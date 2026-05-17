@@ -58,6 +58,18 @@ export class ActionApprovalDecisionStatusError extends Error {
   }
 }
 
+export class ActionLedgerReversalTargetError extends Error {
+  readonly actionId: string
+  readonly reason: "missing_mutation_detail" | "not_reversible"
+
+  constructor(actionId: string, reason: "missing_mutation_detail" | "not_reversible") {
+    super(`Action ledger entry ${actionId} cannot be reversed: ${reason}`)
+    this.name = "ActionLedgerReversalTargetError"
+    this.actionId = actionId
+    this.reason = reason
+  }
+}
+
 export interface AppendActionLedgerEntryInput
   extends Omit<NewActionLedgerEntry, "id" | "createdAt" | "occurredAt"> {
   occurredAt?: Date
@@ -131,6 +143,27 @@ export interface DecideActionApprovalInput {
 export interface DecideActionApprovalResult {
   approval: ActionApproval
   decisionAction: ActionLedgerEntry
+}
+
+type ActionLedgerReversalState = NonNullable<ActionMutationDetail["reversalStateProjection"]>
+type ActionLedgerReversalOutcome = NonNullable<ActionMutationDetail["reversalOutcomeProjection"]>
+
+export interface RecordActionLedgerReversalInput {
+  originalActionId: string
+  reversalAction: Omit<AppendActionLedgerEntryInput, "causationActionId" | "mutationDetail"> & {
+    mutationDetail?: Omit<NewActionMutationDetail, "actionId" | "reversesActionId">
+  }
+  projection?: {
+    reversalState?: ActionLedgerReversalState | null
+    reversalOutcome?: ActionLedgerReversalOutcome | null
+  }
+}
+
+export interface RecordActionLedgerReversalResult {
+  originalAction: ActionLedgerEntry
+  originalMutationDetail: ActionMutationDetail
+  reversalAction: ActionLedgerEntry
+  replayed: boolean
 }
 
 export interface ActionLedgerListCursor {
@@ -476,6 +509,67 @@ export const actionLedgerService = {
       return {
         approval: updatedApproval,
         decisionAction: decisionAction.entry,
+      }
+    })
+  },
+
+  async recordReversal(
+    db: AnyDrizzleDb,
+    input: RecordActionLedgerReversalInput,
+  ): Promise<RecordActionLedgerReversalResult | null> {
+    return withOptionalTransaction(db, async (tx) => {
+      const original = await actionLedgerService.getEntry(tx, input.originalActionId)
+      if (!original) return null
+      if (!original.mutationDetail) {
+        throw new ActionLedgerReversalTargetError(input.originalActionId, "missing_mutation_detail")
+      }
+      if (original.mutationDetail.reversalKind === "none") {
+        throw new ActionLedgerReversalTargetError(input.originalActionId, "not_reversible")
+      }
+
+      const reversalResult = await actionLedgerService.appendEntry(tx, {
+        ...input.reversalAction,
+        causationActionId: original.entry.id,
+        mutationDetail: {
+          commandInputRef: input.reversalAction.mutationDetail?.commandInputRef ?? null,
+          commandResultRef: input.reversalAction.mutationDetail?.commandResultRef ?? null,
+          summary: input.reversalAction.mutationDetail?.summary ?? null,
+          reversalKind: input.reversalAction.mutationDetail?.reversalKind ?? "none",
+          reversalCommandId: input.reversalAction.mutationDetail?.reversalCommandId ?? null,
+          reversalCommandVersion:
+            input.reversalAction.mutationDetail?.reversalCommandVersion ?? null,
+          reversalArgsRef: input.reversalAction.mutationDetail?.reversalArgsRef ?? null,
+          reversalStateProjection:
+            input.reversalAction.mutationDetail?.reversalStateProjection ?? null,
+          reversalOutcomeProjection:
+            input.reversalAction.mutationDetail?.reversalOutcomeProjection ?? null,
+          reversesActionId: original.entry.id,
+          reversedByActionIdProjection:
+            input.reversalAction.mutationDetail?.reversedByActionIdProjection ?? null,
+        },
+      })
+
+      const defaultProjection =
+        input.reversalAction.status === "failed"
+          ? ({ reversalState: "failed", reversalOutcome: "failed" } as const)
+          : ({ reversalState: "completed", reversalOutcome: "full" } as const)
+
+      await tx
+        .update(actionMutationDetails)
+        .set({
+          reversalStateProjection:
+            input.projection?.reversalState ?? defaultProjection.reversalState,
+          reversalOutcomeProjection:
+            input.projection?.reversalOutcome ?? defaultProjection.reversalOutcome,
+          reversedByActionIdProjection: reversalResult.entry.id,
+        })
+        .where(eq(actionMutationDetails.actionId, original.entry.id))
+
+      return {
+        originalAction: original.entry,
+        originalMutationDetail: original.mutationDetail,
+        reversalAction: reversalResult.entry,
+        replayed: reversalResult.replayed,
       }
     })
   },

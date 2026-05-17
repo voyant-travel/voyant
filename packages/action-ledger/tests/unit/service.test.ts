@@ -12,12 +12,13 @@ import type {
   NewActionApproval,
   NewActionLedgerEntry,
 } from "../../src/schema.js"
-import { actionApprovals, actionLedgerEntries } from "../../src/schema.js"
+import { actionApprovals, actionLedgerEntries, actionMutationDetails } from "../../src/schema.js"
 import {
   __test__,
   ActionApprovalDecisionConflictError,
   ActionApprovalDecisionStatusError,
   ActionLedgerIdempotencyConflictError,
+  ActionLedgerReversalTargetError,
   type AppendActionLedgerEntryInput,
   actionLedgerService,
   type DecideActionApprovalInput,
@@ -1078,6 +1079,103 @@ describe("actionLedgerService approval lifecycle", () => {
   })
 })
 
+describe("actionLedgerService.recordReversal", () => {
+  test("appends a reversal action and updates the original mutation projection", async () => {
+    const original = makeEntry({
+      id: "alge_original",
+      actionName: "booking.status.cancel",
+      actionKind: "update",
+      targetType: "booking",
+      targetId: "book_1",
+    })
+    const mutationDetail = makeMutationDetail({
+      actionId: original.id,
+      reversalKind: "domain_command",
+      reversalStateProjection: "available",
+      reversalCommandId: "booking.status.reopen",
+      reversalCommandVersion: "v1",
+    })
+    const { db, entries, insertedMutationDetails, updatedMutationDetails } = makeReversalDb({
+      entry: original,
+      mutationDetail,
+    })
+
+    const result = await actionLedgerService.recordReversal(db, {
+      originalActionId: original.id,
+      reversalAction: {
+        actionName: "booking.status.reopen",
+        actionVersion: "v1",
+        actionKind: "reverse",
+        status: "reversed",
+        evaluatedRisk: "high",
+        principalType: "user",
+        principalId: "usr_reverser",
+        internalRequest: false,
+        targetType: "booking",
+        targetId: "book_1",
+        mutationDetail: {
+          summary: "Booking cancellation reversed",
+          reversalKind: "none",
+        },
+      },
+    })
+
+    expect(result?.replayed).toBe(false)
+    expect(entries).toHaveLength(2)
+    expect(result?.reversalAction).toMatchObject({
+      id: "alge_2",
+      actionName: "booking.status.reopen",
+      actionKind: "reverse",
+      status: "reversed",
+      causationActionId: original.id,
+    })
+    expect(insertedMutationDetails).toEqual([
+      expect.objectContaining({
+        actionId: "alge_2",
+        summary: "Booking cancellation reversed",
+        reversesActionId: original.id,
+      }),
+    ])
+    expect(updatedMutationDetails).toEqual([
+      expect.objectContaining({
+        reversalStateProjection: "completed",
+        reversalOutcomeProjection: "full",
+        reversedByActionIdProjection: "alge_2",
+      }),
+    ])
+  })
+
+  test("rejects non-reversible mutation details", async () => {
+    const original = makeEntry({ id: "alge_original" })
+    const { db } = makeReversalDb({
+      entry: original,
+      mutationDetail: makeMutationDetail({ actionId: original.id, reversalKind: "none" }),
+    })
+
+    await expect(
+      actionLedgerService.recordReversal(db, {
+        originalActionId: original.id,
+        reversalAction: {
+          actionName: "booking.status.reopen",
+          actionVersion: "v1",
+          actionKind: "reverse",
+          status: "reversed",
+          evaluatedRisk: "high",
+          principalType: "user",
+          principalId: "usr_reverser",
+          internalRequest: false,
+          targetType: "booking",
+          targetId: "book_1",
+        },
+      }),
+    ).rejects.toMatchObject({
+      name: ActionLedgerReversalTargetError.name,
+      actionId: original.id,
+      reason: "not_reversible",
+    })
+  })
+})
+
 describe("actionLedgerService.validateApprovedAction", () => {
   test("rejects a missing approval", async () => {
     const { db } = makeValidateApprovedActionDb({})
@@ -1583,6 +1681,102 @@ function makeGetEntryDb(input: {
   } as AnyDrizzleDb
 
   return { db, calls }
+}
+
+function makeReversalDb(input: { entry: ActionLedgerEntry; mutationDetail: ActionMutationDetail }) {
+  const entries = [input.entry]
+  const insertedMutationDetails: unknown[] = []
+  const updatedMutationDetails: unknown[] = []
+  const selectRows = [[input.entry], [input.mutationDetail], [], [], []]
+  let selectIndex = 0
+
+  const db = {
+    transaction<T>(callback: (tx: AnyDrizzleDb) => Promise<T>) {
+      return callback(db as AnyDrizzleDb)
+    },
+    select() {
+      const index = selectIndex
+      selectIndex += 1
+      return {
+        from() {
+          return {
+            where() {
+              if (index >= 3) {
+                return Promise.resolve(selectRows[index] ?? [])
+              }
+              return {
+                limit() {
+                  return Promise.resolve(selectRows[index] ?? [])
+                },
+              }
+            },
+          }
+        },
+      }
+    },
+    insert(table: unknown) {
+      return {
+        values(values: NewActionLedgerEntry | Record<string, unknown>) {
+          if (table === actionMutationDetails) {
+            insertedMutationDetails.push(values)
+            return {}
+          }
+
+          return {
+            returning() {
+              const entryValues = values as NewActionLedgerEntry
+              const entry = makeEntry({
+                ...entryValues,
+                id: `alge_${entries.length + 1}`,
+                occurredAt: entryValues.occurredAt ?? baseDate,
+                createdAt: entryValues.createdAt ?? baseDate,
+                actorType: entryValues.actorType ?? null,
+                principalSubtype: entryValues.principalSubtype ?? null,
+                sessionId: entryValues.sessionId ?? null,
+                apiTokenId: entryValues.apiTokenId ?? null,
+                delegatedByPrincipalType: entryValues.delegatedByPrincipalType ?? null,
+                delegatedByPrincipalId: entryValues.delegatedByPrincipalId ?? null,
+                delegationId: entryValues.delegationId ?? null,
+                callerType: entryValues.callerType ?? null,
+                organizationId: entryValues.organizationId ?? null,
+                routeOrToolName: entryValues.routeOrToolName ?? null,
+                workflowRunId: entryValues.workflowRunId ?? null,
+                workflowStepId: entryValues.workflowStepId ?? null,
+                correlationId: entryValues.correlationId ?? null,
+                causationActionId: entryValues.causationActionId ?? null,
+                idempotencyScope: entryValues.idempotencyScope ?? null,
+                idempotencyKey: entryValues.idempotencyKey ?? null,
+                idempotencyFingerprint: entryValues.idempotencyFingerprint ?? null,
+                capabilityId: entryValues.capabilityId ?? null,
+                capabilityVersion: entryValues.capabilityVersion ?? null,
+                authorizationSource: entryValues.authorizationSource ?? null,
+                approvalId: entryValues.approvalId ?? null,
+                amendsActionId: entryValues.amendsActionId ?? null,
+              })
+              entries.push(entry)
+              return Promise.resolve([entry])
+            },
+          }
+        },
+      }
+    },
+    update(table: unknown) {
+      return {
+        set(values: unknown) {
+          if (table === actionMutationDetails) {
+            updatedMutationDetails.push(values)
+          }
+          return {
+            where() {
+              return Promise.resolve([])
+            },
+          }
+        },
+      }
+    },
+  } as AnyDrizzleDb
+
+  return { db, entries, insertedMutationDetails, updatedMutationDetails }
 }
 
 function makeGetApprovalDb(input: {

@@ -16,6 +16,7 @@ import type {
 } from "./schema.js"
 import {
   ActionApprovalDecisionConflictError,
+  ActionLedgerReversalTargetError,
   actionLedgerService,
   type GetActionApprovalResult,
   type GetActionDelegationResult,
@@ -402,6 +403,63 @@ const decideActionApprovalBodySchema = z
 
 type DecideActionApprovalBody = z.infer<typeof decideActionApprovalBodySchema>
 
+const actionLedgerReversalActionBodySchema = z.object({
+  actionName: z.string().trim().min(1),
+  actionVersion: z.string().trim().min(1).default("v1"),
+  actionKind: z.enum(["reverse", "compensate"]),
+  status: z.enum(["reversed", "compensated", "failed"]),
+  evaluatedRisk: z.enum(actionLedgerRiskValues).default("high"),
+  actorType: nullableTrimmedString,
+  principalType: z.enum(actionLedgerPrincipalTypeValues),
+  principalId: z.string().trim().min(1),
+  principalSubtype: nullableTrimmedString,
+  sessionId: nullableTrimmedString,
+  apiTokenId: nullableTrimmedString,
+  internalRequest: z.boolean().default(false),
+  delegatedByPrincipalType: z.enum(actionLedgerPrincipalTypeValues).optional(),
+  delegatedByPrincipalId: nullableTrimmedString,
+  delegationId: nullableTrimmedString,
+  callerType: nullableTrimmedString,
+  organizationId: nullableTrimmedString,
+  routeOrToolName: nullableTrimmedString,
+  workflowRunId: nullableTrimmedString,
+  workflowStepId: nullableTrimmedString,
+  correlationId: nullableTrimmedString,
+  idempotencyScope: nullableTrimmedString,
+  idempotencyKey: nullableTrimmedString,
+  idempotencyFingerprint: nullableTrimmedString,
+  targetType: z.string().trim().min(1),
+  targetId: z.string().trim().min(1),
+  capabilityId: nullableTrimmedString,
+  capabilityVersion: nullableTrimmedString,
+  authorizationSource: nullableTrimmedString,
+  approvalId: nullableTrimmedString,
+  amendsActionId: nullableTrimmedString,
+  mutationDetail: z
+    .object({
+      commandInputRef: nullableTrimmedString,
+      commandResultRef: nullableTrimmedString,
+      summary: nullableTrimmedString,
+      reversalKind: z.enum(actionLedgerReversalKindValues).default("none"),
+      reversalCommandId: nullableTrimmedString,
+      reversalCommandVersion: nullableTrimmedString,
+      reversalArgsRef: nullableTrimmedString,
+    })
+    .optional(),
+})
+
+const recordActionLedgerReversalBodySchema = z.object({
+  reversalAction: actionLedgerReversalActionBodySchema,
+  projection: z
+    .object({
+      reversalState: z.enum(actionLedgerReversalStateValues).optional(),
+      reversalOutcome: z.enum(actionLedgerReversalOutcomeValues).optional(),
+    })
+    .optional(),
+})
+
+type RecordActionLedgerReversalBody = z.infer<typeof recordActionLedgerReversalBodySchema>
+
 const actionDelegationListQuerySchema = z
   .object({
     rootPrincipalType: z.enum(actionLedgerPrincipalTypeValues).optional(),
@@ -525,6 +583,14 @@ export interface ActionApprovalDecisionResponse {
   data: {
     approval: ActionApprovalResponse
     decisionAction: ActionLedgerEntryResponse
+  }
+}
+
+export interface ActionLedgerReversalResponse {
+  data: {
+    originalAction: ActionLedgerEntryResponse
+    reversalAction: ActionLedgerEntryResponse
+    replayed: boolean
   }
 }
 
@@ -766,6 +832,59 @@ async function decideActionApproval(c: Context<Env>) {
   }
 }
 
+async function recordActionLedgerReversal(c: Context<Env>) {
+  const id = c.req.param("id")
+  if (!id) {
+    return c.json({ error: "Action ledger entry not found" }, 404)
+  }
+
+  const body: RecordActionLedgerReversalBody = await parseJsonBody(
+    c,
+    recordActionLedgerReversalBodySchema,
+  )
+
+  try {
+    const result = await actionLedgerService.recordReversal(c.get("db"), {
+      originalActionId: id,
+      reversalAction: {
+        ...body.reversalAction,
+        mutationDetail: body.reversalAction.mutationDetail
+          ? {
+              ...body.reversalAction.mutationDetail,
+              reversalStateProjection: null,
+              reversalOutcomeProjection: null,
+              reversedByActionIdProjection: null,
+            }
+          : undefined,
+      },
+      projection: body.projection,
+    })
+
+    if (!result) {
+      return c.json({ error: "Action ledger entry not found" }, 404)
+    }
+
+    return c.json({
+      data: {
+        originalAction: serializeActionLedgerEntry(result.originalAction),
+        reversalAction: serializeActionLedgerEntry(result.reversalAction),
+        replayed: result.replayed,
+      },
+    } satisfies ActionLedgerReversalResponse)
+  } catch (error) {
+    if (error instanceof ActionLedgerReversalTargetError) {
+      return c.json(
+        {
+          error: "Action ledger entry cannot be reversed",
+          reason: error.reason,
+        },
+        409,
+      )
+    }
+    throw error
+  }
+}
+
 async function getActionApproval(c: Context<Env>) {
   const id = c.req.param("id")
   if (!id) {
@@ -827,6 +946,7 @@ export const actionLedgerAdminRoutes = new Hono<Env>()
   .get("/delegations", listActionDelegations)
   .get("/delegations/:id", getActionDelegation)
   .get("/relay-outbox", listActionLedgerRelayOutbox)
+  .post("/entries/:id/reversals", recordActionLedgerReversal)
   .get("/entries/:id", getActionLedgerEntry)
 
 export type ActionLedgerAdminRoutes = typeof actionLedgerAdminRoutes
@@ -844,6 +964,7 @@ export const __test__ = {
   actionLedgerEntryListQuerySchema,
   actionApprovalListQuerySchema,
   decideActionApprovalBodySchema,
+  recordActionLedgerReversalBodySchema,
   requestActionApprovalBodySchema,
   actionDelegationListQuerySchema,
   actionLedgerRelayOutboxListQuerySchema,

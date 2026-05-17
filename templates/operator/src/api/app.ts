@@ -67,6 +67,7 @@ import { createProductBrochurePrinter } from "../lib/brochure-printer"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { createVideoUploadTicket } from "../lib/video-uploads"
 import { tryGetCloudClient } from "../lib/voyant-cloud"
+import { mountActionLedgerHealthRoutes } from "./action-ledger-health"
 import authHandler, { hasAuthPermission, resolveAuthRequest } from "./auth/handler"
 import {
   bookingScheduleBundle,
@@ -859,6 +860,10 @@ export const app = createApp<CloudflareBindings>({
     // Admin-issued invitation flow (single-tenant sign-up is otherwise gated
     // at the Better Auth layer).
     hono.route("/", createInvitationsRoutes())
+
+    // Action ledger diagnostics. GET is read-only drift health; POST writes
+    // a synthetic canary action and verifies the relay row is visible.
+    mountActionLedgerHealthRoutes(hono)
 
     // Operator profile + default customer payment policy. Backs the
     // admin Settings → Operator page and the storefront contract

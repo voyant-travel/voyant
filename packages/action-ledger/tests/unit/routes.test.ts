@@ -905,6 +905,83 @@ describe("actionLedgerAdminRoutes", () => {
     })
   })
 
+  test("records a reversal action for an entry", async () => {
+    const db = {} as AnyDrizzleDb
+    const originalAction = makeEntry({
+      id: "alge_original",
+      actionName: "booking.status.cancel",
+      actionKind: "update",
+      targetType: "booking",
+      targetId: "book_1",
+    })
+    const reversalAction = makeEntry({
+      id: "alge_reversal",
+      actionName: "booking.status.reopen",
+      actionKind: "reverse",
+      status: "reversed",
+      targetType: "booking",
+      targetId: "book_1",
+      causationActionId: originalAction.id,
+    })
+    const spy = vi.spyOn(actionLedgerService, "recordReversal").mockResolvedValue({
+      originalAction,
+      originalMutationDetail: makeMutationDetail({ actionId: originalAction.id }),
+      reversalAction,
+      replayed: false,
+    })
+
+    const app = makeApp(db)
+    const response = await app.request("/entries/alge_original/reversals", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        reversalAction: {
+          actionName: "booking.status.reopen",
+          actionVersion: "v1",
+          actionKind: "reverse",
+          status: "reversed",
+          evaluatedRisk: "high",
+          principalType: "user",
+          principalId: "usr_reverser",
+          internalRequest: false,
+          targetType: "booking",
+          targetId: "book_1",
+          mutationDetail: {
+            summary: "Booking cancellation reversed",
+          },
+        },
+      }),
+    })
+
+    expect(spy).toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({
+        originalActionId: "alge_original",
+        reversalAction: expect.objectContaining({
+          actionName: "booking.status.reopen",
+          mutationDetail: expect.objectContaining({
+            summary: "Booking cancellation reversed",
+            reversalKind: "none",
+            reversedByActionIdProjection: null,
+          }),
+        }),
+      }),
+    )
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      data: {
+        originalAction: { id: "alge_original" },
+        reversalAction: {
+          id: "alge_reversal",
+          actionKind: "reverse",
+          status: "reversed",
+          causationActionId: "alge_original",
+        },
+        replayed: false,
+      },
+    })
+  })
+
   test("returns 404 when an entry is missing", async () => {
     vi.spyOn(actionLedgerService, "getEntry").mockResolvedValue(null)
 
