@@ -22,6 +22,9 @@ import {
   buildPaymentCaptureCreateActionLedgerInput,
   buildPaymentCaptureDeleteActionLedgerInput,
   buildPaymentCompletedEvent,
+  buildPaymentInstrumentCreateActionLedgerInput,
+  buildPaymentInstrumentDeleteActionLedgerInput,
+  buildPaymentInstrumentUpdateActionLedgerInput,
   buildPaymentSessionCompletionActionLedgerInput,
   buildPaymentSessionCreateActionLedgerInput,
   buildPaymentSessionFailedActionLedgerInput,
@@ -262,6 +265,130 @@ describe("payment session events", () => {
         commandInputRef: "payment_session:psess_123:fail",
         commandResultRef: "payment_session:psess_123",
         summary: "Payment session psess_123 marked as failed",
+        reversalKind: "none",
+      },
+    })
+  })
+
+  it("builds person-targeted action ledger input for payment instrument creation", () => {
+    const ledgerInput = buildPaymentInstrumentCreateActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        instrument: {
+          id: "pins_123",
+          ownerType: "client",
+          personId: "person_123",
+          organizationId: null,
+          supplierId: null,
+          channelId: null,
+          instrumentType: "card",
+          status: "active",
+          label: "Visa ending 4242",
+          provider: "netopia",
+          externalToken: "tok_sensitive",
+        } as never,
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.payment_instrument.create",
+      actionKind: "create",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "person",
+      targetId: "person_123",
+      routeOrToolName: "finance.payment_instrument.create",
+      authorizationSource: "finance.payment_instrument.route",
+      idempotencyScope: null,
+      idempotencyKey: null,
+      idempotencyFingerprint: null,
+      mutationDetail: {
+        commandInputRef: "person:person_123:payment_instrument",
+        commandResultRef: "payment_instrument:pins_123",
+        summary: "Payment instrument pins_123 created for person:person_123",
+        reversalKind: "none",
+      },
+    })
+  })
+
+  it("builds organization-targeted action ledger input for payment instrument updates", () => {
+    const ledgerInput = buildPaymentInstrumentUpdateActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        instrument: {
+          id: "pins_123",
+          personId: null,
+          organizationId: "org_123",
+          supplierId: null,
+          channelId: null,
+        } as never,
+        changes: {
+          label: "Corporate card",
+          status: "inactive",
+        },
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.payment_instrument.update",
+      actionKind: "update",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "organization",
+      targetId: "org_123",
+      routeOrToolName: "finance.payment_instrument.update",
+      authorizationSource: "finance.payment_instrument.route",
+      idempotencyScope: null,
+      idempotencyKey: null,
+      idempotencyFingerprint: null,
+      mutationDetail: {
+        commandInputRef: "payment_instrument:pins_123:update",
+        commandResultRef: "payment_instrument:pins_123",
+        summary: "Payment instrument pins_123 updated (label, status)",
+        reversalKind: "none",
+      },
+    })
+  })
+
+  it("builds instrument-targeted action ledger input for payment instrument deletes", () => {
+    const ledgerInput = buildPaymentInstrumentDeleteActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        instrument: {
+          id: "pins_123",
+          personId: null,
+          organizationId: null,
+          supplierId: null,
+          channelId: null,
+        } as never,
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.payment_instrument.delete",
+      actionKind: "delete",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "payment_instrument",
+      targetId: "pins_123",
+      routeOrToolName: "finance.payment_instrument.delete",
+      authorizationSource: "finance.payment_instrument.route",
+      idempotencyScope: null,
+      idempotencyKey: null,
+      idempotencyFingerprint: null,
+      mutationDetail: {
+        commandInputRef: "payment_instrument:pins_123:delete",
+        commandResultRef: null,
+        summary: "Payment instrument pins_123 deleted",
         reversalKind: "none",
       },
     })

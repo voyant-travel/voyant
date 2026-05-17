@@ -297,11 +297,17 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .post("/payment-instruments", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     return c.json(
       {
         data: await financeService.createPaymentInstrument(
           c.get("db"),
           await parseJsonBody(c, insertPaymentInstrumentSchema),
+          {
+            eventBus: runtime?.eventBus,
+            actionLedgerContext: getActionLedgerRequestContext(c),
+            actionLedgerAuthorizationSource: "finance.payment_instrument.route",
+          },
         ),
       },
       201,
@@ -315,17 +321,28 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .patch("/payment-instruments/:id", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.updatePaymentInstrument(
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, updatePaymentInstrumentSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.payment_instrument.route",
+      },
     )
     if (!row) return c.json({ error: "Payment instrument not found" }, 404)
     return c.json({ data: row })
   })
 
   .delete("/payment-instruments/:id", async (c) => {
-    const row = await financeService.deletePaymentInstrument(c.get("db"), c.req.param("id"))
+    const runtime = getFinanceRouteRuntime(c)
+    const row = await financeService.deletePaymentInstrument(c.get("db"), c.req.param("id"), {
+      eventBus: runtime?.eventBus,
+      actionLedgerContext: getActionLedgerRequestContext(c),
+      actionLedgerAuthorizationSource: "finance.payment_instrument.route",
+    })
     if (!row) return c.json({ error: "Payment instrument not found" }, 404)
     return c.json({ success: true })
   })
