@@ -11,7 +11,7 @@ import {
   publicStartPaymentSessionSchema,
   publicValidateVoucherSchema,
   publicVoucherValidationSchema,
-} from "@voyantjs/finance"
+} from "@voyantjs/finance/public-validation"
 import { z } from "zod"
 
 export const paginatedEnvelope = <T extends z.ZodTypeAny>(item: T) =>

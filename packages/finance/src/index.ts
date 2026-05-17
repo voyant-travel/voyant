@@ -13,14 +13,6 @@ import { createFinanceAdminDocumentRoutes } from "./routes-documents.js"
 import { createPublicFinanceRoutes, type PublicFinanceRouteOptions } from "./routes-public.js"
 import { createFinanceAdminSettlementRoutes } from "./routes-settlement.js"
 
-export {
-  buildFinanceActionLedgerDriftQueries,
-  type CheckFinanceActionLedgerDriftInput,
-  type CheckFinanceActionLedgerDriftResult,
-  checkFinanceActionLedgerDrift,
-  type FinanceActionLedgerDriftCheck,
-  type FinanceActionLedgerDriftRow,
-} from "./action-ledger-drift.js"
 export type { FinanceRoutes } from "./routes.js"
 export type { PublicFinanceRoutes } from "./routes-public.js"
 export {
