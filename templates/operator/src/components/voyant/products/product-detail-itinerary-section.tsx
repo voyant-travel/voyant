@@ -4,6 +4,7 @@ import {
   type ProductDayRecord,
   type ProductDayServiceRecord,
   type ProductItineraryRecord,
+  productsQueryKeys,
   useProductDayMutation,
   useProductItineraries,
   useProductItineraryDays,
@@ -45,6 +46,9 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
   const itineraryQuery = useProductItineraries(productId)
   const itineraryMutation = useProductItineraryMutation()
   const dayMutation = useProductDayMutation()
+  const productActionLedgerQueryKey = [...productsQueryKeys.product(productId), "action-ledger"]
+  const invalidateProductActionLedger = () =>
+    queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
 
   const [expandedDayId, setExpandedDayId] = useState<string | null>(null)
   const [selectedItineraryId, setSelectedItineraryId] = useState<string | null>(null)
@@ -109,6 +113,7 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
       itineraryId: itinerary.id,
       input: { isDefault: true },
     })
+    void invalidateProductActionLedger()
   }
 
   const handleDuplicate = async (itinerary: ProductItineraryRecord) => {
@@ -118,6 +123,7 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
     })
     setExpandedDayId(null)
     setSelectedItineraryId(result.itinerary.id)
+    void invalidateProductActionLedger()
   }
 
   const handleConfirmDelete = async () => {
@@ -127,6 +133,7 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
       itineraryId: deleteItineraryTarget.id,
     })
     setDeleteItineraryTarget(null)
+    void invalidateProductActionLedger()
   }
 
   const sectionTitle = hasMultiple
@@ -285,11 +292,16 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
                     }}
                     onDelete={() => {
                       if (window.confirm(productMessages.deleteDayConfirm)) {
-                        dayMutation.remove.mutate({
-                          productId,
-                          itineraryId: selectedItineraryId ?? undefined,
-                          dayId: day.id,
-                        })
+                        dayMutation.remove.mutate(
+                          {
+                            productId,
+                            itineraryId: selectedItineraryId ?? undefined,
+                            dayId: day.id,
+                          },
+                          {
+                            onSuccess: () => void invalidateProductActionLedger(),
+                          },
+                        )
                       }
                     }}
                     onAddService={() => {
@@ -310,6 +322,7 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
                             await queryClient.invalidateQueries({
                               queryKey: ["product-day-services", productId, day.id],
                             })
+                            await invalidateProductActionLedger()
                           })
                       }
                     }}
@@ -336,6 +349,7 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
               queryKey: ["products", productId, "itineraries", selectedItineraryId, "days"],
             })
           }
+          void invalidateProductActionLedger()
         }}
       />
 
@@ -351,6 +365,7 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
           void queryClient.invalidateQueries({
             queryKey: ["product-day-services", productId, serviceDialogDayId],
           })
+          void invalidateProductActionLedger()
         }}
       />
 
@@ -365,6 +380,7 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
         itineraryCount={itineraries.length}
         onSuccess={(itineraryId) => {
           if (!editingItinerary) setSelectedItineraryId(itineraryId)
+          void invalidateProductActionLedger()
         }}
       />
 

@@ -1,5 +1,6 @@
 import { useQueries } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import { ProductActionLedgerCard } from "@voyantjs/products-ui/components/product-action-ledger-card"
 import { ProductOptionsSection } from "@voyantjs/products-ui/components/product-options-section"
 import { Button } from "@voyantjs/ui/components"
 import { useMemo } from "react"
@@ -161,6 +162,8 @@ export function ProductDetailPage({ id }: { id: string }) {
           />
 
           <ProductOrganizeSection product={product} onEdit={dialogs.edit.openNow} />
+
+          <ProductActionLedgerCard productId={id} />
 
           <ProductBrochureSection
             brochure={brochure}

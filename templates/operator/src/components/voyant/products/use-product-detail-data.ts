@@ -54,6 +54,7 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
 
   const productQuery = useProduct(productId)
   const itinerariesQuery = useProductItineraries(productId)
+  const productActionLedgerQueryKey = [...productsQueryKeys.product(productId), "action-ledger"]
 
   const slotsQuery = useQuery(getProductSlotsQueryOptions(productId))
   const rulesQuery = useQuery(getProductRulesQueryOptions(productId))
@@ -68,29 +69,42 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
         productId,
         active: true,
       }),
-    onSuccess: () => void mappingsQuery.refetch(),
+    onSuccess: () => {
+      void mappingsQuery.refetch()
+      void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
+    },
   })
 
   const removeChannelMapping = useMutation({
     mutationFn: (mappingId: string) => api.delete(`/v1/distribution/product-mappings/${mappingId}`),
-    onSuccess: () => void mappingsQuery.refetch(),
+    onSuccess: () => {
+      void mappingsQuery.refetch()
+      void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
+    },
   })
 
   const deleteProduct = useMutation({
     mutationFn: () => api.delete(`/v1/products/${productId}`),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["products"] })
+      void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
     },
   })
 
   const deleteSlot = useMutation({
     mutationFn: (slotId: string) => api.delete(`/v1/availability/slots/${slotId}`),
-    onSuccess: () => void slotsQuery.refetch(),
+    onSuccess: () => {
+      void slotsQuery.refetch()
+      void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
+    },
   })
 
   const deleteRule = useMutation({
     mutationFn: (ruleId: string) => api.delete(`/v1/availability/rules/${ruleId}`),
-    onSuccess: () => void rulesQuery.refetch(),
+    onSuccess: () => {
+      void rulesQuery.refetch()
+      void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
+    },
   })
 
   const uploadMedia = useMutation({
@@ -129,22 +143,34 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
         fileSize: upload.size,
       })
     },
-    onSuccess: () => void mediaQuery.refetch(),
+    onSuccess: () => {
+      void mediaQuery.refetch()
+      void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
+    },
   })
 
   const deleteMedia = useMutation({
     mutationFn: (mediaId: string) => api.delete(`/v1/products/media/${mediaId}`),
-    onSuccess: () => void mediaQuery.refetch(),
+    onSuccess: () => {
+      void mediaQuery.refetch()
+      void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
+    },
   })
 
   const setCover = useMutation({
     mutationFn: (mediaId: string) => api.patch(`/v1/products/media/${mediaId}/set-cover`, {}),
-    onSuccess: () => void mediaQuery.refetch(),
+    onSuccess: () => {
+      void mediaQuery.refetch()
+      void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
+    },
   })
 
   const generateBrochure = useMutation({
     mutationFn: () => api.post(`/v1/admin/products/${productId}/brochure/generate`, {}),
-    onSuccess: () => void mediaQuery.refetch(),
+    onSuccess: () => {
+      void mediaQuery.refetch()
+      void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
+    },
   })
 
   const itineraryNameById = useMemo(
@@ -160,6 +186,7 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
   const invalidateProduct = () => {
     void queryClient.invalidateQueries({ queryKey: productsQueryKeys.product(productId) })
     void queryClient.invalidateQueries({ queryKey: productsQueryKeys.products() })
+    void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
   }
 
   return {
