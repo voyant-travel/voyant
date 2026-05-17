@@ -4143,6 +4143,9 @@ importers:
 
   packages/products:
     dependencies:
+      '@voyantjs/action-ledger':
+        specifier: workspace:*
+        version: link:../action-ledger
       '@voyantjs/catalog':
         specifier: workspace:*
         version: link:../catalog

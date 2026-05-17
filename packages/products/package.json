@@ -37,6 +37,7 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
+    "@voyantjs/action-ledger": "workspace:*",
     "@voyantjs/core": "workspace:*",
     "@voyantjs/db": "workspace:*",
     "@voyantjs/hono": "workspace:*",

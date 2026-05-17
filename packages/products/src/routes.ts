@@ -3,6 +3,11 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 import { z } from "zod"
 
+import {
+  appendProductMutationLedgerEntry,
+  changedProductFields,
+  listProductActionLedger,
+} from "./action-ledger.js"
 import { emitProductContentChanged } from "./events.js"
 import { productsService } from "./service.js"
 import {
@@ -88,10 +93,22 @@ import {
   upsertProductBrochureSchema,
 } from "./validation.js"
 
-type Env = {
+export type Env = {
   Variables: {
     db: PostgresJsDatabase
     userId?: string
+    agentId?: string
+    workflowPrincipalId?: string
+    principalSubtype?: string
+    sessionId?: string
+    apiTokenId?: string
+    apiKeyId?: string
+    callerType?: string
+    actor?: string
+    isInternalRequest?: boolean
+    organizationId?: string
+    workflowRunId?: string
+    workflowStepId?: string
     eventBus?: import("@voyantjs/core").EventBus
   }
 }
@@ -116,10 +133,13 @@ export const productRoutes = new Hono<Env>()
 
   // POST / — Create product
   .post("/", async (c) => {
-    const row = await productsService.createProduct(
-      c.get("db"),
-      await parseJsonBody(c, insertProductSchema),
-    )
+    const input = await parseJsonBody(c, insertProductSchema)
+    const row = await productsService.createProduct(c.get("db"), input)
+    await appendProductMutationLedgerEntry(c, {
+      action: "create",
+      productId: row.id,
+      changedFields: changedProductFields(input, null, row),
+    })
     await c.get("eventBus")?.emit("product.created", { id: row.id })
     return c.json({ data: row }, 201)
   })
@@ -1396,18 +1416,29 @@ export const productRoutes = new Hono<Env>()
     return c.json({ data: row })
   })
 
+  // GET /:id/action-ledger — Product-scoped action timeline
+  .get("/:id/action-ledger", listProductActionLedger)
+
   // PATCH /:id — Update product
   .patch("/:id", async (c) => {
-    const row = await productsService.updateProduct(
-      c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateProductSchema),
-    )
+    const productId = c.req.param("id")
+    const before = await productsService.getProductById(c.get("db"), productId)
+    if (!before) {
+      return c.json({ error: "Product not found" }, 404)
+    }
+
+    const input = await parseJsonBody(c, updateProductSchema)
+    const row = await productsService.updateProduct(c.get("db"), productId, input)
 
     if (!row) {
       return c.json({ error: "Product not found" }, 404)
     }
 
+    await appendProductMutationLedgerEntry(c, {
+      action: "update",
+      productId: row.id,
+      changedFields: changedProductFields(input, before, row),
+    })
     await c.get("eventBus")?.emit("product.updated", { id: row.id })
     await emitProductContentChanged(c.get("eventBus"), { id: row.id, axis: "product" })
     return c.json({ data: row })
@@ -1415,12 +1446,23 @@ export const productRoutes = new Hono<Env>()
 
   // DELETE /:id — Delete product
   .delete("/:id", async (c) => {
-    const row = await productsService.deleteProduct(c.get("db"), c.req.param("id"))
+    const productId = c.req.param("id")
+    const before = await productsService.getProductById(c.get("db"), productId)
+    if (!before) {
+      return c.json({ error: "Product not found" }, 404)
+    }
+
+    const row = await productsService.deleteProduct(c.get("db"), productId)
 
     if (!row) {
       return c.json({ error: "Product not found" }, 404)
     }
 
+    await appendProductMutationLedgerEntry(c, {
+      action: "delete",
+      productId: row.id,
+      changedFields: [],
+    })
     await c.get("eventBus")?.emit("product.deleted", { id: row.id })
     return c.json({ success: true }, 200)
   })
