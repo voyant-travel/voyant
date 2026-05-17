@@ -39,11 +39,15 @@ describe("booking action ledger drift checks", () => {
     )
   })
 
-  it("builds drift queries for booking travelers and travel details", () => {
+  it("builds drift queries for booking items, travelers, and travel details", () => {
     const queries = buildBookingActionLedgerDriftQueries({ sampleLimit: 2 })
     const dialect = new PgDialect()
+    const item = dialect.sqlToQuery(queries.booking_item)
     const traveler = dialect.sqlToQuery(queries.booking_traveler)
     const travelDetails = dialect.sqlToQuery(queries.booking_traveler_travel_details)
+
+    expect(item.sql).toContain('"booking_items"')
+    expect(item.params).toEqual(expect.arrayContaining(["booking.item.create", "booking_item"]))
 
     expect(traveler.sql).toContain('"booking_travelers"')
     expect(traveler.params).toEqual(

@@ -76,6 +76,15 @@ describe("booking action ledger timeline", () => {
         }),
         duplicate,
       ],
+      itemEntries: [
+        makeEntry({
+          id: "alge_item",
+          occurredAt: new Date("2026-05-15T10:00:30.000Z"),
+          actionName: "booking.item.update",
+          targetType: "booking_item",
+          targetId: "bkit_1",
+        }),
+      ],
       limit: 10,
     })
 
@@ -83,6 +92,7 @@ describe("booking action ledger timeline", () => {
       "alge_new",
       "alge_tie_z",
       "alge_duplicate",
+      "alge_item",
       "alge_old",
     ])
     expect(page.nextCursor).toBeNull()
@@ -177,5 +187,13 @@ describe("booking action ledger timeline", () => {
     expect(__test__.bookingMutationSummary("update", ["email"], "booking traveler")).toBe(
       "Updated booking traveler fields: email",
     )
+
+    expect(
+      __test__.changedBookingItemFields(
+        { title: "Tour", totalSellAmountCents: 120_00, contactEmail: "ignored@example.test" },
+        { title: "Tour", totalSellAmountCents: 100_00 },
+        { title: "Tour", totalSellAmountCents: 120_00 },
+      ),
+    ).toEqual(["totalSellAmountCents"])
   })
 })

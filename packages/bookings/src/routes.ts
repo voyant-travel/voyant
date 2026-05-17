@@ -109,6 +109,8 @@ const BOOKING_PII_DECISION_POLICY = "bookings-pii-scope-or-staff-v1"
 const BOOKING_PII_AUTHORIZATION_SOURCE = "bookings.pii.route"
 const BOOKING_STATUS_APPROVAL_POLICY = "bookings-status-approval-v1"
 const BOOKING_TRAVELER_LEDGER_ACTION_VERSION = "v1"
+const BOOKING_ITEM_LEDGER_ACTION_VERSION = "v1"
+const BOOKING_NOTE_LEDGER_ACTION_VERSION = "v1"
 
 type ApprovedBookingStatusAction = BuildActionLedgerApprovedExecutionFieldsInput
 type TravelerTravelDetails = Awaited<
@@ -151,6 +153,30 @@ const TRAVELER_MUTATION_FIELDS = [
   "specialRequests",
   "isPrimary",
   "notes",
+]
+const BOOKING_ITEM_MUTATION_FIELDS = [
+  "title",
+  "description",
+  "itemType",
+  "status",
+  "serviceDate",
+  "startsAt",
+  "endsAt",
+  "quantity",
+  "sellCurrency",
+  "unitSellAmountCents",
+  "totalSellAmountCents",
+  "costCurrency",
+  "unitCostAmountCents",
+  "totalCostAmountCents",
+  "notes",
+  "productId",
+  "optionId",
+  "optionUnitId",
+  "pricingCategoryId",
+  "sourceSnapshotId",
+  "sourceOfferId",
+  "metadata",
 ]
 
 const bookingActionLedgerQuerySchema = z
@@ -226,6 +252,7 @@ function getActionLedgerRequestContext(c: Context<Env>): ActionLedgerRequestCont
 }
 
 type BookingTravelerLedgerAction = "create" | "update" | "delete"
+type BookingMutationAction = "create" | "update" | "delete"
 
 function changedBookingMutationFields(
   input: Record<string, unknown>,
@@ -256,15 +283,54 @@ function changedBookingTravelDetailFields(input: Record<string, unknown>): strin
     .sort()
 }
 
-function bookingMutationSummary(
-  action: BookingTravelerLedgerAction,
-  fields: string[],
-  subject: string,
-) {
+function changedBookingItemFields(
+  input: Record<string, unknown>,
+  before: Record<string, unknown> | null,
+  after: Record<string, unknown> | null,
+): string[] {
+  const itemFields = new Set(BOOKING_ITEM_MUTATION_FIELDS)
+  return changedBookingMutationFields(input, before, after).filter((field) => itemFields.has(field))
+}
+
+function bookingMutationSummary(action: BookingMutationAction, fields: string[], subject: string) {
   if (action === "delete") return `Deleted ${subject}`
   if (fields.length === 0) return action === "create" ? `Created ${subject}` : `Updated ${subject}`
   const verb = action === "create" ? "Created" : "Updated"
   return `${verb} ${subject} fields: ${fields.join(", ")}`
+}
+
+async function appendBookingMutationLedgerEntry(
+  c: Context<Env>,
+  input: {
+    action: BookingMutationAction
+    actionName: string
+    actionVersion: string
+    targetType: string
+    targetId: string
+    changedFields: string[]
+    subject: string
+    routeOrToolName: string
+    authorizationSource?: string
+    evaluatedRisk?: ActionLedgerEntry["evaluatedRisk"]
+    summary?: string
+  },
+) {
+  return appendActionLedgerMutation(c.get("db"), {
+    context: getActionLedgerRequestContext(c),
+    actionName: input.actionName,
+    actionVersion: input.actionVersion,
+    actionKind: input.action,
+    evaluatedRisk: input.evaluatedRisk ?? "medium",
+    targetType: input.targetType,
+    targetId: input.targetId,
+    routeOrToolName: input.routeOrToolName,
+    authorizationSource: input.authorizationSource ?? "bookings.route",
+    mutationDetail: {
+      summary:
+        input.summary ?? bookingMutationSummary(input.action, input.changedFields, input.subject),
+      reversalKind: "none",
+    },
+  })
 }
 
 async function appendBookingTravelerMutationLedgerEntry(
@@ -280,21 +346,14 @@ async function appendBookingTravelerMutationLedgerEntry(
     summary?: string
   },
 ) {
-  return appendActionLedgerMutation(c.get("db"), {
-    context: getActionLedgerRequestContext(c),
+  return appendBookingMutationLedgerEntry(c, {
+    ...input,
     actionName: input.actionName,
     actionVersion: BOOKING_TRAVELER_LEDGER_ACTION_VERSION,
-    actionKind: input.action,
-    evaluatedRisk: input.evaluatedRisk ?? "high",
     targetType: "booking_traveler",
     targetId: input.travelerId,
-    routeOrToolName: input.routeOrToolName,
     authorizationSource: BOOKING_PII_AUTHORIZATION_SOURCE,
-    mutationDetail: {
-      summary:
-        input.summary ?? bookingMutationSummary(input.action, input.changedFields, input.subject),
-      reversalKind: "none",
-    },
+    evaluatedRisk: input.evaluatedRisk ?? "high",
   })
 }
 
@@ -972,10 +1031,12 @@ function sortBookingActionLedgerEntries(entries: ActionLedgerEntry[]) {
 function buildBookingActionLedgerPage({
   bookingEntries,
   travelerEntries,
+  itemEntries = [],
   limit,
 }: {
   bookingEntries: ActionLedgerEntry[]
   travelerEntries: ActionLedgerEntry[]
+  itemEntries?: ActionLedgerEntry[]
   limit: number
 }) {
   const entriesById = new Map<string, ActionLedgerEntry>()
@@ -983,6 +1044,9 @@ function buildBookingActionLedgerPage({
     entriesById.set(entry.id, entry)
   }
   for (const entry of travelerEntries) {
+    entriesById.set(entry.id, entry)
+  }
+  for (const entry of itemEntries) {
     entriesById.set(entry.id, entry)
   }
 
@@ -1020,7 +1084,9 @@ async function listBookingActionLedger(c: Context<Env>) {
   const visibleTravelers = reveal ? travelers : travelers.map((row) => redactTravelerIdentity(row))
 
   const travelerIds = travelers.map((traveler) => traveler.id)
-  const [bookingEntriesResult, travelerEntriesResult] = await Promise.all([
+  const items = await bookingsService.listItems(c.get("db"), bookingId)
+  const itemIds = items.map((item) => item.id)
+  const [bookingEntriesResult, travelerEntriesResult, itemEntriesResult] = await Promise.all([
     actionLedgerService.listEntries(c.get("db"), {
       targetType: "booking",
       targetId: bookingId,
@@ -1031,7 +1097,14 @@ async function listBookingActionLedger(c: Context<Env>) {
       ? actionLedgerService.listEntries(c.get("db"), {
           targetType: "booking_traveler",
           targetIds: travelerIds,
-          actionName: BOOKING_PII_READ_ACTION_NAME,
+          cursor: query.cursor,
+          limit: queryLimit,
+        })
+      : Promise.resolve({ entries: [], nextCursor: null }),
+    itemIds.length > 0
+      ? actionLedgerService.listEntries(c.get("db"), {
+          targetType: "booking_item",
+          targetIds: itemIds,
           cursor: query.cursor,
           limit: queryLimit,
         })
@@ -1041,6 +1114,7 @@ async function listBookingActionLedger(c: Context<Env>) {
   const page = buildBookingActionLedgerPage({
     bookingEntries: bookingEntriesResult.entries,
     travelerEntries: travelerEntriesResult.entries,
+    itemEntries: itemEntriesResult.entries,
     limit,
   })
 
@@ -2224,10 +2298,11 @@ export const bookingRoutes = new Hono<Env>()
 
   // 17. POST /:id/items — Add booking item
   .post("/:id/items", async (c) => {
+    const body = await parseJsonBody(c, insertBookingItemSchema)
     const row = await bookingsService.createItem(
       c.get("db"),
       c.req.param("id"),
-      await parseJsonBody(c, insertBookingItemSchema),
+      body,
       c.get("userId"),
     )
 
@@ -2235,31 +2310,87 @@ export const bookingRoutes = new Hono<Env>()
       return c.json({ error: "Booking not found" }, 404)
     }
 
+    await appendBookingMutationLedgerEntry(c, {
+      action: "create",
+      actionName: "booking.item.create",
+      actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
+      targetType: "booking_item",
+      targetId: row.id,
+      changedFields: changedBookingItemFields(body, null, row),
+      subject: "booking item",
+      routeOrToolName: "bookings.items.create",
+      evaluatedRisk: "high",
+    })
+
     return c.json({ data: row }, 201)
   })
 
   // 18. PATCH /:id/items/:itemId — Update booking item
   .patch("/:id/items/:itemId", async (c) => {
-    const row = await bookingsService.updateItem(
-      c.get("db"),
-      c.req.param("itemId"),
-      await parseJsonBody(c, updateBookingItemSchema),
-    )
+    const bookingId = c.req.param("id")
+    const itemId = c.req.param("itemId")
+    const before =
+      (await bookingsService.listItems(c.get("db"), bookingId)).find(
+        (item) => item.id === itemId,
+      ) ?? null
+
+    if (!before) {
+      return c.json({ error: "Booking item not found" }, 404)
+    }
+
+    const body = await parseJsonBody(c, updateBookingItemSchema)
+    const row = await bookingsService.updateItem(c.get("db"), itemId, body)
 
     if (!row) {
       return c.json({ error: "Booking item not found" }, 404)
     }
+
+    await appendBookingMutationLedgerEntry(c, {
+      action: "update",
+      actionName: "booking.item.update",
+      actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
+      targetType: "booking_item",
+      targetId: row.id,
+      changedFields: changedBookingItemFields(body, before, row),
+      subject: "booking item",
+      routeOrToolName: "bookings.items.update",
+      evaluatedRisk: "high",
+    })
 
     return c.json({ data: row })
   })
 
   // 19. DELETE /:id/items/:itemId — Delete booking item
   .delete("/:id/items/:itemId", async (c) => {
-    const row = await bookingsService.deleteItem(c.get("db"), c.req.param("itemId"))
+    const bookingId = c.req.param("id")
+    const itemId = c.req.param("itemId")
+    const before =
+      (await bookingsService.listItems(c.get("db"), bookingId)).find(
+        (item) => item.id === itemId,
+      ) ?? null
+
+    if (!before) {
+      return c.json({ error: "Booking item not found" }, 404)
+    }
+
+    const row = await bookingsService.deleteItem(c.get("db"), itemId)
 
     if (!row) {
       return c.json({ error: "Booking item not found" }, 404)
     }
+
+    await appendBookingMutationLedgerEntry(c, {
+      action: "delete",
+      actionName: "booking.item.delete",
+      actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
+      targetType: "booking_item",
+      targetId: itemId,
+      changedFields: [],
+      subject: "booking item",
+      routeOrToolName: "bookings.items.delete",
+      evaluatedRisk: "high",
+      summary: "Deleted booking item",
+    })
 
     return c.json({ success: true }, 200)
   })
@@ -2273,26 +2404,79 @@ export const bookingRoutes = new Hono<Env>()
 
   // 21. POST /:id/items/:itemId/travelers — Link traveler to item
   .post("/:id/items/:itemId/travelers", async (c) => {
-    const row = await bookingsService.addItemParticipant(
-      c.get("db"),
-      c.req.param("itemId"),
-      await parseJsonBody(c, insertBookingItemTravelerSchema),
-    )
+    const bookingId = c.req.param("id")
+    const itemId = c.req.param("itemId")
+    const item =
+      (await bookingsService.listItems(c.get("db"), bookingId)).find((row) => row.id === itemId) ??
+      null
+
+    if (!item) {
+      return c.json({ error: "Booking item not found" }, 404)
+    }
+
+    const body = await parseJsonBody(c, insertBookingItemTravelerSchema)
+    const row = await bookingsService.addItemParticipant(c.get("db"), itemId, body)
 
     if (!row) {
       return c.json({ error: "Booking item or traveler not found" }, 404)
     }
+
+    await appendBookingMutationLedgerEntry(c, {
+      action: "create",
+      actionName: "booking.item_traveler.create",
+      actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
+      targetType: "booking_item",
+      targetId: itemId,
+      changedFields: changedBookingItemFields(body, null, row),
+      subject: "booking item traveler link",
+      routeOrToolName: "bookings.items.travelers.create",
+      evaluatedRisk: "high",
+      summary: "Linked traveler to booking item",
+    })
 
     return c.json({ data: row }, 201)
   })
 
   // 22. DELETE /:id/items/:itemId/travelers/:linkId — Unlink traveler from item
   .delete("/:id/items/:itemId/travelers/:linkId", async (c) => {
-    const row = await bookingsService.removeItemParticipant(c.get("db"), c.req.param("linkId"))
+    const bookingId = c.req.param("id")
+    const itemId = c.req.param("itemId")
+    const linkId = c.req.param("linkId")
+    const item =
+      (await bookingsService.listItems(c.get("db"), bookingId)).find((row) => row.id === itemId) ??
+      null
+
+    if (!item) {
+      return c.json({ error: "Booking item not found" }, 404)
+    }
+
+    const before =
+      (await bookingsService.listItemParticipants(c.get("db"), itemId)).find(
+        (link) => link.id === linkId,
+      ) ?? null
+
+    if (!before) {
+      return c.json({ error: "Booking item traveler link not found" }, 404)
+    }
+
+    const row = await bookingsService.removeItemParticipant(c.get("db"), linkId)
 
     if (!row) {
       return c.json({ error: "Booking item traveler link not found" }, 404)
     }
+
+    await appendBookingMutationLedgerEntry(c, {
+      action: "delete",
+      actionName: "booking.item_traveler.delete",
+      actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
+      targetType: "booking_item",
+      targetId: itemId,
+      changedFields: [],
+      subject: "booking item traveler link",
+      routeOrToolName: "bookings.items.travelers.delete",
+      evaluatedRisk: "high",
+      summary: "Unlinked traveler from booking item",
+    })
 
     return c.json({ success: true }, 200)
   })
@@ -2432,9 +2616,10 @@ export const bookingRoutes = new Hono<Env>()
   // 28. POST /:id/notes — Add note
   .post("/:id/notes", async (c) => {
     const userId = requireUserId(c)
+    const bookingId = c.req.param("id")
     const row = await bookingsService.createNote(
       c.get("db"),
-      c.req.param("id"),
+      bookingId,
       userId,
       await parseJsonBody(c, insertBookingNoteSchema),
     )
@@ -2442,6 +2627,19 @@ export const bookingRoutes = new Hono<Env>()
     if (!row) {
       return c.json({ error: "Booking not found" }, 404)
     }
+
+    await appendBookingMutationLedgerEntry(c, {
+      action: "create",
+      actionName: "booking.note.create",
+      actionVersion: BOOKING_NOTE_LEDGER_ACTION_VERSION,
+      targetType: "booking",
+      targetId: bookingId,
+      changedFields: ["content"],
+      subject: "booking note",
+      routeOrToolName: "bookings.notes.create",
+      evaluatedRisk: "medium",
+      summary: "Created booking note",
+    })
 
     return c.json({ data: row }, 201)
   })
@@ -2453,6 +2651,19 @@ export const bookingRoutes = new Hono<Env>()
     if (!row) {
       return c.json({ error: "Note not found" }, 404)
     }
+
+    await appendBookingMutationLedgerEntry(c, {
+      action: "delete",
+      actionName: "booking.note.delete",
+      actionVersion: BOOKING_NOTE_LEDGER_ACTION_VERSION,
+      targetType: "booking",
+      targetId: c.req.param("id"),
+      changedFields: [],
+      subject: "booking note",
+      routeOrToolName: "bookings.notes.delete",
+      evaluatedRisk: "medium",
+      summary: "Deleted booking note",
+    })
 
     return c.json({ success: true }, 200)
   })
@@ -2504,6 +2715,7 @@ export const __test__ = {
   bookingActionLedgerQuerySchema,
   bookingMutationSummary,
   buildBookingActionLedgerPage,
+  changedBookingItemFields,
   changedBookingMutationFields,
   changedBookingTravelDetailFields,
   changedBookingTravelerFields,

@@ -23,6 +23,10 @@
  */
 
 import {
+  type ActionLedgerRequestContextValues,
+  appendActionLedgerMutation,
+} from "@voyantjs/action-ledger"
+import {
   bookingActivityLog,
   bookingItems,
   bookingSupplierStatuses,
@@ -497,6 +501,12 @@ async function handleRegenerateSchedule(c: Context): Promise<Response> {
 
   // Persist the override (or clear it) before running the resolver.
   if (Object.hasOwn(body, "customerPaymentPolicy")) {
+    const [before] = await db
+      .select({ customerPaymentPolicy: bookings.customerPaymentPolicy })
+      .from(bookings)
+      .where(eq(bookings.id, bookingId))
+      .limit(1)
+
     await db
       .update(bookings)
       .set({
@@ -504,6 +514,30 @@ async function handleRegenerateSchedule(c: Context): Promise<Response> {
         updatedAt: new Date(),
       })
       .where(eq(bookings.id, bookingId))
+
+    const overrideChanged =
+      JSON.stringify(before?.customerPaymentPolicy ?? null) !==
+      JSON.stringify(body.customerPaymentPolicy ?? null)
+    if (overrideChanged) {
+      await appendActionLedgerMutation(db, {
+        context: getPaymentScheduleActionLedgerRequestContext(c),
+        actionName: "booking.payment_policy.override",
+        actionVersion: "v1",
+        actionKind: "update",
+        evaluatedRisk: "high",
+        targetType: "booking",
+        targetId: bookingId,
+        routeOrToolName: "bookings.payment-schedule.regenerate",
+        authorizationSource: "operator.booking-schedule.route",
+        mutationDetail: {
+          summary:
+            body.customerPaymentPolicy === null
+              ? "Cleared booking payment policy override"
+              : "Updated booking payment policy override",
+          reversalKind: "none",
+        },
+      })
+    }
   }
 
   await generatePaymentScheduleForBooking(db, bookingId)
@@ -532,6 +566,26 @@ async function handleRegenerateSchedule(c: Context): Promise<Response> {
         "operator_default",
     },
   })
+}
+
+function getPaymentScheduleActionLedgerRequestContext(
+  c: Context,
+): ActionLedgerRequestContextValues {
+  return {
+    userId: c.get("userId") ?? null,
+    agentId: c.get("agentId") ?? null,
+    workflowPrincipalId: c.get("workflowPrincipalId") ?? null,
+    principalSubtype: c.get("principalSubtype") ?? null,
+    sessionId: c.get("sessionId") ?? null,
+    apiTokenId: c.get("apiTokenId") ?? c.get("apiKeyId") ?? null,
+    callerType: c.get("callerType") ?? null,
+    actor: c.get("actor") ?? null,
+    isInternalRequest: c.get("isInternalRequest") ?? false,
+    organizationId: c.get("organizationId") ?? null,
+    workflowRunId: c.get("workflowRunId") ?? null,
+    workflowStepId: c.get("workflowStepId") ?? null,
+    correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
+  }
 }
 
 export function mountBookingPaymentScheduleRoutes(hono: Hono): void {
