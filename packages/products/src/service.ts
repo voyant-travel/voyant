@@ -520,6 +520,16 @@ export const productsService = {
     return row ?? null
   },
 
+  async getActivationSettingByProductId(db: PostgresJsDatabase, productId: string) {
+    const [row] = await db
+      .select()
+      .from(productActivationSettings)
+      .where(eq(productActivationSettings.productId, productId))
+      .limit(1)
+
+    return row ?? null
+  },
+
   async upsertActivationSetting(
     db: PostgresJsDatabase,
     productId: string,
@@ -643,6 +653,16 @@ export const productsService = {
     return row ?? null
   },
 
+  async getTicketSettingByProductId(db: PostgresJsDatabase, productId: string) {
+    const [row] = await db
+      .select()
+      .from(productTicketSettings)
+      .where(eq(productTicketSettings.productId, productId))
+      .limit(1)
+
+    return row ?? null
+  },
+
   async upsertTicketSetting(
     db: PostgresJsDatabase,
     productId: string,
@@ -729,6 +749,16 @@ export const productsService = {
       .select()
       .from(productVisibilitySettings)
       .where(eq(productVisibilitySettings.id, id))
+      .limit(1)
+
+    return row ?? null
+  },
+
+  async getVisibilitySettingByProductId(db: PostgresJsDatabase, productId: string) {
+    const [row] = await db
+      .select()
+      .from(productVisibilitySettings)
+      .where(eq(productVisibilitySettings.productId, productId))
       .limit(1)
 
     return row ?? null
@@ -825,6 +855,25 @@ export const productsService = {
     return row ?? null
   },
 
+  async getCapabilityByProductAndName(
+    db: PostgresJsDatabase,
+    productId: string,
+    capability: CreateProductCapabilityInput["capability"],
+  ) {
+    const [row] = await db
+      .select()
+      .from(productCapabilities)
+      .where(
+        and(
+          eq(productCapabilities.productId, productId),
+          eq(productCapabilities.capability, capability),
+        ),
+      )
+      .limit(1)
+
+    return row ?? null
+  },
+
   async createCapability(
     db: PostgresJsDatabase,
     productId: string,
@@ -907,6 +956,25 @@ export const productsService = {
       .select()
       .from(productDeliveryFormats)
       .where(eq(productDeliveryFormats.id, id))
+      .limit(1)
+
+    return row ?? null
+  },
+
+  async getDeliveryFormatByProductAndFormat(
+    db: PostgresJsDatabase,
+    productId: string,
+    format: CreateProductDeliveryFormatInput["format"],
+  ) {
+    const [row] = await db
+      .select()
+      .from(productDeliveryFormats)
+      .where(
+        and(
+          eq(productDeliveryFormats.productId, productId),
+          eq(productDeliveryFormats.format, format),
+        ),
+      )
       .limit(1)
 
     return row ?? null
