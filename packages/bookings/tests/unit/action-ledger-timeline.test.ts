@@ -143,4 +143,39 @@ describe("booking action ledger timeline", () => {
       limit: 25,
     })
   })
+
+  it("builds traveler mutation field summaries without exposing values", () => {
+    expect(
+      __test__.changedBookingTravelerFields(
+        {
+          firstName: "Ada",
+          lastName: "Lovelace",
+          passportNumber: "hidden",
+          updatedAt: "ignored",
+        },
+        null,
+        null,
+      ),
+    ).toEqual(["firstName", "lastName"])
+
+    expect(
+      __test__.changedBookingTravelerFields(
+        { firstName: "Ada", email: "new@example.test" },
+        { firstName: "Ada", email: "old@example.test" },
+        { firstName: "Ada", email: "new@example.test" },
+      ),
+    ).toEqual(["email"])
+
+    expect(
+      __test__.changedBookingTravelDetailFields({
+        passportNumber: "hidden",
+        dietaryRequirements: "hidden",
+        firstName: "not-a-travel-detail",
+      }),
+    ).toEqual(["dietaryRequirements", "passportNumber"])
+
+    expect(__test__.bookingMutationSummary("update", ["email"], "booking traveler")).toBe(
+      "Updated booking traveler fields: email",
+    )
+  })
 })

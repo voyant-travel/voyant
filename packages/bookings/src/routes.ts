@@ -108,6 +108,7 @@ const BOOKING_PII_READ_ACTION_VERSION = "v1"
 const BOOKING_PII_DECISION_POLICY = "bookings-pii-scope-or-staff-v1"
 const BOOKING_PII_AUTHORIZATION_SOURCE = "bookings.pii.route"
 const BOOKING_STATUS_APPROVAL_POLICY = "bookings-status-approval-v1"
+const BOOKING_TRAVELER_LEDGER_ACTION_VERSION = "v1"
 
 type ApprovedBookingStatusAction = BuildActionLedgerApprovedExecutionFieldsInput
 type TravelerTravelDetails = Awaited<
@@ -137,6 +138,19 @@ const TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS = [
   "roomTypeId",
   "bedPreference",
   "allocations",
+]
+const TRAVELER_MUTATION_FIELDS = [
+  "personId",
+  "participantType",
+  "travelerCategory",
+  "firstName",
+  "lastName",
+  "email",
+  "phone",
+  "preferredLanguage",
+  "specialRequests",
+  "isPrimary",
+  "notes",
 ]
 
 const bookingActionLedgerQuerySchema = z
@@ -210,6 +224,91 @@ function getActionLedgerRequestContext(c: Context<Env>): ActionLedgerRequestCont
     correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
   }
 }
+
+type BookingTravelerLedgerAction = "create" | "update" | "delete"
+
+function changedBookingMutationFields(
+  input: Record<string, unknown>,
+  before: Record<string, unknown> | null,
+  after: Record<string, unknown> | null,
+): string[] {
+  const fields = Object.keys(input).filter((field) => !ignoredBookingMutationFields.has(field))
+  if (!before || !after) return fields.sort()
+
+  return fields.filter((field) => !bookingValuesEqual(before[field], after[field])).sort()
+}
+
+function changedBookingTravelerFields(
+  input: Record<string, unknown>,
+  before: Record<string, unknown> | null,
+  after: Record<string, unknown> | null,
+): string[] {
+  const travelerFields = new Set(TRAVELER_MUTATION_FIELDS)
+  return changedBookingMutationFields(input, before, after).filter((field) =>
+    travelerFields.has(field),
+  )
+}
+
+function changedBookingTravelDetailFields(input: Record<string, unknown>): string[] {
+  const travelDetailFields = new Set(TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS)
+  return Object.keys(input)
+    .filter((field) => travelDetailFields.has(field))
+    .sort()
+}
+
+function bookingMutationSummary(
+  action: BookingTravelerLedgerAction,
+  fields: string[],
+  subject: string,
+) {
+  if (action === "delete") return `Deleted ${subject}`
+  if (fields.length === 0) return action === "create" ? `Created ${subject}` : `Updated ${subject}`
+  const verb = action === "create" ? "Created" : "Updated"
+  return `${verb} ${subject} fields: ${fields.join(", ")}`
+}
+
+async function appendBookingTravelerMutationLedgerEntry(
+  c: Context<Env>,
+  input: {
+    action: BookingTravelerLedgerAction
+    travelerId: string
+    changedFields: string[]
+    subject: string
+    actionName: string
+    routeOrToolName: string
+    evaluatedRisk?: ActionLedgerEntry["evaluatedRisk"]
+    summary?: string
+  },
+) {
+  return appendActionLedgerMutation(c.get("db"), {
+    context: getActionLedgerRequestContext(c),
+    actionName: input.actionName,
+    actionVersion: BOOKING_TRAVELER_LEDGER_ACTION_VERSION,
+    actionKind: input.action,
+    evaluatedRisk: input.evaluatedRisk ?? "high",
+    targetType: "booking_traveler",
+    targetId: input.travelerId,
+    routeOrToolName: input.routeOrToolName,
+    authorizationSource: BOOKING_PII_AUTHORIZATION_SOURCE,
+    mutationDetail: {
+      summary:
+        input.summary ?? bookingMutationSummary(input.action, input.changedFields, input.subject),
+      reversalKind: "none",
+    },
+  })
+}
+
+function bookingValuesEqual(left: unknown, right: unknown) {
+  if (left instanceof Date || right instanceof Date) {
+    const leftTime = left instanceof Date ? left.getTime() : new Date(String(left)).getTime()
+    const rightTime = right instanceof Date ? right.getTime() : new Date(String(right)).getTime()
+    return leftTime === rightTime
+  }
+
+  return JSON.stringify(left) === JSON.stringify(right)
+}
+
+const ignoredBookingMutationFields = new Set(["updatedAt", "createdAt"])
 
 type BookingStatusCapabilityRoute =
   | {
@@ -1828,10 +1927,11 @@ export const bookingRoutes = new Hono<Env>()
   })
 
   .post("/:id/travelers", async (c) => {
+    const body = await parseJsonBody(c, insertTravelerSchema)
     const row = await bookingsService.createTraveler(
       c.get("db"),
       c.req.param("id"),
-      await parseJsonBody(c, insertTravelerSchema),
+      body,
       c.get("userId"),
     )
 
@@ -1839,6 +1939,15 @@ export const bookingRoutes = new Hono<Env>()
       return c.json({ error: "Booking not found" }, 404)
     }
 
+    await appendBookingTravelerMutationLedgerEntry(c, {
+      action: "create",
+      travelerId: row.id,
+      changedFields: changedBookingTravelerFields(body, null, row),
+      subject: "booking traveler",
+      actionName: "booking.traveler.create",
+      routeOrToolName: "bookings.travelers.create",
+      evaluatedRisk: "high",
+    })
     return c.json({ data: row }, 201)
   })
 
@@ -1871,6 +1980,20 @@ export const bookingRoutes = new Hono<Env>()
       if (!result) {
         return c.json({ error: "Booking not found" }, 404)
       }
+      await appendBookingTravelerMutationLedgerEntry(c, {
+        action: "create",
+        travelerId: result.traveler.id,
+        changedFields: [
+          ...new Set([
+            ...changedBookingTravelerFields(data, null, result.traveler),
+            ...changedBookingTravelDetailFields(data),
+          ]),
+        ].sort(),
+        subject: "booking traveler with travel details",
+        actionName: "booking.traveler_with_travel_details.create",
+        routeOrToolName: "bookings.travelers.with-travel-details.create",
+        evaluatedRisk: "high",
+      })
       return c.json({ data: result }, 201)
     } catch (error) {
       return handleKmsConfigError(c, error)
@@ -1911,6 +2034,20 @@ export const bookingRoutes = new Hono<Env>()
       if (!result) {
         return c.json({ error: "Traveler not found" }, 404)
       }
+      await appendBookingTravelerMutationLedgerEntry(c, {
+        action: "update",
+        travelerId: result.traveler.id,
+        changedFields: [
+          ...new Set([
+            ...changedBookingTravelerFields(data, traveler, result.traveler),
+            ...changedBookingTravelDetailFields(data),
+          ]),
+        ].sort(),
+        subject: "booking traveler with travel details",
+        actionName: "booking.traveler_with_travel_details.update",
+        routeOrToolName: "bookings.travelers.with-travel-details.update",
+        evaluatedRisk: "high",
+      })
       return c.json({ data: result })
     } catch (error) {
       return handleKmsConfigError(c, error)
@@ -1946,10 +2083,11 @@ export const bookingRoutes = new Hono<Env>()
 
     try {
       const pii = await createAuditedBookingPiiService(c, traveler.bookingId)
+      const body = await parseJsonBody(c, upsertTravelerTravelDetailsSchema)
       const row = await pii.upsertTravelerTravelDetails(
         c.get("db"),
         traveler.id,
-        await parseJsonBody(c, upsertTravelerTravelDetailsSchema),
+        body,
         c.get("userId"),
       )
 
@@ -1957,6 +2095,15 @@ export const bookingRoutes = new Hono<Env>()
         return c.json({ error: "Traveler not found" }, 404)
       }
 
+      await appendBookingTravelerMutationLedgerEntry(c, {
+        action: "update",
+        travelerId: traveler.id,
+        changedFields: changedBookingTravelDetailFields(body),
+        subject: "booking traveler travel details",
+        actionName: "booking.traveler_travel_details.update",
+        routeOrToolName: "bookings.travelers.travel-details.update",
+        evaluatedRisk: "high",
+      })
       return c.json({ data: row })
     } catch (error) {
       return handleKmsConfigError(c, error)
@@ -1964,16 +2111,29 @@ export const bookingRoutes = new Hono<Env>()
   })
 
   .patch("/:id/travelers/:travelerId", async (c) => {
-    const row = await bookingsService.updateTraveler(
-      c.get("db"),
-      c.req.param("travelerId"),
-      await parseJsonBody(c, updateTravelerSchema),
-    )
+    const bookingId = c.req.param("id")
+    const travelerId = c.req.param("travelerId")
+    const before = await bookingsService.getTravelerRecordById(c.get("db"), bookingId, travelerId)
+    if (!before) {
+      return c.json({ error: "Traveler not found" }, 404)
+    }
+
+    const body = await parseJsonBody(c, updateTravelerSchema)
+    const row = await bookingsService.updateTraveler(c.get("db"), travelerId, body)
 
     if (!row) {
       return c.json({ error: "Traveler not found" }, 404)
     }
 
+    await appendBookingTravelerMutationLedgerEntry(c, {
+      action: "update",
+      travelerId: row.id,
+      changedFields: changedBookingTravelerFields(body, before, row),
+      subject: "booking traveler",
+      actionName: "booking.traveler.update",
+      routeOrToolName: "bookings.travelers.update",
+      evaluatedRisk: "high",
+    })
     return c.json({ data: row })
   })
 
@@ -2012,6 +2172,15 @@ export const bookingRoutes = new Hono<Env>()
         return c.json({ error: "Traveler travel details not found" }, 404)
       }
 
+      await appendBookingTravelerMutationLedgerEntry(c, {
+        action: "delete",
+        travelerId: traveler.id,
+        changedFields: [],
+        subject: "booking traveler travel details",
+        actionName: "booking.traveler_travel_details.delete",
+        routeOrToolName: "bookings.travelers.travel-details.delete",
+        evaluatedRisk: "high",
+      })
       return c.json({ success: true }, 200)
     } catch (error) {
       return handleKmsConfigError(c, error)
@@ -2019,12 +2188,28 @@ export const bookingRoutes = new Hono<Env>()
   })
 
   .delete("/:id/travelers/:travelerId", async (c) => {
-    const row = await bookingsService.deleteTraveler(c.get("db"), c.req.param("travelerId"))
+    const bookingId = c.req.param("id")
+    const travelerId = c.req.param("travelerId")
+    const before = await bookingsService.getTravelerRecordById(c.get("db"), bookingId, travelerId)
+    if (!before) {
+      return c.json({ error: "Traveler not found" }, 404)
+    }
+
+    const row = await bookingsService.deleteTraveler(c.get("db"), travelerId)
 
     if (!row) {
       return c.json({ error: "Traveler not found" }, 404)
     }
 
+    await appendBookingTravelerMutationLedgerEntry(c, {
+      action: "delete",
+      travelerId,
+      changedFields: [],
+      subject: "booking traveler",
+      actionName: "booking.traveler.delete",
+      routeOrToolName: "bookings.travelers.delete",
+      evaluatedRisk: "high",
+    })
     return c.json({ success: true }, 200)
   })
 
@@ -2317,5 +2502,9 @@ export type PublicBookingRoutes = typeof publicBookingRoutes
 
 export const __test__ = {
   bookingActionLedgerQuerySchema,
+  bookingMutationSummary,
   buildBookingActionLedgerPage,
+  changedBookingMutationFields,
+  changedBookingTravelDetailFields,
+  changedBookingTravelerFields,
 }

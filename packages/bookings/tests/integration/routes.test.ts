@@ -2666,6 +2666,86 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       ).toBe(true)
     })
 
+    it("writes action ledger entries for traveler and travel-detail mutations", async () => {
+      const booking = await seedBooking()
+      const createRes = await app.request(`/${booking.id}/travelers`, {
+        method: "POST",
+        ...json({ firstName: "Ledger", lastName: "Traveler" }),
+      })
+      expect(createRes.status).toBe(201)
+      const { data: participant } = await createRes.json()
+
+      const updateRes = await app.request(`/${booking.id}/travelers/${participant.id}`, {
+        method: "PATCH",
+        ...json({ email: "ledger@example.test" }),
+      })
+      expect(updateRes.status).toBe(200)
+
+      const travelDetailRes = await app.request(
+        `/${booking.id}/travelers/${participant.id}/travel-details`,
+        {
+          method: "PATCH",
+          ...json({ passportNumber: "LEDGER-SECRET" }),
+        },
+      )
+      expect(travelDetailRes.status).toBe(200)
+
+      const deleteTravelDetailRes = await app.request(
+        `/${booking.id}/travelers/${participant.id}/travel-details`,
+        {
+          method: "DELETE",
+        },
+      )
+      expect(deleteTravelDetailRes.status).toBe(200)
+
+      const ledgerRows = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, participant.id))
+      const mutationDetails = await db.select().from(actionMutationDetails)
+      const detailByActionId = new Map(
+        mutationDetails.map((detail) => [detail.actionId, detail.summary]),
+      )
+
+      expect(
+        ledgerRows.some(
+          (row) =>
+            row.actionName === "booking.traveler.create" &&
+            row.actionKind === "create" &&
+            row.status === "succeeded" &&
+            row.targetType === "booking_traveler" &&
+            detailByActionId.get(row.id) === "Created booking traveler fields: firstName, lastName",
+        ),
+      ).toBe(true)
+      expect(
+        ledgerRows.some(
+          (row) =>
+            row.actionName === "booking.traveler.update" &&
+            row.actionKind === "update" &&
+            detailByActionId.get(row.id) === "Updated booking traveler fields: email",
+        ),
+      ).toBe(true)
+      expect(
+        ledgerRows.some(
+          (row) =>
+            row.actionName === "booking.traveler_travel_details.update" &&
+            row.actionKind === "update" &&
+            detailByActionId.get(row.id) ===
+              "Updated booking traveler travel details fields: passportNumber",
+        ),
+      ).toBe(true)
+      expect(
+        ledgerRows.some(
+          (row) =>
+            row.actionName === "booking.traveler_travel_details.delete" &&
+            row.actionKind === "delete" &&
+            detailByActionId.get(row.id) === "Deleted booking traveler travel details",
+        ),
+      ).toBe(true)
+      expect([...detailByActionId.values()].join(" ")).not.toContain("LEDGER-SECRET")
+      expect([...detailByActionId.values()].join(" ")).not.toContain("ledger@example.test")
+    })
+
     it("allows scoped non-staff pii reads through the action ledger capability guard", async () => {
       const booking = await seedBooking()
       const createRes = await app.request(`/${booking.id}/travelers`, {
