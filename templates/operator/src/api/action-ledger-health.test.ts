@@ -1,4 +1,5 @@
 import type { RunActionLedgerCanaryResult } from "@voyantjs/action-ledger/canary"
+import type { CheckBookingActionLedgerDriftResult } from "@voyantjs/bookings/action-ledger-drift"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import type { CheckFinanceActionLedgerDriftResult } from "@voyantjs/finance/action-ledger-drift"
 import type { CheckProductActionLedgerDriftResult } from "@voyantjs/products/action-ledger-drift"
@@ -9,7 +10,17 @@ import { runOperatorActionLedgerHealthCheck } from "./action-ledger-health.js"
 const db = {} as AnyDrizzleDb
 
 describe("runOperatorActionLedgerHealthCheck", () => {
-  it("combines finance drift and canary health", async () => {
+  it("combines booking, finance, product drift and canary health", async () => {
+    const bookingDrift: CheckBookingActionLedgerDriftResult = {
+      ok: true,
+      rows: [
+        {
+          check: "booking_confirmed",
+          missingCount: 0,
+          sampleIds: [],
+        },
+      ],
+    }
     const financeDrift: CheckFinanceActionLedgerDriftResult = {
       ok: true,
       rows: [
@@ -37,6 +48,7 @@ describe("runOperatorActionLedgerHealthCheck", () => {
         },
       ],
     }
+    const checkBookingDrift = vi.fn().mockResolvedValue(bookingDrift)
     const checkFinanceDrift = vi.fn().mockResolvedValue(financeDrift)
     const checkProductDrift = vi.fn().mockResolvedValue(productDrift)
     const runCanaryCheck = vi.fn().mockResolvedValue(canary)
@@ -47,6 +59,7 @@ describe("runOperatorActionLedgerHealthCheck", () => {
         drift: { createdAtFrom: "2026-05-17T00:00:00.000Z", sampleLimit: 5 },
         canary: { idempotencyKey: "canary-1" },
         runCanary: true,
+        checkBookingDrift,
         checkFinanceDrift,
         checkProductDrift,
         runCanaryCheck,
@@ -54,8 +67,13 @@ describe("runOperatorActionLedgerHealthCheck", () => {
     ).resolves.toEqual({
       ok: true,
       canary,
+      bookingDrift,
       financeDrift,
       productDrift,
+    })
+    expect(checkBookingDrift).toHaveBeenCalledWith(db, {
+      createdAtFrom: "2026-05-17T00:00:00.000Z",
+      sampleLimit: 5,
     })
     expect(checkFinanceDrift).toHaveBeenCalledWith(db, {
       createdAtFrom: "2026-05-17T00:00:00.000Z",
@@ -69,6 +87,10 @@ describe("runOperatorActionLedgerHealthCheck", () => {
   })
 
   it("keeps the read-only health path from writing a canary", async () => {
+    const bookingDrift: CheckBookingActionLedgerDriftResult = {
+      ok: true,
+      rows: [{ check: "booking_traveler", missingCount: 0, sampleIds: [] }],
+    }
     const financeDrift: CheckFinanceActionLedgerDriftResult = {
       ok: false,
       rows: [{ check: "payment", missingCount: 2, sampleIds: ["pay_2", "pay_1"] }],
@@ -84,6 +106,7 @@ describe("runOperatorActionLedgerHealthCheck", () => {
         db,
         drift: {},
         runCanary: false,
+        checkBookingDrift: vi.fn().mockResolvedValue(bookingDrift),
         checkFinanceDrift: vi.fn().mockResolvedValue(financeDrift),
         checkProductDrift: vi.fn().mockResolvedValue(productDrift),
         runCanaryCheck,
@@ -91,6 +114,7 @@ describe("runOperatorActionLedgerHealthCheck", () => {
     ).resolves.toEqual({
       ok: false,
       canary: null,
+      bookingDrift,
       financeDrift,
       productDrift,
     })
@@ -98,6 +122,10 @@ describe("runOperatorActionLedgerHealthCheck", () => {
   })
 
   it("fails health when product drift is missing ledger entries", async () => {
+    const bookingDrift: CheckBookingActionLedgerDriftResult = {
+      ok: true,
+      rows: [{ check: "booking_completed", missingCount: 0, sampleIds: [] }],
+    }
     const financeDrift: CheckFinanceActionLedgerDriftResult = {
       ok: true,
       rows: [{ check: "invoice", missingCount: 0, sampleIds: [] }],
@@ -112,11 +140,44 @@ describe("runOperatorActionLedgerHealthCheck", () => {
         db,
         drift: {},
         runCanary: false,
+        checkBookingDrift: vi.fn().mockResolvedValue(bookingDrift),
         checkFinanceDrift: vi.fn().mockResolvedValue(financeDrift),
         checkProductDrift: vi.fn().mockResolvedValue(productDrift),
       }),
     ).resolves.toMatchObject({
       ok: false,
+      bookingDrift,
+      financeDrift,
+      productDrift,
+    })
+  })
+
+  it("fails health when booking drift is missing ledger entries", async () => {
+    const bookingDrift: CheckBookingActionLedgerDriftResult = {
+      ok: false,
+      rows: [{ check: "booking_traveler_travel_details", missingCount: 1, sampleIds: ["bptr_1"] }],
+    }
+    const financeDrift: CheckFinanceActionLedgerDriftResult = {
+      ok: true,
+      rows: [{ check: "invoice", missingCount: 0, sampleIds: [] }],
+    }
+    const productDrift: CheckProductActionLedgerDriftResult = {
+      ok: true,
+      rows: [{ check: "product", missingCount: 0, sampleIds: [] }],
+    }
+
+    await expect(
+      runOperatorActionLedgerHealthCheck({
+        db,
+        drift: {},
+        runCanary: false,
+        checkBookingDrift: vi.fn().mockResolvedValue(bookingDrift),
+        checkFinanceDrift: vi.fn().mockResolvedValue(financeDrift),
+        checkProductDrift: vi.fn().mockResolvedValue(productDrift),
+      }),
+    ).resolves.toMatchObject({
+      ok: false,
+      bookingDrift,
       financeDrift,
       productDrift,
     })

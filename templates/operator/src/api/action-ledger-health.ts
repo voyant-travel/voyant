@@ -3,6 +3,11 @@ import {
   type RunActionLedgerCanaryResult,
   runActionLedgerCanary,
 } from "@voyantjs/action-ledger/canary"
+import {
+  type CheckBookingActionLedgerDriftInput,
+  type CheckBookingActionLedgerDriftResult,
+  checkBookingActionLedgerDrift,
+} from "@voyantjs/bookings/action-ledger-drift"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import {
   type CheckFinanceActionLedgerDriftInput,
@@ -40,6 +45,7 @@ export interface ActionLedgerHealthResponse {
   data: {
     ok: boolean
     canary: RunActionLedgerCanaryResult | null
+    bookingDrift: CheckBookingActionLedgerDriftResult
     financeDrift: CheckFinanceActionLedgerDriftResult
     productDrift: CheckProductActionLedgerDriftResult
   }
@@ -47,9 +53,15 @@ export interface ActionLedgerHealthResponse {
 
 export interface RunOperatorActionLedgerHealthCheckInput {
   db: AnyDrizzleDb
-  drift: CheckFinanceActionLedgerDriftInput & CheckProductActionLedgerDriftInput
+  drift: CheckBookingActionLedgerDriftInput &
+    CheckFinanceActionLedgerDriftInput &
+    CheckProductActionLedgerDriftInput
   canary?: RunActionLedgerCanaryInput | null
   runCanary: boolean
+  checkBookingDrift?: (
+    db: AnyDrizzleDb,
+    input: CheckBookingActionLedgerDriftInput,
+  ) => Promise<CheckBookingActionLedgerDriftResult>
   checkFinanceDrift?: (
     db: AnyDrizzleDb,
     input: CheckFinanceActionLedgerDriftInput,
@@ -69,19 +81,22 @@ export async function runOperatorActionLedgerHealthCheck({
   drift,
   canary,
   runCanary,
+  checkBookingDrift = checkBookingActionLedgerDrift,
   checkFinanceDrift = checkFinanceActionLedgerDrift,
   checkProductDrift = checkProductActionLedgerDrift,
   runCanaryCheck = runActionLedgerCanary,
 }: RunOperatorActionLedgerHealthCheckInput): Promise<ActionLedgerHealthResponse["data"]> {
-  const [financeDrift, productDrift, canaryResult] = await Promise.all([
+  const [bookingDrift, financeDrift, productDrift, canaryResult] = await Promise.all([
+    checkBookingDrift(db, drift),
     checkFinanceDrift(db, drift),
     checkProductDrift(db, drift),
     runCanary ? runCanaryCheck(db, canary ?? {}) : Promise.resolve(null),
   ])
 
   return {
-    ok: financeDrift.ok && productDrift.ok && (canaryResult?.ok ?? true),
+    ok: bookingDrift.ok && financeDrift.ok && productDrift.ok && (canaryResult?.ok ?? true),
     canary: canaryResult,
+    bookingDrift,
     financeDrift,
     productDrift,
   }
