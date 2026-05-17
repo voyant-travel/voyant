@@ -38,6 +38,7 @@ const actionLedgerEntry = {
   approvalId: null,
   amendsActionId: null,
   createdAt: "2026-01-02T03:04:06.000Z",
+  mutationSummary: "Completed payment session",
 }
 
 function createFetcher(urls: string[]) {

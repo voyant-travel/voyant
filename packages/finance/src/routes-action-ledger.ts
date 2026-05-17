@@ -1,12 +1,13 @@
+import { type ActionLedgerEntry, actionLedgerService } from "@voyantjs/action-ledger"
 import {
-  type ActionLedgerEntry,
-  type ActionLedgerEntryResponse,
-  actionLedgerService,
-} from "@voyantjs/action-ledger"
+  type ActionLedgerTargetTimelinePage,
+  actionLedgerTargetTimelineQuerySchema,
+  buildActionLedgerTargetTimelinePage,
+} from "@voyantjs/action-ledger/timeline"
 import { parseQuery } from "@voyantjs/hono"
 import type { Context } from "hono"
 import { Hono } from "hono"
-import { z } from "zod"
+import type { z } from "zod"
 
 import type { Env } from "./routes-shared.js"
 import { financeService } from "./service.js"
@@ -47,31 +48,7 @@ const FINANCE_PAYMENT_SESSION_LEDGER_ACTION_NAMES = [
   "finance.payment_session.expire",
 ]
 
-const financeActionLedgerQuerySchema = z
-  .object({
-    cursorOccurredAt: z.string().datetime().optional(),
-    cursorId: z.string().trim().min(1).optional(),
-    limit: z.coerce.number().int().min(1).max(199).optional(),
-  })
-  .superRefine((value, ctx) => {
-    if (Boolean(value.cursorOccurredAt) === Boolean(value.cursorId)) return
-
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: value.cursorOccurredAt ? ["cursorId"] : ["cursorOccurredAt"],
-      message: "cursorOccurredAt and cursorId must be provided together",
-    })
-  })
-  .transform(({ cursorOccurredAt, cursorId, ...query }) => ({
-    ...query,
-    cursor:
-      cursorOccurredAt && cursorId
-        ? {
-            occurredAt: cursorOccurredAt,
-            id: cursorId,
-          }
-        : undefined,
-  }))
+const financeActionLedgerQuerySchema = actionLedgerTargetTimelineQuerySchema
 
 interface FinanceActionLedgerSource {
   targetType: string
@@ -79,46 +56,7 @@ interface FinanceActionLedgerSource {
   actionNames: readonly string[]
 }
 
-export interface FinanceActionLedgerListResponse {
-  data: ActionLedgerEntryResponse[]
-  pageInfo: {
-    nextCursor: {
-      occurredAt: string
-      id: string
-    } | null
-  }
-}
-
-function serializeFinanceActionLedgerDate(value: Date | string): string {
-  const date = value instanceof Date ? value : new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    throw new Error("Finance action ledger timestamp must be a valid date")
-  }
-  return date.toISOString()
-}
-
-function serializeFinanceActionLedgerEntry(entry: ActionLedgerEntry): ActionLedgerEntryResponse {
-  return {
-    ...entry,
-    occurredAt: serializeFinanceActionLedgerDate(entry.occurredAt),
-    createdAt: serializeFinanceActionLedgerDate(entry.createdAt),
-  }
-}
-
-function toFinanceActionLedgerCursor(entry: Pick<ActionLedgerEntry, "occurredAt" | "id">) {
-  return {
-    occurredAt: serializeFinanceActionLedgerDate(entry.occurredAt),
-    id: entry.id,
-  }
-}
-
-function sortFinanceActionLedgerEntries(entries: ActionLedgerEntry[]) {
-  return [...entries].sort((a, b) => {
-    const occurredAtDelta = new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
-    if (occurredAtDelta !== 0) return occurredAtDelta
-    return b.id.localeCompare(a.id)
-  })
-}
+export type FinanceActionLedgerListResponse = ActionLedgerTargetTimelinePage
 
 function buildFinanceActionLedgerPage({
   entries,
@@ -127,21 +65,7 @@ function buildFinanceActionLedgerPage({
   entries: ActionLedgerEntry[]
   limit: number
 }) {
-  const entriesById = new Map<string, ActionLedgerEntry>()
-  for (const entry of entries) {
-    entriesById.set(entry.id, entry)
-  }
-
-  const sortedEntries = sortFinanceActionLedgerEntries([...entriesById.values()])
-  const visibleEntries = sortedEntries.slice(0, limit)
-  const lastEntry = visibleEntries.at(-1)
-  const nextCursor =
-    sortedEntries.length > limit && lastEntry ? toFinanceActionLedgerCursor(lastEntry) : null
-
-  return {
-    entries: visibleEntries,
-    nextCursor,
-  }
+  return buildActionLedgerTargetTimelinePage({ entries, limit })
 }
 
 function getPaymentSessionLedgerTarget(session: {
@@ -198,13 +122,22 @@ async function listFinanceActionLedgerPage(
     entries: results.flatMap((result) => result.entries),
     limit,
   })
+  const details = await Promise.all(
+    page.data.map((entry) => actionLedgerService.getEntry(c.get("db"), entry.id)),
+  )
+  const summariesByActionId = new Map(
+    details.flatMap((detail) =>
+      detail ? [[detail.entry.id, detail.mutationDetail?.summary ?? null] as const] : [],
+    ),
+  )
 
-  return c.json({
-    data: page.entries.map(serializeFinanceActionLedgerEntry),
-    pageInfo: {
-      nextCursor: page.nextCursor,
-    },
-  } satisfies FinanceActionLedgerListResponse)
+  return c.json(
+    buildActionLedgerTargetTimelinePage({
+      entries: results.flatMap((result) => result.entries),
+      limit,
+      mutationSummariesByActionId: summariesByActionId,
+    }) satisfies FinanceActionLedgerListResponse,
+  )
 }
 
 async function listInvoiceActionLedger(c: Context<Env>) {

@@ -11,6 +11,7 @@
     "./schema": "./src/schema.ts",
     "./service": "./src/service.ts",
     "./fingerprint": "./src/fingerprint.ts",
+    "./timeline": "./src/timeline.ts",
     "./request-context": "./src/request-context.ts",
     "./routes": "./src/routes.ts"
   },
@@ -72,6 +73,11 @@
         "types": "./dist/fingerprint.d.ts",
         "import": "./dist/fingerprint.js",
         "default": "./dist/fingerprint.js"
+      },
+      "./timeline": {
+        "types": "./dist/timeline.d.ts",
+        "import": "./dist/timeline.js",
+        "default": "./dist/timeline.js"
       },
       "./request-context": {
         "types": "./dist/request-context.d.ts",

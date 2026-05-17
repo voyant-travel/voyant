@@ -2,56 +2,21 @@ import {
   type ActionLedgerRequestContextValues,
   appendActionLedgerMutation,
 } from "@voyantjs/action-ledger/request-context"
-import type { ActionLedgerEntry } from "@voyantjs/action-ledger/schema"
 import { actionLedgerService } from "@voyantjs/action-ledger/service"
+import {
+  type ActionLedgerTargetTimelinePage,
+  actionLedgerTargetTimelineQuerySchema,
+  buildActionLedgerTargetTimelinePage,
+} from "@voyantjs/action-ledger/timeline"
 import { parseQuery } from "@voyantjs/hono"
 import type { Context } from "hono"
-import { z } from "zod"
 import type { Env } from "./route-env.js"
 import type { Product } from "./schema.js"
 import { productsService } from "./service.js"
 
-export const productActionLedgerQuerySchema = z
-  .object({
-    cursorOccurredAt: z.string().datetime().optional(),
-    cursorId: z.string().trim().min(1).optional(),
-    limit: z.coerce.number().int().min(1).max(199).optional(),
-  })
-  .superRefine((value, ctx) => {
-    if (Boolean(value.cursorOccurredAt) === Boolean(value.cursorId)) return
+export const productActionLedgerQuerySchema = actionLedgerTargetTimelineQuerySchema
 
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: value.cursorOccurredAt ? ["cursorId"] : ["cursorOccurredAt"],
-      message: "cursorOccurredAt and cursorId must be provided together",
-    })
-  })
-  .transform(({ cursorOccurredAt, cursorId, ...query }) => ({
-    ...query,
-    cursor:
-      cursorOccurredAt && cursorId
-        ? {
-            occurredAt: cursorOccurredAt,
-            id: cursorId,
-          }
-        : undefined,
-  }))
-
-export interface ProductActionLedgerListResponse {
-  data: Array<
-    Omit<ActionLedgerEntry, "occurredAt" | "createdAt"> & {
-      occurredAt: string
-      createdAt: string
-      mutationSummary: string | null
-    }
-  >
-  pageInfo: {
-    nextCursor: {
-      occurredAt: string
-      id: string
-    } | null
-  }
-}
+export type ProductActionLedgerListResponse = ActionLedgerTargetTimelinePage
 
 export function getProductActionLedgerRequestContext(
   c: Context<Env>,
@@ -120,33 +85,6 @@ export async function appendProductMutationLedgerEntry(
   })
 }
 
-export function serializeProductActionLedgerDate(value: Date | string): string {
-  const date = value instanceof Date ? value : new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    throw new Error("Product action ledger timestamp must be a valid date")
-  }
-  return date.toISOString()
-}
-
-export function serializeProductActionLedgerEntry(
-  entry: ActionLedgerEntry,
-  mutationSummary: string | null,
-) {
-  return {
-    ...entry,
-    occurredAt: serializeProductActionLedgerDate(entry.occurredAt),
-    createdAt: serializeProductActionLedgerDate(entry.createdAt),
-    mutationSummary,
-  }
-}
-
-export function toProductActionLedgerCursor(entry: Pick<ActionLedgerEntry, "occurredAt" | "id">) {
-  return {
-    occurredAt: serializeProductActionLedgerDate(entry.occurredAt),
-    id: entry.id,
-  }
-}
-
 export async function listProductActionLedger(c: Context<Env>) {
   const productId = c.req.param("id")
   if (!productId) return c.json({ error: "Product not found" }, 404)
@@ -162,12 +100,12 @@ export async function listProductActionLedger(c: Context<Env>) {
     cursor: query.cursor,
     limit: limit + 1,
   })
-  const entries = result.entries.slice(0, limit)
-  const lastEntry = entries.at(-1)
-  const nextCursor =
-    result.entries.length > limit && lastEntry ? toProductActionLedgerCursor(lastEntry) : null
+  const page = buildActionLedgerTargetTimelinePage({
+    entries: result.entries,
+    limit,
+  })
   const details = await Promise.all(
-    entries.map((entry) => actionLedgerService.getEntry(c.get("db"), entry.id)),
+    page.data.map((entry) => actionLedgerService.getEntry(c.get("db"), entry.id)),
   )
   const summariesByActionId = new Map(
     details.flatMap((detail) =>
@@ -175,14 +113,13 @@ export async function listProductActionLedger(c: Context<Env>) {
     ),
   )
 
-  return c.json({
-    data: entries.map((entry) =>
-      serializeProductActionLedgerEntry(entry, summariesByActionId.get(entry.id) ?? null),
-    ),
-    pageInfo: {
-      nextCursor,
-    },
-  } satisfies ProductActionLedgerListResponse)
+  return c.json(
+    buildActionLedgerTargetTimelinePage({
+      entries: result.entries,
+      limit,
+      mutationSummariesByActionId: summariesByActionId,
+    }) satisfies ProductActionLedgerListResponse,
+  )
 }
 
 function productValuesEqual(left: unknown, right: unknown) {

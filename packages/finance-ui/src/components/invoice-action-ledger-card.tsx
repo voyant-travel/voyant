@@ -180,6 +180,9 @@ function InvoiceActionLedgerEntryItem({
         <p className="mt-1 text-muted-foreground text-xs">
           {entry.principalType}:{entry.principalId} - {timestamp}
         </p>
+        {entry.mutationSummary ? (
+          <p className="mt-1 truncate text-muted-foreground text-xs">{entry.mutationSummary}</p>
+        ) : null}
         <p className="mt-1 truncate font-mono text-muted-foreground text-xs">
           {entry.targetType}:{entry.targetId}
         </p>

@@ -1,7 +1,6 @@
-import type { ActionLedgerEntry } from "@voyantjs/action-ledger"
 import { describe, expect, it } from "vitest"
-
-import { __test__ } from "../../src/routes-action-ledger.js"
+import type { ActionLedgerEntry } from "../../src/schema.js"
+import { __test__ } from "../../src/timeline.js"
 
 const baseDate = new Date("2026-05-15T10:00:00.000Z")
 
@@ -46,14 +45,14 @@ function makeEntry(overrides: Partial<ActionLedgerEntry> = {}): ActionLedgerEntr
   }
 }
 
-describe("finance action ledger timeline", () => {
-  it("dedupes entries, sorts by action ledger cursor order, and returns next cursor", () => {
+describe("action ledger target timeline helpers", () => {
+  it("dedupes entries, sorts by cursor order, attaches summaries, and returns next cursor", () => {
     const duplicate = makeEntry({
       id: "alge_duplicate",
       occurredAt: new Date("2026-05-15T10:02:00.000Z"),
     })
 
-    const page = __test__.buildFinanceActionLedgerPage({
+    const page = __test__.buildActionLedgerTargetTimelinePage({
       entries: [
         makeEntry({
           id: "alge_old",
@@ -71,23 +70,26 @@ describe("finance action ledger timeline", () => {
         duplicate,
       ],
       limit: 2,
+      mutationSummariesByActionId: new Map([["alge_new", "Updated invoice fields: status"]]),
     })
 
     expect(page.data.map((entry) => entry.id)).toEqual(["alge_new", "alge_tie_z"])
+    expect(page.data[0]?.mutationSummary).toBe("Updated invoice fields: status")
+    expect(page.data[1]?.mutationSummary).toBeNull()
     expect(page.pageInfo.nextCursor).toEqual({
       occurredAt: "2026-05-15T10:02:00.000Z",
       id: "alge_tie_z",
     })
   })
 
-  it("requires both cursor fields and transforms them into the action ledger cursor", () => {
+  it("requires both cursor fields and transforms them into an action ledger cursor", () => {
     expect(
-      __test__.financeActionLedgerQuerySchema.safeParse({
+      __test__.actionLedgerTargetTimelineQuerySchema.safeParse({
         cursorOccurredAt: "2026-05-15T10:02:00.000Z",
       }).success,
     ).toBe(false)
 
-    const result = __test__.financeActionLedgerQuerySchema.safeParse({
+    const result = __test__.actionLedgerTargetTimelineQuerySchema.safeParse({
       cursorOccurredAt: "2026-05-15T10:02:00.000Z",
       cursorId: "alge_2",
       limit: "25",
@@ -102,29 +104,5 @@ describe("finance action ledger timeline", () => {
       },
       limit: 25,
     })
-  })
-
-  it("resolves payment session ledger target using the same precedence as builders", () => {
-    expect(
-      __test__.getPaymentSessionLedgerTarget({
-        id: "pays_1",
-        bookingId: "book_1",
-        invoiceId: "inv_1",
-        orderId: null,
-        targetType: "other",
-        targetId: null,
-      }),
-    ).toEqual({ type: "booking", id: "book_1" })
-
-    expect(
-      __test__.getPaymentSessionLedgerTarget({
-        id: "pays_1",
-        bookingId: null,
-        invoiceId: null,
-        orderId: null,
-        targetType: "checkout_session",
-        targetId: "chk_1",
-      }),
-    ).toEqual({ type: "checkout_session", id: "chk_1" })
   })
 })

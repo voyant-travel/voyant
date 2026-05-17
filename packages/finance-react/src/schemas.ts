@@ -355,6 +355,7 @@ export const financeActionLedgerEntrySchema = z.object({
   approvalId: z.string().nullable(),
   amendsActionId: z.string().nullable(),
   createdAt: z.string(),
+  mutationSummary: z.string().nullable(),
 })
 
 export type FinanceActionLedgerEntryRecord = z.infer<typeof financeActionLedgerEntrySchema>
