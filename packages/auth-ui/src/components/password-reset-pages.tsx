@@ -1,8 +1,18 @@
 "use client"
 
 import { useConfirmPasswordReset, useRequestPasswordReset } from "@voyantjs/auth-react"
-import { Button, cn, Input, Label } from "@voyantjs/ui/components"
-import { CheckCircle2, KeyRound, Loader2, Mail } from "lucide-react"
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  cn,
+  Input,
+  Label,
+} from "@voyantjs/ui/components"
+import { CheckCircle2, Loader2 } from "lucide-react"
 import { type FormEvent, type ReactNode, useState } from "react"
 
 import { authUiEn } from "../i18n/en.js"
@@ -129,75 +139,71 @@ export function ForgotPasswordPage({
   }
 
   return (
-    <div
-      data-slot="forgot-password-page"
-      className={cn("mx-auto flex w-full max-w-sm flex-col gap-6", className)}
-    >
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">{messages.title}</h1>
-        <p className="text-sm text-muted-foreground">{messages.description}</p>
-      </div>
-
-      {submittedEmail ? (
-        <div className="space-y-4">
-          {error && (
-            <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {error}
-            </div>
-          )}
-          <div className="rounded-md bg-muted px-3 py-3 text-sm">
-            <div className="flex gap-2">
-              <CheckCircle2 className="mt-0.5 size-4 text-primary" aria-hidden="true" />
-              <div className="space-y-1">
-                <p className="font-medium">{messages.successTitle}</p>
-                <p className="text-muted-foreground">
-                  {messages.successDescription(submittedEmail)}
-                </p>
+    <Card data-slot="forgot-password-page" className={cn(className)}>
+      <CardHeader>
+        <CardTitle>{messages.title}</CardTitle>
+        <CardDescription>{messages.description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {submittedEmail ? (
+          <div className="space-y-4">
+            {error && (
+              <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+            <div className="rounded-md bg-muted px-3 py-3 text-sm">
+              <div className="flex gap-2">
+                <CheckCircle2 className="mt-0.5 size-4 text-primary" aria-hidden="true" />
+                <div className="space-y-1">
+                  <p className="font-medium">{messages.successTitle}</p>
+                  <p className="text-muted-foreground">
+                    {messages.successDescription(submittedEmail)}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {hasSignInAction && (
-            <p className="text-center text-sm text-muted-foreground">
-              <NavigationAction href={signInHref} onNavigate={onNavigateToSignIn}>
-                {messages.backToSignIn}
-              </NavigationAction>
-            </p>
-          )}
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="auth-forgot-password-email">{messages.emailLabel}</Label>
-            <Input
-              id="auth-forgot-password-email"
-              type="email"
-              placeholder={messages.emailPlaceholder}
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-              autoComplete="email"
-              autoFocus
-            />
-          </div>
-
-          <Button type="submit" className="w-full" disabled={requestReset.isPending}>
-            {requestReset.isPending ? (
-              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <Mail className="mr-2 size-4" aria-hidden="true" />
+            {hasSignInAction && (
+              <p className="text-center text-sm text-muted-foreground">
+                <NavigationAction href={signInHref} onNavigate={onNavigateToSignIn}>
+                  {messages.backToSignIn}
+                </NavigationAction>
+              </p>
             )}
-            {requestReset.isPending ? messages.submitting : messages.submit}
-          </Button>
-        </form>
-      )}
-    </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="auth-forgot-password-email">{messages.emailLabel}</Label>
+              <Input
+                id="auth-forgot-password-email"
+                type="email"
+                placeholder={messages.emailPlaceholder}
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+                autoComplete="email"
+                autoFocus
+              />
+            </div>
+
+            <Button type="submit" className="w-full" disabled={requestReset.isPending}>
+              {requestReset.isPending && (
+                <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+              )}
+              {requestReset.isPending ? messages.submitting : messages.submit}
+            </Button>
+          </form>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
@@ -265,97 +271,93 @@ export function ResetPasswordPage({
   }
 
   return (
-    <div
-      data-slot="reset-password-page"
-      className={cn("mx-auto flex w-full max-w-sm flex-col gap-6", className)}
-    >
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">{messages.title}</h1>
-        <p className="text-sm text-muted-foreground">{messages.description}</p>
-      </div>
-
-      {!resolvedToken ? (
-        <div className="space-y-4">
-          <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {messages.tokenRequired}
-          </div>
-          {hasForgotPasswordAction && (
-            <p className="text-center text-sm text-muted-foreground">
-              <NavigationAction href={forgotPasswordHref} onNavigate={onNavigateToForgotPassword}>
-                {messages.requestNewLink}
-              </NavigationAction>
-            </p>
-          )}
-        </div>
-      ) : succeeded ? (
-        <div className="space-y-4">
-          {error && (
+    <Card data-slot="reset-password-page" className={cn(className)}>
+      <CardHeader>
+        <CardTitle>{messages.title}</CardTitle>
+        <CardDescription>{messages.description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {!resolvedToken ? (
+          <div className="space-y-4">
             <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {error}
+              {messages.tokenRequired}
             </div>
-          )}
-          <div className="rounded-md bg-muted px-3 py-3 text-sm">
-            <div className="flex gap-2">
-              <CheckCircle2 className="mt-0.5 size-4 text-primary" aria-hidden="true" />
-              <div className="space-y-1">
-                <p className="font-medium">{messages.successTitle}</p>
-                <p className="text-muted-foreground">{messages.successDescription}</p>
+            {hasForgotPasswordAction && (
+              <p className="text-center text-sm text-muted-foreground">
+                <NavigationAction href={forgotPasswordHref} onNavigate={onNavigateToForgotPassword}>
+                  {messages.requestNewLink}
+                </NavigationAction>
+              </p>
+            )}
+          </div>
+        ) : succeeded ? (
+          <div className="space-y-4">
+            {error && (
+              <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+            <div className="rounded-md bg-muted px-3 py-3 text-sm">
+              <div className="flex gap-2">
+                <CheckCircle2 className="mt-0.5 size-4 text-primary" aria-hidden="true" />
+                <div className="space-y-1">
+                  <p className="font-medium">{messages.successTitle}</p>
+                  <p className="text-muted-foreground">{messages.successDescription}</p>
+                </div>
               </div>
             </div>
-          </div>
-          {hasSignInAction && (
-            <p className="text-center text-sm text-muted-foreground">
-              <NavigationAction href={signInHref} onNavigate={onNavigateToSignIn}>
-                {messages.signIn}
-              </NavigationAction>
-            </p>
-          )}
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="auth-reset-password-new">{messages.newPasswordLabel}</Label>
-            <Input
-              id="auth-reset-password-new"
-              type="password"
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-              required
-              minLength={minPasswordLength}
-              autoComplete="new-password"
-              autoFocus
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="auth-reset-password-confirm">{messages.confirmPasswordLabel}</Label>
-            <Input
-              id="auth-reset-password-confirm"
-              type="password"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              required
-              minLength={minPasswordLength}
-              autoComplete="new-password"
-            />
-          </div>
-
-          <Button type="submit" className="w-full" disabled={confirmReset.isPending}>
-            {confirmReset.isPending ? (
-              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <KeyRound className="mr-2 size-4" aria-hidden="true" />
+            {hasSignInAction && (
+              <p className="text-center text-sm text-muted-foreground">
+                <NavigationAction href={signInHref} onNavigate={onNavigateToSignIn}>
+                  {messages.signIn}
+                </NavigationAction>
+              </p>
             )}
-            {confirmReset.isPending ? messages.submitting : messages.submit}
-          </Button>
-        </form>
-      )}
-    </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="auth-reset-password-new">{messages.newPasswordLabel}</Label>
+              <Input
+                id="auth-reset-password-new"
+                type="password"
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                required
+                minLength={minPasswordLength}
+                autoComplete="new-password"
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="auth-reset-password-confirm">{messages.confirmPasswordLabel}</Label>
+              <Input
+                id="auth-reset-password-confirm"
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                required
+                minLength={minPasswordLength}
+                autoComplete="new-password"
+              />
+            </div>
+
+            <Button type="submit" className="w-full" disabled={confirmReset.isPending}>
+              {confirmReset.isPending && (
+                <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+              )}
+              {confirmReset.isPending ? messages.submitting : messages.submit}
+            </Button>
+          </form>
+        )}
+      </CardContent>
+    </Card>
   )
 }

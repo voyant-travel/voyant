@@ -280,6 +280,15 @@ export interface BookingConfirmedEvent {
   bookingId: string
   bookingNumber: string
   actorId: string | null
+  /**
+   * When true, customer-facing notification subscribers (e.g. the
+   * notifications module's `autoConfirmAndDispatch`) should skip
+   * dispatch for this event. Set by callers that want to confirm a
+   * booking silently — e.g. operator-side data correction or
+   * confirming a booking on behalf of a customer who's already been
+   * notified out-of-band.
+   */
+  suppressNotifications?: boolean
 }
 
 /**
@@ -1117,20 +1126,18 @@ async function lockAvailabilitySlot(db: PostgresJsDatabase, slotId: string) {
         FOR UPDATE`,
   )
 
-  const row = (
-    rows as unknown as Array<{
-      id: string
-      product_id: string
-      option_id: string | null
-      date_local: string
-      starts_at: Date
-      ends_at: Date | null
-      timezone: string
-      status: string
-      unlimited: boolean
-      remaining_pax: number | null
-    }>
-  )[0]
+  const row = toRows<{
+    id: string
+    product_id: string
+    option_id: string | null
+    date_local: string
+    starts_at: Date
+    ends_at: Date | null
+    timezone: string
+    status: string
+    unlimited: boolean
+    remaining_pax: number | null
+  }>(rows)[0]
 
   if (!row) {
     return null
@@ -1322,7 +1329,7 @@ async function loadResourceCapacityViolations(
         AND ba.status IN ('held', 'confirmed', 'fulfilled')
         AND btd.traveler_id <> ${travelerId}
     `)
-    const existingAssigned = (counts as unknown as Array<{ count: number | null }>)[0]?.count ?? 0
+    const existingAssigned = toRows<{ count: number | null }>(counts)[0]?.count ?? 0
     if (existingAssigned + 1 > resource.capacity) {
       violations.push({
         slotId: resource.slot_id,
@@ -2066,6 +2073,25 @@ export interface BookingAggregates {
   }
 }
 
+/**
+ * Normalize `db.execute(sql)` results across drizzle drivers.
+ * `drizzle-orm/postgres-js` returns rows directly (an array); the
+ * `node-postgres` + `neon-serverless` drivers (used by the operator
+ * template against local pg and Neon WS respectively) wrap them in a
+ * `QueryResult<T>` object with `.rows`. Casting straight to
+ * `Array<T>` and indexing produced silent `undefined`s on the wrapped
+ * shape — the symptom was "Booking not found" on freshly-created
+ * bookings whose status-change followup hit a FOR UPDATE SELECT.
+ */
+function toRows<T>(result: unknown): T[] {
+  if (Array.isArray(result)) return result as T[]
+  if (result && typeof result === "object" && "rows" in result) {
+    const rows = (result as { rows: unknown }).rows
+    return Array.isArray(rows) ? (rows as T[]) : []
+  }
+  return []
+}
+
 export const bookingsService = {
   /**
    * Pre-aggregated dashboard numbers for the admin bookings surface. Replaces
@@ -2435,13 +2461,60 @@ export const bookingsService = {
       return null
     }
 
+    const initialStatus = data.initialStatus ?? "draft"
+    // Map the booking lifecycle status onto the booking-item lifecycle.
+    // Items don't have an `awaiting_payment` state — when the booking is
+    // committed (confirmed / awaiting payment / in progress) the items
+    // are sold, so they land in `confirmed`. Holds, cancellations,
+    // expirations, and completions cascade their analog. Draft falls
+    // through as draft.
+    const initialItemStatus:
+      | "draft"
+      | "on_hold"
+      | "confirmed"
+      | "cancelled"
+      | "expired"
+      | "fulfilled" =
+      initialStatus === "on_hold"
+        ? "on_hold"
+        : initialStatus === "confirmed" ||
+            initialStatus === "in_progress" ||
+            initialStatus === "awaiting_payment"
+          ? "confirmed"
+          : initialStatus === "cancelled"
+            ? "cancelled"
+            : initialStatus === "expired"
+              ? "expired"
+              : initialStatus === "completed"
+                ? "fulfilled"
+                : "draft"
+    const now = new Date()
     const [booking] = await db
       .insert(bookings)
       .values({
         bookingNumber: data.bookingNumber,
-        status: "draft",
+        status: initialStatus,
+        // Mirror the lifecycle timestamps that overrideBookingStatus
+        // stamps when the status transition happens after-the-fact, so
+        // a booking that lands in `confirmed` straight from create is
+        // indistinguishable downstream from one that was flipped via
+        // the verb endpoint.
+        confirmedAt: initialStatus === "confirmed" ? now : null,
         personId: data.personId ?? null,
         organizationId: data.organizationId ?? null,
+        // Billing-contact snapshot — captured at create time so the
+        // booking detail page renders the right payer even if the
+        // CRM person/org record changes (or is deleted) later.
+        contactFirstName: data.contactFirstName ?? null,
+        contactLastName: data.contactLastName ?? null,
+        contactEmail: data.contactEmail ?? null,
+        contactPhone: data.contactPhone ?? null,
+        contactPreferredLanguage: data.contactPreferredLanguage ?? null,
+        contactCountry: data.contactCountry ?? null,
+        contactRegion: data.contactRegion ?? null,
+        contactCity: data.contactCity ?? null,
+        contactAddressLine1: data.contactAddressLine1 ?? null,
+        contactPostalCode: data.contactPostalCode ?? null,
         sellCurrency: product.sellCurrency,
         sellAmountCents: effectiveSellAmountCents,
         priceOverride,
@@ -2501,7 +2574,7 @@ export const bookingsService = {
               title: line.title?.trim() || unit.name,
               description: line.description ?? unit.description,
               itemType: "unit" as const,
-              status: "draft" as const,
+              status: initialItemStatus,
               quantity: line.quantity,
               sellCurrency: product.sellCurrency,
               unitSellAmountCents: line.unitSellAmountCents ?? null,
@@ -2529,7 +2602,7 @@ export const bookingsService = {
                 title: unit.name,
                 description: unit.description,
                 itemType: "unit" as const,
-                status: "draft" as const,
+                status: initialItemStatus,
                 quantity,
                 sellCurrency: product.sellCurrency,
                 unitSellAmountCents:
@@ -2559,7 +2632,7 @@ export const bookingsService = {
                 title: option?.name ?? product.name,
                 description: product.description,
                 itemType: "unit" as const,
-                status: "draft" as const,
+                status: initialItemStatus,
                 quantity: 1,
                 sellCurrency: product.sellCurrency,
                 unitSellAmountCents: effectiveSellAmountCents ?? null,
@@ -3110,14 +3183,12 @@ export const bookingsService = {
               WHERE ${bookings.id} = ${id}
               FOR UPDATE`,
         )
-        const booking = (
-          rows as unknown as Array<{
-            id: string
-            booking_number: string
-            status: BookingStatus
-            hold_expires_at: Date | null
-          }>
-        )[0]
+        const booking = toRows<{
+          id: string
+          booking_number: string
+          status: BookingStatus
+          hold_expires_at: Date | null
+        }>(rows)[0]
 
         if (!booking) {
           throw new BookingServiceError("not_found")
@@ -3194,6 +3265,7 @@ export const bookingsService = {
             bookingId: result.booking.id,
             bookingNumber: result.booking.bookingNumber,
             actorId: userId ?? null,
+            suppressNotifications: data.suppressNotifications === true,
           } satisfies BookingConfirmedEvent,
           { category: "domain", source: "service" },
         )
@@ -3224,13 +3296,11 @@ export const bookingsService = {
               WHERE ${bookings.id} = ${id}
               FOR UPDATE`,
         )
-        const booking = (
-          rows as unknown as Array<{
-            id: string
-            booking_number: string
-            status: BookingStatus
-          }>
-        )[0]
+        const booking = toRows<{
+          id: string
+          booking_number: string
+          status: BookingStatus
+        }>(rows)[0]
 
         if (!booking) {
           throw new BookingServiceError("not_found")
@@ -3370,13 +3440,11 @@ export const bookingsService = {
               WHERE ${bookings.id} = ${id}
               FOR UPDATE`,
         )
-        const booking = (
-          rows as unknown as Array<{
-            id: string
-            status: BookingStatus
-            hold_expires_at: Date | null
-          }>
-        )[0]
+        const booking = toRows<{
+          id: string
+          status: BookingStatus
+          hold_expires_at: Date | null
+        }>(rows)[0]
 
         if (!booking) {
           throw new BookingServiceError("not_found")
@@ -3441,13 +3509,11 @@ export const bookingsService = {
               WHERE ${bookings.id} = ${id}
               FOR UPDATE`,
         )
-        const booking = (
-          rows as unknown as Array<{
-            id: string
-            status: BookingStatus
-            hold_expires_at: Date | null
-          }>
-        )[0]
+        const booking = toRows<{
+          id: string
+          status: BookingStatus
+          hold_expires_at: Date | null
+        }>(rows)[0]
 
         if (!booking) {
           throw new BookingServiceError("not_found")
@@ -3601,7 +3667,7 @@ export const bookingsService = {
               WHERE ${bookings.id} = ${id}
               FOR UPDATE`,
         )
-        const booking = (rows as unknown as Array<{ id: string; status: BookingStatus }>)[0]
+        const booking = toRows<{ id: string; status: BookingStatus }>(rows)[0]
 
         if (!booking) {
           throw new BookingServiceError("not_found")
@@ -3730,9 +3796,11 @@ export const bookingsService = {
               WHERE ${bookings.id} = ${id}
               FOR UPDATE`,
         )
-        const booking = (
-          rows as unknown as Array<{ id: string; booking_number: string; status: BookingStatus }>
-        )[0]
+        const booking = toRows<{
+          id: string
+          booking_number: string
+          status: BookingStatus
+        }>(rows)[0]
 
         if (!booking) {
           throw new BookingServiceError("not_found")
@@ -3806,9 +3874,11 @@ export const bookingsService = {
               WHERE ${bookings.id} = ${id}
               FOR UPDATE`,
         )
-        const booking = (
-          rows as unknown as Array<{ id: string; booking_number: string; status: BookingStatus }>
-        )[0]
+        const booking = toRows<{
+          id: string
+          booking_number: string
+          status: BookingStatus
+        }>(rows)[0]
 
         if (!booking) {
           throw new BookingServiceError("not_found")
@@ -3901,9 +3971,11 @@ export const bookingsService = {
               WHERE ${bookings.id} = ${id}
               FOR UPDATE`,
         )
-        const booking = (
-          rows as unknown as Array<{ id: string; booking_number: string; status: BookingStatus }>
-        )[0]
+        const booking = toRows<{
+          id: string
+          booking_number: string
+          status: BookingStatus
+        }>(rows)[0]
 
         if (!booking) {
           throw new BookingServiceError("not_found")
@@ -3962,6 +4034,23 @@ export const bookingsService = {
           } satisfies BookingStatusOverriddenEvent,
           { category: "domain", source: "service" },
         )
+        // Also emit `booking.confirmed` when the override target is
+        // confirmed so subscribers (auto-dispatch, contract auto-gen)
+        // fire — the dialog's "Confirm after creating" flow goes
+        // through override-status for draft → confirmed and would
+        // otherwise leave those subscribers silent.
+        if (result.toStatus === "confirmed") {
+          await runtime.eventBus?.emit(
+            "booking.confirmed",
+            {
+              bookingId: result.booking.id,
+              bookingNumber: result.booking.bookingNumber,
+              actorId: userId ?? null,
+              suppressNotifications: data.suppressNotifications === true,
+            } satisfies BookingConfirmedEvent,
+            { category: "domain", source: "service" },
+          )
+        }
       }
 
       return { status: result.status, booking: result.booking }

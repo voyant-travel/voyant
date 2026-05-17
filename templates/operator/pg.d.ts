@@ -8,4 +8,8 @@ declare module "pg" {
       values?: ReadonlyArray<unknown>,
     ): Promise<{ rowCount: number; rows: T[] }>
   }
+  export class Pool {
+    constructor(config?: { connectionString?: string; max?: number })
+    end(): Promise<void>
+  }
 }

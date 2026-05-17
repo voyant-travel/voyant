@@ -94,6 +94,8 @@ export const legalUiEn = {
     empty: "No contracts found.",
     loadFailed: "Contracts could not be loaded.",
     filters: {
+      button: "Filters",
+      clear: "Clear filters",
       scope: "Scope",
       status: "Status",
       person: "Person",
@@ -184,6 +186,11 @@ export const legalUiEn = {
     allKinds: "All kinds",
     empty: "No policies found.",
     loadFailed: "Policies could not be loaded.",
+    filters: {
+      button: "Filters",
+      clear: "Clear filters",
+      kind: "Kind",
+    },
     columns: {
       name: "Name",
       slug: "Slug",
@@ -266,10 +273,16 @@ export const legalUiEn = {
     versions: "Versions",
     noVersions: "No versions yet.",
     filters: {
+      button: "Filters",
+      clear: "Clear filters",
       scope: "Scope",
       allScopes: "All scopes",
     },
     columns: {
+      name: "Name",
+      scope: "Scope",
+      status: "Status",
+      created: "Created",
       version: "Version",
       changelog: "Changelog",
       createdBy: "Created By",

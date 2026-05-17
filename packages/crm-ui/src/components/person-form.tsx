@@ -1,13 +1,35 @@
 "use client"
 
-import { type CreatePersonInput, type PersonRecord, usePersonMutation } from "@voyantjs/crm-react"
+import {
+  type CreatePersonDocumentFromPlaintextInput,
+  type CreatePersonInput,
+  type PersonDocumentRecord,
+  type PersonDocumentType,
+  type PersonRecord,
+  usePersonDocumentMutation,
+  usePersonDocuments,
+  usePersonMutation,
+} from "@voyantjs/crm-react"
+import { useAddressMutation } from "@voyantjs/identity-react"
 import { Button } from "@voyantjs/ui/components/button"
+import { CountryCombobox } from "@voyantjs/ui/components/country-combobox"
+import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
-import { Loader2 } from "lucide-react"
+import { PhoneInput } from "@voyantjs/ui/components/phone-input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@voyantjs/ui/components/select"
+import { Loader2, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
+import { PersonAddressesSection } from "./person-addresses-section.js"
+import { PersonRelationshipsSection } from "./person-relationships-section.js"
 
 type Mode = { kind: "create" } | { kind: "edit"; person: PersonRecord }
 
@@ -23,7 +45,22 @@ interface FormState {
   email: string
   phone: string
   jobTitle: string
+  dateOfBirth: string | null
+  addressLine1: string
+  addressLine2: string
+  addressCity: string
+  addressRegion: string
+  addressPostalCode: string
+  addressCountry: string
 }
+
+const DOCUMENT_TYPES: PersonDocumentType[] = [
+  "passport",
+  "id_card",
+  "driver_license",
+  "visa",
+  "other",
+]
 
 function initialState(mode: Mode): FormState {
   if (mode.kind === "edit") {
@@ -34,6 +71,13 @@ function initialState(mode: Mode): FormState {
       email: p.email ?? "",
       phone: p.phone ?? "",
       jobTitle: p.jobTitle ?? "",
+      dateOfBirth: p.dateOfBirth ?? null,
+      addressLine1: "",
+      addressLine2: "",
+      addressCity: "",
+      addressRegion: "",
+      addressPostalCode: "",
+      addressCountry: "",
     }
   }
   return {
@@ -42,6 +86,13 @@ function initialState(mode: Mode): FormState {
     email: "",
     phone: "",
     jobTitle: "",
+    dateOfBirth: null,
+    addressLine1: "",
+    addressLine2: "",
+    addressCity: "",
+    addressRegion: "",
+    addressPostalCode: "",
+    addressCountry: "",
   }
 }
 
@@ -52,7 +103,34 @@ function toPayload(state: FormState): CreatePersonInput {
     email: state.email.trim() || null,
     phone: state.phone.trim() || null,
     jobTitle: state.jobTitle.trim() || null,
+    dateOfBirth: state.dateOfBirth || null,
   }
+}
+
+function hasAddress(state: FormState): boolean {
+  return [
+    state.addressLine1,
+    state.addressLine2,
+    state.addressCity,
+    state.addressRegion,
+    state.addressPostalCode,
+    state.addressCountry,
+  ].some((value) => Boolean(value.trim()))
+}
+
+function formatAddress(state: FormState): string | null {
+  const text = [
+    state.addressLine1,
+    state.addressLine2,
+    state.addressCity,
+    state.addressRegion,
+    state.addressPostalCode,
+    state.addressCountry,
+  ]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(", ")
+  return text || null
 }
 
 /**
@@ -63,10 +141,20 @@ function toPayload(state: FormState): CreatePersonInput {
 export function PersonForm({ mode, onSuccess, onCancel }: PersonFormProps) {
   const [state, setState] = React.useState<FormState>(() => initialState(mode))
   const [error, setError] = React.useState<string | null>(null)
+  // After the operator hits "Create" on a fresh sheet, we flip into an
+  // edit-like UI in-place so the addresses (multi) + documents sections
+  // become available without closing the sheet. The parent's `onSuccess`
+  // is deferred until the operator hits "Done" / "Save changes".
+  const [createdPerson, setCreatedPerson] = React.useState<PersonRecord | null>(null)
   const { create, update } = usePersonMutation()
+  const addressMutation = useAddressMutation()
   const messages = useCrmUiMessagesOrDefault()
+  const effectivePerson: PersonRecord | null =
+    createdPerson ?? (mode.kind === "edit" ? mode.person : null)
+  const editPersonId = effectivePerson?.id
+  const creating = !effectivePerson
 
-  const isSubmitting = create.isPending || update.isPending
+  const isSubmitting = create.isPending || update.isPending || addressMutation.create.isPending
 
   const field =
     <K extends keyof FormState>(key: K) =>
@@ -86,50 +174,180 @@ export function PersonForm({ mode, onSuccess, onCancel }: PersonFormProps) {
     const payload = toPayload(state)
 
     try {
-      const person =
-        mode.kind === "create"
-          ? await create.mutateAsync(payload)
-          : await update.mutateAsync({ id: mode.person.id, input: payload })
-      onSuccess?.(person)
+      if (!effectivePerson) {
+        const person = await create.mutateAsync(payload)
+        if (hasAddress(state)) {
+          await addressMutation.create.mutateAsync({
+            entityType: "person",
+            entityId: person.id,
+            label: "primary" as const,
+            fullText: formatAddress(state),
+            line1: state.addressLine1.trim() || null,
+            line2: state.addressLine2.trim() || null,
+            city: state.addressCity.trim() || null,
+            region: state.addressRegion.trim() || null,
+            postalCode: state.addressPostalCode.trim() || null,
+            country: state.addressCountry.trim() || null,
+            isPrimary: true,
+          })
+        }
+        // Stay on the sheet — the operator now sees the multi-address
+        // and documents sections and can keep editing before closing.
+        setCreatedPerson(person)
+      } else {
+        const updated = await update.mutateAsync({ id: effectivePerson.id, input: payload })
+        onSuccess?.(updated)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : messages.personForm.validation.saveFailed)
     }
   }
 
+  const handleCancel = () => {
+    // If we already created the person in this session, treat the close
+    // button as "Done" so the picker still selects the new person.
+    if (createdPerson) {
+      onSuccess?.(createdPerson)
+    } else {
+      onCancel?.()
+    }
+  }
+
   return (
-    <form data-slot="person-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="person-first-name">{messages.personForm.fields.firstName}</Label>
-          <Input
-            id="person-first-name"
-            required
-            value={state.firstName}
-            onChange={field("firstName")}
-          />
+    <form data-slot="person-form" onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <section className="flex flex-col gap-3">
+        <h3 className="text-sm font-medium text-foreground">
+          {messages.personForm.sections.identity}
+        </h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="person-first-name">{messages.personForm.fields.firstName}</Label>
+            <Input
+              id="person-first-name"
+              required
+              value={state.firstName}
+              onChange={field("firstName")}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="person-last-name">{messages.personForm.fields.lastName}</Label>
+            <Input
+              id="person-last-name"
+              required
+              value={state.lastName}
+              onChange={field("lastName")}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="person-job-title">{messages.personForm.fields.jobTitle}</Label>
+            <Input id="person-job-title" value={state.jobTitle} onChange={field("jobTitle")} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="person-date-of-birth">{messages.personForm.fields.dateOfBirth}</Label>
+            <DatePicker
+              value={state.dateOfBirth}
+              onChange={(next) => setState((prev) => ({ ...prev, dateOfBirth: next }))}
+            />
+          </div>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="person-last-name">{messages.personForm.fields.lastName}</Label>
-          <Input
-            id="person-last-name"
-            required
-            value={state.lastName}
-            onChange={field("lastName")}
-          />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h3 className="text-sm font-medium text-foreground">
+          {messages.personForm.sections.contact}
+        </h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="person-email">{messages.personForm.fields.email}</Label>
+            <Input id="person-email" type="email" value={state.email} onChange={field("email")} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="person-phone">{messages.personForm.fields.phone}</Label>
+            <PhoneInput
+              id="person-phone"
+              international
+              defaultCountry="RO"
+              value={state.phone}
+              onChange={(value) =>
+                setState((prev) => ({ ...prev, phone: (value as string) ?? "" }))
+              }
+            />
+          </div>
         </div>
-        <div className="flex flex-col gap-1.5 sm:col-span-2">
-          <Label htmlFor="person-job-title">{messages.personForm.fields.jobTitle}</Label>
-          <Input id="person-job-title" value={state.jobTitle} onChange={field("jobTitle")} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="person-email">{messages.personForm.fields.email}</Label>
-          <Input id="person-email" type="email" value={state.email} onChange={field("email")} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="person-phone">{messages.personForm.fields.phone}</Label>
-          <Input id="person-phone" value={state.phone} onChange={field("phone")} />
-        </div>
-      </div>
+      </section>
+
+      {editPersonId ? (
+        <PersonAddressesSection personId={editPersonId} />
+      ) : (
+        <section className="flex flex-col gap-3">
+          <h3 className="text-sm font-medium text-foreground">
+            {messages.personForm.sections.address}
+          </h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <Label htmlFor="person-address-line-1">
+                {messages.personForm.fields.addressLine1}
+              </Label>
+              <Input
+                id="person-address-line-1"
+                value={state.addressLine1}
+                onChange={field("addressLine1")}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <Label htmlFor="person-address-line-2">
+                {messages.personForm.fields.addressLine2}
+              </Label>
+              <Input
+                id="person-address-line-2"
+                value={state.addressLine2}
+                onChange={field("addressLine2")}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="person-address-city">{messages.personForm.fields.addressCity}</Label>
+              <Input
+                id="person-address-city"
+                value={state.addressCity}
+                onChange={field("addressCity")}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="person-address-region">
+                {messages.personForm.fields.addressRegion}
+              </Label>
+              <Input
+                id="person-address-region"
+                value={state.addressRegion}
+                onChange={field("addressRegion")}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="person-address-postal-code">
+                {messages.personForm.fields.addressPostalCode}
+              </Label>
+              <Input
+                id="person-address-postal-code"
+                value={state.addressPostalCode}
+                onChange={field("addressPostalCode")}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="person-address-country">
+                {messages.personForm.fields.addressCountry}
+              </Label>
+              <CountryCombobox
+                value={state.addressCountry || null}
+                onChange={(code) => setState((prev) => ({ ...prev, addressCountry: code ?? "" }))}
+              />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {editPersonId ? <PersonRelationshipsSection personId={editPersonId} /> : null}
+
+      {editPersonId ? <DocumentsSection personId={editPersonId} /> : null}
 
       {error ? (
         <p data-slot="person-form-error" className="text-sm text-destructive">
@@ -138,9 +356,9 @@ export function PersonForm({ mode, onSuccess, onCancel }: PersonFormProps) {
       ) : null}
 
       <div className="flex items-center justify-end gap-2">
-        {onCancel ? (
-          <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
-            {messages.common.cancel}
+        {onCancel || createdPerson ? (
+          <Button type="button" variant="ghost" onClick={handleCancel} disabled={isSubmitting}>
+            {createdPerson ? messages.common.done : messages.common.cancel}
           </Button>
         ) : null}
         <Button type="submit" disabled={isSubmitting}>
@@ -149,7 +367,7 @@ export function PersonForm({ mode, onSuccess, onCancel }: PersonFormProps) {
               <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
               {messages.common.saving}
             </>
-          ) : mode.kind === "create" ? (
+          ) : creating ? (
             messages.personForm.actions.create
           ) : (
             messages.common.saveChanges
@@ -157,5 +375,147 @@ export function PersonForm({ mode, onSuccess, onCancel }: PersonFormProps) {
         </Button>
       </div>
     </form>
+  )
+}
+
+function DocumentsSection({ personId }: { personId: string }) {
+  const messages = useCrmUiMessagesOrDefault()
+  const documentsQuery = usePersonDocuments(personId)
+  const mutation = usePersonDocumentMutation(personId)
+  const [adding, setAdding] = React.useState(false)
+  const [draft, setDraft] = React.useState<CreatePersonDocumentFromPlaintextInput>({
+    type: "passport",
+    number: "",
+    issuingCountry: "",
+    expiryDate: null,
+  })
+
+  const documents = documentsQuery.data?.data ?? []
+  const typeLabels = messages.personDetail.documentTypeLabels
+
+  const resetDraft = () => {
+    setDraft({ type: "passport", number: "", issuingCountry: "", expiryDate: null })
+    setAdding(false)
+  }
+
+  const submitDraft = async () => {
+    await mutation.createFromPlaintext.mutateAsync({
+      type: draft.type,
+      number: draft.number?.trim() || null,
+      issuingCountry: draft.issuingCountry?.trim() || null,
+      expiryDate: draft.expiryDate || null,
+    })
+    resetDraft()
+  }
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-foreground">
+          {messages.personForm.sections.documents}
+        </h3>
+        {!adding ? (
+          <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(true)}>
+            <Plus className="mr-1 size-3.5" />
+            {messages.personForm.documents.add}
+          </Button>
+        ) : null}
+      </div>
+
+      {documentsQuery.isPending ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" />
+          {messages.common.saving}
+        </div>
+      ) : documents.length === 0 && !adding ? (
+        <p className="text-sm text-muted-foreground">{messages.personForm.documents.empty}</p>
+      ) : (
+        <ul className="divide-y rounded-md border">
+          {documents.map((doc: PersonDocumentRecord) => (
+            <li key={doc.id} className="flex items-center justify-between gap-3 px-3 py-2">
+              <div className="min-w-0 flex-1 text-sm">
+                <p className="font-medium">{typeLabels[doc.type] ?? doc.type}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {[doc.issuingCountry, doc.expiryDate].filter(Boolean).join(" · ") || "—"}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 text-destructive"
+                onClick={() => mutation.remove.mutate(doc.id)}
+                disabled={mutation.remove.isPending}
+                aria-label={messages.personForm.documents.remove}
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {adding ? (
+        <div className="grid grid-cols-1 gap-3 rounded-md border bg-muted/30 p-3 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs">{messages.personForm.documents.type}</Label>
+            <Select
+              value={draft.type}
+              onValueChange={(v) =>
+                setDraft((prev) => ({ ...prev, type: v as PersonDocumentType }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {DOCUMENT_TYPES.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {typeLabels[t] ?? t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs">{messages.personForm.documents.number}</Label>
+            <Input
+              value={draft.number ?? ""}
+              onChange={(e) => setDraft((prev) => ({ ...prev, number: e.target.value }))}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs">{messages.personForm.documents.issuingCountry}</Label>
+            <Input
+              value={draft.issuingCountry ?? ""}
+              onChange={(e) => setDraft((prev) => ({ ...prev, issuingCountry: e.target.value }))}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs">{messages.personForm.documents.expiryDate}</Label>
+            <DatePicker
+              value={draft.expiryDate ?? null}
+              onChange={(next) => setDraft((prev) => ({ ...prev, expiryDate: next }))}
+            />
+          </div>
+          <div className="flex items-center justify-end gap-2 sm:col-span-2">
+            <Button type="button" variant="ghost" size="sm" onClick={resetDraft}>
+              {messages.common.cancel}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={submitDraft}
+              disabled={mutation.createFromPlaintext.isPending}
+            >
+              {mutation.createFromPlaintext.isPending ? (
+                <Loader2 className="mr-2 size-3.5 animate-spin" />
+              ) : null}
+              {messages.personForm.documents.save}
+            </Button>
+          </div>
+        </div>
+      ) : null}
+    </section>
   )
 }

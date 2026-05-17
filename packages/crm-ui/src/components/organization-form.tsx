@@ -14,6 +14,7 @@ import {
   useContactPoints,
 } from "@voyantjs/identity-react"
 import { Button } from "@voyantjs/ui/components/button"
+import { CountryCombobox } from "@voyantjs/ui/components/country-combobox"
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
 import { Loader2 } from "lucide-react"
@@ -365,10 +366,9 @@ export function OrganizationForm({ mode, onSuccess, onCancel }: OrganizationForm
           <Label htmlFor="organization-billing-country">
             {messages.organizationForm.fields.billingCountry}
           </Label>
-          <Input
-            id="organization-billing-country"
-            value={state.billingCountry}
-            onChange={field("billingCountry")}
+          <CountryCombobox
+            value={state.billingCountry || null}
+            onChange={(code) => setState((prev) => ({ ...prev, billingCountry: code ?? "" }))}
           />
         </div>
       </div>

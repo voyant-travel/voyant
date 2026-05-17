@@ -36,7 +36,7 @@ export interface PriceBreakdownValue {
 export interface PriceBreakdownSectionProps {
   productId?: string
   optionId?: string | null
-  /** Quantity per option_unit id, typically from RoomsStepperSection. */
+  /** Quantity per option_unit id, typically from OptionUnitsStepperSection. */
   unitQuantities: Record<string, number>
   /** Display labels keyed by option_unit id. */
   unitLabels?: Record<string, string>
@@ -60,6 +60,12 @@ export interface PriceBreakdownSectionProps {
     overrideReasonRequired?: string
   }
   onChange?: (value: PriceBreakdownValue) => void
+  /**
+   * When true, the section drops its bordered card wrapper and the
+   * heading label — for embedding inside another card (e.g. the
+   * booking-summary panel) where the parent owns the chrome.
+   */
+  flat?: boolean
 }
 
 interface TierRow {
@@ -106,6 +112,7 @@ export function PriceBreakdownSection({
   catalogId,
   labels,
   onChange,
+  flat = false,
 }: PriceBreakdownSectionProps) {
   const { formatCurrency, formatNumber } = useBookingsUiI18nOrDefault()
   const messages = useBookingsUiMessagesOrDefault()
@@ -310,7 +317,17 @@ export function PriceBreakdownSection({
             value={manualAmountCents}
             onChange={setManualAmountCents}
             currency={currency ?? undefined}
-            placeholder={total === null ? merged.onRequest : formatAmount(total)}
+            // CurrencyInput already renders the currency symbol + code
+            // as addons; the placeholder must be the bare number so we
+            // don't end up with `€ €790.00 EUR` showing.
+            placeholder={
+              total === null
+                ? merged.onRequest
+                : formatNumber(total / 100, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })
+            }
           />
         </div>
         {manualAmountCents != null ? (
@@ -343,10 +360,13 @@ export function PriceBreakdownSection({
 
   // Empty states
   if (!productId) return null
+  const wrapperClassName = flat
+    ? "flex flex-col gap-2"
+    : "flex flex-col gap-2 rounded-md border p-3"
   if ((preview.isError || (preview.isSuccess && !snapshot)) && fallbackUnitAmountCents === null) {
     return (
-      <div className="flex flex-col gap-2 rounded-md border p-3">
-        <Label>{merged.heading}</Label>
+      <div className={wrapperClassName}>
+        {flat ? null : <Label>{merged.heading}</Label>}
         <p className="text-xs text-muted-foreground">{merged.noPricing}</p>
         {manualTotalControls}
       </div>
@@ -354,8 +374,8 @@ export function PriceBreakdownSection({
   }
   if (lines.length === 0) {
     return (
-      <div className="flex flex-col gap-2 rounded-md border p-3">
-        <Label>{merged.heading}</Label>
+      <div className={wrapperClassName}>
+        {flat ? null : <Label>{merged.heading}</Label>}
         <p className="text-xs text-muted-foreground">{merged.empty}</p>
         {manualTotalControls}
       </div>
@@ -363,8 +383,8 @@ export function PriceBreakdownSection({
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-md border p-3">
-      <Label>{merged.heading}</Label>
+    <div className={wrapperClassName}>
+      {flat ? null : <Label>{merged.heading}</Label>}
       <div className="flex flex-col gap-1.5">
         {lines.map((line) => (
           <div key={line.unitId} className="flex items-baseline justify-between text-sm">

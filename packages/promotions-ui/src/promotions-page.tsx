@@ -27,6 +27,9 @@ import {
   DateRangePicker,
   Input,
   Label,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Select,
   SelectContent,
   SelectItem,
@@ -41,7 +44,7 @@ import {
   TableRow,
 } from "@voyantjs/ui/components"
 import { cn } from "@voyantjs/ui/lib/utils"
-import { Plus, Search, X } from "lucide-react"
+import { ListFilter, Plus, Search, X } from "lucide-react"
 import type { ReactNode } from "react"
 import { useState } from "react"
 
@@ -113,6 +116,7 @@ export function PromotionsPage({
   const [pageIndex, setPageIndex] = useState(0)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingOffer, setEditingOffer] = useState<PromotionalOfferRecord | undefined>()
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   const query: PromotionsListQuery = {
     search: search || undefined,
@@ -133,12 +137,12 @@ export function PromotionsPage({
   const page = pageIndex + 1
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
   const showSkeleton = isPending || (isFetching && offers.length === 0)
-  const hasActiveFilters =
-    search !== "" ||
-    applicationMode !== ALL ||
-    status !== ALL ||
-    scopeKind !== ALL ||
-    Boolean(validityRange?.from || validityRange?.to)
+  const activeFilterCount =
+    (applicationMode !== ALL ? 1 : 0) +
+    (status !== ALL ? 1 : 0) +
+    (scopeKind !== ALL ? 1 : 0) +
+    (validityRange?.from || validityRange?.to ? 1 : 0)
+  const hasActiveFilters = activeFilterCount > 0 || search !== ""
 
   const resetPage = () => setPageIndex(0)
 
@@ -186,19 +190,12 @@ export function PromotionsPage({
 
   return (
     <div className={cn("flex flex-col gap-6 p-6", className)}>
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{pageMessages.title}</h1>
-          <p className="text-sm text-muted-foreground">{pageMessages.description}</p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 size-4" aria-hidden="true" />
-          {pageMessages.newPromotion}
-        </Button>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">{pageMessages.title}</h1>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-[14rem] max-w-sm flex-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[14rem] flex-1">
           <Label htmlFor="promotions-search" className="sr-only">
             {pageMessages.searchLabel}
           </Label>
@@ -218,82 +215,144 @@ export function PromotionsPage({
           />
         </div>
 
-        <Select
-          value={applicationMode}
-          onValueChange={(value) => {
-            setApplicationMode(value ?? ALL)
-            resetPage()
-          }}
-        >
-          <SelectTrigger className="w-[10.5rem]">
-            <SelectValue placeholder={pageMessages.modePlaceholder} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>{pageMessages.allModes}</SelectItem>
-            {applicationModes.map((mode) => (
-              <SelectItem key={mode} value={mode}>
-                {messages.common.applicationModeLabels[mode]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <PopoverTrigger
+            render={
+              <Button variant="outline" size="default">
+                <ListFilter className="mr-2 size-4" />
+                {pageMessages.filtersButton}
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="ml-2 px-1.5">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            }
+          />
+          <PopoverContent align="start" className="w-[22rem] p-4">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="promotions-filter-mode">{pageMessages.modePlaceholder}</Label>
+                <Select
+                  value={applicationMode}
+                  onValueChange={(value) => {
+                    setApplicationMode(value ?? ALL)
+                    resetPage()
+                  }}
+                >
+                  <SelectTrigger id="promotions-filter-mode" className="w-full">
+                    <SelectValue>
+                      {(value) =>
+                        value === ALL
+                          ? pageMessages.allModes
+                          : (messages.common.applicationModeLabels[
+                              value as PromotionalOfferApplicationMode
+                            ] ?? value)
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL}>{pageMessages.allModes}</SelectItem>
+                    {applicationModes.map((mode) => (
+                      <SelectItem key={mode} value={mode}>
+                        {messages.common.applicationModeLabels[mode]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <Select
-          value={status}
-          onValueChange={(value) => {
-            setStatus(value ?? ALL)
-            resetPage()
-          }}
-        >
-          <SelectTrigger className="w-[10.5rem]">
-            <SelectValue placeholder={pageMessages.statusPlaceholder} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>{pageMessages.allStatuses}</SelectItem>
-            {statusFilters.map((value) => (
-              <SelectItem key={value} value={value}>
-                {messages.common.statusLabels[value]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="promotions-filter-status">{pageMessages.statusPlaceholder}</Label>
+                <Select
+                  value={status}
+                  onValueChange={(value) => {
+                    setStatus(value ?? ALL)
+                    resetPage()
+                  }}
+                >
+                  <SelectTrigger id="promotions-filter-status" className="w-full">
+                    <SelectValue>
+                      {(value) =>
+                        value === ALL
+                          ? pageMessages.allStatuses
+                          : (messages.common.statusLabels[value as PromotionalOfferListStatus] ??
+                            value)
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL}>{pageMessages.allStatuses}</SelectItem>
+                    {statusFilters.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {messages.common.statusLabels[value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <Select
-          value={scopeKind}
-          onValueChange={(value) => {
-            setScopeKind(value ?? ALL)
-            resetPage()
-          }}
-        >
-          <SelectTrigger className="w-[11rem]">
-            <SelectValue placeholder={pageMessages.scopePlaceholder} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>{pageMessages.allScopes}</SelectItem>
-            {scopeKinds.map((value) => (
-              <SelectItem key={value} value={value}>
-                {messages.common.scopeKindLabels[value]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="promotions-filter-scope">{pageMessages.scopePlaceholder}</Label>
+                <Select
+                  value={scopeKind}
+                  onValueChange={(value) => {
+                    setScopeKind(value ?? ALL)
+                    resetPage()
+                  }}
+                >
+                  <SelectTrigger id="promotions-filter-scope" className="w-full">
+                    <SelectValue>
+                      {(value) =>
+                        value === ALL
+                          ? pageMessages.allScopes
+                          : (messages.common.scopeKindLabels[value as PromotionalOfferScopeKind] ??
+                            value)
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL}>{pageMessages.allScopes}</SelectItem>
+                    {scopeKinds.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {messages.common.scopeKindLabels[value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <DateRangePicker
-          value={validityRange}
-          onChange={(value) => {
-            setValidityRange(value)
-            resetPage()
-          }}
-          placeholder={pageMessages.validityRangePlaceholder}
-          className="w-[15rem]"
-        />
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="promotions-filter-validity">
+                  {pageMessages.validityRangePlaceholder}
+                </Label>
+                <DateRangePicker
+                  value={validityRange}
+                  onChange={(value) => {
+                    setValidityRange(value)
+                    resetPage()
+                  }}
+                  placeholder={pageMessages.validityRangePlaceholder}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
 
         {hasActiveFilters ? (
-          <Button variant="ghost" onClick={clearFilters}>
-            <X className="mr-2 size-4" aria-hidden="true" />
+          <Button variant="ghost" size="sm" onClick={clearFilters}>
+            <X className="mr-1 size-4" aria-hidden="true" />
             {pageMessages.clearFilters}
           </Button>
         ) : null}
+
+        <div className="ml-auto">
+          <Button onClick={openCreate}>
+            <Plus className="mr-1 size-4" aria-hidden="true" />
+            {pageMessages.newPromotion}
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-md border">

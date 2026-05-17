@@ -2,7 +2,17 @@
 
 import { type AcceptInvitationResult, useAcceptInvitation } from "@voyantjs/auth-react"
 import { VoyantApiError } from "@voyantjs/auth-react/client"
-import { Button, cn, Input, Label } from "@voyantjs/ui/components"
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  cn,
+  Input,
+  Label,
+} from "@voyantjs/ui/components"
 import { AlertCircle, CheckCircle2, Loader2, LogIn, UserPlus } from "lucide-react"
 import { type FormEvent, useEffect, useId, useState } from "react"
 
@@ -151,143 +161,135 @@ export function AcceptInvitationPage({
 
   if (accepted) {
     return (
-      <div
-        data-slot="accept-invitation-page"
-        data-state="success"
-        className={cn("mx-auto flex w-full max-w-sm flex-col gap-6", className)}
-      >
-        <div className="space-y-2">
-          <CheckCircle2 className="h-8 w-8 text-primary" aria-hidden="true" />
-          <h1 className="text-2xl font-bold tracking-tight">{messages.successTitle}</h1>
-          <p className="text-sm text-muted-foreground">{messages.successDescription}</p>
-        </div>
-
+      <Card data-slot="accept-invitation-page" data-state="success" className={cn(className)}>
+        <CardHeader>
+          <CheckCircle2 className="mb-2 h-8 w-8 text-primary" aria-hidden="true" />
+          <CardTitle>{messages.successTitle}</CardTitle>
+          <CardDescription>{messages.successDescription}</CardDescription>
+        </CardHeader>
         {hasContinueAction && (
-          <div className="flex flex-col gap-2">
-            {onContinue && (
-              <Button type="button" onClick={() => void handleContinue()}>
-                {messages.continue}
-              </Button>
-            )}
-            {continueHref && (
-              <a
-                href={continueHref}
-                className="text-center text-sm font-medium text-primary hover:underline"
-              >
-                {messages.continue}
-              </a>
-            )}
-          </div>
+          <CardContent>
+            <div className="flex flex-col gap-2">
+              {onContinue && (
+                <Button type="button" onClick={() => void handleContinue()}>
+                  {messages.continue}
+                </Button>
+              )}
+              {continueHref && (
+                <a
+                  href={continueHref}
+                  className="text-center text-sm font-medium text-primary hover:underline"
+                >
+                  {messages.continue}
+                </a>
+              )}
+            </div>
+          </CardContent>
         )}
-      </div>
+      </Card>
     )
   }
 
   return (
-    <div
+    <Card
       data-slot="accept-invitation-page"
       data-state={requiresHandoff ? "handoff" : error ? "failure" : "idle"}
-      className={cn("mx-auto flex w-full max-w-sm flex-col gap-6", className)}
+      className={cn(className)}
     >
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">
-          {requiresHandoff ? messages.handoffTitle : messages.title}
-        </h1>
-        <p className="text-sm text-muted-foreground">
+      <CardHeader>
+        <CardTitle>{requiresHandoff ? messages.handoffTitle : messages.title}</CardTitle>
+        <CardDescription>
           {requiresHandoff ? messages.handoffDescription : messages.description}
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            <div className="flex gap-2">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-              <div>
-                <p className="font-medium">{messages.failureTitle}</p>
-                <p>{error || messages.failureDescription}</p>
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <div className="flex gap-2">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <div>
+                  <p className="font-medium">{messages.failureTitle}</p>
+                  <p>{error || messages.failureDescription}</p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {!tokenIsProvided && (
-          <div className="space-y-2">
-            <Label htmlFor={tokenInputId}>{messages.tokenLabel}</Label>
-            <Input
-              id={tokenInputId}
-              type="text"
-              placeholder={messages.tokenPlaceholder}
-              value={tokenValue}
-              onChange={(event) => setTokenValue(event.target.value)}
-              required
-              autoComplete="off"
-              autoFocus
-            />
-          </div>
-        )}
+          {!tokenIsProvided && (
+            <div className="space-y-2">
+              <Label htmlFor={tokenInputId}>{messages.tokenLabel}</Label>
+              <Input
+                id={tokenInputId}
+                type="text"
+                placeholder={messages.tokenPlaceholder}
+                value={tokenValue}
+                onChange={(event) => setTokenValue(event.target.value)}
+                required
+                autoComplete="off"
+                autoFocus
+              />
+            </div>
+          )}
 
-        {requiresHandoff ? (
-          <div className="space-y-3">
-            {(hasSignInAction || hasSignUpAction) && (
-              <div className="grid gap-2 sm:grid-cols-2">
-                {onSignIn && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={handoffPending !== null}
-                    onClick={() => void handleHandoff("sign-in")}
-                  >
-                    {handoffPending === "sign-in" ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <LogIn className="mr-2 h-4 w-4" />
-                    )}
-                    {messages.signIn}
-                  </Button>
-                )}
-                {onSignUp && (
-                  <Button
-                    type="button"
-                    disabled={handoffPending !== null}
-                    onClick={() => void handleHandoff("sign-up")}
-                  >
-                    {handoffPending === "sign-up" ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <UserPlus className="mr-2 h-4 w-4" />
-                    )}
-                    {messages.signUp}
-                  </Button>
-                )}
-              </div>
-            )}
-            {(signInHref || signUpHref) && (
-              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
-                {signInHref && (
-                  <a href={signInHref} className="font-medium text-primary hover:underline">
-                    {messages.signIn}
-                  </a>
-                )}
-                {signUpHref && (
-                  <a href={signUpHref} className="font-medium text-primary hover:underline">
-                    {messages.signUp}
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
-        ) : (
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-            )}
-            {isSubmitting ? messages.submitting : messages.submit}
-          </Button>
-        )}
-      </form>
-    </div>
+          {requiresHandoff ? (
+            <div className="space-y-3">
+              {(hasSignInAction || hasSignUpAction) && (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {onSignIn && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={handoffPending !== null}
+                      onClick={() => void handleHandoff("sign-in")}
+                    >
+                      {handoffPending === "sign-in" ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <LogIn className="mr-2 h-4 w-4" />
+                      )}
+                      {messages.signIn}
+                    </Button>
+                  )}
+                  {onSignUp && (
+                    <Button
+                      type="button"
+                      disabled={handoffPending !== null}
+                      onClick={() => void handleHandoff("sign-up")}
+                    >
+                      {handoffPending === "sign-up" ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <UserPlus className="mr-2 h-4 w-4" />
+                      )}
+                      {messages.signUp}
+                    </Button>
+                  )}
+                </div>
+              )}
+              {(signInHref || signUpHref) && (
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
+                  {signInHref && (
+                    <a href={signInHref} className="font-medium text-primary hover:underline">
+                      {messages.signIn}
+                    </a>
+                  )}
+                  {signUpHref && (
+                    <a href={signUpHref} className="font-medium text-primary hover:underline">
+                      {messages.signUp}
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting ? messages.submitting : messages.submit}
+            </Button>
+          )}
+        </form>
+      </CardContent>
+    </Card>
   )
 }

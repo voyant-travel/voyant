@@ -38,7 +38,7 @@ import {
   type Visibility,
 } from "@voyantjs/catalog"
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import { asc, eq } from "drizzle-orm"
+import { asc, eq, sql } from "drizzle-orm"
 
 import { productCatalogPolicy } from "./catalog-policy.js"
 import { products } from "./schema-core.js"
@@ -319,6 +319,11 @@ function isPublicStorefrontProduct(row: typeof products.$inferSelect): boolean {
 }
 
 function shouldEmitForSlice(row: typeof products.$inferSelect, slice: IndexerSlice): boolean {
+  // The catalog is a "bookable now" surface — draft and archived
+  // products don't belong there, regardless of audience. Operators
+  // browsing /catalog get the same active-only set the storefront sees,
+  // just with staff-visible attribute columns.
+  if (row.status !== "active") return false
   if (
     slice.audience === "customer" ||
     slice.audience === "partner" ||
@@ -440,6 +445,7 @@ export function createProductStorefrontCardProjectionExtension(): ProductProject
       const durationDays = defaultItinerary
         ? await estimateItineraryDurationDays(db, defaultItinerary.id)
         : null
+      const availableDeparturesCount = await countAvailableDepartures(db, productId)
 
       const out = new Map<string, unknown>([
         ["slug", translation?.slug ?? null],
@@ -448,6 +454,7 @@ export function createProductStorefrontCardProjectionExtension(): ProductProject
         ["thumbnailUrl", primaryMedia?.url ?? null],
         ["coverMediaUrl", primaryMedia?.url ?? null],
         ["durationDays", durationDays],
+        ["availableDeparturesCount", availableDeparturesCount],
         ["latitude", coordinateLocation?.latitude ?? null],
         ["longitude", coordinateLocation?.longitude ?? null],
       ])
@@ -470,6 +477,44 @@ function pickTranslation<T extends { languageTag: string }>(
     rows[0] ??
     null
   )
+}
+
+/**
+ * Counts future, open availability slots for a product — surfaces in the
+ * catalog index as `availableDeparturesCount` so the operator catalog
+ * table can show booking-ready stock at a glance without a separate
+ * round-trip. Owned-products only; sourced products carry departures via
+ * the upstream feed and don't write to `availability_slots`.
+ *
+ * Cross-package boundary: queries `availability_slots` by raw table name
+ * via `sql` so the products module doesn't take a hard dependency on the
+ * `@voyantjs/availability` schema.
+ */
+async function countAvailableDepartures(db: AnyDrizzleDb, productId: string): Promise<number> {
+  try {
+    const result = await db.execute(sql`
+      SELECT COUNT(*)::int AS count
+      FROM availability_slots
+      WHERE product_id = ${productId}
+        AND status = 'open'
+        AND starts_at >= NOW()
+    `)
+    // postgres-js + neon-serverless both return `{ count }` on the first row;
+    // shape-defensive read in case a driver wraps it differently.
+    const rows = Array.isArray(result) ? result : ((result as { rows?: unknown[] }).rows ?? [])
+    const row = rows[0] as { count?: number | string } | undefined
+    const value = row?.count
+    if (typeof value === "number") return value
+    if (typeof value === "string") {
+      const n = Number(value)
+      return Number.isFinite(n) ? n : 0
+    }
+    return 0
+  } catch {
+    // availability_slots may not exist in slim test fixtures; treat as 0
+    // so reindex doesn't fail.
+    return 0
+  }
 }
 
 async function estimateItineraryDurationDays(

@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router"
 import { ProductOptionsSection } from "@voyantjs/products-ui/components/product-options-section"
 import { Button } from "@voyantjs/ui/components"
 import { useMemo } from "react"
+import { OptionResourceTemplatesPanel } from "@/components/voyant/availability/option-resource-templates-panel"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { DepartureDialog } from "./product-departure-dialog"
 import { DeparturePricingOverrideDialog } from "./product-departure-pricing-override-dialog"
@@ -23,7 +24,6 @@ import { PricingPanel } from "./product-options-pricing"
 import { getDeparturePriceOverridesQueryOptions } from "./product-options-shared"
 import { ProductPaymentPolicySection } from "./product-payment-policy-section"
 import { ScheduleDialog } from "./product-schedule-dialog"
-import { ProductSourcedContentSection } from "./product-sourced-content-section"
 import { useProductDetailData } from "./use-product-detail-data"
 import { useProductDetailDialogs } from "./use-product-detail-dialogs"
 
@@ -123,6 +123,9 @@ export function ProductDetailPage({ id }: { id: string }) {
             onCreate={dialogs.departure.openNew}
             onEdit={dialogs.departure.openEdit}
             onOverridePrice={dialogs.departureOverride.openEdit}
+            onManageAvailability={(slot) =>
+              void navigate({ to: "/availability/$id", params: { id: slot.id } })
+            }
             onDelete={(slotId) => {
               if (confirm(productMessages.deleteDepartureConfirm)) {
                 mutations.deleteSlot.mutate(slotId)
@@ -145,7 +148,12 @@ export function ProductDetailPage({ id }: { id: string }) {
 
           <ProductOptionsSection
             productId={id}
-            renderOptionDetails={(option) => <PricingPanel productId={id} optionId={option.id} />}
+            renderOptionDetails={(option) => (
+              <div className="flex flex-col gap-4">
+                <PricingPanel productId={id} optionId={option.id} />
+                <OptionResourceTemplatesPanel productId={id} optionId={option.id} />
+              </div>
+            )}
           />
 
           <ProductPaymentPolicySection product={product} onSuccess={invalidateProduct} />
@@ -167,8 +175,6 @@ export function ProductDetailPage({ id }: { id: string }) {
             isGenerating={mutations.generateBrochure.isPending}
             onGenerate={() => mutations.generateBrochure.mutate()}
           />
-
-          <ProductSourcedContentSection productId={id} />
         </div>
       </div>
 

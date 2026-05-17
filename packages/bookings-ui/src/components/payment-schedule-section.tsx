@@ -15,7 +15,12 @@ import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
-export type PaymentScheduleMode = "unpaid" | "full" | "advance" | "split"
+// Operators commit either the whole balance on a single due date (Full)
+// or two installments (Split). Older "unpaid" and "advance" modes were
+// dropped — an unpaid booking is just one with no schedule attached,
+// and partial deposits are handled via Split (set the second amount to
+// 0 if it's truly a single deposit).
+export type PaymentScheduleMode = "full" | "split"
 
 export interface PaymentScheduleValue {
   mode: PaymentScheduleMode
@@ -48,7 +53,7 @@ export interface PaymentScheduleValue {
 }
 
 export const emptyPaymentScheduleValue: PaymentScheduleValue = {
-  mode: "unpaid",
+  mode: "full",
   fullDueDate: null,
   advanceAmountCents: null,
   advanceDueDate: null,
@@ -140,9 +145,7 @@ export function PaymentScheduleSection({
   const set = (patch: Partial<PaymentScheduleValue>) => onChange({ ...value, ...patch })
 
   const modes: Array<{ id: PaymentScheduleMode; label: string }> = [
-    { id: "unpaid", label: merged.modeUnpaid },
     { id: "full", label: merged.modeFull },
-    { id: "advance", label: merged.modeAdvance },
     { id: "split", label: merged.modeSplit },
   ]
 
@@ -159,13 +162,9 @@ export function PaymentScheduleSection({
 
   const total = typeof totalAmountCents === "number" ? totalAmountCents : null
   const scheduledTotal =
-    value.mode === "unpaid"
-      ? 0
-      : value.mode === "full"
-        ? (total ?? 0)
-        : value.mode === "advance"
-          ? (value.advanceAmountCents ?? 0)
-          : (value.splitFirstAmountCents ?? 0) + (value.splitSecondAmountCents ?? 0)
+    value.mode === "full"
+      ? (total ?? 0)
+      : (value.splitFirstAmountCents ?? 0) + (value.splitSecondAmountCents ?? 0)
   const remaining = total === null ? null : Math.max(0, total - scheduledTotal)
   const formatAmount = (cents: number | null) => {
     if (cents === null) return "-"
@@ -277,10 +276,6 @@ export function PaymentScheduleSection({
         ))}
       </div>
 
-      {value.mode === "unpaid" && (
-        <p className="text-xs text-muted-foreground">{merged.unpaidHint}</p>
-      )}
-
       {value.mode === "full" && (
         <div className="flex flex-col gap-2">
           <div className="flex flex-col gap-1">
@@ -291,29 +286,6 @@ export function PaymentScheduleSection({
             />
           </div>
           {renderPaidFields("full", value.fullAlreadyPaid)}
-        </div>
-      )}
-
-      {value.mode === "advance" && (
-        <div className="flex flex-col gap-2">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex flex-col gap-1">
-              <Label className="text-xs">{merged.amount}</Label>
-              <CurrencyInput
-                value={value.advanceAmountCents}
-                onChange={(next) => set({ advanceAmountCents: next })}
-                currency={currency}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label className="text-xs">{merged.dueDate}</Label>
-              <DatePicker
-                value={value.advanceDueDate ?? ""}
-                onChange={(nextValue) => set({ advanceDueDate: nextValue })}
-              />
-            </div>
-          </div>
-          {renderPaidFields("advance", value.advanceAlreadyPaid)}
         </div>
       )}
 

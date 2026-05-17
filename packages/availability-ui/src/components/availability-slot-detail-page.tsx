@@ -283,22 +283,22 @@ export function AvailabilitySlotDetailPage({
       <Tabs defaultValue="allocation">
         <TabsList className="flex h-auto w-fit flex-wrap justify-start">
           <TabsTrigger value="allocation">{detailMessages.tabs.allocation}</TabsTrigger>
-          <TabsTrigger value="pickup">
-            {detailMessages.tabs.pickup}
-            {pickupRows.length > 0 ? (
+          {pickupRows.length > 0 ? (
+            <TabsTrigger value="pickup">
+              {detailMessages.tabs.pickup}
               <Badge variant="outline" className="ml-1.5">
                 {pickupRows.length}
               </Badge>
-            ) : null}
-          </TabsTrigger>
-          <TabsTrigger value="closeouts">
-            {detailMessages.tabs.closeouts}
-            {closeoutRows.length > 0 ? (
+            </TabsTrigger>
+          ) : null}
+          {closeoutRows.length > 0 ? (
+            <TabsTrigger value="closeouts">
+              {detailMessages.tabs.closeouts}
               <Badge variant="outline" className="ml-1.5">
                 {closeoutRows.length}
               </Badge>
-            ) : null}
-          </TabsTrigger>
+            </TabsTrigger>
+          ) : null}
           <TabsTrigger value="activity">
             {detailMessages.tabs.activity}
             {auditEntries.length > 0 ? (
@@ -320,12 +320,8 @@ export function AvailabilitySlotDetailPage({
           )}
         </TabsContent>
 
-        <TabsContent value="pickup" className="mt-4">
-          {pickupRows.length === 0 ? (
-            <p className="rounded-md border border-dashed p-6 text-sm text-muted-foreground">
-              {detailMessages.slot.pickupCapacityEmpty}
-            </p>
-          ) : (
+        {pickupRows.length > 0 ? (
+          <TabsContent value="pickup" className="mt-4">
             <div className="flex flex-col gap-3 text-sm">
               {pickupRows.map((pickup) => {
                 const point = pickupPointById.get(pickup.pickupPointId)
@@ -346,15 +342,11 @@ export function AvailabilitySlotDetailPage({
                 )
               })}
             </div>
-          )}
-        </TabsContent>
+          </TabsContent>
+        ) : null}
 
-        <TabsContent value="closeouts" className="mt-4">
-          {closeoutRows.length === 0 ? (
-            <p className="rounded-md border border-dashed p-6 text-sm text-muted-foreground">
-              {detailMessages.slot.relatedCloseoutsEmpty}
-            </p>
-          ) : (
+        {closeoutRows.length > 0 ? (
+          <TabsContent value="closeouts" className="mt-4">
             <div className="flex flex-col gap-3 text-sm">
               {closeoutRows.map((closeout) => (
                 <div key={closeout.id} className="rounded-md border p-3">
@@ -371,8 +363,8 @@ export function AvailabilitySlotDetailPage({
                 </div>
               ))}
             </div>
-          )}
-        </TabsContent>
+          </TabsContent>
+        ) : null}
 
         <TabsContent value="activity" className="mt-4">
           {auditEntries.length === 0 && assignmentRows.length === 0 ? (

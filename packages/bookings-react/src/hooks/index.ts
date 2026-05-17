@@ -79,6 +79,10 @@ export {
   useBookingStatusByIdMutation,
   useBookingStatusMutation,
 } from "./use-booking-status-mutation.js"
+export {
+  type UseBookingTaxPreviewOptions,
+  useBookingTaxPreview,
+} from "./use-booking-tax-preview.js"
 export { type UseBookingsOptions, useBookings } from "./use-bookings.js"
 export { type UsePricingPreviewOptions, usePricingPreview } from "./use-pricing-preview.js"
 export {

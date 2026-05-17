@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import type { CatalogSearchHit } from "@voyantjs/catalog-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { cn } from "@voyantjs/ui/lib/utils"
+import { Image as ImageIcon } from "lucide-react"
 import type { ReactNode } from "react"
 
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
@@ -36,6 +37,12 @@ export interface CatalogPageProps {
     entityModule: string,
     departure: NonNullable<CatalogDetailEnrichment["departures"]>[number],
   ) => void
+  onBookOption?: (
+    hit: CatalogSearchHit,
+    entityModule: string,
+    departure: NonNullable<CatalogDetailEnrichment["departures"]>[number],
+    option: NonNullable<CatalogDetailEnrichment["options"]>[number],
+  ) => void
   onOpenProductEditor?: (hit: CatalogSearchHit) => void
   onLoadProductDetail?: (hit: CatalogSearchHit) => Promise<CatalogDetailEnrichment | null>
   detailSheetWidth?: CatalogDetailSheetProps["width"]
@@ -44,6 +51,20 @@ export interface CatalogPageProps {
   renderDetailMedia?: CatalogDetailRenderSlot
   renderDetailItineraryDay?: CatalogDetailSheetProps["renderItineraryDay"]
   renderDetailExtraSections?: CatalogDetailRenderSlot
+  /**
+   * Renders the supplier value in the detail sheet's Attributes tab as
+   * a clickable link to the supplier record. Templates wire this with
+   * their router's `Link` component. When omitted, the supplier shows
+   * as plain text (the resolved supplier name via `formatSupplier`).
+   */
+  renderSupplierLink?: CatalogDetailSheetProps["renderSupplierLink"]
+  /**
+   * Inline tags editor for the detail sheet. When set, the Tags row in
+   * the Overview tab becomes editable; the callback persists the next
+   * tag list (e.g. a product PATCH). Owned products only on the
+   * operator side — sourced rows pass through without an editor.
+   */
+  onTagsChange?: CatalogDetailSheetProps["onTagsChange"]
   title?: ReactNode
   className?: string
 }
@@ -56,6 +77,7 @@ export function CatalogPage({
   formatSupplier = (id) => String(id),
   onBookHit,
   onBookDeparture,
+  onBookOption,
   onOpenProductEditor,
   onLoadProductDetail,
   detailSheetWidth,
@@ -64,6 +86,8 @@ export function CatalogPage({
   renderDetailMedia,
   renderDetailItineraryDay,
   renderDetailExtraSections,
+  renderSupplierLink,
+  onTagsChange,
   title,
   className,
 }: CatalogPageProps) {
@@ -100,6 +124,12 @@ export function CatalogPage({
               {
                 label: messages.actions.openEditor,
                 onClick: onOpenProductEditor,
+                visible: (hit: CatalogSearchHit) => {
+                  const kind = stringField(hit, "source.kind", null)
+                  // Owned products are the only ones that have an editor —
+                  // sourced rows are read-only mirrors of the upstream.
+                  return kind === "owned" || kind == null
+                },
               },
             ]
           : []),
@@ -107,6 +137,9 @@ export function CatalogPage({
       onLoadDetail: onLoadProductDetail,
       onBookDeparture: onBookDeparture
         ? (hit, departure) => onBookDeparture(hit, "products", departure)
+        : undefined,
+      onBookOption: onBookOption
+        ? (hit, departure, option) => onBookOption(hit, "products", departure, option)
         : undefined,
     },
     {
@@ -173,6 +206,8 @@ export function CatalogPage({
         renderDetailMedia={renderDetailMedia}
         renderDetailItineraryDay={renderDetailItineraryDay}
         renderDetailExtraSections={renderDetailExtraSections}
+        renderSupplierLink={renderSupplierLink}
+        onTagsChange={onTagsChange}
         title={
           title ?? (
             <div>
@@ -194,13 +229,14 @@ function makeProductColumns(
   messages: CatalogPageMessages,
 ): ColumnDef<CatalogSearchHit, unknown>[] {
   return [
-    thumbnailColumn(),
     nameColumn(messages.fallbacks.productName, messages),
     statusColumn(messages),
     sourceColumn(messages),
     lookupColumn("supplierId", messages.columns.supplier, formatSupplier, messages),
-    textColumn("bookingMode", messages.columns.bookingMode, messages),
-    textColumn("pax", messages.columns.pax, messages),
+    bookingModeColumn(messages),
+    daysColumn(messages),
+    nightsColumn(messages),
+    availableDeparturesColumn(messages),
     priceColumn("sellAmountCents", "sellCurrency", messages.columns.price, messages),
   ]
 }
@@ -210,7 +246,6 @@ function makeExtraColumns(
   messages: CatalogPageMessages,
 ): ColumnDef<CatalogSearchHit, unknown>[] {
   return [
-    thumbnailColumn(),
     nameColumn(messages.fallbacks.extraName, messages),
     activeColumn(messages),
     sourceColumn(messages),
@@ -226,8 +261,7 @@ function makeCruiseColumns(
   messages: CatalogPageMessages,
 ): ColumnDef<CatalogSearchHit, unknown>[] {
   return [
-    thumbnailColumn("heroImageUrl"),
-    nameColumn(messages.fallbacks.cruiseName, messages),
+    nameColumn(messages.fallbacks.cruiseName, messages, "heroImageUrl"),
     statusColumn(messages),
     sourceColumn(messages),
     textColumn("cruiseType", messages.columns.type, messages),
@@ -241,8 +275,7 @@ function makeCharterColumns(
   messages: CatalogPageMessages,
 ): ColumnDef<CatalogSearchHit, unknown>[] {
   return [
-    thumbnailColumn("heroImageUrl"),
-    nameColumn(messages.fallbacks.charterName, messages),
+    nameColumn(messages.fallbacks.charterName, messages, "heroImageUrl"),
     statusColumn(messages),
     sourceColumn(messages),
     lookupColumn("lineSupplierId", messages.columns.supplier, formatSupplier, messages),
@@ -261,7 +294,6 @@ function makeHospitalityColumns(
   messages: CatalogPageMessages,
 ): ColumnDef<CatalogSearchHit, unknown>[] {
   return [
-    thumbnailColumn(),
     nameColumn(messages.fallbacks.roomName, messages),
     activeColumn(messages),
     sourceColumn(messages),
@@ -446,23 +478,19 @@ function makeHospitalityFilters(
   ]
 }
 
-function thumbnailColumn(urlField = "thumbnailUrl"): ColumnDef<CatalogSearchHit, unknown> {
-  return {
-    id: "thumbnail",
-    header: "",
-    cell: ({ row }) => <CatalogThumbnail hit={row.original} urlField={urlField} />,
-  }
-}
-
 function nameColumn(
   fallback: string,
   messages: CatalogPageMessages,
+  urlField = "thumbnailUrl",
 ): ColumnDef<CatalogSearchHit, unknown> {
   return {
     id: "name",
     header: messages.columns.name,
     cell: ({ row }) => (
-      <span className="font-medium">{stringField(row.original, "name", fallback)}</span>
+      <div className="flex items-center gap-3">
+        <CatalogThumbnail hit={row.original} urlField={urlField} />
+        <span className="font-medium">{stringField(row.original, "name", fallback)}</span>
+      </div>
     ),
   }
 }
@@ -513,6 +541,63 @@ function textColumn(
         {stringField(row.original, field, messages.values.empty)}
       </span>
     ),
+  }
+}
+
+function bookingModeColumn(messages: CatalogPageMessages): ColumnDef<CatalogSearchHit, unknown> {
+  return {
+    id: "bookingMode",
+    header: messages.columns.bookingMode,
+    cell: ({ row }) => {
+      const mode = stringField(row.original, "bookingMode", null)
+      if (!mode) return <span className="text-muted-foreground">{messages.values.empty}</span>
+      return (
+        <Badge variant="outline" className="capitalize">
+          {mode}
+        </Badge>
+      )
+    },
+  }
+}
+
+function daysColumn(messages: CatalogPageMessages): ColumnDef<CatalogSearchHit, unknown> {
+  return {
+    id: "durationDays",
+    header: messages.columns.days,
+    cell: ({ row }) => {
+      const days = numberField(row.original, "durationDays")
+      if (days == null)
+        return <span className="text-muted-foreground">{messages.values.empty}</span>
+      return <span className="tabular-nums">{days}</span>
+    },
+  }
+}
+
+function nightsColumn(messages: CatalogPageMessages): ColumnDef<CatalogSearchHit, unknown> {
+  return {
+    id: "nights",
+    header: messages.columns.nights,
+    cell: ({ row }) => {
+      const days = numberField(row.original, "durationDays")
+      if (days == null || days < 1)
+        return <span className="text-muted-foreground">{messages.values.empty}</span>
+      return <span className="tabular-nums">{Math.max(0, days - 1)}</span>
+    },
+  }
+}
+
+function availableDeparturesColumn(
+  messages: CatalogPageMessages,
+): ColumnDef<CatalogSearchHit, unknown> {
+  return {
+    id: "availableDeparturesCount",
+    header: messages.columns.availableDepartures,
+    cell: ({ row }) => {
+      const count = numberField(row.original, "availableDeparturesCount")
+      if (count == null)
+        return <span className="text-muted-foreground">{messages.values.empty}</span>
+      return <span className="tabular-nums">{count}</span>
+    },
   }
 }
 
@@ -595,13 +680,6 @@ function priceColumn(
 function CatalogThumbnail({ hit, urlField }: { hit: CatalogSearchHit; urlField: string }) {
   const url = stringField(hit, urlField, null)
   const name = stringField(hit, "name", "")
-  const initials =
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((w) => w[0]?.toUpperCase() ?? "")
-      .join("") || "?"
 
   if (url) {
     return (
@@ -616,30 +694,12 @@ function CatalogThumbnail({ hit, urlField }: { hit: CatalogSearchHit; urlField: 
 
   return (
     <div
-      className={cn(
-        "flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[11px] font-medium text-white",
-        thumbnailGradient(hit.id),
-      )}
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
       aria-hidden="true"
     >
-      {initials}
+      <ImageIcon className="h-4 w-4" />
     </div>
   )
-}
-
-const GRADIENTS = [
-  "bg-gradient-to-br from-rose-500 to-orange-500",
-  "bg-gradient-to-br from-amber-500 to-yellow-600",
-  "bg-gradient-to-br from-emerald-500 to-teal-600",
-  "bg-gradient-to-br from-sky-500 to-indigo-600",
-  "bg-gradient-to-br from-violet-500 to-purple-600",
-  "bg-gradient-to-br from-fuchsia-500 to-pink-600",
-] as const
-
-function thumbnailGradient(seed: string): string {
-  let hash = 0
-  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0
-  return GRADIENTS[Math.abs(hash) % GRADIENTS.length] as string
 }
 
 function stringField<T>(hit: CatalogSearchHit, key: string, fallback: T): string | T {

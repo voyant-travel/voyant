@@ -1,12 +1,20 @@
 "use client"
 
+import { useBooking } from "@voyantjs/bookings-react"
 import {
   type BookingPaymentScheduleRecord,
   useBookingPaymentScheduleMutation,
   useBookingPaymentSchedules,
+  useInvoiceMutation,
 } from "@voyantjs/finance-react"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
-import { CalendarClock, Pencil, Plus, Trash2 } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@voyantjs/ui/components/dropdown-menu"
+import { CalendarClock, FileText, Loader2, Pencil, Plus, Receipt, Trash2 } from "lucide-react"
 import * as React from "react"
 
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
@@ -28,12 +36,41 @@ export interface BookingPaymentScheduleListProps {
 export function BookingPaymentScheduleList({ bookingId }: BookingPaymentScheduleListProps) {
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<BookingPaymentScheduleRecord | undefined>(undefined)
+  const [generatingInvoiceForId, setGeneratingInvoiceForId] = React.useState<string | null>(null)
   const { data } = useBookingPaymentSchedules(bookingId)
   const { remove } = useBookingPaymentScheduleMutation(bookingId)
+  const { data: bookingData } = useBooking(bookingId)
+  const booking = bookingData?.data ?? null
+  const { createFromBooking: createInvoiceFromBooking, render: renderInvoice } =
+    useInvoiceMutation()
   const { formatCurrency } = useBookingsUiI18nOrDefault()
   const messages = useBookingsUiMessagesOrDefault()
 
   const schedules = data?.data ?? []
+
+  const handleGenerateInvoice = async (
+    schedule: BookingPaymentScheduleRecord,
+    invoiceType: "invoice" | "proforma",
+  ) => {
+    if (!booking) return
+    setGeneratingInvoiceForId(schedule.id)
+    try {
+      const todayIso = new Date().toISOString().slice(0, 10)
+      const dueIso = schedule.dueDate || todayIso
+      const prefix = invoiceType === "proforma" ? "PRO" : "INV"
+      const invoice = await createInvoiceFromBooking.mutateAsync({
+        bookingId: booking.id,
+        invoiceNumber: `${prefix}-${booking.bookingNumber}-${schedule.scheduleType.toUpperCase().slice(0, 3)}`,
+        issueDate: todayIso,
+        dueDate: dueIso,
+        notes: schedule.notes ?? null,
+        invoiceType,
+      })
+      await renderInvoice.mutateAsync({ id: invoice.id, input: { format: "pdf" } })
+    } finally {
+      setGeneratingInvoiceForId(null)
+    }
+  }
 
   return (
     <Card data-slot="booking-payment-schedule-list">
@@ -102,6 +139,38 @@ export function BookingPaymentScheduleList({ bookingId }: BookingPaymentSchedule
                     </td>
                     <td className="p-2">
                       <div className="flex items-center gap-1">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            disabled={!booking || generatingInvoiceForId === schedule.id}
+                            title={messages.bookingPaymentScheduleList.actions.issueDocument}
+                            render={
+                              <button
+                                type="button"
+                                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
+                              >
+                                {generatingInvoiceForId === schedule.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Receipt className="h-3.5 w-3.5" />
+                                )}
+                              </button>
+                            }
+                          />
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => void handleGenerateInvoice(schedule, "invoice")}
+                            >
+                              <FileText className="h-4 w-4" />
+                              {messages.bookingPaymentScheduleList.actions.issueInvoice}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => void handleGenerateInvoice(schedule, "proforma")}
+                            >
+                              <FileText className="h-4 w-4" />
+                              {messages.bookingPaymentScheduleList.actions.issueProforma}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                         <button
                           type="button"
                           onClick={() => {

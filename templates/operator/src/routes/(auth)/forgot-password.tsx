@@ -1,20 +1,7 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router"
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
 import { formatMessage } from "@voyantjs/admin"
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  Input,
-  Label,
-} from "@voyantjs/ui/components"
-import { Loader2 } from "lucide-react"
-import { useState } from "react"
+import { ForgotPasswordPage, type ForgotPasswordPageMessages } from "@voyantjs/auth-ui"
 import { useAdminMessages } from "@/lib/admin-i18n"
-import { authClient } from "@/lib/auth"
 import { cloudAuthStartHref, getBootstrapStatus, getCurrentUser } from "@/lib/current-user"
 
 export const Route = createFileRoute("/(auth)/forgot-password")({
@@ -31,94 +18,34 @@ export const Route = createFileRoute("/(auth)/forgot-password")({
 
     return null
   },
-  component: ForgotPasswordPage,
+  component: ForgotPasswordRoute,
 })
 
-function ForgotPasswordPage() {
-  const messages = useAdminMessages().auth.forgotPassword
-  const [email, setEmail] = useState("")
-  const [sent, setSent] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+function ForgotPasswordRoute() {
+  const navigate = useNavigate()
+  const adminMessages = useAdminMessages().auth.forgotPassword
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
-
-    try {
-      const result = await authClient.requestPasswordReset({
-        email,
-        redirectTo: "/reset-password",
-      })
-
-      if (result.error) {
-        setError(result.error.message || messages.couldNotSendResetEmail)
-        setLoading(false)
-        return
-      }
-
-      setSent(true)
-    } catch {
-      setError(messages.somethingWentWrong)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (sent) {
-    return (
-      <Card className="text-center">
-        <CardHeader>
-          <CardTitle>{messages.checkEmailTitle}</CardTitle>
-          <CardDescription>
-            {formatMessage(messages.checkEmailDescription, { email })}
-          </CardDescription>
-        </CardHeader>
-        <CardFooter className="justify-center">
-          <Link to="/sign-in" className="text-sm text-primary hover:underline">
-            {messages.backToSignIn}
-          </Link>
-        </CardFooter>
-      </Card>
-    )
+  const messages: Partial<ForgotPasswordPageMessages> = {
+    title: adminMessages.title,
+    description: adminMessages.description,
+    emailLabel: adminMessages.emailLabel,
+    emailPlaceholder: adminMessages.emailPlaceholder,
+    submit: adminMessages.submit,
+    submitting: adminMessages.submit,
+    somethingWentWrong: adminMessages.somethingWentWrong,
+    successTitle: adminMessages.checkEmailTitle,
+    successDescription: (email) => formatMessage(adminMessages.checkEmailDescription, { email }),
+    backToSignIn: adminMessages.backToSignIn,
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{messages.title}</CardTitle>
-        <CardDescription>{messages.description}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="email">{messages.emailLabel}</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder={messages.emailPlaceholder}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              autoFocus
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {messages.submit}
-          </Button>
-        </form>
-      </CardContent>
-      <CardFooter className="justify-center">
-        <Link to="/sign-in" className="text-sm text-muted-foreground hover:underline">
-          {messages.backToSignIn}
-        </Link>
-      </CardFooter>
-    </Card>
+    <ForgotPasswordPage
+      redirectTo="/reset-password"
+      messages={messages}
+      onNavigateToSignIn={() => {
+        void navigate({ to: "/sign-in" })
+      }}
+      signInHref="/sign-in"
+    />
   )
 }

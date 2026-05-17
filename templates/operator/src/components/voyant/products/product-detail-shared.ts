@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query"
 import type { ProductRecord } from "@voyantjs/products-react"
 import type { AdminMessages } from "@/lib/admin-i18n"
 
-import { ApiError, api } from "@/lib/api-client"
+import { api } from "@/lib/api-client"
 import type { DepartureSlot } from "./product-departure-dialog"
 import type { AvailabilityRule } from "./product-schedule-dialog"
 
@@ -286,6 +286,7 @@ export interface ProductSourcedContentResponse {
         title?: string | null
         description?: string | null
         location?: string | null
+        hero_image_url?: string | null
       }>
       media: Array<{ url: string; type: string; caption?: string | null }>
       policies: Array<{ kind: string; body: string }>
@@ -308,29 +309,4 @@ export interface ProductSourcedContentResponse {
     synthesized: boolean
     machine_translated: boolean
   }
-}
-
-export function getProductSourcedContentQueryOptions(productId: string) {
-  return queryOptions({
-    queryKey: ["products", productId, "sourced-content"] as const,
-    queryFn: async (): Promise<ProductSourcedContentResponse | null> => {
-      try {
-        return await api.get<ProductSourcedContentResponse>(
-          `/v1/admin/products/${productId}/content`,
-        )
-      } catch (err) {
-        // 404 → owned product (no sourced-entry row). Return null so
-        // the UI can branch cleanly. 503 → registry not configured —
-        // also null. Other errors propagate so the user sees them.
-        if (err instanceof ApiError && (err.status === 404 || err.status === 503)) {
-          return null
-        }
-        throw err
-      }
-    },
-    // Sourced content is loosely cached at the wizard level — the
-    // backend's SWR machinery handles freshness. 60s stale time keeps
-    // the badge stable across tab switches.
-    staleTime: 60_000,
-  })
 }

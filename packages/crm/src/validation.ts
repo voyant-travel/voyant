@@ -120,7 +120,7 @@ export const personCoreSchema = z.object({
   source: z.string().nullable().optional(),
   sourceRef: z.string().nullable().optional(),
   tags: z.array(z.string()).default([]),
-  birthday: z.string().date().nullable().optional(),
+  dateOfBirth: z.string().date().nullable().optional(),
   notes: z.string().nullable().optional(),
   // Encrypted PII slots (canonical store; documents live in person_documents).
   // `z.lazy(() => …)` defers cross-package schema dereferencing until

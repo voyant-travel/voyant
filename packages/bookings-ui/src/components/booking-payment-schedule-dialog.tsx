@@ -25,7 +25,7 @@ import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
@@ -70,6 +70,22 @@ export function BookingPaymentScheduleDialog({
   const { create, update } = useBookingPaymentScheduleMutation(bookingId)
   const messages = useBookingsUiMessagesOrDefault()
   const scheduleFormSchema = createScheduleFormSchema(messages)
+  const typeItems = useMemo(
+    () =>
+      scheduleTypes.map((t) => ({
+        value: t,
+        label: messages.paymentScheduleDialog.scheduleTypeLabels[t],
+      })),
+    [messages.paymentScheduleDialog.scheduleTypeLabels],
+  )
+  const statusItems = useMemo(
+    () =>
+      scheduleStatuses.map((s) => ({
+        value: s,
+        label: messages.paymentScheduleDialog.scheduleStatusLabels[s],
+      })),
+    [messages.paymentScheduleDialog.scheduleStatusLabels],
+  )
 
   const form = useForm<ScheduleFormValues, unknown, ScheduleFormOutput>({
     resolver: zodResolver(scheduleFormSchema),
@@ -139,10 +155,7 @@ export function BookingPaymentScheduleDialog({
               <div className="flex flex-col gap-2">
                 <Label>{messages.paymentScheduleDialog.fields.type}</Label>
                 <Select
-                  items={scheduleTypes.map((t) => ({
-                    label: messages.paymentScheduleDialog.scheduleTypeLabels[t],
-                    value: t,
-                  }))}
+                  items={typeItems}
                   value={form.watch("scheduleType")}
                   onValueChange={(v) =>
                     form.setValue(
@@ -166,10 +179,7 @@ export function BookingPaymentScheduleDialog({
               <div className="flex flex-col gap-2">
                 <Label>{messages.paymentScheduleDialog.fields.status}</Label>
                 <Select
-                  items={scheduleStatuses.map((s) => ({
-                    label: messages.paymentScheduleDialog.scheduleStatusLabels[s],
-                    value: s,
-                  }))}
+                  items={statusItems}
                   value={form.watch("status")}
                   onValueChange={(v) =>
                     form.setValue("status", (v ?? "pending") as (typeof scheduleStatuses)[number])

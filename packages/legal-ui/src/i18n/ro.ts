@@ -94,6 +94,8 @@ export const legalUiRo = {
     empty: "Nu exista contracte.",
     loadFailed: "Contractele nu au putut fi incarcate.",
     filters: {
+      button: "Filtre",
+      clear: "Sterge filtrele",
       scope: "Domeniu",
       status: "Status",
       person: "Persoana",
@@ -184,6 +186,11 @@ export const legalUiRo = {
     allKinds: "Toate tipurile",
     empty: "Nu exista politici.",
     loadFailed: "Politicile nu au putut fi incarcate.",
+    filters: {
+      button: "Filtre",
+      clear: "Sterge filtrele",
+      kind: "Tip",
+    },
     columns: {
       name: "Nume",
       slug: "Slug",
@@ -266,10 +273,16 @@ export const legalUiRo = {
     versions: "Versiuni",
     noVersions: "Nu exista inca versiuni.",
     filters: {
+      button: "Filtre",
+      clear: "Sterge filtrele",
       scope: "Domeniu",
       allScopes: "Toate domeniile",
     },
     columns: {
+      name: "Nume",
+      scope: "Domeniu",
+      status: "Status",
+      created: "Creat",
       version: "Versiune",
       changelog: "Jurnal modificari",
       createdBy: "Creat de",

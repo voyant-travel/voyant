@@ -38,6 +38,7 @@ import {
   Switch,
   Textarea,
 } from "@voyantjs/ui/components"
+import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
 import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { DateTimePicker } from "@voyantjs/ui/components/date-time-picker"
 import { useEffect, useState } from "react"
@@ -356,12 +357,10 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
                 </div>
                 <div className="grid gap-1.5">
                   <Label htmlFor="promotion-currency">{dialogMessages.fields.currency}</Label>
-                  <Input
-                    id="promotion-currency"
-                    value={state.currency}
-                    onChange={(e) => setField("currency", e.target.value)}
+                  <CurrencyCombobox
+                    value={state.currency || null}
+                    onChange={(next) => setField("currency", next ?? "")}
                     placeholder={dialogMessages.placeholders.currency}
-                    maxLength={3}
                   />
                 </div>
               </>

@@ -773,6 +773,38 @@ export const financeRoutes = new Hono<Env>()
     return c.json({ data: row }, 201)
   })
 
+  // POST /invoices/:id/convert-to-invoice — Convert a proforma into a final invoice
+  .post("/invoices/:id/convert-to-invoice", async (c) => {
+    const { convertProformaToInvoice } = await import("./service-issue.js")
+    const input = await c.req
+      .json<{ invoiceNumber?: string; issueDate?: string; dueDate?: string }>()
+      .catch(() => ({}))
+
+    const runtime = (() => {
+      try {
+        return c.var.container?.resolve<FinanceRouteRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
+      } catch {
+        return undefined
+      }
+    })()
+
+    const result = await convertProformaToInvoice(c.get("db"), c.req.param("id"), input, {
+      eventBus: runtime?.eventBus,
+    })
+
+    if (result.status === "not_found") {
+      return c.json({ error: "Invoice not found" }, 404)
+    }
+    if (result.status === "not_proforma") {
+      return c.json({ error: "Only proforma invoices can be converted" }, 409)
+    }
+    if (result.status === "already_converted") {
+      return c.json({ error: "This proforma has already been converted" }, 409)
+    }
+
+    return c.json({ data: result.invoice }, 201)
+  })
+
   // GET /invoices/:id — Get single invoice
   .get("/invoices/:id", async (c) => {
     const row = await financeService.getInvoiceById(c.get("db"), c.req.param("id"))

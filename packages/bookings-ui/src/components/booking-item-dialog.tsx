@@ -23,7 +23,7 @@ import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
@@ -84,6 +84,22 @@ export function BookingItemDialog({
   const { create, update } = useBookingItemMutation(bookingId)
   const messages = useBookingsUiMessagesOrDefault()
   const bookingItemFormSchema = createBookingItemFormSchema(messages)
+  const typeItems = useMemo(
+    () =>
+      itemTypes.map((t) => ({
+        value: t,
+        label: messages.bookingItemDialog.itemTypeLabels[t],
+      })),
+    [messages.bookingItemDialog.itemTypeLabels],
+  )
+  const statusItems = useMemo(
+    () =>
+      itemStatuses.map((s) => ({
+        value: s,
+        label: messages.bookingItemDialog.itemStatusLabels[s],
+      })),
+    [messages.bookingItemDialog.itemStatusLabels],
+  )
 
   const form = useForm<BookingItemFormValues, unknown, BookingItemFormOutput>({
     resolver: zodResolver(bookingItemFormSchema),
@@ -104,6 +120,13 @@ export function BookingItemDialog({
     },
   })
 
+  // `form` is intentionally omitted from deps — react-hook-form returns
+  // a fresh wrapper object on every render even though the underlying
+  // state lives in a ref. Including `form` here would re-run the effect
+  // on every render and re-trigger reset → re-render → loop. The methods
+  // we call (`reset`) are safe to call from a stale closure since they
+  // dispatch into the form's internal store.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: see comment above
   useEffect(() => {
     if (open && item) {
       form.reset({
@@ -124,7 +147,7 @@ export function BookingItemDialog({
     } else if (open) {
       form.reset()
     }
-  }, [form, open, item])
+  }, [open, item])
 
   const onSubmit = async (values: BookingItemFormOutput) => {
     const payload = {
@@ -185,10 +208,7 @@ export function BookingItemDialog({
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingItemDialog.fields.type}</Label>
                 <Select
-                  items={itemTypes.map((t) => ({
-                    label: messages.bookingItemDialog.itemTypeLabels[t],
-                    value: t,
-                  }))}
+                  items={typeItems}
                   value={form.watch("itemType")}
                   onValueChange={(v) => form.setValue("itemType", v as (typeof itemTypes)[number])}
                 >
@@ -207,10 +227,7 @@ export function BookingItemDialog({
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingItemDialog.fields.status}</Label>
                 <Select
-                  items={itemStatuses.map((s) => ({
-                    label: messages.bookingItemDialog.itemStatusLabels[s],
-                    value: s,
-                  }))}
+                  items={statusItems}
                   value={form.watch("status")}
                   onValueChange={(v) => form.setValue("status", v as (typeof itemStatuses)[number])}
                 >

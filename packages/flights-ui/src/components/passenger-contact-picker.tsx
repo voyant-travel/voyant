@@ -82,7 +82,7 @@ export function PassengerContactPicker({
                         email: person.email ?? undefined,
                         phone: person.phone ?? undefined,
                         ...(person.gender ? { gender: person.gender } : {}),
-                        ...(person.birthday ? { dateOfBirth: person.birthday } : {}),
+                        ...(person.dateOfBirth ? { dateOfBirth: person.dateOfBirth } : {}),
                       })
                       onPersonSelected?.(person.id)
                       setOpen(false)

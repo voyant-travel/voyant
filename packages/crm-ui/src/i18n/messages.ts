@@ -24,6 +24,7 @@ export type CrmQuoteStatus = (typeof crmQuoteStatuses)[number]
 export type CrmUiMessages = {
   common: {
     cancel: string
+    done: string
     saveChanges: string
     create: string
     saving: string
@@ -79,6 +80,67 @@ export type CrmUiMessages = {
       jobTitle: string
       email: string
       phone: string
+      dateOfBirth: string
+      addressLine1: string
+      addressLine2: string
+      addressCity: string
+      addressRegion: string
+      addressPostalCode: string
+      addressCountry: string
+    }
+    sections: {
+      identity: string
+      contact: string
+      address: string
+      addresses: string
+      relationships: string
+      documents: string
+    }
+    relationships: {
+      empty: string
+      add: string
+      personLabel: string
+      personPlaceholder: string
+      personEmpty: string
+      kindLabel: string
+      primaryToggle: string
+      notesLabel: string
+      remove: string
+      saveFailed: string
+    }
+    addresses: {
+      empty: string
+      add: string
+      edit: string
+      remove: string
+      saving: string
+      saveFailed: string
+      noValue: string
+      primaryToggle: string
+      typeLabel: string
+      typePrimary: string
+      typeBilling: string
+      typeShipping: string
+      typeMailing: string
+      typeMeeting: string
+      typeService: string
+      typeLegal: string
+      typeOther: string
+      notesLabel: string
+      dialogAddTitle: string
+      dialogAddDescription: string
+      dialogEditTitle: string
+      dialogEditDescription: string
+    }
+    documents: {
+      empty: string
+      add: string
+      type: string
+      number: string
+      issuingCountry: string
+      expiryDate: string
+      save: string
+      remove: string
     }
     actions: {
       create: string
@@ -324,7 +386,7 @@ export type CrmUiMessages = {
         status: string
         preferredCurrency: string
         preferredLanguage: string
-        birthday: string
+        dateOfBirth: string
         source: string
       }
     }
@@ -349,7 +411,6 @@ export type CrmUiMessages = {
       created: string
       updated: string
       organization: string
-      birthday: string
       notes: string
       travelProfile: string
       dateOfBirth: string

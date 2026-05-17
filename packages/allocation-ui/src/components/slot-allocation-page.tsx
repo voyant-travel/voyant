@@ -10,35 +10,34 @@ import {
   useAssignTravelerAllocationMutation,
   useProductResourceTemplates,
   useSlotAllocation,
-  useSlotAllocationAuditLog,
   useVoyantAvailabilityContext,
 } from "@voyantjs/availability-react"
 import {
   Badge,
   Button,
   cn,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Tabs,
   TabsList,
   TabsTrigger,
 } from "@voyantjs/ui/components"
-import {
-  AlertTriangle,
-  Armchair,
-  ArrowLeft,
-  Bed,
-  Download,
-  Plus,
-  Sparkles,
-  Users,
-  Wand2,
-} from "lucide-react"
+import { AlertTriangle, Armchair, ArrowLeft, Bed, Plus, Sparkles, Users, Wand2 } from "lucide-react"
 import { type FormEvent, type ReactNode, useMemo, useState } from "react"
 
 import { useAllocationUiMessagesOrDefault } from "../i18n/index.js"
 import {
-  buildValidationIssues,
   collectOccupants,
   defaultCapacityFor,
   kindLabel,
@@ -51,7 +50,6 @@ import {
 } from "./slot-allocation-model.js"
 import { ResourceColumnsView } from "./slot-allocation-resource-view.js"
 import { VehicleSeatsView } from "./slot-allocation-seat-view.js"
-import { AuditLogCard, ValidationSummary } from "./slot-allocation-shared.js"
 
 export interface SlotAllocationPageRenderContext {
   slotId: string
@@ -106,7 +104,6 @@ export function SlotAllocationPage({
   const allocation = useSlotAllocation({ slotId })
   const slotRowQuery = useQuery(getSlotQueryOptions(availabilityClient, slotId))
   const slotRow = slotRowQuery.data?.data
-  const auditLog = useSlotAllocationAuditLog({ slotId })
   const resourceMutation = useAllocationResourceMutation(slotId)
   const assignMutation = useAssignTravelerAllocationMutation(slotId)
   const automationMutation = useAllocationAutomationMutation(slotId)
@@ -114,6 +111,7 @@ export function SlotAllocationPage({
   const [addingResource, setAddingResource] = useState(false)
   const [resourceLabel, setResourceLabel] = useState("")
   const [resourceCapacity, setResourceCapacity] = useState(2)
+  const [resourceOptionId, setResourceOptionId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const data = allocation.data?.data
@@ -147,6 +145,16 @@ export function SlotAllocationPage({
     return kinds
   }, [data?.resources, templates.data?.data])
 
+  // option_id → option name, used by ResourceColumnsView to badge each
+  // resource row with the option it's tied to (Standard double, etc.).
+  const optionNamesById = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const option of templates.data?.data ?? []) {
+      map.set(option.id, option.name)
+    }
+    return map
+  }, [templates.data?.data])
+
   const activeKind = allocationKinds.includes(selectedKind)
     ? selectedKind
     : (allocationKinds[0] ?? ROOM_KIND)
@@ -166,10 +174,6 @@ export function SlotAllocationPage({
   const occupants = useMemo(
     () => collectOccupants(travelers, resources, activeKind),
     [travelers, resources, activeKind],
-  )
-  const validationIssues = useMemo(
-    () => buildValidationIssues({ travelers, resources, occupants, kind: activeKind, messages }),
-    [travelers, resources, occupants, activeKind, messages],
   )
   const capacitySummary = useMemo<ResourceCapacitySummary>(
     () =>
@@ -217,12 +221,6 @@ export function SlotAllocationPage({
     slotRow?.unlimited,
   ])
 
-  function downloadExport(kind: "passengers" | "rooming-list") {
-    globalThis.location.assign(
-      `/v1/admin/availability/slots/${encodeURIComponent(slotId)}/allocation/export-${kind}`,
-    )
-  }
-
   async function assignTraveler(travelerId: string, resourceId: string | null) {
     setError(null)
     try {
@@ -240,9 +238,12 @@ export function SlotAllocationPage({
         kind: activeKind,
         label: resourceLabel.trim() || null,
         capacity: resourceCapacity,
+        refType: resourceOptionId ? "option" : null,
+        refId: resourceOptionId,
       })
       setResourceLabel("")
       setResourceCapacity(defaultCapacityFor(activeKind))
+      setResourceOptionId(null)
       setAddingResource(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : messages.createResourceFailed)
@@ -316,14 +317,6 @@ export function SlotAllocationPage({
 
   const summaryLine = (
     <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-      <span>
-        {data.summary.travelerCount} {messages.travelers}
-      </span>
-      {selectedExtraTab ? null : (
-        <span>
-          {resources.length} {kindLabel(activeKind, messages).toLowerCase()}
-        </span>
-      )}
       {selectedExtraTab ? null : (
         <CapacitySummaryBadges summary={capacitySummary} messages={messages} kind={activeKind} />
       )}
@@ -333,14 +326,6 @@ export function SlotAllocationPage({
   const actionsCluster = (
     <div className="flex flex-wrap items-center gap-2">
       {selectedExtraTab ? null : renderExtraActions?.({ slotId, kind: activeKind })}
-      <Button variant="outline" onClick={() => downloadExport("passengers")}>
-        <Download data-icon="inline-start" aria-hidden="true" />
-        {messages.exportPassengers}
-      </Button>
-      <Button variant="outline" onClick={() => downloadExport("rooming-list")}>
-        <Download data-icon="inline-start" aria-hidden="true" />
-        {messages.exportRooming}
-      </Button>
       {selectedExtraTab ? null : resources.length === 0 ? (
         <Button
           variant="outline"
@@ -368,8 +353,11 @@ export function SlotAllocationPage({
         <Button
           variant="outline"
           onClick={() => {
+            setResourceLabel("")
             setResourceCapacity(defaultCapacityFor(activeKind))
-            setAddingResource((value) => !value)
+            setResourceOptionId(null)
+            setError(null)
+            setAddingResource(true)
           }}
         >
           <Plus data-icon="inline-start" aria-hidden="true" />
@@ -439,69 +427,106 @@ export function SlotAllocationPage({
             </div>
           ) : null}
 
-          {addingResource && canManuallyAddResource ? (
-            <div className="flex flex-col gap-2">
-              <form
-                className="grid gap-3 rounded-md border bg-muted/30 p-3 sm:grid-cols-[1fr_8rem_auto_auto]"
-                onSubmit={createResource}
-              >
-                <div className="grid gap-1">
-                  <Label htmlFor="allocation-resource-label">{messages.resourceLabel}</Label>
-                  <Input
-                    id="allocation-resource-label"
-                    value={resourceLabel}
-                    onChange={(event) => setResourceLabel(event.target.value)}
-                    placeholder={activeKind === ROOM_KIND ? "102" : kindLabel(activeKind, messages)}
-                  />
-                </div>
-                <div className="grid gap-1">
-                  <Label htmlFor="allocation-resource-capacity">{messages.resourceCapacity}</Label>
-                  <Input
-                    id="allocation-resource-capacity"
-                    type="number"
-                    min={1}
-                    value={resourceCapacity}
-                    onChange={(event) => setResourceCapacity(Number(event.target.value) || 1)}
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="self-end"
-                  disabled={resourceMutation.create.isPending}
-                >
-                  {messages.createResource}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="self-end"
-                  onClick={() => setAddingResource(false)}
-                >
-                  {messages.cancel}
-                </Button>
-              </form>
-              {projectedSummary?.status === "over" && projectedSummary.delta != null ? (
-                <div
-                  className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100"
-                  role="status"
-                >
-                  <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                  {/* i18n-literal-ok numeric interpolation only */}
-                  <span>
-                    {messages.overCapacityWarning} {projectedSummary.resourceCapacity}/
-                    {projectedSummary.slotPax ?? "—"} ({messages.resourceCapacityOver}:{" "}
-                    {projectedSummary.delta})
-                  </span>
-                </div>
-              ) : null}
-            </div>
+          {canManuallyAddResource ? (
+            <Dialog open={addingResource} onOpenChange={setAddingResource}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{messages.addResource}</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={createResource}>
+                  <DialogBody className="grid gap-4">
+                    {(templates.data?.data ?? []).length > 0 ? (
+                      <div className="grid gap-1.5">
+                        <Label htmlFor="allocation-resource-option">
+                          {messages.resourceOption}
+                        </Label>
+                        <Select
+                          value={resourceOptionId ?? "__none__"}
+                          onValueChange={(value) => {
+                            const next = value === "__none__" ? null : value
+                            setResourceOptionId(next)
+                            // Default capacity from the option's matching template
+                            // when one exists. Operators can still override.
+                            if (next) {
+                              const option = (templates.data?.data ?? []).find((o) => o.id === next)
+                              const template = option?.templates.find((t) => t.kind === activeKind)
+                              if (template?.capacity) setResourceCapacity(template.capacity)
+                            }
+                          }}
+                        >
+                          <SelectTrigger id="allocation-resource-option" className="w-full">
+                            <SelectValue placeholder={messages.resourceOptionPlaceholder}>
+                              {(value) =>
+                                value === "__none__"
+                                  ? messages.resourceOptionNone
+                                  : ((templates.data?.data ?? []).find(
+                                      (option) => option.id === value,
+                                    )?.name ?? value)
+                              }
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">{messages.resourceOptionNone}</SelectItem>
+                            {(templates.data?.data ?? []).map((option) => (
+                              <SelectItem key={option.id} value={option.id}>
+                                {option.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : null}
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="allocation-resource-label">{messages.resourceLabel}</Label>
+                      <Input
+                        id="allocation-resource-label"
+                        value={resourceLabel}
+                        onChange={(event) => setResourceLabel(event.target.value)}
+                        placeholder={
+                          activeKind === ROOM_KIND ? "102" : kindLabel(activeKind, messages)
+                        }
+                        autoFocus
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="allocation-resource-capacity">
+                        {messages.resourceCapacity}
+                      </Label>
+                      <Input
+                        id="allocation-resource-capacity"
+                        type="number"
+                        min={1}
+                        value={resourceCapacity}
+                        onChange={(event) => setResourceCapacity(Number(event.target.value) || 1)}
+                      />
+                    </div>
+                    {projectedSummary?.status === "over" && projectedSummary.delta != null ? (
+                      <div
+                        className="flex items-start gap-2 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200"
+                        role="status"
+                      >
+                        <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                        {/* i18n-literal-ok numeric interpolation only */}
+                        <span>
+                          {messages.overCapacityWarning} {projectedSummary.resourceCapacity}/
+                          {projectedSummary.slotPax ?? "—"} ({messages.resourceCapacityOver}:{" "}
+                          {projectedSummary.delta})
+                        </span>
+                      </div>
+                    ) : null}
+                  </DialogBody>
+                  <DialogFooter>
+                    <Button type="button" variant="ghost" onClick={() => setAddingResource(false)}>
+                      {messages.cancel}
+                    </Button>
+                    <Button type="submit" disabled={resourceMutation.create.isPending}>
+                      {messages.createResource}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
           ) : null}
-
-          <ValidationSummary
-            issues={validationIssues}
-            resources={resources}
-            unallocatedCount={occupants.unallocated.length}
-          />
 
           {isSeatMap ? (
             <VehicleSeatsView
@@ -522,6 +547,7 @@ export function SlotAllocationPage({
               travelers={travelers}
               occupants={occupants}
               sharingGroupLabels={data.sharingGroupLabels}
+              optionNamesById={optionNamesById}
               onAssignTraveler={(travelerId, resourceId) =>
                 void assignTraveler(travelerId, resourceId)
               }
@@ -537,8 +563,6 @@ export function SlotAllocationPage({
       )}
 
       {renderAfter?.(context)}
-
-      <AuditLogCard entries={auditLog.data?.data ?? []} />
     </div>
   )
 }
@@ -554,31 +578,15 @@ function CapacitySummaryBadges({
 }) {
   if (summary.resourceCount === 0 && summary.slotPax == null) return null
 
+  // i18n-literal-ok numeric layout with separator
   const slotLabel =
     summary.slotPax == null
       ? messages.slotCapacityUnlimited
-      : `${summary.slotRemainingPax ?? 0}/${summary.slotPax}`
+      : `${summary.slotRemainingPax ?? 0} of ${summary.slotPax}`
   const resourceLabel =
     summary.slotPax == null
       ? String(summary.resourceCapacity)
-      : `${summary.resourceCapacity}/${summary.slotPax}`
-
-  const deltaVariant =
-    summary.status === "over"
-      ? "destructive"
-      : summary.status === "exact"
-        ? "default"
-        : summary.status === "fits"
-          ? "secondary"
-          : "outline"
-  const deltaLabel =
-    summary.status === "over"
-      ? `${messages.resourceCapacityOver}: ${summary.delta ?? 0}`
-      : summary.status === "exact"
-        ? messages.resourceCapacityExact
-        : summary.status === "fits"
-          ? messages.resourceCapacityFits
-          : null
+      : `${summary.resourceCapacity} of ${summary.slotPax}`
 
   return (
     <span className="contents" data-kind={kind} title={kindLabel(kind, messages)}>
@@ -589,7 +597,6 @@ function CapacitySummaryBadges({
       <Badge variant="outline" className="gap-1">
         {messages.resourceCapacityLabel}: {resourceLabel}
       </Badge>
-      {deltaLabel ? <Badge variant={deltaVariant}>{deltaLabel}</Badge> : null}
     </span>
   )
 }

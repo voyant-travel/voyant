@@ -177,7 +177,7 @@ export const customerPortalRecordSchema = z.object({
   lastName: z.string(),
   preferredLanguage: z.string().nullable(),
   preferredCurrency: z.string().nullable(),
-  birthday: z.string().nullable(),
+  dateOfBirth: z.string().nullable(),
   email: z.string().nullable(),
   phone: z.string().nullable(),
   billingAddress: customerPortalAddressSchema.nullable(),
@@ -236,7 +236,7 @@ export const customerPortalProfileSchema = z.object({
 export const updateCustomerPortalRecordSchema = z.object({
   preferredLanguage: z.string().max(35).nullable().optional(),
   preferredCurrency: z.string().min(3).max(3).nullable().optional(),
-  birthday: z.string().date().nullable().optional(),
+  dateOfBirth: z.string().date().nullable().optional(),
   phone: z.string().max(50).nullable().optional(),
   billingAddress: updateCustomerPortalAddressSchema.optional(),
 })

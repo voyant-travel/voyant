@@ -77,7 +77,7 @@ export type PersonDetailTab =
 
 export type PersonData = Pick<
   PersonRecord,
-  | "birthday"
+  | "dateOfBirth"
   | "createdAt"
   | "email"
   | "firstName"
@@ -520,9 +520,9 @@ export function PersonSidebar({
           />
           <InlineField
             icon={Calendar}
-            label={messages.personDetail.sidebar.fields.birthday}
-            value={person.birthday}
-            onSave={(next) => onUpdateField({ birthday: next })}
+            label={messages.personDetail.sidebar.fields.dateOfBirth}
+            value={person.dateOfBirth}
+            onSave={(next) => onUpdateField({ dateOfBirth: next })}
           />
           <InlineField
             icon={Tag}
@@ -849,9 +849,9 @@ export function PersonOverviewPanel({
             {organization.name}
           </OverviewTerm>
         ) : null}
-        {person.birthday ? (
-          <OverviewTerm label={messages.personDetail.sections.birthday}>
-            {formatCrmDate(i18n, person.birthday)}
+        {person.dateOfBirth ? (
+          <OverviewTerm label={messages.personDetail.sections.dateOfBirth}>
+            {formatCrmDate(i18n, person.dateOfBirth)}
           </OverviewTerm>
         ) : null}
         {person.notes ? (

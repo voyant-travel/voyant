@@ -20,6 +20,7 @@ import { and, asc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { withDbFromEnv } from "./lib/db"
+import { createDocumentStorage } from "./lib/storage"
 import { getOperatorSettings } from "./settings"
 
 type SmartbillEnv = CloudflareBindings & {
@@ -144,11 +145,12 @@ async function syncIssuedInvoice(
   if (!invoiceId) return
   await withDbFromEnv(env, async (rawDb) => {
     const db = rawDb as unknown as PostgresJsDatabase
-    await syncIssuedInvoiceWithDb(db, runtime, invoiceId, documentType)
+    await syncIssuedInvoiceWithDb(env, db, runtime, invoiceId, documentType)
   })
 }
 
 async function syncIssuedInvoiceWithDb(
+  env: SmartbillEnv,
   db: PostgresJsDatabase,
   runtime: SmartbillRuntime,
   invoiceId: string,
@@ -193,6 +195,26 @@ async function syncIssuedInvoiceWithDb(
     console.info(
       `[smartbill] ${documentType} created: ${result.series ?? body.seriesName}-${result.number ?? "unknown"} for ${invoiceId}`,
     )
+
+    // Fetch the PDF and store it as an invoice attachment so operators
+    // can download the final document directly from the invoice detail
+    // page. Failures are non-fatal — the SmartBill record exists either
+    // way, and operators can fall back to externalRef.externalUrl.
+    if (result.number && !result.errorText) {
+      try {
+        await fetchAndStoreSmartbillPdf(env, db, runtime, {
+          invoiceId,
+          documentType,
+          seriesName: result.series ?? body.seriesName,
+          number: result.number,
+        })
+      } catch (pdfError) {
+        console.warn(
+          `[smartbill] PDF fetch/store failed for ${invoiceId}; continuing without attachment`,
+          pdfError,
+        )
+      }
+    }
   } catch (error) {
     console.error(`[smartbill] failed to create ${documentType} for ${invoiceId}`, error)
     await financeService.registerInvoiceExternalRef(db, invoiceId, {
@@ -202,6 +224,64 @@ async function syncIssuedInvoiceWithDb(
       syncError: error instanceof Error ? error.message : String(error),
     })
   }
+}
+
+/**
+ * Fetch the rendered PDF from SmartBill for the freshly-created invoice
+ * (or proforma) and persist it as an `invoice_attachments` row so it
+ * shows up on the invoice detail page's Attachments section. Idempotent
+ * via the storage key: re-running uploads the same key, and the
+ * attachment row is only created when missing.
+ */
+async function fetchAndStoreSmartbillPdf(
+  env: SmartbillEnv,
+  db: PostgresJsDatabase,
+  runtime: SmartbillRuntime,
+  args: {
+    invoiceId: string
+    documentType: "invoice" | "proforma"
+    seriesName: string
+    number: string
+  },
+): Promise<void> {
+  const storage = createDocumentStorage(env)
+  if (!storage) return
+
+  const existing = await financeService.listInvoiceAttachments(db, args.invoiceId)
+  if (existing.some((a) => a.kind === "document")) return
+
+  const pdf =
+    args.documentType === "proforma"
+      ? await runtime.client.viewEstimatePdf(runtime.companyVatCode, args.seriesName, args.number)
+      : await runtime.client.viewInvoicePdf(runtime.companyVatCode, args.seriesName, args.number)
+
+  const filename = `${args.seriesName}-${args.number}.pdf`
+  const storageKey = `invoices/${args.invoiceId}/${filename}`
+  const uploaded = await storage.upload(pdf.bytes, {
+    key: storageKey,
+    contentType: pdf.contentType || "application/pdf",
+    metadata: {
+      invoiceId: args.invoiceId,
+      provider: "smartbill",
+      documentType: args.documentType,
+      series: args.seriesName,
+      number: args.number,
+    },
+  })
+
+  await financeService.createInvoiceAttachment(db, args.invoiceId, {
+    kind: "document",
+    name: filename,
+    mimeType: pdf.contentType || "application/pdf",
+    fileSize: pdf.bytes.byteLength,
+    storageKey: uploaded.key,
+    metadata: {
+      provider: "smartbill",
+      documentType: args.documentType,
+      series: args.seriesName,
+      number: args.number,
+    },
+  })
 }
 
 async function buildSmartbillInvoiceBody(

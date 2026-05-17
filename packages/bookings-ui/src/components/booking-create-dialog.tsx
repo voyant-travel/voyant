@@ -8,26 +8,23 @@ import {
   type BookingCreateVoucherRedemptionInput,
   type BookingRecord,
   useBookingCreateMutation,
-  useBookingStatusByIdMutation,
+  useBookingTaxPreview,
 } from "@voyantjs/bookings-react"
+import { useOrganization, usePerson } from "@voyantjs/crm-react"
+import { useAddresses } from "@voyantjs/identity-react"
+import { useProduct, useProductMedia } from "@voyantjs/products-react"
 import {
   Button,
   Checkbox,
   Dialog,
-  DialogBody,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Textarea,
 } from "@voyantjs/ui/components"
-import { Loader2 } from "lucide-react"
+import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
+import { ImageIcon, Loader2 } from "lucide-react"
 import * as React from "react"
 
 import {
@@ -41,6 +38,12 @@ import {
   itemLinesToRows,
 } from "./booking-create-utils.js"
 import {
+  emptyOptionUnitsStepperValue,
+  OptionUnitsStepperSection,
+  type OptionUnitsStepperUnit,
+  type OptionUnitsStepperValue,
+} from "./option-units-stepper-section.js"
+import {
   emptyPaymentScheduleValue,
   PaymentScheduleSection,
   type PaymentScheduleValue,
@@ -53,19 +56,16 @@ import {
 import { PriceBreakdownSection, type PriceBreakdownValue } from "./price-breakdown-section.js"
 import { ProductPickerSection, type ProductPickerValue } from "./product-picker-section.js"
 import {
-  emptyRoomsStepperValue,
-  RoomsStepperSection,
-  type RoomsStepperUnit,
-  type RoomsStepperValue,
-} from "./rooms-stepper-section.js"
-import {
   emptySharedRoomValue,
   SharedRoomSection,
   type SharedRoomValue,
 } from "./shared-room-section.js"
 import {
+  computeAgeYears,
   emptyTravelerListValue,
+  type RoomGroup,
   type RoomUnitOption,
+  type TravelerEntry,
   type TravelerListValue,
   TravelersSection,
 } from "./travelers-section.js"
@@ -88,8 +88,6 @@ function paymentScheduleToRows(
   currency: string,
   totalAmountCents: number | null,
 ): BookingCreatePaymentScheduleInput[] {
-  if (value.mode === "unpaid") return []
-
   if (value.mode === "full") {
     if (!value.fullDueDate || totalAmountCents === null) return []
     return [
@@ -107,35 +105,6 @@ function paymentScheduleToRows(
         ),
       },
     ]
-  }
-
-  if (value.mode === "advance") {
-    if (!value.advanceDueDate || value.advanceAmountCents == null) return []
-    const rows: BookingCreatePaymentScheduleInput[] = [
-      {
-        scheduleType: "deposit",
-        status: value.advanceAlreadyPaid ? "paid" : "due",
-        dueDate: value.advanceDueDate,
-        currency,
-        amountCents: value.advanceAmountCents,
-        notes: paidScheduleNotes(
-          value.advanceAlreadyPaid,
-          value.advancePaymentDate,
-          value.advancePaymentMethod,
-          value.advancePaymentReference,
-        ),
-      },
-    ]
-    if (totalAmountCents !== null && totalAmountCents > value.advanceAmountCents) {
-      rows.push({
-        scheduleType: "balance",
-        status: "pending",
-        dueDate: value.advanceDueDate,
-        currency,
-        amountCents: totalAmountCents - value.advanceAmountCents,
-      })
-    }
-    return rows
   }
 
   // split
@@ -188,27 +157,191 @@ function paidScheduleNotes(
   })
 }
 
-function travelersToRows(value: TravelerListValue): BookingCreateTravelerInput[] {
-  return value.travelers.map((traveler) => ({
-    personId: traveler.personId,
-    firstName: traveler.firstName.trim(),
-    lastName: traveler.lastName.trim(),
-    email: traveler.email.trim() || null,
-    participantType: "traveler",
-    travelerCategory:
-      traveler.role === "child"
-        ? "child"
-        : traveler.role === "infant"
-          ? "infant"
-          : traveler.role === "adult"
-            ? "adult"
-            : null,
-    isPrimary: traveler.role === "lead",
-    roomUnitId: traveler.roomUnitId,
-  }))
+/**
+ * Pick the option-unit that matches a given age. Falls back to an
+ * ADULT-coded unit when no min/max window matches, then to the first
+ * unit in the option. When `age` is null (no DOB), prefer ADULT.
+ */
+/**
+ * The catalog stepper builds unit names like "Standard double - Adult"
+ * when an option has multiple units. The Room dropdown wants the bare
+ * option name ("Standard double"), so we trim off the trailing
+ * "- <unit>" suffix for display.
+ */
+function stripUnitSuffix(name: string): string {
+  const idx = name.lastIndexOf(" - ")
+  return idx > 0 ? name.slice(0, idx) : name
 }
 
-function sameRoomUnits(left: RoomsStepperUnit[], right: RoomsStepperUnit[]): boolean {
+/**
+ * Any payment-schedule entry the operator has marked as already
+ * paid. Drives the smart-default booking status on submit — if money
+ * is in (deposit / full / split installment), the booking lands in
+ * `confirmed`; otherwise it lands in `awaiting_payment`.
+ */
+function hasAnyPaidPayment(schedule: PaymentScheduleValue): boolean {
+  switch (schedule.mode) {
+    case "full":
+      return schedule.fullAlreadyPaid
+    case "split":
+      return schedule.splitFirstAlreadyPaid || schedule.splitSecondAlreadyPaid
+    default:
+      return false
+  }
+}
+
+/**
+ * Inverse of stripUnitSuffix — strip the leading "Option name - " so
+ * the per-unit label stands alone for category buttons.
+ */
+function stripOptionPrefix(name: string): string {
+  const idx = name.indexOf(" - ")
+  return idx > 0 ? name.slice(idx + 3) : name
+}
+
+/**
+ * Pick the unit for a traveler. Priorities:
+ *   1. If we have an age (from DOB) and it falls into a unit's
+ *      `[minAge, maxAge]` window, use that unit.
+ *   2. Otherwise honor an explicit role hint (Child / Infant / Adult
+ *      buttons) by matching unit code or name.
+ *   3. Fall back to the ADULT-coded unit, or the first unit when
+ *      nothing else matches.
+ *
+ * `roleHint` covers the common case where the operator knows the
+ * traveler is a child but doesn't have the exact DOB. Without it, a
+ * roleless traveler would silently default to Adult pricing.
+ */
+function pickUnitForAge(
+  units: OptionUnitsStepperUnit[],
+  age: number | null,
+  roleHint: "adult" | "child" | "infant" | null = null,
+): OptionUnitsStepperUnit | undefined {
+  if (units.length === 0) return undefined
+  const findByCode = (code: string) =>
+    units.find((u) => (u.unitCode ?? "").toUpperCase() === code) ??
+    units.find((u) => new RegExp(`\\b${code}\\b`, "i").test(u.unitName))
+  const adult = findByCode("ADULT")
+  if (age != null) {
+    const match = units.find(
+      (u) => (u.minAge == null || age >= u.minAge) && (u.maxAge == null || age <= u.maxAge),
+    )
+    if (match) return match
+  }
+  if (roleHint === "child") return findByCode("CHILD") ?? adult ?? units[0]
+  if (roleHint === "infant") return findByCode("INFANT") ?? adult ?? units[0]
+  return adult ?? units[0]
+}
+
+/**
+ * Take the operator-picked per-option quantities (which are tracked
+ * against each option's primary "Adult" unit by the stepper) plus the
+ * travelers list, and redistribute both so that:
+ *   - each traveler's `roomUnitId` points at the age-banded unit
+ *     matching their DOB (Adult / Child / Infant / etc.)
+ *   - `quantities` reflects the per-unit counts after redistribution —
+ *     a 3-pax "Standard double" with 2 adults + 1 child becomes
+ *     `{ adultUnit: 2, childUnit: 1 }` instead of `{ adultUnit: 3 }`.
+ *
+ * Slots without a configured `dateOfBirth` keep the option's adult
+ * default so partially-filled bookings still typecheck.
+ */
+/**
+ * Rebuild stepper quantities from per-traveler unit assignments.
+ *
+ * Each traveler's `roomUnitId` is now the operator's explicit choice
+ * (DOB-pre-picked at attach, overridable via the dynamic category
+ * buttons), so we count assignments directly and add any per-option
+ * residual on the adult/primary unit when the stepper qty exceeds the
+ * number of travelers actually assigned. Unlike the older
+ * DOB-driven rewrite, this never moves a traveler off their chosen
+ * unit — operator selection always wins.
+ */
+function redistributeByAge(
+  quantities: Record<string, number>,
+  travelers: TravelerEntry[],
+  units: OptionUnitsStepperUnit[],
+): { quantities: Record<string, number>; travelers: TravelerEntry[] } {
+  if (units.length === 0) return { quantities, travelers }
+
+  const unitsByOption = new Map<string, OptionUnitsStepperUnit[]>()
+  for (const unit of units) {
+    if (!unit.optionId) continue
+    const list = unitsByOption.get(unit.optionId)
+    if (list) list.push(unit)
+    else unitsByOption.set(unit.optionId, [unit])
+  }
+
+  const unitToOption = new Map(units.map((u) => [u.optionUnitId, u.optionId]))
+
+  // Per-option total from the stepper. This is the count the operator
+  // committed to when picking rooms.
+  const totalByOption = new Map<string, number>()
+  for (const [unitId, qty] of Object.entries(quantities)) {
+    if (qty <= 0) continue
+    const optionId = unitToOption.get(unitId)
+    if (!optionId) continue
+    totalByOption.set(optionId, (totalByOption.get(optionId) ?? 0) + qty)
+  }
+
+  // Count actual traveler assignments per unit + per option.
+  const next: Record<string, number> = {}
+  const assignedByOption = new Map<string, number>()
+  for (const t of travelers) {
+    if (!t.roomUnitId) continue
+    const optionId = unitToOption.get(t.roomUnitId)
+    if (!optionId) continue
+    next[t.roomUnitId] = (next[t.roomUnitId] ?? 0) + 1
+    assignedByOption.set(optionId, (assignedByOption.get(optionId) ?? 0) + 1)
+  }
+
+  // Residual = operator picked N rooms but only added M travelers; put
+  // the leftover on the option's adult/primary unit so the price total
+  // matches the stepper.
+  for (const [optionId, total] of totalByOption) {
+    const assigned = assignedByOption.get(optionId) ?? 0
+    const residual = Math.max(0, total - assigned)
+    if (residual === 0) continue
+    const adult = pickUnitForAge(unitsByOption.get(optionId) ?? [], null)
+    if (!adult) continue
+    next[adult.optionUnitId] = (next[adult.optionUnitId] ?? 0) + residual
+  }
+
+  return { quantities: next, travelers }
+}
+
+function travelersToRows(value: TravelerListValue): BookingCreateTravelerInput[] {
+  return value.travelers.map((traveler) => {
+    // Age-derived category (DOB-driven). The `role` field still
+    // carries the `lead` flag separately for the booking primary; the
+    // demographic category comes from age, not from a manual select.
+    const age = computeAgeYears(traveler.dateOfBirth)
+    const ageCategory: "adult" | "child" | "infant" | null =
+      age == null
+        ? traveler.role === "child" || traveler.role === "infant" || traveler.role === "adult"
+          ? traveler.role
+          : null
+        : age < 2
+          ? "infant"
+          : age < 18
+            ? "child"
+            : "adult"
+    return {
+      personId: traveler.personId,
+      firstName: traveler.firstName.trim(),
+      lastName: traveler.lastName.trim(),
+      email: traveler.email.trim() || null,
+      phone: traveler.phone.trim() || null,
+      preferredLanguage: traveler.preferredLanguage.trim() || null,
+      participantType: "traveler",
+      travelerCategory: ageCategory,
+      isPrimary: traveler.role === "lead",
+      roomUnitId: traveler.roomUnitId,
+    }
+  })
+}
+
+function sameRoomUnits(left: OptionUnitsStepperUnit[], right: OptionUnitsStepperUnit[]): boolean {
   if (left.length !== right.length) return false
   return left.every((unit, index) => {
     const other = right[index]
@@ -290,8 +423,8 @@ export function BookingCreateForm({
     optionId: null,
   })
   const [slotId, setSlotId] = React.useState<string | null>(null)
-  const [rooms, setRooms] = React.useState<RoomsStepperValue>(emptyRoomsStepperValue)
-  const [roomUnits, setRoomUnits] = React.useState<RoomsStepperUnit[]>([])
+  const [rooms, setRooms] = React.useState<OptionUnitsStepperValue>(emptyOptionUnitsStepperValue)
+  const [roomUnits, setRoomUnits] = React.useState<OptionUnitsStepperUnit[]>([])
   const [person, setPerson] = React.useState<PersonPickerValue>(emptyPersonPickerValue)
   const [sharedRoom, setSharedRoom] = React.useState<SharedRoomValue>(emptySharedRoomValue)
   const [travelers, setTravelers] = React.useState<TravelerListValue>(emptyTravelerListValue)
@@ -303,13 +436,19 @@ export function BookingCreateForm({
   const [generateInvoiceDocument, setGenerateInvoiceDocument] = React.useState(false)
   const [notes, setNotes] = React.useState("")
   /**
-   * Optional post-create transition: set status to `confirmed` right after
-   * create succeeds. When the parent app has the notifications module's
-   * `autoConfirmAndDispatch` enabled, this fires the doc bundle + traveler
-   * email via the `booking.confirmed` subscriber. When it isn't, the
-   * booking simply lands in `confirmed` instead of `draft`.
+   * Operator override that forces the booking to land in `draft`
+   * regardless of payment state. Off by default — the dialog
+   * smart-defaults to `confirmed` (when any payment is marked paid)
+   * or `awaiting_payment` (when nothing is paid yet). The override
+   * exists so an operator can still capture a half-configured
+   * booking without committing it to the lifecycle.
    */
-  const [confirmAfterCreate, setConfirmAfterCreate] = React.useState(false)
+  const [createAsDraft, setCreateAsDraft] = React.useState(false)
+  // Only relevant when the derived status is `confirmed`: when off,
+  // the status transition carries `suppressNotifications: true` so
+  // the auto-dispatch subscriber skips the customer email + document
+  // bundle. Defaults on so the operator opts out, not in.
+  const [notifyTraveler, setNotifyTraveler] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const { formatDate } = useBookingsUiI18nOrDefault()
   const messages = useBookingsUiMessagesOrDefault()
@@ -318,7 +457,7 @@ export function BookingCreateForm({
     if (!enabled) {
       setProduct({ productId: defaultProductId ?? "", optionId: null })
       setSlotId(null)
-      setRooms(emptyRoomsStepperValue)
+      setRooms(emptyOptionUnitsStepperValue)
       setRoomUnits([])
       setPerson(emptyPersonPickerValue)
       setSharedRoom(emptySharedRoomValue)
@@ -329,7 +468,8 @@ export function BookingCreateForm({
       setGenerateContractDocument(false)
       setGenerateInvoiceDocument(false)
       setNotes("")
-      setConfirmAfterCreate(false)
+      setCreateAsDraft(false)
+      setNotifyTraveler(true)
       setError(null)
     } else if (defaultProductId) {
       setProduct((prev) =>
@@ -343,7 +483,7 @@ export function BookingCreateForm({
   // biome-ignore lint/correctness/useExhaustiveDependencies: booking-create intentionally resets transient departure state only when product id changes; option changes are reconciled against the selected departure below.
   React.useEffect(() => {
     setSlotId(null)
-    setRooms(emptyRoomsStepperValue)
+    setRooms(emptyOptionUnitsStepperValue)
     setRoomUnits([])
     setSharedRoom(emptySharedRoomValue)
   }, [product.productId])
@@ -384,7 +524,7 @@ export function BookingCreateForm({
     [allOpenSlots, product.optionId],
   )
   React.useEffect(() => {
-    setRooms(emptyRoomsStepperValue)
+    setRooms(emptyOptionUnitsStepperValue)
     setRoomUnits([])
     if (!slotId || !product.optionId) return
     const selectedSlot = allOpenSlots.find((slot) => slot.id === slotId)
@@ -413,28 +553,130 @@ export function BookingCreateForm({
     slotId: slotId ?? undefined,
     enabled: enabled && Boolean(slotId),
   })
-  const handleRoomUnitsChange = React.useCallback((units: RoomsStepperUnit[]) => {
+  const handleRoomUnitsChange = React.useCallback((units: OptionUnitsStepperUnit[]) => {
     setRoomUnits((prev) => (sameRoomUnits(prev, units) ? prev : units))
   }, [])
+  // Room choices presented to the traveler row are *options* (e.g.
+  // "Standard double", "Junior suite upgrade") — NOT option-units
+  // (Adult / Child / Senior). The age-band lives separately on the
+  // traveler and only affects pricing; both an adult and a child sit
+  // in the same Standard double room. Each entry's `unitId` is set to
+  // the option's primary unit so existing `roomUnitId`-keyed plumbing
+  // (assignment, redistribution) keeps working — `redistributeByAge`
+  // moves the traveler to the matching age-banded unit at submit.
   const roomUnitOptions: RoomUnitOption[] = React.useMemo(() => {
-    const units = roomUnits.length > 0 ? roomUnits : (slotUnitAvailability.data?.data ?? [])
+    type UnitLike = {
+      optionId?: string | null
+      optionUnitId: string
+      unitName: string
+      unitCode?: string | null
+      occupancyMax: number | null
+    }
+    const units: UnitLike[] =
+      roomUnits.length > 0 ? roomUnits : (slotUnitAvailability.data?.data ?? [])
     if (units.length === 0) return []
-    return units
-      .filter((unit) => (rooms.quantities[unit.optionUnitId] ?? 0) > 0)
-      .map((unit) => {
-        const qty = rooms.quantities[unit.optionUnitId] ?? 0
-        const occupancyMax = Math.max(1, unit.occupancyMax ?? 1)
-        const seats = qty * occupancyMax
+    const optionGroups = new Map<
+      string,
+      {
+        primaryUnitId: string
+        optionName: string
+        units: UnitLike[]
+      }
+    >()
+    for (const unit of units) {
+      const key = unit.optionId ?? unit.optionUnitId
+      // Prefer an ADULT-coded primary; the stepper routes per-option
+      // qty through the same unit so seat math stays consistent.
+      const isAdult = (unit.unitCode ?? "").toUpperCase() === "ADULT"
+      const existing = optionGroups.get(key)
+      if (existing) {
+        existing.units.push(unit)
+        if (isAdult) existing.primaryUnitId = unit.optionUnitId
+      } else {
+        optionGroups.set(key, {
+          primaryUnitId: unit.optionUnitId,
+          // Strip the trailing " - Adult" / " - Child" suffix the
+          // upstream stepper appends when an option has multiple units.
+          optionName: stripUnitSuffix(unit.unitName),
+          units: [unit],
+        })
+      }
+    }
+    return Array.from(optionGroups.values())
+      .filter((group) => {
+        const totalQty = group.units.reduce(
+          (sum, u) => sum + (rooms.quantities[u.optionUnitId] ?? 0),
+          0,
+        )
+        return totalQty > 0
+      })
+      .map((group) => {
+        const totalQty = group.units.reduce(
+          (sum, u) => sum + (rooms.quantities[u.optionUnitId] ?? 0),
+          0,
+        )
+        const occupancyMax = Math.max(1, ...group.units.map((u) => u.occupancyMax ?? 1))
+        const seats = totalQty * occupancyMax
+        const optionUnitIds = new Set(group.units.map((u) => u.optionUnitId))
         const assigned = travelers.travelers.filter(
-          (traveler) => traveler.roomUnitId === unit.optionUnitId,
+          (traveler) => traveler.roomUnitId && optionUnitIds.has(traveler.roomUnitId),
         ).length
         return {
-          unitId: unit.optionUnitId,
-          unitName: unit.unitName,
+          unitId: group.primaryUnitId,
+          unitName: group.optionName,
           remainingCapacity: Math.max(0, seats - assigned),
         }
       })
   }, [roomUnits, slotUnitAvailability.data, rooms.quantities, travelers.travelers])
+
+  // Per-option breakdown of all configured units, with the
+  // attributes the TravelersSection's dynamic category buttons need
+  // (unitCode/min-max/unitType). Mirrors the grouping logic in
+  // `roomUnitOptions` but exposes every unit instead of collapsing
+  // to one primary.
+  const roomGroups: RoomGroup[] = React.useMemo(() => {
+    if (roomUnits.length === 0) return []
+    const groups = new Map<string, RoomGroup>()
+    for (const u of roomUnits) {
+      if (!u.optionId) continue
+      const groupKey = u.optionId
+      const isAdultCoded = (u.unitCode ?? "").toUpperCase() === "ADULT"
+      const unit = {
+        unitId: u.optionUnitId,
+        // Strip the "Option name - " prefix the stepper applies when
+        // an option has multiple units; the per-unit label is enough
+        // for a category button.
+        unitName: stripOptionPrefix(u.unitName),
+        unitCode: u.unitCode ?? null,
+        minAge: u.minAge ?? null,
+        maxAge: u.maxAge ?? null,
+        unitType: (u.unitType ?? null) as RoomGroup["units"][number]["unitType"],
+      }
+      const existing = groups.get(groupKey)
+      if (existing) {
+        existing.units.push(unit)
+        if (isAdultCoded) existing.primaryUnitId = u.optionUnitId
+      } else {
+        groups.set(groupKey, {
+          optionId: groupKey,
+          optionName: stripUnitSuffix(u.unitName),
+          primaryUnitId: u.optionUnitId,
+          units: [unit],
+        })
+      }
+    }
+    return Array.from(groups.values())
+  }, [roomUnits])
+
+  // Apply the same age-banded redistribution we use at submit so the
+  // live price preview matches what the operator will actually be
+  // billed. Without this, the breakdown sees only the option's primary
+  // (Adult) unit qty from the stepper, missing the per-traveler split
+  // between adult / child / infant tiers.
+  const displayQuantities = React.useMemo(
+    () => redistributeByAge(rooms.quantities, travelers.travelers, roomUnits).quantities,
+    [rooms.quantities, travelers.travelers, roomUnits],
+  )
 
   // Currency placeholder — used for voucher + payment schedule display.
   // Consumers hooking in real product data should override this by wrapping
@@ -448,7 +690,43 @@ export function BookingCreateForm({
   )
 
   const createBookingMutation = useBookingCreateMutation()
-  const statusMutation = useBookingStatusByIdMutation()
+
+  // Resolve the billing person/org once at the dialog level so we can
+  // snapshot their contact details into the booking row at create time.
+  // The booking row's `contact_*` columns are the source of truth for
+  // billing on the detail page — the linked CRM record can change (or
+  // be deleted) later without retroactively rewriting history.
+  const billingPersonRecord = usePerson(
+    (person.billTo ?? "person") === "person" ? (person.personId ?? undefined) : undefined,
+    { enabled: (person.billTo ?? "person") === "person" && Boolean(person.personId) },
+  ).data
+  const billingOrganizationRecord = useOrganization(
+    person.billTo === "organization" ? (person.organizationId ?? undefined) : undefined,
+    { enabled: person.billTo === "organization" && Boolean(person.organizationId) },
+  ).data
+  // Primary address for whichever billing record was picked. Filter by
+  // `entityType` + `entityId` to keep the response small; the first
+  // address with `isPrimary` wins (the server returns at most one).
+  const billingPrimaryAddressKind: "person" | "organization" | null =
+    (person.billTo ?? "person") === "person" && person.personId
+      ? "person"
+      : person.billTo === "organization" && person.organizationId
+        ? "organization"
+        : null
+  const billingPrimaryAddressEntityId =
+    billingPrimaryAddressKind === "person"
+      ? (person.personId ?? undefined)
+      : billingPrimaryAddressKind === "organization"
+        ? (person.organizationId ?? undefined)
+        : undefined
+  const billingAddressQuery = useAddresses({
+    entityType: billingPrimaryAddressKind ?? undefined,
+    entityId: billingPrimaryAddressEntityId,
+    isPrimary: true,
+    limit: 1,
+    enabled: Boolean(billingPrimaryAddressKind && billingPrimaryAddressEntityId),
+  })
+  const billingPrimaryAddress = billingAddressQuery.data?.data?.[0] ?? null
 
   const handleSubmit = async () => {
     setError(null)
@@ -495,18 +773,21 @@ export function BookingCreateForm({
         pricingCurrency,
         confirmedSellAmountCents,
       )
-      const itemLines = itemLinesToRows(
-        rooms.quantities,
+      // Age-banded redistribution: turn the operator's per-option
+      // quantities + raw traveler list into per-unit quantities + each
+      // traveler's matching unit assignment, driven by DOB.
+      const submitUnits =
         roomUnits.length > 0
           ? roomUnits
           : (slotUnitAvailability.data?.data ?? []).map((unit) => ({
               ...unit,
               optionId: product.optionId,
-            })),
-        pricing,
-      )
+            }))
+      const redistributed = redistributeByAge(rooms.quantities, travelers.travelers, submitUnits)
 
-      const travelerRows = travelersToRows(travelers)
+      const itemLines = itemLinesToRows(redistributed.quantities, submitUnits, pricing)
+
+      const travelerRows = travelersToRows({ travelers: redistributed.travelers })
 
       const voucherRedemption: BookingCreateVoucherRedemptionInput | undefined =
         voucher.picked && voucher.picked.remainingAmountCents != null
@@ -533,6 +814,65 @@ export function BookingCreateForm({
             : undefined
         : undefined
 
+      // Smart-default status from payment state — any payment marked
+      // "Already paid" implies the booking is effectively confirmed,
+      // otherwise it lands in `awaiting_payment` so the operator can
+      // dispatch a payment link. Override available via the explicit
+      // "Create as draft" checkbox. The server commits this status in
+      // the create transaction and emits `booking.confirmed`
+      // post-commit when applicable — no second roundtrip.
+      const initialStatus = createAsDraft
+        ? undefined
+        : hasAnyPaidPayment(paymentSchedule)
+          ? ("confirmed" as const)
+          : ("awaiting_payment" as const)
+
+      // Build the billing-contact snapshot from whichever CRM record
+      // the operator picked, plus the primary identity address when
+      // present. Falls back to nulls when a record is missing — the
+      // server stores nulls and the detail page hydrates from the live
+      // CRM record at read time.
+      const addressSnapshot = billingPrimaryAddress
+        ? {
+            contactAddressLine1: billingPrimaryAddress.line1,
+            contactCity: billingPrimaryAddress.city,
+            contactRegion: billingPrimaryAddress.region,
+            contactPostalCode: billingPrimaryAddress.postalCode,
+            contactCountry: billingPrimaryAddress.country,
+          }
+        : {}
+      const contactSnapshot: Pick<
+        Parameters<typeof createBookingMutation.mutateAsync>[0],
+        | "contactFirstName"
+        | "contactLastName"
+        | "contactEmail"
+        | "contactPhone"
+        | "contactPreferredLanguage"
+        | "contactAddressLine1"
+        | "contactCity"
+        | "contactRegion"
+        | "contactPostalCode"
+        | "contactCountry"
+      > = billingPersonRecord
+        ? {
+            contactFirstName: billingPersonRecord.firstName,
+            contactLastName: billingPersonRecord.lastName,
+            contactEmail: billingPersonRecord.email,
+            contactPhone: billingPersonRecord.phone,
+            contactPreferredLanguage: billingPersonRecord.preferredLanguage,
+            ...addressSnapshot,
+          }
+        : billingOrganizationRecord
+          ? {
+              contactFirstName: billingOrganizationRecord.name,
+              contactLastName: null,
+              contactEmail: null,
+              contactPhone: null,
+              contactPreferredLanguage: billingOrganizationRecord.preferredLanguage,
+              ...addressSnapshot,
+            }
+          : {}
+
       const { booking } = await createBookingMutation.mutateAsync({
         productId: product.productId,
         bookingNumber,
@@ -553,35 +893,15 @@ export function BookingCreateForm({
           contractDocument: generateContractDocument,
           invoiceDocument: generateInvoiceDocument,
         },
+        initialStatus,
+        // Suppression only matters when transitioning to `confirmed` —
+        // `awaiting_payment` doesn't trigger the auto-dispatch
+        // subscriber today.
+        suppressNotifications: initialStatus === "confirmed" && !notifyTraveler ? true : undefined,
+        ...contactSnapshot,
       })
 
-      // Optional post-create confirm. If the app has autoConfirmAndDispatch
-      // wired on the notifications module, the status transition triggers
-      // the doc bundle + traveler email subscriber. A failed status change
-      // doesn't roll back the booking — it exists, operator can confirm
-      // manually later.
-      let finalBooking = booking
-      if (confirmAfterCreate) {
-        try {
-          finalBooking = await statusMutation.mutateAsync({
-            bookingId: booking.id,
-            currentStatus: booking.status,
-            status: "confirmed",
-          })
-        } catch (statusErr) {
-          setError(
-            statusErr instanceof Error
-              ? formatMessage(messages.bookingCreateDialog.validation.confirmFailedPrefix, {
-                  message: statusErr.message,
-                })
-              : messages.bookingCreateDialog.validation.confirmFailed,
-          )
-          onCreated?.(booking)
-          return
-        }
-      }
-
-      onCreated?.(finalBooking)
+      onCreated?.(booking)
     } catch (err) {
       setError(
         err instanceof Error ? err.message : messages.bookingCreateDialog.validation.createFailed,
@@ -589,263 +909,560 @@ export function BookingCreateForm({
     }
   }
 
-  const isSubmitting = createBookingMutation.isPending || statusMutation.isPending
+  const isSubmitting = createBookingMutation.isPending
 
   return (
-    <>
-      <DialogBody className="grid gap-4">
-        <ProductPickerSection
-          value={product}
-          onChange={setProduct}
-          enabled={enabled}
-          lockProduct={Boolean(defaultProductId)}
-          labels={{
-            optionNone: messages.bookingCreateDialog.labels.noSpecificOption,
-          }}
-          showOptionPicker={false}
-        />
-
-        {product.productId ? (
-          <div className="flex flex-col gap-1">
-            <Label>{messages.bookingCreateDialog.fields.departure}</Label>
-            <Select
-              value={slotId ?? "__none__"}
-              onValueChange={(v) => setSelectedSlot(v === "__none__" ? null : (v ?? null))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={messages.bookingCreateDialog.placeholders.departure} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">
-                  {messages.bookingCreateDialog.placeholders.departureNone}
-                </SelectItem>
-                {slots.length === 0 ? (
-                  <SelectItem value="__empty__" disabled>
-                    {messages.bookingCreateDialog.placeholders.departureEmpty}
-                  </SelectItem>
-                ) : (
-                  slots.map((slot) => (
-                    <SelectItem key={slot.id} value={slot.id}>
-                      {formatSlotLabel(slot)}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-        ) : null}
-
-        {product.productId ? (
-          <RoomsStepperSection
-            value={rooms}
-            onChange={setRooms}
-            productId={product.productId}
-            slotId={slotId ?? undefined}
-            optionId={product.optionId}
+    <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-12">
+      {/* Form column — form sections scroll above the inline footer buttons. */}
+      <div className="flex min-h-0 min-w-0 flex-col lg:col-span-8">
+        <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-1 pb-2">
+          <ProductPickerSection
+            value={product}
+            onChange={setProduct}
             enabled={enabled}
-            onUnitsChange={handleRoomUnitsChange}
+            lockProduct={Boolean(defaultProductId)}
             labels={{
-              heading: messages.bookingCreateDialog.labels.roomsHeading,
-              noOption: messages.bookingCreateDialog.labels.roomsNoOption,
-              noSlot: messages.bookingCreateDialog.labels.roomsNoSlot,
-              noUnits: messages.bookingCreateDialog.labels.roomsNoUnits,
-              remaining: messages.bookingCreateDialog.labels.roomsRemaining,
-              unlimited: messages.bookingCreateDialog.labels.roomsUnlimited,
+              optionNone: messages.bookingCreateDialog.labels.noSpecificOption,
             }}
+            showOptionPicker={false}
           />
-        ) : null}
 
-        <PersonPickerSection
-          value={person}
-          onChange={setPerson}
-          enabled={enabled}
-          labels={{
-            createNewPerson: messages.bookingCreateDialog.labels.createNewPerson,
-            selectExistingPerson: messages.bookingCreateDialog.labels.selectExistingPerson,
-            organizationNone: messages.bookingCreateDialog.labels.organizationNone,
-          }}
-        />
-
-        <SharedRoomSection
-          value={sharedRoom}
-          onChange={setSharedRoom}
-          productId={product.productId || undefined}
-          enabled={enabled}
-          labels={{
-            toggle: messages.bookingCreateDialog.labels.sharedRoomToggle,
-            createMode: messages.bookingCreateDialog.labels.sharedRoomCreateMode,
-            joinMode: messages.bookingCreateDialog.labels.sharedRoomJoinMode,
-            selectPlaceholder: messages.bookingCreateDialog.labels.sharedRoomSelectPlaceholder,
-            noGroups: messages.bookingCreateDialog.labels.sharedRoomNoGroups,
-            createHint: messages.bookingCreateDialog.labels.sharedRoomCreateHint,
-            remove: messages.bookingCreateDialog.labels.sharedRoomRemove,
-          }}
-        />
-
-        {product.productId ? (
-          <TravelersSection
-            value={travelers}
-            onChange={setTravelers}
-            roomUnits={roomUnitOptions.length > 0 ? roomUnitOptions : undefined}
-            billingPersonId={(person.billTo ?? "person") === "person" ? person.personId : null}
-            labels={{
-              heading: messages.bookingCreateDialog.labels.travelerHeading,
-              addTraveler: messages.bookingCreateDialog.labels.addTraveler,
-              person: messages.bookingCreateDialog.labels.travelerPerson,
-              personSearchPlaceholder:
-                messages.bookingCreateDialog.labels.travelerPersonSearchPlaceholder,
-              personEmpty: messages.bookingCreateDialog.labels.travelerPersonEmpty,
-              createNewPerson: messages.bookingCreateDialog.labels.createNewPerson,
-              createPersonSheetTitle: messages.bookingCreateDialog.labels.createPersonSheetTitle,
-              addBillingPerson: messages.bookingCreateDialog.labels.addBillingPersonAsTraveler,
-              role: messages.bookingCreateDialog.labels.travelerRole,
-              roleLead: messages.bookingCreateDialog.labels.travelerLead,
-              roleAdult: messages.bookingCreateDialog.labels.travelerAdult,
-              roleChild: messages.bookingCreateDialog.labels.travelerChild,
-              roleInfant: messages.bookingCreateDialog.labels.travelerInfant,
-              room: messages.bookingCreateDialog.labels.travelerRoom,
-              noRoom: messages.bookingCreateDialog.labels.travelerNoRoom,
-              remove: messages.bookingCreateDialog.labels.travelerRemove,
-              empty: messages.bookingCreateDialog.labels.travelerEmpty,
-            }}
-          />
-        ) : null}
-
-        {product.productId ? (
-          <PriceBreakdownSection
-            productId={product.productId}
-            optionId={product.optionId}
-            unitQuantities={rooms.quantities}
-            unitLabels={roomUnitLabels}
-            labels={{
-              heading: messages.bookingCreateDialog.labels.breakdownHeading,
-              total: messages.bookingCreateDialog.labels.breakdownTotal,
-              onRequest: messages.bookingCreateDialog.labels.breakdownOnRequest,
-              groupRate: messages.bookingCreateDialog.labels.breakdownGroupRate,
-              empty: messages.bookingCreateDialog.labels.breakdownEmpty,
-              noPricing: messages.bookingCreateDialog.labels.breakdownNoPricing,
-              confirmedTotal: messages.bookingCreateDialog.labels.breakdownConfirmedTotal,
-              manualTotal: messages.bookingCreateDialog.labels.breakdownManualTotal,
-              useCatalogTotal: messages.bookingCreateDialog.labels.breakdownUseCatalogTotal,
-              overrideReason: messages.bookingCreateDialog.labels.breakdownOverrideReason,
-              overrideReasonPlaceholder:
-                messages.bookingCreateDialog.labels.breakdownOverrideReasonPlaceholder,
-              overrideReasonRequired:
-                messages.bookingCreateDialog.labels.breakdownOverrideReasonRequired,
-            }}
-            onChange={setPricing}
-          />
-        ) : null}
-
-        <VoucherPickerSection
-          value={voucher}
-          onChange={setVoucher}
-          currency={currency}
-          labels={{
-            heading: messages.bookingCreateDialog.labels.voucherHeading,
-            codePlaceholder: messages.bookingCreateDialog.labels.voucherCodePlaceholder,
-            apply: messages.bookingCreateDialog.labels.voucherApply,
-            clear: messages.bookingCreateDialog.labels.voucherClear,
-            remainingLabel: messages.bookingCreateDialog.labels.voucherRemainingLabel,
-            invalidLabel: messages.bookingCreateDialog.labels.voucherInvalidLabel,
-          }}
-        />
-
-        <PaymentScheduleSection
-          value={paymentSchedule}
-          onChange={setPaymentSchedule}
-          currency={pricingCurrency}
-          totalAmountCents={pricingTotalAmountCents}
-          labels={{
-            heading: messages.bookingCreateDialog.labels.paymentHeading,
-            modeUnpaid: messages.bookingCreateDialog.labels.paymentModeUnpaid,
-            modeFull: messages.bookingCreateDialog.labels.paymentModeFull,
-            modeAdvance: messages.bookingCreateDialog.labels.paymentModeAdvance,
-            modeSplit: messages.bookingCreateDialog.labels.paymentModeSplit,
-            dueDate: messages.bookingCreateDialog.labels.paymentDueDate,
-            amount: messages.bookingCreateDialog.labels.paymentAmount,
-            firstInstallment: messages.bookingCreateDialog.labels.paymentFirstInstallment,
-            secondInstallment: messages.bookingCreateDialog.labels.paymentSecondInstallment,
-            preset5050: messages.bookingCreateDialog.labels.paymentPreset5050,
-            unpaidHint: messages.bookingCreateDialog.labels.paymentUnpaidHint,
-            totalDue: messages.bookingCreateDialog.labels.paymentTotalDue,
-            scheduledTotal: messages.bookingCreateDialog.labels.paymentScheduledTotal,
-            remaining: messages.bookingCreateDialog.labels.paymentRemaining,
-            alreadyPaid: messages.bookingCreateDialog.labels.paymentAlreadyPaid,
-            paymentDate: messages.bookingCreateDialog.labels.paymentDate,
-            paymentMethod: messages.bookingCreateDialog.labels.paymentMethod,
-            paymentReference: messages.bookingCreateDialog.labels.paymentReference,
-          }}
-        />
-
-        <div className="flex flex-col gap-2 rounded-md border p-3">
-          <Label>{messages.bookingCreateDialog.labels.documentGenerationHeading}</Label>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-sm">
-              <Checkbox
-                id="new-booking-generate-contract-document"
-                checked={generateContractDocument}
-                onCheckedChange={(value) => setGenerateContractDocument(value === true)}
+          {product.productId ? (
+            <div className="flex flex-col gap-1">
+              <Label>{messages.bookingCreateDialog.fields.departure}</Label>
+              <AsyncCombobox
+                value={slotId}
+                onChange={(v) => setSelectedSlot(v)}
+                items={slots}
+                selectedItem={slots.find((s) => s.id === slotId) ?? null}
+                getKey={(slot) => slot.id}
+                getLabel={(slot) => formatSlotLabel(slot)}
+                placeholder={messages.bookingCreateDialog.placeholders.departure}
+                emptyText={messages.bookingCreateDialog.placeholders.departureEmpty}
+                triggerClassName="w-full"
+                clearable
               />
-              <Label htmlFor="new-booking-generate-contract-document" className="cursor-pointer">
-                {messages.bookingCreateDialog.labels.generateContractDocument}
-              </Label>
             </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Checkbox
-                id="new-booking-generate-invoice-document"
-                checked={generateInvoiceDocument}
-                onCheckedChange={(value) => setGenerateInvoiceDocument(value === true)}
+          ) : null}
+
+          {product.productId && slotId ? (
+            <OptionUnitsStepperSection
+              value={rooms}
+              onChange={setRooms}
+              productId={product.productId}
+              slotId={slotId}
+              optionId={product.optionId}
+              enabled={enabled}
+              onUnitsChange={handleRoomUnitsChange}
+              labels={{
+                heading: messages.bookingCreateDialog.labels.roomsHeading,
+                noOption: messages.bookingCreateDialog.labels.roomsNoOption,
+                noSlot: messages.bookingCreateDialog.labels.roomsNoSlot,
+                noUnits: messages.bookingCreateDialog.labels.roomsNoUnits,
+                remaining: messages.bookingCreateDialog.labels.roomsRemaining,
+                unlimited: messages.bookingCreateDialog.labels.roomsUnlimited,
+              }}
+            />
+          ) : null}
+
+          {product.productId && slotId ? (
+            <div className="flex flex-col gap-2 rounded-md border p-3">
+              <Label>{messages.bookingCreateDialog.labels.billingHeading}</Label>
+              <PersonPickerSection
+                value={person}
+                onChange={setPerson}
+                enabled={enabled}
+                labels={{
+                  createNewPerson: messages.bookingCreateDialog.labels.createNewPerson,
+                  selectExistingPerson: messages.bookingCreateDialog.labels.selectExistingPerson,
+                  organizationNone: messages.bookingCreateDialog.labels.organizationNone,
+                }}
               />
-              <Label htmlFor="new-booking-generate-invoice-document" className="cursor-pointer">
-                {messages.bookingCreateDialog.labels.generateInvoiceDocument}
-              </Label>
+            </div>
+          ) : null}
+
+          {product.productId && slotId ? (
+            <SharedRoomSection
+              value={sharedRoom}
+              onChange={setSharedRoom}
+              productId={product.productId || undefined}
+              enabled={enabled}
+              labels={{
+                toggle: messages.bookingCreateDialog.labels.sharedRoomToggle,
+                createMode: messages.bookingCreateDialog.labels.sharedRoomCreateMode,
+                joinMode: messages.bookingCreateDialog.labels.sharedRoomJoinMode,
+                selectPlaceholder: messages.bookingCreateDialog.labels.sharedRoomSelectPlaceholder,
+                noGroups: messages.bookingCreateDialog.labels.sharedRoomNoGroups,
+                createHint: messages.bookingCreateDialog.labels.sharedRoomCreateHint,
+                remove: messages.bookingCreateDialog.labels.sharedRoomRemove,
+              }}
+            />
+          ) : null}
+
+          {product.productId && slotId ? (
+            <TravelersSection
+              value={travelers}
+              onChange={setTravelers}
+              roomUnits={roomUnitOptions.length > 0 ? roomUnitOptions : undefined}
+              roomGroups={roomGroups.length > 0 ? roomGroups : undefined}
+              billingPersonId={(person.billTo ?? "person") === "person" ? person.personId : null}
+              labels={{
+                heading: messages.bookingCreateDialog.labels.travelerHeading,
+                addTraveler: messages.bookingCreateDialog.labels.addTraveler,
+                person: messages.bookingCreateDialog.labels.travelerPerson,
+                personSearchPlaceholder:
+                  messages.bookingCreateDialog.labels.travelerPersonSearchPlaceholder,
+                personEmpty: messages.bookingCreateDialog.labels.travelerPersonEmpty,
+                createNewPerson: messages.bookingCreateDialog.labels.createNewPerson,
+                createPersonSheetTitle: messages.bookingCreateDialog.labels.createPersonSheetTitle,
+                addBillingPerson: messages.bookingCreateDialog.labels.addBillingPersonAsTraveler,
+                role: messages.bookingCreateDialog.labels.travelerRole,
+                roleLead: messages.bookingCreateDialog.labels.travelerLead,
+                roleAdult: messages.bookingCreateDialog.labels.travelerAdult,
+                roleChild: messages.bookingCreateDialog.labels.travelerChild,
+                roleInfant: messages.bookingCreateDialog.labels.travelerInfant,
+                room: messages.bookingCreateDialog.labels.travelerRoom,
+                noRoom: messages.bookingCreateDialog.labels.travelerNoRoom,
+                remove: messages.bookingCreateDialog.labels.travelerRemove,
+                empty: messages.bookingCreateDialog.labels.travelerEmpty,
+              }}
+            />
+          ) : null}
+
+          {product.productId && slotId ? (
+            <div className="flex flex-col gap-2">
+              <Label>{messages.bookingCreateDialog.fields.internalNotes}</Label>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder={messages.bookingCreateDialog.placeholders.internalNotes}
+              />
+            </div>
+          ) : null}
+
+          {/* On-create actions — document generation and confirm-and-notify
+            live in one card since both control what happens immediately
+            after the booking is created. */}
+          {product.productId && slotId ? (
+            <div className="flex flex-col gap-3 rounded-md border p-3">
+              <Label>{messages.bookingCreateDialog.labels.documentGenerationHeading}</Label>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    id="new-booking-generate-contract-document"
+                    checked={generateContractDocument}
+                    onCheckedChange={(value) => setGenerateContractDocument(value === true)}
+                  />
+                  <Label
+                    htmlFor="new-booking-generate-contract-document"
+                    className="cursor-pointer"
+                  >
+                    {messages.bookingCreateDialog.labels.generateContractDocument}
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    id="new-booking-generate-invoice-document"
+                    checked={generateInvoiceDocument}
+                    onCheckedChange={(value) => setGenerateInvoiceDocument(value === true)}
+                  />
+                  <Label htmlFor="new-booking-generate-invoice-document" className="cursor-pointer">
+                    {messages.bookingCreateDialog.labels.generateInvoiceDocument}
+                  </Label>
+                </div>
+                <div className="flex flex-col gap-2 border-t pt-2 text-sm">
+                  {(() => {
+                    const wouldBeConfirmed = hasAnyPaidPayment(paymentSchedule)
+                    const derivedStatusLabel = createAsDraft
+                      ? messages.common.bookingStatusLabels.draft
+                      : wouldBeConfirmed
+                        ? messages.common.bookingStatusLabels.confirmed
+                        : messages.common.bookingStatusLabels.awaiting_payment
+                    return (
+                      <>
+                        <div className="flex items-start gap-2">
+                          <Checkbox
+                            id="new-booking-create-as-draft"
+                            checked={createAsDraft}
+                            onCheckedChange={(v) => setCreateAsDraft(v === true)}
+                            className="mt-0.5"
+                          />
+                          <div className="flex flex-col gap-1">
+                            <Label
+                              htmlFor="new-booking-create-as-draft"
+                              className="cursor-pointer text-sm"
+                            >
+                              {messages.bookingCreateDialog.fields.createAsDraft}
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                              {formatMessage(
+                                messages.bookingCreateDialog.fields.createAsDraftHint,
+                                { status: derivedStatusLabel },
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        {!createAsDraft && wouldBeConfirmed ? (
+                          <div className="flex items-start gap-2 pl-6">
+                            <Checkbox
+                              id="new-booking-notify-traveler"
+                              checked={notifyTraveler}
+                              onCheckedChange={(v) => setNotifyTraveler(v === true)}
+                              className="mt-0.5"
+                            />
+                            <div className="flex flex-col gap-1">
+                              <Label
+                                htmlFor="new-booking-notify-traveler"
+                                className="cursor-pointer text-sm"
+                              >
+                                {messages.bookingCreateDialog.fields.notifyTraveler}
+                              </Label>
+                              <p className="text-xs text-muted-foreground">
+                                {messages.bookingCreateDialog.fields.notifyTravelerHint}
+                              </p>
+                            </div>
+                          </div>
+                        ) : null}
+                      </>
+                    )
+                  })()}
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
+        {/* Footer buttons live INSIDE the form column so they don't span the preview column. */}
+        {error ? (
+          <div
+            role="alert"
+            className="mt-3 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+          >
+            {error}
+          </div>
+        ) : null}
+        <div className="mt-4 flex items-center justify-end gap-2 border-t px-1 pt-3">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
+            {messages.common.cancel}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSubmit}
+            disabled={isSubmitting || !product.productId}
+          >
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {createAsDraft
+              ? messages.bookingCreateDialog.actions.createDraftBooking
+              : hasAnyPaidPayment(paymentSchedule)
+                ? messages.bookingCreateDialog.actions.createConfirmedBooking
+                : messages.bookingCreateDialog.actions.createAwaitingPaymentBooking}
+          </Button>
+        </div>
+      </div>
+      {/* Right column — preview, pricing, voucher. Stays out of the
+          form column so the footer buttons don't sit beneath it. */}
+      <div className="flex flex-col gap-4 lg:col-span-4">
+        <BookingPreviewCard
+          productId={product.productId}
+          optionId={product.optionId}
+          slotId={slotId}
+          slotLabel={(() => {
+            const slot = slots.find((s) => s.id === slotId)
+            return slot ? formatSlotLabel(slot) : null
+          })()}
+          unitQuantities={displayQuantities}
+          unitLabels={roomUnitLabels}
+          travelers={travelers.travelers}
+          messages={messages}
+          onPricingChange={setPricing}
+        />
+        {product.productId && slotId ? (
+          <VoucherPickerSection
+            value={voucher}
+            onChange={setVoucher}
+            currency={currency}
+            labels={{
+              heading: messages.bookingCreateDialog.labels.voucherHeading,
+              codePlaceholder: messages.bookingCreateDialog.labels.voucherCodePlaceholder,
+              apply: messages.bookingCreateDialog.labels.voucherApply,
+              clear: messages.bookingCreateDialog.labels.voucherClear,
+              remainingLabel: messages.bookingCreateDialog.labels.voucherRemainingLabel,
+              invalidLabel: messages.bookingCreateDialog.labels.voucherInvalidLabel,
+            }}
+          />
+        ) : null}
+        {product.productId && slotId ? (
+          <PaymentScheduleSection
+            value={paymentSchedule}
+            onChange={setPaymentSchedule}
+            currency={pricingCurrency}
+            totalAmountCents={pricingTotalAmountCents}
+            labels={{
+              heading: messages.bookingCreateDialog.labels.paymentHeading,
+              modeUnpaid: messages.bookingCreateDialog.labels.paymentModeUnpaid,
+              modeFull: messages.bookingCreateDialog.labels.paymentModeFull,
+              modeAdvance: messages.bookingCreateDialog.labels.paymentModeAdvance,
+              modeSplit: messages.bookingCreateDialog.labels.paymentModeSplit,
+              dueDate: messages.bookingCreateDialog.labels.paymentDueDate,
+              amount: messages.bookingCreateDialog.labels.paymentAmount,
+              firstInstallment: messages.bookingCreateDialog.labels.paymentFirstInstallment,
+              secondInstallment: messages.bookingCreateDialog.labels.paymentSecondInstallment,
+              preset5050: messages.bookingCreateDialog.labels.paymentPreset5050,
+              unpaidHint: messages.bookingCreateDialog.labels.paymentUnpaidHint,
+              totalDue: messages.bookingCreateDialog.labels.paymentTotalDue,
+              scheduledTotal: messages.bookingCreateDialog.labels.paymentScheduledTotal,
+              remaining: messages.bookingCreateDialog.labels.paymentRemaining,
+              alreadyPaid: messages.bookingCreateDialog.labels.paymentAlreadyPaid,
+              paymentDate: messages.bookingCreateDialog.labels.paymentDate,
+              paymentMethod: messages.bookingCreateDialog.labels.paymentMethod,
+              paymentReference: messages.bookingCreateDialog.labels.paymentReference,
+            }}
+          />
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Right-rail live preview for the booking-create dialog. Mirrors the
+ * operator's in-progress selections — product (with thumbnail),
+ * departure, options + quantities, travelers, and the current
+ * confirmed price — so the operator gets a "what am I about to book"
+ * summary without scrolling back through the form.
+ */
+function BookingPreviewCard({
+  productId,
+  optionId,
+  slotId,
+  slotLabel,
+  unitQuantities,
+  unitLabels,
+  travelers,
+  messages,
+  onPricingChange,
+}: {
+  productId: string
+  optionId: string | null
+  slotId: string | null
+  slotLabel: string | null
+  unitQuantities: Record<string, number>
+  unitLabels: Record<string, string>
+  travelers: TravelerEntry[]
+  messages: ReturnType<typeof useBookingsUiMessagesOrDefault>
+  onPricingChange: (value: PriceBreakdownValue) => void
+}) {
+  const { formatCurrency, formatNumber } = useBookingsUiI18nOrDefault()
+  const productQuery = useProduct(productId || undefined, { enabled: Boolean(productId) })
+  const mediaQuery = useProductMedia(productId, { limit: 1, enabled: Boolean(productId) })
+  const product = productQuery.data ?? null
+  const cover = (mediaQuery.data?.data ?? []).find((m) => m.isCover) ?? mediaQuery.data?.data?.[0]
+  const labels = messages.bookingCreateDialog.labels
+  // Mirror the breakdown locally so we can drive the tax preview hook
+  // off the same `confirmedAmountCents` the parent receives via
+  // onPricingChange. Manual overrides flow through the same field, so
+  // the tax line follows whatever the operator decides to charge.
+  const [breakdown, setBreakdown] = React.useState<PriceBreakdownValue | null>(null)
+  const handlePricingChange = React.useCallback(
+    (value: PriceBreakdownValue) => {
+      setBreakdown(value)
+      onPricingChange(value)
+    },
+    [onPricingChange],
+  )
+  const taxSubtotalCents = breakdown?.confirmedAmountCents ?? breakdown?.catalogAmountCents ?? 0
+  const taxCurrency = breakdown?.currency ?? "EUR"
+  const taxPreview = useBookingTaxPreview({
+    productId,
+    subtotalCents: taxSubtotalCents,
+    currency: taxCurrency,
+    enabled: Boolean(productId) && taxSubtotalCents > 0,
+  })
+  const previewMessages = {
+    heading: labels.previewHeading,
+    empty: labels.previewEmpty,
+    product: labels.previewProduct,
+    departure: labels.previewDeparture,
+    travelers: labels.previewTravelers,
+    loading: labels.previewLoading,
+    travelerUnnamed: labels.previewTravelerUnnamed,
+  }
+
+  const showPriceBreakdown = Boolean(productId && slotId)
+  const hasContent =
+    Boolean(productId) || slotLabel != null || travelers.length > 0 || showPriceBreakdown
+
+  return (
+    <aside>
+      <div className="flex flex-col gap-4 rounded-md border bg-muted/10 p-4">
+        <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          {previewMessages.heading}
+        </div>
+
+        {!hasContent ? (
+          <p className="text-xs text-muted-foreground">{previewMessages.empty}</p>
+        ) : null}
+
+        {productId ? (
+          <div className="flex gap-3">
+            {cover?.url ? (
+              <img
+                src={cover.url}
+                alt={product?.name ?? ""}
+                className="h-14 w-14 shrink-0 rounded-md object-cover ring-1 ring-border"
+                loading="lazy"
+              />
+            ) : (
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                <ImageIcon className="h-5 w-5" />
+              </div>
+            )}
+            <div className="flex min-w-0 flex-col">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                {previewMessages.product}
+              </span>
+              <span className="truncate text-sm font-medium">
+                {product?.name ?? previewMessages.loading}
+              </span>
             </div>
           </div>
-        </div>
+        ) : null}
 
-        <div className="flex flex-col gap-2">
-          <Label>{messages.bookingCreateDialog.fields.internalNotes}</Label>
-          <Textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder={messages.bookingCreateDialog.placeholders.internalNotes}
-          />
-        </div>
+        {slotLabel ? (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              {previewMessages.departure}
+            </span>
+            <span className="text-sm">{slotLabel}</span>
+          </div>
+        ) : null}
 
-        <div className="flex items-start gap-2 rounded-md border p-3">
-          <Checkbox
-            id="new-booking-confirm-after-create"
-            checked={confirmAfterCreate}
-            onCheckedChange={(v) => setConfirmAfterCreate(v === true)}
-            className="mt-0.5"
-          />
+        {travelers.length > 0 ? (
           <div className="flex flex-col gap-1">
-            <Label htmlFor="new-booking-confirm-after-create" className="cursor-pointer text-sm">
-              {messages.bookingCreateDialog.fields.confirmAfterCreate}
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              {messages.bookingCreateDialog.fields.confirmAfterCreateHint}
-            </p>
+            <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              {previewMessages.travelers}
+            </span>
+            <ul className="flex flex-col gap-0.5 text-sm">
+              {travelers.map((traveler, idx) => {
+                const name = [traveler.firstName, traveler.lastName]
+                  .filter((part) => part.trim().length > 0)
+                  .join(" ")
+                  .trim()
+                return (
+                  <li
+                    // biome-ignore lint/suspicious/noArrayIndexKey: travelers are positional and may not have a personId yet
+                    key={traveler.personId ?? `traveler-${idx}`}
+                    className="flex items-center justify-between gap-3"
+                  >
+                    <span className="truncate text-muted-foreground">
+                      {name || previewMessages.travelerUnnamed}
+                    </span>
+                    <span className="shrink-0 text-xs uppercase tracking-wider text-muted-foreground">
+                      {traveler.role}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
           </div>
-        </div>
+        ) : null}
 
-        {error && <p className="text-xs text-destructive">{error}</p>}
-      </DialogBody>
-      <DialogFooter>
-        <Button type="button" variant="ghost" size="sm" onClick={onCancel} disabled={isSubmitting}>
-          {messages.common.cancel}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          onClick={handleSubmit}
-          disabled={isSubmitting || !product.productId}
-        >
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {messages.bookingCreateDialog.actions.createDraftBooking}
-        </Button>
-      </DialogFooter>
-    </>
+        {/* Priced lines + totals + manual override live inside the same
+            summary card now — the standalone price-breakdown card was
+            duplicating the option/total rows shown above. */}
+        {showPriceBreakdown ? (
+          <div className="border-t pt-3">
+            <PriceBreakdownSection
+              flat
+              productId={productId}
+              optionId={optionId}
+              unitQuantities={unitQuantities}
+              unitLabels={unitLabels}
+              labels={{
+                heading: labels.breakdownHeading,
+                total: labels.breakdownTotal,
+                onRequest: labels.breakdownOnRequest,
+                groupRate: labels.breakdownGroupRate,
+                empty: labels.breakdownEmpty,
+                noPricing: labels.breakdownNoPricing,
+                confirmedTotal: labels.breakdownConfirmedTotal,
+                manualTotal: labels.breakdownManualTotal,
+                useCatalogTotal: labels.breakdownUseCatalogTotal,
+                overrideReason: labels.breakdownOverrideReason,
+                overrideReasonPlaceholder: labels.breakdownOverrideReasonPlaceholder,
+                overrideReasonRequired: labels.breakdownOverrideReasonRequired,
+              }}
+              onChange={handlePricingChange}
+            />
+            {taxPreview.data?.data && taxPreview.data.data.taxCents > 0 ? (
+              <TaxPreviewRows
+                snapshot={taxPreview.data.data}
+                labels={{
+                  subtotal: labels.breakdownSubtotal,
+                  tax: labels.breakdownTax,
+                  taxIncluded: labels.breakdownTaxIncluded,
+                  total: labels.breakdownTotal,
+                }}
+                formatAmount={(cents, currency) => formatCurrency(cents / 100, currency)}
+                formatRate={(basisPoints) =>
+                  formatNumber(basisPoints / 100, {
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 0,
+                  })
+                }
+              />
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </aside>
+  )
+}
+
+function TaxPreviewRows({
+  snapshot,
+  labels,
+  formatAmount,
+  formatRate,
+}: {
+  snapshot: {
+    subtotalCents: number
+    taxCents: number
+    totalCents: number
+    currency: string
+    taxRate: { code: string; label: string; rateBasisPoints: number; priceMode: string } | null
+  }
+  labels: { subtotal: string; tax: string; taxIncluded: string; total: string }
+  formatAmount: (cents: number, currency: string) => string
+  formatRate: (basisPoints: number) => string
+}) {
+  const inclusive = snapshot.taxRate?.priceMode === "inclusive"
+  const ratePart = snapshot.taxRate ? ` (${formatRate(snapshot.taxRate.rateBasisPoints)}%)` : ""
+  const inclTag = inclusive ? ` · ${labels.taxIncluded}` : ""
+  return (
+    <div className="mt-3 flex flex-col gap-1 border-t pt-3 text-sm">
+      <div className="flex items-center justify-between text-muted-foreground">
+        <span>{labels.subtotal}</span>
+        <span>{formatAmount(snapshot.subtotalCents, snapshot.currency)}</span>
+      </div>
+      <div className="flex items-center justify-between text-muted-foreground">
+        <span>
+          {snapshot.taxRate?.label ?? labels.tax}
+          {ratePart}
+          {inclTag}
+        </span>
+        <span>{formatAmount(snapshot.taxCents, snapshot.currency)}</span>
+      </div>
+      <div className="flex items-center justify-between font-medium">
+        <span>{labels.total}</span>
+        <span>{formatAmount(snapshot.totalCents, snapshot.currency)}</span>
+      </div>
+    </div>
   )
 }

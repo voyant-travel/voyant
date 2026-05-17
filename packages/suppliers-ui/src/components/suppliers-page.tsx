@@ -13,14 +13,19 @@ import {
   Badge,
   Button,
   Input,
+  Label,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@voyantjs/ui/components"
+import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
 import { cn } from "@voyantjs/ui/lib/utils"
-import { ArrowDown, ArrowUp, Plus, Search, SlidersHorizontal } from "lucide-react"
+import { ArrowDown, ArrowUp, ListFilter, Plus, Search, X } from "lucide-react"
 import * as React from "react"
 import { useSuppliersUiMessagesOrDefault } from "../i18n/index.js"
 import { formatMessage } from "./message-format.js"
@@ -53,6 +58,14 @@ export function SuppliersPage({
   const [sortDir, setSortDir] = React.useState<SuppliersListSortDir>("asc")
   const [pageIndex, setPageIndex] = React.useState(0)
   const [dialogOpen, setDialogOpen] = React.useState(false)
+  const [filtersOpen, setFiltersOpen] = React.useState(false)
+
+  const activeFilterCount =
+    (type !== ALL ? 1 : 0) +
+    (status !== ALL ? 1 : 0) +
+    (country !== "" ? 1 : 0) +
+    (currency !== "" ? 1 : 0)
+  const hasActiveFilters = activeFilterCount > 0 || search !== ""
 
   const query = useSuppliers({
     limit: pageSize,
@@ -91,21 +104,19 @@ export function SuppliersPage({
 
   return (
     <div data-slot="suppliers-page" className={cn("flex flex-col gap-6 p-6", className)}>
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">{messages.suppliersPage.title}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{messages.suppliersPage.description}</p>
-        </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus />
-          {messages.suppliersPage.create}
-        </Button>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">{messages.suppliersPage.title}</h1>
+        <p className="text-sm text-muted-foreground">{messages.suppliersPage.description}</p>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <div className="relative">
-          <Search className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground" />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[14rem] flex-1">
+          <Label htmlFor="suppliers-search" className="sr-only">
+            {messages.suppliersPage.searchPlaceholder}
+          </Label>
+          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            id="suppliers-search"
             value={search}
             onChange={(event) => {
               setSearch(event.target.value)
@@ -115,66 +126,133 @@ export function SuppliersPage({
             className="pl-9"
           />
         </div>
-        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_10rem_10rem_auto]">
-          <Select
-            value={type}
-            onValueChange={(value) => {
-              setType(value ?? ALL)
-              setPageIndex(0)
-            }}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>{messages.suppliersPage.allTypes}</SelectItem>
-              {SUPPLIER_TYPES.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {messages.common.supplierTypeLabels[item.value]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={status}
-            onValueChange={(value) => {
-              setStatus(value ?? ALL)
-              setPageIndex(0)
-            }}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>{messages.suppliersPage.allStatuses}</SelectItem>
-              {SUPPLIER_STATUSES.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {messages.common.supplierStatusLabels[item.value]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Input
-            value={country}
-            onChange={(event) => {
-              setCountry(event.target.value.toUpperCase())
-              setPageIndex(0)
-            }}
-            placeholder={messages.suppliersPage.countryPlaceholder}
-            maxLength={2}
+
+        <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <PopoverTrigger
+            render={
+              <Button variant="outline" size="default">
+                <ListFilter className="mr-2 size-4" />
+                {messages.suppliersPage.filters}
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="ml-2 px-1.5">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            }
           />
-          <Input
-            value={currency}
-            onChange={(event) => {
-              setCurrency(event.target.value.toUpperCase())
-              setPageIndex(0)
-            }}
-            placeholder={messages.suppliersPage.currencyPlaceholder}
-            maxLength={3}
-          />
-          <Button type="button" variant="outline" onClick={clearFilters}>
-            <SlidersHorizontal />
+          <PopoverContent align="start" className="w-[20rem] p-4">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="suppliers-filter-type">
+                  {messages.suppliersPage.filterTypeLabel}
+                </Label>
+                <Select
+                  value={type}
+                  onValueChange={(value) => {
+                    setType(value ?? ALL)
+                    setPageIndex(0)
+                  }}
+                >
+                  <SelectTrigger id="suppliers-filter-type" className="w-full">
+                    <SelectValue>
+                      {(value) =>
+                        value === ALL
+                          ? messages.suppliersPage.allTypes
+                          : messages.common.supplierTypeLabels[
+                              value as keyof typeof messages.common.supplierTypeLabels
+                            ]
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL}>{messages.suppliersPage.allTypes}</SelectItem>
+                    {SUPPLIER_TYPES.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {messages.common.supplierTypeLabels[item.value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="suppliers-filter-status">
+                  {messages.suppliersPage.filterStatusLabel}
+                </Label>
+                <Select
+                  value={status}
+                  onValueChange={(value) => {
+                    setStatus(value ?? ALL)
+                    setPageIndex(0)
+                  }}
+                >
+                  <SelectTrigger id="suppliers-filter-status" className="w-full">
+                    <SelectValue>
+                      {(value) =>
+                        value === ALL
+                          ? messages.suppliersPage.allStatuses
+                          : messages.common.supplierStatusLabels[
+                              value as keyof typeof messages.common.supplierStatusLabels
+                            ]
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL}>{messages.suppliersPage.allStatuses}</SelectItem>
+                    {SUPPLIER_STATUSES.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {messages.common.supplierStatusLabels[item.value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="suppliers-filter-country">
+                  {messages.suppliersPage.filterCountryLabel}
+                </Label>
+                <Input
+                  id="suppliers-filter-country"
+                  value={country}
+                  onChange={(event) => {
+                    setCountry(event.target.value.toUpperCase())
+                    setPageIndex(0)
+                  }}
+                  placeholder={messages.suppliersPage.countryPlaceholder}
+                  maxLength={2}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="suppliers-filter-currency">
+                  {messages.suppliersPage.filterCurrencyLabel}
+                </Label>
+                <CurrencyCombobox
+                  value={currency || null}
+                  onChange={(next) => {
+                    setCurrency(next ?? "")
+                    setPageIndex(0)
+                  }}
+                  placeholder={messages.suppliersPage.currencyPlaceholder}
+                />
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters}>
+            <X className="mr-1 size-4" />
             {messages.suppliersPage.clearFilters}
+          </Button>
+        )}
+
+        <div className="ml-auto">
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="mr-1 size-4" />
+            {messages.suppliersPage.create}
           </Button>
         </div>
       </div>

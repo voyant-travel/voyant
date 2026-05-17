@@ -30,6 +30,7 @@ export type PromotionsUiMessages = {
     scopePlaceholder: string
     allScopes: string
     validityRangePlaceholder: string
+    filtersButton: string
     clearFilters: string
     loadFailed: string
     loadFailedPrefix: string

@@ -13,6 +13,7 @@ import {
 } from "@voyantjs/ui/components"
 import { Separator } from "@voyantjs/ui/components/separator"
 import {
+  CalendarRange,
   DollarSign,
   Download,
   FileText,
@@ -206,6 +207,7 @@ export function ProductDeparturesSection({
   onCreate,
   onEdit,
   onOverridePrice,
+  onManageAvailability,
   onDelete,
 }: {
   slots: DepartureSlot[]
@@ -214,6 +216,7 @@ export function ProductDeparturesSection({
   onCreate: () => void
   onEdit: (slot: DepartureSlot) => void
   onOverridePrice?: (slot: DepartureSlot) => void
+  onManageAvailability?: (slot: DepartureSlot) => void
   onDelete: (slotId: string) => void
 }) {
   const messages = useAdminMessages()
@@ -304,6 +307,12 @@ export function ProductDeparturesSection({
                       <Pencil className="h-4 w-4" />
                       {productMessages.edit}
                     </DropdownMenuItem>
+                    {onManageAvailability ? (
+                      <DropdownMenuItem onClick={() => onManageAvailability(slot)}>
+                        <CalendarRange className="h-4 w-4" />
+                        {productMessages.departureManageAvailability}
+                      </DropdownMenuItem>
+                    ) : null}
                     {onOverridePrice ? (
                       <DropdownMenuItem onClick={() => onOverridePrice(slot)}>
                         <DollarSign className="h-4 w-4" />

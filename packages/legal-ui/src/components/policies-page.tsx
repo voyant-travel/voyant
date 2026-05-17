@@ -5,6 +5,9 @@ import {
   Button,
   Input,
   Label,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Select,
   SelectContent,
   SelectItem,
@@ -21,7 +24,7 @@ import {
   TableRow,
 } from "@voyantjs/ui/components/table"
 import { cn } from "@voyantjs/ui/lib/utils"
-import { Plus, Search } from "lucide-react"
+import { ListFilter, Plus, Search, X } from "lucide-react"
 import type { ReactNode } from "react"
 import { useState } from "react"
 
@@ -55,6 +58,15 @@ export function PoliciesPage({
   const [kind, setKind] = useState<string>(KIND_ALL)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [pageIndex, setPageIndex] = useState(0)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+
+  const activeFilterCount = kind !== KIND_ALL ? 1 : 0
+  const hasActiveFilters = activeFilterCount > 0 || search !== ""
+  const clearFilters = () => {
+    setSearch("")
+    setKind(KIND_ALL)
+    setPageIndex(0)
+  }
 
   const { data, isPending, isFetching, isError, refetch } = useLegalPolicies({
     search,
@@ -73,21 +85,12 @@ export function PoliciesPage({
 
   return (
     <div className={cn("flex flex-col gap-6 p-6", className)}>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{f.title}</h1>
-          <p className="text-sm text-muted-foreground">{f.description}</p>
-        </div>
-        {renderPolicyDialog ? (
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 size-4" aria-hidden="true" />
-            {f.create}
-          </Button>
-        ) : null}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">{f.title}</h1>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-[14rem] max-w-sm flex-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[14rem] flex-1">
           <Label htmlFor="policies-search" className="sr-only">
             {f.searchPlaceholder}
           </Label>
@@ -106,25 +109,72 @@ export function PoliciesPage({
             className="pl-9"
           />
         </div>
-        <Select
-          value={kind}
-          onValueChange={(value) => {
-            setKind(value ?? KIND_ALL)
-            resetPage()
-          }}
-        >
-          <SelectTrigger className="w-[12.5rem]">
-            <SelectValue placeholder={f.columns.kind} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={KIND_ALL}>{f.allKinds}</SelectItem>
-            {legalPolicyKinds.map((value) => (
-              <SelectItem key={value} value={value}>
-                {messages.common.policyKindLabels[value]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+
+        <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <PopoverTrigger
+            render={
+              <Button variant="outline" size="default">
+                <ListFilter className="mr-2 size-4" />
+                {f.filters.button}
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="ml-2 px-1.5">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            }
+          />
+          <PopoverContent align="start" className="w-[22rem] p-4">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="policies-filter-kind">{f.filters.kind}</Label>
+                <Select
+                  value={kind}
+                  onValueChange={(value) => {
+                    setKind(value ?? KIND_ALL)
+                    resetPage()
+                  }}
+                >
+                  <SelectTrigger id="policies-filter-kind" className="w-full">
+                    <SelectValue>
+                      {(value) =>
+                        value === KIND_ALL
+                          ? f.allKinds
+                          : (messages.common.policyKindLabels[
+                              value as keyof typeof messages.common.policyKindLabels
+                            ] ?? value)
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={KIND_ALL}>{f.allKinds}</SelectItem>
+                    {legalPolicyKinds.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {messages.common.policyKindLabels[value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters}>
+            <X className="mr-1 size-4" />
+            {f.filters.clear}
+          </Button>
+        )}
+
+        {renderPolicyDialog ? (
+          <div className="ml-auto">
+            <Button onClick={() => setDialogOpen(true)}>
+              <Plus className="mr-1 size-4" aria-hidden="true" />
+              {f.create}
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       <div className="rounded-md border">

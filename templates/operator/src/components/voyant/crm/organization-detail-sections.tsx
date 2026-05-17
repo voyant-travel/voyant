@@ -1,4 +1,4 @@
-import { formatMessage, useLocale } from "@voyantjs/admin"
+import { formatMessage, useAdminBreadcrumbs, useLocale } from "@voyantjs/admin"
 import type { UpdateOrganizationInput } from "@voyantjs/crm-react"
 import {
   Avatar,
@@ -202,19 +202,16 @@ export function OrganizationTopBar({
   deletePending: boolean
 }) {
   const messages = useAdminMessages().crm.organizationDetail
+  useAdminBreadcrumbs([
+    { label: messages.breadcrumbRoot, href: "/organizations" },
+    { label: orgName },
+  ])
 
   return (
     <div className="sticky top-0 z-10 flex items-center gap-3 border-b bg-background px-6 py-3">
       <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
         <ArrowLeft className="h-4 w-4" />
       </Button>
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <button type="button" onClick={onBack} className="hover:text-foreground">
-          {messages.breadcrumbRoot}
-        </button>
-        <span>/</span>
-        <span className="text-foreground">{orgName}</span>
-      </div>
       <div className="ml-auto flex items-center gap-2">
         <ConfirmActionButton
           buttonLabel={messages.deleteButton}

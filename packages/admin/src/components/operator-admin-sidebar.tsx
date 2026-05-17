@@ -14,6 +14,7 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from "@voyantjs/ui/components"
+import { Settings as DefaultSettingsIcon } from "lucide-react"
 import type * as React from "react"
 
 import type { AdminExtension } from "../extensions.js"
@@ -25,6 +26,11 @@ import {
 import { AdminExtensionsProvider } from "../providers/admin-extensions.js"
 import { useOperatorAdminMessages } from "../providers/operator-admin-messages.js"
 import type { AdminUser, NavItem, NavSubItem } from "../types.js"
+import {
+  AdminBreadcrumbsProvider,
+  AdminBreadcrumbsTrail,
+  useAdminBreadcrumbsValue,
+} from "./admin-breadcrumbs.js"
 import { AdminNavGroup } from "./admin-nav-group.js"
 import { type AdminNavLinkComponent, DefaultAdminNavLink } from "./admin-nav-link.js"
 import { type AdminPageHeadOptions, AdminPageHeadProvider } from "./admin-page-head.js"
@@ -90,6 +96,9 @@ export function OperatorAdminSidebar({
   const baseItems = navItems ?? createOperatorAdminNavigation({ icons, messages: messages.nav })
   const resolvedItems = resolveAdminNavigation({ baseItems, extensions })
   const resolvedBrand = brand ?? <DefaultOperatorAdminBrand linkComponent={linkComponent} />
+  const LinkComponent = linkComponent ?? DefaultAdminNavLink
+  const SettingsIcon = icons?.settings ?? DefaultSettingsIcon
+  const settingsActive = navUrlMatchesPath("/settings", currentPath)
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -101,16 +110,26 @@ export function OperatorAdminSidebar({
           linkComponent={linkComponent}
         />
       </SidebarContent>
-      {user && (
-        <SidebarFooter>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={settingsActive} tooltip={messages.nav.settings}>
+              <LinkComponent href="/settings">
+                <SettingsIcon />
+                <span>{messages.nav.settings}</span>
+              </LinkComponent>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        {user && (
           <OperatorAdminUserMenu
             accountHref={accountHref}
             linkComponent={linkComponent}
             onSignOut={onSignOut}
             user={user}
           />
-        </SidebarFooter>
-      )}
+        )}
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )
@@ -124,7 +143,14 @@ export interface OperatorAdminWorkspaceLayoutProps {
   defaultOpen?: React.ComponentProps<typeof SidebarProvider>["defaultOpen"]
   extensions?: ReadonlyArray<AdminExtension>
   headerClassName?: string
+  /**
+   * Left slot of the inset header (after the sidebar trigger). When
+   * omitted, a default breadcrumb showing the resolved page title is
+   * rendered automatically.
+   */
   headerSlot?: React.ReactNode
+  /** Right slot of the inset header — meant for page actions. */
+  headerSlotRight?: React.ReactNode
   icons?: OperatorAdminNavigationIcons
   linkComponent?: AdminNavLinkComponent
   mainClassName?: string
@@ -191,6 +217,7 @@ export function OperatorAdminWorkspaceLayout({
   extensions,
   headerClassName,
   headerSlot,
+  headerSlotRight,
   icons,
   linkComponent,
   mainClassName = "flex-1",
@@ -251,9 +278,11 @@ export function OperatorAdminWorkspaceLayout({
       {...restSidebarProps}
     />
   )
+  const headerHasContent = showSidebarTrigger || headerSlot !== undefined || pageTitle != null
+  const hasHeader = headerHasContent || headerSlotRight != null
   const inset = (
     <SidebarInset className={mainClassName}>
-      {(showSidebarTrigger || headerSlot) && (
+      {hasHeader && (
         <header
           className={cn(
             "flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12",
@@ -268,8 +297,15 @@ export function OperatorAdminWorkspaceLayout({
                 aria-label="Toggle sidebar"
               />
             )}
-            {headerSlot}
+            {headerSlot !== undefined ? (
+              headerSlot
+            ) : (
+              <DefaultHeaderBreadcrumb linkComponent={linkComponent} pageTitle={pageTitle} />
+            )}
           </div>
+          {headerSlotRight && (
+            <div className="flex shrink-0 items-center gap-2">{headerSlotRight}</div>
+          )}
         </header>
       )}
       {children}
@@ -291,12 +327,29 @@ export function OperatorAdminWorkspaceLayout({
   return (
     <AdminExtensionsProvider extensions={extensions}>
       <SidebarProvider defaultOpen={defaultOpen}>
-        {pageHead === false ? (
-          workspace
-        ) : (
-          <AdminPageHeadProvider baseHead={pageHeadBase}>{workspace}</AdminPageHeadProvider>
-        )}
+        <AdminBreadcrumbsProvider>
+          {pageHead === false ? (
+            workspace
+          ) : (
+            <AdminPageHeadProvider baseHead={pageHeadBase}>{workspace}</AdminPageHeadProvider>
+          )}
+        </AdminBreadcrumbsProvider>
       </SidebarProvider>
     </AdminExtensionsProvider>
   )
+}
+
+function DefaultHeaderBreadcrumb({
+  linkComponent,
+  pageTitle,
+}: {
+  linkComponent?: AdminNavLinkComponent
+  pageTitle: string | null
+}) {
+  const segments = useAdminBreadcrumbsValue()
+  if (segments.length > 0) {
+    return <AdminBreadcrumbsTrail linkComponent={linkComponent} segments={segments} />
+  }
+  if (pageTitle == null) return null
+  return <AdminBreadcrumbsTrail linkComponent={linkComponent} segments={[{ label: pageTitle }]} />
 }

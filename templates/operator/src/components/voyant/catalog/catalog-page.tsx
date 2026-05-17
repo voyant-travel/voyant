@@ -1,8 +1,9 @@
 "use client"
 
-import { useNavigate } from "@tanstack/react-router"
+import { Link, useNavigate } from "@tanstack/react-router"
 import type { CatalogSearchHit } from "@voyantjs/catalog-react"
 import { type CatalogDetailEnrichment, CatalogPage as CatalogUiPage } from "@voyantjs/catalog-ui"
+import { useProductMutation } from "@voyantjs/products-react"
 import { useSuppliers } from "@voyantjs/suppliers-react"
 import { useMemo } from "react"
 import { toast } from "sonner"
@@ -22,6 +23,7 @@ export function CatalogPage() {
     return m
   }, [suppliersQuery.data])
   const formatSupplier = (id: string | number) => supplierMap.get(String(id)) ?? String(id)
+  const productMutation = useProductMutation()
 
   return (
     <CatalogUiPage
@@ -53,8 +55,44 @@ export function CatalogPage() {
       onBookDeparture={(hit, entityModule, departure) =>
         goToBookingPage(hit, entityModule, navigate, departure)
       }
+      onBookOption={(hit, entityModule, departure, option) =>
+        goToBookingPage(hit, entityModule, navigate, departure, option)
+      }
       onOpenProductEditor={(hit) => navigate({ to: "/products/$id", params: { id: hit.id } })}
       onLoadProductDetail={(hit) => loadProductDetail(hit, formatSupplier)}
+      renderSupplierLink={(supplierId, displayName) => (
+        <Link
+          to="/suppliers/$id"
+          params={{ id: supplierId }}
+          className="font-medium text-primary hover:underline"
+        >
+          {displayName}
+        </Link>
+      )}
+      onTagsChange={async (hit, nextTags) => {
+        // Owned products only — sourced rows are read-only mirrors of
+        // the upstream so we can't write tags through to them.
+        const sourceKind = stringField(hit, "source.kind", null)
+        if (sourceKind && sourceKind !== "owned") {
+          toast.info("Tags can only be edited on owned products.")
+          throw new Error("read-only source kind")
+        }
+        try {
+          await productMutation.update.mutateAsync({
+            id: hit.id,
+            input: { tags: nextTags },
+          })
+          // Intentionally don't invalidate the catalog search query —
+          // Typesense reindex is async, so a refetch right after the
+          // PATCH would return the pre-mutation tags and clobber the
+          // local optimistic state. The editor keeps its own working
+          // set keyed on hit.id; the next time the user opens this
+          // product the index has caught up.
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Could not update tags.")
+          throw err
+        }
+      }}
     />
   )
 }
@@ -84,6 +122,7 @@ function goToBookingPage(
   entityModule: string,
   navigate: AppNavigate,
   departure?: BookingDeparture,
+  option?: { id: string; name: string },
 ): void {
   const sourceKind = stringField(hit, "source.kind", null)
   if (!sourceKind || sourceKind === "owned") {
@@ -108,6 +147,7 @@ function goToBookingPage(
       ...(name ? { name } : {}),
       ...(supplierId ? { supplierId } : {}),
       ...(departure ? { departureId: departure.id, departureStartsAt: departure.startsAt } : {}),
+      ...(option ? { optionId: option.id, optionName: option.name } : {}),
     },
   })
 }
@@ -149,6 +189,7 @@ async function loadProductDetail(
       title: d.title ?? null,
       description: d.description ?? null,
       location: d.location ?? null,
+      heroImageUrl: d.hero_image_url ?? null,
     })),
     media: content.media.map((m) => ({
       url: m.url,

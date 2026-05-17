@@ -195,6 +195,7 @@ export const contractRecordsService = {
     db: PostgresJsDatabase,
     contractId: string,
     runtime?: ContractLifecycleRuntimeOptions,
+    delivery?: { recipientEmail?: string | null; subject?: string | null; message?: string | null },
   ) {
     const result = await db.transaction(async (tx) => {
       const [contract] = await tx
@@ -223,11 +224,30 @@ export const contractRecordsService = {
         .set({ status: "sent", stageHistory, sentAt: now, updatedAt: now })
         .where(eq(contracts.id, contractId))
         .returning()
+      // Forward the operator's send-dialog customization onto the
+      // lifecycle event so the notification subscriber (template
+      // wires this up) can deliver the typed-in subject + message
+      // instead of falling back to a static contract-sent template.
+      const deliveryPayload = delivery
+        ? {
+            recipientEmail: delivery.recipientEmail ?? null,
+            subject: delivery.subject ?? null,
+            message: delivery.message ?? null,
+          }
+        : null
       return {
         status: "sent" as const,
         contract: updated ?? null,
         event:
-          updated && buildContractLifecycleEvent(updated, contract.status, "sent", "sent", now),
+          updated &&
+          buildContractLifecycleEvent(
+            updated,
+            contract.status,
+            "sent",
+            "sent",
+            now,
+            deliveryPayload,
+          ),
       }
     })
     if (result.status === "sent" && result.event) {

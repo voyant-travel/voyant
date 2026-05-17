@@ -17,6 +17,7 @@ import { AdminWidgetSlotRenderer } from "@/components/admin/admin-widget-slot"
 import { type AdminMessages, useAdminMessages } from "@/lib/admin-i18n"
 import { CreditNoteDialog } from "./credit-note-dialog"
 import {
+  InvoiceAttachmentsCard,
   InvoiceCreditNotesCard,
   InvoiceInfoCards,
   InvoiceLineItemsCard,
@@ -160,6 +161,8 @@ export function InvoiceDetailPage({ id }: { id: string }) {
           }
         }}
       />
+
+      <InvoiceAttachmentsCard invoiceId={id} />
 
       <InvoicePaymentsCard payments={payments} onCreate={() => setPaymentDialogOpen(true)} />
 

@@ -18,6 +18,15 @@
  */
 
 export {
+  type AdminBreadcrumbSegment,
+  AdminBreadcrumbsProvider,
+  type AdminBreadcrumbsProviderProps,
+  AdminBreadcrumbsTrail,
+  type AdminBreadcrumbsTrailProps,
+  useAdminBreadcrumbs,
+  useAdminBreadcrumbsValue,
+} from "./components/admin-breadcrumbs.js"
+export {
   AdminNavGroup,
   type AdminNavGroupProps,
 } from "./components/admin-nav-group.js"

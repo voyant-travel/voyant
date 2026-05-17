@@ -24,6 +24,7 @@ import {
   Textarea,
 } from "@voyantjs/ui/components"
 import { CountryCombobox } from "@voyantjs/ui/components/country-combobox"
+import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import * as React from "react"
@@ -238,11 +239,15 @@ export function SupplierDialog({ open, onOpenChange, supplier, onSuccess }: Supp
                 label={dialog.defaultCurrencyLabel}
                 error={form.formState.errors.defaultCurrency?.message}
               >
-                <Input
-                  {...form.register("defaultCurrency")}
-                  maxLength={3}
+                <CurrencyCombobox
+                  value={form.watch("defaultCurrency") || null}
+                  onChange={(next) =>
+                    form.setValue("defaultCurrency", next ?? "", {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
+                  }
                   placeholder={dialog.defaultCurrencyPlaceholder}
-                  className="uppercase"
                 />
               </Field>
               <Field

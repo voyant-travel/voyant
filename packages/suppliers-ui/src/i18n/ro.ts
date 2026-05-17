@@ -60,6 +60,10 @@ export const suppliersUiRo = {
     allStatuses: "Toate statusurile",
     countryPlaceholder: "Cod tara",
     currencyPlaceholder: "Moneda",
+    filterTypeLabel: "Tip",
+    filterStatusLabel: "Status",
+    filterCountryLabel: "Tara",
+    filterCurrencyLabel: "Moneda",
     empty: "Niciun furnizor nu se potriveste filtrelor curente.",
     loadFailed: "Furnizorii nu au putut fi incarcati.",
     columns: {

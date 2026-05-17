@@ -42,6 +42,12 @@ export interface PricingPreviewFilters {
   catalogId?: string | null | undefined
 }
 
+export interface TaxPreviewFilters {
+  productId: string
+  subtotalCents: number
+  currency: string
+}
+
 export const bookingsQueryKeys = {
   all: ["voyant", "bookings"] as const,
 
@@ -79,4 +85,7 @@ export const bookingsQueryKeys = {
 
   pricingPreview: (filters: PricingPreviewFilters) =>
     [...bookingsQueryKeys.all, "pricing-preview", filters] as const,
+
+  taxPreview: (filters: TaxPreviewFilters) =>
+    [...bookingsQueryKeys.all, "tax-preview", filters] as const,
 } as const

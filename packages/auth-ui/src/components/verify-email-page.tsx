@@ -3,6 +3,11 @@
 import { useVerifyEmail, type VerifyEmailInput, type VerifyEmailResult } from "@voyantjs/auth-react"
 import {
   Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
   cn,
   Input,
   InputOTP,
@@ -190,164 +195,164 @@ export function VerifyEmailPage({
 
   if (verified) {
     return (
-      <div
-        data-slot="verify-email-page"
-        className={cn("mx-auto flex w-full max-w-sm flex-col gap-6", className)}
-      >
-        <div className="space-y-2">
-          <CheckCircle2 className="h-8 w-8 text-green-600" aria-hidden="true" />
-          <h1 className="text-2xl font-bold tracking-tight">{messages.successTitle}</h1>
-          <p className="text-sm text-muted-foreground">{messages.successDescription}</p>
-        </div>
-
-        {signInHref ? (
-          <a
-            href={signInHref}
-            onClick={() => void onSignInClick?.()}
-            className="inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/80"
-          >
-            {messages.signIn}
-          </a>
-        ) : (
-          onSignInClick && (
-            <Button type="button" className="w-full" onClick={() => void onSignInClick()}>
+      <Card data-slot="verify-email-page" className={cn(className)}>
+        <CardHeader>
+          <CheckCircle2 className="mb-2 h-8 w-8 text-green-600" aria-hidden="true" />
+          <CardTitle>{messages.successTitle}</CardTitle>
+          <CardDescription>{messages.successDescription}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {signInHref ? (
+            <a
+              href={signInHref}
+              onClick={() => void onSignInClick?.()}
+              className="inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/80"
+            >
               {messages.signIn}
-            </Button>
-          )
-        )}
-      </div>
+            </a>
+          ) : (
+            onSignInClick && (
+              <Button type="button" className="w-full" onClick={() => void onSignInClick()}>
+                {messages.signIn}
+              </Button>
+            )
+          )}
+        </CardContent>
+      </Card>
     )
   }
 
   return (
-    <div
-      data-slot="verify-email-page"
-      className={cn("mx-auto flex w-full max-w-sm flex-col gap-6", className)}
-    >
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">{messages.title}</h1>
-        <p className="text-sm text-muted-foreground">
+    <Card data-slot="verify-email-page" className={cn(className)}>
+      <CardHeader>
+        <CardTitle>{messages.title}</CardTitle>
+        <CardDescription>
           {selectedMode === "token" ? messages.tokenDescription : messages.description}
-        </p>
+        </CardDescription>
         {selectedMode === "otp" && emailValue && (
           <p className="text-sm font-medium">{emailValue}</p>
         )}
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-
-        {resent && (
-          <div className="rounded-md bg-green-500/10 px-3 py-2 text-sm text-green-700 dark:text-green-400">
-            {messages.resent}
-          </div>
-        )}
-
-        {selectedMode === "otp" && !email && (
-          <div className="space-y-2">
-            <Label htmlFor="auth-verify-email-address">{messages.emailLabel}</Label>
-            <Input
-              id="auth-verify-email-address"
-              type="email"
-              placeholder={messages.emailPlaceholder}
-              value={emailValue}
-              onChange={(event) => setEmailValue(event.target.value)}
-              disabled={isSubmitting}
-              required
-              autoComplete="email"
-              autoFocus
-            />
-          </div>
-        )}
-
-        {selectedMode === "otp" && (
-          <div className="space-y-2">
-            <Label htmlFor="auth-verify-email-code">{messages.codeLabel}</Label>
-            <div className="flex justify-center sm:justify-start">
-              <InputOTP
-                id="auth-verify-email-code"
-                maxLength={codeLength}
-                value={codeValue}
-                onChange={setCodeValue}
-                disabled={isSubmitting}
-                autoFocus={Boolean(email)}
-              >
-                <InputOTPGroup>
-                  {codeSlots.map((slot) => (
-                    <InputOTPSlot key={slot.id} index={slot.index} className="h-12 w-12 text-lg" />
-                  ))}
-                </InputOTPGroup>
-              </InputOTP>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
             </div>
-          </div>
-        )}
+          )}
 
-        {selectedMode === "token" && (
-          <div className="space-y-2">
-            <Label htmlFor="auth-verify-email-token">{messages.tokenLabel}</Label>
-            <Input
-              id="auth-verify-email-token"
-              value={tokenValue}
-              onChange={(event) => setTokenValue(event.target.value)}
-              placeholder={messages.tokenPlaceholder}
-              disabled={isSubmitting}
-              required
-              autoFocus={!tokenValue}
-            />
-          </div>
-        )}
+          {resent && (
+            <div className="rounded-md bg-green-500/10 px-3 py-2 text-sm text-green-700 dark:text-green-400">
+              {messages.resent}
+            </div>
+          )}
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={
-            isSubmitting ||
-            (selectedMode === "otp" && codeValue.trim().length !== codeLength) ||
-            (selectedMode === "token" && tokenValue.trim().length === 0)
-          }
-        >
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isSubmitting ? messages.verifying : messages.submit}
-        </Button>
-      </form>
+          {selectedMode === "otp" && !email && (
+            <div className="space-y-2">
+              <Label htmlFor="auth-verify-email-address">{messages.emailLabel}</Label>
+              <Input
+                id="auth-verify-email-address"
+                type="email"
+                placeholder={messages.emailPlaceholder}
+                value={emailValue}
+                onChange={(event) => setEmailValue(event.target.value)}
+                disabled={isSubmitting}
+                required
+                autoComplete="email"
+                autoFocus
+              />
+            </div>
+          )}
 
-      <div className="flex flex-col items-center gap-3 text-center text-sm">
-        {canResend && (
-          <button
-            type="button"
-            onClick={() => void handleResend()}
-            disabled={resending || isSubmitting}
-            className="inline-flex items-center gap-2 font-medium text-muted-foreground hover:text-primary hover:underline disabled:opacity-50"
+          {selectedMode === "otp" && (
+            <div className="space-y-2">
+              <Label htmlFor="auth-verify-email-code">{messages.codeLabel}</Label>
+              <div className="flex justify-center sm:justify-start">
+                <InputOTP
+                  id="auth-verify-email-code"
+                  maxLength={codeLength}
+                  value={codeValue}
+                  onChange={setCodeValue}
+                  disabled={isSubmitting}
+                  autoFocus={Boolean(email)}
+                >
+                  <InputOTPGroup>
+                    {codeSlots.map((slot) => (
+                      <InputOTPSlot
+                        key={slot.id}
+                        index={slot.index}
+                        className="h-12 w-12 text-lg"
+                      />
+                    ))}
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+            </div>
+          )}
+
+          {selectedMode === "token" && (
+            <div className="space-y-2">
+              <Label htmlFor="auth-verify-email-token">{messages.tokenLabel}</Label>
+              <Input
+                id="auth-verify-email-token"
+                value={tokenValue}
+                onChange={(event) => setTokenValue(event.target.value)}
+                placeholder={messages.tokenPlaceholder}
+                disabled={isSubmitting}
+                required
+                autoFocus={!tokenValue}
+              />
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={
+              isSubmitting ||
+              (selectedMode === "otp" && codeValue.trim().length !== codeLength) ||
+              (selectedMode === "token" && tokenValue.trim().length === 0)
+            }
           >
-            {resending && <RotateCcw className="h-4 w-4 animate-spin" aria-hidden="true" />}
-            {resending ? messages.sending : messages.resendCode}
-          </button>
-        )}
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSubmitting ? messages.verifying : messages.submit}
+          </Button>
+        </form>
 
-        {changeEmailHref ? (
-          <a
-            href={changeEmailHref}
-            onClick={() => void onChangeEmailClick?.()}
-            className="text-muted-foreground hover:text-primary hover:underline"
-          >
-            {messages.changeEmail}
-          </a>
-        ) : (
-          onChangeEmailClick && (
+        <div className="mt-4 flex flex-col items-center gap-3 text-center text-sm">
+          {canResend && (
             <button
               type="button"
-              onClick={() => void onChangeEmailClick()}
+              onClick={() => void handleResend()}
+              disabled={resending || isSubmitting}
+              className="inline-flex items-center gap-2 font-medium text-muted-foreground hover:text-primary hover:underline disabled:opacity-50"
+            >
+              {resending && <RotateCcw className="h-4 w-4 animate-spin" aria-hidden="true" />}
+              {resending ? messages.sending : messages.resendCode}
+            </button>
+          )}
+
+          {changeEmailHref ? (
+            <a
+              href={changeEmailHref}
+              onClick={() => void onChangeEmailClick?.()}
               className="text-muted-foreground hover:text-primary hover:underline"
             >
               {messages.changeEmail}
-            </button>
-          )
-        )}
-      </div>
-    </div>
+            </a>
+          ) : (
+            onChangeEmailClick && (
+              <button
+                type="button"
+                onClick={() => void onChangeEmailClick()}
+                className="text-muted-foreground hover:text-primary hover:underline"
+              >
+                {messages.changeEmail}
+              </button>
+            )
+          )}
+        </div>
+      </CardContent>
+    </Card>
   )
 }

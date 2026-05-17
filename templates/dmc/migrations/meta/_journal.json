@@ -57,6 +57,13 @@
       "when": 1778918400000,
       "tag": "0009_cloud_auth_links",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1778918900000,
+      "tag": "0010_rename_birthday",
+      "breakpoints": true
     }
   ]
 }

@@ -963,7 +963,7 @@ async function listCustomerRecordCandidatesByEmail(
       lastName: people.lastName,
       preferredLanguage: people.preferredLanguage,
       preferredCurrency: people.preferredCurrency,
-      birthday: people.birthday,
+      dateOfBirth: people.dateOfBirth,
       relation: people.relation,
       status: people.status,
       source: people.source,
@@ -994,7 +994,7 @@ async function listCustomerRecordCandidatesByEmail(
     lastName: row.lastName,
     preferredLanguage: row.preferredLanguage ?? null,
     preferredCurrency: row.preferredCurrency ?? null,
-    birthday: row.birthday ?? null,
+    dateOfBirth: row.dateOfBirth ?? null,
     email: normalizedEmail,
     phone: null,
     billingAddress: null,
@@ -1019,7 +1019,7 @@ async function listCustomerRecordCandidatesByPhone(
       lastName: people.lastName,
       preferredLanguage: people.preferredLanguage,
       preferredCurrency: people.preferredCurrency,
-      birthday: people.birthday,
+      dateOfBirth: people.dateOfBirth,
       relation: people.relation,
       status: people.status,
       source: people.source,
@@ -1053,7 +1053,7 @@ async function listCustomerRecordCandidatesByPhone(
     lastName: row.lastName,
     preferredLanguage: row.preferredLanguage ?? null,
     preferredCurrency: row.preferredCurrency ?? null,
-    birthday: row.birthday ?? null,
+    dateOfBirth: row.dateOfBirth ?? null,
     email: null,
     phone: normalizedPhone,
     billingAddress: null,
@@ -1086,7 +1086,7 @@ async function getCustomerRecord(db: PostgresJsDatabase, userId: string) {
     lastName: person.lastName,
     preferredLanguage: person.preferredLanguage ?? null,
     preferredCurrency: person.preferredCurrency ?? null,
-    birthday: person.birthday ?? null,
+    dateOfBirth: person.dateOfBirth ?? null,
     email: person.email ?? null,
     phone: person.phone ?? null,
     billingAddress: billingAddress ? toCustomerAddress(billingAddress) : null,
@@ -1537,7 +1537,7 @@ export const publicCustomerPortalService = {
       locale: authProfile.locale ?? "en",
       timezone: authProfile.timezone ?? null,
       seatingPreference: authProfile.seatingPreference ?? null,
-      dateOfBirth: customerRecord?.birthday ?? null,
+      dateOfBirth: customerRecord?.dateOfBirth ?? null,
       address: billingAddress
         ? {
             country: billingAddress.country,
@@ -1723,7 +1723,7 @@ export const publicCustomerPortalService = {
         nextAddressRecord !== undefined
           ? {
               ...(input.customerRecord ?? {}),
-              ...(nextDateOfBirth !== undefined ? { birthday: nextDateOfBirth } : {}),
+              ...(nextDateOfBirth !== undefined ? { dateOfBirth: nextDateOfBirth } : {}),
               ...(nextAddressRecord ?? {}),
             }
           : undefined
@@ -1746,8 +1746,8 @@ export const publicCustomerPortalService = {
           ...(nextCustomerRecord?.preferredCurrency !== undefined
             ? { preferredCurrency: nextCustomerRecord.preferredCurrency }
             : {}),
-          ...(nextCustomerRecord?.birthday !== undefined
-            ? { birthday: nextCustomerRecord.birthday }
+          ...(nextCustomerRecord?.dateOfBirth !== undefined
+            ? { dateOfBirth: nextCustomerRecord.dateOfBirth }
             : {}),
           ...(nextCustomerRecord?.phone !== undefined ? { phone: nextCustomerRecord.phone } : {}),
         })
@@ -1847,8 +1847,8 @@ export const publicCustomerPortalService = {
         ...(input.customerRecord?.preferredCurrency !== undefined
           ? { preferredCurrency: input.customerRecord.preferredCurrency }
           : {}),
-        ...(input.customerRecord?.birthday !== undefined
-          ? { birthday: input.customerRecord.birthday }
+        ...(input.customerRecord?.dateOfBirth !== undefined
+          ? { dateOfBirth: input.customerRecord.dateOfBirth }
           : {}),
         ...(input.customerRecord?.phone !== undefined ? { phone: input.customerRecord.phone } : {}),
       })
@@ -1901,7 +1901,7 @@ export const publicCustomerPortalService = {
       lastName: nextLastName || "Customer",
       preferredLanguage: input.customerRecord?.preferredLanguage ?? authProfile.locale ?? null,
       preferredCurrency: input.customerRecord?.preferredCurrency ?? null,
-      birthday: input.customerRecord?.birthday ?? null,
+      dateOfBirth: input.customerRecord?.dateOfBirth ?? null,
       relation: "client",
       status: "active",
       source: linkedCustomerSource,
