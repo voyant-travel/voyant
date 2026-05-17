@@ -98,6 +98,24 @@ export type LegalUiMessages = {
     empty: string
     deleteConfirm: string
   }
+  contractSendDialog: {
+    title: string
+    fallbackSubject: string
+    missingRecipient: string
+    alreadySentWarning: string
+    fields: {
+      to: string
+      subject: string
+      message: string
+      attachments: string
+    }
+    messageHint: string
+    recipientPlaceholder: string
+    actions: {
+      cancel: string
+      send: string
+    }
+  }
   contractsPage: {
     title: string
     description: string

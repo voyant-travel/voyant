@@ -235,9 +235,12 @@ const HIDDEN_ARRAY_FIELDS = new Set([
 
 /**
  * Array-field label overrides for the Tags & themes section. Falls
- * through to `humanize(key)` when not present.
+ * through to `humanize(key)` when not present. Localized variants come
+ * in via `messages.detail.arrayLabels` per locale — this stays as a
+ * stable fallback for any call path that hasn't been wired yet.
  */
 const ARRAY_LABEL_OVERRIDES: Record<string, string> = {
+  // i18n-literal-ok: fallback when no localized override is provided
   categories: "Category",
 }
 
@@ -790,6 +793,7 @@ function collectMonthOptions(departures: ReadonlyArray<DepartureEntry>): MonthOp
     const key = monthKey(date)
     if (!map.has(key)) map.set(key, { value: key, label: formatter.format(date) })
   }
+  // i18n-literal-ok: numeric sort comparator return value
   return Array.from(map.values()).sort((a, b) => (a.value < b.value ? -1 : 1))
 }
 
@@ -1121,6 +1125,7 @@ function SortableHeader({
         className={cn(
           "inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider",
           active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+          // i18n-literal-ok: tailwind utilities, not user copy
           className?.includes("text-right") ? "ml-auto flex-row-reverse" : null,
         )}
       >
@@ -1437,6 +1442,7 @@ function InlineTagsEditor({
   onChange: (hit: CatalogSearchHit, next: string[]) => Promise<void> | void
   placeholder: string
 }) {
+  const messages = useCatalogUiMessagesOrDefault().catalogPage.detail
   // Seed the working set from the indexed value on each *hit change*
   // only. The catalog search refetches after every mutation, but
   // Typesense reindex is asynchronous — for a few seconds after the
@@ -1520,7 +1526,7 @@ function InlineTagsEditor({
           onClick={() => inputRef.current?.focus()}
         >
           <Plus className="h-3 w-3" />
-          Add tag
+          {messages.addTag}
         </button>
       </div>
       <div className="flex items-center gap-2">

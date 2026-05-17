@@ -823,6 +823,24 @@ export type BookingsUiMessages = {
       confirm: string
     }
   }
+  bookingBillingDialog: {
+    title: string
+    fields: {
+      firstName: string
+      lastName: string
+      email: string
+      phone: string
+      address: string
+      city: string
+      region: string
+      postalCode: string
+      country: string
+    }
+    actions: {
+      cancel: string
+      save: string
+    }
+  }
   bookingGuaranteeDialog: {
     titles: {
       create: string

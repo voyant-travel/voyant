@@ -142,6 +142,10 @@ export const catalogUiRo = {
         supplierId: "Furnizor",
       },
       tagsInputPlaceholder: "Adauga eticheta, apasa Enter",
+      addTag: "Adauga eticheta",
+      arrayLabels: {
+        categories: "Categorie",
+      },
       priceFromLabel: "De la",
       noUpcomingDepartures: "Nicio plecare disponibila.",
       departuresTable: {

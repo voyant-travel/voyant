@@ -21,6 +21,8 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
+import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+
 const billingFormSchema = z.object({
   contactFirstName: z.string().max(255).optional().nullable(),
   contactLastName: z.string().max(255).optional().nullable(),
@@ -57,6 +59,7 @@ export function BookingBillingDialog({
   onSuccess,
 }: BookingBillingDialogProps) {
   const { update } = useBookingMutation()
+  const messages = useBookingsUiMessagesOrDefault().bookingBillingDialog
 
   const form = useForm<BillingFormValues, unknown, BillingFormOutput>({
     resolver: zodResolver(billingFormSchema),
@@ -117,7 +120,7 @@ export function BookingBillingDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>Edit billing contact</DialogTitle>
+          <DialogTitle>{messages.title}</DialogTitle>
         </DialogHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -126,18 +129,18 @@ export function BookingBillingDialog({
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>First name</Label>
+                <Label>{messages.fields.firstName}</Label>
                 <Input {...form.register("contactFirstName")} />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Last name</Label>
+                <Label>{messages.fields.lastName}</Label>
                 <Input {...form.register("contactLastName")} />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Email</Label>
+                <Label>{messages.fields.email}</Label>
                 <Input type="email" {...form.register("contactEmail")} />
                 {form.formState.errors.contactEmail ? (
                   <p className="text-xs text-destructive">
@@ -146,7 +149,7 @@ export function BookingBillingDialog({
                 ) : null}
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Phone</Label>
+                <Label>{messages.fields.phone}</Label>
                 <PhoneInput
                   value={form.watch("contactPhone") ?? ""}
                   onChange={(next) => form.setValue("contactPhone", next, { shouldDirty: true })}
@@ -155,27 +158,27 @@ export function BookingBillingDialog({
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Address</Label>
+              <Label>{messages.fields.address}</Label>
               <Textarea rows={2} {...form.register("contactAddressLine1")} />
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>City</Label>
+                <Label>{messages.fields.city}</Label>
                 <Input {...form.register("contactCity")} />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Region / state</Label>
+                <Label>{messages.fields.region}</Label>
                 <Input {...form.register("contactRegion")} />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Postal code</Label>
+                <Label>{messages.fields.postalCode}</Label>
                 <Input {...form.register("contactPostalCode")} />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Country</Label>
+              <Label>{messages.fields.country}</Label>
               <CountryCombobox
                 value={form.watch("contactCountry") || null}
                 onChange={(next) =>
@@ -189,11 +192,11 @@ export function BookingBillingDialog({
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.actions.cancel}
             </Button>
             <Button type="submit" size="sm" disabled={update.isPending}>
               {update.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Save changes
+              {messages.actions.save}
             </Button>
           </DialogFooter>
         </form>

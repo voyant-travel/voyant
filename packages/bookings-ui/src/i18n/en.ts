@@ -897,6 +897,24 @@ export const bookingsUiEn = {
       confirm: "Confirm cancellation",
     },
   },
+  bookingBillingDialog: {
+    title: "Edit billing contact",
+    fields: {
+      firstName: "First name",
+      lastName: "Last name",
+      email: "Email",
+      phone: "Phone",
+      address: "Address",
+      city: "City",
+      region: "Region / state",
+      postalCode: "Postal code",
+      country: "Country",
+    },
+    actions: {
+      cancel: "Cancel",
+      save: "Save changes",
+    },
+  },
   bookingGuaranteeDialog: {
     titles: {
       create: "Add guarantee",

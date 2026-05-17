@@ -361,8 +361,8 @@ export function PriceBreakdownSection({
   // Empty states
   if (!productId) return null
   const wrapperClassName = flat
-    ? "flex flex-col gap-2"
-    : "flex flex-col gap-2 rounded-md border p-3"
+    ? "flex flex-col gap-2" // i18n-literal-ok: tailwind utilities
+    : "flex flex-col gap-2 rounded-md border p-3" // i18n-literal-ok: tailwind utilities
   if ((preview.isError || (preview.isSuccess && !snapshot)) && fallbackUnitAmountCents === null) {
     return (
       <div className={wrapperClassName}>

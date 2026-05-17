@@ -14,6 +14,8 @@ import {
 import { Loader2, Mail, Paperclip } from "lucide-react"
 import { useEffect, useState } from "react"
 
+import { useLegalUiMessagesOrDefault } from "../i18n/index.js"
+
 export interface ContractSendDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -57,9 +59,11 @@ export function ContractSendDialog({
   onSent,
 }: ContractSendDialogProps) {
   const { send } = useLegalContractMutation()
+  const messages = useLegalUiMessagesOrDefault().contractSendDialog
 
   const fallbackSubject =
-    defaultSubject ?? `${contract.contractNumber ?? "Contract"} — please review and sign`
+    defaultSubject ??
+    messages.fallbackSubject.replace("{number}", contract.contractNumber ?? messages.title)
   const fallbackMessage =
     defaultMessage ??
     [
@@ -107,7 +111,7 @@ export function ContractSendDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>Send contract</DialogTitle>
+          <DialogTitle>{messages.title}</DialogTitle>
         </DialogHeader>
         <DialogBody className="grid gap-4">
           {!defaultRecipientEmail ? (
@@ -115,8 +119,7 @@ export function ContractSendDialog({
               role="alert"
               className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive"
             >
-              No recipient email on file for this contract. Link a person (or fill the billing
-              contact's email) before sending.
+              {messages.missingRecipient}
             </div>
           ) : null}
           {isAlreadySent ? (
@@ -124,21 +127,22 @@ export function ContractSendDialog({
               role="status"
               className="rounded-md border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300"
             >
-              This contract has already been sent. Sending again will email the recipient another
-              copy.
+              {messages.alreadySentWarning}
             </div>
           ) : null}
 
           <div className="flex flex-col gap-2">
-            <Label>To</Label>
+            <Label>{messages.fields.to}</Label>
             <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">
               <Mail className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-              <span className="font-mono">{defaultRecipientEmail ?? "—"}</span>
+              <span className="font-mono">
+                {defaultRecipientEmail ?? messages.recipientPlaceholder}
+              </span>
             </div>
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="contract-send-subject">Subject</Label>
+            <Label htmlFor="contract-send-subject">{messages.fields.subject}</Label>
             <Input
               id="contract-send-subject"
               value={subject}
@@ -147,22 +151,19 @@ export function ContractSendDialog({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="contract-send-message">Message</Label>
+            <Label htmlFor="contract-send-message">{messages.fields.message}</Label>
             <Textarea
               id="contract-send-message"
               rows={8}
               value={message}
               onChange={(event) => setMessage(event.target.value)}
             />
-            <p className="text-xs text-muted-foreground">
-              The recipient will receive this message together with the contract PDF. Anything you
-              change here is what gets delivered — this isn't a static preview.
-            </p>
+            <p className="text-xs text-muted-foreground">{messages.messageHint}</p>
           </div>
 
           {attachments && attachments.length > 0 ? (
             <div className="flex flex-col gap-2">
-              <Label>Attachments</Label>
+              <Label>{messages.fields.attachments}</Label>
               <ul className="flex flex-col gap-1 rounded-md border bg-muted/40 px-3 py-2 text-xs">
                 {attachments.map((attachment) => (
                   <li key={attachment.id} className="flex items-center gap-2">
@@ -182,11 +183,11 @@ export function ContractSendDialog({
             onClick={() => onOpenChange(false)}
             disabled={send.isPending}
           >
-            Cancel
+            {messages.actions.cancel}
           </Button>
           <Button type="button" size="sm" onClick={handleSend} disabled={!canSend}>
             {send.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Send
+            {messages.actions.send}
           </Button>
         </DialogFooter>
       </DialogContent>

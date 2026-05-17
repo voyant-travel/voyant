@@ -899,6 +899,24 @@ export const bookingsUiRo = {
       confirm: "Confirma anularea",
     },
   },
+  bookingBillingDialog: {
+    title: "Editeaza contactul de facturare",
+    fields: {
+      firstName: "Prenume",
+      lastName: "Nume",
+      email: "Email",
+      phone: "Telefon",
+      address: "Adresa",
+      city: "Oras",
+      region: "Judet / regiune",
+      postalCode: "Cod postal",
+      country: "Tara",
+    },
+    actions: {
+      cancel: "Anuleaza",
+      save: "Salveaza modificarile",
+    },
+  },
   bookingGuaranteeDialog: {
     titles: {
       create: "Adauga garantie",

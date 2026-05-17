@@ -143,6 +143,10 @@ export type CatalogUiMessages = {
         supplierId: string
       }
       tagsInputPlaceholder: string
+      addTag: string
+      arrayLabels: {
+        categories: string
+      }
       priceFromLabel: string
       noUpcomingDepartures: string
       departuresTable: {

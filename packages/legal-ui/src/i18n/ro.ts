@@ -86,6 +86,27 @@ export const legalUiRo = {
     empty: "Nu exista serii de numere. Creeaza una pentru numerotarea contractelor.",
     deleteConfirm: 'Stergi seria "{name}"?',
   },
+  contractSendDialog: {
+    title: "Trimite contractul",
+    fallbackSubject: "{number} - va rugam sa il revizuiti si sa semnati",
+    missingRecipient:
+      "Nu exista un email pentru destinatar pe acest contract. Asociaza o persoana (sau completeaza emailul contactului de facturare) inainte de a trimite.",
+    alreadySentWarning:
+      "Contractul a fost deja trimis. Daca trimiti din nou, destinatarul va primi inca o copie pe email.",
+    fields: {
+      to: "Catre",
+      subject: "Subiect",
+      message: "Mesaj",
+      attachments: "Atasamente",
+    },
+    messageHint:
+      "Destinatarul va primi acest mesaj impreuna cu PDF-ul contractului. Tot ce modifici aici este ce se va trimite - nu este o previzualizare statica.",
+    recipientPlaceholder: "-",
+    actions: {
+      cancel: "Anuleaza",
+      send: "Trimite",
+    },
+  },
   contractsPage: {
     title: "Contracte",
     description: "Gestioneaza contractele juridice pentru clienti, furnizori si parteneri.",

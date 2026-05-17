@@ -142,6 +142,10 @@ export const catalogUiEn = {
         supplierId: "Supplier",
       },
       tagsInputPlaceholder: "Add tag, press Enter",
+      addTag: "Add tag",
+      arrayLabels: {
+        categories: "Category",
+      },
       priceFromLabel: "From",
       noUpcomingDepartures: "No upcoming departures.",
       departuresTable: {

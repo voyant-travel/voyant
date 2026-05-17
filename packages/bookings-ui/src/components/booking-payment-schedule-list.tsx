@@ -57,6 +57,7 @@ export function BookingPaymentScheduleList({ bookingId }: BookingPaymentSchedule
     try {
       const todayIso = new Date().toISOString().slice(0, 10)
       const dueIso = schedule.dueDate || todayIso
+      // i18n-literal-ok: invoice number prefix, not user-facing copy
       const prefix = invoiceType === "proforma" ? "PRO" : "INV"
       const invoice = await createInvoiceFromBooking.mutateAsync({
         bookingId: booking.id,
