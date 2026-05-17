@@ -1,4 +1,10 @@
 export {
+  actionLedgerRiskVariant,
+  actionLedgerStatusVariant,
+  InvoiceActionLedgerCard,
+  type InvoiceActionLedgerCardProps,
+} from "./components/invoice-action-ledger-card.js"
+export {
   creditNoteStatusVariant,
   DetailLink,
   type DetailLinkProps,
@@ -34,6 +40,10 @@ export {
   type MoneyProps,
   paymentStatusVariant,
 } from "./components/invoice-detail-page.js"
+export {
+  InvoiceDetailPageWithActionLedger,
+  type InvoiceDetailPageWithActionLedgerProps,
+} from "./components/invoice-detail-page-with-action-ledger.js"
 export { InvoiceDialog, type InvoiceDialogProps } from "./components/invoice-dialog.js"
 export { InvoicesPage, type InvoicesPageProps } from "./components/invoices-page.js"
 export {

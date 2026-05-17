@@ -353,6 +353,7 @@ export type FinanceUiMessages = {
       deleteAttachmentShort: string
       deleteAttachmentTitle: string
       deleteAttachmentDescription: string
+      loadOlderActionLedger: string
     }
     titles: {
       summary: string
@@ -362,6 +363,7 @@ export type FinanceUiMessages = {
       creditNotes: string
       notes: string
       attachments: string
+      actionLedger: string
     }
     fields: {
       currency: string
@@ -407,6 +409,8 @@ export type FinanceUiMessages = {
       noCreditNotes: string
       noNotes: string
       noAttachments: string
+      noActionLedger: string
+      actionLedgerLoadFailed: string
     }
     placeholders: {
       note: string
