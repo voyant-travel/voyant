@@ -1,5 +1,7 @@
 import {
   ACTION_LEDGER_APPROVAL_ID_HEADER,
+  ActionApprovalDecisionConflictError,
+  type ActionApprovalResponse,
   type ActionLedgerCapabilityAccessResult,
   type ActionLedgerEntry,
   type ActionLedgerEntryResponse,
@@ -11,6 +13,7 @@ import {
   type BuildActionLedgerApprovedExecutionFieldsInput,
   buildActionApprovalCommandFingerprint,
   buildActionLedgerApprovedExecutionFields,
+  decideActionLedgerApproval,
   evaluateActionLedgerApprovalRequirement,
   evaluateActionLedgerCapabilityAccess,
   ledgerSensitiveRead,
@@ -162,6 +165,10 @@ const bookingActionLedgerQuerySchema = z
         : undefined,
   }))
 
+const decideBookingActionApprovalBodySchema = z.object({
+  status: z.enum(["approved", "denied"]),
+})
+
 interface BookingActionLedgerTravelerTarget {
   id: string
   firstName: string | null
@@ -176,6 +183,13 @@ export interface BookingActionLedgerListResponse {
       occurredAt: string
       id: string
     } | null
+  }
+}
+
+export interface BookingActionApprovalDecisionResponse {
+  data: {
+    approval: ActionApprovalResponse
+    decisionAction: ActionLedgerEntryResponse
   }
 }
 
@@ -944,6 +958,103 @@ async function listBookingActionLedger(c: Context<Env>) {
   } satisfies BookingActionLedgerListResponse)
 }
 
+function serializeBookingActionApproval(
+  approval: NonNullable<Awaited<ReturnType<typeof actionLedgerService.getApproval>>>["approval"],
+): ActionApprovalResponse {
+  return {
+    ...approval,
+    expiresAt: approval.expiresAt ? serializeBookingActionLedgerDate(approval.expiresAt) : null,
+    decidedAt: approval.decidedAt ? serializeBookingActionLedgerDate(approval.decidedAt) : null,
+    createdAt: serializeBookingActionLedgerDate(approval.createdAt),
+  }
+}
+
+function findBookingStatusCapability(capabilityId: string | null) {
+  return Object.values(BOOKING_STATUS_CAPABILITIES).find(
+    (capability) => capability.id === capabilityId,
+  )
+}
+
+async function decideBookingActionApproval(c: Context<Env>) {
+  const bookingId = c.req.param("id")
+  const approvalId = c.req.param("approvalId")
+  if (!bookingId || !approvalId) {
+    return c.json({ error: "Action approval not found" }, 404)
+  }
+
+  if (!c.get("isInternalRequest") && !c.get("userId")) {
+    return handleApiError(new UnauthorizedApiError(), c)
+  }
+
+  const body = await parseJsonBody(c, decideBookingActionApprovalBodySchema)
+  const existing = await actionLedgerService.getApproval(c.get("db"), approvalId)
+  if (!existing?.requestedAction?.entry) {
+    return c.json({ error: "Action approval not found" }, 404)
+  }
+
+  const requestedAction = existing.requestedAction.entry
+  if (requestedAction.targetType !== "booking" || requestedAction.targetId !== bookingId) {
+    return c.json({ error: "Action approval not found" }, 404)
+  }
+
+  const capability = findBookingStatusCapability(requestedAction.capabilityId)
+  if (!capability) {
+    return c.json({ error: "Action approval is not a booking status approval" }, 409)
+  }
+
+  const access = evaluateActionLedgerCapabilityAccess({
+    definition: capability,
+    actor: c.get("actor"),
+    callerType: c.get("callerType"),
+    scopes: c.get("scopes"),
+    isInternalRequest: c.get("isInternalRequest"),
+  })
+
+  if (!access.allowed) {
+    return handleApiError(new ForbiddenApiError(), c)
+  }
+
+  try {
+    const result = await decideActionLedgerApproval(c.get("db"), {
+      context: getActionLedgerRequestContext(c),
+      id: approvalId,
+      status: body.status,
+      actionName: "booking.status.approval.decide",
+      actionVersion: capability.version,
+      evaluatedRisk: requestedAction.evaluatedRisk,
+      targetType: "booking",
+      targetId: bookingId,
+      routeOrToolName: "bookings.approvals.decide",
+      capabilityId: capability.id,
+      capabilityVersion: capability.version,
+      authorizationSource: access.authorizationSource,
+    })
+
+    if (!result) {
+      return c.json({ error: "Action approval not found" }, 404)
+    }
+
+    return c.json({
+      data: {
+        approval: serializeBookingActionApproval(result.approval),
+        decisionAction: serializeBookingActionLedgerEntry(result.decisionAction),
+      },
+    } satisfies BookingActionApprovalDecisionResponse)
+  } catch (error) {
+    if (error instanceof ActionApprovalDecisionConflictError) {
+      return c.json(
+        {
+          error: "Action approval has already been decided",
+          approvalId: error.approvalId,
+          status: error.currentStatus,
+        },
+        409,
+      )
+    }
+    throw error
+  }
+}
+
 // ==========================================================================
 // Bookings — method-chained for Hono RPC type inference
 // ==========================================================================
@@ -1064,6 +1175,9 @@ export const bookingRoutes = new Hono<Env>()
 
   // 2b. GET /:id/action-ledger — Booking-scoped action timeline
   .get("/:id/action-ledger", listBookingActionLedger)
+
+  // 2c. POST /:id/action-approvals/:approvalId/decide — Booking-scoped approval decision
+  .post("/:id/action-approvals/:approvalId/decide", decideBookingActionApproval)
 
   // 3. POST /reserve — Reserve inventory and create on-hold booking
   .post("/reserve", idempotencyKey({ scope: "POST /v1/admin/bookings/reserve" }), async (c) => {

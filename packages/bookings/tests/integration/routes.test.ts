@@ -1450,6 +1450,99 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       })
     })
 
+    it("decides agent booking approvals through the booking route and shows the decision in the timeline", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const agentApp = new Hono()
+      agentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      agentApp.route("/", bookingRoutes)
+
+      const requestApproval = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-cancel-route-decision",
+        },
+        body: JSON.stringify({ note: "Route-approved cancellation" }),
+      })
+      expect(requestApproval.status).toBe(202)
+      const requestApprovalBody = await requestApproval.json()
+      const approvalId = requestApprovalBody.data.approval.id
+      const requestedActionId = requestApprovalBody.data.requestedAction.id
+
+      const decision = await app.request(`/${booking.id}/action-approvals/${approvalId}/decide`, {
+        method: "POST",
+        ...json({ status: "approved" }),
+      })
+
+      expect(decision.status).toBe(200)
+      const decisionBody = await decision.json()
+      expect(decisionBody.data).toMatchObject({
+        approval: {
+          id: approvalId,
+          status: "approved",
+          decidedByPrincipalId: "test-user-id",
+        },
+        decisionAction: {
+          actionName: "booking.status.approval.decide",
+          actionKind: "approve",
+          status: "approved",
+          targetType: "booking",
+          targetId: booking.id,
+          principalType: "user",
+          principalId: "test-user-id",
+          causationActionId: requestedActionId,
+          approvalId,
+        },
+      })
+
+      const timeline = await app.request(`/${booking.id}/action-ledger`)
+      expect(timeline.status).toBe(200)
+      const timelineBody = await timeline.json()
+      expect(timelineBody.data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: requestedActionId,
+            actionName: "booking.status.cancel",
+            status: "awaiting_approval",
+          }),
+          expect.objectContaining({
+            id: decisionBody.data.decisionAction.id,
+            actionName: "booking.status.approval.decide",
+            actionKind: "approve",
+            status: "approved",
+            targetType: "booking",
+            targetId: booking.id,
+          }),
+        ]),
+      )
+
+      const execute = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          [ACTION_LEDGER_APPROVAL_ID_HEADER]: approvalId,
+        },
+        body: JSON.stringify({ note: "Route-approved cancellation" }),
+      })
+
+      expect(execute.status).toBe(200)
+      await expect(execute.json()).resolves.toMatchObject({
+        data: {
+          id: booking.id,
+          status: "cancelled",
+        },
+      })
+    })
+
     it("rejects approved booking execution when the command input changed", async () => {
       const booking = await seedBooking({ status: "confirmed" })
 
