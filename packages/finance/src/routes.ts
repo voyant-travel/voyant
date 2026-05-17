@@ -483,10 +483,16 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .post("/bookings/:bookingId/payment-schedules", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.createBookingPaymentSchedule(
       c.get("db"),
       c.req.param("bookingId"),
       await parseJsonBody(c, insertBookingPaymentScheduleSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.booking_payment_schedule.route",
+      },
     )
 
     if (!row) {
@@ -511,10 +517,16 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .patch("/bookings/:bookingId/payment-schedules/:scheduleId", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.updateBookingPaymentSchedule(
       c.get("db"),
       c.req.param("scheduleId"),
       await parseJsonBody(c, updateBookingPaymentScheduleSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.booking_payment_schedule.route",
+      },
     )
 
     if (!row) {
@@ -550,9 +562,15 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .delete("/bookings/:bookingId/payment-schedules/:scheduleId", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.deleteBookingPaymentSchedule(
       c.get("db"),
       c.req.param("scheduleId"),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.booking_payment_schedule.route",
+      },
     )
 
     if (!row) {
@@ -573,10 +591,16 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .post("/bookings/:bookingId/guarantees", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.createBookingGuarantee(
       c.get("db"),
       c.req.param("bookingId"),
       await parseJsonBody(c, insertBookingGuaranteeSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.booking_guarantee.route",
+      },
     )
 
     if (!row) {
@@ -612,10 +636,16 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .patch("/bookings/:bookingId/guarantees/:guaranteeId", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.updateBookingGuarantee(
       c.get("db"),
       c.req.param("guaranteeId"),
       await parseJsonBody(c, updateBookingGuaranteeSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.booking_guarantee.route",
+      },
     )
 
     if (!row) {
@@ -626,7 +656,16 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .delete("/bookings/:bookingId/guarantees/:guaranteeId", async (c) => {
-    const row = await financeService.deleteBookingGuarantee(c.get("db"), c.req.param("guaranteeId"))
+    const runtime = getFinanceRouteRuntime(c)
+    const row = await financeService.deleteBookingGuarantee(
+      c.get("db"),
+      c.req.param("guaranteeId"),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.booking_guarantee.route",
+      },
+    )
 
     if (!row) {
       return c.json({ error: "Booking guarantee not found" }, 404)

@@ -426,6 +426,8 @@ export interface PaymentCompletedEvent {
 type PaymentSessionRecord = typeof paymentSessions.$inferSelect
 type PaymentAuthorizationRecord = typeof paymentAuthorizations.$inferSelect
 type PaymentCaptureRecord = typeof paymentCaptures.$inferSelect
+type BookingPaymentScheduleRecord = typeof bookingPaymentSchedules.$inferSelect
+type BookingGuaranteeRecord = typeof bookingGuarantees.$inferSelect
 type InvoiceRecord = typeof invoices.$inferSelect
 type PaymentRecord = typeof payments.$inferSelect
 type CreditNoteRecord = typeof creditNotes.$inferSelect
@@ -476,6 +478,26 @@ type PaymentCaptureUpdateLedgerInput = {
 }
 type PaymentCaptureDeleteLedgerInput = {
   capture: PaymentCaptureRecord
+}
+type BookingPaymentScheduleCreateLedgerInput = {
+  schedule: BookingPaymentScheduleRecord
+}
+type BookingPaymentScheduleUpdateLedgerInput = {
+  schedule: BookingPaymentScheduleRecord
+  changes: UpdateBookingPaymentScheduleInput
+}
+type BookingPaymentScheduleDeleteLedgerInput = {
+  schedule: BookingPaymentScheduleRecord
+}
+type BookingGuaranteeCreateLedgerInput = {
+  guarantee: BookingGuaranteeRecord
+}
+type BookingGuaranteeUpdateLedgerInput = {
+  guarantee: BookingGuaranteeRecord
+  changes: UpdateBookingGuaranteeInput
+}
+type BookingGuaranteeDeleteLedgerInput = {
+  guarantee: BookingGuaranteeRecord
 }
 type RecordPaymentLedgerInput = {
   invoice: InvoiceRecord
@@ -1044,6 +1066,233 @@ function getPaymentCaptureLedgerTarget(capture: PaymentCaptureRecord) {
     return { type: "payment_authorization", id: capture.paymentAuthorizationId }
   }
   return { type: "payment_capture", id: capture.id }
+}
+
+export function buildBookingPaymentScheduleCreateActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: BookingPaymentScheduleCreateLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getBookingPaymentScheduleLedgerTarget(input.schedule)
+
+  return {
+    context,
+    actionName: "finance.booking_payment_schedule.create",
+    actionVersion: "v1",
+    actionKind: "create",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.booking_payment_schedule.create",
+    authorizationSource: options.authorizationSource ?? "finance.booking_payment_schedule.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `booking:${input.schedule.bookingId}:payment_schedule`,
+      commandResultRef: `booking_payment_schedule:${input.schedule.id}`,
+      summary: `Payment schedule ${input.schedule.id} created for booking ${input.schedule.bookingId}`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildBookingPaymentScheduleUpdateActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: BookingPaymentScheduleUpdateLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getBookingPaymentScheduleLedgerTarget(input.schedule)
+  const changedFields = Object.keys(input.changes).sort()
+  const changeSummary = changedFields.length > 0 ? changedFields.join(", ") : "no fields"
+
+  return {
+    context,
+    actionName: "finance.booking_payment_schedule.update",
+    actionVersion: "v1",
+    actionKind: "update",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.booking_payment_schedule.update",
+    authorizationSource: options.authorizationSource ?? "finance.booking_payment_schedule.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `booking_payment_schedule:${input.schedule.id}:update`,
+      commandResultRef: `booking_payment_schedule:${input.schedule.id}`,
+      summary: `Payment schedule ${input.schedule.id} updated (${changeSummary})`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildBookingPaymentScheduleDeleteActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: BookingPaymentScheduleDeleteLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getBookingPaymentScheduleLedgerTarget(input.schedule)
+
+  return {
+    context,
+    actionName: "finance.booking_payment_schedule.delete",
+    actionVersion: "v1",
+    actionKind: "delete",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.booking_payment_schedule.delete",
+    authorizationSource: options.authorizationSource ?? "finance.booking_payment_schedule.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `booking_payment_schedule:${input.schedule.id}:delete`,
+      commandResultRef: null,
+      summary: `Payment schedule ${input.schedule.id} deleted`,
+      reversalKind: "none",
+    },
+  }
+}
+
+function getBookingPaymentScheduleLedgerTarget(schedule: BookingPaymentScheduleRecord) {
+  return { type: "booking", id: schedule.bookingId }
+}
+
+export async function buildBookingGuaranteeCreateActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: BookingGuaranteeCreateLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): Promise<BuildActionLedgerMutationInput> {
+  const target = getBookingGuaranteeLedgerTarget(input.guarantee)
+  const idempotencyKey = input.guarantee.referenceNumber
+
+  return {
+    context,
+    actionName: "finance.booking_guarantee.create",
+    actionVersion: "v1",
+    actionKind: "create",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.booking_guarantee.create",
+    authorizationSource: options.authorizationSource ?? "finance.booking_guarantee.route",
+    idempotencyScope: idempotencyKey
+      ? `finance.booking:${input.guarantee.bookingId}:guarantee`
+      : null,
+    idempotencyKey,
+    idempotencyFingerprint: idempotencyKey
+      ? await buildIdempotencyFingerprint({
+          actionName: "finance.booking_guarantee.create",
+          actionVersion: "v1",
+          targetType: target.type,
+          targetId: target.id,
+          commandInput: {
+            bookingGuaranteeId: input.guarantee.id,
+            bookingId: input.guarantee.bookingId,
+            bookingPaymentScheduleId: input.guarantee.bookingPaymentScheduleId,
+            guaranteeType: input.guarantee.guaranteeType,
+            status: input.guarantee.status,
+            paymentInstrumentId: input.guarantee.paymentInstrumentId,
+            paymentAuthorizationId: input.guarantee.paymentAuthorizationId,
+            currency: input.guarantee.currency,
+            amountCents: input.guarantee.amountCents,
+            provider: input.guarantee.provider,
+            referenceNumber: input.guarantee.referenceNumber,
+          },
+        })
+      : null,
+    mutationDetail: {
+      commandInputRef: `booking:${input.guarantee.bookingId}:guarantee`,
+      commandResultRef: `booking_guarantee:${input.guarantee.id}`,
+      summary: `Booking guarantee ${input.guarantee.id} created for booking ${input.guarantee.bookingId}`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildBookingGuaranteeUpdateActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: BookingGuaranteeUpdateLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getBookingGuaranteeLedgerTarget(input.guarantee)
+  const changedFields = Object.keys(input.changes).sort()
+  const changeSummary = changedFields.length > 0 ? changedFields.join(", ") : "no fields"
+
+  return {
+    context,
+    actionName: "finance.booking_guarantee.update",
+    actionVersion: "v1",
+    actionKind: "update",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.booking_guarantee.update",
+    authorizationSource: options.authorizationSource ?? "finance.booking_guarantee.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `booking_guarantee:${input.guarantee.id}:update`,
+      commandResultRef: `booking_guarantee:${input.guarantee.id}`,
+      summary: `Booking guarantee ${input.guarantee.id} updated (${changeSummary})`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildBookingGuaranteeDeleteActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: BookingGuaranteeDeleteLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getBookingGuaranteeLedgerTarget(input.guarantee)
+
+  return {
+    context,
+    actionName: "finance.booking_guarantee.delete",
+    actionVersion: "v1",
+    actionKind: "delete",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.booking_guarantee.delete",
+    authorizationSource: options.authorizationSource ?? "finance.booking_guarantee.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `booking_guarantee:${input.guarantee.id}:delete`,
+      commandResultRef: null,
+      summary: `Booking guarantee ${input.guarantee.id} deleted`,
+      reversalKind: "none",
+    },
+  }
+}
+
+function getBookingGuaranteeLedgerTarget(guarantee: BookingGuaranteeRecord) {
+  return { type: "booking", id: guarantee.bookingId }
 }
 
 export async function buildRecordPaymentActionLedgerInput(
@@ -2712,23 +2961,48 @@ export const financeService = {
     db: PostgresJsDatabase,
     bookingId: string,
     data: CreateBookingPaymentScheduleInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [booking] = await db
-      .select({ id: bookings.id })
-      .from(bookings)
-      .where(eq(bookings.id, bookingId))
-      .limit(1)
+    const createSchedule = async (writer: PostgresJsDatabase) => {
+      const [booking] = await writer
+        .select({ id: bookings.id })
+        .from(bookings)
+        .where(eq(bookings.id, bookingId))
+        .limit(1)
 
-    if (!booking) {
-      return null
+      if (!booking) {
+        return null
+      }
+
+      const [row] = await writer
+        .insert(bookingPaymentSchedules)
+        .values({ ...data, bookingId })
+        .returning()
+
+      return row ?? null
     }
 
-    const [row] = await db
-      .insert(bookingPaymentSchedules)
-      .values({ ...data, bookingId })
-      .returning()
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      return db.transaction(async (tx) => {
+        const row = await createSchedule(tx)
 
-    return row ?? null
+        if (row) {
+          await appendActionLedgerMutation(
+            tx,
+            buildBookingPaymentScheduleCreateActionLedgerInput(
+              actionLedgerContext,
+              { schedule: row },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return row
+      })
+    }
+
+    return createSchedule(db)
   },
 
   /**
@@ -2931,17 +3205,73 @@ export const financeService = {
     db: PostgresJsDatabase,
     scheduleId: string,
     data: UpdateBookingPaymentScheduleInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [row] = await db
-      .update(bookingPaymentSchedules)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(bookingPaymentSchedules.id, scheduleId))
-      .returning()
+    const updateSchedule = (writer: PostgresJsDatabase) =>
+      writer
+        .update(bookingPaymentSchedules)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(bookingPaymentSchedules.id, scheduleId))
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await updateSchedule(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildBookingPaymentScheduleUpdateActionLedgerInput(
+              actionLedgerContext,
+              { schedule: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await updateSchedule(db)
     return row ?? null
   },
 
-  async deleteBookingPaymentSchedule(db: PostgresJsDatabase, scheduleId: string) {
+  async deleteBookingPaymentSchedule(
+    db: PostgresJsDatabase,
+    scheduleId: string,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      return db.transaction(async (tx) => {
+        const [existing] = await tx
+          .select()
+          .from(bookingPaymentSchedules)
+          .where(eq(bookingPaymentSchedules.id, scheduleId))
+          .limit(1)
+
+        if (!existing) {
+          return null
+        }
+
+        await tx.delete(bookingPaymentSchedules).where(eq(bookingPaymentSchedules.id, scheduleId))
+        await appendActionLedgerMutation(
+          tx,
+          buildBookingPaymentScheduleDeleteActionLedgerInput(
+            actionLedgerContext,
+            { schedule: existing },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+
+        return { id: existing.id }
+      })
+    }
+
     const [row] = await db
       .delete(bookingPaymentSchedules)
       .where(eq(bookingPaymentSchedules.id, scheduleId))
@@ -3075,39 +3405,64 @@ export const financeService = {
     db: PostgresJsDatabase,
     bookingId: string,
     data: CreateBookingGuaranteeInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [booking] = await db
-      .select({ id: bookings.id })
-      .from(bookings)
-      .where(eq(bookings.id, bookingId))
-      .limit(1)
+    const createGuarantee = async (writer: PostgresJsDatabase) => {
+      const [booking] = await writer
+        .select({ id: bookings.id })
+        .from(bookings)
+        .where(eq(bookings.id, bookingId))
+        .limit(1)
 
-    if (!booking) {
-      return null
+      if (!booking) {
+        return null
+      }
+
+      const [row] = await writer
+        .insert(bookingGuarantees)
+        .values({
+          bookingId,
+          bookingPaymentScheduleId: data.bookingPaymentScheduleId ?? null,
+          bookingItemId: data.bookingItemId ?? null,
+          guaranteeType: data.guaranteeType,
+          status: data.status,
+          paymentInstrumentId: data.paymentInstrumentId ?? null,
+          paymentAuthorizationId: data.paymentAuthorizationId ?? null,
+          currency: data.currency ?? null,
+          amountCents: data.amountCents ?? null,
+          provider: data.provider ?? null,
+          referenceNumber: data.referenceNumber ?? null,
+          guaranteedAt: toTimestamp(data.guaranteedAt),
+          expiresAt: toTimestamp(data.expiresAt),
+          releasedAt: toTimestamp(data.releasedAt),
+          notes: data.notes ?? null,
+        })
+        .returning()
+
+      return row ?? null
     }
 
-    const [row] = await db
-      .insert(bookingGuarantees)
-      .values({
-        bookingId,
-        bookingPaymentScheduleId: data.bookingPaymentScheduleId ?? null,
-        bookingItemId: data.bookingItemId ?? null,
-        guaranteeType: data.guaranteeType,
-        status: data.status,
-        paymentInstrumentId: data.paymentInstrumentId ?? null,
-        paymentAuthorizationId: data.paymentAuthorizationId ?? null,
-        currency: data.currency ?? null,
-        amountCents: data.amountCents ?? null,
-        provider: data.provider ?? null,
-        referenceNumber: data.referenceNumber ?? null,
-        guaranteedAt: toTimestamp(data.guaranteedAt),
-        expiresAt: toTimestamp(data.expiresAt),
-        releasedAt: toTimestamp(data.releasedAt),
-        notes: data.notes ?? null,
-      })
-      .returning()
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      return db.transaction(async (tx) => {
+        const row = await createGuarantee(tx)
 
-    return row ?? null
+        if (row) {
+          await appendActionLedgerMutation(
+            tx,
+            await buildBookingGuaranteeCreateActionLedgerInput(
+              actionLedgerContext,
+              { guarantee: row },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return row
+      })
+    }
+
+    return createGuarantee(db)
   },
 
   async createPaymentSessionFromBookingGuarantee(
@@ -3181,23 +3536,80 @@ export const financeService = {
     db: PostgresJsDatabase,
     guaranteeId: string,
     data: UpdateBookingGuaranteeInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [row] = await db
-      .update(bookingGuarantees)
-      .set({
-        ...data,
-        guaranteedAt: data.guaranteedAt === undefined ? undefined : toTimestamp(data.guaranteedAt),
-        expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
-        releasedAt: data.releasedAt === undefined ? undefined : toTimestamp(data.releasedAt),
-        updatedAt: new Date(),
-      })
-      .where(eq(bookingGuarantees.id, guaranteeId))
-      .returning()
+    const updateGuarantee = (writer: PostgresJsDatabase) =>
+      writer
+        .update(bookingGuarantees)
+        .set({
+          ...data,
+          guaranteedAt:
+            data.guaranteedAt === undefined ? undefined : toTimestamp(data.guaranteedAt),
+          expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
+          releasedAt: data.releasedAt === undefined ? undefined : toTimestamp(data.releasedAt),
+          updatedAt: new Date(),
+        })
+        .where(eq(bookingGuarantees.id, guaranteeId))
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await updateGuarantee(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildBookingGuaranteeUpdateActionLedgerInput(
+              actionLedgerContext,
+              { guarantee: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await updateGuarantee(db)
     return row ?? null
   },
 
-  async deleteBookingGuarantee(db: PostgresJsDatabase, guaranteeId: string) {
+  async deleteBookingGuarantee(
+    db: PostgresJsDatabase,
+    guaranteeId: string,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      return db.transaction(async (tx) => {
+        const [existing] = await tx
+          .select()
+          .from(bookingGuarantees)
+          .where(eq(bookingGuarantees.id, guaranteeId))
+          .limit(1)
+
+        if (!existing) {
+          return null
+        }
+
+        await tx.delete(bookingGuarantees).where(eq(bookingGuarantees.id, guaranteeId))
+        await appendActionLedgerMutation(
+          tx,
+          buildBookingGuaranteeDeleteActionLedgerInput(
+            actionLedgerContext,
+            { guarantee: existing },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+
+        return { id: existing.id }
+      })
+    }
+
     const [row] = await db
       .delete(bookingGuarantees)
       .where(eq(bookingGuarantees.id, guaranteeId))
