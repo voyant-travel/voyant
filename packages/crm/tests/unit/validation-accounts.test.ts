@@ -89,21 +89,21 @@ describe("Person schemas", () => {
     expect(() => insertPersonSchema.parse({ firstName: "John" })).toThrow()
   })
 
-  it("accepts valid birthday date", () => {
+  it("accepts valid dateOfBirth", () => {
     const result = insertPersonSchema.parse({
       firstName: "John",
       lastName: "Doe",
-      birthday: "1990-01-15",
+      dateOfBirth: "1990-01-15",
     })
-    expect(result.birthday).toBe("1990-01-15")
+    expect(result.dateOfBirth).toBe("1990-01-15")
   })
 
-  it("rejects invalid birthday format", () => {
+  it("rejects invalid dateOfBirth format", () => {
     expect(() =>
       insertPersonSchema.parse({
         firstName: "John",
         lastName: "Doe",
-        birthday: "not-a-date",
+        dateOfBirth: "not-a-date",
       }),
     ).toThrow()
   })

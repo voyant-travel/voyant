@@ -144,17 +144,19 @@ export async function resolveDocumentDownloadUrl(
   //
   // Detect the "key passed through" case (no scheme prefix) and
   // rewrite it to an ABSOLUTE URL on the operator's
-  // `/v1/admin/documents/files/*` streaming proxy. Prefer
-  // DOCUMENTS_BASE_URL when set because external systems (Cloud email
-  // attachments, Cloudflare Browser Rendering, Resend, etc.) cannot
-  // fetch localhost. Fall back to APP_URL for local browser/admin
-  // flows. Use an absolute URL — not a root-relative path — because:
-  //   1. The Vite dev server mounts the API under `/api`, but the
-  //      worker mounts its routes under `/v1/...`. A redirect to
-  //      `/v1/admin/...` lands on the SPA's 404 handler instead of
-  //      the API; only `${APP_URL}/v1/admin/...` reaches the worker.
-  //   2. Production deploys may host the API on a separate origin
-  //      from the dashboard — a relative path can't bridge that.
+  // `/v1/admin/documents/files/*` streaming proxy. APP_URL is the
+  // operator-dashboard origin used by the browser; this is what we
+  // want for the redirect that the browser follows out of the
+  // attachment-download route. DOCUMENTS_BASE_URL is reserved for
+  // cases where the URL must be reachable by external systems on a
+  // different host (Cloudflare Browser Rendering hitting the
+  // operator from outside the worker, an email-rendering pipeline
+  // embedding the URL, etc.) and is consulted only as a fallback
+  // when APP_URL isn't configured. In dev that order matters: APP_URL
+  // points at localhost (correct for the browser) while
+  // DOCUMENTS_BASE_URL is often set to a production host (which
+  // can't see the local R2). Picking DOCUMENTS_BASE_URL first there
+  // broke browser-side downloads.
   // In production with a real S3 signer, the signed `https://…`
   // URL is returned as-is and used directly without any rewrite.
   if (signed && /^https?:\/\//i.test(signed)) {
@@ -162,9 +164,9 @@ export async function resolveDocumentDownloadUrl(
   }
   if (!signed) return null
   const apiBase = (
-    env.DOCUMENTS_BASE_URL?.trim() ||
     env.APP_URL?.trim() ||
     env.API_BASE_URL?.trim() ||
+    env.DOCUMENTS_BASE_URL?.trim() ||
     ""
   ).replace(/\/$/, "")
   if (!apiBase) {

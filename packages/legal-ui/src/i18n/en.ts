@@ -86,6 +86,27 @@ export const legalUiEn = {
     empty: "No number series yet. Create one to configure contract numbering.",
     deleteConfirm: 'Delete series "{name}"?',
   },
+  contractSendDialog: {
+    title: "Send contract",
+    fallbackSubject: "{number} - please review and sign",
+    missingRecipient:
+      "No recipient email on file for this contract. Link a person (or fill the billing contact's email) before sending.",
+    alreadySentWarning:
+      "This contract has already been sent. Sending again will email the recipient another copy.",
+    fields: {
+      to: "To",
+      subject: "Subject",
+      message: "Message",
+      attachments: "Attachments",
+    },
+    messageHint:
+      "The recipient will receive this message together with the contract PDF. Anything you change here is what gets delivered - this isn't a static preview.",
+    recipientPlaceholder: "-",
+    actions: {
+      cancel: "Cancel",
+      send: "Send",
+    },
+  },
   contractsPage: {
     title: "Contracts",
     description: "Manage legal contracts across customers, suppliers, and partners.",
@@ -94,6 +115,8 @@ export const legalUiEn = {
     empty: "No contracts found.",
     loadFailed: "Contracts could not be loaded.",
     filters: {
+      button: "Filters",
+      clear: "Clear filters",
       scope: "Scope",
       status: "Status",
       person: "Person",
@@ -184,6 +207,11 @@ export const legalUiEn = {
     allKinds: "All kinds",
     empty: "No policies found.",
     loadFailed: "Policies could not be loaded.",
+    filters: {
+      button: "Filters",
+      clear: "Clear filters",
+      kind: "Kind",
+    },
     columns: {
       name: "Name",
       slug: "Slug",
@@ -266,10 +294,16 @@ export const legalUiEn = {
     versions: "Versions",
     noVersions: "No versions yet.",
     filters: {
+      button: "Filters",
+      clear: "Clear filters",
       scope: "Scope",
       allScopes: "All scopes",
     },
     columns: {
+      name: "Name",
+      scope: "Scope",
+      status: "Status",
+      created: "Created",
       version: "Version",
       changelog: "Changelog",
       createdBy: "Created By",

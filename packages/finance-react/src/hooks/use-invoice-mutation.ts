@@ -1,6 +1,7 @@
 "use client"
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { z } from "zod"
 
 import { fetchWithValidation } from "../client.js"
 import { useVoyantFinanceContext } from "../provider.js"
@@ -82,5 +83,104 @@ export function useInvoiceMutation() {
     },
   })
 
-  return { create, update, remove }
+  /**
+   * Create + issue an invoice (or proforma) from an existing booking. The
+   * server walks the booking's items, builds line items, and emits an
+   * `invoice.issued` event post-commit. Used by the Documents tab on the
+   * booking detail page to bootstrap an invoice when none exists yet.
+   */
+  const createFromBooking = useMutation({
+    mutationFn: async (input: CreateInvoiceFromBookingInput) => {
+      const { data } = await fetchWithValidation(
+        "/v1/finance/invoices/from-booking",
+        invoiceSingleResponse,
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify(input) },
+      )
+      return data
+    },
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: financeQueryKeys.invoices() })
+      queryClient.setQueryData(financeQueryKeys.invoice(data.id), { data })
+    },
+  })
+
+  /**
+   * Convert an issued proforma into a final invoice. Server-side this
+   * copies the proforma's line items + totals, marks the proforma as
+   * `void`, and emits `invoice.issued` with `convertedFromInvoiceId` so
+   * the SmartBill subscriber (and audit chain) sees the linkage.
+   */
+  const convertToInvoice = useMutation({
+    mutationFn: async ({ id, input }: { id: string; input?: ConvertProformaInput }) => {
+      const { data } = await fetchWithValidation(
+        `/v1/finance/invoices/${id}/convert-to-invoice`,
+        invoiceSingleResponse,
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify(input ?? {}) },
+      )
+      return data
+    },
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: financeQueryKeys.invoices() })
+      queryClient.setQueryData(financeQueryKeys.invoice(data.id), { data })
+    },
+  })
+
+  /**
+   * Render (or re-render) a PDF for an existing invoice. Server-side this
+   * inserts an `invoice_rendition` row + emits `invoice.rendered`, which a
+   * downstream subscriber turns into a stored PDF attachment. Use this for
+   * the operator's "Generate" / "Regenerate" buttons.
+   */
+  const render = useMutation({
+    mutationFn: async ({ id, input }: { id: string; input?: RenderInvoiceInput }) => {
+      const { data } = await fetchWithValidation(
+        `/v1/finance/invoices/${id}/render`,
+        invoiceRenditionResponse,
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify(input ?? { format: "pdf" }) },
+      )
+      return data
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: financeQueryKeys.invoice(variables.id),
+      })
+      void queryClient.invalidateQueries({ queryKey: financeQueryKeys.invoices() })
+    },
+  })
+
+  return { create, createFromBooking, convertToInvoice, render, update, remove }
 }
+
+export interface ConvertProformaInput {
+  /** Optional override; server derives from the proforma number when omitted. */
+  invoiceNumber?: string
+  issueDate?: string
+  dueDate?: string
+}
+
+export interface CreateInvoiceFromBookingInput {
+  bookingId: string
+  invoiceNumber: string
+  issueDate: string
+  dueDate: string
+  notes?: string | null
+  /** Defaults to `invoice` on the server. Pass `proforma` for placeholders. */
+  invoiceType?: "invoice" | "proforma"
+}
+
+export interface RenderInvoiceInput {
+  format?: "pdf" | "html"
+  /** Optional invoice-template id; server falls back to the default. */
+  templateId?: string | null
+}
+
+// Light envelope schema for the render endpoint — the server returns
+// `{ data: rendition }` where rendition is { id, invoiceId, format, ... }.
+// We only assert the wrapper so the hook stays portable across renditions
+// shape changes; consumers that care can narrow on the data field.
+const invoiceRenditionResponse = z.object({
+  data: z.object({ id: z.string() }).passthrough(),
+})

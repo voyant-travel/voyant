@@ -24,7 +24,7 @@ import {
 } from "@voyantjs/ui/components"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
@@ -54,6 +54,17 @@ export function StatusChangeDialog({
 }: StatusChangeDialogProps) {
   const mutation = useBookingStatusMutation(bookingId)
   const messages = useBookingsUiMessagesOrDefault()
+  const statusItems = useMemo(
+    () =>
+      bookingStatusOptions.map((s) => ({
+        value: s.value,
+        label:
+          messages.common.bookingStatusLabels[
+            s.value as keyof typeof messages.common.bookingStatusLabels
+          ] ?? s.value,
+      })),
+    [messages.common.bookingStatusLabels],
+  )
 
   const form = useForm<StatusChangeFormValues, unknown, StatusChangeFormOutput>({
     resolver: zodResolver(statusChangeFormSchema),
@@ -96,17 +107,11 @@ export function StatusChangeDialog({
             <div className="flex flex-col gap-2">
               <Label>{messages.statusChangeDialog.fields.status}</Label>
               <Select
+                items={statusItems}
                 value={form.watch("status")}
                 onValueChange={(value) =>
                   form.setValue("status", value as StatusChangeFormValues["status"])
                 }
-                items={bookingStatusOptions.map((status) => ({
-                  ...status,
-                  label:
-                    messages.common.bookingStatusLabels[
-                      status.value as keyof typeof messages.common.bookingStatusLabels
-                    ],
-                }))}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />

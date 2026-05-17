@@ -44,6 +44,18 @@ export interface ContractLifecycleEvent {
   channelId: string | null
   bookingId: string | null
   orderId: string | null
+  /**
+   * Operator-supplied delivery override for the `sent` transition only —
+   * the Send-contract dialog forwards the typed-in subject + message +
+   * recipient through here so the downstream notification subscriber
+   * can build its email body from the operator's wording instead of a
+   * static template. Null on every other transition.
+   */
+  delivery?: {
+    recipientEmail: string | null
+    subject: string | null
+    message: string | null
+  } | null
 }
 
 export type ContractLifecycleHook = (event: ContractLifecycleEvent) => Promise<void> | void
@@ -125,6 +137,7 @@ export function buildContractLifecycleEvent(
   stage: ContractLifecycleStage,
   transition: Exclude<ContractLifecycleTransition, "created">,
   occurredAt: Date,
+  delivery?: ContractLifecycleEvent["delivery"],
 ): ContractLifecycleEvent {
   return {
     contractId: contract.id,
@@ -140,6 +153,7 @@ export function buildContractLifecycleEvent(
     channelId: contract.channelId ?? null,
     bookingId: contract.bookingId ?? null,
     orderId: contract.orderId ?? null,
+    delivery: delivery ?? null,
   }
 }
 

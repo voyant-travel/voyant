@@ -1,32 +1,14 @@
 import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
 
-/**
- * Layout-matched placeholder for BookingDetailPage. Sections map 1:1:
- *   - Breadcrumb row
- *   - Title + status badge + action menu
- *   - Summary grid (4 stats per row, 2 rows)
- *   - Tabs bar (6 tabs) + tab content (default: Overview with items + group)
- */
 export function BookingDetailSkeleton() {
   return (
     <div className="flex flex-col gap-6 p-6">
-      <Breadcrumb />
       <Header />
       <SummaryCard />
       <TabsBar />
       <ListCard titleWidth="w-32" rows={3} />
       <ListCard titleWidth="w-28" rows={2} />
-    </div>
-  )
-}
-
-function Breadcrumb() {
-  return (
-    <div className="flex items-center gap-1.5">
-      <Skeleton className="h-4 w-16" />
-      <Skeleton className="h-3.5 w-3.5" />
-      <Skeleton className="h-4 w-32" />
     </div>
   )
 }

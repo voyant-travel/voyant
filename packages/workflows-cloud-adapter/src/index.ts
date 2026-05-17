@@ -66,6 +66,8 @@ export interface CloudWorkflowsEnv {
   VOYANT_WORKFLOW_BUNDLE_R2_BUCKET?: string
   /** Optional signed URL TTL in seconds. Defaults to 300. */
   VOYANT_WORKFLOW_BUNDLE_URL_TTL_SECONDS?: string
+  /** Platform-managed Cloud Run node step runner endpoint. */
+  VOYANT_WORKFLOW_NODE_RUNNER_URL?: string
   /** Shared secret used to sign dispatches to the platform step runner. */
   VOYANT_WORKFLOW_STEP_AUTH_SECRET?: string
 }
@@ -284,6 +286,10 @@ async function createNodeStepRunner<Env extends CloudWorkflowsEnv>(
   env: Env,
   options: CloudExecutionOptions<Env>,
 ): Promise<StepRunner> {
+  if (env.VOYANT_WORKFLOW_NODE_RUNNER_URL) {
+    return createHttpNodeStepRunner(env, options)
+  }
+
   if (!env.STEP_RUNNER) {
     return createInlineNodeStepRunner(options.now)
   }
@@ -311,6 +317,142 @@ async function createNodeStepRunner<Env extends CloudWorkflowsEnv>(
       hash: bundle.hash,
     }),
   })
+}
+
+async function createHttpNodeStepRunner<Env extends CloudWorkflowsEnv>(
+  env: Env,
+  options: CloudExecutionOptions<Env>,
+): Promise<StepRunner> {
+  const serviceUrl = env.VOYANT_WORKFLOW_NODE_RUNNER_URL?.replace(/\/+$/, "")
+  if (!serviceUrl) {
+    throw new Error("@voyantjs/workflows-cloud-adapter: VOYANT_WORKFLOW_NODE_RUNNER_URL is empty")
+  }
+  const key = env.VOYANT_WORKFLOW_BUNDLE_KEY
+  const hash = env.VOYANT_WORKFLOW_BUNDLE_HASH
+  const missing = [
+    ["VOYANT_WORKFLOW_BUNDLE_KEY", key],
+    ["VOYANT_WORKFLOW_BUNDLE_HASH", hash],
+  ].filter(([, value]) => typeof value !== "string" || value.length === 0)
+  if (missing.length > 0) {
+    throw new Error(
+      `@voyantjs/workflows-cloud-adapter: Cloud Run node runner is configured but bundle env is incomplete: ${missing
+        .map(([name]) => name)
+        .join(", ")}`,
+    )
+  }
+  const sign = env.VOYANT_WORKFLOW_STEP_AUTH_SECRET
+    ? await createHmacSigner(env.VOYANT_WORKFLOW_STEP_AUTH_SECRET)
+    : undefined
+
+  return async ({
+    stepId,
+    attempt,
+    input,
+    stepCtx,
+    runId,
+    workflowId,
+    workflowVersion,
+    projectId,
+    organizationId,
+    options: stepOptions,
+    journal,
+  }): Promise<StepJournalEntry> => {
+    const startedAt = Date.now()
+    const payload = {
+      runId,
+      workflowId,
+      workflowVersion,
+      projectId,
+      organizationId,
+      stepId,
+      attempt,
+      input,
+      options: {
+        machine: stepOptions.machine,
+        timeout:
+          typeof stepOptions.timeout === "string" || typeof stepOptions.timeout === "number"
+            ? stepOptions.timeout
+            : undefined,
+      },
+      bundle: {
+        key,
+        hash,
+      },
+      journal,
+    }
+    const body = JSON.stringify(payload)
+    const headers: Record<string, string> = {
+      "content-type": "application/json; charset=utf-8",
+    }
+    if (sign) headers["x-voyant-step-auth"] = await sign(body)
+
+    let response: Response
+    try {
+      response = await fetch(`${serviceUrl}/step`, {
+        method: "POST",
+        headers,
+        body,
+        signal: stepCtx.signal,
+      })
+    } catch (err) {
+      options.logger?.("error", "cloud-run-node: fetch threw", {
+        runId,
+        stepId,
+        error: err instanceof Error ? err.message : String(err),
+      })
+      return failedNodeStep(attempt, startedAt, "NODE_RUNNER_DISPATCH_FAILED", err)
+    }
+
+    const text = await response.text()
+    if (!response.ok) {
+      options.logger?.("warn", "cloud-run-node: non-2xx response", {
+        runId,
+        stepId,
+        status: response.status,
+        body: text.slice(0, 500),
+      })
+      return failedNodeStep(
+        attempt,
+        startedAt,
+        "NODE_RUNNER_HTTP_ERROR",
+        new Error(`node runner returned HTTP ${response.status}: ${text}`),
+      )
+    }
+
+    try {
+      return JSON.parse(text) as StepJournalEntry
+    } catch (err) {
+      return failedNodeStep(
+        attempt,
+        startedAt,
+        "NODE_RUNNER_INVALID_RESPONSE",
+        new Error(`node runner returned non-JSON body: ${String(err)}`),
+      )
+    }
+  }
+}
+
+function failedNodeStep(
+  attempt: number,
+  startedAt: number,
+  code: string,
+  err: unknown,
+): StepJournalEntry {
+  const e = err instanceof Error ? err : new Error(String(err))
+  return {
+    attempt,
+    status: "err",
+    startedAt,
+    finishedAt: Date.now(),
+    runtime: "node",
+    error: {
+      category: "RUNTIME_ERROR",
+      code,
+      message: e.message,
+      name: e.name,
+      stack: e.stack,
+    },
+  }
 }
 
 function createInlineNodeStepRunner(now = () => Date.now()): StepRunner {

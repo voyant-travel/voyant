@@ -16,6 +16,7 @@ import {
   SelectValue,
   Textarea,
 } from "@voyantjs/ui/components"
+import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
@@ -164,11 +165,14 @@ export function PaymentDialog({
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.finance.paymentDialog.currencyLabel}</Label>
-                <Input
-                  {...form.register("currency")}
-                  placeholder="EUR"
-                  maxLength={3}
-                  className="uppercase"
+                <CurrencyCombobox
+                  value={form.watch("currency") || null}
+                  onChange={(next) =>
+                    form.setValue("currency", next ?? invoiceCurrency, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
+                  }
                 />
               </div>
             </div>

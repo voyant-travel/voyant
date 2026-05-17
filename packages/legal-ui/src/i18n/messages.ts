@@ -98,6 +98,24 @@ export type LegalUiMessages = {
     empty: string
     deleteConfirm: string
   }
+  contractSendDialog: {
+    title: string
+    fallbackSubject: string
+    missingRecipient: string
+    alreadySentWarning: string
+    fields: {
+      to: string
+      subject: string
+      message: string
+      attachments: string
+    }
+    messageHint: string
+    recipientPlaceholder: string
+    actions: {
+      cancel: string
+      send: string
+    }
+  }
   contractsPage: {
     title: string
     description: string
@@ -106,6 +124,8 @@ export type LegalUiMessages = {
     empty: string
     loadFailed: string
     filters: {
+      button: string
+      clear: string
       scope: string
       status: string
       person: string
@@ -196,6 +216,11 @@ export type LegalUiMessages = {
     allKinds: string
     empty: string
     loadFailed: string
+    filters: {
+      button: string
+      clear: string
+      kind: string
+    }
     columns: {
       name: string
       slug: string
@@ -270,10 +295,16 @@ export type LegalUiMessages = {
     versions: string
     noVersions: string
     filters: {
+      button: string
+      clear: string
       scope: string
       allScopes: string
     }
     columns: {
+      name: string
+      scope: string
+      status: string
+      created: string
       version: string
       changelog: string
       createdBy: string

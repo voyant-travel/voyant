@@ -1,7 +1,9 @@
 "use client"
 
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   type BookingTravelerRecord,
+  useBooking,
   useBookingTravelerDocumentMutation,
   useBookingTravelerDocuments,
   useTravelers,
@@ -11,7 +13,6 @@ import {
   type LegalContractAttachmentRecord,
   type LegalContractRecord,
   useLegalContractAttachments,
-  useLegalContractMutation,
   useLegalContracts,
 } from "@voyantjs/legal-react"
 import { Badge } from "@voyantjs/ui/components/badge"
@@ -69,6 +70,9 @@ export function BookingDocumentsTable({
 }: BookingDocumentsTableProps): React.ReactElement {
   const [uploadOpen, setUploadOpen] = useState(false)
 
+  const bookingQuery = useBooking(bookingId)
+  const booking = bookingQuery.data?.data ?? null
+
   const contractsQuery = useLegalContracts({ bookingId, limit: 25 })
   const contracts = contractsQuery.data?.data ?? []
 
@@ -80,7 +84,44 @@ export function BookingDocumentsTable({
 
   const removeTravelerDoc = useBookingTravelerDocumentMutation(bookingId).remove
 
-  const isLoading = contractsQuery.isLoading || travelerDocsQuery.isLoading
+  const [contractGenerating, setContractGenerating] = useState(false)
+  const queryClient = useQueryClient()
+  const generatingContract = contractGenerating
+
+  const handleGenerateContract = async (_templateId?: string) => {
+    if (!booking) return
+    // Delegates to the operator template's
+    // `/v1/admin/bookings/:id/generate-contract` route, which runs the
+    // same `autoGenerateContractForBooking` flow as the
+    // `booking.confirmed` subscriber. That path resolves the default
+    // customer-sales-agreement template, builds the booking +
+    // customer + operator + totals variables, and renders the PDF.
+    // The manual two-step flow we used before (create contract, then
+    // generateDocument) skipped the variable build and produced blank
+    // PDFs — the Liquid placeholders had no data.
+    setContractGenerating(true)
+    try {
+      const response = await fetch(`/api/v1/admin/bookings/${booking.id}/generate-contract`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      })
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({ error: response.statusText }))
+        throw new Error((body as { error?: string }).error ?? `HTTP ${response.status}`)
+      }
+      // Refresh the contracts query — TanStack invalidates by prefix
+      // so this also picks up the nested per-contract attachments
+      // queries the rows depend on.
+      await queryClient.invalidateQueries({ queryKey: ["legal", "contracts"] })
+    } finally {
+      setContractGenerating(false)
+    }
+  }
+
+  const isLoading =
+    bookingQuery.isLoading || contractsQuery.isLoading || travelerDocsQuery.isLoading
   const totalRows = contracts.length + travelerDocs.length
 
   return (
@@ -95,10 +136,26 @@ export function BookingDocumentsTable({
             </Badge>
           ) : null}
         </CardTitle>
-        <Button size="sm" variant="outline" onClick={() => setUploadOpen(true)}>
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
-          Upload document
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleGenerateContract()}
+            disabled={generatingContract || !booking}
+            title="Generate the customer contract for this booking"
+          >
+            {generatingContract ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <FileText className="mr-1.5 h-3.5 w-3.5" />
+            )}
+            Generate contract
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setUploadOpen(true)}>
+            <Plus className="mr-1 h-3.5 w-3.5" />
+            Upload document
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="overflow-hidden p-0">
         {isLoading ? (
@@ -108,8 +165,9 @@ export function BookingDocumentsTable({
           </p>
         ) : totalRows === 0 ? (
           <p className="px-6 py-6 text-center text-muted-foreground text-sm">
-            No documents on this booking yet. Contracts auto-generate on confirmation; traveler
-            documents (passport, visa, insurance) can be uploaded above.
+            No documents on this booking yet. Use "Generate contract" above, or upload traveler
+            documents (passport, visa, insurance). Invoices are generated per payment from the
+            Finance tab.
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -165,21 +223,47 @@ function ContractRow({
   const attachments = (attachmentsQuery.data ?? []).filter(
     (a: LegalContractAttachmentRecord) => a.kind === "document",
   )
-  const { generateDocument, regenerateDocument } = useLegalContractMutation()
-  const isPending = generateDocument.isPending || regenerateDocument.isPending
   const latest = attachments[0] ?? null
   const hasDocument = latest !== null
+  const queryClient = useQueryClient()
+  // Both Generate and Regenerate post to the booking-scoped endpoint so the
+  // variables (booking number, customer, totals) are rebuilt from current
+  // booking data. `force: true` on Regenerate deletes the existing document
+  // + clears renderedBody so the template re-renders with the new values —
+  // the legacy `regenerateDocument` mutation re-ran the PDF printer over
+  // whatever was previously cached on the contract row, which is why
+  // placeholders looked unfilled.
+  const generate = useMutation({
+    mutationFn: async ({ bookingId, force }: { bookingId: string; force: boolean }) => {
+      const response = await fetch(`/api/v1/admin/bookings/${bookingId}/generate-contract`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ force }),
+      })
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({ error: response.statusText }))
+        throw new Error((body as { error?: string }).error ?? `HTTP ${response.status}`)
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["legal", "contracts"] })
+    },
+  })
+  const isPending = generate.isPending
 
   const handleGenerate = () => {
-    const mutation = hasDocument ? regenerateDocument : generateDocument
-    mutation.mutate({
-      id: contract.id,
-      input: { replaceExisting: true, kind: "document" },
-    })
+    if (!contract.bookingId) return
+    generate.mutate({ bookingId: contract.bookingId, force: hasDocument })
   }
 
+  // Hono is mounted at `/api/*` on this template (see entry.ts), so the
+  // download URL must include the `/api` prefix. Defaulting here keeps
+  // the link safe even when a caller forgets to plumb `apiBaseUrl` —
+  // an empty base would otherwise produce a bare `/v1/...` path that
+  // the SSR catch-all returns 404 for.
   const downloadHref = latest
-    ? `${apiBaseUrl ?? ""}/v1/admin/legal/contracts/attachments/${latest.id}/download`
+    ? `${apiBaseUrl ?? "/api"}/v1/admin/legal/contracts/attachments/${latest.id}/download`
     : null
   const titleText = latest?.name ?? contract.contractNumber ?? `Contract ${contract.id.slice(-8)}`
   const statusVariant = CONTRACT_STATUS_VARIANT[contract.status] ?? "outline"

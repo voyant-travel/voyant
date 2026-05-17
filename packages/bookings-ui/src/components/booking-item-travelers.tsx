@@ -49,6 +49,23 @@ export function BookingItemTravelers({ bookingId, itemId }: BookingItemTravelers
   const assignedIds = new Set(assignedTravelers.map((link) => link.travelerId))
   const availableTravelers = travelers.filter((traveler) => !assignedIds.has(traveler.id))
 
+  const travelerItems = React.useMemo(
+    () =>
+      availableTravelers.map((t) => ({
+        value: t.id,
+        label: `${t.firstName} ${t.lastName}`,
+      })),
+    [availableTravelers],
+  )
+  const roleItems = React.useMemo(
+    () =>
+      roles.map((r) => ({
+        value: r,
+        label: messages.bookingItemTravelers.roleLabels[r],
+      })),
+    [messages.bookingItemTravelers.roleLabels],
+  )
+
   const travelerMap = new Map<string, BookingTravelerRecord>()
   for (const traveler of travelers) {
     travelerMap.set(traveler.id, traveler)
@@ -119,10 +136,7 @@ export function BookingItemTravelers({ bookingId, itemId }: BookingItemTravelers
         <div className="flex items-end gap-2 border-t pt-3">
           <div className="flex-1">
             <Select
-              items={availableTravelers.map((traveler) => ({
-                label: `${traveler.firstName} ${traveler.lastName}`,
-                value: traveler.id,
-              }))}
+              items={travelerItems}
               value={selectedTravelerId}
               onValueChange={(v) => setSelectedTravelerId(v ?? "")}
             >
@@ -142,10 +156,7 @@ export function BookingItemTravelers({ bookingId, itemId }: BookingItemTravelers
           </div>
           <div className="w-36">
             <Select
-              items={roles.map((r) => ({
-                label: messages.bookingItemTravelers.roleLabels[r],
-                value: r,
-              }))}
+              items={roleItems}
               value={selectedRole}
               onValueChange={(v) => setSelectedRole(v ?? "traveler")}
             >

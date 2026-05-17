@@ -4,6 +4,8 @@ import {
   type AdminDomainMessagesProvider,
   OperatorAdminShellProvider,
 } from "@voyantjs/admin"
+import { AllocationUiMessagesProvider } from "@voyantjs/allocation-ui/i18n"
+import { VoyantAvailabilityProvider } from "@voyantjs/availability-react"
 import { BookingsUiMessagesProvider } from "@voyantjs/bookings-ui/i18n"
 import { CrmUiMessagesProvider } from "@voyantjs/crm-ui/i18n"
 import { FinanceUiMessagesProvider } from "@voyantjs/finance-ui/i18n"
@@ -18,7 +20,13 @@ import { TooltipProvider } from "@voyantjs/ui/components/tooltip"
 import type * as React from "react"
 import { getApiUrl } from "@/lib/env"
 
-const appProviders = [TooltipProvider] satisfies readonly AdminChildProvider[]
+// VoyantAvailabilityProvider needs a baseUrl prop — wrap it once so it
+// fits the child-only AdminChildProvider shape used by the admin shell.
+const AvailabilityProvider: AdminChildProvider = ({ children }) => (
+  <VoyantAvailabilityProvider baseUrl={getApiUrl()}>{children}</VoyantAvailabilityProvider>
+)
+
+const appProviders = [TooltipProvider, AvailabilityProvider] satisfies readonly AdminChildProvider[]
 
 const domainMessageProviders = [
   BookingsUiMessagesProvider,
@@ -31,6 +39,7 @@ const domainMessageProviders = [
   FinanceUiMessagesProvider,
   NotificationsUiMessagesProvider,
   SuppliersUiMessagesProvider,
+  AllocationUiMessagesProvider,
 ] satisfies readonly AdminDomainMessagesProvider[]
 
 export function Providers({

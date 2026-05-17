@@ -27,6 +27,17 @@ export interface CreateBookingInput {
   endDate?: string | null
   pax?: number | null
   internalNotes?: string | null
+  // Billing-contact snapshot — editable post-create via PATCH.
+  contactFirstName?: string | null
+  contactLastName?: string | null
+  contactEmail?: string | null
+  contactPhone?: string | null
+  contactPreferredLanguage?: string | null
+  contactCountry?: string | null
+  contactRegion?: string | null
+  contactCity?: string | null
+  contactAddressLine1?: string | null
+  contactPostalCode?: string | null
 }
 
 export type UpdateBookingInput = Partial<CreateBookingInput>

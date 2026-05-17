@@ -110,7 +110,7 @@ describe.skipIf(!DB_AVAILABLE)("Public customer portal routes", () => {
       lastName: "Popescu",
       preferredLanguage: "ro",
       preferredCurrency: "EUR",
-      birthday: "1990-04-15",
+      dateOfBirth: "1990-04-15",
       relation: "client",
       status: "active",
       source: "auth.user",
@@ -352,7 +352,7 @@ describe.skipIf(!DB_AVAILABLE)("Public customer portal routes", () => {
 
     const updatedPerson = await crmService.getPersonById(db, person.id)
     expect(updatedPerson?.firstName).toBe("Anamaria")
-    expect(updatedPerson?.birthday).toBe("1991-06-20")
+    expect(updatedPerson?.dateOfBirth).toBe("1991-06-20")
     expect(updatedPerson?.phone).toBe("+40999888777")
     expect(updatedPerson?.country).toBe("FR")
     const [updatedProfile] = await db

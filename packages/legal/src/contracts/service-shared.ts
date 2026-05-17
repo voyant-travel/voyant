@@ -154,6 +154,19 @@ function formatNumber(
   return `${prefix}${separator}${padded}`
 }
 
+/**
+ * Normalize `db.execute(sql)` results across drizzle drivers. See the
+ * comment in `bookings/service.ts#toRows` for the why.
+ */
+function toResultRows<T>(result: unknown): T[] {
+  if (Array.isArray(result)) return result as T[]
+  if (result && typeof result === "object" && "rows" in result) {
+    const rows = (result as { rows: unknown }).rows
+    return Array.isArray(rows) ? (rows as T[]) : []
+  }
+  return []
+}
+
 export async function allocateContractNumber(
   db: PostgresJsDatabase,
   seriesId: string,
@@ -164,7 +177,13 @@ export async function allocateContractNumber(
           WHERE ${contractNumberSeries.id} = ${seriesId}
           FOR UPDATE`,
     )
-    const row = (rows as unknown as Array<Record<string, unknown>>)[0]
+    // `db.execute(sql)` returns rows directly under `drizzle-orm/postgres-js`
+    // but pg's `QueryResult<T>` (with `.rows`) under `node-postgres` and
+    // `neon-serverless`. Casting straight to `Array<T>` worked on the
+    // first driver and silently returned `undefined` on the others —
+    // which is why contracts auto-issued under the node-pg/Neon-WS
+    // operator template came out without a number. Normalise the shape.
+    const row = toResultRows<Record<string, unknown>>(rows)[0]
     if (!row) return null
 
     const strategy = row.reset_strategy as "never" | "annual" | "monthly"

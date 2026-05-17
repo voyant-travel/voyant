@@ -163,6 +163,7 @@ describe("contract lifecycle", () => {
       channelId: null,
       bookingId: "book_123",
       orderId: null,
+      delivery: null,
     })
   })
 })

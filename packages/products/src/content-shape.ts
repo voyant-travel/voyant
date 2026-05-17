@@ -78,6 +78,8 @@ export const productDaySchema = z.object({
   title: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
+  /** Day-level hero image (catalog detail sheet thumbnail). */
+  hero_image_url: z.string().nullable().optional(),
   services: z.array(z.string()).optional().default([]),
 })
 

@@ -227,7 +227,7 @@ export const personDocumentsService = {
    * Plaintext snapshot of the fields a booking-traveler creation
    * pulls from a person record: dietary, accessibility, primary
    * passport (number + expiry + country + authority + provenance id),
-   * and date-of-birth from `people.birthday`.
+   * and date-of-birth from `people.dateOfBirth`.
    *
    * Caller passes a KMS provider so decryption happens in-process.
    * Missing person → returns null. Missing document or blob → that
@@ -240,7 +240,7 @@ export const personDocumentsService = {
   ): Promise<PersonTravelSnapshot | null> {
     const [personRow] = await db
       .select({
-        birthday: people.birthday,
+        dateOfBirth: people.dateOfBirth,
         accessibilityEncrypted: people.accessibilityEncrypted,
         dietaryEncrypted: people.dietaryEncrypted,
       })
@@ -279,7 +279,7 @@ export const personDocumentsService = {
     }
 
     return {
-      dateOfBirth: personRow.birthday ?? null,
+      dateOfBirth: personRow.dateOfBirth ?? null,
       dietaryRequirements: dietaryBlob?.text ?? null,
       accessibilityNeeds: accessibilityBlob?.text ?? null,
       passportNumber,

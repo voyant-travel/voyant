@@ -73,9 +73,14 @@ import {
   mountPublicPaymentPolicyRoutes,
   readPolicySourceFromInternalNotes,
 } from "./booking-schedule"
+import { mountBookingTaxPreviewRoutes } from "./booking-tax-preview"
 import { mountCatalogBookingRoutes } from "./catalog-booking"
 import { catalogBridgeBundle } from "./catalog-bridge"
-import { createCatalogCheckoutBundle, mountCatalogCheckoutRoutes } from "./catalog-checkout"
+import {
+  createCatalogCheckoutBundle,
+  mountCatalogCheckoutRoutes,
+  rebuildBookingItemTaxLines,
+} from "./catalog-checkout"
 import { mountCatalogContentRoutes } from "./catalog-content"
 import { channelPushBundle, mountChannelPushAdminRoutes } from "./channel-push"
 import { mountFlightRoutes } from "./flights"
@@ -380,6 +385,18 @@ const AUTO_GENERATE_CONTRACT_OPTIONS: AutoGenerateContractOptions = {
     const roomsSummary = await deriveRoomsSummary(db, booking.id)
     const operatorProfile = await getOperatorSettings(db)
 
+    // Hydrate the customer block from the linked CRM person /
+    // identity record when the booking's snapshot columns are
+    // empty. Bookings created before snapshot-at-create landed
+    // still have `contact_*` nulls; without this fallback the
+    // contract template renders blank customer info even though
+    // the data lives on the linked person.
+    const customerOverride = await resolveCustomerVariables(
+      db,
+      booking.personId,
+      booking.organizationId,
+    )
+
     // Public base URL for any external resources templates load when
     // CF Browser Rendering pulls the HTML to a PDF. In dev this falls
     // back to APP_URL (localhost) so existing template authoring
@@ -460,8 +477,101 @@ const AUTO_GENERATE_CONTRACT_OPTIONS: AutoGenerateContractOptions = {
         // or unrecognised.
         source: bookingSourceTypeToContractSource(booking.sourceType),
       },
+      customer: customerOverride
+        ? {
+            ...defaults.customer,
+            // Booking snapshot wins when present; live CRM data fills
+            // any gap. Falsy snapshot strings (`""`) lose to non-empty
+            // overrides so legacy bookings without contact_* still
+            // render a populated customer block.
+            firstName: defaults.customer.firstName || customerOverride.firstName,
+            lastName: defaults.customer.lastName || customerOverride.lastName,
+            fullName: defaults.customer.fullName || customerOverride.fullName,
+            email: defaults.customer.email || customerOverride.email,
+            phone: defaults.customer.phone || customerOverride.phone,
+            dateOfBirth: defaults.customer.dateOfBirth || customerOverride.dateOfBirth,
+            companyName: defaults.customer.companyName || customerOverride.companyName,
+            address: {
+              ...defaults.customer.address,
+              line1: defaults.customer.address.line1 || customerOverride.address.line1,
+              city: defaults.customer.address.city || customerOverride.address.city,
+              region: defaults.customer.address.region || customerOverride.address.region,
+              postal: defaults.customer.address.postal || customerOverride.address.postal,
+              country: defaults.customer.address.country || customerOverride.address.country,
+            },
+          }
+        : defaults.customer,
     }
   },
+}
+
+/**
+ * Fetch the customer's CRM record + primary identity address so the
+ * contract render falls back to live data when the booking row's
+ * snapshot columns are empty (legacy bookings, or bookings created
+ * via flows that didn't snapshot). Returns null when no CRM record
+ * is linked — the resolver keeps `defaults.customer` (snapshot only).
+ */
+async function resolveCustomerVariables(
+  db: PostgresJsDatabase,
+  personId: string | null,
+  organizationId: string | null,
+): Promise<{
+  firstName: string
+  lastName: string
+  fullName: string
+  email: string
+  phone: string
+  dateOfBirth: string
+  companyName: string
+  address: { line1: string; city: string; region: string; postal: string; country: string }
+} | null> {
+  if (personId) {
+    const person = await crmService.getPersonById(db, personId)
+    if (!person) return null
+    const addresses = await crmService.listAddresses(db, "person", person.id).catch(() => [])
+    const primary = addresses.find((a) => a.isPrimary) ?? addresses[0] ?? null
+    const fullName = [person.firstName, person.lastName].filter(Boolean).join(" ").trim()
+    return {
+      firstName: person.firstName ?? "",
+      lastName: person.lastName ?? "",
+      fullName,
+      email: person.email ?? "",
+      phone: person.phone ?? "",
+      dateOfBirth: person.dateOfBirth ?? "",
+      companyName: "",
+      address: {
+        line1: primary?.line1 ?? "",
+        city: primary?.city ?? "",
+        region: primary?.region ?? "",
+        postal: primary?.postalCode ?? "",
+        country: primary?.country ?? "",
+      },
+    }
+  }
+  if (organizationId) {
+    const org = await crmService.getOrganizationById(db, organizationId)
+    if (!org) return null
+    const addresses = await crmService.listAddresses(db, "organization", org.id).catch(() => [])
+    const primary = addresses.find((a) => a.isPrimary) ?? addresses[0] ?? null
+    return {
+      firstName: "",
+      lastName: "",
+      fullName: org.name ?? "",
+      email: "",
+      phone: "",
+      dateOfBirth: "",
+      companyName: org.name ?? "",
+      address: {
+        line1: primary?.line1 ?? "",
+        city: primary?.city ?? "",
+        region: primary?.region ?? "",
+        postal: primary?.postalCode ?? "",
+        country: primary?.country ?? "",
+      },
+    }
+  }
+  return null
 }
 
 /**
@@ -519,11 +629,49 @@ async function ensureDefaultContractSeries(db: PostgresJsDatabase): Promise<void
   }
 }
 
+/**
+ * Reset every existing customer contract for the booking so the next
+ * `autoGenerateContractForBooking` invocation rebuilds variables from
+ * the latest booking data and re-renders the template.
+ *
+ * Steps per contract:
+ *   - delete any `document` attachments (legal cascades to storage cleanup
+ *     via attachment lifecycle hooks)
+ *   - null out `renderedBody` so `ensureRenderedContract` re-renders from
+ *     the current template body with the freshly-resolved variables
+ *
+ * Used by the Documents tab's per-row Regenerate action — the legacy
+ * `regenerateDocument` mutation just re-runs the PDF printer over the
+ * previously-stored variables/body, which is why placeholders looked
+ * unfilled when the initial render had partial inputs.
+ */
+async function resetContractDocumentForBooking(
+  db: PostgresJsDatabase,
+  bookingId: string,
+): Promise<void> {
+  const { contractsService } = await import("@voyantjs/legal/contracts")
+  const { contracts: contractsTable } = await import("@voyantjs/legal/schema")
+  const existing = await contractsService.listContracts(db, { bookingId, limit: 25, offset: 0 })
+  for (const contract of existing.data) {
+    const attachments = await contractsService.listAttachments(db, contract.id)
+    for (const attachment of attachments) {
+      if (attachment.kind === "document") {
+        await contractsService.deleteAttachment(db, attachment.id)
+      }
+    }
+    await db
+      .update(contractsTable)
+      .set({ renderedBody: null, updatedAt: new Date() })
+      .where(eq(contractsTable.id, contract.id))
+  }
+}
+
 async function generateContractPdfForBooking(
   env: CloudflareBindings,
   db: PostgresJsDatabase,
   eventBus: import("@voyantjs/core").EventBus | undefined,
   bookingId: string,
+  options: { force?: boolean } = {},
 ): Promise<{ contractId: string; attachmentId: string } | null> {
   const generator = resolveContractDocumentGenerator(env)
   if (!generator) return null
@@ -541,6 +689,15 @@ async function generateContractPdfForBooking(
     .limit(1)
   if (!bookingRow) {
     throw new Error(`generateContractPdfForBooking: booking ${bookingId} not found`)
+  }
+
+  // Force-regenerate path: `autoGenerateContractForBooking` is idempotent —
+  // it short-circuits when a document attachment already exists. To rebuild
+  // variables from current booking data and re-render the PDF, we first
+  // delete the existing document attachment(s) and clear `renderedBody` on
+  // the contract row so the rebuild branch fires with fresh inputs.
+  if (options.force) {
+    await resetContractDocumentForBooking(db, bookingId)
   }
 
   const result = await autoGenerateContractForBooking(
@@ -867,6 +1024,62 @@ export const app = createApp<CloudflareBindings>({
     // Booking-level payment-policy override + schedule regeneration.
     // POST /v1/admin/bookings/:bookingId/payment-schedule/regenerate
     mountBookingPaymentScheduleRoutes(hono)
+
+    // Real-time tax preview for the admin booking-create dialog.
+    // POST /v1/admin/bookings/tax-preview
+    mountBookingTaxPreviewRoutes(hono)
+
+    // Rebuild `booking_item_tax_lines` from the catalog snapshot for a
+    // booking. Repairs bookings created before the snapshot fallback in
+    // `materializeBookingItemTaxLine` shipped — without this, invoices
+    // generated from such bookings end up with 0 tax even though the
+    // booking page shows the upstream tax from its catalog snapshot.
+    // POST /v1/admin/bookings/:bookingId/rebuild-tax-lines
+    hono.post("/v1/admin/bookings/:bookingId/rebuild-tax-lines", async (c) => {
+      const bookingId = c.req.param("bookingId")
+      try {
+        const result = await rebuildBookingItemTaxLines(
+          c.get("db") as unknown as PostgresJsDatabase,
+          bookingId,
+        )
+        return c.json({ data: result })
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        return c.json({ error: message }, 500)
+      }
+    })
+
+    // Manual contract-PDF generation for the booking detail page's
+    // Documents tab. Reuses the same `autoGenerateContractForBooking`
+    // flow the `booking.confirmed` subscriber + the checkout-finalize
+    // step use, so the variables (booking number, customer, operator
+    // block, totals) match between automatic and manual paths.
+    // POST /v1/admin/bookings/:bookingId/generate-contract
+    hono.post("/v1/admin/bookings/:bookingId/generate-contract", async (c) => {
+      const bookingId = c.req.param("bookingId")
+      // Body is optional: callers may post `{}` (initial generate) or
+      // `{ force: true }` (regenerate — rebuild variables + re-render).
+      const body = await c.req.json<{ force?: boolean }>().catch(() => ({}) as { force?: boolean })
+      try {
+        const result = await generateContractPdfForBooking(
+          c.env,
+          c.get("db") as unknown as PostgresJsDatabase,
+          c.get("eventBus"),
+          bookingId,
+          { force: body.force === true },
+        )
+        if (!result) {
+          return c.json(
+            { error: "Contract document storage not configured (missing DOCUMENTS_BUCKET)" },
+            503,
+          )
+        }
+        return c.json({ data: result })
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        return c.json({ error: message }, 502)
+      }
+    })
 
     // Storefront preview policy resolution. The customer-facing
     // booking journey calls this on mount + whenever the

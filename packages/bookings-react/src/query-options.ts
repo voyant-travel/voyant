@@ -15,7 +15,11 @@ import type { UseBookingNotesOptions } from "./hooks/use-booking-notes.js"
 import type { UseBookingsOptions } from "./hooks/use-bookings.js"
 import type { UseSupplierStatusesOptions } from "./hooks/use-supplier-statuses.js"
 import type { UseTravelersOptions } from "./hooks/use-travelers.js"
-import { bookingsQueryKeys, type PricingPreviewFilters } from "./query-keys.js"
+import {
+  bookingsQueryKeys,
+  type PricingPreviewFilters,
+  type TaxPreviewFilters,
+} from "./query-keys.js"
 import {
   bookingActivityResponse,
   bookingGroupDetailResponse,
@@ -35,6 +39,7 @@ import {
   pricingPreviewResponse,
   publicBookingSessionResponse,
   publicBookingSessionStateResponse,
+  taxPreviewResponse,
 } from "./schemas.js"
 
 export function getBookingsQueryOptions(
@@ -357,6 +362,34 @@ export function getPricingPreviewQueryOptions(
           productId: filters.productId,
           optionId: filters.optionId ?? null,
           catalogId: filters.catalogId ?? null,
+        }),
+      }),
+  })
+}
+
+/**
+ * Tax preview — resolves the operator's sell-side tax rate against an
+ * in-progress booking's subtotal so the booking-create dialog can show
+ * a real subtotal/tax/total breakdown.
+ *
+ * Backed by the template-level `/v1/admin/bookings/tax-preview` route,
+ * which mirrors the logic that runs at booking-finalize time. Numbers
+ * shown to the operator match what will land in
+ * `booking_item_tax_lines`.
+ */
+export function getTaxPreviewQueryOptions(
+  client: FetchWithValidationOptions,
+  filters: TaxPreviewFilters,
+) {
+  return queryOptions({
+    queryKey: bookingsQueryKeys.taxPreview(filters),
+    queryFn: () =>
+      fetchWithValidation("/v1/admin/bookings/tax-preview", taxPreviewResponse, client, {
+        method: "POST",
+        body: JSON.stringify({
+          productId: filters.productId,
+          subtotalCents: filters.subtotalCents,
+          currency: filters.currency,
         }),
       }),
   })

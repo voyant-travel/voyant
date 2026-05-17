@@ -252,8 +252,17 @@ export function createNotificationsHonoModule(
         eventBus.subscribe(
           "booking.confirmed",
           async (event: {
-            data: { bookingId: string; bookingNumber: string; actorId: string | null }
+            data: {
+              bookingId: string
+              bookingNumber: string
+              actorId: string | null
+              suppressNotifications?: boolean
+            }
           }) => {
+            // Honor caller opt-out — the operator may want to confirm
+            // a booking without firing the customer-facing email/doc
+            // bundle (e.g. data correction, manual hand-off).
+            if (event.data.suppressNotifications === true) return
             try {
               // The resolver may return either drizzle flavor; the queries
               // bookingDocumentNotificationsService runs are compatible with

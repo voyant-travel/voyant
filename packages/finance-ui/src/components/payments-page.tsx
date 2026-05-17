@@ -221,7 +221,13 @@ export function PaymentsPage({
                     }}
                   >
                     <SelectTrigger id="payments-filter-kind" className="w-full">
-                      <SelectValue />
+                      <SelectValue>
+                        {(value) =>
+                          value === KIND_ALL
+                            ? f.filters.kindAll
+                            : (f.kindLabels[value as keyof typeof f.kindLabels] ?? value)
+                        }
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={KIND_ALL}>{f.filters.kindAll}</SelectItem>
@@ -244,7 +250,15 @@ export function PaymentsPage({
                     }}
                   >
                     <SelectTrigger id="payments-filter-status" className="w-full">
-                      <SelectValue />
+                      <SelectValue>
+                        {(value) =>
+                          value === STATUS_ALL
+                            ? f.filters.statusAll
+                            : (messages.common.supplierPaymentStatusLabels[
+                                value as keyof typeof messages.common.supplierPaymentStatusLabels
+                              ] ?? value)
+                        }
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={STATUS_ALL}>{f.filters.statusAll}</SelectItem>
@@ -267,7 +281,15 @@ export function PaymentsPage({
                     }}
                   >
                     <SelectTrigger id="payments-filter-method" className="w-full">
-                      <SelectValue />
+                      <SelectValue>
+                        {(value) =>
+                          value === METHOD_ALL
+                            ? f.filters.methodAll
+                            : (messages.common.paymentMethodLabels[
+                                value as keyof typeof messages.common.paymentMethodLabels
+                              ] ?? value)
+                        }
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={METHOD_ALL}>{f.filters.methodAll}</SelectItem>

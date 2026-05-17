@@ -432,3 +432,22 @@ export const pricingPreviewSnapshotSchema = z.object({
 })
 export type PricingPreviewSnapshot = z.infer<typeof pricingPreviewSnapshotSchema>
 export const pricingPreviewResponse = singleEnvelope(pricingPreviewSnapshotSchema)
+
+// Tax preview — operator-side resolution of the tax line the booking
+// would carry given the current subtotal. Backed by the template-level
+// tax policy resolver.
+const taxPreviewRateSchema = z.object({
+  code: z.string(),
+  label: z.string(),
+  rateBasisPoints: z.number().int(),
+  priceMode: z.enum(["inclusive", "exclusive"]),
+})
+export const taxPreviewSnapshotSchema = z.object({
+  subtotalCents: z.number().int(),
+  taxCents: z.number().int(),
+  totalCents: z.number().int(),
+  currency: z.string(),
+  taxRate: taxPreviewRateSchema.nullable(),
+})
+export type TaxPreviewSnapshot = z.infer<typeof taxPreviewSnapshotSchema>
+export const taxPreviewResponse = singleEnvelope(taxPreviewSnapshotSchema)

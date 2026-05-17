@@ -16,6 +16,8 @@ export {
   type BookingsListSortDir,
   type BookingsListSortField,
   bookingsQueryKeys,
+  type PricingPreviewFilters,
+  type TaxPreviewFilters,
 } from "./query-keys.js"
 export {
   getBookingActivityQueryOptions,
@@ -34,6 +36,7 @@ export {
   getPublicBookingSessionStateQueryOptions,
   getSharingGroupsForSlotQueryOptions,
   getSupplierStatusesQueryOptions,
+  getTaxPreviewQueryOptions,
   getTravelersQueryOptions,
 } from "./query-options.js"
 export * from "./schemas.js"

@@ -52,7 +52,7 @@ export const personRecordSchema = z.object({
   source: z.string().nullable(),
   sourceRef: z.string().nullable(),
   tags: z.array(z.string()),
-  birthday: z.string().nullable(),
+  dateOfBirth: z.string().nullable(),
   notes: z.string().nullable(),
   // Encrypted PII slots (canonical store; documents live in /documents)
   accessibilityEncrypted: kmsEnvelopeRecordSchema.optional(),

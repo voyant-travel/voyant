@@ -23,7 +23,7 @@ import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { DateTimePicker } from "@voyantjs/ui/components/date-time-picker"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
@@ -84,6 +84,22 @@ export function BookingGuaranteeDialog({
   const { create, update } = useBookingGuaranteeMutation(bookingId)
   const messages = useBookingsUiMessagesOrDefault()
   const guaranteeFormSchema = createGuaranteeFormSchema()
+  const typeItems = useMemo(
+    () =>
+      guaranteeTypes.map((t) => ({
+        value: t,
+        label: messages.bookingGuaranteeDialog.guaranteeTypeLabels[t],
+      })),
+    [messages.bookingGuaranteeDialog.guaranteeTypeLabels],
+  )
+  const statusItems = useMemo(
+    () =>
+      guaranteeStatuses.map((s) => ({
+        value: s,
+        label: messages.bookingGuaranteeDialog.guaranteeStatusLabels[s],
+      })),
+    [messages.bookingGuaranteeDialog.guaranteeStatusLabels],
+  )
 
   const form = useForm<GuaranteeFormValues, unknown, GuaranteeFormOutput>({
     resolver: zodResolver(guaranteeFormSchema),
@@ -159,10 +175,7 @@ export function BookingGuaranteeDialog({
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingGuaranteeDialog.fields.type}</Label>
                 <Select
-                  items={guaranteeTypes.map((t) => ({
-                    label: messages.bookingGuaranteeDialog.guaranteeTypeLabels[t],
-                    value: t,
-                  }))}
+                  items={typeItems}
                   value={form.watch("guaranteeType")}
                   onValueChange={(v) =>
                     form.setValue(
@@ -186,10 +199,7 @@ export function BookingGuaranteeDialog({
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingGuaranteeDialog.fields.status}</Label>
                 <Select
-                  items={guaranteeStatuses.map((s) => ({
-                    label: messages.bookingGuaranteeDialog.guaranteeStatusLabels[s],
-                    value: s,
-                  }))}
+                  items={statusItems}
                   value={form.watch("status")}
                   onValueChange={(v) =>
                     form.setValue("status", (v ?? "pending") as (typeof guaranteeStatuses)[number])

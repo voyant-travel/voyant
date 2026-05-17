@@ -7,7 +7,7 @@ import { DataTable } from "@voyantjs/ui/components/data-table"
 import { Input } from "@voyantjs/ui/components/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react"
-import { type ReactNode, useEffect, useMemo, useState } from "react"
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 import {
   type CatalogDetailAction,
@@ -140,6 +140,12 @@ export interface CatalogSearchTab {
     hit: CatalogSearchHit,
     departure: NonNullable<CatalogDetailEnrichment["departures"]>[number],
   ) => void
+  /** Per-option Book button inside the expanded departure panel. */
+  onBookOption?: (
+    hit: CatalogSearchHit,
+    departure: NonNullable<CatalogDetailEnrichment["departures"]>[number],
+    option: NonNullable<CatalogDetailEnrichment["options"]>[number],
+  ) => void
 }
 
 export interface CatalogSearchPageProps {
@@ -183,6 +189,14 @@ export interface CatalogSearchPageProps {
   renderDetailItineraryDay?: CatalogDetailSheetProps["renderItineraryDay"]
   /** Optional default extra sections rendered above detail footer actions. */
   renderDetailExtraSections?: CatalogDetailRenderSlot
+  /** Optional supplier-link renderer for the detail sheet's Attributes tab. */
+  renderSupplierLink?: CatalogDetailSheetProps["renderSupplierLink"]
+  /**
+   * Optional inline tags editor handler for the detail sheet. When set,
+   * the sheet's Tags row becomes editable; the callback persists the
+   * next tag list (typically a PATCH to the entity).
+   */
+  onTagsChange?: CatalogDetailSheetProps["onTagsChange"]
 }
 
 /**
@@ -210,6 +224,8 @@ export function CatalogSearchPage({
   renderDetailMedia,
   renderDetailItineraryDay,
   renderDetailExtraSections,
+  renderSupplierLink,
+  onTagsChange,
 }: CatalogSearchPageProps) {
   const messages = useCatalogUiMessagesOrDefault().catalogPage
   const resolvedSearchPlaceholder = searchPlaceholder ?? messages.searchPlaceholder
@@ -222,24 +238,30 @@ export function CatalogSearchPage({
     if (activeTabProp == null) setInternalActiveTab(next)
   }
 
-  // The query input lives locally (typing buffer); the debounced value is
-  // either pushed to the controlled `onQueryChange` callback OR kept as
-  // internal state. Controlled `queryProp` wins on the way down (e.g. URL
-  // back button overrides the typed value).
+  // The query input is always driven by the local typing buffer so
+  // keystrokes never get clobbered by a re-render triggered by our own
+  // debounced URL push. `queryProp` only resets the buffer when it
+  // changes from a value we did *not* emit (e.g. browser back/forward,
+  // or an external clear).
   const [internalRawQuery, setInternalRawQuery] = useState(queryProp ?? "")
   const [debouncedInternal, setDebouncedInternal] = useState(queryProp ?? "")
-  const rawQuery = queryProp != null ? queryProp : internalRawQuery
+  const lastEmittedRef = useRef<string>(queryProp ?? "")
+  const rawQuery = internalRawQuery
   const debouncedQuery = queryProp != null ? queryProp : debouncedInternal
 
   useEffect(() => {
-    if (queryProp != null) {
-      // Keep the typing buffer in sync when the URL changes externally.
+    if (queryProp != null && queryProp !== lastEmittedRef.current) {
+      // External update (e.g. URL back/forward) — accept it and re-seed
+      // the typing buffer.
+      lastEmittedRef.current = queryProp
       setInternalRawQuery(queryProp)
     }
   }, [queryProp])
 
   useEffect(() => {
     const t = setTimeout(() => {
+      if (internalRawQuery === lastEmittedRef.current) return
+      lastEmittedRef.current = internalRawQuery
       if (onQueryChange) onQueryChange(internalRawQuery)
       else setDebouncedInternal(internalRawQuery)
     }, queryDebounceMs)
@@ -289,6 +311,8 @@ export function CatalogSearchPage({
               renderDetailMedia={renderDetailMedia}
               renderDetailItineraryDay={renderDetailItineraryDay}
               renderDetailExtraSections={renderDetailExtraSections}
+              renderSupplierLink={renderSupplierLink}
+              onTagsChange={onTagsChange}
               messages={messages}
             />
           </TabsContent>
@@ -311,6 +335,8 @@ interface CatalogTabPanelProps {
   renderDetailMedia?: CatalogDetailRenderSlot
   renderDetailItineraryDay?: CatalogDetailSheetProps["renderItineraryDay"]
   renderDetailExtraSections?: CatalogDetailRenderSlot
+  renderSupplierLink?: CatalogDetailSheetProps["renderSupplierLink"]
+  onTagsChange?: CatalogDetailSheetProps["onTagsChange"]
   messages: ReturnType<typeof useCatalogUiMessagesOrDefault>["catalogPage"]
 }
 
@@ -338,6 +364,8 @@ function CatalogTabPanel({
   renderDetailMedia,
   renderDetailItineraryDay,
   renderDetailExtraSections,
+  renderSupplierLink,
+  onTagsChange,
   messages,
 }: CatalogTabPanelProps) {
   const [selections, setSelections] = useState<FilterSelections>(EMPTY_SELECTIONS)
@@ -528,10 +556,13 @@ function CatalogTabPanel({
         headerExtras={tab.detailHeaderExtras ?? detailHeaderExtras}
         onLoadDetail={tab.onLoadDetail}
         onBookDeparture={tab.onBookDeparture}
+        onBookOption={tab.onBookOption}
         renderBrochure={tab.renderDetailBrochure ?? renderDetailBrochure}
         renderMedia={tab.renderDetailMedia ?? renderDetailMedia}
         renderItineraryDay={tab.renderDetailItineraryDay ?? renderDetailItineraryDay}
         renderExtraSections={tab.renderDetailExtraSections ?? renderDetailExtraSections}
+        renderSupplierLink={renderSupplierLink}
+        onTagsChange={onTagsChange}
       />
     </div>
   )

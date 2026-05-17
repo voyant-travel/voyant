@@ -180,6 +180,32 @@ export const convertProductSchema = z
      */
     confirmedSellAmountCents: z.number().int().min(0).optional().nullable(),
     priceOverrideReason: z.string().trim().min(1).max(1000).optional().nullable(),
+    /**
+     * Initial status to insert with — defaults to `draft`. Lets the booking-
+     * create flow commit straight to `confirmed` or `awaiting_payment` in
+     * one transaction instead of doing a `create-then-flip` dance that's
+     * vulnerable to a window where the second request can't see the just-
+     * committed booking row. When set to `confirmed`, the caller is
+     * responsible for emitting the matching `booking.confirmed` event.
+     */
+    initialStatus: bookingStatusSchema.optional(),
+    /**
+     * Billing-contact snapshot. Captures who the operator was billing
+     * at create time so the booking detail page renders the right
+     * payer even if the linked CRM person/organization changes later
+     * (or is hard-deleted). All fields optional — the create flow can
+     * pass a partial snapshot when only some details are known.
+     */
+    contactFirstName: z.string().max(255).optional().nullable(),
+    contactLastName: z.string().max(255).optional().nullable(),
+    contactEmail: z.string().max(255).optional().nullable(),
+    contactPhone: z.string().max(50).optional().nullable(),
+    contactPreferredLanguage: z.string().max(35).optional().nullable(),
+    contactCountry: z.string().max(2).optional().nullable(),
+    contactRegion: z.string().max(100).optional().nullable(),
+    contactCity: z.string().max(100).optional().nullable(),
+    contactAddressLine1: z.string().max(500).optional().nullable(),
+    contactPostalCode: z.string().max(20).optional().nullable(),
     itemLines: z
       .array(
         z.object({
@@ -278,6 +304,13 @@ export const extendBookingHoldSchema = z
 
 export const confirmBookingSchema = z.object({
   note: z.string().optional().nullable(),
+  /**
+   * When true, downstream subscribers that send customer-facing
+   * notifications (e.g. notifications module's `autoConfirmAndDispatch`)
+   * skip dispatching for this confirmation. Lets the operator confirm a
+   * booking internally without auto-sending a confirmation email.
+   */
+  suppressNotifications: z.boolean().optional(),
 })
 
 export const cancelBookingSchema = z.object({
@@ -311,6 +344,12 @@ export const overrideBookingStatusSchema = z.object({
   status: bookingStatusSchema,
   reason: z.string().min(1).max(2000),
   note: z.string().optional().nullable(),
+  /**
+   * Same opt-out as `confirmBookingSchema.suppressNotifications`. The
+   * override-status path also emits `booking.confirmed` when the target
+   * is `confirmed`, so subscribers need the same hint.
+   */
+  suppressNotifications: z.boolean().optional(),
 })
 
 export const reserveBookingFromTransactionSchema = bookingCoreSchema

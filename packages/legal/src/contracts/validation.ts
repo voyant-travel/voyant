@@ -169,6 +169,19 @@ export const generateContractDocumentInputSchema = z.object({
   issueIfDraft: z.boolean().default(true),
 })
 
+/**
+ * Optional customization the operator typed in the Send-contract dialog.
+ * All fields nullable — the route falls through to defaults (recipient
+ * from the linked person record, subject + message resolved by the
+ * notification subscriber's contract-sent template) when omitted.
+ */
+export const sendContractInputSchema = z.object({
+  recipientEmail: z.string().email().optional().nullable(),
+  subject: z.string().max(500).optional().nullable(),
+  message: z.string().max(10_000).optional().nullable(),
+})
+export type SendContractInput = z.infer<typeof sendContractInputSchema>
+
 export const generatedContractDocumentAttachmentSchema = z.object({
   id: z.string(),
   contractId: z.string(),

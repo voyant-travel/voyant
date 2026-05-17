@@ -90,6 +90,11 @@ export {
   type UploadedFile,
 } from "./components/file-dropzone.js"
 export {
+  OptionUnitsStepperSection,
+  type OptionUnitsStepperSectionProps,
+  type OptionUnitsStepperValue,
+} from "./components/option-units-stepper-section.js"
+export {
   type PaymentScheduleMode,
   PaymentScheduleSection,
   type PaymentScheduleSectionProps,
@@ -112,11 +117,6 @@ export {
   type ProductPickerSectionProps,
   type ProductPickerValue,
 } from "./components/product-picker-section.js"
-export {
-  RoomsStepperSection,
-  type RoomsStepperSectionProps,
-  type RoomsStepperValue,
-} from "./components/rooms-stepper-section.js"
 export {
   type SharedRoomMode,
   SharedRoomSection,

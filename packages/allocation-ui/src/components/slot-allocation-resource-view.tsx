@@ -22,7 +22,18 @@ import {
   TableHeader,
   TableRow,
 } from "@voyantjs/ui/components"
-import { Bed, Pencil, Plus, Trash2, UserMinus, Users, X } from "lucide-react"
+import {
+  Accessibility,
+  Bed,
+  Crown,
+  Pencil,
+  Plus,
+  Trash2,
+  UserMinus,
+  Users,
+  UtensilsCrossed,
+  X,
+} from "lucide-react"
 import { type FormEvent, type ReactNode, useEffect, useState } from "react"
 
 import { useAllocationUiMessagesOrDefault } from "../i18n/index.js"
@@ -31,7 +42,7 @@ import {
   groupResourcesBySubType,
   kindLabel,
 } from "./slot-allocation-model.js"
-import { AllocationColumn, TravelerTile } from "./slot-allocation-shared.js"
+import { AllocationColumn } from "./slot-allocation-shared.js"
 
 export interface EditResourceInput {
   label: string | null
@@ -44,6 +55,7 @@ export function ResourceColumnsView({
   travelers,
   occupants,
   sharingGroupLabels,
+  optionNamesById,
   onAssignTraveler,
   onUnassignTraveler,
   onRemoveResource,
@@ -55,6 +67,13 @@ export function ResourceColumnsView({
   travelers: AllocationManifestTraveler[]
   occupants: AllocationOccupants
   sharingGroupLabels: Record<string, string>
+  /**
+   * Map from product_option_id → option name, used to badge each resource
+   * row with the option it's tied to (when refType === "option"). Lets
+   * operators distinguish "Standard double" rooms from "Junior suite"
+   * rooms at a glance. Omit when the host doesn't have option data.
+   */
+  optionNamesById?: ReadonlyMap<string, string>
   /** Assign a single unallocated traveler to a specific resource. */
   onAssignTraveler: (travelerId: string, resourceId: string) => void
   /** Remove a single traveler from their current resource. */
@@ -77,16 +96,11 @@ export function ResourceColumnsView({
         {occupants.unallocated.length === 0 ? (
           <p className="text-xs text-muted-foreground">{messages.unallocatedEmpty}</p>
         ) : (
-          occupants.unallocated.map((traveler) => (
-            <TravelerTile
-              key={traveler.id}
-              traveler={traveler}
-              sharingGroupLabel={
-                traveler.sharingGroupId ? sharingGroupLabels[traveler.sharingGroupId] : null
-              }
-              renderActions={renderTravelerActions}
-            />
-          ))
+          <UnallocatedTravelersTable
+            travelers={occupants.unallocated}
+            sharingGroupLabels={sharingGroupLabels}
+            renderActions={renderTravelerActions}
+          />
         )}
       </AllocationColumn>
 
@@ -97,16 +111,18 @@ export function ResourceColumnsView({
           </div>
         ) : (
           groupResourcesBySubType(resources).map((group) => {
-            const groupLabel = group.label ?? messages.resourceOtherGroup
+            // The grouping function uses the raw `refId` as the label fallback.
+            // Resolve product-option ids back to human names so the section
+            // header reads "Standard double" instead of "POPT_01KRS8…".
+            const resolvedLabel =
+              (group.label ? optionNamesById?.get(group.label) : null) ?? group.label
+            const groupLabel = resolvedLabel ?? messages.resourceOtherGroup
             return (
               <section key={group.key} aria-label={groupLabel} className="flex flex-col gap-2">
-                <header className="flex items-baseline justify-between gap-2 border-b pb-1">
+                <header className="flex items-baseline gap-2 border-b pb-1">
                   <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
                     {groupLabel}
                   </h3>
-                  <span className="text-xs text-muted-foreground">
-                    {group.count} · {messages.capacity.toLowerCase()} {group.capacity}
-                  </span>
                 </header>
                 <ResourceGroupTable
                   kind={kind}
@@ -114,6 +130,7 @@ export function ResourceColumnsView({
                   occupants={occupants}
                   unallocated={occupants.unallocated}
                   sharingGroupLabels={sharingGroupLabels}
+                  optionNamesById={optionNamesById}
                   onAssignTraveler={onAssignTraveler}
                   onUnassignTraveler={onUnassignTraveler}
                   onRemoveResource={onRemoveResource}
@@ -134,6 +151,7 @@ function ResourceGroupTable({
   occupants,
   unallocated,
   sharingGroupLabels,
+  optionNamesById,
   onAssignTraveler,
   onUnassignTraveler,
   onRemoveResource,
@@ -144,6 +162,7 @@ function ResourceGroupTable({
   occupants: AllocationOccupants
   unallocated: AllocationManifestTraveler[]
   sharingGroupLabels: Record<string, string>
+  optionNamesById?: ReadonlyMap<string, string>
   onAssignTraveler: (travelerId: string, resourceId: string) => void
   onUnassignTraveler: (travelerId: string) => void
   onRemoveResource: (resourceId: string) => void
@@ -176,6 +195,11 @@ function ResourceGroupTable({
                 seated={seated}
                 unallocated={unallocated}
                 sharingGroupLabels={sharingGroupLabels}
+                optionName={
+                  resource.refType === "option" && resource.refId
+                    ? (optionNamesById?.get(resource.refId) ?? null)
+                    : null
+                }
                 isEditing={isEditing}
                 isFull={isFull}
                 canEdit={Boolean(onEditResource)}
@@ -203,6 +227,7 @@ function ResourceRow({
   seated,
   unallocated,
   sharingGroupLabels,
+  optionName,
   isEditing,
   isFull,
   canEdit,
@@ -217,6 +242,7 @@ function ResourceRow({
   resource: AllocationResource
   seated: AllocationManifestTraveler[]
   unallocated: AllocationManifestTraveler[]
+  optionName?: string | null
   sharingGroupLabels: Record<string, string>
   isEditing: boolean
   isFull: boolean
@@ -253,6 +279,11 @@ function ResourceRow({
         <span className="inline-flex items-center gap-2">
           <Bed className="size-4 text-muted-foreground" aria-hidden="true" />
           {resource.label ?? kindLabel(kind, messages)}
+          {optionName ? (
+            <Badge variant="secondary" className="text-[10px] font-normal">
+              {optionName}
+            </Badge>
+          ) : null}
         </span>
       </TableCell>
       <TableCell className="text-center">
@@ -277,6 +308,7 @@ function ResourceRow({
           {!isFull ? (
             <AssignTravelerPopover
               unallocated={unallocated}
+              seatedBookingIds={new Set(seated.map((t) => t.bookingId))}
               onSelect={(travelerId) => onAssignTraveler(travelerId)}
             />
           ) : null}
@@ -342,14 +374,45 @@ function TravelerChip({
 
 function AssignTravelerPopover({
   unallocated,
+  seatedBookingIds,
   onSelect,
 }: {
   unallocated: AllocationManifestTraveler[]
+  /**
+   * Booking ids of travelers already assigned to this resource. When set,
+   * travelers from those same bookings are surfaced as a "Same booking"
+   * group at the top of the picker — common case for couples / families
+   * who arrive in the same booking and should share a room by default.
+   */
+  seatedBookingIds?: ReadonlySet<string>
   onSelect: (travelerId: string) => void
 }) {
   const messages = useAllocationUiMessagesOrDefault()
   const [open, setOpen] = useState(false)
   const disabled = unallocated.length === 0
+  const sameBooking = seatedBookingIds
+    ? unallocated.filter((t) => seatedBookingIds.has(t.bookingId))
+    : []
+  const others = seatedBookingIds
+    ? unallocated.filter((t) => !seatedBookingIds.has(t.bookingId))
+    : unallocated
+
+  const renderItem = (traveler: AllocationManifestTraveler) => (
+    <CommandItem
+      key={traveler.id}
+      value={`${traveler.fullName} ${traveler.bookingNumber}`}
+      onSelect={() => {
+        onSelect(traveler.id)
+        setOpen(false)
+      }}
+    >
+      <UserMinus className="mr-2 size-4 text-muted-foreground" aria-hidden="true" />
+      <div className="flex flex-col">
+        <span className="font-medium">{traveler.fullName}</span>
+        <span className="text-xs text-muted-foreground">{traveler.bookingNumber}</span>
+      </div>
+    </CommandItem>
+  )
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -374,24 +437,18 @@ function AssignTravelerPopover({
           <CommandInput placeholder={messages.assignTravelerSearch} />
           <CommandList>
             <CommandEmpty>{messages.assignTravelerEmpty}</CommandEmpty>
-            <CommandGroup>
-              {unallocated.map((traveler) => (
-                <CommandItem
-                  key={traveler.id}
-                  value={`${traveler.fullName} ${traveler.bookingNumber}`}
-                  onSelect={() => {
-                    onSelect(traveler.id)
-                    setOpen(false)
-                  }}
-                >
-                  <UserMinus className="mr-2 size-4 text-muted-foreground" aria-hidden="true" />
-                  <div className="flex flex-col">
-                    <span className="font-medium">{traveler.fullName}</span>
-                    <span className="text-xs text-muted-foreground">{traveler.bookingNumber}</span>
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
+            {sameBooking.length > 0 ? (
+              <CommandGroup heading={messages.assignTravelerSameBooking}>
+                {sameBooking.map(renderItem)}
+              </CommandGroup>
+            ) : null}
+            {others.length > 0 ? (
+              <CommandGroup
+                heading={sameBooking.length > 0 ? messages.assignTravelerOthers : undefined}
+              >
+                {others.map(renderItem)}
+              </CommandGroup>
+            ) : null}
           </CommandList>
         </Command>
       </PopoverContent>
@@ -473,5 +530,79 @@ function ResourceEditForm({
         {messages.cancel}
       </Button>
     </form>
+  )
+}
+
+/**
+ * Dense table view of unallocated travelers. Replaces the per-row Card
+ * tiles, which took multiple line-heights per traveler and made even a
+ * small slot scroll. Keeps the same metadata (lead flag, sharing group,
+ * accessibility / dietary icons, booking number) but in a single row.
+ */
+function UnallocatedTravelersTable({
+  travelers,
+  sharingGroupLabels,
+  renderActions,
+}: {
+  travelers: AllocationManifestTraveler[]
+  sharingGroupLabels: Record<string, string>
+  renderActions?: (traveler: AllocationManifestTraveler) => ReactNode
+}) {
+  const messages = useAllocationUiMessagesOrDefault()
+  const hasActions = Boolean(renderActions)
+  return (
+    <div className="overflow-hidden rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-muted/40">
+            <TableHead className="px-3 py-1.5 text-xs">{messages.travelers}</TableHead>
+            <TableHead className="px-3 py-1.5 text-xs">&nbsp;</TableHead>
+            {hasActions ? <TableHead className="w-12 px-3 py-1.5" /> : null}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {travelers.map((traveler) => (
+            <TableRow key={traveler.id}>
+              <TableCell className="px-3 py-1.5">
+                <div className="flex items-center gap-1.5">
+                  {traveler.isLeadTraveler ? (
+                    <Crown
+                      className="size-3.5 shrink-0 text-amber-500"
+                      aria-label={messages.lead}
+                    />
+                  ) : null}
+                  <span className="truncate font-medium text-sm">{traveler.fullName}</span>
+                  {traveler.sharingGroupId ? (
+                    <Badge variant="secondary" className="max-w-full truncate text-[10px]">
+                      {sharingGroupLabels[traveler.sharingGroupId] ?? messages.sharingGroup}
+                    </Badge>
+                  ) : null}
+                  {traveler.hasAccessibilityNeeds ? (
+                    <Accessibility
+                      className="size-3.5 shrink-0 text-muted-foreground"
+                      aria-label={messages.accessibility}
+                    />
+                  ) : null}
+                  {traveler.hasDietaryRequirements ? (
+                    <UtensilsCrossed
+                      className="size-3.5 shrink-0 text-muted-foreground"
+                      aria-label={messages.dietary}
+                    />
+                  ) : null}
+                </div>
+              </TableCell>
+              <TableCell className="px-3 py-1.5 text-muted-foreground text-xs">
+                {traveler.bookingNumber}
+              </TableCell>
+              {hasActions ? (
+                <TableCell className="px-3 py-1.5 text-right">
+                  {renderActions?.(traveler)}
+                </TableCell>
+              ) : null}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   )
 }

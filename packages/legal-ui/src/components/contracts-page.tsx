@@ -32,7 +32,7 @@ import {
   TableRow,
 } from "@voyantjs/ui/components/table"
 import { cn } from "@voyantjs/ui/lib/utils"
-import { ChevronDown, Plus, Search, User, X } from "lucide-react"
+import { ChevronDown, ListFilter, Plus, Search, User, X } from "lucide-react"
 import type { ReactNode } from "react"
 import { useMemo, useState } from "react"
 
@@ -105,8 +105,12 @@ export function ContractsPage({
   )
   const [selectedPerson, setSelectedPerson] = useState<ContractPersonSummary | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [pageIndex, setPageIndex] = useState(0)
   const resolvedPersonId = personId ?? internalPersonId
+  const activeFilterCount =
+    (scope !== SCOPE_ALL ? 1 : 0) + (status !== STATUS_ALL ? 1 : 0) + (resolvedPersonId ? 1 : 0)
+  const hasActiveFilters = activeFilterCount > 0 || search !== ""
 
   const { data, isPending, isFetching, isError, refetch } = useLegalContracts({
     search,
@@ -143,23 +147,23 @@ export function ContractsPage({
     resetPage()
   }
 
+  const clearFilters = () => {
+    setSearch("")
+    setScope(SCOPE_ALL)
+    setStatus(STATUS_ALL)
+    handlePersonChange(null, null)
+    resetPage()
+  }
+
   return (
     <div className={cn("flex flex-col gap-6 p-6", className)}>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{f.title}</h1>
-          <p className="text-sm text-muted-foreground">{f.description}</p>
-        </div>
-        {renderContractDialog ? (
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 size-4" aria-hidden="true" />
-            {f.create}
-          </Button>
-        ) : null}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">{f.title}</h1>
+        <p className="text-sm text-muted-foreground">{f.description}</p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-[14rem] max-w-sm flex-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[14rem] flex-1">
           <Label htmlFor="contracts-search" className="sr-only">
             {f.searchPlaceholder}
           </Label>
@@ -178,57 +182,120 @@ export function ContractsPage({
             className="pl-9"
           />
         </div>
-        <Select
-          value={scope}
-          onValueChange={(value) => {
-            setScope(value ?? SCOPE_ALL)
-            resetPage()
-          }}
-        >
-          <SelectTrigger className="w-[12.5rem]">
-            <SelectValue placeholder={f.filters.scope} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={SCOPE_ALL}>{f.filters.allScopes}</SelectItem>
-            {legalContractScopes.map((value) => (
-              <SelectItem key={value} value={value}>
-                {messages.common.contractScopeLabels[value]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={status}
-          onValueChange={(value) => {
-            setStatus(value ?? STATUS_ALL)
-            resetPage()
-          }}
-        >
-          <SelectTrigger className="w-[12.5rem]">
-            <SelectValue placeholder={f.filters.status} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={STATUS_ALL}>{f.filters.allStatuses}</SelectItem>
-            {legalContractStatuses.map((value) => (
-              <SelectItem key={value} value={value}>
-                {messages.common.contractStatusLabels[value]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {renderPersonFilter ? (
-          renderPersonFilter({
-            personId: resolvedPersonId || null,
-            selectedPerson: contractPersonSummary,
-            onPersonChange: handlePersonChange,
-          })
-        ) : (
-          <ContractsPersonFilter
-            value={resolvedPersonId || null}
-            selectedPerson={contractPersonSummary}
-            onChange={handlePersonChange}
+
+        <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <PopoverTrigger
+            render={
+              <Button variant="outline" size="default">
+                <ListFilter className="mr-2 size-4" />
+                {f.filters.button}
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="ml-2 px-1.5">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            }
           />
+          <PopoverContent align="start" className="w-[22rem] p-4">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="contracts-filter-scope">{f.filters.scope}</Label>
+                <Select
+                  value={scope}
+                  onValueChange={(value) => {
+                    setScope(value ?? SCOPE_ALL)
+                    resetPage()
+                  }}
+                >
+                  <SelectTrigger id="contracts-filter-scope" className="w-full">
+                    <SelectValue>
+                      {(value) =>
+                        value === SCOPE_ALL
+                          ? f.filters.allScopes
+                          : (messages.common.contractScopeLabels[
+                              value as keyof typeof messages.common.contractScopeLabels
+                            ] ?? value)
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={SCOPE_ALL}>{f.filters.allScopes}</SelectItem>
+                    {legalContractScopes.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {messages.common.contractScopeLabels[value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="contracts-filter-status">{f.filters.status}</Label>
+                <Select
+                  value={status}
+                  onValueChange={(value) => {
+                    setStatus(value ?? STATUS_ALL)
+                    resetPage()
+                  }}
+                >
+                  <SelectTrigger id="contracts-filter-status" className="w-full">
+                    <SelectValue>
+                      {(value) =>
+                        value === STATUS_ALL
+                          ? f.filters.allStatuses
+                          : (messages.common.contractStatusLabels[
+                              value as keyof typeof messages.common.contractStatusLabels
+                            ] ?? value)
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={STATUS_ALL}>{f.filters.allStatuses}</SelectItem>
+                    {legalContractStatuses.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {messages.common.contractStatusLabels[value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label>{f.filters.person}</Label>
+                {renderPersonFilter ? (
+                  renderPersonFilter({
+                    personId: resolvedPersonId || null,
+                    selectedPerson: contractPersonSummary,
+                    onPersonChange: handlePersonChange,
+                  })
+                ) : (
+                  <ContractsPersonFilter
+                    value={resolvedPersonId || null}
+                    selectedPerson={contractPersonSummary}
+                    onChange={handlePersonChange}
+                  />
+                )}
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters}>
+            <X className="mr-1 size-4" />
+            {f.filters.clear}
+          </Button>
         )}
+
+        {renderContractDialog ? (
+          <div className="ml-auto">
+            <Button onClick={() => setDialogOpen(true)}>
+              <Plus className="mr-1 size-4" aria-hidden="true" />
+              {f.create}
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       <div className="rounded-md border">
@@ -381,7 +448,7 @@ function ContractsPersonFilter({
             <Button
               type="button"
               variant="outline"
-              className="w-[14rem] justify-between gap-2 px-3"
+              className="w-full flex-1 justify-between gap-2 px-3"
             />
           }
         >

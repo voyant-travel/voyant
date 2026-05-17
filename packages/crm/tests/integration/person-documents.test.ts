@@ -31,7 +31,7 @@ describe.skipIf(!DB_AVAILABLE)("personDocumentsService", () => {
     await closeTestDb()
   })
 
-  async function seedPerson(overrides: { birthday?: string } = {}) {
+  async function seedPerson(overrides: { dateOfBirth?: string } = {}) {
     const [row] = await db
       .insert(people)
       .values({
@@ -196,7 +196,7 @@ describe.skipIf(!DB_AVAILABLE)("personDocumentsService", () => {
 
   it("loadPersonTravelSnapshot decrypts blobs + primary passport", async () => {
     const kms = new EnvKmsProvider({ key: generateEnvKmsKey() })
-    const person = await seedPerson({ birthday: "1990-04-15" })
+    const person = await seedPerson({ dateOfBirth: "1990-04-15" })
 
     const dietaryEncrypted = await encryptOptionalJsonEnvelope(
       kms,
@@ -259,7 +259,7 @@ describe.skipIf(!DB_AVAILABLE)("personDocumentsService", () => {
 
   it("loadPersonTravelSnapshot returns nulls when no primary passport / blobs are set", async () => {
     const kms = new EnvKmsProvider({ key: generateEnvKmsKey() })
-    const person = await seedPerson({ birthday: "1985-12-01" })
+    const person = await seedPerson({ dateOfBirth: "1985-12-01" })
     const snapshot = await personDocumentsService.loadPersonTravelSnapshot(db, person.id, { kms })
     expect(snapshot).toEqual({
       dateOfBirth: "1985-12-01",

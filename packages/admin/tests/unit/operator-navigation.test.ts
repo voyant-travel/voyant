@@ -50,7 +50,6 @@ describe("createOperatorAdminNavigation", () => {
       "finance",
       "legal",
       "channel-sync",
-      "settings",
     ])
   })
 

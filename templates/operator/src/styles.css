@@ -23,7 +23,24 @@
 @source "../node_modules/@voyantjs/products-ui/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/resources-ui/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/suppliers-ui/dist/**/*.{js,mjs}";
+/* In the monorepo, package `exports` point at `./src/*.ts(x)` so dev/SSR
+   runs from live source, not the package `dist/`. The dist scans above
+   only help published consumers and can lag behind src during local dev,
+   so also scan workspace src trees directly. */
+@source "../../../packages/admin/src/**/*.{ts,tsx}";
+@source "../../../packages/auth-ui/src/**/*.{ts,tsx}";
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
+@source "../../../packages/availability-ui/src/**/*.{ts,tsx}";
+@source "../../../packages/bookings-ui/src/**/*.{ts,tsx}";
+@source "../../../packages/catalog-ui/src/**/*.{ts,tsx}";
+@source "../../../packages/crm-ui/src/**/*.{ts,tsx}";
+@source "../../../packages/extras-ui/src/**/*.{ts,tsx}";
+@source "../../../packages/finance-ui/src/**/*.{ts,tsx}";
+@source "../../../packages/flights-ui/src/**/*.{ts,tsx}";
+@source "../../../packages/legal-ui/src/**/*.{ts,tsx}";
+@source "../../../packages/products-ui/src/**/*.{ts,tsx}";
+@source "../../../packages/resources-ui/src/**/*.{ts,tsx}";
+@source "../../../packages/suppliers-ui/src/**/*.{ts,tsx}";
 
 @import "@voyantjs/ui/styles.css";
 @import "@voyantjs/admin/styles.css";

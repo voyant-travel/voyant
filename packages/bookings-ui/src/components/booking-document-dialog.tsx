@@ -20,7 +20,7 @@ import {
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
@@ -66,6 +66,27 @@ export function BookingDocumentDialog({
   const travelers = travelersData?.data ?? []
   const messages = useBookingsUiMessagesOrDefault()
   const documentFormSchema = createDocumentFormSchema(messages)
+  const typeItems = useMemo(
+    () =>
+      documentTypes.map((t) => ({
+        value: t,
+        label: messages.bookingDocumentDialog.documentTypeLabels[t],
+      })),
+    [messages.bookingDocumentDialog.documentTypeLabels],
+  )
+  const travelerItems = useMemo(
+    () => [
+      {
+        value: UNASSIGNED,
+        label: messages.bookingDocumentDialog.placeholders.travelerUnassigned,
+      },
+      ...travelers.map((t) => ({
+        value: t.id,
+        label: `${t.firstName} ${t.lastName}`,
+      })),
+    ],
+    [travelers, messages.bookingDocumentDialog.placeholders.travelerUnassigned],
+  )
 
   const form = useForm<DocumentFormValues, unknown, DocumentFormOutput>({
     resolver: zodResolver(documentFormSchema),
@@ -114,10 +135,7 @@ export function BookingDocumentDialog({
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingDocumentDialog.fields.type}</Label>
                 <Select
-                  items={documentTypes.map((t) => ({
-                    label: messages.bookingDocumentDialog.documentTypeLabels[t],
-                    value: t,
-                  }))}
+                  items={typeItems}
                   value={form.watch("type")}
                   onValueChange={(v) =>
                     form.setValue("type", (v ?? "other") as (typeof documentTypes)[number])
@@ -138,16 +156,7 @@ export function BookingDocumentDialog({
               <div className="flex flex-col gap-2">
                 <Label>{messages.bookingDocumentDialog.fields.traveler}</Label>
                 <Select
-                  items={[
-                    {
-                      label: messages.bookingDocumentDialog.placeholders.travelerUnassigned,
-                      value: UNASSIGNED,
-                    },
-                    ...travelers.map((traveler) => ({
-                      label: `${traveler.firstName} ${traveler.lastName}`,
-                      value: traveler.id,
-                    })),
-                  ]}
+                  items={travelerItems}
                   value={form.watch("travelerId") ?? UNASSIGNED}
                   onValueChange={(v) => form.setValue("travelerId", v ?? UNASSIGNED)}
                 >

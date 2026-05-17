@@ -1,8 +1,18 @@
 "use client"
 
 import { useSignUp } from "@voyantjs/auth-react"
-import { Button, cn, Input, Label } from "@voyantjs/ui/components"
-import { Loader2, UserPlus } from "lucide-react"
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  cn,
+  Input,
+  Label,
+} from "@voyantjs/ui/components"
+import { Loader2 } from "lucide-react"
 import { type FormEvent, type ReactNode, useState } from "react"
 
 import { authUiEn } from "../i18n/en.js"
@@ -150,123 +160,117 @@ export function SignUpPage({
   }
 
   return (
-    <div
-      data-slot="sign-up-page"
-      className={cn("mx-auto flex w-full max-w-sm flex-col gap-6", className)}
-    >
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">{messages.title}</h1>
-        <p className="text-sm text-muted-foreground">{messages.description}</p>
-      </div>
+    <Card data-slot="sign-up-page" className={cn(className)}>
+      <CardHeader>
+        <CardTitle>{messages.title}</CardTitle>
+        <CardDescription>{messages.description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </div>
+          )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-
-        <div className="space-y-2">
-          <Label htmlFor="auth-sign-up-name">{messages.nameLabel}</Label>
-          <Input
-            id="auth-sign-up-name"
-            type="text"
-            placeholder={messages.namePlaceholder}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            required
-            autoComplete="name"
-            autoFocus
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="auth-sign-up-email">{messages.emailLabel}</Label>
-          <Input
-            id="auth-sign-up-email"
-            type="email"
-            placeholder={messages.emailPlaceholder}
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-            autoComplete="email"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="auth-sign-up-password">{messages.passwordLabel}</Label>
-          <Input
-            id="auth-sign-up-password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-            minLength={8}
-            autoComplete="new-password"
-          />
-        </div>
-
-        {collectsInvitationToken && (
           <div className="space-y-2">
-            <Label htmlFor="auth-sign-up-invitation-token">{messages.invitationTokenLabel}</Label>
+            <Label htmlFor="auth-sign-up-name">{messages.nameLabel}</Label>
             <Input
-              id="auth-sign-up-invitation-token"
+              id="auth-sign-up-name"
               type="text"
-              placeholder={messages.invitationTokenPlaceholder}
-              value={invitationTokenValue}
-              onChange={(event) => setInvitationTokenValue(event.target.value)}
-              autoComplete="off"
+              placeholder={messages.namePlaceholder}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              required
+              autoComplete="name"
+              autoFocus
             />
           </div>
-        )}
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <UserPlus className="mr-2 h-4 w-4" />
-          )}
-          {isSubmitting ? messages.signingUp : messages.submit}
-        </Button>
-      </form>
-
-      {hasSocialProviders && (
-        <>
-          <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-xs uppercase text-muted-foreground">{messages.or}</span>
-            <div className="h-px flex-1 bg-border" />
+          <div className="space-y-2">
+            <Label htmlFor="auth-sign-up-email">{messages.emailLabel}</Label>
+            <Input
+              id="auth-sign-up-email"
+              type="email"
+              placeholder={messages.emailPlaceholder}
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+              autoComplete="email"
+            />
           </div>
 
           <div className="space-y-2">
-            {socialProviders.map((provider) => {
-              const isPending = pendingSocialProvider === provider.id
-              return (
-                <Button
-                  key={provider.id}
-                  variant="outline"
-                  className="w-full"
-                  type="button"
-                  disabled={pendingSocialProvider !== null}
-                  onClick={() => void handleSocialSignUp(provider)}
-                >
-                  {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : provider.icon}
-                  {provider.label}
-                </Button>
-              )
-            })}
+            <Label htmlFor="auth-sign-up-password">{messages.passwordLabel}</Label>
+            <Input
+              id="auth-sign-up-password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              minLength={8}
+              autoComplete="new-password"
+            />
           </div>
-        </>
-      )}
 
-      {signInHref && (
-        <p className="text-center text-sm text-muted-foreground">
-          {messages.haveAccount}{" "}
-          <a href={signInHref} className="font-medium text-primary hover:underline">
-            {messages.signIn}
-          </a>
-        </p>
-      )}
-    </div>
+          {collectsInvitationToken && (
+            <div className="space-y-2">
+              <Label htmlFor="auth-sign-up-invitation-token">{messages.invitationTokenLabel}</Label>
+              <Input
+                id="auth-sign-up-invitation-token"
+                type="text"
+                placeholder={messages.invitationTokenPlaceholder}
+                value={invitationTokenValue}
+                onChange={(event) => setInvitationTokenValue(event.target.value)}
+                autoComplete="off"
+              />
+            </div>
+          )}
+
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSubmitting ? messages.signingUp : messages.submit}
+          </Button>
+        </form>
+
+        {hasSocialProviders && (
+          <>
+            <div className="my-4 flex items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs uppercase text-muted-foreground">{messages.or}</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+
+            <div className="space-y-2">
+              {socialProviders.map((provider) => {
+                const isPending = pendingSocialProvider === provider.id
+                return (
+                  <Button
+                    key={provider.id}
+                    variant="outline"
+                    className="w-full"
+                    type="button"
+                    disabled={pendingSocialProvider !== null}
+                    onClick={() => void handleSocialSignUp(provider)}
+                  >
+                    {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : provider.icon}
+                    {provider.label}
+                  </Button>
+                )
+              })}
+            </div>
+          </>
+        )}
+
+        {signInHref && (
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            {messages.haveAccount}{" "}
+            <a href={signInHref} className="font-medium text-primary hover:underline">
+              {messages.signIn}
+            </a>
+          </p>
+        )}
+      </CardContent>
+    </Card>
   )
 }

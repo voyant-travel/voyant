@@ -198,18 +198,10 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
   const localizedStatusBreakdown = (bookings?.countsByStatus ?? [])
     .filter((entry) => entry.count > 0)
     .map((entry) => ({
-      status:
-        entry.status === "confirmed"
-          ? messages.dashboard.statusConfirmedLabel
-          : entry.status === "completed"
-            ? messages.dashboard.statusCompletedLabel
-            : entry.status === "in_progress"
-              ? messages.dashboard.statusInProgressLabel
-              : entry.status === "draft"
-                ? messages.dashboard.statusDraftLabel
-                : entry.status === "cancelled"
-                  ? messages.dashboard.statusCancelledLabel
-                  : entry.status,
+      // Keep the raw status key so the chart config (keyed by
+      // `confirmed`/`completed`/...) can resolve the localized label
+      // for both the legend and the tooltip.
+      status: entry.status,
       count: entry.count,
       fill: getStatusColor(entry.status),
     }))
@@ -296,10 +288,6 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{messages.dashboard.title}</h1>
-        <p className="text-sm text-muted-foreground">{messages.dashboard.description}</p>
-      </div>
       <AdminWidgetSlotRenderer slot="dashboard.header" props={widgetProps} />
       {isBrandNewTenant ? (
         <>
@@ -386,61 +374,93 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
           </div>
           <AdminWidgetSlotRenderer slot="dashboard.after-kpis" props={widgetProps} />
 
-          <div className="grid gap-4 lg:grid-cols-7">
-            <Card className="lg:col-span-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>{messages.dashboard.revenueTrendTitle}</CardTitle>
+              <CardDescription>{messages.dashboard.revenueTrendDescription}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {bookingsPending ? (
+                <DashboardAreaChartSkeleton />
+              ) : !hasRevenueData ? (
+                <DashboardEmptyState emptyState={resolvedEmptyStates.revenueTrend} />
+              ) : (
+                <ChartContainer config={revenueChartConfig} className="h-[300px] w-full">
+                  <AreaChart
+                    data={monthlyRevenue}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(221 83% 53%)" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(221 83% 53%)" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid vertical={false} />
+                    <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      tickFormatter={(value: number) => `$${(value / 1000).toFixed(0)}k`}
+                    />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent
+                          formatter={(value) =>
+                            typeof value === "number"
+                              ? formatCurrency(value * 100, defaultCurrency)
+                              : String(value)
+                          }
+                        />
+                      }
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke="hsl(221 83% 53%)"
+                      fill="url(#fillRevenue)"
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ChartContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card>
               <CardHeader>
-                <CardTitle>{messages.dashboard.revenueTrendTitle}</CardTitle>
-                <CardDescription>{messages.dashboard.revenueTrendDescription}</CardDescription>
+                <CardTitle>{messages.dashboard.monthlyBookingsTitle}</CardTitle>
+                <CardDescription>{messages.dashboard.monthlyBookingsDescription}</CardDescription>
               </CardHeader>
               <CardContent>
                 {bookingsPending ? (
-                  <DashboardAreaChartSkeleton />
-                ) : !hasRevenueData ? (
-                  <DashboardEmptyState emptyState={resolvedEmptyStates.revenueTrend} />
+                  <DashboardBarChartSkeleton />
+                ) : !hasMonthlyBookingsData ? (
+                  <DashboardEmptyState emptyState={resolvedEmptyStates.monthlyBookings} compact />
                 ) : (
-                  <ChartContainer config={revenueChartConfig} className="h-[300px] w-full">
-                    <AreaChart
-                      data={monthlyRevenue}
+                  <ChartContainer config={monthlyBookingsConfig} className="h-[250px] w-full">
+                    <BarChart
+                      data={monthlyBookings}
                       margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
                     >
-                      <defs>
-                        <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(221 83% 53%)" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="hsl(221 83% 53%)" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
                       <CartesianGrid vertical={false} />
                       <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
                       <YAxis
                         tickLine={false}
                         axisLine={false}
                         tickMargin={8}
-                        tickFormatter={(value: number) => `$${(value / 1000).toFixed(0)}k`}
+                        allowDecimals={false}
                       />
-                      <ChartTooltip
-                        content={
-                          <ChartTooltipContent
-                            formatter={(value) =>
-                              typeof value === "number"
-                                ? formatCurrency(value * 100, defaultCurrency)
-                                : String(value)
-                            }
-                          />
-                        }
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="revenue"
-                        stroke="hsl(221 83% 53%)"
-                        fill="url(#fillRevenue)"
-                        strokeWidth={2}
-                      />
-                    </AreaChart>
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="count" fill="hsl(221 83% 53%)" radius={[4, 4, 0, 0]} />
+                    </BarChart>
                   </ChartContainer>
                 )}
               </CardContent>
             </Card>
-            <Card className="lg:col-span-3">
+            <Card>
               <CardHeader>
                 <CardTitle>{messages.dashboard.bookingStatusTitle}</CardTitle>
                 <CardDescription>{messages.dashboard.bookingStatusDescription}</CardDescription>
@@ -476,39 +496,8 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
             </Card>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-7">
-            <Card className="lg:col-span-3">
-              <CardHeader>
-                <CardTitle>{messages.dashboard.monthlyBookingsTitle}</CardTitle>
-                <CardDescription>{messages.dashboard.monthlyBookingsDescription}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {bookingsPending ? (
-                  <DashboardBarChartSkeleton />
-                ) : !hasMonthlyBookingsData ? (
-                  <DashboardEmptyState emptyState={resolvedEmptyStates.monthlyBookings} compact />
-                ) : (
-                  <ChartContainer config={monthlyBookingsConfig} className="h-[250px] w-full">
-                    <BarChart
-                      data={monthlyBookings}
-                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                    >
-                      <CartesianGrid vertical={false} />
-                      <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-                      <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        tickMargin={8}
-                        allowDecimals={false}
-                      />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="count" fill="hsl(221 83% 53%)" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ChartContainer>
-                )}
-              </CardContent>
-            </Card>
-            <Card className="lg:col-span-4">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle>{messages.dashboard.upcomingDeparturesTitle}</CardTitle>
@@ -575,9 +564,6 @@ export function DashboardPage({ emptyStates = {} }: DashboardPageProps = {}) {
                 )}
               </CardContent>
             </Card>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>{messages.dashboard.outstandingInvoicesTitle}</CardTitle>
