@@ -2,11 +2,52 @@
 
 import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
-import type * as React from "react"
+import * as React from "react"
 
 import { cn } from "../lib/utils.js"
 
-const Select = SelectPrimitive.Root
+// Walks `SelectContent` children to harvest `<SelectItem value="..."> label </SelectItem>`
+// pairs. Feeds the resulting map to base-ui's `items` prop so `<Select.Value />` renders
+// the label instead of the raw value — matches the shadcn/Radix Select expectation, and
+// keeps the localized labels working for callsites that pass children only (no explicit
+// `items` prop).
+function collectSelectItems(
+  children: React.ReactNode,
+  out: Record<string, React.ReactNode> = {},
+): Record<string, React.ReactNode> {
+  React.Children.forEach(children, (child) => {
+    if (!React.isValidElement(child)) return
+    const props = child.props as {
+      value?: unknown
+      children?: React.ReactNode
+    }
+    if (typeof props.value === "string" && props.children != null) {
+      out[props.value] = props.children
+    }
+    if (props.children != null) {
+      collectSelectItems(props.children, out)
+    }
+  })
+  return out
+}
+
+function Select<Value, Multiple extends boolean | undefined = false>({
+  children,
+  items,
+  ...props
+}: SelectPrimitive.Root.Props<Value, Multiple>) {
+  const harvested = React.useMemo(() => {
+    if (items !== undefined) return undefined
+    const map = collectSelectItems(children)
+    return Object.keys(map).length > 0 ? map : undefined
+  }, [items, children])
+  const resolvedItems = (items ?? harvested) as SelectPrimitive.Root.Props<Value, Multiple>["items"]
+  return (
+    <SelectPrimitive.Root<Value, Multiple> items={resolvedItems} {...props}>
+      {children}
+    </SelectPrimitive.Root>
+  )
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (

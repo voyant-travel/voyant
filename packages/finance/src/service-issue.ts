@@ -3,7 +3,7 @@ import type { EventBus } from "@voyantjs/core"
 import { asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import { invoiceLineItems, invoices } from "./schema.js"
+import { invoiceLineItems, invoices, payments } from "./schema.js"
 import {
   type CreateInvoiceFromBookingInput,
   financeService,
@@ -234,10 +234,18 @@ export async function convertProformaToInvoice(
         baseTaxCents: proforma.baseTaxCents,
         totalCents: proforma.totalCents,
         baseTotalCents: proforma.baseTotalCents,
-        paidCents: 0,
-        basePaidCents: proforma.baseCurrency ? 0 : null,
-        balanceDueCents: proforma.totalCents,
-        baseBalanceDueCents: proforma.baseTotalCents,
+        // Carry the proforma's settled amounts forward — a partially
+        // (or fully) paid proforma must convert to an invoice that
+        // reflects those payments, otherwise the new invoice shows the
+        // full total as outstanding and the payment rows reassigned
+        // below would orphan the balance.
+        paidCents: proforma.paidCents,
+        basePaidCents: proforma.basePaidCents,
+        balanceDueCents: proforma.totalCents - proforma.paidCents,
+        baseBalanceDueCents:
+          proforma.baseTotalCents !== null && proforma.basePaidCents !== null
+            ? proforma.baseTotalCents - proforma.basePaidCents
+            : proforma.baseTotalCents,
         commissionPercent: proforma.commissionPercent,
         commissionAmountCents: proforma.commissionAmountCents,
         issueDate,
@@ -262,6 +270,14 @@ export async function convertProformaToInvoice(
         })),
       )
     }
+
+    // Reassign payments off the proforma so they don't sit attached to
+    // a void document. The proforma's payment rows become the final
+    // invoice's payment history.
+    await tx
+      .update(payments)
+      .set({ invoiceId: inserted.id, updatedAt: new Date() })
+      .where(eq(payments.invoiceId, proforma.id))
 
     await tx
       .update(invoices)
