@@ -9,6 +9,7 @@ import {
   useInvoiceNotes,
   useInvoicePayments,
 } from "@voyantjs/finance-react"
+import { InvoiceActionLedgerCard } from "@voyantjs/finance-ui/components/invoice-action-ledger-card"
 import { InvoiceDialog } from "@voyantjs/finance-ui/components/invoice-dialog"
 import { Badge, Button } from "@voyantjs/ui/components"
 import { ArrowLeft, Pencil, Trash2 } from "lucide-react"
@@ -184,6 +185,8 @@ export function InvoiceDetailPage({ id }: { id: string }) {
           )
         }
       />
+
+      <InvoiceActionLedgerCard invoiceId={invoice.id} />
 
       <InvoiceDialog open={editOpen} onOpenChange={setEditOpen} invoice={invoice} />
 

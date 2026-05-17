@@ -6,6 +6,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./canary": "./src/canary.ts",
     "./capability": "./src/capability.ts",
     "./schema": "./src/schema.ts",
     "./service": "./src/service.ts",
@@ -46,6 +47,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./canary": {
+        "types": "./dist/canary.d.ts",
+        "import": "./dist/canary.js",
+        "default": "./dist/canary.js"
       },
       "./capability": {
         "types": "./dist/capability.d.ts",

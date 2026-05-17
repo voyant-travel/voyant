@@ -1,6 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
+import { PaymentSessionActionLedgerCard } from "@voyantjs/finance-ui/components/invoice-action-ledger-card"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
 import { CheckCircle2, ExternalLink } from "lucide-react"
@@ -125,6 +126,8 @@ export function BookingPaidPaymentSessions({
                 />
               ) : null}
             </dl>
+
+            <PaymentSessionActionLedgerCard paymentSessionId={session.id} limit={5} />
           </div>
         ))}
       </CardContent>

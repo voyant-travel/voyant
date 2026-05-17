@@ -3,6 +3,8 @@ export {
   actionLedgerStatusVariant,
   InvoiceActionLedgerCard,
   type InvoiceActionLedgerCardProps,
+  PaymentSessionActionLedgerCard,
+  type PaymentSessionActionLedgerCardProps,
 } from "./components/invoice-action-ledger-card.js"
 export {
   creditNoteStatusVariant,

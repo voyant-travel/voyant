@@ -1,4 +1,9 @@
 export {
+  type RunActionLedgerCanaryInput,
+  type RunActionLedgerCanaryResult,
+  runActionLedgerCanary,
+} from "./canary.js"
+export {
   type ActionLedgerApprovalRequirementReason,
   type ActionLedgerApprovalRequirementResult,
   type ActionLedgerCapabilityAccessReason,

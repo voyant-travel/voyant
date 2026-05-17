@@ -4,7 +4,7 @@ import type {
   FinanceActionLedgerEntryRecord,
   FinanceActionLedgerListResponse,
 } from "@voyantjs/finance-react"
-import { useInvoiceActionLedger } from "@voyantjs/finance-react"
+import { useInvoiceActionLedger, usePaymentSessionActionLedger } from "@voyantjs/finance-react"
 import { Badge, Button } from "@voyantjs/ui/components"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Activity, Loader2 } from "lucide-react"
@@ -24,15 +24,86 @@ export function InvoiceActionLedgerCard({
   className,
 }: InvoiceActionLedgerCardProps) {
   const messages = useFinanceUiMessagesOrDefault()
-  const { formatDateTime } = useFinanceUiI18nOrDefault()
   const detail = messages.invoiceDetailPage
   const [cursor, setCursor] =
     useState<FinanceActionLedgerListResponse["pageInfo"]["nextCursor"]>(null)
-  const [pages, setPages] = useState<FinanceActionLedgerListResponse[]>([])
   const actionLedgerQuery = useInvoiceActionLedger(invoiceId, { cursor, limit })
 
+  return (
+    <FinanceActionLedgerCard
+      dataSlot="invoice-action-ledger-card"
+      title={detail.titles.actionLedger}
+      loadOlderLabel={detail.actions.loadOlderActionLedger}
+      emptyLabel={detail.states.noActionLedger}
+      loadFailedLabel={detail.states.actionLedgerLoadFailed}
+      className={className}
+      cursor={cursor}
+      setCursor={setCursor}
+      query={actionLedgerQuery}
+    />
+  )
+}
+
+export interface PaymentSessionActionLedgerCardProps {
+  paymentSessionId: string
+  limit?: number
+  className?: string
+}
+
+export function PaymentSessionActionLedgerCard({
+  paymentSessionId,
+  limit = 20,
+  className,
+}: PaymentSessionActionLedgerCardProps) {
+  const messages = useFinanceUiMessagesOrDefault()
+  const detail = messages.invoiceDetailPage
+  const [cursor, setCursor] =
+    useState<FinanceActionLedgerListResponse["pageInfo"]["nextCursor"]>(null)
+  const actionLedgerQuery = usePaymentSessionActionLedger(paymentSessionId, { cursor, limit })
+
+  return (
+    <FinanceActionLedgerCard
+      dataSlot="payment-session-action-ledger-card"
+      title={detail.titles.actionLedger}
+      loadOlderLabel={detail.actions.loadOlderActionLedger}
+      emptyLabel={detail.states.noActionLedger}
+      loadFailedLabel={detail.states.actionLedgerLoadFailed}
+      className={className}
+      cursor={cursor}
+      setCursor={setCursor}
+      query={actionLedgerQuery}
+    />
+  )
+}
+
+function FinanceActionLedgerCard({
+  dataSlot,
+  title,
+  loadOlderLabel,
+  emptyLabel,
+  loadFailedLabel,
+  className,
+  cursor,
+  setCursor,
+  query,
+}: {
+  dataSlot: string
+  title: string
+  loadOlderLabel: string
+  emptyLabel: string
+  loadFailedLabel: string
+  className?: string
+  cursor: FinanceActionLedgerListResponse["pageInfo"]["nextCursor"]
+  setCursor: (cursor: FinanceActionLedgerListResponse["pageInfo"]["nextCursor"]) => void
+  query:
+    | ReturnType<typeof useInvoiceActionLedger>
+    | ReturnType<typeof usePaymentSessionActionLedger>
+}) {
+  const { formatDateTime } = useFinanceUiI18nOrDefault()
+  const [pages, setPages] = useState<FinanceActionLedgerListResponse[]>([])
+
   useEffect(() => {
-    const page = actionLedgerQuery.data
+    const page = query.data
     if (!page) return
 
     setPages((currentPages) => {
@@ -41,23 +112,19 @@ export function InvoiceActionLedgerCard({
       }
       return cursor ? [...currentPages, page] : [page]
     })
-  }, [actionLedgerQuery.data, cursor])
+  }, [query.data, cursor])
 
   const entries = pages.flatMap((page) => page.data)
   const nextCursor = pages.at(-1)?.pageInfo.nextCursor ?? null
 
   return (
-    <ActionLedgerSection
-      dataSlot="invoice-action-ledger-card"
-      title={detail.titles.actionLedger}
-      className={className}
-    >
-      {actionLedgerQuery.isPending && entries.length === 0 ? (
+    <ActionLedgerSection dataSlot={dataSlot} title={title} className={className}>
+      {query.isPending && entries.length === 0 ? (
         <ActionLedgerLoadingRow />
-      ) : actionLedgerQuery.isError && entries.length === 0 ? (
-        <ActionLedgerEmptyRow>{detail.states.actionLedgerLoadFailed}</ActionLedgerEmptyRow>
+      ) : query.isError && entries.length === 0 ? (
+        <ActionLedgerEmptyRow>{loadFailedLabel}</ActionLedgerEmptyRow>
       ) : entries.length === 0 ? (
-        <ActionLedgerEmptyRow>{detail.states.noActionLedger}</ActionLedgerEmptyRow>
+        <ActionLedgerEmptyRow>{emptyLabel}</ActionLedgerEmptyRow>
       ) : (
         <div className="flex flex-col gap-3">
           <ul className="divide-y rounded-md border bg-background">
@@ -75,13 +142,13 @@ export function InvoiceActionLedgerCard({
               variant="outline"
               size="sm"
               className="self-start"
-              disabled={actionLedgerQuery.isFetching}
+              disabled={query.isFetching}
               onClick={() => setCursor(nextCursor)}
             >
-              {actionLedgerQuery.isFetching ? (
+              {query.isFetching ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />
               ) : null}
-              {detail.actions.loadOlderActionLedger}
+              {loadOlderLabel}
             </Button>
           ) : null}
         </div>
