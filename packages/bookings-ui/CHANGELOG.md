@@ -1,5 +1,182 @@
 # @voyantjs/bookings-ui
 
+## 0.52.1
+
+### Patch Changes
+
+- @voyantjs/availability-react@0.52.1
+- @voyantjs/bookings-react@0.52.1
+- @voyantjs/catalog@0.52.1
+- @voyantjs/catalog-react@0.52.1
+- @voyantjs/crm-react@0.52.1
+- @voyantjs/crm-ui@0.52.1
+- @voyantjs/finance-react@0.52.1
+- @voyantjs/i18n@0.52.1
+- @voyantjs/legal-react@0.52.1
+- @voyantjs/products-react@0.52.1
+- @voyantjs/suppliers-react@0.52.1
+- @voyantjs/ui@0.52.1
+
+## 0.52.0
+
+### Patch Changes
+
+- @voyantjs/availability-react@0.52.0
+- @voyantjs/bookings-react@0.52.0
+- @voyantjs/catalog@0.52.0
+- @voyantjs/catalog-react@0.52.0
+- @voyantjs/crm-react@0.52.0
+- @voyantjs/crm-ui@0.52.0
+- @voyantjs/finance-react@0.52.0
+- @voyantjs/i18n@0.52.0
+- @voyantjs/legal-react@0.52.0
+- @voyantjs/products-react@0.52.0
+- @voyantjs/suppliers-react@0.52.0
+- @voyantjs/ui@0.52.0
+
+## 0.51.1
+
+### Patch Changes
+
+- Updated dependencies [deaacb3]
+  - @voyantjs/availability-react@0.51.1
+  - @voyantjs/bookings-react@0.51.1
+  - @voyantjs/catalog@0.51.1
+  - @voyantjs/catalog-react@0.51.1
+  - @voyantjs/crm-react@0.51.1
+  - @voyantjs/crm-ui@0.51.1
+  - @voyantjs/finance-react@0.51.1
+  - @voyantjs/i18n@0.51.1
+  - @voyantjs/legal-react@0.51.1
+  - @voyantjs/products-react@0.51.1
+  - @voyantjs/suppliers-react@0.51.1
+  - @voyantjs/ui@0.51.1
+
+## 0.51.0
+
+### Patch Changes
+
+- Updated dependencies [2316791]
+  - @voyantjs/availability-react@0.51.0
+  - @voyantjs/bookings-react@0.51.0
+  - @voyantjs/catalog@0.51.0
+  - @voyantjs/catalog-react@0.51.0
+  - @voyantjs/crm-react@0.51.0
+  - @voyantjs/crm-ui@0.51.0
+  - @voyantjs/finance-react@0.51.0
+  - @voyantjs/i18n@0.51.0
+  - @voyantjs/legal-react@0.51.0
+  - @voyantjs/products-react@0.51.0
+  - @voyantjs/suppliers-react@0.51.0
+  - @voyantjs/ui@0.51.0
+
+## 0.50.8
+
+### Patch Changes
+
+- f35014f: Fix admin booking create pricing and room-option selection after the initial create-flow patch. The admin flow now resolves active internal products for pricing preview, keeps selected combobox labels readable, lists product options as independent room/unit rows, and shows accurate pricing-preview fallback copy.
+  - @voyantjs/availability-react@0.50.8
+  - @voyantjs/bookings-react@0.50.8
+  - @voyantjs/catalog@0.50.8
+  - @voyantjs/catalog-react@0.50.8
+  - @voyantjs/crm-react@0.50.8
+  - @voyantjs/crm-ui@0.50.8
+  - @voyantjs/finance-react@0.50.8
+  - @voyantjs/i18n@0.50.8
+  - @voyantjs/legal-react@0.50.8
+  - @voyantjs/products-react@0.50.8
+  - @voyantjs/suppliers-react@0.50.8
+  - @voyantjs/ui@0.50.8
+
+## 0.50.7
+
+### Patch Changes
+
+- 7e4593e: Make the booking create flow usable for priced room/unit selections by keeping product combobox labels readable, falling back to product departures when option-filtered departures are empty, showing option units before departure selection, and surfacing booking total/scheduled/remaining payment amounts.
+  - @voyantjs/availability-react@0.50.7
+  - @voyantjs/bookings-react@0.50.7
+  - @voyantjs/catalog@0.50.7
+  - @voyantjs/catalog-react@0.50.7
+  - @voyantjs/crm-react@0.50.7
+  - @voyantjs/crm-ui@0.50.7
+  - @voyantjs/finance-react@0.50.7
+  - @voyantjs/i18n@0.50.7
+  - @voyantjs/legal-react@0.50.7
+  - @voyantjs/products-react@0.50.7
+  - @voyantjs/suppliers-react@0.50.7
+  - @voyantjs/ui@0.50.7
+
+## 0.50.6
+
+### Patch Changes
+
+- c14f0a8: Fix the booking-create flow: scrollable dialog content with reachable actions, normalized product search, future departure lookup, shared-room clearing, explicit item lines, selectable traveler people including the payer, already-paid schedule rows, and booking-create naming throughout the API/registry surface.
+- Updated dependencies [c14f0a8]
+  - @voyantjs/availability-react@0.50.6
+  - @voyantjs/bookings-react@0.50.6
+  - @voyantjs/catalog@0.50.6
+  - @voyantjs/catalog-react@0.50.6
+  - @voyantjs/crm-react@0.50.6
+  - @voyantjs/crm-ui@0.50.6
+  - @voyantjs/finance-react@0.50.6
+  - @voyantjs/i18n@0.50.6
+  - @voyantjs/legal-react@0.50.6
+  - @voyantjs/products-react@0.50.6
+  - @voyantjs/suppliers-react@0.50.6
+  - @voyantjs/ui@0.50.6
+
+## 0.50.5
+
+### Patch Changes
+
+- @voyantjs/availability-react@0.50.5
+- @voyantjs/bookings-react@0.50.5
+- @voyantjs/catalog@0.50.5
+- @voyantjs/catalog-react@0.50.5
+- @voyantjs/crm-react@0.50.5
+- @voyantjs/crm-ui@0.50.5
+- @voyantjs/finance-react@0.50.5
+- @voyantjs/i18n@0.50.5
+- @voyantjs/legal-react@0.50.5
+- @voyantjs/products-react@0.50.5
+- @voyantjs/suppliers-react@0.50.5
+- @voyantjs/ui@0.50.5
+
+## 0.50.4
+
+### Patch Changes
+
+- @voyantjs/availability-react@0.50.4
+- @voyantjs/bookings-react@0.50.4
+- @voyantjs/catalog@0.50.4
+- @voyantjs/catalog-react@0.50.4
+- @voyantjs/crm-react@0.50.4
+- @voyantjs/crm-ui@0.50.4
+- @voyantjs/finance-react@0.50.4
+- @voyantjs/i18n@0.50.4
+- @voyantjs/legal-react@0.50.4
+- @voyantjs/products-react@0.50.4
+- @voyantjs/suppliers-react@0.50.4
+- @voyantjs/ui@0.50.4
+
+## 0.50.3
+
+### Patch Changes
+
+- f6e051e: Allow BookingWorkspacePage consumers to replace the default booking tab content with a typed bookingTab slot.
+  - @voyantjs/availability-react@0.50.3
+  - @voyantjs/bookings-react@0.50.3
+  - @voyantjs/catalog@0.50.3
+  - @voyantjs/catalog-react@0.50.3
+  - @voyantjs/crm-react@0.50.3
+  - @voyantjs/crm-ui@0.50.3
+  - @voyantjs/finance-react@0.50.3
+  - @voyantjs/i18n@0.50.3
+  - @voyantjs/legal-react@0.50.3
+  - @voyantjs/products-react@0.50.3
+  - @voyantjs/suppliers-react@0.50.3
+  - @voyantjs/ui@0.50.3
+
 ## 0.50.2
 
 ### Patch Changes

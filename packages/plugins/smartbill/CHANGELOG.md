@@ -1,5 +1,86 @@
 # @voyantjs/plugin-smartbill
 
+## 0.52.1
+
+### Patch Changes
+
+- @voyantjs/core@0.52.1
+- @voyantjs/finance@0.52.1
+- @voyantjs/storage@0.52.1
+
+## 0.52.0
+
+### Patch Changes
+
+- @voyantjs/core@0.52.0
+- @voyantjs/finance@0.52.0
+- @voyantjs/storage@0.52.0
+
+## 0.51.1
+
+### Patch Changes
+
+- @voyantjs/core@0.51.1
+- @voyantjs/finance@0.51.1
+- @voyantjs/storage@0.51.1
+
+## 0.51.0
+
+### Patch Changes
+
+- @voyantjs/core@0.51.0
+- @voyantjs/finance@0.51.0
+- @voyantjs/storage@0.51.0
+
+## 0.50.8
+
+### Patch Changes
+
+- @voyantjs/core@0.50.8
+- @voyantjs/finance@0.50.8
+- @voyantjs/storage@0.50.8
+
+## 0.50.7
+
+### Patch Changes
+
+- @voyantjs/core@0.50.7
+- @voyantjs/finance@0.50.7
+- @voyantjs/storage@0.50.7
+
+## 0.50.6
+
+### Patch Changes
+
+- Updated dependencies [c14f0a8]
+  - @voyantjs/core@0.50.6
+  - @voyantjs/finance@0.50.6
+  - @voyantjs/storage@0.50.6
+
+## 0.50.5
+
+### Patch Changes
+
+- @voyantjs/core@0.50.5
+- @voyantjs/finance@0.50.5
+- @voyantjs/storage@0.50.5
+
+## 0.50.4
+
+### Patch Changes
+
+- @voyantjs/core@0.50.4
+- @voyantjs/finance@0.50.4
+- @voyantjs/storage@0.50.4
+
+## 0.50.3
+
+### Patch Changes
+
+- @voyantjs/core@0.50.3
+- @voyantjs/finance@0.50.3
+- @voyantjs/storage@0.50.3
+
 ## 0.50.2
 
 ### Patch Changes

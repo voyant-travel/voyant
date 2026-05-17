@@ -1,6 +1,5 @@
 import { useQueries } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
-import { BookingDialog } from "@voyantjs/bookings-ui/components/booking-dialog"
 import { ProductOptionsSection } from "@voyantjs/products-ui/components/product-options-section"
 import { Button } from "@voyantjs/ui/components"
 import { useMemo } from "react"
@@ -82,7 +81,13 @@ export function ProductDetailPage({ id }: { id: string }) {
         product={product}
         isDeleting={mutations.deleteProduct.isPending}
         onEdit={dialogs.edit.openNow}
-        onAddBooking={dialogs.bookingCreate.openNow}
+        onAddBooking={() =>
+          void navigate({
+            to: "/bookings/$id",
+            params: { id: "new" },
+            search: { productId: id },
+          })
+        }
         onDelete={() => {
           if (confirm(productMessages.deleteConfirm)) {
             mutations.deleteProduct.mutate(undefined, {
@@ -168,16 +173,6 @@ export function ProductDetailPage({ id }: { id: string }) {
       </div>
 
       {/* Dialogs */}
-      <BookingDialog
-        open={dialogs.bookingCreate.open}
-        onOpenChange={dialogs.bookingCreate.setOpen}
-        defaultProductId={id}
-        onSuccess={(booking) => {
-          dialogs.bookingCreate.close()
-          void navigate({ to: "/bookings/$id", params: { id: booking.id } })
-        }}
-      />
-
       <ProductDialog
         open={dialogs.edit.open}
         onOpenChange={dialogs.edit.setOpen}

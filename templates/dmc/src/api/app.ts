@@ -9,7 +9,7 @@ import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/
 import { externalRefsHonoModule } from "@voyantjs/external-refs"
 import { extrasHonoModule } from "@voyantjs/extras"
 import { facilitiesHonoModule } from "@voyantjs/facilities"
-import { bookingsQuickCreateExtension, createFinanceHonoModule } from "@voyantjs/finance"
+import { bookingsCreateExtension, createFinanceHonoModule } from "@voyantjs/finance"
 import { groundHonoModule } from "@voyantjs/ground"
 import { createApp } from "@voyantjs/hono"
 import { hospitalityHonoModule } from "@voyantjs/hospitality"
@@ -30,7 +30,11 @@ import { suppliersHonoModule } from "@voyantjs/suppliers"
 import { transactionsBookingExtension, transactionsHonoModule } from "@voyantjs/transactions"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { createVideoUploadTicket } from "../lib/video-uploads"
-import authHandler, { hasAuthPermission, resolveAuthRequest } from "./auth/handler"
+import authHandler, {
+  hasAuthPermission,
+  resolveAuthRequest,
+  validateApiTokenAccess,
+} from "./auth/handler"
 import { catalogBridgeBundle } from "./catalog-bridge"
 import { mountCatalogContentRoutes } from "./catalog-content"
 import { createInvitationsRoutes } from "./invitations"
@@ -139,7 +143,7 @@ export const app = createApp<CloudflareBindings>({
   ],
   extensions: [
     bookingsSupplierExtension,
-    bookingsQuickCreateExtension,
+    bookingsCreateExtension,
     productsBookingExtension,
     crmBookingExtension,
     transactionsBookingExtension,
@@ -153,6 +157,7 @@ export const app = createApp<CloudflareBindings>({
     }),
     resolve: async ({ request, env }) => resolveAuthRequest(request, env),
     hasPermission: async ({ request, env }) => hasAuthPermission(request, env),
+    validateApiKey: async ({ env, db, apiKey }) => validateApiTokenAccess(env, db, apiKey),
   },
   additionalRoutes: (hono) => {
     // Admin-issued invitation flow (single-tenant sign-up is otherwise gated

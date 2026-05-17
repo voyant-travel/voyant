@@ -1,5 +1,147 @@
 # @voyantjs/sellability
 
+## 0.52.1
+
+### Patch Changes
+
+- Updated dependencies [335d277]
+  - @voyantjs/availability@0.52.1
+  - @voyantjs/core@0.52.1
+  - @voyantjs/db@0.52.1
+  - @voyantjs/distribution@0.52.1
+  - @voyantjs/hono@0.52.1
+  - @voyantjs/markets@0.52.1
+  - @voyantjs/pricing@0.52.1
+  - @voyantjs/products@0.52.1
+  - @voyantjs/transactions@0.52.1
+
+## 0.52.0
+
+### Patch Changes
+
+- @voyantjs/availability@0.52.0
+- @voyantjs/core@0.52.0
+- @voyantjs/db@0.52.0
+- @voyantjs/distribution@0.52.0
+- @voyantjs/hono@0.52.0
+- @voyantjs/markets@0.52.0
+- @voyantjs/pricing@0.52.0
+- @voyantjs/products@0.52.0
+- @voyantjs/transactions@0.52.0
+
+## 0.51.1
+
+### Patch Changes
+
+- @voyantjs/availability@0.51.1
+- @voyantjs/core@0.51.1
+- @voyantjs/db@0.51.1
+- @voyantjs/distribution@0.51.1
+- @voyantjs/hono@0.51.1
+- @voyantjs/markets@0.51.1
+- @voyantjs/pricing@0.51.1
+- @voyantjs/products@0.51.1
+- @voyantjs/transactions@0.51.1
+
+## 0.51.0
+
+### Patch Changes
+
+- @voyantjs/availability@0.51.0
+- @voyantjs/core@0.51.0
+- @voyantjs/db@0.51.0
+- @voyantjs/distribution@0.51.0
+- @voyantjs/hono@0.51.0
+- @voyantjs/markets@0.51.0
+- @voyantjs/pricing@0.51.0
+- @voyantjs/products@0.51.0
+- @voyantjs/transactions@0.51.0
+
+## 0.50.8
+
+### Patch Changes
+
+- @voyantjs/availability@0.50.8
+- @voyantjs/core@0.50.8
+- @voyantjs/db@0.50.8
+- @voyantjs/distribution@0.50.8
+- @voyantjs/hono@0.50.8
+- @voyantjs/markets@0.50.8
+- @voyantjs/pricing@0.50.8
+- @voyantjs/products@0.50.8
+- @voyantjs/transactions@0.50.8
+
+## 0.50.7
+
+### Patch Changes
+
+- @voyantjs/availability@0.50.7
+- @voyantjs/core@0.50.7
+- @voyantjs/db@0.50.7
+- @voyantjs/distribution@0.50.7
+- @voyantjs/hono@0.50.7
+- @voyantjs/markets@0.50.7
+- @voyantjs/pricing@0.50.7
+- @voyantjs/products@0.50.7
+- @voyantjs/transactions@0.50.7
+
+## 0.50.6
+
+### Patch Changes
+
+- Updated dependencies [c14f0a8]
+  - @voyantjs/availability@0.50.6
+  - @voyantjs/core@0.50.6
+  - @voyantjs/db@0.50.6
+  - @voyantjs/distribution@0.50.6
+  - @voyantjs/hono@0.50.6
+  - @voyantjs/markets@0.50.6
+  - @voyantjs/pricing@0.50.6
+  - @voyantjs/products@0.50.6
+  - @voyantjs/transactions@0.50.6
+
+## 0.50.5
+
+### Patch Changes
+
+- @voyantjs/availability@0.50.5
+- @voyantjs/core@0.50.5
+- @voyantjs/db@0.50.5
+- @voyantjs/distribution@0.50.5
+- @voyantjs/hono@0.50.5
+- @voyantjs/markets@0.50.5
+- @voyantjs/pricing@0.50.5
+- @voyantjs/products@0.50.5
+- @voyantjs/transactions@0.50.5
+
+## 0.50.4
+
+### Patch Changes
+
+- @voyantjs/availability@0.50.4
+- @voyantjs/core@0.50.4
+- @voyantjs/db@0.50.4
+- @voyantjs/distribution@0.50.4
+- @voyantjs/hono@0.50.4
+- @voyantjs/markets@0.50.4
+- @voyantjs/pricing@0.50.4
+- @voyantjs/products@0.50.4
+- @voyantjs/transactions@0.50.4
+
+## 0.50.3
+
+### Patch Changes
+
+- @voyantjs/availability@0.50.3
+- @voyantjs/core@0.50.3
+- @voyantjs/db@0.50.3
+- @voyantjs/distribution@0.50.3
+- @voyantjs/hono@0.50.3
+- @voyantjs/markets@0.50.3
+- @voyantjs/pricing@0.50.3
+- @voyantjs/products@0.50.3
+- @voyantjs/transactions@0.50.3
+
 ## 0.50.2
 
 ### Patch Changes

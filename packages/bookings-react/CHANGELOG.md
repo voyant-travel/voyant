@@ -1,5 +1,79 @@
 # @voyantjs/bookings-react
 
+## 0.52.1
+
+### Patch Changes
+
+- Updated dependencies [335d277]
+  - @voyantjs/bookings@0.52.1
+  - @voyantjs/react@0.52.1
+
+## 0.52.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.52.0
+- @voyantjs/react@0.52.0
+
+## 0.51.1
+
+### Patch Changes
+
+- @voyantjs/bookings@0.51.1
+- @voyantjs/react@0.51.1
+
+## 0.51.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.51.0
+- @voyantjs/react@0.51.0
+
+## 0.50.8
+
+### Patch Changes
+
+- Updated dependencies [f35014f]
+  - @voyantjs/bookings@0.50.8
+  - @voyantjs/react@0.50.8
+
+## 0.50.7
+
+### Patch Changes
+
+- @voyantjs/bookings@0.50.7
+- @voyantjs/react@0.50.7
+
+## 0.50.6
+
+### Patch Changes
+
+- c14f0a8: Fix the booking-create flow: scrollable dialog content with reachable actions, normalized product search, future departure lookup, shared-room clearing, explicit item lines, selectable traveler people including the payer, already-paid schedule rows, and booking-create naming throughout the API/registry surface.
+- Updated dependencies [c14f0a8]
+  - @voyantjs/bookings@0.50.6
+  - @voyantjs/react@0.50.6
+
+## 0.50.5
+
+### Patch Changes
+
+- @voyantjs/bookings@0.50.5
+- @voyantjs/react@0.50.5
+
+## 0.50.4
+
+### Patch Changes
+
+- @voyantjs/bookings@0.50.4
+- @voyantjs/react@0.50.4
+
+## 0.50.3
+
+### Patch Changes
+
+- @voyantjs/bookings@0.50.3
+- @voyantjs/react@0.50.3
+
 ## 0.50.2
 
 ### Patch Changes

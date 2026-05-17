@@ -21,7 +21,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@voyantjs/ui/components/combobox"
-import { Link2, Plus } from "lucide-react"
+import { Link2, Plus, X } from "lucide-react"
 import * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
@@ -41,6 +41,10 @@ export const emptySharedRoomValue: SharedRoomValue = {
   mode: "create",
   groupId: "",
   groupLabel: "",
+}
+
+export function clearSharedRoomValue(): SharedRoomValue {
+  return { ...emptySharedRoomValue }
 }
 
 export interface SharedRoomSectionProps {
@@ -63,6 +67,7 @@ export interface SharedRoomSectionProps {
     groupLabel?: string
     groupLabelPlaceholder?: string
     createAction?: string
+    remove?: string
   }
 }
 
@@ -111,6 +116,14 @@ export function SharedRoomSection({
   }, [createSheetOpen, value.groupLabel])
 
   const set = (patch: Partial<SharedRoomValue>) => onChange({ ...value, ...patch })
+  const clear = () => {
+    if (!enabled) return
+    setCreateSheetOpen(false)
+    setDraftGroupLabel("")
+    setGroupInputValue("")
+    setGroupSearch("")
+    onChange(clearSharedRoomValue())
+  }
   const selectCreateMode = () => {
     if (!enabled) return
     setCreateSheetOpen(true)
@@ -132,12 +145,20 @@ export function SharedRoomSection({
   return (
     <>
       <div className="flex flex-col gap-3 rounded-md border p-3">
-        <div className="flex flex-col gap-1">
-          <Label>{merged.toggle}</Label>
-          {value.enabled && value.mode === "create" && value.groupLabel ? (
-            <p className="text-xs text-muted-foreground">{value.groupLabel}</p>
-          ) : value.enabled && value.mode === "create" ? (
-            <p className="text-xs text-muted-foreground">{merged.createHint}</p>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-col gap-1">
+            <Label>{merged.toggle}</Label>
+            {value.enabled && value.mode === "create" && value.groupLabel ? (
+              <p className="truncate text-xs text-muted-foreground">{value.groupLabel}</p>
+            ) : value.enabled && value.mode === "create" ? (
+              <p className="text-xs text-muted-foreground">{merged.createHint}</p>
+            ) : null}
+          </div>
+          {value.enabled ? (
+            <Button type="button" size="sm" variant="ghost" onClick={clear} disabled={!enabled}>
+              <X className="mr-2 h-4 w-4" />
+              {merged.remove}
+            </Button>
           ) : null}
         </div>
 

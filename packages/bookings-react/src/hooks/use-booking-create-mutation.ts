@@ -8,7 +8,7 @@ import { useVoyantBookingsContext } from "../provider.js"
 import { bookingsQueryKeys } from "../query-keys.js"
 import { bookingRecordSchema } from "../schemas.js"
 
-export interface QuickCreateTravelerInput {
+export interface BookingCreateTravelerInput {
   firstName: string
   lastName: string
   email?: string | null
@@ -29,7 +29,7 @@ export interface QuickCreateTravelerInput {
   notes?: string | null
 }
 
-export interface QuickCreatePaymentScheduleInput {
+export interface BookingCreatePaymentScheduleInput {
   scheduleType?: "deposit" | "installment" | "balance" | "hold" | "other"
   status?: "pending" | "due" | "paid" | "waived" | "cancelled" | "expired"
   dueDate: string
@@ -38,12 +38,27 @@ export interface QuickCreatePaymentScheduleInput {
   notes?: string | null
 }
 
-export interface QuickCreateVoucherRedemptionInput {
+export interface BookingCreateDocumentGenerationInput {
+  contractDocument?: boolean
+  invoiceDocument?: boolean
+}
+
+export interface BookingCreateItemLineInput {
+  optionId?: string | null
+  optionUnitId: string
+  quantity: number
+  title?: string | null
+  description?: string | null
+  unitSellAmountCents?: number | null
+  totalSellAmountCents?: number | null
+}
+
+export interface BookingCreateVoucherRedemptionInput {
   voucherId: string
   amountCents: number
 }
 
-export type QuickCreateGroupMembershipInput =
+export type BookingCreateGroupMembershipInput =
   | {
       action: "join"
       groupId: string
@@ -57,7 +72,7 @@ export type QuickCreateGroupMembershipInput =
       makeBookingPrimary?: boolean
     }
 
-export interface QuickCreateBookingInput {
+export interface BookingCreateInput {
   productId: string
   optionId?: string | null
   slotId?: string | null
@@ -69,10 +84,12 @@ export interface QuickCreateBookingInput {
   confirmedSellAmountCents?: number | null
   priceOverrideReason?: string | null
 
-  travelers?: QuickCreateTravelerInput[]
-  paymentSchedules?: QuickCreatePaymentScheduleInput[]
-  voucherRedemption?: QuickCreateVoucherRedemptionInput
-  groupMembership?: QuickCreateGroupMembershipInput
+  itemLines?: BookingCreateItemLineInput[]
+  travelers?: BookingCreateTravelerInput[]
+  paymentSchedules?: BookingCreatePaymentScheduleInput[]
+  voucherRedemption?: BookingCreateVoucherRedemptionInput
+  groupMembership?: BookingCreateGroupMembershipInput
+  documentGeneration?: BookingCreateDocumentGenerationInput
 }
 
 // Response envelope: route returns `{ data: { booking, travelers, paymentSchedules, voucherRedemption, groupMembership } }`.
@@ -80,34 +97,37 @@ export interface QuickCreateBookingInput {
 // pass the rest through as-is so the surface can evolve without breaking
 // clients. Callers who want typed assertions on the extras can narrow on the
 // result.
-const quickCreateResultSchema = z.object({
+const bookingCreateResultSchema = z.object({
   booking: bookingRecordSchema,
   travelers: z.array(z.unknown()).optional(),
   paymentSchedules: z.array(z.unknown()).optional(),
   voucherRedemption: z.unknown().nullable().optional(),
   groupMembership: z.unknown().nullable().optional(),
+  invoice: z.unknown().nullable().optional(),
+  invoiceDocument: z.unknown().optional(),
+  payments: z.array(z.unknown()).optional(),
 })
 
-const quickCreateResponseSchema = z.object({ data: quickCreateResultSchema })
+const bookingCreateResponseSchema = z.object({ data: bookingCreateResultSchema })
 
-export type QuickCreateBookingResult = z.infer<typeof quickCreateResultSchema>
+export type BookingCreateResult = z.infer<typeof bookingCreateResultSchema>
 
 /**
- * Atomic booking-create: calls `POST /v1/bookings/quick-create` which wraps
+ * Atomic booking-create: calls `POST /v1/bookings/create` which wraps
  * convert-from-product + travelers + payment schedules + voucher redemption
  * + group membership in one transaction. Prefer this over chaining the
  * separate create mutations (convert, group, traveler) from a single submit
  * handler — a mid-chain failure there leaves orphan state.
  */
-export function useBookingQuickCreateMutation() {
+export function useBookingCreateMutation() {
   const { baseUrl, fetcher } = useVoyantBookingsContext()
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (input: QuickCreateBookingInput) => {
+    mutationFn: async (input: BookingCreateInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/bookings/quick-create",
-        quickCreateResponseSchema,
+        "/v1/bookings/create",
+        bookingCreateResponseSchema,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
       )

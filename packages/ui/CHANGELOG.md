@@ -1,5 +1,98 @@
 # @voyantjs/ui
 
+## 0.52.1
+
+### Patch Changes
+
+- @voyantjs/i18n@0.52.1
+- @voyantjs/notifications@0.52.1
+- @voyantjs/notifications-react@0.52.1
+- @voyantjs/utils@0.52.1
+
+## 0.52.0
+
+### Patch Changes
+
+- @voyantjs/i18n@0.52.0
+- @voyantjs/notifications@0.52.0
+- @voyantjs/notifications-react@0.52.0
+- @voyantjs/utils@0.52.0
+
+## 0.51.1
+
+### Patch Changes
+
+- Updated dependencies [deaacb3]
+  - @voyantjs/i18n@0.51.1
+  - @voyantjs/notifications@0.51.1
+  - @voyantjs/notifications-react@0.51.1
+  - @voyantjs/utils@0.51.1
+
+## 0.51.0
+
+### Patch Changes
+
+- Updated dependencies [2316791]
+  - @voyantjs/i18n@0.51.0
+  - @voyantjs/notifications@0.51.0
+  - @voyantjs/notifications-react@0.51.0
+  - @voyantjs/utils@0.51.0
+
+## 0.50.8
+
+### Patch Changes
+
+- @voyantjs/i18n@0.50.8
+- @voyantjs/notifications@0.50.8
+- @voyantjs/notifications-react@0.50.8
+- @voyantjs/utils@0.50.8
+
+## 0.50.7
+
+### Patch Changes
+
+- @voyantjs/i18n@0.50.7
+- @voyantjs/notifications@0.50.7
+- @voyantjs/notifications-react@0.50.7
+- @voyantjs/utils@0.50.7
+
+## 0.50.6
+
+### Patch Changes
+
+- c14f0a8: Fix the booking-create flow: scrollable dialog content with reachable actions, normalized product search, future departure lookup, shared-room clearing, explicit item lines, selectable traveler people including the payer, already-paid schedule rows, and booking-create naming throughout the API/registry surface.
+  - @voyantjs/i18n@0.50.6
+  - @voyantjs/notifications@0.50.6
+  - @voyantjs/notifications-react@0.50.6
+  - @voyantjs/utils@0.50.6
+
+## 0.50.5
+
+### Patch Changes
+
+- @voyantjs/i18n@0.50.5
+- @voyantjs/notifications@0.50.5
+- @voyantjs/notifications-react@0.50.5
+- @voyantjs/utils@0.50.5
+
+## 0.50.4
+
+### Patch Changes
+
+- @voyantjs/i18n@0.50.4
+- @voyantjs/notifications@0.50.4
+- @voyantjs/notifications-react@0.50.4
+- @voyantjs/utils@0.50.4
+
+## 0.50.3
+
+### Patch Changes
+
+- @voyantjs/i18n@0.50.3
+- @voyantjs/notifications@0.50.3
+- @voyantjs/notifications-react@0.50.3
+- @voyantjs/utils@0.50.3
+
 ## 0.50.2
 
 ### Patch Changes

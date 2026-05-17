@@ -27,6 +27,13 @@ export type UpdateCurrentUserProfileInput = {
   profilePictureUrl?: string | null
 }
 
+export type ProvisionCurrentUserProfileInput = {
+  userId: string
+  name?: string | null
+  image?: string | null
+  isSuperAdmin?: boolean
+}
+
 export type AuthStatus = {
   userExists: boolean
   authenticated: boolean
@@ -99,6 +106,30 @@ export async function updateCurrentUserProfile(
   return getCurrentUser(db, { userId: input.userId })
 }
 
+export async function isFirstAuthUser(db: WorkspaceDb): Promise<boolean> {
+  const [countRow] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
+  return (countRow?.count ?? 0) === 1
+}
+
+export async function provisionCurrentUserProfile(
+  db: WorkspaceDb,
+  input: ProvisionCurrentUserProfileInput,
+): Promise<void> {
+  const { firstName, lastName } = splitDisplayName(input.name)
+  const values: typeof userProfilesTable.$inferInsert = {
+    id: input.userId,
+    firstName,
+    lastName,
+    avatarUrl: input.image ?? null,
+  }
+
+  if (input.isSuperAdmin !== undefined) {
+    values.isSuperAdmin = input.isSuperAdmin
+  }
+
+  await db.insert(userProfilesTable).values(values).onConflictDoNothing()
+}
+
 export async function ensureCurrentUserProfile(
   db: WorkspaceDb,
   userId: string,
@@ -135,14 +166,11 @@ export async function ensureCurrentUserProfile(
       }
     }
 
-    const nameParts = user.name?.split(" ") ?? []
-    const firstName = nameParts[0] ?? null
-    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : null
-
-    await db
-      .insert(userProfilesTable)
-      .values({ id: userId, firstName, lastName, avatarUrl: user.image ?? null })
-      .onConflictDoNothing()
+    await provisionCurrentUserProfile(db, {
+      userId,
+      name: user.name,
+      image: user.image,
+    })
 
     return { userExists: true, authenticated: true }
   } catch (error) {
@@ -167,6 +195,17 @@ function profilePatchValues(input: UpdateCurrentUserProfileInput) {
     values.avatarUrl = normalizeOptionalText(input.profilePictureUrl)
 
   return values
+}
+
+function splitDisplayName(name: string | null | undefined): {
+  firstName: string | null
+  lastName: string | null
+} {
+  const nameParts = name?.trim().split(/\s+/).filter(Boolean) ?? []
+  const firstName = nameParts[0] ?? null
+  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : null
+
+  return { firstName, lastName }
 }
 
 function normalizeOptionalText(value: string | null | undefined): string | null {

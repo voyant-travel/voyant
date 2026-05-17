@@ -16,6 +16,7 @@ import {
   lte,
   ne,
   or,
+  type SQL,
   sql,
 } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -103,6 +104,20 @@ import type {
   updateTravelerSchema,
   updateTravelerWithTravelDetailsSchema,
 } from "./validation.js"
+
+/**
+ * Emit `ARRAY[$1, $2, …]::text[]` instead of the naive
+ * `${jsArray}::text[]` form. drizzle's `sql` template spreads JS
+ * arrays into a row constructor (`($1, $2)`) which Postgres refuses
+ * to cast to `text[]` — see issue #952.
+ */
+function sqlTextArray(values: readonly string[]): SQL {
+  if (values.length === 0) return sql`ARRAY[]::text[]`
+  return sql`ARRAY[${sql.join(
+    values.map((value) => sql`${value}`),
+    sql.raw(", "),
+  )}]::text[]`
+}
 
 type BookingListQuery = z.infer<typeof bookingListQuerySchema>
 type ConvertProductInput = z.infer<typeof convertProductSchema>
@@ -193,6 +208,7 @@ export interface ConvertProductData {
   }>
   units: Array<{
     id: string
+    optionId: string
     name: string
     description: string | null
     unitType: string | null
@@ -703,6 +719,32 @@ async function getConvertProductData(
     return null
   }
 
+  const itemLines = data.itemLines ?? []
+  const requestedLineOptionIds = [
+    ...new Set(
+      itemLines
+        .map((line) => line.optionId ?? null)
+        .filter((optionId): optionId is string => optionId !== null),
+    ),
+  ]
+  const requestedUnitIds = [...new Set(itemLines.map((line) => line.optionUnitId))]
+  let lineOptions: ProductOptionReference[] = []
+  if (requestedLineOptionIds.length > 0) {
+    lineOptions = await db
+      .select()
+      .from(productOptionsRef)
+      .where(
+        and(
+          eq(productOptionsRef.productId, product.id),
+          inArray(productOptionsRef.id, requestedLineOptionIds),
+        ),
+      )
+
+    if (lineOptions.length !== requestedLineOptionIds.length) {
+      return null
+    }
+  }
+
   let option: ProductOptionReference | null = null
   if (data.optionId) {
     const [selectedOption] = await db
@@ -718,6 +760,10 @@ async function getConvertProductData(
     }
 
     option = selectedOption
+  } else if (requestedLineOptionIds.length === 1) {
+    option = lineOptions[0] ?? null
+  } else if (requestedLineOptionIds.length > 1) {
+    option = null
   } else {
     const [defaultOption] = await db
       .select()
@@ -765,14 +811,28 @@ async function getConvertProductData(
         .orderBy(asc(productDayServicesRef.sortOrder), asc(productDayServicesRef.id))
     : []
 
-  const units: OptionUnitReference[] =
-    option === null
-      ? []
-      : await db
-          .select()
-          .from(optionUnitsRef)
-          .where(eq(optionUnitsRef.optionId, option.id))
-          .orderBy(asc(optionUnitsRef.sortOrder), asc(optionUnitsRef.createdAt))
+  let units: OptionUnitReference[] = []
+  if (requestedUnitIds.length > 0) {
+    const unitRows = await db
+      .select({ unit: optionUnitsRef })
+      .from(optionUnitsRef)
+      .innerJoin(productOptionsRef, eq(optionUnitsRef.optionId, productOptionsRef.id))
+      .where(
+        and(
+          eq(productOptionsRef.productId, product.id),
+          inArray(optionUnitsRef.id, requestedUnitIds),
+        ),
+      )
+      .orderBy(asc(optionUnitsRef.sortOrder), asc(optionUnitsRef.createdAt))
+
+    units = unitRows.map((row) => row.unit)
+  } else if (option !== null) {
+    units = await db
+      .select()
+      .from(optionUnitsRef)
+      .where(eq(optionUnitsRef.optionId, option.id))
+      .orderBy(asc(optionUnitsRef.sortOrder), asc(optionUnitsRef.createdAt))
+  }
 
   let slot: ConvertProductData["slot"] = null
   if (data.slotId) {
@@ -792,6 +852,12 @@ async function getConvertProductData(
     }
 
     if (option && selectedSlot.optionId && selectedSlot.optionId !== option.id) {
+      return null
+    }
+    if (
+      selectedSlot.optionId &&
+      requestedLineOptionIds.some((optionId) => optionId !== selectedSlot.optionId)
+    ) {
       return null
     }
 
@@ -822,6 +888,7 @@ async function getConvertProductData(
     dayServices,
     units: units.map((unit) => ({
       id: unit.id,
+      optionId: unit.optionId,
       name: unit.name,
       description: unit.description,
       unitType: unit.unitType,
@@ -1217,6 +1284,166 @@ async function adjustSlotCapacity(
     remainingPax: nextRemaining,
     slotChange: buildSlotChange(locked, nextRemaining, source),
   }
+}
+
+/**
+ * Per-resource capacity check used when a traveler is being assigned
+ * to one or more allocation_resources via `travelDetails.allocations`.
+ *
+ * The slot-level pax check (`adjustSlotCapacity`) only enforces total
+ * pax against `availability_slots.remaining_pax` — it cannot tell
+ * that a request fits in the slot's room total but oversells the DBL
+ * bucket. This helper walks each requested (kind, resourceId) pair,
+ * loads the resource, and counts other travelers already assigned to
+ * it across live bookings on the same slot. If the new traveler would
+ * push that count above the resource's `capacity`, we throw
+ * `resource_capacity_exhausted` citing the offending resource so
+ * the caller can surface a useful error to the client.
+ *
+ * Implemented with raw SQL because @voyantjs/bookings deliberately
+ * has no runtime dep on @voyantjs/availability (see the module-
+ * decoupling notes in CLAUDE.md / MEMORY.md). The schema is stable —
+ * `allocation_resources` and `booking_traveler_travel_details.allocations`
+ * are migration-frozen.
+ */
+export interface BookingResourceCapacityViolation {
+  slotId: string
+  resourceId: string
+  kind: string
+  capacity: number
+  existingAssigned: number
+}
+
+async function loadResourceCapacityViolations(
+  db: PostgresJsDatabase,
+  travelerId: string,
+  allocations: Record<string, string>,
+): Promise<BookingResourceCapacityViolation[]> {
+  const entries = Object.entries(allocations ?? {}).filter(
+    ([kind, resourceId]) => kind && resourceId,
+  )
+  if (entries.length === 0) return []
+
+  const resourceIds = entries.map(([, resourceId]) => resourceId)
+  // Lock the targeted allocation_resources rows so concurrent
+  // assignments to the same resource serialise — otherwise two
+  // requests can both see one seat free and both write, leaving the
+  // resource over capacity. The caller is responsible for invoking
+  // this inside a transaction; outside one this lock degrades to a
+  // single-statement no-op which is the same race we had before.
+  const resources = await db.execute(sql`
+    SELECT id, kind, capacity, slot_id
+    FROM allocation_resources
+    WHERE id = ANY(${sqlTextArray(resourceIds)})
+    FOR UPDATE
+  `)
+  const resourceList = resources as unknown as Array<{
+    id: string
+    kind: string
+    capacity: number
+    slot_id: string
+  }>
+
+  const resourceById = new Map(resourceList.map((row) => [row.id, row]))
+  const violations: BookingResourceCapacityViolation[] = []
+
+  for (const [kind, resourceId] of entries) {
+    const resource = resourceById.get(resourceId)
+    if (!resource) {
+      violations.push({
+        slotId: "",
+        resourceId,
+        kind,
+        capacity: 0,
+        existingAssigned: 0,
+      })
+      continue
+    }
+    if (resource.kind !== kind) {
+      violations.push({
+        slotId: resource.slot_id,
+        resourceId,
+        kind,
+        capacity: resource.capacity,
+        existingAssigned: 0,
+      })
+      continue
+    }
+
+    const counts = await db.execute(sql`
+      SELECT COUNT(DISTINCT btd.traveler_id)::int AS count
+      FROM booking_traveler_travel_details btd
+      JOIN booking_travelers bt ON bt.id = btd.traveler_id
+      JOIN booking_allocations ba ON ba.booking_id = bt.booking_id
+      JOIN bookings b ON b.id = bt.booking_id
+      WHERE btd.allocations ->> ${kind} = ${resourceId}
+        AND ba.availability_slot_id = ${resource.slot_id}
+        AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+        AND ba.status IN ('held', 'confirmed', 'fulfilled')
+        AND btd.traveler_id <> ${travelerId}
+    `)
+    const existingAssigned = (counts as unknown as Array<{ count: number | null }>)[0]?.count ?? 0
+    if (existingAssigned + 1 > resource.capacity) {
+      violations.push({
+        slotId: resource.slot_id,
+        resourceId,
+        kind,
+        capacity: resource.capacity,
+        existingAssigned,
+      })
+    }
+  }
+  return violations
+}
+
+async function assertResourceCapacityForAllocations(
+  db: PostgresJsDatabase,
+  travelerId: string,
+  allocations: Record<string, string> | undefined | null,
+): Promise<void> {
+  if (!allocations) return
+  const violations = await loadResourceCapacityViolations(db, travelerId, allocations)
+  if (violations.length > 0) {
+    throw new BookingServiceError(
+      "resource_capacity_exhausted",
+      `Allocation resource over capacity: ${violations
+        .map((v) => `${v.kind}=${v.resourceId} (cap ${v.capacity}, assigned ${v.existingAssigned})`)
+        .join(", ")}`,
+    )
+  }
+}
+
+/**
+ * Lock the targeted resource rows, validate, and write in one
+ * transaction so two concurrent assignments to the last seat in a
+ * resource cannot both pass a stale capacity check. When there are no
+ * allocations to enforce, we skip the wrapping transaction entirely —
+ * avoids the round trip for the common path and keeps the unit-test
+ * mocks (which don't stub `db.transaction`) working unchanged.
+ */
+async function persistTravelDetailsWithCapacityCheck(
+  db: PostgresJsDatabase,
+  travelerId: string,
+  input: UpsertBookingTravelerTravelDetailInput,
+  opts: { pii: BookingPiiService; actorId?: string | null },
+) {
+  const allocations = input.allocations
+  const hasAllocations =
+    allocations != null && Object.values(allocations).some((value) => Boolean(value))
+
+  if (!hasAllocations) {
+    return opts.pii.upsertTravelerTravelDetails(db, travelerId, input, opts.actorId)
+  }
+
+  return db.transaction(async (tx) => {
+    await assertResourceCapacityForAllocations(tx as PostgresJsDatabase, travelerId, allocations)
+    return opts.pii.upsertTravelerTravelDetails(
+      tx as PostgresJsDatabase,
+      travelerId,
+      input,
+      opts.actorId,
+    )
+  })
 }
 
 async function releaseAllocationCapacity(
@@ -2252,6 +2479,22 @@ export const bookingsService = {
         }
       : null
 
+    const selectedUnits = option === null ? [] : units
+    const unitById = new Map(selectedUnits.map((unit) => [unit.id, unit]))
+    const requestedItemLines =
+      data.itemLines
+        ?.map((line) => {
+          const unit = unitById.get(line.optionUnitId)
+          if (!unit) return null
+          if (line.optionId && line.optionId !== unit.optionId) return null
+          if (data.optionId && data.optionId !== unit.optionId) return null
+          return { line, unit }
+        })
+        .filter((entry): entry is NonNullable<typeof entry> => entry !== null) ?? []
+    if (data.itemLines && requestedItemLines.length !== data.itemLines.length) {
+      return null
+    }
+
     const [booking] = await db
       .insert(bookings)
       .values({
@@ -2288,8 +2531,6 @@ export const bookingsService = {
       )
     }
 
-    const selectedUnits = option === null ? [] : units
-
     const unitsToSeed =
       selectedUnits.filter((unit) => unit.isRequired).length > 0
         ? selectedUnits.filter((unit) => unit.isRequired)
@@ -2310,64 +2551,88 @@ export const bookingsService = {
     // so checkout / payment / invoicing don't see a list-price item beneath
     // a discounted booking header.
     const itemRows =
-      unitsToSeed.length > 0
-        ? unitsToSeed.map((unit, index) => {
-            const quantity =
-              unit.unitType === "person" && product.pax
-                ? product.pax
-                : unit.minQuantity && unit.minQuantity > 0
-                  ? unit.minQuantity
-                  : 1
-            const singleSeedItem = unitsToSeed.length === 1 && index === 0
+      requestedItemLines.length > 0
+        ? requestedItemLines.map(({ line, unit }) => {
+            const totalSellAmountCents =
+              line.totalSellAmountCents ??
+              (line.unitSellAmountCents != null ? line.unitSellAmountCents * line.quantity : null)
             return {
               bookingId: booking.id,
-              title: unit.name,
-              description: unit.description,
+              title: line.title?.trim() || unit.name,
+              description: line.description ?? unit.description,
               itemType: "unit" as const,
               status: "draft" as const,
-              quantity,
+              quantity: line.quantity,
               sellCurrency: product.sellCurrency,
-              unitSellAmountCents:
-                singleSeedItem &&
-                effectiveSellAmountCents !== null &&
-                effectiveSellAmountCents !== undefined
-                  ? Math.floor(effectiveSellAmountCents / quantity)
-                  : null,
-              totalSellAmountCents: singleSeedItem ? (effectiveSellAmountCents ?? null) : null,
-              costCurrency: singleSeedItem ? product.sellCurrency : null,
-              unitCostAmountCents:
-                singleSeedItem &&
-                product.costAmountCents !== null &&
-                product.costAmountCents !== undefined
-                  ? Math.floor(product.costAmountCents / quantity)
-                  : null,
-              totalCostAmountCents: singleSeedItem ? (product.costAmountCents ?? null) : null,
+              unitSellAmountCents: line.unitSellAmountCents ?? null,
+              totalSellAmountCents,
+              costCurrency: null,
+              unitCostAmountCents: null,
+              totalCostAmountCents: null,
               productId: product.id,
-              optionId: option?.id ?? null,
+              optionId: unit.optionId,
               optionUnitId: unit.id,
               ...slotFields,
             }
           })
-        : [
-            {
-              bookingId: booking.id,
-              title: option?.name ?? product.name,
-              description: product.description,
-              itemType: "unit" as const,
-              status: "draft" as const,
-              quantity: 1,
-              sellCurrency: product.sellCurrency,
-              unitSellAmountCents: effectiveSellAmountCents ?? null,
-              totalSellAmountCents: effectiveSellAmountCents ?? null,
-              costCurrency: product.sellCurrency,
-              unitCostAmountCents: product.costAmountCents ?? null,
-              totalCostAmountCents: product.costAmountCents ?? null,
-              productId: product.id,
-              optionId: option?.id ?? null,
-              optionUnitId: null,
-              ...slotFields,
-            },
-          ]
+        : unitsToSeed.length > 0
+          ? unitsToSeed.map((unit, index) => {
+              const quantity =
+                unit.unitType === "person" && product.pax
+                  ? product.pax
+                  : unit.minQuantity && unit.minQuantity > 0
+                    ? unit.minQuantity
+                    : 1
+              const singleSeedItem = unitsToSeed.length === 1 && index === 0
+              return {
+                bookingId: booking.id,
+                title: unit.name,
+                description: unit.description,
+                itemType: "unit" as const,
+                status: "draft" as const,
+                quantity,
+                sellCurrency: product.sellCurrency,
+                unitSellAmountCents:
+                  singleSeedItem &&
+                  effectiveSellAmountCents !== null &&
+                  effectiveSellAmountCents !== undefined
+                    ? Math.floor(effectiveSellAmountCents / quantity)
+                    : null,
+                totalSellAmountCents: singleSeedItem ? (effectiveSellAmountCents ?? null) : null,
+                costCurrency: singleSeedItem ? product.sellCurrency : null,
+                unitCostAmountCents:
+                  singleSeedItem &&
+                  product.costAmountCents !== null &&
+                  product.costAmountCents !== undefined
+                    ? Math.floor(product.costAmountCents / quantity)
+                    : null,
+                totalCostAmountCents: singleSeedItem ? (product.costAmountCents ?? null) : null,
+                productId: product.id,
+                optionId: option?.id ?? null,
+                optionUnitId: unit.id,
+                ...slotFields,
+              }
+            })
+          : [
+              {
+                bookingId: booking.id,
+                title: option?.name ?? product.name,
+                description: product.description,
+                itemType: "unit" as const,
+                status: "draft" as const,
+                quantity: 1,
+                sellCurrency: product.sellCurrency,
+                unitSellAmountCents: effectiveSellAmountCents ?? null,
+                totalSellAmountCents: effectiveSellAmountCents ?? null,
+                costCurrency: product.sellCurrency,
+                unitCostAmountCents: product.costAmountCents ?? null,
+                totalCostAmountCents: product.costAmountCents ?? null,
+                productId: product.id,
+                optionId: option?.id ?? null,
+                optionUnitId: null,
+                ...slotFields,
+              },
+            ]
 
     const insertedItems = await db.insert(bookingItems).values(itemRows).returning()
 
@@ -3970,11 +4235,11 @@ export const bookingsService = {
       travelDetailInput = applyTravelDetailSnapshot(travelDetailInput, snapshot)
     }
 
-    const travelDetails = await opts.pii.upsertTravelerTravelDetails(
+    const travelDetails = await persistTravelDetailsWithCapacityCheck(
       db,
       traveler.id,
       travelDetailInput,
-      opts.actorId,
+      opts,
     )
 
     return { traveler, travelDetails }
@@ -4012,11 +4277,12 @@ export const bookingsService = {
       return null
     }
 
-    const travelDetails = await opts.pii.upsertTravelerTravelDetails(
+    const travelDetailInput = pickTravelDetailFields(data)
+    const travelDetails = await persistTravelDetailsWithCapacityCheck(
       db,
       traveler.id,
-      pickTravelDetailFields(data),
-      opts.actorId,
+      travelDetailInput,
+      opts,
     )
 
     return { traveler, travelDetails }

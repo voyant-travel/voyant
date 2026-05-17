@@ -70,8 +70,16 @@ export const crmUiRo = {
     fields: {
       name: "Nume",
       legalName: "Nume legal",
+      vatNumber: "Cod TVA",
       website: "Website",
       industry: "Industrie",
+      billingEmail: "Email facturare",
+      billingAddressLine1: "Adresa facturare linia 1",
+      billingAddressLine2: "Adresa facturare linia 2",
+      billingCity: "Oras facturare",
+      billingRegion: "Judet/regiune facturare",
+      billingPostalCode: "Cod postal facturare",
+      billingCountry: "Tara facturare",
     },
     actions: {
       create: "Creeaza organizatia",

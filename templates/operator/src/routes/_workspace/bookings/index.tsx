@@ -19,6 +19,7 @@ function BookingsRoute() {
 
   return (
     <BookingsPage
+      onCreateBooking={() => void navigate({ to: "/bookings/$id", params: { id: "new" } })}
       onBookingOpen={(booking) =>
         void navigate({ to: "/bookings/$id", params: { id: booking.id } })
       }

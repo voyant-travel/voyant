@@ -62,6 +62,44 @@ export function formatLocalizedSelectionLabel(count: number, singular: string, p
   return `${count} ${count === 1 ? singular : plural}`
 }
 
+export type AvailabilityPageTabId =
+  | "slots"
+  | "rules"
+  | "start-times"
+  | "closeouts"
+  | "pickup-points"
+
+const availabilityPageTabIds: ReadonlySet<AvailabilityPageTabId> = new Set([
+  "slots",
+  "rules",
+  "start-times",
+  "closeouts",
+  "pickup-points",
+])
+
+export function isAvailabilityPageTabId(value: unknown): value is AvailabilityPageTabId {
+  return typeof value === "string" && availabilityPageTabIds.has(value as AvailabilityPageTabId)
+}
+
+/**
+ * Build a deep-link to the availability workspace pre-filtered to a
+ * specific product (and optionally a tab). Product detail pages call
+ * this to render "Manage availability" links without inventing the
+ * URL shape themselves.
+ *
+ * The route honours `?productId=` and `?tab=` search params; this
+ * helper keeps the two in sync. Returning a plain string keeps it
+ * usable from anything that accepts an href.
+ */
+export function productAvailabilityPath(
+  productId: string,
+  opts?: { tab?: AvailabilityPageTabId },
+): string {
+  const search = new URLSearchParams({ productId })
+  if (opts?.tab) search.set("tab", opts.tab)
+  return `/availability?${search.toString()}`
+}
+
 export function getSlotStatusLabel(status: AvailabilitySlotRow["status"], messages: AdminMessages) {
   switch (status) {
     case "open":

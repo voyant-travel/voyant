@@ -11,6 +11,7 @@ import { organizationSingleResponse } from "../schemas.js"
 export interface CreateOrganizationInput {
   name: string
   legalName?: string | null
+  vatNumber?: string | null
   website?: string | null
   industry?: string | null
   relation?: string | null

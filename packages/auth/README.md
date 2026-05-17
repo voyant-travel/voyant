@@ -23,6 +23,14 @@ const auth = createBetterAuth({
   db,
   secret: env.AUTH_SECRET,
   trustedOrigins: ["https://example.com"],
+  user: {
+    additionalFields: {
+      surfaces: {
+        type: "string",
+        required: false,
+      },
+    },
+  },
 })
 
 const profileResponse = await handleAccountProfileRequest(request, auth, { db })
@@ -37,10 +45,120 @@ return auth.handler(request)
 Auth provider wiring is template-owned — core Voyant packages only depend on
 the normalized `{ userId, actor }` contract, not on Better Auth specifically.
 
+`createBetterAuth` forwards Better Auth's `user` options, including
+`user.additionalFields`, while preserving Voyant's default change-email support.
+When using additional user fields with the Drizzle adapter, the consuming app is
+responsible for adding matching columns and migrations to the auth user table.
+
+Better Auth server plugins that define their own tables must pass those Drizzle
+tables through `extraSchema` so the shared Drizzle adapter can resolve them:
+
+```typescript
+import { createBetterAuth } from "@voyantjs/auth/server"
+import { authInvitation, authMember, authOrganization } from "@voyantjs/db/schema/iam"
+import { organization } from "better-auth/plugins"
+
+const auth = createBetterAuth({
+  db,
+  plugins: [organization()],
+  extraSchema: {
+    organization: authOrganization,
+    member: authMember,
+    invitation: authInvitation,
+  },
+})
+```
+
+The app that mounts the plugin owns the plugin migrations. `extraSchema` only
+connects existing Drizzle table definitions to Better Auth; it does not create
+or run migrations.
+
 The package also exposes a narrow shared-secret bearer-token helper surface via
 `@voyantjs/utils/session-claims` for runtime-local verification. That helper is
 not a replacement for Better Auth session cookies and does not imply a
 platform-wide JWKS/JWT-first auth model.
+
+## Voyant Cloud Admin Auth
+
+Voyant Cloud deployments can use `@voyantjs/auth/cloud-admin-session` to keep
+Better Auth as the local session and JWT/JWKS issuer while delegating identity
+and membership checks to Voyant Cloud.
+
+Cloud mode is exclusive. A deployment running with
+`VOYANT_ADMIN_AUTH_MODE=voyant-cloud` should expose only the Cloud start and
+callback routes plus the Better Auth endpoints that remain local session/token
+infrastructure (`get-session`, `session`, `sign-out`, `token`, `jwks`, and API
+token management when Cloud revalidation is configured). Local sign-in,
+sign-up, invitation redemption, password reset, email verification, email OTP,
+change-email, and social OAuth routes must stay server-blocked in Cloud mode.
+Local/self-host development should set `VOYANT_ADMIN_AUTH_MODE=local` and keeps
+the normal Better Auth flows.
+
+```typescript
+import { createVoyantCloudAdminAuthPlugin } from "@voyantjs/auth/cloud-admin-session"
+import { createBetterAuth } from "@voyantjs/auth/server"
+
+const auth = createBetterAuth({
+  db,
+  basePath: "/auth",
+  plugins: [
+    createVoyantCloudAdminAuthPlugin({
+      db,
+      cookieSecret: env.SESSION_CLAIMS_SECRET,
+      exchange: {
+        exchangeUrl: env.VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL,
+        deploymentId: env.VOYANT_CLOUD_DEPLOYMENT_ID,
+        clientToken: env.VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN,
+        assertionJwksUrl: env.VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL,
+        assertionAudience: env.VOYANT_CLOUD_ADMIN_AUTH_AUDIENCE ?? env.VOYANT_CLOUD_DEPLOYMENT_ID,
+      },
+      onUserProvisioning: async ({ db, assertion, user, isNewUser }) => {
+        // Optional Cloud-mode side effects or app-owned profile/user columns.
+        // Better Auth databaseHooks.user.create.* do not fire for this trusted
+        // mirror path because it bypasses public sign-up.
+      },
+    }),
+  ],
+})
+```
+
+The plugin mounts Better Auth's `/auth/cloud/callback` endpoint. That endpoint
+validates the signed broker state, exchanges the one-time Cloud code, verifies
+the signed Cloud assertion, upserts the local mirror user/account/profile,
+stores Cloud linkage side-table rows, and then creates the local Better Auth
+session cookie through Better Auth's own session and cookie helpers.
+
+Cloud mode is intentionally a direct mirror provisioning path, similar to a
+trusted invitation redemption path. Consumer Better Auth
+`databaseHooks.user.create.*` are not invoked. Use `onUserProvisioning` for
+Cloud-mode custom fields or side effects.
+
+The mirror user uses a generated local Better Auth `user.id`; WorkOS user ids
+are stored in local account/linkage rows and must not be used as JWT `sub`.
+Cloud linkage metadata lives in `cloud_auth_user_links` and
+`cloud_auth_session_links`, not in the Better Auth session response shape.
+
+For ongoing access, call `revalidateVoyantCloudAdminAuthSession(...)` before
+Cloud-mode browser-session-sensitive operations and
+`revalidateVoyantCloudAdminAuthUser(...)` for local API-token callers. A revoked
+Cloud membership marks the Cloud link revoked and disables local Better Auth API
+keys for that mirrored user. Current v1 revalidation is pull/cached; a Cloud
+webhook can later reduce revocation latency but should not replace pull checks.
+
+Voyant Cloud-provisioned deployments receive these settings from Cloud:
+
+```dotenv
+VOYANT_ADMIN_AUTH_MODE=voyant-cloud
+VOYANT_CLOUD_ADMIN_AUTH_START_URL=https://dash.voyantcloud.com/admin-auth/start
+VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL=https://api.voyantjs.com/cloud/v1/admin-auth/exchange
+VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL=https://api.voyantjs.com/.well-known/admin-auth/jwks.json
+VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL=https://api.voyantjs.com/cloud/v1/admin-auth/revalidate
+VOYANT_CLOUD_ADMIN_AUTH_AUDIENCE=dep_...
+VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN=...
+VOYANT_CLOUD_DEPLOYMENT_ID=dep_...
+```
+
+Self-hosted deployments do not need WorkOS or Voyant Cloud configuration.
 
 ## API Token Management
 
@@ -49,6 +167,10 @@ small `/auth/api-tokens` facade for operator management UI because the UI needs
 server-only plugin fields such as `permissions`, `remaining`, and `enabled`.
 Mount `handleApiTokenManagementRequest(...)` before falling through to
 `auth.handler(request)`.
+
+In Cloud mode, API-token management and raw `voy_` API-token request handling
+must both call Cloud revalidation. This prevents a personal API token from
+outliving the user's WorkOS/Voyant Cloud membership.
 
 ## Account Profile
 
@@ -70,6 +192,8 @@ normalized `CurrentUser`.
 | `./server` | Node.js/server `createAuth` factory |
 | `./edge` | Edge/Workers `createAuth` factory |
 | `./backend` | Backend helpers (session inspection, API keys) |
+| `./cloud-admin-session` | Better Auth plugin for Voyant Cloud broker callbacks |
+| `./cloud-broker` | Browser state and assertion exchange helpers for the Cloud broker |
 | `./workspace` | Current-user/profile helpers for mounted auth routes |
 | `./permissions` | Permission/role contracts |
 

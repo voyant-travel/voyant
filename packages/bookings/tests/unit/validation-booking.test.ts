@@ -253,6 +253,33 @@ describe("Convert product schema", () => {
     expect(result.confirmedSellAmountCents).toBe(15000)
   })
 
+  it("accepts explicit item lines for selected option units", () => {
+    const result = convertProductSchema.parse({
+      productId: "prod_abc",
+      bookingNumber: "BK-001",
+      itemLines: [
+        {
+          optionId: "opto_dbl",
+          optionUnitId: "opun_dbl",
+          quantity: 2,
+          title: "Double room",
+          unitSellAmountCents: 10000,
+          totalSellAmountCents: 20000,
+        },
+        {
+          optionId: "opto_sgl",
+          optionUnitId: "opun_sgl",
+          quantity: 1,
+          title: "Single room",
+        },
+      ],
+    })
+
+    expect(result.itemLines).toHaveLength(2)
+    expect(result.itemLines?.[0]?.optionId).toBe("opto_dbl")
+    expect(result.itemLines?.[0]?.quantity).toBe(2)
+  })
+
   it("requires a reason when confirmed total differs from catalog pricing", () => {
     expect(() =>
       convertProductSchema.parse({

@@ -1,5 +1,92 @@
 # @voyantjs/availability
 
+## 0.52.1
+
+### Patch Changes
+
+- 335d277: Fix `cannot cast type record to text[]` crash on `getSlotAllocationManifest`, `validateSlotAllocationCapacity`, `autoAllocateSlotResources`, and the bookings per-resource capacity guard whenever the array being interpolated had 2+ elements.
+
+  drizzle-orm's `sql\`…${jsArray}…\`` template spreads JS arrays into a Postgres row constructor (`($1, $2)`) — and `($1, $2)::text[]`is a record cast, which Postgres refuses. Single-element arrays happened to work because`(($1)::text[])` evaluates as the lone scalar. So the bug stayed latent in fresh dev environments with one booking per slot, then hit production immediately on the second booking.
+
+  All raw-SQL sites that previously wrote `${array}::text[]` now go through a tiny local helper that emits `ARRAY[$1, $2, …]::text[]` via `sql.join`. Affects nine call sites across `service-allocation.ts`, `service-allocation-automation.ts`, and `bookings/service.ts`. Added an integration regression test that loads the manifest for a slot with 3 bookings.
+
+  - @voyantjs/core@0.52.1
+  - @voyantjs/db@0.52.1
+  - @voyantjs/hono@0.52.1
+
+## 0.52.0
+
+### Patch Changes
+
+- @voyantjs/core@0.52.0
+- @voyantjs/db@0.52.0
+- @voyantjs/hono@0.52.0
+
+## 0.51.1
+
+### Patch Changes
+
+- @voyantjs/core@0.51.1
+- @voyantjs/db@0.51.1
+- @voyantjs/hono@0.51.1
+
+## 0.51.0
+
+### Patch Changes
+
+- @voyantjs/core@0.51.0
+- @voyantjs/db@0.51.0
+- @voyantjs/hono@0.51.0
+
+## 0.50.8
+
+### Patch Changes
+
+- @voyantjs/core@0.50.8
+- @voyantjs/db@0.50.8
+- @voyantjs/hono@0.50.8
+
+## 0.50.7
+
+### Patch Changes
+
+- @voyantjs/core@0.50.7
+- @voyantjs/db@0.50.7
+- @voyantjs/hono@0.50.7
+
+## 0.50.6
+
+### Patch Changes
+
+- c14f0a8: Fix the booking-create flow: scrollable dialog content with reachable actions, normalized product search, future departure lookup, shared-room clearing, explicit item lines, selectable traveler people including the payer, already-paid schedule rows, and booking-create naming throughout the API/registry surface.
+  - @voyantjs/core@0.50.6
+  - @voyantjs/db@0.50.6
+  - @voyantjs/hono@0.50.6
+
+## 0.50.5
+
+### Patch Changes
+
+- @voyantjs/core@0.50.5
+- @voyantjs/db@0.50.5
+- @voyantjs/hono@0.50.5
+
+## 0.50.4
+
+### Patch Changes
+
+- @voyantjs/core@0.50.4
+- @voyantjs/db@0.50.4
+- @voyantjs/hono@0.50.4
+
+## 0.50.3
+
+### Patch Changes
+
+- @voyantjs/core@0.50.3
+- @voyantjs/db@0.50.3
+- @voyantjs/hono@0.50.3
+
 ## 0.50.2
 
 ### Patch Changes

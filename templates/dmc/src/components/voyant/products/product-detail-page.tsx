@@ -15,6 +15,7 @@ import {
 import {
   ArrowLeft,
   CalendarCheck,
+  CalendarDays,
   FileText,
   History,
   Loader2,
@@ -139,6 +140,15 @@ export function ProductDetailPage({ id }: { id: string }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() =>
+              void navigate({ to: "/availability", search: { productId: product.id } })
+            }
+          >
+            <CalendarDays className="mr-2 h-4 w-4" />
+            {messages.manageAvailabilityAction}
+          </Button>
           <Button
             variant="outline"
             onClick={() => {

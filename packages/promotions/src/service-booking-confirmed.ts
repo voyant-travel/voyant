@@ -6,7 +6,7 @@
  *
  * Why a subscriber rather than a `BookEntityDeps` hook: `bookEntity`
  * does sequential writes without an enclosing `db.transaction(...)`,
- * and the owned `quickCreate` path opens its own transaction in
+ * and the owned `createBooking` path opens its own transaction in
  * `@voyantjs/finance`. There is no single commit transaction to be
  * atomic with — claiming "atomic with commit" would be misleading.
  *

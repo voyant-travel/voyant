@@ -2,19 +2,21 @@
 
 import { useSlots, useSlotUnitAvailability } from "@voyantjs/availability-react"
 import {
+  type BookingCreateGroupMembershipInput,
+  type BookingCreatePaymentScheduleInput,
+  type BookingCreateTravelerInput,
+  type BookingCreateVoucherRedemptionInput,
   type BookingRecord,
-  type QuickCreateGroupMembershipInput,
-  type QuickCreatePaymentScheduleInput,
-  type QuickCreateTravelerInput,
-  type QuickCreateVoucherRedemptionInput,
-  useBookingQuickCreateMutation,
+  useBookingCreateMutation,
   useBookingStatusByIdMutation,
 } from "@voyantjs/bookings-react"
 import {
   Button,
   Checkbox,
   Dialog,
+  DialogBody,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   Label,
@@ -34,6 +36,11 @@ import {
   useBookingsUiMessagesOrDefault,
 } from "../i18n/provider.js"
 import {
+  getBookableDepartureSlots,
+  getSelectedSharedRoomUnitId,
+  itemLinesToRows,
+} from "./booking-create-utils.js"
+import {
   emptyPaymentScheduleValue,
   PaymentScheduleSection,
   type PaymentScheduleValue,
@@ -48,6 +55,7 @@ import { ProductPickerSection, type ProductPickerValue } from "./product-picker-
 import {
   emptyRoomsStepperValue,
   RoomsStepperSection,
+  type RoomsStepperUnit,
   type RoomsStepperValue,
 } from "./rooms-stepper-section.js"
 import {
@@ -79,7 +87,7 @@ function paymentScheduleToRows(
   value: PaymentScheduleValue,
   currency: string,
   totalAmountCents: number | null,
-): QuickCreatePaymentScheduleInput[] {
+): BookingCreatePaymentScheduleInput[] {
   if (value.mode === "unpaid") return []
 
   if (value.mode === "full") {
@@ -87,23 +95,35 @@ function paymentScheduleToRows(
     return [
       {
         scheduleType: "balance",
-        status: "due",
+        status: value.fullAlreadyPaid ? "paid" : "due",
         dueDate: value.fullDueDate,
         currency,
         amountCents: totalAmountCents,
+        notes: paidScheduleNotes(
+          value.fullAlreadyPaid,
+          value.fullPaymentDate,
+          value.fullPaymentMethod,
+          value.fullPaymentReference,
+        ),
       },
     ]
   }
 
   if (value.mode === "advance") {
     if (!value.advanceDueDate || value.advanceAmountCents == null) return []
-    const rows: QuickCreatePaymentScheduleInput[] = [
+    const rows: BookingCreatePaymentScheduleInput[] = [
       {
         scheduleType: "deposit",
-        status: "due",
+        status: value.advanceAlreadyPaid ? "paid" : "due",
         dueDate: value.advanceDueDate,
         currency,
         amountCents: value.advanceAmountCents,
+        notes: paidScheduleNotes(
+          value.advanceAlreadyPaid,
+          value.advancePaymentDate,
+          value.advancePaymentMethod,
+          value.advancePaymentReference,
+        ),
       },
     ]
     if (totalAmountCents !== null && totalAmountCents > value.advanceAmountCents) {
@@ -119,30 +139,58 @@ function paymentScheduleToRows(
   }
 
   // split
-  const rows: QuickCreatePaymentScheduleInput[] = []
+  const rows: BookingCreatePaymentScheduleInput[] = []
   if (value.splitFirstDueDate && value.splitFirstAmountCents != null) {
     rows.push({
       scheduleType: "installment",
-      status: "due",
+      status: value.splitFirstAlreadyPaid ? "paid" : "due",
       dueDate: value.splitFirstDueDate,
       currency,
       amountCents: value.splitFirstAmountCents,
+      notes: paidScheduleNotes(
+        value.splitFirstAlreadyPaid,
+        value.splitFirstPaymentDate,
+        value.splitFirstPaymentMethod,
+        value.splitFirstPaymentReference,
+      ),
     })
   }
   if (value.splitSecondDueDate && value.splitSecondAmountCents != null) {
     rows.push({
       scheduleType: "installment",
-      status: "pending",
+      status: value.splitSecondAlreadyPaid ? "paid" : "pending",
       dueDate: value.splitSecondDueDate,
       currency,
       amountCents: value.splitSecondAmountCents,
+      notes: paidScheduleNotes(
+        value.splitSecondAlreadyPaid,
+        value.splitSecondPaymentDate,
+        value.splitSecondPaymentMethod,
+        value.splitSecondPaymentReference,
+      ),
     })
   }
   return rows
 }
 
-function travelersToRows(value: TravelerListValue): QuickCreateTravelerInput[] {
+function paidScheduleNotes(
+  alreadyPaid: boolean,
+  paymentDate: string | null,
+  paymentMethod: string,
+  paymentReference: string,
+) {
+  if (!alreadyPaid) return null
+  return JSON.stringify({
+    alreadyPaid: true,
+    paymentDate,
+    paymentMethod,
+    paymentReference: paymentReference.trim() || null,
+  })
+}
+
+function travelersToRows(value: TravelerListValue): BookingCreateTravelerInput[] {
   return value.travelers.map((traveler) => ({
+    personId: traveler.personId,
     firstName: traveler.firstName.trim(),
     lastName: traveler.lastName.trim(),
     email: traveler.email.trim() || null,
@@ -158,6 +206,21 @@ function travelersToRows(value: TravelerListValue): QuickCreateTravelerInput[] {
     isPrimary: traveler.role === "lead",
     roomUnitId: traveler.roomUnitId,
   }))
+}
+
+function sameRoomUnits(left: RoomsStepperUnit[], right: RoomsStepperUnit[]): boolean {
+  if (left.length !== right.length) return false
+  return left.every((unit, index) => {
+    const other = right[index]
+    return (
+      other !== undefined &&
+      unit.optionId === other.optionId &&
+      unit.optionUnitId === other.optionUnitId &&
+      unit.unitName === other.unitName &&
+      unit.occupancyMax === other.occupancyMax &&
+      unit.remaining === other.remaining
+    )
+  })
 }
 
 export interface BookingCreateDialogProps {
@@ -181,7 +244,7 @@ export interface BookingCreateFormProps {
  * Operator booking-create dialog. Composes the booking-create picker
  * sections — product, departure, rooms, person, shared-room, travelers,
  * price breakdown, voucher, payment schedule — and submits via the atomic
- * `POST /v1/bookings/quick-create` endpoint so partial failures can't
+ * `POST /v1/bookings/create` endpoint so partial failures can't
  * leave orphan state.
  *
  * Normally consumed via `BookingDialog` which delegates here when no
@@ -228,6 +291,7 @@ export function BookingCreateForm({
   })
   const [slotId, setSlotId] = React.useState<string | null>(null)
   const [rooms, setRooms] = React.useState<RoomsStepperValue>(emptyRoomsStepperValue)
+  const [roomUnits, setRoomUnits] = React.useState<RoomsStepperUnit[]>([])
   const [person, setPerson] = React.useState<PersonPickerValue>(emptyPersonPickerValue)
   const [sharedRoom, setSharedRoom] = React.useState<SharedRoomValue>(emptySharedRoomValue)
   const [travelers, setTravelers] = React.useState<TravelerListValue>(emptyTravelerListValue)
@@ -235,6 +299,8 @@ export function BookingCreateForm({
   const [pricing, setPricing] = React.useState<PriceBreakdownValue | null>(null)
   const [paymentSchedule, setPaymentSchedule] =
     React.useState<PaymentScheduleValue>(emptyPaymentScheduleValue)
+  const [generateContractDocument, setGenerateContractDocument] = React.useState(false)
+  const [generateInvoiceDocument, setGenerateInvoiceDocument] = React.useState(false)
   const [notes, setNotes] = React.useState("")
   /**
    * Optional post-create transition: set status to `confirmed` right after
@@ -253,12 +319,15 @@ export function BookingCreateForm({
       setProduct({ productId: defaultProductId ?? "", optionId: null })
       setSlotId(null)
       setRooms(emptyRoomsStepperValue)
+      setRoomUnits([])
       setPerson(emptyPersonPickerValue)
       setSharedRoom(emptySharedRoomValue)
       setTravelers(emptyTravelerListValue)
       setVoucher(emptyVoucherPickerValue)
       setPricing(null)
       setPaymentSchedule(emptyPaymentScheduleValue)
+      setGenerateContractDocument(false)
+      setGenerateInvoiceDocument(false)
       setNotes("")
       setConfirmAfterCreate(false)
       setError(null)
@@ -271,28 +340,58 @@ export function BookingCreateForm({
     }
   }, [enabled, defaultProductId])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally only resets when product/option changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: booking-create intentionally resets transient departure state only when product id changes; option changes are reconciled against the selected departure below.
   React.useEffect(() => {
     setSlotId(null)
     setRooms(emptyRoomsStepperValue)
-  }, [product.productId, product.optionId])
+    setRoomUnits([])
+    setSharedRoom(emptySharedRoomValue)
+  }, [product.productId])
+
+  const [slotsFromIso, setSlotsFromIso] = React.useState(() => new Date().toISOString())
+  React.useEffect(() => {
+    if (enabled && product.productId) setSlotsFromIso(new Date().toISOString())
+  }, [enabled, product.productId])
 
   const { data: slotsData } = useSlots({
     productId: product.productId || undefined,
     status: "open",
+    startsAtFrom: slotsFromIso,
     limit: 100,
     enabled: enabled && Boolean(product.productId),
   })
+  const allOpenSlots = React.useMemo(() => {
+    return getBookableDepartureSlots(slotsData?.data ?? [], {
+      nowIso: slotsFromIso,
+      optionId: null,
+    })
+  }, [slotsData?.data, slotsFromIso])
   const slots = React.useMemo(() => {
-    const nowIso = new Date().toISOString()
-    return (slotsData?.data ?? [])
-      .filter((slot) => slot.startsAt >= nowIso)
-      .filter((slot) => {
-        if (!product.optionId) return true
-        return slot.optionId === null || slot.optionId === product.optionId
-      })
-      .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
-  }, [slotsData, product.optionId])
+    const optionSlots = getBookableDepartureSlots(slotsData?.data ?? [], {
+      nowIso: slotsFromIso,
+      optionId: product.optionId,
+    })
+    return optionSlots.length > 0 ? optionSlots : allOpenSlots
+  }, [slotsData?.data, slotsFromIso, product.optionId, allOpenSlots])
+  const setSelectedSlot = React.useCallback(
+    (nextSlotId: string | null) => {
+      const selectedSlot = nextSlotId ? allOpenSlots.find((slot) => slot.id === nextSlotId) : null
+      if (selectedSlot?.optionId && selectedSlot.optionId !== product.optionId) {
+        setProduct((prev) => ({ ...prev, optionId: selectedSlot.optionId }))
+      }
+      setSlotId(nextSlotId)
+    },
+    [allOpenSlots, product.optionId],
+  )
+  React.useEffect(() => {
+    setRooms(emptyRoomsStepperValue)
+    setRoomUnits([])
+    if (!slotId || !product.optionId) return
+    const selectedSlot = allOpenSlots.find((slot) => slot.id === slotId)
+    if (selectedSlot?.optionId && selectedSlot.optionId !== product.optionId) {
+      setSlotId(null)
+    }
+  }, [allOpenSlots, product.optionId, slotId])
 
   const formatSlotLabel = React.useCallback(
     (slot: (typeof slots)[number]) => {
@@ -314,14 +413,17 @@ export function BookingCreateForm({
     slotId: slotId ?? undefined,
     enabled: enabled && Boolean(slotId),
   })
+  const handleRoomUnitsChange = React.useCallback((units: RoomsStepperUnit[]) => {
+    setRoomUnits((prev) => (sameRoomUnits(prev, units) ? prev : units))
+  }, [])
   const roomUnitOptions: RoomUnitOption[] = React.useMemo(() => {
-    const units = slotUnitAvailability.data?.data ?? []
+    const units = roomUnits.length > 0 ? roomUnits : (slotUnitAvailability.data?.data ?? [])
     if (units.length === 0) return []
     return units
       .filter((unit) => (rooms.quantities[unit.optionUnitId] ?? 0) > 0)
       .map((unit) => {
         const qty = rooms.quantities[unit.optionUnitId] ?? 0
-        const occupancyMax = 1
+        const occupancyMax = Math.max(1, unit.occupancyMax ?? 1)
         const seats = qty * occupancyMax
         const assigned = travelers.travelers.filter(
           (traveler) => traveler.roomUnitId === unit.optionUnitId,
@@ -332,7 +434,7 @@ export function BookingCreateForm({
           remainingCapacity: Math.max(0, seats - assigned),
         }
       })
-  }, [slotUnitAvailability.data, rooms.quantities, travelers.travelers])
+  }, [roomUnits, slotUnitAvailability.data, rooms.quantities, travelers.travelers])
 
   // Currency placeholder — used for voucher + payment schedule display.
   // Consumers hooking in real product data should override this by wrapping
@@ -340,8 +442,12 @@ export function BookingCreateForm({
   const currency = messages.bookingCreateDialog.labels.currency
   const pricingCurrency = pricing?.currency ?? currency
   const pricingTotalAmountCents = pricing?.confirmedAmountCents ?? undefined
+  const roomUnitLabels = React.useMemo(
+    () => Object.fromEntries(roomUnits.map((unit) => [unit.optionUnitId, unit.unitName])),
+    [roomUnits],
+  )
 
-  const quickCreateMutation = useBookingQuickCreateMutation()
+  const createBookingMutation = useBookingCreateMutation()
   const statusMutation = useBookingStatusByIdMutation()
 
   const handleSubmit = async () => {
@@ -389,10 +495,20 @@ export function BookingCreateForm({
         pricingCurrency,
         confirmedSellAmountCents,
       )
+      const itemLines = itemLinesToRows(
+        rooms.quantities,
+        roomUnits.length > 0
+          ? roomUnits
+          : (slotUnitAvailability.data?.data ?? []).map((unit) => ({
+              ...unit,
+              optionId: product.optionId,
+            })),
+        pricing,
+      )
 
       const travelerRows = travelersToRows(travelers)
 
-      const voucherRedemption: QuickCreateVoucherRedemptionInput | undefined =
+      const voucherRedemption: BookingCreateVoucherRedemptionInput | undefined =
         voucher.picked && voucher.picked.remainingAmountCents != null
           ? {
               voucherId: voucher.picked.id,
@@ -400,7 +516,8 @@ export function BookingCreateForm({
             }
           : undefined
 
-      const groupMembership: QuickCreateGroupMembershipInput | undefined = sharedRoom.enabled
+      const selectedSharedRoomUnitId = getSelectedSharedRoomUnitId(rooms.quantities)
+      const groupMembership: BookingCreateGroupMembershipInput | undefined = sharedRoom.enabled
         ? sharedRoom.mode === "create"
           ? {
               action: "create",
@@ -408,7 +525,7 @@ export function BookingCreateForm({
               label:
                 sharedRoom.groupLabel?.trim() ||
                 `${messages.bookingCreateDialog.labels.sharedRoomGeneratedLabelPrefix} - ${bookingNumber}`,
-              optionUnitId: product.optionId,
+              optionUnitId: selectedSharedRoomUnitId,
               makeBookingPrimary: true,
             }
           : sharedRoom.groupId
@@ -416,7 +533,7 @@ export function BookingCreateForm({
             : undefined
         : undefined
 
-      const { booking } = await quickCreateMutation.mutateAsync({
+      const { booking } = await createBookingMutation.mutateAsync({
         productId: product.productId,
         bookingNumber,
         optionId: product.optionId,
@@ -427,10 +544,15 @@ export function BookingCreateForm({
         catalogSellAmountCents,
         confirmedSellAmountCents,
         priceOverrideReason: priceOverrideReason || null,
+        itemLines: itemLines.length > 0 ? itemLines : undefined,
         travelers: travelerRows.length > 0 ? travelerRows : undefined,
         paymentSchedules: paymentSchedules.length > 0 ? paymentSchedules : undefined,
         voucherRedemption,
         groupMembership,
+        documentGeneration: {
+          contractDocument: generateContractDocument,
+          invoiceDocument: generateInvoiceDocument,
+        },
       })
 
       // Optional post-create confirm. If the app has autoConfirmAndDispatch
@@ -467,11 +589,11 @@ export function BookingCreateForm({
     }
   }
 
-  const isSubmitting = quickCreateMutation.isPending || statusMutation.isPending
+  const isSubmitting = createBookingMutation.isPending || statusMutation.isPending
 
   return (
     <>
-      <div className="grid gap-4">
+      <DialogBody className="grid gap-4">
         <ProductPickerSection
           value={product}
           onChange={setProduct}
@@ -480,6 +602,7 @@ export function BookingCreateForm({
           labels={{
             optionNone: messages.bookingCreateDialog.labels.noSpecificOption,
           }}
+          showOptionPicker={false}
         />
 
         {product.productId ? (
@@ -487,7 +610,7 @@ export function BookingCreateForm({
             <Label>{messages.bookingCreateDialog.fields.departure}</Label>
             <Select
               value={slotId ?? "__none__"}
-              onValueChange={(v) => setSlotId(v === "__none__" ? null : (v ?? null))}
+              onValueChange={(v) => setSelectedSlot(v === "__none__" ? null : (v ?? null))}
             >
               <SelectTrigger>
                 <SelectValue placeholder={messages.bookingCreateDialog.placeholders.departure} />
@@ -512,14 +635,18 @@ export function BookingCreateForm({
           </div>
         ) : null}
 
-        {slotId ? (
+        {product.productId ? (
           <RoomsStepperSection
             value={rooms}
             onChange={setRooms}
-            slotId={slotId}
+            productId={product.productId}
+            slotId={slotId ?? undefined}
+            optionId={product.optionId}
             enabled={enabled}
+            onUnitsChange={handleRoomUnitsChange}
             labels={{
               heading: messages.bookingCreateDialog.labels.roomsHeading,
+              noOption: messages.bookingCreateDialog.labels.roomsNoOption,
               noSlot: messages.bookingCreateDialog.labels.roomsNoSlot,
               noUnits: messages.bookingCreateDialog.labels.roomsNoUnits,
               remaining: messages.bookingCreateDialog.labels.roomsRemaining,
@@ -551,6 +678,7 @@ export function BookingCreateForm({
             selectPlaceholder: messages.bookingCreateDialog.labels.sharedRoomSelectPlaceholder,
             noGroups: messages.bookingCreateDialog.labels.sharedRoomNoGroups,
             createHint: messages.bookingCreateDialog.labels.sharedRoomCreateHint,
+            remove: messages.bookingCreateDialog.labels.sharedRoomRemove,
           }}
         />
 
@@ -559,9 +687,17 @@ export function BookingCreateForm({
             value={travelers}
             onChange={setTravelers}
             roomUnits={roomUnitOptions.length > 0 ? roomUnitOptions : undefined}
+            billingPersonId={(person.billTo ?? "person") === "person" ? person.personId : null}
             labels={{
               heading: messages.bookingCreateDialog.labels.travelerHeading,
               addTraveler: messages.bookingCreateDialog.labels.addTraveler,
+              person: messages.bookingCreateDialog.labels.travelerPerson,
+              personSearchPlaceholder:
+                messages.bookingCreateDialog.labels.travelerPersonSearchPlaceholder,
+              personEmpty: messages.bookingCreateDialog.labels.travelerPersonEmpty,
+              createNewPerson: messages.bookingCreateDialog.labels.createNewPerson,
+              createPersonSheetTitle: messages.bookingCreateDialog.labels.createPersonSheetTitle,
+              addBillingPerson: messages.bookingCreateDialog.labels.addBillingPersonAsTraveler,
               role: messages.bookingCreateDialog.labels.travelerRole,
               roleLead: messages.bookingCreateDialog.labels.travelerLead,
               roleAdult: messages.bookingCreateDialog.labels.travelerAdult,
@@ -580,6 +716,7 @@ export function BookingCreateForm({
             productId={product.productId}
             optionId={product.optionId}
             unitQuantities={rooms.quantities}
+            unitLabels={roomUnitLabels}
             labels={{
               heading: messages.bookingCreateDialog.labels.breakdownHeading,
               total: messages.bookingCreateDialog.labels.breakdownTotal,
@@ -631,8 +768,41 @@ export function BookingCreateForm({
             secondInstallment: messages.bookingCreateDialog.labels.paymentSecondInstallment,
             preset5050: messages.bookingCreateDialog.labels.paymentPreset5050,
             unpaidHint: messages.bookingCreateDialog.labels.paymentUnpaidHint,
+            totalDue: messages.bookingCreateDialog.labels.paymentTotalDue,
+            scheduledTotal: messages.bookingCreateDialog.labels.paymentScheduledTotal,
+            remaining: messages.bookingCreateDialog.labels.paymentRemaining,
+            alreadyPaid: messages.bookingCreateDialog.labels.paymentAlreadyPaid,
+            paymentDate: messages.bookingCreateDialog.labels.paymentDate,
+            paymentMethod: messages.bookingCreateDialog.labels.paymentMethod,
+            paymentReference: messages.bookingCreateDialog.labels.paymentReference,
           }}
         />
+
+        <div className="flex flex-col gap-2 rounded-md border p-3">
+          <Label>{messages.bookingCreateDialog.labels.documentGenerationHeading}</Label>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-sm">
+              <Checkbox
+                id="new-booking-generate-contract-document"
+                checked={generateContractDocument}
+                onCheckedChange={(value) => setGenerateContractDocument(value === true)}
+              />
+              <Label htmlFor="new-booking-generate-contract-document" className="cursor-pointer">
+                {messages.bookingCreateDialog.labels.generateContractDocument}
+              </Label>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Checkbox
+                id="new-booking-generate-invoice-document"
+                checked={generateInvoiceDocument}
+                onCheckedChange={(value) => setGenerateInvoiceDocument(value === true)}
+              />
+              <Label htmlFor="new-booking-generate-invoice-document" className="cursor-pointer">
+                {messages.bookingCreateDialog.labels.generateInvoiceDocument}
+              </Label>
+            </div>
+          </div>
+        </div>
 
         <div className="flex flex-col gap-2">
           <Label>{messages.bookingCreateDialog.fields.internalNotes}</Label>
@@ -661,8 +831,8 @@ export function BookingCreateForm({
         </div>
 
         {error && <p className="text-xs text-destructive">{error}</p>}
-      </div>
-      <div className="mt-4 flex justify-end gap-2">
+      </DialogBody>
+      <DialogFooter>
         <Button type="button" variant="ghost" size="sm" onClick={onCancel} disabled={isSubmitting}>
           {messages.common.cancel}
         </Button>
@@ -675,7 +845,7 @@ export function BookingCreateForm({
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {messages.bookingCreateDialog.actions.createDraftBooking}
         </Button>
-      </div>
+      </DialogFooter>
     </>
   )
 }

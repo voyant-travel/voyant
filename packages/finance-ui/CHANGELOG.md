@@ -1,5 +1,121 @@
 # @voyantjs/finance-ui
 
+## 0.52.1
+
+### Patch Changes
+
+- @voyantjs/bookings-ui@0.52.1
+- @voyantjs/finance@0.52.1
+- @voyantjs/finance-react@0.52.1
+- @voyantjs/i18n@0.52.1
+- @voyantjs/suppliers-ui@0.52.1
+- @voyantjs/ui@0.52.1
+
+## 0.52.0
+
+### Patch Changes
+
+- @voyantjs/bookings-ui@0.52.0
+- @voyantjs/finance@0.52.0
+- @voyantjs/finance-react@0.52.0
+- @voyantjs/i18n@0.52.0
+- @voyantjs/suppliers-ui@0.52.0
+- @voyantjs/ui@0.52.0
+
+## 0.51.1
+
+### Patch Changes
+
+- Updated dependencies [deaacb3]
+  - @voyantjs/bookings-ui@0.51.1
+  - @voyantjs/finance@0.51.1
+  - @voyantjs/finance-react@0.51.1
+  - @voyantjs/i18n@0.51.1
+  - @voyantjs/suppliers-ui@0.51.1
+  - @voyantjs/ui@0.51.1
+
+## 0.51.0
+
+### Patch Changes
+
+- Updated dependencies [2316791]
+  - @voyantjs/bookings-ui@0.51.0
+  - @voyantjs/finance@0.51.0
+  - @voyantjs/finance-react@0.51.0
+  - @voyantjs/i18n@0.51.0
+  - @voyantjs/suppliers-ui@0.51.0
+  - @voyantjs/ui@0.51.0
+
+## 0.50.8
+
+### Patch Changes
+
+- Updated dependencies [f35014f]
+  - @voyantjs/bookings-ui@0.50.8
+  - @voyantjs/finance@0.50.8
+  - @voyantjs/finance-react@0.50.8
+  - @voyantjs/i18n@0.50.8
+  - @voyantjs/suppliers-ui@0.50.8
+  - @voyantjs/ui@0.50.8
+
+## 0.50.7
+
+### Patch Changes
+
+- Updated dependencies [7e4593e]
+  - @voyantjs/bookings-ui@0.50.7
+  - @voyantjs/finance@0.50.7
+  - @voyantjs/finance-react@0.50.7
+  - @voyantjs/i18n@0.50.7
+  - @voyantjs/suppliers-ui@0.50.7
+  - @voyantjs/ui@0.50.7
+
+## 0.50.6
+
+### Patch Changes
+
+- Updated dependencies [c14f0a8]
+  - @voyantjs/bookings-ui@0.50.6
+  - @voyantjs/finance@0.50.6
+  - @voyantjs/finance-react@0.50.6
+  - @voyantjs/i18n@0.50.6
+  - @voyantjs/suppliers-ui@0.50.6
+  - @voyantjs/ui@0.50.6
+
+## 0.50.5
+
+### Patch Changes
+
+- @voyantjs/bookings-ui@0.50.5
+- @voyantjs/finance@0.50.5
+- @voyantjs/finance-react@0.50.5
+- @voyantjs/i18n@0.50.5
+- @voyantjs/suppliers-ui@0.50.5
+- @voyantjs/ui@0.50.5
+
+## 0.50.4
+
+### Patch Changes
+
+- @voyantjs/bookings-ui@0.50.4
+- @voyantjs/finance@0.50.4
+- @voyantjs/finance-react@0.50.4
+- @voyantjs/i18n@0.50.4
+- @voyantjs/suppliers-ui@0.50.4
+- @voyantjs/ui@0.50.4
+
+## 0.50.3
+
+### Patch Changes
+
+- Updated dependencies [f6e051e]
+  - @voyantjs/bookings-ui@0.50.3
+  - @voyantjs/finance@0.50.3
+  - @voyantjs/finance-react@0.50.3
+  - @voyantjs/i18n@0.50.3
+  - @voyantjs/suppliers-ui@0.50.3
+  - @voyantjs/ui@0.50.3
+
 ## 0.50.2
 
 ### Patch Changes

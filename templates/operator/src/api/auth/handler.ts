@@ -7,9 +7,19 @@
  * Also provides /auth/status (user provisioning) and /auth/me (user info).
  */
 
+import {
+  createVoyantCloudAdminAuthPlugin,
+  revalidateVoyantCloudAdminAuthSession,
+  revalidateVoyantCloudAdminAuthUser,
+} from "@voyantjs/auth/cloud-admin-session"
+import {
+  buildClearCloudAdminAuthStateCookie,
+  createCloudAdminAuthStart,
+} from "@voyantjs/auth/cloud-broker"
 import { createBetterAuth, handleApiTokenManagementRequest } from "@voyantjs/auth/server"
+import { ensureCurrentUserProfile } from "@voyantjs/auth/workspace"
 import { tryGetVoyantCloudClient } from "@voyantjs/cloud-sdk"
-import { authUser, userProfilesTable } from "@voyantjs/db/schema/iam"
+import { authUser, type SelectApikey, userProfilesTable } from "@voyantjs/db/schema/iam"
 import type { VoyantDb, VoyantRequestAuthContext } from "@voyantjs/hono"
 import { eq, sql } from "drizzle-orm"
 import { type Context, Hono } from "hono"
@@ -21,9 +31,46 @@ import { dbFromEnvForApp } from "../lib/db"
 // set `VoyantDb` (the per-request Pool the `dbFromEnvForApp` factory
 // installed). Without this, the sub-app sees `unknown` for context vars.
 type AuthHonoEnv = { Bindings: CloudflareBindings; Variables: { db: VoyantDb } }
+type OperatorAuthMode = "local" | "voyant-cloud"
 
 const auth = new Hono<AuthHonoEnv>()
 const DEFAULT_APP_URL = "http://localhost:3300"
+const CLOUD_BETTER_AUTH_ALLOWLIST = new Set([
+  "/auth/get-session",
+  "/auth/jwks",
+  "/auth/session",
+  "/auth/sign-out",
+  "/auth/token",
+])
+
+function resolveOperatorAuthMode(env: CloudflareBindings): OperatorAuthMode {
+  const mode = env.VOYANT_ADMIN_AUTH_MODE?.trim() || "local"
+
+  if (mode === "local" || mode === "voyant-cloud") {
+    return mode
+  }
+
+  console.error(`[auth] Invalid VOYANT_ADMIN_AUTH_MODE="${mode}". Failing closed as voyant-cloud.`)
+  return "voyant-cloud"
+}
+
+function isVoyantCloudAuthMode(env: CloudflareBindings): boolean {
+  return resolveOperatorAuthMode(env) === "voyant-cloud"
+}
+
+function isCloudAllowedBetterAuthRoute(request: Request): boolean {
+  const url = new URL(request.url)
+  const pathname = url.pathname.replace(/\/+$/, "") || "/"
+  return CLOUD_BETTER_AUTH_ALLOWLIST.has(pathname)
+}
+
+function localAuthDisabledResponse(c: Context<AuthHonoEnv>) {
+  return c.json({ error: "Local auth routes are disabled in Voyant Cloud auth mode" }, 404)
+}
+
+function cloudAuthNotConfiguredResponse(c: Context<AuthHonoEnv>) {
+  return c.json({ error: "Voyant Cloud auth broker is not configured yet" }, 501)
+}
 
 function normalizeUrl(url: string): string {
   return url.trim().replace(/\/$/, "")
@@ -68,6 +115,67 @@ function getAuthBaseUrl(env: CloudflareBindings): string {
   }
 }
 
+function getPublicApiBaseUrl(env: CloudflareBindings): string {
+  const candidate = env.API_BASE_URL?.trim() || env.APP_URL?.trim() || `${getAppUrl(env)}/api`
+  const normalized = normalizeUrl(candidate)
+
+  try {
+    const parsed = new URL(normalized)
+    if (parsed.pathname === "/" || parsed.pathname === "") {
+      parsed.pathname = "/api"
+      return normalizeUrl(parsed.toString())
+    }
+  } catch {
+    return normalized
+  }
+
+  return normalized
+}
+
+function getCloudAuthStartConfig(env: CloudflareBindings) {
+  const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
+  const cloudAuthStartUrl = env.VOYANT_CLOUD_ADMIN_AUTH_START_URL?.trim()
+  if (!deploymentId || !cloudAuthStartUrl) return null
+
+  return {
+    cloudAuthStartUrl,
+    deploymentId,
+    adminCallbackUrl: `${getPublicApiBaseUrl(env)}/auth/cloud/callback`,
+    cookieSecret: env.SESSION_CLAIMS_SECRET,
+    appId: env.VOYANT_CLOUD_APP_ID?.trim() || undefined,
+    environment: env.VOYANT_CLOUD_ENVIRONMENT?.trim() || undefined,
+  }
+}
+
+function getCloudAuthExchangeConfig(env: CloudflareBindings) {
+  const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
+  const exchangeUrl = env.VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL?.trim()
+  const assertionJwksUrl = env.VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL?.trim()
+  const clientToken = env.VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?.trim()
+  if (!deploymentId || !exchangeUrl || !assertionJwksUrl || !clientToken) return null
+
+  return {
+    exchangeUrl,
+    deploymentId,
+    clientToken,
+    assertionJwksUrl,
+    assertionAudience: env.VOYANT_CLOUD_ADMIN_AUTH_AUDIENCE?.trim() || deploymentId,
+  }
+}
+
+function getCloudAuthRevalidateConfig(env: CloudflareBindings) {
+  const deploymentId = env.VOYANT_CLOUD_DEPLOYMENT_ID?.trim()
+  const revalidateUrl = env.VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL?.trim()
+  const clientToken = env.VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN?.trim()
+  if (!deploymentId || !revalidateUrl || !clientToken) return null
+
+  return {
+    revalidateUrl,
+    deploymentId,
+    clientToken,
+  }
+}
+
 function isLocalRequest(request: Request): boolean {
   const hostname = new URL(request.url).hostname
   return hostname === "127.0.0.1" || hostname === "localhost"
@@ -93,6 +201,9 @@ function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEn
   const cloud = tryGetVoyantCloudClient(env as unknown as Record<string, unknown>)
   const emailFrom = env.EMAIL_FROM || "Voyant <noreply@voyantcloud.app>"
   const emailReplyTo = resolveEmailReplyTo(env)
+  const cloudAuthExchange = isVoyantCloudAuthMode(env) ? getCloudAuthExchangeConfig(env) : null
+  const authDb = db as NonNullable<Parameters<typeof createBetterAuth>[0]>["db"]
+  const cloudAuthDb = db as Parameters<typeof createVoyantCloudAdminAuthPlugin>[0]["db"]
 
   return createBetterAuth({
     // `db` is a `NeonDatabase` (neon-serverless WebSocket); the
@@ -101,11 +212,20 @@ function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEn
     // PgDatabase surface is identical across flavors at runtime, so
     // the cast is structurally safe — better-auth's drizzleAdapter
     // works on any PgDatabase. See #500 for context.
-    db: db as unknown as NonNullable<Parameters<typeof createBetterAuth>[0]>["db"],
+    db: authDb,
     secret: env.SESSION_CLAIMS_SECRET,
     baseURL: getAuthBaseUrl(env),
     basePath: "/auth",
     trustedOrigins: getTrustedOrigins(env),
+    plugins: cloudAuthExchange
+      ? [
+          createVoyantCloudAdminAuthPlugin({
+            db: cloudAuthDb,
+            cookieSecret: env.SESSION_CLAIMS_SECRET,
+            exchange: cloudAuthExchange,
+          }),
+        ]
+      : undefined,
     sendResetPassword: async ({ user, url }) => {
       if (!cloud) {
         console.info(`[auth] reset-password (no VOYANT_CLOUD_API_KEY) → ${user.email}: ${url}`)
@@ -150,6 +270,28 @@ export async function resolveAuthRequest(
       return null
     }
 
+    if (isVoyantCloudAuthMode(env)) {
+      const revalidateConfig = getCloudAuthRevalidateConfig(env)
+      if (!revalidateConfig) {
+        return null
+      }
+
+      try {
+        const revalidation = await revalidateVoyantCloudAdminAuthSession({
+          db: db as Parameters<typeof revalidateVoyantCloudAdminAuthSession>[0]["db"],
+          sessionId: session.session.id,
+          config: revalidateConfig,
+        })
+
+        if (!revalidation.ok) {
+          return null
+        }
+      } catch (error) {
+        console.error("[auth/session] Cloud revalidation failed:", error)
+        return null
+      }
+    }
+
     return {
       userId: session.user.id,
       sessionId: session.session.id,
@@ -178,6 +320,29 @@ export async function hasAuthPermission(
 ): Promise<boolean> {
   const auth = await resolveAuthRequest(request, env)
   return auth !== null
+}
+
+export async function validateApiTokenAccess(
+  env: CloudflareBindings,
+  db: VoyantDb,
+  apiKey: SelectApikey,
+): Promise<boolean> {
+  if (!isVoyantCloudAuthMode(env)) return true
+
+  const revalidateConfig = getCloudAuthRevalidateConfig(env)
+  if (!revalidateConfig) return false
+
+  try {
+    const revalidation = await revalidateVoyantCloudAdminAuthUser({
+      db: db as unknown as Parameters<typeof revalidateVoyantCloudAdminAuthUser>[0]["db"],
+      userId: apiKey.referenceId,
+      config: revalidateConfig,
+    })
+    return revalidation.ok
+  } catch (error) {
+    console.error("[auth/api-token] Cloud revalidation failed:", error)
+    return false
+  }
 }
 
 /**
@@ -265,49 +430,16 @@ auth.get("/auth/status", async (c) => {
 
     const userId = session.user.id
 
-    try {
-      const [existingProfile] = await db
-        .select({ id: userProfilesTable.id })
-        .from(userProfilesTable)
-        .where(eq(userProfilesTable.id, userId))
-        .limit(1)
-
-      if (existingProfile) {
-        return c.json({ userExists: true, authenticated: true })
-      }
-
-      // Profile doesn't exist yet — create from BA user data
-      const [baUser] = await db
-        .select({ name: authUser.name, email: authUser.email, image: authUser.image })
-        .from(authUser)
-        .where(eq(authUser.id, userId))
-        .limit(1)
-
-      if (!baUser?.email) {
-        return c.json(
-          { userExists: false, authenticated: true, reason: `No email found for user ${userId}.` },
-          400,
-        )
-      }
-
-      const nameParts = baUser.name?.split(" ") ?? []
-      const firstName = nameParts[0] ?? null
-      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : null
-
-      await db
-        .insert(userProfilesTable)
-        .values({ id: userId, firstName, lastName, avatarUrl: baUser.image ?? null })
-        .onConflictDoNothing()
-
-      return c.json({ userExists: true, authenticated: true })
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      console.error("[auth/status] Error:", message)
-      return c.json(
-        { userExists: false, authenticated: true, reason: `Provisioning error: ${message}` },
-        500,
-      )
+    const status = await ensureCurrentUserProfile(
+      db as Parameters<typeof ensureCurrentUserProfile>[0],
+      userId,
+    )
+    if (!status.userExists && status.authenticated) {
+      console.error("[auth/status] Error:", status.reason)
+      return c.json(status, 500)
     }
+
+    return c.json(status)
   } finally {
     c.executionCtx.waitUntil(dispose())
   }
@@ -323,12 +455,16 @@ auth.get("/auth/bootstrap-status", async (c) => {
     return c.json({ hasUsers: true })
   }
 
+  if (isVoyantCloudAuthMode(c.env)) {
+    return c.json({ hasUsers: true, authMode: "voyant-cloud" })
+  }
+
   // See `/auth/me` above — auth sub-app runs before the request `db`
   // middleware, so own the Pool here.
   const { db, dispose } = dbFromEnvForApp(c.env)
   try {
     const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
-    return c.json({ hasUsers: (row?.count ?? 0) > 0 })
+    return c.json({ hasUsers: (row?.count ?? 0) > 0, authMode: "local" })
   } finally {
     c.executionCtx.waitUntil(dispose())
   }
@@ -338,6 +474,38 @@ async function handleApiTokensFacade(c: Context<AuthHonoEnv>) {
   const { db, dispose } = dbFromEnvForApp(c.env)
   try {
     const betterAuth = buildBetterAuth(c.env, db)
+    const cloudAuthDb = db as Parameters<typeof revalidateVoyantCloudAdminAuthSession>[0]["db"]
+
+    if (isVoyantCloudAuthMode(c.env)) {
+      const revalidateConfig = getCloudAuthRevalidateConfig(c.env)
+      if (!revalidateConfig) {
+        return c.json(
+          { error: "Cloud-mode API token management requires membership revalidation" },
+          501,
+        )
+      }
+
+      const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
+      if (!session) {
+        return c.json({ error: "Unauthorized" }, 401)
+      }
+
+      try {
+        const revalidation = await revalidateVoyantCloudAdminAuthSession({
+          db: cloudAuthDb,
+          sessionId: session.session.id,
+          config: revalidateConfig,
+        })
+
+        if (!revalidation.ok) {
+          return c.json({ error: "Voyant Cloud access revoked" }, 403)
+        }
+      } catch (error) {
+        console.error("[auth/api-tokens] Cloud revalidation failed:", error)
+        return c.json({ error: "Voyant Cloud access could not be revalidated" }, 503)
+      }
+    }
+
     return (
       (await handleApiTokenManagementRequest(c.req.raw, betterAuth, {
         db,
@@ -347,6 +515,63 @@ async function handleApiTokensFacade(c: Context<AuthHonoEnv>) {
     c.executionCtx.waitUntil(dispose())
   }
 }
+
+auth.get("/auth/cloud/start", async (c) => {
+  if (!isVoyantCloudAuthMode(c.env)) {
+    return c.json({ error: "Not found" }, 404)
+  }
+
+  const config = getCloudAuthStartConfig(c.env)
+  if (!config) {
+    return cloudAuthNotConfiguredResponse(c)
+  }
+
+  try {
+    const start = await createCloudAdminAuthStart({
+      requestUrl: c.req.url,
+      next: c.req.query("next"),
+      config,
+    })
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: start.redirectUrl,
+        "Set-Cookie": start.setCookie,
+      },
+    })
+  } catch (error) {
+    console.error("[auth/cloud/start] Error:", error)
+    return c.json({ error: "Voyant Cloud auth broker is misconfigured" }, 500)
+  }
+})
+
+auth.get("/auth/cloud/callback", async (c) => {
+  if (!isVoyantCloudAuthMode(c.env)) {
+    return c.json({ error: "Not found" }, 404)
+  }
+
+  const exchangeConfig = getCloudAuthExchangeConfig(c.env)
+  if (!exchangeConfig) {
+    const url = new URL(c.req.url)
+    return c.json({ error: "Voyant Cloud auth exchange is not configured yet" }, 501, {
+      "Set-Cookie": buildClearCloudAdminAuthStateCookie(
+        url.protocol === "https:",
+        url.pathname.replace(/\/callback$/, "") || "/auth/cloud",
+      ),
+    })
+  }
+
+  const { db, dispose } = dbFromEnvForApp(c.env)
+  try {
+    const betterAuth = buildBetterAuth(c.env, db)
+    return await betterAuth.handler(c.req.raw)
+  } catch (error) {
+    console.error("[auth/cloud/callback] Error:", error)
+    return c.json({ error: "Voyant Cloud auth callback failed" }, 500)
+  } finally {
+    c.executionCtx.waitUntil(dispose())
+  }
+})
 
 auth.all("/auth/api-tokens", handleApiTokensFacade)
 auth.all("/auth/api-tokens/:keyId", handleApiTokensFacade)
@@ -360,6 +585,10 @@ auth.all("/auth/api-tokens/:keyId/rotate", handleApiTokensFacade)
  * user exists, the hook throws and BA returns an error to the client.
  */
 auth.all("/auth/*", async (c) => {
+  if (isVoyantCloudAuthMode(c.env) && !isCloudAllowedBetterAuthRoute(c.req.raw)) {
+    return localAuthDisabledResponse(c)
+  }
+
   const { db, dispose } = dbFromEnvForApp(c.env)
   try {
     const betterAuth = buildBetterAuth(c.env, db)

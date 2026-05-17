@@ -1,5 +1,128 @@
 # @voyantjs/flights-ui
 
+## 0.52.1
+
+### Patch Changes
+
+- @voyantjs/checkout-ui@0.52.1
+- @voyantjs/crm-react@0.52.1
+- @voyantjs/finance@0.52.1
+- @voyantjs/flights@0.52.1
+- @voyantjs/flights-react@0.52.1
+- @voyantjs/i18n@0.52.1
+- @voyantjs/ui@0.52.1
+
+## 0.52.0
+
+### Patch Changes
+
+- @voyantjs/checkout-ui@0.52.0
+- @voyantjs/crm-react@0.52.0
+- @voyantjs/finance@0.52.0
+- @voyantjs/flights@0.52.0
+- @voyantjs/flights-react@0.52.0
+- @voyantjs/i18n@0.52.0
+- @voyantjs/ui@0.52.0
+
+## 0.51.1
+
+### Patch Changes
+
+- Updated dependencies [deaacb3]
+  - @voyantjs/checkout-ui@0.51.1
+  - @voyantjs/crm-react@0.51.1
+  - @voyantjs/finance@0.51.1
+  - @voyantjs/flights@0.51.1
+  - @voyantjs/flights-react@0.51.1
+  - @voyantjs/i18n@0.51.1
+  - @voyantjs/ui@0.51.1
+
+## 0.51.0
+
+### Patch Changes
+
+- Updated dependencies [2316791]
+  - @voyantjs/checkout-ui@0.51.0
+  - @voyantjs/crm-react@0.51.0
+  - @voyantjs/finance@0.51.0
+  - @voyantjs/flights@0.51.0
+  - @voyantjs/flights-react@0.51.0
+  - @voyantjs/i18n@0.51.0
+  - @voyantjs/ui@0.51.0
+
+## 0.50.8
+
+### Patch Changes
+
+- @voyantjs/checkout-ui@0.50.8
+- @voyantjs/crm-react@0.50.8
+- @voyantjs/finance@0.50.8
+- @voyantjs/flights@0.50.8
+- @voyantjs/flights-react@0.50.8
+- @voyantjs/i18n@0.50.8
+- @voyantjs/ui@0.50.8
+
+## 0.50.7
+
+### Patch Changes
+
+- @voyantjs/checkout-ui@0.50.7
+- @voyantjs/crm-react@0.50.7
+- @voyantjs/finance@0.50.7
+- @voyantjs/flights@0.50.7
+- @voyantjs/flights-react@0.50.7
+- @voyantjs/i18n@0.50.7
+- @voyantjs/ui@0.50.7
+
+## 0.50.6
+
+### Patch Changes
+
+- Updated dependencies [c14f0a8]
+  - @voyantjs/checkout-ui@0.50.6
+  - @voyantjs/crm-react@0.50.6
+  - @voyantjs/finance@0.50.6
+  - @voyantjs/flights@0.50.6
+  - @voyantjs/flights-react@0.50.6
+  - @voyantjs/i18n@0.50.6
+  - @voyantjs/ui@0.50.6
+
+## 0.50.5
+
+### Patch Changes
+
+- @voyantjs/checkout-ui@0.50.5
+- @voyantjs/crm-react@0.50.5
+- @voyantjs/finance@0.50.5
+- @voyantjs/flights@0.50.5
+- @voyantjs/flights-react@0.50.5
+- @voyantjs/i18n@0.50.5
+- @voyantjs/ui@0.50.5
+
+## 0.50.4
+
+### Patch Changes
+
+- @voyantjs/checkout-ui@0.50.4
+- @voyantjs/crm-react@0.50.4
+- @voyantjs/finance@0.50.4
+- @voyantjs/flights@0.50.4
+- @voyantjs/flights-react@0.50.4
+- @voyantjs/i18n@0.50.4
+- @voyantjs/ui@0.50.4
+
+## 0.50.3
+
+### Patch Changes
+
+- @voyantjs/checkout-ui@0.50.3
+- @voyantjs/crm-react@0.50.3
+- @voyantjs/finance@0.50.3
+- @voyantjs/flights@0.50.3
+- @voyantjs/flights-react@0.50.3
+- @voyantjs/i18n@0.50.3
+- @voyantjs/ui@0.50.3
+
 ## 0.50.2
 
 ### Patch Changes

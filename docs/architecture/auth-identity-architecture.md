@@ -72,6 +72,32 @@ Rule:
 Session auth should stay the default model unless a route explicitly needs a
 different boundary such as internal or machine auth.
 
+### 3a. Voyant Cloud is an identity broker, not the admin session issuer
+
+Voyant Cloud-provisioned admin deployments use `voyant-cloud` auth mode. In
+that mode, Voyant Cloud owns WorkOS identity, organization membership, app
+scope, broker grants, assertion signing, and revalidation. The tenant admin
+deployment still owns the local Better Auth mirror user, Better Auth session
+cookie, Better Auth JWT/JWKS endpoints, and local API-token storage.
+
+Cloud mode is exclusive. When `VOYANT_ADMIN_AUTH_MODE=voyant-cloud`, local
+credential sign-in, sign-up, password reset, email verification, email OTP,
+change-email, invitations, and social OAuth are disabled server-side. Hiding
+local UI is not sufficient. Local development and self-host deployments use
+`VOYANT_ADMIN_AUTH_MODE=local` and keep the regular Better Auth flows without
+WorkOS or Voyant Cloud configuration.
+
+The local mirror user uses a generated local Better Auth `auth.user.id`. WorkOS
+ids and platform organization ids are stored only in account/linkage tables and
+must not become JWT `sub` values or be exposed through provider-neutral request
+auth context.
+
+Rule:
+
+Cloud answers "who is this WorkOS user and may they access this deployment";
+Better Auth answers "what local admin session/token does this deployment
+trust".
+
 ## Request Context
 
 ### 4. Routes should consume shared request identity helpers
@@ -179,6 +205,23 @@ For the current token-signing baseline and the threshold for eventual JWKS-style
 distribution, see
 [`token-signing-and-key-distribution-policy.md`](./token-signing-and-key-distribution-policy.md).
 
+### 10a. Cloud-mode API tokens must revalidate Cloud membership
+
+Better Auth API keys are local machine credentials, but in Cloud mode they are
+still owned by a Cloud-mirrored user. A personal API token must not keep working
+after that user's WorkOS/Voyant Cloud membership is revoked.
+
+Cloud-mode API-token management and raw `voy_` API-token middleware validation
+must call Cloud revalidation for the mirrored user. A revoked response marks the
+Cloud link revoked and disables that user's local API keys. Cached pull
+revalidation is acceptable for v1; a future Cloud webhook may reduce revocation
+latency, but webhook push is an optimization, not the only enforcement path.
+
+Rule:
+
+Local API tokens remain Better Auth API keys, but Cloud mode gates their use on
+current Cloud membership.
+
 ## Product Guidance
 
 ### 11. Templates should compose the auth surface, not redefine it
@@ -196,6 +239,15 @@ Rule:
 
 Templates compose the shared auth surface; they should not create a second auth
 architecture.
+
+Voyant Cloud-provisioned templates are prewired with Cloud broker environment
+variables (`VOYANT_CLOUD_ADMIN_AUTH_START_URL`,
+`VOYANT_CLOUD_ADMIN_AUTH_EXCHANGE_URL`, `VOYANT_CLOUD_ADMIN_AUTH_JWKS_URL`,
+`VOYANT_CLOUD_ADMIN_AUTH_REVALIDATE_URL`,
+`VOYANT_CLOUD_ADMIN_AUTH_CLIENT_TOKEN`, and `VOYANT_CLOUD_DEPLOYMENT_ID`) and
+run with `VOYANT_ADMIN_AUTH_MODE=voyant-cloud`. The checked-in local examples
+must default to `local` so self-hosters and local development are not coupled to
+Voyant Cloud.
 
 ### 12. Modules should rely on shared auth contracts
 

@@ -1,5 +1,104 @@
 # @voyantjs/availability-ui
 
+## 0.52.1
+
+### Patch Changes
+
+- @voyantjs/availability-react@0.52.1
+- @voyantjs/i18n@0.52.1
+- @voyantjs/ui@0.52.1
+
+## 0.52.0
+
+### Patch Changes
+
+- @voyantjs/availability-react@0.52.0
+- @voyantjs/i18n@0.52.0
+- @voyantjs/ui@0.52.0
+
+## 0.51.1
+
+### Patch Changes
+
+- Updated dependencies [deaacb3]
+  - @voyantjs/availability-react@0.51.1
+  - @voyantjs/i18n@0.51.1
+  - @voyantjs/ui@0.51.1
+
+## 0.51.0
+
+### Minor Changes
+
+- 2316791: Redesign `AvailabilitySlotDetailPage` from a debug-dump card stack into a tabbed workspace.
+
+  - One compact header (product name + date range + nights + status pills) replaces the start-date-concatenated-with-itself title and the three "Unlimited / Past Cutoff / Too Early : Yes/No" rows.
+  - 4-cell **KPI strip** (pax remaining/initial, product, date, notes).
+  - 5-tab body: **Allocation** (default) · **Pickup** · **Closeouts** · **Activity** · **Meta**. Counts render as badges on the tab triggers; empty tabs show one inline message instead of a full empty card. Activity bundles the audit log + resource-assignment list; Meta holds identifiers + lifecycle timestamps.
+  - Null detail rows (rule / start time / ends at / initial pickups / remaining pickups / remaining resources) hide instead of rendering a dash.
+  - New slot props on the package:
+    - `breadcrumb?: ReactNode` — host renders breadcrumbs in its own chrome (sidebar inset top bar).
+    - `headerActions?: ReactNode` — host can override the in-page Open product / Delete buttons and render them elsewhere.
+    - `renderAllocation?: ({ slotId, productId }) => ReactNode` — host mounts the allocation manager (keeps `availability-ui` free of any runtime dependency on `allocation-ui`).
+  - Product / start time rows in the Meta tab are real links via the existing `onOpenProduct` / `onOpenStartTime` callbacks.
+
+  `@voyantjs/i18n`: new keys under `availability.details.tabs.*` for the detail page's tabbed body (en + ro).
+
+### Patch Changes
+
+- Updated dependencies [2316791]
+  - @voyantjs/availability-react@0.51.0
+  - @voyantjs/i18n@0.51.0
+  - @voyantjs/ui@0.51.0
+
+## 0.50.8
+
+### Patch Changes
+
+- @voyantjs/availability-react@0.50.8
+- @voyantjs/i18n@0.50.8
+- @voyantjs/ui@0.50.8
+
+## 0.50.7
+
+### Patch Changes
+
+- @voyantjs/availability-react@0.50.7
+- @voyantjs/i18n@0.50.7
+- @voyantjs/ui@0.50.7
+
+## 0.50.6
+
+### Patch Changes
+
+- Updated dependencies [c14f0a8]
+  - @voyantjs/availability-react@0.50.6
+  - @voyantjs/i18n@0.50.6
+  - @voyantjs/ui@0.50.6
+
+## 0.50.5
+
+### Patch Changes
+
+- @voyantjs/availability-react@0.50.5
+- @voyantjs/i18n@0.50.5
+- @voyantjs/ui@0.50.5
+
+## 0.50.4
+
+### Patch Changes
+
+- @voyantjs/availability-react@0.50.4
+- @voyantjs/i18n@0.50.4
+- @voyantjs/ui@0.50.4
+
+## 0.50.3
+
+### Patch Changes
+
+- @voyantjs/availability-react@0.50.3
+- @voyantjs/i18n@0.50.3
+- @voyantjs/ui@0.50.3
+
 ## 0.50.2
 
 ### Patch Changes

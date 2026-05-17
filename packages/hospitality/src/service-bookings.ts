@@ -185,7 +185,7 @@ export const hospitalityBookingsService = {
 
         if (reserveResult.status !== "ok") {
           // Roll back by throwing a typed sentinel — mirrors the
-          // pattern used in finance/quickCreateBooking.
+          // pattern used in finance/createBooking.
           throw new ReserveStayAbort(reserveResult)
         }
 

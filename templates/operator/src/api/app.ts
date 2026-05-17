@@ -15,11 +15,7 @@ import { createCustomerPortalHonoModule } from "@voyantjs/customer-portal"
 import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
 import { externalRefsHonoModule } from "@voyantjs/external-refs"
 import { extrasHonoModule } from "@voyantjs/extras"
-import {
-  bookingsQuickCreateExtension,
-  createFinanceHonoModule,
-  financeService,
-} from "@voyantjs/finance"
+import { bookingsCreateExtension, createFinanceHonoModule, financeService } from "@voyantjs/finance"
 import { bookingPaymentSchedules, invoices, paymentSessions } from "@voyantjs/finance/schema"
 import { createApp } from "@voyantjs/hono"
 import { identityHonoModule } from "@voyantjs/identity"
@@ -68,7 +64,11 @@ import { resolveNotificationProviders } from "../lib/notifications"
 import { createVideoUploadTicket } from "../lib/video-uploads"
 import { tryGetCloudClient } from "../lib/voyant-cloud"
 import { mountActionLedgerHealthRoutes } from "./action-ledger-health"
-import authHandler, { hasAuthPermission, resolveAuthRequest } from "./auth/handler"
+import authHandler, {
+  hasAuthPermission,
+  resolveAuthRequest,
+  validateApiTokenAccess,
+} from "./auth/handler"
 import {
   bookingScheduleBundle,
   mountBookingPaymentScheduleRoutes,
@@ -827,7 +827,7 @@ export const app = createApp<CloudflareBindings>({
   ],
   extensions: [
     bookingsSupplierExtension,
-    bookingsQuickCreateExtension,
+    bookingsCreateExtension,
     productsBookingExtension,
     crmBookingExtension,
     transactionsBookingExtension,
@@ -855,6 +855,7 @@ export const app = createApp<CloudflareBindings>({
     }),
     resolve: async ({ request, env }) => resolveAuthRequest(request, env),
     hasPermission: async ({ request, env }) => hasAuthPermission(request, env),
+    validateApiKey: async ({ env, db, apiKey }) => validateApiTokenAccess(env, db, apiKey),
   },
   additionalRoutes: (hono) => {
     // Admin-issued invitation flow (single-tenant sign-up is otherwise gated

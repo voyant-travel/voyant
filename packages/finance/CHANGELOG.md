@@ -1,5 +1,119 @@
 # @voyantjs/finance
 
+## 0.52.1
+
+### Patch Changes
+
+- Updated dependencies [335d277]
+  - @voyantjs/bookings@0.52.1
+  - @voyantjs/core@0.52.1
+  - @voyantjs/db@0.52.1
+  - @voyantjs/hono@0.52.1
+  - @voyantjs/storage@0.52.1
+  - @voyantjs/utils@0.52.1
+
+## 0.52.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.52.0
+- @voyantjs/core@0.52.0
+- @voyantjs/db@0.52.0
+- @voyantjs/hono@0.52.0
+- @voyantjs/storage@0.52.0
+- @voyantjs/utils@0.52.0
+
+## 0.51.1
+
+### Patch Changes
+
+- @voyantjs/bookings@0.51.1
+- @voyantjs/core@0.51.1
+- @voyantjs/db@0.51.1
+- @voyantjs/hono@0.51.1
+- @voyantjs/storage@0.51.1
+- @voyantjs/utils@0.51.1
+
+## 0.51.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.51.0
+- @voyantjs/core@0.51.0
+- @voyantjs/db@0.51.0
+- @voyantjs/hono@0.51.0
+- @voyantjs/storage@0.51.0
+- @voyantjs/utils@0.51.0
+
+## 0.50.8
+
+### Patch Changes
+
+- Updated dependencies [f35014f]
+  - @voyantjs/bookings@0.50.8
+  - @voyantjs/core@0.50.8
+  - @voyantjs/db@0.50.8
+  - @voyantjs/hono@0.50.8
+  - @voyantjs/storage@0.50.8
+  - @voyantjs/utils@0.50.8
+
+## 0.50.7
+
+### Patch Changes
+
+- @voyantjs/bookings@0.50.7
+- @voyantjs/core@0.50.7
+- @voyantjs/db@0.50.7
+- @voyantjs/hono@0.50.7
+- @voyantjs/storage@0.50.7
+- @voyantjs/utils@0.50.7
+
+## 0.50.6
+
+### Patch Changes
+
+- c14f0a8: Fix the booking-create flow: scrollable dialog content with reachable actions, normalized product search, future departure lookup, shared-room clearing, explicit item lines, selectable traveler people including the payer, already-paid schedule rows, and booking-create naming throughout the API/registry surface.
+- Updated dependencies [c14f0a8]
+  - @voyantjs/bookings@0.50.6
+  - @voyantjs/core@0.50.6
+  - @voyantjs/db@0.50.6
+  - @voyantjs/hono@0.50.6
+  - @voyantjs/storage@0.50.6
+  - @voyantjs/utils@0.50.6
+
+## 0.50.5
+
+### Patch Changes
+
+- @voyantjs/bookings@0.50.5
+- @voyantjs/core@0.50.5
+- @voyantjs/db@0.50.5
+- @voyantjs/hono@0.50.5
+- @voyantjs/storage@0.50.5
+- @voyantjs/utils@0.50.5
+
+## 0.50.4
+
+### Patch Changes
+
+- @voyantjs/bookings@0.50.4
+- @voyantjs/core@0.50.4
+- @voyantjs/db@0.50.4
+- @voyantjs/hono@0.50.4
+- @voyantjs/storage@0.50.4
+- @voyantjs/utils@0.50.4
+
+## 0.50.3
+
+### Patch Changes
+
+- @voyantjs/bookings@0.50.3
+- @voyantjs/core@0.50.3
+- @voyantjs/db@0.50.3
+- @voyantjs/hono@0.50.3
+- @voyantjs/storage@0.50.3
+- @voyantjs/utils@0.50.3
+
 ## 0.50.2
 
 ### Patch Changes

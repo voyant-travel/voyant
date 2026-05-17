@@ -1,5 +1,82 @@
 # @voyantjs/auth
 
+## 0.52.1
+
+### Patch Changes
+
+- @voyantjs/db@0.52.1
+- @voyantjs/utils@0.52.1
+
+## 0.52.0
+
+### Minor Changes
+
+- 1468e12: Add an `onUserProvisioning` hook to the Voyant Cloud admin session plugin for Cloud-mode mirror side effects.
+- 1468e12: Add the Voyant Cloud admin session plugin subpath for Better Auth-backed Cloud broker callbacks.
+
+### Patch Changes
+
+- @voyantjs/db@0.52.0
+- @voyantjs/utils@0.52.0
+
+## 0.51.1
+
+### Patch Changes
+
+- @voyantjs/db@0.51.1
+- @voyantjs/utils@0.51.1
+
+## 0.51.0
+
+### Patch Changes
+
+- @voyantjs/db@0.51.0
+- @voyantjs/utils@0.51.0
+
+## 0.50.8
+
+### Patch Changes
+
+- @voyantjs/db@0.50.8
+- @voyantjs/utils@0.50.8
+
+## 0.50.7
+
+### Patch Changes
+
+- @voyantjs/db@0.50.7
+- @voyantjs/utils@0.50.7
+
+## 0.50.6
+
+### Patch Changes
+
+- @voyantjs/db@0.50.6
+- @voyantjs/utils@0.50.6
+
+## 0.50.5
+
+### Patch Changes
+
+- c2b36ce: Allow Better Auth plugin Drizzle tables to be passed through createBetterAuth.
+  - @voyantjs/db@0.50.5
+  - @voyantjs/utils@0.50.5
+
+## 0.50.4
+
+### Patch Changes
+
+- d1f7559: Forward Better Auth `user` options from `createBetterAuth`, including `user.additionalFields`, while preserving Voyant's default change-email support.
+  - @voyantjs/db@0.50.4
+  - @voyantjs/utils@0.50.4
+
+## 0.50.3
+
+### Patch Changes
+
+- @voyantjs/db@0.50.3
+- @voyantjs/utils@0.50.3
+
 ## 0.50.2
 
 ### Patch Changes

@@ -6,13 +6,13 @@ import {
   authSession,
   authUser,
   authVerification,
-  userProfilesTable,
 } from "@voyantjs/db/schema/iam"
-import { betterAuth } from "better-auth"
+import { type BetterAuthOptions, betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { emailOTP } from "better-auth/plugins"
 import type { BetterAuthPlugin } from "better-auth/types"
 import { sql } from "drizzle-orm"
+import type { AnyPgTable } from "drizzle-orm/pg-core"
 
 import {
   type ApiTokenRotationOptions,
@@ -21,6 +21,8 @@ import {
 } from "./api-token-rotation.js"
 import {
   type CurrentUser,
+  isFirstAuthUser,
+  provisionCurrentUserProfile,
   type UpdateCurrentUserProfileInput,
   updateCurrentUserProfile,
 } from "./workspace.js"
@@ -433,13 +435,56 @@ function expandTrustedOrigins(origins: string[], baseURL: string): string[] {
   return Array.from(new Set([...origins, ...LOCAL_WILDCARDS]))
 }
 
-export interface CreateBetterAuthOptions {
+type DefinedBetterAuthUserOptions<UserOptions extends BetterAuthOptions["user"]> =
+  UserOptions extends undefined ? Record<PropertyKey, never> : NonNullable<UserOptions>
+
+type ResolvedBetterAuthChangeEmail<UserOptions extends BetterAuthOptions["user"]> =
+  DefinedBetterAuthUserOptions<UserOptions> extends { changeEmail?: infer ChangeEmail }
+    ? ChangeEmail extends { enabled: infer Enabled }
+      ? Omit<ChangeEmail, "enabled"> & { enabled: Enabled }
+      : NonNullable<ChangeEmail> & { enabled: true }
+    : { enabled: true }
+
+type ResolvedBetterAuthUserOptions<UserOptions extends BetterAuthOptions["user"]> = Omit<
+  DefinedBetterAuthUserOptions<UserOptions>,
+  "changeEmail"
+> & {
+  changeEmail: ResolvedBetterAuthChangeEmail<UserOptions>
+}
+
+type VoyantBetterAuthPlugins = [ReturnType<typeof apiKey>, ReturnType<typeof emailOTP>]
+
+type ResolvedBetterAuthPlugins<Plugins extends BetterAuthPlugin[] | undefined> =
+  Plugins extends BetterAuthPlugin[]
+    ? [...VoyantBetterAuthPlugins, ...Plugins]
+    : VoyantBetterAuthPlugins
+
+type ResolvedCreateBetterAuthOptions<
+  UserOptions extends BetterAuthOptions["user"],
+  Plugins extends BetterAuthPlugin[] | undefined,
+> = Omit<BetterAuthOptions, "plugins" | "user"> & {
+  plugins: ResolvedBetterAuthPlugins<Plugins>
+  user: ResolvedBetterAuthUserOptions<UserOptions>
+}
+
+export type BetterAuthDrizzleSchema = Record<string, AnyPgTable>
+
+export interface CreateBetterAuthOptions<
+  UserOptions extends BetterAuthOptions["user"] = BetterAuthOptions["user"],
+  Plugins extends BetterAuthPlugin[] | undefined = BetterAuthPlugin[] | undefined,
+> {
   db?: ReturnType<typeof getDb>
   secret?: string
   baseURL?: string
   basePath?: string
   trustedOrigins?: string[]
-  plugins?: BetterAuthPlugin[]
+  /**
+   * Additional Drizzle tables for Better Auth plugins. The consuming app owns
+   * matching migrations for every table passed here.
+   */
+  extraSchema?: BetterAuthDrizzleSchema
+  plugins?: Plugins
+  user?: UserOptions
   /** Called when a user requests a password reset. If not provided, logs to console. */
   sendResetPassword?: (data: {
     user: { email: string; name: string }
@@ -456,7 +501,10 @@ export interface CreateBetterAuthOptions {
  * Accepts optional overrides for db, secret, baseURL, trustedOrigins.
  * Does NOT depend on Next.js — safe to use in Hono workers, TanStack Start, etc.
  */
-export function createBetterAuth(options: CreateBetterAuthOptions = {}) {
+export function createBetterAuth<
+  const UserOptions extends BetterAuthOptions["user"] = undefined,
+  const Plugins extends BetterAuthPlugin[] | undefined = undefined,
+>(options: CreateBetterAuthOptions<UserOptions, Plugins> = {}) {
   const db = options.db ?? getDb("edge")
   const secret = options.secret ?? getAuthSecret()
   const baseURL =
@@ -470,21 +518,23 @@ export function createBetterAuth(options: CreateBetterAuthOptions = {}) {
     baseURL,
   )
   const extraPlugins = options.plugins ?? []
+  const schema = {
+    user: authUser,
+    session: authSession,
+    account: authAccount,
+    verification: authVerification,
+    apikey: apikeyTable,
+    ...(options.extraSchema ?? {}),
+  } satisfies BetterAuthDrizzleSchema
 
-  return betterAuth({
+  const authOptions = {
     appName: "Voyant",
     baseURL,
     ...(options.basePath ? { basePath: options.basePath } : {}),
     secret,
     database: drizzleAdapter(db, {
       provider: "pg",
-      schema: {
-        user: authUser,
-        session: authSession,
-        account: authAccount,
-        verification: authVerification,
-        apikey: apikeyTable,
-      },
+      schema,
     }),
     emailAndPassword: {
       enabled: true,
@@ -506,10 +556,12 @@ export function createBetterAuth(options: CreateBetterAuthOptions = {}) {
       autoSignInAfterVerification: true,
     },
     user: {
+      ...options.user,
       changeEmail: {
         enabled: true,
+        ...options.user?.changeEmail,
       },
-    },
+    } as ResolvedBetterAuthUserOptions<UserOptions>,
     socialProviders: {
       google: {
         clientId: process.env.GOOGLE_CLIENT_ID || "",
@@ -542,7 +594,7 @@ export function createBetterAuth(options: CreateBetterAuthOptions = {}) {
         },
       }),
       ...extraPlugins,
-    ],
+    ] as ResolvedBetterAuthPlugins<Plugins>,
     databaseHooks: {
       user: {
         create: {
@@ -559,26 +611,15 @@ export function createBetterAuth(options: CreateBetterAuthOptions = {}) {
             }
           },
           after: async (user) => {
-            const nameParts = user.name?.split(" ") ?? []
-            const firstName = nameParts[0] ?? null
-            const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : null
-
             // Single-tenant bootstrap: the very first user to register becomes
             // the super-admin. Runs atomically after the `user` row is
             // inserted, so a simple COUNT(*) = 1 check identifies them.
-            const [countRow] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
-            const isFirstUser = (countRow?.count ?? 0) === 1
-
-            await db
-              .insert(userProfilesTable)
-              .values({
-                id: user.id,
-                firstName,
-                lastName,
-                avatarUrl: user.image ?? null,
-                isSuperAdmin: isFirstUser,
-              })
-              .onConflictDoNothing()
+            await provisionCurrentUserProfile(db, {
+              userId: user.id,
+              name: user.name,
+              image: user.image,
+              isSuperAdmin: await isFirstAuthUser(db),
+            })
           },
         },
       },
@@ -586,5 +627,7 @@ export function createBetterAuth(options: CreateBetterAuthOptions = {}) {
     advanced: {
       useSecureCookies: process.env.NODE_ENV === "production",
     },
-  })
+  } as ResolvedCreateBetterAuthOptions<UserOptions, Plugins>
+
+  return betterAuth<ResolvedCreateBetterAuthOptions<UserOptions, Plugins>>(authOptions)
 }

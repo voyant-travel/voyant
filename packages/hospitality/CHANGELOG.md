@@ -1,5 +1,118 @@
 # @voyantjs/hospitality
 
+## 0.52.1
+
+### Patch Changes
+
+- Updated dependencies [335d277]
+  - @voyantjs/bookings@0.52.1
+  - @voyantjs/catalog@0.52.1
+  - @voyantjs/core@0.52.1
+  - @voyantjs/db@0.52.1
+  - @voyantjs/facilities@0.52.1
+  - @voyantjs/hono@0.52.1
+
+## 0.52.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.52.0
+- @voyantjs/catalog@0.52.0
+- @voyantjs/core@0.52.0
+- @voyantjs/db@0.52.0
+- @voyantjs/facilities@0.52.0
+- @voyantjs/hono@0.52.0
+
+## 0.51.1
+
+### Patch Changes
+
+- @voyantjs/bookings@0.51.1
+- @voyantjs/catalog@0.51.1
+- @voyantjs/core@0.51.1
+- @voyantjs/db@0.51.1
+- @voyantjs/facilities@0.51.1
+- @voyantjs/hono@0.51.1
+
+## 0.51.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.51.0
+- @voyantjs/catalog@0.51.0
+- @voyantjs/core@0.51.0
+- @voyantjs/db@0.51.0
+- @voyantjs/facilities@0.51.0
+- @voyantjs/hono@0.51.0
+
+## 0.50.8
+
+### Patch Changes
+
+- Updated dependencies [f35014f]
+  - @voyantjs/bookings@0.50.8
+  - @voyantjs/catalog@0.50.8
+  - @voyantjs/core@0.50.8
+  - @voyantjs/db@0.50.8
+  - @voyantjs/facilities@0.50.8
+  - @voyantjs/hono@0.50.8
+
+## 0.50.7
+
+### Patch Changes
+
+- @voyantjs/bookings@0.50.7
+- @voyantjs/catalog@0.50.7
+- @voyantjs/core@0.50.7
+- @voyantjs/db@0.50.7
+- @voyantjs/facilities@0.50.7
+- @voyantjs/hono@0.50.7
+
+## 0.50.6
+
+### Patch Changes
+
+- Updated dependencies [c14f0a8]
+  - @voyantjs/bookings@0.50.6
+  - @voyantjs/catalog@0.50.6
+  - @voyantjs/core@0.50.6
+  - @voyantjs/db@0.50.6
+  - @voyantjs/facilities@0.50.6
+  - @voyantjs/hono@0.50.6
+
+## 0.50.5
+
+### Patch Changes
+
+- @voyantjs/bookings@0.50.5
+- @voyantjs/catalog@0.50.5
+- @voyantjs/core@0.50.5
+- @voyantjs/db@0.50.5
+- @voyantjs/facilities@0.50.5
+- @voyantjs/hono@0.50.5
+
+## 0.50.4
+
+### Patch Changes
+
+- @voyantjs/bookings@0.50.4
+- @voyantjs/catalog@0.50.4
+- @voyantjs/core@0.50.4
+- @voyantjs/db@0.50.4
+- @voyantjs/facilities@0.50.4
+- @voyantjs/hono@0.50.4
+
+## 0.50.3
+
+### Patch Changes
+
+- @voyantjs/bookings@0.50.3
+- @voyantjs/catalog@0.50.3
+- @voyantjs/core@0.50.3
+- @voyantjs/db@0.50.3
+- @voyantjs/facilities@0.50.3
+- @voyantjs/hono@0.50.3
+
 ## 0.50.2
 
 ### Patch Changes

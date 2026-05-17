@@ -34,9 +34,17 @@ export type AllocationUiMessages = Record<string, unknown> & {
   resourceLabel: string
   resourceCapacity: string
   createResource: string
+  editResource: string
+  saveResource: string
+  updateResourceFailed: string
   cancel: string
   unallocated: string
   unallocatedDescription: string
+  unallocatedEmpty: string
+  assignTraveler: string
+  assignTravelerSearch: string
+  assignTravelerEmpty: string
+  resourceOtherGroup: string
   rooms: string
   resources: string
   vehicleSeats: string
@@ -54,6 +62,13 @@ export type AllocationUiMessages = Record<string, unknown> & {
   remove: string
   overCapacity: string
   dropHere: string
+  slotCapacityLabel: string
+  slotCapacityUnlimited: string
+  resourceCapacityLabel: string
+  resourceCapacityFits: string
+  resourceCapacityExact: string
+  resourceCapacityOver: string
+  overCapacityWarning: string
   noRooms: string
   noResources: string
   noSeats: string
@@ -76,7 +91,7 @@ export type AllocationUiMessages = Record<string, unknown> & {
 export const allocationUiEn = {
   pageTitle: "Allocation",
   loading: "Loading allocation...",
-  empty: "No travelers on this departure yet.",
+  empty: "Allocation data unavailable for this departure.",
   back: "Back",
   addRoom: "Add room",
   addResource: "Add resource",
@@ -109,9 +124,17 @@ export const allocationUiEn = {
   resourceLabel: "Resource label",
   resourceCapacity: "Capacity",
   createResource: "Create resource",
+  editResource: "Edit resource",
+  saveResource: "Save",
+  updateResourceFailed: "Could not update resource.",
   cancel: "Cancel",
   unallocated: "Unallocated",
   unallocatedDescription: "Travelers not assigned to this resource kind.",
+  unallocatedEmpty: "Everyone has been assigned.",
+  assignTraveler: "Assign",
+  assignTravelerSearch: "Search traveler...",
+  assignTravelerEmpty: "No unallocated travelers.",
+  resourceOtherGroup: "Other",
   rooms: "Rooms",
   resources: "Resources",
   vehicleSeats: "Vehicle seats",
@@ -129,6 +152,13 @@ export const allocationUiEn = {
   remove: "Remove",
   overCapacity: "Resource is full",
   dropHere: "Drop traveler here",
+  slotCapacityLabel: "Slot pax",
+  slotCapacityUnlimited: "Unlimited",
+  resourceCapacityLabel: "Resource capacity",
+  resourceCapacityFits: "fits in slot",
+  resourceCapacityExact: "matches slot",
+  resourceCapacityOver: "over slot cap",
+  overCapacityWarning: "Resource capacity exceeds the slot's pax cap.",
   noRooms: "No rooms have been added for this slot.",
   noResources: "No resources have been added for this slot.",
   noSeats: "No vehicle seats have been generated for this slot.",
@@ -151,7 +181,7 @@ export const allocationUiEn = {
 export const allocationUiRo = {
   pageTitle: "Alocare",
   loading: "Se incarca alocarea...",
-  empty: "Nu exista calatori pe aceasta plecare.",
+  empty: "Datele de alocare nu sunt disponibile pentru aceasta plecare.",
   back: "Inapoi",
   addRoom: "Adauga camera",
   addResource: "Adauga resursa",
@@ -184,9 +214,17 @@ export const allocationUiRo = {
   resourceLabel: "Eticheta resursa",
   resourceCapacity: "Capacitate",
   createResource: "Creeaza resursa",
+  editResource: "Editeaza resursa",
+  saveResource: "Salveaza",
+  updateResourceFailed: "Resursa nu a putut fi actualizata.",
   cancel: "Anuleaza",
   unallocated: "Nealocati",
   unallocatedDescription: "Calatori fara acest tip de resursa alocat.",
+  unallocatedEmpty: "Toti calatorii sunt alocati.",
+  assignTraveler: "Aloca",
+  assignTravelerSearch: "Cauta calator...",
+  assignTravelerEmpty: "Nu exista calatori nealocati.",
+  resourceOtherGroup: "Altele",
   rooms: "Camere",
   resources: "Resurse",
   vehicleSeats: "Locuri vehicul",
@@ -204,6 +242,13 @@ export const allocationUiRo = {
   remove: "Scoate",
   overCapacity: "Resursa este plina",
   dropHere: "Trage calatorul aici",
+  slotCapacityLabel: "Pax slot",
+  slotCapacityUnlimited: "Nelimitat",
+  resourceCapacityLabel: "Capacitate resurse",
+  resourceCapacityFits: "incape in slot",
+  resourceCapacityExact: "egal cu slotul",
+  resourceCapacityOver: "depaseste slotul",
+  overCapacityWarning: "Capacitatea resurselor depaseste limita de pax a slotului.",
   noRooms: "Nu exista camere adaugate pentru acest slot.",
   noResources: "Nu exista resurse adaugate pentru acest slot.",
   noSeats: "Nu exista locuri generate pentru acest slot.",

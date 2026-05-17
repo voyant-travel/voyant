@@ -1,5 +1,75 @@
 # @voyantjs/promotions-react
 
+## 0.52.1
+
+### Patch Changes
+
+- @voyantjs/promotions@0.52.1
+- @voyantjs/react@0.52.1
+
+## 0.52.0
+
+### Patch Changes
+
+- @voyantjs/promotions@0.52.0
+- @voyantjs/react@0.52.0
+
+## 0.51.1
+
+### Patch Changes
+
+- @voyantjs/promotions@0.51.1
+- @voyantjs/react@0.51.1
+
+## 0.51.0
+
+### Patch Changes
+
+- @voyantjs/promotions@0.51.0
+- @voyantjs/react@0.51.0
+
+## 0.50.8
+
+### Patch Changes
+
+- @voyantjs/promotions@0.50.8
+- @voyantjs/react@0.50.8
+
+## 0.50.7
+
+### Patch Changes
+
+- @voyantjs/promotions@0.50.7
+- @voyantjs/react@0.50.7
+
+## 0.50.6
+
+### Patch Changes
+
+- @voyantjs/promotions@0.50.6
+- @voyantjs/react@0.50.6
+
+## 0.50.5
+
+### Patch Changes
+
+- @voyantjs/promotions@0.50.5
+- @voyantjs/react@0.50.5
+
+## 0.50.4
+
+### Patch Changes
+
+- @voyantjs/promotions@0.50.4
+- @voyantjs/react@0.50.4
+
+## 0.50.3
+
+### Patch Changes
+
+- @voyantjs/promotions@0.50.3
+- @voyantjs/react@0.50.3
+
 ## 0.50.2
 
 ### Patch Changes

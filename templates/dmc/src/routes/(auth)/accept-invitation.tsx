@@ -12,14 +12,18 @@ import { useState } from "react"
 import { z } from "zod"
 
 import { authClient } from "@/lib/auth"
-import { getCurrentUser } from "@/lib/current-user"
+import { cloudAuthStartHref, getBootstrapStatus, getCurrentUser } from "@/lib/current-user"
 
 export const Route = createFileRoute("/(auth)/accept-invitation")({
   validateSearch: z.object({
     id: z.string(),
   }),
   loader: async ({ location }) => {
-    const user = await getCurrentUser()
+    const [user, bootstrap] = await Promise.all([getCurrentUser(), getBootstrapStatus()])
+
+    if (bootstrap.authMode === "voyant-cloud") {
+      throw redirect({ href: cloudAuthStartHref(location.href) })
+    }
 
     if (!user) {
       throw redirect({

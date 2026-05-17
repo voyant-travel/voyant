@@ -47,7 +47,7 @@ const baseRequest = (draft?: unknown): ComputeQuoteRequest => ({
 describe("createProductsBookingHandler.computeQuote", () => {
   it("falls back to product.sellAmountCents × pax when no resolver hooks are wired", async () => {
     const handler = createProductsBookingHandler({
-      quickCreate: vi.fn(),
+      createBooking: vi.fn(),
     })
 
     const result = await handler.computeQuote(
@@ -94,7 +94,7 @@ describe("createProductsBookingHandler.computeQuote", () => {
     const loadSlotDate = vi.fn(async () => "2026-06-21")
 
     const handler = createProductsBookingHandler({
-      quickCreate: vi.fn(),
+      createBooking: vi.fn(),
       loadResolvedOptionPrice,
       loadSlotDate,
     })
@@ -127,7 +127,7 @@ describe("createProductsBookingHandler.computeQuote", () => {
 
   it("uses baseSellAmountCents × pax for per-booking rules with no unit prices", async () => {
     const handler = createProductsBookingHandler({
-      quickCreate: vi.fn(),
+      createBooking: vi.fn(),
       loadSlotDate: async () => "2026-07-15",
       loadResolvedOptionPrice: async () => ({
         baseSellAmountCents: 18000,
@@ -156,7 +156,7 @@ describe("createProductsBookingHandler.computeQuote", () => {
 
   it("falls through to product.sellAmountCents when the resolver returns null", async () => {
     const handler = createProductsBookingHandler({
-      quickCreate: vi.fn(),
+      createBooking: vi.fn(),
       loadSlotDate: async () => "2026-12-01",
       loadResolvedOptionPrice: async () => null,
     })
@@ -180,7 +180,7 @@ describe("createProductsBookingHandler.computeQuote", () => {
     const loadResolvedOptionPrice = vi.fn(async (): Promise<ResolvedOptionPrice | null> => null)
 
     const handler = createProductsBookingHandler({
-      quickCreate: vi.fn(),
+      createBooking: vi.fn(),
       loadResolvedOptionPrice,
       loadSlotDate: async () => "2026-06-21",
     })
@@ -204,7 +204,7 @@ describe("createProductsBookingHandler.computeQuote", () => {
     )
 
     const handler = createProductsBookingHandler({
-      quickCreate: vi.fn(),
+      createBooking: vi.fn(),
       loadResolvedOptionPrice,
     })
 
@@ -231,12 +231,12 @@ describe("createProductsBookingHandler.computeQuote", () => {
 
 describe("createProductsBookingHandler.commit", () => {
   it("uses the gross inclusive-tax total for the booking sell amount override", async () => {
-    const quickCreate = vi.fn(async () => ({
+    const createBooking = vi.fn(async () => ({
       status: "ok" as const,
       bookingId: "book_1",
       bookingNumber: "BK-1",
     }))
-    const handler = createProductsBookingHandler({ quickCreate })
+    const handler = createProductsBookingHandler({ createBooking })
 
     const request: CommitOwnedRequest = {
       entityModule: "products",
@@ -269,7 +269,7 @@ describe("createProductsBookingHandler.commit", () => {
     const result = await handler.commit(makeCtx([product]), request)
 
     expect(result.status).toBe("held")
-    expect(quickCreate).toHaveBeenCalledWith(
+    expect(createBooking).toHaveBeenCalledWith(
       expect.objectContaining({
         productId: product.id,
         sellAmountCentsOverride: 10000,

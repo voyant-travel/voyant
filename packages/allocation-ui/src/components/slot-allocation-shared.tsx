@@ -5,24 +5,29 @@ import type {
   AllocationManifestTraveler,
   AllocationResource,
 } from "@voyantjs/availability-react"
-import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from "@voyantjs/ui/components"
+import { Badge, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { Accessibility, CircleAlert, Crown, History, UtensilsCrossed } from "lucide-react"
-import { type DragEvent, type ReactNode, useState } from "react"
+import type { ReactNode } from "react"
 
 import { useAllocationUiMessagesOrDefault } from "../i18n/index.js"
 import { flagString, type ValidationIssue } from "./slot-allocation-model.js"
 
-export function DropColumn({
+/**
+ * Passive grouping container used by the unallocated column and other
+ * card-shaped sections. Used to be a drop target during the drag-and-
+ * drop era; switched to click-to-allocate, so it's now a plain layout
+ * primitive. Kept as a named export so render-prop consumers can
+ * compose new sections without re-exporting Card pieces themselves.
+ */
+export function AllocationColumn({
   id,
   icon,
   title,
   description,
   count,
   capacity,
-  disabled,
   action,
   children,
-  onDropTraveler,
 }: {
   id: string
   icon: ReactNode
@@ -30,37 +35,11 @@ export function DropColumn({
   description: string
   count: number
   capacity: number
-  disabled?: boolean
   action?: ReactNode
   children: ReactNode
-  onDropTraveler: (travelerId: string) => void
 }) {
-  const [over, setOver] = useState(false)
-
-  function onDrop(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault()
-    setOver(false)
-    if (disabled) return
-    const travelerId = event.dataTransfer.getData("text/plain")
-    if (travelerId) onDropTraveler(travelerId)
-  }
-
   return (
-    <Card
-      id={id}
-      className={cn(
-        "min-h-40 transition-colors",
-        over && !disabled
-          ? "border-primary bg-primary/5" /* i18n-literal-ok CSS class token */
-          : null,
-      )}
-      onDragOver={(event) => {
-        event.preventDefault()
-        if (!disabled) setOver(true)
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={onDrop}
-    >
+    <Card id={id} className="min-h-40">
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
         <div>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -93,17 +72,7 @@ export function TravelerTile({
   const messages = useAllocationUiMessagesOrDefault()
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: issue #696; the tile can wrap custom action controls, so it cannot be a button.
-    <div
-      draggable
-      role="button"
-      tabIndex={0}
-      onDragStart={(event) => {
-        event.dataTransfer.effectAllowed = "move"
-        event.dataTransfer.setData("text/plain", traveler.id)
-      }}
-      className="group flex cursor-grab items-start justify-between gap-3 rounded-md border bg-background p-3 text-sm shadow-sm active:cursor-grabbing"
-    >
+    <div className="group flex items-start justify-between gap-3 rounded-md border bg-background p-3 text-sm shadow-sm">
       <div className="min-w-0">
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           {traveler.isLeadTraveler ? (

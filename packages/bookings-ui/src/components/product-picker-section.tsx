@@ -25,6 +25,7 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+import { productMatchesPickerSearch } from "./booking-create-utils.js"
 
 const OPTION_NONE = "__none__"
 
@@ -41,6 +42,8 @@ export interface ProductPickerSectionProps {
   enabled?: boolean
   /** When true, hide the product picker and fix the productId (e.g., launched from a product page). */
   lockProduct?: boolean
+  /** When false, product options are selected downstream as quantities instead of a single global choice. */
+  showOptionPicker?: boolean
   labels?: {
     product?: string
     productSearchPlaceholder?: string
@@ -60,9 +63,11 @@ export function ProductPickerSection({
   onChange,
   enabled = true,
   lockProduct = false,
+  showOptionPicker = true,
   labels,
 }: ProductPickerSectionProps) {
   const [productSearch, setProductSearch] = React.useState("")
+  const cachedProductsRef = React.useRef(new Map<string, ProductRecord>())
   const messages = useBookingsUiMessagesOrDefault()
   const merged = { ...messages.productPickerSection.labels, ...labels }
 
@@ -76,9 +81,10 @@ export function ProductPickerSection({
   })
 
   const products = React.useMemo(() => {
-    const map = new Map<string, ProductRecord>()
+    const map = new Map(cachedProductsRef.current)
     for (const product of productsData?.data ?? []) map.set(product.id, product)
     if (selectedProductQuery.data) map.set(selectedProductQuery.data.id, selectedProductQuery.data)
+    cachedProductsRef.current = map
     return Array.from(map.values())
   }, [productsData?.data, selectedProductQuery.data])
 
@@ -86,7 +92,12 @@ export function ProductPickerSection({
     () => new Map(products.map((product) => [product.id, product])),
     [products],
   )
-  const selectedProductLabel = value.productId ? (productMap.get(value.productId)?.name ?? "") : ""
+  const resolveProductLabel = React.useCallback(
+    (productId: string) =>
+      productMap.get(productId)?.name ?? cachedProductsRef.current.get(productId)?.name ?? "",
+    [productMap],
+  )
+  const selectedProductLabel = value.productId ? resolveProductLabel(value.productId) : ""
   const [productInputValue, setProductInputValue] = React.useState(selectedProductLabel)
 
   React.useEffect(() => {
@@ -96,7 +107,7 @@ export function ProductPickerSection({
   const { data: optionsData } = useProductOptions({
     productId: value.productId || undefined,
     limit: 50,
-    enabled: enabled && Boolean(value.productId),
+    enabled: enabled && showOptionPicker && Boolean(value.productId),
   })
   const options = optionsData?.data ?? []
 
@@ -113,7 +124,9 @@ export function ProductPickerSection({
             inputValue={productInputValue}
             autoHighlight
             disabled={!enabled}
-            itemToStringValue={(id) => productMap.get(id as string)?.name ?? ""}
+            filter={(id, query) => productMatchesPickerSearch(productMap.get(id as string), query)}
+            itemToStringLabel={(id) => resolveProductLabel(id as string) || (id as string)}
+            itemToStringValue={(id) => id as string}
             onInputValueChange={(next) => {
               setProductInputValue(next)
               setProductSearch(next)
@@ -122,7 +135,7 @@ export function ProductPickerSection({
             onValueChange={(next) => {
               const productId = (next as string | null) ?? ""
               onChange({ productId, optionId: null })
-              setProductInputValue(productId ? (productMap.get(productId)?.name ?? "") : "")
+              setProductInputValue(productId ? resolveProductLabel(productId) : "")
             }}
           >
             <ComboboxInput
@@ -157,7 +170,7 @@ export function ProductPickerSection({
         </div>
       )}
 
-      {value.productId && options.length > 0 && (
+      {showOptionPicker && value.productId && options.length > 0 && (
         <div className="flex flex-col gap-2">
           <Label>{merged.option}</Label>
           <Select

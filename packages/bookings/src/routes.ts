@@ -1094,6 +1094,7 @@ export const bookingRoutes = new Hono<Env>()
     const snapshot = await resolveSessionPricingSnapshot(c.get("db"), body.productId, {
       optionId: body.optionId ?? undefined,
       catalogId: body.catalogId ?? undefined,
+      requirePublicProduct: false,
     })
     if (!snapshot) {
       return c.json({ error: "Pricing unavailable for this selection" }, 404)

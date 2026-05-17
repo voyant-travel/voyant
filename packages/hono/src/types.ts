@@ -9,6 +9,7 @@ import type {
   VoyantAuthContext,
   VoyantPermission,
 } from "@voyantjs/core"
+import type { SelectApikey } from "@voyantjs/db/schema/iam"
 import type { KVStore } from "@voyantjs/utils/cache"
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http"
 import type { NeonDatabase as NeonWsDatabase } from "drizzle-orm/neon-serverless"
@@ -122,6 +123,11 @@ export interface VoyantAuthPermissionArgs<TBindings extends VoyantBindings = Voy
   auth: VoyantRequestAuthContext
 }
 
+export interface VoyantAuthApiKeyValidationArgs<TBindings extends VoyantBindings = VoyantBindings>
+  extends VoyantAuthResolveArgs<TBindings> {
+  apiKey: SelectApikey
+}
+
 export interface VoyantAuthIntegration<TBindings extends VoyantBindings = VoyantBindings> {
   handler?: (env: TBindings) => {
     fetch: (
@@ -143,6 +149,7 @@ export interface VoyantAuthIntegration<TBindings extends VoyantBindings = Voyant
     args: VoyantAuthResolveArgs<TBindings>,
   ) => Promise<VoyantRequestAuthContext | null> | VoyantRequestAuthContext | null
   hasPermission?: (args: VoyantAuthPermissionArgs<TBindings>) => Promise<boolean> | boolean
+  validateApiKey?: (args: VoyantAuthApiKeyValidationArgs<TBindings>) => Promise<boolean> | boolean
 }
 
 export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindings> {

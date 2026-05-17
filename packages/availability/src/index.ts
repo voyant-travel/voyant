@@ -74,6 +74,18 @@ export {
   sharingGroupLabels,
 } from "./schema.js"
 export {
+  getSlotResourceAvailability,
+  getSlotsResourceAvailability,
+  type PlannedAllocation,
+  type ResourceCapacityViolation,
+  type SlotResourceAvailability,
+  validateSlotAllocationCapacity,
+} from "./service-allocation.js"
+export {
+  type MaterializeSlotResourcesFromTemplatesOptions,
+  materializeSlotResourcesFromTemplateDefaults,
+} from "./service-allocation-automation.js"
+export {
   allocationExportFilename,
   buildAllocationPassengersCsv,
   buildAllocationRoomingCsv,

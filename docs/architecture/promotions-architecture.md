@@ -137,7 +137,7 @@ export interface QuoteEntityDeps {
 }
 ```
 
-**Commit-time** (async, side-effect-only): a `booking.confirmed` event subscriber, mirroring the existing `captureSnapshotGraph` pattern in the operator catalog-bridge. **No `BookEntityDeps` hook**. The reason: `bookEntity` (`packages/catalog/src/booking-engine/book.ts:175-220`) does sequential writes (snapshot capture, mark-quote-consumed) without an enclosing `db.transaction(...)`, and the owned-product path opens its own transaction in `quickCreate` (`packages/finance/src/service-bookings-quick-create.ts:218`). A hook claiming "atomic with commit" would be misleading — there is no single commit transaction to be atomic with.
+**Commit-time** (async, side-effect-only): a `booking.confirmed` event subscriber, mirroring the existing `captureSnapshotGraph` pattern in the operator catalog-bridge. **No `BookEntityDeps` hook**. The reason: `bookEntity` (`packages/catalog/src/booking-engine/book.ts:175-220`) does sequential writes (snapshot capture, mark-quote-consumed) without an enclosing `db.transaction(...)`, and the owned-product path opens its own transaction in `createBooking` (`packages/finance/src/service-booking-create.ts`). A hook claiming "atomic with commit" would be misleading — there is no single commit transaction to be atomic with.
 
 The subscriber pattern matches reality:
 
@@ -559,7 +559,7 @@ export function createBookingConfirmedRedemptionSubscriber(env: WorkersEnv) {
 
 #### 7.3.1. Honest about what this guarantees
 
-`bookEntity` (`packages/catalog/src/booking-engine/book.ts:175`) does sequential writes — `captureSnapshot` then `markQuoteConsumed` — without an enclosing `db.transaction(...)`. The owned-product `quickCreate` path opens its own transaction in `packages/finance/src/service-bookings-quick-create.ts:218`. There is **no single commit transaction** to be atomic with. An earlier draft of this doc claimed "atomic with commit" via a `BookEntityDeps` hook; that was wrong.
+`bookEntity` (`packages/catalog/src/booking-engine/book.ts:175`) does sequential writes — `captureSnapshot` then `markQuoteConsumed` — without an enclosing `db.transaction(...)`. The owned-product `createBooking` path opens its own transaction in `packages/finance/src/service-booking-create.ts`. There is **no single commit transaction** to be atomic with. An earlier draft of this doc claimed "atomic with commit" via a `BookEntityDeps` hook; that was wrong.
 
 The subscriber pattern accepts the trade-off:
 
@@ -826,7 +826,7 @@ Two threads needed explicit user sign-off because they were the largest design f
 
 **Decision: keep the subscriber pattern.** Promotions does not refactor `bookEntity`'s commit path.
 
-**Today**: `bookEntity` does sequential writes without a single enclosing `db.transaction(...)`; the owned `quickCreate` path opens its own transaction in `packages/finance/src/service-bookings-quick-create.ts:218`. This affected the redemption-recording design — we picked the subscriber pattern (§7.3) instead of an inline hook because there's no coherent transaction to be atomic with.
+**Today**: `bookEntity` does sequential writes without a single enclosing `db.transaction(...)`; the owned `createBooking` path opens its own transaction in `packages/finance/src/service-booking-create.ts`. This affected the redemption-recording design — we picked the subscriber pattern (§7.3) instead of an inline hook because there's no coherent transaction to be atomic with.
 
 **Open question for the user**:
 - (a) Keep as-is. Promotions' subscriber pattern is correct for current `bookEntity` reality. If a permanently-failing subscriber is a concern, add a periodic reconciliation job (out of scope for v1).

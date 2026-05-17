@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/db",
-  "version": "0.50.2",
+  "version": "0.52.1",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -29,6 +29,7 @@
     "./schema/iam": "./src/schema/iam/index.ts",
     "./schema/iam/apikey": "./src/schema/iam/apikey.ts",
     "./schema/iam/auth": "./src/schema/iam/auth.ts",
+    "./schema/iam/cloud_auth": "./src/schema/iam/cloud_auth.ts",
     "./schema/iam/invitations": "./src/schema/iam/invitations.ts",
     "./schema/iam/kms": "./src/schema/iam/kms.ts",
     "./schema/iam/roles": "./src/schema/iam/roles.ts",
@@ -158,6 +159,11 @@
         "types": "./dist/schema/iam/auth.d.ts",
         "import": "./dist/schema/iam/auth.js",
         "default": "./dist/schema/iam/auth.js"
+      },
+      "./schema/iam/cloud_auth": {
+        "types": "./dist/schema/iam/cloud_auth.d.ts",
+        "import": "./dist/schema/iam/cloud_auth.js",
+        "default": "./dist/schema/iam/cloud_auth.js"
       },
       "./schema/iam/invitations": {
         "types": "./dist/schema/iam/invitations.d.ts",

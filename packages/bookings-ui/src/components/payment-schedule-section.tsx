@@ -1,9 +1,19 @@
 "use client"
 
-import { Button, Label } from "@voyantjs/ui/components"
+import {
+  Button,
+  Checkbox,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@voyantjs/ui/components"
 import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
-import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
 export type PaymentScheduleMode = "unpaid" | "full" | "advance" | "split"
 
@@ -19,6 +29,22 @@ export interface PaymentScheduleValue {
   splitFirstDueDate: string | null
   splitSecondAmountCents: number | null
   splitSecondDueDate: string | null
+  fullAlreadyPaid: boolean
+  fullPaymentDate: string | null
+  fullPaymentMethod: string
+  fullPaymentReference: string
+  advanceAlreadyPaid: boolean
+  advancePaymentDate: string | null
+  advancePaymentMethod: string
+  advancePaymentReference: string
+  splitFirstAlreadyPaid: boolean
+  splitFirstPaymentDate: string | null
+  splitFirstPaymentMethod: string
+  splitFirstPaymentReference: string
+  splitSecondAlreadyPaid: boolean
+  splitSecondPaymentDate: string | null
+  splitSecondPaymentMethod: string
+  splitSecondPaymentReference: string
 }
 
 export const emptyPaymentScheduleValue: PaymentScheduleValue = {
@@ -30,6 +56,22 @@ export const emptyPaymentScheduleValue: PaymentScheduleValue = {
   splitFirstDueDate: null,
   splitSecondAmountCents: null,
   splitSecondDueDate: null,
+  fullAlreadyPaid: false,
+  fullPaymentDate: null,
+  fullPaymentMethod: "bank_transfer",
+  fullPaymentReference: "",
+  advanceAlreadyPaid: false,
+  advancePaymentDate: null,
+  advancePaymentMethod: "bank_transfer",
+  advancePaymentReference: "",
+  splitFirstAlreadyPaid: false,
+  splitFirstPaymentDate: null,
+  splitFirstPaymentMethod: "bank_transfer",
+  splitFirstPaymentReference: "",
+  splitSecondAlreadyPaid: false,
+  splitSecondPaymentDate: null,
+  splitSecondPaymentMethod: "bank_transfer",
+  splitSecondPaymentReference: "",
 }
 
 export interface PaymentScheduleSectionProps {
@@ -55,6 +97,13 @@ export interface PaymentScheduleSectionProps {
     secondInstallment?: string
     preset5050?: string
     unpaidHint?: string
+    totalDue?: string
+    scheduledTotal?: string
+    remaining?: string
+    alreadyPaid?: string
+    paymentDate?: string
+    paymentMethod?: string
+    paymentReference?: string
   }
 }
 
@@ -86,6 +135,7 @@ export function PaymentScheduleSection({
   labels,
 }: PaymentScheduleSectionProps) {
   const messages = useBookingsUiMessagesOrDefault()
+  const { formatCurrency, formatNumber } = useBookingsUiI18nOrDefault()
   const merged = { ...messages.paymentScheduleSection.labels, ...labels }
   const set = (patch: Partial<PaymentScheduleValue>) => onChange({ ...value, ...patch })
 
@@ -107,9 +157,111 @@ export function PaymentScheduleSection({
     })
   }
 
+  const total = typeof totalAmountCents === "number" ? totalAmountCents : null
+  const scheduledTotal =
+    value.mode === "unpaid"
+      ? 0
+      : value.mode === "full"
+        ? (total ?? 0)
+        : value.mode === "advance"
+          ? (value.advanceAmountCents ?? 0)
+          : (value.splitFirstAmountCents ?? 0) + (value.splitSecondAmountCents ?? 0)
+  const remaining = total === null ? null : Math.max(0, total - scheduledTotal)
+  const formatAmount = (cents: number | null) => {
+    if (cents === null) return "-"
+    return currency
+      ? formatCurrency(cents / 100, currency)
+      : formatNumber(cents / 100, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+  }
+
+  const paymentMethodLabels = messages.bookingPaymentsSummary.paymentMethodLabels
+  const renderPaidFields = (
+    prefix: "full" | "advance" | "splitFirst" | "splitSecond",
+    checked: boolean,
+  ) => {
+    const paymentDateKey = `${prefix}PaymentDate` as keyof PaymentScheduleValue
+    const paymentMethodKey = `${prefix}PaymentMethod` as keyof PaymentScheduleValue
+    const paymentReferenceKey = `${prefix}PaymentReference` as keyof PaymentScheduleValue
+    const checkedKey = `${prefix}AlreadyPaid` as keyof PaymentScheduleValue
+    const checkboxId = `payment-schedule-${prefix}-already-paid`
+
+    return (
+      <div className="flex flex-col gap-2 rounded-md border border-dashed p-2">
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id={checkboxId}
+            checked={checked}
+            onCheckedChange={(next) => set({ [checkedKey]: next === true })}
+          />
+          <Label htmlFor={checkboxId} className="cursor-pointer text-xs">
+            {merged.alreadyPaid}
+          </Label>
+        </div>
+        {checked ? (
+          <div className="grid gap-2 sm:grid-cols-3">
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">{merged.paymentDate}</Label>
+              <DatePicker
+                value={(value[paymentDateKey] as string | null) ?? ""}
+                onChange={(nextValue) => set({ [paymentDateKey]: nextValue })}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">{merged.paymentMethod}</Label>
+              <Select
+                value={(value[paymentMethodKey] as string | null) ?? "bank_transfer"}
+                onValueChange={(nextValue) =>
+                  set({ [paymentMethodKey]: nextValue ?? "bank_transfer" })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(["bank_transfer", "credit_card", "cash", "voucher", "other"] as const).map(
+                    (method) => (
+                      <SelectItem key={method} value={method}>
+                        {paymentMethodLabels[method === "credit_card" ? "card" : method]}
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">{merged.paymentReference}</Label>
+              <Input
+                value={(value[paymentReferenceKey] as string | null) ?? ""}
+                onChange={(event) => set({ [paymentReferenceKey]: event.target.value })}
+              />
+            </div>
+          </div>
+        ) : null}
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-3 rounded-md border p-3">
       <Label>{merged.heading}</Label>
+
+      <div className="grid gap-2 rounded-md bg-muted/40 p-2 text-xs sm:grid-cols-3">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-muted-foreground">{merged.totalDue}</span>
+          <span className="font-medium tabular-nums">{formatAmount(total)}</span>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-muted-foreground">{merged.scheduledTotal}</span>
+          <span className="font-medium tabular-nums">{formatAmount(scheduledTotal)}</span>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-muted-foreground">{merged.remaining}</span>
+          <span className="font-medium tabular-nums">{formatAmount(remaining)}</span>
+        </div>
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         {modes.map((mode) => (
@@ -130,32 +282,38 @@ export function PaymentScheduleSection({
       )}
 
       {value.mode === "full" && (
-        <div className="flex flex-col gap-1">
-          <Label className="text-xs">{merged.dueDate}</Label>
-          <DatePicker
-            value={value.fullDueDate ?? ""}
-            onChange={(nextValue) => set({ fullDueDate: nextValue })}
-          />
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs">{merged.dueDate}</Label>
+            <DatePicker
+              value={value.fullDueDate ?? ""}
+              onChange={(nextValue) => set({ fullDueDate: nextValue })}
+            />
+          </div>
+          {renderPaidFields("full", value.fullAlreadyPaid)}
         </div>
       )}
 
       {value.mode === "advance" && (
-        <div className="grid grid-cols-2 gap-2">
-          <div className="flex flex-col gap-1">
-            <Label className="text-xs">{merged.amount}</Label>
-            <CurrencyInput
-              value={value.advanceAmountCents}
-              onChange={(next) => set({ advanceAmountCents: next })}
-              currency={currency}
-            />
+        <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">{merged.amount}</Label>
+              <CurrencyInput
+                value={value.advanceAmountCents}
+                onChange={(next) => set({ advanceAmountCents: next })}
+                currency={currency}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">{merged.dueDate}</Label>
+              <DatePicker
+                value={value.advanceDueDate ?? ""}
+                onChange={(nextValue) => set({ advanceDueDate: nextValue })}
+              />
+            </div>
           </div>
-          <div className="flex flex-col gap-1">
-            <Label className="text-xs">{merged.dueDate}</Label>
-            <DatePicker
-              value={value.advanceDueDate ?? ""}
-              onChange={(nextValue) => set({ advanceDueDate: nextValue })}
-            />
-          </div>
+          {renderPaidFields("advance", value.advanceAlreadyPaid)}
         </div>
       )}
 
@@ -181,6 +339,7 @@ export function PaymentScheduleSection({
               onChange={(nextValue) => set({ splitFirstDueDate: nextValue })}
             />
           </div>
+          {renderPaidFields("splitFirst", value.splitFirstAlreadyPaid)}
 
           <div className="text-xs font-medium">{merged.secondInstallment}</div>
           <div className="grid grid-cols-2 gap-2">
@@ -195,6 +354,7 @@ export function PaymentScheduleSection({
               onChange={(nextValue) => set({ splitSecondDueDate: nextValue })}
             />
           </div>
+          {renderPaidFields("splitSecond", value.splitSecondAlreadyPaid)}
         </div>
       )}
     </div>

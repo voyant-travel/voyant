@@ -1,5 +1,88 @@
 # @voyantjs/storefront-sdk
 
+## 0.52.1
+
+### Patch Changes
+
+- Updated dependencies [335d277]
+  - @voyantjs/bookings@0.52.1
+  - @voyantjs/checkout@0.52.1
+  - @voyantjs/storefront@0.52.1
+
+## 0.52.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.52.0
+- @voyantjs/checkout@0.52.0
+- @voyantjs/storefront@0.52.0
+
+## 0.51.1
+
+### Patch Changes
+
+- @voyantjs/bookings@0.51.1
+- @voyantjs/checkout@0.51.1
+- @voyantjs/storefront@0.51.1
+
+## 0.51.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.51.0
+- @voyantjs/checkout@0.51.0
+- @voyantjs/storefront@0.51.0
+
+## 0.50.8
+
+### Patch Changes
+
+- Updated dependencies [f35014f]
+  - @voyantjs/bookings@0.50.8
+  - @voyantjs/checkout@0.50.8
+  - @voyantjs/storefront@0.50.8
+
+## 0.50.7
+
+### Patch Changes
+
+- @voyantjs/bookings@0.50.7
+- @voyantjs/checkout@0.50.7
+- @voyantjs/storefront@0.50.7
+
+## 0.50.6
+
+### Patch Changes
+
+- Updated dependencies [c14f0a8]
+  - @voyantjs/bookings@0.50.6
+  - @voyantjs/checkout@0.50.6
+  - @voyantjs/storefront@0.50.6
+
+## 0.50.5
+
+### Patch Changes
+
+- @voyantjs/bookings@0.50.5
+- @voyantjs/checkout@0.50.5
+- @voyantjs/storefront@0.50.5
+
+## 0.50.4
+
+### Patch Changes
+
+- @voyantjs/bookings@0.50.4
+- @voyantjs/checkout@0.50.4
+- @voyantjs/storefront@0.50.4
+
+## 0.50.3
+
+### Patch Changes
+
+- @voyantjs/bookings@0.50.3
+- @voyantjs/checkout@0.50.3
+- @voyantjs/storefront@0.50.3
+
 ## 0.50.2
 
 ### Patch Changes

@@ -27,8 +27,10 @@ export function OrganizationCard({ organization, className, ...props }: Organiza
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-semibold truncate">{organization.name}</div>
-          {organization.industry ? (
-            <div className="text-sm text-muted-foreground truncate">{organization.industry}</div>
+          {organization.industry || organization.vatNumber ? (
+            <div className="text-sm text-muted-foreground truncate">
+              {[organization.industry, organization.vatNumber].filter(Boolean).join(" - ")}
+            </div>
           ) : null}
         </div>
         {organization.relation ? (

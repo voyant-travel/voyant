@@ -1,5 +1,108 @@
 # @voyantjs/hospitality-ui
 
+## 0.52.1
+
+### Patch Changes
+
+- @voyantjs/catalog-react@0.52.1
+- @voyantjs/hospitality-react@0.52.1
+- @voyantjs/i18n@0.52.1
+- @voyantjs/pricing-react@0.52.1
+- @voyantjs/ui@0.52.1
+
+## 0.52.0
+
+### Patch Changes
+
+- @voyantjs/catalog-react@0.52.0
+- @voyantjs/hospitality-react@0.52.0
+- @voyantjs/i18n@0.52.0
+- @voyantjs/pricing-react@0.52.0
+- @voyantjs/ui@0.52.0
+
+## 0.51.1
+
+### Patch Changes
+
+- Updated dependencies [deaacb3]
+  - @voyantjs/catalog-react@0.51.1
+  - @voyantjs/hospitality-react@0.51.1
+  - @voyantjs/i18n@0.51.1
+  - @voyantjs/pricing-react@0.51.1
+  - @voyantjs/ui@0.51.1
+
+## 0.51.0
+
+### Patch Changes
+
+- Updated dependencies [2316791]
+  - @voyantjs/catalog-react@0.51.0
+  - @voyantjs/hospitality-react@0.51.0
+  - @voyantjs/i18n@0.51.0
+  - @voyantjs/pricing-react@0.51.0
+  - @voyantjs/ui@0.51.0
+
+## 0.50.8
+
+### Patch Changes
+
+- @voyantjs/catalog-react@0.50.8
+- @voyantjs/hospitality-react@0.50.8
+- @voyantjs/i18n@0.50.8
+- @voyantjs/pricing-react@0.50.8
+- @voyantjs/ui@0.50.8
+
+## 0.50.7
+
+### Patch Changes
+
+- @voyantjs/catalog-react@0.50.7
+- @voyantjs/hospitality-react@0.50.7
+- @voyantjs/i18n@0.50.7
+- @voyantjs/pricing-react@0.50.7
+- @voyantjs/ui@0.50.7
+
+## 0.50.6
+
+### Patch Changes
+
+- Updated dependencies [c14f0a8]
+  - @voyantjs/catalog-react@0.50.6
+  - @voyantjs/hospitality-react@0.50.6
+  - @voyantjs/i18n@0.50.6
+  - @voyantjs/pricing-react@0.50.6
+  - @voyantjs/ui@0.50.6
+
+## 0.50.5
+
+### Patch Changes
+
+- @voyantjs/catalog-react@0.50.5
+- @voyantjs/hospitality-react@0.50.5
+- @voyantjs/i18n@0.50.5
+- @voyantjs/pricing-react@0.50.5
+- @voyantjs/ui@0.50.5
+
+## 0.50.4
+
+### Patch Changes
+
+- @voyantjs/catalog-react@0.50.4
+- @voyantjs/hospitality-react@0.50.4
+- @voyantjs/i18n@0.50.4
+- @voyantjs/pricing-react@0.50.4
+- @voyantjs/ui@0.50.4
+
+## 0.50.3
+
+### Patch Changes
+
+- @voyantjs/catalog-react@0.50.3
+- @voyantjs/hospitality-react@0.50.3
+- @voyantjs/i18n@0.50.3
+- @voyantjs/pricing-react@0.50.3
+- @voyantjs/ui@0.50.3
+
 ## 0.50.2
 
 ### Patch Changes

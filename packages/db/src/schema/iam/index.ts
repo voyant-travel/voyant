@@ -1,5 +1,6 @@
 export * from "./apikey.js"
 export * from "./auth.js"
+export * from "./cloud_auth.js"
 export * from "./invitations.js"
 export * from "./kms.js"
 export * from "./roles.js"
