@@ -1,6 +1,11 @@
 export { OptionUnitDialog, type OptionUnitDialogProps } from "./components/option-unit-dialog.js"
 export { OptionUnitForm, type OptionUnitFormProps } from "./components/option-unit-form.js"
 export {
+  ProductActionLedgerCard,
+  type ProductActionLedgerCardMessages,
+  type ProductActionLedgerCardProps,
+} from "./components/product-action-ledger-card.js"
+export {
   ProductCategoriesPage,
   type ProductCategoriesPageProps,
 } from "./components/product-categories-page.js"
@@ -44,8 +49,6 @@ export {
   type ProductDetailPageSlots,
   ProductDetailSidebar,
   type ProductDetailSidebarProps,
-  ProductItinerarySection,
-  type ProductItinerarySectionProps,
   ProductOverviewCard,
   type ProductOverviewCardProps,
 } from "./components/product-detail-page.js"
@@ -65,6 +68,10 @@ export {
   ProductItineraryDialog,
   type ProductItineraryDialogProps,
 } from "./components/product-itinerary-dialog.js"
+export {
+  ProductItinerarySection,
+  type ProductItinerarySectionProps,
+} from "./components/product-itinerary-section.js"
 export { ProductList, type ProductListProps } from "./components/product-list.js"
 export {
   ProductMediaDialog,

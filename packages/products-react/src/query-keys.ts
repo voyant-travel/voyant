@@ -73,6 +73,17 @@ export interface ProductMediaListFilters {
   offset?: number | undefined
 }
 
+export interface ProductActionLedgerListCursor {
+  occurredAt: string
+  id: string
+}
+
+export interface ProductActionLedgerListFilters {
+  cursorOccurredAt?: string | undefined
+  cursorId?: string | undefined
+  limit?: number | undefined
+}
+
 export const productsQueryKeys = {
   all: ["voyant", "products"] as const,
 
@@ -80,6 +91,8 @@ export const productsQueryKeys = {
   productsList: (filters: ProductsListFilters) =>
     [...productsQueryKeys.products(), "list", filters] as const,
   product: (id: string) => [...productsQueryKeys.products(), "detail", id] as const,
+  productActionLedger: (id: string, filters: ProductActionLedgerListFilters = {}) =>
+    [...productsQueryKeys.product(id), "action-ledger", filters] as const,
 
   productTypes: () => [...productsQueryKeys.all, "product-types"] as const,
   productTypesList: (filters: ProductTypesListFilters) =>
