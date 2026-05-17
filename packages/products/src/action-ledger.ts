@@ -7,7 +7,7 @@ import { actionLedgerService } from "@voyantjs/action-ledger/service"
 import { parseQuery } from "@voyantjs/hono"
 import type { Context } from "hono"
 import { z } from "zod"
-import type { Env } from "./routes.js"
+import type { Env } from "./route-env.js"
 import type { Product } from "./schema.js"
 import { productsService } from "./service.js"
 
