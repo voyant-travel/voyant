@@ -340,11 +340,17 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .post("/payment-authorizations", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     return c.json(
       {
         data: await financeService.createPaymentAuthorization(
           c.get("db"),
           await parseJsonBody(c, insertPaymentAuthorizationSchema),
+          {
+            eventBus: runtime?.eventBus,
+            actionLedgerContext: getActionLedgerRequestContext(c),
+            actionLedgerAuthorizationSource: "finance.payment_authorization.route",
+          },
         ),
       },
       201,
@@ -358,17 +364,28 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .patch("/payment-authorizations/:id", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.updatePaymentAuthorization(
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, updatePaymentAuthorizationSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.payment_authorization.route",
+      },
     )
     if (!row) return c.json({ error: "Payment authorization not found" }, 404)
     return c.json({ data: row })
   })
 
   .delete("/payment-authorizations/:id", async (c) => {
-    const row = await financeService.deletePaymentAuthorization(c.get("db"), c.req.param("id"))
+    const runtime = getFinanceRouteRuntime(c)
+    const row = await financeService.deletePaymentAuthorization(c.get("db"), c.req.param("id"), {
+      eventBus: runtime?.eventBus,
+      actionLedgerContext: getActionLedgerRequestContext(c),
+      actionLedgerAuthorizationSource: "finance.payment_authorization.route",
+    })
     if (!row) return c.json({ error: "Payment authorization not found" }, 404)
     return c.json({ success: true })
   })
@@ -383,11 +400,17 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .post("/payment-captures", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     return c.json(
       {
         data: await financeService.createPaymentCapture(
           c.get("db"),
           await parseJsonBody(c, insertPaymentCaptureSchema),
+          {
+            eventBus: runtime?.eventBus,
+            actionLedgerContext: getActionLedgerRequestContext(c),
+            actionLedgerAuthorizationSource: "finance.payment_capture.route",
+          },
         ),
       },
       201,
@@ -401,17 +424,28 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .patch("/payment-captures/:id", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
     const row = await financeService.updatePaymentCapture(
       c.get("db"),
       c.req.param("id"),
       await parseJsonBody(c, updatePaymentCaptureSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.payment_capture.route",
+      },
     )
     if (!row) return c.json({ error: "Payment capture not found" }, 404)
     return c.json({ data: row })
   })
 
   .delete("/payment-captures/:id", async (c) => {
-    const row = await financeService.deletePaymentCapture(c.get("db"), c.req.param("id"))
+    const runtime = getFinanceRouteRuntime(c)
+    const row = await financeService.deletePaymentCapture(c.get("db"), c.req.param("id"), {
+      eventBus: runtime?.eventBus,
+      actionLedgerContext: getActionLedgerRequestContext(c),
+      actionLedgerAuthorizationSource: "finance.payment_capture.route",
+    })
     if (!row) return c.json({ error: "Payment capture not found" }, 404)
     return c.json({ success: true })
   })

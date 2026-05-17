@@ -11,6 +11,10 @@ import {
   buildInvoiceLineItemDeleteActionLedgerInput,
   buildInvoiceLineItemUpdateActionLedgerInput,
   buildInvoiceUpdateActionLedgerInput,
+  buildPaymentAuthorizationCreateActionLedgerInput,
+  buildPaymentAuthorizationUpdateActionLedgerInput,
+  buildPaymentCaptureCreateActionLedgerInput,
+  buildPaymentCaptureDeleteActionLedgerInput,
   buildPaymentCompletedEvent,
   buildPaymentSessionCompletionActionLedgerInput,
   buildPaymentSessionCreateActionLedgerInput,
@@ -252,6 +256,168 @@ describe("payment session events", () => {
         commandInputRef: "payment_session:psess_123:fail",
         commandResultRef: "payment_session:psess_123",
         summary: "Payment session psess_123 marked as failed",
+        reversalKind: "none",
+      },
+    })
+  })
+
+  it("builds invoice-targeted action ledger input for payment authorization creation", async () => {
+    const ledgerInput = await buildPaymentAuthorizationCreateActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        authorization: {
+          id: "pauth_123",
+          bookingId: null,
+          orderId: null,
+          invoiceId: "inv_123",
+          bookingGuaranteeId: null,
+          amountCents: 25000,
+          currency: "USD",
+          provider: "netopia",
+          externalAuthorizationId: "auth-ext-123",
+          status: "authorized",
+        } as never,
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.payment_authorization.create",
+      actionKind: "create",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "invoice",
+      targetId: "inv_123",
+      routeOrToolName: "finance.payment_authorization.create",
+      authorizationSource: "finance.payment_authorization.route",
+      idempotencyScope: "finance.invoice:inv_123:payment_authorization",
+      idempotencyKey: "auth-ext-123",
+      mutationDetail: {
+        commandInputRef: "invoice:inv_123:payment_authorization",
+        commandResultRef: "payment_authorization:pauth_123",
+        summary: "Payment authorization pauth_123 created for invoice inv_123",
+        reversalKind: "none",
+      },
+    })
+    expect(ledgerInput.idempotencyFingerprint).toMatch(/^sha256:/)
+  })
+
+  it("builds invoice-targeted action ledger input for payment authorization updates", () => {
+    const ledgerInput = buildPaymentAuthorizationUpdateActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        authorization: {
+          id: "pauth_123",
+          bookingId: null,
+          orderId: null,
+          invoiceId: "inv_123",
+          bookingGuaranteeId: null,
+        } as never,
+        changes: {
+          approvalCode: "A-123",
+          status: "captured",
+        },
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.payment_authorization.update",
+      actionKind: "update",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "invoice",
+      targetId: "inv_123",
+      routeOrToolName: "finance.payment_authorization.update",
+      authorizationSource: "finance.payment_authorization.route",
+      idempotencyScope: null,
+      idempotencyKey: null,
+      idempotencyFingerprint: null,
+      mutationDetail: {
+        commandInputRef: "payment_authorization:pauth_123:update",
+        commandResultRef: "payment_authorization:pauth_123",
+        summary: "Payment authorization pauth_123 updated (approvalCode, status)",
+        reversalKind: "none",
+      },
+    })
+  })
+
+  it("builds invoice-targeted action ledger input for payment capture creation", async () => {
+    const ledgerInput = await buildPaymentCaptureCreateActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        capture: {
+          id: "pcap_123",
+          paymentAuthorizationId: "pauth_123",
+          invoiceId: "inv_123",
+          amountCents: 25000,
+          currency: "USD",
+          provider: "netopia",
+          externalCaptureId: "cap-ext-123",
+          status: "completed",
+        } as never,
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.payment_capture.create",
+      actionKind: "create",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "invoice",
+      targetId: "inv_123",
+      routeOrToolName: "finance.payment_capture.create",
+      authorizationSource: "finance.payment_capture.route",
+      idempotencyScope: "finance.invoice:inv_123:payment_capture",
+      idempotencyKey: "cap-ext-123",
+      mutationDetail: {
+        commandInputRef: "invoice:inv_123:payment_capture",
+        commandResultRef: "payment_capture:pcap_123",
+        summary: "Payment capture pcap_123 created for invoice inv_123",
+        reversalKind: "none",
+      },
+    })
+    expect(ledgerInput.idempotencyFingerprint).toMatch(/^sha256:/)
+  })
+
+  it("builds invoice-targeted action ledger input for payment capture deletes", () => {
+    const ledgerInput = buildPaymentCaptureDeleteActionLedgerInput(
+      {
+        userId: "user_123",
+        callerType: "session",
+      },
+      {
+        capture: {
+          id: "pcap_123",
+          paymentAuthorizationId: "pauth_123",
+          invoiceId: "inv_123",
+        } as never,
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      actionName: "finance.payment_capture.delete",
+      actionKind: "delete",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "invoice",
+      targetId: "inv_123",
+      routeOrToolName: "finance.payment_capture.delete",
+      authorizationSource: "finance.payment_capture.route",
+      idempotencyScope: null,
+      idempotencyKey: null,
+      idempotencyFingerprint: null,
+      mutationDetail: {
+        commandInputRef: "payment_capture:pcap_123:delete",
+        commandResultRef: null,
+        summary: "Payment capture pcap_123 deleted",
         reversalKind: "none",
       },
     })

@@ -424,6 +424,8 @@ export interface PaymentCompletedEvent {
 }
 
 type PaymentSessionRecord = typeof paymentSessions.$inferSelect
+type PaymentAuthorizationRecord = typeof paymentAuthorizations.$inferSelect
+type PaymentCaptureRecord = typeof paymentCaptures.$inferSelect
 type InvoiceRecord = typeof invoices.$inferSelect
 type PaymentRecord = typeof payments.$inferSelect
 type CreditNoteRecord = typeof creditNotes.$inferSelect
@@ -454,6 +456,26 @@ type PaymentSessionCancelledLedgerInput = {
 type PaymentSessionExpiredLedgerInput = {
   session: PaymentSessionRecord
   changes: ExpirePaymentSessionInput
+}
+type PaymentAuthorizationCreateLedgerInput = {
+  authorization: PaymentAuthorizationRecord
+}
+type PaymentAuthorizationUpdateLedgerInput = {
+  authorization: PaymentAuthorizationRecord
+  changes: UpdatePaymentAuthorizationInput
+}
+type PaymentAuthorizationDeleteLedgerInput = {
+  authorization: PaymentAuthorizationRecord
+}
+type PaymentCaptureCreateLedgerInput = {
+  capture: PaymentCaptureRecord
+}
+type PaymentCaptureUpdateLedgerInput = {
+  capture: PaymentCaptureRecord
+  changes: UpdatePaymentCaptureInput
+}
+type PaymentCaptureDeleteLedgerInput = {
+  capture: PaymentCaptureRecord
 }
 type RecordPaymentLedgerInput = {
   invoice: InvoiceRecord
@@ -768,6 +790,260 @@ function buildPaymentSessionStatusActionLedgerInput(
       reversalKind: "none",
     },
   }
+}
+
+export async function buildPaymentAuthorizationCreateActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: PaymentAuthorizationCreateLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): Promise<BuildActionLedgerMutationInput> {
+  const target = getPaymentAuthorizationLedgerTarget(input.authorization)
+  const idempotencyKey = input.authorization.externalAuthorizationId
+
+  return {
+    context,
+    actionName: "finance.payment_authorization.create",
+    actionVersion: "v1",
+    actionKind: "create",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.payment_authorization.create",
+    authorizationSource: options.authorizationSource ?? "finance.payment_authorization.route",
+    idempotencyScope: idempotencyKey
+      ? `finance.${target.type}:${target.id}:payment_authorization`
+      : null,
+    idempotencyKey,
+    idempotencyFingerprint: idempotencyKey
+      ? await buildIdempotencyFingerprint({
+          actionName: "finance.payment_authorization.create",
+          actionVersion: "v1",
+          targetType: target.type,
+          targetId: target.id,
+          commandInput: {
+            paymentAuthorizationId: input.authorization.id,
+            bookingId: input.authorization.bookingId,
+            orderId: input.authorization.orderId,
+            invoiceId: input.authorization.invoiceId,
+            bookingGuaranteeId: input.authorization.bookingGuaranteeId,
+            amountCents: input.authorization.amountCents,
+            currency: input.authorization.currency,
+            provider: input.authorization.provider,
+            externalAuthorizationId: input.authorization.externalAuthorizationId,
+            status: input.authorization.status,
+          },
+        })
+      : null,
+    mutationDetail: {
+      commandInputRef: `${target.type}:${target.id}:payment_authorization`,
+      commandResultRef: `payment_authorization:${input.authorization.id}`,
+      summary: `Payment authorization ${input.authorization.id} created for ${target.type} ${target.id}`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildPaymentAuthorizationUpdateActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: PaymentAuthorizationUpdateLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getPaymentAuthorizationLedgerTarget(input.authorization)
+  const changedFields = Object.keys(input.changes).sort()
+  const changeSummary = changedFields.length > 0 ? changedFields.join(", ") : "no fields"
+
+  return {
+    context,
+    actionName: "finance.payment_authorization.update",
+    actionVersion: "v1",
+    actionKind: "update",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.payment_authorization.update",
+    authorizationSource: options.authorizationSource ?? "finance.payment_authorization.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `payment_authorization:${input.authorization.id}:update`,
+      commandResultRef: `payment_authorization:${input.authorization.id}`,
+      summary: `Payment authorization ${input.authorization.id} updated (${changeSummary})`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildPaymentAuthorizationDeleteActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: PaymentAuthorizationDeleteLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getPaymentAuthorizationLedgerTarget(input.authorization)
+
+  return {
+    context,
+    actionName: "finance.payment_authorization.delete",
+    actionVersion: "v1",
+    actionKind: "delete",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.payment_authorization.delete",
+    authorizationSource: options.authorizationSource ?? "finance.payment_authorization.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `payment_authorization:${input.authorization.id}:delete`,
+      commandResultRef: null,
+      summary: `Payment authorization ${input.authorization.id} deleted`,
+      reversalKind: "none",
+    },
+  }
+}
+
+function getPaymentAuthorizationLedgerTarget(authorization: PaymentAuthorizationRecord) {
+  if (authorization.bookingId) return { type: "booking", id: authorization.bookingId }
+  if (authorization.invoiceId) return { type: "invoice", id: authorization.invoiceId }
+  if (authorization.orderId) return { type: "order", id: authorization.orderId }
+  if (authorization.bookingGuaranteeId) {
+    return { type: "booking_guarantee", id: authorization.bookingGuaranteeId }
+  }
+  return { type: "payment_authorization", id: authorization.id }
+}
+
+export async function buildPaymentCaptureCreateActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: PaymentCaptureCreateLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): Promise<BuildActionLedgerMutationInput> {
+  const target = getPaymentCaptureLedgerTarget(input.capture)
+  const idempotencyKey = input.capture.externalCaptureId
+
+  return {
+    context,
+    actionName: "finance.payment_capture.create",
+    actionVersion: "v1",
+    actionKind: "create",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.payment_capture.create",
+    authorizationSource: options.authorizationSource ?? "finance.payment_capture.route",
+    idempotencyScope: idempotencyKey ? `finance.${target.type}:${target.id}:payment_capture` : null,
+    idempotencyKey,
+    idempotencyFingerprint: idempotencyKey
+      ? await buildIdempotencyFingerprint({
+          actionName: "finance.payment_capture.create",
+          actionVersion: "v1",
+          targetType: target.type,
+          targetId: target.id,
+          commandInput: {
+            paymentCaptureId: input.capture.id,
+            paymentAuthorizationId: input.capture.paymentAuthorizationId,
+            invoiceId: input.capture.invoiceId,
+            amountCents: input.capture.amountCents,
+            currency: input.capture.currency,
+            provider: input.capture.provider,
+            externalCaptureId: input.capture.externalCaptureId,
+            status: input.capture.status,
+          },
+        })
+      : null,
+    mutationDetail: {
+      commandInputRef: `${target.type}:${target.id}:payment_capture`,
+      commandResultRef: `payment_capture:${input.capture.id}`,
+      summary: `Payment capture ${input.capture.id} created for ${target.type} ${target.id}`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildPaymentCaptureUpdateActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: PaymentCaptureUpdateLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getPaymentCaptureLedgerTarget(input.capture)
+  const changedFields = Object.keys(input.changes).sort()
+  const changeSummary = changedFields.length > 0 ? changedFields.join(", ") : "no fields"
+
+  return {
+    context,
+    actionName: "finance.payment_capture.update",
+    actionVersion: "v1",
+    actionKind: "update",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.payment_capture.update",
+    authorizationSource: options.authorizationSource ?? "finance.payment_capture.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `payment_capture:${input.capture.id}:update`,
+      commandResultRef: `payment_capture:${input.capture.id}`,
+      summary: `Payment capture ${input.capture.id} updated (${changeSummary})`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildPaymentCaptureDeleteActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: PaymentCaptureDeleteLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getPaymentCaptureLedgerTarget(input.capture)
+
+  return {
+    context,
+    actionName: "finance.payment_capture.delete",
+    actionVersion: "v1",
+    actionKind: "delete",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.payment_capture.delete",
+    authorizationSource: options.authorizationSource ?? "finance.payment_capture.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `payment_capture:${input.capture.id}:delete`,
+      commandResultRef: null,
+      summary: `Payment capture ${input.capture.id} deleted`,
+      reversalKind: "none",
+    },
+  }
+}
+
+function getPaymentCaptureLedgerTarget(capture: PaymentCaptureRecord) {
+  if (capture.invoiceId) return { type: "invoice", id: capture.invoiceId }
+  if (capture.paymentAuthorizationId) {
+    return { type: "payment_authorization", id: capture.paymentAuthorizationId }
+  }
+  return { type: "payment_capture", id: capture.id }
 }
 
 export async function buildRecordPaymentActionLedgerInput(
@@ -2147,16 +2423,45 @@ export const financeService = {
     return row ?? null
   },
 
-  async createPaymentAuthorization(db: PostgresJsDatabase, data: CreatePaymentAuthorizationInput) {
-    const [row] = await db
-      .insert(paymentAuthorizations)
-      .values({
-        ...data,
-        authorizedAt: toTimestamp(data.authorizedAt),
-        expiresAt: toTimestamp(data.expiresAt),
-        voidedAt: toTimestamp(data.voidedAt),
+  async createPaymentAuthorization(
+    db: PostgresJsDatabase,
+    data: CreatePaymentAuthorizationInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const createAuthorization = (writer: PostgresJsDatabase) =>
+      writer
+        .insert(paymentAuthorizations)
+        .values({
+          ...data,
+          authorizedAt: toTimestamp(data.authorizedAt),
+          expiresAt: toTimestamp(data.expiresAt),
+          voidedAt: toTimestamp(data.voidedAt),
+        })
+        .returning()
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const created = await createAuthorization(tx)
+
+        if (created[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            await buildPaymentAuthorizationCreateActionLedgerInput(
+              actionLedgerContext,
+              { authorization: created[0] },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return created
       })
-      .returning()
+
+      return row ?? null
+    }
+
+    const [row] = await createAuthorization(db)
     return row ?? null
   },
 
@@ -2164,22 +2469,80 @@ export const financeService = {
     db: PostgresJsDatabase,
     id: string,
     data: UpdatePaymentAuthorizationInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [row] = await db
-      .update(paymentAuthorizations)
-      .set({
-        ...data,
-        authorizedAt: data.authorizedAt === undefined ? undefined : toTimestamp(data.authorizedAt),
-        expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
-        voidedAt: data.voidedAt === undefined ? undefined : toTimestamp(data.voidedAt),
-        updatedAt: new Date(),
+    const updateAuthorization = (writer: PostgresJsDatabase) =>
+      writer
+        .update(paymentAuthorizations)
+        .set({
+          ...data,
+          authorizedAt:
+            data.authorizedAt === undefined ? undefined : toTimestamp(data.authorizedAt),
+          expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
+          voidedAt: data.voidedAt === undefined ? undefined : toTimestamp(data.voidedAt),
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentAuthorizations.id, id))
+        .returning()
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await updateAuthorization(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildPaymentAuthorizationUpdateActionLedgerInput(
+              actionLedgerContext,
+              { authorization: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
       })
-      .where(eq(paymentAuthorizations.id, id))
-      .returning()
+
+      return row ?? null
+    }
+
+    const [row] = await updateAuthorization(db)
     return row ?? null
   },
 
-  async deletePaymentAuthorization(db: PostgresJsDatabase, id: string) {
+  async deletePaymentAuthorization(
+    db: PostgresJsDatabase,
+    id: string,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      return db.transaction(async (tx) => {
+        const [existing] = await tx
+          .select()
+          .from(paymentAuthorizations)
+          .where(eq(paymentAuthorizations.id, id))
+          .limit(1)
+
+        if (!existing) {
+          return null
+        }
+
+        await tx.delete(paymentAuthorizations).where(eq(paymentAuthorizations.id, id))
+        await appendActionLedgerMutation(
+          tx,
+          buildPaymentAuthorizationDeleteActionLedgerInput(
+            actionLedgerContext,
+            { authorization: existing },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+
+        return { id: existing.id }
+      })
+    }
+
     const [row] = await db
       .delete(paymentAuthorizations)
       .where(eq(paymentAuthorizations.id, id))
@@ -2213,33 +2576,123 @@ export const financeService = {
     return row ?? null
   },
 
-  async createPaymentCapture(db: PostgresJsDatabase, data: CreatePaymentCaptureInput) {
-    const [row] = await db
-      .insert(paymentCaptures)
-      .values({
-        ...data,
-        capturedAt: toTimestamp(data.capturedAt),
-        settledAt: toTimestamp(data.settledAt),
+  async createPaymentCapture(
+    db: PostgresJsDatabase,
+    data: CreatePaymentCaptureInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const createCapture = (writer: PostgresJsDatabase) =>
+      writer
+        .insert(paymentCaptures)
+        .values({
+          ...data,
+          capturedAt: toTimestamp(data.capturedAt),
+          settledAt: toTimestamp(data.settledAt),
+        })
+        .returning()
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const created = await createCapture(tx)
+
+        if (created[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            await buildPaymentCaptureCreateActionLedgerInput(
+              actionLedgerContext,
+              { capture: created[0] },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return created
       })
-      .returning()
+
+      return row ?? null
+    }
+
+    const [row] = await createCapture(db)
     return row ?? null
   },
 
-  async updatePaymentCapture(db: PostgresJsDatabase, id: string, data: UpdatePaymentCaptureInput) {
-    const [row] = await db
-      .update(paymentCaptures)
-      .set({
-        ...data,
-        capturedAt: data.capturedAt === undefined ? undefined : toTimestamp(data.capturedAt),
-        settledAt: data.settledAt === undefined ? undefined : toTimestamp(data.settledAt),
-        updatedAt: new Date(),
+  async updatePaymentCapture(
+    db: PostgresJsDatabase,
+    id: string,
+    data: UpdatePaymentCaptureInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const updateCapture = (writer: PostgresJsDatabase) =>
+      writer
+        .update(paymentCaptures)
+        .set({
+          ...data,
+          capturedAt: data.capturedAt === undefined ? undefined : toTimestamp(data.capturedAt),
+          settledAt: data.settledAt === undefined ? undefined : toTimestamp(data.settledAt),
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentCaptures.id, id))
+        .returning()
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await updateCapture(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildPaymentCaptureUpdateActionLedgerInput(
+              actionLedgerContext,
+              { capture: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
       })
-      .where(eq(paymentCaptures.id, id))
-      .returning()
+
+      return row ?? null
+    }
+
+    const [row] = await updateCapture(db)
     return row ?? null
   },
 
-  async deletePaymentCapture(db: PostgresJsDatabase, id: string) {
+  async deletePaymentCapture(
+    db: PostgresJsDatabase,
+    id: string,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      return db.transaction(async (tx) => {
+        const [existing] = await tx
+          .select()
+          .from(paymentCaptures)
+          .where(eq(paymentCaptures.id, id))
+          .limit(1)
+
+        if (!existing) {
+          return null
+        }
+
+        await tx.delete(paymentCaptures).where(eq(paymentCaptures.id, id))
+        await appendActionLedgerMutation(
+          tx,
+          buildPaymentCaptureDeleteActionLedgerInput(
+            actionLedgerContext,
+            { capture: existing },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+
+        return { id: existing.id }
+      })
+    }
+
     const [row] = await db
       .delete(paymentCaptures)
       .where(eq(paymentCaptures.id, id))
