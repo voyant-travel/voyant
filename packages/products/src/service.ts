@@ -1879,6 +1879,17 @@ export const productsService = {
     return row ?? null
   },
 
+  async getUnitForProductMutation(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .select({ unit: optionUnits, productId: productOptions.productId })
+      .from(optionUnits)
+      .innerJoin(productOptions, eq(optionUnits.optionId, productOptions.id))
+      .where(eq(optionUnits.id, id))
+      .limit(1)
+
+    return row ? { ...row.unit, productId: row.productId } : null
+  },
+
   async createUnit(db: PostgresJsDatabase, optionId: string, data: CreateOptionUnitInput) {
     const [option] = await db
       .select({ id: productOptions.id })
@@ -2078,6 +2089,17 @@ export const productsService = {
     return row ?? null
   },
 
+  async getOptionTranslationForProductMutation(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .select({ translation: productOptionTranslations, productId: productOptions.productId })
+      .from(productOptionTranslations)
+      .innerJoin(productOptions, eq(productOptionTranslations.optionId, productOptions.id))
+      .where(eq(productOptionTranslations.id, id))
+      .limit(1)
+
+    return row ? { ...row.translation, productId: row.productId } : null
+  },
+
   async createOptionTranslation(
     db: PostgresJsDatabase,
     optionId: string,
@@ -2164,6 +2186,18 @@ export const productsService = {
       .limit(1)
 
     return row ?? null
+  },
+
+  async getUnitTranslationForProductMutation(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .select({ translation: optionUnitTranslations, productId: productOptions.productId })
+      .from(optionUnitTranslations)
+      .innerJoin(optionUnits, eq(optionUnitTranslations.unitId, optionUnits.id))
+      .innerJoin(productOptions, eq(optionUnits.optionId, productOptions.id))
+      .where(eq(optionUnitTranslations.id, id))
+      .limit(1)
+
+    return row ? { ...row.translation, productId: row.productId } : null
   },
 
   async createUnitTranslation(

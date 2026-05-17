@@ -128,41 +128,80 @@ export const productOptionRoutes = new Hono<Env>()
 
   // POST /options/:optionId/units — Create unit for option
   .post("/options/:optionId/units", async (c) => {
-    const row = await productsService.createUnit(
-      c.get("db"),
-      c.req.param("optionId"),
-      await parseJsonBody(c, validation.insertOptionUnitSchema),
-    )
+    const optionId = c.req.param("optionId")
+    const body = await parseJsonBody(c, validation.insertOptionUnitSchema)
+    const option = await productsService.getOptionById(c.get("db"), optionId)
+    if (!option) {
+      return c.json({ error: "Product option not found" }, 404)
+    }
+
+    const row = await productsService.createUnit(c.get("db"), optionId, body)
 
     if (!row) {
       return c.json({ error: "Product option not found" }, 404)
     }
 
+    await appendProductMutationLedgerEntry(c, {
+      action: "create",
+      productId: option.productId,
+      changedFields: changedMutationFields(body, null, row),
+      subject: "product option unit",
+      actionName: "product.option_unit.create",
+      routeOrToolName: "products.option_unit.create",
+    })
+    await emitProductContentChanged(c.get("eventBus"), { id: option.productId, axis: "option" })
     return c.json({ data: row }, 201)
   })
 
   // PATCH /units/:unitId — Update unit
   .patch("/units/:unitId", async (c) => {
-    const row = await productsService.updateUnit(
-      c.get("db"),
-      c.req.param("unitId"),
-      await parseJsonBody(c, validation.updateOptionUnitSchema),
-    )
+    const unitId = c.req.param("unitId")
+    const body = await parseJsonBody(c, validation.updateOptionUnitSchema)
+    const before = await productsService.getUnitForProductMutation(c.get("db"), unitId)
+    if (!before) {
+      return c.json({ error: "Option unit not found" }, 404)
+    }
+
+    const row = await productsService.updateUnit(c.get("db"), unitId, body)
 
     if (!row) {
       return c.json({ error: "Option unit not found" }, 404)
     }
 
+    await appendProductMutationLedgerEntry(c, {
+      action: "update",
+      productId: before.productId,
+      changedFields: changedMutationFields(body, before, row),
+      subject: "product option unit",
+      actionName: "product.option_unit.update",
+      routeOrToolName: "products.option_unit.update",
+    })
+    await emitProductContentChanged(c.get("eventBus"), { id: before.productId, axis: "option" })
     return c.json({ data: row })
   })
 
   // DELETE /units/:unitId — Delete unit
   .delete("/units/:unitId", async (c) => {
-    const row = await productsService.deleteUnit(c.get("db"), c.req.param("unitId"))
+    const unitId = c.req.param("unitId")
+    const before = await productsService.getUnitForProductMutation(c.get("db"), unitId)
+    if (!before) {
+      return c.json({ error: "Option unit not found" }, 404)
+    }
+
+    const row = await productsService.deleteUnit(c.get("db"), unitId)
 
     if (!row) {
       return c.json({ error: "Option unit not found" }, 404)
     }
 
+    await appendProductMutationLedgerEntry(c, {
+      action: "delete",
+      productId: before.productId,
+      changedFields: [],
+      subject: "product option unit",
+      actionName: "product.option_unit.delete",
+      routeOrToolName: "products.option_unit.delete",
+    })
+    await emitProductContentChanged(c.get("eventBus"), { id: before.productId, axis: "option" })
     return c.json({ success: true }, 200)
   })

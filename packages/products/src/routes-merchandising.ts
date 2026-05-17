@@ -1,5 +1,6 @@
 import { parseJsonBody, parseQuery } from "@voyantjs/hono"
 import { Hono } from "hono"
+import { appendProductMutationLedgerEntry, changedMutationFields } from "./action-ledger.js"
 import { emitProductContentChanged } from "./events.js"
 import type { Env } from "./route-env.js"
 import { productsService } from "./service.js"
@@ -22,47 +23,73 @@ export const productMerchandisingRoutes = new Hono<Env>()
 
   .post("/:id/features", async (c) => {
     const productId = c.req.param("id")
-    const row = await productsService.createFeature(
-      c.get("db"),
-      productId,
-      await parseJsonBody(c, validation.insertProductFeatureSchema),
-    )
+    const body = await parseJsonBody(c, validation.insertProductFeatureSchema)
+    const row = await productsService.createFeature(c.get("db"), productId, body)
 
     if (!row) {
       return c.json({ error: "Product not found" }, 404)
     }
 
+    await appendProductMutationLedgerEntry(c, {
+      action: "create",
+      productId,
+      changedFields: changedMutationFields(body, null, row),
+      subject: "product feature",
+      actionName: "product.feature.create",
+      routeOrToolName: "products.feature.create",
+    })
     await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "feature" })
     return c.json({ data: row }, 201)
   })
 
   .patch("/features/:id", async (c) => {
-    const row = await productsService.updateFeature(
-      c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, validation.updateProductFeatureSchema),
-    )
+    const featureId = c.req.param("id")
+    const body = await parseJsonBody(c, validation.updateProductFeatureSchema)
+    const before = await productsService.getFeatureById(c.get("db"), featureId)
+    if (!before) {
+      return c.json({ error: "Product feature not found" }, 404)
+    }
+
+    const row = await productsService.updateFeature(c.get("db"), featureId, body)
 
     if (!row) {
       return c.json({ error: "Product feature not found" }, 404)
     }
 
-    if (row.productId) {
-      await emitProductContentChanged(c.get("eventBus"), { id: row.productId, axis: "feature" })
-    }
+    await appendProductMutationLedgerEntry(c, {
+      action: "update",
+      productId: row.productId,
+      changedFields: changedMutationFields(body, before, row),
+      subject: "product feature",
+      actionName: "product.feature.update",
+      routeOrToolName: "products.feature.update",
+    })
+    await emitProductContentChanged(c.get("eventBus"), { id: row.productId, axis: "feature" })
     return c.json({ data: row })
   })
 
   .delete("/features/:id", async (c) => {
-    const row = await productsService.deleteFeature(c.get("db"), c.req.param("id"))
+    const featureId = c.req.param("id")
+    const before = await productsService.getFeatureById(c.get("db"), featureId)
+    if (!before) {
+      return c.json({ error: "Product feature not found" }, 404)
+    }
+
+    const row = await productsService.deleteFeature(c.get("db"), featureId)
 
     if (!row) {
       return c.json({ error: "Product feature not found" }, 404)
     }
 
-    if ("productId" in row && typeof row.productId === "string") {
-      await emitProductContentChanged(c.get("eventBus"), { id: row.productId, axis: "feature" })
-    }
+    await appendProductMutationLedgerEntry(c, {
+      action: "delete",
+      productId: before.productId,
+      changedFields: [],
+      subject: "product feature",
+      actionName: "product.feature.delete",
+      routeOrToolName: "products.feature.delete",
+    })
+    await emitProductContentChanged(c.get("eventBus"), { id: before.productId, axis: "feature" })
     return c.json({ success: true }, 200)
   })
 
@@ -82,46 +109,73 @@ export const productMerchandisingRoutes = new Hono<Env>()
 
   .post("/:id/faqs", async (c) => {
     const productId = c.req.param("id")
-    const row = await productsService.createFaq(
-      c.get("db"),
-      productId,
-      await parseJsonBody(c, validation.insertProductFaqSchema),
-    )
+    const body = await parseJsonBody(c, validation.insertProductFaqSchema)
+    const row = await productsService.createFaq(c.get("db"), productId, body)
 
     if (!row) {
       return c.json({ error: "Product not found" }, 404)
     }
 
+    await appendProductMutationLedgerEntry(c, {
+      action: "create",
+      productId,
+      changedFields: changedMutationFields(body, null, row),
+      subject: "product FAQ",
+      actionName: "product.faq.create",
+      routeOrToolName: "products.faq.create",
+    })
     await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "faq" })
     return c.json({ data: row }, 201)
   })
 
   .patch("/faqs/:id", async (c) => {
-    const row = await productsService.updateFaq(
-      c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, validation.updateProductFaqSchema),
-    )
+    const faqId = c.req.param("id")
+    const body = await parseJsonBody(c, validation.updateProductFaqSchema)
+    const before = await productsService.getFaqById(c.get("db"), faqId)
+    if (!before) {
+      return c.json({ error: "Product FAQ not found" }, 404)
+    }
+
+    const row = await productsService.updateFaq(c.get("db"), faqId, body)
 
     if (!row) {
       return c.json({ error: "Product FAQ not found" }, 404)
     }
 
-    if (row.productId) {
-      await emitProductContentChanged(c.get("eventBus"), { id: row.productId, axis: "faq" })
-    }
+    await appendProductMutationLedgerEntry(c, {
+      action: "update",
+      productId: row.productId,
+      changedFields: changedMutationFields(body, before, row),
+      subject: "product FAQ",
+      actionName: "product.faq.update",
+      routeOrToolName: "products.faq.update",
+    })
+    await emitProductContentChanged(c.get("eventBus"), { id: row.productId, axis: "faq" })
     return c.json({ data: row })
   })
 
   .delete("/faqs/:id", async (c) => {
-    const row = await productsService.deleteFaq(c.get("db"), c.req.param("id"))
+    const faqId = c.req.param("id")
+    const before = await productsService.getFaqById(c.get("db"), faqId)
+    if (!before) {
+      return c.json({ error: "Product FAQ not found" }, 404)
+    }
+
+    const row = await productsService.deleteFaq(c.get("db"), faqId)
 
     if (!row) {
       return c.json({ error: "Product FAQ not found" }, 404)
     }
-    if ("productId" in row && typeof row.productId === "string") {
-      await emitProductContentChanged(c.get("eventBus"), { id: row.productId, axis: "faq" })
-    }
+
+    await appendProductMutationLedgerEntry(c, {
+      action: "delete",
+      productId: before.productId,
+      changedFields: [],
+      subject: "product FAQ",
+      actionName: "product.faq.delete",
+      routeOrToolName: "products.faq.delete",
+    })
+    await emitProductContentChanged(c.get("eventBus"), { id: before.productId, axis: "faq" })
 
     return c.json({ success: true }, 200)
   })
@@ -142,47 +196,73 @@ export const productMerchandisingRoutes = new Hono<Env>()
 
   .post("/:id/locations", async (c) => {
     const productId = c.req.param("id")
-    const row = await productsService.createLocation(
-      c.get("db"),
-      productId,
-      await parseJsonBody(c, validation.insertProductLocationSchema),
-    )
+    const body = await parseJsonBody(c, validation.insertProductLocationSchema)
+    const row = await productsService.createLocation(c.get("db"), productId, body)
 
     if (!row) {
       return c.json({ error: "Product not found" }, 404)
     }
 
+    await appendProductMutationLedgerEntry(c, {
+      action: "create",
+      productId,
+      changedFields: changedMutationFields(body, null, row),
+      subject: "product location",
+      actionName: "product.location.create",
+      routeOrToolName: "products.location.create",
+    })
     await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "location" })
     return c.json({ data: row }, 201)
   })
 
   .patch("/locations/:id", async (c) => {
-    const row = await productsService.updateLocation(
-      c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, validation.updateProductLocationSchema),
-    )
+    const locationId = c.req.param("id")
+    const body = await parseJsonBody(c, validation.updateProductLocationSchema)
+    const before = await productsService.getLocationById(c.get("db"), locationId)
+    if (!before) {
+      return c.json({ error: "Product location not found" }, 404)
+    }
+
+    const row = await productsService.updateLocation(c.get("db"), locationId, body)
 
     if (!row) {
       return c.json({ error: "Product location not found" }, 404)
     }
 
-    if (row.productId) {
-      await emitProductContentChanged(c.get("eventBus"), { id: row.productId, axis: "location" })
-    }
+    await appendProductMutationLedgerEntry(c, {
+      action: "update",
+      productId: row.productId,
+      changedFields: changedMutationFields(body, before, row),
+      subject: "product location",
+      actionName: "product.location.update",
+      routeOrToolName: "products.location.update",
+    })
+    await emitProductContentChanged(c.get("eventBus"), { id: row.productId, axis: "location" })
     return c.json({ data: row })
   })
 
   .delete("/locations/:id", async (c) => {
-    const row = await productsService.deleteLocation(c.get("db"), c.req.param("id"))
+    const locationId = c.req.param("id")
+    const before = await productsService.getLocationById(c.get("db"), locationId)
+    if (!before) {
+      return c.json({ error: "Product location not found" }, 404)
+    }
+
+    const row = await productsService.deleteLocation(c.get("db"), locationId)
 
     if (!row) {
       return c.json({ error: "Product location not found" }, 404)
     }
 
-    if ("productId" in row && typeof row.productId === "string") {
-      await emitProductContentChanged(c.get("eventBus"), { id: row.productId, axis: "location" })
-    }
+    await appendProductMutationLedgerEntry(c, {
+      action: "delete",
+      productId: before.productId,
+      changedFields: [],
+      subject: "product location",
+      actionName: "product.location.delete",
+      routeOrToolName: "products.location.delete",
+    })
+    await emitProductContentChanged(c.get("eventBus"), { id: before.productId, axis: "location" })
     return c.json({ success: true }, 200)
   })
 
@@ -384,16 +464,21 @@ export const productMerchandisingRoutes = new Hono<Env>()
 
   .post("/:id/destinations", async (c) => {
     const productId = c.req.param("id")
-    const row = await productsService.assignProductDestination(
-      c.get("db"),
-      productId,
-      await parseJsonBody(c, validation.insertProductDestinationSchema),
-    )
+    const body = await parseJsonBody(c, validation.insertProductDestinationSchema)
+    const row = await productsService.assignProductDestination(c.get("db"), productId, body)
 
     if (!row) {
       return c.json({ error: "Product or destination not found" }, 404)
     }
 
+    await appendProductMutationLedgerEntry(c, {
+      action: "create",
+      productId,
+      changedFields: changedMutationFields(body, null, row),
+      subject: "product destination link",
+      actionName: "product.destination_link.create",
+      routeOrToolName: "products.destination_link.create",
+    })
     await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "destination" })
     return c.json({ data: row }, 201)
   })
@@ -410,6 +495,14 @@ export const productMerchandisingRoutes = new Hono<Env>()
       return c.json({ error: "Product destination link not found" }, 404)
     }
 
+    await appendProductMutationLedgerEntry(c, {
+      action: "delete",
+      productId,
+      changedFields: [],
+      subject: "product destination link",
+      actionName: "product.destination_link.delete",
+      routeOrToolName: "products.destination_link.delete",
+    })
     await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "destination" })
     return c.json({ success: true }, 200)
   })
