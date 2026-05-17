@@ -1,6 +1,7 @@
 import type { RunActionLedgerCanaryResult } from "@voyantjs/action-ledger/canary"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import type { CheckFinanceActionLedgerDriftResult } from "@voyantjs/finance/action-ledger-drift"
+import type { CheckProductActionLedgerDriftResult } from "@voyantjs/products/action-ledger-drift"
 import { describe, expect, it, vi } from "vitest"
 
 import { runOperatorActionLedgerHealthCheck } from "./action-ledger-health.js"
@@ -26,7 +27,18 @@ describe("runOperatorActionLedgerHealthCheck", () => {
       observedWrite: true,
       observedRelay: true,
     }
+    const productDrift: CheckProductActionLedgerDriftResult = {
+      ok: true,
+      rows: [
+        {
+          check: "product",
+          missingCount: 0,
+          sampleIds: [],
+        },
+      ],
+    }
     const checkFinanceDrift = vi.fn().mockResolvedValue(financeDrift)
+    const checkProductDrift = vi.fn().mockResolvedValue(productDrift)
     const runCanaryCheck = vi.fn().mockResolvedValue(canary)
 
     await expect(
@@ -36,14 +48,20 @@ describe("runOperatorActionLedgerHealthCheck", () => {
         canary: { idempotencyKey: "canary-1" },
         runCanary: true,
         checkFinanceDrift,
+        checkProductDrift,
         runCanaryCheck,
       }),
     ).resolves.toEqual({
       ok: true,
       canary,
       financeDrift,
+      productDrift,
     })
     expect(checkFinanceDrift).toHaveBeenCalledWith(db, {
+      createdAtFrom: "2026-05-17T00:00:00.000Z",
+      sampleLimit: 5,
+    })
+    expect(checkProductDrift).toHaveBeenCalledWith(db, {
       createdAtFrom: "2026-05-17T00:00:00.000Z",
       sampleLimit: 5,
     })
@@ -55,6 +73,10 @@ describe("runOperatorActionLedgerHealthCheck", () => {
       ok: false,
       rows: [{ check: "payment", missingCount: 2, sampleIds: ["pay_2", "pay_1"] }],
     }
+    const productDrift: CheckProductActionLedgerDriftResult = {
+      ok: true,
+      rows: [{ check: "product", missingCount: 0, sampleIds: [] }],
+    }
     const runCanaryCheck = vi.fn()
 
     await expect(
@@ -63,13 +85,40 @@ describe("runOperatorActionLedgerHealthCheck", () => {
         drift: {},
         runCanary: false,
         checkFinanceDrift: vi.fn().mockResolvedValue(financeDrift),
+        checkProductDrift: vi.fn().mockResolvedValue(productDrift),
         runCanaryCheck,
       }),
     ).resolves.toEqual({
       ok: false,
       canary: null,
       financeDrift,
+      productDrift,
     })
     expect(runCanaryCheck).not.toHaveBeenCalled()
+  })
+
+  it("fails health when product drift is missing ledger entries", async () => {
+    const financeDrift: CheckFinanceActionLedgerDriftResult = {
+      ok: true,
+      rows: [{ check: "invoice", missingCount: 0, sampleIds: [] }],
+    }
+    const productDrift: CheckProductActionLedgerDriftResult = {
+      ok: false,
+      rows: [{ check: "product_media", missingCount: 1, sampleIds: ["pm_1"] }],
+    }
+
+    await expect(
+      runOperatorActionLedgerHealthCheck({
+        db,
+        drift: {},
+        runCanary: false,
+        checkFinanceDrift: vi.fn().mockResolvedValue(financeDrift),
+        checkProductDrift: vi.fn().mockResolvedValue(productDrift),
+      }),
+    ).resolves.toMatchObject({
+      ok: false,
+      financeDrift,
+      productDrift,
+    })
   })
 })

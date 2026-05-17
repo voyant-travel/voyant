@@ -10,6 +10,11 @@ import {
   checkFinanceActionLedgerDrift,
 } from "@voyantjs/finance/action-ledger-drift"
 import { parseJsonBody, parseQuery } from "@voyantjs/hono"
+import {
+  type CheckProductActionLedgerDriftInput,
+  type CheckProductActionLedgerDriftResult,
+  checkProductActionLedgerDrift,
+} from "@voyantjs/products/action-ledger-drift"
 import type { Hono } from "hono"
 import { z } from "zod"
 
@@ -36,18 +41,23 @@ export interface ActionLedgerHealthResponse {
     ok: boolean
     canary: RunActionLedgerCanaryResult | null
     financeDrift: CheckFinanceActionLedgerDriftResult
+    productDrift: CheckProductActionLedgerDriftResult
   }
 }
 
 export interface RunOperatorActionLedgerHealthCheckInput {
   db: AnyDrizzleDb
-  drift: CheckFinanceActionLedgerDriftInput
+  drift: CheckFinanceActionLedgerDriftInput & CheckProductActionLedgerDriftInput
   canary?: RunActionLedgerCanaryInput | null
   runCanary: boolean
   checkFinanceDrift?: (
     db: AnyDrizzleDb,
     input: CheckFinanceActionLedgerDriftInput,
   ) => Promise<CheckFinanceActionLedgerDriftResult>
+  checkProductDrift?: (
+    db: AnyDrizzleDb,
+    input: CheckProductActionLedgerDriftInput,
+  ) => Promise<CheckProductActionLedgerDriftResult>
   runCanaryCheck?: (
     db: AnyDrizzleDb,
     input: RunActionLedgerCanaryInput,
@@ -60,17 +70,20 @@ export async function runOperatorActionLedgerHealthCheck({
   canary,
   runCanary,
   checkFinanceDrift = checkFinanceActionLedgerDrift,
+  checkProductDrift = checkProductActionLedgerDrift,
   runCanaryCheck = runActionLedgerCanary,
 }: RunOperatorActionLedgerHealthCheckInput): Promise<ActionLedgerHealthResponse["data"]> {
-  const [financeDrift, canaryResult] = await Promise.all([
+  const [financeDrift, productDrift, canaryResult] = await Promise.all([
     checkFinanceDrift(db, drift),
+    checkProductDrift(db, drift),
     runCanary ? runCanaryCheck(db, canary ?? {}) : Promise.resolve(null),
   ])
 
   return {
-    ok: financeDrift.ok && (canaryResult?.ok ?? true),
+    ok: financeDrift.ok && productDrift.ok && (canaryResult?.ok ?? true),
     canary: canaryResult,
     financeDrift,
+    productDrift,
   }
 }
 
