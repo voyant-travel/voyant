@@ -137,6 +137,7 @@ export const operatorAdminProductsMessages = {
         departureStatusCancelled: "Cancelled",
         departureOverridePricing: "Override pricing",
         departureOverrideBadge: "Custom price",
+        departureManageAvailability: "Manage availability",
         departureOverrideTitle: "Override pricing for departure",
         departureOverrideDescription:
           "Set per-unit prices that apply only to this departure. Units without an override fall back to the option's price rules.",
@@ -613,6 +614,7 @@ export const operatorAdminProductsMessages = {
         departureStatusCancelled: "Anulat",
         departureOverridePricing: "Pret personalizat",
         departureOverrideBadge: "Pret personalizat",
+        departureManageAvailability: "Gestioneaza disponibilitatea",
         departureOverrideTitle: "Pret personalizat pentru plecare",
         departureOverrideDescription:
           "Seteaza preturi per unitate care se aplica doar acestei plecari. Unitatile fara pret personalizat folosesc regulile de pret ale optiunii.",

@@ -9,6 +9,7 @@ import {
   useTravelerMutation,
   useTravelers,
 } from "@voyantjs/bookings-react"
+import { usePerson } from "@voyantjs/crm-react"
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { Eye, EyeOff, Loader2, Pencil, Plus, Trash2, Users } from "lucide-react"
 import * as React from "react"
@@ -197,6 +198,17 @@ function TravelerRow({
   const showLoading = revealed && reveal.isLoading
   const revealError = revealed && reveal.error
 
+  // When the booking_traveler row didn't snapshot contact info (or DOB),
+  // hydrate from the linked CRM person so the list still shows useful
+  // data instead of dashes. The snapshot still wins when present —
+  // historical bookings keep the values they were created with.
+  const person = usePerson(traveler.personId ?? undefined, {
+    enabled: Boolean(traveler.personId),
+  }).data
+  const resolvedEmail = display.email ?? person?.email ?? null
+  const resolvedPhone = display.phone ?? person?.phone ?? null
+  const resolvedDateOfBirth = travelDetails?.dateOfBirth ?? person?.dateOfBirth ?? null
+
   return (
     <>
       <tr className="border-b">
@@ -208,10 +220,10 @@ function TravelerRow({
           )}
         </td>
         <td className="p-2">
-          {showLoading ? <RowLoading /> : (display.email ?? emailUnavailable)}
+          {showLoading ? <RowLoading /> : (resolvedEmail ?? emailUnavailable)}
         </td>
         <td className="p-2">
-          {showLoading ? <RowLoading /> : (display.phone ?? phoneUnavailable)}
+          {showLoading ? <RowLoading /> : (resolvedPhone ?? phoneUnavailable)}
         </td>
         <td className="p-2">
           <div className="flex flex-wrap gap-1.5">
@@ -226,7 +238,7 @@ function TravelerRow({
           {showLoading ? (
             <RowLoading />
           ) : (
-            formatDobAge(travelDetails?.dateOfBirth, messages.travelerList.values.fieldUnavailable)
+            formatDobAge(resolvedDateOfBirth, messages.travelerList.values.fieldUnavailable)
           )}
         </td>
         <td className="p-2">

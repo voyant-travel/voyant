@@ -1,5 +1,21 @@
 # @voyantjs/ui
 
+## 0.52.2
+
+### Patch Changes
+
+- 6bdfcbc: Fix `packages/ui/registry.json` so the bookings stepper entry points at `option-units-stepper-section.tsx` (and exposes it as `voyant-bookings-option-units-stepper-section`). The previous 0.52.1 release renamed the file but left the registry source-of-truth pointing at the old `rooms-stepper-section.tsx` path, which caused `shadcn build` to ENOENT in the release workflow.
+- 3e09123: UI primitives: `DatePicker` and `Select` polish.
+
+  - `DatePicker` / `DateRangePicker` default to `captionLayout="dropdown"` and ship a 100-year `startMonth`/`endMonth` window (`-90 → +10`). Without these, react-day-picker's year dropdown only listed the current year, so DOB pickers across the CRM/auth surfaces were unusable. Per-callsite overrides still work.
+  - `Select` styling polish: trigger switches to `rounded-lg`, drops the redundant `shadow-xs`/`transition-[color,box-shadow]`, and aligns sm/default heights with the rest of the input set. Marked with `"use client"` so it works in RSC-first stacks (Next.js App Router examples). The `collectSelectItems` child-walker stays in place — base-ui still relies on the `items` map to render localized labels for child-driven `<Select>`s.
+
+- Updated dependencies [3e09123]
+  - @voyantjs/i18n@0.52.2
+  - @voyantjs/notifications@0.52.2
+  - @voyantjs/notifications-react@0.52.2
+  - @voyantjs/utils@0.52.2
+
 ## 0.52.1
 
 ### Patch Changes

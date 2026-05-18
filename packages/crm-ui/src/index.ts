@@ -59,6 +59,10 @@ export {
 } from "./components/organizations-page.js"
 export { PeoplePage, type PeoplePageProps } from "./components/people-page.js"
 export {
+  PersonAddressesSection,
+  type PersonAddressesSectionProps,
+} from "./components/person-addresses-section.js"
+export {
   PersonCard,
   type PersonCardProps,
 } from "./components/person-card.js"
@@ -118,6 +122,10 @@ export {
   PersonList,
   type PersonListProps,
 } from "./components/person-list.js"
+export {
+  PersonRelationshipsSection,
+  type PersonRelationshipsSectionProps,
+} from "./components/person-relationships-section.js"
 export {
   QuoteLinesCard,
   type QuoteLinesCardProps,

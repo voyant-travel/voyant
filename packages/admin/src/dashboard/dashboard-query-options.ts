@@ -179,12 +179,16 @@ export function formatCurrency(cents: number, currency = "USD"): string {
 }
 
 export function getStatusColor(status: string): string {
+  // Status colors are intentionally hard-coded — they carry meaning
+  // (green = confirmed, red = cancelled, etc.) and shouldn't change
+  // with theme palette tokens like --chart-1..5, which are general
+  // chart palette slots and may be set to a monochromatic series.
   const map: Record<string, string> = {
-    confirmed: "var(--color-chart-1, hsl(142 71% 45%))",
-    completed: "var(--color-chart-2, hsl(221 83% 53%))",
-    in_progress: "var(--color-chart-3, hsl(47 96% 53%))",
-    draft: "var(--color-chart-4, hsl(215 14% 55%))",
-    cancelled: "var(--color-chart-5, hsl(0 84% 60%))",
+    confirmed: "hsl(142 71% 45%)",
+    completed: "hsl(221 83% 53%)",
+    in_progress: "hsl(47 96% 53%)",
+    draft: "hsl(215 14% 55%)",
+    cancelled: "hsl(0 84% 60%)",
   }
   return map[status] ?? "hsl(215 14% 55%)"
 }

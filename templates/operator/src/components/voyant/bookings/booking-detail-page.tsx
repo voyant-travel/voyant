@@ -1,7 +1,7 @@
 "use client"
 
 import { Link, useNavigate } from "@tanstack/react-router"
-import { useLocale } from "@voyantjs/admin"
+import { useAdminBreadcrumbs, useLocale } from "@voyantjs/admin"
 import {
   type BookingRecord,
   bookingStatusBadgeVariant,
@@ -9,6 +9,7 @@ import {
   useBookingMutation,
 } from "@voyantjs/bookings-react"
 import { BookingActivityTimeline } from "@voyantjs/bookings-ui/components/booking-activity-timeline"
+import { BookingBillingDialog } from "@voyantjs/bookings-ui/components/booking-billing-dialog"
 import { BookingCancellationDialog } from "@voyantjs/bookings-ui/components/booking-cancellation-dialog"
 import { BookingDialog } from "@voyantjs/bookings-ui/components/booking-dialog"
 import { BookingGroupSection } from "@voyantjs/bookings-ui/components/booking-group-section"
@@ -21,6 +22,7 @@ import { StatusChangeDialog } from "@voyantjs/bookings-ui/components/status-chan
 import { SupplierStatusList } from "@voyantjs/bookings-ui/components/supplier-status-list"
 import { TravelerList } from "@voyantjs/bookings-ui/components/traveler-list"
 import { CollectPaymentDialog } from "@voyantjs/checkout-ui"
+import { useOrganization, usePerson } from "@voyantjs/crm-react"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import {
   DropdownMenu,
@@ -33,7 +35,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/component
 import {
   Ban,
   Calendar,
-  ChevronRight,
   CreditCard,
   Mail,
   MapPin,
@@ -48,6 +49,7 @@ import type { ReactNode } from "react"
 import { useState } from "react"
 import { AdminWidgetSlotRenderer } from "@/components/admin/admin-widget-slot"
 import { useAdminMessages } from "@/lib/admin-i18n"
+import { getApiUrl } from "@/lib/env"
 import { visibleInternalNotes } from "@/lib/internal-notes"
 import { BookingActionLedgerPanel } from "./booking-action-ledger-panel"
 import { BookingCatalogSourceCard } from "./booking-catalog-source-card"
@@ -119,12 +121,20 @@ export function BookingDetailPage({ id }: { id: string }) {
   const [collectPaymentOpen, setCollectPaymentOpen] = useState(false)
   const { data: bookingData, isPending } = useBooking(id)
   const { remove } = useBookingMutation()
+  const booking = bookingData?.data
+  useAdminBreadcrumbs(
+    booking
+      ? [
+          { label: detailMessages.breadcrumbBookings, href: "/bookings" },
+          { label: booking.bookingNumber },
+        ]
+      : [{ label: detailMessages.breadcrumbBookings, href: "/bookings" }],
+  )
 
   if (isPending) {
     return <BookingDetailSkeleton />
   }
 
-  const booking = bookingData?.data
   if (!booking) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-12">
@@ -143,16 +153,6 @@ export function BookingDetailPage({ id }: { id: string }) {
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Link to="/bookings" className="transition-colors hover:text-foreground">
-          {detailMessages.breadcrumbBookings}
-        </Link>
-        <ChevronRight className="h-3.5 w-3.5" />
-        <span className="font-normal text-foreground">{booking.bookingNumber}</span>
-      </div>
-
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold tracking-tight">{booking.bookingNumber}</h1>
@@ -233,17 +233,12 @@ export function BookingDetailPage({ id }: { id: string }) {
           />
 
           {booking.personId ? (
-            <SummaryLink
-              label={detailMessages.summaryPerson}
-              to="/people/$id"
-              params={{ id: booking.personId }}
-            />
+            <SummaryPersonLink label={detailMessages.summaryPerson} personId={booking.personId} />
           ) : null}
           {booking.organizationId ? (
-            <SummaryLink
+            <SummaryOrganizationLink
               label={detailMessages.summaryOrganization}
-              to="/organizations/$id"
-              params={{ id: booking.organizationId }}
+              organizationId={booking.organizationId}
             />
           ) : null}
           <SummaryStat
@@ -265,6 +260,7 @@ export function BookingDetailPage({ id }: { id: string }) {
           <TabsTrigger value="overview">{detailMessages.tabOverview}</TabsTrigger>
           <TabsTrigger value="travelers">{detailMessages.tabTravelers}</TabsTrigger>
           <TabsTrigger value="finance">{detailMessages.tabFinance}</TabsTrigger>
+          <TabsTrigger value="invoices">{detailMessages.tabInvoices}</TabsTrigger>
           <TabsTrigger value="suppliers">{detailMessages.tabSuppliers}</TabsTrigger>
           <TabsTrigger value="documents">{detailMessages.tabDocuments}</TabsTrigger>
           <TabsTrigger value="activity">{detailMessages.tabActivity}</TabsTrigger>
@@ -308,11 +304,14 @@ export function BookingDetailPage({ id }: { id: string }) {
           </div>
           <BookingPendingPaymentSessions bookingId={id} />
           <BookingPaidPaymentSessions bookingId={id} />
-          <BookingInvoicesCard bookingId={id} />
           <BookingPaymentsSummary bookingId={id} variant="admin" />
           <BookingPaymentPolicyCard booking={booking} />
           <BookingPaymentScheduleList bookingId={id} />
           <BookingGuaranteeList bookingId={id} />
+        </TabsContent>
+
+        <TabsContent value="invoices" className="mt-4">
+          <BookingInvoicesCard bookingId={id} />
         </TabsContent>
 
         <TabsContent value="suppliers" className="mt-4">
@@ -320,7 +319,7 @@ export function BookingDetailPage({ id }: { id: string }) {
         </TabsContent>
 
         <TabsContent value="documents" className="mt-4 flex flex-col gap-4">
-          <BookingDocumentsTable bookingId={id} />
+          <BookingDocumentsTable bookingId={id} apiBaseUrl={getApiUrl()} />
         </TabsContent>
 
         <TabsContent value="activity" className="mt-4 flex flex-col gap-6">
@@ -384,7 +383,26 @@ function SummaryStat({
 }
 
 function BookingBillingContextCard({ booking }: { booking: BookingRecord }) {
-  const payerName = [booking.contactFirstName, booking.contactLastName].filter(Boolean).join(" ")
+  const [editOpen, setEditOpen] = useState(false)
+  // Snapshot fields on the booking row are the source of truth (they
+  // capture contact info at the time of booking). When they're empty
+  // — typically for bookings created via flows that don't snapshot —
+  // fall back to the linked CRM person / organization so the card
+  // still tells the operator who they're billing.
+  const person = usePerson(booking.personId ?? undefined, {
+    enabled: Boolean(booking.personId),
+  }).data
+  const organization = useOrganization(booking.organizationId ?? undefined, {
+    enabled: Boolean(booking.organizationId) && !booking.personId,
+  }).data
+
+  const payerName =
+    [booking.contactFirstName, booking.contactLastName].filter(Boolean).join(" ") ||
+    (person ? [person.firstName, person.lastName].filter(Boolean).join(" ") : "") ||
+    organization?.name ||
+    ""
+  const email = booking.contactEmail ?? person?.email ?? null
+  const phone = booking.contactPhone ?? person?.phone ?? null
   const address = [
     booking.contactAddressLine1,
     booking.contactCity,
@@ -395,33 +413,41 @@ function BookingBillingContextCard({ booking }: { booking: BookingRecord }) {
     .filter(Boolean)
     .join(", ")
 
+  const m = useAdminMessages().bookings.detail.billingContact
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <CreditCard className="h-4 w-4" />
-          Billing contact
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-4">
-        <BillingField label="Payer" value={payerName || "-"} />
-        <BillingField
-          label="Email"
-          value={booking.contactEmail ?? "-"}
-          icon={<Mail className="h-3.5 w-3.5" />}
-        />
-        <BillingField
-          label="Phone"
-          value={booking.contactPhone ?? "-"}
-          icon={<Phone className="h-3.5 w-3.5" />}
-        />
-        <BillingField
-          label="Address"
-          value={address || "-"}
-          icon={<MapPin className="h-3.5 w-3.5" />}
-        />
-      </CardContent>
-    </Card>
+    <>
+      <Card>
+        <CardHeader className="pb-3 flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CreditCard className="h-4 w-4" />
+            {m.title}
+          </CardTitle>
+          <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
+            <Pencil className="mr-1 h-3.5 w-3.5" />
+            {m.edit}
+          </Button>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-4">
+          <BillingField label={m.payerLabel} value={payerName || m.noValue} />
+          <BillingField
+            label={m.emailLabel}
+            value={email ?? m.noValue}
+            icon={<Mail className="h-3.5 w-3.5" />}
+          />
+          <BillingField
+            label={m.phoneLabel}
+            value={phone ?? m.noValue}
+            icon={<Phone className="h-3.5 w-3.5" />}
+          />
+          <BillingField
+            label={m.addressLabel}
+            value={address || m.noValue}
+            icon={<MapPin className="h-3.5 w-3.5" />}
+          />
+        </CardContent>
+      </Card>
+      <BookingBillingDialog open={editOpen} onOpenChange={setEditOpen} booking={booking} />
+    </>
   )
 }
 
@@ -460,24 +486,43 @@ function ActionMenu({ children }: { children: ReactNode }) {
   )
 }
 
-function SummaryLink({
-  label,
-  to,
-  params,
-}: {
-  label: string
-  to: "/people/$id" | "/organizations/$id"
-  params: { id: string }
-}) {
+function SummaryPersonLink({ label, personId }: { label: string; personId: string }) {
+  // Hydrate the CRM person so the header shows a human name with a
+  // link to the detail page, falling back to the raw id while the
+  // record is in flight (or when the person was hard-deleted).
+  const person = usePerson(personId).data
+  const name = person ? [person.firstName, person.lastName].filter(Boolean).join(" ").trim() : ""
   return (
     <div className="flex flex-col gap-1">
       <div className="text-xs font-medium text-muted-foreground">{label}</div>
       <Link
-        to={to}
-        params={params}
-        className="truncate font-mono text-xs text-primary hover:underline"
+        to="/people/$id"
+        params={{ id: personId }}
+        className="truncate text-sm font-medium text-primary hover:underline"
       >
-        {params.id}
+        {name || personId}
+      </Link>
+    </div>
+  )
+}
+
+function SummaryOrganizationLink({
+  label,
+  organizationId,
+}: {
+  label: string
+  organizationId: string
+}) {
+  const organization = useOrganization(organizationId).data
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="text-xs font-medium text-muted-foreground">{label}</div>
+      <Link
+        to="/organizations/$id"
+        params={{ id: organizationId }}
+        className="truncate text-sm font-medium text-primary hover:underline"
+      >
+        {organization?.name || organizationId}
       </Link>
     </div>
   )

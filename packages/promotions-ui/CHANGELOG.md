@@ -1,5 +1,22 @@
 # @voyantjs/promotions-ui
 
+## 0.52.2
+
+### Patch Changes
+
+- 3e09123: UI polish across supplier, promotion, and flights surfaces.
+
+  - `SuppliersPage` rebuilt around the shared table primitives with consistent sort/filter/empty-state behaviour. `SupplierDialog` and `RateDialog` get the same form pattern as the rest of the admin dialogs, including new i18n strings (EN + RO).
+  - `PromotionsPage` moves filter controls into a `Popover` driven by a single "Filters" trigger so the toolbar no longer overflows on narrow viewports; new i18n string for the trigger label (EN + RO).
+  - `BillingPersonPicker` / `BillingOrgPicker` follow the CRM `birthday → dateOfBirth` rename so the adult-only filter keeps working.
+
+- Updated dependencies [3e09123]
+- Updated dependencies [6bdfcbc]
+- Updated dependencies [3e09123]
+  - @voyantjs/i18n@0.52.2
+  - @voyantjs/promotions-react@0.52.2
+  - @voyantjs/ui@0.52.2
+
 ## 0.52.1
 
 ### Patch Changes

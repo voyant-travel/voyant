@@ -76,7 +76,7 @@ export function personBaseFields(data: CreatePersonInput | UpdatePersonInput) {
     source: data.source,
     sourceRef: data.sourceRef,
     tags: data.tags,
-    birthday: data.birthday,
+    dateOfBirth: data.dateOfBirth,
     notes: data.notes,
     accessibilityEncrypted: data.accessibilityEncrypted,
     dietaryEncrypted: data.dietaryEncrypted,

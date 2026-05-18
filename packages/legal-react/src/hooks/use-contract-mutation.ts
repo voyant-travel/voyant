@@ -21,6 +21,20 @@ export type CreateLegalContractInput = z.input<typeof insertContractSchema>
 export type UpdateLegalContractInput = z.input<typeof updateContractSchema>
 export type GenerateLegalContractDocumentInput = z.input<typeof generateContractDocumentInputSchema>
 
+export interface SendLegalContractInputBody {
+  /** Customer email to deliver the contract to. */
+  recipientEmail?: string | null
+  /** Subject line for the outgoing email. */
+  subject?: string | null
+  /** Plain-text or HTML body that the operator typed in the send dialog. */
+  message?: string | null
+}
+
+export interface SendLegalContractInput {
+  id: string
+  input?: SendLegalContractInputBody
+}
+
 export function useLegalContractMutation() {
   const { baseUrl, fetcher } = useVoyantLegalContext()
   const queryClient = useQueryClient()
@@ -92,12 +106,19 @@ export function useLegalContractMutation() {
   })
 
   const send = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (input: SendLegalContractInput | string) => {
+      // Back-compat: callers that just need the status flip can keep
+      // passing the id string. New callers (ContractSendDialog) pass
+      // `{ id, input: { subject, message, recipientEmail } }` so the
+      // route can carry their customization onto the `contract.sent`
+      // lifecycle event.
+      const normalized: SendLegalContractInput =
+        typeof input === "string" ? { id: input, input: {} } : input
       const { data } = await fetchWithValidation(
-        `/v1/admin/legal/contracts/${id}/send`,
+        `/v1/admin/legal/contracts/${normalized.id}/send`,
         legalContractSingleResponse,
         { baseUrl, fetcher },
-        { method: "POST" },
+        { method: "POST", body: JSON.stringify(normalized.input ?? {}) },
       )
       return data
     },

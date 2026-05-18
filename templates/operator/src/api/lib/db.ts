@@ -1,6 +1,8 @@
 import { Pool } from "@neondatabase/serverless"
 import { createDbClient, type DbAdapter } from "@voyantjs/db"
 import { drizzle as drizzleNeonWs, type NeonDatabase } from "drizzle-orm/neon-serverless"
+import { drizzle as drizzleNodePg } from "drizzle-orm/node-postgres"
+import { Pool as NodePgPool } from "pg"
 
 /**
  * `@neondatabase/serverless`'s `Pool` extends `pg.Pool`. Some pnpm
@@ -14,6 +16,41 @@ type PgPoolApi = {
 function newPool(connectionString: string): Pool & PgPoolApi {
   const Ctor = Pool as unknown as new (cfg: { connectionString: string }) => Pool & PgPoolApi
   return new Ctor({ connectionString })
+}
+
+/**
+ * Local Postgres doesn't speak Neon's WebSocket protocol. When the
+ * connection string points at localhost, swap the WS driver for
+ * `pg.Pool` + `drizzle-orm/node-postgres`. Drizzle's runtime API
+ * (queries, transactions) is identical across the two flavors, so we
+ * cast through `unknown` to keep the `NeonDatabase` annotation that
+ * downstream call sites depend on.
+ */
+function isLocalConnection(connectionString: string): boolean {
+  try {
+    const { hostname } = new URL(connectionString)
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1"
+  } catch {
+    return false
+  }
+}
+
+function openDb(connectionString: string): {
+  db: NeonDatabase
+  dispose: () => Promise<void>
+} {
+  if (isLocalConnection(connectionString)) {
+    const pool = new NodePgPool({ connectionString })
+    return {
+      db: drizzleNodePg(pool) as unknown as NeonDatabase,
+      dispose: () => pool.end().catch(() => {}),
+    }
+  }
+  const pool = newPool(connectionString)
+  return {
+    db: drizzleNeonWs(pool),
+    dispose: () => pool.end().catch(() => {}),
+  }
 }
 
 /**
@@ -40,8 +77,7 @@ export function getDb(adapter?: DbAdapter) {
  * runtime reclaims the isolate.
  */
 export function getDbFromEnv(env: CloudflareBindings): NeonDatabase {
-  const pool = newPool(env.DATABASE_URL)
-  return drizzleNeonWs(pool)
+  return openDb(env.DATABASE_URL).db
 }
 
 /**
@@ -55,11 +91,7 @@ export function dbFromEnvForApp(env: CloudflareBindings): {
   db: NeonDatabase
   dispose: () => Promise<void>
 } {
-  const pool = newPool(env.DATABASE_URL)
-  return {
-    db: drizzleNeonWs(pool),
-    dispose: () => pool.end().catch(() => {}),
-  }
+  return openDb(env.DATABASE_URL)
 }
 
 /**
@@ -72,10 +104,10 @@ export async function withDbFromEnv<T>(
   env: CloudflareBindings,
   fn: (db: NeonDatabase) => Promise<T>,
 ): Promise<T> {
-  const pool = newPool(env.DATABASE_URL)
+  const { db, dispose } = openDb(env.DATABASE_URL)
   try {
-    return await fn(drizzleNeonWs(pool))
+    return await fn(db)
   } finally {
-    await pool.end().catch(() => {})
+    await dispose()
   }
 }

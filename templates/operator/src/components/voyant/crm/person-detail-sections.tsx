@@ -1,4 +1,4 @@
-import { formatMessage, useLocale } from "@voyantjs/admin"
+import { formatMessage, useAdminBreadcrumbs, useLocale } from "@voyantjs/admin"
 import { type OrganizationRecord, useOrganizations } from "@voyantjs/crm-react"
 import {
   Avatar,
@@ -1421,18 +1421,12 @@ export function PersonTopBar({
   deletePending: boolean
 }) {
   const messages = useAdminMessages().crm.personDetail
+  useAdminBreadcrumbs([{ label: messages.breadcrumbRoot, href: "/people" }, { label: displayName }])
   return (
     <div className="sticky top-0 z-10 flex items-center gap-3 border-b bg-background px-6 py-3">
       <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
         <ArrowLeft className="h-4 w-4" />
       </Button>
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <button type="button" onClick={onBack} className="hover:text-foreground">
-          {messages.breadcrumbRoot}
-        </button>
-        <span>/</span>
-        <span className="text-foreground">{displayName}</span>
-      </div>
       <div className="ml-auto flex items-center gap-2">
         <Button variant="outline" size="sm" onClick={onEdit}>
           <Pencil className="mr-2 h-4 w-4" />
@@ -1468,7 +1462,7 @@ export function PersonSidebar({
     phone: string | null
     website: string | null
     jobTitle: string | null
-    birthday: string | null
+    dateOfBirth: string | null
     source: string | null
     preferredLanguage: string | null
     preferredCurrency: string | null
@@ -1604,10 +1598,10 @@ export function PersonSidebar({
           />
           <InlineField
             icon={Calendar}
-            label={messages.birthdayLabel}
+            label={messages.dateOfBirthLabel}
             kind="date"
-            value={person.birthday}
-            onSave={(next) => updateField({ birthday: next })}
+            value={person.dateOfBirth}
+            onSave={(next) => updateField({ dateOfBirth: next })}
           />
           <InlineField
             icon={Tag}

@@ -33,6 +33,9 @@ export type AllocationUiMessages = Record<string, unknown> & {
   createRoom: string
   resourceLabel: string
   resourceCapacity: string
+  resourceOption: string
+  resourceOptionPlaceholder: string
+  resourceOptionNone: string
   createResource: string
   editResource: string
   saveResource: string
@@ -44,6 +47,8 @@ export type AllocationUiMessages = Record<string, unknown> & {
   assignTraveler: string
   assignTravelerSearch: string
   assignTravelerEmpty: string
+  assignTravelerSameBooking: string
+  assignTravelerOthers: string
   resourceOtherGroup: string
   rooms: string
   resources: string
@@ -123,6 +128,9 @@ export const allocationUiEn = {
   createRoom: "Create room",
   resourceLabel: "Resource label",
   resourceCapacity: "Capacity",
+  resourceOption: "Tied to option",
+  resourceOptionPlaceholder: "Select an option…",
+  resourceOptionNone: "Unassigned (manual)",
   createResource: "Create resource",
   editResource: "Edit resource",
   saveResource: "Save",
@@ -134,6 +142,8 @@ export const allocationUiEn = {
   assignTraveler: "Assign",
   assignTravelerSearch: "Search traveler...",
   assignTravelerEmpty: "No unallocated travelers.",
+  assignTravelerSameBooking: "Same booking",
+  assignTravelerOthers: "Other bookings",
   resourceOtherGroup: "Other",
   rooms: "Rooms",
   resources: "Resources",
@@ -142,7 +152,7 @@ export const allocationUiEn = {
   seat: "Seat",
   cabins: "Cabins",
   flightSeats: "Flight seats",
-  travelers: "travelers",
+  travelers: "Travelers",
   capacity: "Capacity",
   lead: "Lead",
   sharingGroup: "Sharing group",
@@ -152,9 +162,9 @@ export const allocationUiEn = {
   remove: "Remove",
   overCapacity: "Resource is full",
   dropHere: "Drop traveler here",
-  slotCapacityLabel: "Slot pax",
+  slotCapacityLabel: "Free seats",
   slotCapacityUnlimited: "Unlimited",
-  resourceCapacityLabel: "Resource capacity",
+  resourceCapacityLabel: "Provisioned",
   resourceCapacityFits: "fits in slot",
   resourceCapacityExact: "matches slot",
   resourceCapacityOver: "over slot cap",
@@ -213,6 +223,9 @@ export const allocationUiRo = {
   createRoom: "Creeaza camera",
   resourceLabel: "Eticheta resursa",
   resourceCapacity: "Capacitate",
+  resourceOption: "Optiune asociata",
+  resourceOptionPlaceholder: "Alege o optiune…",
+  resourceOptionNone: "Neasociata (manual)",
   createResource: "Creeaza resursa",
   editResource: "Editeaza resursa",
   saveResource: "Salveaza",
@@ -224,6 +237,8 @@ export const allocationUiRo = {
   assignTraveler: "Aloca",
   assignTravelerSearch: "Cauta calator...",
   assignTravelerEmpty: "Nu exista calatori nealocati.",
+  assignTravelerSameBooking: "Aceeasi rezervare",
+  assignTravelerOthers: "Alte rezervari",
   resourceOtherGroup: "Altele",
   rooms: "Camere",
   resources: "Resurse",
@@ -232,7 +247,7 @@ export const allocationUiRo = {
   seat: "Loc",
   cabins: "Cabine",
   flightSeats: "Locuri zbor",
-  travelers: "calatori",
+  travelers: "Calatori",
   capacity: "Capacitate",
   lead: "Lead",
   sharingGroup: "Grup partaj",
@@ -242,9 +257,9 @@ export const allocationUiRo = {
   remove: "Scoate",
   overCapacity: "Resursa este plina",
   dropHere: "Trage calatorul aici",
-  slotCapacityLabel: "Pax slot",
+  slotCapacityLabel: "Locuri libere",
   slotCapacityUnlimited: "Nelimitat",
-  resourceCapacityLabel: "Capacitate resurse",
+  resourceCapacityLabel: "Provizionate",
   resourceCapacityFits: "incape in slot",
   resourceCapacityExact: "egal cu slotul",
   resourceCapacityOver: "depaseste slotul",

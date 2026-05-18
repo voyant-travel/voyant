@@ -33,6 +33,8 @@ export {
   shouldRevealBookingPii,
 } from "./pii-redaction.js"
 export type {
+  BookingCancelledEvent,
+  BookingConfirmedEvent,
   BookingTravelerSharingGroupMember,
   BookingTravelerSharingGroupSummary,
   ConvertProductData,

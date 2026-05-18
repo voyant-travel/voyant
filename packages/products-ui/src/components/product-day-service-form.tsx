@@ -5,6 +5,7 @@ import {
   useProductDayServiceMutation,
 } from "@voyantjs/products-react"
 import { Button } from "@voyantjs/ui/components/button"
+import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
 import {
@@ -325,11 +326,9 @@ export function ProductDayServiceForm({
           <Label htmlFor="product-day-service-currency">
             {serviceMessages.fields.costCurrency}
           </Label>
-          <Input
-            id="product-day-service-currency"
-            value={state.costCurrency}
-            maxLength={3}
-            onChange={(event) => field("costCurrency")(event.target.value)}
+          <CurrencyCombobox
+            value={state.costCurrency || null}
+            onChange={(next) => field("costCurrency")(next ?? "")}
             disabled={isSubmitting}
           />
         </div>

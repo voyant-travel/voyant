@@ -326,6 +326,10 @@ export type BookingsUiMessages = {
       createNewOrganization: string
       createPersonSheetTitle: string
       createOrganizationSheetTitle: string
+      editPerson: string
+      editOrganization: string
+      editPersonSheetTitle: string
+      editOrganizationSheetTitle: string
       selectExistingPerson: string
       personSearchPlaceholder: string
       personSelectPlaceholder: string
@@ -352,6 +356,8 @@ export type BookingsUiMessages = {
       lastName: string
       email: string
       role: string
+      category: string
+      dateOfBirth: string
       roleLead: string
       roleAdult: string
       roleChild: string
@@ -365,7 +371,24 @@ export type BookingsUiMessages = {
       personEmpty: string
       createNewPerson: string
       createPersonSheetTitle: string
+      editPerson: string
+      editPersonSheetTitle: string
       addBillingPerson: string
+      relatedPeopleHeading: string
+      addRelatedPerson: string
+    }
+    relationshipKindLabels: {
+      spouse: string
+      partner: string
+      parent: string
+      child: string
+      sibling: string
+      guardian: string
+      ward: string
+      emergency_contact: string
+      friend: string
+      travel_companion: string
+      other: string
     }
   }
   paymentScheduleSection: {
@@ -738,6 +761,9 @@ export type BookingsUiMessages = {
     }
     actions: {
       deleteConfirm: string
+      issueDocument: string
+      issueInvoice: string
+      issueProforma: string
     }
   }
   supplierStatusList: {
@@ -795,6 +821,24 @@ export type BookingsUiMessages = {
     actions: {
       close: string
       confirm: string
+    }
+  }
+  bookingBillingDialog: {
+    title: string
+    fields: {
+      firstName: string
+      lastName: string
+      email: string
+      phone: string
+      address: string
+      city: string
+      region: string
+      postalCode: string
+      country: string
+    }
+    actions: {
+      cancel: string
+      save: string
     }
   }
   bookingGuaranteeDialog: {
@@ -934,6 +978,10 @@ export type BookingsUiMessages = {
       internalNotes: string
       confirmAfterCreate: string
       confirmAfterCreateHint: string
+      createAsDraft: string
+      createAsDraftHint: string
+      notifyTraveler: string
+      notifyTravelerHint: string
     }
     placeholders: {
       departure: string
@@ -953,6 +1001,8 @@ export type BookingsUiMessages = {
     }
     actions: {
       createDraftBooking: string
+      createConfirmedBooking: string
+      createAwaitingPaymentBooking: string
     }
     labels: {
       currency: string
@@ -961,6 +1011,7 @@ export type BookingsUiMessages = {
       createNewPerson: string
       selectExistingPerson: string
       organizationNone: string
+      billingHeading: string
       addTraveler: string
       travelerHeading: string
       travelerRole: string
@@ -998,6 +1049,15 @@ export type BookingsUiMessages = {
       voucherRemainingLabel: string
       voucherInvalidLabel: string
       paymentHeading: string
+      previewHeading: string
+      previewEmpty: string
+      previewProduct: string
+      previewDeparture: string
+      previewOptions: string
+      previewTravelers: string
+      previewTotal: string
+      previewLoading: string
+      previewTravelerUnnamed: string
       paymentModeUnpaid: string
       paymentModeFull: string
       paymentModeAdvance: string
@@ -1030,6 +1090,9 @@ export type BookingsUiMessages = {
       breakdownOverrideReason: string
       breakdownOverrideReasonPlaceholder: string
       breakdownOverrideReasonRequired: string
+      breakdownSubtotal: string
+      breakdownTax: string
+      breakdownTaxIncluded: string
     }
   }
   bookingList: {

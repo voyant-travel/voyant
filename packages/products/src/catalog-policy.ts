@@ -383,6 +383,24 @@ const PRODUCT_FIELD_POLICY: FieldPolicyInput[] = [
     sourceFreshness: "sync",
   },
   {
+    path: "availableDeparturesCount",
+    class: "merchandisable",
+    merge: "source-only",
+    // High-drift because the count moves whenever availability_slots are
+    // added/removed or close-outs change; reindex-on-entry keeps it warm
+    // enough for the operator catalog table without being load-bearing
+    // for downstream booking flows.
+    drift: "high",
+    reindex: "facet-affecting",
+    snapshot: "never",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
     path: "durationDays",
     class: "structural",
     merge: "source-only",

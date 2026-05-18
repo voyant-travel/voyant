@@ -39,6 +39,7 @@
     "@tiptap/starter-kit": "^3.7.2",
     "@voyantjs/action-ledger": "workspace:*",
     "@voyantjs/admin": "workspace:*",
+    "@voyantjs/allocation-ui": "workspace:*",
     "@voyantjs/auth": "workspace:*",
     "@voyantjs/auth-ui": "workspace:*",
     "@voyantjs/availability": "workspace:*",

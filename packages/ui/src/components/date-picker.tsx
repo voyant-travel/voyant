@@ -198,6 +198,16 @@ function RangePresets({ presets, onSelect }: RangePresetsProps) {
   )
 }
 
+/**
+ * Default visible range when `captionLayout` is a dropdown variant.
+ * react-day-picker requires `startMonth`/`endMonth` for the year dropdown
+ * to enumerate options — without them only the current year is shown. We
+ * default to a 100-year window (-90 → +10) so DOB pickers and forward-looking
+ * pickers both work without needing per-callsite configuration.
+ */
+const DEFAULT_DROPDOWN_START_MONTH = new Date(new Date().getFullYear() - 90, 0, 1)
+const DEFAULT_DROPDOWN_END_MONTH = new Date(new Date().getFullYear() + 10, 11, 31)
+
 export function DatePicker({
   value,
   defaultValue,
@@ -208,6 +218,9 @@ export function DatePicker({
   className,
   contentClassName,
   clearable = true,
+  captionLayout = "dropdown",
+  startMonth,
+  endMonth,
   ...calendarProps
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false)
@@ -255,6 +268,13 @@ export function DatePicker({
           selected={selectedDate}
           onSelect={handleSelect}
           defaultMonth={selectedDate}
+          captionLayout={captionLayout}
+          startMonth={
+            startMonth ?? (captionLayout !== "label" ? DEFAULT_DROPDOWN_START_MONTH : undefined)
+          }
+          endMonth={
+            endMonth ?? (captionLayout !== "label" ? DEFAULT_DROPDOWN_END_MONTH : undefined)
+          }
           {...calendarProps}
         />
         <DatePickerFooter
@@ -281,6 +301,9 @@ export function DateRangePicker({
   contentClassName,
   clearable = true,
   numberOfMonths = 2,
+  captionLayout = "dropdown",
+  startMonth,
+  endMonth,
   ...calendarProps
 }: DateRangePickerProps) {
   const [open, setOpen] = React.useState(false)
@@ -346,6 +369,13 @@ export function DateRangePicker({
           onSelect={handleSelect}
           defaultMonth={selectedRange?.from}
           numberOfMonths={numberOfMonths}
+          captionLayout={captionLayout}
+          startMonth={
+            startMonth ?? (captionLayout !== "label" ? DEFAULT_DROPDOWN_START_MONTH : undefined)
+          }
+          endMonth={
+            endMonth ?? (captionLayout !== "label" ? DEFAULT_DROPDOWN_END_MONTH : undefined)
+          }
           {...calendarProps}
         />
         <DatePickerFooter

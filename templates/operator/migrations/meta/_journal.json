@@ -113,6 +113,41 @@
       "when": 1778918400000,
       "tag": "0017_cloud_auth_links",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1778918500000,
+      "tag": "0011_allocation_resource_templates",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1778918600000,
+      "tag": "0012_allocation_audit_labels",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1778918700000,
+      "tag": "0013_booking_price_override",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1778918800000,
+      "tag": "0014_booking_activity_traveler_update",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1778918900000,
+      "tag": "0018_rename_birthday",
+      "breakpoints": true
     }
   ]
 }

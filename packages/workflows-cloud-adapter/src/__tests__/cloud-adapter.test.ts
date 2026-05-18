@@ -224,6 +224,66 @@ describe("createCloudOrchestrator", () => {
     expect(capturedBody.bundle?.url).toContain("/voyant-bundles/prj_test/v1/container.mjs")
     expect(capturedBody.bundle?.url).toContain("X-Amz-Signature=")
   })
+
+  it("dispatches runtime=node steps to the Cloud Run node runner", async () => {
+    workflow<{ n: number }, unknown>({
+      id: "cloud-run-node",
+      async run(input, ctx) {
+        return ctx.step("compute", { runtime: "node" }, async () => input.n + 1)
+      },
+    })
+
+    let capturedBody: {
+      bundle?: { key: string; hash: string }
+      workflowId?: string
+      stepId?: string
+    } = {}
+    let capturedAuth: string | null = null
+    const originalFetch = globalThis.fetch
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init)
+      capturedAuth = request.headers.get("x-voyant-step-auth")
+      capturedBody = JSON.parse(await request.text()) as typeof capturedBody
+      return new Response(
+        JSON.stringify({
+          attempt: 1,
+          status: "ok",
+          output: "from-cloud-run",
+          startedAt: 10,
+          finishedAt: 20,
+          runtime: "node",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      )
+    }) as typeof fetch
+
+    try {
+      const envRef: { env?: CloudWorkflowsEnv } = {}
+      const env: CloudWorkflowsEnv = {
+        WORKFLOW_RUN_DO: makeRunNamespace(envRef),
+        VOYANT_WORKFLOW_NODE_RUNNER_URL: "https://node-runner.example",
+        VOYANT_WORKFLOW_BUNDLE_KEY: "artifacts/acme/container.mjs",
+        VOYANT_WORKFLOW_BUNDLE_HASH: "sha256:abcd",
+        VOYANT_WORKFLOW_STEP_AUTH_SECRET: "step-secret",
+      }
+      envRef.env = env
+
+      const response = await handleCloudFetch(triggerRequest("cloud-run-node", "run_cloudrun"), env)
+      expect(response.status).toBe(200)
+      const body = (await response.json()) as { status: string; output: unknown }
+      expect(body.status).toBe("completed")
+      expect(body.output).toBe("from-cloud-run")
+      expect(capturedAuth).toEqual(expect.any(String))
+      expect(capturedBody.workflowId).toBe("cloud-run-node")
+      expect(capturedBody.stepId).toBe("compute")
+      expect(capturedBody.bundle).toEqual({
+        key: "artifacts/acme/container.mjs",
+        hash: "sha256:abcd",
+      })
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
 })
 
 describe("mountWorkflows", () => {

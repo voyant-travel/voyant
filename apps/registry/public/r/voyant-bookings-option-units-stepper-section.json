@@ -1,0 +1,23 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "voyant-bookings-option-units-stepper-section",
+  "title": "Booking Option Units Stepper Section",
+  "description": "Per-option-unit quantity stepper for booking-create, driven by GET /v1/availability/slots/:id/unit-availability. Shows live 'N left' counters; min/max enforced against the server's remaining count so the UI can't queue up a 409.",
+  "dependencies": [
+    "@voyantjs/availability-react",
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "button",
+    "label"
+  ],
+  "files": [
+    {
+      "path": "registry/bookings/option-units-stepper-section.tsx",
+      "content": "export {\n  OptionUnitsStepperSection,\n  type OptionUnitsStepperSectionProps,\n  type OptionUnitsStepperValue,\n} from \"@voyantjs/bookings-ui\"\n",
+      "type": "registry:component",
+      "target": "components/voyant/bookings/option-units-stepper-section.tsx"
+    }
+  ],
+  "type": "registry:component"
+}

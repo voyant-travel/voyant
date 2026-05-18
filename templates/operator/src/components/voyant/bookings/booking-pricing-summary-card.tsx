@@ -1,10 +1,11 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
+import { formatMessage, useLocale } from "@voyantjs/admin"
 import { useInvoices } from "@voyantjs/finance-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
 import { Receipt } from "lucide-react"
-
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 
 interface CatalogSnapshotResponse {
@@ -43,6 +44,8 @@ export function BookingPricingSummaryCard({
   /** Fallback currency when neither invoice nor snapshot has one. */
   defaultCurrency: string
 }): React.ReactElement | null {
+  const messages = useAdminMessages().bookings.detail.pricingSummary
+  const { resolvedLocale } = useLocale()
   const { data: invoicesData } = useInvoices({ bookingId, limit: 5 })
   const { data: snapshotData } = useQuery({
     queryKey: ["booking-catalog-snapshot", bookingId],
@@ -105,36 +108,60 @@ export function BookingPricingSummaryCard({
       <CardHeader className="pb-3">
         <CardTitle className="flex flex-wrap items-center gap-2 text-base">
           <Receipt className="h-4 w-4 text-muted-foreground" />
-          Pret
+          {messages.title}
           <span className="ml-auto text-muted-foreground text-xs font-normal">
             {source === "invoice"
-              ? `From invoice ${invoiceLabel}`
-              : "Estimated from catalog snapshot — final on invoice"}
+              ? formatMessage(messages.fromInvoice, { number: invoiceLabel ?? "" })
+              : messages.fromSnapshot}
           </span>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <dl className="space-y-2 text-sm">
           {subtotalCents != null ? (
-            <Row label="Subtotal" amountCents={subtotalCents} currency={currency} />
+            <Row
+              label={messages.subtotalLabel}
+              amountCents={subtotalCents}
+              currency={currency}
+              locale={resolvedLocale}
+            />
           ) : null}
           {feesCents != null && feesCents > 0 ? (
-            <Row label="Taxe administrative" amountCents={feesCents} currency={currency} muted />
+            <Row
+              label={messages.feesLabel}
+              amountCents={feesCents}
+              currency={currency}
+              locale={resolvedLocale}
+              muted
+            />
           ) : null}
           {surchargesCents != null && surchargesCents > 0 ? (
-            <Row label="Suprataxe" amountCents={surchargesCents} currency={currency} muted />
+            <Row
+              label={messages.surchargesLabel}
+              amountCents={surchargesCents}
+              currency={currency}
+              locale={resolvedLocale}
+              muted
+            />
           ) : null}
           {taxCents != null ? (
             <Row
-              label="TVA / impozite"
+              label={messages.taxLabel}
               amountCents={taxCents}
               currency={currency}
+              locale={resolvedLocale}
               muted={taxCents === 0}
             />
           ) : null}
           {totalCents != null ? (
             <div className="border-t pt-2">
-              <Row label="Total" amountCents={totalCents} currency={currency} bold />
+              <Row
+                label={messages.totalLabel}
+                amountCents={totalCents}
+                currency={currency}
+                locale={resolvedLocale}
+                bold
+              />
             </div>
           ) : null}
         </dl>
@@ -147,12 +174,14 @@ function Row({
   label,
   amountCents,
   currency,
+  locale,
   bold,
   muted,
 }: {
   label: string
   amountCents: number
   currency: string
+  locale: string
   bold?: boolean
   muted?: boolean
 }): React.ReactElement {
@@ -160,7 +189,7 @@ function Row({
   return (
     <div className={`flex items-baseline justify-between gap-3 ${className}`}>
       <dt>{label}</dt>
-      <dd className="font-mono">{formatMoney(amountCents, currency)}</dd>
+      <dd className="font-mono">{formatMoney(amountCents, currency, locale)}</dd>
     </div>
   )
 }
@@ -171,9 +200,9 @@ function parseAmount(raw: string | null): number {
   return Number.isFinite(n) ? Math.round(n) : 0
 }
 
-function formatMoney(cents: number, currency: string): string {
+function formatMoney(cents: number, currency: string, locale: string): string {
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100)
+    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(cents / 100)
   } catch {
     return `${(cents / 100).toFixed(2)} ${currency}`
   }

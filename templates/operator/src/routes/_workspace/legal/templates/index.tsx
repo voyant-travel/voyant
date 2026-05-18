@@ -3,7 +3,6 @@ import { defaultFetcher, getLegalContractTemplatesQueryOptions } from "@voyantjs
 import { TemplatesPage } from "@voyantjs/legal-ui"
 
 import { TemplateDialog } from "@/components/voyant/legal/template-dialog"
-import { TemplateVersionDialog } from "@/components/voyant/legal/template-version-dialog"
 import { getApiUrl } from "@/lib/env"
 
 export const Route = createFileRoute("/_workspace/legal/templates/")({
@@ -29,7 +28,6 @@ function RouteComponent() {
         })
       }
       renderTemplateDialog={(props) => <TemplateDialog {...props} />}
-      renderTemplateVersionDialog={(props) => <TemplateVersionDialog {...props} />}
     />
   )
 }

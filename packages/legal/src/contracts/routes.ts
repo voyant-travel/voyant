@@ -25,6 +25,7 @@ import {
   insertContractTemplateVersionSchema,
   publicRenderTemplatePreviewInputSchema,
   renderTemplateInputSchema,
+  sendContractInputSchema,
   updateContractAttachmentSchema,
   updateContractNumberSeriesSchema,
   updateContractSchema,
@@ -421,7 +422,17 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
     })
     .post("/:id/send", async (c) => {
       const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
-      const result = await contractsService.sendContract(c.get("db"), c.req.param("id"), runtime)
+      // Body is optional — older callers POST without one and the
+      // service falls back to defaults. The Send-contract dialog POSTs
+      // `{ recipientEmail, subject, message }` so the notification
+      // subscriber can deliver the operator's customised copy.
+      const input = await parseOptionalJsonBody(c, sendContractInputSchema)
+      const result = await contractsService.sendContract(
+        c.get("db"),
+        c.req.param("id"),
+        runtime,
+        input ?? undefined,
+      )
       if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
       if (result.status === "not_issued") {
         return c.json({ error: "Only issued/sent contracts can be sent" }, 409)

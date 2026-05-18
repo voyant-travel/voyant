@@ -34,7 +34,7 @@
 import type { ContentLocaleMatchKind } from "@voyantjs/catalog"
 import { pickBestCachedLocale } from "@voyantjs/catalog"
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import { and, asc, eq, inArray } from "drizzle-orm"
+import { and, asc, eq, inArray, sql } from "drizzle-orm"
 
 import {
   type ProductContent,
@@ -194,6 +194,9 @@ export async function buildOwnedProductContent(
       title: d.title ?? null,
       description: d.description ?? null,
       location: d.location ?? null,
+      // Per-day hero — prefer the cover, fall back to the first sorted
+      // image attached to this day in `product_media`.
+      hero_image_url: pickDayHeroImage(mediaRows, d.id),
       services: [],
     })),
     media: mediaRows
@@ -205,9 +208,11 @@ export async function buildOwnedProductContent(
         alt: m.altText ?? null,
       })),
     policies: [],
-    // Owned products have no scheduled-departure table in v1; sourced
-    // products carry departures via the upstream's getContent payload.
-    departures: [],
+    // Owned products derive departures from `availability_slots`. Pull
+    // future-or-current slots only so the catalog sheet doesn't drown
+    // operators in expired departures; ordering is chronological so the
+    // UI can group consecutive months without sorting client-side.
+    departures: await readOwnedProductDepartures(db, entityId, productRow.sellCurrency),
   })
 
   const validation = validateProductContent(content)
@@ -231,6 +236,104 @@ interface ProductTrnCandidate {
   name: string
   shortDescription: string | null
   description: string | null
+}
+
+/**
+ * Pick the best image to surface on an itinerary day card. Filters
+ * media rows to entries with a matching `dayId`, ignores brochures and
+ * non-images, then prefers `isCover === true` before falling back to
+ * the first sorted entry. `media-rows` is the same list the parent
+ * projection already pulled; no extra round-trip.
+ */
+function pickDayHeroImage(
+  mediaRows: ReadonlyArray<typeof productMedia.$inferSelect>,
+  dayId: string,
+): string | null {
+  const dayImages = mediaRows.filter(
+    (m) => m.dayId === dayId && m.mediaType === "image" && !m.isBrochure,
+  )
+  if (dayImages.length === 0) return null
+  const cover = dayImages.find((m) => m.isCover)
+  return (cover ?? dayImages[0])?.url ?? null
+}
+
+/**
+ * Map future availability_slots → ProductDeparture[]. Raw SQL keeps the
+ * products module from depending on `@voyantjs/availability` (cross-
+ * module schema coupling is avoided per the workspace's separation).
+ */
+async function readOwnedProductDepartures(
+  db: AnyDrizzleDb,
+  productId: string,
+  sellCurrency: string,
+): Promise<ProductContent["departures"]> {
+  try {
+    const result = await db.execute(sql`
+      SELECT
+        id,
+        starts_at,
+        ends_at,
+        status,
+        initial_pax,
+        remaining_pax
+      FROM availability_slots
+      WHERE product_id = ${productId}
+        AND starts_at >= NOW()
+      ORDER BY starts_at ASC
+      LIMIT 365
+    `)
+    const rows = Array.isArray(result) ? result : ((result as { rows?: unknown[] }).rows ?? [])
+    return rows
+      .map((raw): ProductContent["departures"][number] | null => {
+        const row = raw as Record<string, unknown>
+        const id = typeof row.id === "string" ? row.id : null
+        const startsAt = isoOrNull(row.starts_at)
+        if (!id || !startsAt) return null
+        const status = typeof row.status === "string" ? row.status : null
+        const capacity = numberOrNull(row.initial_pax)
+        const remaining = numberOrNull(row.remaining_pax)
+        return {
+          id,
+          starts_at: startsAt,
+          ends_at: isoOrNull(row.ends_at),
+          status,
+          capacity,
+          remaining,
+          // Lowest price hint is for display only; the live engine
+          // resolves the actual quote. Fall back to the product's base
+          // sell_amount via the content shape's parent currency.
+          lowest_price_cents: null,
+          currency: sellCurrency,
+          note: null,
+        }
+      })
+      .filter((row): row is NonNullable<typeof row> => row !== null)
+  } catch {
+    // availability_slots may be absent in trimmed test fixtures —
+    // empty list is a safe default (matches "on-request" behavior).
+    return []
+  }
+}
+
+function isoOrNull(value: unknown): string | null {
+  if (value instanceof Date) {
+    const ms = value.getTime()
+    return Number.isFinite(ms) ? value.toISOString() : null
+  }
+  if (typeof value === "string" && value.length > 0) {
+    const d = new Date(value)
+    return Number.isFinite(d.getTime()) ? d.toISOString() : null
+  }
+  return null
+}
+
+function numberOrNull(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string") {
+    const n = Number(value)
+    return Number.isFinite(n) ? n : null
+  }
+  return null
 }
 
 function pickBestProductTranslation(

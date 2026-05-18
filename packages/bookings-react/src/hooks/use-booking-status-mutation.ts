@@ -18,6 +18,12 @@ export interface UpdateBookingStatusInput {
   currentStatus: BookingStatus
   status: BookingStatus
   note?: string | null
+  /**
+   * When true and `status === "confirmed"`, downstream subscribers
+   * (auto-dispatch notifications, document bundle email) skip
+   * sending. Lets the operator confirm a booking silently.
+   */
+  suppressNotifications?: boolean
 }
 
 export function useBookingStatusMutation(bookingId: string) {
@@ -31,6 +37,7 @@ export function useBookingStatusMutation(bookingId: string) {
         input.currentStatus,
         input.status,
         input.note,
+        { suppressNotifications: input.suppressNotifications },
       )
       const { data } = await fetchWithValidation(
         target.path,
@@ -69,8 +76,11 @@ export function useBookingStatusByIdMutation() {
       currentStatus,
       status,
       note,
+      suppressNotifications,
     }: UpdateBookingStatusByIdInput) => {
-      const target = dispatchBookingStatusChange(bookingId, currentStatus, status, note)
+      const target = dispatchBookingStatusChange(bookingId, currentStatus, status, note, {
+        suppressNotifications,
+      })
       const { data } = await fetchWithValidation(
         target.path,
         bookingSingleResponse,

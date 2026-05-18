@@ -27,7 +27,9 @@ export type CatalogUiMessages = {
       | "pricing"
       | "defaultQuantity"
       | "type"
+      | "days"
       | "nights"
+      | "availableDepartures"
       | "yacht"
       | "from"
       | "class"
@@ -133,6 +135,39 @@ export type CatalogUiMessages = {
       leftWithCapacity: string
       left: string
       capacity: string
+      tabs: {
+        overview: string
+      }
+      attributeLabels: {
+        sellAmount: string
+        supplierId: string
+      }
+      tagsInputPlaceholder: string
+      addTag: string
+      arrayLabels: {
+        categories: string
+      }
+      priceFromLabel: string
+      noUpcomingDepartures: string
+      departuresTable: {
+        date: string
+        status: string
+        availability: string
+        priceFrom: string
+        soldOut: string
+        closed: string
+        cancelled: string
+        open: string
+        viewDetails: string
+        optionsHeading: string
+        noOptions: string
+        anyMonth: string
+        anyStatus: string
+        minAvailability: string
+        clearFilters: string
+        noResults: string
+        remainingLabel: string
+      }
     }
     values: {
       active: string

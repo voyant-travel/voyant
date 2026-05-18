@@ -35,7 +35,7 @@ export function BillingPersonPicker({ apply, onPersonSelected }: BillingPersonPi
     limit: 30,
     enabled: open,
   })
-  const people = (peopleQuery.data?.data ?? []).filter((person) => isAdult(person.birthday))
+  const people = (peopleQuery.data?.data ?? []).filter((person) => isAdult(person.dateOfBirth))
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -189,9 +189,9 @@ export function BillingOrgPicker({ apply }: BillingOrgPickerProps) {
   )
 }
 
-function isAdult(birthday: string | null | undefined): boolean {
-  if (!birthday) return true
-  const dob = new Date(birthday)
+function isAdult(dateOfBirth: string | null | undefined): boolean {
+  if (!dateOfBirth) return true
+  const dob = new Date(dateOfBirth)
   if (Number.isNaN(dob.getTime())) return true
   const now = new Date()
   let years = now.getFullYear() - dob.getFullYear()

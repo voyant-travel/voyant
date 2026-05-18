@@ -256,17 +256,17 @@ export async function autoMaterializeAllocationResources(
           AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
           AND ba.status IN ('held', 'confirmed', 'fulfilled')
       ),
-      slot_items AS (
-        SELECT bi.booking_id, bi.option_id
+      -- Pax per option = sum of booking_item quantities for items belonging
+      -- to bookings on this slot. The previous formulation joined
+      -- booking_travelers to booking_id, which cross-multiplied items × travelers
+      -- whenever a booking had more than one item (e.g. Adult + Senior rows
+      -- on the same booking inflated pax_count to 4 instead of 2).
+      pax AS (
+        SELECT bi.option_id, SUM(bi.quantity)::int AS pax_count
         FROM booking_items bi
         JOIN slot_bookings sb ON sb.booking_id = bi.booking_id
         WHERE bi.option_id IS NOT NULL
-      ),
-      pax AS (
-        SELECT si.option_id, COUNT(bt.id)::int AS pax_count
-        FROM slot_items si
-        JOIN booking_travelers bt ON bt.booking_id = si.booking_id
-        GROUP BY si.option_id
+        GROUP BY bi.option_id
       )
       SELECT
         pax.option_id,
@@ -302,13 +302,19 @@ export async function autoMaterializeAllocationResources(
     const unitsNeeded = Math.max(1, Math.ceil(group.pax_count / Math.max(1, group.capacity)))
     for (let index = 0; index < unitsNeeded; index++) {
       sequence += 1
+      // Default the resource's ref to its materializing option so the UI
+      // can badge each row with the option name (e.g. Standard double).
+      // Templates that explicitly set ref_type/ref_id (e.g. pointing at a
+      // hotel inventory row) keep their own values.
+      const resolvedRefType = group.ref_type ?? "option"
+      const resolvedRefId = group.ref_id ?? group.option_id
       const [row] = await db
         .insert(allocationResources)
         .values({
           slotId,
           kind,
-          refType: group.ref_type,
-          refId: group.ref_id,
+          refType: resolvedRefType,
+          refId: resolvedRefId,
           label: renderNamePattern(group.name_pattern, {
             sequence: String(sequence),
             option: group.option_name ?? "",
@@ -655,8 +661,19 @@ function renderNamePattern(pattern: string, vars: Record<string, string>): strin
 }
 
 async function executeRows<T>(db: SqlExecutor, query: SQL): Promise<T[]> {
-  const rows = await db.execute(query)
-  return Array.isArray(rows) ? (rows as T[]) : []
+  const result = await db.execute(query)
+  if (Array.isArray(result)) return result as T[]
+  // node-postgres / neon-serverless drivers return `{ rows, rowCount, ... }`
+  // instead of a bare array — unwrap so this wrapper is driver-agnostic.
+  if (
+    result &&
+    typeof result === "object" &&
+    "rows" in result &&
+    Array.isArray((result as { rows: unknown }).rows)
+  ) {
+    return (result as { rows: T[] }).rows
+  }
+  return []
 }
 
 interface ProductOptionRow {

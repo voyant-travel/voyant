@@ -1,4 +1,5 @@
 import { useLocale } from "@voyantjs/admin"
+import { useInvoiceAttachments } from "@voyantjs/finance-react"
 import {
   Badge,
   Button,
@@ -8,8 +9,9 @@ import {
   CardTitle,
   Textarea,
 } from "@voyantjs/ui/components"
-import { Pencil, Plus, Trash2 } from "lucide-react"
+import { Download, FileText, Pencil, Plus, Trash2 } from "lucide-react"
 import { type AdminMessages, useAdminMessages } from "@/lib/admin-i18n"
+import { getApiUrl } from "@/lib/env"
 
 import {
   type CreditNoteRow,
@@ -429,6 +431,83 @@ export function InvoiceCreditNotesCard({
       </CardContent>
     </Card>
   )
+}
+
+export function InvoiceAttachmentsCard({ invoiceId }: { invoiceId: string }) {
+  const messages = useAdminMessages().finance.detailSections
+  const { resolvedLocale } = useLocale()
+  const { data } = useInvoiceAttachments(invoiceId)
+  const attachments = data?.data ?? []
+  const apiBase = getApiUrl()
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <FileText className="h-4 w-4 text-muted-foreground" />
+          {messages.attachmentsTitle}
+          {attachments.length > 0 ? (
+            <Badge variant="outline" className="text-[10px]">
+              {attachments.length}
+            </Badge>
+          ) : null}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        {attachments.length === 0 ? (
+          <p className="px-6 py-6 text-center text-muted-foreground text-sm">
+            {messages.noAttachments}
+          </p>
+        ) : (
+          <ul className="divide-y">
+            {attachments.map((attachment) => (
+              <li key={attachment.id} className="flex items-center justify-between gap-3 px-6 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{attachment.name}</p>
+                  <p className="text-muted-foreground text-xs">
+                    {formatAttachmentMeta(attachment, resolvedLocale)}
+                  </p>
+                </div>
+                <a
+                  href={`${apiBase}/v1/finance/invoice-attachments/${attachment.id}/download`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+                  aria-label={messages.downloadAttachment}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  {messages.downloadAttachment}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function formatAttachmentMeta(
+  attachment: { fileSize?: number | null; mimeType?: string | null; createdAt?: string },
+  locale: string,
+): string {
+  const parts: string[] = []
+  if (attachment.mimeType) parts.push(attachment.mimeType)
+  if (typeof attachment.fileSize === "number") parts.push(formatBytes(attachment.fileSize))
+  if (attachment.createdAt) {
+    try {
+      parts.push(new Date(attachment.createdAt).toLocaleDateString(locale))
+    } catch {
+      // ignore — locale parse failures fall through silently
+    }
+  }
+  return parts.join(" · ")
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 export function InvoiceNotesCard({

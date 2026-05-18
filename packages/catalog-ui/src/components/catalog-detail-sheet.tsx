@@ -3,6 +3,14 @@
 import type { CatalogSearchHit } from "@voyantjs/catalog-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
+import { Input } from "@voyantjs/ui/components/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@voyantjs/ui/components/select"
 import {
   Sheet,
   SheetContent,
@@ -10,9 +18,30 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@voyantjs/ui/components/sheet"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { cn } from "@voyantjs/ui/lib/utils"
-import { Check, ExternalLink, Loader2, Minus } from "lucide-react"
-import { type ReactNode, useEffect, useState } from "react"
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  ExternalLink,
+  Loader2,
+  Minus,
+  Plus,
+  X,
+} from "lucide-react"
+import {
+  Fragment,
+  type KeyboardEvent,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 import type { CatalogUiMessages } from "../i18n/messages.js"
 
@@ -20,6 +49,12 @@ export interface CatalogDetailAction {
   label: string
   onClick: (hit: CatalogSearchHit) => void
   variant?: "default" | "secondary" | "outline" | "ghost"
+  /**
+   * Optional predicate to hide the action for specific hits — e.g. only
+   * show "Open editor" when the hit is an owned product. Defaults to
+   * always-visible when omitted.
+   */
+  visible?: (hit: CatalogSearchHit) => boolean
 }
 
 /**
@@ -40,6 +75,8 @@ export interface CatalogDetailEnrichment {
     title?: string | null
     description?: string | null
     location?: string | null
+    /** Optional hero image rendered alongside the day card. */
+    heroImageUrl?: string | null
   }>
   media?: ReadonlyArray<{ url: string; type?: string; caption?: string | null }>
   options?: ReadonlyArray<{ id: string; name: string; description?: string | null }>
@@ -112,6 +149,17 @@ export interface CatalogDetailSheetProps {
     hit: CatalogSearchHit,
     departure: NonNullable<CatalogDetailEnrichment["departures"]>[number],
   ) => void
+  /**
+   * Per-option book affordance. When set, the expanded departure panel
+   * renders a Book button on each option row; the callback receives the
+   * departure plus the chosen option so the booking journey can
+   * pre-select it. Falls back to `onBookDeparture` when omitted.
+   */
+  onBookOption?: (
+    hit: CatalogSearchHit,
+    departure: NonNullable<CatalogDetailEnrichment["departures"]>[number],
+    option: NonNullable<CatalogDetailEnrichment["options"]>[number],
+  ) => void
   /** Dedicated brochure/print section rendered above media. */
   renderBrochure?: CatalogDetailRenderSlot
   /** Consumer-provided media rendering, replacing the default thumbnail grid. */
@@ -124,6 +172,25 @@ export interface CatalogDetailSheetProps {
   ) => ReactNode
   /** Additional consumer sections rendered above the footer actions. */
   renderExtraSections?: CatalogDetailRenderSlot
+  /**
+   * Render a clickable supplier link in the Attributes tab. When set,
+   * the `supplierId` row uses this renderer instead of the plain
+   * formatter — typically a router-aware Link to the supplier detail
+   * page. Receives the supplier id and the display name (already
+   * resolved by `formatters.supplierId`).
+   */
+  renderSupplierLink?: (supplierId: string, displayName: string) => ReactNode
+  /**
+   * When provided, the Tags row in the Overview tab swaps its read-only
+   * chips for an inline add/remove editor. The callback is invoked with
+   * the *next* tag list (after the local optimistic update); rejecting
+   * the promise reverts to the indexed tags.
+   *
+   * Only the `tags` field — the operator-authored jsonb list — is
+   * editable. Index-derived arrays (categories, regions, etc.) stay
+   * read-only because they're computed from elsewhere.
+   */
+  onTagsChange?: (hit: CatalogSearchHit, tags: string[]) => Promise<void> | void
 }
 
 const HIDDEN_FIELDS = new Set([
@@ -141,6 +208,43 @@ const SYSTEM_FIELD_PREFIXES = ["source.", "seller."] as const
 const ARRAY_FIELDS = new Set(["tags", "highlights", "regions", "themes", "defaultBookingModes"])
 
 /**
+ * Array fields the index emits that don't carry operator-facing value in
+ * the Tags & themes section — either duplicates of a friendlier sibling
+ * (`destinationSlugs` ↔ `regions`/`countries`/`cities`; `categorySlugs`
+ * ↔ `categoryIds`; `tagIds` ↔ `tagLabels`/`tags`) or noise derived from
+ * other rendered fields (`departureMonths` is a roll-up of
+ * `departureDates`). Hidden at render time; the underlying index still
+ * carries them for facets/filters.
+ */
+const HIDDEN_ARRAY_FIELDS = new Set([
+  // Departure surface lives in its own Departures tab now — the
+  // raw date / month chip lists in Tags & themes are redundant.
+  "departureDates",
+  "departureMonths",
+  "destinationIds",
+  "destinationSlugs",
+  // Three category projections cover the same relation: keep the
+  // friendly localized `categories` list, drop the id + slug mirrors.
+  "categoryIds",
+  "categorySlugs",
+  // `tagIds` + `tagLabels` mirror the relational tags table; keep only
+  // the operator-authored `tags` jsonb column.
+  "tagIds",
+  "tagLabels",
+])
+
+/**
+ * Array-field label overrides for the Tags & themes section. Falls
+ * through to `humanize(key)` when not present. Localized variants come
+ * in via `messages.detail.arrayLabels` per locale — this stays as a
+ * stable fallback for any call path that hasn't been wired yet.
+ */
+const ARRAY_LABEL_OVERRIDES: Record<string, string> = {
+  // i18n-literal-ok: fallback when no localized override is provided
+  categories: "Category",
+}
+
+/**
  * Right-side detail sheet for any catalog hit. Header shows the entity's
  * primary image, name, status, and id. Body is split into Description,
  * Highlights/Tags (when present), and a clean two-column attribute grid.
@@ -156,10 +260,13 @@ export function CatalogDetailSheet({
   headerExtras,
   onLoadDetail,
   onBookDeparture,
+  onBookOption,
   renderBrochure,
   renderMedia,
   renderItineraryDay,
   renderExtraSections,
+  renderSupplierLink,
+  onTagsChange,
 }: CatalogDetailSheetProps) {
   const catalogMessages = useCatalogUiMessagesOrDefault().catalogPage
   const messages = catalogMessages.detail
@@ -219,15 +326,50 @@ export function CatalogDetailSheet({
     : enrichment?.media != null && enrichment.media.length > 0
   const extraSections = hit && renderExtraSections ? renderExtraSections(hit, enrichment) : null
 
-  const allEntries = Object.entries(fields).filter(([k]) => !HIDDEN_FIELDS.has(k))
-  const arrayEntries: Array<[string, unknown]> = []
-  const attributeEntries: Array<[string, unknown]> = []
-  const systemEntries: Array<[string, unknown]> = []
-  for (const [k, v] of allEntries) {
-    if (SYSTEM_FIELD_PREFIXES.some((p) => k.startsWith(p))) systemEntries.push([k, v])
-    else if (ARRAY_FIELDS.has(k) || Array.isArray(v)) arrayEntries.push([k, v])
-    else attributeEntries.push([k, v])
-  }
+  const { arrayEntries, attributeEntries, systemEntries } = useMemo(() => {
+    const allEntries = Object.entries(fields).filter(([k]) => !HIDDEN_FIELDS.has(k))
+    const array: Array<[string, unknown]> = []
+    const attrs: Array<[string, unknown]> = []
+    const system: Array<[string, unknown]> = []
+    for (const [k, v] of allEntries) {
+      if (SYSTEM_FIELD_PREFIXES.some((p) => k.startsWith(p))) system.push([k, v])
+      else if (ARRAY_FIELDS.has(k) || Array.isArray(v)) {
+        if (HIDDEN_ARRAY_FIELDS.has(k)) continue
+        array.push([k, v])
+      } else attrs.push([k, v])
+    }
+    return { arrayEntries: array, attributeEntries: attrs, systemEntries: system }
+  }, [fields])
+
+  // ─── Attribute reshaping ──────────────────────────────────────────────
+  // Indexed projections expose `sellAmountCents` + `sellCurrency` as two
+  // separate facetable fields, plus `pax`/`supplierId`/`visibility` as
+  // raw values. Operators don't think in cents and don't need to see a
+  // standalone currency row — collapse those into a single "Sell amount"
+  // row formatted with the currency, drop `pax` from the list, and let
+  // visibility render as a Badge. `supplierId` is renamed to "Supplier".
+  const reshapedAttributeEntries: Array<[string, unknown]> = (() => {
+    const map = new Map(attributeEntries)
+    const out: Array<[string, unknown]> = []
+    let didAmount = false
+    for (const [k, v] of attributeEntries) {
+      if (k === "pax") continue
+      if (k === "sellCurrency") continue
+      if (k === "sellAmountCents") {
+        const currency = stringOr(map.get("sellCurrency"), "USD") as string
+        out.push(["sellAmount", { amountCents: v, currency }])
+        didAmount = true
+        continue
+      }
+      out.push([k, v])
+    }
+    // Edge case: `sellCurrency` is present but `sellAmountCents` isn't —
+    // surface it as a plain row so we don't drop info silently.
+    if (!didAmount && map.has("sellCurrency")) {
+      out.push(["sellCurrency", map.get("sellCurrency")])
+    }
+    return out
+  })()
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -296,234 +438,249 @@ export function CatalogDetailSheet({
                   </div>
                 </div>
               </div>
-              {resolvedHeaderExtras && (
-                <div className="flex shrink-0 items-center gap-2">{resolvedHeaderExtras}</div>
-              )}
+              <div className="flex shrink-0 items-center gap-3">
+                <ProductPriceFrom enrichment={enrichment} fields={fields} messages={messages} />
+                {resolvedHeaderExtras && (
+                  <div className="flex items-center gap-2">{resolvedHeaderExtras}</div>
+                )}
+              </div>
             </div>
           </SheetHeader>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto px-6 py-5">
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)]">
-              {enrichmentLoading && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground xl:col-span-2">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  {messages.loadingFullContent}
-                </div>
-              )}
-
-              <div className="flex min-w-0 flex-col gap-6">
-                {(shortDescription || description) && (
-                  <Section>
-                    {shortDescription && (
-                      <p className="text-sm font-medium leading-relaxed text-foreground">
-                        {shortDescription}
-                      </p>
+          {(() => {
+            const hasItinerary = (enrichment?.itinerary?.length ?? 0) > 0
+            const hasOptions = (enrichment?.options?.length ?? 0) > 0
+            const hasDepartures = (enrichment?.departures?.length ?? 0) > 0
+            const hasPolicies = (enrichment?.policies?.length ?? 0) > 0
+            const hasAttributes =
+              reshapedAttributeEntries.length > 0 ||
+              arrayEntries.length > 0 ||
+              systemEntries.length > 0
+            return (
+              <div className="flex-1 overflow-y-auto px-6 py-5">
+                {enrichmentLoading && (
+                  <div className="mb-4 flex items-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    {messages.loadingFullContent}
+                  </div>
+                )}
+                <Tabs defaultValue="overview" className="gap-4">
+                  <TabsList>
+                    <TabsTrigger value="overview">{messages.tabs.overview}</TabsTrigger>
+                    {hasItinerary && (
+                      <TabsTrigger value="itinerary">{messages.itinerary}</TabsTrigger>
                     )}
-                    {description && (
-                      <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-                        {description}
-                      </p>
+                    {hasOptions && <TabsTrigger value="options">{messages.options}</TabsTrigger>}
+                    {hasDepartures && (
+                      <TabsTrigger value="departures">{messages.departures}</TabsTrigger>
                     )}
-                  </Section>
-                )}
+                    {shouldRenderMediaSection && (
+                      <TabsTrigger value="media">{messages.media}</TabsTrigger>
+                    )}
+                    {hasPolicies && <TabsTrigger value="policies">{messages.policies}</TabsTrigger>}
+                    {hasAttributes && (
+                      <TabsTrigger value="attributes">{messages.attributes}</TabsTrigger>
+                    )}
+                  </TabsList>
 
-                {enrichment?.highlights && enrichment.highlights.length > 0 && (
-                  <Section title={messages.highlights}>
-                    <ul className="ml-4 list-disc space-y-1 text-sm text-muted-foreground">
-                      {enrichment.highlights.map((h) => (
-                        <li key={h}>{h}</li>
-                      ))}
-                    </ul>
-                  </Section>
-                )}
+                  <TabsContent value="overview" className="flex flex-col gap-6">
+                    {(shortDescription || description) && (
+                      <Section>
+                        {shortDescription && (
+                          <p className="text-sm font-medium leading-relaxed text-foreground">
+                            {shortDescription}
+                          </p>
+                        )}
+                        {description && (
+                          <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                            {description}
+                          </p>
+                        )}
+                      </Section>
+                    )}
 
-                {enrichment?.supplier && (
-                  <Section title={messages.supplier}>
-                    <p className="text-sm text-foreground">{enrichment.supplier}</p>
-                  </Section>
-                )}
+                    {enrichment?.highlights && enrichment.highlights.length > 0 && (
+                      <Section title={messages.highlights}>
+                        <ul className="ml-4 list-disc space-y-1 text-sm text-muted-foreground">
+                          {enrichment.highlights.map((h) => (
+                            <li key={h}>{h}</li>
+                          ))}
+                        </ul>
+                      </Section>
+                    )}
 
-                {enrichment?.itinerary && enrichment.itinerary.length > 0 && (
-                  <Section title={messages.itinerary}>
-                    <ol className="space-y-2">
-                      {enrichment.itinerary.map((d) => (
-                        <li key={d.dayNumber}>
-                          {renderItineraryDay && hit ? (
-                            renderItineraryDay(d, hit, enrichment)
-                          ) : (
-                            <DefaultItineraryDay day={d} dayLabel={messages.day} />
-                          )}
-                        </li>
-                      ))}
-                    </ol>
-                  </Section>
-                )}
+                    {enrichment?.supplier && (
+                      <Section title={messages.supplier}>
+                        <p className="text-sm text-foreground">{enrichment.supplier}</p>
+                      </Section>
+                    )}
 
-                {arrayEntries.length > 0 && (
-                  <Section title={messages.tagsThemes}>
-                    <div className="flex flex-col gap-3">
-                      {arrayEntries.map(([key, value]) => (
-                        <div key={key} className="flex flex-col gap-1.5">
-                          <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                            {humanize(key)}
-                          </span>
-                          <ArrayBadges value={value} />
+                    {arrayEntries.length > 0 && (
+                      <Section title={messages.tagsThemes}>
+                        <div className="flex flex-col gap-3">
+                          {arrayEntries.map(([key, value]) => (
+                            <div key={key} className="flex flex-col gap-1.5">
+                              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                                {ARRAY_LABEL_OVERRIDES[key] ?? humanize(key)}
+                              </span>
+                              {key === "tags" && hit && onTagsChange ? (
+                                <InlineTagsEditor
+                                  hit={hit}
+                                  value={toStringArray(value)}
+                                  onChange={onTagsChange}
+                                  placeholder={messages.tagsInputPlaceholder}
+                                />
+                              ) : (
+                                <ArrayBadges value={value} />
+                              )}
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </Section>
-                )}
+                      </Section>
+                    )}
 
-                {attributeEntries.length > 0 && (
-                  <Section title={messages.attributes}>
-                    <AttributeList
-                      entries={attributeEntries}
-                      formatters={formatters}
-                      messages={catalogMessages}
-                    />
-                  </Section>
-                )}
+                    {brochureContent && (
+                      <Section title={messages.brochure}>{brochureContent}</Section>
+                    )}
 
-                {systemEntries.length > 0 && (
-                  <details className="group rounded-lg border bg-muted/20">
-                    <summary className="cursor-pointer list-none px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:bg-muted/40 group-open:border-b">
-                      {messages.system}
-                    </summary>
-                    <div className="px-4 py-3">
-                      <AttributeList
-                        entries={systemEntries}
-                        formatters={formatters}
-                        messages={catalogMessages}
-                      />
-                    </div>
-                  </details>
-                )}
-              </div>
+                    {extraSections}
+                  </TabsContent>
 
-              <div className="flex min-w-0 flex-col gap-6">
-                {enrichment?.departures && enrichment.departures.length > 0 && (
-                  <Section title={messages.departures}>
-                    <ul className="divide-y rounded-md border">
-                      {enrichment.departures.slice(0, 12).map((d) => {
-                        const soldOut =
-                          d.status === "sold_out" ||
-                          d.status === "closed" ||
-                          d.status === "cancelled" ||
-                          (typeof d.remaining === "number" && d.remaining <= 0)
-                        const availabilityLabel = formatDepartureAvailability(d, messages)
-                        return (
-                          <li
-                            key={d.id}
-                            className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-3 py-2 text-sm"
-                          >
-                            <div className="flex flex-col">
-                              <span className="font-medium">{formatDeparture(d.startsAt)}</span>
-                              {d.endsAt && (
-                                <span className="text-xs text-muted-foreground">
-                                  {formatTemplate(messages.ends, {
-                                    date: formatDeparture(d.endsAt),
-                                  })}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {availabilityLabel && (
-                                <span className="text-xs text-muted-foreground">
-                                  {availabilityLabel}
-                                </span>
-                              )}
-                              {typeof d.lowestPriceCents === "number" && (
-                                <span className="font-medium tabular-nums">
-                                  {formatPriceCents(d.lowestPriceCents, d.currency)}
-                                </span>
-                              )}
-                              {d.status && (
-                                <Badge variant="outline" className="font-normal">
-                                  {d.status}
-                                </Badge>
-                              )}
-                              {onBookDeparture && hit && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  disabled={soldOut}
-                                  onClick={() => onBookDeparture(hit, d)}
-                                >
-                                  {messages.book}
-                                </Button>
-                              )}
-                            </div>
+                  {hasItinerary && (
+                    <TabsContent value="itinerary" className="flex flex-col gap-2">
+                      <ol className="space-y-2">
+                        {enrichment!.itinerary!.map((d) => (
+                          <li key={d.dayNumber}>
+                            {renderItineraryDay && hit ? (
+                              renderItineraryDay(d, hit, enrichment!)
+                            ) : (
+                              <DefaultItineraryDay day={d} dayLabel={messages.day} />
+                            )}
                           </li>
-                        )
-                      })}
-                    </ul>
-                  </Section>
-                )}
+                        ))}
+                      </ol>
+                    </TabsContent>
+                  )}
 
-                {enrichment?.options && enrichment.options.length > 0 && (
-                  <Section title={messages.options}>
-                    <ul className="space-y-1.5 text-sm">
-                      {enrichment.options.map((o) => (
-                        <li key={o.id} className="rounded-md border border-border px-3 py-2">
-                          <div className="font-medium">{o.name}</div>
-                          {o.description && (
-                            <div className="text-xs text-muted-foreground">{o.description}</div>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </Section>
-                )}
+                  {hasOptions && (
+                    <TabsContent value="options">
+                      <ul className="space-y-1.5 text-sm">
+                        {enrichment!.options!.map((o) => (
+                          <li key={o.id} className="rounded-md border border-border px-3 py-2">
+                            <div className="font-medium">{o.name}</div>
+                            {o.description && (
+                              <div className="text-xs text-muted-foreground">{o.description}</div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </TabsContent>
+                  )}
 
-                {enrichment?.policies && enrichment.policies.length > 0 && (
-                  <Section title={messages.policies}>
-                    <dl className="space-y-2 text-sm">
-                      {enrichment.policies.map((p, idx) => (
-                        // biome-ignore lint/suspicious/noArrayIndexKey: ordering is stable per render
-                        <div key={`${p.kind}-${idx}`}>
-                          <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                            {p.kind.replace(/_/g, " ")}
-                          </dt>
-                          <dd className="mt-0.5 whitespace-pre-line text-muted-foreground">
-                            {p.body}
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </Section>
-                )}
+                  {hasDepartures && (
+                    <TabsContent value="departures">
+                      <DeparturesTable
+                        hit={hit}
+                        departures={enrichment!.departures!}
+                        options={enrichment?.options ?? []}
+                        productSellAmountCents={
+                          typeof fields.sellAmountCents === "number"
+                            ? fields.sellAmountCents
+                            : typeof fields.sellAmountCents === "string"
+                              ? Number(fields.sellAmountCents) || null
+                              : null
+                        }
+                        productSellCurrency={
+                          typeof fields.sellCurrency === "string" ? fields.sellCurrency : null
+                        }
+                        onBookDeparture={onBookDeparture}
+                        onBookOption={onBookOption}
+                        messages={messages}
+                      />
+                    </TabsContent>
+                  )}
 
-                {brochureContent && <Section title={messages.brochure}>{brochureContent}</Section>}
+                  {shouldRenderMediaSection && (
+                    <TabsContent value="media">
+                      {mediaContent ?? <DefaultMediaGrid media={enrichment?.media ?? []} />}
+                    </TabsContent>
+                  )}
 
-                {shouldRenderMediaSection && (
-                  <Section title={messages.media}>
-                    {mediaContent ?? <DefaultMediaGrid media={enrichment?.media ?? []} />}
-                  </Section>
-                )}
+                  {hasPolicies && (
+                    <TabsContent value="policies">
+                      <dl className="space-y-2 text-sm">
+                        {enrichment!.policies!.map((p, idx) => (
+                          // biome-ignore lint/suspicious/noArrayIndexKey: ordering is stable per render
+                          <div key={`${p.kind}-${idx}`}>
+                            <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                              {p.kind.replace(/_/g, " ")}
+                            </dt>
+                            <dd className="mt-0.5 whitespace-pre-line text-muted-foreground">
+                              {p.body}
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </TabsContent>
+                  )}
 
-                {extraSections}
+                  {hasAttributes && (
+                    <TabsContent value="attributes" className="flex flex-col gap-6">
+                      {reshapedAttributeEntries.length > 0 && (
+                        <AttributeList
+                          entries={reshapedAttributeEntries}
+                          formatters={formatters}
+                          messages={catalogMessages}
+                          renderSupplierLink={renderSupplierLink}
+                        />
+                      )}
+                      {systemEntries.length > 0 && (
+                        <details className="group rounded-lg border bg-muted/20">
+                          <summary className="cursor-pointer list-none px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:bg-muted/40 group-open:border-b">
+                            {messages.system}
+                          </summary>
+                          <div className="px-4 py-3">
+                            <AttributeList
+                              entries={systemEntries}
+                              formatters={formatters}
+                              messages={catalogMessages}
+                            />
+                          </div>
+                        </details>
+                      )}
+                    </TabsContent>
+                  )}
+                </Tabs>
               </div>
-            </div>
-          </div>
+            )
+          })()}
 
           {/* Footer */}
-          {actions && actions.length > 0 && hit && (
-            <SheetFooter className="border-t bg-muted/20 px-6 py-3">
-              <div className="flex flex-wrap justify-end gap-2">
-                {actions.map((a) => (
-                  <Button
-                    key={a.label}
-                    variant={a.variant ?? "default"}
-                    size="sm"
-                    onClick={() => a.onClick(hit)}
-                  >
-                    {a.label}
-                  </Button>
-                ))}
-              </div>
-            </SheetFooter>
-          )}
+          {(() => {
+            if (!hit || !actions || actions.length === 0) return null
+            const visibleActions = actions.filter((a) => (a.visible ? a.visible(hit) : true))
+            if (visibleActions.length === 0) return null
+            return (
+              <SheetFooter className="border-t bg-muted/20 px-6 py-3">
+                <div className="flex flex-wrap justify-end gap-2">
+                  {visibleActions.map((a) => (
+                    <Button
+                      key={a.label}
+                      variant={a.variant ?? "default"}
+                      size="sm"
+                      onClick={() => {
+                        a.onClick(hit)
+                        onOpenChange(false)
+                      }}
+                    >
+                      {a.label}
+                    </Button>
+                  ))}
+                </div>
+              </SheetFooter>
+            )
+          })()}
         </div>
       </SheetContent>
     </Sheet>
@@ -538,15 +695,568 @@ function DefaultItineraryDay({
   dayLabel: string
 }) {
   return (
-    <div className="rounded-md border border-border bg-muted/10 px-3 py-2 text-sm">
-      <div className="flex items-baseline gap-2">
-        <span className="text-xs font-medium text-muted-foreground">
-          {formatTemplate(dayLabel, { day: day.dayNumber })}
-        </span>
-        {day.title && <span className="font-medium">{day.title}</span>}
-        {day.location && <span className="text-xs text-muted-foreground">· {day.location}</span>}
+    <div className="flex gap-3 rounded-md border border-border bg-muted/10 p-3 text-sm">
+      {day.heroImageUrl ? (
+        <img
+          src={day.heroImageUrl}
+          alt={day.title ?? formatTemplate(dayLabel, { day: day.dayNumber })}
+          className="h-20 w-28 shrink-0 rounded-md object-cover ring-1 ring-border"
+          loading="lazy"
+        />
+      ) : null}
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex flex-wrap items-baseline gap-2">
+          <span className="text-xs font-medium text-muted-foreground">
+            {formatTemplate(dayLabel, { day: day.dayNumber })}
+          </span>
+          {day.title && <span className="font-medium">{day.title}</span>}
+          {day.location && <span className="text-xs text-muted-foreground">· {day.location}</span>}
+        </div>
+        {day.description && (
+          <p className="text-xs leading-relaxed text-muted-foreground">{day.description}</p>
+        )}
       </div>
-      {day.description && <p className="mt-1 text-xs text-muted-foreground">{day.description}</p>}
+    </div>
+  )
+}
+
+/**
+ * Header-side "From {price}" indicator. Prefers per-departure
+ * `lowestPriceCents` minimums (only counting open/limited slots); falls
+ * back to the product's indexed `sellAmountCents` so always-on products
+ * still surface a price. Renders nothing when neither source has a
+ * value — the rest of the sheet still carries pricing detail elsewhere.
+ */
+function ProductPriceFrom({
+  enrichment,
+  fields,
+  messages,
+}: {
+  enrichment: CatalogDetailEnrichment | null
+  fields: Record<string, unknown>
+  messages: CatalogUiMessages["catalogPage"]["detail"]
+}) {
+  const departureMin = (enrichment?.departures ?? []).reduce<{
+    amount: number
+    currency: string | null
+  } | null>((acc, d) => {
+    if (typeof d.lowestPriceCents !== "number") return acc
+    if (d.status === "sold_out" || d.status === "closed" || d.status === "cancelled") return acc
+    if (acc && acc.amount <= d.lowestPriceCents) return acc
+    return { amount: d.lowestPriceCents, currency: d.currency ?? null }
+  }, null)
+  const fallbackAmount =
+    typeof fields.sellAmountCents === "number"
+      ? fields.sellAmountCents
+      : typeof fields.sellAmountCents === "string"
+        ? Number(fields.sellAmountCents)
+        : null
+  const fallbackCurrency = typeof fields.sellCurrency === "string" ? fields.sellCurrency : null
+
+  const amount = departureMin?.amount ?? (Number.isFinite(fallbackAmount) ? fallbackAmount : null)
+  const currency = departureMin?.currency ?? fallbackCurrency
+  if (amount == null) return null
+
+  return (
+    <div className="flex flex-col items-end whitespace-nowrap">
+      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        {messages.priceFromLabel}
+      </span>
+      <span className="font-semibold text-base tabular-nums">
+        {formatPriceCents(amount, currency ?? undefined)}
+      </span>
+    </div>
+  )
+}
+
+type DepartureEntry = NonNullable<CatalogDetailEnrichment["departures"]>[number]
+type DepartureOption = NonNullable<CatalogDetailEnrichment["options"]>[number]
+
+type SortColumn = "date" | "status" | "availability" | "priceFrom"
+type SortDirection = "asc" | "desc"
+
+interface MonthOption {
+  value: string // "YYYY-MM"
+  label: string
+}
+
+function monthKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+}
+
+function collectMonthOptions(departures: ReadonlyArray<DepartureEntry>): MonthOption[] {
+  const formatter = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" })
+  const map = new Map<string, MonthOption>()
+  for (const d of departures) {
+    const date = new Date(d.startsAt)
+    if (Number.isNaN(date.getTime())) continue
+    const key = monthKey(date)
+    if (!map.has(key)) map.set(key, { value: key, label: formatter.format(date) })
+  }
+  // i18n-literal-ok: numeric sort comparator return value
+  return Array.from(map.values()).sort((a, b) => (a.value < b.value ? -1 : 1))
+}
+
+function normaliseStatus(d: DepartureEntry): string {
+  if (d.status) return d.status
+  return "open"
+}
+
+function collectStatusOptions(departures: ReadonlyArray<DepartureEntry>): string[] {
+  const set = new Set<string>()
+  for (const d of departures) set.add(normaliseStatus(d))
+  return Array.from(set).sort()
+}
+
+function isDepartureBookable(d: DepartureEntry): boolean {
+  if (d.status === "sold_out" || d.status === "closed" || d.status === "cancelled") return false
+  if (typeof d.remaining === "number" && d.remaining <= 0) return false
+  return new Date(d.startsAt).getTime() > Date.now()
+}
+
+const ALL_FILTER_VALUE = "__all__"
+
+/**
+ * Flat departures table with sortable columns and filter controls
+ * (month/year, status, min-availability). Sold-out / closed / past
+ * rows render dimmed and are not clickable. Bookable rows expand to
+ * reveal a per-option row with its own remaining capacity and Book
+ * button.
+ */
+function DeparturesTable({
+  hit,
+  departures,
+  options,
+  productSellAmountCents,
+  productSellCurrency,
+  onBookDeparture,
+  onBookOption,
+  messages,
+}: {
+  hit: CatalogSearchHit | null
+  departures: ReadonlyArray<DepartureEntry>
+  options: NonNullable<CatalogDetailEnrichment["options"]>
+  productSellAmountCents: number | null
+  productSellCurrency: string | null
+  onBookDeparture?: (hit: CatalogSearchHit, departure: DepartureEntry) => void
+  onBookOption?: (hit: CatalogSearchHit, departure: DepartureEntry, option: DepartureOption) => void
+  messages: CatalogUiMessages["catalogPage"]["detail"]
+}) {
+  const tableMessages = messages.departuresTable
+  const monthOptions = useMemo(() => collectMonthOptions(departures), [departures])
+  const statusOptions = useMemo(() => collectStatusOptions(departures), [departures])
+
+  const [monthFilter, setMonthFilter] = useState<string>(ALL_FILTER_VALUE)
+  const [statusFilter, setStatusFilter] = useState<string>(ALL_FILTER_VALUE)
+  const [minAvailability, setMinAvailability] = useState<string>("")
+  const [sort, setSort] = useState<{ column: SortColumn; direction: SortDirection }>({
+    column: "date",
+    direction: "asc",
+  })
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  const dateTimeFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+    [],
+  )
+
+  const filtersActive =
+    monthFilter !== ALL_FILTER_VALUE || statusFilter !== ALL_FILTER_VALUE || minAvailability !== ""
+
+  const filtered = useMemo(() => {
+    const minAvail = minAvailability ? Number(minAvailability) : null
+    return departures.filter((d) => {
+      const date = new Date(d.startsAt)
+      if (monthFilter !== ALL_FILTER_VALUE) {
+        if (Number.isNaN(date.getTime())) return false
+        if (monthKey(date) !== monthFilter) return false
+      }
+      if (statusFilter !== ALL_FILTER_VALUE && normaliseStatus(d) !== statusFilter) {
+        return false
+      }
+      if (minAvail != null && Number.isFinite(minAvail)) {
+        const remaining = typeof d.remaining === "number" ? d.remaining : null
+        if (remaining == null) return false
+        if (remaining < minAvail) return false
+      }
+      return true
+    })
+  }, [departures, monthFilter, statusFilter, minAvailability])
+
+  const sorted = useMemo(() => {
+    const list = [...filtered]
+    const dir = sort.direction === "asc" ? 1 : -1
+    list.sort((a, b) => {
+      switch (sort.column) {
+        case "date":
+          return (new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()) * dir
+        case "status":
+          return normaliseStatus(a).localeCompare(normaliseStatus(b)) * dir
+        case "availability": {
+          const av = typeof a.remaining === "number" ? a.remaining : -1
+          const bv = typeof b.remaining === "number" ? b.remaining : -1
+          return (av - bv) * dir
+        }
+        case "priceFrom": {
+          const av = a.lowestPriceCents ?? productSellAmountCents ?? -1
+          const bv = b.lowestPriceCents ?? productSellAmountCents ?? -1
+          return (av - bv) * dir
+        }
+        default:
+          return 0
+      }
+    })
+    return list
+  }, [filtered, sort, productSellAmountCents])
+
+  const toggleSort = (column: SortColumn) => {
+    setSort((current) =>
+      current.column === column
+        ? { column, direction: current.direction === "asc" ? "desc" : "asc" }
+        : { column, direction: "asc" },
+    )
+  }
+
+  const clearFilters = () => {
+    setMonthFilter(ALL_FILTER_VALUE)
+    setStatusFilter(ALL_FILTER_VALUE)
+    setMinAvailability("")
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-col gap-1">
+          <Select value={monthFilter} onValueChange={(v) => setMonthFilter(v ?? ALL_FILTER_VALUE)}>
+            <SelectTrigger className="h-9 w-[180px] text-sm">
+              <SelectValue placeholder={tableMessages.anyMonth} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_FILTER_VALUE}>{tableMessages.anyMonth}</SelectItem>
+              {monthOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => setStatusFilter(v ?? ALL_FILTER_VALUE)}
+          >
+            <SelectTrigger className="h-9 w-[160px] text-sm">
+              <SelectValue placeholder={tableMessages.anyStatus} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_FILTER_VALUE}>{tableMessages.anyStatus}</SelectItem>
+              {statusOptions.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {statusLabelFor(status, tableMessages)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Input
+            type="number"
+            min={0}
+            value={minAvailability}
+            onChange={(event) => setMinAvailability(event.target.value)}
+            placeholder={tableMessages.minAvailability}
+            className="h-9 w-[140px] text-sm"
+          />
+        </div>
+        {filtersActive && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto">
+            <X className="mr-1 h-3.5 w-3.5" />
+            {tableMessages.clearFilters}
+          </Button>
+        )}
+      </div>
+
+      {sorted.length === 0 ? (
+        <div className="rounded-md border bg-muted/10 px-3 py-6 text-center text-sm text-muted-foreground">
+          {filtersActive ? tableMessages.noResults : messages.noUpcomingDepartures}
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-md border">
+          <table className="w-full text-sm">
+            <thead className="border-b bg-muted/30 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <SortableHeader
+                  className="text-left"
+                  column="date"
+                  sort={sort}
+                  onToggle={toggleSort}
+                >
+                  {tableMessages.date}
+                </SortableHeader>
+                <SortableHeader
+                  className="text-left"
+                  column="status"
+                  sort={sort}
+                  onToggle={toggleSort}
+                >
+                  {tableMessages.status}
+                </SortableHeader>
+                <SortableHeader
+                  className="text-right"
+                  column="availability"
+                  sort={sort}
+                  onToggle={toggleSort}
+                >
+                  {tableMessages.availability}
+                </SortableHeader>
+                <SortableHeader
+                  className="text-right"
+                  column="priceFrom"
+                  sort={sort}
+                  onToggle={toggleSort}
+                >
+                  {tableMessages.priceFrom}
+                </SortableHeader>
+                <th className="w-[36px] px-3 py-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((d) => {
+                const bookable = isDepartureBookable(d)
+                const isExpanded = expandedId === d.id
+                const date = new Date(d.startsAt)
+                const statusKey = normaliseStatus(d)
+                const remaining = typeof d.remaining === "number" ? d.remaining : null
+                const priceCents = d.lowestPriceCents ?? productSellAmountCents
+                const priceCurrency = d.currency ?? productSellCurrency ?? undefined
+                return (
+                  <Fragment key={d.id}>
+                    <tr
+                      className={cn(
+                        "border-b last:border-b-0 transition-colors",
+                        bookable ? "cursor-pointer hover:bg-muted/40" : "cursor-default opacity-50",
+                      )}
+                      onClick={() => {
+                        if (!bookable) return
+                        setExpandedId((current) => (current === d.id ? null : d.id))
+                      }}
+                    >
+                      <td className="px-3 py-2 font-medium">{dateTimeFormatter.format(date)}</td>
+                      <td className="px-3 py-2">
+                        <Badge
+                          variant={bookable ? "outline" : "secondary"}
+                          className="w-fit font-normal capitalize"
+                        >
+                          {statusLabelFor(statusKey, tableMessages)}
+                        </Badge>
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums">
+                        {remaining != null ? remaining : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-right font-medium tabular-nums">
+                        {priceCents != null ? formatPriceCents(priceCents, priceCurrency) : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        {bookable ? (
+                          isExpanded ? (
+                            <ChevronDown className="ml-auto h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
+                          )
+                        ) : null}
+                      </td>
+                    </tr>
+                    {isExpanded && (
+                      <tr className="border-b last:border-b-0 bg-muted/20">
+                        <td colSpan={5} className="px-3 py-3">
+                          <DepartureDetailPanel
+                            hit={hit}
+                            departure={d}
+                            options={options}
+                            productSellAmountCents={productSellAmountCents}
+                            productSellCurrency={productSellCurrency}
+                            onBookDeparture={onBookDeparture}
+                            onBookOption={onBookOption}
+                            messages={messages}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SortableHeader({
+  column,
+  sort,
+  onToggle,
+  children,
+  className,
+}: {
+  column: SortColumn
+  sort: { column: SortColumn; direction: SortDirection }
+  onToggle: (column: SortColumn) => void
+  children: ReactNode
+  className?: string
+}) {
+  const active = sort.column === column
+  const Icon = !active ? ArrowUpDown : sort.direction === "asc" ? ArrowUp : ArrowDown
+  return (
+    <th className={cn("px-3 py-2", className)}>
+      <button
+        type="button"
+        onClick={() => onToggle(column)}
+        className={cn(
+          "inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider",
+          active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+          // i18n-literal-ok: tailwind utilities, not user copy
+          className?.includes("text-right") ? "ml-auto flex-row-reverse" : null,
+        )}
+      >
+        <Icon className="h-3 w-3" />
+        {children}
+      </button>
+    </th>
+  )
+}
+
+function statusLabelFor(
+  status: string,
+  tableMessages: CatalogUiMessages["catalogPage"]["detail"]["departuresTable"],
+): string {
+  switch (status) {
+    case "sold_out":
+      return tableMessages.soldOut
+    case "closed":
+      return tableMessages.closed
+    case "cancelled":
+      return tableMessages.cancelled
+    case "open":
+      return tableMessages.open
+    default:
+      return status.replace(/_/g, " ")
+  }
+}
+
+/**
+ * Per-departure expansion panel. Lists the bookable options with their
+ * own remaining capacity, "from" price, and Book button. Today the
+ * seeded availability_slots track capacity at the product level (not
+ * per option), so per-option remaining mirrors the departure total —
+ * once `availability_slots.option_id` is populated, the per-option
+ * number will diverge automatically.
+ */
+function DepartureDetailPanel({
+  hit,
+  departure,
+  options,
+  productSellAmountCents,
+  productSellCurrency,
+  onBookDeparture,
+  onBookOption,
+  messages,
+}: {
+  hit: CatalogSearchHit | null
+  departure: DepartureEntry
+  options: NonNullable<CatalogDetailEnrichment["options"]>
+  productSellAmountCents: number | null
+  productSellCurrency: string | null
+  onBookDeparture?: (hit: CatalogSearchHit, departure: DepartureEntry) => void
+  onBookOption?: (hit: CatalogSearchHit, departure: DepartureEntry, option: DepartureOption) => void
+  messages: CatalogUiMessages["catalogPage"]["detail"]
+}) {
+  const tableMessages = messages.departuresTable
+  const currency = departure.currency ?? productSellCurrency ?? undefined
+  const departurePriceCents = departure.lowestPriceCents ?? productSellAmountCents
+  const departureRemaining = typeof departure.remaining === "number" ? departure.remaining : null
+
+  const handleBook = (option: DepartureOption) => {
+    if (!hit) return
+    if (onBookOption) {
+      onBookOption(hit, departure, option)
+    } else if (onBookDeparture) {
+      onBookDeparture(hit, departure)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+        {tableMessages.optionsHeading}
+      </div>
+      {options.length === 0 ? (
+        <div className="text-xs text-muted-foreground">{tableMessages.noOptions}</div>
+      ) : (
+        <ul className="divide-y rounded-md border bg-background">
+          {options.map((option) => {
+            const canBook =
+              isDepartureBookable(departure) &&
+              hit != null &&
+              (onBookOption != null || onBookDeparture != null)
+            return (
+              <li
+                key={option.id}
+                className="flex flex-wrap items-center justify-between gap-3 px-3 py-2 text-sm"
+              >
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <span className="font-medium">{option.name}</span>
+                  {option.description && (
+                    <span className="text-xs text-muted-foreground">{option.description}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-right text-xs text-muted-foreground">
+                    {departureRemaining != null ? (
+                      <span className="tabular-nums">
+                        <span className="font-medium text-foreground">{departureRemaining}</span>{" "}
+                        {tableMessages.remainingLabel}
+                      </span>
+                    ) : (
+                      "—"
+                    )}
+                  </div>
+                  {departurePriceCents != null && (
+                    <div className="text-right text-xs text-muted-foreground">
+                      {tableMessages.priceFrom}{" "}
+                      <span className="font-medium text-foreground tabular-nums">
+                        {formatPriceCents(departurePriceCents, currency)}
+                      </span>
+                    </div>
+                  )}
+                  {canBook && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        handleBook(option)
+                      }}
+                    >
+                      {messages.book}
+                    </Button>
+                  )}
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </div>
   )
 }
@@ -620,23 +1330,79 @@ function AttributeList({
   entries,
   formatters,
   messages,
+  renderSupplierLink,
 }: {
   entries: Array<[string, unknown]>
   formatters?: Record<string, (value: unknown) => ReactNode>
   messages: CatalogUiMessages["catalogPage"]
+  renderSupplierLink?: (supplierId: string, displayName: string) => ReactNode
 }) {
   return (
     <div className="divide-y rounded-lg border">
       {entries.map(([key, value]) => (
         <div key={key} className="grid grid-cols-[140px_1fr] items-baseline gap-4 px-3 py-2.5">
-          <span className="text-xs text-muted-foreground">{humanize(key)}</span>
+          <span className="text-xs text-muted-foreground">{attributeLabel(key, messages)}</span>
           <span className="text-sm break-words">
-            {formatters?.[key] ? formatters[key](value) : defaultFormat(key, value, messages)}
+            {renderAttributeValue(key, value, { formatters, messages, renderSupplierLink })}
           </span>
         </div>
       ))}
     </div>
   )
+}
+
+function attributeLabel(key: string, messages: CatalogUiMessages["catalogPage"]): string {
+  const overrides = messages.detail.attributeLabels
+  if (key === "sellAmount") return overrides.sellAmount
+  if (key === "supplierId") return overrides.supplierId
+  return humanize(key)
+}
+
+function renderAttributeValue(
+  key: string,
+  value: unknown,
+  ctx: {
+    formatters?: Record<string, (value: unknown) => ReactNode>
+    messages: CatalogUiMessages["catalogPage"]
+    renderSupplierLink?: (supplierId: string, displayName: string) => ReactNode
+  },
+): ReactNode {
+  const { formatters, messages, renderSupplierLink } = ctx
+
+  // Synthetic "Sell amount" — value is `{ amountCents, currency }`,
+  // emitted by the attribute-reshaping pass above.
+  if (key === "sellAmount" && value && typeof value === "object" && "amountCents" in value) {
+    const amountCents = (value as { amountCents: unknown }).amountCents
+    const currency = (value as { currency?: unknown }).currency
+    const cents = typeof amountCents === "number" ? amountCents : Number(amountCents)
+    if (!Number.isFinite(cents)) return <span className="text-muted-foreground">—</span>
+    return (
+      <span className="font-medium tabular-nums">
+        {formatPriceCents(cents, typeof currency === "string" ? currency : undefined)}
+      </span>
+    )
+  }
+
+  // Supplier — render an operator-supplied link to the supplier record,
+  // falling back to the plain formatter when no renderer is wired.
+  if (key === "supplierId" && renderSupplierLink && typeof value === "string" && value) {
+    const displayName =
+      typeof formatters?.[key] === "function"
+        ? String((formatters[key] as (v: unknown) => unknown)(value) ?? value)
+        : value
+    return renderSupplierLink(value, displayName)
+  }
+
+  // Visibility — render as a badge so it reads at a glance.
+  if (key === "visibility" && typeof value === "string" && value) {
+    return (
+      <Badge variant={value === "public" ? "default" : "secondary"} className="capitalize">
+        {value}
+      </Badge>
+    )
+  }
+
+  return formatters?.[key] ? formatters[key]!(value) : defaultFormat(key, value, messages)
 }
 
 function ArrayBadges({ value }: { value: unknown }) {
@@ -651,6 +1417,132 @@ function ArrayBadges({ value }: { value: unknown }) {
           {String(v)}
         </Badge>
       ))}
+    </div>
+  )
+}
+
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value.filter((v): v is string => typeof v === "string" && v.length > 0)
+}
+
+/**
+ * Inline tag editor used by the catalog detail sheet. Holds a local
+ * working list so chip add/remove feels immediate; the indexed `value`
+ * re-syncs whenever the hit refetches after a successful mutation.
+ */
+function InlineTagsEditor({
+  hit,
+  value,
+  onChange,
+  placeholder,
+}: {
+  hit: CatalogSearchHit
+  value: string[]
+  onChange: (hit: CatalogSearchHit, next: string[]) => Promise<void> | void
+  placeholder: string
+}) {
+  const messages = useCatalogUiMessagesOrDefault().catalogPage.detail
+  // Seed the working set from the indexed value on each *hit change*
+  // only. The catalog search refetches after every mutation, but
+  // Typesense reindex is asynchronous — for a few seconds after the
+  // PATCH the indexed hit still carries the pre-mutation tags. If we
+  // re-synced from `value` on every render, those stale tags would
+  // clobber the chip the user just added. Pinning the seed to `hit.id`
+  // means a different product re-seeds, but our own optimistic state
+  // sticks while the index catches up.
+  const [tags, setTags] = useState<string[]>(value)
+  const [draft, setDraft] = useState("")
+  const [pending, setPending] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const seededIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (seededIdRef.current === hit.id) return
+    seededIdRef.current = hit.id
+    setTags(value)
+    setDraft("")
+  }, [hit.id, value])
+
+  const commit = async (next: string[]) => {
+    const previous = tags
+    setTags(next)
+    setPending(true)
+    try {
+      await onChange(hit, next)
+    } catch {
+      setTags(previous)
+    } finally {
+      setPending(false)
+    }
+  }
+
+  const addTag = () => {
+    const trimmed = draft.trim().replace(/,+$/, "")
+    if (!trimmed) return
+    if (tags.includes(trimmed)) {
+      setDraft("")
+      return
+    }
+    void commit([...tags, trimmed])
+    setDraft("")
+  }
+
+  const removeTag = (tag: string) => {
+    void commit(tags.filter((t) => t !== tag))
+  }
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter" || event.key === ",") {
+      event.preventDefault()
+      addTag()
+      return
+    }
+    if (event.key === "Backspace" && draft === "" && tags.length > 0) {
+      event.preventDefault()
+      removeTag(tags[tags.length - 1] as string)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {tags.map((tag) => (
+          <Badge key={tag} variant="secondary" className="gap-1 font-normal">
+            {tag}
+            <button
+              type="button"
+              aria-label={`Remove ${tag}`}
+              className="rounded-full hover:text-destructive"
+              onClick={() => removeTag(tag)}
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        ))}
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 text-xs text-muted-foreground hover:border-foreground hover:text-foreground"
+          onClick={() => inputRef.current?.focus()}
+        >
+          <Plus className="h-3 w-3" />
+          {messages.addTag}
+        </button>
+      </div>
+      <div className="flex items-center gap-2">
+        <Input
+          ref={inputRef}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={() => {
+            if (draft.trim()) addTag()
+          }}
+          placeholder={placeholder}
+          className="h-8 max-w-xs text-sm"
+        />
+        {pending && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+      </div>
     </div>
   )
 }
@@ -778,18 +1670,6 @@ function stringOr<T>(value: unknown, fallback: T): string | T {
   return typeof value === "string" && value.length > 0 ? value : fallback
 }
 
-function formatDeparture(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return new Intl.DateTimeFormat(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(d)
-}
-
 function formatPriceCents(cents: number, currency?: string | null): string {
   if (!currency) {
     return new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(cents / 100)
@@ -799,27 +1679,6 @@ function formatPriceCents(cents: number, currency?: string | null): string {
     currency,
     maximumFractionDigits: 0,
   }).format(cents / 100)
-}
-
-function formatDepartureAvailability(
-  departure: NonNullable<CatalogDetailEnrichment["departures"]>[number],
-  messages: ReturnType<typeof useCatalogUiMessagesOrDefault>["catalogPage"]["detail"],
-): string | null {
-  if (departure.unlimited) return messages.unlimited
-  if (typeof departure.capacity === "number" && typeof departure.remaining === "number") {
-    return formatTemplate(messages.leftWithCapacity, {
-      remaining: departure.remaining,
-      capacity: departure.capacity,
-    })
-  }
-  if (typeof departure.remaining === "number") {
-    return formatTemplate(messages.left, { remaining: departure.remaining })
-  }
-  if (typeof departure.capacity === "number") {
-    return formatTemplate(messages.capacity, { capacity: departure.capacity })
-  }
-  if (departure.status && departure.status !== "open") return humanize(departure.status)
-  return null
 }
 
 function formatTemplate(template: string, values: Record<string, string | number>): string {

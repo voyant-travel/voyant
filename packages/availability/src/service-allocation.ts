@@ -986,8 +986,19 @@ async function loadSharingGroupLabelMap(
 }
 
 async function executeRows<T>(db: SqlExecutor, query: SQL): Promise<T[]> {
-  const rows = await db.execute(query)
-  return Array.isArray(rows) ? (rows as T[]) : []
+  const result = await db.execute(query)
+  if (Array.isArray(result)) return result as T[]
+  // node-postgres / neon-serverless drivers return `{ rows, rowCount, ... }`
+  // instead of a bare array — unwrap so this wrapper is driver-agnostic.
+  if (
+    result &&
+    typeof result === "object" &&
+    "rows" in result &&
+    Array.isArray((result as { rows: unknown }).rows)
+  ) {
+    return (result as { rows: T[] }).rows
+  }
+  return []
 }
 
 /**

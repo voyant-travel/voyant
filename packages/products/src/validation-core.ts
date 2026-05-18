@@ -52,7 +52,23 @@ const productPricingFields = {
 }
 
 export const insertProductSchema = productCoreSchema.extend(productPricingFields)
-export const updateProductSchema = productCoreSchema.partial().extend(productPricingFields)
+// `productCoreSchema` carries `.default(...)` on enum-ish fields so
+// insert can omit them. zod's `.partial()` does NOT strip those
+// defaults — every PATCH would synthesize `status: "draft"`,
+// `visibility: "private"`, etc., and overwrite the row. Re-declare the
+// defaulted fields without defaults before partial-ising so PATCH only
+// touches the keys the client actually sent.
+export const updateProductSchema = productCoreSchema
+  .extend({
+    status: productStatusSchema,
+    bookingMode: productBookingModeSchema,
+    capacityMode: productCapacityModeSchema,
+    visibility: productVisibilitySchema,
+    activated: z.boolean(),
+    tags: z.array(z.string()),
+  })
+  .partial()
+  .extend(productPricingFields)
 export const selectProductSchema = productCoreSchema.extend({
   id: typeIdSchema("products"),
   sellAmountCents: z.number().int().nullable(),

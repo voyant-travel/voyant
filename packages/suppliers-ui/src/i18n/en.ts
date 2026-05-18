@@ -60,6 +60,10 @@ export const suppliersUiEn = {
     allStatuses: "All statuses",
     countryPlaceholder: "Country code",
     currencyPlaceholder: "Currency",
+    filterTypeLabel: "Type",
+    filterStatusLabel: "Status",
+    filterCountryLabel: "Country",
+    filterCurrencyLabel: "Currency",
     empty: "No suppliers match the current filters.",
     loadFailed: "Suppliers could not be loaded.",
     columns: {

@@ -1125,7 +1125,7 @@ export function PersonSidebar({
     phone: string | null
     website: string | null
     jobTitle: string | null
-    birthday: string | null
+    dateOfBirth: string | null
     source: string | null
     preferredLanguage: string | null
     preferredCurrency: string | null
@@ -1236,10 +1236,10 @@ export function PersonSidebar({
           />
           <InlineField
             icon={Calendar}
-            label="Birthday"
+            label="Date of birth"
             kind="date"
-            value={person.birthday}
-            onSave={(next) => updateField({ birthday: next })}
+            value={person.dateOfBirth}
+            onSave={(next) => updateField({ dateOfBirth: next })}
           />
           <InlineField
             icon={Tag}

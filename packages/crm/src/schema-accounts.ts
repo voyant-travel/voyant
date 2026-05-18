@@ -113,7 +113,7 @@ export const people = pgTable(
     source: text("source"),
     sourceRef: text("source_ref"),
     tags: jsonb("tags").$type<string[]>().notNull().default([]),
-    birthday: date("birthday"),
+    dateOfBirth: date("date_of_birth"),
     notes: text("notes"),
     /**
      * Encrypted PII slots — canonical store for person-level travel

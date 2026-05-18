@@ -13,6 +13,10 @@ export {
   type ContractReferenceRenderProps,
 } from "./components/contract-detail-page.js"
 export {
+  ContractSendDialog,
+  type ContractSendDialogProps,
+} from "./components/contract-send-dialog.js"
+export {
   type ContractDialogRenderProps,
   ContractsPage,
   type ContractsPageProps,

@@ -270,6 +270,12 @@ async function reset() {
     "option_units",
     "product_options",
     "products",
+    // Catalog verticals (seeded by seed-catalog-verticals.ts)
+    "product_extras",
+    "charter_products",
+    "cruises",
+    "room_types",
+    "properties",
     // Suppliers
     "supplier_notes",
     "supplier_rates",
@@ -1494,6 +1500,17 @@ type ProductRow = {
   description?: string
   /** Faceted tags — surfaces in the catalog "Tags & themes" section. */
   tags?: string[]
+  /**
+   * Day-by-day itinerary copy. Length should equal `days`; when shorter,
+   * remaining days fall back to a generic stub. Surfaces in the catalog
+   * detail sheet's Itinerary section.
+   */
+  itinerary?: Array<{ title: string; description: string; location?: string }>
+  /**
+   * Bookable options for the product. Defaults to a single "Standard"
+   * option when omitted. The first entry is treated as the default.
+   */
+  options?: Array<{ code: string; name: string; description: string }>
 }
 const PRODUCTS: ProductRow[] = [
   {
@@ -1510,6 +1527,38 @@ const PRODUCTS: ProductRow[] = [
     description:
       "Three days hitting London's headline beats — Westminster, Tower Bridge, Borough Market — with a riverside boutique hotel, central transfers, and a private guide who picks the queue-skip windows.",
     tags: ["london", "city-break", "guided", "boutique"],
+    itinerary: [
+      {
+        title: "Arrival + Westminster on foot",
+        description:
+          "Meet-and-greet at Heathrow, sedan transfer to the South Bank hotel, late-afternoon walking tour from Westminster Abbey to Big Ben and Whitehall. Welcome dinner reservation included.",
+        location: "London — South Bank",
+      },
+      {
+        title: "Tower of London + Borough Market",
+        description:
+          "Crown Jewels access before public opening, Tower Bridge glass walk, lunch at Borough Market with a private food guide, free evening with hotel concierge picks.",
+        location: "London — City",
+      },
+      {
+        title: "Royal parks + departure transfer",
+        description:
+          "Morning stroll through St James's and Green Park, optional Buckingham Palace state-room visit (seasonal), late checkout, private transfer back to Heathrow.",
+        location: "London — West End",
+      },
+    ],
+    options: [
+      {
+        code: "STD",
+        name: "Standard double",
+        description: "Boutique river-view double room, daily breakfast included.",
+      },
+      {
+        code: "STE",
+        name: "Junior suite upgrade",
+        description: "Top-floor junior suite with terrace, evening turndown, sparkling on arrival.",
+      },
+    ],
   },
   {
     id: newId("products"),
@@ -1525,6 +1574,32 @@ const PRODUCTS: ProductRow[] = [
     description:
       "Two evenings in Paris built around a sunset cruise on the Seine, a Montmartre dinner reservation, and a private morning at the Musée d'Orsay before the crowds.",
     tags: ["paris", "romantic", "cruise", "evening"],
+    itinerary: [
+      {
+        title: "Sunset cruise on the Seine",
+        description:
+          "Hotel check-in at a small Montmartre maison, late-afternoon glass of champagne at the rooftop bar, private boarding for a sunset cruise from Pont de l'Alma, Montmartre dinner reservation to follow.",
+        location: "Paris — 7e / Montmartre",
+      },
+      {
+        title: "Musée d'Orsay + free afternoon",
+        description:
+          "Skip-the-line access to the Musée d'Orsay before public opening with a private art historian, leisurely lunch on the Left Bank, free afternoon to wander Saint-Germain before a late departure.",
+        location: "Paris — Left Bank",
+      },
+    ],
+    options: [
+      {
+        code: "STD",
+        name: "Classic evening",
+        description: "Shared sunset cruise, Montmartre bistro dinner.",
+      },
+      {
+        code: "PRIV",
+        name: "Private boat",
+        description: "Private boat charter on the Seine, chef-curated tasting menu on board.",
+      },
+    ],
   },
   {
     id: newId("products"),
@@ -1539,6 +1614,26 @@ const PRODUCTS: ProductRow[] = [
     description:
       "Half-day walking tour through Montmartre's painters' streets with a local art-history guide. Stops at Sacré-Cœur, Place du Tertre, and a tucked-away wine cellar for a tasting break.",
     tags: ["paris", "walking", "guided", "half-day", "art"],
+    itinerary: [
+      {
+        title: "Painters, basilica, and a cellar tasting",
+        description:
+          "Meet at Abbesses metro, climb through the painters' quarter with a Montmartre native, stop at Place du Tertre and Sacré-Cœur for terrace views, finish with a tasting at a tucked-away 18th-century wine cellar.",
+        location: "Paris — Montmartre",
+      },
+    ],
+    options: [
+      {
+        code: "STD",
+        name: "Shared small group",
+        description: "Up to 8 guests, English-speaking art historian guide.",
+      },
+      {
+        code: "PRIV",
+        name: "Private guide",
+        description: "Private guide for your group only, choice of English/French/Spanish.",
+      },
+    ],
   },
   {
     id: newId("products"),
@@ -1554,6 +1649,26 @@ const PRODUCTS: ProductRow[] = [
     description:
       "Private sedan transfer between Heathrow Terminal 5 and central London. Meet-and-greet inside arrivals, complimentary wait time, fixed all-in price.",
     tags: ["transfer", "london", "airport", "private"],
+    itinerary: [
+      {
+        title: "Heathrow ↔ central London transfer",
+        description:
+          "Driver waits inside arrivals with a name board, 60 min complimentary wait time, child seats on request, mineral water on board. Drop-off at any central London address.",
+        location: "London — LHR / central London",
+      },
+    ],
+    options: [
+      {
+        code: "STD",
+        name: "Executive sedan",
+        description: "Up to 3 passengers and 3 suitcases. Mercedes E-Class or equivalent.",
+      },
+      {
+        code: "SUV",
+        name: "Premium SUV",
+        description: "Up to 5 passengers and 5 suitcases. Range Rover or equivalent.",
+      },
+    ],
   },
   {
     id: newId("products"),
@@ -1569,6 +1684,26 @@ const PRODUCTS: ProductRow[] = [
     description:
       "Skip-the-line summit access at the Eiffel Tower with a private host. Champagne option at the second floor brasserie; flexible 90-minute window.",
     tags: ["paris", "landmark", "private", "skip-the-line", "evening"],
+    itinerary: [
+      {
+        title: "Summit access with a private host",
+        description:
+          "Meet your host at the dedicated reservations entrance, dedicated lift to the summit, panoramic narration of Paris's quartiers, optional descent stop at the second-floor brasserie. 90-minute booking window.",
+        location: "Paris — Champ de Mars",
+      },
+    ],
+    options: [
+      {
+        code: "STD",
+        name: "Summit access",
+        description: "Skip-the-line summit access with a private English-speaking host.",
+      },
+      {
+        code: "CHMP",
+        name: "Summit + champagne",
+        description: "Summit access plus a glass of champagne at the second-floor brasserie.",
+      },
+    ],
   },
   {
     id: newId("products"),
@@ -1583,6 +1718,58 @@ const PRODUCTS: ProductRow[] = [
     description:
       "Five-night two-city honeymoon — three nights riverside in London, two nights Montmartre in Paris, Eurostar in between, daily concierge, sunset Seine cruise on night four.",
     tags: ["honeymoon", "luxury", "multi-city", "london", "paris"],
+    itinerary: [
+      {
+        title: "London arrival + welcome dinner",
+        description:
+          "LHR meet-and-greet, sedan transfer to a riverside boutique on the South Bank. Sparkling on arrival, evening Thames-side stroll, welcome dinner at a chef's-table reservation walking distance from the hotel.",
+        location: "London — South Bank",
+      },
+      {
+        title: "Tower of London + West End evening",
+        description:
+          "Crown Jewels access before the public opens, private tour through the medieval halls, lunch reservation in the City, free afternoon, West End theatre seats with pre-show champagne.",
+        location: "London — City / West End",
+      },
+      {
+        title: "Eurostar to Paris",
+        description:
+          "Leisurely brunch, transfer to St Pancras, Eurostar Business Premier to Gare du Nord, check-in at a small Montmartre maison. Evening apéro at the rooftop bar, dinner reservation in a Montmartre bistro.",
+        location: "London → Paris",
+      },
+      {
+        title: "Sunset cruise on the Seine",
+        description:
+          "Slow morning, private guided visit of the Musée d'Orsay before public hours, free afternoon to wander Saint-Germain, private boat boarding at sunset for a chef-curated tasting menu on the Seine.",
+        location: "Paris — 7e",
+      },
+      {
+        title: "Versailles + departure",
+        description:
+          "Private morning tour of Versailles with a Louis-XIV historian, lunch in the gardens, return to Paris for late checkout, sedan transfer to CDG or Eurostar back to London.",
+        location: "Paris — Versailles",
+      },
+    ],
+    options: [
+      {
+        code: "DLX",
+        name: "Deluxe rooms",
+        description:
+          "River-view in London, Montmartre maison classic double in Paris, daily breakfast at both hotels.",
+      },
+      {
+        code: "STE",
+        name: "Suite upgrade",
+        description:
+          "Junior suite at both hotels, turndown nightly, in-room sparkling on arrival in each city.",
+      },
+      {
+        code: "ALLIN",
+        name: "All-in concierge",
+        description:
+          "Suite upgrade plus a daily concierge budget for restaurant reservations, theatre, and private museum bookings — handled before you arrive.",
+      },
+    ],
   },
 ]
 
@@ -1744,29 +1931,36 @@ async function seedProducts() {
     })
 
     for (let d = 1; d <= p.days; d++) {
+      const day = p.itinerary?.[d - 1]
       await db.insert(productDays).values({
         id: newId("product_days"),
         itineraryId,
         dayNumber: d,
-        title: `Day ${d}`,
-        description: `Day ${d} itinerary highlights.`,
+        title: day?.title ?? `Day ${d}`,
+        description: day?.description ?? `Day ${d} itinerary highlights.`,
+        location: day?.location ?? null,
       })
     }
   }
 
-  // Options: a "standard" option per product
   await seedProductImages()
 
+  // Options: rich per-product set when defined, falling back to a
+  // single "Standard" option. First entry is treated as the default.
   for (const p of PRODUCTS) {
-    await db.insert(productOptions).values({
-      id: newId("product_options"),
-      productId: p.id,
-      name: "Standard",
-      code: "STD",
-      isDefault: true,
-      status: "active",
-      sortOrder: 0,
-    })
+    const options = p.options ?? [{ code: "STD", name: "Standard", description: "" }]
+    for (const [idx, opt] of options.entries()) {
+      await db.insert(productOptions).values({
+        id: newId("product_options"),
+        productId: p.id,
+        name: opt.name,
+        code: opt.code,
+        description: opt.description || null,
+        isDefault: idx === 0,
+        status: "active",
+        sortOrder: idx,
+      })
+    }
   }
 }
 

@@ -10,6 +10,7 @@ import {
   SelectValue,
   Textarea,
 } from "@voyantjs/ui/components"
+import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
@@ -299,11 +300,15 @@ export function ServiceForm({ productId, dayId, service, onSuccess, onCancel }: 
         <div className="grid grid-cols-3 gap-4">
           <div className="flex flex-col gap-2">
             <Label>{serviceMessages.costCurrencyLabel}</Label>
-            <Input
-              {...form.register("costCurrency")}
+            <CurrencyCombobox
+              value={form.watch("costCurrency") || null}
+              onChange={(next) =>
+                form.setValue("costCurrency", next ?? "", {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                })
+              }
               placeholder={serviceMessages.costCurrencyPlaceholder}
-              maxLength={3}
-              className="uppercase"
             />
             {form.formState.errors.costCurrency && (
               <p className="text-xs text-destructive">

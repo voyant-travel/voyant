@@ -25,7 +25,7 @@ import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
 import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
@@ -76,6 +76,14 @@ export function SupplierStatusDialog({
   const { create, update } = useSupplierStatusMutation(bookingId)
   const messages = useBookingsUiMessagesOrDefault()
   const supplierStatusFormSchema = createSupplierStatusFormSchema(messages)
+  const statusItems = useMemo(
+    () =>
+      CONFIRMATION_STATUSES.map((s) => ({
+        value: s.value,
+        label: messages.common.supplierStatusLabels[s.value],
+      })),
+    [messages.common.supplierStatusLabels],
+  )
 
   const form = useForm<SupplierStatusFormValues, unknown, SupplierStatusFormOutput>({
     resolver: zodResolver(supplierStatusFormSchema),
@@ -159,14 +167,11 @@ export function SupplierStatusDialog({
               <div className="flex flex-col gap-2">
                 <Label>{messages.supplierStatusDialog.fields.status}</Label>
                 <Select
+                  items={statusItems}
                   value={form.watch("status")}
                   onValueChange={(value) =>
                     form.setValue("status", value as SupplierStatusFormValues["status"])
                   }
-                  items={CONFIRMATION_STATUSES.map((status) => ({
-                    ...status,
-                    label: messages.common.supplierStatusLabels[status.value],
-                  }))}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />

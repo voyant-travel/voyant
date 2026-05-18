@@ -27,7 +27,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@voyantjs/ui/components/combobox"
-import { Building2, User, UserPlus } from "lucide-react"
+import { Building2, Pencil, User, UserPlus } from "lucide-react"
 import * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
@@ -82,6 +82,10 @@ export interface PersonPickerSectionProps {
     createNewOrganization?: string
     createPersonSheetTitle?: string
     createOrganizationSheetTitle?: string
+    editPerson?: string
+    editOrganization?: string
+    editPersonSheetTitle?: string
+    editOrganizationSheetTitle?: string
     selectExistingPerson?: string
     personSearchPlaceholder?: string
     personSelectPlaceholder?: string
@@ -121,7 +125,9 @@ export function PersonPickerSection({
   const [personInputValue, setPersonInputValue] = React.useState("")
   const [orgInputValue, setOrgInputValue] = React.useState("")
   const [personSheetOpen, setPersonSheetOpen] = React.useState(false)
+  const [personSheetMode, setPersonSheetMode] = React.useState<"create" | "edit">("create")
   const [orgSheetOpen, setOrgSheetOpen] = React.useState(false)
+  const [orgSheetMode, setOrgSheetMode] = React.useState<"create" | "edit">("create")
   const messages = useBookingsUiMessagesOrDefault()
   const merged = { ...messages.personPickerSection.labels, ...labels }
   const billingTarget = value.billTo ?? "person"
@@ -217,17 +223,38 @@ export function PersonPickerSection({
             <Label>
               {merged.person} <span className="text-destructive">*</span>
             </Label>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7"
-              onClick={() => setPersonSheetOpen(true)}
-              disabled={!enabled}
-            >
-              <UserPlus className="mr-1 h-3.5 w-3.5" />
-              {merged.createNewPerson}
-            </Button>
+            <div className="flex items-center gap-1">
+              {value.personId ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7"
+                  onClick={() => {
+                    setPersonSheetMode("edit")
+                    setPersonSheetOpen(true)
+                  }}
+                  disabled={!enabled || !selectedPersonQuery.data}
+                >
+                  <Pencil className="mr-1 h-3.5 w-3.5" />
+                  {merged.editPerson}
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7"
+                onClick={() => {
+                  setPersonSheetMode("create")
+                  setPersonSheetOpen(true)
+                }}
+                disabled={!enabled}
+              >
+                <UserPlus className="mr-1 h-3.5 w-3.5" />
+                {merged.createNewPerson}
+              </Button>
+            </div>
           </div>
           <Combobox
             items={people.map((person) => person.id)}
@@ -283,17 +310,38 @@ export function PersonPickerSection({
             <Label>
               {merged.organization} <span className="text-destructive">*</span>
             </Label>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7"
-              onClick={() => setOrgSheetOpen(true)}
-              disabled={!enabled}
-            >
-              <Building2 className="mr-1 h-3.5 w-3.5" />
-              {merged.createNewOrganization}
-            </Button>
+            <div className="flex items-center gap-1">
+              {value.organizationId ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7"
+                  onClick={() => {
+                    setOrgSheetMode("edit")
+                    setOrgSheetOpen(true)
+                  }}
+                  disabled={!enabled || !selectedOrgQuery.data}
+                >
+                  <Pencil className="mr-1 h-3.5 w-3.5" />
+                  {merged.editOrganization}
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7"
+                onClick={() => {
+                  setOrgSheetMode("create")
+                  setOrgSheetOpen(true)
+                }}
+                disabled={!enabled}
+              >
+                <Building2 className="mr-1 h-3.5 w-3.5" />
+                {merged.createNewOrganization}
+              </Button>
+            </div>
           </div>
           <Combobox
             items={orgs.map((org) => org.id)}
@@ -348,11 +396,19 @@ export function PersonPickerSection({
       <Sheet open={personSheetOpen} onOpenChange={setPersonSheetOpen}>
         <SheetContent side="right" size="lg">
           <SheetHeader>
-            <SheetTitle>{merged.createPersonSheetTitle}</SheetTitle>
+            <SheetTitle>
+              {personSheetMode === "edit"
+                ? merged.editPersonSheetTitle
+                : merged.createPersonSheetTitle}
+            </SheetTitle>
           </SheetHeader>
           <SheetBody>
             <PersonForm
-              mode={{ kind: "create" }}
+              mode={
+                personSheetMode === "edit" && selectedPersonQuery.data
+                  ? { kind: "edit", person: selectedPersonQuery.data }
+                  : { kind: "create" }
+              }
               onCancel={() => setPersonSheetOpen(false)}
               onSuccess={(saved) => {
                 setPerson({ billTo: "person", personId: saved.id, organizationId: null })
@@ -367,11 +423,19 @@ export function PersonPickerSection({
       <Sheet open={orgSheetOpen} onOpenChange={setOrgSheetOpen}>
         <SheetContent side="right" size="lg">
           <SheetHeader>
-            <SheetTitle>{merged.createOrganizationSheetTitle}</SheetTitle>
+            <SheetTitle>
+              {orgSheetMode === "edit"
+                ? merged.editOrganizationSheetTitle
+                : merged.createOrganizationSheetTitle}
+            </SheetTitle>
           </SheetHeader>
           <SheetBody>
             <OrganizationForm
-              mode={{ kind: "create" }}
+              mode={
+                orgSheetMode === "edit" && selectedOrgQuery.data
+                  ? { kind: "edit", organization: selectedOrgQuery.data }
+                  : { kind: "create" }
+              }
               onCancel={() => setOrgSheetOpen(false)}
               onSuccess={(saved) => {
                 setPerson({ billTo: "organization", personId: "", organizationId: saved.id })

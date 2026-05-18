@@ -841,7 +841,10 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edit Contract" : "New Contract"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-1 flex-col overflow-hidden"
+        >
           <DialogBody className="grid gap-6">
             <div className="grid gap-4">
               <div>
@@ -1074,13 +1077,7 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
             </div>
 
             <div className="grid gap-4">
-              <div>
-                <h3 className="text-sm font-semibold">Template variables</h3>
-                <p className="text-sm text-muted-foreground">
-                  These fields are inferred from the selected template version so non-technical
-                  users can fill the contract without touching JSON.
-                </p>
-              </div>
+              <h3 className="text-sm font-semibold">Template variables</h3>
 
               {!selectedTemplateVersionId ? (
                 <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">

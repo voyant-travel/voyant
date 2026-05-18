@@ -1,6 +1,11 @@
-import { bookingGroupsService, bookingsService } from "@voyantjs/bookings"
+import {
+  type BookingConfirmedEvent,
+  bookingGroupsService,
+  bookingsService,
+} from "@voyantjs/bookings"
 import type { Booking, BookingGroupMember, BookingTraveler } from "@voyantjs/bookings/schema"
 import { bookingItems, bookingTravelers } from "@voyantjs/bookings/schema"
+import { bookingStatusSchema } from "@voyantjs/bookings/validation"
 import type { EventBus } from "@voyantjs/core"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -141,6 +146,39 @@ const bookingCreateBaseSchema = z.object({
   catalogSellAmountCents: z.number().int().min(0).optional().nullable(),
   confirmedSellAmountCents: z.number().int().min(0).optional().nullable(),
   priceOverrideReason: z.string().trim().min(1).max(1000).optional().nullable(),
+
+  /**
+   * Initial lifecycle status to seat the booking in — defaults to `draft`.
+   * Lets the dialog commit straight to `confirmed` or `awaiting_payment`
+   * in the same transaction, avoiding the post-create `/override-status`
+   * roundtrip that previously occasionally raced the create's COMMIT.
+   *
+   * When set to `confirmed`, the orchestrator emits `booking.confirmed`
+   * post-commit so notification + document-bundle subscribers fire just
+   * like they would for an after-the-fact transition.
+   */
+  initialStatus: bookingStatusSchema.optional(),
+  /**
+   * When true and `initialStatus === "confirmed"`, the post-commit
+   * `booking.confirmed` event carries `suppressNotifications: true` so
+   * downstream subscribers skip customer-facing email + document
+   * bundles. Operators can confirm a booking silently this way.
+   */
+  suppressNotifications: z.boolean().optional(),
+  // Billing-contact snapshot — captured at create time. Caller (the
+  // dialog) reads the linked CRM person/org and supplies what it
+  // knows; the convertProductToBooking helper writes everything
+  // through to the booking row's contact_* columns.
+  contactFirstName: z.string().max(255).optional().nullable(),
+  contactLastName: z.string().max(255).optional().nullable(),
+  contactEmail: z.string().max(255).optional().nullable(),
+  contactPhone: z.string().max(50).optional().nullable(),
+  contactPreferredLanguage: z.string().max(35).optional().nullable(),
+  contactCountry: z.string().max(2).optional().nullable(),
+  contactRegion: z.string().max(100).optional().nullable(),
+  contactCity: z.string().max(100).optional().nullable(),
+  contactAddressLine1: z.string().max(500).optional().nullable(),
+  contactPostalCode: z.string().max(20).optional().nullable(),
 
   // Orchestration fields
   travelers: z.array(travelerInputSchema).optional(),
@@ -342,6 +380,17 @@ export async function createBooking(
         catalogSellAmountCents: input.catalogSellAmountCents ?? null,
         confirmedSellAmountCents: input.confirmedSellAmountCents ?? null,
         priceOverrideReason: input.priceOverrideReason ?? null,
+        initialStatus: input.initialStatus,
+        contactFirstName: input.contactFirstName ?? null,
+        contactLastName: input.contactLastName ?? null,
+        contactEmail: input.contactEmail ?? null,
+        contactPhone: input.contactPhone ?? null,
+        contactPreferredLanguage: input.contactPreferredLanguage ?? null,
+        contactCountry: input.contactCountry ?? null,
+        contactRegion: input.contactRegion ?? null,
+        contactCity: input.contactCity ?? null,
+        contactAddressLine1: input.contactAddressLine1 ?? null,
+        contactPostalCode: input.contactPostalCode ?? null,
         itemLines: input.itemLines,
       })
       if (!booking) {
@@ -596,6 +645,19 @@ export async function createBooking(
       occurredAt: new Date(),
     }
     await runtime.eventBus.emit("booking.created", event)
+    // When the caller asked us to land the booking already in
+    // `confirmed`, fan out the `booking.confirmed` event the same way
+    // the verb endpoint would so notification / document-bundle
+    // subscribers fire just once at create-time.
+    if (input.initialStatus === "confirmed") {
+      const confirmedEvent: BookingConfirmedEvent = {
+        bookingId: result.booking.id,
+        bookingNumber: result.booking.bookingNumber,
+        actorId: userId ?? null,
+        suppressNotifications: input.suppressNotifications === true ? true : undefined,
+      }
+      await runtime.eventBus.emit("booking.confirmed", confirmedEvent)
+    }
     if (documentGeneration.contractDocument) {
       await runtime.eventBus.emit("booking.contract_document.requested", {
         bookingId: result.booking.id,

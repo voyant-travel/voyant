@@ -176,6 +176,13 @@
       "when": 1778906146000,
       "tag": "0027_action_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1778918900000,
+      "tag": "0028_rename_birthday",
+      "breakpoints": true
     }
   ]
 }

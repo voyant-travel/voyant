@@ -24,6 +24,7 @@ export {
   type AccountProfileFormMessages,
   defaultAccountPageMessages,
 } from "./components/account-page-shared.js"
+export { AuthLayout, type AuthLayoutProps } from "./components/auth-layout.js"
 export {
   defaultOnboardingPageMessages,
   OnboardingPage,

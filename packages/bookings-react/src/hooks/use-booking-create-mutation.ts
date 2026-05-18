@@ -6,7 +6,7 @@ import { z } from "zod"
 import { fetchWithValidation } from "../client.js"
 import { useVoyantBookingsContext } from "../provider.js"
 import { bookingsQueryKeys } from "../query-keys.js"
-import { bookingRecordSchema } from "../schemas.js"
+import { type BookingStatus, bookingRecordSchema } from "../schemas.js"
 
 export interface BookingCreateTravelerInput {
   firstName: string
@@ -90,6 +90,37 @@ export interface BookingCreateInput {
   voucherRedemption?: BookingCreateVoucherRedemptionInput
   groupMembership?: BookingCreateGroupMembershipInput
   documentGeneration?: BookingCreateDocumentGenerationInput
+  /**
+   * Initial booking status — defaults to `draft` on the server. Set
+   * this to skip the legacy create-then-flip dance: the server commits
+   * the booking already in `confirmed` / `awaiting_payment` in the
+   * same transaction and fires `booking.confirmed` post-commit when
+   * applicable.
+   */
+  initialStatus?: BookingStatus
+  /**
+   * Only honored when `initialStatus === "confirmed"`. When true, the
+   * post-commit `booking.confirmed` event carries
+   * `suppressNotifications: true` so downstream subscribers skip
+   * customer-facing emails / document bundles.
+   */
+  suppressNotifications?: boolean
+  /**
+   * Billing-contact snapshot. Caller (typically the create dialog)
+   * reads the linked CRM person/org and supplies what it knows so the
+   * booking detail page renders the right payer even if those CRM
+   * records change later.
+   */
+  contactFirstName?: string | null
+  contactLastName?: string | null
+  contactEmail?: string | null
+  contactPhone?: string | null
+  contactPreferredLanguage?: string | null
+  contactCountry?: string | null
+  contactRegion?: string | null
+  contactCity?: string | null
+  contactAddressLine1?: string | null
+  contactPostalCode?: string | null
 }
 
 // Response envelope: route returns `{ data: { booking, travelers, paymentSchedules, voucherRedemption, groupMembership } }`.

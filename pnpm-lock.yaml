@@ -1507,6 +1507,9 @@ importers:
       '@voyantjs/finance-react':
         specifier: workspace:*
         version: link:../finance-react
+      '@voyantjs/identity-react':
+        specifier: workspace:*
+        version: link:../identity-react
       '@voyantjs/legal-react':
         specifier: workspace:*
         version: link:../legal-react
@@ -5987,6 +5990,9 @@ importers:
       '@voyantjs/admin':
         specifier: workspace:*
         version: link:../../packages/admin
+      '@voyantjs/allocation-ui':
+        specifier: workspace:*
+        version: link:../../packages/allocation-ui
       '@voyantjs/auth':
         specifier: workspace:*
         version: link:../../packages/auth

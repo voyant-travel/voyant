@@ -40,6 +40,10 @@ export type SuppliersUiMessages = {
     allStatuses: string
     countryPlaceholder: string
     currencyPlaceholder: string
+    filterTypeLabel: string
+    filterStatusLabel: string
+    filterCountryLabel: string
+    filterCurrencyLabel: string
     empty: string
     loadFailed: string
     columns: {

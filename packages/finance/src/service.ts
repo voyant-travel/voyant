@@ -583,6 +583,24 @@ interface RawUnifiedPaymentRow {
   updated_at: Date | string
 }
 
+/**
+ * Normalize `db.execute(sql)` results across drizzle drivers.
+ * `drizzle-orm/postgres-js` returns rows directly (an array), while
+ * `drizzle-orm/node-postgres` (used by the operator template against a
+ * local pg server) and `drizzle-orm/neon-serverless` return pg's
+ * `QueryResult<T>` wrapper with `.rows`. Casting to `Array<T>` and
+ * calling `.map` blows up under the wrapper shape — surface the rows
+ * regardless of which driver is bound.
+ */
+function toRows<T>(result: unknown): T[] {
+  if (Array.isArray(result)) return result as T[]
+  if (result && typeof result === "object" && "rows" in result) {
+    const rows = (result as { rows: unknown }).rows
+    return Array.isArray(rows) ? (rows as T[]) : []
+  }
+  return []
+}
+
 function mapRawPayment(row: RawUnifiedPaymentRow): UnifiedPaymentRow {
   // Person display name: "First Last", trimmed. Falls back to null when both
   // halves are missing so the UI can swap to organization or hide the field.
@@ -3410,8 +3428,8 @@ export const financeService = {
       SELECT COUNT(*)::int AS count FROM (${unioned}) all_payments
     `)
 
-    const rows = dataResult as unknown as Array<RawUnifiedPaymentRow>
-    const total = (countResult as unknown as Array<{ count: number }>)[0]?.count ?? 0
+    const rows = toRows<RawUnifiedPaymentRow>(dataResult)
+    const total = toRows<{ count: number }>(countResult)[0]?.count ?? 0
     const data: UnifiedPaymentRow[] = rows.map(mapRawPayment)
 
     return {
@@ -3462,7 +3480,7 @@ export const financeService = {
         WHERE sp.id = ${id}
         LIMIT 1
       `)
-      const row = (result as unknown as RawUnifiedPaymentRow[])[0]
+      const row = toRows<RawUnifiedPaymentRow>(result)[0]
       return row ? mapRawPayment(row) : null
     }
 
@@ -3499,7 +3517,7 @@ export const financeService = {
       WHERE p.id = ${id}
       LIMIT 1
     `)
-    const row = (result as unknown as RawUnifiedPaymentRow[])[0]
+    const row = toRows<RawUnifiedPaymentRow>(result)[0]
     return row ? mapRawPayment(row) : null
   },
 

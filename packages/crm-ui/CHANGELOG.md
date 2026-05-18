@@ -1,5 +1,27 @@
 # @voyantjs/crm-ui
 
+## 0.52.2
+
+### Patch Changes
+
+- 3e09123: Expand the CRM person form and detail surface.
+
+  - `PersonForm` gains addresses and relationships subforms with full add/remove/edit affordances; `OrganizationForm` picks up the same address widgets.
+  - New exported sections `PersonAddressesSection` and `PersonRelationshipsSection` so the person detail page can render addresses/relationships outside the edit form (e.g. on the read-only detail view).
+  - i18n strings for the new sections (EN + RO).
+  - `@voyantjs/crm` service/validation: rename the legacy `birthday` field to `dateOfBirth` to match the rest of identity; migrations `0028_rename_birthday.sql` (dev), `0010_rename_birthday.sql` (dmc), and `0018_rename_birthday.sql` (operator) handle the column rename.
+  - Document-attach service tightens its validation around the renamed field.
+
+- Updated dependencies [3e09123]
+- Updated dependencies [3e09123]
+- Updated dependencies [6bdfcbc]
+- Updated dependencies [3e09123]
+  - @voyantjs/crm-react@0.52.2
+  - @voyantjs/i18n@0.52.2
+  - @voyantjs/identity-react@0.52.2
+  - @voyantjs/ui@0.52.2
+  - @voyantjs/utils@0.52.2
+
 ## 0.52.1
 
 ### Patch Changes
