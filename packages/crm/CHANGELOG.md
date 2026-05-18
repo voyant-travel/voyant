@@ -1,5 +1,16 @@
 # @voyantjs/crm
 
+## 0.52.3
+
+### Patch Changes
+
+- Updated dependencies [9679a57]
+  - @voyantjs/core@0.52.3
+  - @voyantjs/db@0.52.3
+  - @voyantjs/hono@0.52.3
+  - @voyantjs/identity@0.52.3
+  - @voyantjs/utils@0.52.3
+
 ## 0.52.2
 
 ### Patch Changes
