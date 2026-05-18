@@ -1,4 +1,4 @@
-import { typeId } from "@voyantjs/db"
+import { typeId } from "@voyantjs/db/lib/typeid-column"
 import { sql } from "drizzle-orm"
 import {
   boolean,
