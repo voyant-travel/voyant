@@ -2,36 +2,18 @@
  * Operator-template-local drizzle schema.
  *
  * Most domain tables live in shared `@voyantjs/*` packages. This file
- * is only for tables that are deployment-flavored — things every
- * operator instance needs but that don't make sense as a generic
- * Voyant module. Right now: the operator profile + default customer
- * payment policy.
+ * is only for tables that are operator-template concerns and do not
+ * make sense as generic package-owned domain rows.
  */
 
 import { typeId } from "@voyantjs/db/lib/typeid-column"
 import { jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
 /**
- * Single-row table holding the deployment's operator profile + the
- * deployment's default customer payment policy. Surfaced in the
- * admin Settings → Operator page.
- *
- * "Operator" is intentionally the neutral term here — the deployment
- * owner could be a tour agency, a hotel, a cruise line, an airline,
- * a DMC, etc. Using "agency" would lie when a hotel adopts Voyant.
- *
- * Why not env vars: operator identity (VAT id, IBAN, signatory) and
- * customer payment terms are admin concerns, not developer concerns.
- * Operators expect to edit these from the dashboard, not by SSHing
- * into a Cloudflare worker config.
- *
- * Why not a generic `settings` package: deployments diverge on what
- * they want to configure. Keeping this in-template lets the operator
- * template own its own settings shape without forcing the same one on
- * every Voyant deployment.
- *
- * Single-row enforcement: handled at the API layer — the GET reads
- * the first row, the PATCH upserts.
+ * Original catch-all table from the first booking-journey settings
+ * pass. Runtime code reads/writes the narrower tables below:
+ * `operator_profile`, `operator_payment_instructions`,
+ * `operator_payment_defaults`, and `booking_tax_settings`.
  */
 export const operatorSettings = pgTable("operator_settings", {
   id: typeId("operator_settings"),
@@ -77,11 +59,8 @@ export const operatorSettings = pgTable("operator_settings", {
    */
   customerPaymentPolicy: jsonb("customer_payment_policy"),
 
-  /**
-   * Whether catalog prices entered by operators include tax already.
-   * This is an admin setting because it controls commercial behavior,
-   * not deployment/runtime configuration.
-   */
+  // Columns retained for migrations from pre-booking-tax-settings
+  // beta databases. Runtime code reads/writes `booking_tax_settings`.
   taxPriceMode: text("tax_price_mode").notNull().default("inclusive"),
   taxPolicyProfileId: text("tax_policy_profile_id"),
 
@@ -91,3 +70,79 @@ export const operatorSettings = pgTable("operator_settings", {
 
 export type OperatorSettings = typeof operatorSettings.$inferSelect
 export type NewOperatorSettings = typeof operatorSettings.$inferInsert
+
+/**
+ * Single-row operator profile: the legal/trading identity that
+ * contracts with the customer. Used by contract variables and public
+ * checkout / booking-preview legal blocks.
+ */
+export const operatorProfile = pgTable("operator_profile", {
+  id: typeId("operator_profile"),
+  name: text("name"),
+  legalName: text("legal_name"),
+  vatId: text("vat_id"),
+  registrationNumber: text("registration_number"),
+  address: text("address"),
+  phone: text("phone"),
+  email: text("email"),
+  website: text("website"),
+  license: text("license"),
+  licenseAuthority: text("license_authority"),
+  signatoryName: text("signatory_name"),
+  signatoryRole: text("signatory_role"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type OperatorProfile = typeof operatorProfile.$inferSelect
+export type NewOperatorProfile = typeof operatorProfile.$inferInsert
+
+/**
+ * Single-row operator payment instructions for customer-facing
+ * collection rails such as bank transfer.
+ */
+export const operatorPaymentInstructions = pgTable("operator_payment_instructions", {
+  id: typeId("operator_payment_instructions"),
+  bankTransferBeneficiary: text("bank_transfer_beneficiary"),
+  iban: text("iban"),
+  bank: text("bank"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type OperatorPaymentInstructions = typeof operatorPaymentInstructions.$inferSelect
+export type NewOperatorPaymentInstructions = typeof operatorPaymentInstructions.$inferInsert
+
+/**
+ * Single-row operator-level customer payment default. The booking
+ * payment-policy cascade uses this only when supplier/category/listing
+ * and booking-level policies do not override it.
+ */
+export const operatorPaymentDefaults = pgTable("operator_payment_defaults", {
+  id: typeId("operator_payment_defaults"),
+  customerPaymentPolicy: jsonb("customer_payment_policy"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type OperatorPaymentDefaults = typeof operatorPaymentDefaults.$inferSelect
+export type NewOperatorPaymentDefaults = typeof operatorPaymentDefaults.$inferInsert
+
+/**
+ * Single-row booking tax configuration for booking-create previews,
+ * quote recomputation, and booking item tax-line materialization.
+ *
+ * Kept separate from operator identity and payment instructions:
+ * these fields are finance/booking tax policy knobs.
+ */
+export const bookingTaxSettings = pgTable("booking_tax_settings", {
+  id: typeId("booking_tax_settings"),
+  taxPriceMode: text("tax_price_mode").notNull().default("inclusive"),
+  taxPolicyProfileId: text("tax_policy_profile_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type BookingTaxSettings = typeof bookingTaxSettings.$inferSelect
+export type NewBookingTaxSettings = typeof bookingTaxSettings.$inferInsert

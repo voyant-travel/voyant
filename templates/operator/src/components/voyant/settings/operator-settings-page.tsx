@@ -1,13 +1,11 @@
 "use client"
 
 /**
- * Settings → Operator.
+ * Settings -> Operator profile.
  *
- * Single-form page for the deployment's operator profile (the legal
- * entity that issues contracts to customers — tour agency, hotel,
- * cruise line, airline, DMC, …) plus the default customer payment
- * policy. The fields populate `operator.*` variables in contract
- * templates.
+ * Operator identity, payment instructions, and operator-level
+ * booking payment defaults live in separate API/storage concepts, but
+ * remain one operational settings form.
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -22,11 +20,6 @@ import {
   CardTitle,
   Input,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Textarea,
 } from "@voyantjs/ui/components"
 import { Loader2 } from "lucide-react"
@@ -35,8 +28,7 @@ import { toast } from "sonner"
 
 import { getApiUrl } from "@/lib/env"
 
-interface OperatorSettingsRecord {
-  id?: string
+interface OperatorProfileForm {
   name?: string | null
   legalName?: string | null
   vatId?: string | null
@@ -45,24 +37,28 @@ interface OperatorSettingsRecord {
   phone?: string | null
   email?: string | null
   website?: string | null
+  bankTransferBeneficiary?: string | null
   iban?: string | null
   bank?: string | null
+  notes?: string | null
   license?: string | null
   licenseAuthority?: string | null
   signatoryName?: string | null
   signatoryRole?: string | null
   customerPaymentPolicy?: PaymentPolicy | null
-  taxPriceMode?: "inclusive" | "exclusive"
-  taxPolicyProfileId?: string | null
 }
 
-interface TaxPolicyProfileRecord {
-  id: string
-  name: string
-  jurisdiction?: string | null
-}
+type OperatorProfileRecord = Omit<
+  OperatorProfileForm,
+  "bankTransferBeneficiary" | "iban" | "bank" | "notes" | "customerPaymentPolicy"
+>
+type OperatorPaymentInstructionsRecord = Pick<
+  OperatorProfileForm,
+  "bankTransferBeneficiary" | "iban" | "bank" | "notes"
+>
+type OperatorPaymentDefaultsRecord = Pick<OperatorProfileForm, "customerPaymentPolicy">
 
-const EMPTY_FORM: OperatorSettingsRecord = {
+const EMPTY_FORM: OperatorProfileForm = {
   name: "",
   legalName: "",
   vatId: "",
@@ -71,93 +67,114 @@ const EMPTY_FORM: OperatorSettingsRecord = {
   phone: "",
   email: "",
   website: "",
+  bankTransferBeneficiary: "",
   iban: "",
   bank: "",
+  notes: "",
   license: "",
   licenseAuthority: "",
   signatoryName: "",
   signatoryRole: "",
   customerPaymentPolicy: null,
-  taxPriceMode: "inclusive",
-  taxPolicyProfileId: null,
 }
 
-export function OperatorSettingsPage() {
+export function OperatorProfilePage() {
   const queryClient = useQueryClient()
 
   const { data, isPending } = useQuery({
-    queryKey: ["operator-settings"],
-    queryFn: async (): Promise<OperatorSettingsRecord | null> => {
-      const res = await fetch(`${getApiUrl()}/v1/admin/settings/operator`, {
-        credentials: "include",
-      })
-      if (!res.ok) return null
-      const json = (await res.json()) as { data?: OperatorSettingsRecord | null }
-      return json.data ?? null
-    },
-  })
-  const taxPolicyProfilesQuery = useQuery({
-    queryKey: ["tax-policy-profiles"],
-    queryFn: async (): Promise<TaxPolicyProfileRecord[]> => {
-      const res = await fetch(
-        `${getApiUrl()}/v1/finance/tax-policy-profiles?limit=100&active=true`,
-        {
+    queryKey: ["operator-profile-settings"],
+    queryFn: async (): Promise<OperatorProfileForm | null> => {
+      const [profileRes, instructionsRes, defaultsRes] = await Promise.all([
+        fetch(`${getApiUrl()}/v1/admin/settings/operator-profile`, { credentials: "include" }),
+        fetch(`${getApiUrl()}/v1/admin/settings/operator-payment-instructions`, {
           credentials: "include",
-        },
-      )
-      if (!res.ok) return []
-      const json = (await res.json()) as { data?: TaxPolicyProfileRecord[] }
-      return json.data ?? []
+        }),
+        fetch(`${getApiUrl()}/v1/admin/settings/operator-payment-defaults`, {
+          credentials: "include",
+        }),
+      ])
+      if (!profileRes.ok && !instructionsRes.ok && !defaultsRes.ok) return null
+
+      const [profileJson, instructionsJson, defaultsJson] = await Promise.all([
+        profileRes.ok
+          ? ((await profileRes.json()) as { data?: OperatorProfileRecord | null })
+          : { data: null },
+        instructionsRes.ok
+          ? ((await instructionsRes.json()) as { data?: OperatorPaymentInstructionsRecord | null })
+          : { data: null },
+        defaultsRes.ok
+          ? ((await defaultsRes.json()) as { data?: OperatorPaymentDefaultsRecord | null })
+          : { data: null },
+      ])
+
+      return {
+        ...EMPTY_FORM,
+        ...(profileJson.data ?? {}),
+        ...(instructionsJson.data ?? {}),
+        customerPaymentPolicy: defaultsJson.data?.customerPaymentPolicy ?? null,
+      }
     },
   })
-
-  const [form, setForm] = useState<OperatorSettingsRecord>(EMPTY_FORM)
+  const [form, setForm] = useState<OperatorProfileForm>(EMPTY_FORM)
 
   useEffect(() => {
     if (data) {
-      setForm({
-        ...EMPTY_FORM,
-        ...data,
-      })
+      setForm({ ...EMPTY_FORM, ...data })
     }
   }, [data])
 
   const save = useMutation({
-    mutationFn: async (next: OperatorSettingsRecord) => {
-      const res = await fetch(`${getApiUrl()}/v1/admin/settings/operator`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          name: next.name ?? null,
-          legalName: next.legalName ?? null,
-          vatId: next.vatId ?? null,
-          registrationNumber: next.registrationNumber ?? null,
-          address: next.address ?? null,
-          phone: next.phone ?? null,
-          email: next.email ?? null,
-          website: next.website ?? null,
-          iban: next.iban ?? null,
-          bank: next.bank ?? null,
-          license: next.license ?? null,
-          licenseAuthority: next.licenseAuthority ?? null,
-          signatoryName: next.signatoryName ?? null,
-          signatoryRole: next.signatoryRole ?? null,
-          customerPaymentPolicy: next.customerPaymentPolicy ?? null,
-          taxPriceMode: next.taxPriceMode ?? "inclusive",
-          taxPolicyProfileId: next.taxPolicyProfileId ?? null,
+    mutationFn: async (next: OperatorProfileForm) => {
+      const responses = await Promise.all([
+        fetch(`${getApiUrl()}/v1/admin/settings/operator-profile`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            name: next.name ?? null,
+            legalName: next.legalName ?? null,
+            vatId: next.vatId ?? null,
+            registrationNumber: next.registrationNumber ?? null,
+            address: next.address ?? null,
+            phone: next.phone ?? null,
+            email: next.email ?? null,
+            website: next.website ?? null,
+            license: next.license ?? null,
+            licenseAuthority: next.licenseAuthority ?? null,
+            signatoryName: next.signatoryName ?? null,
+            signatoryRole: next.signatoryRole ?? null,
+          }),
         }),
-      })
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string }
-        throw new Error(body.error ?? `Save failed (${res.status})`)
+        fetch(`${getApiUrl()}/v1/admin/settings/operator-payment-instructions`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            bankTransferBeneficiary: next.bankTransferBeneficiary ?? null,
+            iban: next.iban ?? null,
+            bank: next.bank ?? null,
+            notes: next.notes ?? null,
+          }),
+        }),
+        fetch(`${getApiUrl()}/v1/admin/settings/operator-payment-defaults`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            customerPaymentPolicy: next.customerPaymentPolicy ?? null,
+          }),
+        }),
+      ])
+      const failed = responses.find((res) => !res.ok)
+      if (failed) {
+        const body = (await failed.json().catch(() => ({}))) as { error?: string }
+        throw new Error(body.error ?? `Save failed (${failed.status})`)
       }
-      return (await res.json()) as { data: OperatorSettingsRecord | null }
     },
     onSuccess: () => {
-      toast.success("Operator settings saved")
-      void queryClient.invalidateQueries({ queryKey: ["operator-settings"] })
-      void queryClient.invalidateQueries({ queryKey: ["public-operator-settings"] })
+      toast.success("Operator profile saved")
+      void queryClient.invalidateQueries({ queryKey: ["operator-profile-settings"] })
+      void queryClient.invalidateQueries({ queryKey: ["public-operator-profile"] })
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "Save failed")
@@ -172,10 +189,8 @@ export function OperatorSettingsPage() {
     )
   }
 
-  const setField = <K extends keyof OperatorSettingsRecord>(
-    key: K,
-    value: OperatorSettingsRecord[K],
-  ) => setForm((prev) => ({ ...prev, [key]: value }))
+  const setField = <K extends keyof OperatorProfileForm>(key: K, value: OperatorProfileForm[K]) =>
+    setForm((prev) => ({ ...prev, [key]: value }))
 
   return (
     <form
@@ -186,10 +201,10 @@ export function OperatorSettingsPage() {
       }}
     >
       <header>
-        <h1 className="text-2xl font-bold tracking-tight">Operator</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Operator profile</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          The legal entity that issues contracts to your customers — tour agency, hotel, cruise
-          line, DMC, etc. These details populate <code>operator.*</code> in contract templates.
+          Operator identity for contracts, public legal blocks, and payment collection. These
+          details populate <code>operator.*</code> in contract templates.
         </p>
       </header>
 
@@ -279,10 +294,19 @@ export function OperatorSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Banking</CardTitle>
+          <CardTitle>Payment collection</CardTitle>
           <CardDescription>For bank-transfer payment instructions.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-1 md:col-span-2">
+            <Label htmlFor="op-bankTransferBeneficiary">Bank-transfer beneficiary</Label>
+            <Input
+              id="op-bankTransferBeneficiary"
+              value={form.bankTransferBeneficiary ?? ""}
+              placeholder="Defaults to legal name"
+              onChange={(e) => setField("bankTransferBeneficiary", e.target.value)}
+            />
+          </div>
           <div className="space-y-1">
             <Label htmlFor="op-iban">IBAN</Label>
             <Input
@@ -299,6 +323,15 @@ export function OperatorSettingsPage() {
               onChange={(e) => setField("bank", e.target.value)}
             />
           </div>
+          <div className="space-y-1 md:col-span-2">
+            <Label htmlFor="op-notes">Payment notes</Label>
+            <Textarea
+              id="op-notes"
+              value={form.notes ?? ""}
+              onChange={(e) => setField("notes", e.target.value)}
+              rows={2}
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -306,7 +339,7 @@ export function OperatorSettingsPage() {
         <CardHeader>
           <CardTitle>License</CardTitle>
           <CardDescription>
-            Tour-operator license, hotel rating registry, cruise flag-state — whichever applies.
+            Tour license, hotel rating registry, cruise flag-state, or whichever applies.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
@@ -376,71 +409,6 @@ export function OperatorSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Tax pricing</CardTitle>
-          <CardDescription>
-            Controls whether catalog prices entered in products and option pricing already include
-            tax or have tax added on top at quote time.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-1">
-            <Label>Catalog price mode</Label>
-            <Select
-              value={form.taxPriceMode ?? "inclusive"}
-              onValueChange={(value) =>
-                setField("taxPriceMode", value === "exclusive" ? "exclusive" : "inclusive")
-              }
-              items={[
-                { value: "inclusive", label: "Tax inclusive" },
-                { value: "exclusive", label: "Tax exclusive" },
-              ]}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="inclusive">Tax inclusive</SelectItem>
-                <SelectItem value="exclusive">Tax exclusive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label>Tax policy profile</Label>
-            <Select
-              value={form.taxPolicyProfileId ?? "__auto__"}
-              onValueChange={(value) =>
-                setField("taxPolicyProfileId", value === "__auto__" ? null : value)
-              }
-              items={[
-                { value: "__auto__", label: "Automatic active profile" },
-                ...(taxPolicyProfilesQuery.data ?? []).map((profile) => ({
-                  value: profile.id,
-                  label: profile.jurisdiction
-                    ? `${profile.name} (${profile.jurisdiction})`
-                    : profile.name,
-                })),
-              ]}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__auto__">Automatic active profile</SelectItem>
-                {(taxPolicyProfilesQuery.data ?? []).map((profile) => (
-                  <SelectItem key={profile.id} value={profile.id}>
-                    {profile.jurisdiction
-                      ? `${profile.name} (${profile.jurisdiction})`
-                      : profile.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
       <div className="flex justify-end gap-2">
         <Button type="submit" disabled={save.isPending}>
           {save.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -450,3 +418,5 @@ export function OperatorSettingsPage() {
     </form>
   )
 }
+
+export const OperatorSettingsPage = OperatorProfilePage

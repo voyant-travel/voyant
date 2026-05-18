@@ -618,7 +618,7 @@ export const contractTemplateVariableCatalog: ContractTemplateVariableCategory[]
     id: "operator",
     label: "Operator",
     description:
-      "The deployment owner — tour agency, hotel, cruise line, airline, DMC. Wired from Settings → Operator.",
+      "The legal/trading entity contracting with the customer. Wired from Settings -> Operator profile.",
     variables: [
       { key: "operator.name", label: "Trading name", example: "Voyant Travel", type: "string" },
       {

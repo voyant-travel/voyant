@@ -1,31 +1,30 @@
 /**
- * Operator settings API.
+ * Operator profile and payment settings API.
  *
- * Backs the admin Settings → Operator page + the storefront's
- * contract preview operator block. Single-row table, single endpoint
- * family:
+ * The first booking-journey pass stored operator identity, payment
+ * instructions, default booking payment policy, and booking tax
+ * selection in one catch-all settings row. Runtime code now uses
+ * narrower operator-owned concepts:
  *
- *   GET    /v1/admin/settings/operator  → full row (admin actor only)
- *   PATCH  /v1/admin/settings/operator  → upsert any subset of fields
- *   GET    /v1/public/settings/operator → sanitized subset (no banking,
- *                                         no signatory, no payment policy)
- *
- * The PATCH route auto-creates the row on first call when none
- * exists, so a fresh deployment doesn't need to seed anything.
- *
- * "Operator" is the neutral term across verticals — a tour agency, a
- * hotel, a cruise line, an airline, a DMC are all operators of their
- * Voyant deployment.
+ *   operator_profile                contract/customer-facing identity
+ *   operator_payment_instructions   bank-transfer instructions
+ *   operator_payment_defaults       fallback customer payment policy
+ *   booking_tax_settings            booking tax preview/finalization knobs
  */
 
-import type { PaymentPolicy } from "@voyantjs/finance"
+import type { BookingTaxSettings, PaymentPolicy } from "@voyantjs/finance"
 import { parseJsonBody } from "@voyantjs/hono"
 import { desc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
 import { z } from "zod"
 
-import { operatorSettings } from "../db/schema.js"
+import {
+  bookingTaxSettings,
+  operatorPaymentDefaults,
+  operatorPaymentInstructions,
+  operatorProfile,
+} from "../db/schema.js"
 
 const depositRuleSchema = z.object({
   kind: z.enum(["none", "percent", "fixed_cents"]),
@@ -40,9 +39,7 @@ const paymentPolicySchema = z.object({
   balanceDueMinDaysFromNow: z.number().int().min(0),
 })
 
-const taxPriceModeSchema = z.enum(["inclusive", "exclusive"])
-
-const updateOperatorSettingsSchema = z.object({
+const updateOperatorProfileSchema = z.object({
   name: z.string().nullable().optional(),
   legalName: z.string().nullable().optional(),
   vatId: z.string().nullable().optional(),
@@ -51,68 +48,192 @@ const updateOperatorSettingsSchema = z.object({
   phone: z.string().nullable().optional(),
   email: z.string().email().nullable().optional().or(z.literal("")),
   website: z.string().url().nullable().optional().or(z.literal("")),
-  iban: z.string().nullable().optional(),
-  bank: z.string().nullable().optional(),
   license: z.string().nullable().optional(),
   licenseAuthority: z.string().nullable().optional(),
   signatoryName: z.string().nullable().optional(),
   signatoryRole: z.string().nullable().optional(),
-  customerPaymentPolicy: paymentPolicySchema.nullable().optional(),
-  taxPriceMode: taxPriceModeSchema.optional(),
-  taxPolicyProfileId: z.string().nullable().optional(),
 })
 
+const updateOperatorPaymentInstructionsSchema = z.object({
+  bankTransferBeneficiary: z.string().nullable().optional(),
+  iban: z.string().nullable().optional(),
+  bank: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+})
+
+const updateOperatorPaymentDefaultsSchema = z.object({
+  customerPaymentPolicy: paymentPolicySchema.nullable().optional(),
+})
+
+const updateOperatorSettingsSchema = updateOperatorProfileSchema
+  .merge(updateOperatorPaymentInstructionsSchema)
+  .merge(updateOperatorPaymentDefaultsSchema)
+
+export type UpdateOperatorProfileInput = z.infer<typeof updateOperatorProfileSchema>
+export type UpdateOperatorPaymentInstructionsInput = z.infer<
+  typeof updateOperatorPaymentInstructionsSchema
+>
+export type UpdateOperatorPaymentDefaultsInput = z.infer<typeof updateOperatorPaymentDefaultsSchema>
 export type UpdateOperatorSettingsInput = z.infer<typeof updateOperatorSettingsSchema>
 
-export async function getOperatorSettings(db: PostgresJsDatabase) {
+type OperatorProfileRow = typeof operatorProfile.$inferSelect
+type OperatorPaymentInstructionsRow = typeof operatorPaymentInstructions.$inferSelect
+type OperatorPaymentDefaultsRow = typeof operatorPaymentDefaults.$inferSelect
+
+export async function getOperatorProfile(db: PostgresJsDatabase) {
   const [row] = await db
     .select()
-    .from(operatorSettings)
-    .orderBy(desc(operatorSettings.createdAt))
+    .from(operatorProfile)
+    .orderBy(desc(operatorProfile.createdAt))
     .limit(1)
   return row ?? null
 }
 
-export async function upsertOperatorSettings(
+export async function upsertOperatorProfile(
   db: PostgresJsDatabase,
-  patch: UpdateOperatorSettingsInput,
+  patch: UpdateOperatorProfileInput,
 ) {
-  const existing = await getOperatorSettings(db)
+  const existing = await getOperatorProfile(db)
   if (!existing) {
-    const [created] = await db
-      .insert(operatorSettings)
-      .values({
-        ...patch,
-        // jsonb expects unknown — cast through here so the union
-        // (PaymentPolicy | null | undefined) lands cleanly.
-        customerPaymentPolicy: (patch.customerPaymentPolicy ?? null) as unknown,
-      } as typeof operatorSettings.$inferInsert)
-      .returning()
+    const [created] = await db.insert(operatorProfile).values(patch).returning()
     return created ?? null
   }
+
   const [updated] = await db
-    .update(operatorSettings)
-    .set({
-      ...patch,
-      customerPaymentPolicy: (patch.customerPaymentPolicy ?? null) as unknown,
-      updatedAt: new Date(),
-    } as Partial<typeof operatorSettings.$inferInsert>)
-    .where(eq(operatorSettings.id, existing.id))
+    .update(operatorProfile)
+    .set({ ...patch, updatedAt: new Date() })
+    .where(eq(operatorProfile.id, existing.id))
     .returning()
   return updated ?? null
 }
 
-/**
- * Strip operator-private fields before exposing the row to the
- * unauthenticated storefront. The customer needs the operator name,
- * postal address, license number, etc. for the contract preview;
- * they should never see VAT id, IBAN, or the customer payment policy
- * (the storefront recomputes the schedule from the public deposit
- * terms it gets back).
- */
-export function toPublicOperatorSettings(
-  row: typeof operatorSettings.$inferSelect,
-): PublicOperatorSettings {
+export async function getOperatorPaymentInstructions(db: PostgresJsDatabase) {
+  const [row] = await db
+    .select()
+    .from(operatorPaymentInstructions)
+    .orderBy(desc(operatorPaymentInstructions.createdAt))
+    .limit(1)
+  return row ?? null
+}
+
+export async function upsertOperatorPaymentInstructions(
+  db: PostgresJsDatabase,
+  patch: UpdateOperatorPaymentInstructionsInput,
+) {
+  const existing = await getOperatorPaymentInstructions(db)
+  if (!existing) {
+    const [created] = await db.insert(operatorPaymentInstructions).values(patch).returning()
+    return created ?? null
+  }
+
+  const [updated] = await db
+    .update(operatorPaymentInstructions)
+    .set({ ...patch, updatedAt: new Date() })
+    .where(eq(operatorPaymentInstructions.id, existing.id))
+    .returning()
+  return updated ?? null
+}
+
+export async function getOperatorPaymentDefaults(db: PostgresJsDatabase) {
+  const [row] = await db
+    .select()
+    .from(operatorPaymentDefaults)
+    .orderBy(desc(operatorPaymentDefaults.createdAt))
+    .limit(1)
+  return row ?? null
+}
+
+export async function upsertOperatorPaymentDefaults(
+  db: PostgresJsDatabase,
+  patch: UpdateOperatorPaymentDefaultsInput,
+) {
+  const existing = await getOperatorPaymentDefaults(db)
+  const values = {
+    customerPaymentPolicy: (patch.customerPaymentPolicy ?? null) as unknown,
+  } as typeof operatorPaymentDefaults.$inferInsert
+
+  if (!existing) {
+    const [created] = await db.insert(operatorPaymentDefaults).values(values).returning()
+    return created ?? null
+  }
+
+  const [updated] = await db
+    .update(operatorPaymentDefaults)
+    .set({
+      ...values,
+      updatedAt: new Date(),
+    } as Partial<typeof operatorPaymentDefaults.$inferInsert>)
+    .where(eq(operatorPaymentDefaults.id, existing.id))
+    .returning()
+  return updated ?? null
+}
+
+export async function resolveOperatorDefaultPaymentPolicy(
+  db: PostgresJsDatabase,
+): Promise<PaymentPolicy | null> {
+  const defaults = await getOperatorPaymentDefaults(db)
+  return (defaults?.customerPaymentPolicy as PaymentPolicy | null | undefined) ?? null
+}
+
+export async function resolveBookingTaxSettings(
+  db: PostgresJsDatabase,
+): Promise<BookingTaxSettings> {
+  const [settings] = await db
+    .select()
+    .from(bookingTaxSettings)
+    .orderBy(desc(bookingTaxSettings.createdAt))
+    .limit(1)
+
+  return {
+    taxPriceMode: settings?.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
+    taxPolicyProfileId: settings?.taxPolicyProfileId ?? null,
+  }
+}
+
+export async function updateBookingTaxSettings(
+  db: PostgresJsDatabase,
+  patch: BookingTaxSettings,
+): Promise<BookingTaxSettings> {
+  const [existing] = await db
+    .select()
+    .from(bookingTaxSettings)
+    .orderBy(desc(bookingTaxSettings.createdAt))
+    .limit(1)
+
+  if (!existing) {
+    const [created] = await db
+      .insert(bookingTaxSettings)
+      .values({
+        taxPriceMode: patch.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
+        taxPolicyProfileId: patch.taxPolicyProfileId ?? null,
+      })
+      .returning()
+    return {
+      taxPriceMode: created?.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
+      taxPolicyProfileId: created?.taxPolicyProfileId ?? null,
+    }
+  }
+
+  const [updated] = await db
+    .update(bookingTaxSettings)
+    .set({
+      taxPriceMode: patch.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
+      taxPolicyProfileId: patch.taxPolicyProfileId ?? null,
+      updatedAt: new Date(),
+    })
+    .where(eq(bookingTaxSettings.id, existing.id))
+    .returning()
+
+  return {
+    taxPriceMode: updated?.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
+    taxPolicyProfileId: updated?.taxPolicyProfileId ?? null,
+  }
+}
+
+export function toPublicOperatorProfile(
+  row: OperatorProfileRow,
+  defaults?: OperatorPaymentDefaultsRow | null,
+): PublicOperatorProfile {
   return {
     name: row.name ?? "",
     legalName: row.legalName ?? "",
@@ -122,13 +243,12 @@ export function toPublicOperatorSettings(
     website: row.website ?? "",
     license: row.license ?? "",
     licenseAuthority: row.licenseAuthority ?? "",
-    customerPaymentPolicy: (row.customerPaymentPolicy as PaymentPolicy | null | undefined) ?? null,
-    taxPriceMode: row.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
-    taxPolicyProfileId: row.taxPolicyProfileId ?? null,
+    customerPaymentPolicy:
+      (defaults?.customerPaymentPolicy as PaymentPolicy | null | undefined) ?? null,
   }
 }
 
-export interface PublicOperatorSettings {
+export interface PublicOperatorProfile {
   name: string
   legalName: string
   address: string
@@ -137,29 +257,139 @@ export interface PublicOperatorSettings {
   website: string
   license: string
   licenseAuthority: string
-  /** Public-safe — the storefront uses it to compute the preview
-   *  schedule. Banking / signatory / vatId stay private. */
   customerPaymentPolicy: PaymentPolicy | null
-  taxPriceMode: "inclusive" | "exclusive"
-  taxPolicyProfileId: string | null
+}
+
+type CombinedOperatorSettings = Partial<OperatorProfileRow> &
+  Partial<OperatorPaymentInstructionsRow> & {
+    customerPaymentPolicy?: unknown
+  }
+
+function combineOperatorSettings(
+  profile: OperatorProfileRow | null,
+  instructions: OperatorPaymentInstructionsRow | null,
+  defaults: OperatorPaymentDefaultsRow | null,
+): CombinedOperatorSettings | null {
+  if (!profile && !instructions && !defaults) return null
+  return {
+    ...(profile ?? {}),
+    bankTransferBeneficiary: instructions?.bankTransferBeneficiary ?? null,
+    iban: instructions?.iban ?? null,
+    bank: instructions?.bank ?? null,
+    notes: instructions?.notes ?? null,
+    customerPaymentPolicy: defaults?.customerPaymentPolicy ?? null,
+  }
+}
+
+export async function getOperatorSettings(db: PostgresJsDatabase) {
+  const [profile, instructions, defaults] = await Promise.all([
+    getOperatorProfile(db),
+    getOperatorPaymentInstructions(db),
+    getOperatorPaymentDefaults(db),
+  ])
+  return combineOperatorSettings(profile, instructions, defaults)
+}
+
+export async function upsertOperatorSettings(
+  db: PostgresJsDatabase,
+  patch: UpdateOperatorSettingsInput,
+) {
+  const [profile, instructions, defaults] = await Promise.all([
+    upsertOperatorProfile(db, {
+      name: patch.name,
+      legalName: patch.legalName,
+      vatId: patch.vatId,
+      registrationNumber: patch.registrationNumber,
+      address: patch.address,
+      phone: patch.phone,
+      email: patch.email,
+      website: patch.website,
+      license: patch.license,
+      licenseAuthority: patch.licenseAuthority,
+      signatoryName: patch.signatoryName,
+      signatoryRole: patch.signatoryRole,
+    }),
+    upsertOperatorPaymentInstructions(db, {
+      bankTransferBeneficiary: patch.bankTransferBeneficiary,
+      iban: patch.iban,
+      bank: patch.bank,
+      notes: patch.notes,
+    }),
+    upsertOperatorPaymentDefaults(db, {
+      customerPaymentPolicy: patch.customerPaymentPolicy,
+    }),
+  ])
+  return combineOperatorSettings(profile, instructions, defaults)
+}
+
+export function toPublicOperatorSettings(
+  row: Awaited<ReturnType<typeof getOperatorSettings>>,
+): PublicOperatorProfile {
+  return {
+    name: row?.name ?? "",
+    legalName: row?.legalName ?? "",
+    address: row?.address ?? "",
+    phone: row?.phone ?? "",
+    email: row?.email ?? "",
+    website: row?.website ?? "",
+    license: row?.license ?? "",
+    licenseAuthority: row?.licenseAuthority ?? "",
+    customerPaymentPolicy: (row?.customerPaymentPolicy as PaymentPolicy | null | undefined) ?? null,
+  }
+}
+
+async function handleGetOperatorProfile(c: Context): Promise<Response> {
+  const db = c.get("db") as PostgresJsDatabase
+  return c.json({ data: await getOperatorProfile(db) })
+}
+
+async function handlePatchOperatorProfile(c: Context): Promise<Response> {
+  const db = c.get("db") as PostgresJsDatabase
+  const patch = await parseJsonBody(c, updateOperatorProfileSchema)
+  return c.json({ data: await upsertOperatorProfile(db, patch) })
+}
+
+async function handleGetOperatorPaymentInstructions(c: Context): Promise<Response> {
+  const db = c.get("db") as PostgresJsDatabase
+  return c.json({ data: await getOperatorPaymentInstructions(db) })
+}
+
+async function handlePatchOperatorPaymentInstructions(c: Context): Promise<Response> {
+  const db = c.get("db") as PostgresJsDatabase
+  const patch = await parseJsonBody(c, updateOperatorPaymentInstructionsSchema)
+  return c.json({ data: await upsertOperatorPaymentInstructions(db, patch) })
+}
+
+async function handleGetOperatorPaymentDefaults(c: Context): Promise<Response> {
+  const db = c.get("db") as PostgresJsDatabase
+  return c.json({ data: await getOperatorPaymentDefaults(db) })
+}
+
+async function handlePatchOperatorPaymentDefaults(c: Context): Promise<Response> {
+  const db = c.get("db") as PostgresJsDatabase
+  const patch = await parseJsonBody(c, updateOperatorPaymentDefaultsSchema)
+  return c.json({ data: await upsertOperatorPaymentDefaults(db, patch) })
+}
+
+async function handleGetPublicOperatorProfile(c: Context): Promise<Response> {
+  const db = c.get("db") as PostgresJsDatabase
+  const [profile, defaults] = await Promise.all([
+    getOperatorProfile(db),
+    getOperatorPaymentDefaults(db),
+  ])
+  if (!profile) return c.json({ data: null })
+  return c.json({ data: toPublicOperatorProfile(profile, defaults) })
 }
 
 async function handleGetOperatorSettings(c: Context): Promise<Response> {
   const db = c.get("db") as PostgresJsDatabase
-  const row = await getOperatorSettings(db)
-  return c.json({ data: row })
+  return c.json({ data: await getOperatorSettings(db) })
 }
 
 async function handlePatchOperatorSettings(c: Context): Promise<Response> {
   const db = c.get("db") as PostgresJsDatabase
-  let patch: UpdateOperatorSettingsInput
-  try {
-    patch = await parseJsonBody(c, updateOperatorSettingsSchema)
-  } catch (err) {
-    return c.json({ error: err instanceof Error ? err.message : "invalid body" }, 400)
-  }
-  const row = await upsertOperatorSettings(db, patch)
-  return c.json({ data: row })
+  const patch = await parseJsonBody(c, updateOperatorSettingsSchema)
+  return c.json({ data: await upsertOperatorSettings(db, patch) })
 }
 
 async function handleGetPublicOperatorSettings(c: Context): Promise<Response> {
@@ -170,6 +400,17 @@ async function handleGetPublicOperatorSettings(c: Context): Promise<Response> {
 }
 
 export function mountOperatorSettingsRoutes(hono: Hono): void {
+  hono.get("/v1/admin/settings/operator-profile", handleGetOperatorProfile)
+  hono.patch("/v1/admin/settings/operator-profile", handlePatchOperatorProfile)
+  hono.get("/v1/admin/settings/operator-payment-instructions", handleGetOperatorPaymentInstructions)
+  hono.patch(
+    "/v1/admin/settings/operator-payment-instructions",
+    handlePatchOperatorPaymentInstructions,
+  )
+  hono.get("/v1/admin/settings/operator-payment-defaults", handleGetOperatorPaymentDefaults)
+  hono.patch("/v1/admin/settings/operator-payment-defaults", handlePatchOperatorPaymentDefaults)
+  hono.get("/v1/public/operator-profile", handleGetPublicOperatorProfile)
+
   hono.get("/v1/admin/settings/operator", handleGetOperatorSettings)
   hono.patch("/v1/admin/settings/operator", handlePatchOperatorSettings)
   hono.get("/v1/public/settings/operator", handleGetPublicOperatorSettings)

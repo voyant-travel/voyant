@@ -368,13 +368,13 @@ export function getPricingPreviewQueryOptions(
 }
 
 /**
- * Tax preview — resolves the operator's sell-side tax rate against an
- * in-progress booking's subtotal so the booking-create dialog can show
- * a real subtotal/tax/total breakdown.
+ * Tax preview — resolves the configured sell-side tax rate against an
+ * in-progress booking's subtotal so booking-create screens can show a
+ * real subtotal/tax/total breakdown.
  *
- * Backed by the template-level `/v1/admin/bookings/tax-preview` route,
- * which mirrors the logic that runs at booking-finalize time. Numbers
- * shown to the operator match what will land in
+ * Backed by the mountable booking-tax `/v1/admin/bookings/tax-preview`
+ * route, which mirrors the logic that runs at booking-finalize time.
+ * Numbers shown to staff match what will land in
  * `booking_item_tax_lines`.
  */
 export function getTaxPreviewQueryOptions(

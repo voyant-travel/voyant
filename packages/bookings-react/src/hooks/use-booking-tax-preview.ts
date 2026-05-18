@@ -13,12 +13,12 @@ export interface UseBookingTaxPreviewOptions extends TaxPreviewFilters {
 /**
  * Real-time tax breakdown for the in-progress booking the operator is
  * configuring. The hook fires whenever `subtotalCents` changes so the
- * preview card reflects the customer-facing total as the operator
- * iterates on travelers / options / rooms.
+ * preview card reflects the customer-facing total as staff iterate on
+ * travelers / options / rooms.
  *
- * Wired to the template-level `/v1/admin/bookings/tax-preview` route —
- * resolved tax matches what will land on `booking_item_tax_lines` at
- * booking finalize.
+ * Wired to the mountable booking-tax `/v1/admin/bookings/tax-preview`
+ * route — resolved tax matches what will land on `booking_item_tax_lines`
+ * at booking finalize.
  */
 export function useBookingTaxPreview({ enabled = true, ...filters }: UseBookingTaxPreviewOptions) {
   const client = useVoyantBookingsContext()

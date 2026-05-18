@@ -1,0 +1,384 @@
+import type { Extension } from "@voyantjs/core"
+import { ApiHttpError, parseJsonBody } from "@voyantjs/hono"
+import type { HonoExtension } from "@voyantjs/hono/module"
+import {
+  productDayServices,
+  productDays,
+  productItineraries,
+  productLocations,
+  products as productsTable,
+} from "@voyantjs/products/schema"
+import { and, asc, eq } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { Hono } from "hono"
+import { Hono as HonoApp } from "hono"
+import { z } from "zod"
+
+import { taxClasses, taxPolicyProfiles, taxPolicyRules, taxRegimes } from "./schema.js"
+
+export type ProductTaxFacts = {
+  hasAccommodation: boolean
+  accommodationCountries: string[]
+}
+
+export type ResolvedBookingSellTaxRate = {
+  code: string
+  label: string
+  rate: number
+  priceMode: "inclusive" | "exclusive"
+}
+
+export type BookingTaxSettings = {
+  taxPriceMode?: "inclusive" | "exclusive" | null
+  taxPolicyProfileId?: string | null
+}
+
+export type ResolveBookingTaxSettings = (
+  db: PostgresJsDatabase,
+) => BookingTaxSettings | null | undefined | Promise<BookingTaxSettings | null | undefined>
+
+export type UpdateBookingTaxSettings = (
+  db: PostgresJsDatabase,
+  settings: BookingTaxSettings,
+) => BookingTaxSettings | null | undefined | Promise<BookingTaxSettings | null | undefined>
+
+export type TaxPolicyCondition =
+  | { always: true }
+  | { all: TaxPolicyCondition[] }
+  | { any: TaxPolicyCondition[] }
+  | { fact: keyof ProductTaxFacts; eq?: unknown; contains?: unknown }
+
+export interface ResolveBookingSellTaxRateOptions {
+  settings?: BookingTaxSettings | null
+  resolveBookingTaxSettings?: ResolveBookingTaxSettings
+}
+
+export interface BookingTaxRouteOptions extends ResolveBookingSellTaxRateOptions {
+  updateBookingTaxSettings?: UpdateBookingTaxSettings
+}
+
+const taxPreviewBodySchema = z.object({
+  productId: z.string().min(1),
+  subtotalCents: z.number().int().min(0),
+  currency: z.string().min(3).max(8),
+})
+
+const bookingTaxSettingsPatchSchema = z.object({
+  taxPriceMode: z.enum(["inclusive", "exclusive"]).optional(),
+  taxPolicyProfileId: z.string().min(1).nullable().optional(),
+})
+
+export async function resolveBookingSellTaxRate(
+  db: PostgresJsDatabase,
+  args: {
+    productId?: string | null
+    facts?: Partial<ProductTaxFacts>
+  },
+  options: ResolveBookingSellTaxRateOptions = {},
+): Promise<ResolvedBookingSellTaxRate | null> {
+  const resolvedSettings =
+    options.settings !== undefined
+      ? options.settings
+      : ((await options.resolveBookingTaxSettings?.(db)) ?? null)
+  const priceMode: "inclusive" | "exclusive" =
+    resolvedSettings?.taxPriceMode === "exclusive" ? "exclusive" : "inclusive"
+  const policyProfile = await resolveTaxPolicyProfile(db, resolvedSettings?.taxPolicyProfileId)
+
+  if (policyProfile) {
+    const facts = normalizeTaxFacts(
+      args.facts ?? (args.productId ? await loadProductTaxFacts(db, args.productId) : undefined),
+    )
+    const rules = await db
+      .select({
+        condition: taxPolicyRules.condition,
+        taxRegimeId: taxPolicyRules.taxRegimeId,
+      })
+      .from(taxPolicyRules)
+      .where(
+        and(
+          eq(taxPolicyRules.profileId, policyProfile.id),
+          eq(taxPolicyRules.side, "sell"),
+          eq(taxPolicyRules.active, true),
+        ),
+      )
+      .orderBy(asc(taxPolicyRules.priority), asc(taxPolicyRules.createdAt))
+
+    for (const rule of rules) {
+      if (!matchesTaxPolicyCondition(rule.condition as TaxPolicyCondition | null, facts)) continue
+      const resolved = await loadResolvedTaxRegime(db, rule.taxRegimeId, policyProfile.code)
+      if (resolved) return { ...resolved, priceMode }
+    }
+  }
+
+  return args.productId ? resolveProductTaxClassRate(db, args.productId, priceMode) : null
+}
+
+async function resolveBookingTaxSettingsOrDefault(
+  db: PostgresJsDatabase,
+  options: ResolveBookingSellTaxRateOptions = {},
+): Promise<BookingTaxSettings> {
+  const settings =
+    options.settings !== undefined
+      ? options.settings
+      : ((await options.resolveBookingTaxSettings?.(db)) ?? null)
+
+  return {
+    taxPriceMode: settings?.taxPriceMode === "exclusive" ? "exclusive" : "inclusive",
+    taxPolicyProfileId: settings?.taxPolicyProfileId ?? null,
+  }
+}
+
+export function computeBookingItemTaxLine(
+  taxRate: ResolvedBookingSellTaxRate | null,
+  amountCents: number,
+  currency: string,
+  sortOrder = 0,
+) {
+  if (!taxRate || taxRate.rate <= 0 || amountCents <= 0) return null
+  const includedInPrice = taxRate.priceMode === "inclusive"
+  const taxCents = includedInPrice
+    ? Math.round(amountCents - amountCents / (1 + taxRate.rate))
+    : Math.round(amountCents * taxRate.rate)
+  if (taxCents <= 0) return null
+
+  return {
+    code: taxRate.code,
+    name: taxRate.label,
+    scope: includedInPrice ? ("included" as const) : ("excluded" as const),
+    currency,
+    amountCents: taxCents,
+    rateBasisPoints: Math.round(taxRate.rate * 10_000),
+    includedInPrice,
+    sortOrder,
+  }
+}
+
+export async function loadProductTaxFacts(
+  db: PostgresJsDatabase,
+  productId: string,
+): Promise<ProductTaxFacts> {
+  const [accommodationLocations, accommodationServices] = await Promise.all([
+    db
+      .select({ countryCode: productLocations.countryCode })
+      .from(productLocations)
+      .where(eq(productLocations.productId, productId)),
+    db
+      .select({ id: productDayServices.id, countryCode: productDayServices.countryCode })
+      .from(productDayServices)
+      .innerJoin(productDays, eq(productDayServices.dayId, productDays.id))
+      .innerJoin(productItineraries, eq(productDays.itineraryId, productItineraries.id))
+      .where(
+        and(
+          eq(productItineraries.productId, productId),
+          eq(productDayServices.serviceType, "accommodation"),
+        ),
+      ),
+  ])
+  const accommodationCountries = [...accommodationServices, ...accommodationLocations]
+    .map((entry) => entry.countryCode?.trim().toUpperCase())
+    .filter((countryCode): countryCode is string => Boolean(countryCode))
+
+  return {
+    hasAccommodation: accommodationLocations.length > 0 || accommodationServices.length > 0,
+    accommodationCountries: [...new Set(accommodationCountries)],
+  }
+}
+
+export function matchesTaxPolicyCondition(
+  condition: TaxPolicyCondition | null | undefined,
+  facts: ProductTaxFacts,
+): boolean {
+  if (!condition) return true
+  if ("always" in condition) return condition.always === true
+  if ("all" in condition)
+    return condition.all.every((entry) => matchesTaxPolicyCondition(entry, facts))
+  if ("any" in condition)
+    return condition.any.some((entry) => matchesTaxPolicyCondition(entry, facts))
+  if (!("fact" in condition)) return false
+
+  const value = facts[condition.fact]
+  if ("eq" in condition) return value === condition.eq
+  if ("contains" in condition) {
+    return Array.isArray(value) && value.includes(String(condition.contains).toUpperCase())
+  }
+  return false
+}
+
+function normalizeTaxFacts(facts?: Partial<ProductTaxFacts>): ProductTaxFacts {
+  return {
+    hasAccommodation: facts?.hasAccommodation === true,
+    accommodationCountries: [
+      ...new Set(
+        (facts?.accommodationCountries ?? [])
+          .map((countryCode) => countryCode.trim().toUpperCase())
+          .filter(Boolean),
+      ),
+    ],
+  }
+}
+
+async function resolveTaxPolicyProfile(
+  db: PostgresJsDatabase,
+  configuredProfileId?: string | null,
+) {
+  if (configuredProfileId) {
+    const [configured] = await db
+      .select()
+      .from(taxPolicyProfiles)
+      .where(eq(taxPolicyProfiles.id, configuredProfileId))
+      .limit(1)
+    if (configured?.active) return configured
+  }
+
+  const [active] = await db
+    .select()
+    .from(taxPolicyProfiles)
+    .where(eq(taxPolicyProfiles.active, true))
+    .orderBy(asc(taxPolicyProfiles.createdAt))
+    .limit(1)
+  return active ?? null
+}
+
+async function loadResolvedTaxRegime(
+  db: PostgresJsDatabase,
+  taxRegimeId: string,
+  codePrefix: string,
+) {
+  const [regime] = await db
+    .select({
+      ratePercent: taxRegimes.ratePercent,
+      code: taxRegimes.code,
+      name: taxRegimes.name,
+    })
+    .from(taxRegimes)
+    .where(eq(taxRegimes.id, taxRegimeId))
+    .limit(1)
+  if (!regime || regime.ratePercent == null) return null
+
+  return {
+    code: `${codePrefix}/${regime.code}`,
+    label: regime.name,
+    rate: regime.ratePercent / 100,
+  }
+}
+
+async function resolveProductTaxClassRate(
+  db: PostgresJsDatabase,
+  productId: string,
+  priceMode: "inclusive" | "exclusive",
+) {
+  const productRows = await db
+    .select({ taxClassId: productsTable.taxClassId })
+    .from(productsTable)
+    .where(eq(productsTable.id, productId))
+    .limit(1)
+  const taxClassId = productRows[0]?.taxClassId
+  if (!taxClassId) return null
+
+  const classRows = await db
+    .select({
+      defaultRegimeId: taxClasses.defaultRegimeId,
+      code: taxClasses.code,
+    })
+    .from(taxClasses)
+    .where(eq(taxClasses.id, taxClassId))
+    .limit(1)
+  const klass = classRows[0]
+  if (!klass?.defaultRegimeId) return null
+
+  const resolved = await loadResolvedTaxRegime(db, klass.defaultRegimeId, klass.code)
+  return resolved ? { ...resolved, priceMode } : null
+}
+
+export function createBookingTaxRoutes(options: BookingTaxRouteOptions = {}) {
+  return new HonoApp<{
+    Variables: {
+      db: PostgresJsDatabase
+    }
+  }>()
+    .get("/tax-settings", async (c) => {
+      return c.json({
+        data: await resolveBookingTaxSettingsOrDefault(c.get("db"), options),
+      })
+    })
+    .patch("/tax-settings", async (c) => {
+      if (!options.updateBookingTaxSettings) {
+        throw new ApiHttpError("Booking tax settings updates are not configured", {
+          status: 409,
+          code: "booking_tax_settings_update_not_configured",
+        })
+      }
+
+      const current = await resolveBookingTaxSettingsOrDefault(c.get("db"), options)
+      const patch = await parseJsonBody(c, bookingTaxSettingsPatchSchema)
+      const next = await options.updateBookingTaxSettings(c.get("db"), {
+        taxPriceMode: patch.taxPriceMode ?? current.taxPriceMode,
+        taxPolicyProfileId:
+          patch.taxPolicyProfileId === undefined
+            ? current.taxPolicyProfileId
+            : patch.taxPolicyProfileId,
+      })
+
+      return c.json({
+        data: await resolveBookingTaxSettingsOrDefault(c.get("db"), { settings: next }),
+      })
+    })
+    .post("/tax-preview", async (c) => {
+      const body = await parseJsonBody(c, taxPreviewBodySchema)
+      const taxRate = await resolveBookingSellTaxRate(
+        c.get("db"),
+        { productId: body.productId },
+        options,
+      )
+      const taxLine = computeBookingItemTaxLine(taxRate, body.subtotalCents, body.currency)
+
+      if (!taxRate || !taxLine) {
+        return c.json({
+          data: {
+            subtotalCents: body.subtotalCents,
+            taxCents: 0,
+            totalCents: body.subtotalCents,
+            currency: body.currency,
+            taxRate: null,
+          },
+        })
+      }
+
+      const inclusive = taxLine.includedInPrice
+      const displaySubtotal = inclusive
+        ? Math.max(0, body.subtotalCents - taxLine.amountCents)
+        : body.subtotalCents
+      const total = inclusive ? body.subtotalCents : body.subtotalCents + taxLine.amountCents
+
+      return c.json({
+        data: {
+          subtotalCents: displaySubtotal,
+          taxCents: taxLine.amountCents,
+          totalCents: total,
+          currency: body.currency,
+          taxRate: {
+            code: taxRate.code,
+            label: taxRate.label,
+            rateBasisPoints: Math.round(taxRate.rate * 10_000),
+            priceMode: taxRate.priceMode,
+          },
+        },
+      })
+    })
+}
+
+export function mountBookingTaxRoutes(hono: Hono, options: BookingTaxRouteOptions = {}): void {
+  hono.route("/v1/admin/bookings", createBookingTaxRoutes(options))
+}
+
+export function createBookingTaxHonoExtension(options: BookingTaxRouteOptions = {}): HonoExtension {
+  const extension: Extension = {
+    name: "booking-tax",
+    module: "bookings",
+  }
+
+  return {
+    extension,
+    adminRoutes: createBookingTaxRoutes(options),
+  }
+}

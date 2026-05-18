@@ -97,7 +97,11 @@ import {
   resolveDocumentDownloadUrl,
 } from "./lib/storage"
 import { mountCatalogMcpRoutes } from "./mcp"
-import { getOperatorSettings, mountOperatorSettingsRoutes } from "./settings"
+import {
+  getOperatorPaymentInstructions,
+  getOperatorProfile,
+  mountOperatorSettingsRoutes,
+} from "./settings"
 import { createSmartbillSettlementPollers, smartbillOperatorBundle } from "./smartbill"
 
 const notificationsHonoModule = createNotificationsHonoModule({
@@ -205,19 +209,24 @@ function resolveBankTransferDetails(
 }
 
 function bankTransferDetailsFromOperatorSettings(
-  operatorProfile: Awaited<ReturnType<typeof getOperatorSettings>>,
+  operatorProfile: Awaited<ReturnType<typeof getOperatorProfile>>,
+  paymentInstructions: Awaited<ReturnType<typeof getOperatorPaymentInstructions>>,
   bindings: Record<string, unknown>,
 ): CheckoutBankTransferDetails | null {
   const envDetails = resolveBankTransferDetails(bindings)
-  const beneficiary = operatorProfile?.legalName || operatorProfile?.name || envDetails?.beneficiary
-  const iban = operatorProfile?.iban || envDetails?.iban
+  const beneficiary =
+    paymentInstructions?.bankTransferBeneficiary ||
+    operatorProfile?.legalName ||
+    operatorProfile?.name ||
+    envDetails?.beneficiary
+  const iban = paymentInstructions?.iban || envDetails?.iban
   if (!beneficiary || !iban) return null
   return {
     provider: "bank-transfer",
     beneficiary,
     iban,
-    bankName: operatorProfile?.bank || envDetails?.bankName || null,
-    notes: envDetails?.notes ?? null,
+    bankName: paymentInstructions?.bank || envDetails?.bankName || null,
+    notes: paymentInstructions?.notes || envDetails?.notes || null,
   }
 }
 
@@ -231,8 +240,15 @@ async function buildPublicBankTransferInstructions(
   },
   bindings: Record<string, unknown>,
 ) {
-  const operatorProfile = await getOperatorSettings(db)
-  const details = bankTransferDetailsFromOperatorSettings(operatorProfile, bindings)
+  const [operatorProfile, paymentInstructions] = await Promise.all([
+    getOperatorProfile(db),
+    getOperatorPaymentInstructions(db),
+  ])
+  const details = bankTransferDetailsFromOperatorSettings(
+    operatorProfile,
+    paymentInstructions,
+    bindings,
+  )
   if (!details) return null
 
   const [invoice] = session.invoiceId
@@ -397,14 +413,17 @@ const AUTO_GENERATE_CONTRACT_OPTIONS: AutoGenerateContractOptions = {
   // Promote the storefront's acceptance marker (saved by
   // catalog-checkout into booking.internalNotes) into the proper
   // `acceptance.*` variables, and fold in the operator profile
-  // (from Settings → Operator) so the post-confirm render fills
-  // `operator.*` instead of leaving every variable blank.
+  // (from Settings -> Operator profile) so the post-confirm render
+  // fills `operator.*` instead of leaving every variable blank.
   resolveVariables: async ({ db, booking, defaults, bindings }) => {
     const env = bindings as unknown as CloudflareBindings
     const acceptance = parseAcceptanceMarker(booking.internalNotes ?? "")
     const schedule = await loadBookingPaymentSchedule(db, booking.id)
     const roomsSummary = await deriveRoomsSummary(db, booking.id)
-    const operatorProfile = await getOperatorSettings(db)
+    const [operatorProfile, paymentInstructions] = await Promise.all([
+      getOperatorProfile(db),
+      getOperatorPaymentInstructions(db),
+    ])
 
     // Hydrate the customer block from the linked CRM person /
     // identity record when the booking's snapshot columns are
@@ -471,8 +490,8 @@ const AUTO_GENERATE_CONTRACT_OPTIONS: AutoGenerateContractOptions = {
         phone: operatorProfile?.phone ?? "",
         email: operatorProfile?.email ?? "",
         website: operatorProfile?.website ?? "",
-        iban: operatorProfile?.iban ?? "",
-        bank: operatorProfile?.bank ?? "",
+        iban: paymentInstructions?.iban ?? "",
+        bank: paymentInstructions?.bank ?? "",
         license: operatorProfile?.license ?? "",
         licenseAuthority: operatorProfile?.licenseAuthority ?? "",
         signatoryName: operatorProfile?.signatoryName ?? "",
@@ -961,7 +980,7 @@ export const app = createApp<CloudflareBindings>({
     // license + the deposit terms from here so it can render the
     // operator block and a deposit/balance schedule before the booking
     // exists.
-    "/v1/public/settings/operator",
+    "/v1/public/operator-profile",
     // Cascade-aware policy resolver — storefront preview hits this
     // with `(entityModule, entityId)` + journey selections to get
     // the policy that will apply at booking time (supplier /
@@ -1042,9 +1061,7 @@ export const app = createApp<CloudflareBindings>({
     // a synthetic canary action and verifies the relay row is visible.
     mountActionLedgerHealthRoutes(hono)
 
-    // Operator profile + default customer payment policy. Backs the
-    // admin Settings → Operator page and the storefront contract
-    // preview's operator block.
+    // Operator profile, payment instructions, and booking payment defaults.
     mountOperatorSettingsRoutes(hono)
 
     // Booking-level payment-policy override + schedule regeneration.
@@ -1275,9 +1292,13 @@ export const app = createApp<CloudflareBindings>({
     // can render a header. Intentionally minimal — no PII, no secrets.
     hono.get("/v1/public/payment-link-config", async (c) => {
       const db = c.get("db") as PostgresJsDatabase
-      const operatorProfile = await getOperatorSettings(db)
+      const [operatorProfile, paymentInstructions] = await Promise.all([
+        getOperatorProfile(db),
+        getOperatorPaymentInstructions(db),
+      ])
       const bankTransfer = bankTransferDetailsFromOperatorSettings(
         operatorProfile,
+        paymentInstructions,
         c.env as Record<string, unknown>,
       )
       return c.json({

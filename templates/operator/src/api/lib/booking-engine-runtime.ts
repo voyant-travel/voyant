@@ -41,6 +41,7 @@ import {
   bookingItemTaxLines,
   bookingPaymentSchedules,
   createBooking as createFinanceBooking,
+  resolveBookingSellTaxRate,
 } from "@voyantjs/finance"
 import { hospitalityBookingsService } from "@voyantjs/hospitality"
 import { createHospitalityBookingHandler } from "@voyantjs/hospitality/booking-engine"
@@ -58,8 +59,8 @@ import { and, asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
+import { resolveBookingTaxSettings } from "../settings"
 import { withDbFromEnv } from "./db"
-import { resolveOperatorSellTaxRate } from "./operator-tax-policy"
 
 let _registry: SourceAdapterRegistry | undefined
 let _ownedHandlers: OwnedBookingHandlerRegistry | undefined
@@ -210,7 +211,11 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           void args.buyerCountry
           void args.buyerType
           const db = ctx.db as unknown as PostgresJsDatabase
-          return resolveOperatorSellTaxRate(db, { productId: args.productId })
+          return resolveBookingSellTaxRate(
+            db,
+            { productId: args.productId },
+            { resolveBookingTaxSettings },
+          )
         },
         async loadSlotDate(ctx, slotId) {
           const db = ctx.db as unknown as PostgresJsDatabase

@@ -32,8 +32,8 @@
  *     filled in.
  *   - `acceptance.ipAddress` / `userAgent` are captured server-side
  *     at `/checkout/start` from request headers. Empty during preview.
- *   - `operator.*` reads from the `operatorInfo` block injected by
- *     the storefront wrapper (fetched from `/v1/public/settings/operator`).
+ *   - `operator.*` reads from the `operatorInfo` block injected by the
+ *     storefront wrapper (fetched from `/v1/public/operator-profile`).
  *     Anything not configured renders as the empty string.
  *   - Vertical-specific blocks (`sailing`, `stay`, `departureSlot`)
  *     are populated only when `entitySummary` carries enough context.
@@ -84,9 +84,8 @@ interface ResolveContractVariablesContext {
   entityId: string
   entitySummary?: BookingEntitySummary
   pricing?: PricingBreakdownV1 | null
-  /** Operator profile — fetched from `/v1/public/settings/operator`
-   *  by the storefront wrapper. Anything missing renders as the
-   *  empty string. */
+  /** Operator profile — fetched from `/v1/public/operator-profile` by
+   *  the storefront wrapper. Anything missing renders as empty. */
   operatorInfo?: OperatorInfoVariables
   /** Acceptance fingerprint — populated only on server-side renders
    *  (post-confirm contract auto-generation). At preview time the

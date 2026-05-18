@@ -2816,6 +2816,9 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:*
         version: link:../hono
+      '@voyantjs/products':
+        specifier: workspace:*
+        version: link:../products
       '@voyantjs/storage':
         specifier: workspace:*
         version: link:../storage

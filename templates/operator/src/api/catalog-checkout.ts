@@ -44,9 +44,11 @@ import type { EventBus } from "@voyantjs/core"
 import {
   bookingItemTaxLines,
   type CreateInvoiceFromBookingInput,
+  computeBookingItemTaxLine,
   financeService,
   issueInvoiceFromBooking,
   issueProformaFromBooking,
+  resolveBookingSellTaxRate,
 } from "@voyantjs/finance"
 import { parseJsonBody } from "@voyantjs/hono"
 import type { HonoBundle } from "@voyantjs/hono/plugin"
@@ -66,8 +68,11 @@ import type { Context, Hono } from "hono"
 import { z } from "zod"
 
 import { withDbFromEnv } from "./lib/db"
-import { computeBookingItemTaxLine, resolveOperatorSellTaxRate } from "./lib/operator-tax-policy"
-import { getOperatorSettings } from "./settings"
+import {
+  getOperatorPaymentInstructions,
+  getOperatorProfile,
+  resolveBookingTaxSettings,
+} from "./settings"
 
 const checkoutStartSchema = z.object({
   bookingId: z.string().min(1),
@@ -792,10 +797,16 @@ async function materializeBookingItemTaxLine(
   snapshot: MaterializationSnapshot,
 ) {
   const currency = booking.sellCurrency ?? snapshot.pricing_currency ?? "EUR"
-  const taxRate = await resolveOperatorSellTaxRate(db, {
-    productId: snapshot.entity_module === "products" ? snapshot.entity_id : null,
-    facts: inferSnapshotTaxFacts(snapshot),
-  })
+  const taxRate = await resolveBookingSellTaxRate(
+    db,
+    {
+      productId: snapshot.entity_module === "products" ? snapshot.entity_id : null,
+      facts: inferSnapshotTaxFacts(snapshot),
+    },
+    {
+      resolveBookingTaxSettings,
+    },
+  )
   const policyLine = computeBookingItemTaxLine(taxRate, amountCents, currency)
   // Fall back to the snapshot's `pricing_taxes` when the operator has no
   // tax policy configured. Without this the booking page (which reads the
@@ -1619,16 +1630,21 @@ async function resolveBankTransferInstructions(
   db: PostgresJsDatabase,
   env: Record<string, string | undefined>,
 ) {
-  const operator = await getOperatorSettings(db)
+  const [operatorProfile, paymentInstructions] = await Promise.all([
+    getOperatorProfile(db),
+    getOperatorPaymentInstructions(db),
+  ])
   return {
     beneficiary:
-      operator?.legalName ||
-      operator?.name ||
+      paymentInstructions?.bankTransferBeneficiary ||
+      operatorProfile?.legalName ||
+      operatorProfile?.name ||
       env.BANK_TRANSFER_BENEFICIARY ||
       env.STOREFRONT_BANK_BENEFICIARY ||
       "—",
-    iban: operator?.iban || env.BANK_TRANSFER_IBAN || env.STOREFRONT_BANK_IBAN || "—",
-    bankName: operator?.bank || env.BANK_TRANSFER_BANK_NAME || env.STOREFRONT_BANK_NAME || "—",
+    iban: paymentInstructions?.iban || env.BANK_TRANSFER_IBAN || env.STOREFRONT_BANK_IBAN || "—",
+    bankName:
+      paymentInstructions?.bank || env.BANK_TRANSFER_BANK_NAME || env.STOREFRONT_BANK_NAME || "—",
   }
 }
 

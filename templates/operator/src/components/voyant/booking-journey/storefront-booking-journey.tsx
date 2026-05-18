@@ -107,7 +107,7 @@ export function StorefrontBookingJourney({
   // has been seeded — the journey skips the preview dialog and
   // commits without a contract.
   const resolvedSlug = useResolvedContractSlug(contractTemplateSlug)
-  const operatorProfile = usePublicOperatorSettings()
+  const operatorProfile = usePublicOperatorProfile()
   const resolvedPolicy = useResolvedPaymentPolicy(entityModule, entityId)
 
   // Storefront-specific slot wiring. NO CRM picker — customers fill
@@ -401,21 +401,21 @@ function useResolvedContractSlug(override: string | undefined): string | undefin
 
 /**
  * Fetch the operator profile (name / legal name / address / license /
- * default customer payment policy) from the deployment's public
- * settings endpoint. The result is cached for 5 minutes — operator
+ * default customer payment policy) from the public settings endpoint.
+ * The result is cached for 5 minutes — operator
  * details rarely change, and stale-while-revalidate is fine for the
  * contract preview UI.
  *
  * Returns `undefined` while the request is in flight or when the
- * deployment hasn't filled in Settings → Operator yet — the contract
+ * operator hasn't filled in Settings -> Operator profile yet — the contract
  * preview then renders the operator block with `-` placeholders (the
  * template renderer's missing-value substitution kicks in).
  */
-function usePublicOperatorSettings(): PublicOperatorProfile | undefined {
+function usePublicOperatorProfile(): PublicOperatorProfile | undefined {
   const { data } = useQuery({
-    queryKey: ["public-operator-settings"],
+    queryKey: ["public-operator-profile"],
     queryFn: async (): Promise<PublicOperatorProfile | null> => {
-      const res = await fetch(`${getApiUrl()}/v1/public/settings/operator`, {
+      const res = await fetch(`${getApiUrl()}/v1/public/operator-profile`, {
         credentials: "include",
       })
       if (!res.ok) return null
