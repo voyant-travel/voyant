@@ -1,5 +1,16 @@
 # @voyantjs/checkout-ui
 
+## 0.53.2
+
+### Patch Changes
+
+- @voyantjs/checkout@0.53.2
+- @voyantjs/checkout-react@0.53.2
+- @voyantjs/finance@0.53.2
+- @voyantjs/finance-react@0.53.2
+- @voyantjs/i18n@0.53.2
+- @voyantjs/ui@0.53.2
+
 ## 0.53.1
 
 ### Patch Changes
