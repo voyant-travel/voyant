@@ -135,20 +135,46 @@ export function OptionUnitsStepperSection({
     })
     return rows
   }, [productOptions, optionUnitQueries])
+  // optionUnitId → optionId lookup, derived from the product's own option
+  // catalog. The slot-availability endpoint only returns option_unit rows
+  // for the slot's bound option and doesn't stamp the option_id on each
+  // row, so we look it up from the units we already fetched per option.
+  const optionByUnitId = React.useMemo(() => {
+    const map = new Map<string, string>()
+    productOptions.forEach((option, index) => {
+      const units = optionUnitQueries[index]?.data?.data ?? []
+      for (const unit of units) {
+        map.set(unit.id, option.id)
+      }
+    })
+    return map
+  }, [productOptions, optionUnitQueries])
+  // The slot's bound option, derived from the first availability row.
+  // `null` when the slot is product-level (no option_id) — that path goes
+  // through the product-level fallback below.
+  const slotOptionId = React.useMemo(
+    () => resolveSlotOptionId(availability.data?.data ?? [], optionByUnitId, optionId ?? null),
+    [availability.data?.data, optionByUnitId, optionId],
+  )
   const availabilityUnitRows = React.useMemo(
     () =>
       (availability.data?.data ?? []).map((unit) => ({
         ...unit,
-        optionId: optionId ?? null,
+        optionId: slotOptionId ?? optionId ?? null,
       })),
-    [availability.data?.data, optionId],
+    [availability.data?.data, slotOptionId, optionId],
   )
-  // Slot-specific per-unit availability wins when it actually returns
-  // rows; otherwise fall back to the product's option-level units so
-  // the operator can still pick quantities. Product-level slots (no
-  // option_id) report no per-unit availability — but the product's
-  // options still describe the bookable units.
-  const units = slotId && availabilityUnitRows.length > 0 ? availabilityUnitRows : optionUnitRows
+  // Slot-bound per-unit availability stays authoritative for the slot's
+  // option (real-time `remaining` from active bookings). For *other*
+  // options the same product offers, fall back to the product-level
+  // option_units so the operator can still pick a DBL/TWN even when the
+  // slot is option-scoped to SGL. Product-level slots (no option_id) hit
+  // the no-slot-rows branch and use the product fallback for everything.
+  // See issue #960.
+  const units = React.useMemo(
+    () => mergeStepperUnits(availabilityUnitRows, optionUnitRows, slotOptionId, Boolean(slotId)),
+    [availabilityUnitRows, optionUnitRows, slotOptionId, slotId],
+  )
 
   React.useEffect(() => {
     onUnitsChange?.(units)
@@ -276,6 +302,47 @@ export function OptionUnitsStepperSection({
       </div>
     </div>
   )
+}
+
+/**
+ * Returns the `optionId` the slot is bound to, derived from the first
+ * slot-availability row whose `optionUnitId` we can map to a known
+ * product option. Falls back to the caller's `fallbackOptionId` (the
+ * dialog's currently-selected option) when no rows resolve — that lets
+ * the existing `optionId` prop drive the previous-behavior path for
+ * unit pickers that haven't loaded yet.
+ */
+export function resolveSlotOptionId(
+  slotRows: ReadonlyArray<{ optionUnitId: string }>,
+  optionByUnitId: ReadonlyMap<string, string>,
+  fallbackOptionId: string | null,
+): string | null {
+  for (const row of slotRows) {
+    const resolved = optionByUnitId.get(row.optionUnitId)
+    if (resolved) return resolved
+  }
+  return fallbackOptionId
+}
+
+/**
+ * Merges slot-bound per-unit availability with the product's option-unit
+ * catalog. Slot rows are authoritative for the slot's option (they carry
+ * real-time `remaining`); product-level rows fill in the other options
+ * the product offers so the operator can still pick mixes the slot isn't
+ * explicitly tracking. When the slot is product-level (no `option_id`)
+ * or hasn't loaded slot rows yet, the product-level rows cover everything.
+ */
+export function mergeStepperUnits(
+  slotRows: ReadonlyArray<OptionUnitsStepperUnit>,
+  productRows: ReadonlyArray<OptionUnitsStepperUnit>,
+  slotOptionId: string | null,
+  hasSlot: boolean,
+): OptionUnitsStepperUnit[] {
+  if (!hasSlot || slotRows.length === 0 || !slotOptionId) {
+    return [...productRows]
+  }
+  const otherOptionRows = productRows.filter((row) => row.optionId !== slotOptionId)
+  return [...slotRows, ...otherOptionRows]
 }
 
 function isAdultUnit(unit: OptionUnitsStepperUnit): boolean {
