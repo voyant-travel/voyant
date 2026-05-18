@@ -62,7 +62,7 @@ jobs:
         run: pnpm lint
 
       - name: Typecheck
-        run: NODE_OPTIONS=--max-old-space-size=8192 pnpm turbo run typecheck --continue --ui=stream --log-order=stream
+        run: NODE_OPTIONS=--max-old-space-size=8192 pnpm turbo run typecheck --continue --concurrency=4 --ui=stream --log-order=stream
 
       - name: Test
         run: pnpm turbo run test --continue --ui=stream --log-order=stream
