@@ -1,5 +1,15 @@
 # @voyantjs/ui
 
+## 0.52.4
+
+### Patch Changes
+
+- 5d3c119: Fix `packages/ui/registry.json` so the bookings stepper entry points at `option-units-stepper-section.tsx` (and exposes it as `voyant-bookings-option-units-stepper-section`). The previous 0.52.1 release renamed the file but left the registry source-of-truth pointing at the old `rooms-stepper-section.tsx` path, which caused `shadcn build` to ENOENT in the release workflow.
+  - @voyantjs/i18n@0.52.4
+  - @voyantjs/notifications@0.52.4
+  - @voyantjs/notifications-react@0.52.4
+  - @voyantjs/utils@0.52.4
+
 ## 0.52.3
 
 ### Patch Changes
