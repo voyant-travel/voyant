@@ -16,7 +16,7 @@
  * tag with `bookingId:<id>`, `paymentSessionId:<id>`, etc.
  */
 
-import { typeId, typeIdRef } from "@voyantjs/db"
+import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
 import { sql } from "drizzle-orm"
 import { check, index, integer, jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 

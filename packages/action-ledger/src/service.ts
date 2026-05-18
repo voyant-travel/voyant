@@ -1,4 +1,5 @@
-import { type AnyDrizzleDb, newId } from "@voyantjs/db"
+import type { AnyDrizzleDb } from "@voyantjs/db"
+import { newId } from "@voyantjs/db/lib/typeid"
 import { and, desc, eq, gte, inArray, lt, lte, or, type SQL, sql } from "drizzle-orm"
 
 import {
