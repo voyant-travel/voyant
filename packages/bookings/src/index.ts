@@ -109,9 +109,13 @@ export function createBookingsHonoModule(options: BookingsHonoModuleOptions = {}
 export const bookingsHonoModule: HonoModule = createBookingsHonoModule()
 
 export type {
+  BookingPersonResolverContact,
   BookingRouteRuntime,
   BookingRouteRuntimeOptions,
+  ResolveBookingBillingPerson,
   ResolveBookingKmsProvider,
+  ResolveBookingTravelerPerson,
+  ResolveBookingTravelSnapshot,
 } from "./route-runtime.js"
 export {
   BOOKING_ROUTE_RUNTIME_CONTAINER_KEY,
@@ -195,7 +199,11 @@ export {
   bookings,
   bookingTravelers,
 } from "./schema.js"
-export { publicBookingsService, resolveSessionPricingSnapshot } from "./service-public.js"
+export {
+  type PublicBookingsServiceResolvers,
+  publicBookingsService,
+  resolveSessionPricingSnapshot,
+} from "./service-public.js"
 export {
   addBookingGroupMemberSchema,
   bookingGroupKindSchema,

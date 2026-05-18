@@ -21,9 +21,52 @@ export type ResolveBookingTravelSnapshot = (
   ctx: { kms: KmsProvider },
 ) => Promise<BookingTravelerSnapshot | null>
 
+/**
+ * Best-effort contact snapshot the booking-session bootstrap + update
+ * flows hand to the caller's person resolver. Mirrors the storefront
+ * lead-intake `StorefrontLeadContact` shape so the same resolver can
+ * service both surfaces.
+ */
+export interface BookingPersonResolverContact {
+  firstName: string | null
+  lastName: string | null
+  email: string | null
+  phone: string | null
+  preferredLanguage: string | null
+}
+
+/**
+ * Resolves (or upserts) a CRM person from a booking's billing contact
+ * snapshot. Returns the resolved person id, or `null` to leave the
+ * booking's `person_id` unset. Templates wire this from
+ * `crmService.upsertPersonFromContact` so the bookings package stays
+ * free of any direct CRM dependency — see issue #961.
+ */
+export type ResolveBookingBillingPerson = (
+  db: PostgresJsDatabase,
+  contact: BookingPersonResolverContact,
+  ctx: { bookingId: string; source: string; sourceRef: string },
+) => Promise<string | null>
+
+/**
+ * Resolves (or upserts) a CRM person from a booking traveler payload.
+ * Called from `publicBookingsService.createSession` /
+ * `updateSession` per-traveler so storefront-originated bookings
+ * produce CRM person links per traveler (not just for the billing
+ * contact). Returns the resolved person id, or `null` to keep
+ * `booking_travelers.person_id` unset.
+ */
+export type ResolveBookingTravelerPerson = (
+  db: PostgresJsDatabase,
+  contact: BookingPersonResolverContact,
+  ctx: { bookingId: string; source: string; sourceRef: string },
+) => Promise<string | null>
+
 export interface BookingRouteRuntime {
   getKmsProvider(): Promise<KmsProvider>
   resolveTravelSnapshot?: ResolveBookingTravelSnapshot
+  resolveBillingPerson?: ResolveBookingBillingPerson
+  resolveTravelerPerson?: ResolveBookingTravelerPerson
 }
 
 /**
@@ -40,6 +83,8 @@ export type ResolveBookingKmsProvider = (
 export interface BookingRouteRuntimeOptions {
   resolveKmsProvider?: ResolveBookingKmsProvider
   resolveTravelSnapshot?: ResolveBookingTravelSnapshot
+  resolveBillingPerson?: ResolveBookingBillingPerson
+  resolveTravelerPerson?: ResolveBookingTravelerPerson
 }
 
 function buildRuntimeEnv(bindings: KmsBindings): Record<string, string | undefined> {
@@ -70,5 +115,7 @@ export function buildBookingRouteRuntime(
       return createKmsProviderFromEnv(runtimeEnv)
     },
     resolveTravelSnapshot: options.resolveTravelSnapshot,
+    resolveBillingPerson: options.resolveBillingPerson,
+    resolveTravelerPerson: options.resolveTravelerPerson,
   }
 }

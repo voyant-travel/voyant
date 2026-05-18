@@ -8,6 +8,11 @@ import {
   priceCatalogsRef,
 } from "./pricing-ref.js"
 import { optionUnitsRef, productOptionsRef, productsRef } from "./products-ref.js"
+import type {
+  BookingPersonResolverContact,
+  ResolveBookingBillingPerson,
+  ResolveBookingTravelerPerson,
+} from "./route-runtime.js"
 import {
   bookingAllocations,
   bookingDocuments,
@@ -29,6 +34,75 @@ import type {
   PublicUpdateBookingSessionInput,
   PublicUpsertBookingSessionStateInput,
 } from "./validation-public.js"
+
+/**
+ * Optional resolver bundle for storefront/public booking flows. When
+ * supplied, billing-contact + traveler payloads are run through the
+ * caller's resolver to look up (or create) the matching CRM person
+ * and the booking / traveler rows pick up the resulting `person_id`.
+ * Default (omitted) behaviour is the historic one: rows land with
+ * `person_id = NULL`. See issue #961.
+ */
+export interface PublicBookingsServiceResolvers {
+  resolveBillingPerson?: ResolveBookingBillingPerson
+  resolveTravelerPerson?: ResolveBookingTravelerPerson
+}
+
+const BOOKING_PERSON_SOURCE = "storefront-booking" as const
+
+async function safeResolveTravelerPerson(
+  db: PostgresJsDatabase,
+  resolver: ResolveBookingTravelerPerson | undefined,
+  participant: {
+    firstName: string
+    lastName: string
+    email: string | null
+    phone: string | null
+    preferredLanguage: string | null
+  },
+  bookingId: string,
+): Promise<string | null> {
+  if (!resolver) return null
+  const contact: BookingPersonResolverContact = {
+    firstName: participant.firstName,
+    lastName: participant.lastName,
+    email: participant.email,
+    phone: participant.phone,
+    preferredLanguage: participant.preferredLanguage,
+  }
+  try {
+    return await resolver(db, contact, {
+      bookingId,
+      source: BOOKING_PERSON_SOURCE,
+      sourceRef: bookingId,
+    })
+  } catch (error) {
+    // Person resolution is best-effort — a CRM hiccup must not block
+    // the actual booking. Log and fall back to `null` so the traveler
+    // row still lands without a person link.
+    console.error("[bookings] resolveTravelerPerson failed for booking", bookingId, error)
+    return null
+  }
+}
+
+async function safeResolveBillingPerson(
+  db: PostgresJsDatabase,
+  resolver: ResolveBookingBillingPerson | undefined,
+  contact: BookingPersonResolverContact,
+  bookingId: string,
+): Promise<string | null> {
+  if (!resolver) return null
+  try {
+    return await resolver(db, contact, {
+      bookingId,
+      source: BOOKING_PERSON_SOURCE,
+      sourceRef: bookingId,
+    })
+  } catch (error) {
+    console.error("[bookings] resolveBillingPerson failed for booking", bookingId, error)
+    return null
+  }
+}
 
 const travelerParticipantTypes = new Set(["traveler", "occupant"])
 const WIZARD_STATE_KEY = "wizard" as const
@@ -846,6 +920,7 @@ export const publicBookingsService = {
     db: PostgresJsDatabase,
     input: PublicCreateBookingSessionInput,
     userId?: string,
+    resolvers: PublicBookingsServiceResolvers = {},
   ) {
     const travelers = input.travelers ?? []
     const travelerCount = countTravelerParticipants(travelers)
@@ -893,6 +968,18 @@ export const publicBookingsService = {
     }
 
     for (const participant of travelers) {
+      const personId = await safeResolveTravelerPerson(
+        db,
+        resolvers.resolveTravelerPerson,
+        {
+          firstName: participant.firstName,
+          lastName: participant.lastName,
+          email: participant.email ?? null,
+          phone: participant.phone ?? null,
+          preferredLanguage: participant.preferredLanguage ?? null,
+        },
+        result.booking.id,
+      )
       await bookingsService.createTravelerRecord(
         db,
         result.booking.id,
@@ -907,7 +994,7 @@ export const publicBookingsService = {
           specialRequests: participant.specialRequests ?? null,
           isPrimary: participant.isPrimary,
           notes: participant.notes ?? null,
-          personId: null,
+          personId,
         },
         userId,
       )
@@ -934,6 +1021,7 @@ export const publicBookingsService = {
     db: PostgresJsDatabase,
     bookingId: string,
     input: PublicUpsertBookingSessionStateInput,
+    resolvers: PublicBookingsServiceResolvers = {},
   ) {
     const booking = await bookingsService.getBookingById(db, bookingId)
     if (!booking) {
@@ -947,7 +1035,28 @@ export const publicBookingsService = {
 
     const bookingContact = extractBookingContactFromStatePayload(state.payload)
     if (bookingContact) {
-      await bookingsService.updateBooking(db, bookingId, bookingContact)
+      // Resolve a CRM person from the billing snapshot when a resolver
+      // is wired — issue #961 calls out that storefront bookings used
+      // to land with `person_id = NULL`, leaving every customer outside
+      // the CRM until each operator wired their own bridge.
+      const personId = booking.personId
+        ? booking.personId
+        : await safeResolveBillingPerson(
+            db,
+            resolvers.resolveBillingPerson,
+            {
+              firstName: bookingContact.contactFirstName,
+              lastName: bookingContact.contactLastName,
+              email: bookingContact.contactEmail,
+              phone: bookingContact.contactPhone,
+              preferredLanguage: null,
+            },
+            bookingId,
+          )
+      await bookingsService.updateBooking(db, bookingId, {
+        ...bookingContact,
+        ...(personId && booking.personId !== personId ? { personId } : {}),
+      })
     }
     return { status: "ok" as const, state }
   },
@@ -957,6 +1066,7 @@ export const publicBookingsService = {
     bookingId: string,
     input: PublicUpdateBookingSessionInput,
     userId?: string,
+    resolvers: PublicBookingsServiceResolvers = {},
   ) {
     const booking = await bookingsService.getBookingById(db, bookingId)
     if (!booking) {
@@ -1012,6 +1122,18 @@ export const publicBookingsService = {
           continue
         }
 
+        const personId = await safeResolveTravelerPerson(
+          db,
+          resolvers.resolveTravelerPerson,
+          {
+            firstName: participant.firstName,
+            lastName: participant.lastName,
+            email: participant.email ?? null,
+            phone: participant.phone ?? null,
+            preferredLanguage: participant.preferredLanguage ?? null,
+          },
+          bookingId,
+        )
         await bookingsService.createTravelerRecord(
           db,
           bookingId,
@@ -1026,7 +1148,7 @@ export const publicBookingsService = {
             specialRequests: participant.specialRequests ?? null,
             isPrimary: participant.isPrimary,
             notes: participant.notes ?? null,
-            personId: null,
+            personId,
           },
           userId,
         )
