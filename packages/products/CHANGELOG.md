@@ -1,5 +1,18 @@
 # @voyantjs/products
 
+## 0.53.2
+
+### Patch Changes
+
+- fc3bc6f: Render markdown brochure bodies to HTML for browser PDF printers while preserving inline HTML from rich-text day descriptions.
+  - @voyantjs/action-ledger@0.53.2
+  - @voyantjs/catalog@0.53.2
+  - @voyantjs/core@0.53.2
+  - @voyantjs/db@0.53.2
+  - @voyantjs/hono@0.53.2
+  - @voyantjs/storage@0.53.2
+  - @voyantjs/utils@0.53.2
+
 ## 0.53.1
 
 ### Patch Changes
