@@ -34,6 +34,22 @@ Session reads now include first-class persisted wizard state, and repricing
 supports both preview mode and `applyToSession` mode for committing the priced
 room/unit selection back onto the booking session totals.
 
+## Action-ledger approvals
+
+Agent/workflow booking status mutations that require approval return `202` with
+the requested action and approval ids. These approval-required requests must
+send `Idempotency-Key`; the key is fingerprinted with the command input and
+approval policy inputs, so replaying the key with different input returns a
+conflict.
+
+After an approval is approved, execute the same status mutation again with the
+`ACTION_LEDGER_APPROVAL_ID_HEADER` header from `@voyantjs/action-ledger`. The
+route validates that the approval is approved, unexpired, linked to the same
+requested action and current principal, and command-equivalent to the original
+request before it mutates the booking. Approved execution ledger fields are
+stamped through `buildActionLedgerApprovedExecutionFields(...)` so execution
+entries consistently link back to the requested action and approval.
+
 ## Entities
 
 - **Bookings** (`book`)

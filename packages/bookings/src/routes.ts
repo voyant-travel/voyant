@@ -1,4 +1,27 @@
 import {
+  ACTION_LEDGER_APPROVAL_ID_HEADER,
+  ActionApprovalDecisionConflictError,
+  type ActionApprovalResponse,
+  type ActionLedgerCapabilityAccessResult,
+  type ActionLedgerEntry,
+  type ActionLedgerEntryResponse,
+  ActionLedgerIdempotencyConflictError,
+  type ActionLedgerRequestContextValues,
+  actionLedgerService,
+  appendActionLedgerMutation,
+  appendActionLedgerSensitiveRead,
+  type BuildActionLedgerApprovedExecutionFieldsInput,
+  buildActionApprovalCommandFingerprint,
+  buildActionLedgerApprovedExecutionFields,
+  decideActionLedgerApproval,
+  evaluateActionLedgerApprovalRequirement,
+  evaluateActionLedgerCapabilityAccess,
+  ledgerSensitiveRead,
+  mapActionLedgerRequestContext,
+  requestActionLedgerApproval,
+} from "@voyantjs/action-ledger"
+import type { AnyDrizzleDb } from "@voyantjs/db"
+import {
   ForbiddenApiError,
   handleApiError,
   idempotencyKey,
@@ -8,8 +31,14 @@ import {
   requireUserId,
   UnauthorizedApiError,
 } from "@voyantjs/hono"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type Context, Hono } from "hono"
+import { z } from "zod"
 
+import {
+  BOOKING_PII_READ_CAPABILITY,
+  BOOKING_STATUS_CAPABILITIES,
+} from "./action-ledger-capabilities.js"
 import { createBookingPiiService } from "./pii.js"
 import {
   redactBookingContact,
@@ -76,6 +105,760 @@ function hasPiiScope(scopes: string[] | null | undefined, action: "read" | "upda
   )
 }
 
+const BOOKING_PII_READ_ACTION_NAME = "booking.pii.read"
+const BOOKING_PII_READ_ACTION_VERSION = "v1"
+const BOOKING_PII_DECISION_POLICY = "bookings-pii-scope-or-staff-v1"
+const BOOKING_PII_AUTHORIZATION_SOURCE = "bookings.pii.route"
+const BOOKING_STATUS_APPROVAL_POLICY = "bookings-status-approval-v1"
+const BOOKING_TRAVELER_LEDGER_ACTION_VERSION = "v1"
+const BOOKING_ITEM_LEDGER_ACTION_VERSION = "v1"
+const BOOKING_NOTE_LEDGER_ACTION_VERSION = "v1"
+
+type ApprovedBookingStatusAction = BuildActionLedgerApprovedExecutionFieldsInput
+type BookingMutationLedgerInput = {
+  action: BookingMutationAction
+  actionName: string
+  actionVersion: string
+  targetType: string
+  targetId: string
+  changedFields: string[]
+  subject: string
+  routeOrToolName: string
+  authorizationSource?: string
+  evaluatedRisk?: ActionLedgerEntry["evaluatedRisk"]
+  summary?: string
+}
+type BookingTravelerMutationLedgerInput = {
+  action: BookingTravelerLedgerAction
+  travelerId: string
+  changedFields: string[]
+  subject: string
+  actionName: string
+  routeOrToolName: string
+  evaluatedRisk?: ActionLedgerEntry["evaluatedRisk"]
+  summary?: string
+}
+type BookingStatusApprovalTargetState =
+  | {
+      exists: false
+    }
+  | {
+      exists: true
+      status: string
+      sellCurrency: string
+      sellAmountCents: number | null
+      costAmountCents: number | null
+      customerPaymentPolicy: unknown
+      holdExpiresAt: string | null
+      confirmedAt: string | null
+      awaitingPaymentAt: string | null
+      paidAt: string | null
+      cancelledAt: string | null
+      completedAt: string | null
+      expiredAt: string | null
+    }
+type TravelerTravelDetails = Awaited<
+  ReturnType<ReturnType<typeof createBookingPiiService>["getTravelerTravelDetails"]>
+>
+
+const TRAVELER_IDENTITY_DISCLOSED_FIELDS = [
+  "firstName",
+  "lastName",
+  "email",
+  "phone",
+  "specialRequests",
+  "notes",
+]
+const TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS = [
+  "nationality",
+  "passportNumber",
+  "passportExpiry",
+  "passportIssuingCountry",
+  "passportIssuingAuthority",
+  "passportPersonDocumentId",
+  "dateOfBirth",
+  "dietaryRequirements",
+  "accessibilityNeeds",
+  "isLeadTraveler",
+  "sharingGroupId",
+  "roomTypeId",
+  "bedPreference",
+  "allocations",
+]
+const TRAVELER_MUTATION_FIELDS = [
+  "personId",
+  "participantType",
+  "travelerCategory",
+  "firstName",
+  "lastName",
+  "email",
+  "phone",
+  "preferredLanguage",
+  "specialRequests",
+  "isPrimary",
+  "notes",
+]
+const BOOKING_ITEM_MUTATION_FIELDS = [
+  "title",
+  "description",
+  "itemType",
+  "status",
+  "serviceDate",
+  "startsAt",
+  "endsAt",
+  "quantity",
+  "sellCurrency",
+  "unitSellAmountCents",
+  "totalSellAmountCents",
+  "costCurrency",
+  "unitCostAmountCents",
+  "totalCostAmountCents",
+  "notes",
+  "productId",
+  "optionId",
+  "optionUnitId",
+  "pricingCategoryId",
+  "sourceSnapshotId",
+  "sourceOfferId",
+  "metadata",
+]
+
+const bookingActionLedgerQuerySchema = z
+  .object({
+    cursorOccurredAt: z.string().datetime().optional(),
+    cursorId: z.string().trim().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(199).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (Boolean(value.cursorOccurredAt) === Boolean(value.cursorId)) return
+
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: value.cursorOccurredAt ? ["cursorId"] : ["cursorOccurredAt"],
+      message: "cursorOccurredAt and cursorId must be provided together",
+    })
+  })
+  .transform(({ cursorOccurredAt, cursorId, ...query }) => ({
+    ...query,
+    cursor:
+      cursorOccurredAt && cursorId
+        ? {
+            occurredAt: cursorOccurredAt,
+            id: cursorId,
+          }
+        : undefined,
+  }))
+
+const decideBookingActionApprovalBodySchema = z.object({
+  status: z.enum(["approved", "denied"]),
+})
+
+interface BookingActionLedgerTravelerTarget {
+  id: string
+  firstName: string | null
+  lastName: string | null
+}
+
+export interface BookingActionLedgerListResponse {
+  data: ActionLedgerEntryResponse[]
+  travelers: BookingActionLedgerTravelerTarget[]
+  pageInfo: {
+    nextCursor: {
+      occurredAt: string
+      id: string
+    } | null
+  }
+}
+
+export interface BookingActionApprovalDecisionResponse {
+  data: {
+    approval: ActionApprovalResponse
+    decisionAction: ActionLedgerEntryResponse
+  }
+}
+
+function getActionLedgerRequestContext(c: Context<Env>): ActionLedgerRequestContextValues {
+  return {
+    userId: c.get("userId") ?? null,
+    agentId: c.get("agentId") ?? null,
+    workflowPrincipalId: c.get("workflowPrincipalId") ?? null,
+    principalSubtype: c.get("principalSubtype") ?? null,
+    sessionId: c.get("sessionId") ?? null,
+    apiTokenId: c.get("apiTokenId") ?? c.get("apiKeyId") ?? null,
+    callerType: c.get("callerType") ?? null,
+    actor: c.get("actor") ?? null,
+    isInternalRequest: c.get("isInternalRequest") ?? false,
+    organizationId: c.get("organizationId") ?? null,
+    workflowRunId: c.get("workflowRunId") ?? null,
+    workflowStepId: c.get("workflowStepId") ?? null,
+    correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
+  }
+}
+
+type BookingTravelerLedgerAction = "create" | "update" | "delete"
+type BookingMutationAction = "create" | "update" | "delete"
+
+function changedBookingMutationFields(
+  input: Record<string, unknown>,
+  before: Record<string, unknown> | null,
+  after: Record<string, unknown> | null,
+): string[] {
+  const fields = Object.keys(input).filter((field) => !ignoredBookingMutationFields.has(field))
+  if (!before || !after) return fields.sort()
+
+  return fields.filter((field) => !bookingValuesEqual(before[field], after[field])).sort()
+}
+
+function changedBookingTravelerFields(
+  input: Record<string, unknown>,
+  before: Record<string, unknown> | null,
+  after: Record<string, unknown> | null,
+): string[] {
+  const travelerFields = new Set(TRAVELER_MUTATION_FIELDS)
+  return changedBookingMutationFields(input, before, after).filter((field) =>
+    travelerFields.has(field),
+  )
+}
+
+function changedBookingTravelDetailFields(input: Record<string, unknown>): string[] {
+  const travelDetailFields = new Set(TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS)
+  return Object.keys(input)
+    .filter((field) => travelDetailFields.has(field))
+    .sort()
+}
+
+function changedBookingItemFields(
+  input: Record<string, unknown>,
+  before: Record<string, unknown> | null,
+  after: Record<string, unknown> | null,
+): string[] {
+  const itemFields = new Set(BOOKING_ITEM_MUTATION_FIELDS)
+  return changedBookingMutationFields(input, before, after).filter((field) => itemFields.has(field))
+}
+
+function bookingMutationSummary(action: BookingMutationAction, fields: string[], subject: string) {
+  if (action === "delete") return `Deleted ${subject}`
+  if (fields.length === 0) return action === "create" ? `Created ${subject}` : `Updated ${subject}`
+  const verb = action === "create" ? "Created" : "Updated"
+  return `${verb} ${subject} fields: ${fields.join(", ")}`
+}
+
+async function appendBookingMutationLedgerEntry(
+  c: Context<Env>,
+  input: BookingMutationLedgerInput,
+) {
+  return appendBookingMutationLedgerEntryToDb(c.get("db"), getActionLedgerRequestContext(c), input)
+}
+
+async function appendBookingMutationLedgerEntryToDb(
+  db: AnyDrizzleDb,
+  context: ActionLedgerRequestContextValues,
+  input: BookingMutationLedgerInput,
+) {
+  return appendActionLedgerMutation(db, {
+    context,
+    actionName: input.actionName,
+    actionVersion: input.actionVersion,
+    actionKind: input.action,
+    evaluatedRisk: input.evaluatedRisk ?? "medium",
+    targetType: input.targetType,
+    targetId: input.targetId,
+    routeOrToolName: input.routeOrToolName,
+    authorizationSource: input.authorizationSource ?? "bookings.route",
+    mutationDetail: {
+      summary:
+        input.summary ?? bookingMutationSummary(input.action, input.changedFields, input.subject),
+      reversalKind: "none",
+    },
+  })
+}
+
+async function appendBookingTravelerMutationLedgerEntryToDb(
+  db: AnyDrizzleDb,
+  context: ActionLedgerRequestContextValues,
+  input: BookingTravelerMutationLedgerInput,
+) {
+  return appendBookingMutationLedgerEntryToDb(db, context, {
+    ...input,
+    actionName: input.actionName,
+    actionVersion: BOOKING_TRAVELER_LEDGER_ACTION_VERSION,
+    targetType: "booking_traveler",
+    targetId: input.travelerId,
+    authorizationSource: BOOKING_PII_AUTHORIZATION_SOURCE,
+    evaluatedRisk: input.evaluatedRisk ?? "high",
+  })
+}
+
+function bookingValuesEqual(left: unknown, right: unknown) {
+  if (left instanceof Date || right instanceof Date) {
+    const leftTime = left instanceof Date ? left.getTime() : new Date(String(left)).getTime()
+    const rightTime = right instanceof Date ? right.getTime() : new Date(String(right)).getTime()
+    return leftTime === rightTime
+  }
+
+  return JSON.stringify(left) === JSON.stringify(right)
+}
+
+const ignoredBookingMutationFields = new Set(["updatedAt", "createdAt"])
+
+type BookingStatusCapabilityRoute =
+  | {
+      key: "confirm"
+      actionName: "booking.status.confirm"
+      routeOrToolName: "bookings.confirm"
+    }
+  | {
+      key: "expire"
+      actionName: "booking.status.expire"
+      routeOrToolName: "bookings.expire"
+    }
+  | {
+      key: "cancel"
+      actionName: "booking.status.cancel"
+      routeOrToolName: "bookings.cancel"
+    }
+  | {
+      key: "start"
+      actionName: "booking.status.start"
+      routeOrToolName: "bookings.start"
+    }
+  | {
+      key: "complete"
+      actionName: "booking.status.complete"
+      routeOrToolName: "bookings.complete"
+    }
+  | {
+      key: "override"
+      actionName: "booking.status.override"
+      routeOrToolName: "bookings.override-status"
+    }
+
+async function authorizeBookingStatusMutation(
+  c: Context<Env>,
+  input: BookingStatusCapabilityRoute & {
+    bookingId: string
+    commandInput?: unknown
+  },
+) {
+  const capability = BOOKING_STATUS_CAPABILITIES[input.key]
+  const access = evaluateActionLedgerCapabilityAccess({
+    definition: capability,
+    actor: c.get("actor"),
+    callerType: c.get("callerType"),
+    scopes: c.get("scopes"),
+    isInternalRequest: c.get("isInternalRequest"),
+  })
+
+  if (access.allowed) {
+    const approvalRequirement = evaluateActionLedgerApprovalRequirement({
+      access,
+      conditionalApprovalRequired: requiresBookingStatusApproval(c, input.key),
+      reasonCode: bookingStatusApprovalReason(c, input.key),
+    })
+
+    if (approvalRequirement.required) {
+      const approvedAction = await resolveApprovedBookingStatusAction(
+        c,
+        input,
+        access,
+        approvalRequirement,
+      )
+      if (approvedAction) {
+        if (!approvedAction.allowed) return approvedAction
+        return { allowed: true as const, access, approvedAction: approvedAction.action }
+      }
+
+      const idempotencyKey = c.req.header("idempotency-key") ?? null
+      if (!idempotencyKey) {
+        return {
+          allowed: false as const,
+          response: c.json(
+            {
+              error: "Approval-required booking status actions require an Idempotency-Key",
+            },
+            400,
+          ),
+        }
+      }
+
+      const idempotencyScope = `${input.routeOrToolName}:${input.bookingId}`
+      const idempotencyFingerprint = await buildBookingStatusApprovalFingerprint(
+        input,
+        await loadBookingStatusApprovalTargetState(c, input.bookingId),
+        access,
+        approvalRequirement,
+      )
+
+      const requestInput = {
+        context: getActionLedgerRequestContext(c),
+        actionName: input.actionName,
+        actionVersion: capability.version,
+        actionKind: "update",
+        evaluatedRisk: approvalRequirement.evaluatedRisk,
+        targetType: "booking",
+        targetId: input.bookingId,
+        routeOrToolName: input.routeOrToolName,
+        capabilityId: access.capabilityId,
+        capabilityVersion: access.capabilityVersion,
+        authorizationSource: access.authorizationSource,
+        idempotencyScope,
+        idempotencyKey,
+        idempotencyFingerprint,
+        mutationDetail: {
+          summary: `Booking status ${capability.action} awaiting approval: ${approvalRequirement.reasonCode}`,
+          reversalKind: "none",
+        },
+        approval: {
+          policyName: BOOKING_STATUS_APPROVAL_POLICY,
+          policyVersion: capability.version,
+          riskSnapshot: approvalRequirement.evaluatedRisk,
+          reasonCode: approvalRequirement.reasonCode,
+        },
+      } as const
+
+      let result: Awaited<ReturnType<typeof requestActionLedgerApproval>>
+      try {
+        result = await requestActionLedgerApproval(c.get("db"), requestInput)
+      } catch (error) {
+        if (error instanceof ActionLedgerIdempotencyConflictError) {
+          return {
+            allowed: false as const,
+            response: c.json(
+              {
+                error: error.message,
+                existingActionId: error.existingActionId,
+              },
+              409,
+            ),
+          }
+        }
+        throw error
+      }
+
+      return {
+        allowed: false as const,
+        response: c.json(
+          {
+            data: {
+              approvalRequired: true,
+              requestedAction: {
+                id: result.requestedAction.id,
+                status: result.requestedAction.status,
+                actionName: result.requestedAction.actionName,
+                targetType: result.requestedAction.targetType,
+                targetId: result.requestedAction.targetId,
+              },
+              approval: {
+                id: result.approval.id,
+                status: result.approval.status,
+                requestedActionId: result.approval.requestedActionId,
+                requestedByPrincipalId: result.approval.requestedByPrincipalId,
+                assignedToPrincipalId: result.approval.assignedToPrincipalId,
+                policyName: result.approval.policyName,
+                policyVersion: result.approval.policyVersion,
+                riskSnapshot: result.approval.riskSnapshot,
+                reasonCode: result.approval.reasonCode,
+                expiresAt: result.approval.expiresAt,
+                createdAt: result.approval.createdAt,
+              },
+              replayed: result.replayed,
+            },
+          },
+          202,
+        ),
+      }
+    }
+
+    return { allowed: true as const, access }
+  }
+
+  await appendActionLedgerMutation(c.get("db"), {
+    context: getActionLedgerRequestContext(c),
+    actionName: input.actionName,
+    actionVersion: capability.version,
+    actionKind: "update",
+    status: "denied",
+    evaluatedRisk: access.evaluatedRisk,
+    targetType: "booking",
+    targetId: input.bookingId,
+    routeOrToolName: input.routeOrToolName,
+    capabilityId: access.capabilityId,
+    capabilityVersion: access.capabilityVersion,
+    authorizationSource: access.authorizationSource,
+    mutationDetail: {
+      summary: `Booking status ${capability.action} denied: ${access.reason}`,
+      reversalKind: "none",
+    },
+  })
+
+  return {
+    allowed: false as const,
+    response: handleApiError(new ForbiddenApiError(), c),
+  }
+}
+
+async function resolveApprovedBookingStatusAction(
+  c: Context<Env>,
+  input: BookingStatusCapabilityRoute & {
+    bookingId: string
+    commandInput?: unknown
+  },
+  access: ActionLedgerCapabilityAccessResult,
+  approvalRequirement: ReturnType<typeof evaluateActionLedgerApprovalRequirement>,
+): Promise<
+  | {
+      allowed: true
+      action: ApprovedBookingStatusAction
+    }
+  | {
+      allowed: false
+      response: Response
+    }
+  | null
+> {
+  const approvalId = c.req.header(ACTION_LEDGER_APPROVAL_ID_HEADER)
+  if (!approvalId) return null
+
+  const executionFingerprint = await buildBookingStatusApprovalFingerprint(
+    input,
+    await loadBookingStatusApprovalTargetState(c, input.bookingId),
+    access,
+    approvalRequirement,
+  )
+
+  const actorFields = mapActionLedgerRequestContext(getActionLedgerRequestContext(c))
+  const validation = await actionLedgerService.validateApprovedAction(c.get("db"), {
+    approvalId,
+    actionName: input.actionName,
+    actionVersion: BOOKING_STATUS_CAPABILITIES[input.key].version,
+    requestedActionKind: "update",
+    requestedActionStatus: "awaiting_approval",
+    targetType: "booking",
+    targetId: input.bookingId,
+    routeOrToolName: input.routeOrToolName,
+    principalType: actorFields.principalType,
+    principalId: actorFields.principalId,
+    idempotencyFingerprint: executionFingerprint,
+    executionActionKind: "update",
+    executionStatus: "succeeded",
+  })
+  if (!validation.ok) {
+    return {
+      allowed: false,
+      response: actionApprovalValidationResponse(c, validation),
+    }
+  }
+
+  return {
+    allowed: true,
+    action: {
+      requestedActionId: validation.requestedAction.id,
+      approvalId: validation.approval.id,
+      idempotencyFingerprint: validation.idempotencyFingerprint,
+    },
+  }
+}
+
+function buildBookingStatusApprovalFingerprint(
+  input: BookingStatusCapabilityRoute & {
+    bookingId: string
+    commandInput?: unknown
+  },
+  targetState: BookingStatusApprovalTargetState,
+  access: ActionLedgerCapabilityAccessResult,
+  approvalRequirement: ReturnType<typeof evaluateActionLedgerApprovalRequirement>,
+) {
+  return buildActionApprovalCommandFingerprint({
+    actionName: input.actionName,
+    actionVersion: BOOKING_STATUS_CAPABILITIES[input.key].version,
+    targetType: "booking",
+    targetId: input.bookingId,
+    commandInput: {
+      command: input.commandInput ?? null,
+      targetState,
+    },
+    approvalPolicy: approvalRequirement.approvalPolicy,
+    capabilityId: access.capabilityId,
+    capabilityVersion: access.capabilityVersion,
+    evaluatedRisk: approvalRequirement.evaluatedRisk,
+    reasonCode: approvalRequirement.reasonCode,
+  })
+}
+
+async function loadBookingStatusApprovalTargetState(
+  c: Context<Env>,
+  bookingId: string,
+): Promise<BookingStatusApprovalTargetState> {
+  const booking = await bookingsService.getBookingById(c.get("db"), bookingId)
+  if (!booking) return { exists: false }
+
+  return {
+    exists: true,
+    status: booking.status,
+    sellCurrency: booking.sellCurrency,
+    sellAmountCents: booking.sellAmountCents,
+    costAmountCents: booking.costAmountCents,
+    customerPaymentPolicy: booking.customerPaymentPolicy,
+    holdExpiresAt: serializeBookingApprovalDate(booking.holdExpiresAt),
+    confirmedAt: serializeBookingApprovalDate(booking.confirmedAt),
+    awaitingPaymentAt: serializeBookingApprovalDate(booking.awaitingPaymentAt),
+    paidAt: serializeBookingApprovalDate(booking.paidAt),
+    cancelledAt: serializeBookingApprovalDate(booking.cancelledAt),
+    completedAt: serializeBookingApprovalDate(booking.completedAt),
+    expiredAt: serializeBookingApprovalDate(booking.expiredAt),
+  }
+}
+
+function serializeBookingApprovalDate(value: Date | string | null): string | null {
+  if (!value) return null
+  return value instanceof Date ? value.toISOString() : value
+}
+
+function actionApprovalValidationResponse(
+  c: Context<Env>,
+  validation: Exclude<
+    Awaited<ReturnType<typeof actionLedgerService.validateApprovedAction>>,
+    { ok: true }
+  >,
+) {
+  switch (validation.reason) {
+    case "not_found":
+      return c.json({ error: "Action approval not found" }, 404)
+    case "not_approved":
+      return c.json(
+        {
+          error: "Action approval is not approved",
+          approvalId: validation.approval?.id,
+          status: validation.status,
+        },
+        409,
+      )
+    case "expired":
+      return c.json(
+        {
+          error: "Action approval has expired",
+          approvalId: validation.approval?.id,
+        },
+        409,
+      )
+    case "mismatched_action":
+      return c.json(
+        {
+          error: "Action approval does not match this booking status action",
+          approvalId: validation.approval?.id,
+        },
+        409,
+      )
+    case "already_executed":
+      return c.json(
+        {
+          error: "Action approval has already been executed",
+          approvalId: validation.approval?.id,
+          existingActionId: validation.existingActionId,
+        },
+        409,
+      )
+    case "missing_fingerprint":
+      return c.json(
+        {
+          error: "Action approval is missing an approved command fingerprint",
+          approvalId: validation.approval?.id,
+        },
+        409,
+      )
+    case "fingerprint_mismatch":
+      return c.json(
+        {
+          error: "Action approval command input does not match the approved request",
+          approvalId: validation.approval?.id,
+        },
+        409,
+      )
+    case "principal_mismatch":
+      return c.json({ error: "Action approval belongs to a different principal" }, 403)
+  }
+
+  const exhaustiveReason: never = validation.reason
+  return c.json({ error: `Unhandled action approval validation failure: ${exhaustiveReason}` }, 500)
+}
+
+function bookingStatusMutationRuntime(
+  c: Context<Env>,
+  auth: {
+    access: ActionLedgerCapabilityAccessResult
+    approvedAction?: ApprovedBookingStatusAction
+  },
+) {
+  const approvedExecution = auth.approvedAction
+    ? buildActionLedgerApprovedExecutionFields(auth.approvedAction)
+    : null
+
+  return {
+    eventBus: c.get("eventBus"),
+    actionLedgerContext: getActionLedgerRequestContext(c),
+    actionLedgerAuthorizationSource: auth.access.authorizationSource,
+    actionLedgerCausationActionId: approvedExecution?.causationActionId ?? null,
+    actionLedgerApprovalId: approvedExecution?.approvalId ?? null,
+    actionLedgerIdempotencyScope: approvedExecution?.idempotencyScope ?? null,
+    actionLedgerIdempotencyKey: approvedExecution?.idempotencyKey ?? null,
+    actionLedgerIdempotencyFingerprint: approvedExecution?.idempotencyFingerprint ?? null,
+  }
+}
+
+function requiresBookingStatusApproval(c: Context<Env>, key: BookingStatusCapabilityRoute["key"]) {
+  const capability = BOOKING_STATUS_CAPABILITIES[key]
+  if (capability.approvalPolicy !== "conditional") return false
+  return (
+    c.get("callerType") === "agent" ||
+    c.get("callerType") === "workflow" ||
+    Boolean(c.get("agentId")) ||
+    Boolean(c.get("workflowPrincipalId"))
+  )
+}
+
+function bookingStatusApprovalReason(c: Context<Env>, key: BookingStatusCapabilityRoute["key"]) {
+  if (c.get("callerType") === "agent" || c.get("agentId")) {
+    return `${key}_requested_by_agent`
+  }
+  if (c.get("callerType") === "workflow" || c.get("workflowPrincipalId")) {
+    return `${key}_requested_by_workflow`
+  }
+  return null
+}
+
+async function logBookingPiiReadActionLedger(
+  c: Context<Env>,
+  input: {
+    travelerId: string
+    status: "succeeded" | "denied" | "failed"
+    reason: string
+    routeOrToolName: string
+    disclosedFieldSet?: string[] | null
+    disclosureSummary?: string | null
+    decisionPolicy?: string | null
+    authorizationSource?: string | null
+    evaluatedRisk?: ActionLedgerCapabilityAccessResult["evaluatedRisk"] | null
+  },
+) {
+  await appendActionLedgerSensitiveRead(c.get("db"), {
+    context: getActionLedgerRequestContext(c),
+    actionName: BOOKING_PII_READ_ACTION_NAME,
+    actionVersion: BOOKING_PII_READ_ACTION_VERSION,
+    status: input.status,
+    evaluatedRisk: input.evaluatedRisk ?? "high",
+    targetType: "booking_traveler",
+    targetId: input.travelerId,
+    routeOrToolName: input.routeOrToolName,
+    capabilityId: BOOKING_PII_READ_CAPABILITY.id,
+    capabilityVersion: BOOKING_PII_READ_CAPABILITY.version,
+    authorizationSource: input.authorizationSource ?? BOOKING_PII_AUTHORIZATION_SOURCE,
+    reasonCode: input.reason,
+    disclosedFieldSet: input.status === "succeeded" ? (input.disclosedFieldSet ?? []) : [],
+    disclosureSummary: input.disclosureSummary ?? null,
+    decisionPolicy: input.decisionPolicy ?? BOOKING_PII_DECISION_POLICY,
+  })
+}
+
 async function logBookingPiiAccess(
   c: Context<Env>,
   input: {
@@ -112,7 +895,7 @@ async function authorizeBookingPiiAccess(
   },
 ) {
   if (c.get("isInternalRequest")) {
-    return { allowed: true as const }
+    return { allowed: true as const, access: undefined }
   }
 
   const userId = c.get("userId")
@@ -122,6 +905,15 @@ async function authorizeBookingPiiAccess(
       outcome: "denied",
       reason: "missing_user",
     })
+    if (input.action === "read") {
+      await logBookingPiiReadActionLedger(c, {
+        travelerId: input.travelerId,
+        status: "denied",
+        reason: "missing_user",
+        routeOrToolName: "bookings.pii.authorize",
+        disclosureSummary: "Booking PII read denied before reveal",
+      })
+    }
     return {
       allowed: false as const,
       response: handleApiError(new UnauthorizedApiError(), c),
@@ -146,17 +938,67 @@ async function authorizeBookingPiiAccess(
         outcome: "denied",
         reason: "custom_policy_denied",
       })
+      if (input.action === "read") {
+        await logBookingPiiReadActionLedger(c, {
+          travelerId: input.travelerId,
+          status: "denied",
+          reason: "custom_policy_denied",
+          routeOrToolName: "bookings.pii.authorize",
+          disclosureSummary: "Booking PII read denied before reveal",
+          decisionPolicy: "custom",
+        })
+      }
       return {
         allowed: false as const,
         response: handleApiError(new ForbiddenApiError(), c),
       }
     }
 
-    return { allowed: true as const }
+    return { allowed: true as const, access: undefined }
   }
 
   const actor = c.get("actor")
   const scopes = c.get("scopes")
+
+  if (input.action === "read") {
+    const access = evaluateActionLedgerCapabilityAccess({
+      definition: BOOKING_PII_READ_CAPABILITY,
+      actor,
+      callerType: c.get("callerType"),
+      scopes,
+      isInternalRequest: c.get("isInternalRequest"),
+    })
+
+    if (!access.allowed) {
+      await logBookingPiiAccess(c, {
+        ...input,
+        outcome: "denied",
+        reason: access.reason,
+        metadata: {
+          actor: actor ?? null,
+          authorizationSource: access.authorizationSource,
+          capabilityId: access.capabilityId,
+          capabilityVersion: access.capabilityVersion,
+        },
+      })
+      await logBookingPiiReadActionLedger(c, {
+        travelerId: input.travelerId,
+        status: "denied",
+        reason: access.reason,
+        routeOrToolName: "bookings.pii.authorize",
+        disclosureSummary: "Booking PII read denied before reveal",
+        authorizationSource: access.authorizationSource,
+        evaluatedRisk: access.evaluatedRisk,
+      })
+      return {
+        allowed: false as const,
+        response: handleApiError(new ForbiddenApiError(), c),
+      }
+    }
+
+    return { allowed: true as const, access }
+  }
+
   const allowed = hasPiiScope(scopes, input.action) || actor === "staff"
 
   if (!allowed) {
@@ -172,7 +1014,7 @@ async function authorizeBookingPiiAccess(
     }
   }
 
-  return { allowed: true as const }
+  return { allowed: true as const, access: undefined }
 }
 
 function handleKmsConfigError(c: Context<Env>, error: unknown) {
@@ -220,6 +1062,237 @@ async function createAuditedBookingPiiService(c: Context<Env>, bookingId: string
       })
     },
   })
+}
+
+function serializeBookingActionLedgerDate(value: Date | string): string {
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    throw new Error("Booking action ledger timestamp must be a valid date")
+  }
+  return date.toISOString()
+}
+
+function serializeBookingActionLedgerEntry(entry: ActionLedgerEntry): ActionLedgerEntryResponse {
+  return {
+    ...entry,
+    occurredAt: serializeBookingActionLedgerDate(entry.occurredAt),
+    createdAt: serializeBookingActionLedgerDate(entry.createdAt),
+  }
+}
+
+function toBookingActionLedgerCursor(entry: Pick<ActionLedgerEntry, "occurredAt" | "id">) {
+  return {
+    occurredAt: serializeBookingActionLedgerDate(entry.occurredAt),
+    id: entry.id,
+  }
+}
+
+function sortBookingActionLedgerEntries(entries: ActionLedgerEntry[]) {
+  return [...entries].sort((a, b) => {
+    const occurredAtDelta = new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
+    if (occurredAtDelta !== 0) return occurredAtDelta
+    return b.id.localeCompare(a.id)
+  })
+}
+
+function buildBookingActionLedgerPage({
+  bookingEntries,
+  travelerEntries,
+  itemEntries = [],
+  limit,
+}: {
+  bookingEntries: ActionLedgerEntry[]
+  travelerEntries: ActionLedgerEntry[]
+  itemEntries?: ActionLedgerEntry[]
+  limit: number
+}) {
+  const entriesById = new Map<string, ActionLedgerEntry>()
+  for (const entry of bookingEntries) {
+    entriesById.set(entry.id, entry)
+  }
+  for (const entry of travelerEntries) {
+    entriesById.set(entry.id, entry)
+  }
+  for (const entry of itemEntries) {
+    entriesById.set(entry.id, entry)
+  }
+
+  const sortedEntries = sortBookingActionLedgerEntries([...entriesById.values()])
+  const entries = sortedEntries.slice(0, limit)
+  const lastEntry = entries.at(-1)
+  const nextCursor =
+    sortedEntries.length > limit && lastEntry ? toBookingActionLedgerCursor(lastEntry) : null
+
+  return { entries, nextCursor }
+}
+
+async function listBookingActionLedger(c: Context<Env>) {
+  const bookingId = c.req.param("id")
+  if (!bookingId) {
+    return c.json({ error: "Booking not found" }, 404)
+  }
+
+  const query = parseQuery(c, bookingActionLedgerQuerySchema)
+  const limit = query.limit ?? 50
+  const queryLimit = limit + 1
+
+  const booking = await bookingsService.getBookingById(c.get("db"), bookingId)
+  if (!booking) {
+    return c.json({ error: "Booking not found" }, 404)
+  }
+
+  const travelers = await bookingsService.listTravelers(c.get("db"), bookingId)
+  const reveal = shouldRevealBookingPii({
+    actor: c.get("actor"),
+    scopes: c.get("scopes"),
+    callerType: c.get("callerType"),
+    isInternalRequest: c.get("isInternalRequest"),
+  })
+  const visibleTravelers = reveal ? travelers : travelers.map((row) => redactTravelerIdentity(row))
+
+  const travelerIds = travelers.map((traveler) => traveler.id)
+  const items = await bookingsService.listItems(c.get("db"), bookingId)
+  const itemIds = items.map((item) => item.id)
+  const [bookingEntriesResult, travelerEntriesResult, itemEntriesResult] = await Promise.all([
+    actionLedgerService.listEntries(c.get("db"), {
+      targetType: "booking",
+      targetId: bookingId,
+      cursor: query.cursor,
+      limit: queryLimit,
+    }),
+    travelerIds.length > 0
+      ? actionLedgerService.listEntries(c.get("db"), {
+          targetType: "booking_traveler",
+          targetIds: travelerIds,
+          cursor: query.cursor,
+          limit: queryLimit,
+        })
+      : Promise.resolve({ entries: [], nextCursor: null }),
+    itemIds.length > 0
+      ? actionLedgerService.listEntries(c.get("db"), {
+          targetType: "booking_item",
+          targetIds: itemIds,
+          cursor: query.cursor,
+          limit: queryLimit,
+        })
+      : Promise.resolve({ entries: [], nextCursor: null }),
+  ])
+
+  const page = buildBookingActionLedgerPage({
+    bookingEntries: bookingEntriesResult.entries,
+    travelerEntries: travelerEntriesResult.entries,
+    itemEntries: itemEntriesResult.entries,
+    limit,
+  })
+
+  return c.json({
+    data: page.entries.map(serializeBookingActionLedgerEntry),
+    travelers: visibleTravelers.map((traveler) => ({
+      id: traveler.id,
+      firstName: traveler.firstName,
+      lastName: traveler.lastName,
+    })),
+    pageInfo: {
+      nextCursor: page.nextCursor,
+    },
+  } satisfies BookingActionLedgerListResponse)
+}
+
+function serializeBookingActionApproval(
+  approval: NonNullable<Awaited<ReturnType<typeof actionLedgerService.getApproval>>>["approval"],
+): ActionApprovalResponse {
+  return {
+    ...approval,
+    expiresAt: approval.expiresAt ? serializeBookingActionLedgerDate(approval.expiresAt) : null,
+    decidedAt: approval.decidedAt ? serializeBookingActionLedgerDate(approval.decidedAt) : null,
+    createdAt: serializeBookingActionLedgerDate(approval.createdAt),
+  }
+}
+
+function findBookingStatusCapability(capabilityId: string | null) {
+  return Object.values(BOOKING_STATUS_CAPABILITIES).find(
+    (capability) => capability.id === capabilityId,
+  )
+}
+
+async function decideBookingActionApproval(c: Context<Env>) {
+  const bookingId = c.req.param("id")
+  const approvalId = c.req.param("approvalId")
+  if (!bookingId || !approvalId) {
+    return c.json({ error: "Action approval not found" }, 404)
+  }
+
+  if (!c.get("isInternalRequest") && !c.get("userId")) {
+    return handleApiError(new UnauthorizedApiError(), c)
+  }
+
+  const body = await parseJsonBody(c, decideBookingActionApprovalBodySchema)
+  const existing = await actionLedgerService.getApproval(c.get("db"), approvalId)
+  if (!existing?.requestedAction?.entry) {
+    return c.json({ error: "Action approval not found" }, 404)
+  }
+
+  const requestedAction = existing.requestedAction.entry
+  if (requestedAction.targetType !== "booking" || requestedAction.targetId !== bookingId) {
+    return c.json({ error: "Action approval not found" }, 404)
+  }
+
+  const capability = findBookingStatusCapability(requestedAction.capabilityId)
+  if (!capability) {
+    return c.json({ error: "Action approval is not a booking status approval" }, 409)
+  }
+
+  const access = evaluateActionLedgerCapabilityAccess({
+    definition: capability,
+    actor: c.get("actor"),
+    callerType: c.get("callerType"),
+    scopes: c.get("scopes"),
+    isInternalRequest: c.get("isInternalRequest"),
+  })
+
+  if (!access.allowed) {
+    return handleApiError(new ForbiddenApiError(), c)
+  }
+
+  try {
+    const result = await decideActionLedgerApproval(c.get("db"), {
+      context: getActionLedgerRequestContext(c),
+      id: approvalId,
+      status: body.status,
+      actionName: "booking.status.approval.decide",
+      actionVersion: capability.version,
+      evaluatedRisk: requestedAction.evaluatedRisk,
+      targetType: "booking",
+      targetId: bookingId,
+      routeOrToolName: "bookings.approvals.decide",
+      capabilityId: capability.id,
+      capabilityVersion: capability.version,
+      authorizationSource: access.authorizationSource,
+    })
+
+    if (!result) {
+      return c.json({ error: "Action approval not found" }, 404)
+    }
+
+    return c.json({
+      data: {
+        approval: serializeBookingActionApproval(result.approval),
+        decisionAction: serializeBookingActionLedgerEntry(result.decisionAction),
+      },
+    } satisfies BookingActionApprovalDecisionResponse)
+  } catch (error) {
+    if (error instanceof ActionApprovalDecisionConflictError) {
+      return c.json(
+        {
+          error: "Action approval has already been decided",
+          approvalId: error.approvalId,
+          status: error.currentStatus,
+        },
+        409,
+      )
+    }
+    throw error
+  }
 }
 
 // ==========================================================================
@@ -340,6 +1413,12 @@ export const bookingRoutes = new Hono<Env>()
     })
     return c.json({ data: reveal ? row : redactBookingContact(row) })
   })
+
+  // 2b. GET /:id/action-ledger — Booking-scoped action timeline
+  .get("/:id/action-ledger", listBookingActionLedger)
+
+  // 2c. POST /:id/action-approvals/:approvalId/decide — Booking-scoped approval decision
+  .post("/:id/action-approvals/:approvalId/decide", decideBookingActionApproval)
 
   // 3. POST /reserve — Reserve inventory and create on-hold booking
   .post("/reserve", idempotencyKey({ scope: "POST /v1/admin/bookings/reserve" }), async (c) => {
@@ -535,12 +1614,22 @@ export const bookingRoutes = new Hono<Env>()
 
   // 8. POST /:id/confirm — Confirm an on-hold booking
   .post("/:id/confirm", async (c) => {
+    const bookingId = c.req.param("id")
+    const data = await parseJsonBody(c, confirmBookingSchema)
+    const auth = await authorizeBookingStatusMutation(c, {
+      key: "confirm",
+      actionName: "booking.status.confirm",
+      routeOrToolName: "bookings.confirm",
+      bookingId,
+    })
+    if (!auth.allowed) return auth.response
+
     const result = await bookingsService.confirmBooking(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, confirmBookingSchema),
+      bookingId,
+      data,
       c.get("userId"),
-      { eventBus: c.get("eventBus") },
+      bookingStatusMutationRuntime(c, auth),
     )
 
     if (result.status === "not_found") {
@@ -592,12 +1681,25 @@ export const bookingRoutes = new Hono<Env>()
 
   // 10. POST /:id/expire — Expire an on-hold booking
   .post("/:id/expire", async (c) => {
+    const bookingId = c.req.param("id")
+    const data = await parseJsonBody(c, expireBookingSchema)
+    const auth = await authorizeBookingStatusMutation(c, {
+      key: "expire",
+      actionName: "booking.status.expire",
+      routeOrToolName: "bookings.expire",
+      bookingId,
+    })
+    if (!auth.allowed) return auth.response
+
     const result = await bookingsService.expireBooking(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, expireBookingSchema),
+      bookingId,
+      data,
       c.get("userId"),
-      { eventBus: c.get("eventBus"), cause: "route" },
+      {
+        ...bookingStatusMutationRuntime(c, auth),
+        cause: "route",
+      },
     )
 
     if (result.status === "not_found") {
@@ -629,12 +1731,23 @@ export const bookingRoutes = new Hono<Env>()
 
   // 11. POST /:id/cancel — Cancel a booking and release allocations
   .post("/:id/cancel", async (c) => {
+    const bookingId = c.req.param("id")
+    const data = await parseJsonBody(c, cancelBookingSchema)
+    const auth = await authorizeBookingStatusMutation(c, {
+      key: "cancel",
+      actionName: "booking.status.cancel",
+      routeOrToolName: "bookings.cancel",
+      bookingId,
+      commandInput: data,
+    })
+    if (!auth.allowed) return auth.response
+
     const result = await bookingsService.cancelBooking(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, cancelBookingSchema),
+      bookingId,
+      data,
       c.get("userId"),
-      { eventBus: c.get("eventBus") },
+      bookingStatusMutationRuntime(c, auth),
     )
 
     if (result.status === "not_found") {
@@ -654,12 +1767,22 @@ export const bookingRoutes = new Hono<Env>()
 
   // 11a. POST /:id/start — Mark a confirmed booking as in-progress
   .post("/:id/start", async (c) => {
+    const bookingId = c.req.param("id")
+    const data = await parseJsonBody(c, startBookingSchema)
+    const auth = await authorizeBookingStatusMutation(c, {
+      key: "start",
+      actionName: "booking.status.start",
+      routeOrToolName: "bookings.start",
+      bookingId,
+    })
+    if (!auth.allowed) return auth.response
+
     const result = await bookingsService.startBooking(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, startBookingSchema),
+      bookingId,
+      data,
       c.get("userId"),
-      { eventBus: c.get("eventBus") },
+      bookingStatusMutationRuntime(c, auth),
     )
 
     if (result.status === "not_found") {
@@ -679,12 +1802,22 @@ export const bookingRoutes = new Hono<Env>()
 
   // 11b. POST /:id/complete — Mark an in-progress booking as completed
   .post("/:id/complete", async (c) => {
+    const bookingId = c.req.param("id")
+    const data = await parseJsonBody(c, completeBookingSchema)
+    const auth = await authorizeBookingStatusMutation(c, {
+      key: "complete",
+      actionName: "booking.status.complete",
+      routeOrToolName: "bookings.complete",
+      bookingId,
+    })
+    if (!auth.allowed) return auth.response
+
     const result = await bookingsService.completeBooking(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, completeBookingSchema),
+      bookingId,
+      data,
       c.get("userId"),
-      { eventBus: c.get("eventBus") },
+      bookingStatusMutationRuntime(c, auth),
     )
 
     if (result.status === "not_found") {
@@ -707,12 +1840,23 @@ export const bookingRoutes = new Hono<Env>()
   // allocations, or fulfillments. Always emits booking.status_overridden for
   // audit. Requires a non-empty `reason`.
   .post("/:id/override-status", async (c) => {
+    const bookingId = c.req.param("id")
+    const data = await parseJsonBody(c, overrideBookingStatusSchema)
+    const auth = await authorizeBookingStatusMutation(c, {
+      key: "override",
+      actionName: "booking.status.override",
+      routeOrToolName: "bookings.override-status",
+      bookingId,
+      commandInput: data,
+    })
+    if (!auth.allowed) return auth.response
+
     const result = await bookingsService.overrideBookingStatus(
       c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, overrideBookingStatusSchema),
+      bookingId,
+      data,
       c.get("userId"),
-      { eventBus: c.get("eventBus") },
+      bookingStatusMutationRuntime(c, auth),
     )
 
     if (result.status === "not_found") {
@@ -786,29 +1930,58 @@ export const bookingRoutes = new Hono<Env>()
         outcome: "denied",
         reason: "traveler_not_found",
       })
+      await logBookingPiiReadActionLedger(c, {
+        travelerId,
+        status: "denied",
+        reason: "traveler_not_found",
+        routeOrToolName: "bookings.travelers.reveal",
+        disclosureSummary: "Booking PII read denied before reveal",
+        authorizationSource: auth.access?.authorizationSource,
+        evaluatedRisk: auth.access?.evaluatedRisk,
+      })
       return c.json({ error: "Traveler not found" }, 404)
     }
 
+    let travelDetails: TravelerTravelDetails
     try {
       const pii = await createAuditedBookingPiiService(c, traveler.bookingId)
-      const travelDetails = await pii.getTravelerTravelDetails(
+      travelDetails = await ledgerSensitiveRead(
         c.get("db"),
-        traveler.id,
-        c.get("userId"),
+        {
+          context: getActionLedgerRequestContext(c),
+          actionName: BOOKING_PII_READ_ACTION_NAME,
+          actionVersion: BOOKING_PII_READ_ACTION_VERSION,
+          status: "succeeded",
+          evaluatedRisk: auth.access?.evaluatedRisk ?? "high",
+          targetType: "booking_traveler",
+          targetId: traveler.id,
+          routeOrToolName: "bookings.travelers.reveal",
+          capabilityId: BOOKING_PII_READ_CAPABILITY.id,
+          capabilityVersion: BOOKING_PII_READ_CAPABILITY.version,
+          authorizationSource: auth.access?.authorizationSource ?? BOOKING_PII_AUTHORIZATION_SOURCE,
+          reasonCode: "traveler_reveal",
+          disclosedFieldSet: [
+            ...TRAVELER_IDENTITY_DISCLOSED_FIELDS,
+            ...TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS,
+          ],
+          disclosureSummary: "Traveler identity reveal",
+          decisionPolicy: BOOKING_PII_DECISION_POLICY,
+        },
+        () => pii.getTravelerTravelDetails(c.get("db"), traveler.id, c.get("userId")),
       )
-
-      await logBookingPiiAccess(c, {
-        bookingId,
-        travelerId,
-        action: "read",
-        outcome: "allowed",
-        reason: "traveler_reveal",
-      })
-
-      return c.json({ data: { ...traveler, travelDetails } })
     } catch (error) {
       return handleKmsConfigError(c, error)
     }
+
+    await logBookingPiiAccess(c, {
+      bookingId,
+      travelerId,
+      action: "read",
+      outcome: "allowed",
+      reason: "traveler_reveal",
+    })
+
+    return c.json({ data: { ...traveler, travelDetails } })
   })
 
   .get("/:id/travelers/:travelerId/travel-details", async (c) => {
@@ -835,37 +2008,86 @@ export const bookingRoutes = new Hono<Env>()
         outcome: "denied",
         reason: "participant_not_found",
       })
+      await logBookingPiiReadActionLedger(c, {
+        travelerId: c.req.param("travelerId"),
+        status: "denied",
+        reason: "participant_not_found",
+        routeOrToolName: "bookings.travelers.travel-details",
+        disclosureSummary: "Booking PII read denied before reveal",
+        authorizationSource: auth.access?.authorizationSource,
+        evaluatedRisk: auth.access?.evaluatedRisk,
+      })
       return c.json({ error: "Traveler not found" }, 404)
     }
 
+    let details: TravelerTravelDetails
     try {
       const pii = await createAuditedBookingPiiService(c, traveler.bookingId)
-      const details = await pii.getTravelerTravelDetails(c.get("db"), traveler.id, c.get("userId"))
-
-      if (!details) {
-        await logBookingPiiAccess(c, {
-          bookingId: traveler.bookingId,
-          travelerId: traveler.id,
-          action: "read",
-          outcome: "denied",
-          reason: "travel_details_not_found",
-        })
-        return c.json({ error: "Traveler travel details not found" }, 404)
-      }
-
-      return c.json({ data: details })
+      details = await ledgerSensitiveRead(
+        c.get("db"),
+        {
+          context: getActionLedgerRequestContext(c),
+          actionName: BOOKING_PII_READ_ACTION_NAME,
+          actionVersion: BOOKING_PII_READ_ACTION_VERSION,
+          status: "succeeded",
+          evaluatedRisk: auth.access?.evaluatedRisk ?? "high",
+          targetType: "booking_traveler",
+          targetId: traveler.id,
+          routeOrToolName: "bookings.travelers.travel-details",
+          capabilityId: BOOKING_PII_READ_CAPABILITY.id,
+          capabilityVersion: BOOKING_PII_READ_CAPABILITY.version,
+          authorizationSource: auth.access?.authorizationSource ?? BOOKING_PII_AUTHORIZATION_SOURCE,
+          reasonCode: "travel_details_reveal",
+          disclosedFieldSet: TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS,
+          disclosureSummary: "Traveler travel details reveal",
+          decisionPolicy: BOOKING_PII_DECISION_POLICY,
+        },
+        () => pii.getTravelerTravelDetails(c.get("db"), traveler.id, c.get("userId")),
+      )
     } catch (error) {
       return handleKmsConfigError(c, error)
     }
+
+    if (!details) {
+      await logBookingPiiAccess(c, {
+        bookingId: traveler.bookingId,
+        travelerId: traveler.id,
+        action: "read",
+        outcome: "denied",
+        reason: "travel_details_not_found",
+      })
+      return c.json({ error: "Traveler travel details not found" }, 404)
+    }
+
+    return c.json({ data: details })
   })
 
   .post("/:id/travelers", async (c) => {
-    const row = await bookingsService.createTraveler(
-      c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, insertTravelerSchema),
-      c.get("userId"),
-    )
+    const body = await parseJsonBody(c, insertTravelerSchema)
+    const ledgerContext = getActionLedgerRequestContext(c)
+    const row = await c.get("db").transaction(async (tx) => {
+      const txDb = tx as PostgresJsDatabase
+      const row = await bookingsService.createTraveler(
+        txDb,
+        c.req.param("id"),
+        body,
+        c.get("userId"),
+      )
+
+      if (!row) return null
+
+      await appendBookingTravelerMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+        action: "create",
+        travelerId: row.id,
+        changedFields: changedBookingTravelerFields(body, null, row),
+        subject: "booking traveler",
+        actionName: "booking.traveler.create",
+        routeOrToolName: "bookings.travelers.create",
+        evaluatedRisk: "high",
+      })
+
+      return row
+    })
 
     if (!row) {
       return c.json({ error: "Booking not found" }, 404)
@@ -887,19 +2109,41 @@ export const bookingRoutes = new Hono<Env>()
       const runtime = getRouteRuntime(c)
       const kms = await runtime.getKmsProvider()
       const pii = await createAuditedBookingPiiService(c, c.req.param("id"))
-      const result = await bookingsService.createTravelerWithTravelDetails(
-        c.get("db"),
-        c.req.param("id"),
-        data,
-        {
-          pii,
-          userId: c.get("userId"),
-          actorId: c.get("userId"),
-          resolveTravelSnapshot: runtime.resolveTravelSnapshot
-            ? (personId) => runtime.resolveTravelSnapshot!(c.get("db"), personId, { kms })
-            : undefined,
-        },
-      )
+      const ledgerContext = getActionLedgerRequestContext(c)
+      const result = await c.get("db").transaction(async (tx) => {
+        const txDb = tx as PostgresJsDatabase
+        const result = await bookingsService.createTravelerWithTravelDetails(
+          txDb,
+          c.req.param("id"),
+          data,
+          {
+            pii,
+            userId: c.get("userId"),
+            actorId: c.get("userId"),
+            resolveTravelSnapshot: runtime.resolveTravelSnapshot
+              ? (personId) => runtime.resolveTravelSnapshot!(txDb, personId, { kms })
+              : undefined,
+          },
+        )
+        if (!result) return null
+
+        await appendBookingTravelerMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+          action: "create",
+          travelerId: result.traveler.id,
+          changedFields: [
+            ...new Set([
+              ...changedBookingTravelerFields(data, null, result.traveler),
+              ...changedBookingTravelDetailFields(data),
+            ]),
+          ].sort(),
+          subject: "booking traveler with travel details",
+          actionName: "booking.traveler_with_travel_details.create",
+          routeOrToolName: "bookings.travelers.with-travel-details.create",
+          evaluatedRisk: "high",
+        })
+
+        return result
+      })
       if (!result) {
         return c.json({ error: "Booking not found" }, 404)
       }
@@ -934,12 +2178,33 @@ export const bookingRoutes = new Hono<Env>()
 
       const data = await parseJsonBody(c, updateTravelerWithTravelDetailsSchema)
       const pii = await createAuditedBookingPiiService(c, bookingId)
-      const result = await bookingsService.updateTravelerWithTravelDetails(
-        c.get("db"),
-        travelerId,
-        data,
-        { pii, actorId: c.get("userId") },
-      )
+      const ledgerContext = getActionLedgerRequestContext(c)
+      const result = await c.get("db").transaction(async (tx) => {
+        const result = await bookingsService.updateTravelerWithTravelDetails(
+          tx as PostgresJsDatabase,
+          travelerId,
+          data,
+          { pii, actorId: c.get("userId") },
+        )
+        if (!result) return null
+
+        await appendBookingTravelerMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+          action: "update",
+          travelerId: result.traveler.id,
+          changedFields: [
+            ...new Set([
+              ...changedBookingTravelerFields(data, traveler, result.traveler),
+              ...changedBookingTravelDetailFields(data),
+            ]),
+          ].sort(),
+          subject: "booking traveler with travel details",
+          actionName: "booking.traveler_with_travel_details.update",
+          routeOrToolName: "bookings.travelers.with-travel-details.update",
+          evaluatedRisk: "high",
+        })
+
+        return result
+      })
       if (!result) {
         return c.json({ error: "Traveler not found" }, 404)
       }
@@ -978,12 +2243,30 @@ export const bookingRoutes = new Hono<Env>()
 
     try {
       const pii = await createAuditedBookingPiiService(c, traveler.bookingId)
-      const row = await pii.upsertTravelerTravelDetails(
-        c.get("db"),
-        traveler.id,
-        await parseJsonBody(c, upsertTravelerTravelDetailsSchema),
-        c.get("userId"),
-      )
+      const body = await parseJsonBody(c, upsertTravelerTravelDetailsSchema)
+      const ledgerContext = getActionLedgerRequestContext(c)
+      const row = await c.get("db").transaction(async (tx) => {
+        const row = await pii.upsertTravelerTravelDetails(
+          tx as PostgresJsDatabase,
+          traveler.id,
+          body,
+          c.get("userId"),
+        )
+
+        if (!row) return null
+
+        await appendBookingTravelerMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+          action: "update",
+          travelerId: traveler.id,
+          changedFields: changedBookingTravelDetailFields(body),
+          subject: "booking traveler travel details",
+          actionName: "booking.traveler_travel_details.update",
+          routeOrToolName: "bookings.travelers.travel-details.update",
+          evaluatedRisk: "high",
+        })
+
+        return row
+      })
 
       if (!row) {
         return c.json({ error: "Traveler not found" }, 404)
@@ -996,11 +2279,32 @@ export const bookingRoutes = new Hono<Env>()
   })
 
   .patch("/:id/travelers/:travelerId", async (c) => {
-    const row = await bookingsService.updateTraveler(
-      c.get("db"),
-      c.req.param("travelerId"),
-      await parseJsonBody(c, updateTravelerSchema),
-    )
+    const bookingId = c.req.param("id")
+    const travelerId = c.req.param("travelerId")
+    const before = await bookingsService.getTravelerRecordById(c.get("db"), bookingId, travelerId)
+    if (!before) {
+      return c.json({ error: "Traveler not found" }, 404)
+    }
+
+    const body = await parseJsonBody(c, updateTravelerSchema)
+    const ledgerContext = getActionLedgerRequestContext(c)
+    const row = await c.get("db").transaction(async (tx) => {
+      const row = await bookingsService.updateTraveler(tx as PostgresJsDatabase, travelerId, body)
+
+      if (!row) return null
+
+      await appendBookingTravelerMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+        action: "update",
+        travelerId: row.id,
+        changedFields: changedBookingTravelerFields(body, before, row),
+        subject: "booking traveler",
+        actionName: "booking.traveler.update",
+        routeOrToolName: "bookings.travelers.update",
+        evaluatedRisk: "high",
+      })
+
+      return row
+    })
 
     if (!row) {
       return c.json({ error: "Traveler not found" }, 404)
@@ -1038,7 +2342,28 @@ export const bookingRoutes = new Hono<Env>()
 
     try {
       const pii = await createAuditedBookingPiiService(c, traveler.bookingId)
-      const row = await pii.deleteTravelerTravelDetails(c.get("db"), traveler.id, c.get("userId"))
+      const ledgerContext = getActionLedgerRequestContext(c)
+      const row = await c.get("db").transaction(async (tx) => {
+        const row = await pii.deleteTravelerTravelDetails(
+          tx as PostgresJsDatabase,
+          traveler.id,
+          c.get("userId"),
+        )
+
+        if (!row) return null
+
+        await appendBookingTravelerMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+          action: "delete",
+          travelerId: traveler.id,
+          changedFields: [],
+          subject: "booking traveler travel details",
+          actionName: "booking.traveler_travel_details.delete",
+          routeOrToolName: "bookings.travelers.travel-details.delete",
+          evaluatedRisk: "high",
+        })
+
+        return row
+      })
 
       if (!row) {
         return c.json({ error: "Traveler travel details not found" }, 404)
@@ -1051,7 +2376,31 @@ export const bookingRoutes = new Hono<Env>()
   })
 
   .delete("/:id/travelers/:travelerId", async (c) => {
-    const row = await bookingsService.deleteTraveler(c.get("db"), c.req.param("travelerId"))
+    const bookingId = c.req.param("id")
+    const travelerId = c.req.param("travelerId")
+    const before = await bookingsService.getTravelerRecordById(c.get("db"), bookingId, travelerId)
+    if (!before) {
+      return c.json({ error: "Traveler not found" }, 404)
+    }
+
+    const ledgerContext = getActionLedgerRequestContext(c)
+    const row = await c.get("db").transaction(async (tx) => {
+      const row = await bookingsService.deleteTraveler(tx as PostgresJsDatabase, travelerId)
+
+      if (!row) return null
+
+      await appendBookingTravelerMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+        action: "delete",
+        travelerId,
+        changedFields: [],
+        subject: "booking traveler",
+        actionName: "booking.traveler.delete",
+        routeOrToolName: "bookings.travelers.delete",
+        evaluatedRisk: "high",
+      })
+
+      return row
+    })
 
     if (!row) {
       return c.json({ error: "Traveler not found" }, 404)
@@ -1071,12 +2420,32 @@ export const bookingRoutes = new Hono<Env>()
 
   // 17. POST /:id/items — Add booking item
   .post("/:id/items", async (c) => {
-    const row = await bookingsService.createItem(
-      c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, insertBookingItemSchema),
-      c.get("userId"),
-    )
+    const body = await parseJsonBody(c, insertBookingItemSchema)
+    const ledgerContext = getActionLedgerRequestContext(c)
+    const row = await c.get("db").transaction(async (tx) => {
+      const row = await bookingsService.createItem(
+        tx as PostgresJsDatabase,
+        c.req.param("id"),
+        body,
+        c.get("userId"),
+      )
+
+      if (!row) return null
+
+      await appendBookingMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+        action: "create",
+        actionName: "booking.item.create",
+        actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
+        targetType: "booking_item",
+        targetId: row.id,
+        changedFields: changedBookingItemFields(body, null, row),
+        subject: "booking item",
+        routeOrToolName: "bookings.items.create",
+        evaluatedRisk: "high",
+      })
+
+      return row
+    })
 
     if (!row) {
       return c.json({ error: "Booking not found" }, 404)
@@ -1087,11 +2456,38 @@ export const bookingRoutes = new Hono<Env>()
 
   // 18. PATCH /:id/items/:itemId — Update booking item
   .patch("/:id/items/:itemId", async (c) => {
-    const row = await bookingsService.updateItem(
-      c.get("db"),
-      c.req.param("itemId"),
-      await parseJsonBody(c, updateBookingItemSchema),
-    )
+    const bookingId = c.req.param("id")
+    const itemId = c.req.param("itemId")
+    const before =
+      (await bookingsService.listItems(c.get("db"), bookingId)).find(
+        (item) => item.id === itemId,
+      ) ?? null
+
+    if (!before) {
+      return c.json({ error: "Booking item not found" }, 404)
+    }
+
+    const body = await parseJsonBody(c, updateBookingItemSchema)
+    const ledgerContext = getActionLedgerRequestContext(c)
+    const row = await c.get("db").transaction(async (tx) => {
+      const row = await bookingsService.updateItem(tx as PostgresJsDatabase, itemId, body)
+
+      if (!row) return null
+
+      await appendBookingMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+        action: "update",
+        actionName: "booking.item.update",
+        actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
+        targetType: "booking_item",
+        targetId: row.id,
+        changedFields: changedBookingItemFields(body, before, row),
+        subject: "booking item",
+        routeOrToolName: "bookings.items.update",
+        evaluatedRisk: "high",
+      })
+
+      return row
+    })
 
     if (!row) {
       return c.json({ error: "Booking item not found" }, 404)
@@ -1102,7 +2498,38 @@ export const bookingRoutes = new Hono<Env>()
 
   // 19. DELETE /:id/items/:itemId — Delete booking item
   .delete("/:id/items/:itemId", async (c) => {
-    const row = await bookingsService.deleteItem(c.get("db"), c.req.param("itemId"))
+    const bookingId = c.req.param("id")
+    const itemId = c.req.param("itemId")
+    const before =
+      (await bookingsService.listItems(c.get("db"), bookingId)).find(
+        (item) => item.id === itemId,
+      ) ?? null
+
+    if (!before) {
+      return c.json({ error: "Booking item not found" }, 404)
+    }
+
+    const ledgerContext = getActionLedgerRequestContext(c)
+    const row = await c.get("db").transaction(async (tx) => {
+      const row = await bookingsService.deleteItem(tx as PostgresJsDatabase, itemId)
+
+      if (!row) return null
+
+      await appendBookingMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+        action: "delete",
+        actionName: "booking.item.delete",
+        actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
+        targetType: "booking_item",
+        targetId: itemId,
+        changedFields: [],
+        subject: "booking item",
+        routeOrToolName: "bookings.items.delete",
+        evaluatedRisk: "high",
+        summary: "Deleted booking item",
+      })
+
+      return row
+    })
 
     if (!row) {
       return c.json({ error: "Booking item not found" }, 404)
@@ -1120,11 +2547,38 @@ export const bookingRoutes = new Hono<Env>()
 
   // 21. POST /:id/items/:itemId/travelers — Link traveler to item
   .post("/:id/items/:itemId/travelers", async (c) => {
-    const row = await bookingsService.addItemParticipant(
-      c.get("db"),
-      c.req.param("itemId"),
-      await parseJsonBody(c, insertBookingItemTravelerSchema),
-    )
+    const bookingId = c.req.param("id")
+    const itemId = c.req.param("itemId")
+    const item =
+      (await bookingsService.listItems(c.get("db"), bookingId)).find((row) => row.id === itemId) ??
+      null
+
+    if (!item) {
+      return c.json({ error: "Booking item not found" }, 404)
+    }
+
+    const body = await parseJsonBody(c, insertBookingItemTravelerSchema)
+    const ledgerContext = getActionLedgerRequestContext(c)
+    const row = await c.get("db").transaction(async (tx) => {
+      const row = await bookingsService.addItemParticipant(tx as PostgresJsDatabase, itemId, body)
+
+      if (!row) return null
+
+      await appendBookingMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+        action: "create",
+        actionName: "booking.item_traveler.create",
+        actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
+        targetType: "booking_item",
+        targetId: itemId,
+        changedFields: changedBookingItemFields(body, null, row),
+        subject: "booking item traveler link",
+        routeOrToolName: "bookings.items.travelers.create",
+        evaluatedRisk: "high",
+        summary: "Linked traveler to booking item",
+      })
+
+      return row
+    })
 
     if (!row) {
       return c.json({ error: "Booking item or traveler not found" }, 404)
@@ -1135,7 +2589,47 @@ export const bookingRoutes = new Hono<Env>()
 
   // 22. DELETE /:id/items/:itemId/travelers/:linkId — Unlink traveler from item
   .delete("/:id/items/:itemId/travelers/:linkId", async (c) => {
-    const row = await bookingsService.removeItemParticipant(c.get("db"), c.req.param("linkId"))
+    const bookingId = c.req.param("id")
+    const itemId = c.req.param("itemId")
+    const linkId = c.req.param("linkId")
+    const item =
+      (await bookingsService.listItems(c.get("db"), bookingId)).find((row) => row.id === itemId) ??
+      null
+
+    if (!item) {
+      return c.json({ error: "Booking item not found" }, 404)
+    }
+
+    const before =
+      (await bookingsService.listItemParticipants(c.get("db"), itemId)).find(
+        (link) => link.id === linkId,
+      ) ?? null
+
+    if (!before) {
+      return c.json({ error: "Booking item traveler link not found" }, 404)
+    }
+
+    const ledgerContext = getActionLedgerRequestContext(c)
+    const row = await c.get("db").transaction(async (tx) => {
+      const row = await bookingsService.removeItemParticipant(tx as PostgresJsDatabase, linkId)
+
+      if (!row) return null
+
+      await appendBookingMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+        action: "delete",
+        actionName: "booking.item_traveler.delete",
+        actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
+        targetType: "booking_item",
+        targetId: itemId,
+        changedFields: [],
+        subject: "booking item traveler link",
+        routeOrToolName: "bookings.items.travelers.delete",
+        evaluatedRisk: "high",
+        summary: "Unlinked traveler from booking item",
+      })
+
+      return row
+    })
 
     if (!row) {
       return c.json({ error: "Booking item traveler link not found" }, 404)
@@ -1279,9 +2773,10 @@ export const bookingRoutes = new Hono<Env>()
   // 28. POST /:id/notes — Add note
   .post("/:id/notes", async (c) => {
     const userId = requireUserId(c)
+    const bookingId = c.req.param("id")
     const row = await bookingsService.createNote(
       c.get("db"),
-      c.req.param("id"),
+      bookingId,
       userId,
       await parseJsonBody(c, insertBookingNoteSchema),
     )
@@ -1289,6 +2784,19 @@ export const bookingRoutes = new Hono<Env>()
     if (!row) {
       return c.json({ error: "Booking not found" }, 404)
     }
+
+    await appendBookingMutationLedgerEntry(c, {
+      action: "create",
+      actionName: "booking.note.create",
+      actionVersion: BOOKING_NOTE_LEDGER_ACTION_VERSION,
+      targetType: "booking",
+      targetId: bookingId,
+      changedFields: ["content"],
+      subject: "booking note",
+      routeOrToolName: "bookings.notes.create",
+      evaluatedRisk: "medium",
+      summary: "Created booking note",
+    })
 
     return c.json({ data: row }, 201)
   })
@@ -1300,6 +2808,19 @@ export const bookingRoutes = new Hono<Env>()
     if (!row) {
       return c.json({ error: "Note not found" }, 404)
     }
+
+    await appendBookingMutationLedgerEntry(c, {
+      action: "delete",
+      actionName: "booking.note.delete",
+      actionVersion: BOOKING_NOTE_LEDGER_ACTION_VERSION,
+      targetType: "booking",
+      targetId: c.req.param("id"),
+      changedFields: [],
+      subject: "booking note",
+      routeOrToolName: "bookings.notes.delete",
+      evaluatedRisk: "medium",
+      summary: "Deleted booking note",
+    })
 
     return c.json({ success: true }, 200)
   })
@@ -1346,3 +2867,13 @@ export const bookingRoutes = new Hono<Env>()
 
 export type BookingRoutes = typeof bookingRoutes
 export type PublicBookingRoutes = typeof publicBookingRoutes
+
+export const __test__ = {
+  bookingActionLedgerQuerySchema,
+  bookingMutationSummary,
+  buildBookingActionLedgerPage,
+  changedBookingItemFields,
+  changedBookingMutationFields,
+  changedBookingTravelDetailFields,
+  changedBookingTravelerFields,
+}

@@ -1,3 +1,7 @@
+import {
+  type ActionLedgerRequestContextValues,
+  appendActionLedgerMutation,
+} from "@voyantjs/action-ledger"
 import { bookings } from "@voyantjs/bookings/schema"
 import type { EventBus } from "@voyantjs/core"
 import { asc, eq } from "drizzle-orm"
@@ -5,6 +9,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { invoiceLineItems, invoices, payments } from "./schema.js"
 import {
+  buildInvoiceIssuedActionLedgerInput,
   type CreateInvoiceFromBookingInput,
   financeService,
   type InvoiceFromBookingData,
@@ -22,6 +27,8 @@ import {
 
 export interface InvoiceIssueRuntime {
   eventBus?: EventBus
+  actionLedgerContext?: ActionLedgerRequestContextValues
+  actionLedgerAuthorizationSource?: string | null
 }
 
 export interface InvoiceIssuedEvent {
@@ -75,11 +82,32 @@ export async function issueInvoiceFromBooking(
   const draft = await financeService.createInvoiceFromBooking(db, input, bookingData)
   if (!draft) return null
 
-  const [issued] = await db
-    .update(invoices)
-    .set({ status: "sent", updatedAt: new Date() })
-    .where(eq(invoices.id, draft.id))
-    .returning()
+  const updateIssuedInvoice = (writer: PostgresJsDatabase) =>
+    writer
+      .update(invoices)
+      .set({ status: "sent", updatedAt: new Date() })
+      .where(eq(invoices.id, draft.id))
+      .returning()
+
+  const actionLedgerContext = runtime.actionLedgerContext
+  const issued = actionLedgerContext
+    ? await db.transaction(async (tx) => {
+        const [row] = await updateIssuedInvoice(tx)
+
+        if (row) {
+          await appendActionLedgerMutation(
+            tx,
+            await buildInvoiceIssuedActionLedgerInput(
+              actionLedgerContext,
+              { invoice: row },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return row
+      })
+    : (await updateIssuedInvoice(db))[0]
 
   const row = issued ?? draft
   await emitIssued(db, runtime, ISSUED_EVENT, row)
@@ -101,11 +129,32 @@ export async function issueProformaFromBooking(
   const draft = await financeService.createInvoiceFromBooking(db, input, bookingData)
   if (!draft) return null
 
-  const [issued] = await db
-    .update(invoices)
-    .set({ invoiceType: "proforma", status: "sent", updatedAt: new Date() })
-    .where(eq(invoices.id, draft.id))
-    .returning()
+  const updateIssuedInvoice = (writer: PostgresJsDatabase) =>
+    writer
+      .update(invoices)
+      .set({ invoiceType: "proforma", status: "sent", updatedAt: new Date() })
+      .where(eq(invoices.id, draft.id))
+      .returning()
+
+  const actionLedgerContext = runtime.actionLedgerContext
+  const issued = actionLedgerContext
+    ? await db.transaction(async (tx) => {
+        const [row] = await updateIssuedInvoice(tx)
+
+        if (row) {
+          await appendActionLedgerMutation(
+            tx,
+            await buildInvoiceIssuedActionLedgerInput(
+              actionLedgerContext,
+              { invoice: row },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return row
+      })
+    : (await updateIssuedInvoice(db))[0]
 
   const row = issued ?? draft
   await emitIssued(db, runtime, PROFORMA_ISSUED_EVENT, row)

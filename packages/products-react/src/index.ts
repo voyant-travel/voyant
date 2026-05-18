@@ -3,8 +3,10 @@ export {
   fetchWithValidation,
   VoyantApiError,
   type VoyantFetcher,
+  withQueryParams,
 } from "./client.js"
 export * from "./hooks/index.js"
+export { listProductActionLedger, type ProductActionLedgerListInput } from "./operations.js"
 export {
   useVoyantProductsContext,
   type VoyantProductsContextValue,
@@ -12,6 +14,8 @@ export {
   type VoyantProductsProviderProps,
 } from "./provider.js"
 export {
+  type ProductActionLedgerListCursor,
+  type ProductActionLedgerListFilters,
   type ProductsListFilters,
   type ProductsListSortDir,
   type ProductsListSortField,
@@ -35,4 +39,5 @@ export {
   getProductTypesQueryOptions,
   getProductVersionsQueryOptions,
 } from "./query-options.js"
+export { getProductActionLedgerQueryOptions } from "./query-options-action-ledger.js"
 export * from "./schemas.js"

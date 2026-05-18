@@ -1,11 +1,13 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { PaymentSessionActionLedgerCard } from "@voyantjs/finance-ui/components/invoice-action-ledger-card"
 import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
 import { Loader2, Wallet } from "lucide-react"
 
 import { api } from "@/lib/api-client"
+import { queryKeys } from "@/lib/query-keys"
 
 interface PendingPaymentSession {
   id: string
@@ -79,6 +81,8 @@ export function BookingPendingPaymentSessions({
       // the operator sees the new status without a hard reload.
       void queryClient.invalidateQueries({ queryKey: ["public-booking-detail", bookingId] })
       void queryClient.invalidateQueries({ queryKey: ["public-booking-payments", bookingId] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.bookings.actionLedger(bookingId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.actionLedger.all })
     },
   })
 
@@ -101,40 +105,40 @@ export function BookingPendingPaymentSessions({
           </div>
         ) : null}
         {sessions.map((session) => (
-          <div
-            key={session.id}
-            className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div className="space-y-0.5">
-              <div className="font-medium">
-                {formatMoney(session.amountCents, session.currency)}
-                {session.provider ? (
-                  <span className="ml-2 text-muted-foreground text-xs uppercase">
-                    {session.provider}
-                  </span>
+          <div key={session.id} className="flex flex-col gap-3 rounded-md border p-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-0.5">
+                <div className="font-medium">
+                  {formatMoney(session.amountCents, session.currency)}
+                  {session.provider ? (
+                    <span className="ml-2 text-muted-foreground text-xs uppercase">
+                      {session.provider}
+                    </span>
+                  ) : null}
+                </div>
+                {session.notes ? (
+                  <div className="text-muted-foreground text-xs">{session.notes}</div>
                 ) : null}
+                <div className="text-muted-foreground text-xs">
+                  Created {new Date(session.createdAt).toLocaleString()}
+                </div>
               </div>
-              {session.notes ? (
-                <div className="text-muted-foreground text-xs">{session.notes}</div>
-              ) : null}
-              <div className="text-muted-foreground text-xs">
-                Created {new Date(session.createdAt).toLocaleString()}
-              </div>
+              <Button
+                size="sm"
+                onClick={() => markReceived.mutate(session.id)}
+                disabled={markReceived.isPending}
+              >
+                {markReceived.isPending && markReceived.variables === session.id ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    Marking…
+                  </>
+                ) : (
+                  "Mark payment received"
+                )}
+              </Button>
             </div>
-            <Button
-              size="sm"
-              onClick={() => markReceived.mutate(session.id)}
-              disabled={markReceived.isPending}
-            >
-              {markReceived.isPending && markReceived.variables === session.id ? (
-                <>
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                  Marking…
-                </>
-              ) : (
-                "Mark payment received"
-              )}
-            </Button>
+            <PaymentSessionActionLedgerCard paymentSessionId={session.id} limit={5} />
           </div>
         ))}
         {markReceived.error ? (

@@ -240,6 +240,7 @@ export const financeUiRo = {
       deleteAttachmentShort: "Sterge",
       deleteAttachmentTitle: "Stergi acest atasament?",
       deleteAttachmentDescription: "Aceasta actiune elimina inregistrarea atasamentului.",
+      loadOlderActionLedger: "Incarca mai vechi",
     },
     titles: {
       summary: "Detalii factura",
@@ -249,6 +250,7 @@ export const financeUiRo = {
       creditNotes: "Note de credit",
       notes: "Note",
       attachments: "Atasamente",
+      actionLedger: "Jurnal actiuni",
     },
     fields: {
       currency: "Moneda",
@@ -294,6 +296,8 @@ export const financeUiRo = {
       noCreditNotes: "Nu exista inca note de credit.",
       noNotes: "Nu exista inca note.",
       noAttachments: "Nu exista inca atasamente.",
+      noActionLedger: "Nu exista inca intrari in jurnal.",
+      actionLedgerLoadFailed: "Incarcarea intrarilor din jurnal a esuat.",
     },
     placeholders: {
       note: "Adauga o nota interna...",

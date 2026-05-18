@@ -13,6 +13,7 @@ export default defineConfig({
   schema: [
     // Core IAM + infra schemas
     "../../packages/db/src/schema/index.ts",
+    "../../packages/action-ledger/src/schema.ts",
     // Module schemas — add/remove based on which modules this template uses
     "../../packages/crm/src/schema.ts",
     "../../packages/availability/src/schema.ts",

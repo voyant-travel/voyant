@@ -1,3 +1,7 @@
+import {
+  type ActionLedgerRequestContextValues,
+  appendActionLedgerMutation,
+} from "@voyantjs/action-ledger"
 import type { EventBus } from "@voyantjs/core"
 import {
   and,
@@ -18,6 +22,7 @@ import {
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
+import { BOOKING_STATUS_CAPABILITIES } from "./action-ledger-capabilities.js"
 import { availabilitySlotsRef } from "./availability-ref.js"
 import { exchangeRatesRef } from "./markets-ref.js"
 import {
@@ -223,10 +228,65 @@ type OptionUnitReference = typeof optionUnitsRef.$inferSelect
  */
 export interface BookingServiceRuntime {
   eventBus?: EventBus
+  actionLedgerContext?: ActionLedgerRequestContextValues
+  actionLedgerAuthorizationSource?: string | null
+  actionLedgerCausationActionId?: string | null
+  actionLedgerApprovalId?: string | null
+  actionLedgerIdempotencyScope?: string | null
+  actionLedgerIdempotencyKey?: string | null
+  actionLedgerIdempotencyFingerprint?: string | null
   expirePaymentSessionsForBooking?: (
     db: PostgresJsDatabase,
     bookingId: string,
   ) => Promise<void> | void
+}
+
+type BookingStatusActionName =
+  | "booking.status.confirm"
+  | "booking.status.expire"
+  | "booking.status.cancel"
+  | "booking.status.start"
+  | "booking.status.complete"
+  | "booking.status.override"
+
+async function appendBookingStatusMutationLedger(
+  db: PostgresJsDatabase,
+  runtime: BookingServiceRuntime,
+  input: {
+    actionName: BookingStatusActionName
+    routeOrToolName: string
+    capabilityId: string
+    bookingId: string
+    fromStatus: BookingStatus
+    toStatus: BookingStatus
+    evaluatedRisk?: "medium" | "high"
+  },
+) {
+  if (!runtime.actionLedgerContext) return
+
+  await appendActionLedgerMutation(db, {
+    context: runtime.actionLedgerContext,
+    actionName: input.actionName,
+    actionVersion: "v1",
+    actionKind: "update",
+    status: "succeeded",
+    evaluatedRisk: input.evaluatedRisk ?? "medium",
+    targetType: "booking",
+    targetId: input.bookingId,
+    routeOrToolName: input.routeOrToolName,
+    capabilityId: input.capabilityId,
+    capabilityVersion: "v1",
+    authorizationSource: runtime.actionLedgerAuthorizationSource ?? "bookings.status.route",
+    causationActionId: runtime.actionLedgerCausationActionId ?? null,
+    approvalId: runtime.actionLedgerApprovalId ?? null,
+    idempotencyScope: runtime.actionLedgerIdempotencyScope ?? null,
+    idempotencyKey: runtime.actionLedgerIdempotencyKey ?? null,
+    idempotencyFingerprint: runtime.actionLedgerIdempotencyFingerprint ?? null,
+    mutationDetail: {
+      summary: `Booking status changed from ${input.fromStatus} to ${input.toStatus}`,
+      reversalKind: "none",
+    },
+  })
 }
 
 /**
@@ -3252,6 +3312,15 @@ export const bookingsService = {
           })
         }
 
+        await appendBookingStatusMutationLedger(tx as PostgresJsDatabase, runtime, {
+          actionName: "booking.status.confirm",
+          routeOrToolName: "bookings.confirm",
+          capabilityId: BOOKING_STATUS_CAPABILITIES.confirm.id,
+          bookingId: id,
+          fromStatus: booking.status,
+          toStatus: "confirmed",
+        })
+
         return { status: "ok" as const, booking: row ?? null }
       })
 
@@ -3400,6 +3469,15 @@ export const bookingsService = {
             content: data.note,
           })
         }
+
+        await appendBookingStatusMutationLedger(tx as PostgresJsDatabase, runtime, {
+          actionName: "booking.status.expire",
+          routeOrToolName: "bookings.expire",
+          capabilityId: BOOKING_STATUS_CAPABILITIES.expire.id,
+          bookingId: id,
+          fromStatus: booking.status,
+          toStatus: "expired",
+        })
 
         return { status: "ok" as const, booking: row ?? null }
       })
@@ -3755,6 +3833,16 @@ export const bookingsService = {
         // Clean up any booking-group membership (dissolve if ≤1 active members remain).
         await cleanupGroupOnBookingCancelled(tx as PostgresJsDatabase, id)
 
+        await appendBookingStatusMutationLedger(tx as PostgresJsDatabase, runtime, {
+          actionName: "booking.status.cancel",
+          routeOrToolName: "bookings.cancel",
+          capabilityId: BOOKING_STATUS_CAPABILITIES.cancel.id,
+          bookingId: id,
+          fromStatus: booking.status,
+          toStatus: "cancelled",
+          evaluatedRisk: "high",
+        })
+
         return { status: "ok" as const, booking: row ?? null, previousStatus }
       })
 
@@ -3834,6 +3922,15 @@ export const bookingsService = {
             content: data.note,
           })
         }
+
+        await appendBookingStatusMutationLedger(tx as PostgresJsDatabase, runtime, {
+          actionName: "booking.status.start",
+          routeOrToolName: "bookings.start",
+          capabilityId: BOOKING_STATUS_CAPABILITIES.start.id,
+          bookingId: id,
+          fromStatus: booking.status,
+          toStatus: "in_progress",
+        })
 
         return { status: "ok" as const, booking: row ?? null }
       })
@@ -3925,6 +4022,15 @@ export const bookingsService = {
           })
         }
 
+        await appendBookingStatusMutationLedger(tx as PostgresJsDatabase, runtime, {
+          actionName: "booking.status.complete",
+          routeOrToolName: "bookings.complete",
+          capabilityId: BOOKING_STATUS_CAPABILITIES.complete.id,
+          bookingId: id,
+          fromStatus: booking.status,
+          toStatus: "completed",
+        })
+
         return { status: "ok" as const, booking: row ?? null }
       })
 
@@ -4012,6 +4118,16 @@ export const bookingsService = {
             content: data.note,
           })
         }
+
+        await appendBookingStatusMutationLedger(tx as PostgresJsDatabase, runtime, {
+          actionName: "booking.status.override",
+          routeOrToolName: "bookings.override-status",
+          capabilityId: BOOKING_STATUS_CAPABILITIES.override.id,
+          bookingId: id,
+          fromStatus: booking.status,
+          toStatus: data.status,
+          evaluatedRisk: "high",
+        })
 
         return {
           status: "ok" as const,

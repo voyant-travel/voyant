@@ -22,6 +22,13 @@ export const PREFIXES = {
   domains: "dom",
   email_domain_records: "emdr",
   idempotency_keys: "ikey",
+  action_ledger_entries: "alge",
+  action_ledger_outbox: "algo",
+  action_ledger_payloads: "algp",
+  action_delegations: "aldg",
+  action_mutation_details: "almd",
+  action_sensitive_read_details: "alsr",
+  action_approvals: "alap",
 
   // --- VOYANT MODULES ---
   communication_log: "clog",

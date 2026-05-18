@@ -1,0 +1,105 @@
+{
+  "name": "@voyantjs/action-ledger",
+  "version": "0.50.2",
+  "description": "Action ledger schema, append-only write helpers, and idempotency primitives for Voyant control surfaces.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./canary": "./src/canary.ts",
+    "./capability": "./src/capability.ts",
+    "./schema": "./src/schema.ts",
+    "./service": "./src/service.ts",
+    "./fingerprint": "./src/fingerprint.ts",
+    "./timeline": "./src/timeline.ts",
+    "./request-context": "./src/request-context.ts",
+    "./routes": "./src/routes.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/ tests/",
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build"
+  },
+  "dependencies": {
+    "@voyantjs/core": "workspace:*",
+    "@voyantjs/db": "workspace:*",
+    "@voyantjs/hono": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.10",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./canary": {
+        "types": "./dist/canary.d.ts",
+        "import": "./dist/canary.js",
+        "default": "./dist/canary.js"
+      },
+      "./capability": {
+        "types": "./dist/capability.d.ts",
+        "import": "./dist/capability.js",
+        "default": "./dist/capability.js"
+      },
+      "./schema": {
+        "types": "./dist/schema.d.ts",
+        "import": "./dist/schema.js",
+        "default": "./dist/schema.js"
+      },
+      "./service": {
+        "types": "./dist/service.d.ts",
+        "import": "./dist/service.js",
+        "default": "./dist/service.js"
+      },
+      "./fingerprint": {
+        "types": "./dist/fingerprint.d.ts",
+        "import": "./dist/fingerprint.js",
+        "default": "./dist/fingerprint.js"
+      },
+      "./timeline": {
+        "types": "./dist/timeline.d.ts",
+        "import": "./dist/timeline.js",
+        "default": "./dist/timeline.js"
+      },
+      "./request-context": {
+        "types": "./dist/request-context.d.ts",
+        "import": "./dist/request-context.js",
+        "default": "./dist/request-context.js"
+      },
+      "./routes": {
+        "types": "./dist/routes.d.ts",
+        "import": "./dist/routes.js",
+        "default": "./dist/routes.js"
+      }
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyantjs/voyant.git",
+    "directory": "packages/action-ledger"
+  },
+  "voyant": {
+    "schema": "./schema",
+    "requiresSchemas": [
+      "@voyantjs/db"
+    ]
+  }
+}

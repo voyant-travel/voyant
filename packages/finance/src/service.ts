@@ -1,3 +1,7 @@
+import {
+  type ActionLedgerRequestContextValues,
+  appendActionLedgerMutation,
+} from "@voyantjs/action-ledger"
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
 import type { EventBus } from "@voyantjs/core"
 import { renderStructuredTemplate } from "@voyantjs/utils/template-renderer"
@@ -30,9 +34,82 @@ import {
   taxPolicyRules,
   taxRegimes,
 } from "./schema.js"
+import {
+  buildBookingGuaranteeCreateActionLedgerInput,
+  buildBookingGuaranteeDeleteActionLedgerInput,
+  buildBookingGuaranteeUpdateActionLedgerInput,
+  buildBookingPaymentScheduleCreateActionLedgerInput,
+  buildBookingPaymentScheduleDeleteActionLedgerInput,
+  buildBookingPaymentScheduleUpdateActionLedgerInput,
+  buildCreditNoteCreationActionLedgerInput,
+  buildCreditNoteLineItemCreateActionLedgerInput,
+  buildCreditNoteUpdateActionLedgerInput,
+  buildInvoiceDeleteActionLedgerInput,
+  buildInvoiceLineItemCreateActionLedgerInput,
+  buildInvoiceLineItemDeleteActionLedgerInput,
+  buildInvoiceLineItemUpdateActionLedgerInput,
+  buildInvoiceUpdateActionLedgerInput,
+  buildPaymentAuthorizationCreateActionLedgerInput,
+  buildPaymentAuthorizationDeleteActionLedgerInput,
+  buildPaymentAuthorizationUpdateActionLedgerInput,
+  buildPaymentCaptureCreateActionLedgerInput,
+  buildPaymentCaptureDeleteActionLedgerInput,
+  buildPaymentCaptureUpdateActionLedgerInput,
+  buildPaymentInstrumentCreateActionLedgerInput,
+  buildPaymentInstrumentDeleteActionLedgerInput,
+  buildPaymentInstrumentUpdateActionLedgerInput,
+  buildPaymentSessionCancelledActionLedgerInput,
+  buildPaymentSessionCompletionActionLedgerInput,
+  buildPaymentSessionCreateActionLedgerInput,
+  buildPaymentSessionExpiredActionLedgerInput,
+  buildPaymentSessionFailedActionLedgerInput,
+  buildPaymentSessionRequiresRedirectActionLedgerInput,
+  buildPaymentSessionUpdateActionLedgerInput,
+  buildRecordPaymentActionLedgerInput,
+  buildSupplierPaymentCreateActionLedgerInput,
+  buildSupplierPaymentUpdateActionLedgerInput,
+} from "./service-action-ledger.js"
 import { getFinanceAggregates } from "./service-aggregates.js"
 import type { InvoiceSettledEvent } from "./service-settlement.js"
 import { vouchersService } from "./service-vouchers.js"
+
+export {
+  buildBookingGuaranteeCreateActionLedgerInput,
+  buildBookingGuaranteeDeleteActionLedgerInput,
+  buildBookingGuaranteeUpdateActionLedgerInput,
+  buildBookingPaymentScheduleCreateActionLedgerInput,
+  buildBookingPaymentScheduleDeleteActionLedgerInput,
+  buildBookingPaymentScheduleUpdateActionLedgerInput,
+  buildCreditNoteCreationActionLedgerInput,
+  buildCreditNoteLineItemCreateActionLedgerInput,
+  buildCreditNoteUpdateActionLedgerInput,
+  buildInvoiceDeleteActionLedgerInput,
+  buildInvoiceIssuedActionLedgerInput,
+  buildInvoiceLineItemCreateActionLedgerInput,
+  buildInvoiceLineItemDeleteActionLedgerInput,
+  buildInvoiceLineItemUpdateActionLedgerInput,
+  buildInvoiceUpdateActionLedgerInput,
+  buildPaymentAuthorizationCreateActionLedgerInput,
+  buildPaymentAuthorizationDeleteActionLedgerInput,
+  buildPaymentAuthorizationUpdateActionLedgerInput,
+  buildPaymentCaptureCreateActionLedgerInput,
+  buildPaymentCaptureDeleteActionLedgerInput,
+  buildPaymentCaptureUpdateActionLedgerInput,
+  buildPaymentInstrumentCreateActionLedgerInput,
+  buildPaymentInstrumentDeleteActionLedgerInput,
+  buildPaymentInstrumentUpdateActionLedgerInput,
+  buildPaymentSessionCancelledActionLedgerInput,
+  buildPaymentSessionCompletionActionLedgerInput,
+  buildPaymentSessionCreateActionLedgerInput,
+  buildPaymentSessionExpiredActionLedgerInput,
+  buildPaymentSessionFailedActionLedgerInput,
+  buildPaymentSessionRequiresRedirectActionLedgerInput,
+  buildPaymentSessionUpdateActionLedgerInput,
+  buildRecordPaymentActionLedgerInput,
+  buildSupplierPaymentCreateActionLedgerInput,
+  buildSupplierPaymentUpdateActionLedgerInput,
+} from "./service-action-ledger.js"
+
 import type {
   agingReportQuerySchema,
   applyDefaultBookingPaymentPlanSchema,
@@ -388,6 +465,8 @@ async function paginate<T extends object>(
  */
 export interface FinanceServiceRuntime {
   eventBus?: EventBus
+  actionLedgerContext?: ActionLedgerRequestContextValues
+  actionLedgerAuthorizationSource?: string | null
 }
 
 export interface BookingPaymentSchedulePaidEvent {
@@ -414,6 +493,8 @@ export interface PaymentCompletedEvent {
   currency: string
   provider: string | null
 }
+
+type BookingGuaranteeRecord = typeof bookingGuarantees.$inferSelect
 
 export interface BindInvoiceRenditionInput {
   templateId?: string | null
@@ -634,8 +715,37 @@ export const financeService = {
     return row ?? null
   },
 
-  async createPaymentInstrument(db: PostgresJsDatabase, data: CreatePaymentInstrumentInput) {
-    const [row] = await db.insert(paymentInstruments).values(data).returning()
+  async createPaymentInstrument(
+    db: PostgresJsDatabase,
+    data: CreatePaymentInstrumentInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const createInstrument = (writer: PostgresJsDatabase) =>
+      writer.insert(paymentInstruments).values(data).returning()
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const created = await createInstrument(tx)
+
+        if (created[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildPaymentInstrumentCreateActionLedgerInput(
+              actionLedgerContext,
+              { instrument: created[0] },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return created
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await createInstrument(db)
     return row ?? null
   },
 
@@ -643,16 +753,73 @@ export const financeService = {
     db: PostgresJsDatabase,
     id: string,
     data: UpdatePaymentInstrumentInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [row] = await db
-      .update(paymentInstruments)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(paymentInstruments.id, id))
-      .returning()
+    const updateInstrument = (writer: PostgresJsDatabase) =>
+      writer
+        .update(paymentInstruments)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(paymentInstruments.id, id))
+        .returning()
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await updateInstrument(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildPaymentInstrumentUpdateActionLedgerInput(
+              actionLedgerContext,
+              { instrument: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await updateInstrument(db)
     return row ?? null
   },
 
-  async deletePaymentInstrument(db: PostgresJsDatabase, id: string) {
+  async deletePaymentInstrument(
+    db: PostgresJsDatabase,
+    id: string,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      return db.transaction(async (tx) => {
+        const [existing] = await tx
+          .select()
+          .from(paymentInstruments)
+          .where(eq(paymentInstruments.id, id))
+          .limit(1)
+
+        if (!existing) {
+          return null
+        }
+
+        await tx.delete(paymentInstruments).where(eq(paymentInstruments.id, id))
+        await appendActionLedgerMutation(
+          tx,
+          buildPaymentInstrumentDeleteActionLedgerInput(
+            actionLedgerContext,
+            { instrument: existing },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+
+        return { id: existing.id }
+      })
+    }
+
     const [row] = await db
       .delete(paymentInstruments)
       .where(eq(paymentInstruments.id, id))
@@ -710,7 +877,11 @@ export const financeService = {
     return row ?? null
   },
 
-  async createPaymentSession(db: PostgresJsDatabase, data: CreatePaymentSessionInput) {
+  async createPaymentSession(
+    db: PostgresJsDatabase,
+    data: CreatePaymentSessionInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
     if (data.idempotencyKey) {
       const [existing] = await db
         .select()
@@ -724,52 +895,105 @@ export const financeService = {
     }
 
     const target = derivePaymentSessionTarget(data)
-    const [row] = await db
-      .insert(paymentSessions)
-      .values({
-        ...data,
-        ...target,
-        paymentInstrumentId: data.paymentInstrumentId ?? null,
-        paymentAuthorizationId: data.paymentAuthorizationId ?? null,
-        paymentCaptureId: data.paymentCaptureId ?? null,
-        paymentId: data.paymentId ?? null,
-        completedAt: toTimestamp(data.completedAt),
-        failedAt: toTimestamp(data.failedAt),
-        cancelledAt: toTimestamp(data.cancelledAt),
-        expiredAt: toTimestamp(data.expiredAt),
-        expiresAt: toTimestamp(data.expiresAt),
-      })
-      .returning()
+    const createSession = (writer: PostgresJsDatabase) =>
+      writer
+        .insert(paymentSessions)
+        .values({
+          ...data,
+          ...target,
+          paymentInstrumentId: data.paymentInstrumentId ?? null,
+          paymentAuthorizationId: data.paymentAuthorizationId ?? null,
+          paymentCaptureId: data.paymentCaptureId ?? null,
+          paymentId: data.paymentId ?? null,
+          completedAt: toTimestamp(data.completedAt),
+          failedAt: toTimestamp(data.failedAt),
+          cancelledAt: toTimestamp(data.cancelledAt),
+          expiredAt: toTimestamp(data.expiredAt),
+          expiresAt: toTimestamp(data.expiresAt),
+        })
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const created = await createSession(tx)
+
+        if (created[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            await buildPaymentSessionCreateActionLedgerInput(
+              actionLedgerContext,
+              { session: created[0] },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return created
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await createSession(db)
     return row ?? null
   },
 
-  async updatePaymentSession(db: PostgresJsDatabase, id: string, data: UpdatePaymentSessionInput) {
+  async updatePaymentSession(
+    db: PostgresJsDatabase,
+    id: string,
+    data: UpdatePaymentSessionInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
     const target = derivePaymentSessionTarget(data)
-    const [row] = await db
-      .update(paymentSessions)
-      .set({
-        ...data,
-        ...target,
-        paymentInstrumentId:
-          data.paymentInstrumentId === undefined ? undefined : (data.paymentInstrumentId ?? null),
-        paymentAuthorizationId:
-          data.paymentAuthorizationId === undefined
-            ? undefined
-            : (data.paymentAuthorizationId ?? null),
-        paymentCaptureId:
-          data.paymentCaptureId === undefined ? undefined : (data.paymentCaptureId ?? null),
-        paymentId: data.paymentId === undefined ? undefined : (data.paymentId ?? null),
-        completedAt: data.completedAt === undefined ? undefined : toTimestamp(data.completedAt),
-        failedAt: data.failedAt === undefined ? undefined : toTimestamp(data.failedAt),
-        cancelledAt: data.cancelledAt === undefined ? undefined : toTimestamp(data.cancelledAt),
-        expiredAt: data.expiredAt === undefined ? undefined : toTimestamp(data.expiredAt),
-        expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
-        updatedAt: new Date(),
-      })
-      .where(eq(paymentSessions.id, id))
-      .returning()
+    const updateSession = (writer: PostgresJsDatabase) =>
+      writer
+        .update(paymentSessions)
+        .set({
+          ...data,
+          ...target,
+          paymentInstrumentId:
+            data.paymentInstrumentId === undefined ? undefined : (data.paymentInstrumentId ?? null),
+          paymentAuthorizationId:
+            data.paymentAuthorizationId === undefined
+              ? undefined
+              : (data.paymentAuthorizationId ?? null),
+          paymentCaptureId:
+            data.paymentCaptureId === undefined ? undefined : (data.paymentCaptureId ?? null),
+          paymentId: data.paymentId === undefined ? undefined : (data.paymentId ?? null),
+          completedAt: data.completedAt === undefined ? undefined : toTimestamp(data.completedAt),
+          failedAt: data.failedAt === undefined ? undefined : toTimestamp(data.failedAt),
+          cancelledAt: data.cancelledAt === undefined ? undefined : toTimestamp(data.cancelledAt),
+          expiredAt: data.expiredAt === undefined ? undefined : toTimestamp(data.expiredAt),
+          expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentSessions.id, id))
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await updateSession(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildPaymentSessionUpdateActionLedgerInput(
+              actionLedgerContext,
+              { session: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await updateSession(db)
     return row ?? null
   },
 
@@ -777,84 +1001,196 @@ export const financeService = {
     db: PostgresJsDatabase,
     id: string,
     data: MarkPaymentSessionRequiresRedirectInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [row] = await db
-      .update(paymentSessions)
-      .set({
-        status: "requires_redirect",
-        provider: data.provider ?? undefined,
-        providerSessionId: data.providerSessionId ?? undefined,
-        providerPaymentId: data.providerPaymentId ?? undefined,
-        externalReference: data.externalReference ?? undefined,
-        redirectUrl: data.redirectUrl,
-        returnUrl: data.returnUrl ?? undefined,
-        cancelUrl: data.cancelUrl ?? undefined,
-        callbackUrl: data.callbackUrl ?? undefined,
-        expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
-        providerPayload: data.providerPayload ?? undefined,
-        metadata: data.metadata ?? undefined,
-        notes: data.notes ?? undefined,
-        updatedAt: new Date(),
-      })
-      .where(eq(paymentSessions.id, id))
-      .returning()
+    const markRequiresRedirect = (writer: PostgresJsDatabase) =>
+      writer
+        .update(paymentSessions)
+        .set({
+          status: "requires_redirect",
+          provider: data.provider ?? undefined,
+          providerSessionId: data.providerSessionId ?? undefined,
+          providerPaymentId: data.providerPaymentId ?? undefined,
+          externalReference: data.externalReference ?? undefined,
+          redirectUrl: data.redirectUrl,
+          returnUrl: data.returnUrl ?? undefined,
+          cancelUrl: data.cancelUrl ?? undefined,
+          callbackUrl: data.callbackUrl ?? undefined,
+          expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
+          providerPayload: data.providerPayload ?? undefined,
+          metadata: data.metadata ?? undefined,
+          notes: data.notes ?? undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentSessions.id, id))
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await markRequiresRedirect(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildPaymentSessionRequiresRedirectActionLedgerInput(
+              actionLedgerContext,
+              { session: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await markRequiresRedirect(db)
     return row ?? null
   },
 
-  async failPaymentSession(db: PostgresJsDatabase, id: string, data: FailPaymentSessionInput) {
-    const [row] = await db
-      .update(paymentSessions)
-      .set({
-        status: "failed",
-        providerSessionId: data.providerSessionId ?? undefined,
-        providerPaymentId: data.providerPaymentId ?? undefined,
-        externalReference: data.externalReference ?? undefined,
-        failureCode: data.failureCode ?? undefined,
-        failureMessage: data.failureMessage ?? undefined,
-        failedAt: new Date(),
-        providerPayload: data.providerPayload ?? undefined,
-        metadata: data.metadata ?? undefined,
-        notes: data.notes ?? undefined,
-        updatedAt: new Date(),
-      })
-      .where(eq(paymentSessions.id, id))
-      .returning()
+  async failPaymentSession(
+    db: PostgresJsDatabase,
+    id: string,
+    data: FailPaymentSessionInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const failSession = (writer: PostgresJsDatabase) =>
+      writer
+        .update(paymentSessions)
+        .set({
+          status: "failed",
+          providerSessionId: data.providerSessionId ?? undefined,
+          providerPaymentId: data.providerPaymentId ?? undefined,
+          externalReference: data.externalReference ?? undefined,
+          failureCode: data.failureCode ?? undefined,
+          failureMessage: data.failureMessage ?? undefined,
+          failedAt: new Date(),
+          providerPayload: data.providerPayload ?? undefined,
+          metadata: data.metadata ?? undefined,
+          notes: data.notes ?? undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentSessions.id, id))
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await failSession(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildPaymentSessionFailedActionLedgerInput(
+              actionLedgerContext,
+              { session: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await failSession(db)
     return row ?? null
   },
 
-  async cancelPaymentSession(db: PostgresJsDatabase, id: string, data: CancelPaymentSessionInput) {
-    const [row] = await db
-      .update(paymentSessions)
-      .set({
-        status: "cancelled",
-        cancelledAt: data.cancelledAt ? toTimestamp(data.cancelledAt) : new Date(),
-        providerPayload: data.providerPayload ?? undefined,
-        metadata: data.metadata ?? undefined,
-        notes: data.notes ?? undefined,
-        updatedAt: new Date(),
-      })
-      .where(eq(paymentSessions.id, id))
-      .returning()
+  async cancelPaymentSession(
+    db: PostgresJsDatabase,
+    id: string,
+    data: CancelPaymentSessionInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const cancelSession = (writer: PostgresJsDatabase) =>
+      writer
+        .update(paymentSessions)
+        .set({
+          status: "cancelled",
+          cancelledAt: data.cancelledAt ? toTimestamp(data.cancelledAt) : new Date(),
+          providerPayload: data.providerPayload ?? undefined,
+          metadata: data.metadata ?? undefined,
+          notes: data.notes ?? undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentSessions.id, id))
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await cancelSession(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildPaymentSessionCancelledActionLedgerInput(
+              actionLedgerContext,
+              { session: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await cancelSession(db)
     return row ?? null
   },
 
-  async expirePaymentSession(db: PostgresJsDatabase, id: string, data: ExpirePaymentSessionInput) {
-    const [row] = await db
-      .update(paymentSessions)
-      .set({
-        status: "expired",
-        expiredAt: data.expiredAt ? toTimestamp(data.expiredAt) : new Date(),
-        providerPayload: data.providerPayload ?? undefined,
-        metadata: data.metadata ?? undefined,
-        notes: data.notes ?? undefined,
-        updatedAt: new Date(),
-      })
-      .where(eq(paymentSessions.id, id))
-      .returning()
+  async expirePaymentSession(
+    db: PostgresJsDatabase,
+    id: string,
+    data: ExpirePaymentSessionInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const expireSession = (writer: PostgresJsDatabase) =>
+      writer
+        .update(paymentSessions)
+        .set({
+          status: "expired",
+          expiredAt: data.expiredAt ? toTimestamp(data.expiredAt) : new Date(),
+          providerPayload: data.providerPayload ?? undefined,
+          metadata: data.metadata ?? undefined,
+          notes: data.notes ?? undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentSessions.id, id))
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await expireSession(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildPaymentSessionExpiredActionLedgerInput(
+              actionLedgerContext,
+              { session: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await expireSession(db)
     return row ?? null
   },
 
@@ -1078,6 +1414,23 @@ export const financeService = {
         .where(eq(paymentSessions.id, id))
         .returning()
 
+      if (updated && runtime.actionLedgerContext) {
+        await appendActionLedgerMutation(
+          tx,
+          await buildPaymentSessionCompletionActionLedgerInput(
+            runtime.actionLedgerContext,
+            {
+              session: updated,
+              status: data.status,
+              paymentId,
+            },
+            {
+              authorizationSource: runtime.actionLedgerAuthorizationSource,
+            },
+          ),
+        )
+      }
+
       return {
         updated: updated ?? null,
         settlement: settlementForEmit,
@@ -1152,16 +1505,45 @@ export const financeService = {
     return row ?? null
   },
 
-  async createPaymentAuthorization(db: PostgresJsDatabase, data: CreatePaymentAuthorizationInput) {
-    const [row] = await db
-      .insert(paymentAuthorizations)
-      .values({
-        ...data,
-        authorizedAt: toTimestamp(data.authorizedAt),
-        expiresAt: toTimestamp(data.expiresAt),
-        voidedAt: toTimestamp(data.voidedAt),
+  async createPaymentAuthorization(
+    db: PostgresJsDatabase,
+    data: CreatePaymentAuthorizationInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const createAuthorization = (writer: PostgresJsDatabase) =>
+      writer
+        .insert(paymentAuthorizations)
+        .values({
+          ...data,
+          authorizedAt: toTimestamp(data.authorizedAt),
+          expiresAt: toTimestamp(data.expiresAt),
+          voidedAt: toTimestamp(data.voidedAt),
+        })
+        .returning()
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const created = await createAuthorization(tx)
+
+        if (created[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            await buildPaymentAuthorizationCreateActionLedgerInput(
+              actionLedgerContext,
+              { authorization: created[0] },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return created
       })
-      .returning()
+
+      return row ?? null
+    }
+
+    const [row] = await createAuthorization(db)
     return row ?? null
   },
 
@@ -1169,22 +1551,80 @@ export const financeService = {
     db: PostgresJsDatabase,
     id: string,
     data: UpdatePaymentAuthorizationInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [row] = await db
-      .update(paymentAuthorizations)
-      .set({
-        ...data,
-        authorizedAt: data.authorizedAt === undefined ? undefined : toTimestamp(data.authorizedAt),
-        expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
-        voidedAt: data.voidedAt === undefined ? undefined : toTimestamp(data.voidedAt),
-        updatedAt: new Date(),
+    const updateAuthorization = (writer: PostgresJsDatabase) =>
+      writer
+        .update(paymentAuthorizations)
+        .set({
+          ...data,
+          authorizedAt:
+            data.authorizedAt === undefined ? undefined : toTimestamp(data.authorizedAt),
+          expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
+          voidedAt: data.voidedAt === undefined ? undefined : toTimestamp(data.voidedAt),
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentAuthorizations.id, id))
+        .returning()
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await updateAuthorization(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildPaymentAuthorizationUpdateActionLedgerInput(
+              actionLedgerContext,
+              { authorization: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
       })
-      .where(eq(paymentAuthorizations.id, id))
-      .returning()
+
+      return row ?? null
+    }
+
+    const [row] = await updateAuthorization(db)
     return row ?? null
   },
 
-  async deletePaymentAuthorization(db: PostgresJsDatabase, id: string) {
+  async deletePaymentAuthorization(
+    db: PostgresJsDatabase,
+    id: string,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      return db.transaction(async (tx) => {
+        const [existing] = await tx
+          .select()
+          .from(paymentAuthorizations)
+          .where(eq(paymentAuthorizations.id, id))
+          .limit(1)
+
+        if (!existing) {
+          return null
+        }
+
+        await tx.delete(paymentAuthorizations).where(eq(paymentAuthorizations.id, id))
+        await appendActionLedgerMutation(
+          tx,
+          buildPaymentAuthorizationDeleteActionLedgerInput(
+            actionLedgerContext,
+            { authorization: existing },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+
+        return { id: existing.id }
+      })
+    }
+
     const [row] = await db
       .delete(paymentAuthorizations)
       .where(eq(paymentAuthorizations.id, id))
@@ -1218,33 +1658,123 @@ export const financeService = {
     return row ?? null
   },
 
-  async createPaymentCapture(db: PostgresJsDatabase, data: CreatePaymentCaptureInput) {
-    const [row] = await db
-      .insert(paymentCaptures)
-      .values({
-        ...data,
-        capturedAt: toTimestamp(data.capturedAt),
-        settledAt: toTimestamp(data.settledAt),
+  async createPaymentCapture(
+    db: PostgresJsDatabase,
+    data: CreatePaymentCaptureInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const createCapture = (writer: PostgresJsDatabase) =>
+      writer
+        .insert(paymentCaptures)
+        .values({
+          ...data,
+          capturedAt: toTimestamp(data.capturedAt),
+          settledAt: toTimestamp(data.settledAt),
+        })
+        .returning()
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const created = await createCapture(tx)
+
+        if (created[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            await buildPaymentCaptureCreateActionLedgerInput(
+              actionLedgerContext,
+              { capture: created[0] },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return created
       })
-      .returning()
+
+      return row ?? null
+    }
+
+    const [row] = await createCapture(db)
     return row ?? null
   },
 
-  async updatePaymentCapture(db: PostgresJsDatabase, id: string, data: UpdatePaymentCaptureInput) {
-    const [row] = await db
-      .update(paymentCaptures)
-      .set({
-        ...data,
-        capturedAt: data.capturedAt === undefined ? undefined : toTimestamp(data.capturedAt),
-        settledAt: data.settledAt === undefined ? undefined : toTimestamp(data.settledAt),
-        updatedAt: new Date(),
+  async updatePaymentCapture(
+    db: PostgresJsDatabase,
+    id: string,
+    data: UpdatePaymentCaptureInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const updateCapture = (writer: PostgresJsDatabase) =>
+      writer
+        .update(paymentCaptures)
+        .set({
+          ...data,
+          capturedAt: data.capturedAt === undefined ? undefined : toTimestamp(data.capturedAt),
+          settledAt: data.settledAt === undefined ? undefined : toTimestamp(data.settledAt),
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentCaptures.id, id))
+        .returning()
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await updateCapture(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildPaymentCaptureUpdateActionLedgerInput(
+              actionLedgerContext,
+              { capture: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
       })
-      .where(eq(paymentCaptures.id, id))
-      .returning()
+
+      return row ?? null
+    }
+
+    const [row] = await updateCapture(db)
     return row ?? null
   },
 
-  async deletePaymentCapture(db: PostgresJsDatabase, id: string) {
+  async deletePaymentCapture(
+    db: PostgresJsDatabase,
+    id: string,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      return db.transaction(async (tx) => {
+        const [existing] = await tx
+          .select()
+          .from(paymentCaptures)
+          .where(eq(paymentCaptures.id, id))
+          .limit(1)
+
+        if (!existing) {
+          return null
+        }
+
+        await tx.delete(paymentCaptures).where(eq(paymentCaptures.id, id))
+        await appendActionLedgerMutation(
+          tx,
+          buildPaymentCaptureDeleteActionLedgerInput(
+            actionLedgerContext,
+            { capture: existing },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+
+        return { id: existing.id }
+      })
+    }
+
     const [row] = await db
       .delete(paymentCaptures)
       .where(eq(paymentCaptures.id, id))
@@ -1264,23 +1794,48 @@ export const financeService = {
     db: PostgresJsDatabase,
     bookingId: string,
     data: CreateBookingPaymentScheduleInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [booking] = await db
-      .select({ id: bookings.id })
-      .from(bookings)
-      .where(eq(bookings.id, bookingId))
-      .limit(1)
+    const createSchedule = async (writer: PostgresJsDatabase) => {
+      const [booking] = await writer
+        .select({ id: bookings.id })
+        .from(bookings)
+        .where(eq(bookings.id, bookingId))
+        .limit(1)
 
-    if (!booking) {
-      return null
+      if (!booking) {
+        return null
+      }
+
+      const [row] = await writer
+        .insert(bookingPaymentSchedules)
+        .values({ ...data, bookingId })
+        .returning()
+
+      return row ?? null
     }
 
-    const [row] = await db
-      .insert(bookingPaymentSchedules)
-      .values({ ...data, bookingId })
-      .returning()
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      return db.transaction(async (tx) => {
+        const row = await createSchedule(tx)
 
-    return row ?? null
+        if (row) {
+          await appendActionLedgerMutation(
+            tx,
+            buildBookingPaymentScheduleCreateActionLedgerInput(
+              actionLedgerContext,
+              { schedule: row },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return row
+      })
+    }
+
+    return createSchedule(db)
   },
 
   /**
@@ -1362,138 +1917,263 @@ export const financeService = {
     db: PostgresJsDatabase,
     bookingId: string,
     data: ApplyDefaultBookingPaymentPlanInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)
+    const applyPlan = async (writer: PostgresJsDatabase) => {
+      const [booking] = await writer
+        .select()
+        .from(bookings)
+        .where(eq(bookings.id, bookingId))
+        .limit(1)
 
-    if (!booking) {
-      return null
-    }
+      if (!booking) {
+        return null
+      }
 
-    const totalAmountCents = booking.sellAmountCents ?? 0
-    if (totalAmountCents <= 0) {
-      return []
-    }
+      const totalAmountCents = booking.sellAmountCents ?? 0
+      if (totalAmountCents <= 0) {
+        return {
+          createdSchedules: [],
+          deletedSchedules: [],
+          createdGuarantee: null,
+        }
+      }
 
-    const today = startOfUtcDay(new Date())
-    const depositDueDate = data.depositDueDate ? parseDateString(data.depositDueDate) : today
-    const startDate = booking.startDate ? parseDateString(booking.startDate) : null
-    const rawBalanceDueDate = startDate
-      ? new Date(startDate.getTime() - data.balanceDueDaysBeforeStart * 24 * 60 * 60 * 1000)
-      : today
-    const balanceDueDate = rawBalanceDueDate < today ? today : rawBalanceDueDate
+      const today = startOfUtcDay(new Date())
+      const depositDueDate = data.depositDueDate ? parseDateString(data.depositDueDate) : today
+      const startDate = booking.startDate ? parseDateString(booking.startDate) : null
+      const rawBalanceDueDate = startDate
+        ? new Date(startDate.getTime() - data.balanceDueDaysBeforeStart * 24 * 60 * 60 * 1000)
+        : today
+      const balanceDueDate = rawBalanceDueDate < today ? today : rawBalanceDueDate
 
-    let depositAmountCents = 0
-    if (data.depositMode === "fixed_amount") {
-      depositAmountCents = Math.min(totalAmountCents, data.depositValue)
-    } else if (data.depositMode === "percentage") {
-      depositAmountCents = Math.min(
-        totalAmountCents,
-        Math.round((totalAmountCents * data.depositValue) / 100),
-      )
-    }
-
-    if (data.clearExistingPending) {
-      await db
-        .delete(bookingPaymentSchedules)
-        .where(
-          and(
-            eq(bookingPaymentSchedules.bookingId, bookingId),
-            or(
-              eq(bookingPaymentSchedules.status, "pending"),
-              eq(bookingPaymentSchedules.status, "due"),
-            ),
-          ),
+      let depositAmountCents = 0
+      if (data.depositMode === "fixed_amount") {
+        depositAmountCents = Math.min(totalAmountCents, data.depositValue)
+      } else if (data.depositMode === "percentage") {
+        depositAmountCents = Math.min(
+          totalAmountCents,
+          Math.round((totalAmountCents * data.depositValue) / 100),
         )
-    }
+      }
 
-    const scheduleRows: CreateBookingPaymentScheduleInput[] = []
-    if (depositAmountCents > 0 && depositAmountCents < totalAmountCents) {
-      scheduleRows.push({
-        bookingItemId: null,
-        scheduleType: "deposit",
-        status: depositDueDate <= today ? "due" : "pending",
-        dueDate: toDateString(depositDueDate),
-        currency: booking.sellCurrency,
-        amountCents: depositAmountCents,
-        notes: data.notes ?? null,
-      })
-      scheduleRows.push({
-        bookingItemId: null,
-        scheduleType: "balance",
-        status: balanceDueDate <= today ? "due" : "pending",
-        dueDate: toDateString(balanceDueDate),
-        currency: booking.sellCurrency,
-        amountCents: Math.max(0, totalAmountCents - depositAmountCents),
-        notes: data.notes ?? null,
-      })
-    } else {
-      const singleDueDate = balanceDueDate <= today ? today : balanceDueDate
-      scheduleRows.push({
-        bookingItemId: null,
-        scheduleType: "balance",
-        status: singleDueDate <= today ? "due" : "pending",
-        dueDate: toDateString(singleDueDate),
-        currency: booking.sellCurrency,
-        amountCents: totalAmountCents,
-        notes: data.notes ?? null,
-      })
-    }
-
-    const createdSchedules = await db
-      .insert(bookingPaymentSchedules)
-      .values(
-        scheduleRows.map((row) => ({
-          ...row,
-          bookingId,
-          bookingItemId: row.bookingItemId ?? null,
-          notes: row.notes ?? null,
-        })),
+      const clearableScheduleWhere = and(
+        eq(bookingPaymentSchedules.bookingId, bookingId),
+        or(
+          eq(bookingPaymentSchedules.status, "pending"),
+          eq(bookingPaymentSchedules.status, "due"),
+        ),
       )
-      .returning()
 
-    if (data.createGuarantee) {
-      const depositSchedule = createdSchedules.find(
-        (schedule) => schedule.scheduleType === "deposit",
-      )
-      if (depositSchedule) {
-        await db.insert(bookingGuarantees).values({
-          bookingId,
-          bookingPaymentScheduleId: depositSchedule.id,
+      const deletedSchedules = data.clearExistingPending
+        ? await writer.select().from(bookingPaymentSchedules).where(clearableScheduleWhere)
+        : []
+
+      if (data.clearExistingPending) {
+        await writer.delete(bookingPaymentSchedules).where(clearableScheduleWhere)
+      }
+
+      const scheduleRows: CreateBookingPaymentScheduleInput[] = []
+      if (depositAmountCents > 0 && depositAmountCents < totalAmountCents) {
+        scheduleRows.push({
           bookingItemId: null,
-          guaranteeType: data.guaranteeType,
-          status: "pending",
-          paymentInstrumentId: null,
-          paymentAuthorizationId: null,
-          currency: depositSchedule.currency,
-          amountCents: depositSchedule.amountCents,
-          provider: null,
-          referenceNumber: null,
-          guaranteedAt: null,
-          expiresAt: null,
-          releasedAt: null,
+          scheduleType: "deposit",
+          status: depositDueDate <= today ? "due" : "pending",
+          dueDate: toDateString(depositDueDate),
+          currency: booking.sellCurrency,
+          amountCents: depositAmountCents,
+          notes: data.notes ?? null,
+        })
+        scheduleRows.push({
+          bookingItemId: null,
+          scheduleType: "balance",
+          status: balanceDueDate <= today ? "due" : "pending",
+          dueDate: toDateString(balanceDueDate),
+          currency: booking.sellCurrency,
+          amountCents: Math.max(0, totalAmountCents - depositAmountCents),
+          notes: data.notes ?? null,
+        })
+      } else {
+        const singleDueDate = balanceDueDate <= today ? today : balanceDueDate
+        scheduleRows.push({
+          bookingItemId: null,
+          scheduleType: "balance",
+          status: singleDueDate <= today ? "due" : "pending",
+          dueDate: toDateString(singleDueDate),
+          currency: booking.sellCurrency,
+          amountCents: totalAmountCents,
           notes: data.notes ?? null,
         })
       }
+
+      const createdSchedules = await writer
+        .insert(bookingPaymentSchedules)
+        .values(
+          scheduleRows.map((row) => ({
+            ...row,
+            bookingId,
+            bookingItemId: row.bookingItemId ?? null,
+            notes: row.notes ?? null,
+          })),
+        )
+        .returning()
+
+      let createdGuarantee: BookingGuaranteeRecord | null = null
+      if (data.createGuarantee) {
+        const depositSchedule = createdSchedules.find(
+          (schedule) => schedule.scheduleType === "deposit",
+        )
+        if (depositSchedule) {
+          const [guarantee] = await writer
+            .insert(bookingGuarantees)
+            .values({
+              bookingId,
+              bookingPaymentScheduleId: depositSchedule.id,
+              bookingItemId: null,
+              guaranteeType: data.guaranteeType,
+              status: "pending",
+              paymentInstrumentId: null,
+              paymentAuthorizationId: null,
+              currency: depositSchedule.currency,
+              amountCents: depositSchedule.amountCents,
+              provider: null,
+              referenceNumber: null,
+              guaranteedAt: null,
+              expiresAt: null,
+              releasedAt: null,
+              notes: data.notes ?? null,
+            })
+            .returning()
+          createdGuarantee = guarantee ?? null
+        }
+      }
+
+      return { createdSchedules, deletedSchedules, createdGuarantee }
     }
 
-    return createdSchedules
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const result = await db.transaction(async (tx) => {
+        const applied = await applyPlan(tx)
+
+        if (!applied) {
+          return null
+        }
+
+        for (const schedule of applied.deletedSchedules) {
+          await appendActionLedgerMutation(
+            tx,
+            buildBookingPaymentScheduleDeleteActionLedgerInput(
+              actionLedgerContext,
+              { schedule },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        for (const schedule of applied.createdSchedules) {
+          await appendActionLedgerMutation(
+            tx,
+            buildBookingPaymentScheduleCreateActionLedgerInput(
+              actionLedgerContext,
+              { schedule },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        if (applied.createdGuarantee) {
+          await appendActionLedgerMutation(
+            tx,
+            await buildBookingGuaranteeCreateActionLedgerInput(
+              actionLedgerContext,
+              { guarantee: applied.createdGuarantee },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return applied.createdSchedules
+      })
+
+      return result
+    }
+
+    const result = await applyPlan(db)
+    return result?.createdSchedules ?? null
   },
 
   async updateBookingPaymentSchedule(
     db: PostgresJsDatabase,
     scheduleId: string,
     data: UpdateBookingPaymentScheduleInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [row] = await db
-      .update(bookingPaymentSchedules)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(bookingPaymentSchedules.id, scheduleId))
-      .returning()
+    const updateSchedule = (writer: PostgresJsDatabase) =>
+      writer
+        .update(bookingPaymentSchedules)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(bookingPaymentSchedules.id, scheduleId))
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await updateSchedule(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildBookingPaymentScheduleUpdateActionLedgerInput(
+              actionLedgerContext,
+              { schedule: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await updateSchedule(db)
     return row ?? null
   },
 
-  async deleteBookingPaymentSchedule(db: PostgresJsDatabase, scheduleId: string) {
+  async deleteBookingPaymentSchedule(
+    db: PostgresJsDatabase,
+    scheduleId: string,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      return db.transaction(async (tx) => {
+        const [existing] = await tx
+          .select()
+          .from(bookingPaymentSchedules)
+          .where(eq(bookingPaymentSchedules.id, scheduleId))
+          .limit(1)
+
+        if (!existing) {
+          return null
+        }
+
+        await tx.delete(bookingPaymentSchedules).where(eq(bookingPaymentSchedules.id, scheduleId))
+        await appendActionLedgerMutation(
+          tx,
+          buildBookingPaymentScheduleDeleteActionLedgerInput(
+            actionLedgerContext,
+            { schedule: existing },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+
+        return { id: existing.id }
+      })
+    }
+
     const [row] = await db
       .delete(bookingPaymentSchedules)
       .where(eq(bookingPaymentSchedules.id, scheduleId))
@@ -1506,6 +2186,7 @@ export const financeService = {
     db: PostgresJsDatabase,
     scheduleId: string,
     data: CreatePaymentSessionFromScheduleInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
     const [schedule] = await db
       .select()
@@ -1525,40 +2206,45 @@ export const financeService = {
       throw new Error(`Cannot create payment session for schedule in status "${schedule.status}"`)
     }
 
-    return this.createPaymentSession(db, {
-      targetType: "booking_payment_schedule",
-      targetId: schedule.id,
-      bookingId: schedule.bookingId,
-      bookingPaymentScheduleId: schedule.id,
-      status: "pending",
-      provider: data.provider ?? null,
-      externalReference: data.externalReference ?? null,
-      idempotencyKey: data.idempotencyKey ?? null,
-      clientReference: data.clientReference ?? schedule.id,
-      currency: schedule.currency,
-      amountCents: schedule.amountCents,
-      paymentMethod: data.paymentMethod ?? null,
-      payerPersonId: data.payerPersonId ?? null,
-      payerOrganizationId: data.payerOrganizationId ?? null,
-      payerEmail: data.payerEmail ?? null,
-      payerName: data.payerName ?? null,
-      returnUrl: data.returnUrl ?? null,
-      cancelUrl: data.cancelUrl ?? null,
-      callbackUrl: data.callbackUrl ?? null,
-      expiresAt: data.expiresAt ?? null,
-      notes: data.notes ?? schedule.notes ?? null,
-      providerPayload: data.providerPayload ?? null,
-      metadata: data.metadata ?? {
-        scheduleType: schedule.scheduleType,
-        dueDate: schedule.dueDate,
+    return this.createPaymentSession(
+      db,
+      {
+        targetType: "booking_payment_schedule",
+        targetId: schedule.id,
+        bookingId: schedule.bookingId,
+        bookingPaymentScheduleId: schedule.id,
+        status: "pending",
+        provider: data.provider ?? null,
+        externalReference: data.externalReference ?? null,
+        idempotencyKey: data.idempotencyKey ?? null,
+        clientReference: data.clientReference ?? schedule.id,
+        currency: schedule.currency,
+        amountCents: schedule.amountCents,
+        paymentMethod: data.paymentMethod ?? null,
+        payerPersonId: data.payerPersonId ?? null,
+        payerOrganizationId: data.payerOrganizationId ?? null,
+        payerEmail: data.payerEmail ?? null,
+        payerName: data.payerName ?? null,
+        returnUrl: data.returnUrl ?? null,
+        cancelUrl: data.cancelUrl ?? null,
+        callbackUrl: data.callbackUrl ?? null,
+        expiresAt: data.expiresAt ?? null,
+        notes: data.notes ?? schedule.notes ?? null,
+        providerPayload: data.providerPayload ?? null,
+        metadata: data.metadata ?? {
+          scheduleType: schedule.scheduleType,
+          dueDate: schedule.dueDate,
+        },
       },
-    })
+      runtime,
+    )
   },
 
   async createPaymentSessionFromInvoice(
     db: PostgresJsDatabase,
     invoiceId: string,
     data: CreatePaymentSessionFromInvoiceInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
     const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId)).limit(1)
 
@@ -1574,35 +2260,39 @@ export const financeService = {
       throw new Error("Invoice must have an outstanding balance before creating a payment session")
     }
 
-    return this.createPaymentSession(db, {
-      targetType: "invoice",
-      targetId: invoice.id,
-      bookingId: invoice.bookingId,
-      invoiceId: invoice.id,
-      status: "pending",
-      provider: data.provider ?? null,
-      externalReference: data.externalReference ?? invoice.invoiceNumber,
-      idempotencyKey: data.idempotencyKey ?? null,
-      clientReference: data.clientReference ?? invoice.id,
-      currency: invoice.currency,
-      amountCents: invoice.balanceDueCents,
-      paymentMethod: data.paymentMethod ?? null,
-      payerPersonId: data.payerPersonId ?? invoice.personId ?? null,
-      payerOrganizationId: data.payerOrganizationId ?? invoice.organizationId ?? null,
-      payerEmail: data.payerEmail ?? null,
-      payerName: data.payerName ?? null,
-      returnUrl: data.returnUrl ?? null,
-      cancelUrl: data.cancelUrl ?? null,
-      callbackUrl: data.callbackUrl ?? null,
-      expiresAt: data.expiresAt ?? null,
-      notes: data.notes ?? invoice.notes ?? null,
-      providerPayload: data.providerPayload ?? null,
-      metadata: data.metadata ?? {
-        invoiceNumber: invoice.invoiceNumber,
-        invoiceType: invoice.invoiceType,
-        dueDate: invoice.dueDate,
+    return this.createPaymentSession(
+      db,
+      {
+        targetType: "invoice",
+        targetId: invoice.id,
+        bookingId: invoice.bookingId,
+        invoiceId: invoice.id,
+        status: "pending",
+        provider: data.provider ?? null,
+        externalReference: data.externalReference ?? invoice.invoiceNumber,
+        idempotencyKey: data.idempotencyKey ?? null,
+        clientReference: data.clientReference ?? invoice.id,
+        currency: invoice.currency,
+        amountCents: invoice.balanceDueCents,
+        paymentMethod: data.paymentMethod ?? null,
+        payerPersonId: data.payerPersonId ?? invoice.personId ?? null,
+        payerOrganizationId: data.payerOrganizationId ?? invoice.organizationId ?? null,
+        payerEmail: data.payerEmail ?? null,
+        payerName: data.payerName ?? null,
+        returnUrl: data.returnUrl ?? null,
+        cancelUrl: data.cancelUrl ?? null,
+        callbackUrl: data.callbackUrl ?? null,
+        expiresAt: data.expiresAt ?? null,
+        notes: data.notes ?? invoice.notes ?? null,
+        providerPayload: data.providerPayload ?? null,
+        metadata: data.metadata ?? {
+          invoiceNumber: invoice.invoiceNumber,
+          invoiceType: invoice.invoiceType,
+          dueDate: invoice.dueDate,
+        },
       },
-    })
+      runtime,
+    )
   },
 
   listBookingGuarantees(db: PostgresJsDatabase, bookingId: string) {
@@ -1617,45 +2307,71 @@ export const financeService = {
     db: PostgresJsDatabase,
     bookingId: string,
     data: CreateBookingGuaranteeInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [booking] = await db
-      .select({ id: bookings.id })
-      .from(bookings)
-      .where(eq(bookings.id, bookingId))
-      .limit(1)
+    const createGuarantee = async (writer: PostgresJsDatabase) => {
+      const [booking] = await writer
+        .select({ id: bookings.id })
+        .from(bookings)
+        .where(eq(bookings.id, bookingId))
+        .limit(1)
 
-    if (!booking) {
-      return null
+      if (!booking) {
+        return null
+      }
+
+      const [row] = await writer
+        .insert(bookingGuarantees)
+        .values({
+          bookingId,
+          bookingPaymentScheduleId: data.bookingPaymentScheduleId ?? null,
+          bookingItemId: data.bookingItemId ?? null,
+          guaranteeType: data.guaranteeType,
+          status: data.status,
+          paymentInstrumentId: data.paymentInstrumentId ?? null,
+          paymentAuthorizationId: data.paymentAuthorizationId ?? null,
+          currency: data.currency ?? null,
+          amountCents: data.amountCents ?? null,
+          provider: data.provider ?? null,
+          referenceNumber: data.referenceNumber ?? null,
+          guaranteedAt: toTimestamp(data.guaranteedAt),
+          expiresAt: toTimestamp(data.expiresAt),
+          releasedAt: toTimestamp(data.releasedAt),
+          notes: data.notes ?? null,
+        })
+        .returning()
+
+      return row ?? null
     }
 
-    const [row] = await db
-      .insert(bookingGuarantees)
-      .values({
-        bookingId,
-        bookingPaymentScheduleId: data.bookingPaymentScheduleId ?? null,
-        bookingItemId: data.bookingItemId ?? null,
-        guaranteeType: data.guaranteeType,
-        status: data.status,
-        paymentInstrumentId: data.paymentInstrumentId ?? null,
-        paymentAuthorizationId: data.paymentAuthorizationId ?? null,
-        currency: data.currency ?? null,
-        amountCents: data.amountCents ?? null,
-        provider: data.provider ?? null,
-        referenceNumber: data.referenceNumber ?? null,
-        guaranteedAt: toTimestamp(data.guaranteedAt),
-        expiresAt: toTimestamp(data.expiresAt),
-        releasedAt: toTimestamp(data.releasedAt),
-        notes: data.notes ?? null,
-      })
-      .returning()
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      return db.transaction(async (tx) => {
+        const row = await createGuarantee(tx)
 
-    return row ?? null
+        if (row) {
+          await appendActionLedgerMutation(
+            tx,
+            await buildBookingGuaranteeCreateActionLedgerInput(
+              actionLedgerContext,
+              { guarantee: row },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return row
+      })
+    }
+
+    return createGuarantee(db)
   },
 
   async createPaymentSessionFromBookingGuarantee(
     db: PostgresJsDatabase,
     guaranteeId: string,
     data: CreatePaymentSessionFromGuaranteeInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
     const [guarantee] = await db
       .select()
@@ -1683,58 +2399,119 @@ export const financeService = {
       )
     }
 
-    return this.createPaymentSession(db, {
-      targetType: "booking_guarantee",
-      targetId: guarantee.id,
-      bookingId: guarantee.bookingId,
-      bookingGuaranteeId: guarantee.id,
-      paymentInstrumentId: guarantee.paymentInstrumentId ?? null,
-      paymentAuthorizationId: guarantee.paymentAuthorizationId ?? null,
-      status: "pending",
-      provider: data.provider ?? guarantee.provider ?? null,
-      externalReference: data.externalReference ?? guarantee.referenceNumber ?? null,
-      idempotencyKey: data.idempotencyKey ?? null,
-      clientReference: data.clientReference ?? guarantee.id,
-      currency,
-      amountCents,
-      paymentMethod: data.paymentMethod ?? null,
-      payerPersonId: data.payerPersonId ?? null,
-      payerOrganizationId: data.payerOrganizationId ?? null,
-      payerEmail: data.payerEmail ?? null,
-      payerName: data.payerName ?? null,
-      returnUrl: data.returnUrl ?? null,
-      cancelUrl: data.cancelUrl ?? null,
-      callbackUrl: data.callbackUrl ?? null,
-      expiresAt: data.expiresAt ?? null,
-      notes: data.notes ?? guarantee.notes ?? null,
-      providerPayload: data.providerPayload ?? null,
-      metadata: data.metadata ?? {
-        guaranteeType: guarantee.guaranteeType,
+    return this.createPaymentSession(
+      db,
+      {
+        targetType: "booking_guarantee",
+        targetId: guarantee.id,
+        bookingId: guarantee.bookingId,
+        bookingGuaranteeId: guarantee.id,
+        paymentInstrumentId: guarantee.paymentInstrumentId ?? null,
+        paymentAuthorizationId: guarantee.paymentAuthorizationId ?? null,
+        status: "pending",
+        provider: data.provider ?? guarantee.provider ?? null,
+        externalReference: data.externalReference ?? guarantee.referenceNumber ?? null,
+        idempotencyKey: data.idempotencyKey ?? null,
+        clientReference: data.clientReference ?? guarantee.id,
+        currency,
+        amountCents,
+        paymentMethod: data.paymentMethod ?? null,
+        payerPersonId: data.payerPersonId ?? null,
+        payerOrganizationId: data.payerOrganizationId ?? null,
+        payerEmail: data.payerEmail ?? null,
+        payerName: data.payerName ?? null,
+        returnUrl: data.returnUrl ?? null,
+        cancelUrl: data.cancelUrl ?? null,
+        callbackUrl: data.callbackUrl ?? null,
+        expiresAt: data.expiresAt ?? null,
+        notes: data.notes ?? guarantee.notes ?? null,
+        providerPayload: data.providerPayload ?? null,
+        metadata: data.metadata ?? {
+          guaranteeType: guarantee.guaranteeType,
+        },
       },
-    })
+      runtime,
+    )
   },
 
   async updateBookingGuarantee(
     db: PostgresJsDatabase,
     guaranteeId: string,
     data: UpdateBookingGuaranteeInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [row] = await db
-      .update(bookingGuarantees)
-      .set({
-        ...data,
-        guaranteedAt: data.guaranteedAt === undefined ? undefined : toTimestamp(data.guaranteedAt),
-        expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
-        releasedAt: data.releasedAt === undefined ? undefined : toTimestamp(data.releasedAt),
-        updatedAt: new Date(),
-      })
-      .where(eq(bookingGuarantees.id, guaranteeId))
-      .returning()
+    const updateGuarantee = (writer: PostgresJsDatabase) =>
+      writer
+        .update(bookingGuarantees)
+        .set({
+          ...data,
+          guaranteedAt:
+            data.guaranteedAt === undefined ? undefined : toTimestamp(data.guaranteedAt),
+          expiresAt: data.expiresAt === undefined ? undefined : toTimestamp(data.expiresAt),
+          releasedAt: data.releasedAt === undefined ? undefined : toTimestamp(data.releasedAt),
+          updatedAt: new Date(),
+        })
+        .where(eq(bookingGuarantees.id, guaranteeId))
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await updateGuarantee(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildBookingGuaranteeUpdateActionLedgerInput(
+              actionLedgerContext,
+              { guarantee: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await updateGuarantee(db)
     return row ?? null
   },
 
-  async deleteBookingGuarantee(db: PostgresJsDatabase, guaranteeId: string) {
+  async deleteBookingGuarantee(
+    db: PostgresJsDatabase,
+    guaranteeId: string,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      return db.transaction(async (tx) => {
+        const [existing] = await tx
+          .select()
+          .from(bookingGuarantees)
+          .where(eq(bookingGuarantees.id, guaranteeId))
+          .limit(1)
+
+        if (!existing) {
+          return null
+        }
+
+        await tx.delete(bookingGuarantees).where(eq(bookingGuarantees.id, guaranteeId))
+        await appendActionLedgerMutation(
+          tx,
+          buildBookingGuaranteeDeleteActionLedgerInput(
+            actionLedgerContext,
+            { guarantee: existing },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+
+        return { id: existing.id }
+      })
+    }
+
     const [row] = await db
       .delete(bookingGuarantees)
       .where(eq(bookingGuarantees.id, guaranteeId))
@@ -1987,11 +2764,40 @@ export const financeService = {
     }
   },
 
-  async createSupplierPayment(db: PostgresJsDatabase, data: CreateSupplierPaymentInput) {
-    const [row] = await db
-      .insert(supplierPayments)
-      .values({ ...data, paymentInstrumentId: data.paymentInstrumentId ?? null })
-      .returning()
+  async createSupplierPayment(
+    db: PostgresJsDatabase,
+    data: CreateSupplierPaymentInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const createPayment = (writer: PostgresJsDatabase) =>
+      writer
+        .insert(supplierPayments)
+        .values({ ...data, paymentInstrumentId: data.paymentInstrumentId ?? null })
+        .returning()
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const created = await createPayment(tx)
+
+        if (created[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            await buildSupplierPaymentCreateActionLedgerInput(
+              actionLedgerContext,
+              { payment: created[0] },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return created
+      })
+
+      return row
+    }
+
+    const [row] = await createPayment(db)
     return row
   },
 
@@ -1999,13 +2805,38 @@ export const financeService = {
     db: PostgresJsDatabase,
     id: string,
     data: UpdateSupplierPaymentInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [row] = await db
-      .update(supplierPayments)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(supplierPayments.id, id))
-      .returning()
+    const updatePayment = (writer: PostgresJsDatabase) =>
+      writer
+        .update(supplierPayments)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(supplierPayments.id, id))
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const [row] = await db.transaction(async (tx) => {
+        const updated = await updatePayment(tx)
+
+        if (updated[0]) {
+          await appendActionLedgerMutation(
+            tx,
+            buildSupplierPaymentUpdateActionLedgerInput(
+              actionLedgerContext,
+              { payment: updated[0], changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return row ?? null
+    }
+
+    const [row] = await updatePayment(db)
     return row ?? null
   },
 
@@ -2221,17 +3052,70 @@ export const financeService = {
     return row ?? null
   },
 
-  async updateInvoice(db: PostgresJsDatabase, id: string, data: UpdateInvoiceInput) {
-    const [row] = await db
-      .update(invoices)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(invoices.id, id))
-      .returning()
+  async updateInvoice(
+    db: PostgresJsDatabase,
+    id: string,
+    data: UpdateInvoiceInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const updateInvoiceRow = (writer: PostgresJsDatabase) =>
+      writer
+        .update(invoices)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(invoices.id, id))
+        .returning()
 
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      return db.transaction(async (tx) => {
+        const [row] = await updateInvoiceRow(tx)
+
+        if (row) {
+          await appendActionLedgerMutation(
+            tx,
+            buildInvoiceUpdateActionLedgerInput(
+              actionLedgerContext,
+              { invoice: row, changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return row ?? null
+      })
+    }
+
+    const [row] = await updateInvoiceRow(db)
     return row ?? null
   },
 
-  async deleteInvoice(db: PostgresJsDatabase, id: string) {
+  async deleteInvoice(db: PostgresJsDatabase, id: string, runtime: FinanceServiceRuntime = {}) {
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      return db.transaction(async (tx) => {
+        const [existing] = await tx.select().from(invoices).where(eq(invoices.id, id)).limit(1)
+
+        if (!existing) {
+          return { status: "not_found" as const }
+        }
+
+        if (existing.status !== "draft") {
+          return { status: "not_draft" as const }
+        }
+
+        await tx.delete(invoices).where(eq(invoices.id, id))
+        await appendActionLedgerMutation(
+          tx,
+          buildInvoiceDeleteActionLedgerInput(
+            actionLedgerContext,
+            { invoice: existing },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+        return { status: "deleted" as const }
+      })
+    }
+
     const [existing] = await db
       .select({ id: invoices.id, status: invoices.status })
       .from(invoices)
@@ -2262,46 +3146,146 @@ export const financeService = {
     db: PostgresJsDatabase,
     invoiceId: string,
     data: CreateInvoiceLineItemInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [invoice] = await db
-      .select({ id: invoices.id })
-      .from(invoices)
-      .where(eq(invoices.id, invoiceId))
-      .limit(1)
+    const createLineItem = async (writer: PostgresJsDatabase) => {
+      const [invoice] = await writer
+        .select()
+        .from(invoices)
+        .where(eq(invoices.id, invoiceId))
+        .limit(1)
 
-    if (!invoice) {
-      return null
+      if (!invoice) {
+        return null
+      }
+
+      const [row] = await writer
+        .insert(invoiceLineItems)
+        .values({ ...data, invoiceId })
+        .returning()
+
+      return row ? { invoice, lineItem: row } : null
     }
 
-    const [row] = await db
-      .insert(invoiceLineItems)
-      .values({ ...data, invoiceId })
-      .returning()
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const result = await db.transaction(async (tx) => {
+        const created = await createLineItem(tx)
 
-    return row
+        if (created) {
+          await appendActionLedgerMutation(
+            tx,
+            buildInvoiceLineItemCreateActionLedgerInput(actionLedgerContext, created, {
+              authorizationSource: runtime.actionLedgerAuthorizationSource,
+            }),
+          )
+        }
+
+        return created
+      })
+
+      return result?.lineItem ?? null
+    }
+
+    return (await createLineItem(db))?.lineItem ?? null
   },
 
   async updateInvoiceLineItem(
     db: PostgresJsDatabase,
     lineId: string,
     data: UpdateInvoiceLineItemInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [row] = await db
-      .update(invoiceLineItems)
-      .set(data)
-      .where(eq(invoiceLineItems.id, lineId))
-      .returning()
+    const updateLineItem = async (writer: PostgresJsDatabase) => {
+      const [row] = await writer
+        .update(invoiceLineItems)
+        .set(data)
+        .where(eq(invoiceLineItems.id, lineId))
+        .returning()
 
-    return row ?? null
+      if (!row) {
+        return null
+      }
+
+      const [invoice] = await writer
+        .select()
+        .from(invoices)
+        .where(eq(invoices.id, row.invoiceId))
+        .limit(1)
+
+      return invoice ? { invoice, lineItem: row } : null
+    }
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const result = await db.transaction(async (tx) => {
+        const updated = await updateLineItem(tx)
+
+        if (updated) {
+          await appendActionLedgerMutation(
+            tx,
+            buildInvoiceLineItemUpdateActionLedgerInput(
+              actionLedgerContext,
+              { ...updated, changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return result?.lineItem ?? null
+    }
+
+    return (await updateLineItem(db))?.lineItem ?? null
   },
 
-  async deleteInvoiceLineItem(db: PostgresJsDatabase, lineId: string) {
-    const [row] = await db
-      .delete(invoiceLineItems)
-      .where(eq(invoiceLineItems.id, lineId))
-      .returning({ id: invoiceLineItems.id })
+  async deleteInvoiceLineItem(
+    db: PostgresJsDatabase,
+    lineId: string,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const deleteLineItem = async (writer: PostgresJsDatabase) => {
+      const [row] = await writer
+        .delete(invoiceLineItems)
+        .where(eq(invoiceLineItems.id, lineId))
+        .returning()
 
-    return row ?? null
+      if (!row) {
+        return null
+      }
+
+      const [invoice] = await writer
+        .select()
+        .from(invoices)
+        .where(eq(invoices.id, row.invoiceId))
+        .limit(1)
+
+      return invoice ? { invoice, lineItem: row } : null
+    }
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const result = await db.transaction(async (tx) => {
+        const deleted = await deleteLineItem(tx)
+
+        if (deleted) {
+          await appendActionLedgerMutation(
+            tx,
+            buildInvoiceLineItemDeleteActionLedgerInput(actionLedgerContext, deleted, {
+              authorizationSource: runtime.actionLedgerAuthorizationSource,
+            }),
+          )
+        }
+
+        return deleted
+      })
+
+      return result?.lineItem ?? null
+    }
+
+    return (await deleteLineItem(db))?.lineItem ?? null
   },
 
   listPayments(db: PostgresJsDatabase, invoiceId: string) {
@@ -2537,7 +3521,12 @@ export const financeService = {
     return row ? mapRawPayment(row) : null
   },
 
-  async createPayment(db: PostgresJsDatabase, invoiceId: string, data: CreatePaymentInput) {
+  async createPayment(
+    db: PostgresJsDatabase,
+    invoiceId: string,
+    data: CreatePaymentInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
     const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId)).limit(1)
 
     if (!invoice) {
@@ -2578,6 +3567,22 @@ export const financeService = {
         .set({ paidCents, balanceDueCents, status: newStatus, updatedAt: new Date() })
         .where(eq(invoices.id, invoiceId))
 
+      if (payment && runtime.actionLedgerContext) {
+        await appendActionLedgerMutation(
+          tx,
+          await buildRecordPaymentActionLedgerInput(
+            runtime.actionLedgerContext,
+            {
+              invoice,
+              payment,
+            },
+            {
+              authorizationSource: runtime.actionLedgerAuthorizationSource,
+            },
+          ),
+        )
+      }
+
       return payment
     })
   },
@@ -2590,37 +3595,93 @@ export const financeService = {
       .orderBy(desc(creditNotes.createdAt))
   },
 
-  async createCreditNote(db: PostgresJsDatabase, invoiceId: string, data: CreateCreditNoteInput) {
-    const [invoice] = await db
-      .select({ id: invoices.id })
-      .from(invoices)
-      .where(eq(invoices.id, invoiceId))
-      .limit(1)
+  async createCreditNote(
+    db: PostgresJsDatabase,
+    invoiceId: string,
+    data: CreateCreditNoteInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, invoiceId)).limit(1)
 
     if (!invoice) {
       return null
     }
 
-    const [row] = await db
-      .insert(creditNotes)
-      .values({ ...data, invoiceId })
-      .returning()
+    return db.transaction(async (tx) => {
+      const [row] = await tx
+        .insert(creditNotes)
+        .values({ ...data, invoiceId })
+        .returning()
 
-    return row
+      if (row && runtime.actionLedgerContext) {
+        await appendActionLedgerMutation(
+          tx,
+          await buildCreditNoteCreationActionLedgerInput(
+            runtime.actionLedgerContext,
+            {
+              invoice,
+              creditNote: row,
+            },
+            {
+              authorizationSource: runtime.actionLedgerAuthorizationSource,
+            },
+          ),
+        )
+      }
+
+      return row
+    })
   },
 
   async updateCreditNote(
     db: PostgresJsDatabase,
     creditNoteId: string,
     data: UpdateCreditNoteInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [row] = await db
-      .update(creditNotes)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(creditNotes.id, creditNoteId))
-      .returning()
+    const updateCreditNoteRow = async (writer: PostgresJsDatabase) => {
+      const [row] = await writer
+        .update(creditNotes)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(creditNotes.id, creditNoteId))
+        .returning()
 
-    return row ?? null
+      if (!row) {
+        return null
+      }
+
+      const [invoice] = await writer
+        .select()
+        .from(invoices)
+        .where(eq(invoices.id, row.invoiceId))
+        .limit(1)
+
+      return invoice ? { invoice, creditNote: row } : null
+    }
+
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const result = await db.transaction(async (tx) => {
+        const updated = await updateCreditNoteRow(tx)
+
+        if (updated) {
+          await appendActionLedgerMutation(
+            tx,
+            buildCreditNoteUpdateActionLedgerInput(
+              actionLedgerContext,
+              { ...updated, changes: data },
+              { authorizationSource: runtime.actionLedgerAuthorizationSource },
+            ),
+          )
+        }
+
+        return updated
+      })
+
+      return result?.creditNote ?? null
+    }
+
+    return (await updateCreditNoteRow(db))?.creditNote ?? null
   },
 
   listCreditNoteLineItems(db: PostgresJsDatabase, creditNoteId: string) {
@@ -2635,23 +3696,58 @@ export const financeService = {
     db: PostgresJsDatabase,
     creditNoteId: string,
     data: CreateCreditNoteLineItemInput,
+    runtime: FinanceServiceRuntime = {},
   ) {
-    const [creditNote] = await db
-      .select({ id: creditNotes.id })
-      .from(creditNotes)
-      .where(eq(creditNotes.id, creditNoteId))
-      .limit(1)
+    const createLineItem = async (writer: PostgresJsDatabase) => {
+      const [creditNote] = await writer
+        .select()
+        .from(creditNotes)
+        .where(eq(creditNotes.id, creditNoteId))
+        .limit(1)
 
-    if (!creditNote) {
-      return null
+      if (!creditNote) {
+        return null
+      }
+
+      const [invoice] = await writer
+        .select()
+        .from(invoices)
+        .where(eq(invoices.id, creditNote.invoiceId))
+        .limit(1)
+
+      if (!invoice) {
+        return null
+      }
+
+      const [row] = await writer
+        .insert(creditNoteLineItems)
+        .values({ ...data, creditNoteId })
+        .returning()
+
+      return row ? { invoice, creditNote, lineItem: row } : null
     }
 
-    const [row] = await db
-      .insert(creditNoteLineItems)
-      .values({ ...data, creditNoteId })
-      .returning()
+    const actionLedgerContext = runtime.actionLedgerContext
+    if (actionLedgerContext) {
+      const result = await db.transaction(async (tx) => {
+        const created = await createLineItem(tx)
 
-    return row
+        if (created) {
+          await appendActionLedgerMutation(
+            tx,
+            buildCreditNoteLineItemCreateActionLedgerInput(actionLedgerContext, created, {
+              authorizationSource: runtime.actionLedgerAuthorizationSource,
+            }),
+          )
+        }
+
+        return created
+      })
+
+      return result?.lineItem ?? null
+    }
+
+    return (await createLineItem(db))?.lineItem ?? null
   },
 
   listNotes(db: PostgresJsDatabase, invoiceId: string) {

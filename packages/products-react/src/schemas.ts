@@ -258,6 +258,98 @@ export const productVersionResponse = singleEnvelope(productVersionRecordSchema)
 export const productMediaListResponse = paginatedEnvelope(productMediaRecordSchema)
 export const productMediaResponse = singleEnvelope(productMediaRecordSchema)
 
+export const productActionLedgerActionKindSchema = z.enum([
+  "read",
+  "create",
+  "update",
+  "delete",
+  "execute",
+  "approve",
+  "reject",
+  "reverse",
+  "compensate",
+  "duplicate",
+])
+
+export const productActionLedgerStatusSchema = z.enum([
+  "requested",
+  "awaiting_approval",
+  "approved",
+  "denied",
+  "succeeded",
+  "failed",
+  "reversed",
+  "compensated",
+  "expired",
+  "cancelled",
+  "superseded",
+])
+
+export const productActionLedgerRiskSchema = z.enum(["low", "medium", "high", "critical"])
+
+export const productActionLedgerPrincipalTypeSchema = z.enum([
+  "user",
+  "api_key",
+  "agent",
+  "workflow",
+  "system",
+])
+
+export const productActionLedgerEntrySchema = z.object({
+  id: z.string(),
+  occurredAt: z.string(),
+  actionName: z.string(),
+  actionVersion: z.string(),
+  actionKind: productActionLedgerActionKindSchema,
+  status: productActionLedgerStatusSchema,
+  evaluatedRisk: productActionLedgerRiskSchema,
+  actorType: z.string().nullable(),
+  principalType: productActionLedgerPrincipalTypeSchema,
+  principalId: z.string(),
+  principalSubtype: z.string().nullable(),
+  sessionId: z.string().nullable(),
+  apiTokenId: z.string().nullable(),
+  internalRequest: z.boolean(),
+  delegatedByPrincipalType: productActionLedgerPrincipalTypeSchema.nullable(),
+  delegatedByPrincipalId: z.string().nullable(),
+  delegationId: z.string().nullable(),
+  callerType: z.string().nullable(),
+  organizationId: z.string().nullable(),
+  routeOrToolName: z.string().nullable(),
+  workflowRunId: z.string().nullable(),
+  workflowStepId: z.string().nullable(),
+  correlationId: z.string().nullable(),
+  causationActionId: z.string().nullable(),
+  idempotencyScope: z.string().nullable(),
+  idempotencyKey: z.string().nullable(),
+  idempotencyFingerprint: z.string().nullable(),
+  targetType: z.string(),
+  targetId: z.string(),
+  capabilityId: z.string().nullable(),
+  capabilityVersion: z.string().nullable(),
+  authorizationSource: z.string().nullable(),
+  approvalId: z.string().nullable(),
+  amendsActionId: z.string().nullable(),
+  createdAt: z.string(),
+  mutationSummary: z.string().nullable(),
+})
+
+export type ProductActionLedgerEntryRecord = z.infer<typeof productActionLedgerEntrySchema>
+
+export const productActionLedgerListResponse = z.object({
+  data: z.array(productActionLedgerEntrySchema),
+  pageInfo: z.object({
+    nextCursor: z
+      .object({
+        occurredAt: z.string(),
+        id: z.string(),
+      })
+      .nullable(),
+  }),
+})
+
+export type ProductActionLedgerListResponse = z.infer<typeof productActionLedgerListResponse>
+
 export {
   duplicateItinerarySchema,
   insertDaySchema,

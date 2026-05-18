@@ -31,8 +31,17 @@ export const queryKeys = {
     travelers: (id: string) => [...queryKeys.bookings.all, id, "travelers"] as const,
     supplierStatuses: (id: string) => [...queryKeys.bookings.all, id, "supplierStatuses"] as const,
     activityLog: (id: string) => [...queryKeys.bookings.all, id, "activityLog"] as const,
+    actionLedger: (id: string) => [...queryKeys.bookings.all, id, "actionLedger"] as const,
     notes: (id: string) => [...queryKeys.bookings.all, id, "notes"] as const,
     documents: (id: string) => [...queryKeys.bookings.all, id, "documents"] as const,
+  },
+  actionLedger: {
+    all: ["actionLedger"] as const,
+    entries: (filtersKey?: string) =>
+      [...queryKeys.actionLedger.all, "entries", filtersKey ?? ""] as const,
+    entry: (id: string) => [...queryKeys.actionLedger.all, "entry", id] as const,
+    approvals: (status?: string) =>
+      [...queryKeys.actionLedger.all, "approvals", { status }] as const,
   },
   inviteTokens: {
     all: ["inviteTokens"] as const,

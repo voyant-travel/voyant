@@ -238,6 +238,7 @@ export const financeUiEn = {
       deleteAttachmentShort: "Delete",
       deleteAttachmentTitle: "Delete this attachment?",
       deleteAttachmentDescription: "This removes the attachment record from the invoice.",
+      loadOlderActionLedger: "Load older",
     },
     titles: {
       summary: "Invoice details",
@@ -247,6 +248,7 @@ export const financeUiEn = {
       creditNotes: "Credit notes",
       notes: "Notes",
       attachments: "Attachments",
+      actionLedger: "Action ledger",
     },
     fields: {
       currency: "Currency",
@@ -292,6 +294,8 @@ export const financeUiEn = {
       noCreditNotes: "No credit notes yet.",
       noNotes: "No notes yet.",
       noAttachments: "No attachments yet.",
+      noActionLedger: "No ledger entries yet.",
+      actionLedgerLoadFailed: "Failed to load ledger entries.",
     },
     placeholders: {
       note: "Add an internal note...",

@@ -98,6 +98,17 @@ export interface PublicFinanceDocumentLookupFilters {
   reference?: string | undefined
 }
 
+export interface FinanceActionLedgerListCursor {
+  occurredAt: string
+  id: string
+}
+
+export interface FinanceActionLedgerListFilters {
+  cursorOccurredAt?: string | undefined
+  cursorId?: string | undefined
+  limit?: number | undefined
+}
+
 export const financeQueryKeys = {
   all: ["voyant", "finance"] as const,
 
@@ -105,6 +116,8 @@ export const financeQueryKeys = {
   invoicesList: (filters: FinanceInvoiceListFilters) =>
     [...financeQueryKeys.invoices(), "list", filters] as const,
   invoice: (id: string) => [...financeQueryKeys.invoices(), "detail", id] as const,
+  invoiceActionLedger: (id: string, filters: FinanceActionLedgerListFilters = {}) =>
+    [...financeQueryKeys.invoice(id), "action-ledger", filters] as const,
   lineItems: (invoiceId: string) => [...financeQueryKeys.invoice(invoiceId), "line-items"] as const,
   payments: (invoiceId: string) => [...financeQueryKeys.invoice(invoiceId), "payments"] as const,
   creditNotes: (invoiceId: string) =>
@@ -126,6 +139,8 @@ export const financeQueryKeys = {
   allPaymentsList: (filters: FinanceAllPaymentsListFilters) =>
     [...financeQueryKeys.allPayments(), "list", filters] as const,
   payment: (id: string) => [...financeQueryKeys.allPayments(), "detail", id] as const,
+  paymentSessionActionLedger: (id: string, filters: FinanceActionLedgerListFilters = {}) =>
+    [...financeQueryKeys.all, "payment-sessions", id, "action-ledger", filters] as const,
 
   publicCheckout: () => [...financeQueryKeys.all, "public-checkout"] as const,
   publicFinanceDocumentLookup: (filters: PublicFinanceDocumentLookupFilters) =>

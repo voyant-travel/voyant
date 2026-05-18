@@ -51,6 +51,7 @@ import { AdminWidgetSlotRenderer } from "@/components/admin/admin-widget-slot"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
 import { visibleInternalNotes } from "@/lib/internal-notes"
+import { BookingActionLedgerPanel } from "./booking-action-ledger-panel"
 import { BookingCatalogSourceCard } from "./booking-catalog-source-card"
 import { BookingDetailSkeleton } from "./booking-detail-skeleton"
 import { BookingDocumentsTable } from "./booking-documents-table"
@@ -263,6 +264,7 @@ export function BookingDetailPage({ id }: { id: string }) {
           <TabsTrigger value="suppliers">{detailMessages.tabSuppliers}</TabsTrigger>
           <TabsTrigger value="documents">{detailMessages.tabDocuments}</TabsTrigger>
           <TabsTrigger value="activity">{detailMessages.tabActivity}</TabsTrigger>
+          <TabsTrigger value="ledger">Ledger</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4 flex flex-col gap-6">
@@ -323,6 +325,10 @@ export function BookingDetailPage({ id }: { id: string }) {
         <TabsContent value="activity" className="mt-4 flex flex-col gap-6">
           <BookingActivityTimeline bookingId={id} />
           <BookingNotes bookingId={id} />
+        </TabsContent>
+
+        <TabsContent value="ledger" className="mt-4 flex flex-col gap-6">
+          <BookingActionLedgerPanel bookingId={id} />
         </TabsContent>
       </Tabs>
 

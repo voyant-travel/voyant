@@ -8,6 +8,7 @@ import {
   type FinanceRuntimeOptions,
 } from "./route-runtime.js"
 import { financeRoutes } from "./routes.js"
+import { financeActionLedgerRoutes } from "./routes-action-ledger.js"
 import { createFinanceAdminDocumentRoutes } from "./routes-documents.js"
 import { createPublicFinanceRoutes, type PublicFinanceRouteOptions } from "./routes-public.js"
 import { createFinanceAdminSettlementRoutes } from "./routes-settlement.js"
@@ -60,6 +61,7 @@ export interface FinanceHonoModuleOptions
 export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}): HonoModule {
   const adminRoutes = new Hono()
     .route("/", financeRoutes)
+    .route("/", financeActionLedgerRoutes)
     .route("/", createFinanceAdminDocumentRoutes(options))
     .route("/", createFinanceAdminSettlementRoutes(options))
 

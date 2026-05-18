@@ -41,6 +41,7 @@ import { Route as WorkspaceLegalIndexRouteImport } from './routes/_workspace/leg
 import { Route as WorkspaceFinanceIndexRouteImport } from './routes/_workspace/finance/index'
 import { Route as WorkspaceBookingsIndexRouteImport } from './routes/_workspace/bookings/index'
 import { Route as WorkspaceAvailabilityIndexRouteImport } from './routes/_workspace/availability/index'
+import { Route as WorkspaceActionLedgerIndexRouteImport } from './routes/_workspace/action-ledger/index'
 import { Route as WorkspaceSuppliersIdRouteImport } from './routes/_workspace/suppliers/$id'
 import { Route as WorkspaceSettingsTeamRouteImport } from './routes/_workspace/settings/team'
 import { Route as WorkspaceSettingsTaxesRouteImport } from './routes/_workspace/settings/taxes'
@@ -62,6 +63,7 @@ import { Route as WorkspaceNotificationsPreviewRouteImport } from './routes/_wor
 import { Route as WorkspaceNotificationsDeliveriesRouteImport } from './routes/_workspace/notifications/deliveries'
 import { Route as WorkspaceBookingsIdRouteImport } from './routes/_workspace/bookings/$id'
 import { Route as WorkspaceAvailabilityIdRouteImport } from './routes/_workspace/availability/$id'
+import { Route as WorkspaceActionLedgerApprovalsRouteImport } from './routes/_workspace/action-ledger/approvals'
 import { Route as WorkspaceNotificationsTemplatesIndexRouteImport } from './routes/_workspace/notifications/templates/index'
 import { Route as WorkspaceNotificationsReminderRulesIndexRouteImport } from './routes/_workspace/notifications/reminder-rules/index'
 import { Route as WorkspaceLegalTemplatesIndexRouteImport } from './routes/_workspace/legal/templates/index'
@@ -250,6 +252,12 @@ const WorkspaceAvailabilityIndexRoute =
     path: '/availability/',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const WorkspaceActionLedgerIndexRoute =
+  WorkspaceActionLedgerIndexRouteImport.update({
+    id: '/action-ledger/',
+    path: '/action-ledger/',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 const WorkspaceSuppliersIdRoute = WorkspaceSuppliersIdRouteImport.update({
   id: '/suppliers/$id',
   path: '/suppliers/$id',
@@ -368,6 +376,12 @@ const WorkspaceAvailabilityIdRoute = WorkspaceAvailabilityIdRouteImport.update({
   path: '/availability/$id',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
+const WorkspaceActionLedgerApprovalsRoute =
+  WorkspaceActionLedgerApprovalsRouteImport.update({
+    id: '/action-ledger/approvals',
+    path: '/action-ledger/approvals',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 const WorkspaceNotificationsTemplatesIndexRoute =
   WorkspaceNotificationsTemplatesIndexRouteImport.update({
     id: '/notifications/templates/',
@@ -543,6 +557,7 @@ export interface FileRoutesByFullPath {
   '/channel-sync': typeof WorkspaceChannelSyncRoute
   '/flights': typeof WorkspaceFlightsRoute
   '/pay/$sessionId': typeof PaySessionIdRoute
+  '/action-ledger/approvals': typeof WorkspaceActionLedgerApprovalsRoute
   '/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
@@ -564,6 +579,7 @@ export interface FileRoutesByFullPath {
   '/settings/taxes': typeof WorkspaceSettingsTaxesRoute
   '/settings/team': typeof WorkspaceSettingsTeamRoute
   '/suppliers/$id': typeof WorkspaceSuppliersIdRoute
+  '/action-ledger/': typeof WorkspaceActionLedgerIndexRoute
   '/availability/': typeof WorkspaceAvailabilityIndexRoute
   '/bookings/': typeof WorkspaceBookingsIndexRoute
   '/finance/': typeof WorkspaceFinanceIndexRoute
@@ -620,6 +636,7 @@ export interface FileRoutesByTo {
   '/flights': typeof WorkspaceFlightsRoute
   '/pay/$sessionId': typeof PaySessionIdRoute
   '/': typeof WorkspaceIndexRoute
+  '/action-ledger/approvals': typeof WorkspaceActionLedgerApprovalsRoute
   '/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
@@ -641,6 +658,7 @@ export interface FileRoutesByTo {
   '/settings/taxes': typeof WorkspaceSettingsTaxesRoute
   '/settings/team': typeof WorkspaceSettingsTeamRoute
   '/suppliers/$id': typeof WorkspaceSuppliersIdRoute
+  '/action-ledger': typeof WorkspaceActionLedgerIndexRoute
   '/availability': typeof WorkspaceAvailabilityIndexRoute
   '/bookings': typeof WorkspaceBookingsIndexRoute
   '/finance': typeof WorkspaceFinanceIndexRoute
@@ -702,6 +720,7 @@ export interface FileRoutesById {
   '/_workspace/flights': typeof WorkspaceFlightsRoute
   '/pay_/$sessionId': typeof PaySessionIdRoute
   '/_workspace/': typeof WorkspaceIndexRoute
+  '/_workspace/action-ledger/approvals': typeof WorkspaceActionLedgerApprovalsRoute
   '/_workspace/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/_workspace/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/_workspace/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
@@ -723,6 +742,7 @@ export interface FileRoutesById {
   '/_workspace/settings/taxes': typeof WorkspaceSettingsTaxesRoute
   '/_workspace/settings/team': typeof WorkspaceSettingsTeamRoute
   '/_workspace/suppliers/$id': typeof WorkspaceSuppliersIdRoute
+  '/_workspace/action-ledger/': typeof WorkspaceActionLedgerIndexRoute
   '/_workspace/availability/': typeof WorkspaceAvailabilityIndexRoute
   '/_workspace/bookings/': typeof WorkspaceBookingsIndexRoute
   '/_workspace/finance/': typeof WorkspaceFinanceIndexRoute
@@ -782,6 +802,7 @@ export interface FileRouteTypes {
     | '/channel-sync'
     | '/flights'
     | '/pay/$sessionId'
+    | '/action-ledger/approvals'
     | '/availability/$id'
     | '/bookings/$id'
     | '/notifications/deliveries'
@@ -803,6 +824,7 @@ export interface FileRouteTypes {
     | '/settings/taxes'
     | '/settings/team'
     | '/suppliers/$id'
+    | '/action-ledger/'
     | '/availability/'
     | '/bookings/'
     | '/finance/'
@@ -859,6 +881,7 @@ export interface FileRouteTypes {
     | '/flights'
     | '/pay/$sessionId'
     | '/'
+    | '/action-ledger/approvals'
     | '/availability/$id'
     | '/bookings/$id'
     | '/notifications/deliveries'
@@ -880,6 +903,7 @@ export interface FileRouteTypes {
     | '/settings/taxes'
     | '/settings/team'
     | '/suppliers/$id'
+    | '/action-ledger'
     | '/availability'
     | '/bookings'
     | '/finance'
@@ -940,6 +964,7 @@ export interface FileRouteTypes {
     | '/_workspace/flights'
     | '/pay_/$sessionId'
     | '/_workspace/'
+    | '/_workspace/action-ledger/approvals'
     | '/_workspace/availability/$id'
     | '/_workspace/bookings/$id'
     | '/_workspace/notifications/deliveries'
@@ -961,6 +986,7 @@ export interface FileRouteTypes {
     | '/_workspace/settings/taxes'
     | '/_workspace/settings/team'
     | '/_workspace/suppliers/$id'
+    | '/_workspace/action-ledger/'
     | '/_workspace/availability/'
     | '/_workspace/bookings/'
     | '/_workspace/finance/'
@@ -1235,6 +1261,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceAvailabilityIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/action-ledger/': {
+      id: '/_workspace/action-ledger/'
+      path: '/action-ledger'
+      fullPath: '/action-ledger/'
+      preLoaderRoute: typeof WorkspaceActionLedgerIndexRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/_workspace/suppliers/$id': {
       id: '/_workspace/suppliers/$id'
       path: '/suppliers/$id'
@@ -1380,6 +1413,13 @@ declare module '@tanstack/react-router' {
       path: '/availability/$id'
       fullPath: '/availability/$id'
       preLoaderRoute: typeof WorkspaceAvailabilityIdRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/_workspace/action-ledger/approvals': {
+      id: '/_workspace/action-ledger/approvals'
+      path: '/action-ledger/approvals'
+      fullPath: '/action-ledger/approvals'
+      preLoaderRoute: typeof WorkspaceActionLedgerApprovalsRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/notifications/templates/': {
@@ -1654,6 +1694,7 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceChannelSyncRoute: typeof WorkspaceChannelSyncRoute
   WorkspaceFlightsRoute: typeof WorkspaceFlightsRoute
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
+  WorkspaceActionLedgerApprovalsRoute: typeof WorkspaceActionLedgerApprovalsRoute
   WorkspaceAvailabilityIdRoute: typeof WorkspaceAvailabilityIdRoute
   WorkspaceBookingsIdRoute: typeof WorkspaceBookingsIdRoute
   WorkspaceNotificationsDeliveriesRoute: typeof WorkspaceNotificationsDeliveriesRoute
@@ -1666,6 +1707,7 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceProductsCategoriesRoute: typeof WorkspaceProductsCategoriesRoute
   WorkspaceResourcesIdRoute: typeof WorkspaceResourcesIdRoute
   WorkspaceSuppliersIdRoute: typeof WorkspaceSuppliersIdRoute
+  WorkspaceActionLedgerIndexRoute: typeof WorkspaceActionLedgerIndexRoute
   WorkspaceAvailabilityIndexRoute: typeof WorkspaceAvailabilityIndexRoute
   WorkspaceBookingsIndexRoute: typeof WorkspaceBookingsIndexRoute
   WorkspaceFinanceIndexRoute: typeof WorkspaceFinanceIndexRoute
@@ -1709,6 +1751,7 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceChannelSyncRoute: WorkspaceChannelSyncRoute,
   WorkspaceFlightsRoute: WorkspaceFlightsRoute,
   WorkspaceIndexRoute: WorkspaceIndexRoute,
+  WorkspaceActionLedgerApprovalsRoute: WorkspaceActionLedgerApprovalsRoute,
   WorkspaceAvailabilityIdRoute: WorkspaceAvailabilityIdRoute,
   WorkspaceBookingsIdRoute: WorkspaceBookingsIdRoute,
   WorkspaceNotificationsDeliveriesRoute: WorkspaceNotificationsDeliveriesRoute,
@@ -1722,6 +1765,7 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceProductsCategoriesRoute: WorkspaceProductsCategoriesRoute,
   WorkspaceResourcesIdRoute: WorkspaceResourcesIdRoute,
   WorkspaceSuppliersIdRoute: WorkspaceSuppliersIdRoute,
+  WorkspaceActionLedgerIndexRoute: WorkspaceActionLedgerIndexRoute,
   WorkspaceAvailabilityIndexRoute: WorkspaceAvailabilityIndexRoute,
   WorkspaceBookingsIndexRoute: WorkspaceBookingsIndexRoute,
   WorkspaceFinanceIndexRoute: WorkspaceFinanceIndexRoute,

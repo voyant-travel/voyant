@@ -1356,7 +1356,6 @@ function BookingPreviewCard({
                   .trim()
                 return (
                   <li
-                    // biome-ignore lint/suspicious/noArrayIndexKey: travelers are positional and may not have a personId yet
                     key={traveler.personId ?? `traveler-${idx}`}
                     className="flex items-center justify-between gap-3"
                   >

@@ -6,7 +6,7 @@ Audience: anyone designing or implementing the semantic-search, embeddings, and 
 This document covers the **Phase 2** work that sits on top of the catalog foundation defined in [`catalog-architecture.md`](./catalog-architecture.md). It is intentionally separated from the foundation doc because:
 
 - The foundation (Phase 1) ships as keyword + hybrid-keyword search via the indexer; it is complete and useful without any embeddings or AI surface.
-- Phase 2 adds vector embeddings, AI agent access, and the MCP server. None of this is required for the catalog plane to do its job; it is real value-add work that earns its own design and timeline.
+- Phase 2 adds vector embeddings, AI agent access, and the MCP tool package. None of this is required for the catalog plane to do its job; it is real value-add work that earns its own design and timeline.
 
 ## 1. Phase relationship
 
@@ -24,7 +24,7 @@ This document covers the **Phase 2** work that sits on top of the catalog founda
 - Embedding model registry with explicit migration tooling for model upgrades.
 - API mode parameter (`mode: "semantic" | "hybrid" | "keyword"`) on the existing search endpoints.
 - Per-audience embedding pools with strict isolation guarantees for AI agent access.
-- An MCP (Model Context Protocol) server wrapping the search and entity APIs as agent-callable tools.
+- An MCP (Model Context Protocol) tool package wrapping the search and entity APIs as agent-callable tools.
 
 **What Phase 2 does NOT change:**
 
@@ -34,7 +34,7 @@ This document covers the **Phase 2** work that sits on top of the catalog founda
 
 ## 2. AI agents query the API, not the vector database directly
 
-**This is the load-bearing rule of Phase 2.** External and internal AI agents access the catalog plane through HTTP APIs (or an MCP server wrapping those APIs) — never by querying the underlying vector database directly. The agent treats the catalog plane as a tool, not a data store.
+**This is the load-bearing rule of Phase 2.** External and internal AI agents access the catalog plane through HTTP APIs (or an MCP transport registered with `@voyantjs/catalog-mcp` tools) — never by querying the underlying vector database directly. The agent treats the catalog plane as a tool, not a data store.
 
 Reasons:
 
@@ -51,10 +51,12 @@ The vector database is **infrastructure**, not a public surface. AI agents are c
 Three surfaces, layered:
 
 1. **`/v1/{admin,public}/{vertical}/search` with `mode: "semantic" | "hybrid" | "keyword"`** — the catalog plane's primary semantic-search endpoint, an extension of the Phase 1 search endpoint. Returns resolved CatalogEntry views (visibility-filtered, overlay-applied, locale-scoped) ranked by either keyword match, vector similarity, or a hybrid blend. This is the same endpoint storefronts and admin UIs use; AI agents are not special.
-2. **A dedicated MCP (Model Context Protocol) server** wrapping the search and entity-retrieval APIs as MCP tools — `search_catalog`, `get_entity`, `suggest_alternatives`, `check_availability`, `get_quote`. AI agents (Claude, ChatGPT plugins, custom agents) connect to the MCP server with tenant-scoped credentials and call tools rather than crafting REST calls. Lives in `packages/catalog-rag/src/mcp/` or a sibling package; the architectural commitment is that the MCP tools wrap the same APIs, not the vector DB.
+2. **A dedicated MCP (Model Context Protocol) tool package** wrapping the search and entity-retrieval APIs as MCP tools — `search_catalog`, `get_entity`, `suggest_alternatives`, `check_availability`, `get_quote`. AI agents (Claude, ChatGPT plugins, custom agents) connect to a transport registered with tenant-scoped credentials and call tools rather than crafting REST calls. This now lives in `@voyantjs/catalog-mcp`; the architectural commitment is that the MCP tools wrap the same APIs, not the vector DB.
 3. **Embeddings as opt-in API parameters.** When a caller wants to bring its own query embedding (an upstream agent that has already vectorized the user's intent), the API accepts a `query_embedding: number[]` parameter alongside `query: string`. The catalog plane uses whichever is provided; if both, it can blend.
 
-The MCP server is a distinct module — vendor / agent ecosystem moves fast and deserves a clean seam — but it is a thin wrapper. All semantic capability lives in the underlying API.
+The MCP tool layer is a distinct package because the vendor / agent ecosystem
+moves fast and deserves a clean seam. It remains a thin wrapper: all semantic
+capability lives in the underlying API and `@voyantjs/catalog-rag`.
 
 ## 4. Embeddings live in the search index
 
@@ -121,8 +123,7 @@ interface EmbeddingProvider {
 Phase 2 v1 ships:
 
 - An OpenAI provider (`text-embedding-3-small` as default — cheap, good quality, multilingual).
-- A Voyage AI provider (cleaner multilingual quality for non-English markets).
-- A local-only option for air-gapped deployments (sentence-transformers via a small server).
+- A Gemini provider for deployments that standardize on Google AI Studio.
 
 Operators pick. The provider's vector dimensions must match the IndexerAdapter's declared `vectorDimensions`. Mismatch is a setup error, surfaced loudly at deployment.
 
@@ -220,18 +221,22 @@ A few things deployments will hit early and that the architecture should not pre
 - The architectural commitment that AI agents access via API/MCP, not direct DB.
 - IndexerAdapter `capabilities` declaration including vector support flags.
 - Native Typesense integration with vector field support and hybrid search.
-- The `EmbeddingProvider` contract with default OpenAI, Voyage AI, and local-only providers.
+- The `EmbeddingProvider` contract with OpenAI and Gemini providers.
 - Per-vertical embedding selection in the vertical's catalog-policy file (sibling to field policy, not embedded in it).
 - Async embedding generation in the reindex pipeline with `embedding_pending` handling.
 - The `/v1/{admin,public}/{vertical}/search?mode=semantic|hybrid|keyword` API mode parameter.
 - Per-audience embedding pools with strict isolation guarantees.
+- The separate `@voyantjs/catalog-mcp` package with transport-agnostic tool
+  definitions, a registry, and the five canonical catalog tools.
 
 **Phase 2.x defers (additive, follow-up):**
 
-- The MCP server itself. The architectural commitment is documented; the implementation may ship in a follow-up package once MCP's adoption stabilizes and the catalog API surface is exercised by real AI agents.
 - Per-field embeddings (vs document-level). Phase 2 emits one embedding per `(entity, locale, audience, market)`; per-field embeddings (e.g. separate vectors for "amenities" vs "neighborhood") are an obvious extension when measured retrieval quality demands it. Likely promotes `embed` to a 13th field-policy attribute at that point.
 - Re-ranking with cross-encoders. Vector retrieval gives a candidate set; cross-encoder rerankers improve quality at latency cost. Same staging pattern as Tier 2 pricing rerank (foundation §5.4.3); not Phase 2.
-- Long-tail embedding providers (Cohere, voyage-3-large, BGE, local sentence-transformers beyond a single default). Adding providers is mechanical; not blocking.
+- Long-tail embedding providers (Cohere, Voyage, BGE, local sentence-transformers). Adding providers is mechanical; not blocking.
+- A bundled MCP transport/server runtime. `@voyantjs/catalog-mcp` owns tool
+  definitions and dispatch; templates still choose stdio, HTTP+SSE, or another
+  transport.
 
 ## 11. Package layout
 
@@ -240,36 +245,39 @@ packages/catalog-rag                  Phase 2 RAG package (separate from catalog
   src/embeddings/
     contract.ts                       EmbeddingProvider contract
     openai.ts                         default OpenAI provider
-    voyage.ts                         Voyage AI provider
-    local.ts                          local sentence-transformers provider
-  src/pipeline/
-    generate.ts                       async embedding generation in the reindex pipeline
+    gemini.ts                         Gemini provider
     model-registry.ts                 embedding_model_id tracking + migration helpers
   src/search/
     semantic.ts                       semantic / hybrid search orchestration over the IndexerAdapter
     federate.ts                       cross-audience federated query helper
-  src/mcp/                            MCP server scaffolding; ships in Phase 2.x
-    contract.ts                       MCP tool definitions
-    server.ts                         MCP server entry point
+
+packages/catalog-mcp                  MCP tool package:
+  src/contract.ts                     MCP tool contract types
+  src/registry.ts                     tool registry + audience enforcement
+  src/tools/search-catalog.ts         search_catalog
+  src/tools/get-entity.ts             get_entity
+  src/tools/suggest-alternatives.ts   suggest_alternatives
+  src/tools/check-availability.ts     check_availability
+  src/tools/get-quote.ts              get_quote
 ```
 
 Phase 1's `packages/catalog` does not gain embeddings code; that lives entirely in `packages/catalog-rag`. Templates that want semantic search add this dependency; templates that don't, skip it.
 
 ## 12. Open questions
 
-1. **MCP server packaging and shipping cadence.** §3 commits to AI agents accessing the catalog through an MCP server wrapping the APIs. Whether this ships in `packages/catalog-rag/src/mcp/` or as a separate `@voyantjs/catalog-mcp` package, and whether it lands within Phase 2 or in a Phase 2.x follow-up, depends on how fast the MCP ecosystem stabilizes and whether real AI-agent integrations land within the Phase 2 release window.
+1. **MCP transport packaging.** `@voyantjs/catalog-mcp` owns the tool definitions and registry, but not a concrete MCP transport. Templates still need to decide whether they expose stdio, HTTP+SSE, hosted HTTP, or a custom transport.
 2. **Per-field vs document-level embeddings.** Phase 2 emits one embedding per `(entity, locale, audience, market)` covering title + summary + key descriptive fields. Real retrieval-quality measurement may show that separate embeddings per field group materially improve relevance. If promoted, embedding selection likely becomes a 13th field-policy attribute (`embed: true`).
 3. **Cross-encoder rerankers for semantic search.** Mirror of the Tier 2 pricing rerank pattern (foundation §5.4.3) — vector retrieval narrows, a cross-encoder reranks the top-N for quality. Worth real measurement before committing latency budget; not Phase 2.
-4. **Embedding provider coverage for non-English markets.** OpenAI's `text-embedding-3-small` is multilingual but quality varies by language. Voyage AI ships better non-English models. Worth measuring per-locale retrieval quality before locking the default.
+4. **Embedding provider coverage for non-English markets.** OpenAI's `text-embedding-3-small` and Gemini are multilingual, but quality varies by language. Worth measuring per-locale retrieval quality before locking the default and before adding Voyage/BGE/local providers.
 5. **Per-tenant embedding keys for SaaS-style multi-tenant operators.** The `EmbeddingProvider` contract should support tenant-scoped key override; specifics deferred until a multi-tenant operator hits rate limits.
 
 ## 13. Glossary (Phase 2-specific)
 
 - **Embedding** — a fixed-dimension vector representation of a CatalogEntry's text content, used for semantic similarity search.
-- **`EmbeddingProvider`** — the swappable contract for generating embeddings. Default implementations: OpenAI, Voyage AI, local sentence-transformers. Operator-specific providers can be implemented and registered.
+- **`EmbeddingProvider`** — the swappable contract for generating embeddings. Current implementations include OpenAI and Gemini. Operator-specific providers can be implemented and registered.
 - **Embedding pool** — the set of embeddings for a particular `(vertical, locale, audience, market)` combination. Strictly per-audience for isolation guarantees.
 - **Hybrid search** — a single query that blends keyword matching and vector similarity. Typesense and Algolia support it natively.
-- **MCP (Model Context Protocol)** — the standard for exposing tools and data to AI agents. Voyant's catalog MCP server wraps the search and entity-retrieval APIs.
+- **MCP (Model Context Protocol)** — the standard for exposing tools and data to AI agents. Voyant's catalog MCP package defines tools that wrap the search and entity-retrieval APIs; templates choose the concrete transport.
 - **Re-embedding** — regenerating vectors when contributing fields change or when migrating to a new embedding model.
 
 ## 14. Related documents

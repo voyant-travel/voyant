@@ -33,6 +33,14 @@ export interface FetchWithValidationOptions {
   fetcher: VoyantFetcher
 }
 
+export type QueryParamValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | Array<string | number | boolean>
+
 export async function fetchWithValidation<TOut>(
   path: string,
   schema: z.ZodType<TOut>,
@@ -70,6 +78,32 @@ export async function fetchWithValidation<TOut>(
   }
 
   return parsed.data
+}
+
+export function withQueryParams(path: string, query?: object): string {
+  if (!query) {
+    return path
+  }
+
+  const params = new URLSearchParams()
+
+  for (const [key, value] of Object.entries(query as Record<string, QueryParamValue>)) {
+    if (value === undefined || value === null) {
+      continue
+    }
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        params.append(key, String(item))
+      }
+      continue
+    }
+
+    params.set(key, String(value))
+  }
+
+  const serialized = params.toString()
+  return serialized ? `${path}?${serialized}` : path
 }
 
 async function safeJson(response: Response): Promise<unknown> {

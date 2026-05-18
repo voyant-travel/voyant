@@ -1,7 +1,15 @@
+import {
+  ACTION_LEDGER_APPROVAL_ID_HEADER,
+  actionApprovals,
+  actionLedgerEntries,
+  actionLedgerService,
+  actionMutationDetails,
+  actionSensitiveReadDetails,
+} from "@voyantjs/action-ledger"
+import type { AnyDrizzleDb } from "@voyantjs/db"
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
-
 import { availabilitySlotsRef } from "../../src/availability-ref.js"
 import {
   bookingItemProductDetailsRef,
@@ -25,6 +33,7 @@ import {
   bookingStaffAssignments,
   bookingTravelers,
 } from "../../src/schema.js"
+import { bookingsService } from "../../src/service.js"
 import {
   bookingTransactionDetailsRef,
   offerItemParticipantsRef,
@@ -63,6 +72,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
     const { generateEnvKmsKey } = await import("@voyantjs/utils")
     db = createTestDb()
     await cleanupTestDb(db)
+    await ensureProductReferenceTables()
     await db.execute(sql`
       DO $$
       BEGIN
@@ -106,6 +116,187 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
     await db.execute(
       sql`CREATE INDEX IF NOT EXISTS idx_booking_pii_access_log_created_at ON booking_pii_access_log (created_at)`,
     )
+    await db.execute(sql`
+      DO $$
+      BEGIN
+        CREATE TYPE action_ledger_action_kind AS ENUM (
+          'read',
+          'create',
+          'update',
+          'delete',
+          'execute',
+          'approve',
+          'reject',
+          'reverse',
+          'compensate',
+          'duplicate'
+        );
+      EXCEPTION
+        WHEN duplicate_object THEN NULL;
+      END $$;
+    `)
+    await db.execute(sql`
+      DO $$
+      BEGIN
+        CREATE TYPE action_ledger_status AS ENUM (
+          'requested',
+          'awaiting_approval',
+          'approved',
+          'denied',
+          'succeeded',
+          'failed',
+          'reversed',
+          'compensated',
+          'expired',
+          'cancelled',
+          'superseded'
+        );
+      EXCEPTION
+        WHEN duplicate_object THEN NULL;
+      END $$;
+    `)
+    await db.execute(sql`
+      DO $$
+      BEGIN
+        CREATE TYPE action_ledger_risk AS ENUM ('low', 'medium', 'high', 'critical');
+      EXCEPTION
+        WHEN duplicate_object THEN NULL;
+      END $$;
+    `)
+    await db.execute(sql`
+      DO $$
+      BEGIN
+        CREATE TYPE action_ledger_principal_type AS ENUM (
+          'user',
+          'api_key',
+          'agent',
+          'workflow',
+          'system'
+        );
+      EXCEPTION
+        WHEN duplicate_object THEN NULL;
+      END $$;
+    `)
+    await db.execute(sql`
+      DO $$
+      BEGIN
+        CREATE TYPE action_ledger_reversal_kind AS ENUM (
+          'none',
+          'revert',
+          'compensate',
+          'domain_command'
+        );
+      EXCEPTION
+        WHEN duplicate_object THEN NULL;
+      END $$;
+    `)
+    await db.execute(sql`
+      DO $$
+      BEGIN
+        CREATE TYPE action_ledger_approval_status AS ENUM (
+          'pending',
+          'approved',
+          'denied',
+          'expired',
+          'cancelled',
+          'superseded'
+        );
+      EXCEPTION
+        WHEN duplicate_object THEN NULL;
+      END $$;
+    `)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS action_ledger_entries (
+        id text PRIMARY KEY NOT NULL,
+        occurred_at timestamp with time zone DEFAULT now() NOT NULL,
+        action_name text NOT NULL,
+        action_version text NOT NULL,
+        action_kind action_ledger_action_kind NOT NULL,
+        status action_ledger_status NOT NULL,
+        evaluated_risk action_ledger_risk NOT NULL,
+        actor_type text,
+        principal_type action_ledger_principal_type NOT NULL,
+        principal_id text NOT NULL,
+        principal_subtype text,
+        session_id text,
+        api_token_id text,
+        internal_request boolean DEFAULT false NOT NULL,
+        delegated_by_principal_type action_ledger_principal_type,
+        delegated_by_principal_id text,
+        delegation_id text,
+        caller_type text,
+        organization_id text,
+        route_or_tool_name text,
+        workflow_run_id text,
+        workflow_step_id text,
+        correlation_id text,
+        causation_action_id text,
+        idempotency_scope text,
+        idempotency_key text,
+        idempotency_fingerprint text,
+        target_type text NOT NULL,
+        target_id text NOT NULL,
+        capability_id text,
+        capability_version text,
+        authorization_source text,
+        approval_id text,
+        amends_action_id text,
+        created_at timestamp with time zone DEFAULT now() NOT NULL
+      )
+    `)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS action_sensitive_read_details (
+        action_id text PRIMARY KEY NOT NULL REFERENCES action_ledger_entries(id) ON DELETE CASCADE,
+        reason_code text,
+        disclosed_field_set jsonb,
+        disclosure_summary text,
+        decision_policy text
+      )
+    `)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS action_mutation_details (
+        action_id text PRIMARY KEY NOT NULL REFERENCES action_ledger_entries(id) ON DELETE CASCADE,
+        command_input_ref text,
+        command_result_ref text,
+        summary text,
+        reversal_kind action_ledger_reversal_kind DEFAULT 'none' NOT NULL,
+        reversal_command_id text,
+        reversal_command_version text,
+        reversal_args_ref text,
+        reversal_state_projection text,
+        reversal_outcome_projection text,
+        reverses_action_id text,
+        reversed_by_action_id_projection text
+      )
+    `)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS action_approvals (
+        id text PRIMARY KEY NOT NULL,
+        requested_action_id text NOT NULL REFERENCES action_ledger_entries(id) ON DELETE CASCADE,
+        status action_ledger_approval_status DEFAULT 'pending' NOT NULL,
+        requested_by_principal_id text NOT NULL,
+        assigned_to_principal_id text,
+        decided_by_principal_id text,
+        delegated_from_principal_id text,
+        policy_name text NOT NULL,
+        policy_version text NOT NULL,
+        target_snapshot_ref text,
+        risk_snapshot action_ledger_risk NOT NULL,
+        reason_code text,
+        expires_at timestamp with time zone,
+        decided_at timestamp with time zone,
+        created_at timestamp with time zone DEFAULT now() NOT NULL
+      )
+    `)
+    await db.execute(
+      sql`CREATE INDEX IF NOT EXISTS idx_action_approvals_requested_action ON action_approvals (requested_action_id)`,
+    )
+    await db.execute(
+      sql`CREATE INDEX IF NOT EXISTS idx_action_approvals_status_expires ON action_approvals (status, expires_at)`,
+    )
+    await db.execute(
+      sql`CREATE INDEX IF NOT EXISTS idx_action_approvals_assignee ON action_approvals (assigned_to_principal_id, created_at)`,
+    )
 
     process.env.KMS_PROVIDER = "env"
     process.env.KMS_ENV_KEY = generateEnvKmsKey()
@@ -127,6 +318,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
   beforeEach(async () => {
     const { cleanupTestDb } = await import("@voyantjs/db/test-utils")
     await cleanupTestDb(db)
+    await ensureProductReferenceTables()
   })
 
   afterAll(async () => {
@@ -157,6 +349,28 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       }),
     })
     return (await res.json()).data
+  }
+
+  async function ensureProductReferenceTables() {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS products (
+        id text PRIMARY KEY,
+        name text NOT NULL,
+        status text NOT NULL DEFAULT 'active',
+        description text,
+        visibility text NOT NULL DEFAULT 'public',
+        activated boolean NOT NULL DEFAULT true,
+        reservation_timeout_minutes integer,
+        sell_currency text NOT NULL DEFAULT 'EUR',
+        sell_amount_cents integer,
+        cost_amount_cents integer,
+        margin_percent integer,
+        supplier_id text,
+        start_date date,
+        end_date date,
+        pax integer
+      )
+    `)
   }
 
   async function seedSlot(overrides: Record<string, unknown> = {}) {
@@ -809,6 +1023,754 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
 
       expect(res.status).toBe(200)
       expect((await res.json()).data.status).toBe("confirmed")
+
+      const [entry] = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, booking.id))
+
+      expect(entry).toBeDefined()
+      if (!entry) {
+        throw new Error("Expected action ledger entry for booking confirmation")
+      }
+      expect(entry).toMatchObject({
+        actionName: "booking.status.confirm",
+        actionKind: "update",
+        status: "succeeded",
+        evaluatedRisk: "medium",
+        principalType: "user",
+        principalId: "test-user-id",
+        targetType: "booking",
+        targetId: booking.id,
+        routeOrToolName: "bookings.confirm",
+        capabilityId: "bookings:status:confirm",
+        authorizationSource: "actor_context",
+      })
+
+      const [detail] = await db
+        .select()
+        .from(actionMutationDetails)
+        .where(eq(actionMutationDetails.actionId, entry.id))
+
+      expect(detail).toMatchObject({
+        summary: "Booking status changed from on_hold to confirmed",
+        reversalKind: "none",
+      })
+    })
+
+    it("allows scoped non-staff booking status mutations through the capability guard", async () => {
+      const slot = await seedSlot()
+      const reserveRes = await app.request("/reserve", {
+        method: "POST",
+        ...json({
+          bookingNumber: nextBookingNumber(),
+          sellCurrency: "USD",
+          items: [{ title: "Adult ticket", availabilitySlotId: slot.id, quantity: 1 }],
+        }),
+      })
+      const { data: booking } = await reserveRes.json()
+
+      const scopedApp = new Hono()
+      scopedApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("userId" as never, "scoped-status-user-id")
+        c.set("apiTokenId" as never, "api-token-bookings-write")
+        c.set("actor" as never, "customer")
+        c.set("callerType" as never, "api_key")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      scopedApp.route("/", bookingRoutes)
+
+      const res = await scopedApp.request(`/${booking.id}/confirm`, {
+        method: "POST",
+        ...json({}),
+      })
+
+      expect(res.status).toBe(200)
+
+      const [entry] = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, booking.id))
+
+      expect(entry).toMatchObject({
+        actionName: "booking.status.confirm",
+        status: "succeeded",
+        principalType: "api_key",
+        principalId: "api-token-bookings-write",
+        capabilityId: "bookings:status:confirm",
+        authorizationSource: "scope",
+      })
+    })
+
+    it("forbids non-staff booking status mutations without a grant and ledgers the denial", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const restrictedApp = new Hono()
+      restrictedApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("userId" as never, "status-customer-id")
+        c.set("actor" as never, "customer")
+        await next()
+      })
+      restrictedApp.route("/", bookingRoutes)
+
+      const res = await restrictedApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        ...json({ note: "Not allowed" }),
+      })
+
+      expect(res.status).toBe(403)
+
+      const [entry] = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, booking.id))
+
+      expect(entry).toMatchObject({
+        actionName: "booking.status.cancel",
+        actionKind: "update",
+        status: "denied",
+        evaluatedRisk: "high",
+        principalType: "user",
+        principalId: "status-customer-id",
+        capabilityId: "bookings:status:cancel",
+        authorizationSource: "actor_context",
+      })
+
+      const [detail] = await db
+        .select()
+        .from(actionMutationDetails)
+        .where(eq(actionMutationDetails.actionId, entry.id))
+
+      expect(detail).toMatchObject({
+        summary: "Booking status cancel denied: actor_not_allowed",
+        reversalKind: "none",
+      })
+    })
+
+    it("turns agent booking cancel requests into pending action approvals", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const agentApp = new Hono()
+      agentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      agentApp.route("/", bookingRoutes)
+
+      const res = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-cancel-request-1",
+        },
+        body: JSON.stringify({ note: "Agent proposed cancellation" }),
+      })
+
+      expect(res.status).toBe(202)
+      const body = await res.json()
+      expect(body.data).toMatchObject({
+        approvalRequired: true,
+        requestedAction: {
+          status: "awaiting_approval",
+          actionName: "booking.status.cancel",
+          targetType: "booking",
+          targetId: booking.id,
+        },
+        approval: {
+          status: "pending",
+          requestedByPrincipalId: "agent-booking-cancel",
+          policyName: "bookings-status-approval-v1",
+          policyVersion: "v1",
+          riskSnapshot: "high",
+          reasonCode: "cancel_requested_by_agent",
+        },
+        replayed: false,
+      })
+
+      const [entry] = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, booking.id))
+
+      expect(entry).toMatchObject({
+        actionName: "booking.status.cancel",
+        actionKind: "update",
+        status: "awaiting_approval",
+        evaluatedRisk: "high",
+        principalType: "agent",
+        principalId: "agent-booking-cancel",
+        callerType: "agent",
+        capabilityId: "bookings:status:cancel",
+        authorizationSource: "scope",
+      })
+
+      const [approval] = await db
+        .select()
+        .from(actionApprovals)
+        .where(eq(actionApprovals.requestedActionId, entry.id))
+
+      expect(approval).toMatchObject({
+        id: entry.approvalId,
+        status: "pending",
+        requestedByPrincipalId: "agent-booking-cancel",
+        policyName: "bookings-status-approval-v1",
+        reasonCode: "cancel_requested_by_agent",
+      })
+
+      const latestBooking = await bookingsService.getBookingById(db, booking.id)
+      expect(latestBooking?.status).toBe("confirmed")
+    })
+
+    it("rejects approval-required booking status requests without idempotency keys", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const agentApp = new Hono()
+      agentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      agentApp.route("/", bookingRoutes)
+
+      const res = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ note: "Agent proposed cancellation" }),
+      })
+
+      expect(res.status).toBe(400)
+      await expect(res.json()).resolves.toMatchObject({
+        error: "Approval-required booking status actions require an Idempotency-Key",
+      })
+
+      const entries = await db.select().from(actionLedgerEntries)
+      const approvals = await db.select().from(actionApprovals)
+      expect(entries).toHaveLength(0)
+      expect(approvals).toHaveLength(0)
+
+      const latestBooking = await bookingsService.getBookingById(db, booking.id)
+      expect(latestBooking?.status).toBe("confirmed")
+    })
+
+    it("rejects reused approval idempotency keys with different command input", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const agentApp = new Hono()
+      agentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      agentApp.route("/", bookingRoutes)
+
+      const first = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-cancel-conflict",
+        },
+        body: JSON.stringify({ note: "First reason" }),
+      })
+      expect(first.status).toBe(202)
+      const firstBody = await first.json()
+
+      const conflict = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-cancel-conflict",
+        },
+        body: JSON.stringify({ note: "Different reason" }),
+      })
+
+      expect(conflict.status).toBe(409)
+      await expect(conflict.json()).resolves.toMatchObject({
+        error: "Action ledger idempotency key was reused with a different fingerprint",
+        existingActionId: firstBody.data.requestedAction.id,
+      })
+
+      const approvals = await db.select().from(actionApprovals)
+      expect(approvals).toHaveLength(1)
+    })
+
+    it("replays identical agent booking approval requests", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const agentApp = new Hono()
+      agentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      agentApp.route("/", bookingRoutes)
+
+      const request = {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-cancel-replay",
+        },
+        body: JSON.stringify({ note: "Same reason" }),
+      }
+
+      const first = await agentApp.request(`/${booking.id}/cancel`, request)
+      expect(first.status).toBe(202)
+      const firstBody = await first.json()
+      expect(firstBody.data.replayed).toBe(false)
+
+      const replay = await agentApp.request(`/${booking.id}/cancel`, request)
+      expect(replay.status).toBe(202)
+      const replayBody = await replay.json()
+      expect(replayBody.data).toMatchObject({
+        replayed: true,
+        requestedAction: {
+          id: firstBody.data.requestedAction.id,
+          status: "awaiting_approval",
+        },
+        approval: {
+          id: firstBody.data.approval.id,
+          status: "pending",
+        },
+      })
+
+      const entries = await db.select().from(actionLedgerEntries)
+      const approvals = await db.select().from(actionApprovals)
+      expect(entries).toHaveLength(1)
+      expect(approvals).toHaveLength(1)
+    })
+
+    it("executes approved agent booking cancel requests and links ledger entries", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const agentApp = new Hono()
+      agentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      agentApp.route("/", bookingRoutes)
+
+      const requestApproval = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-cancel-execute",
+        },
+        body: JSON.stringify({ note: "Approved cancellation" }),
+      })
+      expect(requestApproval.status).toBe(202)
+      const requestApprovalBody = await requestApproval.json()
+      const approvalId = requestApprovalBody.data.approval.id
+      const requestedActionId = requestApprovalBody.data.requestedAction.id
+
+      await approveActionApproval(db, approvalId)
+
+      const execute = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          [ACTION_LEDGER_APPROVAL_ID_HEADER]: approvalId,
+        },
+        body: JSON.stringify({ note: "Approved cancellation" }),
+      })
+
+      expect(execute.status).toBe(200)
+      await expect(execute.json()).resolves.toMatchObject({
+        data: {
+          id: booking.id,
+          status: "cancelled",
+        },
+      })
+
+      const entries = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, booking.id))
+      const requestedAction = entries.find((entry) => entry.id === requestedActionId)
+      const executedAction = entries.find(
+        (entry) => entry.actionName === "booking.status.cancel" && entry.status === "succeeded",
+      )
+
+      expect(requestedAction).toMatchObject({
+        actionName: "booking.status.cancel",
+        status: "awaiting_approval",
+      })
+      expect(executedAction).toMatchObject({
+        actionName: "booking.status.cancel",
+        status: "succeeded",
+        causationActionId: requestedActionId,
+        approvalId,
+        idempotencyScope: `${approvalId}:execution`,
+        idempotencyKey: approvalId,
+        principalType: "agent",
+        principalId: "agent-booking-cancel",
+      })
+
+      const secondExecute = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          [ACTION_LEDGER_APPROVAL_ID_HEADER]: approvalId,
+        },
+        body: JSON.stringify({ note: "Approved cancellation" }),
+      })
+
+      expect(secondExecute.status).toBe(409)
+      await expect(secondExecute.json()).resolves.toMatchObject({
+        error: "Action approval has already been executed",
+        approvalId,
+        existingActionId: executedAction?.id,
+      })
+    })
+
+    it("decides agent booking approvals through the booking route and shows the decision in the timeline", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const agentApp = new Hono()
+      agentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      agentApp.route("/", bookingRoutes)
+
+      const requestApproval = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-cancel-route-decision",
+        },
+        body: JSON.stringify({ note: "Route-approved cancellation" }),
+      })
+      expect(requestApproval.status).toBe(202)
+      const requestApprovalBody = await requestApproval.json()
+      const approvalId = requestApprovalBody.data.approval.id
+      const requestedActionId = requestApprovalBody.data.requestedAction.id
+
+      const decision = await app.request(`/${booking.id}/action-approvals/${approvalId}/decide`, {
+        method: "POST",
+        ...json({ status: "approved" }),
+      })
+
+      expect(decision.status).toBe(200)
+      const decisionBody = await decision.json()
+      expect(decisionBody.data).toMatchObject({
+        approval: {
+          id: approvalId,
+          status: "approved",
+          decidedByPrincipalId: "test-user-id",
+        },
+        decisionAction: {
+          actionName: "booking.status.approval.decide",
+          actionKind: "approve",
+          status: "approved",
+          targetType: "booking",
+          targetId: booking.id,
+          principalType: "user",
+          principalId: "test-user-id",
+          causationActionId: requestedActionId,
+          approvalId,
+        },
+      })
+
+      const timeline = await app.request(`/${booking.id}/action-ledger`)
+      expect(timeline.status).toBe(200)
+      const timelineBody = await timeline.json()
+      expect(timelineBody.data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: requestedActionId,
+            actionName: "booking.status.cancel",
+            status: "awaiting_approval",
+          }),
+          expect.objectContaining({
+            id: decisionBody.data.decisionAction.id,
+            actionName: "booking.status.approval.decide",
+            actionKind: "approve",
+            status: "approved",
+            targetType: "booking",
+            targetId: booking.id,
+          }),
+        ]),
+      )
+
+      const execute = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          [ACTION_LEDGER_APPROVAL_ID_HEADER]: approvalId,
+        },
+        body: JSON.stringify({ note: "Route-approved cancellation" }),
+      })
+
+      expect(execute.status).toBe(200)
+      await expect(execute.json()).resolves.toMatchObject({
+        data: {
+          id: booking.id,
+          status: "cancelled",
+        },
+      })
+    })
+
+    it("rejects approved booking execution when the command input changed", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const agentApp = new Hono()
+      agentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      agentApp.route("/", bookingRoutes)
+
+      const requestApproval = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-cancel-command-mismatch",
+        },
+        body: JSON.stringify({ note: "Approved cancellation" }),
+      })
+      expect(requestApproval.status).toBe(202)
+      const requestApprovalBody = await requestApproval.json()
+      const approvalId = requestApprovalBody.data.approval.id
+
+      await approveActionApproval(db, approvalId)
+
+      const execute = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          [ACTION_LEDGER_APPROVAL_ID_HEADER]: approvalId,
+        },
+        body: JSON.stringify({ note: "Different cancellation" }),
+      })
+
+      expect(execute.status).toBe(409)
+      await expect(execute.json()).resolves.toMatchObject({
+        error: "Action approval command input does not match the approved request",
+        approvalId,
+      })
+
+      const latestBooking = await bookingsService.getBookingById(db, booking.id)
+      expect(latestBooking?.status).toBe("confirmed")
+      const entries = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, booking.id))
+      expect(entries).toHaveLength(1)
+    })
+
+    it("rejects booking execution while approval is still pending", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const agentApp = new Hono()
+      agentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      agentApp.route("/", bookingRoutes)
+
+      const requestApproval = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-cancel-pending-execute",
+        },
+        body: JSON.stringify({ note: "Pending cancellation" }),
+      })
+      expect(requestApproval.status).toBe(202)
+      const requestApprovalBody = await requestApproval.json()
+      const approvalId = requestApprovalBody.data.approval.id
+
+      const execute = await agentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          [ACTION_LEDGER_APPROVAL_ID_HEADER]: approvalId,
+        },
+        body: JSON.stringify({ note: "Pending cancellation" }),
+      })
+
+      expect(execute.status).toBe(409)
+      await expect(execute.json()).resolves.toMatchObject({
+        error: "Action approval is not approved",
+        approvalId,
+        status: "pending",
+      })
+
+      const latestBooking = await bookingsService.getBookingById(db, booking.id)
+      expect(latestBooking?.status).toBe("confirmed")
+      const entries = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, booking.id))
+      expect(entries).toHaveLength(1)
+    })
+
+    it("rejects approved booking execution from a different agent principal", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const requestingAgentApp = new Hono()
+      requestingAgentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      requestingAgentApp.route("/", bookingRoutes)
+
+      const executingAgentApp = new Hono()
+      executingAgentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-cancel-other")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      executingAgentApp.route("/", bookingRoutes)
+
+      const requestApproval = await requestingAgentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-cancel-principal-mismatch",
+        },
+        body: JSON.stringify({ note: "Approved cancellation" }),
+      })
+      expect(requestApproval.status).toBe(202)
+      const requestApprovalBody = await requestApproval.json()
+      const approvalId = requestApprovalBody.data.approval.id
+
+      await approveActionApproval(db, approvalId)
+
+      const execute = await executingAgentApp.request(`/${booking.id}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          [ACTION_LEDGER_APPROVAL_ID_HEADER]: approvalId,
+        },
+        body: JSON.stringify({ note: "Approved cancellation" }),
+      })
+
+      expect(execute.status).toBe(403)
+      await expect(execute.json()).resolves.toMatchObject({
+        error: "Action approval belongs to a different principal",
+      })
+
+      const latestBooking = await bookingsService.getBookingById(db, booking.id)
+      expect(latestBooking?.status).toBe("confirmed")
+      const entries = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, booking.id))
+      expect(entries.filter((entry) => entry.status === "succeeded")).toHaveLength(0)
+    })
+
+    it("rejects reused override approval idempotency keys with different command input", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+
+      const agentApp = new Hono()
+      agentApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("eventBus" as never, eventBus)
+        c.set("agentId" as never, "agent-booking-override")
+        c.set("actor" as never, "agent")
+        c.set("callerType" as never, "agent")
+        c.set("scopes" as never, ["bookings:write"])
+        await next()
+      })
+      agentApp.route("/", bookingRoutes)
+
+      const first = await agentApp.request(`/${booking.id}/override-status`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-override-conflict",
+        },
+        body: JSON.stringify({
+          status: "cancelled",
+          reason: "Supplier cancelled the booking",
+          note: "Initial override",
+        }),
+      })
+      expect(first.status).toBe(202)
+      const firstBody = await first.json()
+
+      const conflict = await agentApp.request(`/${booking.id}/override-status`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "agent-override-conflict",
+        },
+        body: JSON.stringify({
+          status: "expired",
+          reason: "Hold expired before supplier confirmation",
+          note: "Different override",
+        }),
+      })
+
+      expect(conflict.status).toBe(409)
+      await expect(conflict.json()).resolves.toMatchObject({
+        error: "Action ledger idempotency key was reused with a different fingerprint",
+        existingActionId: firstBody.data.requestedAction.id,
+      })
+
+      const [entry] = await db.select().from(actionLedgerEntries)
+      expect(entry).toMatchObject({
+        actionName: "booking.status.override",
+        targetId: booking.id,
+        status: "awaiting_approval",
+        principalId: "agent-booking-override",
+      })
+
+      const approvals = await db.select().from(actionApprovals)
+      expect(approvals).toHaveLength(1)
     })
 
     it("emits booking.confirmed with id + number + actor after confirm", async () => {
@@ -1650,6 +2612,14 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         ...json({ passportNumber: "AUDIT-1" }),
       })
 
+      const readRes = await app.request(
+        `/${booking.id}/travelers/${participant.id}/travel-details`,
+        {
+          method: "GET",
+        },
+      )
+      expect(readRes.status).toBe(200)
+
       const rows = await db
         .select()
         .from(bookingPiiAccessLog)
@@ -1665,6 +2635,162 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         rows.some(
           (row: { action: string; outcome: string }) =>
             row.action === "read" && row.outcome === "allowed",
+        ),
+      ).toBe(true)
+
+      const ledgerRows = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, participant.id))
+      const sensitiveReadRows = await db.select().from(actionSensitiveReadDetails)
+
+      expect(
+        ledgerRows.some(
+          (row) =>
+            row.actionName === "booking.pii.read" &&
+            row.actionKind === "read" &&
+            row.status === "succeeded" &&
+            row.principalType === "user" &&
+            row.principalId === "test-user-id" &&
+            row.targetType === "booking_traveler" &&
+            row.authorizationSource === "actor_context",
+        ),
+      ).toBe(true)
+      expect(
+        sensitiveReadRows.some(
+          (row) =>
+            row.reasonCode === "travel_details_reveal" &&
+            row.decisionPolicy === "bookings-pii-scope-or-staff-v1" &&
+            row.disclosedFieldSet?.includes("passportNumber"),
+        ),
+      ).toBe(true)
+    })
+
+    it("writes action ledger entries for traveler and travel-detail mutations", async () => {
+      const booking = await seedBooking()
+      const createRes = await app.request(`/${booking.id}/travelers`, {
+        method: "POST",
+        ...json({ firstName: "Ledger", lastName: "Traveler" }),
+      })
+      expect(createRes.status).toBe(201)
+      const { data: participant } = await createRes.json()
+
+      const updateRes = await app.request(`/${booking.id}/travelers/${participant.id}`, {
+        method: "PATCH",
+        ...json({ email: "ledger@example.test" }),
+      })
+      expect(updateRes.status).toBe(200)
+
+      const travelDetailRes = await app.request(
+        `/${booking.id}/travelers/${participant.id}/travel-details`,
+        {
+          method: "PATCH",
+          ...json({ passportNumber: "LEDGER-SECRET" }),
+        },
+      )
+      expect(travelDetailRes.status).toBe(200)
+
+      const deleteTravelDetailRes = await app.request(
+        `/${booking.id}/travelers/${participant.id}/travel-details`,
+        {
+          method: "DELETE",
+        },
+      )
+      expect(deleteTravelDetailRes.status).toBe(200)
+
+      const ledgerRows = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, participant.id))
+      const mutationDetails = await db.select().from(actionMutationDetails)
+      const detailByActionId = new Map(
+        mutationDetails.map((detail) => [detail.actionId, detail.summary]),
+      )
+
+      expect(
+        ledgerRows.some(
+          (row) =>
+            row.actionName === "booking.traveler.create" &&
+            row.actionKind === "create" &&
+            row.status === "succeeded" &&
+            row.targetType === "booking_traveler" &&
+            detailByActionId.get(row.id) === "Created booking traveler fields: firstName, lastName",
+        ),
+      ).toBe(true)
+      expect(
+        ledgerRows.some(
+          (row) =>
+            row.actionName === "booking.traveler.update" &&
+            row.actionKind === "update" &&
+            detailByActionId.get(row.id) === "Updated booking traveler fields: email",
+        ),
+      ).toBe(true)
+      expect(
+        ledgerRows.some(
+          (row) =>
+            row.actionName === "booking.traveler_travel_details.update" &&
+            row.actionKind === "update" &&
+            detailByActionId.get(row.id) ===
+              "Updated booking traveler travel details fields: passportNumber",
+        ),
+      ).toBe(true)
+      expect(
+        ledgerRows.some(
+          (row) =>
+            row.actionName === "booking.traveler_travel_details.delete" &&
+            row.actionKind === "delete" &&
+            detailByActionId.get(row.id) === "Deleted booking traveler travel details",
+        ),
+      ).toBe(true)
+      expect([...detailByActionId.values()].join(" ")).not.toContain("LEDGER-SECRET")
+      expect([...detailByActionId.values()].join(" ")).not.toContain("ledger@example.test")
+    })
+
+    it("allows scoped non-staff pii reads through the action ledger capability guard", async () => {
+      const booking = await seedBooking()
+      const createRes = await app.request(`/${booking.id}/travelers`, {
+        method: "POST",
+        ...json({ firstName: "Scoped", lastName: "Reader" }),
+      })
+      const { data: participant } = await createRes.json()
+
+      await app.request(`/${booking.id}/travelers/${participant.id}/travel-details`, {
+        method: "PATCH",
+        ...json({ passportNumber: "SCOPED-1" }),
+      })
+
+      const scopedApp = new Hono()
+      scopedApp.use("*", async (c, next) => {
+        c.set("db" as never, db)
+        c.set("userId" as never, "scoped-customer-id")
+        c.set("actor" as never, "customer")
+        c.set("callerType" as never, "api_key")
+        c.set("scopes" as never, ["bookings-pii:read"])
+        await next()
+      })
+      scopedApp.route("/", bookingRoutes)
+
+      const res = await scopedApp.request(
+        `/${booking.id}/travelers/${participant.id}/travel-details`,
+        {
+          method: "GET",
+        },
+      )
+
+      expect(res.status).toBe(200)
+
+      const ledgerRows = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, participant.id))
+
+      expect(
+        ledgerRows.some(
+          (row) =>
+            row.actionName === "booking.pii.read" &&
+            row.status === "succeeded" &&
+            row.principalId === "scoped-customer-id" &&
+            row.authorizationSource === "scope",
         ),
       ).toBe(true)
     })
@@ -1714,10 +2840,28 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
           }) =>
             row.action === "read" &&
             row.outcome === "denied" &&
-            row.reason === "insufficient_scope" &&
+            row.reason === "actor_not_allowed" &&
             row.actorId === "test-customer-id",
         ),
       ).toBe(true)
+
+      const ledgerRows = await db
+        .select()
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, participant.id))
+      const sensitiveReadRows = await db.select().from(actionSensitiveReadDetails)
+
+      expect(
+        ledgerRows.some(
+          (row) =>
+            row.actionName === "booking.pii.read" &&
+            row.status === "denied" &&
+            row.principalType === "user" &&
+            row.principalId === "test-customer-id" &&
+            row.authorizationSource === "actor_context",
+        ),
+      ).toBe(true)
+      expect(sensitiveReadRows.some((row) => row.reasonCode === "actor_not_allowed")).toBe(true)
     })
   })
 
@@ -2095,3 +3239,22 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
     })
   })
 })
+
+async function approveActionApproval(db: AnyDrizzleDb, approvalId: string) {
+  const result = await actionLedgerService.decideApproval(db, {
+    id: approvalId,
+    status: "approved",
+    decidedByPrincipalId: "manager-1",
+    decisionAction: {
+      actionName: "booking.status.approval.decide",
+      actionVersion: "v1",
+      principalType: "user",
+      principalId: "manager-1",
+      internalRequest: false,
+      routeOrToolName: "bookings.approvals.decide",
+    },
+  })
+
+  expect(result?.approval.status).toBe("approved")
+  return result
+}

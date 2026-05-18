@@ -1,7 +1,9 @@
 "use client"
 
 import { type FetchWithValidationOptions, fetchWithValidation, withQueryParams } from "./client.js"
+import type { FinanceActionLedgerListCursor } from "./query-keys.js"
 import {
+  financeActionLedgerListResponse,
   type PublicFinanceDocumentLookupQuery,
   type PublicStartPaymentSessionInput,
   type PublicValidateVoucherInput,
@@ -12,6 +14,49 @@ import {
   publicPaymentSessionResponse,
   publicVoucherValidationResponse,
 } from "./schemas.js"
+
+export interface FinanceActionLedgerListInput {
+  cursor?: FinanceActionLedgerListCursor | null | undefined
+  limit?: number | undefined
+}
+
+function toFinanceActionLedgerQuery(input?: FinanceActionLedgerListInput) {
+  return {
+    cursorOccurredAt: input?.cursor?.occurredAt,
+    cursorId: input?.cursor?.id,
+    limit: input?.limit,
+  }
+}
+
+export function listInvoiceActionLedger(
+  client: FetchWithValidationOptions,
+  invoiceId: string,
+  input: FinanceActionLedgerListInput = {},
+) {
+  return fetchWithValidation(
+    withQueryParams(
+      `/v1/finance/invoices/${invoiceId}/action-ledger`,
+      toFinanceActionLedgerQuery(input),
+    ),
+    financeActionLedgerListResponse,
+    client,
+  )
+}
+
+export function listPaymentSessionActionLedger(
+  client: FetchWithValidationOptions,
+  paymentSessionId: string,
+  input: FinanceActionLedgerListInput = {},
+) {
+  return fetchWithValidation(
+    withQueryParams(
+      `/v1/finance/payment-sessions/${paymentSessionId}/action-ledger`,
+      toFinanceActionLedgerQuery(input),
+    ),
+    financeActionLedgerListResponse,
+    client,
+  )
+}
 
 export function getPublicFinanceDocumentByReference(
   client: FetchWithValidationOptions,

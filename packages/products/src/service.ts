@@ -520,6 +520,16 @@ export const productsService = {
     return row ?? null
   },
 
+  async getActivationSettingByProductId(db: PostgresJsDatabase, productId: string) {
+    const [row] = await db
+      .select()
+      .from(productActivationSettings)
+      .where(eq(productActivationSettings.productId, productId))
+      .limit(1)
+
+    return row ?? null
+  },
+
   async upsertActivationSetting(
     db: PostgresJsDatabase,
     productId: string,
@@ -643,6 +653,16 @@ export const productsService = {
     return row ?? null
   },
 
+  async getTicketSettingByProductId(db: PostgresJsDatabase, productId: string) {
+    const [row] = await db
+      .select()
+      .from(productTicketSettings)
+      .where(eq(productTicketSettings.productId, productId))
+      .limit(1)
+
+    return row ?? null
+  },
+
   async upsertTicketSetting(
     db: PostgresJsDatabase,
     productId: string,
@@ -729,6 +749,16 @@ export const productsService = {
       .select()
       .from(productVisibilitySettings)
       .where(eq(productVisibilitySettings.id, id))
+      .limit(1)
+
+    return row ?? null
+  },
+
+  async getVisibilitySettingByProductId(db: PostgresJsDatabase, productId: string) {
+    const [row] = await db
+      .select()
+      .from(productVisibilitySettings)
+      .where(eq(productVisibilitySettings.productId, productId))
       .limit(1)
 
     return row ?? null
@@ -825,6 +855,25 @@ export const productsService = {
     return row ?? null
   },
 
+  async getCapabilityByProductAndName(
+    db: PostgresJsDatabase,
+    productId: string,
+    capability: CreateProductCapabilityInput["capability"],
+  ) {
+    const [row] = await db
+      .select()
+      .from(productCapabilities)
+      .where(
+        and(
+          eq(productCapabilities.productId, productId),
+          eq(productCapabilities.capability, capability),
+        ),
+      )
+      .limit(1)
+
+    return row ?? null
+  },
+
   async createCapability(
     db: PostgresJsDatabase,
     productId: string,
@@ -907,6 +956,25 @@ export const productsService = {
       .select()
       .from(productDeliveryFormats)
       .where(eq(productDeliveryFormats.id, id))
+      .limit(1)
+
+    return row ?? null
+  },
+
+  async getDeliveryFormatByProductAndFormat(
+    db: PostgresJsDatabase,
+    productId: string,
+    format: CreateProductDeliveryFormatInput["format"],
+  ) {
+    const [row] = await db
+      .select()
+      .from(productDeliveryFormats)
+      .where(
+        and(
+          eq(productDeliveryFormats.productId, productId),
+          eq(productDeliveryFormats.format, format),
+        ),
+      )
       .limit(1)
 
     return row ?? null
@@ -1879,6 +1947,17 @@ export const productsService = {
     return row ?? null
   },
 
+  async getUnitForProductMutation(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .select({ unit: optionUnits, productId: productOptions.productId })
+      .from(optionUnits)
+      .innerJoin(productOptions, eq(optionUnits.optionId, productOptions.id))
+      .where(eq(optionUnits.id, id))
+      .limit(1)
+
+    return row ? { ...row.unit, productId: row.productId } : null
+  },
+
   async createUnit(db: PostgresJsDatabase, optionId: string, data: CreateOptionUnitInput) {
     const [option] = await db
       .select({ id: productOptions.id })
@@ -2078,6 +2157,17 @@ export const productsService = {
     return row ?? null
   },
 
+  async getOptionTranslationForProductMutation(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .select({ translation: productOptionTranslations, productId: productOptions.productId })
+      .from(productOptionTranslations)
+      .innerJoin(productOptions, eq(productOptionTranslations.optionId, productOptions.id))
+      .where(eq(productOptionTranslations.id, id))
+      .limit(1)
+
+    return row ? { ...row.translation, productId: row.productId } : null
+  },
+
   async createOptionTranslation(
     db: PostgresJsDatabase,
     optionId: string,
@@ -2166,6 +2256,18 @@ export const productsService = {
     return row ?? null
   },
 
+  async getUnitTranslationForProductMutation(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .select({ translation: optionUnitTranslations, productId: productOptions.productId })
+      .from(optionUnitTranslations)
+      .innerJoin(optionUnits, eq(optionUnitTranslations.unitId, optionUnits.id))
+      .innerJoin(productOptions, eq(optionUnits.optionId, productOptions.id))
+      .where(eq(optionUnitTranslations.id, id))
+      .limit(1)
+
+    return row ? { ...row.translation, productId: row.productId } : null
+  },
+
   async createUnitTranslation(
     db: PostgresJsDatabase,
     unitId: string,
@@ -2218,6 +2320,10 @@ export const productsService = {
       .from(productItineraries)
       .where(eq(productItineraries.productId, productId))
       .orderBy(desc(productItineraries.isDefault), asc(productItineraries.sortOrder))
+  },
+
+  getItineraryById(db: PostgresJsDatabase, itineraryId: string) {
+    return getItineraryById(db, itineraryId)
   },
 
   async createItinerary(db: PostgresJsDatabase, productId: string, data: CreateItineraryInput) {
@@ -2470,6 +2576,16 @@ export const productsService = {
       .orderBy(asc(productDays.dayNumber))
   },
 
+  async getDayForProductMutation(db: PostgresJsDatabase, dayId: string) {
+    const dayRef = await getDayById(db, dayId)
+    if (!dayRef) {
+      return null
+    }
+
+    const [row] = await db.select().from(productDays).where(eq(productDays.id, dayId)).limit(1)
+    return row ? { ...row, productId: dayRef.productId } : null
+  },
+
   async createDay(db: PostgresJsDatabase, productId: string, data: CreateDayInput) {
     const itinerary = await ensureDefaultItinerary(db, productId)
     return productsService.createItineraryDay(db, productId, itinerary.id, data)
@@ -2519,6 +2635,20 @@ export const productsService = {
       .from(productDayServices)
       .where(eq(productDayServices.dayId, dayId))
       .orderBy(asc(productDayServices.sortOrder))
+  },
+
+  async getDayServiceForProductMutation(db: PostgresJsDatabase, serviceId: string) {
+    const [row] = await db
+      .select()
+      .from(productDayServices)
+      .where(eq(productDayServices.id, serviceId))
+      .limit(1)
+    if (!row) {
+      return null
+    }
+
+    const dayRef = await getDayById(db, row.dayId)
+    return dayRef ? { ...row, productId: dayRef.productId } : null
   },
 
   async createDayService(

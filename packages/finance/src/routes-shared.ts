@@ -14,6 +14,18 @@ export type Env = {
   Variables: {
     db: PostgresJsDatabase
     userId?: string
+    agentId?: string
+    workflowPrincipalId?: string
+    principalSubtype?: string
+    sessionId?: string
+    organizationId?: string | null
+    callerType?: "session" | "api_key" | "internal" | "agent" | "workflow"
+    actor?: string
+    apiTokenId?: string
+    apiKeyId?: string
+    workflowRunId?: string
+    workflowStepId?: string
+    isInternalRequest?: boolean
     container?: ModuleContainer
   }
 }
