@@ -803,12 +803,15 @@ async function getConvertProductData(
     if (option && selectedSlot.optionId && selectedSlot.optionId !== option.id) {
       return null
     }
-    if (
-      selectedSlot.optionId &&
-      requestedLineOptionIds.some((optionId) => optionId !== selectedSlot.optionId)
-    ) {
-      return null
-    }
+    // Note: per-line `optionId` is intentionally NOT required to match
+    // `selectedSlot.optionId`. A slot's `option_id` marks which option
+    // owns the slot's per-unit allocation tracking; other options on the
+    // same product are still bookable on the same departure (e.g. a
+    // tour-operator bus + hotel allotment selling SGL/DBL/TWN/TPL on one
+    // slot). Line options are validated to live on the product above
+    // (the `lineOptions.length !== requestedLineOptionIds.length` guard),
+    // and `adjustSlotCapacity` enforces total pax server-side at booking
+    // time. See issue #960.
 
     slot = {
       id: selectedSlot.id,
@@ -1528,9 +1531,11 @@ async function reserveBookingFromTransactionSource(
           if (item.productId && item.productId !== slot.product_id) {
             throw new BookingServiceError("slot_product_mismatch")
           }
-          if (item.optionId && item.optionId !== slot.option_id) {
-            throw new BookingServiceError("slot_option_mismatch")
-          }
+          // Per issue #960, a per-item `optionId` no longer has to match
+          // `slot.option_id` — option-scoped slots accept items for any
+          // option that lives on the same product. `getConvertProductData`
+          // already validated each line's option belongs to the product;
+          // total pax is enforced by `adjustSlotCapacity` above.
           if (capacity.slotChange) slotChanges.push(capacity.slotChange)
         }
 
