@@ -1,5 +1,7 @@
 import { renderPdfDocument } from "@voyantjs/utils/pdf-renderer"
 import type { StructuredTemplateBodyFormat } from "@voyantjs/utils/template-renderer"
+import { marked } from "marked"
+import sanitizeHtml from "sanitize-html"
 
 import type {
   ProductBrochureTemplateContext,
@@ -42,15 +44,66 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#39;")
 }
 
+function renderMarkdownBrochureBody(body: string) {
+  return sanitizeHtml(marked(body, { async: false }), {
+    allowedTags: [
+      "a",
+      "b",
+      "blockquote",
+      "br",
+      "code",
+      "del",
+      "div",
+      "em",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "hr",
+      "i",
+      "li",
+      "ol",
+      "p",
+      "pre",
+      "s",
+      "span",
+      "strong",
+      "table",
+      "tbody",
+      "td",
+      "tfoot",
+      "th",
+      "thead",
+      "tr",
+      "u",
+      "ul",
+    ],
+    allowedAttributes: {
+      a: ["href", "name", "rel", "target", "title"],
+      "*": ["class", "title"],
+    },
+    allowedSchemes: ["http", "https", "mailto", "tel"],
+    allowedSchemesAppliedToAttributes: ["href"],
+    allowProtocolRelative: false,
+    disallowedTagsMode: "discard",
+  })
+}
+
 export function brochureBodyToHtml(
   body: string,
   bodyFormat: StructuredTemplateBodyFormat,
   title: string,
 ) {
-  const content =
-    bodyFormat === "html"
-      ? body
-      : `<pre style="white-space: pre-wrap; font-family: system-ui, sans-serif;">${escapeHtml(body)}</pre>`
+  let content: string
+  if (bodyFormat === "html") {
+    content = body
+  } else if (bodyFormat === "markdown") {
+    content = renderMarkdownBrochureBody(body)
+  } else {
+    content = `<pre style="white-space: pre-wrap; font-family: system-ui, sans-serif;">${escapeHtml(body)}</pre>`
+  }
 
   return [
     "<!doctype html>",

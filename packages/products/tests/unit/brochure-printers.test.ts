@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
+  brochureBodyToHtml,
   createBasicPdfProductBrochurePrinter,
   createCloudflareBrowserProductBrochurePrinter,
   createCloudflareBrowserProductBrochurePrinterFromEnv,
@@ -131,6 +132,65 @@ describe("product brochure template and printers", () => {
       browserMsUsed: "91",
       productId: "prod_123",
     })
+  })
+
+  it("converts markdown brochure bodies to HTML for browser printers", () => {
+    const html = brochureBodyToHtml(
+      [
+        "# Voyant City Break",
+        "",
+        "## Day 1: Arrival",
+        "",
+        '<div class="payload-richtext"><p><strong>Airport transfer</strong></p></div>',
+      ].join("\n"),
+      "markdown",
+      "Voyant City Break brochure",
+    )
+
+    expect(html).toContain("<h1>Voyant City Break</h1>")
+    expect(html).toContain("<h2>Day 1: Arrival</h2>")
+    expect(html).toContain(
+      '<div class="payload-richtext"><p><strong>Airport transfer</strong></p></div>',
+    )
+    expect(html).not.toContain("<pre")
+    expect(html).not.toContain("&lt;div")
+  })
+
+  it("sanitizes unsafe markdown HTML before browser rendering", () => {
+    const html = brochureBodyToHtml(
+      [
+        "# Safe brochure",
+        "",
+        '<p onclick="alert(1)">Rich <strong>text</strong></p>',
+        '<script>alert("xss")</script>',
+        '<img src="https://example.com/tracker.png" onerror="alert(1)" />',
+        '<a href="javascript:alert(1)">Unsafe link</a>',
+        '<a href="https://example.com/details" target="_blank">Safe link</a>',
+      ].join("\n"),
+      "markdown",
+      "Safe brochure",
+    )
+
+    expect(html).toContain("<h1>Safe brochure</h1>")
+    expect(html).toContain("<p>Rich <strong>text</strong></p>")
+    expect(html).toContain('<a href="https://example.com/details" target="_blank">Safe link</a>')
+    expect(html).not.toContain("<script")
+    expect(html).not.toContain("<img")
+    expect(html).not.toContain("onclick")
+    expect(html).not.toContain("onerror")
+    expect(html).not.toContain("javascript:")
+    expect(html).not.toContain("alert(")
+  })
+
+  it("keeps unknown brochure body formats in escaped preformatted text", () => {
+    const html = brochureBodyToHtml(
+      '{"root":{"type":"root","children":[]}}',
+      "lexical_json",
+      "Lexical brochure",
+    )
+
+    expect(html).toContain("<pre")
+    expect(html).toContain("&quot;root&quot;")
   })
 
   it("requires Cloudflare credentials when building a printer from env", () => {
