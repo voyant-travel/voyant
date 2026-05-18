@@ -370,7 +370,7 @@ describe("ledgerSensitiveRead", () => {
     })
 
     expect(result).toBe("secret")
-    expect(events).toEqual(["read", "append", "resolved"])
+    expect(events).toEqual(["append", "read", "resolved"])
     expect(appendSpy).toHaveBeenCalledOnce()
   })
 
@@ -442,7 +442,7 @@ describe("ledgerSensitiveRead", () => {
       }),
     ).rejects.toThrow("ledger unavailable")
 
-    expect(events).toEqual(["read", "append"])
+    expect(events).toEqual(["append"])
   })
 })
 

@@ -127,6 +127,25 @@ describe("action ledger capability registry", () => {
     })
   })
 
+  test("denies session callers when a capability requires a missing grant", () => {
+    expect(
+      evaluateActionLedgerCapabilityAccess({
+        definition: {
+          ...capability,
+          allowedActorTypes: ["staff"],
+          requiredGrants: [{ resource: "bookings", action: "write" }],
+        },
+        actor: "staff",
+        callerType: "session",
+      }),
+    ).toMatchObject({
+      allowed: false,
+      reason: "grant_missing",
+      authorizationSource: "scope",
+      grant: null,
+    })
+  })
+
   test("allows flattened scope grants and wildcard scopes", () => {
     expect(
       evaluateActionLedgerCapabilityAccess({

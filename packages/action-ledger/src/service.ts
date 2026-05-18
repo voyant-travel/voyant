@@ -397,7 +397,7 @@ export const actionLedgerService = {
     }
 
     try {
-      return await insertEntry(db, input)
+      return await withOptionalTransaction(db, (tx) => insertEntry(tx, input))
     } catch (error) {
       const racedExisting = await findExistingIdempotentEntry(db, input)
       if (racedExisting) {
@@ -966,13 +966,26 @@ type TransactionalDrizzleDb = AnyDrizzleDb & {
   transaction?: <T>(callback: (tx: AnyDrizzleDb) => Promise<T>) => Promise<T>
 }
 
+const activeTransactionDbs = new WeakSet<object>()
+
 function withOptionalTransaction<T>(
   db: AnyDrizzleDb,
   callback: (tx: AnyDrizzleDb) => Promise<T>,
 ): Promise<T> {
+  if (activeTransactionDbs.has(db as object)) {
+    return callback(db)
+  }
+
   const maybeTransactional = db as TransactionalDrizzleDb
   if (typeof maybeTransactional.transaction === "function") {
-    return maybeTransactional.transaction((tx) => callback(tx))
+    return maybeTransactional.transaction(async (tx) => {
+      activeTransactionDbs.add(tx as object)
+      try {
+        return await callback(tx)
+      } finally {
+        activeTransactionDbs.delete(tx as object)
+      }
+    })
   }
   return callback(db)
 }

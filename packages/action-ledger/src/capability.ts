@@ -178,6 +178,16 @@ export function evaluateActionLedgerCapabilityAccess<TContext = unknown>(
     }
   }
 
+  if (definition.requiredGrants && definition.requiredGrants.length > 0) {
+    return {
+      ...base,
+      allowed: false,
+      reason: "grant_missing",
+      authorizationSource: input.callerType === "api_key" ? "api_token_permission" : "scope",
+      grant: null,
+    }
+  }
+
   if (input.callerType === "api_key") {
     return {
       ...base,

@@ -739,6 +739,38 @@ describe("actionLedgerService.getEntry", () => {
 })
 
 describe("actionLedgerService.appendEntry", () => {
+  test("wraps entry detail inserts in a transaction when the db supports it", async () => {
+    const { db, transactionCalls } = makeAppendDb()
+
+    await actionLedgerService.appendEntry(db, {
+      actionName: "booking.cancel",
+      actionVersion: "v1",
+      actionKind: "update",
+      status: "succeeded",
+      evaluatedRisk: "high",
+      principalType: "user",
+      principalId: "usr_1",
+      internalRequest: false,
+      targetType: "booking",
+      targetId: "book_1",
+      mutationDetail: {
+        summary: "Cancelled booking",
+        reversalKind: "domain_command",
+      },
+      payloads: [
+        {
+          payloadKind: "command_input",
+          schemaTag: "booking.cancel:v1",
+          retentionPolicy: "audit-default",
+          storageRef: "blob://action-ledger/book_1/cancel-input",
+        },
+      ],
+      enqueueRelay: true,
+    })
+
+    expect(transactionCalls).toEqual(["begin", "commit"])
+  })
+
   test("inserts payload references and relay markers with the action id", async () => {
     const { db, insertedPayloads, insertedRelayOutbox } = makeAppendDb()
 
@@ -2292,7 +2324,19 @@ function makeAppendDb() {
   const insertedPayloads: unknown[] = []
   const insertedRelayOutbox: unknown[] = []
   const insertedSensitiveReadDetails: unknown[] = []
+  const transactionCalls: string[] = []
   const db = {
+    async transaction<T>(callback: (tx: AnyDrizzleDb) => Promise<T>) {
+      transactionCalls.push("begin")
+      try {
+        const result = await callback(db as AnyDrizzleDb)
+        transactionCalls.push("commit")
+        return result
+      } catch (error) {
+        transactionCalls.push("rollback")
+        throw error
+      }
+    },
     select() {
       return {
         from() {
@@ -2383,5 +2427,6 @@ function makeAppendDb() {
     insertedPayloads,
     insertedRelayOutbox,
     insertedSensitiveReadDetails,
+    transactionCalls,
   }
 }

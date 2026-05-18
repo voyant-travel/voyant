@@ -298,8 +298,13 @@ export async function ledgerSensitiveRead<T>(
   input: BuildActionLedgerSensitiveReadInputForValue<T>,
   read: () => T | Promise<T>,
 ): Promise<T> {
+  if (typeof input !== "function") {
+    await appendActionLedgerSensitiveRead(db, input)
+    return read()
+  }
+
   const value = await read()
-  await appendActionLedgerSensitiveRead(db, typeof input === "function" ? input(value) : input)
+  await appendActionLedgerSensitiveRead(db, input(value))
   return value
 }
 

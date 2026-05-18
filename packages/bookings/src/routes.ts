@@ -20,6 +20,7 @@ import {
   mapActionLedgerRequestContext,
   requestActionLedgerApproval,
 } from "@voyantjs/action-ledger"
+import type { AnyDrizzleDb } from "@voyantjs/db"
 import {
   ForbiddenApiError,
   handleApiError,
@@ -30,6 +31,7 @@ import {
   requireUserId,
   UnauthorizedApiError,
 } from "@voyantjs/hono"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type Context, Hono } from "hono"
 import { z } from "zod"
 
@@ -113,6 +115,48 @@ const BOOKING_ITEM_LEDGER_ACTION_VERSION = "v1"
 const BOOKING_NOTE_LEDGER_ACTION_VERSION = "v1"
 
 type ApprovedBookingStatusAction = BuildActionLedgerApprovedExecutionFieldsInput
+type BookingMutationLedgerInput = {
+  action: BookingMutationAction
+  actionName: string
+  actionVersion: string
+  targetType: string
+  targetId: string
+  changedFields: string[]
+  subject: string
+  routeOrToolName: string
+  authorizationSource?: string
+  evaluatedRisk?: ActionLedgerEntry["evaluatedRisk"]
+  summary?: string
+}
+type BookingTravelerMutationLedgerInput = {
+  action: BookingTravelerLedgerAction
+  travelerId: string
+  changedFields: string[]
+  subject: string
+  actionName: string
+  routeOrToolName: string
+  evaluatedRisk?: ActionLedgerEntry["evaluatedRisk"]
+  summary?: string
+}
+type BookingStatusApprovalTargetState =
+  | {
+      exists: false
+    }
+  | {
+      exists: true
+      status: string
+      sellCurrency: string
+      sellAmountCents: number | null
+      costAmountCents: number | null
+      customerPaymentPolicy: unknown
+      holdExpiresAt: string | null
+      confirmedAt: string | null
+      awaitingPaymentAt: string | null
+      paidAt: string | null
+      cancelledAt: string | null
+      completedAt: string | null
+      expiredAt: string | null
+    }
 type TravelerTravelDetails = Awaited<
   ReturnType<ReturnType<typeof createBookingPiiService>["getTravelerTravelDetails"]>
 >
@@ -301,22 +345,18 @@ function bookingMutationSummary(action: BookingMutationAction, fields: string[],
 
 async function appendBookingMutationLedgerEntry(
   c: Context<Env>,
-  input: {
-    action: BookingMutationAction
-    actionName: string
-    actionVersion: string
-    targetType: string
-    targetId: string
-    changedFields: string[]
-    subject: string
-    routeOrToolName: string
-    authorizationSource?: string
-    evaluatedRisk?: ActionLedgerEntry["evaluatedRisk"]
-    summary?: string
-  },
+  input: BookingMutationLedgerInput,
 ) {
-  return appendActionLedgerMutation(c.get("db"), {
-    context: getActionLedgerRequestContext(c),
+  return appendBookingMutationLedgerEntryToDb(c.get("db"), getActionLedgerRequestContext(c), input)
+}
+
+async function appendBookingMutationLedgerEntryToDb(
+  db: AnyDrizzleDb,
+  context: ActionLedgerRequestContextValues,
+  input: BookingMutationLedgerInput,
+) {
+  return appendActionLedgerMutation(db, {
+    context,
     actionName: input.actionName,
     actionVersion: input.actionVersion,
     actionKind: input.action,
@@ -333,20 +373,12 @@ async function appendBookingMutationLedgerEntry(
   })
 }
 
-async function appendBookingTravelerMutationLedgerEntry(
-  c: Context<Env>,
-  input: {
-    action: BookingTravelerLedgerAction
-    travelerId: string
-    changedFields: string[]
-    subject: string
-    actionName: string
-    routeOrToolName: string
-    evaluatedRisk?: ActionLedgerEntry["evaluatedRisk"]
-    summary?: string
-  },
+async function appendBookingTravelerMutationLedgerEntryToDb(
+  db: AnyDrizzleDb,
+  context: ActionLedgerRequestContextValues,
+  input: BookingTravelerMutationLedgerInput,
 ) {
-  return appendBookingMutationLedgerEntry(c, {
+  return appendBookingMutationLedgerEntryToDb(db, context, {
     ...input,
     actionName: input.actionName,
     actionVersion: BOOKING_TRAVELER_LEDGER_ACTION_VERSION,
@@ -452,6 +484,7 @@ async function authorizeBookingStatusMutation(
       const idempotencyScope = `${input.routeOrToolName}:${input.bookingId}`
       const idempotencyFingerprint = await buildBookingStatusApprovalFingerprint(
         input,
+        await loadBookingStatusApprovalTargetState(c, input.bookingId),
         access,
         approvalRequirement,
       )
@@ -588,6 +621,7 @@ async function resolveApprovedBookingStatusAction(
 
   const executionFingerprint = await buildBookingStatusApprovalFingerprint(
     input,
+    await loadBookingStatusApprovalTargetState(c, input.bookingId),
     access,
     approvalRequirement,
   )
@@ -630,6 +664,7 @@ function buildBookingStatusApprovalFingerprint(
     bookingId: string
     commandInput?: unknown
   },
+  targetState: BookingStatusApprovalTargetState,
   access: ActionLedgerCapabilityAccessResult,
   approvalRequirement: ReturnType<typeof evaluateActionLedgerApprovalRequirement>,
 ) {
@@ -638,13 +673,45 @@ function buildBookingStatusApprovalFingerprint(
     actionVersion: BOOKING_STATUS_CAPABILITIES[input.key].version,
     targetType: "booking",
     targetId: input.bookingId,
-    commandInput: input.commandInput ?? null,
+    commandInput: {
+      command: input.commandInput ?? null,
+      targetState,
+    },
     approvalPolicy: approvalRequirement.approvalPolicy,
     capabilityId: access.capabilityId,
     capabilityVersion: access.capabilityVersion,
     evaluatedRisk: approvalRequirement.evaluatedRisk,
     reasonCode: approvalRequirement.reasonCode,
   })
+}
+
+async function loadBookingStatusApprovalTargetState(
+  c: Context<Env>,
+  bookingId: string,
+): Promise<BookingStatusApprovalTargetState> {
+  const booking = await bookingsService.getBookingById(c.get("db"), bookingId)
+  if (!booking) return { exists: false }
+
+  return {
+    exists: true,
+    status: booking.status,
+    sellCurrency: booking.sellCurrency,
+    sellAmountCents: booking.sellAmountCents,
+    costAmountCents: booking.costAmountCents,
+    customerPaymentPolicy: booking.customerPaymentPolicy,
+    holdExpiresAt: serializeBookingApprovalDate(booking.holdExpiresAt),
+    confirmedAt: serializeBookingApprovalDate(booking.confirmedAt),
+    awaitingPaymentAt: serializeBookingApprovalDate(booking.awaitingPaymentAt),
+    paidAt: serializeBookingApprovalDate(booking.paidAt),
+    cancelledAt: serializeBookingApprovalDate(booking.cancelledAt),
+    completedAt: serializeBookingApprovalDate(booking.completedAt),
+    expiredAt: serializeBookingApprovalDate(booking.expiredAt),
+  }
+}
+
+function serializeBookingApprovalDate(value: Date | string | null): string | null {
+  if (!value) return null
+  return value instanceof Date ? value.toISOString() : value
 }
 
 function actionApprovalValidationResponse(
@@ -1878,34 +1945,33 @@ export const bookingRoutes = new Hono<Env>()
     let travelDetails: TravelerTravelDetails
     try {
       const pii = await createAuditedBookingPiiService(c, traveler.bookingId)
-      travelDetails = await pii.getTravelerTravelDetails(c.get("db"), traveler.id, c.get("userId"))
+      travelDetails = await ledgerSensitiveRead(
+        c.get("db"),
+        {
+          context: getActionLedgerRequestContext(c),
+          actionName: BOOKING_PII_READ_ACTION_NAME,
+          actionVersion: BOOKING_PII_READ_ACTION_VERSION,
+          status: "succeeded",
+          evaluatedRisk: auth.access?.evaluatedRisk ?? "high",
+          targetType: "booking_traveler",
+          targetId: traveler.id,
+          routeOrToolName: "bookings.travelers.reveal",
+          capabilityId: BOOKING_PII_READ_CAPABILITY.id,
+          capabilityVersion: BOOKING_PII_READ_CAPABILITY.version,
+          authorizationSource: auth.access?.authorizationSource ?? BOOKING_PII_AUTHORIZATION_SOURCE,
+          reasonCode: "traveler_reveal",
+          disclosedFieldSet: [
+            ...TRAVELER_IDENTITY_DISCLOSED_FIELDS,
+            ...TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS,
+          ],
+          disclosureSummary: "Traveler identity reveal",
+          decisionPolicy: BOOKING_PII_DECISION_POLICY,
+        },
+        () => pii.getTravelerTravelDetails(c.get("db"), traveler.id, c.get("userId")),
+      )
     } catch (error) {
       return handleKmsConfigError(c, error)
     }
-
-    travelDetails = await ledgerSensitiveRead(
-      c.get("db"),
-      (value: TravelerTravelDetails) => ({
-        context: getActionLedgerRequestContext(c),
-        actionName: BOOKING_PII_READ_ACTION_NAME,
-        actionVersion: BOOKING_PII_READ_ACTION_VERSION,
-        status: "succeeded",
-        evaluatedRisk: auth.access?.evaluatedRisk ?? "high",
-        targetType: "booking_traveler",
-        targetId: traveler.id,
-        routeOrToolName: "bookings.travelers.reveal",
-        capabilityId: BOOKING_PII_READ_CAPABILITY.id,
-        capabilityVersion: BOOKING_PII_READ_CAPABILITY.version,
-        authorizationSource: auth.access?.authorizationSource ?? BOOKING_PII_AUTHORIZATION_SOURCE,
-        reasonCode: "traveler_reveal",
-        disclosedFieldSet: value
-          ? [...TRAVELER_IDENTITY_DISCLOSED_FIELDS, ...TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS]
-          : TRAVELER_IDENTITY_DISCLOSED_FIELDS,
-        disclosureSummary: "Traveler identity reveal",
-        decisionPolicy: BOOKING_PII_DECISION_POLICY,
-      }),
-      () => travelDetails,
-    )
 
     await logBookingPiiAccess(c, {
       bookingId,
@@ -1957,34 +2023,30 @@ export const bookingRoutes = new Hono<Env>()
     let details: TravelerTravelDetails
     try {
       const pii = await createAuditedBookingPiiService(c, traveler.bookingId)
-      details = await pii.getTravelerTravelDetails(c.get("db"), traveler.id, c.get("userId"))
+      details = await ledgerSensitiveRead(
+        c.get("db"),
+        {
+          context: getActionLedgerRequestContext(c),
+          actionName: BOOKING_PII_READ_ACTION_NAME,
+          actionVersion: BOOKING_PII_READ_ACTION_VERSION,
+          status: "succeeded",
+          evaluatedRisk: auth.access?.evaluatedRisk ?? "high",
+          targetType: "booking_traveler",
+          targetId: traveler.id,
+          routeOrToolName: "bookings.travelers.travel-details",
+          capabilityId: BOOKING_PII_READ_CAPABILITY.id,
+          capabilityVersion: BOOKING_PII_READ_CAPABILITY.version,
+          authorizationSource: auth.access?.authorizationSource ?? BOOKING_PII_AUTHORIZATION_SOURCE,
+          reasonCode: "travel_details_reveal",
+          disclosedFieldSet: TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS,
+          disclosureSummary: "Traveler travel details reveal",
+          decisionPolicy: BOOKING_PII_DECISION_POLICY,
+        },
+        () => pii.getTravelerTravelDetails(c.get("db"), traveler.id, c.get("userId")),
+      )
     } catch (error) {
       return handleKmsConfigError(c, error)
     }
-
-    details = await ledgerSensitiveRead(
-      c.get("db"),
-      (value: TravelerTravelDetails) => ({
-        context: getActionLedgerRequestContext(c),
-        actionName: BOOKING_PII_READ_ACTION_NAME,
-        actionVersion: BOOKING_PII_READ_ACTION_VERSION,
-        status: value ? "succeeded" : "denied",
-        evaluatedRisk: auth.access?.evaluatedRisk ?? "high",
-        targetType: "booking_traveler",
-        targetId: traveler.id,
-        routeOrToolName: "bookings.travelers.travel-details",
-        capabilityId: BOOKING_PII_READ_CAPABILITY.id,
-        capabilityVersion: BOOKING_PII_READ_CAPABILITY.version,
-        authorizationSource: auth.access?.authorizationSource ?? BOOKING_PII_AUTHORIZATION_SOURCE,
-        reasonCode: value ? "travel_details_reveal" : "travel_details_not_found",
-        disclosedFieldSet: value ? TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS : [],
-        disclosureSummary: value
-          ? "Traveler travel details reveal"
-          : "Booking traveler travel details not found",
-        decisionPolicy: BOOKING_PII_DECISION_POLICY,
-      }),
-      () => details,
-    )
 
     if (!details) {
       await logBookingPiiAccess(c, {
@@ -2002,26 +2064,35 @@ export const bookingRoutes = new Hono<Env>()
 
   .post("/:id/travelers", async (c) => {
     const body = await parseJsonBody(c, insertTravelerSchema)
-    const row = await bookingsService.createTraveler(
-      c.get("db"),
-      c.req.param("id"),
-      body,
-      c.get("userId"),
-    )
+    const ledgerContext = getActionLedgerRequestContext(c)
+    const row = await c.get("db").transaction(async (tx) => {
+      const txDb = tx as PostgresJsDatabase
+      const row = await bookingsService.createTraveler(
+        txDb,
+        c.req.param("id"),
+        body,
+        c.get("userId"),
+      )
+
+      if (!row) return null
+
+      await appendBookingTravelerMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+        action: "create",
+        travelerId: row.id,
+        changedFields: changedBookingTravelerFields(body, null, row),
+        subject: "booking traveler",
+        actionName: "booking.traveler.create",
+        routeOrToolName: "bookings.travelers.create",
+        evaluatedRisk: "high",
+      })
+
+      return row
+    })
 
     if (!row) {
       return c.json({ error: "Booking not found" }, 404)
     }
 
-    await appendBookingTravelerMutationLedgerEntry(c, {
-      action: "create",
-      travelerId: row.id,
-      changedFields: changedBookingTravelerFields(body, null, row),
-      subject: "booking traveler",
-      actionName: "booking.traveler.create",
-      routeOrToolName: "bookings.travelers.create",
-      evaluatedRisk: "high",
-    })
     return c.json({ data: row }, 201)
   })
 
@@ -2038,36 +2109,44 @@ export const bookingRoutes = new Hono<Env>()
       const runtime = getRouteRuntime(c)
       const kms = await runtime.getKmsProvider()
       const pii = await createAuditedBookingPiiService(c, c.req.param("id"))
-      const result = await bookingsService.createTravelerWithTravelDetails(
-        c.get("db"),
-        c.req.param("id"),
-        data,
-        {
-          pii,
-          userId: c.get("userId"),
-          actorId: c.get("userId"),
-          resolveTravelSnapshot: runtime.resolveTravelSnapshot
-            ? (personId) => runtime.resolveTravelSnapshot!(c.get("db"), personId, { kms })
-            : undefined,
-        },
-      )
+      const ledgerContext = getActionLedgerRequestContext(c)
+      const result = await c.get("db").transaction(async (tx) => {
+        const txDb = tx as PostgresJsDatabase
+        const result = await bookingsService.createTravelerWithTravelDetails(
+          txDb,
+          c.req.param("id"),
+          data,
+          {
+            pii,
+            userId: c.get("userId"),
+            actorId: c.get("userId"),
+            resolveTravelSnapshot: runtime.resolveTravelSnapshot
+              ? (personId) => runtime.resolveTravelSnapshot!(txDb, personId, { kms })
+              : undefined,
+          },
+        )
+        if (!result) return null
+
+        await appendBookingTravelerMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+          action: "create",
+          travelerId: result.traveler.id,
+          changedFields: [
+            ...new Set([
+              ...changedBookingTravelerFields(data, null, result.traveler),
+              ...changedBookingTravelDetailFields(data),
+            ]),
+          ].sort(),
+          subject: "booking traveler with travel details",
+          actionName: "booking.traveler_with_travel_details.create",
+          routeOrToolName: "bookings.travelers.with-travel-details.create",
+          evaluatedRisk: "high",
+        })
+
+        return result
+      })
       if (!result) {
         return c.json({ error: "Booking not found" }, 404)
       }
-      await appendBookingTravelerMutationLedgerEntry(c, {
-        action: "create",
-        travelerId: result.traveler.id,
-        changedFields: [
-          ...new Set([
-            ...changedBookingTravelerFields(data, null, result.traveler),
-            ...changedBookingTravelDetailFields(data),
-          ]),
-        ].sort(),
-        subject: "booking traveler with travel details",
-        actionName: "booking.traveler_with_travel_details.create",
-        routeOrToolName: "bookings.travelers.with-travel-details.create",
-        evaluatedRisk: "high",
-      })
       return c.json({ data: result }, 201)
     } catch (error) {
       return handleKmsConfigError(c, error)
@@ -2099,29 +2178,36 @@ export const bookingRoutes = new Hono<Env>()
 
       const data = await parseJsonBody(c, updateTravelerWithTravelDetailsSchema)
       const pii = await createAuditedBookingPiiService(c, bookingId)
-      const result = await bookingsService.updateTravelerWithTravelDetails(
-        c.get("db"),
-        travelerId,
-        data,
-        { pii, actorId: c.get("userId") },
-      )
+      const ledgerContext = getActionLedgerRequestContext(c)
+      const result = await c.get("db").transaction(async (tx) => {
+        const result = await bookingsService.updateTravelerWithTravelDetails(
+          tx as PostgresJsDatabase,
+          travelerId,
+          data,
+          { pii, actorId: c.get("userId") },
+        )
+        if (!result) return null
+
+        await appendBookingTravelerMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+          action: "update",
+          travelerId: result.traveler.id,
+          changedFields: [
+            ...new Set([
+              ...changedBookingTravelerFields(data, traveler, result.traveler),
+              ...changedBookingTravelDetailFields(data),
+            ]),
+          ].sort(),
+          subject: "booking traveler with travel details",
+          actionName: "booking.traveler_with_travel_details.update",
+          routeOrToolName: "bookings.travelers.with-travel-details.update",
+          evaluatedRisk: "high",
+        })
+
+        return result
+      })
       if (!result) {
         return c.json({ error: "Traveler not found" }, 404)
       }
-      await appendBookingTravelerMutationLedgerEntry(c, {
-        action: "update",
-        travelerId: result.traveler.id,
-        changedFields: [
-          ...new Set([
-            ...changedBookingTravelerFields(data, traveler, result.traveler),
-            ...changedBookingTravelDetailFields(data),
-          ]),
-        ].sort(),
-        subject: "booking traveler with travel details",
-        actionName: "booking.traveler_with_travel_details.update",
-        routeOrToolName: "bookings.travelers.with-travel-details.update",
-        evaluatedRisk: "high",
-      })
       return c.json({ data: result })
     } catch (error) {
       return handleKmsConfigError(c, error)
@@ -2158,26 +2244,34 @@ export const bookingRoutes = new Hono<Env>()
     try {
       const pii = await createAuditedBookingPiiService(c, traveler.bookingId)
       const body = await parseJsonBody(c, upsertTravelerTravelDetailsSchema)
-      const row = await pii.upsertTravelerTravelDetails(
-        c.get("db"),
-        traveler.id,
-        body,
-        c.get("userId"),
-      )
+      const ledgerContext = getActionLedgerRequestContext(c)
+      const row = await c.get("db").transaction(async (tx) => {
+        const row = await pii.upsertTravelerTravelDetails(
+          tx as PostgresJsDatabase,
+          traveler.id,
+          body,
+          c.get("userId"),
+        )
+
+        if (!row) return null
+
+        await appendBookingTravelerMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+          action: "update",
+          travelerId: traveler.id,
+          changedFields: changedBookingTravelDetailFields(body),
+          subject: "booking traveler travel details",
+          actionName: "booking.traveler_travel_details.update",
+          routeOrToolName: "bookings.travelers.travel-details.update",
+          evaluatedRisk: "high",
+        })
+
+        return row
+      })
 
       if (!row) {
         return c.json({ error: "Traveler not found" }, 404)
       }
 
-      await appendBookingTravelerMutationLedgerEntry(c, {
-        action: "update",
-        travelerId: traveler.id,
-        changedFields: changedBookingTravelDetailFields(body),
-        subject: "booking traveler travel details",
-        actionName: "booking.traveler_travel_details.update",
-        routeOrToolName: "bookings.travelers.travel-details.update",
-        evaluatedRisk: "high",
-      })
       return c.json({ data: row })
     } catch (error) {
       return handleKmsConfigError(c, error)
@@ -2193,21 +2287,29 @@ export const bookingRoutes = new Hono<Env>()
     }
 
     const body = await parseJsonBody(c, updateTravelerSchema)
-    const row = await bookingsService.updateTraveler(c.get("db"), travelerId, body)
+    const ledgerContext = getActionLedgerRequestContext(c)
+    const row = await c.get("db").transaction(async (tx) => {
+      const row = await bookingsService.updateTraveler(tx as PostgresJsDatabase, travelerId, body)
+
+      if (!row) return null
+
+      await appendBookingTravelerMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+        action: "update",
+        travelerId: row.id,
+        changedFields: changedBookingTravelerFields(body, before, row),
+        subject: "booking traveler",
+        actionName: "booking.traveler.update",
+        routeOrToolName: "bookings.travelers.update",
+        evaluatedRisk: "high",
+      })
+
+      return row
+    })
 
     if (!row) {
       return c.json({ error: "Traveler not found" }, 404)
     }
 
-    await appendBookingTravelerMutationLedgerEntry(c, {
-      action: "update",
-      travelerId: row.id,
-      changedFields: changedBookingTravelerFields(body, before, row),
-      subject: "booking traveler",
-      actionName: "booking.traveler.update",
-      routeOrToolName: "bookings.travelers.update",
-      evaluatedRisk: "high",
-    })
     return c.json({ data: row })
   })
 
@@ -2240,21 +2342,33 @@ export const bookingRoutes = new Hono<Env>()
 
     try {
       const pii = await createAuditedBookingPiiService(c, traveler.bookingId)
-      const row = await pii.deleteTravelerTravelDetails(c.get("db"), traveler.id, c.get("userId"))
+      const ledgerContext = getActionLedgerRequestContext(c)
+      const row = await c.get("db").transaction(async (tx) => {
+        const row = await pii.deleteTravelerTravelDetails(
+          tx as PostgresJsDatabase,
+          traveler.id,
+          c.get("userId"),
+        )
+
+        if (!row) return null
+
+        await appendBookingTravelerMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+          action: "delete",
+          travelerId: traveler.id,
+          changedFields: [],
+          subject: "booking traveler travel details",
+          actionName: "booking.traveler_travel_details.delete",
+          routeOrToolName: "bookings.travelers.travel-details.delete",
+          evaluatedRisk: "high",
+        })
+
+        return row
+      })
 
       if (!row) {
         return c.json({ error: "Traveler travel details not found" }, 404)
       }
 
-      await appendBookingTravelerMutationLedgerEntry(c, {
-        action: "delete",
-        travelerId: traveler.id,
-        changedFields: [],
-        subject: "booking traveler travel details",
-        actionName: "booking.traveler_travel_details.delete",
-        routeOrToolName: "bookings.travelers.travel-details.delete",
-        evaluatedRisk: "high",
-      })
       return c.json({ success: true }, 200)
     } catch (error) {
       return handleKmsConfigError(c, error)
@@ -2269,21 +2383,29 @@ export const bookingRoutes = new Hono<Env>()
       return c.json({ error: "Traveler not found" }, 404)
     }
 
-    const row = await bookingsService.deleteTraveler(c.get("db"), travelerId)
+    const ledgerContext = getActionLedgerRequestContext(c)
+    const row = await c.get("db").transaction(async (tx) => {
+      const row = await bookingsService.deleteTraveler(tx as PostgresJsDatabase, travelerId)
+
+      if (!row) return null
+
+      await appendBookingTravelerMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+        action: "delete",
+        travelerId,
+        changedFields: [],
+        subject: "booking traveler",
+        actionName: "booking.traveler.delete",
+        routeOrToolName: "bookings.travelers.delete",
+        evaluatedRisk: "high",
+      })
+
+      return row
+    })
 
     if (!row) {
       return c.json({ error: "Traveler not found" }, 404)
     }
 
-    await appendBookingTravelerMutationLedgerEntry(c, {
-      action: "delete",
-      travelerId,
-      changedFields: [],
-      subject: "booking traveler",
-      actionName: "booking.traveler.delete",
-      routeOrToolName: "bookings.travelers.delete",
-      evaluatedRisk: "high",
-    })
     return c.json({ success: true }, 200)
   })
 
@@ -2299,28 +2421,35 @@ export const bookingRoutes = new Hono<Env>()
   // 17. POST /:id/items — Add booking item
   .post("/:id/items", async (c) => {
     const body = await parseJsonBody(c, insertBookingItemSchema)
-    const row = await bookingsService.createItem(
-      c.get("db"),
-      c.req.param("id"),
-      body,
-      c.get("userId"),
-    )
+    const ledgerContext = getActionLedgerRequestContext(c)
+    const row = await c.get("db").transaction(async (tx) => {
+      const row = await bookingsService.createItem(
+        tx as PostgresJsDatabase,
+        c.req.param("id"),
+        body,
+        c.get("userId"),
+      )
+
+      if (!row) return null
+
+      await appendBookingMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+        action: "create",
+        actionName: "booking.item.create",
+        actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
+        targetType: "booking_item",
+        targetId: row.id,
+        changedFields: changedBookingItemFields(body, null, row),
+        subject: "booking item",
+        routeOrToolName: "bookings.items.create",
+        evaluatedRisk: "high",
+      })
+
+      return row
+    })
 
     if (!row) {
       return c.json({ error: "Booking not found" }, 404)
     }
-
-    await appendBookingMutationLedgerEntry(c, {
-      action: "create",
-      actionName: "booking.item.create",
-      actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
-      targetType: "booking_item",
-      targetId: row.id,
-      changedFields: changedBookingItemFields(body, null, row),
-      subject: "booking item",
-      routeOrToolName: "bookings.items.create",
-      evaluatedRisk: "high",
-    })
 
     return c.json({ data: row }, 201)
   })
@@ -2339,23 +2468,30 @@ export const bookingRoutes = new Hono<Env>()
     }
 
     const body = await parseJsonBody(c, updateBookingItemSchema)
-    const row = await bookingsService.updateItem(c.get("db"), itemId, body)
+    const ledgerContext = getActionLedgerRequestContext(c)
+    const row = await c.get("db").transaction(async (tx) => {
+      const row = await bookingsService.updateItem(tx as PostgresJsDatabase, itemId, body)
+
+      if (!row) return null
+
+      await appendBookingMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+        action: "update",
+        actionName: "booking.item.update",
+        actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
+        targetType: "booking_item",
+        targetId: row.id,
+        changedFields: changedBookingItemFields(body, before, row),
+        subject: "booking item",
+        routeOrToolName: "bookings.items.update",
+        evaluatedRisk: "high",
+      })
+
+      return row
+    })
 
     if (!row) {
       return c.json({ error: "Booking item not found" }, 404)
     }
-
-    await appendBookingMutationLedgerEntry(c, {
-      action: "update",
-      actionName: "booking.item.update",
-      actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
-      targetType: "booking_item",
-      targetId: row.id,
-      changedFields: changedBookingItemFields(body, before, row),
-      subject: "booking item",
-      routeOrToolName: "bookings.items.update",
-      evaluatedRisk: "high",
-    })
 
     return c.json({ data: row })
   })
@@ -2373,24 +2509,31 @@ export const bookingRoutes = new Hono<Env>()
       return c.json({ error: "Booking item not found" }, 404)
     }
 
-    const row = await bookingsService.deleteItem(c.get("db"), itemId)
+    const ledgerContext = getActionLedgerRequestContext(c)
+    const row = await c.get("db").transaction(async (tx) => {
+      const row = await bookingsService.deleteItem(tx as PostgresJsDatabase, itemId)
+
+      if (!row) return null
+
+      await appendBookingMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+        action: "delete",
+        actionName: "booking.item.delete",
+        actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
+        targetType: "booking_item",
+        targetId: itemId,
+        changedFields: [],
+        subject: "booking item",
+        routeOrToolName: "bookings.items.delete",
+        evaluatedRisk: "high",
+        summary: "Deleted booking item",
+      })
+
+      return row
+    })
 
     if (!row) {
       return c.json({ error: "Booking item not found" }, 404)
     }
-
-    await appendBookingMutationLedgerEntry(c, {
-      action: "delete",
-      actionName: "booking.item.delete",
-      actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
-      targetType: "booking_item",
-      targetId: itemId,
-      changedFields: [],
-      subject: "booking item",
-      routeOrToolName: "bookings.items.delete",
-      evaluatedRisk: "high",
-      summary: "Deleted booking item",
-    })
 
     return c.json({ success: true }, 200)
   })
@@ -2415,24 +2558,31 @@ export const bookingRoutes = new Hono<Env>()
     }
 
     const body = await parseJsonBody(c, insertBookingItemTravelerSchema)
-    const row = await bookingsService.addItemParticipant(c.get("db"), itemId, body)
+    const ledgerContext = getActionLedgerRequestContext(c)
+    const row = await c.get("db").transaction(async (tx) => {
+      const row = await bookingsService.addItemParticipant(tx as PostgresJsDatabase, itemId, body)
+
+      if (!row) return null
+
+      await appendBookingMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+        action: "create",
+        actionName: "booking.item_traveler.create",
+        actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
+        targetType: "booking_item",
+        targetId: itemId,
+        changedFields: changedBookingItemFields(body, null, row),
+        subject: "booking item traveler link",
+        routeOrToolName: "bookings.items.travelers.create",
+        evaluatedRisk: "high",
+        summary: "Linked traveler to booking item",
+      })
+
+      return row
+    })
 
     if (!row) {
       return c.json({ error: "Booking item or traveler not found" }, 404)
     }
-
-    await appendBookingMutationLedgerEntry(c, {
-      action: "create",
-      actionName: "booking.item_traveler.create",
-      actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
-      targetType: "booking_item",
-      targetId: itemId,
-      changedFields: changedBookingItemFields(body, null, row),
-      subject: "booking item traveler link",
-      routeOrToolName: "bookings.items.travelers.create",
-      evaluatedRisk: "high",
-      summary: "Linked traveler to booking item",
-    })
 
     return c.json({ data: row }, 201)
   })
@@ -2459,24 +2609,31 @@ export const bookingRoutes = new Hono<Env>()
       return c.json({ error: "Booking item traveler link not found" }, 404)
     }
 
-    const row = await bookingsService.removeItemParticipant(c.get("db"), linkId)
+    const ledgerContext = getActionLedgerRequestContext(c)
+    const row = await c.get("db").transaction(async (tx) => {
+      const row = await bookingsService.removeItemParticipant(tx as PostgresJsDatabase, linkId)
+
+      if (!row) return null
+
+      await appendBookingMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+        action: "delete",
+        actionName: "booking.item_traveler.delete",
+        actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
+        targetType: "booking_item",
+        targetId: itemId,
+        changedFields: [],
+        subject: "booking item traveler link",
+        routeOrToolName: "bookings.items.travelers.delete",
+        evaluatedRisk: "high",
+        summary: "Unlinked traveler from booking item",
+      })
+
+      return row
+    })
 
     if (!row) {
       return c.json({ error: "Booking item traveler link not found" }, 404)
     }
-
-    await appendBookingMutationLedgerEntry(c, {
-      action: "delete",
-      actionName: "booking.item_traveler.delete",
-      actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
-      targetType: "booking_item",
-      targetId: itemId,
-      changedFields: [],
-      subject: "booking item traveler link",
-      routeOrToolName: "bookings.items.travelers.delete",
-      evaluatedRisk: "high",
-      summary: "Unlinked traveler from booking item",
-    })
 
     return c.json({ success: true }, 200)
   })
