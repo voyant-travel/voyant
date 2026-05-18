@@ -73,6 +73,58 @@ The by-reference variant resolves invoice numbers and payment reference numbers
 only inside that booking, so a valid capability for one booking cannot retrieve
 documents from another booking.
 
+## Booking Tax Preview
+
+Booking creation UIs can show the same tax line that booking finalization will
+persist by mounting the booking-tax extension:
+
+```typescript
+import { createBookingTaxHonoExtension } from "@voyantjs/finance/booking-tax"
+
+createApp({
+  extensions: [
+    createBookingTaxHonoExtension({
+      resolveBookingTaxSettings: async (db) => {
+        const settings = await getTaxSettings(db)
+        return {
+          taxPriceMode: settings?.taxPriceMode ?? "inclusive",
+          taxPolicyProfileId: settings?.taxPolicyProfileId ?? null,
+        }
+      },
+    }),
+  ],
+})
+```
+
+The settings callback is the storage seam. A template can read a singleton
+settings table, KV, environment configuration, or any other deployment-owned
+store, while `@voyantjs/finance` owns the tax policy rule walker, tax-regime
+lookup, product tax-class fallback, and inclusive/exclusive math.
+
+Templates that already mount custom routes can call `mountBookingTaxRoutes(...)`
+from the same entrypoint instead of using the Hono extension.
+
+Mounting this route registers:
+
+- `GET /v1/admin/bookings/tax-settings`
+- `PATCH /v1/admin/bookings/tax-settings` when `updateBookingTaxSettings` is supplied
+- `POST /v1/admin/bookings/tax-preview`
+
+The preview endpoint is consumed by `@voyantjs/bookings-react` tax-preview
+hooks. Consumers that use the booking-create dialog without mounting the route
+will silently lose tax rows in the dialog summary because the client treats a
+missing preview as "no tax to show".
+
+Server-side booking-finalize code can use the same helpers directly:
+
+```typescript
+import {
+  computeBookingItemTaxLine,
+  loadProductTaxFacts,
+  resolveBookingSellTaxRate,
+} from "@voyantjs/finance/booking-tax"
+```
+
 ## Exports
 
 | Entry | Description |
@@ -80,6 +132,7 @@ documents from another booking.
 | `.` | Module export |
 | `./schema` | Drizzle tables |
 | `./validation` | Zod schemas |
+| `./booking-tax` | Booking sell-side tax policy helpers and route mounting |
 | `./routes` | Hono routes |
 
 ## License

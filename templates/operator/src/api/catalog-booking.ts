@@ -48,6 +48,7 @@ import {
 } from "@voyantjs/catalog/booking-engine"
 import { readSourcedEntry } from "@voyantjs/catalog/services/sourced-entry"
 import type { AnyDrizzleDb } from "@voyantjs/db"
+import { computeBookingItemTaxLine, resolveBookingSellTaxRate } from "@voyantjs/finance"
 import { products } from "@voyantjs/products"
 import { getProductContent } from "@voyantjs/products/service-content"
 import { createCatalogPromotionEvaluator } from "@voyantjs/promotions/service-catalog-evaluator"
@@ -60,7 +61,7 @@ import {
   getBookingEngineRegistryFromContext,
   getOwnedBookingHandlerRegistryFromContext,
 } from "./lib/booking-engine-runtime"
-import { computeBookingItemTaxLine, resolveOperatorSellTaxRate } from "./lib/operator-tax-policy"
+import { resolveBookingTaxSettings } from "./settings"
 
 const DEFAULT_HOLD_TTL_MS = 30 * 60 * 1000
 
@@ -92,7 +93,7 @@ export function mountCatalogBookingRoutes(hono: Hono): void {
         // Per docs/architecture/promotions-architecture.md §3.6.
         resolveEvaluatePromotions: ({ db }) => createCatalogPromotionEvaluator(db),
         transformQuoteResult: ({ db, result, request, provenance }) =>
-          applyOperatorTaxToQuoteResult(
+          applyBookingTaxToQuoteResult(
             db,
             result,
             request.entityModule,
@@ -357,7 +358,7 @@ function cryptoRandom(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
 }
 
-async function applyOperatorTaxToQuoteResult(
+async function applyBookingTaxToQuoteResult(
   db: AnyDrizzleDb,
   result: QuoteEntityResult,
   entityModule: string,
@@ -379,10 +380,16 @@ async function applyOperatorTaxToQuoteResult(
 
   const pricing = result.pricing
   const taxableCents = pricing.base_amount
-  const taxRate = await resolveOperatorSellTaxRate(db as PostgresJsDatabase, {
-    productId: entityModule === "products" ? entityId : null,
-    facts: { hasAccommodation: false, accommodationCountries: [] },
-  })
+  const taxRate = await resolveBookingSellTaxRate(
+    db as PostgresJsDatabase,
+    {
+      productId: entityModule === "products" ? entityId : null,
+      facts: { hasAccommodation: false, accommodationCountries: [] },
+    },
+    {
+      resolveBookingTaxSettings,
+    },
+  )
   const taxLine = computeBookingItemTaxLine(taxRate, taxableCents, pricing.currency)
   if (!taxLine) return result
 

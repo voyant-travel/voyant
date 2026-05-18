@@ -89,6 +89,23 @@ export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}):
 
 export const financeHonoModule: HonoModule = createFinanceHonoModule()
 
+export {
+  type BookingTaxRouteOptions,
+  type BookingTaxSettings,
+  computeBookingItemTaxLine,
+  createBookingTaxHonoExtension,
+  createBookingTaxRoutes,
+  loadProductTaxFacts,
+  matchesTaxPolicyCondition,
+  mountBookingTaxRoutes,
+  type ProductTaxFacts,
+  type ResolveBookingSellTaxRateOptions,
+  type ResolveBookingTaxSettings,
+  type ResolvedBookingSellTaxRate,
+  resolveBookingSellTaxRate,
+  type TaxPolicyCondition,
+  type UpdateBookingTaxSettings,
+} from "./booking-tax.js"
 export type {
   ComputedScheduleEntry,
   ComputeScheduleInput,

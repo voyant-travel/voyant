@@ -3,7 +3,7 @@
  *
  * Subscribes to `booking.confirmed`. On fire, resolves the effective
  * customer payment policy (cascade: booking → listing → category →
- * supplier → operator default), runs `computePaymentSchedule()`, and
+ * supplier -> operator default), runs `computePaymentSchedule()`, and
  * persists the resulting deposit / balance rows into
  * `booking_payment_schedules`.
  *
@@ -54,7 +54,7 @@ import type { Context, Hono } from "hono"
 import { z } from "zod"
 
 import { withDbFromEnv } from "./lib/db"
-import { getOperatorSettings } from "./settings"
+import { resolveOperatorDefaultPaymentPolicy } from "./settings"
 
 interface BookingConfirmedPayload {
   bookingId: string
@@ -92,9 +92,7 @@ async function generatePaymentScheduleForBooking(
   if (!booking) return
   if (!booking.sellAmountCents || booking.sellAmountCents <= 0) return
 
-  const operatorProfile = await getOperatorSettings(db)
-  const operatorDefault =
-    (operatorProfile?.customerPaymentPolicy as PaymentPolicy | null) ?? noDepositPolicy
+  const operatorDefault = (await resolveOperatorDefaultPaymentPolicy(db)) ?? noDepositPolicy
 
   // Phase 2: supplier-layer override. Falls back to operator
   // default when the booking has no supplier link or the supplier
@@ -432,7 +430,7 @@ async function stampPolicySourceOnBooking(
  * Read the policy-source marker stamped onto a booking by the
  * schedule subscriber. Used by the contract resolver so
  * `booking.paymentPolicy.source` reflects the actual cascade layer
- * (`supplier`, `operator_default`, …) rather than always echoing
+ * (`supplier`, `operator_default`, etc.) rather than always echoing
  * `"operator_default"`.
  */
 export function readPolicySourceFromInternalNotes(
@@ -619,9 +617,7 @@ async function handleResolvePolicy(c: Context): Promise<Response> {
     return c.json({ error: err instanceof Error ? err.message : "invalid_body" }, 400)
   }
 
-  const operatorProfile = await getOperatorSettings(db)
-  const operatorDefault =
-    (operatorProfile?.customerPaymentPolicy as PaymentPolicy | null) ?? noDepositPolicy
+  const operatorDefault = (await resolveOperatorDefaultPaymentPolicy(db)) ?? noDepositPolicy
 
   // Vertical-specific listing lookups — same source-of-truth queries
   // as the booking-confirmed path, just keyed off the journey

@@ -148,6 +148,20 @@
       "when": 1778918900000,
       "tag": "0018_rename_birthday",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1778919000000,
+      "tag": "0019_booking_tax_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1778919100000,
+      "tag": "0020_operator_settings_split",
+      "breakpoints": true
     }
   ]
 }

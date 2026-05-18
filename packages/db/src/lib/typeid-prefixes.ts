@@ -374,6 +374,10 @@ export const PREFIXES = {
   workflow_run_steps: "wfrs",
   // --- Operator-template-local settings ---
   operator_settings: "opset",
+  operator_profile: "oppf",
+  operator_payment_instructions: "opin",
+  operator_payment_defaults: "opdp",
+  booking_tax_settings: "btxs",
 
   // --- PROMOTIONS (per docs/architecture/promotions-architecture.md §4.4) ---
   // promotional_offer_products is a join table (no `id` column).

@@ -433,9 +433,9 @@ export const pricingPreviewSnapshotSchema = z.object({
 export type PricingPreviewSnapshot = z.infer<typeof pricingPreviewSnapshotSchema>
 export const pricingPreviewResponse = singleEnvelope(pricingPreviewSnapshotSchema)
 
-// Tax preview — operator-side resolution of the tax line the booking
-// would carry given the current subtotal. Backed by the template-level
-// tax policy resolver.
+// Tax preview — sell-side resolution of the tax line the booking
+// would carry given the current subtotal. Backed by the mountable
+// booking-tax route.
 const taxPreviewRateSchema = z.object({
   code: z.string(),
   label: z.string(),

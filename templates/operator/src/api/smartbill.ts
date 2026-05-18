@@ -21,7 +21,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { withDbFromEnv } from "./lib/db"
 import { createDocumentStorage } from "./lib/storage"
-import { getOperatorSettings } from "./settings"
+import { resolveBookingTaxSettings } from "./settings"
 
 type SmartbillEnv = CloudflareBindings & {
   SMARTBILL_USERNAME?: string
@@ -308,8 +308,8 @@ async function buildSmartbillInvoiceBody(
   const taxRegime = invoice.taxRegimeId
     ? await resolveInvoiceTaxRegime(db, invoice.taxRegimeId)
     : null
-  const operatorSettings = await getOperatorSettings(db)
-  const isTaxIncluded = operatorSettings?.taxPriceMode !== "exclusive"
+  const bookingTaxSettings = await resolveBookingTaxSettings(db)
+  const isTaxIncluded = bookingTaxSettings.taxPriceMode !== "exclusive"
 
   const client = await resolveSmartbillClient(db, booking)
   const body: SmartbillInvoiceBody = {
