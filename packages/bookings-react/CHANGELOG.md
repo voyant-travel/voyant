@@ -1,5 +1,13 @@
 # @voyantjs/bookings-react
 
+## 0.54.0
+
+### Patch Changes
+
+- 3117d27: Extract booking sell-side tax-preview helpers and route mounting into `@voyantjs/finance`.
+  - @voyantjs/bookings@0.54.0
+  - @voyantjs/react@0.54.0
+
 ## 0.53.2
 
 ### Patch Changes
