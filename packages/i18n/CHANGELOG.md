@@ -1,5 +1,7 @@
 # @voyantjs/i18n
 
+## 0.52.3
+
 ## 0.52.2
 
 ### Patch Changes

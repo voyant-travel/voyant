@@ -1,5 +1,21 @@
 # @voyantjs/distribution
 
+## 0.52.3
+
+### Patch Changes
+
+- Updated dependencies [9679a57]
+  - @voyantjs/availability@0.52.3
+  - @voyantjs/bookings@0.52.3
+  - @voyantjs/catalog@0.52.3
+  - @voyantjs/core@0.52.3
+  - @voyantjs/db@0.52.3
+  - @voyantjs/hono@0.52.3
+  - @voyantjs/identity@0.52.3
+  - @voyantjs/products@0.52.3
+  - @voyantjs/suppliers@0.52.3
+  - @voyantjs/workflows@0.52.3
+
 ## 0.52.2
 
 ### Patch Changes
