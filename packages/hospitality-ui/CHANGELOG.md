@@ -1,5 +1,15 @@
 # @voyantjs/hospitality-ui
 
+## 0.53.0
+
+### Patch Changes
+
+- @voyantjs/catalog-react@0.53.0
+- @voyantjs/hospitality-react@0.53.0
+- @voyantjs/i18n@0.53.0
+- @voyantjs/pricing-react@0.53.0
+- @voyantjs/ui@0.53.0
+
 ## 0.52.4
 
 ### Patch Changes
