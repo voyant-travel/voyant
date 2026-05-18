@@ -9,8 +9,13 @@ import {
   issueCheckoutCapability,
   requireCheckoutCapability,
 } from "./checkout-capability.js"
+import {
+  BOOKING_ROUTE_RUNTIME_CONTAINER_KEY,
+  type BookingRouteRuntime,
+  buildBookingRouteRuntime,
+} from "./route-runtime.js"
 import { type Env, getRuntimeEnv, notFound } from "./routes-shared.js"
-import { publicBookingsService } from "./service-public.js"
+import { type PublicBookingsServiceResolvers, publicBookingsService } from "./service-public.js"
 import {
   publicBookingOverviewLookupQuerySchema,
   publicBookingSessionMutationSchema,
@@ -77,12 +82,34 @@ function sessionCapability(action: CheckoutCapabilityAction): MiddlewareHandler<
   }
 }
 
+function getRouteRuntime(c: Context): BookingRouteRuntime {
+  const container = (c.var as { container?: { resolve: (key: string) => unknown } }).container
+  try {
+    return (
+      (container?.resolve(BOOKING_ROUTE_RUNTIME_CONTAINER_KEY) as
+        | BookingRouteRuntime
+        | undefined) ?? buildBookingRouteRuntime(c.env as Record<string, string | undefined>)
+    )
+  } catch {
+    return buildBookingRouteRuntime(c.env as Record<string, string | undefined>)
+  }
+}
+
+function publicResolvers(c: Context): PublicBookingsServiceResolvers {
+  const runtime = getRouteRuntime(c)
+  return {
+    resolveBillingPerson: runtime.resolveBillingPerson,
+    resolveTravelerPerson: runtime.resolveTravelerPerson,
+  }
+}
+
 export const publicBookingRoutes = new Hono<Env>()
   .post("/sessions", idempotencyKey({ scope: "POST /v1/public/bookings/sessions" }), async (c) => {
     const result = await publicBookingsService.createSession(
       c.get("db"),
       await parseJsonBody(c, publicCreateBookingSessionSchema),
       c.get("userId"),
+      publicResolvers(c),
     )
 
     if (result.status === "slot_not_found") {
@@ -126,6 +153,7 @@ export const publicBookingRoutes = new Hono<Env>()
         c.req.param("sessionId"),
         await parseJsonBody(c, publicUpdateBookingSessionSchema),
         c.get("userId"),
+        publicResolvers(c),
       )
 
       if (result.status === "not_found") {
@@ -155,6 +183,7 @@ export const publicBookingRoutes = new Hono<Env>()
         c.get("db"),
         c.req.param("sessionId"),
         await parseJsonBody(c, publicUpsertBookingSessionStateSchema),
+        publicResolvers(c),
       )
 
       if (result.status === "not_found") {

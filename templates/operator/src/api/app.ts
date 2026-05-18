@@ -298,6 +298,25 @@ const crmHonoModule = createCrmHonoModule()
 const bookingsHonoModule = createBookingsHonoModule({
   resolveTravelSnapshot: (db, personId, { kms }) =>
     crmService.loadPersonTravelSnapshot(db, personId, { kms }),
+  // Storefront booking session bootstrap + update flows hand the
+  // billing contact and per-traveler snapshots to this resolver, which
+  // dedupes by normalized email/phone via `identity_contact_points` and
+  // upserts a CRM person on miss. Returns the resolved person id (or
+  // `null` to skip linkage on this row). See issue #961.
+  resolveBillingPerson: async (db, contact, ctx) => {
+    const person = await crmService.upsertPersonFromContact(db, contact, {
+      source: ctx.source,
+      sourceRef: ctx.sourceRef,
+    })
+    return person?.id ?? null
+  },
+  resolveTravelerPerson: async (db, contact, ctx) => {
+    const person = await crmService.upsertPersonFromContact(db, contact, {
+      source: ctx.source,
+      sourceRef: ctx.sourceRef,
+    })
+    return person?.id ?? null
+  },
 })
 
 const financeModule = createFinanceHonoModule({
