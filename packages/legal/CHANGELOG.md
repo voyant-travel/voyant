@@ -1,5 +1,27 @@
 # @voyantjs/legal
 
+## 0.52.2
+
+### Patch Changes
+
+- 3e09123: Contracts/templates UI refresh.
+
+  - `ContractDetailPage`, `ContractsPage`, `PoliciesPage`, and `TemplatesPage` rebuilt around the shared table primitives with sort/filter/empty-state parity. Detail page now surfaces lifecycle actions inline rather than in a side panel.
+  - New `ContractSendDialog` for kicking off the contract-send flow with recipient/CC selection and i18n strings (EN + RO).
+  - `useContractMutation` invalidates the contract list + detail queries after lifecycle transitions so list rows reflect the new state immediately.
+  - `@voyantjs/legal` lifecycle/routes/service updated to expose the data the new dialog needs (recipient hydration, send payload) and to surface lifecycle validation errors with structured codes.
+
+- Updated dependencies [3e09123]
+- Updated dependencies [3e09123]
+  - @voyantjs/bookings@0.52.2
+  - @voyantjs/core@0.52.2
+  - @voyantjs/crm@0.52.2
+  - @voyantjs/db@0.52.2
+  - @voyantjs/hono@0.52.2
+  - @voyantjs/storage@0.52.2
+  - @voyantjs/suppliers@0.52.2
+  - @voyantjs/utils@0.52.2
+
 ## 0.52.1
 
 ### Patch Changes

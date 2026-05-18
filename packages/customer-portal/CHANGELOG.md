@@ -1,5 +1,29 @@
 # @voyantjs/customer-portal
 
+## 0.52.2
+
+### Patch Changes
+
+- 3e09123: Quiet/auxiliary updates.
+
+  - `@voyantjs/notifications`: `booking.confirmed` subscriber honors a new `suppressNotifications` flag on the event payload so operators can confirm a booking without firing the customer-facing email/doc bundle (data corrections, manual hand-offs).
+  - `@voyantjs/customer-portal`: public service + validation tightened around the new booking tax-preview shape; integration tests updated to assert the new response.
+  - `@voyantjs/i18n`: new admin strings for the bookings billing dialog, finance tax-preview labels, CRM operator screens, and products operator surface (EN + RO).
+
+- Updated dependencies [3e09123]
+- Updated dependencies [3e09123]
+- Updated dependencies [3e09123]
+- Updated dependencies [3e09123]
+  - @voyantjs/bookings@0.52.2
+  - @voyantjs/core@0.52.2
+  - @voyantjs/crm@0.52.2
+  - @voyantjs/db@0.52.2
+  - @voyantjs/finance@0.52.2
+  - @voyantjs/hono@0.52.2
+  - @voyantjs/identity@0.52.2
+  - @voyantjs/legal@0.52.2
+  - @voyantjs/utils@0.52.2
+
 ## 0.52.1
 
 ### Patch Changes
