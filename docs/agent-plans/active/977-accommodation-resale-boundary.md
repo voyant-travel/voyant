@@ -95,6 +95,11 @@ resale contracts from hotel-operations surfaces.
    booking journey summary typing, catalog booking-engine comments/tests,
    service API-key descriptors, and active catalog architecture docs. The
    boundary checker now covers these shared surfaces.
+10. Repoint active schema wiring from hospitality to accommodations. Completed
+    for dev, DMC, and operator drizzle configs plus `generate-schema-docs`.
+    `SCHEMA.md` now documents the retained accommodation resale tables instead
+    of the old hotel-operations tables, and the boundary checker blocks the
+    legacy schema wiring from returning.
 
 ## Verification Plan
 

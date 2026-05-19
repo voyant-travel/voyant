@@ -40,7 +40,7 @@ export default defineConfig({
     "../../packages/promotions/src/schema.ts",
     "../../packages/cruises/src/schema.ts",
     "../../packages/charters/src/schema.ts",
-    "../../packages/hospitality/src/schema.ts",
+    "../../packages/accommodations/src/schema.ts",
     "../../packages/flights/src/reference/local-postgres.ts",
     "../../packages/catalog/src/schema.ts",
     "../../packages/workflow-runs/src/schema.ts",

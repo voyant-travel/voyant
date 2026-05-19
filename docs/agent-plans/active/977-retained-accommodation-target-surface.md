@@ -269,5 +269,8 @@ until a retained resale route surface is intentionally designed.
    without keeping hospitality compatibility aliases.
 4. Remove `/v1/hospitality` starter mounts from dev and DMC.
 5. Split or migrate schema after routes and consumers no longer require the
-   mixed package.
-6. Regenerate registry and schema artifacts after source removal/move.
+   mixed package. Completed for active drizzle/schema-doc inputs: dev, DMC, and
+   operator now point at `@voyantjs/accommodations/schema`.
+6. Regenerate registry and schema artifacts after source removal/move. Registry
+   regeneration is complete for removed UI entries; `SCHEMA.md` is regenerated
+   against the retained accommodations schema.

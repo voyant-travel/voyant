@@ -62,8 +62,8 @@ references are excluded — they don't create FK constraints.
 |---|---|---|---|
 | `ground` | `facilities` (`facilities`) | `schema-dispatch.ts`, `schema-operations.ts`, `schema-operators.ts` | 7 |
 | `ground` | `identity` (`identity_addresses`) | `schema-dispatch.ts`, `schema-operations.ts` | 6 |
-| `hospitality` | `facilities` (`properties`) | `schema-bookings.ts`, `schema-inventory.ts`, `schema-operations.ts`, `schema-pricing.ts` | 11 |
-| `hospitality` | `bookings` (`booking_items`) | `schema-bookings.ts`, `schema-operations.ts` | 2 |
+| `accommodations` | `facilities` (`properties`) | `schema-bookings.ts`, `schema-inventory.ts` | 4 |
+| `accommodations` | `bookings` (`booking_items`) | `schema-bookings.ts` | 1 |
 | `suppliers` | `facilities` (`facilities`) | `schema.ts` | 2 |
 
 Each of these is a follow-up issue: convert the `.references()` call to a

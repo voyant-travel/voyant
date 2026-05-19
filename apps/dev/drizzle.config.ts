@@ -18,7 +18,7 @@ export default defineConfig({
     "../../packages/crm/src/schema.ts",
     "../../packages/availability/src/schema.ts",
     "../../packages/facilities/src/schema.ts",
-    "../../packages/hospitality/src/schema.ts",
+    "../../packages/accommodations/src/schema.ts",
     "../../packages/identity/src/schema.ts",
     "../../packages/external-refs/src/schema.ts",
     "../../packages/extras/src/schema.ts",

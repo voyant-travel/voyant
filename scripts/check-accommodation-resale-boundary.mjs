@@ -96,6 +96,30 @@ const FILE_CHECKS = [
     patterns: [/@voyantjs\/hospitality-ui/],
   },
   {
+    file: "apps/dev/drizzle.config.ts",
+    patterns: [/packages\/hospitality/],
+  },
+  {
+    file: "templates/dmc/drizzle.config.ts",
+    patterns: [/packages\/hospitality/],
+  },
+  {
+    file: "templates/operator/drizzle.config.ts",
+    patterns: [/packages\/hospitality/],
+  },
+  {
+    file: "scripts/generate-schema-docs.ts",
+    patterns: [/\bhospitality\b/i, /packages\/hospitality/],
+  },
+  {
+    file: "docs/architecture/schema-discipline.md",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "SCHEMA.md",
+    patterns: [/\bhospitality\b/i, /^## Hospitality$/],
+  },
+  {
     file: "packages/ui/registry.json",
     patterns: [/voyant-hospitality-/, /registry\/hospitality/, /@voyantjs\/hospitality-react/],
   },
