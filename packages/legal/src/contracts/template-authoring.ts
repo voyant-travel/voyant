@@ -140,7 +140,7 @@ export const contractTemplateVariableCatalog: ContractTemplateVariableCategory[]
         label: "Vertical",
         example: "products",
         type: "string",
-        description: "products | cruises | hospitality | flights | charters | ground",
+        description: "products | cruises | accommodations | flights | charters | ground",
       },
       {
         key: "booking.productName",
@@ -545,7 +545,7 @@ export const contractTemplateVariableCatalog: ContractTemplateVariableCategory[]
   },
   {
     id: "stay",
-    label: "Stay (hospitality)",
+    label: "Accommodation stay",
     description: "Filled when the booking is for a hotel stay.",
     variables: [
       { key: "stay.checkIn", label: "Check-in", example: "2026-06-15", type: "date" },

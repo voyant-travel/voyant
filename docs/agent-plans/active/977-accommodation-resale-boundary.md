@@ -100,6 +100,11 @@ resale contracts from hotel-operations surfaces.
     `SCHEMA.md` now documents the retained accommodation resale tables instead
     of the old hotel-operations tables, and the boundary checker blocks the
     legacy schema wiring from returning.
+11. Repoint remaining active non-legacy wording from hospitality to
+    accommodations. Completed for dev property copy, products/extras/charters
+    comments, booking travel-detail comments, legal contract variable
+    descriptors, payments architecture, and cruise pricing notes. The boundary
+    checker now covers those files too.
 
 ## Verification Plan
 

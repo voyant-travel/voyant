@@ -2,7 +2,7 @@
  * Charter content service — `getCharterContent` with locale-resolved
  * cache reads, SWR refresh, and synthesizer fallback.
  *
- * Mirrors `service-content.ts` in the products / cruises / hospitality
+ * Mirrors `service-content.ts` in the products / cruises / accommodations
  * packages but charter-shaped. The charter content aggregate (§3.2 /
  * §3.6) is `{ charter, yacht, voyages[], suites[], schedule_days[],
  * policies[] }` — one payload returned by a single getContent.

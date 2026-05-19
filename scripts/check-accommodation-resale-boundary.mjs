@@ -120,6 +120,58 @@ const FILE_CHECKS = [
     patterns: [/\bhospitality\b/i, /^## Hospitality$/],
   },
   {
+    file: "apps/dev/src/components/voyant/facilities/property-tab.tsx",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/products/src/draft-shape.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/products/src/booking-engine/handler.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/products/src/service-catalog-plane.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/extras/src/service-content.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/extras/src/schema-sourced-content.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/charters/src/service-content.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/charters/src/schema-sourced-content.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/charters/src/service-catalog-plane.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/bookings/src/schema/travel-details.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/legal/src/contracts/template-authoring.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "docs/architecture/payments-architecture.md",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "docs/architecture/cruises-module.md",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
     file: "packages/ui/registry.json",
     patterns: [/voyant-hospitality-/, /registry\/hospitality/, /@voyantjs\/hospitality-react/],
   },

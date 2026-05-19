@@ -2,7 +2,7 @@
  * Extras content service — `getExtraContent` with locale-resolved
  * cache reads, SWR refresh, and synthesizer fallback.
  *
- * Mirrors `service-content.ts` in the products / cruises / hospitality
+ * Mirrors `service-content.ts` in the products / cruises / accommodations
  * / charters packages but extras-shaped. The extras content aggregate
  * (§3.2 / §3.6) is `{ extra, options[], media[], policies[] }` — one
  * payload returned by a single getContent. Pricing stays out (volatile-

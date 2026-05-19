@@ -18,7 +18,7 @@
  *   - Price = product.sellAmountCents × pax_count, no taxes / addons /
  *     accommodation / vouchers.
  *   - Commit goes through the bridge into `bookingsCreate`'s input
- *     shape — products-only, no extras / hospitality / cruises / encrypted
+ *     shape — products-only, no extras / accommodations / cruises / encrypted
  *     travel details / snapshot graph.
  *
  * Phase C+ extensions land on this same handler without re-architecting

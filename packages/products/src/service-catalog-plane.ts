@@ -15,7 +15,7 @@
  * `@voyantjs/catalog`.
  *
  * See `docs/architecture/catalog-architecture.md` §9.1 for the integration
- * pattern this file establishes (replicated for cruises, hospitality, etc.
+ * pattern this file establishes (replicated for cruises, accommodations, etc.
  * in their own service-catalog-plane.ts files).
  */
 
@@ -217,7 +217,7 @@ export async function listResolvedProducts(
  *
  * Composition: a single-product booking calls this once and passes the
  * result to `captureSnapshot`. A composite booking (e.g. a tour-package
- * booking with referenced hospitality + excursions) calls this and the
+ * booking with referenced accommodations + excursions) calls this and the
  * other verticals' equivalents, collects the inputs, and passes them all
  * to `captureSnapshotGraph` in one transaction.
  */

@@ -120,7 +120,7 @@ export function PropertyTab({ facilityId }: Props) {
     <div className="max-w-3xl">
       <p className="mb-4 text-sm text-muted-foreground">
         {property
-          ? "Extends this facility with hospitality-specific fields."
+          ? "Extends this facility with property-specific fields."
           : "No property row exists for this facility yet. Fill out this form to create one."}
       </p>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">

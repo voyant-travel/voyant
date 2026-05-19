@@ -1,7 +1,7 @@
 /**
  * Catalog-plane integration for the charters service.
  *
- * Mirrors the products / cruises / hospitality pattern. Charters carry a
+ * Mirrors the products / cruises / accommodations pattern. Charters carry a
  * couple of vertical-specific managed fields — `defaultMybaTemplateId` and
  * `defaultApaPercent` — that participate in the snapshot at quote/book time.
  *
