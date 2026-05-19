@@ -16,20 +16,41 @@
 import type {
   AncillaryRequest,
   AncillaryResponse,
+  CheckInRequest,
+  CheckInResponse,
   FlightBookRequest,
   FlightCapability,
+  FlightModifyRequest,
+  FlightModifyResponse,
   FlightOffer,
   FlightOrder,
   FlightOrderStatus,
+  FlightRefundRequest,
+  FlightRefundResponse,
   FlightSearchPaginationMeta,
   FlightSearchRequest,
+  FlightVoidResponse,
   SeatMapRequest,
   SeatMapResponse,
+  SeatSelectionRequest,
+  SeatSelectionResponse,
+  SsrRequest,
+  SsrResponse,
 } from "./types.js"
+
+export interface AdapterLogger {
+  debug(message: string, meta?: Record<string, unknown>): void
+  info(message: string, meta?: Record<string, unknown>): void
+  warn(message: string, meta?: Record<string, unknown>): void
+  error(message: string, meta?: Record<string, unknown>): void
+}
+
+export type FlightAdapterEnvironment = "sandbox" | "production"
 
 /**
  * Context passed to every adapter call. Identifies the connection and
- * carries credentials, optional point-of-sale, tracing identifiers.
+ * carries credentials, optional point-of-sale, tracing identifiers,
+ * cancellation, idempotency, logging, and environment selection signals.
  *
  * `deps` is an escape hatch for adapter-specific runtime dependencies that
  * shouldn't bleed into the contract — e.g. a Postgres handle for a demo
@@ -41,7 +62,18 @@ export interface FlightAdapterContext {
   credentials?: Record<string, string>
   /** Operator's IATA office id / pseudo-city / point-of-sale, when applicable. */
   pointOfSale?: string
+  /** Upstream trace id, usually propagated from the caller. */
   correlationId?: string
+  /** Per-call request id for adapter-local tracing. */
+  requestId?: string
+  /** Idempotency key for replay-safe writes: book, modify, refund, void. */
+  idempotencyKey?: string
+  /** Adapter-scoped logger with provider/connection/request metadata bound in. */
+  logger?: AdapterLogger
+  /** Cancellation signal propagated from the orchestration layer. */
+  signal?: AbortSignal
+  /** Selects the supplier environment when the adapter supports both. */
+  environment?: FlightAdapterEnvironment
   deps?: Record<string, unknown>
 }
 
@@ -142,7 +174,14 @@ export interface FlightConnectorAdapter {
     request: FlightSearchRequest,
   ): Promise<FlightSearchResponse>
 
-  /** Re-price an offer immediately before booking. */
+  /**
+   * Re-price an offer immediately before booking.
+   *
+   * This is also the canonical re-quote path for offers approaching
+   * `FlightOffer.expiresAt` or `lastTicketingDate`. Callers should invoke it
+   * before booking whenever the offer is older than the provider's freshness
+   * window or the UI is resuming a saved/held offer.
+   */
   priceOffer(ctx: FlightAdapterContext, request: FlightPriceRequest): Promise<FlightPriceResponse>
 
   /**
@@ -198,6 +237,33 @@ export interface FlightConnectorAdapter {
    * are submitted at book time via `FlightBookRequest.ancillaries.seats`.
    */
   getSeatMap?(ctx: FlightAdapterContext, request: SeatMapRequest): Promise<SeatMapResponse>
+
+  /** `flight/seat-selection` — change/add seat selections on an existing order. */
+  selectSeats?(
+    ctx: FlightAdapterContext,
+    request: SeatSelectionRequest,
+  ): Promise<SeatSelectionResponse>
+
+  /** `flight/checkin` — initiate or complete online check-in for passengers. */
+  checkIn?(ctx: FlightAdapterContext, request: CheckInRequest): Promise<CheckInResponse>
+
+  /** `flight/exchange` — change an existing order's itinerary, fare, pax, or extras. */
+  modifyOrder?(
+    ctx: FlightAdapterContext,
+    request: FlightModifyRequest,
+  ): Promise<FlightModifyResponse>
+
+  /** `flight/refund` — refund a ticketed order after the ticketing/void window. */
+  refundOrder?(
+    ctx: FlightAdapterContext,
+    request: FlightRefundRequest,
+  ): Promise<FlightRefundResponse>
+
+  /** `flight/void` — void a ticketed order inside the supplier void window. */
+  voidOrder?(ctx: FlightAdapterContext, orderId: string): Promise<FlightVoidResponse>
+
+  /** `flight/ssr` — add a special service request such as wheelchair, meal, or UMNR. */
+  addSpecialServiceRequest?(ctx: FlightAdapterContext, request: SsrRequest): Promise<SsrResponse>
 }
 
 /**

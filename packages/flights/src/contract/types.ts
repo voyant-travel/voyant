@@ -510,6 +510,26 @@ export interface SeatMapResponse {
   validUntil?: string
 }
 
+export type {
+  CheckInRequest,
+  CheckInResponse,
+  CheckInStatus,
+  FlightBoardingPass,
+  FlightModifyReason,
+  FlightModifyRequest,
+  FlightModifyResponse,
+  FlightRefundReason,
+  FlightRefundRequest,
+  FlightRefundResponse,
+  FlightVoidResponse,
+  SeatAssignment,
+  SeatSelectionRequest,
+  SeatSelectionResponse,
+  SsrCode,
+  SsrRequest,
+  SsrResponse,
+} from "./post-book-types.js"
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Capability ids
 // ─────────────────────────────────────────────────────────────────────────────

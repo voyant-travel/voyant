@@ -42,4 +42,5 @@ rather than at first request.
 | POST   | `/orders/:orderId/cancel`         | `cancelOrder`    |
 | POST   | `/ancillaries`                    | `getAncillaries` |
 | POST   | `/seatmap`                        | `getSeatMap`     |
+| POST   | `/seat-selection`                 | `selectSeats`    |
 | GET    | `/health`                         | (liveness probe) |

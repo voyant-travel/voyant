@@ -11,6 +11,7 @@
  *   POST   /orders/:orderId/cancel       cancelOrder
  *   POST   /ancillaries                  getAncillaries
  *   POST   /seatmap                      getSeatMap
+ *   POST   /seat-selection               selectSeats
  */
 
 import type {
@@ -20,6 +21,7 @@ import type {
   FlightOrderStatus,
   FlightSearchRequest,
   SeatMapRequest,
+  SeatSelectionRequest,
 } from "@voyantjs/flights/contract/types"
 import { Hono } from "hono"
 
@@ -161,5 +163,61 @@ export function createRoutes(db: DemoFlightsDb): Hono {
     })
   })
 
+  // ── Seat selection ───────────────────────────────────────────────────
+  app.post("/seat-selection", async (c) => {
+    const body = await c.req.json<SeatSelectionRequest>()
+    const existing = await store.getOrder(db, body.orderId)
+    if (!existing) return c.json({ error: "Order not found" }, 404)
+
+    const passengerIds = new Set(existing.passengers.map((passenger) => passenger.passengerId))
+    const segmentIds = new Set(
+      existing.offer.itineraries.flatMap((itinerary) =>
+        itinerary.segments.map((segment) => segment.segmentId),
+      ),
+    )
+    const invalidSelection = body.selections.find(
+      (selection) =>
+        !passengerIds.has(selection.passengerId) || !segmentIds.has(selection.segmentId),
+    )
+    if (invalidSelection) {
+      return c.json(
+        {
+          error: `Invalid seat selection for passenger ${invalidSelection.passengerId} on segment ${invalidSelection.segmentId}`,
+        },
+        400,
+      )
+    }
+
+    const additionalAmount = totalSelectionPrice(body.selections)
+    const updated: FlightOrder = {
+      ...existing,
+      providerData: {
+        ...(existing.providerData ?? {}),
+        seatSelections: body.selections,
+      },
+      updatedAt: new Date().toISOString(),
+    }
+    await store.updateOrder(db, body.orderId, updated)
+    return c.json({
+      order: updated,
+      selections: body.selections,
+      ...(additionalAmount ? { additionalAmount } : {}),
+    })
+  })
+
   return app
+}
+
+function totalSelectionPrice(
+  selections: SeatSelectionRequest["selections"],
+): { amount: string; currency: string } | null {
+  let currency: string | null = null
+  let amount = 0
+  for (const selection of selections) {
+    if (!selection.price) continue
+    if (currency && selection.price.currency !== currency) return null
+    currency = selection.price.currency
+    amount += Number.parseFloat(selection.price.amount)
+  }
+  return currency ? { amount: amount.toFixed(2), currency } : null
 }
