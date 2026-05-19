@@ -23,8 +23,10 @@ pnpm add @voyantjs/flights
   discriminated union. Shapes mirror voyant-cloud's `connect-flight-contract`
   so adapters are portable across `voyant-cloud` and Voyant Catalog.
 - **`./contract/adapter`** — `FlightConnectorAdapter` interface (5 core methods
-  + capability declarations). Provider-agnostic; implementations come from
-  Voyant Connect, third-party providers, or operator-built adapters.
+  + optional capability-gated methods for holds, seat maps, post-book seat
+  selection, check-in, exchange, refund, void, SSR, ancillaries, and order
+  listing). Provider-agnostic; implementations come from Voyant Connect,
+  third-party providers, or operator-built adapters.
 - **`./orchestration/fingerprint`** — Itinerary fingerprint helper. Two
   providers selling the same flight produce identical fingerprints.
 - **`./orchestration/fan-out`** — Multi-connection fan-out search:

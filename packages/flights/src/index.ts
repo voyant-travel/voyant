@@ -2,9 +2,11 @@
 
 // FlightConnectorAdapter contract.
 export {
+  type AdapterLogger,
   CAPABILITY_NOT_SUPPORTED,
   type FlightAdapterCapabilities,
   type FlightAdapterContext,
+  type FlightAdapterEnvironment,
   type FlightBookResponse,
   type FlightCancelReason,
   type FlightCancelResponse,

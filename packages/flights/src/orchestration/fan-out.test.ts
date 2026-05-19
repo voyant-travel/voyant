@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import type { FlightConnectorAdapter } from "../contract/adapter.js"
+import type { FlightAdapterContext, FlightConnectorAdapter } from "../contract/adapter.js"
 import type { FlightOffer, FlightSearchRequest } from "../contract/types.js"
 import { fanOutFlightSearch } from "./fan-out.js"
 
@@ -38,7 +38,13 @@ function makeOffer(overrides: Partial<FlightOffer>): FlightOffer {
 
 function makeAdapter(
   provider: string,
-  behaviour: { offers?: FlightOffer[]; throws?: Error; delayMs?: number; maxSlices?: number } = {},
+  behaviour: {
+    offers?: FlightOffer[]
+    throws?: Error
+    delayMs?: number
+    maxSlices?: number
+    captureContext?: (ctx: FlightAdapterContext) => void
+  } = {},
 ): FlightConnectorAdapter {
   return {
     capabilities: {
@@ -46,7 +52,8 @@ function makeAdapter(
       declared: [],
       maxSlicesPerSearch: behaviour.maxSlices,
     },
-    async searchFlights() {
+    async searchFlights(ctx) {
+      behaviour.captureContext?.(ctx)
       if (behaviour.delayMs) {
         await new Promise((r) => setTimeout(r, behaviour.delayMs))
       }
@@ -253,5 +260,41 @@ describe("fanOutFlightSearch", () => {
 
     expect(result.offers).toHaveLength(1)
     expect(result.offers[0]?.cheapest.totalPrice.amount).toBe("100")
+  })
+
+  it("propagates adapter context fields to each connection", async () => {
+    const controller = new AbortController()
+    const captured: FlightAdapterContext[] = []
+
+    await fanOutFlightSearch({
+      adapters: [
+        {
+          connectionId: "conn_a",
+          adapter: makeAdapter("a", {
+            offers: [makeOffer({})],
+            captureContext: (ctx) => {
+              captured.push(ctx)
+            },
+          }),
+          context: {
+            requestId: "req_1",
+            correlationId: "corr_1",
+            idempotencyKey: "idem_1",
+            environment: "sandbox",
+            signal: controller.signal,
+          },
+        },
+      ],
+      request: oneSliceRequest,
+    })
+
+    expect(captured[0]).toMatchObject({
+      connectionId: "conn_a",
+      requestId: "req_1",
+      correlationId: "corr_1",
+      idempotencyKey: "idem_1",
+      environment: "sandbox",
+    })
+    expect(captured[0]?.signal).toBe(controller.signal)
   })
 })

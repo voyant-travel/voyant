@@ -67,9 +67,9 @@ If any of these cannot be implemented, the connection is not a flight connection
 | `flight/holds` | `ticketOrder` (two-step hold-then-ticket flow) |
 | `flight/seatmap` | `getSeatMap` |
 | `flight/seat-selection` | `selectSeats` |
-| `flight/ancillaries` | `getAncillaries`, `addAncillary` |
+| `flight/ancillaries` | `getAncillaries`; selected ancillaries are submitted through `bookFlight` |
 | `flight/checkin` | `checkIn` |
-| `flight/exchange` | `exchangeOrder` |
+| `flight/exchange` | `modifyOrder` |
 | `flight/refund` | `refundOrder` |
 | `flight/void` | `voidOrder` (same-day void) |
 | `flight/ssr` | `addSpecialServiceRequest` (meals, wheelchair, infant-on-lap, UM) |

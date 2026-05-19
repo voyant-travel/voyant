@@ -20,13 +20,25 @@ import type {
   FlightPriceResponse,
   FlightSearchResponse,
 } from "@voyantjs/flights/contract/adapter"
+import { requireCapability } from "@voyantjs/flights/contract/adapter"
 import type {
   AncillaryRequest,
   AncillaryResponse,
+  CheckInRequest,
+  CheckInResponse,
   FlightBookRequest,
+  FlightModifyRequest,
+  FlightModifyResponse,
+  FlightRefundRequest,
+  FlightRefundResponse,
   FlightSearchRequest,
+  FlightVoidResponse,
   SeatMapRequest,
   SeatMapResponse,
+  SeatSelectionRequest,
+  SeatSelectionResponse,
+  SsrRequest,
+  SsrResponse,
 } from "@voyantjs/flights/contract/types"
 
 const CAPABILITIES: FlightAdapterCapabilities = {
@@ -58,6 +70,7 @@ export function createDemoFlightAdapter(options: DemoFlightAdapterOptions): Flig
   const fetchImpl = options.fetch ?? globalThis.fetch
 
   async function call<T>(
+    ctx: FlightAdapterContext,
     path: string,
     init?: {
       method?: string
@@ -78,8 +91,15 @@ export function createDemoFlightAdapter(options: DemoFlightAdapterOptions): Flig
     }
     const response = await fetchImpl(url.toString(), {
       method: init?.method ?? "GET",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(ctx.correlationId ? { "x-correlation-id": ctx.correlationId } : {}),
+        ...(ctx.requestId ? { "x-request-id": ctx.requestId } : {}),
+        ...(ctx.idempotencyKey ? { "idempotency-key": ctx.idempotencyKey } : {}),
+      },
       body: init?.body !== undefined ? JSON.stringify(init.body) : undefined,
+      signal: ctx.signal,
     })
     const text = await response.text()
     const json: unknown = text ? JSON.parse(text) : null
@@ -96,31 +116,31 @@ export function createDemoFlightAdapter(options: DemoFlightAdapterOptions): Flig
   return {
     capabilities: CAPABILITIES,
 
-    async searchFlights(_ctx, request: FlightSearchRequest) {
-      return call<FlightSearchResponse>("/search", { method: "POST", body: request })
+    async searchFlights(ctx, request: FlightSearchRequest) {
+      return call<FlightSearchResponse>(ctx, "/search", { method: "POST", body: request })
     },
 
-    async priceOffer(_ctx, request: FlightPriceRequest) {
-      return call<FlightPriceResponse>("/price", { method: "POST", body: request })
+    async priceOffer(ctx, request: FlightPriceRequest) {
+      return call<FlightPriceResponse>(ctx, "/price", { method: "POST", body: request })
     },
 
-    async bookFlight(_ctx, request: FlightBookRequest) {
-      return call<FlightBookResponse>("/book", { method: "POST", body: request })
+    async bookFlight(ctx, request: FlightBookRequest) {
+      return call<FlightBookResponse>(ctx, "/book", { method: "POST", body: request })
     },
 
-    async getOrder(_ctx: FlightAdapterContext, orderId: string) {
-      return call<FlightGetOrderResponse>(`/orders/${encodeURIComponent(orderId)}`)
+    async getOrder(ctx: FlightAdapterContext, orderId: string) {
+      return call<FlightGetOrderResponse>(ctx, `/orders/${encodeURIComponent(orderId)}`)
     },
 
-    async cancelOrder(_ctx, orderId, reason) {
-      return call<FlightCancelResponse>(`/orders/${encodeURIComponent(orderId)}/cancel`, {
+    async cancelOrder(ctx, orderId, reason) {
+      return call<FlightCancelResponse>(ctx, `/orders/${encodeURIComponent(orderId)}/cancel`, {
         method: "POST",
         body: reason ? { reason } : {},
       })
     },
 
-    async listOrders(_ctx, query: FlightOrdersListQuery) {
-      return call<FlightOrdersListResponse>("/orders", {
+    async listOrders(ctx, query: FlightOrdersListQuery) {
+      return call<FlightOrdersListResponse>(ctx, "/orders", {
         query: {
           ...(query.cursor ? { cursor: query.cursor } : {}),
           ...(query.limit !== undefined ? { limit: String(query.limit) } : {}),
@@ -130,12 +150,44 @@ export function createDemoFlightAdapter(options: DemoFlightAdapterOptions): Flig
       })
     },
 
-    async getAncillaries(_ctx, request: AncillaryRequest) {
-      return call<AncillaryResponse>("/ancillaries", { method: "POST", body: request })
+    async getAncillaries(ctx, request: AncillaryRequest) {
+      return call<AncillaryResponse>(ctx, "/ancillaries", { method: "POST", body: request })
     },
 
-    async getSeatMap(_ctx, request: SeatMapRequest) {
-      return call<SeatMapResponse>("/seatmap", { method: "POST", body: request })
+    async getSeatMap(ctx, request: SeatMapRequest) {
+      return call<SeatMapResponse>(ctx, "/seatmap", { method: "POST", body: request })
+    },
+
+    async selectSeats(ctx, request: SeatSelectionRequest) {
+      return call<SeatSelectionResponse>(ctx, "/seat-selection", {
+        method: "POST",
+        body: request,
+      })
+    },
+
+    async checkIn(_ctx, _request: CheckInRequest): Promise<CheckInResponse> {
+      requireCapability(CAPABILITIES, "flight/checkin", "checkIn")
+      throw new Error("unreachable")
+    },
+
+    async modifyOrder(_ctx, _request: FlightModifyRequest): Promise<FlightModifyResponse> {
+      requireCapability(CAPABILITIES, "flight/exchange", "modifyOrder")
+      throw new Error("unreachable")
+    },
+
+    async refundOrder(_ctx, _request: FlightRefundRequest): Promise<FlightRefundResponse> {
+      requireCapability(CAPABILITIES, "flight/refund", "refundOrder")
+      throw new Error("unreachable")
+    },
+
+    async voidOrder(_ctx, _orderId: string): Promise<FlightVoidResponse> {
+      requireCapability(CAPABILITIES, "flight/void", "voidOrder")
+      throw new Error("unreachable")
+    },
+
+    async addSpecialServiceRequest(_ctx, _request: SsrRequest): Promise<SsrResponse> {
+      requireCapability(CAPABILITIES, "flight/ssr", "addSpecialServiceRequest")
+      throw new Error("unreachable")
     },
   }
 }
