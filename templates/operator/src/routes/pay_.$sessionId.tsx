@@ -4,6 +4,7 @@ import { type BankTransferInstructions, PaymentLinkLandingPage } from "@voyantjs
 import { usePublicPaymentSession } from "@voyantjs/finance-react"
 import { Loader2 } from "lucide-react"
 
+import { usePaymentLinkTripSummary } from "@/components/voyant/checkout/payment-link-trip-summary"
 import { getApiUrl } from "@/lib/env"
 
 /**
@@ -37,6 +38,7 @@ interface PaymentLinkConfigResponse {
 function PayLandingInner() {
   const { sessionId } = Route.useParams()
   const sessionQuery = usePublicPaymentSession(sessionId)
+  const tripSummary = usePaymentLinkTripSummary(sessionId)
   const configQuery = useQuery({
     queryKey: ["payment-link-config"],
     queryFn: async (): Promise<PaymentLinkConfigResponse["data"]> => {
@@ -124,6 +126,8 @@ function PayLandingInner() {
     <PaymentLinkLandingPage
       session={session}
       bankTransferInstructions={bankTransferInstructions}
+      summary={tripSummary.node}
+      suppressNotes={tripSummary.status !== "empty"}
       onRetry={async () => {
         const res = await fetch(`${getApiUrl()}/v1/public/payment-link/${sessionId}/retry`, {
           method: "POST",

@@ -1,6 +1,6 @@
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { newId } from "@voyantjs/db/lib/typeid"
-import { and, desc, eq, gte, inArray, lt, lte, or, type SQL, sql } from "drizzle-orm"
+import { and, asc, desc, eq, gt, gte, inArray, lt, lte, or, type SQL, sql } from "drizzle-orm"
 
 import {
   type ActionApproval,
@@ -228,6 +228,7 @@ export interface ListActionLedgerEntriesInput {
   occurredAtFrom?: Date | string | null
   occurredAtTo?: Date | string | null
   cursor?: ActionLedgerListCursor | null
+  sortDir?: "asc" | "desc"
   limit?: number
 }
 
@@ -581,6 +582,7 @@ export const actionLedgerService = {
   ): Promise<ListActionLedgerEntriesResult> {
     const limit = normalizeListLimit(input.limit)
     const predicate = buildActionLedgerEntriesPredicate(input)
+    const direction = input.sortDir === "asc" ? asc : desc
 
     let query = db.select().from(actionLedgerEntries).$dynamic()
     if (predicate) {
@@ -588,7 +590,7 @@ export const actionLedgerService = {
     }
 
     const rows = await query
-      .orderBy(desc(actionLedgerEntries.occurredAt), desc(actionLedgerEntries.id))
+      .orderBy(direction(actionLedgerEntries.occurredAt), direction(actionLedgerEntries.id))
       .limit(limit + 1)
 
     const entries = rows.slice(0, limit)
@@ -1285,14 +1287,18 @@ function sensitiveReadDetailExists(condition: SQL): SQL {
   )`
 }
 
-function buildCursorCondition(cursor: ActionLedgerListCursor): SQL {
+function buildCursorCondition(
+  cursor: ActionLedgerListCursor,
+  sortDir: "asc" | "desc" = "desc",
+): SQL {
   const occurredAt = parseCursorDate(cursor.occurredAt)
+  const compare = sortDir === "asc" ? gt : lt
   const tieBreaker = and(
     eq(actionLedgerEntries.occurredAt, occurredAt),
-    lt(actionLedgerEntries.id, cursor.id),
+    compare(actionLedgerEntries.id, cursor.id),
   )
 
-  return or(lt(actionLedgerEntries.occurredAt, occurredAt), tieBreaker) as SQL
+  return or(compare(actionLedgerEntries.occurredAt, occurredAt), tieBreaker) as SQL
 }
 
 function buildRelayOutboxCursorCondition(cursor: ActionLedgerRelayOutboxListCursor): SQL {
@@ -1585,7 +1591,7 @@ function buildActionLedgerEntriesPredicate(input: ListActionLedgerEntriesInput):
   }
 
   if (input.cursor) {
-    conditions.push(buildCursorCondition(input.cursor))
+    conditions.push(buildCursorCondition(input.cursor, input.sortDir))
   }
 
   if (conditions.length === 0) return undefined

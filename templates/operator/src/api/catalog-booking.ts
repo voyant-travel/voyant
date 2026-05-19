@@ -30,6 +30,7 @@
 import { availabilitySlots } from "@voyantjs/availability/schema"
 import {
   BookingEngineError,
+  type CatalogBookingRoutesOptions,
   cancelEntity,
   catalogQuotesTable,
   createCatalogBookingRoutes,
@@ -77,34 +78,9 @@ interface CancelBody {
 }
 
 export function mountCatalogBookingRoutes(hono: Hono): void {
+  const options = createOperatorCatalogBookingRoutesOptions()
   for (const prefix of ["/v1/admin/catalog", "/v1/public/catalog"]) {
-    hono.route(
-      prefix,
-      createCatalogBookingRoutes({
-        resolveDb: getDb,
-        resolveSourceRegistry: getBookingEngineRegistryFromContext,
-        resolveOwnedHandlers: getOwnedBookingHandlerRegistryFromContext,
-        resolveHoldTtlMs: ({ db, entityModule, entityId }) =>
-          resolveHoldTtlMs(db, entityModule, entityId),
-        // Promotions hook — wires the per-request `db` into the
-        // evaluator. When the customer-supplied promotion code fails
-        // validation, quoteEntity surfaces a `code_*` invalidReason
-        // and tax recompute below sees no discount on `base_amount`.
-        // Per docs/architecture/promotions-architecture.md §3.6.
-        resolveEvaluatePromotions: ({ db }) => createCatalogPromotionEvaluator(db),
-        transformQuoteResult: ({ db, result, request, provenance }) =>
-          applyBookingTaxToQuoteResult(
-            db,
-            result,
-            request.entityModule,
-            request.entityId,
-            provenance.sourceKind,
-          ),
-        onDraftConsumedError: ({ error }) => {
-          console.warn("[catalog-booking] markDraftConsumed failed:", error)
-        },
-      }),
-    )
+    hono.route(prefix, createCatalogBookingRoutes(options))
     // List available departures / slots for a product. Drives the
     // storefront's departure-select on the product detail page —
     // customers pick from real available options, not a free-form
@@ -123,6 +99,33 @@ export function mountCatalogBookingRoutes(hono: Hono): void {
   // captured content payload so operators can see exactly what the
   // customer was quoted at booking time.
   hono.get("/v1/admin/bookings/:id/catalog-snapshot", handleGetBookingSnapshot)
+}
+
+export function createOperatorCatalogBookingRoutesOptions(): CatalogBookingRoutesOptions {
+  return {
+    resolveDb: getDb,
+    resolveSourceRegistry: getBookingEngineRegistryFromContext,
+    resolveOwnedHandlers: getOwnedBookingHandlerRegistryFromContext,
+    resolveHoldTtlMs: ({ db, entityModule, entityId }) =>
+      resolveHoldTtlMs(db, entityModule, entityId),
+    // Promotions hook — wires the per-request `db` into the
+    // evaluator. When the customer-supplied promotion code fails
+    // validation, quoteEntity surfaces a `code_*` invalidReason
+    // and tax recompute below sees no discount on `base_amount`.
+    // Per docs/architecture/promotions-architecture.md §3.6.
+    resolveEvaluatePromotions: ({ db }) => createCatalogPromotionEvaluator(db),
+    transformQuoteResult: ({ db, result, request, provenance }) =>
+      applyOperatorTaxToQuoteResult(
+        db,
+        result,
+        request.entityModule,
+        request.entityId,
+        provenance.sourceKind,
+      ),
+    onDraftConsumedError: ({ error }) => {
+      console.warn("[catalog-booking] markDraftConsumed failed:", error)
+    },
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -358,7 +361,7 @@ function cryptoRandom(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
 }
 
-async function applyBookingTaxToQuoteResult(
+export async function applyOperatorTaxToQuoteResult(
   db: AnyDrizzleDb,
   result: QuoteEntityResult,
   entityModule: string,

@@ -15,9 +15,18 @@ import {
   searchCatalogTool,
   suggestAlternativesTool,
 } from "@voyantjs/catalog-mcp"
+import {
+  createTripTool,
+  priceTripTool,
+  reserveTripTool,
+  reviseTripTool,
+  type TravelComposerMcpServices,
+  travelComposerService,
+} from "@voyantjs/travel-composer"
 import type { Context, Hono } from "hono"
 
 import { buildCatalogContext } from "./lib/catalog-context"
+import { createOperatorTravelComposerRoutesOptions } from "./travel-composer-runtime"
 
 function registerAllTools(registry: ReturnType<typeof createMcpToolRegistry>): void {
   registry.register(searchCatalogTool)
@@ -25,6 +34,10 @@ function registerAllTools(registry: ReturnType<typeof createMcpToolRegistry>): v
   registry.register(suggestAlternativesTool)
   registry.register(checkAvailabilityTool)
   registry.register(getQuoteTool)
+  registry.register(createTripTool)
+  registry.register(reviseTripTool)
+  registry.register(priceTripTool)
+  registry.register(reserveTripTool)
 }
 
 export function mountCatalogMcpRoutes(hono: Hono): void {
@@ -37,7 +50,10 @@ export function mountCatalogMcpRoutes(hono: Hono): void {
     } catch {
       body = {}
     }
-    const ctx = buildCatalogContext(c)
+    const ctx = {
+      ...buildCatalogContext(c),
+      travelComposer: createTravelComposerMcpServices(c),
+    }
     const registry = createMcpToolRegistry({ context: ctx })
     registerAllTools(registry)
     const result = await registry.dispatchTool(tool, body)
@@ -46,4 +62,28 @@ export function mountCatalogMcpRoutes(hono: Hono): void {
 
   hono.post("/v1/admin/mcp/tools/:tool", handle)
   hono.post("/v1/public/mcp/tools/:tool", handle)
+}
+
+function createTravelComposerMcpServices(c: Context): TravelComposerMcpServices {
+  const options = createOperatorTravelComposerRoutesOptions()
+  return {
+    createTrip: (input) => travelComposerService.createTrip(c.var.db, input),
+    addComponent: (input) => travelComposerService.addComponent(c.var.db, input),
+    removeComponent: (componentId) => travelComposerService.removeComponent(c.var.db, componentId),
+    priceTrip: (input) => {
+      const deps = resolveDeps(c, options.priceTripDeps)
+      if (!deps) throw new Error("Travel composer price dependencies are not configured")
+      return travelComposerService.priceTrip(c.var.db, input, deps)
+    },
+    reserveTrip: (input) => {
+      const deps = resolveDeps(c, options.reserveTripDeps)
+      if (!deps) throw new Error("Travel composer reserve dependencies are not configured")
+      return travelComposerService.reserveTrip(c.var.db, input, deps)
+    },
+  }
+}
+
+function resolveDeps<T>(c: Context, deps: T | ((c: Context) => T | undefined) | undefined) {
+  if (typeof deps !== "function") return deps
+  return (deps as (c: Context) => T | undefined)(c)
 }

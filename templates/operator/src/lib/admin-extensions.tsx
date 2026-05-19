@@ -3,7 +3,7 @@ import {
   createAdminExtensionRegistry,
   defineAdminExtension,
 } from "@voyantjs/admin"
-import { ScrollText, ShieldCheck, Tag } from "lucide-react"
+import { Route, ScrollText, Tag } from "lucide-react"
 
 /**
  * Operator admin contributions composed through the shared admin runtime.
@@ -47,28 +47,30 @@ const promotionsExtension = defineAdminExtension({
   ],
 })
 
-const actionLedgerExtension = defineAdminExtension({
-  id: "action-ledger",
+const travelComposerExtension = defineAdminExtension({
+  id: "travel-composer",
   navigation: [
     {
-      order: 60,
+      // Splice Trips in right after Bookings — both belong to the booking
+      // lifecycle. `insertAfter` keeps the contribution shape; the resolver
+      // splices in place rather than appending at the end.
+      insertAfter: "bookings",
       items: [
         {
-          id: "action-ledger",
-          title: "Action ledger",
-          url: "/action-ledger",
-          icon: ScrollText,
+          id: "travel-composer",
+          title: "Trips",
+          url: "/trips",
+          icon: Route,
           items: [
             {
-              id: "action-ledger-entries",
-              title: "Entries",
-              url: "/action-ledger",
+              id: "travel-composer-list",
+              title: "All trips",
+              url: "/trips",
             },
             {
-              id: "action-ledger-approvals",
-              title: "Approvals",
-              url: "/action-ledger/approvals",
-              icon: ShieldCheck,
+              id: "travel-composer-new",
+              title: "New trip",
+              url: "/trips/new",
             },
           ],
         },
@@ -77,7 +79,25 @@ const actionLedgerExtension = defineAdminExtension({
   ],
 })
 
+const actionLedgerExtension = defineAdminExtension({
+  id: "action-ledger",
+  navigation: [
+    {
+      order: 60,
+      items: [
+        {
+          id: "action-ledger",
+          title: "Logs",
+          url: "/action-ledger",
+          icon: ScrollText,
+        },
+      ],
+    },
+  ],
+})
+
 export const adminExtensions: ReadonlyArray<AdminExtension> = createAdminExtensionRegistry(
   promotionsExtension,
+  travelComposerExtension,
   actionLedgerExtension,
 )

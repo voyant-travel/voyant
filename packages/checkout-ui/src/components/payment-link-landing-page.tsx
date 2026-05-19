@@ -60,6 +60,18 @@ export interface PaymentLinkLandingPageProps {
    */
   description?: string
   /**
+   * Optional structured summary slot rendered above the payment methods.
+   * Templates use this to surface vertical-specific context (itinerary
+   * cards with thumbnails for trips, line items for invoices, etc.).
+   */
+  summary?: ReactNode
+  /**
+   * Hide the raw `session.notes` paragraph in the header. Templates set this
+   * when the `summary` slot already conveys the same content in a
+   * structured form (so customers don't see the same data twice).
+   */
+  suppressNotes?: boolean
+  /**
    * Fired when the customer clicks "Try again" on a failed payment.
    * Should create a fresh `payment_session` (the original one is dead)
    * and redirect the customer to its landing page. The parent typically
@@ -94,11 +106,14 @@ export function PaymentLinkLandingPage({
   onPayByCard,
   onRetry,
   description,
+  summary,
+  suppressNotes,
 }: PaymentLinkLandingPageProps) {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-6 px-4 py-8">
       {brandHeader}
-      <Header session={session} description={description} />
+      <Header session={session} description={description} suppressNotes={suppressNotes} />
+      {summary ? <div>{summary}</div> : null}
       <Body
         session={session}
         bankTransferInstructions={bankTransferInstructions}
@@ -112,7 +127,15 @@ export function PaymentLinkLandingPage({
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-function Header({ session, description }: { session: PublicPaymentSession; description?: string }) {
+function Header({
+  session,
+  description,
+  suppressNotes,
+}: {
+  session: PublicPaymentSession
+  description?: string
+  suppressNotes?: boolean
+}) {
   const i18n = useCheckoutUiI18nOrDefault()
   const messages = i18n.messages.paymentLinkLandingPage
   return (
@@ -120,7 +143,9 @@ function Header({ session, description }: { session: PublicPaymentSession; descr
       <h1 className="font-semibold text-2xl">
         {description ?? defaultDescription(session, messages)}
       </h1>
-      {session.notes && <p className="text-muted-foreground text-sm">{session.notes}</p>}
+      {!suppressNotes && session.notes ? (
+        <p className="whitespace-pre-line text-muted-foreground text-sm">{session.notes}</p>
+      ) : null}
       <div className="flex items-baseline gap-3">
         <span className="font-semibold text-3xl tabular-nums">
           {i18n.formatCurrency(session.amountCents / 100, session.currency)}

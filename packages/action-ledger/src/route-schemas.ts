@@ -115,6 +115,7 @@ export const actionLedgerEntryListQuerySchema = z
     occurredAtTo: z.string().datetime().optional(),
     cursorOccurredAt: z.string().datetime().optional(),
     cursorId: z.string().trim().min(1).optional(),
+    sortDir: z.enum(["asc", "desc"]).optional(),
     limit: z.coerce.number().int().min(1).max(200).optional(),
   })
   .superRefine((value, ctx) => {

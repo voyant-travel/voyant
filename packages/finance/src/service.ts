@@ -1453,15 +1453,11 @@ export const financeService = {
     }
 
     // Emit a generic `payment.completed` so cross-vertical subscribers
-    // (notably the storefront's checkout-finalize workflow) can react
-    // without having to know the specific provider chain. Keyed by
-    // booking when the session targets one — that's the field the
-    // checkout flow needs.
-    if (
-      data.status === "paid" &&
-      txResult.updated &&
-      (session.bookingId || session.orderId || session.invoiceId)
-    ) {
+    // can react without having to know the specific provider chain.
+    // Some aggregate flows, such as composed trips, intentionally use a
+    // generic target instead of booking/order/invoice columns; those still
+    // need the completion event keyed by targetType/targetId.
+    if (data.status === "paid" && txResult.updated) {
       await runtime.eventBus?.emit("payment.completed", buildPaymentCompletedEvent(session), {
         category: "domain",
         source: "service",

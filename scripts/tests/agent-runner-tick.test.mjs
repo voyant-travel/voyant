@@ -40,6 +40,48 @@ describe("agent runner tick helpers", () => {
     )
   })
 
+  it("holds new implementation sessions while the local executor is at capacity", () => {
+    const today = new Date().toISOString().slice(0, 10)
+    const running = workItem({
+      fields: {
+        "Agent State": "Running",
+        "Last Heartbeat": today,
+      },
+      number: 580,
+      title: "Active implementation session",
+    })
+    const planning = workItem({
+      fields: {
+        "Agent State": "Planning",
+        "Last Heartbeat": today,
+      },
+      number: 581,
+      title: "Next implementation session",
+    })
+
+    assert.deepEqual(
+      recommendQueueActions([running, planning], {
+        implementationCommand: "codex exec fix",
+        maxAgeDays: 1,
+        repository: "voyantjs/other",
+      }).map((item) => [item.issue.number, item.action, item.command, item.reason]),
+      [
+        [581, "wait-agent-session-capacity", null, "agent session capacity reached (1/1)"],
+        [580, "wait-running", null, "command execution is already marked running"],
+      ],
+    )
+
+    assert.equal(
+      recommendQueueActions([running, planning], {
+        implementationCommand: "codex exec fix",
+        maxAgeDays: 1,
+        maxAgentSessions: 2,
+        repository: "voyantjs/other",
+      })[0].action,
+      "run-command",
+    )
+  })
+
   it("maps queue tick states to the next safe runner command", () => {
     assert.deepEqual(
       recommendQueueAction(workItem(), { maxAgeDays: 1, repository: "voyantjs/other" }),

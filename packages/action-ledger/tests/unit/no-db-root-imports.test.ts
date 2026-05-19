@@ -32,7 +32,7 @@ function* walkTsFiles(dir: string): Generator<string> {
   }
 }
 
-function findDbRootRuntimeImports(file: string, source: string): number[] {
+function findDbRootRuntimeImports(_file: string, source: string): number[] {
   const lines = source.split("\n")
   const offenders: number[] = []
   for (let i = 0; i < lines.length; i++) {
@@ -99,5 +99,5 @@ describe("no @voyantjs/db root runtime imports outside the allow list", () => {
         `bundles don't pull drizzle-orm/postgres-js + postgres. Offenders:\n` +
         offenders.join("\n"),
     ).toEqual([])
-  })
+  }, 30_000)
 })

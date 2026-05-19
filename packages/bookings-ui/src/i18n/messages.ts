@@ -991,8 +991,12 @@ export type BookingsUiMessages = {
     }
     validation: {
       selectProduct: string
+      selectDeparture: string
+      selectUnits: string
       selectPerson: string
       selectOrganization: string
+      billingEmailRequired: string
+      travelerRequired: string
       firstAndLastNameRequired: string
       selectSharedRoomGroup: string
       confirmFailedPrefix: string
@@ -1034,6 +1038,11 @@ export type BookingsUiMessages = {
       roomsNoUnits: string
       roomsRemaining: string
       roomsUnlimited: string
+      extrasHeading: string
+      extrasEmpty: string
+      extrasIncluded: string
+      extrasOnRequest: string
+      extrasPerPerson: string
       sharedRoomToggle: string
       sharedRoomCreateMode: string
       sharedRoomJoinMode: string

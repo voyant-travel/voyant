@@ -1,6 +1,6 @@
 # AI Travel Experience Composition
 
-Status: draft / planning reference
+Status: implemented foundation / hardening reference
 Audience: anyone designing AI-assisted storefront, itinerary planning, package composition, and checkout flows in Voyant.
 
 This document captures the missing product and architecture layer needed for
@@ -16,23 +16,65 @@ composition module that turns customer intent into a priced, holdable,
 checkout-ready itinerary. AI agents, staff quote builders, storefront wizards,
 and partner APIs can all call that same module.
 
-Implementation status: `@voyantjs/travel-composer` does **not** exist yet.
-This is the active planning reference for that package. The surrounding
-building blocks listed below exist in varying depth; the composer work should
-reuse them rather than introduce parallel planning, quoting, holding, checkout,
-or AI-tool infrastructure.
+Implementation status: `@voyantjs/travel-composer` now exists as the
+deterministic composition package. It has durable Trip Envelope / Trip
+Component schema, Zod contracts, trip operations, catalog-backed component
+adaptation, aggregate price/tax snapshots, reserve and checkout handoff
+workflows, component-level cancellation preview/cancel operations, Cruise
+Extension placement helpers, admin/public Hono routes, and AI-safe MCP tools.
+`@voyantjs/travel-composer-react` exposes the corresponding client operations,
+query keys/options, provider, and hooks. The remaining work is integration
+hardening: deeper vertical holds, generic checkout extraction beyond the
+operator template, public-safe flight booking surfaces, and production admin UI
+for support workflows.
+
+Execution plan: use
+[`travel-composer-implementation-plan.md`](./travel-composer-implementation-plan.md)
+for the feature-branch and PR-by-PR rollout.
+
+Current code alignment, May 2026:
+
+- The single-line booking journey foundation has shipped: V1 contracts,
+  `catalog_quotes`, `booking_drafts`, quote/book/draft/hold routes,
+  React hooks, and `@voyantjs/bookings-ui/journey`.
+- The composer is catalog-first. It selects Catalog Items, not products,
+  hotels, or other vertical-owned tables directly. `sourceKind: "owned"` is
+  one catalog provenance/fulfillment path: the booking engine calls an internal
+  Voyant handler when that module is installed. Sourced rows call the supplier
+  or inventory-source adapter. OTA deployments can omit the products module and
+  still compose trips entirely from sourced catalog inventory.
+- Catalog MCP exists for discovery and quote tools, and the composer now adds
+  deterministic trip composition tools.
+- Flights, ground, checkout, workflows, catalog RAG, storefront SDK, and public
+  contracts remain separate modules. The composer groups their commitments
+  under one customer-facing Trip Envelope, but live flight booking is still held
+  behind public-safe flight search/price/reserve/order-status surfaces.
+- `POST /v1/public/catalog/checkout/start` is working template-owned storefront
+  glue, and the operator composer adapter can call the extracted
+  `startCatalogCheckout(...)` function. A generic composer should still depend
+  on framework-owned catalog/checkout services before non-operator templates
+  consume it directly.
 
 ## 1. Current foundation
 
 Voyant already has many of the required primitives:
 
+- **Travel Composer** in `@voyantjs/travel-composer` for Trip Envelopes, Trip
+  Components, deterministic create/revise/price/reserve/checkout/cancellation
+  operations, Cruise Extension representation, Hono route mounting, and MCP
+  tools. It groups multiple component bookings/orders into one customer-facing
+  trip without collapsing component-level taxes, cancellation rules, supplier
+  references, or support state.
+- **Travel Composer React** in `@voyantjs/travel-composer-react` for admin and
+  public client operations, validation-aware fetches, cache writers, query
+  options, and hooks.
 - **Catalog plane** for normalized discovery across operated and sourced
   inventory, with resolved views, provenance, overlays, search, and booking
   snapshots.
 - **Catalog booking engine** in `@voyantjs/catalog/booking-engine` for
   per-line `quoteEntity`, `bookEntity`, `cancelEntity`, `catalog_quotes`,
-  `booking_drafts`, `BookingDraftShape`, owned-handler dispatch, and
-  snapshot capture.
+  `booking_drafts`, `BookingDraftShape`, source-adapter dispatch,
+  optional owned-handler dispatch, and snapshot capture.
 - **Pre-booking holds** through `booking_drafts` plus `availability_holds` for
   owned product slots. The operator template ships a scheduled draft reaper
   that releases expired holds and deletes abandoned drafts.
@@ -65,9 +107,11 @@ Voyant already has many of the required primitives:
   `checkout-react`, and source-installed UI packages that keep public flows
   reusable without owning the final storefront shell.
 
-The missing piece is not more CRUD around those modules. The missing piece is a
-first-class **composition layer** between catalog discovery and the commercial
-ladder.
+The missing piece was not more CRUD around those modules. It was a first-class
+**composition layer** between catalog discovery and the commercial ladder. That
+layer now exists in foundation form; this document remains the source of truth
+for hardening the component boundaries, public surface, and cross-vertical
+workflow behavior.
 
 ## 2. Desired customer journey
 
@@ -76,8 +120,8 @@ A representative storefront flow:
 1. Customer opens chat on an operator storefront.
 2. Customer says: "Plan a 9-day Egypt trip in October for two adults, boutique
    hotels, private guides, no overnight trains, budget around EUR 7,000."
-3. AI asks only the missing questions needed to produce a useful draft.
-4. System creates an itinerary draft with day-by-day structure and candidate
+3. AI asks only the missing questions needed to produce a useful trip.
+4. System creates a trip with day-by-day structure and candidate
    sellable items.
 5. Customer revises: "Add one beach day and make the Cairo hotel nicer."
 6. System reprices and validates availability.
@@ -91,9 +135,9 @@ A representative storefront flow:
 The AI should never invent sellable inventory or mutate bookings directly. It
 should call deterministic tools backed by Voyant modules.
 
-## 3. Proposed module
+## 3. Module
 
-Working name:
+Package name:
 
 `@voyantjs/travel-composer`
 
@@ -111,12 +155,12 @@ composition. AI is one caller.
 The composer owns the pre-commitment itinerary composition lifecycle:
 
 - capture customer intent and constraints
-- create candidate itinerary drafts
+- create candidate trips
 - attach candidate CatalogEntries and live-API offers
 - compare alternatives
-- price the full draft
+- price the full trip
 - validate live availability
-- reserve the selected draft
+- reserve the selected trip
 - start checkout or convert into the existing commercial ladder
 
 It does not own:
@@ -132,14 +176,14 @@ It does not own:
 
 ### 3.2. Minimal interface
 
-The composer interface should stay small and deterministic:
+The composer interface stays small and deterministic:
 
 ```ts
-createDraft(intent)
-reviseDraft(draftId, instruction)
-priceDraft(draftId)
-reserveDraft(draftId)
-startCheckout(draftId | bookingId)
+createTrip(intent)
+reviseTrip(tripId, instruction)
+priceTrip(tripId)
+reserveTrip(tripId)
+startCheckout(tripId | bookingId)
 ```
 
 The implementation behind those calls can be deep: catalog search, vertical
@@ -148,20 +192,112 @@ checkout bootstrap, audit, and compensation.
 
 ## 4. Domain concepts
 
-These are planning terms. Add them to `UBIQUITOUS_LANGUAGE.md` once the names
-settle.
+These terms are mirrored in `UBIQUITOUS_LANGUAGE.md` where they are stable
+enough to guide implementation.
 
-### Itinerary Draft
+### Trip / Package Envelope
 
-A mutable pre-commitment plan produced from customer intent. It can contain
+The customer-facing aggregate that ties together one travel purchase or
+planning session: title, itinerary timeline, traveler party, combined price,
+checkout state, documents, support context, and cancellation preview.
+
+It is not necessarily one Booking. It may contain:
+
+- one operated group departure booking
+- several independent FIT bookings/orders
+- manual placeholders
+- future package-level commercial artifacts
+
+The envelope is what the customer experiences as "my trip." The underlying
+commitments stay split where their lifecycle differs.
+
+### Operated Group Departure
+
+A fixed operator-sold product with a departure date, capacity, itinerary, and
+often internal components such as bus transport, stays, included excursions,
+guide assignment, rooming list, and optional Extras.
+
+Example: a 5-day Bucharest to Istanbul group tour. The bus, included stays,
+included excursions, and departure capacity are product-internal concerns.
+They should remain inside that product/departure booking unless one component
+is sold and cancelled independently by a different supplier.
+
+### Composed FIT Trip
+
+An individually composed trip assembled from independent commitments: flight,
+stay, tour, transfer, cruise, rail, tickets, or staff-confirmed placeholders.
+The customer may build and buy it in one flow, but the backend should keep
+independently cancellable/provider-backed commitments as separate
+bookings/orders under the Trip / Package Envelope.
+
+Example: book the 5-day Bucharest to Istanbul group departure, then add 3
+extra nights in Bucharest, then add a Bucharest to London flight. The group
+departure is one component; the post-stay and flight are sibling components in
+the same customer-facing trip.
+
+### Component Booking / Order
+
+One independently committed part of a Trip / Package Envelope. It has its own
+supplier/provider reference, cancellation rules, tax treatment, fulfillment
+state, and operational owner.
+
+The lifecycle boundary rule:
+
+**Split by lifecycle boundary. Nest by dependency. Aggregate by customer
+experience.**
+
+Verticals often imply lifecycle boundaries, but not always. Breakfast and
+parking depend on the stay; baggage and seats depend on the flight; cruise-line
+excursions depend on the cruise booking. A separately operated transfer or
+museum ticket is a sibling component, even if the UI offered it as an upsell.
+
+### Extra
+
+A child line that modifies or extends a Component Booking and shares its
+supplier lifecycle closely enough to be cancelled, fulfilled, taxed, and
+supported with that booking.
+
+Use **Extra** as the canonical domain term because the existing vertical,
+schemas, pricing rules, and admin UI are already named `extras`,
+`product_extras`, `booking_extras`, and `ExtraPriceRule`. Existing V1 booking
+journey contracts still expose `addonGroups` / `AddonsStep`; treat that as
+legacy wire/UI naming until a compatibility migration is worth the churn.
+
+Examples:
+
+- hotel room + breakfast + parking = one stay component with Extras
+- flight + bags + seats = one flight order with ancillaries
+- cruise cabin + cruise-line excursions + cruise-line pre/post Cruise Extension
+  = one cruise component when the cruise line owns those services
+
+When an offered Extra is operated by a separate supplier with independent
+confirmation or cancellation rules, it is not a child Extra for backend
+purposes; it is a sibling Component Booking / Order under the same Trip /
+Package Envelope.
+
+Cruise vocabulary exception: **Cruise Extension** is a vertical-specific
+category for pre/post-cruise hotel or land programs. It is not a generic
+replacement for Extra. The extension's catalog definition can be shared across
+multiple cruises or sailings; the selected extension line is what gets nested or
+split. Model that selected line as an Extra when it is sold, confirmed, changed,
+cancelled, taxed, and supported as part of the cruise booking; model it as a
+sibling Component Booking / Order when it has an independent supplier or
+lifecycle.
+
+### Trip Envelope
+
+The durable customer-facing aggregate for a composed trip. It can contain
 freeform narrative, day-by-day structure, candidate sellable items, unresolved
 requirements, rejected alternatives, and AI rationale.
 
-It is not a Booking, Order, or Offer. It has not committed inventory.
+It is not a Booking, Order, or Offer. It has not committed inventory until the
+reserve/checkout workflow creates the relevant underlying commitments. `draft`
+is one lifecycle status of a Trip Envelope, not the object name operators or
+customers should see.
 
-### Draft Item
+### Trip Component
 
-One proposed component of an Itinerary Draft. It may reference:
+One proposed or committed component of a Trip Envelope. It may reference:
 
 - a CatalogEntry
 - a vertical-specific live offer, such as a flight offer
@@ -172,29 +308,37 @@ One proposed component of an Itinerary Draft. It may reference:
 
 Do not overload the booking engine's `booking_drafts` table with the whole
 multi-line itinerary. A booking draft is a per-line, resumable booking-journey
-primitive. An Itinerary Draft is the multi-line composition envelope that can
-point at zero or more booking drafts.
+primitive. A Trip Envelope is the multi-line composition aggregate that can
+point at zero or more booking drafts through its Trip Components.
 
-### Priced Draft
+### Priced Trip
 
-A Draft after live pricing and availability validation. Prices may have expiry
-timestamps, warnings, unavailable items, or alternatives.
+A Trip after live pricing and availability validation. Prices may have expiry
+timestamps, warnings, unavailable components, or alternatives.
 
-### Reserved Draft
+### Reserved Trip
 
-A Draft whose selected items have been held or booked upstream and converted
+A Trip whose selected components have been held or booked upstream and converted
 into Voyant's Booking Session / Booking / Order structures as appropriate.
 
-A Reserved Draft may resolve to one Booking with many items, multiple Bookings
+A Reserved Trip may resolve to one Booking with many items, multiple Bookings
 under a booking group, or a future package-level transactional record. The
 composer must keep that grouping decision behind its service interface until a
 formal `PackageOffer` / composite package vertical exists.
 
+Default grouping decision for cross-vertical composition:
+
+- Use one component booking/order per independently operated or independently
+  cancellable commitment.
+- Keep product-internal bundles and dependent Extras inside that component.
+- Put all components under the Trip / Package Envelope so the customer still
+  gets one itinerary, one checkout flow, and one support/cancellation surface.
+
 ### Experience Session
 
 The customer-facing planning session: conversation transcript summary,
-customer constraints, selected draft, current state, and consent/approval
-history. This is the AI/storefront wrapper around one or more Itinerary Drafts.
+customer constraints, selected trip, current state, and consent/approval
+history. This is the AI/storefront wrapper around one or more Trip Envelopes.
 
 ## 5. Relationship to existing architecture
 
@@ -225,24 +369,56 @@ Each vertical keeps its own truth:
 
 The composer coordinates verticals. It does not flatten them.
 
+### 5.2.1. Group departure vs FIT composition
+
+Do not conflate these axes:
+
+- **Operated group departure**: the operator sells a fixed departure as one
+  product with capacity and product-internal components. The booking journey
+  commits that product as one component booking.
+- **Composed FIT trip**: the customer assembles independent commitments. The
+  composer groups them under a Trip / Package Envelope but keeps backend
+  commitments split by lifecycle boundary.
+- **Combined customer experience**: both cases can present one itinerary, one
+  checkout, one document set, and one cancellation preview.
+
+The composer can compose around an operated group product. A customer may book
+a 5-day group tour, then add post-stay nights and a flight home. The group tour
+remains one booking component; the post-stay and flight become sibling
+components in the same envelope.
+
+This distinction prevents two bad extremes:
+
+- exploding an operated group product into unrelated bookings for bus, stays,
+  included excursions, and internal allocations
+- forcing a customer-composed flight + hotel + tour into one backend booking
+  when cancellation, taxes, fulfillment, and provider references differ
+
 ### 5.3. Catalog booking engine and booking drafts
 
 The single-line booking journey and catalog booking engine now provide the
 leaf primitives the composer should reuse:
 
 - `BookingDraftShape` describes one bookable line's required steps, traveler
-  fields, payment intents, accommodation sub-steps, and add-ons.
+  fields, payment intents, accommodation sub-steps, and Extras.
 - `booking_drafts` stores one resumable pre-booking-row draft for that line.
 - `catalog_quotes` stores short-lived live pricing for that line.
 - `quoteEntity` and `bookEntity` dispatch to the correct owned handler or
   source adapter and capture booking snapshots.
 
-The composer should hold N Draft Items and call those primitives per item. It
-should not create a second single-line booking engine, and it should not force
+The composer should hold N Trip Components and call those primitives per
+component. It should not create a second single-line booking engine, and it
+should not force
 the booking journey to understand a whole custom itinerary.
 
-Current caveat: `booking_drafts.current_quote_id` is one-to-one. The composer
-must store quote references per Draft Item, not on the Itinerary Draft root.
+Current caveats:
+
+- `booking_drafts.current_quote_id` is one-to-one. The composer must store
+  quote references per Trip Component, not on the Trip Envelope root.
+- The current hold token convention is not yet uniform. Products use the draft
+  id as the hold token and lock `availability_holds`; cruises and accommodations
+  return placeholder/stamping holds until their inventory models expose real
+  locks; sourced adapters still lack a hold-only release primitive.
 
 ### 5.4. Commercial ladder
 
@@ -252,10 +428,10 @@ Voyant's ladder remains:
 
 The composer sits before and around that ladder:
 
-- Itinerary Draft is pre-commitment.
-- Priced Draft is a customer-facing priced proposal, but not necessarily a
+- Trip Envelope in `draft` status is pre-commitment.
+- Priced Trip is a customer-facing priced proposal, but not necessarily a
   formal Offer record.
-- Reserved Draft creates holds and/or Booking Session state.
+- Reserved Trip creates holds and/or Booking Session state.
 - Checkout turns the held/reserved commitment into collection.
 
 Open design question: whether a formal `PackageOffer` should be introduced as
@@ -270,9 +446,9 @@ exists, protected by a scoped checkout capability. The storefront also exposes
 booking-session bootstrap helpers for customer-facing product departures.
 
 They are too late and too item-concrete to be the full AI planning state. The
-composer should create or update Booking Sessions only after a Draft has been
-priced and the customer asks to reserve/buy, or when handing a single Draft Item
-to the existing booking journey.
+composer should create or update Booking Sessions only after a Trip has been
+priced and the customer asks to reserve/buy, or when handing a single Trip
+Component to the existing booking journey.
 
 ### 5.6. Checkout
 
@@ -287,9 +463,13 @@ intent, using the existing collection primitives:
 - bank transfer
 - card
 
-The relevant code surface is `previewCheckoutCollection`,
-`initiateCheckoutCollection`, and `bootstrapCheckoutCollection`; the composer
-should not mint arbitrary payment amounts in a public flow.
+The reusable code surface is `previewCheckoutCollection`,
+`initiateCheckoutCollection`, and `bootstrapCheckoutCollection`; the current
+customer-facing catalog handoff is
+`POST /v1/public/catalog/checkout/start` in the operator template. Before a
+generic composer ships, extract the reusable parts of that route into
+framework-owned catalog/checkout services. The composer should not mint
+arbitrary payment amounts in a public flow.
 
 ### 5.7. Workflows
 
@@ -327,14 +507,14 @@ Candidate tools:
 
 - `create_experience_session`
 - `update_traveler_intent`
-- `create_itinerary_draft`
-- `revise_itinerary_draft`
+- `create_trip`
+- `revise_trip`
 - `search_catalog`
 - `suggest_alternatives`
 - `check_availability`
-- `price_itinerary_draft`
+- `price_trip`
 - `explain_itinerary_terms`
-- `reserve_itinerary_draft`
+- `reserve_trip`
 - `start_checkout`
 - `handoff_to_staff`
 
@@ -364,7 +544,7 @@ Required controls:
 - **Tool audit**: record AI-requested actions, tool inputs, service results,
   and user confirmations.
 - **Human handoff**: unsupported, ambiguous, high-value, or policy-blocked
-  drafts can become staff tasks instead of failed chats.
+  trips can become staff tasks instead of failed chats.
 
 The policy should be deterministic and testable. It should not live in prompts.
 
@@ -375,7 +555,7 @@ pieces that developers can compose into an operator-owned storefront.
 
 Framework-owned:
 
-- public contracts for experience sessions and drafts
+- public contracts for experience sessions and trips
 - React hooks for composer state
 - MCP/tool definitions for composer operations, layered above
   `@voyantjs/catalog-mcp`
@@ -410,11 +590,11 @@ experience_sessions
   status
   intent_summary
   constraints_json
-  selected_draft_id
+  selected_trip_envelope_id
   created_at
   updated_at
 
-itinerary_drafts
+trip_envelopes
   id
   experience_session_id
   status
@@ -432,17 +612,17 @@ itinerary_drafts
   created_at
   updated_at
 
-itinerary_draft_days
+trip_days
   id
-  draft_id
+  trip_envelope_id
   day_number
   date
   title
   summary
 
-itinerary_draft_items
+trip_components
   id
-  draft_id
+  trip_envelope_id
   day_id
   item_kind
   vertical
@@ -466,7 +646,7 @@ itinerary_draft_items
 experience_tool_events
   id
   experience_session_id
-  draft_id
+  trip_envelope_id
   tool_name
   requested_by
   input_json
@@ -478,19 +658,25 @@ Do not commit to this schema prematurely. The important decision is the seam:
 multi-line planning state is separate from per-line `booking_drafts` and from
 Booking Session state until the customer asks to reserve or buy.
 
-Avoid making the root draft depend on exactly one Booking. Multi-line
+Avoid making the Trip Envelope depend on exactly one Booking. Multi-line
 composition may need one Booking with many items, several Bookings under a
 group, or a later `PackageOffer`/package vertical. The schema should preserve
 line-level commit references and an optional aggregate reference.
+
+For MVP, bias toward several component bookings/orders under one envelope for
+FIT composition, while allowing a component itself to contain child booking
+items/Extras when they share lifecycle. This keeps cancellation and tax
+materialization line-specific without sacrificing the unified customer
+experience.
 
 ## 10. Reserve / buy workflow
 
 High-level reserve flow:
 
-1. Load selected Itinerary Draft.
+1. Load selected Trip Envelope.
 2. Validate required customer and traveler information.
-3. For every selected Draft Item, create/update a per-line booking draft where
-   the catalog booking journey applies.
+3. For every selected Trip Component, create/update a per-line booking draft
+   where the catalog booking journey applies.
 4. Reprice every selected item through `quoteEntity`, the relevant
    vertical/source adapter, or flight repricing.
 5. Check availability for every selected item.
@@ -501,9 +687,13 @@ High-level reserve flow:
 10. Capture catalog snapshots for committed items.
 11. Return checkout-ready target and hold expiry summary.
 
+Reservation and cancellation should run at component level. The composer may
+show one Reserve/Buy/Cancel action, but the workflow must record which
+component bookings/orders succeeded, failed, or require staff remediation.
+
 High-level buy flow:
 
-1. Run reserve flow or reuse an unexpired Reserved Draft.
+1. Run reserve flow or reuse an unexpired Reserved Trip.
 2. Compute collection plan.
 3. Start checkout collection bootstrap/initiation against the booking or
    booking session.
@@ -513,11 +703,13 @@ High-level buy flow:
 
 ## 11. Open questions
 
-1. **Module name.** `travel-composer` is descriptive, but `package-offers` may
-   fit better if the primary output becomes a formal `PackageOffer`.
-2. **PackageOffer vs Itinerary Draft only.** If cross-vertical pricing,
+1. **Future package-offer artifact.** `travel-composer` is the package name.
+   If the primary output later becomes a formal transactable proposal, add a
+   `PackageOffer` artifact inside or alongside the composer rather than
+   renaming the package.
+2. **PackageOffer vs Trip Envelope only.** If cross-vertical pricing,
    cancellation, and terms need a durable transactable proposal, introduce
-   `PackageOffer`. If not, keep Draft + Booking Session.
+   `PackageOffer`. If not, keep Trip Envelope + Booking Session.
 3. **Where to store conversation state.** The composer should store structured
    summaries and decisions, not raw prompt dependence. Raw transcript retention
    may be app-owned or configurable.
@@ -529,92 +721,122 @@ High-level buy flow:
 6. **Flights in public surface.** The `@voyantjs/flights` package now provides
    contracts, fan-out, snapshots, and reference-data providers, but AI
    storefront use still needs public-safe route mounting for search, price,
-   reserve, and order-status surfaces.
+   reserve, and order-status surfaces. The operator template has flight UI/API
+   wiring, but the composer should not assume a customer-safe flight route
+   family exists yet.
 7. **Manual placeholders.** Real operators often need "we will confirm this
    hotel manually." The composer should support placeholders without pretending
    they are live inventory.
 8. **Ground transport boundary.** `@voyantjs/ground` is an operational module.
    The composer still needs a sellable transfer/search surface before it can
-   treat ground services like normal Draft Items.
+   treat ground services like normal Trip Components.
 9. **Hold-release primitive for sourced drafts.** The draft reaper can release
-   owned holds through owned handlers. Sourced adapters currently expose
+   owned holds through owned handlers and can honor
+   `AdapterCapabilities.holdReleaseGraceMs`. Sourced adapters currently expose
    `cancel`, not a hold-only release primitive, so sourced soft-hold cleanup
-   needs a SourceAdapter contract addition before broad multi-source reserve
-   flows are safe.
+   still needs a SourceAdapter contract addition before broad multi-source
+   reserve flows are safe.
 10. **Aggregate commit shape.** Decide whether MVP reserve produces one Booking
     with many Booking Items, several Bookings in a booking group, or a narrower
-    package-level artifact. The composer interface can hide this, but checkout,
-    documents, cancellation, and support UI need a consistent target.
+    package-level artifact. Current default: several component bookings/orders
+    under one Trip / Package Envelope for FIT composition; one booking with
+    child items/Extras for operated products and dependent upsells. The
+    composer interface can hide this, but checkout, documents, cancellation,
+    and support UI need a consistent target.
 11. **Template-owned checkout extraction.** `POST
     /v1/public/catalog/checkout/start` exists in the operator template. The
-    composer should not depend on template-local code long term; extract the
-    reusable parts into framework-owned services before shipping a generic
-    composer package.
+    current operator adapter can call the extracted `startCatalogCheckout(...)`
+    service from that template, which is enough for the integration branch.
+    Before shipping the composer as a generic package, move the reusable
+    checkout-start pieces into framework-owned catalog/checkout services so
+    non-operator templates do not depend on operator-local code.
 
 ## 12. MVP slices
 
-### Slice 0: settle reusable boundaries
+### Slice 0: choose a deliberately narrow first vertical set
 
-- Confirm the MVP aggregate commit shape: one Booking, booking group, or a
-  minimal package artifact.
-- Extract reusable checkout-start behavior from the operator template if the
-  composer needs to call it outside that template.
-- Add or design a SourceAdapter hold-release primitive for sourced soft holds.
-- Decide whether flight public routes are in scope for the first composer
-  demo, or explicitly exclude flights from the first vertical set.
-- Decide whether ground services enter as manual placeholders, product-linked
-  transfers, or a new sellable transfer surface.
+For the first composer demo, use only lines that can already be priced and
+committed through today's deterministic services. Recommended first set:
 
-### Slice 1: make AI access complete for discovery
+- products
+- accommodations, if the selected property/rate-plan path has a real commit
+  bridge in the target template
+- cruises only when the target template wires the cruise commit bridge and the
+  demo accepts placeholder holds
+- manual placeholders for ground transfers and staff-confirmed services
+- flights excluded unless the work also includes public-safe flight search,
+  price, reserve, and order-status routes
 
-- Use the existing catalog MCP tools (`search_catalog`, `get_entity`,
-  `suggest_alternatives`, `check_availability`, `get_quote`) as the discovery
-  base.
-- Add customer-safe public MCP or tool-call routes for storefront agents where
-  templates need hosted agent access.
-- Fill adapter-backed availability/quote coverage for adopted verticals rather
-  than leaving tools wired only to products/extras.
-- Ensure semantic search downgrades cleanly when embeddings are not configured.
+This keeps the first slice honest: every sellable line either resolves to a
+catalog booking-engine quote or is explicitly marked as a manual placeholder.
 
-### Slice 2: introduce Itinerary Drafts
+For the first aggregate shape, use a Trip / Package Envelope with component
+bookings/orders. Do not force cross-vertical FIT composition into one booking
+row. Keep Extras inside the component booking only when they share
+that component's supplier lifecycle.
 
-- Add `@voyantjs/travel-composer` with Draft, Draft Day, and Draft Item
-  contracts.
-- Support create/revise/read draft operations.
-- Store structured intent and constraints.
+### Slice 1: extract checkout-start behavior
+
+- Extract reusable checkout-start orchestration from
+  `templates/operator/src/api/catalog-checkout.ts` into a callable service.
+  The integration branch may keep the callable service in the operator template
+  while the adapter wiring is proven; the hardening slice should move the
+  generic parts into framework-owned catalog/checkout services.
+- Preserve template ownership of Netopia config, bank details, contract template
+  choice, CRM opportunity creation, and storefront URLs.
+- Expose a service-level `startCheckout({ bookingId, paymentIntent, ... })`
+  that the composer can call after reserve.
+
+### Slice 2: introduce Trip Envelopes
+
+- Add `@voyantjs/travel-composer` with Trip Envelope, Trip Day, and Trip
+  Component contracts.
+- Support create/read/revise operations against structured intent and
+  constraints.
 - Keep all mutation deterministic and service-validated.
-- Keep Itinerary Draft state separate from catalog booking-engine
-  `booking_drafts`; store per-line references instead of merging the concepts.
+- Store per-line references to `booking_drafts`, `catalog_quotes`, flight
+  offers/orders, and placeholders. Do not merge the itinerary envelope into
+  the catalog booking-engine `booking_drafts` table.
 
-### Slice 3: price a draft
+### Slice 3: price a trip
 
-- Add `priceDraft`.
-- Resolve live prices and availability per vertical, using `quoteEntity` where
-  available and the flight adapter repricing path for flights.
-- Return warnings, expiries, unavailable items, and alternatives.
-- Add tests for stale price, unavailable item, and partial quote failure.
+- Add `priceTrip`.
+- For catalog-backed items, call the booking-engine quote route/service with a
+  per-line `BookingDraftV1`.
+- For flights, use the flight adapter repricing path only if the deployment has
+  customer-safe access to it; otherwise require a manual placeholder.
+- Return warnings, expiries, unavailable items, partial failures, and suggested
+  alternatives.
+- Add tests for stale price, unavailable item, mixed manual/live items, and
+  partial quote failure.
 
-### Slice 4: reserve a draft
+### Slice 4: reserve a trip with workflows
 
-- Add workflow-backed `reserveDraft`.
-- Create Booking Session / Booking records only at this point.
-- Implement compensation for partial hold failure.
-- Capture snapshots and preserve source provenance.
-- Cover owned-hold release, sourced-hold release, quote expiry, and one-line
-  success / one-line failure in tests.
+- Add workflow-backed `reserveTrip`.
+- Create or update per-line booking drafts where the single-line journey
+  applies.
+- Place holds/bookings in dependency order, with compensation on partial
+  failure.
+- Preserve line-level references and optional aggregate references
+  (`bookingId`, `bookingGroupId`, or future package artifact).
+- Cover owned-hold release, quote expiry, one-line success, one-line failure,
+  and sourced-hold unsupported behavior in tests.
 
 ### Slice 5: checkout handoff
 
-- Add `startCheckout`.
-- Support deposit/full/exact-amount collection through existing checkout
-  collection primitives.
-- Provide UI-ready output for "Reserve now" and "Buy now".
+- Add composer-level `startCheckout`.
+- Use the extracted checkout-start service and existing checkout collection
+  primitives for deposit/full/exact-amount collection.
+- Return UI-ready output for "Reserve now" and "Buy now": checkout target,
+  provider redirect/payment session/bank instructions, hold expiry summary, and
+  terms disclosure state.
 
 ### Slice 6: ship a reference storefront block
 
 - Chat panel
 - Itinerary timeline/cards
 - Alternative selector
+- Manual-placeholder state
 - Live price and expiry badges
 - Reserve/buy CTA
 - Staff handoff state
@@ -627,9 +849,9 @@ app-local glue:
 ```txt
 Customer intent
   -> AI tool calls
-  -> Itinerary Draft
-  -> priced Draft
-  -> Reserved Draft / Booking Session
+  -> Trip Envelope
+  -> Priced Trip
+  -> Reserved Trip / Booking Session
   -> checkout bootstrap
   -> Booking / Order / Payment Session
 ```

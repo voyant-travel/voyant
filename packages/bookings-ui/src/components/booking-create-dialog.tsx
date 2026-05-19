@@ -1,7 +1,9 @@
 "use client"
 
+import { useQueries } from "@tanstack/react-query"
 import { useSlots, useSlotUnitAvailability } from "@voyantjs/availability-react"
 import {
+  type BookingCreateExtraLineInput,
   type BookingCreateGroupMembershipInput,
   type BookingCreatePaymentScheduleInput,
   type BookingCreateTravelerInput,
@@ -11,7 +13,9 @@ import {
   useBookingTaxPreview,
 } from "@voyantjs/bookings-react"
 import { useOrganization, usePerson } from "@voyantjs/crm-react"
+import { type ProductExtraRecord, useProductExtras } from "@voyantjs/extras-react"
 import { useAddresses } from "@voyantjs/identity-react"
+import { getExtraPriceRulesQueryOptions, useVoyantPricingContext } from "@voyantjs/pricing-react"
 import { useProduct, useProductMedia } from "@voyantjs/products-react"
 import {
   Button,
@@ -356,6 +360,12 @@ function sameRoomUnits(left: OptionUnitsStepperUnit[], right: OptionUnitsStepper
   })
 }
 
+function isRealBookingEmail(value: string | null | undefined): boolean {
+  const normalized = value?.trim().toLowerCase() ?? ""
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) return false
+  return !["noreply@example.com", "tbd@example.com", "traveler@example.com"].includes(normalized)
+}
+
 export interface BookingCreateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -425,6 +435,7 @@ export function BookingCreateForm({
   const [slotId, setSlotId] = React.useState<string | null>(null)
   const [rooms, setRooms] = React.useState<OptionUnitsStepperValue>(emptyOptionUnitsStepperValue)
   const [roomUnits, setRoomUnits] = React.useState<OptionUnitsStepperUnit[]>([])
+  const [extraLines, setExtraLines] = React.useState<BookingCreateExtraLineInput[]>([])
   const [person, setPerson] = React.useState<PersonPickerValue>(emptyPersonPickerValue)
   const [sharedRoom, setSharedRoom] = React.useState<SharedRoomValue>(emptySharedRoomValue)
   const [travelers, setTravelers] = React.useState<TravelerListValue>(emptyTravelerListValue)
@@ -459,6 +470,7 @@ export function BookingCreateForm({
       setSlotId(null)
       setRooms(emptyOptionUnitsStepperValue)
       setRoomUnits([])
+      setExtraLines([])
       setPerson(emptyPersonPickerValue)
       setSharedRoom(emptySharedRoomValue)
       setTravelers(emptyTravelerListValue)
@@ -486,6 +498,7 @@ export function BookingCreateForm({
     setRooms(emptyOptionUnitsStepperValue)
     setRoomUnits([])
     setSharedRoom(emptySharedRoomValue)
+    setExtraLines([])
   }, [product.productId])
 
   const [slotsFromIso, setSlotsFromIso] = React.useState(() => new Date().toISOString())
@@ -727,12 +740,26 @@ export function BookingCreateForm({
     enabled: Boolean(billingPrimaryAddressKind && billingPrimaryAddressEntityId),
   })
   const billingPrimaryAddress = billingAddressQuery.data?.data?.[0] ?? null
+  const hasSelectedUnits = React.useMemo(
+    () => Object.values(rooms.quantities).some((qty) => qty > 0),
+    [rooms.quantities],
+  )
 
   const handleSubmit = async () => {
     setError(null)
 
     if (!product.productId) {
       setError(messages.bookingCreateDialog.validation.selectProduct)
+      return
+    }
+
+    if (!slotId) {
+      setError(messages.bookingCreateDialog.validation.selectDeparture)
+      return
+    }
+
+    if (!hasSelectedUnits) {
+      setError(messages.bookingCreateDialog.validation.selectUnits)
       return
     }
 
@@ -744,12 +771,31 @@ export function BookingCreateForm({
         return
       }
       resolvedPersonId = person.personId
+      if (!isRealBookingEmail(billingPersonRecord?.email)) {
+        setError(messages.bookingCreateDialog.validation.billingEmailRequired)
+        return
+      }
     } else {
       if (!person.organizationId) {
         setError(messages.bookingCreateDialog.validation.selectOrganization)
         return
       }
       resolvedOrganizationId = person.organizationId
+    }
+
+    if (travelers.travelers.length === 0) {
+      setError(messages.bookingCreateDialog.validation.travelerRequired)
+      return
+    }
+
+    const invalidTraveler = travelers.travelers.find(
+      (traveler) =>
+        (!traveler.personId && (!traveler.firstName.trim() || !traveler.lastName.trim())) ||
+        (traveler.email.trim() ? !isRealBookingEmail(traveler.email) : false),
+    )
+    if (invalidTraveler) {
+      setError(messages.bookingCreateDialog.validation.firstAndLastNameRequired)
+      return
     }
 
     try {
@@ -885,6 +931,7 @@ export function BookingCreateForm({
         confirmedSellAmountCents,
         priceOverrideReason: priceOverrideReason || null,
         itemLines: itemLines.length > 0 ? itemLines : undefined,
+        extraLines: extraLines.length > 0 ? extraLines : undefined,
         travelers: travelerRows.length > 0 ? travelerRows : undefined,
         paymentSchedules: paymentSchedules.length > 0 ? paymentSchedules : undefined,
         voucherRedemption,
@@ -961,6 +1008,25 @@ export function BookingCreateForm({
                 noUnits: messages.bookingCreateDialog.labels.roomsNoUnits,
                 remaining: messages.bookingCreateDialog.labels.roomsRemaining,
                 unlimited: messages.bookingCreateDialog.labels.roomsUnlimited,
+              }}
+            />
+          ) : null}
+
+          {product.productId && slotId ? (
+            <ProductExtrasPickerSection
+              productId={product.productId}
+              optionId={product.optionId}
+              currency={pricingCurrency}
+              travelerCount={travelers.travelers.length}
+              value={extraLines}
+              onChange={setExtraLines}
+              enabled={enabled}
+              labels={{
+                heading: messages.bookingCreateDialog.labels.extrasHeading,
+                empty: messages.bookingCreateDialog.labels.extrasEmpty,
+                included: messages.bookingCreateDialog.labels.extrasIncluded,
+                onRequest: messages.bookingCreateDialog.labels.extrasOnRequest,
+                perPerson: messages.bookingCreateDialog.labels.extrasPerPerson,
               }}
             />
           ) : null}
@@ -1154,7 +1220,7 @@ export function BookingCreateForm({
             type="button"
             size="sm"
             onClick={handleSubmit}
-            disabled={isSubmitting || !product.productId}
+            disabled={isSubmitting || !product.productId || !slotId || !hasSelectedUnits}
           >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {createAsDraft
@@ -1178,6 +1244,7 @@ export function BookingCreateForm({
           })()}
           unitQuantities={displayQuantities}
           unitLabels={roomUnitLabels}
+          extraLines={extraLines}
           travelers={travelers.travelers}
           messages={messages}
           onPricingChange={setPricing}
@@ -1230,6 +1297,175 @@ export function BookingCreateForm({
   )
 }
 
+function ProductExtrasPickerSection({
+  productId,
+  optionId,
+  currency,
+  travelerCount,
+  value,
+  onChange,
+  enabled,
+  labels,
+}: {
+  productId: string
+  optionId: string | null
+  currency: string
+  travelerCount: number
+  value: BookingCreateExtraLineInput[]
+  onChange: (value: BookingCreateExtraLineInput[]) => void
+  enabled: boolean
+  labels: {
+    heading: string
+    empty: string
+    included: string
+    onRequest: string
+    perPerson: string
+  }
+}) {
+  const { formatCurrency } = useBookingsUiI18nOrDefault()
+  const pricingClient = useVoyantPricingContext()
+  const extrasQuery = useProductExtras({
+    productId,
+    active: true,
+    limit: 100,
+    enabled: enabled && Boolean(productId),
+  })
+  const extras = extrasQuery.data?.data ?? []
+  const priceQueries = useQueries({
+    queries: extras.map((extra) => ({
+      ...getExtraPriceRulesQueryOptions(pricingClient, {
+        productExtraId: extra.id,
+        ...(optionId ? { optionId } : {}),
+        active: true,
+        limit: 10,
+      }),
+      enabled,
+    })),
+  })
+  const priceByExtraId = new Map(
+    extras.flatMap((extra, index) => {
+      const row = priceQueries[index]?.data?.data?.[0]
+      return row ? ([[extra.id, row]] as const) : []
+    }),
+  )
+  const selectedByExtraId = new Map(value.map((line) => [line.productExtraId, line]))
+
+  const setQuantity = (extra: ProductExtraRecord, quantity: number) => {
+    const next = value.filter((line) => line.productExtraId !== extra.id)
+    if (quantity > 0) {
+      const price = priceByExtraId.get(extra.id)
+      const pricingMode =
+        price?.pricingMode ?? (extra.pricedPerPerson ? "per_person" : extra.pricingMode)
+      const unitSellAmountCents = price?.sellAmountCents ?? null
+      const chargedQuantity =
+        pricingMode === "per_person" || extra.pricedPerPerson
+          ? Math.max(1, travelerCount) * quantity
+          : quantity
+      const totalSellAmountCents =
+        unitSellAmountCents == null ? null : unitSellAmountCents * chargedQuantity
+      next.push({
+        productExtraId: extra.id,
+        name: extra.name,
+        description: extra.description,
+        pricingMode,
+        pricedPerPerson: extra.pricedPerPerson,
+        quantity,
+        sellCurrency: currency,
+        unitSellAmountCents,
+        totalSellAmountCents,
+      })
+    }
+    onChange(next)
+  }
+
+  if (extras.length === 0 && extrasQuery.isSuccess) {
+    return (
+      <div className="flex flex-col gap-2 rounded-md border p-3">
+        <Label>{labels.heading}</Label>
+        <p className="text-xs text-muted-foreground">{labels.empty}</p>
+      </div>
+    )
+  }
+
+  if (extras.length === 0) return null
+
+  return (
+    <div className="flex flex-col gap-2 rounded-md border p-3">
+      <Label>{labels.heading}</Label>
+      <div className="flex flex-col gap-2">
+        {extras.map((extra) => {
+          const selected = selectedByExtraId.get(extra.id)
+          const quantity = selected?.quantity ?? 0
+          const price = priceByExtraId.get(extra.id)
+          const pricingMode =
+            price?.pricingMode ?? (extra.pricedPerPerson ? "per_person" : extra.pricingMode)
+          const unitAmount = price?.sellAmountCents ?? null
+          const priceLabel =
+            pricingMode === "included" || pricingMode === "free"
+              ? labels.included
+              : unitAmount == null
+                ? labels.onRequest
+                : `${formatCurrency(unitAmount / 100, currency)}${
+                    pricingMode === "per_person" || extra.pricedPerPerson
+                      ? ` ${labels.perPerson}`
+                      : ""
+                  }`
+          const maxQuantity = extra.maxQuantity ?? undefined
+          return (
+            <div key={extra.id} className="flex items-center gap-3 rounded-md border px-3 py-2">
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium">{extra.name}</div>
+                <div className="text-xs text-muted-foreground">{priceLabel}</div>
+              </div>
+              <QuantityButtons
+                value={quantity}
+                max={maxQuantity}
+                onChange={(next) => setQuantity(extra, next)}
+              />
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function QuantityButtons({
+  value,
+  max,
+  onChange,
+}: {
+  value: number
+  max?: number
+  onChange(value: number): void
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="h-7 w-7 p-0"
+        disabled={value <= 0}
+        onClick={() => onChange(Math.max(0, value - 1))}
+      >
+        -
+      </Button>
+      <span className="min-w-6 text-center text-sm tabular-nums">{value}</span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="h-7 w-7 p-0"
+        disabled={max != null && value >= max}
+        onClick={() => onChange(value + 1)}
+      >
+        +
+      </Button>
+    </div>
+  )
+}
+
 /**
  * Right-rail live preview for the booking-create dialog. Mirrors the
  * operator's in-progress selections — product (with thumbnail),
@@ -1244,6 +1480,7 @@ function BookingPreviewCard({
   slotLabel,
   unitQuantities,
   unitLabels,
+  extraLines,
   travelers,
   messages,
   onPricingChange,
@@ -1254,6 +1491,7 @@ function BookingPreviewCard({
   slotLabel: string | null
   unitQuantities: Record<string, number>
   unitLabels: Record<string, string>
+  extraLines: BookingCreateExtraLineInput[]
   travelers: TravelerEntry[]
   messages: ReturnType<typeof useBookingsUiMessagesOrDefault>
   onPricingChange: (value: PriceBreakdownValue) => void
@@ -1271,10 +1509,33 @@ function BookingPreviewCard({
   const [breakdown, setBreakdown] = React.useState<PriceBreakdownValue | null>(null)
   const handlePricingChange = React.useCallback(
     (value: PriceBreakdownValue) => {
-      setBreakdown(value)
-      onPricingChange(value)
+      const extraTotal = extraLines.reduce((sum, line) => sum + (line.totalSellAmountCents ?? 0), 0)
+      const next =
+        extraTotal > 0
+          ? {
+              ...value,
+              catalogAmountCents:
+                value.catalogAmountCents == null ? null : value.catalogAmountCents + extraTotal,
+              confirmedAmountCents:
+                value.confirmedAmountCents == null ? null : value.confirmedAmountCents + extraTotal,
+              lines: [
+                ...value.lines,
+                ...extraLines.map((line) => ({
+                  unitId: `extra:${line.productExtraId}`,
+                  label: line.name,
+                  quantity: line.quantity,
+                  unitAmountCents: line.unitSellAmountCents ?? null,
+                  totalAmountCents: line.totalSellAmountCents ?? null,
+                  tierLabel: null,
+                  isGroupRate: false,
+                })),
+              ],
+            }
+          : value
+      setBreakdown(next)
+      onPricingChange(next)
     },
-    [onPricingChange],
+    [extraLines, onPricingChange],
   )
   const taxSubtotalCents = breakdown?.confirmedAmountCents ?? breakdown?.catalogAmountCents ?? 0
   const taxCurrency = breakdown?.currency ?? "EUR"
@@ -1399,6 +1660,26 @@ function BookingPreviewCard({
               }}
               onChange={handlePricingChange}
             />
+            {extraLines.length > 0 ? (
+              <div className="mt-2 flex flex-col gap-1.5 border-t pt-2 text-sm">
+                {extraLines.map((line) => (
+                  <div
+                    key={line.productExtraId}
+                    className="flex items-baseline justify-between gap-3"
+                  >
+                    <div className="flex items-baseline gap-2">
+                      <span className="tabular-nums">{formatNumber(line.quantity)}x</span>
+                      <span>{line.name}</span>
+                    </div>
+                    <div className="tabular-nums">
+                      {line.totalSellAmountCents == null || !line.sellCurrency
+                        ? labels.breakdownOnRequest
+                        : formatCurrency(line.totalSellAmountCents / 100, line.sellCurrency)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             {taxPreview.data?.data && taxPreview.data.data.taxCents > 0 ? (
               <TaxPreviewRows
                 snapshot={taxPreview.data.data}

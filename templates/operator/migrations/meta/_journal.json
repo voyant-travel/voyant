@@ -162,6 +162,13 @@
       "when": 1778919100000,
       "tag": "0020_operator_settings_split",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1779127359669,
+      "tag": "0021_brainy_zaladane",
+      "breakpoints": true
     }
   ]
 }

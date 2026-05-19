@@ -21,6 +21,7 @@ import {
   ProductSchedulesSection,
 } from "./product-detail-sections"
 import { ProductDetailSkeleton } from "./product-detail-skeleton"
+import { ProductExtrasSection } from "./product-extras-section"
 import { PricingPanel } from "./product-options-pricing"
 import { getDeparturePriceOverridesQueryOptions } from "./product-options-shared"
 import { ProductPaymentPolicySection } from "./product-payment-policy-section"
@@ -156,6 +157,8 @@ export function ProductDetailPage({ id }: { id: string }) {
               </div>
             )}
           />
+
+          <ProductExtrasSection productId={id} />
 
           <ProductPaymentPolicySection product={product} onSuccess={invalidateProduct} />
         </div>

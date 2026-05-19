@@ -10,6 +10,14 @@ import { remoteWorkspaceRecommendation } from "./agent-runner-tick-remote.mjs"
 const runnableStates = new Set(["Planning", "Changes Requested", "CI Repair"])
 const stalePreemptionStates = new Set(["Planning", "Running", "Changes Requested", "CI Repair"])
 const watchedStates = new Set([...stalePreemptionStates, "Blocked", "Human Review"])
+const implementationSessionActions = new Set(["remote-run-command", "run-command"])
+const defaultMaxAgentSessions = 1
+
+export function maxAgentSessionsFromArgs(args, env = process.env) {
+  return normalizeMaxAgentSessions(
+    args.maxAgentSessions ?? env.AGENT_RUNNER_MAX_AGENT_SESSIONS ?? defaultMaxAgentSessions,
+  )
+}
 
 export function recommendQueueActions(
   items,
@@ -22,8 +30,12 @@ export function recommendQueueActions(
     remoteBrowserPort,
     remoteImplementationCommand,
     repository,
+    maxAgentSessions = defaultMaxAgentSessions,
   },
 ) {
+  const normalizedMaxAgentSessions = normalizeMaxAgentSessions(maxAgentSessions)
+  const activeAgentSessions = countActiveAgentSessions(items, { maxAgeDays })
+
   return items
     .map((item) =>
       recommendQueueAction(item, {
@@ -35,6 +47,12 @@ export function recommendQueueActions(
         remoteBrowserPort,
         remoteImplementationCommand,
         repository,
+      }),
+    )
+    .map((recommendation) =>
+      applyAgentSessionCapacity(recommendation, {
+        activeAgentSessions,
+        maxAgentSessions: normalizedMaxAgentSessions,
       }),
     )
     .filter((recommendation) => recommendation.action !== "ignore")
@@ -240,6 +258,36 @@ export function recommendQueueAction(
     priority: 999,
     reason: item.reasons.join("; ") || `Agent State is ${state ?? "unset"}`,
   })
+}
+
+function applyAgentSessionCapacity(recommendation, { activeAgentSessions, maxAgentSessions }) {
+  if (!implementationSessionActions.has(recommendation.action)) return recommendation
+  if (activeAgentSessions < maxAgentSessions) return recommendation
+
+  return {
+    ...recommendation,
+    action: "wait-agent-session-capacity",
+    command: null,
+    priority: 30,
+    reason: `agent session capacity reached (${activeAgentSessions}/${maxAgentSessions})`,
+  }
+}
+
+function countActiveAgentSessions(items, { maxAgeDays }) {
+  return items.filter((item) => {
+    if (item.fields?.["Agent State"] !== "Running") return false
+
+    const heartbeat = evaluateHeartbeat(item.fields["Last Heartbeat"], { maxAgeDays })
+    return !heartbeat.stale
+  }).length
+}
+
+function normalizeMaxAgentSessions(value) {
+  const number = Number(value)
+  if (!Number.isInteger(number) || number < 1) {
+    throw new Error(`invalid max agent sessions: ${String(value)}`)
+  }
+  return number
 }
 
 function humanReviewRecommendation(item, { heartbeat, repository }) {

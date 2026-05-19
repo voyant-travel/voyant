@@ -53,6 +53,19 @@ export interface BookingCreateItemLineInput {
   totalSellAmountCents?: number | null
 }
 
+export interface BookingCreateExtraLineInput {
+  productExtraId: string
+  optionExtraConfigId?: string | null
+  name: string
+  description?: string | null
+  pricingMode?: string | null
+  pricedPerPerson?: boolean | null
+  quantity: number
+  sellCurrency: string
+  unitSellAmountCents?: number | null
+  totalSellAmountCents?: number | null
+}
+
 export interface BookingCreateVoucherRedemptionInput {
   voucherId: string
   amountCents: number
@@ -85,6 +98,7 @@ export interface BookingCreateInput {
   priceOverrideReason?: string | null
 
   itemLines?: BookingCreateItemLineInput[]
+  extraLines?: BookingCreateExtraLineInput[]
   travelers?: BookingCreateTravelerInput[]
   paymentSchedules?: BookingCreatePaymentScheduleInput[]
   voucherRedemption?: BookingCreateVoucherRedemptionInput

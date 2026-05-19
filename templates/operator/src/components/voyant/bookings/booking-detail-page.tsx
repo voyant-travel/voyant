@@ -353,6 +353,10 @@ export function BookingDetailPage({ id }: { id: string }) {
         bookingId={id}
         defaultCurrency={booking.sellCurrency}
         defaultAmountCents={booking.sellAmountCents ?? null}
+        defaultPayerEmail={booking.contactEmail}
+        defaultPayerName={[booking.contactFirstName, booking.contactLastName]
+          .filter(Boolean)
+          .join(" ")}
         defaultPayerLanguage={resolvedLocale}
       />
     </div>

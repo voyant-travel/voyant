@@ -1,6 +1,12 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { formatMessage } from "@voyantjs/admin"
-import { useOptionPriceRuleMutation, useOptionUnitPriceRuleMutation } from "@voyantjs/pricing-react"
+import { useProductExtras } from "@voyantjs/extras-react"
+import {
+  useExtraPriceRuleMutation,
+  useExtraPriceRules,
+  useOptionPriceRuleMutation,
+  useOptionUnitPriceRuleMutation,
+} from "@voyantjs/pricing-react"
 import {
   Badge,
   Button,
@@ -118,6 +124,7 @@ export function PricingPanel({ productId, optionId }: { productId: string; optio
             <PriceRuleCard
               key={rule.id}
               rule={rule}
+              productId={productId}
               optionId={optionId}
               onEdit={() => {
                 setEditingRule(rule)
@@ -153,11 +160,13 @@ export function PricingPanel({ productId, optionId }: { productId: string; optio
 
 function PriceRuleCard({
   rule,
+  productId,
   optionId,
   onEdit,
   onDelete,
 }: {
   rule: OptionPriceRuleData
+  productId: string
   optionId: string
   onEdit: () => void
   onDelete: () => void
@@ -213,6 +222,11 @@ function PriceRuleCard({
           optionId={optionId}
           pricingMode={rule.pricingMode}
           allPricingCategories={rule.allPricingCategories}
+        />
+        <ExtraPriceRulesPanel
+          productId={productId}
+          optionId={optionId}
+          optionPriceRuleId={rule.id}
         />
       </div>
     </div>
@@ -382,6 +396,99 @@ function UnitPriceMatrix({
           void refetchCells()
         }}
       />
+    </div>
+  )
+}
+
+function ExtraPriceRulesPanel({
+  productId,
+  optionId,
+  optionPriceRuleId,
+}: {
+  productId: string
+  optionId: string
+  optionPriceRuleId: string
+}) {
+  const extrasQuery = useProductExtras({ productId, active: true, limit: 100 })
+  const rulesQuery = useExtraPriceRules({ optionPriceRuleId, optionId, active: true, limit: 100 })
+  const { create, update, remove } = useExtraPriceRuleMutation()
+  const extras = extrasQuery.data?.data ?? []
+  const rules = rulesQuery.data?.data ?? []
+  const ruleByExtraId = new Map(
+    rules.flatMap((rule) => (rule.productExtraId ? [[rule.productExtraId, rule] as const] : [])),
+  )
+
+  if (extras.length === 0) return null
+
+  const savePrice = async (extraId: string) => {
+    const extra = extras.find((row) => row.id === extraId)
+    if (!extra) return
+    const existing = ruleByExtraId.get(extraId)
+    const raw = window.prompt(
+      "Sell amount",
+      existing?.sellAmountCents != null ? String(existing.sellAmountCents / 100) : "",
+    )
+    if (raw == null) return
+    const amount = Math.round(Number(raw) * 100)
+    if (!Number.isFinite(amount) || amount < 0) return
+    const payload = {
+      optionPriceRuleId,
+      optionId,
+      productExtraId: extra.id,
+      optionExtraConfigId: null,
+      pricingMode: extra.pricedPerPerson ? ("per_person" as const) : ("per_booking" as const),
+      sellAmountCents: amount,
+      costAmountCents: null,
+      active: true,
+      sortOrder: existing?.sortOrder ?? rules.length,
+    }
+    if (existing) await update.mutateAsync({ id: existing.id, input: payload })
+    else await create.mutateAsync(payload)
+    void rulesQuery.refetch()
+  }
+
+  return (
+    <div className="mt-4 border-t pt-3">
+      <div className="mb-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        Extras pricing
+      </div>
+      <div className="flex flex-col gap-2">
+        {extras.map((extra) => {
+          const rule = ruleByExtraId.get(extra.id)
+          return (
+            <div
+              key={extra.id}
+              className="flex items-center justify-between gap-3 rounded border px-2 py-1.5 text-xs"
+            >
+              <div className="min-w-0">
+                <span className="font-medium">{extra.name}</span>
+                {extra.pricedPerPerson ? (
+                  <span className="ml-2 text-muted-foreground">per traveler</span>
+                ) : null}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono">
+                  {rule?.sellAmountCents != null ? (rule.sellAmountCents / 100).toFixed(2) : "-"}
+                </span>
+                <Button variant="outline" size="sm" onClick={() => void savePrice(extra.id)}>
+                  Set price
+                </Button>
+                {rule ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      remove.mutate(rule.id, { onSuccess: () => void rulesQuery.refetch() })
+                    }
+                  >
+                    Remove
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

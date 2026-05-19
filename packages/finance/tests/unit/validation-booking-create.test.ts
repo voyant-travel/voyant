@@ -6,6 +6,17 @@ describe("bookingCreateSchema", () => {
   const valid = {
     productId: "prod_123",
     bookingNumber: "BK-001",
+    personId: "pers_123",
+    contactFirstName: "Alice",
+    contactLastName: "Lead",
+    contactEmail: "alice@example.com",
+    travelers: [
+      {
+        firstName: "Alice",
+        lastName: "Lead",
+        email: "alice@example.com",
+      },
+    ],
   }
 
   it("accepts a confirmed catalog total without an override reason", () => {
@@ -68,5 +79,23 @@ describe("bookingCreateSchema", () => {
       contractDocument: false,
       invoiceDocument: false,
     })
+  })
+
+  it("requires billing and travelers", () => {
+    expect(() =>
+      bookingCreateSchema.parse({
+        productId: "prod_123",
+        bookingNumber: "BK-001",
+      }),
+    ).toThrow()
+  })
+
+  it("rejects placeholder billing emails", () => {
+    expect(() =>
+      bookingCreateSchema.parse({
+        ...valid,
+        contactEmail: "noreply@example.com",
+      }),
+    ).toThrow()
   })
 })

@@ -9,8 +9,8 @@
  *     scheduled departures.
  *   - Travelers: per-pax fields (first / last / email; passport when
  *     the supplier requires it — surfaced via overlay when known).
- *   - Add-ons: the product's own `options[]` projected as add-on
- *     offers.
+ *   - Product options: the product's own `options[]` projected as a
+ *     configure sub-step, setting `draft.configure.variantId`.
  *
  * No accommodation sub-step today (multi-day tours w/ rooms route
  * through accommodations, not products). Pricing flows through
@@ -20,7 +20,6 @@
  */
 
 import {
-  type AddonOffer,
   type BookingDraftShape,
   DEFAULT_PAX_BANDS,
   defaultBookingFields,
@@ -56,26 +55,24 @@ export function buildProductDraftShape(
   const paxBands = options.paxBands ?? DEFAULT_PAX_BANDS
   const total = options.paxBandsAllowedTotal ?? paxBandsAllowedTotalFrom(paxBands)
 
-  // Project the product's own options into add-on offers. Each
-  // option becomes an extras-type add-on; verticals with grouped
-  // catalogs (cruise excursions) override.
-  const addonItems: AddonOffer[] = content.options.map((opt) => ({
+  const productOptions = content.options.map((opt) => ({
     id: opt.id,
     name: opt.name,
     description: opt.description ?? null,
-    kind: "extras",
-    pricingMode: null,
   }))
 
   return {
     ...defaultDraftShapeFlags(),
-    showsAddons: addonItems.length > 0,
     paxBands,
     paxBandsAllowedTotal: total,
     travelerFields: defaultTravelerFields(),
     bookingFields: defaultBookingFields(),
-    addons: addonItems.length > 0 ? { catalog: addonItems } : undefined,
     paymentIntents: ["hold", "card"],
-    configureSubSteps: [{ kind: "occupancy", bands: paxBands }],
+    configureSubSteps: [
+      ...(productOptions.length > 0
+        ? [{ kind: "product-option" as const, options: productOptions }]
+        : []),
+      { kind: "occupancy", bands: paxBands },
+    ],
   }
 }

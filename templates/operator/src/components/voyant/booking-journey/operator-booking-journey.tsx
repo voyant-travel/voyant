@@ -26,6 +26,8 @@ export interface OperatorBookingJourneyProps {
   sourceKind: string
   sourceConnectionId?: string
   sourceRef?: string
+  departureId?: string
+  optionId?: string
   draftId: string
   className?: string
 }
@@ -36,6 +38,8 @@ export function OperatorBookingJourney({
   sourceKind,
   sourceConnectionId,
   sourceRef,
+  departureId,
+  optionId,
   draftId,
   className,
 }: OperatorBookingJourneyProps): React.ReactElement {
@@ -74,6 +78,10 @@ export function OperatorBookingJourney({
       sourceConnectionId={sourceConnectionId}
       sourceRef={sourceRef}
       draftId={draftId}
+      initialConfigure={{
+        ...(departureId ? { departureSlotId: departureId } : {}),
+        ...(optionId ? { variantId: optionId } : {}),
+      }}
       defaultBuyerType="B2B"
       paymentCapabilities={{
         acceptsCard: true,

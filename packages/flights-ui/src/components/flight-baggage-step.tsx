@@ -246,7 +246,26 @@ function PaxBaggageRow({
           </span>
         )}
       </div>
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+        <button
+          type="button"
+          onClick={() => onSelect(null)}
+          className={cn(
+            "relative flex flex-col items-center justify-center gap-1.5 rounded-lg border bg-card p-3 text-center transition-colors",
+            selectedOptionId == null
+              ? "border-primary ring-2 ring-primary/20"
+              : "hover:border-primary/40 hover:bg-accent/30",
+          )}
+        >
+          {selectedOptionId == null && (
+            <CheckCircle2 className="absolute top-2 right-2 h-3.5 w-3.5 text-primary" />
+          )}
+          <Briefcase className="h-7 w-7 text-muted-foreground/70" />
+          <span className="font-semibold text-base">{messages.flightBaggageStep.noCheckedBag}</span>
+          <span className="font-mono text-[11px] text-muted-foreground">
+            {messages.common.included}
+          </span>
+        </button>
         {options.map((opt) => {
           const isSelected = selectedOptionId === opt.id
           return (

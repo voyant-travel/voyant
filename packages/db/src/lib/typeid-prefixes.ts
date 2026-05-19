@@ -346,6 +346,11 @@ export const PREFIXES = {
   // booking_session_states).
   booking_drafts: "bdrf",
 
+  // --- TRAVEL COMPOSER ---
+  trip_envelopes: "trip",
+  trip_components: "trcp",
+  trip_component_events: "trce",
+
   // --- FINANCE (extensions for journey tax computation) ---
   // Per booking-journey-architecture §9. The classes are the per-
   // product treatment decision; tax_regimes remains the

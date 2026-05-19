@@ -97,6 +97,66 @@ const checkoutStartSchema = z.object({
   returnOrigin: z.string().url().optional(),
 })
 
+export type CheckoutStartInput = z.infer<typeof checkoutStartSchema>
+
+interface CheckoutStartRequestMeta {
+  clientIp?: string
+  userAgent?: string
+}
+
+export interface CatalogCheckoutStartContext {
+  db: PostgresJsDatabase
+  env: CloudflareBindings & Record<string, string | undefined>
+  eventBus?: EventBus
+  resolveRuntime?: (key: string) => unknown
+  requestMeta?: CheckoutStartRequestMeta
+}
+
+export type CatalogCheckoutStartResult =
+  | {
+      kind: "card_redirect"
+      bookingId: string
+      paymentSessionId: string
+      redirectUrl: string | null
+      note?: string
+    }
+  | {
+      kind: "bank_transfer_instructions"
+      bookingId: string
+      proformaId: string | null
+      proformaNumber: string | null
+      paymentSessionId: string | null
+      instructions: {
+        beneficiary: string
+        iban: string
+        bankName: string
+        reference: string
+        amountCents: number
+        currency: string
+        dueAt: string
+      }
+    }
+  | {
+      kind: "inquiry_received"
+      bookingId: string
+      inquiryId: string
+      note?: string
+    }
+  | {
+      kind: "hold_placed"
+      bookingId: string
+    }
+
+export class CatalogCheckoutStartError extends Error {
+  constructor(
+    public readonly code: string,
+    public readonly status: 404 | 409 | 500 | 502,
+  ) {
+    super(code)
+    this.name = "CatalogCheckoutStartError"
+  }
+}
+
 interface PaymentCompletedPayload {
   bookingId: string | null
   paymentSessionId?: string
@@ -134,14 +194,38 @@ export function mountCatalogCheckoutRoutes(hono: Hono): void {
 }
 
 async function handleCheckoutStart(c: Context): Promise<Response> {
-  let body: z.infer<typeof checkoutStartSchema>
+  let body: CheckoutStartInput
   try {
     body = await parseJsonBody(c, checkoutStartSchema)
   } catch (err) {
     return c.json({ error: err instanceof Error ? err.message : "invalid body" }, 400)
   }
 
-  const db = c.get("db") as PostgresJsDatabase
+  try {
+    const result = await startCatalogCheckout(
+      {
+        db: c.get("db") as PostgresJsDatabase,
+        env: c.env as CloudflareBindings & Record<string, string | undefined>,
+        eventBus: c.var.eventBus,
+        resolveRuntime: (key) => c.var.container?.resolve(key),
+        requestMeta: checkoutRequestMeta(c),
+      },
+      body,
+    )
+    return c.json(result)
+  } catch (err) {
+    if (err instanceof CatalogCheckoutStartError) {
+      return c.json({ error: err.code }, err.status)
+    }
+    throw err
+  }
+}
+
+export async function startCatalogCheckout(
+  context: CatalogCheckoutStartContext,
+  body: CheckoutStartInput,
+): Promise<CatalogCheckoutStartResult> {
+  const db = context.db
   let booking: typeof bookings.$inferSelect | null =
     (await db.select().from(bookings).where(eq(bookings.id, body.bookingId)).limit(1))[0] ?? null
 
@@ -152,15 +236,15 @@ async function handleCheckoutStart(c: Context): Promise<Response> {
   // can operate on a normal booking. Owned products already have
   // the row written by their OwnedBookingHandler.commit.
   if (!booking) {
-    booking = await materializeBookingFromSnapshot(db, body.bookingId, c.env as CloudflareBindings)
+    booking = await materializeBookingFromSnapshot(db, body.bookingId, context.env)
   }
-  if (!booking) return c.json({ error: "booking_not_found" }, 404)
+  if (!booking) throw new CatalogCheckoutStartError("booking_not_found", 404)
   if (
     (body.paymentIntent === "card" || body.paymentIntent === "bank_transfer") &&
     booking.holdExpiresAt &&
     booking.holdExpiresAt <= new Date()
   ) {
-    return c.json({ error: "hold_expired" }, 409)
+    throw new CatalogCheckoutStartError("hold_expired", 409)
   }
 
   // Pre-create a draft contract carrying the acceptance fingerprint
@@ -178,7 +262,12 @@ async function handleCheckoutStart(c: Context): Promise<Response> {
   // acceptance fingerprints.
   if (body.contractAcceptance) {
     try {
-      await persistAcceptanceDraftContract(db, c, booking, body.contractAcceptance)
+      await persistAcceptanceDraftContract(
+        db,
+        context.requestMeta ?? {},
+        booking,
+        body.contractAcceptance,
+      )
     } catch (err) {
       // Acceptance recording is best-effort during checkout-start —
       // the customer still needs to reach payment even if our
@@ -191,16 +280,27 @@ async function handleCheckoutStart(c: Context): Promise<Response> {
 
   switch (body.paymentIntent) {
     case "card":
-      return handleCardIntent(c, db, booking, body)
+      return startCardCheckout(context, booking, body)
     case "bank_transfer":
-      return handleBankTransferIntent(c, db, booking, body)
+      return startBankTransferCheckout(context, booking)
     case "inquiry":
-      return handleInquiryIntent(c, db, booking, body)
+      return startInquiryCheckout(context, booking)
     case "hold":
-      return c.json({
-        kind: "hold_placed" as const,
+      return {
+        kind: "hold_placed",
         bookingId: booking.id,
-      })
+      }
+  }
+}
+
+function checkoutRequestMeta(c: Context): CheckoutStartRequestMeta {
+  return {
+    clientIp:
+      c.req.header("cf-connecting-ip") ??
+      c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
+      c.req.header("x-real-ip") ??
+      "",
+    userAgent: c.req.header("user-agent") ?? "",
   }
 }
 
@@ -214,14 +314,13 @@ async function handleCheckoutStart(c: Context): Promise<Response> {
  * pipeline the endpoint falls back to a stub response so the journey
  * keeps working through demos.
  */
-async function handleInquiryIntent(
-  c: Context,
-  db: PostgresJsDatabase,
+async function startInquiryCheckout(
+  context: CatalogCheckoutStartContext,
   booking: typeof bookings.$inferSelect,
-  _body: z.infer<typeof checkoutStartSchema>,
-): Promise<Response> {
-  const env = c.env as Record<string, string | undefined>
-  const eventBus = c.var.eventBus
+): Promise<CatalogCheckoutStartResult> {
+  const db = context.db
+  const env = context.env
+  const eventBus = context.eventBus
 
   let pipelineId = env.INQUIRY_PIPELINE_ID ?? null
   let stageId = env.INQUIRY_STAGE_ID ?? null
@@ -245,12 +344,12 @@ async function handleInquiryIntent(
     // No CRM pipeline configured. Still cancel the booking so the
     // hold doesn't linger, and return a stub inquiry reference.
     await releaseInquiryBooking(db, booking, eventBus)
-    return c.json({
-      kind: "inquiry_received" as const,
+    return {
+      kind: "inquiry_received",
       bookingId: booking.id,
       inquiryId: `inq-${booking.id}`,
       note: "No CRM pipeline configured — set INQUIRY_PIPELINE_ID + INQUIRY_STAGE_ID to record a real opportunity.",
-    })
+    }
   }
 
   const { crmService } = await import("@voyantjs/crm")
@@ -277,11 +376,11 @@ async function handleInquiryIntent(
     stageId,
   })
 
-  return c.json({
-    kind: "inquiry_received" as const,
+  return {
+    kind: "inquiry_received",
     bookingId: booking.id,
     inquiryId: opportunity?.id ?? `inq-${booking.id}`,
-  })
+  }
 }
 
 async function releaseInquiryBooking(
@@ -1431,21 +1530,13 @@ async function markAwaitingPayment(
     .where(eq(bookings.id, booking.id))
 }
 
-async function handleCardIntent(
-  c: Context,
-  db: PostgresJsDatabase,
+async function startCardCheckout(
+  context: CatalogCheckoutStartContext,
   booking: typeof bookings.$inferSelect,
-  body: z.infer<typeof checkoutStartSchema>,
-): Promise<Response> {
-  const runtime = (() => {
-    try {
-      return c.var.container?.resolve(NETOPIA_RUNTIME_CONTAINER_KEY) as
-        | ResolvedNetopiaRuntimeOptions
-        | undefined
-    } catch {
-      return undefined
-    }
-  })()
+  body: CheckoutStartInput,
+): Promise<CatalogCheckoutStartResult> {
+  const db = context.db
+  const runtime = resolveNetopiaRuntime(context)
 
   // Without Netopia configured, fall back to a placeholder redirect
   // — the storefront's confirmation page polls booking status and
@@ -1468,7 +1559,7 @@ async function handleCardIntent(
     targetType: "booking",
   } as never)
   if (!session) {
-    return c.json({ error: "could_not_create_payment_session" }, 500)
+    throw new CatalogCheckoutStartError("could_not_create_payment_session", 500)
   }
 
   if (!runtime) {
@@ -1477,13 +1568,13 @@ async function handleCardIntent(
     // booking status and unlocks contract/invoice download links
     // once the operator marks payment received via the booking
     // detail's pending-payment-sessions panel.
-    return c.json({
-      kind: "card_redirect" as const,
+    return {
+      kind: "card_redirect",
       bookingId: booking.id,
       paymentSessionId: session.id,
       redirectUrl: `/shop/confirmation/${encodeURIComponent(booking.id)}?kind=card_pending&session=${encodeURIComponent(session.id)}`,
       note: "Netopia not configured — falling back to a confirmation-page poll.",
-    })
+    }
   }
 
   const [firstName, ...rest] = (body.payerName ?? "").trim().split(/\s+/)
@@ -1517,24 +1608,35 @@ async function handleCardIntent(
       runtime,
       undefined,
     )
-    return c.json({
-      kind: "card_redirect" as const,
+    return {
+      kind: "card_redirect",
       bookingId: booking.id,
       paymentSessionId: session.id,
       redirectUrl: started.providerResponse.payment?.paymentURL ?? null,
-    })
+    }
   } catch (err) {
     console.error("[catalog-checkout] netopia startPaymentSession failed", err)
-    return c.json({ error: "payment_provider_failed" }, 502)
+    throw new CatalogCheckoutStartError("payment_provider_failed", 502)
   }
 }
 
-async function handleBankTransferIntent(
-  c: Context,
-  db: PostgresJsDatabase,
+function resolveNetopiaRuntime(
+  context: CatalogCheckoutStartContext,
+): ResolvedNetopiaRuntimeOptions | undefined {
+  try {
+    return context.resolveRuntime?.(NETOPIA_RUNTIME_CONTAINER_KEY) as
+      | ResolvedNetopiaRuntimeOptions
+      | undefined
+  } catch {
+    return undefined
+  }
+}
+
+async function startBankTransferCheckout(
+  context: CatalogCheckoutStartContext,
   booking: typeof bookings.$inferSelect,
-  _body: z.infer<typeof checkoutStartSchema>,
-): Promise<Response> {
+): Promise<CatalogCheckoutStartResult> {
+  const db = context.db
   await markAwaitingPayment(db, booking)
 
   // Issue a proforma synchronously so the customer leaves with a
@@ -1542,7 +1644,7 @@ async function handleBankTransferIntent(
   // invoice.proforma.issued) will sync to its proforma endpoint.
   const issueDate = new Date().toISOString().slice(0, 10)
   const dueDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-  const eventBus = c.var.eventBus
+  const eventBus = context.eventBus
 
   const proformaInput: CreateInvoiceFromBookingInput = {
     bookingId: booking.id,
@@ -1606,10 +1708,9 @@ async function handleBankTransferIntent(
     targetType: "booking",
   } as never)
 
-  const env = c.env as Record<string, string | undefined>
-  const bankTransfer = await resolveBankTransferInstructions(db, env)
-  return c.json({
-    kind: "bank_transfer_instructions" as const,
+  const bankTransfer = await resolveBankTransferInstructions(db, context.env)
+  return {
+    kind: "bank_transfer_instructions",
     bookingId: booking.id,
     proformaId: proforma?.id ?? null,
     proformaNumber: proforma?.invoiceNumber ?? null,
@@ -1623,7 +1724,7 @@ async function handleBankTransferIntent(
       currency: booking.sellCurrency ?? "EUR",
       dueAt: dueDate,
     },
-  })
+  }
 }
 
 async function resolveBankTransferInstructions(
@@ -1704,9 +1805,9 @@ function readContractAcceptance(
  */
 async function persistAcceptanceDraftContract(
   db: PostgresJsDatabase,
-  c: Context,
+  requestMeta: CheckoutStartRequestMeta,
   booking: typeof bookings.$inferSelect,
-  acceptance: NonNullable<z.infer<typeof checkoutStartSchema>["contractAcceptance"]>,
+  acceptance: NonNullable<CheckoutStartInput["contractAcceptance"]>,
 ): Promise<void> {
   const { contractsService } = await import("@voyantjs/legal/contracts")
 
@@ -1718,19 +1819,13 @@ async function persistAcceptanceDraftContract(
     return
   }
 
-  const clientIp =
-    c.req.header("cf-connecting-ip") ??
-    c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
-    c.req.header("x-real-ip") ??
-    ""
-  const userAgent = c.req.header("user-agent") ?? ""
   const acceptanceMetadata: StoredAcceptance = {
     templateId: acceptance.templateId,
     templateSlug: acceptance.templateSlug,
     acceptedAt: acceptance.acceptedAt,
     acceptedMarketing: acceptance.acceptedMarketing,
-    clientIp,
-    userAgent,
+    clientIp: requestMeta.clientIp ?? "",
+    userAgent: requestMeta.userAgent ?? "",
     renderedHtmlLength: acceptance.renderedHtml.length,
   }
 

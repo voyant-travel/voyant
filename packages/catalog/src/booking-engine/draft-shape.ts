@@ -66,6 +66,26 @@ export interface CabinNumberOption {
   hasAccessibilityFeatures?: boolean
 }
 
+/** A bookable unit under a product option / variant. */
+export interface ProductVariantUnitOption {
+  id: string
+  name: string
+  description?: string | null
+  unitType?: string | null
+  minQuantity?: number | null
+  maxQuantity?: number | null
+}
+
+/** A product option / variant selectable before pricing and booking. */
+export interface ProductVariantOption {
+  id: string
+  code?: string | null
+  name: string
+  description?: string | null
+  isDefault?: boolean
+  units?: ReadonlyArray<ProductVariantUnitOption>
+}
+
 /** A rate-plan option attached to a `RoomOption` (accommodations only, today). */
 export interface RatePlanOption {
   id: string
@@ -120,11 +140,22 @@ export interface AddonOffer {
   groupKey?: string | null
   /** Pricing model — display-only. */
   pricingMode?: string | null
+  /** Optional sell price hint in minor units. */
+  unitAmountCents?: number | null
+  /** Optional currency for the sell price hint. */
+  currency?: string | null
+  /** True when quantity is applied once per traveler. */
+  pricedPerPerson?: boolean | null
+  selectionType?: "optional" | "required" | "default_selected" | "unavailable" | null
+  minQuantity?: number | null
+  maxQuantity?: number | null
+  defaultQuantity?: number | null
 }
 
 /** Configure step sub-step union. */
 export type ConfigureSubStep =
   | { kind: "departure"; required: true }
+  | { kind: "product-option"; options: ReadonlyArray<ProductVariantOption> }
   | { kind: "cabin-category"; categories: ReadonlyArray<CabinCategoryOption> }
   | { kind: "cabin-number"; perCategory: Record<string, ReadonlyArray<CabinNumberOption>> }
   | { kind: "date-range"; minNights: number; maxNights: number }

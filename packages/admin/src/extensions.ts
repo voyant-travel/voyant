@@ -18,11 +18,15 @@ export interface AdminUiRouteContribution {
  * Contribute one or more navigation items to the shared admin shell.
  *
  * Contributions are appended after the template's base navigation and sorted
- * by `order`.
+ * by `order`. Set `insertAfter` to a base nav item id to splice the
+ * contribution's items in directly after that item instead — useful when
+ * the extension's items belong logically next to a built-in entry (e.g.
+ * Trips below Bookings).
  */
 export interface AdminNavigationContribution {
   items: ReadonlyArray<NavItem>
   order?: number
+  insertAfter?: string
 }
 
 /**
@@ -108,7 +112,31 @@ export function resolveAdminNavigation({
     })),
   )
 
-  return [...baseItems, ...orderedContributions.flatMap((contribution) => contribution.items)]
+  const anchoredByBaseId = new Map<string, NavItem[]>()
+  const appended: NavItem[] = []
+  for (const contribution of orderedContributions) {
+    if (contribution.insertAfter) {
+      const bucket = anchoredByBaseId.get(contribution.insertAfter) ?? []
+      bucket.push(...contribution.items)
+      anchoredByBaseId.set(contribution.insertAfter, bucket)
+    } else {
+      appended.push(...contribution.items)
+    }
+  }
+
+  const merged: NavItem[] = []
+  for (const item of baseItems) {
+    merged.push(item)
+    if (!item.id) continue
+    const anchored = anchoredByBaseId.get(item.id)
+    if (anchored) merged.push(...anchored)
+  }
+  // Items anchored to a base id that no longer exists fall through to the
+  // tail so they're still discoverable rather than silently dropped.
+  for (const [baseId, items] of anchoredByBaseId.entries()) {
+    if (!baseItems.some((item) => item.id === baseId)) appended.push(...items)
+  }
+  return [...merged, ...appended]
 }
 
 export interface ResolveAdminWidgetsOptions {

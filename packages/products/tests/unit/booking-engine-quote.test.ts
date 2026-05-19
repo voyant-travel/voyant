@@ -154,6 +154,60 @@ describe("createProductsBookingHandler.computeQuote", () => {
     expect(lines[0]?.quantity).toBe(3)
   })
 
+  it("prices selected product option quantities", async () => {
+    const loadResolvedOptionPrice = vi.fn(
+      async (): Promise<ResolvedOptionPrice> => ({
+        baseSellAmountCents: 25000,
+        unitPrices: [
+          {
+            unitId: "unit_suite",
+            unitType: "room",
+            travelerCategory: null,
+            sellAmountCents: 32000,
+          },
+        ],
+      }),
+    )
+    const handler = createProductsBookingHandler({
+      createBooking: vi.fn(),
+      loadSlotDate: async () => "2026-07-15",
+      loadProductOptions: async () => [
+        {
+          id: "opt_suite",
+          name: "Junior suite upgrade",
+          units: [{ id: "unit_suite", name: "Suite" }],
+        },
+      ],
+      loadResolvedOptionPrice,
+    })
+
+    const result = await handler.computeQuote(
+      makeCtx([product]),
+      baseRequest({
+        configure: {
+          departureSlotId: "slot_1",
+          optionSelections: [{ optionId: "opt_suite", optionUnitId: "unit_suite", quantity: 2 }],
+        },
+      }),
+    )
+
+    expect(loadResolvedOptionPrice).toHaveBeenCalledWith(expect.anything(), {
+      productId: product.id,
+      optionId: "opt_suite",
+      date: "2026-07-15",
+    })
+    const breakdown = result.pricing?.breakdown as Record<string, unknown>
+    expect(breakdown?.total).toBe(64000)
+    const lines = breakdown?.lines as Array<{ label: string; quantity: number; unitAmount: number }>
+    expect(lines[0]).toEqual(
+      expect.objectContaining({
+        label: "Junior suite upgrade",
+        quantity: 2,
+        unitAmount: 32000,
+      }),
+    )
+  })
+
   it("falls through to product.sellAmountCents when the resolver returns null", async () => {
     const handler = createProductsBookingHandler({
       createBooking: vi.fn(),
@@ -242,6 +296,11 @@ describe("createProductsBookingHandler.commit", () => {
       entityModule: "products",
       entityId: product.id,
       bookingId: "catalog_booking_1",
+      draft: {
+        configure: {
+          optionSelections: [{ optionId: "opt_suite", optionUnitId: "unit_suite", quantity: 2 }],
+        },
+      },
       pricing: {
         base_amount: 8333,
         taxes: 1667,
@@ -272,7 +331,58 @@ describe("createProductsBookingHandler.commit", () => {
     expect(createBooking).toHaveBeenCalledWith(
       expect.objectContaining({
         productId: product.id,
+        itemLines: [
+          {
+            optionId: "opt_suite",
+            optionUnitId: "unit_suite",
+            quantity: 2,
+          },
+        ],
+        optionId: "opt_suite",
         sellAmountCentsOverride: 10000,
+      }),
+    )
+  })
+
+  it("commits multiple selected option quantities as item lines without a single option id", async () => {
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const handler = createProductsBookingHandler({ createBooking })
+
+    const request: CommitOwnedRequest = {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      draft: {
+        configure: {
+          optionSelections: [
+            { optionId: "opt_standard", optionUnitId: "unit_standard", quantity: 1 },
+            { optionId: "opt_suite", optionUnitId: "unit_suite", quantity: 1 },
+          ],
+        },
+      },
+      pricing: {
+        base_amount: 29000,
+        taxes: 0,
+        fees: 0,
+        surcharges: 0,
+        currency: "RON",
+      },
+    }
+
+    const result = await handler.commit(makeCtx([product]), request)
+
+    expect(result.status).toBe("held")
+    expect(createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({
+        optionId: null,
+        itemLines: [
+          { optionId: "opt_standard", optionUnitId: "unit_standard", quantity: 1 },
+          { optionId: "opt_suite", optionUnitId: "unit_suite", quantity: 1 },
+        ],
       }),
     )
   })
