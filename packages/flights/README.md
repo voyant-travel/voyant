@@ -27,6 +27,9 @@ pnpm add @voyantjs/flights
   selection, check-in, exchange, refund, void, SSR, ancillaries, and order
   listing). Provider-agnostic; implementations come from Voyant Connect,
   third-party providers, or operator-built adapters.
+- **`./contract/schemas`** — zod schemas for the public flight contract
+  request, response, enum, and value-object shapes. Use these at HTTP, queue,
+  RPC, and adapter boundaries instead of re-declaring runtime validators.
 - **`./orchestration/fingerprint`** — Itinerary fingerprint helper. Two
   providers selling the same flight produce identical fingerprints.
 - **`./orchestration/fan-out`** — Multi-connection fan-out search:
@@ -84,6 +87,15 @@ const result = await fanOutFlightSearch({
 // result.offers — merged offers across all connections, deduped by
 // itinerary fingerprint, sorted by cheapest price ascending.
 // result.perConnection — status + latency per connection.
+```
+
+### Runtime validation
+
+```typescript
+import { flightBookRequestSchema } from "@voyantjs/flights/contract/schemas"
+import type { FlightBookRequest } from "@voyantjs/flights/contract/types"
+
+const request: FlightBookRequest = flightBookRequestSchema.parse(await req.json())
 ```
 
 ### Reference data — operator's own Postgres tables
