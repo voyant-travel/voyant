@@ -19,6 +19,8 @@
  *   VOYANT_CLOUD_API_URL      — defaults to `https://api.voyantjs.com`.
  */
 
+import { roomTypes } from "@voyantjs/accommodations/schema"
+import { createRoomTypeDocumentBuilder } from "@voyantjs/accommodations/service-catalog-plane"
 import {
   createIndexerService,
   createTypesenseIndexer,
@@ -35,8 +37,6 @@ import { createCruiseDocumentBuilder } from "@voyantjs/cruises/service-catalog-p
 import { createDbClient } from "@voyantjs/db"
 import { productExtras } from "@voyantjs/extras/schema"
 import { createExtraDocumentBuilder } from "@voyantjs/extras/service-catalog-plane"
-import { roomTypes } from "@voyantjs/hospitality/schema"
-import { createRoomTypeDocumentBuilder } from "@voyantjs/hospitality/service-catalog-plane"
 import { products } from "@voyantjs/products/schema"
 import { config } from "dotenv"
 import type { PgTable } from "drizzle-orm/pg-core"
@@ -70,7 +70,7 @@ const sellerOperatorId = process.env.TENANT_ID ?? "default"
 // Default slice set — staff (admin) + customer (storefront) on en-GB / default
 // market for every adopted vertical. Mirrors `DEFAULT_SLICES` in the live
 // catalog-runtime so the reindex CLI and the request-time route never drift.
-const VERTICALS = ["products", "extras", "cruises", "charters", "hospitality"] as const
+const VERTICALS = ["products", "extras", "cruises", "charters", "accommodations"] as const
 const SLICES: IndexerSlice[] = VERTICALS.flatMap((vertical) => [
   { vertical, locale: "en-GB", audience: "staff", market: "default" },
   { vertical, locale: "en-GB", audience: "customer", market: "default" },
@@ -160,7 +160,7 @@ const VERTICAL_CONFIGS: VerticalConfig[] = [
     builder: createCharterDocumentBuilder(db, { sellerOperatorId }),
   },
   {
-    vertical: "hospitality",
+    vertical: "accommodations",
     table: roomTypes as unknown as VerticalConfig["table"],
     builder: createRoomTypeDocumentBuilder(db, { sellerOperatorId }),
   },

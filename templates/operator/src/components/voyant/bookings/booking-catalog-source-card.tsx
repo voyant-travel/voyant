@@ -426,7 +426,7 @@ function labelForModule(entityModule: string): string {
   const map: Record<string, string> = {
     products: "Product",
     cruises: "Cruise",
-    hospitality: "Hospitality",
+    accommodations: "Accommodation",
     flights: "Flight",
   }
   return map[entityModule] ?? entityModule
@@ -438,7 +438,7 @@ function verticalIcon(entityModule: string) {
       return Package
     case "cruises":
       return Ship
-    case "hospitality":
+    case "accommodations":
       return Hotel
     case "flights":
       return Plane

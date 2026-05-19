@@ -6,6 +6,7 @@
  * background catalog-bridge subscribers stay aligned.
  */
 
+import { accommodationCatalogPolicy } from "@voyantjs/accommodations/catalog-policy"
 import { createProductDeparturesProjectionExtension } from "@voyantjs/availability/service-catalog-plane-departures"
 import {
   createFieldPolicyRegistry,
@@ -25,7 +26,6 @@ import { charterCatalogPolicy } from "@voyantjs/charters/catalog-policy"
 import { cruiseCatalogPolicy } from "@voyantjs/cruises/catalog-policy"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { extrasCatalogPolicy } from "@voyantjs/extras/catalog-policy"
-import { hospitalityCatalogPolicy } from "@voyantjs/hospitality/catalog-policy"
 import { createProductPricingProjectionExtension } from "@voyantjs/pricing/service-catalog-plane-pricing"
 import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
 import { productDeparturesCatalogPolicy } from "@voyantjs/products/catalog-policy-departures"
@@ -56,8 +56,8 @@ export const DEFAULT_SLICES: ReadonlyArray<IndexerSlice> = [
   { vertical: "cruises", locale: "en-GB", audience: "customer", market: "default" },
   { vertical: "charters", locale: "en-GB", audience: "staff", market: "default" },
   { vertical: "charters", locale: "en-GB", audience: "customer", market: "default" },
-  { vertical: "hospitality", locale: "en-GB", audience: "staff", market: "default" },
-  { vertical: "hospitality", locale: "en-GB", audience: "customer", market: "default" },
+  { vertical: "accommodations", locale: "en-GB", audience: "staff", market: "default" },
+  { vertical: "accommodations", locale: "en-GB", audience: "customer", market: "default" },
 ]
 
 /**
@@ -256,7 +256,7 @@ export function getFieldPolicyRegistries(): Map<string, FieldPolicyRegistry> {
       ["extras", createFieldPolicyRegistry(extrasCatalogPolicy)],
       ["cruises", createFieldPolicyRegistry(cruiseCatalogPolicy)],
       ["charters", createFieldPolicyRegistry(charterCatalogPolicy)],
-      ["hospitality", createFieldPolicyRegistry(hospitalityCatalogPolicy)],
+      ["accommodations", createFieldPolicyRegistry(accommodationCatalogPolicy)],
     ])
   }
   return _registries

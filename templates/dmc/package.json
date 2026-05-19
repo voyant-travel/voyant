@@ -59,7 +59,7 @@
     "@voyantjs/finance-ui": "workspace:*",
     "@voyantjs/ground": "workspace:*",
     "@voyantjs/hono": "workspace:*",
-    "@voyantjs/hospitality": "workspace:*",
+    "@voyantjs/accommodations": "workspace:*",
     "@voyantjs/i18n": "workspace:*",
     "@voyantjs/identity": "workspace:*",
     "@voyantjs/legal": "workspace:*",

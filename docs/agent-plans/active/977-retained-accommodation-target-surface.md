@@ -163,45 +163,38 @@ hotel's own rooms or in-stay operations.
 ### Retain And Repoint
 
 - `templates/operator/src/api/catalog-content.ts`
-  - Current: inline `/v1/{admin,public}/hospitality/:id/content`
-  - Target: `/v1/{admin,public}/accommodations/:id/content`, backed by
-    `getAccommodationContent`
+  - Current: `/v1/{admin,public}/accommodations/:id/content`, backed by
+    `createAccommodationContentRoutes` and `getAccommodationContent`.
 
 - `templates/operator/src/api/lib/booking-engine-runtime.ts`
-  - Current: imports `hospitalityBookingsService`,
-    `createHospitalityBookingHandler`, and `getHospitalityContent`
-  - Target: import accommodation booking service, booking handler, and content
-    service from `@voyantjs/accommodations`.
+  - Current: imports the accommodation booking handler and content service from
+    `@voyantjs/accommodations`. The legacy stay-booking commit bridge was not
+    retained.
 
 - `templates/operator/src/api/lib/catalog-runtime.ts`
-  - Current: `hospitalityCatalogPolicy`, `hospitality` slices
-  - Target: `accommodationCatalogPolicy`, `accommodations` slices.
+  - Current: `accommodationCatalogPolicy`, `accommodations` slices.
 
 - `templates/operator/scripts/reindex.ts`
-  - Current: indexes `roomTypes` as vertical `hospitality`
-  - Target: indexes accommodation entries as `accommodations`.
+  - Current: indexes accommodation room options as vertical `accommodations`.
 
 - `templates/operator/scripts/sync-sources.ts`
-  - Current: policy registry includes `hospitality`
-  - Target: source adapters emit `accommodations` projections.
+  - Current: policy registry includes `accommodations`; source adapters emit
+    `accommodations` projections.
 
 - `templates/operator/src/routes/(storefront)/shop_.products.$entityModule.$entityId.tsx`
-  - Current: renders `HospitalityContent` through `/v1/public/hospitality`
-  - Target: `AccommodationContent` through `/v1/public/accommodations`.
+  - Current: renders `AccommodationContent` through
+    `/v1/public/accommodations`.
 
 - `templates/operator/src/routes/(storefront)/shop_.book.$entityModule.$entityId.tsx`
-  - Current: summary fetches `/v1/public/hospitality`
-  - Target: `/v1/public/accommodations`, preserving hotel/lodging summary.
+  - Current: summary fetches `/v1/public/accommodations`, preserving
+    hotel/lodging summary.
 
 - `templates/operator/src/api/booking-schedule.ts`
-  - Current: reads `stayBookingItems` and `ratePlans` from hospitality schema
-    for accommodation-specific payment policy.
-  - Target: reads the retained accommodation booking-line and rate-plan tables
+  - Current: reads the retained accommodation booking-line and rate-plan tables
     from `@voyantjs/accommodations/schema`.
 
 - `templates/dmc/src/api/mcp.ts`
-  - Current: resolves `hospitality` via `getResolvedRoomTypeById`
-  - Target: resolves `accommodations` via the accommodation catalog-plane
+  - Current: resolves `accommodations` via the accommodation catalog-plane
     resolver.
 
 ### Remove Or Quarantine

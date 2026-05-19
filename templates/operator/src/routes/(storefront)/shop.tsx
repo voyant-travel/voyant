@@ -19,7 +19,7 @@ import { z } from "zod"
  */
 const shopSearchSchema = z.object({
   q: z.string().optional(),
-  vertical: z.enum(["products", "cruises", "hospitality", "charters", "flights"]).optional(),
+  vertical: z.enum(["products", "cruises", "accommodations", "charters", "flights"]).optional(),
 })
 
 export const Route = createFileRoute("/(storefront)/shop")({
@@ -70,7 +70,7 @@ function StorefrontIndex(): React.ReactElement {
         >
           <option value="products">Tours & products</option>
           <option value="cruises">Cruises</option>
-          <option value="hospitality">Stays</option>
+          <option value="accommodations">Stays</option>
           <option value="charters">Charters</option>
         </select>
       </div>

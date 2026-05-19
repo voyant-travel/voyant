@@ -2,10 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router"
+import type { AccommodationContent } from "@voyantjs/accommodations/content-shape"
 import { type BookingDraftV1, bookingDraftV1 } from "@voyantjs/catalog/booking-engine"
 import { useBookingQuote } from "@voyantjs/catalog-react/booking-engine"
 import type { CruiseContent } from "@voyantjs/cruises/content-shape"
-import type { HospitalityContent } from "@voyantjs/hospitality/content-shape"
 import type { ProductContent } from "@voyantjs/products/content-shape"
 import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
@@ -93,7 +93,7 @@ async function fetchContent<T>(
 
 /**
  * Catalog detail page — single route serving products / cruises /
- * hospitality. Each vertical renders its own body (itinerary / ship
+ * accommodations. Each vertical renders its own body (itinerary / ship
  * details / property details) and its own sidebar (departure
  * picker / sailing+cabin picker / date-range+room+rate picker).
  *
@@ -112,8 +112,8 @@ function DetailPage(): React.ReactElement {
   if (entityModule === "cruises") {
     return <CruiseDetailPage entityId={entityId} />
   }
-  if (entityModule === "hospitality") {
-    return <HospitalityDetailPage entityId={entityId} />
+  if (entityModule === "accommodations") {
+    return <AccommodationDetailPage entityId={entityId} />
   }
   return <ProductDetailPageProducts entityModule={entityModule} entityId={entityId} />
 }
@@ -607,17 +607,17 @@ function CruiseDetailBody({
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Hospitality vertical
+// Accommodation vertical
 // ─────────────────────────────────────────────────────────────────
 
-function HospitalityDetailPage({ entityId }: { entityId: string }): React.ReactElement {
+function AccommodationDetailPage({ entityId }: { entityId: string }): React.ReactElement {
   const navigate = useNavigate()
 
   const content = useQuery({
-    queryKey: ["public-hospitality-content", entityId],
+    queryKey: ["public-accommodations-content", entityId],
     queryFn: () =>
-      fetchContent<HospitalityContent>(
-        `${getApiUrl()}/v1/public/hospitality/${encodeURIComponent(entityId)}/content`,
+      fetchContent<AccommodationContent>(
+        `${getApiUrl()}/v1/public/accommodations/${encodeURIComponent(entityId)}/content`,
       ),
     staleTime: 30_000,
   })
@@ -657,7 +657,7 @@ function HospitalityDetailPage({ entityId }: { entityId: string }): React.ReactE
   const probeDraft = useMemo<BookingDraftV1 | null>(() => {
     if (!selectedRoomId || !checkIn || !checkOut) return null
     return bookingDraftV1.parse({
-      entity: { module: "hospitality", id: entityId, sourceKind: "" },
+      entity: { module: "accommodations", id: entityId, sourceKind: "" },
       configure: {
         dateRange: { checkIn, checkOut },
         pax: { adult: adultCount, child: childCount },
@@ -688,9 +688,9 @@ function HospitalityDetailPage({ entityId }: { entityId: string }): React.ReactE
         content.isLoading ? (
           <BodySkeleton />
         ) : !content.data ? (
-          <BodyMissing entityModule="hospitality" entityId={entityId} />
+          <BodyMissing entityModule="accommodations" entityId={entityId} />
         ) : (
-          <HospitalityDetailBody
+          <AccommodationDetailBody
             content={content.data.content}
             resolution={content.data.resolution}
             selectedRoomId={selectedRoomId}
@@ -722,7 +722,7 @@ function HospitalityDetailPage({ entityId }: { entityId: string }): React.ReactE
             if (!selectedRoomId || !selectedRatePlanId || !datesValid) return
             navigate({
               to: "/shop/book/$entityModule/$entityId",
-              params: { entityModule: "hospitality", entityId },
+              params: { entityModule: "accommodations", entityId },
               search: {
                 checkIn,
                 checkOut,
@@ -772,7 +772,7 @@ function HospitalityDetailPage({ entityId }: { entityId: string }): React.ReactE
   )
 }
 
-function HospitalityDetailBody({
+function AccommodationDetailBody({
   content,
   resolution,
   selectedRoomId,
@@ -781,13 +781,13 @@ function HospitalityDetailBody({
   onSelectRatePlan,
   ratePlansForRoom,
 }: {
-  content: HospitalityContent
+  content: AccommodationContent
   resolution: ContentResolution | null
   selectedRoomId: string | undefined
   onSelectRoom: (id: string) => void
   selectedRatePlanId: string | undefined
   onSelectRatePlan: (id: string) => void
-  ratePlansForRoom: ReadonlyArray<HospitalityContent["rate_plans"][number]>
+  ratePlansForRoom: ReadonlyArray<AccommodationContent["rate_plans"][number]>
 }): React.ReactElement {
   return (
     <div className="space-y-4">

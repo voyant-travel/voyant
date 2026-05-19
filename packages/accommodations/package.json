@@ -1,0 +1,113 @@
+{
+  "name": "@voyantjs/accommodations",
+  "version": "0.54.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./content-shape": "./src/content-shape.ts",
+    "./service-content": "./src/service-content.ts",
+    "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
+    "./catalog-policy": "./src/catalog-policy.ts",
+    "./service-catalog-plane": "./src/service-catalog-plane.ts",
+    "./draft-shape": "./src/draft-shape.ts",
+    "./booking-engine": "./src/booking-engine/index.ts",
+    "./routes-content": "./src/routes-content.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build"
+  },
+  "dependencies": {
+    "@voyantjs/bookings": "workspace:*",
+    "@voyantjs/catalog": "workspace:*",
+    "@voyantjs/db": "workspace:*",
+    "@voyantjs/facilities": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.10",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./schema": {
+        "types": "./dist/schema.d.ts",
+        "import": "./dist/schema.js",
+        "default": "./dist/schema.js"
+      },
+      "./content-shape": {
+        "types": "./dist/content-shape.d.ts",
+        "import": "./dist/content-shape.js",
+        "default": "./dist/content-shape.js"
+      },
+      "./service-content": {
+        "types": "./dist/service-content.d.ts",
+        "import": "./dist/service-content.js",
+        "default": "./dist/service-content.js"
+      },
+      "./service-content-synthesizer": {
+        "types": "./dist/service-content-synthesizer.d.ts",
+        "import": "./dist/service-content-synthesizer.js",
+        "default": "./dist/service-content-synthesizer.js"
+      },
+      "./catalog-policy": {
+        "types": "./dist/catalog-policy.d.ts",
+        "import": "./dist/catalog-policy.js",
+        "default": "./dist/catalog-policy.js"
+      },
+      "./service-catalog-plane": {
+        "types": "./dist/service-catalog-plane.d.ts",
+        "import": "./dist/service-catalog-plane.js",
+        "default": "./dist/service-catalog-plane.js"
+      },
+      "./draft-shape": {
+        "types": "./dist/draft-shape.d.ts",
+        "import": "./dist/draft-shape.js",
+        "default": "./dist/draft-shape.js"
+      },
+      "./booking-engine": {
+        "types": "./dist/booking-engine/index.d.ts",
+        "import": "./dist/booking-engine/index.js",
+        "default": "./dist/booking-engine/index.js"
+      },
+      "./routes-content": {
+        "types": "./dist/routes-content.d.ts",
+        "import": "./dist/routes-content.js",
+        "default": "./dist/routes-content.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyantjs/voyant.git",
+    "directory": "packages/accommodations"
+  },
+  "voyant": {
+    "schema": "./schema",
+    "requiresSchemas": [
+      "@voyantjs/db",
+      "@voyantjs/facilities",
+      "@voyantjs/bookings"
+    ]
+  }
+}

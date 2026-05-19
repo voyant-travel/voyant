@@ -22,6 +22,7 @@
  * already pre-supports them via {@link resolveEffectivePaymentPolicy}.
  */
 
+import { ratePlans, stayBookingItems } from "@voyantjs/accommodations/schema"
 import {
   type ActionLedgerRequestContextValues,
   appendActionLedgerMutation,
@@ -45,7 +46,6 @@ import {
 } from "@voyantjs/finance"
 import { parseJsonBody } from "@voyantjs/hono"
 import type { HonoBundle } from "@voyantjs/hono/plugin"
-import { ratePlans, stayBookingItems } from "@voyantjs/hospitality/schema"
 import { productCategories, productCategoryProducts, products } from "@voyantjs/products/schema"
 import { supplierServices, suppliers } from "@voyantjs/suppliers/schema"
 import { and, asc, eq, inArray, isNotNull } from "drizzle-orm"
@@ -243,9 +243,8 @@ async function resolveCategoryPolicy(
  *   1. Cruise — cabin category > sailing > cruise (most-specific
  *      first, since cabin-category overrides are common in cruise
  *      pricing).
- *   2. Product — the booking's first non-null product policy.
- *   3. (Hospitality and other verticals slot in here as their
- *      schemas grow listing-level policy fields.)
+ *   2. Accommodation — the booking's selected rate-plan policy.
+ *   3. Product — the booking's first non-null product policy.
  *
  * Returns the first non-null policy found across the verticals.
  * `null` falls through to the category / supplier / operator
@@ -258,23 +257,23 @@ async function resolveListingPolicy(
   const cruisePolicy = await resolveCruiseListingPolicy(db, bookingId)
   if (cruisePolicy) return cruisePolicy
 
-  const stayPolicy = await resolveHospitalityListingPolicy(db, bookingId)
+  const stayPolicy = await resolveAccommodationListingPolicy(db, bookingId)
   if (stayPolicy) return stayPolicy
 
   return resolveProductListingPolicy(db, bookingId)
 }
 
 /**
- * Hospitality-vertical listing resolver.
+ * Accommodation-vertical listing resolver.
  *
  * Walks `stay_booking_items.rate_plan_id` → `rate_plans` and returns
- * the first non-null `customerPaymentPolicy`. Hospitality bookings
+ * the first non-null `customerPaymentPolicy`. Accommodation bookings
  * link from the generic `booking_items` row through
  * `stay_booking_items` to a `rate_plans` row — non-refundable
  * advance-purchase rates carry stricter terms than flexible best-
  * available rates at the same property.
  *
- * Returns `null` when this isn't a hospitality booking (no
+ * Returns `null` when this isn't an accommodations booking (no
  * stay_booking_items row) or none of the matched rate plans carry a
  * policy override.
  *
@@ -282,7 +281,7 @@ async function resolveListingPolicy(
  * for groups) take the first stay_booking_items row by
  * createdAt — same heuristic as products.
  */
-async function resolveHospitalityListingPolicy(
+async function resolveAccommodationListingPolicy(
   db: PostgresJsDatabase,
   bookingId: string,
 ): Promise<PaymentPolicy | null> {
@@ -602,7 +601,7 @@ const resolvePolicyBodySchema = z.object({
    *  may not have selected a cabin yet. */
   sailingId: z.string().optional(),
   cabinCategoryId: z.string().optional(),
-  /** Hospitality journey selection — resolver picks the rate plan's
+  /** Accommodation journey selection — resolver picks the rate plan's
    *  policy when present. */
   ratePlanId: z.string().optional(),
 })
@@ -678,7 +677,7 @@ async function resolveListingPolicyForEntity(
     return (cruise?.policy as PaymentPolicy | null | undefined) ?? null
   }
 
-  if (ctx.entityModule === "hospitality") {
+  if (ctx.entityModule === "accommodations") {
     if (ctx.ratePlanId) {
       const [plan] = await db
         .select({ policy: ratePlans.customerPaymentPolicy })
@@ -704,7 +703,7 @@ async function resolveListingPolicyForEntity(
 
 /**
  * Per-entity category resolver. Currently only products carry
- * categories — cruises / hospitality fall through.
+ * categories — cruises and accommodations fall through.
  */
 async function resolveCategoryPolicyForEntity(
   db: PostgresJsDatabase,

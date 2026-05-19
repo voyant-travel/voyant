@@ -84,6 +84,12 @@ resale contracts from hotel-operations surfaces.
    normal first-party module. Completed for the `hospitality`,
    `hospitality-react`, and `hospitality-ui` READMEs; the checker now blocks
    new install or mount examples for the legacy package docs.
+8. Add the retained accommodation resale package and repoint active resale
+   consumers. Completed initial `@voyantjs/accommodations` package for content,
+   catalog policy/projection, draft shape, content routes, and the booking
+   engine descriptor. Operator and DMC resale consumers now use
+   `accommodations` routes/imports instead of `hospitality`; the old
+   stay-booking commit bridge was intentionally not carried forward.
 
 ## Verification Plan
 

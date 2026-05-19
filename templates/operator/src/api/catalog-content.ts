@@ -6,7 +6,7 @@
  *
  *   GET /v1/{admin,public}/products/:id/content
  *   GET /v1/{admin,public}/cruises/:id/content
- *   GET /v1/{admin,public}/hospitality/:id/content
+ *   GET /v1/{admin,public}/accommodations/:id/content
  *
  * Each endpoint dispatches through the vertical's `getXxxContent`
  * service (cache-first, SWR refresh, synthesizer fallback). The
@@ -17,12 +17,10 @@
  * See `docs/architecture/catalog-sourced-content.md` §3.3.
  */
 
+import { createAccommodationContentRoutes } from "@voyantjs/accommodations/routes-content"
 import { createCruiseContentRoutes } from "@voyantjs/cruises/routes-content"
-import type { AnyDrizzleDb } from "@voyantjs/db"
-import { getHospitalityContent } from "@voyantjs/hospitality/service-content"
 import { createProductContentRoutes } from "@voyantjs/products/routes-content"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import type { Context, Hono } from "hono"
+import type { Hono } from "hono"
 
 import { getBookingEngineRegistryFromContext } from "./lib/booking-engine-runtime"
 
@@ -62,54 +60,17 @@ export function mountCatalogContentRoutes(hono: Hono): void {
   hono.route("/v1/admin/cruises", adminCruiseContentRoutes)
   hono.route("/v1/public/cruises", publicCruiseContentRoutes)
 
-  // ── Hospitality ──────────────────────────────────────────────
-  // Hospitality doesn't ship a `routes-content.ts` factory yet, so
-  // we wire a thin handler inline. Same shape as the products /
-  // cruises factories — read the locale-resolved content,
-  // synthesize / overlay applied, return the payload + resolution
-  // metadata.
-  hono.get("/v1/admin/hospitality/:id/content", handleHospitalityContent)
-  hono.get("/v1/public/hospitality/:id/content", handleHospitalityContent)
-}
-
-async function handleHospitalityContent(c: Context): Promise<Response> {
-  const entityId = c.req.param("id")
-  if (!entityId) return c.json({ error: "id_required" }, 400)
-
-  const db = (c.var as { db: AnyDrizzleDb }).db as PostgresJsDatabase
-  const registry = getBookingEngineRegistryFromContext(c)
-  const acceptHeader = c.req.header("accept-language") ?? ""
-  const preferredLocales = acceptHeader
-    .split(",")
-    .map((s) => s.split(";")[0]?.trim())
-    .filter((s): s is string => Boolean(s))
-
-  const result = await getHospitalityContent(
-    db,
-    entityId,
-    { preferredLocales: preferredLocales.length > 0 ? preferredLocales : ["en-GB"] },
-    { registry },
-  )
-
-  if (!result) {
-    return c.json(
-      {
-        error: "not_found",
-        detail: `Hospitality property ${entityId} not found.`,
-      },
-      404,
-    )
-  }
-
-  return c.json({
-    data: {
-      content: result.content,
-      served_locale: result.resolution.served_locale,
-      match_kind: result.resolution.match_kind,
-      source: result.source,
-      served_stale: result.served_stale,
-      synthesized: result.synthesized,
-      machine_translated: result.machine_translated,
-    },
+  // ── Accommodations ─────────────────────────────────────────────
+  const adminAccommodationContentRoutes = createAccommodationContentRoutes({
+    resolveRegistry: (c) => getBookingEngineRegistryFromContext(c),
+    defaultAcceptMachineTranslated: false,
   })
+
+  const publicAccommodationContentRoutes = createAccommodationContentRoutes({
+    resolveRegistry: (c) => getBookingEngineRegistryFromContext(c),
+    defaultAcceptMachineTranslated: true,
+  })
+
+  hono.route("/v1/admin/accommodations", adminAccommodationContentRoutes)
+  hono.route("/v1/public/accommodations", publicAccommodationContentRoutes)
 }

@@ -8,7 +8,7 @@
  *   - sell vs cost money split (`sellAmountCents`, `sellCurrency`,
  *     `costAmountCents`, `costCurrency`, `baseCurrency`)
  *   - vertical-aware schedule blocks — `departureSlot` for products,
- *     `sailing` for cruises, `stay` for hospitality
+ *     `sailing` for cruises, `stay` for accommodations
  *   - pax-bands as a record (Voyant doesn't lock you into adult /
  *     child / infant — descriptors can declare any band code)
  *   - sourced vs owned booking arms (`booking.source.kind`,
@@ -565,7 +565,7 @@ function buildVerticalBlocks(ctx: VerticalContext): Record<string, unknown> {
       cabinCategoryId: draft.configure?.cabinCategoryId ?? "",
       cabinNumberId: draft.configure?.cabinNumberId ?? "",
     }
-  } else if (vertical === "hospitality") {
+  } else if (vertical === "accommodations") {
     blocks.stay = {
       checkIn: draft.configure?.dateRange?.checkIn ?? "",
       checkOut: draft.configure?.dateRange?.checkOut ?? "",

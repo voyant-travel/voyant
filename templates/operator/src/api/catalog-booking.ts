@@ -199,7 +199,7 @@ async function handleListSlots(c: Context): Promise<Response> {
   if (!entityModule || !entityId) {
     return c.json({ error: "entityModule and entityId are required" }, 400)
   }
-  // Cruises + hospitality have vertical-specific scheduling
+  // Cruises + accommodations have vertical-specific scheduling
   // (sailings, rate plans) surfaced by the detail page directly off
   // their content payloads. This endpoint only serves products.
   if (entityModule !== "products") {
@@ -449,7 +449,7 @@ async function applyBookingTaxToQuoteResult(
  *
  * Returns the `booking_catalog_snapshot` row for this booking — the
  * frozen view of what the customer actually purchased: which entity
- * (product / cruise / hospitality), which source (owned / Bokun / Mews),
+ * (product / cruise / accommodations), which source (owned / Bokun / Mews),
  * the quoted pricing breakdown, and the captured content payload.
  *
  * The response is **enriched server-side** with operator-friendly

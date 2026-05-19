@@ -4,7 +4,7 @@
  *
  * Inserts realistic sample rows into the four "extra" verticals that the
  * operator catalog browse surface knows how to index — extras, cruises,
- * charters, and hospitality rooms — so the /catalog page in the operator
+ * charters, and accommodations rooms — so the /catalog page in the operator
  * admin renders rich, faceted content without needing live external feeds.
  *
  * Each function is independently invokable from `seed.ts`; callers pass a
@@ -18,12 +18,12 @@
  * the per-vertical catalog policies project as facetable index fields.
  */
 
+import { roomTypes } from "@voyantjs/accommodations/schema"
 import { charterProducts } from "@voyantjs/charters/schema"
 import { cruises } from "@voyantjs/cruises/schema"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { productExtras } from "@voyantjs/extras/schema"
 import { facilities, properties } from "@voyantjs/facilities/schema"
-import { roomTypes } from "@voyantjs/hospitality/schema"
 import type { drizzle } from "drizzle-orm/postgres-js"
 
 type Db = ReturnType<typeof drizzle>
@@ -497,7 +497,7 @@ export async function seedCharters(db: Db, ctx: CatalogSeedContext): Promise<str
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HOSPITALITY (rooms across 2 properties)
+// ACCOMMODATION (rooms across 2 properties)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -506,9 +506,9 @@ export async function seedCharters(db: Db, ctx: CatalogSeedContext): Promise<str
  * `ctx.facilityIds` doesn't already contain enough hotel-kind facilities to
  * borrow, since `properties.facility_id` is a non-null FK.
  */
-export async function seedHospitalityRooms(db: Db, ctx: CatalogSeedContext): Promise<string[]> {
-  // Always seed two dedicated facilities for the hospitality demo so the
-  // properties have stable, hospitality-tagged anchors regardless of what
+export async function seedAccommodationRooms(db: Db, ctx: CatalogSeedContext): Promise<string[]> {
+  // Always seed two dedicated facilities for the accommodations demo so the
+  // properties have stable, accommodations-tagged anchors regardless of what
   // ctx.facilityIds contains.
   const facilityLondonId = newId("facilities")
   const facilityParisId = newId("facilities")
@@ -573,14 +573,14 @@ export async function seedHospitalityRooms(db: Db, ctx: CatalogSeedContext): Pro
   // Both hotel properties roll up to the first synthetic supplier (the
   // "Voyant Hotels" group) — keeps the demo coherent with the seeded
   // supplier list while still letting individual rooms attribute back.
-  const hospitalitySupplierId = pickSupplier(ctx.supplierIds, 0)
+  const accommodationsSupplierId = pickSupplier(ctx.supplierIds, 0)
 
   const rows = [
     // ── Hotel Thames London ──
     {
       id: newId("room_types"),
       propertyId: propertyLondonId,
-      supplierId: hospitalitySupplierId,
+      supplierId: accommodationsSupplierId,
       code: "DLX-RIVER",
       name: "Deluxe Sea-View Suite",
       description:
@@ -605,7 +605,7 @@ export async function seedHospitalityRooms(db: Db, ctx: CatalogSeedContext): Pro
     {
       id: newId("room_types"),
       propertyId: propertyLondonId,
-      supplierId: hospitalitySupplierId,
+      supplierId: accommodationsSupplierId,
       code: "EXEC-KING",
       name: "Executive King · City View",
       description:
@@ -629,7 +629,7 @@ export async function seedHospitalityRooms(db: Db, ctx: CatalogSeedContext): Pro
     {
       id: newId("room_types"),
       propertyId: propertyLondonId,
-      supplierId: hospitalitySupplierId,
+      supplierId: accommodationsSupplierId,
       code: "STD-TWIN",
       name: "Standard Twin Park-Side",
       description:
@@ -653,7 +653,7 @@ export async function seedHospitalityRooms(db: Db, ctx: CatalogSeedContext): Pro
     {
       id: newId("room_types"),
       propertyId: propertyLondonId,
-      supplierId: hospitalitySupplierId,
+      supplierId: accommodationsSupplierId,
       code: "FAM-CONNECT",
       name: "Family Connecting Rooms",
       description:
@@ -679,7 +679,7 @@ export async function seedHospitalityRooms(db: Db, ctx: CatalogSeedContext): Pro
     {
       id: newId("room_types"),
       propertyId: propertyParisId,
-      supplierId: hospitalitySupplierId,
+      supplierId: accommodationsSupplierId,
       code: "GARDEN-TWIN",
       name: "Family Garden Twin",
       description:
@@ -704,7 +704,7 @@ export async function seedHospitalityRooms(db: Db, ctx: CatalogSeedContext): Pro
     {
       id: newId("room_types"),
       propertyId: propertyParisId,
-      supplierId: hospitalitySupplierId,
+      supplierId: accommodationsSupplierId,
       code: "MAISON-SUITE",
       name: "Maison Suite · Sacré-Cœur View",
       description:
@@ -729,7 +729,7 @@ export async function seedHospitalityRooms(db: Db, ctx: CatalogSeedContext): Pro
     {
       id: newId("room_types"),
       propertyId: propertyParisId,
-      supplierId: hospitalitySupplierId,
+      supplierId: accommodationsSupplierId,
       code: "ATELIER-DBL",
       name: "Atelier Double",
       description:
@@ -754,7 +754,7 @@ export async function seedHospitalityRooms(db: Db, ctx: CatalogSeedContext): Pro
     {
       id: newId("room_types"),
       propertyId: propertyParisId,
-      supplierId: hospitalitySupplierId,
+      supplierId: accommodationsSupplierId,
       code: "ACCESS-DBL",
       name: "Accessible Garden Double",
       description:

@@ -40,6 +40,50 @@ const FILE_CHECKS = [
     patterns: [/"@voyantjs\/hospitality"/],
   },
   {
+    file: "templates/dmc/package.json",
+    patterns: [/"@voyantjs\/hospitality"/],
+  },
+  {
+    file: "templates/dmc/src/api/mcp.ts",
+    patterns: [/@voyantjs\/hospitality/, /\bvertical === "hospitality"\b/],
+  },
+  {
+    file: "templates/operator/package.json",
+    patterns: [/"@voyantjs\/hospitality"/],
+  },
+  {
+    file: "templates/operator/src/api/catalog-content.ts",
+    patterns: [/@voyantjs\/hospitality/, /\/v1\/(?:admin|public)\/hospitality/],
+  },
+  {
+    file: "templates/operator/src/api/lib/booking-engine-runtime.ts",
+    patterns: [/@voyantjs\/hospitality/, /\bhospitalityBookingsService\b/],
+  },
+  {
+    file: "templates/operator/src/api/lib/catalog-runtime.ts",
+    patterns: [/@voyantjs\/hospitality/, /\bhospitalityCatalogPolicy\b/, /"hospitality"/],
+  },
+  {
+    file: "templates/operator/src/api/booking-schedule.ts",
+    patterns: [/@voyantjs\/hospitality/, /\bresolveHospitalityListingPolicy\b/, /"hospitality"/],
+  },
+  {
+    file: "templates/operator/src/api/app.ts",
+    patterns: [/\/v1\/public\/hospitality/],
+  },
+  {
+    file: "templates/operator/src/routes/(storefront)/shop.tsx",
+    patterns: [/"hospitality"/],
+  },
+  {
+    file: "templates/operator/src/routes/(storefront)/shop_.book.$entityModule.$entityId.tsx",
+    patterns: [/@voyantjs\/hospitality/, /"hospitality"/, /\bHospitalityContent\b/],
+  },
+  {
+    file: "templates/operator/src/routes/(storefront)/shop_.products.$entityModule.$entityId.tsx",
+    patterns: [/@voyantjs\/hospitality/, /"hospitality"/, /\bHospitalityContent\b/],
+  },
+  {
     file: "apps/dev/package.json",
     patterns: [
       /"@voyantjs\/hospitality"/,
