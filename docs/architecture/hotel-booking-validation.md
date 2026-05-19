@@ -8,11 +8,11 @@ multi-segment stays, but it should not be read as approval for a first-party
 hotel PMS or hotel-operations module. See
 [`accommodation-resale-boundary.md`](./accommodation-resale-boundary.md).
 
-This doc captures the findings from exercising the bookings + hospitality
-schema against a realistic multi-night hotel booking. The accompanying
-test in `packages/hospitality/tests/integration/multi-night-mixed-room.test.ts`
-is the executable proof; this doc captures observations about what worked
-cleanly, what was awkward, and what's missing.
+This doc captures the findings from exercising the bookings + accommodation
+booking-line schema against a realistic multi-night hotel booking. The original
+executable proof lived in the removed legacy hotel-operations package; this doc
+now remains as a historical design note for retained accommodation resale
+concepts.
 
 Closes #293.
 
@@ -51,7 +51,7 @@ The `uidx_stay_booking_items_booking_item` unique index enforces the 1:1 between
 
 ### Add-ons are first-class
 
-Parking is a plain `bookings.booking_items` row with `itemType: "extra"`, no hospitality extension. The booking total aggregates over all `booking_items` regardless of whether they have a `stay_booking_items` extension. Other add-ons (transfers, spa packages, late checkout) follow the same pattern.
+Parking is a plain `bookings.booking_items` row with `itemType: "extra"`, no accommodation extension. The booking total aggregates over all `booking_items` regardless of whether they have a `stay_booking_items` extension. Other add-ons (transfers, spa packages, late checkout) follow the same pattern.
 
 ## What's awkward
 
@@ -94,8 +94,8 @@ Each `stay_booking_items.ratePlanId` references a rate plan that has its own `ca
 The follow-up gaps are **service-layer**, not schema-layer:
 
 1. Per-segment cancellation policy fan-out (legal)
-2. Atomic inventory consumption at stay-reserve time (hospitality)
-3. Rate-card resolver from rate plan + room type + date (hospitality / pricing)
+2. Atomic inventory consumption at stay-reserve time (accommodations)
+3. Rate-card resolver from rate plan + room type + date (accommodations / pricing)
 4. Booking-total auto-rollup helper (bookings or finance)
 
 Each of those should be filed as a separate issue. The core data model is fit for purpose.
