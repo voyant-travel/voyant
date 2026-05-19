@@ -9,7 +9,7 @@
  *     `connection_id` (one adapter per upstream connection).
  *   - Owned rows go through `OwnedBookingHandlerRegistry` keyed by
  *     `entity_module` (one handler per vertical — products,
- *     hospitality, cruises, etc.).
+ *     accommodations, cruises, etc.).
  *
  * The two registries live side-by-side, never wrap each other. The
  * dispatch direction inverts: instead of `@voyantjs/catalog`
@@ -18,7 +18,7 @@
  * verticals stay self-contained.
  *
  * Phase A (per doc §10) ships the registry + interface + the first
- * vertical handler (products). Subsequent phases land hospitality,
+ * vertical handler (products). Subsequent phases land accommodations,
  * cruises, etc. against the same interface without re-architecting
  * the dispatch.
  */
@@ -159,7 +159,7 @@ export interface OwnedBookingHandler {
   /**
    * Commit the draft to a booking row. Phase A handlers map the
    * draft into `bookingsCreate`'s input shape; later phases
-   * extend this to model extras, hospitality stays, encrypted
+   * extend this to model extras, accommodation stays, encrypted
    * travel details, tax lines, snapshot graphs.
    */
   commit(ctx: OwnedHandlerContext, request: CommitOwnedRequest): Promise<CommitOwnedResult>

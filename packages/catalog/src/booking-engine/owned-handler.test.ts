@@ -31,7 +31,7 @@ describe("OwnedBookingHandlerRegistry", () => {
     reg.register(products)
 
     expect(reg.has("products")).toBe(true)
-    expect(reg.has("hospitality")).toBe(false)
+    expect(reg.has("accommodations")).toBe(false)
     expect(reg.resolve("products")).toBe(products)
     expect(reg.resolveOrThrow("products")).toBe(products)
     expect(reg.modules()).toEqual(["products"])
@@ -49,8 +49,8 @@ describe("OwnedBookingHandlerRegistry", () => {
 
   it("throws NoOwnedHandlerRegisteredError when missing", () => {
     const reg = createOwnedBookingHandlerRegistry()
-    expect(() => reg.resolveOrThrow("hospitality")).toThrow(NoOwnedHandlerRegisteredError)
-    expect(reg.resolve("hospitality")).toBeUndefined()
+    expect(() => reg.resolveOrThrow("accommodations")).toThrow(NoOwnedHandlerRegisteredError)
+    expect(reg.resolve("accommodations")).toBeUndefined()
   })
 
   it("dispatches computeQuote through resolved handler", async () => {

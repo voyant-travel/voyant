@@ -210,7 +210,7 @@ export interface BookingJourneyProps {
    * Optional summary of the entity being booked — surfaces in the
    * side panel so the customer keeps context while filling out the
    * journey. Shape is loose because each vertical carries different
-   * fields (cruises have ports, hospitality has check-in/out, etc.).
+   * fields (cruises have ports, accommodations have check-in/out, etc.).
    */
   entitySummary?: BookingEntitySummary
 
@@ -289,7 +289,7 @@ export interface BookingEntitySummary {
   /** Optional hero image — small thumbnail at the top of the panel. */
   heroImageUrl?: string
   /** Vertical badge — drives the "What you're booking" header copy. */
-  vertical?: "products" | "cruises" | "hospitality" | string
+  vertical?: "products" | "cruises" | "accommodations" | string
   /** Optional ISO date or formatted date — e.g. "Tue, May 5, 2026". */
   whenLabel?: string
   /** Optional location label — e.g. "Reykjavík", "Mediterranean", "Bucharest". */

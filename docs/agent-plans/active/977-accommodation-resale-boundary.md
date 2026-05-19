@@ -90,6 +90,11 @@ resale contracts from hotel-operations surfaces.
    engine descriptor. Operator and DMC resale consumers now use
    `accommodations` routes/imports instead of `hospitality`; the old
    stay-booking commit bridge was intentionally not carried forward.
+9. Repoint shared catalog examples and permission surfaces from hospitality to
+   accommodations. Completed for catalog UI tabs/messages, catalog MCP examples,
+   booking journey summary typing, catalog booking-engine comments/tests,
+   service API-key descriptors, and active catalog architecture docs. The
+   boundary checker now covers these shared surfaces.
 
 ## Verification Plan
 

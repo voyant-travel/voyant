@@ -11,7 +11,7 @@ import { requireService } from "../registry.js"
 const getEntityArgs = z.object({
   vertical: z
     .string()
-    .describe('The catalog vertical (e.g. "products", "cruises", "hospitality").'),
+    .describe('The catalog vertical (e.g. "products", "cruises", "accommodations").'),
   entityId: z.string().describe("Entity id."),
 })
 

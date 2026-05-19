@@ -309,7 +309,7 @@ export const bookingDraftV1 = z.object({
         z.object({
           optionUnitId: z.string(),
           quantity: z.number().int().min(1),
-          /** Selected rate plan (hospitality). When the descriptor's
+          /** Selected rate plan (accommodations). When the descriptor's
            *  `RoomOption.ratePlans` is non-empty, the journey
            *  requires this before the Accommodation step is
            *  considered complete. */

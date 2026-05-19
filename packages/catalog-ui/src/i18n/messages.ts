@@ -8,7 +8,7 @@ export type CatalogUiMessages = {
       extras: string
       cruises: string
       charters: string
-      hospitality: string
+      accommodations: string
     }
     actions: {
       bookThis: string

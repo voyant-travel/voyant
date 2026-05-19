@@ -328,7 +328,7 @@ A single overlay table holds editorial overrides for every vertical. Rows are ke
 
 Where:
 
-- `entity_module` — the vertical that owns the entity (`"products"`, `"cruises"`, `"hospitality"`, `"charters"`, `"extras"`).
+- `entity_module` — the vertical that owns the entity (`"products"`, `"cruises"`, `"accommodations"`, `"charters"`, `"extras"`).
 - `entity_id` — the typed ID within that vertical's table.
 - `field_path` — the dotted path matching a row in that vertical's field-policy file.
 - `locale` — IETF language tag (`"en-GB"`, `"fr-FR"`, …) plus a `default` sentinel for non-localized fields and fallback.
@@ -948,7 +948,7 @@ A structure is its own first-class CatalogEntry in its own vertical module when 
 - (a) it is independently sellable, **or**
 - (b) it is reused across multiple parent entries with a single shared editorial / snapshot surface.
 
-A hospitality stay (hotel) qualifies under (a) — sold inside a multi-component package or standalone. A standalone excursion product (a 1-day `products` row sold by itself or linked from a longer parent product) qualifies under (a). A DMC's reusable 3-day mini-tour module — never sold alone, but reused across multiple longer tours with one editorial surface — qualifies under (b).
+An accommodation stay (hotel) qualifies under (a) — sold inside a multi-component package or standalone. A standalone excursion product (a 1-day `products` row sold by itself or linked from a longer parent product) qualifies under (a). A DMC's reusable 3-day mini-tour module — never sold alone, but reused across multiple longer tours with one editorial surface — qualifies under (b).
 
 The practical test: if marketing asks "where do I edit this?" and the right answer is "in one place that affects all uses," it is a referenced CatalogEntry, not nested.
 
@@ -988,7 +988,7 @@ The search index is a materialized view; live-volatile fields by definition cann
 
 ### 7.5. The vertical identifier is open-ended in code; v1 ships a closed set
 
-The vertical-module names that participate in the catalog plane are open-ended at the type level (it is just a string identifier per vertical, matching the package name). The v1 catalog plane ships with the existing verticals: `products`, `cruises`, `hospitality`, `charters`, and `extras` (with the adoption nuance noted in §3.3.1). Adding a future vertical (composite tour-package module, flight-only, transfer-only) is a mechanical addition — register a new vertical identifier, write its field-policy file, declare its overlay / snapshot / indexer adapters. No contract change.
+The vertical-module names that participate in the catalog plane are open-ended at the type level (it is just a string identifier per vertical, matching the package name). The v1 catalog plane ships with the existing verticals: `products`, `cruises`, `accommodations`, `charters`, and `extras` (with the adoption nuance noted in §3.3.1). Adding a future vertical (composite tour-package module, flight-only, transfer-only) is a mechanical addition — register a new vertical identifier, write its field-policy file, declare its overlay / snapshot / indexer adapters. No contract change.
 
 ## 8. Worked examples
 
@@ -1145,7 +1145,7 @@ Coordinating five vertical adoptions inside one release is more upfront work tha
 
 **Bounded exception: `extras`.** Per §3.3.1, `extras` ships with overlays and indexer participation deferred — that's its intended Phase 1 scope, not a transitional gap. Each vertical's intended scope is fully live at release; varied participation depths across verticals are explicit and documented, not in flight.
 
-The existing operational schemas are untouched. Catalog adoption is additive — no destructive migration on `products`, `cruises`, `hospitality`, `charters`, or `extras`.
+The existing operational schemas are untouched. Catalog adoption is additive — no destructive migration on `products`, `cruises`, `accommodations`, `charters`, or `extras`.
 
 ### 9.3. After v1
 
@@ -1173,8 +1173,8 @@ Phase 2 (RAG) and Phase 3 (Flights) carry their own open questions in their resp
 ## 11. Glossary
 
 - **CatalogEntry** — a sellable inventory record in any vertical; not a concrete table or type, but a contract that vertical modules implement. The unifying noun of the catalog plane (the discovery / browse / merchandising layer). Distinct from **Offer** (transaction-ladder term, vertical-specific suffix — see below).
-- **Offer** (vertical-specific suffix only) — a priced, dated, sellability-resolved proposal in Voyant's commercial ladder (`Quote → Offer → Order → Booking → Fulfillment`, per [`UBIQUITOUS_LANGUAGE.md`](../../UBIQUITOUS_LANGUAGE.md)). Always vertical-specific in code: `StayOffer` for hospitality, `CruiseOffer` for cruises, `ProductOffer` for products if needed, `PackageOffer` for composite tour-packages if/when the vertical exists. This document explicitly does **not** introduce a generic `CatalogOffer` or cross-domain `Offer` — each vertical's pricing topology is different, and unifying the noun obscures that. The catalog plane's unifying noun is `CatalogEntry`, not `Offer`.
-- **Vertical module** — a package modeling one kind of sellable inventory. Existing verticals: `products` (tours / experiences / standalone excursions), `cruises`, `hospitality` (hotels / stays), `charters` (yachts), `extras` (booking add-ons).
+- **Offer** (vertical-specific suffix only) — a priced, dated, sellability-resolved proposal in Voyant's commercial ladder (`Quote → Offer → Order → Booking → Fulfillment`, per [`UBIQUITOUS_LANGUAGE.md`](../../UBIQUITOUS_LANGUAGE.md)). Always vertical-specific in code: `AccommodationOffer` for accommodations, `CruiseOffer` for cruises, `ProductOffer` for products if needed, `PackageOffer` for composite tour-packages if/when the vertical exists. This document explicitly does **not** introduce a generic `CatalogOffer` or cross-domain `Offer` — each vertical's pricing topology is different, and unifying the noun obscures that. The catalog plane's unifying noun is `CatalogEntry`, not `Offer`.
+- **Vertical module** — a package modeling one kind of sellable inventory. Existing verticals: `products` (tours / experiences / standalone excursions), `cruises`, `accommodations` (hotels / stays for resale), `charters` (yachts), `extras` (booking add-ons).
 - **Catalog plane** — the cross-vertical projection / overlay / snapshot / indexer surface defined by `packages/catalog`.
 - **Provenance** — the `(source_kind, source_ref, source_connection_id, source_freshness)` tuple carried by every CatalogEntry.
 - **Overlay** — an editorial override on a specific field of a specific entity, scoped by `(locale, audience, market)`. See §5.2.

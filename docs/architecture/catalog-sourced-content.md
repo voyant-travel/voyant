@@ -54,7 +54,7 @@ This is the load-bearing prerequisite. The content cache, the read service, drif
 -- packages/catalog/src/schema-sourced-entries.ts (new)
 catalog_sourced_entries (
   id                       text primary key,    -- typeid: cse_*; canonical Voyant-side id
-  entity_module            text not null,       -- "products", "cruises", "hospitality", ...
+  entity_module            text not null,       -- "products", "cruises", "accommodations", ...
   entity_id                text not null,       -- typeid in the vertical (prod_*, crus_*, ...)
 
   -- Provenance (mirrors Provenance interface, made durable)
@@ -687,7 +687,7 @@ Each vertical opts in. Verticals that don't yet have detail-page needs (extras, 
 - Replace the ad-hoc `adapter.fetchCruise()` pattern in `packages/cruises/src/routes.ts` with the new content service.
 - Detail route reads from cache; existing route shape stays the same from the caller's perspective. The cruises adapter retains its internal multi-call composition; only the public surface narrows.
 
-**Phase F — Hospitality / charters / extras** (2-3 days each, as needed):
+**Phase F — Accommodations / charters / extras** (2-3 days each, as needed):
 - Adopt the pattern per vertical when first sourced integration ships. Each vertical defines its content aggregate boundary (which sub-fetches roll into one `getContent`, what stays in `liveResolve`).
 
 **Phase G — Booking journey integration** (parallel to journey Phase B):

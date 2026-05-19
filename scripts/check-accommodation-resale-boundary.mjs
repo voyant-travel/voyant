@@ -108,6 +108,98 @@ const FILE_CHECKS = [
     patterns: [/voyant-hospitality-/],
   },
   {
+    file: "packages/catalog-ui/src/components/catalog-page.tsx",
+    patterns: [/\bhospitality\b/i, /\bmakeHospitality/],
+  },
+  {
+    file: "packages/catalog-ui/src/components/catalog-search-page.tsx",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/catalog-ui/src/i18n/messages.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/catalog-ui/src/i18n/en.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/catalog-ui/src/i18n/ro.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/bookings-ui/src/journey/types.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/types/src/api-keys.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/catalog-mcp/src/tools/get-entity.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/catalog-mcp/src/tools/tools.test.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/catalog/README.md",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/catalog/src/adapter/contract.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/catalog/src/booking-engine/contracts.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/catalog/src/booking-engine/draft-shape.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/catalog/src/booking-engine/orders.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/catalog/src/booking-engine/owned-handler.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/catalog/src/booking-engine/owned-handler.test.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/catalog/tests/integration/snapshot-service.test.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "docs/architecture/catalog-booking-engine.md",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "docs/architecture/catalog-architecture.md",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "docs/architecture/catalog-sourced-content.md",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "docs/architecture/booking-journey-architecture.md",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "docs/architecture/service-api-keys.md",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "docs/architecture/ai-travel-experience-composition.md",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
     file: "packages/hospitality/README.md",
     patterns: [/pnpm add @voyantjs\/hospitality/, /\bhospitalityModule\b/],
   },

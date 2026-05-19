@@ -1,6 +1,6 @@
 # @voyantjs/catalog
 
-Catalog plane foundation for Voyant. The shared cross-cutting infrastructure that vertical modules — `products`, `cruises`, `hospitality`, `charters`, `extras` — adopt to participate in a normalized discovery / overlay / snapshot / search surface.
+Catalog plane foundation for Voyant. The shared cross-cutting infrastructure that vertical modules — `products`, `cruises`, `accommodations`, `charters`, `extras` — adopt to participate in a normalized discovery / overlay / snapshot / search surface.
 
 This is **Phase 1** of the catalog plane. Phase 2 (semantic search, embeddings, AI agent access via MCP) ships in `@voyantjs/catalog-rag`. Phase 3 (the flights vertical, the swappable `ReferenceDataProvider`) ships in `@voyantjs/flights`.
 

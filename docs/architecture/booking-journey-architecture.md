@@ -377,7 +377,7 @@ export interface OwnedBookingHandler {
 
   /**
    * Commit the draft to a booking row. May call bookingsCreate as
-   * a bridge today; richer commit primitives (extras, hospitality
+   * a bridge today; richer commit primitives (extras, accommodation
    * stays, encrypted travel details, tax lines, snapshot graph) land
    * on this same handler in Phase C+.
    */
@@ -431,7 +431,7 @@ ownedRegistry.register(createAccommodationResaleBookingHandler({ db }))
 
 This inverts the dependency direction: instead of `@voyantjs/catalog` importing every vertical, each vertical imports the handler interface from `@voyantjs/catalog/booking-engine` and provides an implementation. Catalog stays a contract package; verticals stay self-contained.
 
-This also makes Phase A genuinely small (§10) — the first owned handler ships only the products vertical, only for simple bookings, and only for the booking-create-mappable shape. Hospitality, cruises, extras, taxes, encrypted travel details all land on the same handler interface in subsequent phases without re-architecting the dispatch.
+This also makes Phase A genuinely small (§10) — the first owned handler ships only the products vertical, only for simple bookings, and only for the booking-create-mappable shape. Accommodations, cruises, extras, taxes, encrypted travel details all land on the same handler interface in subsequent phases without re-architecting the dispatch.
 
 ## 7. Per-product variation — concrete examples
 
@@ -456,7 +456,7 @@ The same wizard handles each of these by reading the descriptor; no special-case
   - Steps shown: Configure (with extra fields), Billing, Travelers (names), Payment, Review.
 
 - **Hotel-only stay** (check-in / check-out, room type):
-  - The "product" is a room type from the hospitality vertical
+  - The "product" is a room type from the accommodations vertical
   - Configure step shows date-range picker + occupancy
   - Accommodation step is folded into Configure (single room type, but with meal-plan / rate-plan picks)
   - `addons` may contain "breakfast included", "spa credit"
@@ -504,7 +504,7 @@ Per Rule 4 (§overview), every piece of the journey except the wired-up route co
 | Owned-handler interface + registry (`OwnedBookingHandler`, `OwnedBookingHandlerRegistry`) | `@voyantjs/catalog/booking-engine` | New (interface only — no vertical imports) |
 | Per-vertical owned handlers (e.g. `createProductsBookingHandler`) | each vertical's `<vertical>/src/booking-engine/handler.ts` | New per vertical, lands incrementally per phase |
 | Adapter contract bits not already in `SourceAdapter` (`describeShape`, hold metadata) | `@voyantjs/catalog/adapter` | Existing — extend |
-| Per-vertical descriptor builders (e.g. cruise-specific shape construction) | each vertical's `service-catalog-plane.ts` (cruises, products, hospitality, etc.) | Existing — extend |
+| Per-vertical descriptor builders (e.g. cruise-specific shape construction) | each vertical's `service-catalog-plane.ts` (cruises, products, accommodations, etc.) | Existing — extend |
 | Demo upstream + plugin (already shipping in the tracer) | `apps/catalog-demo-api` + `@voyantjs/plugin-catalog-demo` | Existing |
 
 #### Slot injection — the seam between operator and storefront
@@ -676,7 +676,7 @@ The full channel-push integration work (real adapters per channel) parallels Pha
 - Add **first** vertical handler: `createProductsBookingHandler({ db })` in `packages/products/src/booking-engine/handler.ts`. Composes the products vertical's existing pricing primitives + maps a draft into `bookingsCreate`'s input shape for the commit. Phase A delivers ONE working handler against ONE vertical.
 - Wire into `quoteEntity` / `bookEntity` so `source.kind === "owned" && entity_module === "products"` dispatches to the products handler. Other modules still fail with `NO_HANDLER_REGISTERED` (a new error code, sibling to `NO_ADAPTER_REGISTERED`).
 - Operator template registers the products handler at boot. Existing one-page booking flow on this branch dispatches through the new handler for owned products.
-- **Out of scope for Phase A:** taxes, addons, hospitality stays, encrypted travel details, draft persistence (still uses `catalog_quotes` with the ephemeral 10-min TTL), idempotency keys. Each lands in its own follow-up phase. This is the smallest credible "doesn't 503 anymore" milestone.
+- **Out of scope for Phase A:** taxes, addons, accommodation stays, encrypted travel details, draft persistence (still uses `catalog_quotes` with the ephemeral 10-min TTL), idempotency keys. Each lands in its own follow-up phase. This is the smallest credible "doesn't 503 anymore" milestone.
 
 **Phase B — The shareable wizard, both surfaces** (7-10 days):
 - Build `@voyantjs/bookings-ui/journey` with `<BookingJourney />` shell and all seven step section components. Slots typed as render-props (§8.1).
@@ -720,7 +720,7 @@ The full channel-push integration work (real adapters per channel) parallels Pha
 - **Group bookings** beyond shared-room (corporate event, school trip).
 - **Loyalty program** integration (frequent-cruiser numbers are stored as a traveler field but don't drive pricing or perks in v1).
 - **Partial cancellations** (cancel only some travelers from a booking).
-- **Wizard for hospitality direct-from-search** without going through the catalog page. Stage 1 entry point is the Catalog UI's "Book this".
+- **Wizard for accommodations direct-from-search** without going through the catalog page. Stage 1 entry point is the Catalog UI's "Book this".
 - **Multi-cabin cruise parties** (one booking, two cabins, party split). v1 is single-cabin-per-booking; multi-cabin is a v2 feature that materializes as N drafts under a `bookingGroups` row.
 - **Cruise-line-arranged air** (CL-FLIGHT). Air is a separate vertical; v1 cruise bookings don't include flights. Customer adds them as a second booking against the flights vertical.
 

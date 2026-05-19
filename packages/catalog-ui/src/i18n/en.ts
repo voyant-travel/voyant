@@ -10,7 +10,7 @@ export const catalogUiEn = {
       extras: "Extras",
       cruises: "Cruises",
       charters: "Charters",
-      hospitality: "Hospitality",
+      accommodations: "Accommodations",
     },
     actions: {
       bookThis: "Book this",
