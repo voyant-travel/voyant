@@ -230,105 +230,99 @@ export function BookingListFiltersPopover({
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="bookings-filter-category">{filterMessages.categoryLabel}</Label>
-              <AsyncCombobox<ProductCategoryRecord>
-                value={productCategoryId}
-                onChange={(value) => {
-                  onProductCategoryIdChange(value)
-                  if (!value) setSelectedProductCategory(null)
-                  else {
-                    const match = productCategories.find((category) => category.id === value)
-                    if (match) setSelectedProductCategory(match)
-                  }
-                  markChanged()
-                }}
-                items={productCategories}
-                selectedItem={selectedProductCategory}
-                getKey={(category) => category.id}
-                getLabel={(category) => category.name}
-                onSearchChange={setProductCategorySearch}
-                placeholder={filterMessages.category}
-                emptyText={filterMessages.categoryEmpty}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="bookings-filter-supplier">{filterMessages.supplierLabel}</Label>
-              <AsyncCombobox<Supplier>
-                value={supplierId}
-                onChange={(value) => {
-                  onSupplierIdChange(value)
-                  if (!value) setSelectedSupplier(null)
-                  else {
-                    const match = suppliers.find((supplier) => supplier.id === value)
-                    if (match) setSelectedSupplier(match)
-                  }
-                  markChanged()
-                }}
-                items={suppliers}
-                selectedItem={selectedSupplier}
-                getKey={(supplier) => supplier.id}
-                getLabel={(supplier) => supplier.name}
-                getSecondary={(supplier) => supplier.type}
-                onSearchChange={setSupplierSearch}
-                placeholder={filterMessages.supplier}
-                emptyText={filterMessages.supplierEmpty}
-              />
-            </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="bookings-filter-category">{filterMessages.categoryLabel}</Label>
+            <AsyncCombobox<ProductCategoryRecord>
+              value={productCategoryId}
+              onChange={(value) => {
+                onProductCategoryIdChange(value)
+                if (!value) setSelectedProductCategory(null)
+                else {
+                  const match = productCategories.find((category) => category.id === value)
+                  if (match) setSelectedProductCategory(match)
+                }
+                markChanged()
+              }}
+              items={productCategories}
+              selectedItem={selectedProductCategory}
+              getKey={(category) => category.id}
+              getLabel={(category) => category.name}
+              onSearchChange={setProductCategorySearch}
+              placeholder={filterMessages.category}
+              emptyText={filterMessages.categoryEmpty}
+            />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="bookings-filter-person">{filterMessages.personLabel}</Label>
-              <AsyncCombobox<PersonRecord>
-                value={personId}
-                onChange={(value) => {
-                  onPersonIdChange(value)
-                  if (!value) setSelectedPerson(null)
-                  else {
-                    const match = people.find((person) => person.id === value)
-                    if (match) setSelectedPerson(match)
-                  }
-                  markChanged()
-                }}
-                items={people}
-                selectedItem={selectedPerson}
-                getKey={(person) => person.id}
-                getLabel={formatPersonName}
-                getSecondary={(person) => person.email ?? undefined}
-                onSearchChange={setPersonSearch}
-                placeholder={filterMessages.person}
-                emptyText={filterMessages.personEmpty}
-              />
-            </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="bookings-filter-supplier">{filterMessages.supplierLabel}</Label>
+            <AsyncCombobox<Supplier>
+              value={supplierId}
+              onChange={(value) => {
+                onSupplierIdChange(value)
+                if (!value) setSelectedSupplier(null)
+                else {
+                  const match = suppliers.find((supplier) => supplier.id === value)
+                  if (match) setSelectedSupplier(match)
+                }
+                markChanged()
+              }}
+              items={suppliers}
+              selectedItem={selectedSupplier}
+              getKey={(supplier) => supplier.id}
+              getLabel={(supplier) => supplier.name}
+              getSecondary={(supplier) => supplier.type}
+              onSearchChange={setSupplierSearch}
+              placeholder={filterMessages.supplier}
+              emptyText={filterMessages.supplierEmpty}
+            />
+          </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="bookings-filter-organization">
-                {filterMessages.organizationLabel}
-              </Label>
-              <AsyncCombobox<OrganizationRecord>
-                value={organizationId}
-                onChange={(value) => {
-                  onOrganizationIdChange(value)
-                  if (!value) setSelectedOrganization(null)
-                  else {
-                    const match = organizations.find((organization) => organization.id === value)
-                    if (match) setSelectedOrganization(match)
-                  }
-                  markChanged()
-                }}
-                items={organizations}
-                selectedItem={selectedOrganization}
-                getKey={(organization) => organization.id}
-                getLabel={(organization) => organization.name}
-                getSecondary={(organization) => organization.vatNumber ?? undefined}
-                onSearchChange={setOrganizationSearch}
-                placeholder={filterMessages.organization}
-                emptyText={filterMessages.organizationEmpty}
-              />
-            </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="bookings-filter-person">{filterMessages.personLabel}</Label>
+            <AsyncCombobox<PersonRecord>
+              value={personId}
+              onChange={(value) => {
+                onPersonIdChange(value)
+                if (!value) setSelectedPerson(null)
+                else {
+                  const match = people.find((person) => person.id === value)
+                  if (match) setSelectedPerson(match)
+                }
+                markChanged()
+              }}
+              items={people}
+              selectedItem={selectedPerson}
+              getKey={(person) => person.id}
+              getLabel={formatPersonName}
+              getSecondary={(person) => person.email ?? undefined}
+              onSearchChange={setPersonSearch}
+              placeholder={filterMessages.person}
+              emptyText={filterMessages.personEmpty}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="bookings-filter-organization">{filterMessages.organizationLabel}</Label>
+            <AsyncCombobox<OrganizationRecord>
+              value={organizationId}
+              onChange={(value) => {
+                onOrganizationIdChange(value)
+                if (!value) setSelectedOrganization(null)
+                else {
+                  const match = organizations.find((organization) => organization.id === value)
+                  if (match) setSelectedOrganization(match)
+                }
+                markChanged()
+              }}
+              items={organizations}
+              selectedItem={selectedOrganization}
+              getKey={(organization) => organization.id}
+              getLabel={(organization) => organization.name}
+              getSecondary={(organization) => organization.vatNumber ?? undefined}
+              onSearchChange={setOrganizationSearch}
+              placeholder={filterMessages.organization}
+              emptyText={filterMessages.organizationEmpty}
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">

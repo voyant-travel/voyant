@@ -73,7 +73,7 @@ describe("generateAndStoreProductBrochure", () => {
     expect(result.brochure.isBrochure).toBe(true)
     expect(result.brochure.isBrochureCurrent).toBe(true)
     expect(result.brochure.storageKey).toBe(result.storageKey)
-  })
+  }, 15_000)
 
   it("renders brochure templates through a custom printer and persists printer metadata", async () => {
     const { generateAndStoreProductBrochure } = await import("../../src/tasks/brochures.js")

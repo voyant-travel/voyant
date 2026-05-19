@@ -35,6 +35,22 @@ describe("buildOwnedProductDraftShape", () => {
     expect(shape.addons?.catalog).toHaveLength(2)
   })
 
+  it("exposes product options as configure variants", () => {
+    const shape = buildOwnedProductDraftShape({
+      productOptions: [
+        { id: "opt_std", name: "Standard double", code: "STD", isDefault: true },
+        { id: "opt_suite", name: "Junior suite upgrade", code: "STE" },
+      ],
+    })
+    expect(shape.configureSubSteps?.[0]).toEqual({
+      kind: "product-option",
+      options: [
+        { id: "opt_std", name: "Standard double", code: "STD", isDefault: true },
+        { id: "opt_suite", name: "Junior suite upgrade", code: "STE" },
+      ],
+    })
+  })
+
   it("omits addons when the catalog is empty", () => {
     const shape = buildOwnedProductDraftShape({ addonCatalog: [] })
     expect(shape.showsAddons).toBe(false)

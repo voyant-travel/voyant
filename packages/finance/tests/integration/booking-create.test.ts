@@ -161,12 +161,31 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     return group!
   }
 
+  function bookingParty() {
+    return {
+      personId: "pers_booking_create",
+      contactFirstName: "Alice",
+      contactLastName: "Lead",
+      contactEmail: "alice@example.com",
+      travelers: [
+        {
+          firstName: "Alice",
+          lastName: "Lead",
+          email: "alice@example.com",
+          participantType: "traveler" as const,
+          isPrimary: true,
+        },
+      ],
+    }
+  }
+
   it("creates booking + travelers + payment schedules atomically", async () => {
     const { productId } = await seedProduct()
 
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
       travelers: [
         {
           firstName: "Alice",
@@ -229,6 +248,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
       paymentSchedules: [
         {
           scheduleType: "balance",
@@ -274,6 +294,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
       documentGeneration: {
         contractDocument: false,
         invoiceDocument: true,
@@ -305,6 +326,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       productId,
       optionId,
       bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
       catalogSellAmountCents: 30000,
       confirmedSellAmountCents: 30000,
       itemLines: [
@@ -346,6 +368,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
       voucherRedemption: {
         voucherId: voucher.id,
         amountCents: 10000,
@@ -375,6 +398,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
       travelers: [{ firstName: "Will", lastName: "Rollback", participantType: "traveler" }],
       paymentSchedules: [
         {
@@ -403,6 +427,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
       voucherRedemption: { voucherId: "vchr_missing", amountCents: 1000 },
     })
 
@@ -417,6 +442,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
       voucherRedemption: { voucherId: voucher.id, amountCents: 1000 },
     })
     expect(outcome.status).toBe("voucher_inactive")
@@ -429,6 +455,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
       voucherRedemption: { voucherId: voucher.id, amountCents: 1000 },
     })
     expect(outcome.status).toBe("voucher_expired")
@@ -440,6 +467,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
       groupMembership: {
         action: "create",
         kind: "shared_room",
@@ -464,6 +492,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
       groupMembership: {
         action: "join",
         groupId: group.id,
@@ -483,6 +512,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     const outcome = await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
       travelers: [{ firstName: "Orphan", lastName: "Ghost", participantType: "traveler" }],
       groupMembership: { action: "join", groupId: "bgrp_missing", role: "shared" },
     })
@@ -496,6 +526,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     const outcome = await createBooking(db, {
       productId: "prod_nope",
       bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
     })
 
     expect(outcome.status).toBe("product_not_found")
@@ -515,6 +546,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       {
         productId,
         bookingNumber: nextBookingNumber(),
+        ...bookingParty(),
         travelers: [{ firstName: "Evt", lastName: "Listener", participantType: "traveler" }],
       },
       { runtime: { eventBus }, userId: "usrp_tester" },
@@ -550,6 +582,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     await createBooking(db, {
       productId,
       bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
       voucherRedemption: { voucherId: voucher.id, amountCents: 5000 },
     })
 

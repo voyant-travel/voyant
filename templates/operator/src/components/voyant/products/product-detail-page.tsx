@@ -21,6 +21,7 @@ import {
   ProductSchedulesSection,
 } from "./product-detail-sections"
 import { ProductDetailSkeleton } from "./product-detail-skeleton"
+import { ProductExtrasSection } from "./product-extras-section"
 import { PricingPanel } from "./product-options-pricing"
 import { getDeparturePriceOverridesQueryOptions } from "./product-options-shared"
 import { ProductPaymentPolicySection } from "./product-payment-policy-section"
@@ -151,11 +152,17 @@ export function ProductDetailPage({ id }: { id: string }) {
             productId={id}
             renderOptionDetails={(option) => (
               <div className="flex flex-col gap-4">
-                <PricingPanel productId={id} optionId={option.id} />
+                <PricingPanel
+                  productId={id}
+                  optionId={option.id}
+                  productCurrency={product.sellCurrency}
+                />
                 <OptionResourceTemplatesPanel productId={id} optionId={option.id} />
               </div>
             )}
           />
+
+          <ProductExtrasSection productId={id} />
 
           <ProductPaymentPolicySection product={product} onSuccess={invalidateProduct} />
         </div>

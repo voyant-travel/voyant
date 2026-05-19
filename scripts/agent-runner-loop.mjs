@@ -30,7 +30,7 @@ import {
   repositoryOptions,
 } from "./lib/agent-runner-help.mjs"
 import { normalizeLoopOptions, shouldContinueLoop } from "./lib/agent-runner-loop.mjs"
-import { recommendQueueActions } from "./lib/agent-runner-tick.mjs"
+import { maxAgentSessionsFromArgs, recommendQueueActions } from "./lib/agent-runner-tick.mjs"
 
 const args = parseArgs(process.argv.slice(2))
 maybePrintHelp(args, {
@@ -46,6 +46,10 @@ maybePrintHelp(args, {
       `Only dispatch this action. Allowed: ${Array.from(dispatchableActions).join(", ")}.`,
     ],
     ["--max-age-days <number>", "Heartbeat staleness threshold. Defaults to 1."],
+    [
+      "--max-agent-sessions <number>",
+      "Maximum fresh Running implementation sessions before new run-command work is held. Defaults to 1.",
+    ],
     ["--implementation-command <shell>", "Command used when dispatching local run-command items."],
     [
       "--remote-implementation-command <shell>",
@@ -63,6 +67,7 @@ maybePrintHelp(args, {
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
 const maxAgeDays = Number(args.maxAgeDays ?? 1)
+const maxAgentSessions = maxAgentSessionsFromArgs(args)
 const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 
 if (!Number.isInteger(maxAgeDays) || maxAgeDays < 0) {
@@ -142,6 +147,7 @@ function selectLoopRecommendation() {
   const recommendations = recommendQueueActions(items, {
     ciRepairDispatchEnabled: ciRepairDispatchEnabled(args),
     implementationCommand: args.implementationCommand,
+    maxAgentSessions,
     maxAgeDays,
     remoteImplementationCommand: args.remoteImplementationCommand ?? args.implementationCommand,
     repository,

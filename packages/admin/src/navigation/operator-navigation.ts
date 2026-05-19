@@ -173,7 +173,7 @@ export function createOperatorAdminNavigation({
     },
     {
       id: "channel-sync",
-      title: "Channel sync",
+      title: messages.channelSync,
       url: "/channel-sync",
       icon: icons.channelSync,
     },

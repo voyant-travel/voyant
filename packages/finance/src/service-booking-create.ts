@@ -77,6 +77,19 @@ const itemLineInputSchema = z.object({
   totalSellAmountCents: z.number().int().min(0).optional().nullable(),
 })
 
+const extraLineInputSchema = z.object({
+  productExtraId: z.string().min(1),
+  optionExtraConfigId: z.string().min(1).optional().nullable(),
+  name: z.string().min(1).max(255),
+  description: z.string().max(5000).optional().nullable(),
+  pricingMode: z.string().max(50).optional().nullable(),
+  pricedPerPerson: z.boolean().optional().nullable(),
+  quantity: z.number().int().min(1),
+  sellCurrency: z.string().length(3),
+  unitSellAmountCents: z.number().int().min(0).optional().nullable(),
+  totalSellAmountCents: z.number().int().min(0).optional().nullable(),
+})
+
 const voucherRedemptionInputSchema = z.object({
   voucherId: z.string().min(1),
   amountCents: z.number().int().min(1),
@@ -107,6 +120,12 @@ const groupMembershipInputSchema = z.discriminatedUnion("action", [
   groupCreateSchema,
 ])
 
+const placeholderEmails = new Set([
+  "noreply@example.com",
+  "tbd@example.com",
+  "traveler@example.com",
+])
+
 function requirePriceOverrideReason(
   value: {
     catalogSellAmountCents?: number | null
@@ -125,6 +144,84 @@ function requirePriceOverrideReason(
     message:
       "A price override reason is required when the confirmed total differs from catalog pricing",
   })
+}
+
+function requireCompleteBookingParty(
+  value: {
+    personId?: string | null
+    organizationId?: string | null
+    contactFirstName?: string | null
+    contactLastName?: string | null
+    contactEmail?: string | null
+    travelers?: Array<{
+      firstName: string
+      lastName: string
+      email?: string | null
+      personId?: string | null
+    }>
+  },
+  ctx: z.RefinementCtx,
+) {
+  if (!value.personId && !value.organizationId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["personId"],
+      message: "Select a billing person or organization",
+    })
+  }
+
+  if (value.personId) {
+    if (!value.contactFirstName?.trim() || !value.contactLastName?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["contactFirstName"],
+        message: "Billing person requires first and last name",
+      })
+    }
+    if (!isRealEmail(value.contactEmail)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["contactEmail"],
+        message: "Billing person requires a real email address",
+      })
+    }
+  } else if (value.contactEmail && !isRealEmail(value.contactEmail)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["contactEmail"],
+      message: "Billing email cannot be a placeholder address",
+    })
+  }
+
+  if (!value.travelers || value.travelers.length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["travelers"],
+      message: "Add at least one traveler",
+    })
+  }
+
+  value.travelers?.forEach((traveler, index) => {
+    if (!traveler.personId && (!traveler.firstName.trim() || !traveler.lastName.trim())) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["travelers", index],
+        message: "Traveler requires a name or person record",
+      })
+    }
+    if (traveler.email && !isRealEmail(traveler.email)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["travelers", index, "email"],
+        message: "Traveler email cannot be a placeholder address",
+      })
+    }
+  })
+}
+
+function isRealEmail(value: string | null | undefined): value is string {
+  const normalized = value?.trim().toLowerCase() ?? ""
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized) && !placeholderEmails.has(normalized)
 }
 
 const bookingCreateBaseSchema = z.object({
@@ -183,17 +280,21 @@ const bookingCreateBaseSchema = z.object({
   // Orchestration fields
   travelers: z.array(travelerInputSchema).optional(),
   itemLines: z.array(itemLineInputSchema).optional(),
+  extraLines: z.array(extraLineInputSchema).optional(),
   paymentSchedules: z.array(paymentScheduleInputSchema).optional(),
   voucherRedemption: voucherRedemptionInputSchema.optional(),
   groupMembership: groupMembershipInputSchema.optional(),
   documentGeneration: documentGenerationInputSchema.optional(),
 })
 
-export const bookingCreateSchema = bookingCreateBaseSchema.superRefine(requirePriceOverrideReason)
+export const bookingCreateSchema = bookingCreateBaseSchema
+  .superRefine(requirePriceOverrideReason)
+  .superRefine(requireCompleteBookingParty)
 
 export const bookingCreateSubSchema = bookingCreateBaseSchema
   .omit({ groupMembership: true })
   .superRefine(requirePriceOverrideReason)
+  .superRefine(requireCompleteBookingParty)
 
 export type BookingCreateInput = z.infer<typeof bookingCreateSchema>
 type BookingCreatePaymentScheduleInput = NonNullable<BookingCreateInput["paymentSchedules"]>[number]
@@ -315,6 +416,19 @@ function isAlreadyPaidSchedule(schedule: BookingCreatePaymentScheduleInput) {
   return schedule.status === "paid" || metadata?.alreadyPaid === true
 }
 
+function bookingItemStatusForInitialStatus(
+  status: BookingCreateInput["initialStatus"] | undefined,
+): "draft" | "on_hold" | "confirmed" | "cancelled" | "expired" | "fulfilled" {
+  if (status === "on_hold") return "on_hold"
+  if (status === "cancelled") return "cancelled"
+  if (status === "expired") return "expired"
+  if (status === "completed") return "fulfilled"
+  if (status === "confirmed" || status === "awaiting_payment" || status === "in_progress") {
+    return "confirmed"
+  }
+  return "draft"
+}
+
 function generateInvoiceNumber(bookingNumber: string) {
   return `INV-${bookingNumber}`.slice(0, 50)
 }
@@ -397,6 +511,40 @@ export async function createBooking(
         // Caller gave us a product that doesn't resolve. Throw so drizzle
         // rolls back any writes the convert helper may have made.
         throw new BookingCreateAbort({ status: "product_not_found" })
+      }
+
+      if (input.extraLines?.length) {
+        await tx.insert(bookingItems).values(
+          input.extraLines.map((line) => {
+            const unitSellAmountCents = line.unitSellAmountCents ?? null
+            const totalSellAmountCents =
+              line.totalSellAmountCents ??
+              (unitSellAmountCents == null ? null : unitSellAmountCents * line.quantity)
+            return {
+              bookingId: booking.id,
+              title: line.name,
+              description: line.description ?? null,
+              itemType: "extra" as const,
+              status: bookingItemStatusForInitialStatus(input.initialStatus),
+              quantity: line.quantity,
+              sellCurrency: line.sellCurrency,
+              unitSellAmountCents,
+              totalSellAmountCents,
+              costCurrency: null,
+              unitCostAmountCents: null,
+              totalCostAmountCents: null,
+              productId: input.productId,
+              optionId: input.optionId ?? null,
+              optionUnitId: null,
+              metadata: {
+                productExtraId: line.productExtraId,
+                optionExtraConfigId: line.optionExtraConfigId ?? null,
+                pricingMode: line.pricingMode ?? null,
+                pricedPerPerson: line.pricedPerPerson ?? null,
+              },
+            }
+          }),
+        )
       }
 
       // 2. Travelers. roomUnitId is accepted on the input but not persisted

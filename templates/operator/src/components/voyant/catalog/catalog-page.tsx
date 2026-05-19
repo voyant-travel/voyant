@@ -124,30 +124,25 @@ function goToBookingPage(
   departure?: BookingDeparture,
   option?: { id: string; name: string },
 ): void {
-  const sourceKind = stringField(hit, "source.kind", null)
-  if (!sourceKind || sourceKind === "owned") {
-    toast.info("Booking via the catalog engine is only wired for sourced inventory today.", {
-      description:
-        sourceKind === "owned"
-          ? "Owned products go through the existing product workflow - try a Demo source row."
-          : "This row has no source.kind; book through the per-vertical workflow instead.",
+  const sourceKind = stringField(hit, "source.kind", null) ?? "owned"
+  if (!sourceKind) {
+    toast.info("This catalog row cannot be booked yet.", {
+      description: "The catalog record is missing source information.",
     })
     return
   }
 
   const sourceRef = stringField(hit, "source.ref", null) ?? undefined
-  const name = stringField(hit, "name", null) ?? undefined
-  const supplierId = stringField(hit, "supplierId", null) ?? undefined
+  const sourceConnectionId = stringField(hit, "source.connectionId", null) ?? undefined
   navigate({
-    to: "/catalog/book/$entityModule/$entityId",
+    to: "/catalog/journey/$entityModule/$entityId",
     params: { entityModule, entityId: hit.id },
     search: {
       sourceKind,
+      ...(sourceConnectionId ? { sourceConnectionId } : {}),
       ...(sourceRef ? { sourceRef } : {}),
-      ...(name ? { name } : {}),
-      ...(supplierId ? { supplierId } : {}),
-      ...(departure ? { departureId: departure.id, departureStartsAt: departure.startsAt } : {}),
-      ...(option ? { optionId: option.id, optionName: option.name } : {}),
+      ...(departure ? { departureId: departure.id } : {}),
+      ...(option ? { optionId: option.id } : {}),
     },
   })
 }

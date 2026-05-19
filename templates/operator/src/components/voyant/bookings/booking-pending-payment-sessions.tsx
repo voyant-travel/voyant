@@ -4,7 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { PaymentSessionActionLedgerCard } from "@voyantjs/finance-ui/components/invoice-action-ledger-card"
 import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
-import { Loader2, Wallet } from "lucide-react"
+import { Copy, Loader2, Wallet } from "lucide-react"
+import { toast } from "sonner"
 
 import { api } from "@/lib/api-client"
 import { queryKeys } from "@/lib/query-keys"
@@ -123,20 +124,30 @@ export function BookingPendingPaymentSessions({
                   Created {new Date(session.createdAt).toLocaleString()}
                 </div>
               </div>
-              <Button
-                size="sm"
-                onClick={() => markReceived.mutate(session.id)}
-                disabled={markReceived.isPending}
-              >
-                {markReceived.isPending && markReceived.variables === session.id ? (
-                  <>
-                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                    Marking…
-                  </>
-                ) : (
-                  "Mark payment received"
-                )}
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void copyPaymentLink(session.id)}
+                >
+                  <Copy className="mr-1.5 h-3.5 w-3.5" />
+                  Copy payment link
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => markReceived.mutate(session.id)}
+                  disabled={markReceived.isPending}
+                >
+                  {markReceived.isPending && markReceived.variables === session.id ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      Marking…
+                    </>
+                  ) : (
+                    "Mark payment received"
+                  )}
+                </Button>
+              </div>
             </div>
             <PaymentSessionActionLedgerCard paymentSessionId={session.id} limit={5} />
           </div>
@@ -151,6 +162,17 @@ export function BookingPendingPaymentSessions({
       </CardContent>
     </Card>
   )
+}
+
+async function copyPaymentLink(paymentSessionId: string): Promise<void> {
+  if (typeof window === "undefined") return
+  const url = new URL(`/pay/${paymentSessionId}`, window.location.origin).toString()
+  try {
+    await navigator.clipboard.writeText(url)
+    toast.success("Payment link copied")
+  } catch {
+    toast.error("Could not copy payment link")
+  }
 }
 
 function formatMoney(cents: number, currency: string): string {

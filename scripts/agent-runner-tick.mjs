@@ -22,7 +22,7 @@ import {
   projectOptions,
   repositoryOptions,
 } from "./lib/agent-runner-help.mjs"
-import { recommendQueueActions } from "./lib/agent-runner-tick.mjs"
+import { maxAgentSessionsFromArgs, recommendQueueActions } from "./lib/agent-runner-tick.mjs"
 
 const args = parseArgs(process.argv.slice(2))
 maybePrintHelp(args, {
@@ -33,6 +33,10 @@ maybePrintHelp(args, {
   options: [
     ["--json", "Print machine-readable JSON."],
     ["--max-age-days <number>", "Heartbeat staleness threshold. Defaults to 1."],
+    [
+      "--max-agent-sessions <number>",
+      "Maximum fresh Running implementation sessions before new run-command work is held. Defaults to 1.",
+    ],
     ["--recent-events <number>", "Number of recent runner events to show. Defaults to 5."],
     ...ciRepairCommandOptions,
     ...eventLogOptions,
@@ -44,6 +48,7 @@ maybePrintHelp(args, {
 const repoRoot = runGit(["rev-parse", "--show-toplevel"])
 const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
 const maxAgeDays = Number(args.maxAgeDays ?? 1)
+const maxAgentSessions = maxAgentSessionsFromArgs(args)
 const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
 const recentEventLimit = numberArg(args.recentEvents, "recent-events", 5, { min: 0 })
 
@@ -55,6 +60,7 @@ const project = loadAllEvaluatedProject(projectScanConfigFromArgs(args))
 const items = filterItemsByRepository(project.items, repository)
 const recommendations = recommendQueueActions(items, {
   ciRepairDispatchEnabled: ciRepairDispatchEnabled(args),
+  maxAgentSessions,
   maxAgeDays,
   repository,
 })
@@ -72,6 +78,7 @@ if (args.json) {
         },
         repository,
         maxAgeDays,
+        maxAgentSessions,
         eventLog: {
           path: eventLogPath,
           recentEvents,

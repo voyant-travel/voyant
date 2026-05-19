@@ -770,7 +770,7 @@ Lead-gen is therefore not a "mode" of the cruises module — it's a state on the
 | **suppliers** | cruise lines are `suppliers` rows, linked from `cruises.lineSupplierId` (soft FK, schema-discipline rule) |
 | **finance** | bookings → invoices via existing finance module; cruise-specific line items live in the booking quote snapshot, not finance |
 | **pricing** | `cruise_prices.priceCatalogId` and `cruise_prices.priceScheduleId` soft-FK into `pricing.price_catalogs` / `pricing.price_schedules`. Same pattern accommodations already use. No promo/discount primitives are reinvented in cruises. |
-| **products** | pre/post extensions (a 3-night Reykjavik hotel before the cruise) are just `products` rows linked to the cruise via a template link `cruiseProductExtensionLink` |
+| **products** | pre/post Cruise Extensions (a 3-night Reykjavik hotel before the cruise) are reusable `products` rows linked to one or more cruises/sailings via a template link such as `cruiseProductExtensionLink` |
 | **identity / facilities** | ports are `facilities` rows; cruise schema soft-FKs by `facilityId` |
 | **storage** | `cruise_media` uses the same R2/S3 pattern as `product_media`, no new infra |
 | **availability** | not used (cruise availability is per-price-row, not per-product-day) |

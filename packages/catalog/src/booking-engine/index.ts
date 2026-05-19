@@ -94,6 +94,8 @@ export {
   defaultTravelerFields,
   type ExtensionOption,
   type PaxBandSpec,
+  type ProductVariantOption,
+  type ProductVariantUnitOption,
   paxBandsAllowedTotalFrom,
   type RatePlanOption,
   type RoomOption,

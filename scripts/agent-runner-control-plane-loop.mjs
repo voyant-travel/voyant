@@ -40,6 +40,10 @@ maybePrintHelp(args, {
       `Only lease this action. Allowed: ${Array.from(dispatchableActions).join(", ")}.`,
     ],
     ["--max-age-days <number>", "Heartbeat staleness threshold. Defaults to 1."],
+    [
+      "--max-agent-sessions <number>",
+      "Maximum fresh Running implementation sessions before new run-command work is held. Defaults to 1.",
+    ],
     ["--recent-events <number>", "Number of recent runner events to include. Defaults to 5."],
     [
       "--implementation-command <shell>",

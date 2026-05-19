@@ -47,6 +47,7 @@ import {
   productsBookingExtension,
   productsHonoModule,
 } from "@voyantjs/products"
+import { productMedia, products } from "@voyantjs/products/schema"
 import { promotionsHonoModule } from "@voyantjs/promotions"
 import { createPromotionsStorefrontResolvers } from "@voyantjs/promotions/service-storefront"
 import { resourcesHonoModule } from "@voyantjs/resources"
@@ -55,9 +56,11 @@ import { createStorefrontHonoModule } from "@voyantjs/storefront"
 import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-verification"
 import { suppliersHonoModule } from "@voyantjs/suppliers"
 import { transactionsBookingExtension, transactionsHonoModule } from "@voyantjs/transactions"
+import { createTravelComposerHonoModule, travelComposerService } from "@voyantjs/travel-composer"
+import { tripComponents, tripEnvelopes } from "@voyantjs/travel-composer/schema"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyantjs/workflow-runs"
 import { createCloudflareEdgeDriver } from "@voyantjs/workflows-orchestrator-cloudflare"
-import { and, asc, desc, eq, or } from "drizzle-orm"
+import { and, asc, desc, eq, inArray, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { createProductBrochurePrinter } from "../lib/brochure-printer"
 import { resolveNotificationProviders } from "../lib/notifications"
@@ -103,6 +106,10 @@ import {
   mountOperatorSettingsRoutes,
 } from "./settings"
 import { createSmartbillSettlementPollers, smartbillOperatorBundle } from "./smartbill"
+import {
+  createOperatorTravelComposerRoutesOptions,
+  travelComposerPaymentBundle,
+} from "./travel-composer-runtime"
 
 const notificationsHonoModule = createNotificationsHonoModule({
   resolveProviders: resolveNotificationProviders,
@@ -1019,6 +1026,10 @@ export const app = createApp<CloudflareBindings>({
     customerPortalHonoModule,
     storefrontVerificationHonoModule,
     checkoutHonoModule,
+    createTravelComposerHonoModule({
+      ...createOperatorTravelComposerRoutesOptions(),
+      publicRoutes: true,
+    }),
   ],
   extensions: [
     bookingsSupplierExtension,
@@ -1039,6 +1050,7 @@ export const app = createApp<CloudflareBindings>({
       generateContractPdf: ({ env, db, eventBus, bookingId }) =>
         generateContractPdfForBooking(env, db, eventBus, bookingId),
     }),
+    travelComposerPaymentBundle,
     smartbillOperatorBundle,
     channelPushBundle,
     netopiaHonoBundle(),
@@ -1441,6 +1453,169 @@ export const app = createApp<CloudflareBindings>({
       }
     })
 
+    // GET /v1/public/payment-link/:sessionId/trip-summary — structured
+    // trip context for the `/pay/:sessionId` landing page when the session
+    // belongs to a travel-composer trip checkout. Lookup chain:
+    //   session.metadata.tripEnvelopeId -> trip_envelopes/trip_components
+    //   -> product_media (cover image) for each component's entity_id.
+    // Returns `{ data: null }` (200) for non-trip sessions so the customer
+    // page falls back to the universal notes view without an error.
+    hono.get("/v1/public/payment-link/:sessionId/trip-summary", async (c) => {
+      const sessionId = c.req.param("sessionId")
+      const db = c.get("db") as PostgresJsDatabase
+      const [session] = await db
+        .select()
+        .from(paymentSessions)
+        .where(eq(paymentSessions.id, sessionId))
+        .limit(1)
+      if (!session) return c.json({ error: "Session not found" }, 404)
+
+      const metadata = (session.metadata ?? {}) as Record<string, unknown>
+      const tripEnvelopeId =
+        typeof metadata.tripEnvelopeId === "string" ? metadata.tripEnvelopeId : null
+      if (!tripEnvelopeId) return c.json({ data: null })
+
+      const [envelope] = await db
+        .select()
+        .from(tripEnvelopes)
+        .where(eq(tripEnvelopes.id, tripEnvelopeId))
+        .limit(1)
+      if (!envelope) return c.json({ data: null })
+
+      if (session.status === "paid" && envelope.status !== "booked") {
+        try {
+          await travelComposerService.completeTripCheckout(db, {
+            envelopeId: envelope.id,
+            paymentSessionId: session.id,
+            payload: {
+              source: "payment_link_trip_summary_reconcile",
+              amountCents: session.amountCents,
+              currency: session.currency,
+              provider: session.provider,
+            },
+          })
+        } catch (err) {
+          console.error("[travel-composer] payment summary reconciliation failed", err)
+        }
+      }
+
+      const components = await db
+        .select()
+        .from(tripComponents)
+        .where(eq(tripComponents.envelopeId, tripEnvelopeId))
+        .orderBy(asc(tripComponents.sequence), asc(tripComponents.createdAt))
+
+      const visibleComponents = components.filter(
+        (component) => component.status !== "removed" && component.status !== "cancelled",
+      )
+
+      const productIds = Array.from(
+        new Set(
+          visibleComponents
+            .map((component) => component.entityId)
+            .filter((value): value is string => typeof value === "string" && value.length > 0),
+        ),
+      )
+
+      const mediaByProductId = new Map<string, { url: string; altText: string | null }>()
+      const productNameById = new Map<string, string>()
+      if (productIds.length > 0) {
+        const productRows = await db
+          .select({ id: products.id, name: products.name })
+          .from(products)
+          .where(inArray(products.id, productIds))
+        for (const row of productRows) productNameById.set(row.id, row.name)
+        const mediaRows = await db
+          .select({
+            productId: productMedia.productId,
+            url: productMedia.url,
+            altText: productMedia.altText,
+            isCover: productMedia.isCover,
+            sortOrder: productMedia.sortOrder,
+            mediaType: productMedia.mediaType,
+          })
+          .from(productMedia)
+          .where(
+            and(inArray(productMedia.productId, productIds), eq(productMedia.mediaType, "image")),
+          )
+          .orderBy(
+            asc(productMedia.productId),
+            desc(productMedia.isCover),
+            asc(productMedia.sortOrder),
+          )
+        for (const row of mediaRows) {
+          if (!mediaByProductId.has(row.productId)) {
+            mediaByProductId.set(row.productId, { url: row.url, altText: row.altText })
+          }
+        }
+      }
+
+      type Allocation = {
+        componentId?: string
+        sourceAmountCents?: number
+        sourceCurrency?: string
+        targetAmountCents?: number
+        targetCurrency?: string
+        fx?: { rate: number; quotedAt: string } | null
+      }
+      const allocationsRaw = Array.isArray(metadata.componentAllocations)
+        ? (metadata.componentAllocations as Allocation[])
+        : []
+      const allocationByComponentId = new Map<string, Allocation>()
+      for (const allocation of allocationsRaw) {
+        if (allocation.componentId) allocationByComponentId.set(allocation.componentId, allocation)
+      }
+
+      const trip = {
+        envelopeId: envelope.id,
+        currency: session.currency,
+        totalAmountCents: session.amountCents,
+        components: visibleComponents.map((component) => {
+          const metadataRecord = (component.metadata ?? {}) as Record<string, unknown>
+          const catalogItem = (metadataRecord.catalogItem ?? null) as { name?: string } | null
+          const flightDraft = (metadataRecord.flightDraft ?? null) as {
+            origin?: string
+            destination?: string
+          } | null
+          const schedule = resolvePublicTripComponentSchedule(metadataRecord)
+          const fallbackName =
+            catalogItem?.name ??
+            (component.entityId ? productNameById.get(component.entityId) : null) ??
+            (flightDraft?.origin && flightDraft?.destination
+              ? `${flightDraft.origin} → ${flightDraft.destination}`
+              : null) ??
+            component.description ??
+            component.kind.replaceAll("_", " ")
+          const thumbnail = component.entityId
+            ? (mediaByProductId.get(component.entityId) ?? null)
+            : null
+          const catalogThumbnailUrl = publicStringValue(
+            readPublicRecord(metadataRecord.catalogItem)?.thumbnailUrl,
+          )
+          const allocation = allocationByComponentId.get(component.id)
+          return {
+            id: component.id,
+            kind: component.kind,
+            entityModule: component.entityModule,
+            title: fallbackName,
+            thumbnailUrl: thumbnail?.url ?? catalogThumbnailUrl ?? null,
+            thumbnailAlt: thumbnail?.altText ?? null,
+            scheduledStartsAt: schedule.start,
+            scheduledEndsAt: schedule.end,
+            sourceAmountCents:
+              allocation?.sourceAmountCents ?? component.componentTotalAmountCents ?? null,
+            sourceCurrency:
+              allocation?.sourceCurrency ?? component.componentCurrency ?? session.currency,
+            targetAmountCents:
+              allocation?.targetAmountCents ?? component.componentTotalAmountCents ?? null,
+            targetCurrency: allocation?.targetCurrency ?? session.currency,
+            fx: allocation?.fx ?? null,
+          }
+        }),
+      }
+      return c.json({ data: trip })
+    })
+
     // GET /v1/public/bookings/:bookingId/checkout-status — minimal
     // customer-facing status for the storefront confirmation page.
     // It intentionally exposes only non-PII state: booking status and
@@ -1582,3 +1757,56 @@ export const app = createApp<CloudflareBindings>({
     })
   },
 })
+
+function resolvePublicTripComponentSchedule(metadata: Record<string, unknown>): {
+  start: string | null
+  end: string | null
+} {
+  const scheduledStart = publicStringValue(metadata.scheduledStartsAt)
+  const scheduledEnd = publicStringValue(metadata.scheduledEndsAt)
+  if (scheduledStart) return { start: scheduledStart, end: scheduledEnd }
+
+  const flightDraft = readPublicRecord(metadata.flightDraft)
+  if (flightDraft) {
+    const selectedOffer = readPublicRecord(flightDraft.selectedOffer)
+    const itineraries = Array.isArray(selectedOffer?.itineraries) ? selectedOffer.itineraries : []
+    const firstItinerary = readPublicRecord(itineraries[0])
+    const lastItinerary = readPublicRecord(itineraries[itineraries.length - 1])
+    const firstSegments = Array.isArray(firstItinerary?.segments) ? firstItinerary.segments : []
+    const lastSegments = Array.isArray(lastItinerary?.segments) ? lastItinerary.segments : []
+    const firstSegment = readPublicRecord(firstSegments[0])
+    const lastSegment = readPublicRecord(lastSegments[lastSegments.length - 1])
+    const departure = readPublicRecord(firstSegment?.departure)
+    const arrival = readPublicRecord(lastSegment?.arrival)
+    return {
+      start: publicStringValue(departure?.at) ?? publicStringValue(flightDraft.departDate),
+      end: publicStringValue(arrival?.at) ?? publicStringValue(flightDraft.returnDate),
+    }
+  }
+
+  const bookingDraft = readPublicRecord(metadata.bookingDraftV1)
+  const configure = readPublicRecord(bookingDraft?.configure)
+  const dateRange = readPublicRecord(configure?.dateRange)
+  const departureDate = publicStringValue(configure?.departureDate)
+  const checkIn = publicStringValue(dateRange?.checkIn)
+  const checkOut = publicStringValue(dateRange?.checkOut)
+  if (departureDate || checkIn) {
+    return { start: departureDate ?? checkIn, end: checkOut }
+  }
+
+  const cruiseDraft = readPublicRecord(metadata.cruiseDraft)
+  const embarkationDate = publicStringValue(cruiseDraft?.embarkationDate)
+  if (embarkationDate) return { start: embarkationDate, end: null }
+
+  return { start: null, end: null }
+}
+
+function readPublicRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null
+}
+
+function publicStringValue(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null
+}

@@ -2,6 +2,7 @@
 
 import type { BookingRecord } from "@voyantjs/bookings-react"
 import { cn } from "@voyantjs/ui/lib/utils"
+import type * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/index.js"
 import { BookingList } from "./booking-list.js"
 
@@ -9,6 +10,11 @@ export interface BookingsPageProps {
   pageSize?: number
   onBookingOpen?: (booking: BookingRecord) => void
   onCreateBooking?: () => void
+  /**
+   * Extra action(s) rendered alongside the primary "New booking" button.
+   * Templates pass adjacent flows (e.g. a "Compose trip" link) here.
+   */
+  headerActions?: React.ReactNode
   className?: string
 }
 
@@ -16,6 +22,7 @@ export function BookingsPage({
   pageSize,
   onBookingOpen,
   onCreateBooking,
+  headerActions,
   className,
 }: BookingsPageProps = {}) {
   const messages = useBookingsUiMessagesOrDefault().bookingsPage
@@ -31,6 +38,7 @@ export function BookingsPage({
         pageSize={pageSize}
         onSelectBooking={onBookingOpen}
         onCreateBooking={onCreateBooking}
+        headerActions={headerActions}
       />
     </div>
   )

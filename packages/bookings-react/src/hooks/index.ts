@@ -9,6 +9,7 @@ export {
   useBookingConvertMutation,
 } from "./use-booking-convert-mutation.js"
 export {
+  type BookingCreateExtraLineInput,
   type BookingCreateGroupMembershipInput,
   type BookingCreateInput,
   type BookingCreateItemLineInput,

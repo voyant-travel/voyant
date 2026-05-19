@@ -28,8 +28,8 @@ platform. Terms are grouped by subdomain. Use the **bold** term; treat
 | **Operating party**  | The party that actually runs and fulfills the travel service day to day.                           | *supplier (when the party is an operator)* |
 | **Inventory Source** | A technical upstream source of inventory data or booking capability (Connect, GDS, direct API, CSV import). | *supplier, provider, feed*   |
 | **Operator Link**    | A capability-bearing relationship between an Operator and a counterparty for catalog, availability, booking, or sync. | *connection, partnership* |
-| **Catalog Item**     | A normalized sellable discovery record used by admin search, storefront, or CMS sync regardless of provenance. | *product, listing*          |
-| **Operated Inventory** | Inventory the Operator owns or manages operationally in local module-owned records.              | *local product*                      |
+| **Catalog Item**     | A normalized sellable discovery and booking record used by admin search, storefront, composer, or CMS sync regardless of provenance. | *product, listing*          |
+| **Operated Inventory** | Inventory the Operator owns or manages operationally in optional local module-owned records.     | *local product*                      |
 | **Sourced Inventory** | Inventory the Operator sells but does not operate, reached through an Inventory Source.           | *external product, imported product* |
 | **Catalog Projection** | A derived read model that interleaves Operated Inventory and Sourced Inventory for search and sync. | *master catalog, product table*  |
 
@@ -60,6 +60,12 @@ platform. Terms are grouped by subdomain. Use the **bold** term; treat
 | **Stay Component**    | A date-range accommodation line within a Product, Offer, Booking, or sourced Catalog Item.        | *hotel reservation*            |
 | **Product Version**   | An immutable snapshot of a Product's structure at a point in time.                               | *revision, snapshot*           |
 | **Product Media**     | An image, video, or document attached to a Product or one of its Days.                           | *asset, attachment*            |
+| **Operated Group Departure** | A fixed Product instance/departure with capacity and product-internal components such as bus transport, stays, included excursions, guide assignment, rooming list, and dependent Extras. | *package when used for the aggregate* |
+| **Trip / Package Envelope** | A customer-facing aggregate that groups one or more Component Bookings/Orders into one itinerary, checkout, support, document, and cancellation-preview experience. Not necessarily one Booking. | *Product, Booking* |
+| **Composed FIT Trip** | An individually composed Trip / Package Envelope assembled from independent commitments such as a product, stay, flight, transfer, cruise, or staff-confirmed placeholder. | *custom product, mega-booking* |
+| **Component Booking / Order** | One independently committed part of a Trip / Package Envelope, with its own supplier/provider reference, cancellation rules, tax treatment, fulfillment state, and operational owner. | *line when lifecycle is independent* |
+| **Extra** | A child line that modifies or extends a Component Booking and shares that component's lifecycle closely enough to be cancelled, fulfilled, taxed, and supported with it. | *add-on, addon, extension, separate booking when dependent* |
+| **Cruise Extension** | A cruise-specific pre/post-cruise hotel or land program. The offer definition can be shared across multiple cruises/sailings; a selected extension is an Extra when cruise-owned and lifecycle-dependent, or a sibling Component Booking / Order when independently supplied, confirmed, cancelled, taxed, or supported. | *generic extension* |
 
 ## Inventory & availability
 
@@ -202,6 +208,9 @@ The five-step ladder is **Quote → Offer → Order → Booking → Fulfillment*
 - A **Product** is canonical module-owned truth; a **Catalog Item** is a derived sellable read model that may resolve to a Product or to Sourced Inventory.
 - An **Operator Link** grants one or more capabilities (catalog, availability, booking, sync) between counterparties; an **Inventory Source** is one technical adapter behind that link.
 - An Operator can be both an **Operating party** for some inventory and a **Reseller** for other inventory at the same time.
+- A **Trip / Package Envelope** groups Component Bookings/Orders for customer experience and checkout; it does not erase the lifecycle boundaries of those components.
+- Product-internal bundles and dependent **Extras** stay inside their Component Booking. Customer-composed additions with independent supplier/cancellation/tax/fulfillment state become sibling Component Bookings/Orders under the same Trip / Package Envelope.
+- A **Cruise Extension** is a vertical-specific category, not a generic synonym for Extra. Its catalog definition may be reused across cruises; apply the same lifecycle boundary rule to the selected extension to decide whether it is nested under the cruise booking or split into its own Component Booking / Order.
 
 ## Example dialogue
 
@@ -232,8 +241,8 @@ The five-step ladder is **Quote → Offer → Order → Booking → Fulfillment*
 These terms are used loosely in conversation. Pick the canonical form below; treat the rest as smells when you see them in code or docs.
 
 - **Customer / client / buyer** — none are first-class entities. The canonical CRM record is **Person** (with optional **Organization**). On a Booking, the buyer is captured as `personId` + `organizationId` snapshot fields. Avoid "customer" / "client" except in UI copy facing the operator's own staff.
-- **Tour / trip / experience / package** — all collapse to **Product**. The booking shape is encoded in `productBookingMode` (`date`, `date-time`, `open`, `stay`, `transfer`, `itinerary`).
-- **Accommodation vs. hotel operations** - accommodation is valid as catalog inventory, sourced resale, or trip composition. Hotel/property operations are not a first-party Voyant implementation scenario.
+- **Tour / experience** — usually collapse to **Product**. **Trip** and **package** are overloaded: use **Product** for an operator-sold offering, **Operated Group Departure** for a fixed-capacity product instance, and **Trip / Package Envelope** for a customer-facing aggregate of multiple component commitments.
+- **Accommodation vs. hotel operations** — accommodation is valid as catalog inventory, sourced resale, or trip composition. Hotel/property operations are not a first-party Voyant implementation scenario.
 - **Quote vs. Offer** — both look like "a price proposal". **Quote** is a CRM artifact attached to an Opportunity (informational, pre-sales). **Offer** is the transactional, sellability-resolved, sendable, acceptable document on the commitment ladder. They are not synonyms.
 - **Order vs. Booking** — both are post-sale. **Order** is the commercial commitment (with Order Terms, links to Invoices); **Booking** is the operational record (Travelers, Allocations, Fulfillments). One Order produces one Booking in normal flows; do not use them interchangeably.
 - **Reservation** — overloaded between "Hold" (a temporary inventory claim) and "Booking" (the persistent record). Use **Hold** or **Booking** — never "Reservation".

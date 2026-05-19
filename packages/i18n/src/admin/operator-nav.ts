@@ -9,6 +9,9 @@ export type OperatorAdminNavMessages = {
   products: string
   categories: string
   bookings: string
+  trips: string
+  allTrips: string
+  newTrip: string
   notifications: string
   notificationTemplates: string
   notificationReminderRules: string
@@ -30,6 +33,9 @@ export type OperatorAdminNavMessages = {
   policies: string
   contractNumberSeries: string
   settings: string
+  channelSync: string
+  promotions: string
+  actionLedger: string
 }
 
 export const operatorAdminNavMessages = {
@@ -43,6 +49,9 @@ export const operatorAdminNavMessages = {
       products: "Products",
       categories: "Categories",
       bookings: "Bookings",
+      trips: "Trips",
+      allTrips: "All trips",
+      newTrip: "New trip",
       notifications: "Notifications",
       notificationTemplates: "Templates",
       notificationReminderRules: "Reminder Rules",
@@ -64,6 +73,9 @@ export const operatorAdminNavMessages = {
       policies: "Policies",
       contractNumberSeries: "Number Series",
       settings: "Settings",
+      channelSync: "Channel sync",
+      promotions: "Promotions",
+      actionLedger: "Logs",
     },
   },
   ro: {
@@ -76,6 +88,9 @@ export const operatorAdminNavMessages = {
       products: "Produse",
       categories: "Categorii",
       bookings: "Rezervari",
+      trips: "Calatorii",
+      allTrips: "Toate calatoriile",
+      newTrip: "Calatorie noua",
       notifications: "Notificari",
       notificationTemplates: "Sabloane",
       notificationReminderRules: "Reguli reminder",
@@ -97,6 +112,9 @@ export const operatorAdminNavMessages = {
       policies: "Politici",
       contractNumberSeries: "Serii numere",
       settings: "Setari",
+      channelSync: "Sincronizare canale",
+      promotions: "Promotii",
+      actionLedger: "Jurnal actiuni",
     },
   },
 } satisfies LocaleMessageDefinitions<{ nav: OperatorAdminNavMessages }>

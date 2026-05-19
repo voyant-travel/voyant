@@ -24,7 +24,7 @@ describe("buildProductDraftShape", () => {
     expect(shape.showsPayment).toBe(true)
     expect(shape.showsReview).toBe(true)
     expect(shape.showsAccommodation).toBe(false)
-    // No options → no add-ons step.
+    // No extras → no add-ons step.
     expect(shape.showsAddons).toBe(false)
     expect(shape.addons).toBeUndefined()
   })
@@ -39,12 +39,17 @@ describe("buildProductDraftShape", () => {
     ])
   })
 
-  it("turns product options into addon offers when present", () => {
+  it("turns product options into a configure sub-step when present", () => {
     const shape = buildProductDraftShape(richContent)
-    expect(shape.showsAddons).toBe(true)
-    expect(shape.addons?.catalog).toHaveLength(2)
-    expect(shape.addons?.catalog?.[0]?.id).toBe("opt_a")
-    expect(shape.addons?.catalog?.[0]?.kind).toBe("extras")
+    expect(shape.showsAddons).toBe(false)
+    expect(shape.addons).toBeUndefined()
+    expect(shape.configureSubSteps?.[0]).toEqual({
+      kind: "product-option",
+      options: [
+        { id: "opt_a", name: "Premium upgrade", description: null },
+        { id: "opt_b", name: "Lunch included", description: null },
+      ],
+    })
   })
 
   it("respects custom paxBands when provided", () => {

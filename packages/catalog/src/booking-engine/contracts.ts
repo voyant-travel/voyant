@@ -80,12 +80,41 @@ export const cabinNumberOptionV1 = z.object({
   hasAccessibilityFeatures: z.boolean().optional(),
 })
 
+export const productVariantUnitOptionV1 = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable().optional(),
+  unitType: z.string().nullable().optional(),
+  minQuantity: z.number().int().nonnegative().nullable().optional(),
+  maxQuantity: z.number().int().nonnegative().nullable().optional(),
+})
+
+export const productVariantOptionV1 = z.object({
+  id: z.string(),
+  code: z.string().nullable().optional(),
+  name: z.string(),
+  description: z.string().nullable().optional(),
+  isDefault: z.boolean().optional(),
+  units: z.array(productVariantUnitOptionV1).optional(),
+})
+
+export const ratePlanOptionV1 = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable().optional(),
+  chargeFrequency: z.enum(["per_night", "per_stay"]).optional(),
+  cancellationPolicy: z.string().nullable().optional(),
+  inclusions: z.array(z.string()).optional(),
+  currency: z.string().optional(),
+})
+
 export const roomOptionV1 = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().nullable().optional(),
   capacity: z.number().int().nonnegative().nullable().optional(),
   baseRateHint: z.number().nullable().optional(),
+  ratePlans: z.array(ratePlanOptionV1).optional(),
 })
 
 export const extensionOptionV1 = z.object({
@@ -104,10 +133,21 @@ export const addonOfferV1 = z.object({
   kind: z.enum(["extras", "excursions", "insurance"]),
   groupKey: z.string().nullable().optional(),
   pricingMode: z.string().nullable().optional(),
+  unitAmountCents: z.number().int().nullable().optional(),
+  currency: z.string().nullable().optional(),
+  pricedPerPerson: z.boolean().nullable().optional(),
+  selectionType: z
+    .enum(["optional", "required", "default_selected", "unavailable"])
+    .nullable()
+    .optional(),
+  minQuantity: z.number().int().nonnegative().nullable().optional(),
+  maxQuantity: z.number().int().nonnegative().nullable().optional(),
+  defaultQuantity: z.number().int().nonnegative().nullable().optional(),
 })
 
 export const configureSubStepV1 = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("departure"), required: z.literal(true) }),
+  z.object({ kind: z.literal("product-option"), options: z.array(productVariantOptionV1) }),
   z.object({ kind: z.literal("cabin-category"), categories: z.array(cabinCategoryOptionV1) }),
   z.object({
     kind: z.literal("cabin-number"),
@@ -225,6 +265,15 @@ export const pricingBreakdownV1 = z.object({
   total: z.number().int(),
 })
 
+export const bookingPaymentScheduleV1 = z.object({
+  scheduleType: z.enum(["deposit", "installment", "balance", "hold", "other"]),
+  status: z.enum(["pending", "due", "paid", "waived", "cancelled", "expired"]),
+  dueDate: z.string(),
+  currency: z.string().length(3),
+  amountCents: z.number().int().nonnegative(),
+  notes: z.string().nullable().optional(),
+})
+
 // ─────────────────────────────────────────────────────────────────
 // Draft state — what survives across step transitions
 // ─────────────────────────────────────────────────────────────────
@@ -251,6 +300,17 @@ export const bookingDraftV1 = z.object({
       // when omitted.
       pax: z.record(z.string(), z.number().int().nonnegative()).default(() => ({})),
       variantId: z.string().optional(),
+      optionSelections: z
+        .array(
+          z.object({
+            optionId: z.string(),
+            optionName: z.string().optional(),
+            optionUnitId: z.string().optional(),
+            optionUnitName: z.string().optional(),
+            quantity: z.number().int().nonnegative(),
+          }),
+        )
+        .optional(),
       cabinCategoryId: z.string().optional(),
       cabinNumberId: z.string().optional(),
       dateRange: z
@@ -339,6 +399,14 @@ export const bookingDraftV1 = z.object({
       schedule: z.unknown().optional(),
     })
     .default({ intent: "hold" }),
+
+  paymentSchedules: z.array(bookingPaymentScheduleV1).optional(),
+  documentGeneration: z
+    .object({
+      contractDocument: z.boolean().optional(),
+      invoiceDocument: z.boolean().optional(),
+    })
+    .optional(),
 
   /**
    * Customer-typed promotion code. Validated case-insensitively against

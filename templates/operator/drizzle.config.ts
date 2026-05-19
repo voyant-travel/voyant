@@ -41,6 +41,7 @@ export default defineConfig({
     "../../packages/cruises/src/schema.ts",
     "../../packages/charters/src/schema.ts",
     "../../packages/accommodations/src/schema.ts",
+    "../../packages/travel-composer/src/schema.ts",
     "../../packages/flights/src/reference/local-postgres.ts",
     "../../packages/catalog/src/schema.ts",
     "../../packages/workflow-runs/src/schema.ts",

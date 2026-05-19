@@ -38,6 +38,7 @@ import {
   defaultTravelerFields,
   type OwnedBookingHandler,
   type OwnedHandlerContext,
+  type ProductVariantOption,
   paxBandsAllowedTotalFrom,
   type TravelerFieldRequirement,
 } from "@voyantjs/catalog/booking-engine"
@@ -64,6 +65,10 @@ export interface BookingCreateBridgeInput {
   bookingNumber: string
   personId?: string | null
   organizationId?: string | null
+  contactFirstName?: string | null
+  contactLastName?: string | null
+  contactEmail?: string | null
+  contactPhone?: string | null
   internalNotes?: string | null
   /**
    * Override the seed sellAmountCents the booking lands at. The owned
@@ -73,6 +78,23 @@ export interface BookingCreateBridgeInput {
    * docs/architecture/promotions-architecture.md §7.1.
    */
   sellAmountCentsOverride?: number | null
+  /**
+   * Status the booking lands in. When omitted, `@voyantjs/finance`'s
+   * `createBooking` defaults to `"draft"`. Callers that compose bookings
+   * via the catalog booking engine (e.g. trip composer reserve, journey
+   * commit) typically want `"awaiting_payment"` so the booking shows in
+   * the operator's queue with a payable balance. The handler forwards
+   * whatever value is passed via `commit`'s `request.parameters.initialStatus`.
+   */
+  initialStatus?:
+    | "draft"
+    | "on_hold"
+    | "awaiting_payment"
+    | "confirmed"
+    | "in_progress"
+    | "completed"
+    | "cancelled"
+    | "expired"
   travelers?: Array<{
     firstName: string
     lastName: string
@@ -91,6 +113,10 @@ export interface BookingCreateBridgeInput {
     amountCents: number
     notes?: string | null
   }>
+  documentGeneration?: {
+    contractDocument: boolean
+    invoiceDocument: boolean
+  }
   taxLines?: Array<{
     code?: string | null
     name: string
@@ -102,6 +128,26 @@ export interface BookingCreateBridgeInput {
     includedInPrice?: boolean
     remittanceParty?: string | null
     sortOrder?: number
+  }>
+  itemLines?: Array<{
+    optionId?: string | null
+    optionUnitId: string
+    quantity: number
+    title?: string | null
+    description?: string | null
+    unitSellAmountCents?: number | null
+    totalSellAmountCents?: number | null
+  }>
+  extraLines?: Array<{
+    productExtraId: string
+    name: string
+    description?: string | null
+    pricingMode?: string | null
+    pricedPerPerson?: boolean | null
+    quantity: number
+    sellCurrency: string
+    unitSellAmountCents?: number | null
+    totalSellAmountCents?: number | null
   }>
 }
 
@@ -131,6 +177,13 @@ interface DraftLike {
     departureDate?: string
     departureTime?: string
     variantId?: string
+    optionSelections?: Array<{
+      optionId: string
+      optionName?: string
+      optionUnitId?: string
+      optionUnitName?: string
+      quantity: number
+    }>
   }
   billing?: {
     buyerType?: "B2C" | "B2B"
@@ -143,6 +196,12 @@ interface DraftLike {
     email?: string
     phone?: string
     band?: string
+  }>
+  paymentSchedules?: BookingCreateBridgeInput["paymentSchedules"]
+  documentGeneration?: BookingCreateBridgeInput["documentGeneration"]
+  addons?: Array<{
+    extraId: string
+    quantity: number
   }>
 }
 
@@ -159,6 +218,12 @@ export interface BuildOwnedProductDraftShapeOptions {
    * `showsAddons` is false.
    */
   addonCatalog?: ReadonlyArray<AddonOffer>
+  /**
+   * Product options / variants. These select `draft.configure.variantId`
+   * and are distinct from extras: one option changes the underlying
+   * booking configuration, while extras add optional line items.
+   */
+  productOptions?: ReadonlyArray<ProductVariantOption>
 }
 
 export function buildOwnedProductDraftShape(
@@ -167,6 +232,7 @@ export function buildOwnedProductDraftShape(
   const paxBands = DEFAULT_PAX_BANDS
   const fields = options.travelerFields ?? defaultTravelerFields()
   const addons = options.addonCatalog ?? []
+  const variants = options.productOptions ?? []
   const flags = defaultDraftShapeFlags()
   return {
     ...flags,
@@ -176,7 +242,10 @@ export function buildOwnedProductDraftShape(
     travelerFields: fields,
     bookingFields: defaultBookingFields(),
     paymentIntents: ["hold", "card"],
-    configureSubSteps: [{ kind: "occupancy", bands: paxBands }],
+    configureSubSteps: [
+      ...(variants.length > 0 ? [{ kind: "product-option" as const, options: variants }] : []),
+      { kind: "occupancy", bands: paxBands },
+    ],
     addons: addons.length > 0 ? { catalog: addons } : undefined,
   }
 }
@@ -243,6 +312,16 @@ export interface OwnedProductsShapeLoaders {
     ctx: OwnedHandlerContext,
     productId: string,
   ) => Promise<ReadonlyArray<AddonOffer>>
+
+  /**
+   * Resolve product options / variants from the owning products module.
+   * Optional for tests and deployments that do not expose option
+   * variants in the booking flow.
+   */
+  loadProductOptions?: (
+    ctx: OwnedHandlerContext,
+    productId: string,
+  ) => Promise<ReadonlyArray<ProductVariantOption>>
 
   /**
    * Resolve the tax rate for a given (product, buyer country) pair.
@@ -370,26 +449,29 @@ export function createProductsBookingHandler(
 
       const draft = (request.draft ?? {}) as DraftLike
       const optionId = draft.configure?.variantId
+      const optionSelections = normalizeOptionSelections(draft.configure?.optionSelections)
       const slotId = draft.configure?.departureSlotId
 
       // Concurrent enrichment + slot-date lookup. The slot date is
       // needed before we can call loadResolvedOptionPrice, so it
       // joins this batch.
-      const [travelerFields, addonCatalog, taxRate, slotDate] = await Promise.all([
-        options.loadTravelerFields?.(ctx, request.entityId) ?? Promise.resolve(undefined),
-        options.loadAddonCatalog?.(ctx, request.entityId) ?? Promise.resolve(undefined),
-        options.loadTaxRate?.(ctx, {
-          productId: request.entityId,
-          buyerCountry: draft.billing?.address?.country,
-          buyerType: draft.billing?.buyerType,
-        }) ?? Promise.resolve(null),
-        slotId && options.loadSlotDate
-          ? options.loadSlotDate(ctx, slotId)
-          : Promise.resolve(draft.configure?.departureDate ?? null),
-      ])
+      const [travelerFields, addonCatalog, productOptionCatalog, taxRate, slotDate] =
+        await Promise.all([
+          options.loadTravelerFields?.(ctx, request.entityId) ?? Promise.resolve(undefined),
+          options.loadAddonCatalog?.(ctx, request.entityId) ?? Promise.resolve(undefined),
+          options.loadProductOptions?.(ctx, request.entityId) ?? Promise.resolve(undefined),
+          options.loadTaxRate?.(ctx, {
+            productId: request.entityId,
+            buyerCountry: draft.billing?.address?.country,
+            buyerType: draft.billing?.buyerType,
+          }) ?? Promise.resolve(null),
+          slotId && options.loadSlotDate
+            ? options.loadSlotDate(ctx, slotId)
+            : Promise.resolve(draft.configure?.departureDate ?? null),
+        ])
 
       const resolvedPrice =
-        optionId && slotDate && options.loadResolvedOptionPrice
+        optionSelections.length === 0 && optionId && slotDate && options.loadResolvedOptionPrice
           ? await options.loadResolvedOptionPrice(ctx, {
               productId: request.entityId,
               optionId,
@@ -403,10 +485,26 @@ export function createProductsBookingHandler(
       // total before the user picks counts.
       const effectivePax = paxCount > 0 ? paxCount : 1
 
-      const priced = priceQuote({
-        product,
-        resolvedPrice,
-        pax: draft.configure?.pax,
+      const priced =
+        optionSelections.length > 0
+          ? await priceOptionSelections({
+              ctx,
+              options,
+              product,
+              productOptions: productOptionCatalog ?? [],
+              selections: optionSelections,
+              slotDate,
+            })
+          : priceQuote({
+              product,
+              resolvedPrice,
+              pax: draft.configure?.pax,
+              effectivePax,
+            })
+      const pricedWithAddons = applyAddonSelections({
+        priced,
+        addons: draft.addons,
+        addonCatalog: addonCatalog ?? [],
         effectivePax,
       })
 
@@ -415,7 +513,7 @@ export function createProductsBookingHandler(
       // `applies_to` axis on tax_classes.lines) lands in a follow-up
       // when the catalog actually carries mixed treatments.
       const taxIsInclusive = taxRate?.priceMode === "inclusive"
-      const grossCents = priced.totalCents
+      const grossCents = pricedWithAddons.totalCents
       const taxCents =
         taxRate && taxRate.rate > 0
           ? taxIsInclusive
@@ -434,7 +532,7 @@ export function createProductsBookingHandler(
             surcharges: 0,
             currency: product.sellCurrency,
             breakdown: {
-              lines: priced.lines.map((line) => ({
+              lines: pricedWithAddons.lines.map((line) => ({
                 ...line,
                 taxIncluded: taxIsInclusive,
               })),
@@ -467,6 +565,7 @@ export function createProductsBookingHandler(
         shape: buildOwnedProductDraftShape({
           travelerFields,
           addonCatalog,
+          productOptions: productOptionCatalog,
         }),
       }
     },
@@ -554,11 +653,14 @@ export function createProductsBookingHandler(
         }
       }
 
-      const travelers = (draft.travelers ?? []).map((t) => ({
+      const partyBilling = extractBillingParty(request.party)
+      const partyTravelers = extractPartyTravelers(request.party)
+      const travelers = (draft.travelers ?? []).map((t, index) => ({
         firstName: t.firstName,
         lastName: t.lastName,
         email: t.email,
         phone: t.phone,
+        personId: partyTravelers[index]?.personId ?? null,
         participantType: "traveler" as const,
         travelerCategory:
           t.band === "child" || t.band === "infant"
@@ -573,16 +675,46 @@ export function createProductsBookingHandler(
       // subtotal during tax recompute, so derive the override from the
       // gross breakdown total when an included tax line is present.
       const sellAmountCentsOverride = resolveSellAmountCentsOverride(request.pricing)
+      const optionSelections = normalizeOptionSelections(draft.configure?.optionSelections)
+      const selectedOptionIds = [
+        ...new Set(optionSelections.map((selection) => selection.optionId)),
+      ]
+      const primaryOptionId =
+        selectedOptionIds.length === 1
+          ? selectedOptionIds[0]
+          : optionSelections.length === 0
+            ? (draft.configure?.variantId ?? null)
+            : null
 
       const bridge = await options.createBooking({
         productId: product.id,
+        optionId: primaryOptionId,
         bookingNumber: generateNumber(),
-        personId: extractPersonId(request.party),
-        organizationId: extractOrganizationId(request.party),
+        personId: partyBilling.personId,
+        organizationId: partyBilling.organizationId,
+        contactFirstName: partyBilling.contactFirstName,
+        contactLastName: partyBilling.contactLastName,
+        contactEmail: partyBilling.contactEmail,
+        contactPhone: partyBilling.contactPhone,
         internalNotes: extractInternalNotes(request.party),
         travelers: travelers.length > 0 ? travelers : undefined,
+        paymentSchedules: draft.paymentSchedules,
+        documentGeneration: draft.documentGeneration
+          ? {
+              contractDocument: draft.documentGeneration.contractDocument === true,
+              invoiceDocument: draft.documentGeneration.invoiceDocument === true,
+            }
+          : undefined,
         sellAmountCentsOverride,
         taxLines: extractTaxLines(request.pricing),
+        itemLines: bookingItemLinesFromOptionSelections(optionSelections),
+        extraLines: bookingExtraLinesFromAddonSelections({
+          addons: draft.addons,
+          addonCatalog: await options.loadAddonCatalog?.(ctx, product.id),
+          currency: product.sellCurrency,
+          quantityMultiplier: Math.max(1, travelers.length || 1),
+        }),
+        initialStatus: readInitialStatus(request.parameters),
       })
 
       if (bridge.status !== "ok" || !bridge.bookingId) {
@@ -630,7 +762,7 @@ function sumPax(pax: Partial<Record<string, number>> | undefined): number {
 }
 
 interface PricedLine {
-  kind: "base"
+  kind: "base" | "addon"
   label: string
   quantity: number
   unitAmount: number
@@ -640,6 +772,179 @@ interface PricedLine {
 interface PricedQuote {
   totalCents: number
   lines: PricedLine[]
+}
+
+interface NormalizedOptionSelection {
+  optionId: string
+  optionUnitId?: string
+  quantity: number
+}
+
+type DraftOptionSelection = NonNullable<
+  NonNullable<DraftLike["configure"]>["optionSelections"]
+>[number]
+
+function normalizeOptionSelections(
+  selections: ReadonlyArray<DraftOptionSelection> | undefined,
+): NormalizedOptionSelection[] {
+  if (!Array.isArray(selections)) return []
+  return selections.flatMap((selection) => {
+    if (
+      !selection ||
+      typeof selection !== "object" ||
+      typeof selection.optionId !== "string" ||
+      selection.optionId.length === 0
+    ) {
+      return []
+    }
+    const quantity =
+      typeof selection.quantity === "number" && Number.isFinite(selection.quantity)
+        ? Math.floor(selection.quantity)
+        : 0
+    if (quantity <= 0) return []
+    return [
+      {
+        optionId: selection.optionId,
+        ...(typeof selection.optionUnitId === "string" && selection.optionUnitId.length > 0
+          ? { optionUnitId: selection.optionUnitId }
+          : {}),
+        quantity,
+      },
+    ]
+  })
+}
+
+async function priceOptionSelections(input: {
+  ctx: OwnedHandlerContext
+  options: CreateProductsBookingHandlerOptions
+  product: typeof products.$inferSelect
+  productOptions: ReadonlyArray<ProductVariantOption>
+  selections: ReadonlyArray<NormalizedOptionSelection>
+  slotDate: string | null
+}): Promise<PricedQuote> {
+  const lines: PricedLine[] = []
+  let totalCents = 0
+  const optionsById = new Map(input.productOptions.map((option) => [option.id, option]))
+
+  for (const selection of input.selections) {
+    const resolvedPrice =
+      input.slotDate && input.options.loadResolvedOptionPrice
+        ? await input.options.loadResolvedOptionPrice(input.ctx, {
+            productId: input.product.id,
+            optionId: selection.optionId,
+            date: input.slotDate,
+          })
+        : null
+    const unitPrice =
+      selection.optionUnitId && resolvedPrice?.unitPrices
+        ? resolvedPrice.unitPrices.find((unit) => unit.unitId === selection.optionUnitId)
+            ?.sellAmountCents
+        : null
+    const unitAmount =
+      unitPrice ?? resolvedPrice?.baseSellAmountCents ?? input.product.sellAmountCents ?? 0
+    if (unitAmount <= 0) continue
+    const totalAmount = unitAmount * selection.quantity
+    totalCents += totalAmount
+    lines.push({
+      kind: "base",
+      label: optionsById.get(selection.optionId)?.name ?? input.product.name,
+      quantity: selection.quantity,
+      unitAmount,
+      totalAmount,
+    })
+  }
+
+  return { totalCents, lines }
+}
+
+function bookingItemLinesFromOptionSelections(
+  selections: ReadonlyArray<NormalizedOptionSelection>,
+): BookingCreateBridgeInput["itemLines"] | undefined {
+  const lines = selections.flatMap((selection) =>
+    selection.optionUnitId
+      ? [
+          {
+            optionId: selection.optionId,
+            optionUnitId: selection.optionUnitId,
+            quantity: selection.quantity,
+          },
+        ]
+      : [],
+  )
+  return lines.length > 0 ? lines : undefined
+}
+
+function applyAddonSelections(input: {
+  priced: PricedQuote
+  addons: DraftLike["addons"] | undefined
+  addonCatalog: ReadonlyArray<AddonOffer>
+  effectivePax: number
+}): PricedQuote {
+  const extraLines = bookingExtraLinesFromAddonSelections({
+    addons: input.addons,
+    addonCatalog: input.addonCatalog,
+    currency: "EUR",
+  })
+  if (!extraLines?.length) return input.priced
+
+  const lines: PricedLine[] = [...input.priced.lines]
+  let totalCents = input.priced.totalCents
+  for (const extra of extraLines) {
+    const unitAmount = extra.unitSellAmountCents ?? 0
+    const quantity =
+      extra.pricingMode === "per_person" || extra.pricedPerPerson
+        ? Math.max(1, input.effectivePax) * extra.quantity
+        : extra.quantity
+    const totalAmount = unitAmount * quantity
+    if (totalAmount <= 0) continue
+    totalCents += totalAmount
+    lines.push({
+      kind: "addon",
+      label: extra.name,
+      quantity,
+      unitAmount,
+      totalAmount,
+    })
+  }
+  return { totalCents, lines }
+}
+
+function bookingExtraLinesFromAddonSelections(input: {
+  addons: DraftLike["addons"] | undefined
+  addonCatalog: ReadonlyArray<AddonOffer> | undefined
+  currency: string
+  quantityMultiplier?: number
+}): BookingCreateBridgeInput["extraLines"] | undefined {
+  if (!Array.isArray(input.addons) || input.addons.length === 0) return undefined
+  const catalogById = new Map((input.addonCatalog ?? []).map((offer) => [offer.id, offer]))
+  const lines = input.addons.flatMap((selection) => {
+    const offer = catalogById.get(selection.extraId)
+    const quantity =
+      typeof selection.quantity === "number" && Number.isFinite(selection.quantity)
+        ? Math.floor(selection.quantity)
+        : 0
+    if (!offer || quantity <= 0) return []
+    const unitSellAmountCents = offer.unitAmountCents ?? null
+    const chargedQuantity =
+      offer.pricingMode === "per_person" || offer.pricedPerPerson
+        ? quantity * Math.max(1, input.quantityMultiplier ?? 1)
+        : quantity
+    return [
+      {
+        productExtraId: offer.id,
+        name: offer.name,
+        description: offer.description ?? null,
+        pricingMode: offer.pricingMode ?? null,
+        pricedPerPerson: offer.pricedPerPerson ?? null,
+        quantity,
+        sellCurrency: offer.currency ?? input.currency,
+        unitSellAmountCents,
+        totalSellAmountCents:
+          unitSellAmountCents == null ? null : unitSellAmountCents * chargedQuantity,
+      },
+    ]
+  })
+  return lines.length > 0 ? lines : undefined
 }
 
 /**
@@ -722,22 +1027,73 @@ function priceQuote(input: {
   }
 }
 
-function extractPersonId(party: Record<string, unknown> | undefined): string | undefined {
-  if (!party) return undefined
-  const v = party.personId
-  return typeof v === "string" && v.length > 0 ? v : undefined
-}
-
-function extractOrganizationId(party: Record<string, unknown> | undefined): string | undefined {
-  if (!party) return undefined
-  const v = party.organizationId
-  return typeof v === "string" && v.length > 0 ? v : undefined
+function readInitialStatus(
+  parameters: Record<string, unknown> | undefined,
+): BookingCreateBridgeInput["initialStatus"] {
+  const allowed: ReadonlyArray<NonNullable<BookingCreateBridgeInput["initialStatus"]>> = [
+    "draft",
+    "on_hold",
+    "awaiting_payment",
+    "confirmed",
+    "in_progress",
+    "completed",
+    "cancelled",
+    "expired",
+  ]
+  const raw = parameters?.initialStatus
+  return typeof raw === "string" && (allowed as ReadonlyArray<string>).includes(raw)
+    ? (raw as BookingCreateBridgeInput["initialStatus"])
+    : undefined
 }
 
 function extractInternalNotes(party: Record<string, unknown> | undefined): string | undefined {
   if (!party) return undefined
   const v = party.internalNotes
   return typeof v === "string" && v.length > 0 ? v : undefined
+}
+
+function extractBillingParty(party: Record<string, unknown> | undefined): {
+  personId?: string | null
+  organizationId?: string | null
+  contactFirstName?: string | null
+  contactLastName?: string | null
+  contactEmail?: string | null
+  contactPhone?: string | null
+} {
+  const directBilling = asRecord(party?.billing)
+  const travelerParty = asRecord(party?.travelerParty)
+  const envelopeBilling = asRecord(travelerParty?.billing)
+  const billing = envelopeBilling ?? directBilling
+  const contact = asRecord(billing?.contact)
+
+  return {
+    personId: stringValue(party?.personId) ?? stringValue(billing?.personId),
+    organizationId: stringValue(party?.organizationId) ?? stringValue(billing?.organizationId),
+    contactFirstName: stringValue(contact?.firstName),
+    contactLastName: stringValue(contact?.lastName),
+    contactEmail: stringValue(contact?.email),
+    contactPhone: stringValue(contact?.phone),
+  }
+}
+
+function extractPartyTravelers(
+  party: Record<string, unknown> | undefined,
+): Array<{ personId?: string | null }> {
+  const travelerParty = asRecord(party?.travelerParty)
+  const travelers = Array.isArray(travelerParty?.travelers) ? travelerParty.travelers : []
+  return travelers.map((traveler) => ({
+    personId: stringValue(asRecord(traveler)?.personId),
+  }))
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null
 }
 
 function extractTaxLines(

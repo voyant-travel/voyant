@@ -2510,7 +2510,8 @@ export const bookingsService = {
         }
       : null
 
-    const selectedUnits = option === null ? [] : units
+    const selectedUnits =
+      data.itemLines && data.itemLines.length > 0 ? units : option === null ? [] : units
     const unitById = new Map(selectedUnits.map((unit) => [unit.id, unit]))
     const requestedItemLines =
       data.itemLines

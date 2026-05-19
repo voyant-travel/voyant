@@ -35,6 +35,12 @@ export interface BookingListProps {
   pageSize?: number
   onSelectBooking?: (booking: BookingRecord) => void
   onCreateBooking?: () => void
+  /**
+   * Extra action(s) rendered next to the primary "New booking" button in
+   * the filter bar. Templates use this to surface adjacent flows such as
+   * the trip composer without forking the component.
+   */
+  headerActions?: React.ReactNode
 }
 
 type SortableField = Exclude<BookingsListSortField, "createdAt">
@@ -55,6 +61,7 @@ export function BookingList({
   pageSize = 25,
   onSelectBooking,
   onCreateBooking,
+  headerActions,
 }: BookingListProps = {}) {
   const [search, setSearch] = React.useState("")
   const [status, setStatus] = React.useState<string>(BOOKING_STATUS_ALL)
@@ -218,7 +225,8 @@ export function BookingList({
           </Button>
         )}
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          {headerActions}
           <Button
             onClick={() => {
               if (onCreateBooking) {

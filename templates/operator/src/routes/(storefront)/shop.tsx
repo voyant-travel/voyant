@@ -52,6 +52,15 @@ function StorefrontIndex(): React.ReactElement {
         </p>
       </div>
 
+      <div className="flex">
+        <Link
+          to="/shop/composer"
+          className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 font-medium text-primary-foreground text-sm hover:bg-primary/90"
+        >
+          Build a trip
+        </Link>
+      </div>
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Input
           placeholder="Search products, tours, stays…"

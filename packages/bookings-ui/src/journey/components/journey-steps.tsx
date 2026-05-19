@@ -164,6 +164,16 @@ function DepartureFields({ draft, setDraft, shape }: StepCommonProps): React.Rea
         if (sub.kind === "departure") {
           return <DepartureBasic key="departure" draft={draft} setDraft={setDraft} />
         }
+        if (sub.kind === "product-option") {
+          return (
+            <ProductOptionFields
+              key="product-option"
+              draft={draft}
+              setDraft={setDraft}
+              options={sub.options}
+            />
+          )
+        }
         if (sub.kind === "date-range") {
           return (
             <DateRangeFields
@@ -201,6 +211,56 @@ function DepartureFields({ draft, setDraft, shape }: StepCommonProps): React.Rea
         // "occupancy" — already rendered as PaxBands above; no sub-row.
         return null
       })}
+    </div>
+  )
+}
+
+function ProductOptionFields({
+  draft,
+  setDraft,
+  options,
+}: {
+  draft: Draft
+  setDraft: (next: Draft) => void
+  options: ReadonlyArray<{
+    id: string
+    code?: string | null
+    name: string
+    description?: string | null
+    isDefault?: boolean
+  }>
+}): React.ReactElement | null {
+  const messages = useBookingsUiMessagesOrDefault()
+  const selectedId = draft.configure.variantId
+  if (options.length === 0) return null
+  return (
+    <div className="space-y-2">
+      <Label>{messages.bookingJourney.configure.option}</Label>
+      <div className="grid grid-cols-1 gap-2">
+        {options.map((option) => {
+          const selected = option.id === selectedId
+          return (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => setDraft(patchConfigure(draft, { variantId: option.id }))}
+              className={`w-full rounded border p-3 text-left text-sm ${
+                selected ? "border-primary ring-2 ring-primary" : ""
+              }`}
+            >
+              <span className="font-medium">{option.name}</span>
+              {option.code ? (
+                <span className="ml-2 text-muted-foreground text-xs uppercase">{option.code}</span>
+              ) : null}
+              {option.description ? (
+                <span className="mt-1 block text-muted-foreground text-xs">
+                  {option.description}
+                </span>
+              ) : null}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

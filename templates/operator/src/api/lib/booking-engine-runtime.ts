@@ -29,6 +29,7 @@ import {
 import { bookingRequirementsService } from "@voyantjs/booking-requirements"
 import { bookingItems } from "@voyantjs/bookings/schema"
 import {
+  type AddonOffer,
   createOwnedBookingHandlerRegistry,
   createSourceAdapterRegistry,
   type OwnedBookingHandlerRegistry,
@@ -39,6 +40,7 @@ import { cruisesBookingService } from "@voyantjs/cruises"
 import { createCruiseBookingHandler } from "@voyantjs/cruises/booking-engine"
 import { getCruiseContent } from "@voyantjs/cruises/service-content"
 import { pricingService as cruisePricingService } from "@voyantjs/cruises/service-pricing"
+import { productExtras } from "@voyantjs/extras/schema"
 import {
   bookingItemTaxLines,
   bookingPaymentSchedules,
@@ -47,14 +49,15 @@ import {
 } from "@voyantjs/finance"
 import { createDemoCatalogAdapter } from "@voyantjs/plugin-catalog-demo"
 import {
+  extraPriceRules,
   optionPriceRules,
   optionUnitPriceRules,
   priceCatalogs,
   resolveOptionPriceRulesForDate,
 } from "@voyantjs/pricing"
 import { createProductsBookingHandler } from "@voyantjs/products/booking-engine"
-import { optionUnits } from "@voyantjs/products/schema"
-import { and, asc, eq } from "drizzle-orm"
+import { optionUnits, productOptions } from "@voyantjs/products/schema"
+import { and, asc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
@@ -152,6 +155,10 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           // ops we use.
           return withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
             const db = rawDb as unknown as PostgresJsDatabase
+            // `input.initialStatus` is plumbed from the booking-engine
+            // commit caller (e.g. trip composer reserve) so bookings land in
+            // the operator's preferred state — `awaiting_payment` for live
+            // reservations, `draft` when the operator explicitly asks.
             const outcome = await createFinanceBooking(db, input, opts)
             if (outcome.status === "ok") {
               await persistBookingCreateTaxLines(db, outcome.result.booking.id, input.taxLines)
@@ -206,6 +213,66 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           }
           return fields
         },
+        async loadAddonCatalog(ctx, productId) {
+          const db = ctx.db as unknown as PostgresJsDatabase
+          const rows = await db
+            .select({
+              id: productExtras.id,
+              name: productExtras.name,
+              description: productExtras.description,
+              selectionType: productExtras.selectionType,
+              pricingMode: productExtras.pricingMode,
+              pricedPerPerson: productExtras.pricedPerPerson,
+              minQuantity: productExtras.minQuantity,
+              maxQuantity: productExtras.maxQuantity,
+              defaultQuantity: productExtras.defaultQuantity,
+            })
+            .from(productExtras)
+            .where(and(eq(productExtras.productId, productId), eq(productExtras.active, true)))
+            .orderBy(asc(productExtras.sortOrder), asc(productExtras.name))
+
+          if (rows.length === 0) return []
+          const extraIds = rows.map((row) => row.id)
+          const priceRows = await db
+            .select({
+              productExtraId: extraPriceRules.productExtraId,
+              pricingMode: extraPriceRules.pricingMode,
+              sellAmountCents: extraPriceRules.sellAmountCents,
+              sortOrder: extraPriceRules.sortOrder,
+            })
+            .from(extraPriceRules)
+            .where(
+              and(
+                inArray(extraPriceRules.productExtraId, extraIds),
+                eq(extraPriceRules.active, true),
+              ),
+            )
+            .orderBy(asc(extraPriceRules.sortOrder), asc(extraPriceRules.createdAt))
+
+          const priceByExtraId = new Map(
+            priceRows.flatMap((row) =>
+              row.productExtraId ? [[row.productExtraId, row] as const] : [],
+            ),
+          )
+
+          return rows.map((row): AddonOffer => {
+            const price = priceByExtraId.get(row.id)
+            return {
+              id: row.id,
+              name: row.name,
+              description: row.description,
+              kind: "extras",
+              pricingMode: price?.pricingMode ?? row.pricingMode,
+              unitAmountCents: price?.sellAmountCents ?? null,
+              currency: null,
+              pricedPerPerson: row.pricedPerPerson,
+              selectionType: row.selectionType,
+              minQuantity: row.minQuantity,
+              maxQuantity: row.maxQuantity,
+              defaultQuantity: row.defaultQuantity,
+            }
+          })
+        },
         async loadTaxRate(ctx, args) {
           void args.buyerCountry
           void args.buyerType
@@ -215,6 +282,62 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
             { productId: args.productId },
             { resolveBookingTaxSettings },
           )
+        },
+        async loadProductOptions(ctx, productId) {
+          const db = ctx.db as unknown as PostgresJsDatabase
+          const rows = await db
+            .select({
+              id: productOptions.id,
+              code: productOptions.code,
+              name: productOptions.name,
+              description: productOptions.description,
+              isDefault: productOptions.isDefault,
+            })
+            .from(productOptions)
+            .where(
+              and(eq(productOptions.productId, productId), eq(productOptions.status, "active")),
+            )
+            .orderBy(asc(productOptions.sortOrder), asc(productOptions.createdAt))
+          const optionIds = rows.map((row) => row.id)
+          const units =
+            optionIds.length > 0
+              ? await db
+                  .select({
+                    id: optionUnits.id,
+                    optionId: optionUnits.optionId,
+                    name: optionUnits.name,
+                    description: optionUnits.description,
+                    unitType: optionUnits.unitType,
+                    minQuantity: optionUnits.minQuantity,
+                    maxQuantity: optionUnits.maxQuantity,
+                  })
+                  .from(optionUnits)
+                  .where(
+                    and(inArray(optionUnits.optionId, optionIds), eq(optionUnits.isHidden, false)),
+                  )
+                  .orderBy(asc(optionUnits.sortOrder), asc(optionUnits.createdAt))
+              : []
+          const unitsByOptionId = new Map<string, typeof units>()
+          for (const unit of units) {
+            const current = unitsByOptionId.get(unit.optionId) ?? []
+            current.push(unit)
+            unitsByOptionId.set(unit.optionId, current)
+          }
+          return rows.map((row) => ({
+            id: row.id,
+            code: row.code,
+            name: row.name,
+            description: row.description,
+            isDefault: row.isDefault,
+            units: unitsByOptionId.get(row.id)?.map((unit) => ({
+              id: unit.id,
+              name: unit.name,
+              description: unit.description,
+              unitType: unit.unitType,
+              minQuantity: unit.minQuantity,
+              maxQuantity: unit.maxQuantity,
+            })),
+          }))
         },
         async loadSlotDate(ctx, slotId) {
           const db = ctx.db as unknown as PostgresJsDatabase

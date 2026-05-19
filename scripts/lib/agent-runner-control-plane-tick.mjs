@@ -9,11 +9,12 @@ import {
 } from "./agent-project-queue.mjs"
 import { ciRepairDispatchEnabled } from "./agent-runner-ci-repair-command.mjs"
 import { readAgentRunnerEvents, resolveEventLogPath } from "./agent-runner-events.mjs"
-import { recommendQueueActions } from "./agent-runner-tick.mjs"
+import { maxAgentSessionsFromArgs, recommendQueueActions } from "./agent-runner-tick.mjs"
 
 export function generateControlPlaneTickSnapshot(args, { repoRoot }) {
   const repository = args.repo ?? currentRepositoryFromOrigin(repoRoot)
   const maxAgeDays = Number(args.maxAgeDays ?? 1)
+  const maxAgentSessions = maxAgentSessionsFromArgs(args)
   const eventLogPath = resolveEventLogPath(args.eventLog, { repoRoot })
   const recentEventLimit = numberArg(args.recentEvents, "recent-events", 5, { min: 0 })
 
@@ -42,6 +43,7 @@ export function generateControlPlaneTickSnapshot(args, { repoRoot }) {
       browserPort: args.browserPort,
       ciRepairDispatchEnabled: ciRepairDispatchEnabled(args),
       implementationCommand: args.implementationCommand,
+      maxAgentSessions,
       maxAgeDays,
       remoteBrowserDevServerCommand: args.remoteBrowserDevServerCommand,
       remoteBrowserPort: args.remoteBrowserPort,
