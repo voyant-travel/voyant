@@ -9,6 +9,9 @@ const navMessages: OperatorAdminMessages["nav"] = {
   catalog: "Catalog",
   catalogOrders: "Orders",
   categories: "Categories",
+  actionLedger: "Logs",
+  allTrips: "All trips",
+  channelSync: "Channel sync",
   contractNumberSeries: "Number Series",
   contractTemplates: "Contract Templates",
   contracts: "Contracts",
@@ -22,13 +25,16 @@ const navMessages: OperatorAdminMessages["nav"] = {
   notificationReminderRuns: "Reminder Runs",
   notificationTemplates: "Templates",
   notifications: "Notifications",
+  newTrip: "New trip",
   organizations: "Organizations",
   people: "People",
   policies: "Policies",
   products: "Products",
+  promotions: "Promotions",
   resources: "Resources",
   settings: "Settings",
   suppliers: "Suppliers",
+  trips: "Trips",
 }
 
 describe("createOperatorAdminNavigation", () => {

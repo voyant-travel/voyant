@@ -24,9 +24,9 @@ import {
   Users,
   Wrench,
 } from "lucide-react"
-import { forwardRef } from "react"
+import { forwardRef, useMemo } from "react"
 import { UserProvider, useUser } from "@/components/providers/user-provider"
-import { adminExtensions } from "@/lib/admin-extensions"
+import { createOperatorAdminExtensions } from "@/lib/admin-extensions"
 import {
   AdminI18nProvider,
   getAdminMessageOverridesFromUiPrefs,
@@ -156,7 +156,25 @@ function WorkspaceContent() {
 function WorkspaceInner({ user }: { user: NonNullable<ReturnType<typeof useUser>["user"]> }) {
   const displayName = [user.firstName, user.lastName].filter(Boolean).join(" ")
   const currentPath = useRouterState({ select: (s) => s.location.pathname })
+  const messages = useAdminMessages()
   const signOut = useSignOut()
+  const adminExtensions = useMemo(
+    () =>
+      createOperatorAdminExtensions({
+        actionLedger: messages.nav.actionLedger,
+        allTrips: messages.nav.allTrips,
+        newTrip: messages.nav.newTrip,
+        promotions: messages.nav.promotions,
+        trips: messages.nav.trips,
+      }),
+    [
+      messages.nav.actionLedger,
+      messages.nav.allTrips,
+      messages.nav.newTrip,
+      messages.nav.promotions,
+      messages.nav.trips,
+    ],
+  )
 
   return (
     <OperatorAdminWorkspaceLayout

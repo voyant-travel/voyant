@@ -4,6 +4,7 @@ import {
   defineAdminExtension,
 } from "@voyantjs/admin"
 import { Route, ScrollText, Tag } from "lucide-react"
+import type { AdminMessages } from "@/lib/admin-i18n"
 
 /**
  * Operator admin contributions composed through the shared admin runtime.
@@ -28,76 +29,103 @@ import { Route, ScrollText, Tag } from "lucide-react"
  *
  * Per docs/architecture/promotions-architecture.md PR5.
  */
-const promotionsExtension = defineAdminExtension({
-  id: "promotions",
-  navigation: [
-    {
-      // Order > 0 nudges this past the default admin items so it lands
-      // alongside the operator's commercial tools.
-      order: 50,
-      items: [
-        {
-          id: "promotions",
-          title: "Promotions",
-          url: "/promotions",
-          icon: Tag,
-        },
-      ],
-    },
-  ],
-})
+type AdminExtensionNavMessages = Pick<
+  AdminMessages["nav"],
+  "actionLedger" | "allTrips" | "newTrip" | "promotions" | "trips"
+>
 
-const travelComposerExtension = defineAdminExtension({
-  id: "travel-composer",
-  navigation: [
-    {
-      // Splice Trips in right after Bookings — both belong to the booking
-      // lifecycle. `insertAfter` keeps the contribution shape; the resolver
-      // splices in place rather than appending at the end.
-      insertAfter: "bookings",
-      items: [
-        {
-          id: "travel-composer",
-          title: "Trips",
-          url: "/trips",
-          icon: Route,
-          items: [
-            {
-              id: "travel-composer-list",
-              title: "All trips",
-              url: "/trips",
-            },
-            {
-              id: "travel-composer-new",
-              title: "New trip",
-              url: "/trips/new",
-            },
-          ],
-        },
-      ],
-    },
-  ],
-})
+function createPromotionsExtension(messages: AdminExtensionNavMessages) {
+  return defineAdminExtension({
+    id: "promotions",
+    navigation: [
+      {
+        // Order > 0 nudges this past the default admin items so it lands
+        // alongside the operator's commercial tools.
+        order: 50,
+        items: [
+          {
+            id: "promotions",
+            title: messages.promotions,
+            url: "/promotions",
+            icon: Tag,
+          },
+        ],
+      },
+    ],
+  })
+}
 
-const actionLedgerExtension = defineAdminExtension({
-  id: "action-ledger",
-  navigation: [
-    {
-      order: 60,
-      items: [
-        {
-          id: "action-ledger",
-          title: "Logs",
-          url: "/action-ledger",
-          icon: ScrollText,
-        },
-      ],
-    },
-  ],
-})
+function createTravelComposerExtension(messages: AdminExtensionNavMessages) {
+  return defineAdminExtension({
+    id: "travel-composer",
+    navigation: [
+      {
+        // Splice Trips in right after Bookings — both belong to the booking
+        // lifecycle. `insertAfter` keeps the contribution shape; the resolver
+        // splices in place rather than appending at the end.
+        insertAfter: "bookings",
+        items: [
+          {
+            id: "travel-composer",
+            title: messages.trips,
+            url: "/trips",
+            icon: Route,
+            items: [
+              {
+                id: "travel-composer-list",
+                title: messages.allTrips,
+                url: "/trips",
+              },
+              {
+                id: "travel-composer-new",
+                title: messages.newTrip,
+                url: "/trips/new",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  })
+}
 
-export const adminExtensions: ReadonlyArray<AdminExtension> = createAdminExtensionRegistry(
-  promotionsExtension,
-  travelComposerExtension,
-  actionLedgerExtension,
+function createActionLedgerExtension(messages: AdminExtensionNavMessages) {
+  return defineAdminExtension({
+    id: "action-ledger",
+    navigation: [
+      {
+        order: 60,
+        items: [
+          {
+            id: "action-ledger",
+            title: messages.actionLedger,
+            url: "/action-ledger",
+            icon: ScrollText,
+          },
+        ],
+      },
+    ],
+  })
+}
+
+const defaultExtensionNavMessages: AdminExtensionNavMessages = {
+  actionLedger: "Logs",
+  allTrips: "All trips",
+  newTrip: "New trip",
+  promotions: "Promotions",
+  trips: "Trips",
+}
+
+export function createOperatorAdminExtensions(
+  messages: AdminExtensionNavMessages,
+): ReadonlyArray<AdminExtension> {
+  return createAdminExtensionRegistry(
+    createPromotionsExtension(messages),
+    createTravelComposerExtension(messages),
+    createActionLedgerExtension(messages),
+  )
+}
+
+export const adminExtensions: ReadonlyArray<AdminExtension> = createOperatorAdminExtensions(
+  defaultExtensionNavMessages,
 )
