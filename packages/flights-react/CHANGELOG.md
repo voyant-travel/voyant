@@ -1,5 +1,13 @@
 # @voyantjs/flights-react
 
+## 0.56.0
+
+### Patch Changes
+
+- Updated dependencies [fe403fc]
+  - @voyantjs/flights@0.56.0
+  - @voyantjs/react@0.56.0
+
 ## 0.55.1
 
 ### Patch Changes

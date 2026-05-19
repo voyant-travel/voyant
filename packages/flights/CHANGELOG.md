@@ -1,5 +1,16 @@
 # @voyantjs/flights
 
+## 0.56.0
+
+### Minor Changes
+
+- fe403fc: Complete the flight connector contract with optional capability-gated methods for post-book seat selection, check-in, exchange, refund, void, and SSR operations. Extend adapter context with optional request, idempotency, logger, abort signal, and environment fields.
+
+### Patch Changes
+
+- @voyantjs/catalog@0.56.0
+- @voyantjs/db@0.56.0
+
 ## 0.55.1
 
 ### Patch Changes
