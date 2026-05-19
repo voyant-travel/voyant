@@ -59,9 +59,11 @@ resale contracts from hotel-operations surfaces.
    `packages/hospitality-ui` file-by-file into retained resale contracts versus
    hotel-operations surfaces. Completed in
    `docs/agent-plans/active/977-hospitality-file-classification.md`.
-2. Define the retained target surface. Likely homes are `catalog`, `products`,
-   `bookings`, `storefront`, source adapters, or a narrowly named accommodation
-   resale package. Avoid `hospitality` as the new public family name.
+2. Define the retained target surface. Completed in
+   `docs/agent-plans/active/977-retained-accommodation-target-surface.md`.
+   The target is a narrow `accommodations` resale surface, with temporary
+   compatibility for existing `hospitality` catalog rows and URLs during
+   migration.
 3. Remove hotel-operations UI registry entries first. This is the clearest
    first-party exposure and is unlikely to affect catalog resale if resale
    contracts are kept.
