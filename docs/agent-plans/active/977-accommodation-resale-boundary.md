@@ -80,6 +80,10 @@ resale contracts from hotel-operations surfaces.
    - catalog/storefront/booking resale contracts
    - historical migrations
    - legacy notes that explicitly mark the surface as out of scope
+7. Remove package documentation that instructs users to adopt hospitality as a
+   normal first-party module. Completed for the `hospitality`,
+   `hospitality-react`, and `hospitality-ui` READMEs; the checker now blocks
+   new install or mount examples for the legacy package docs.
 
 ## Verification Plan
 

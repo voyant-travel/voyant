@@ -11,23 +11,22 @@ Accommodation resale UI should move toward catalog, storefront, products,
 bookings, or a narrowly named accommodation resale surface. See
 [`docs/architecture/accommodation-resale-boundary.md`](../../docs/architecture/accommodation-resale-boundary.md).
 
-## Install
+## Status
 
-Direct installation is transitional while hospitality UI is being split or
-removed from first-party positioning.
+This package is not a normal first-party UI adoption surface. Do not add it to
+new starters, registry blocks, or first-party workspaces. Do not use it to give
+hotels a place to manage rooms, housekeeping, maintenance, folios, or in-stay
+operations.
 
-```bash
-pnpm add @voyantjs/hospitality-ui @voyantjs/hospitality-react @voyantjs/ui @tanstack/react-query react react-dom
-```
-
-`@voyantjs/ui` provides the design-system primitives. `@voyantjs/hospitality-react` provides the data-layer hooks. Both are required peers.
-
-All components accept a `className` prop and merge it with `cn()`. Wrap or compose to extend; use the registry copy-paste path (`npx shadcn add @voyant/...`) for components you want to fork outright.
+Keep any temporary usage scoped to legacy package migration. New accommodation
+resale UI should be built through catalog, storefront, products, bookings, or a
+narrowly named accommodation resale surface.
 
 ## I18n
 
-Components render English by default. To localize them, wrap your UI in
-`HospitalityUiMessagesProvider` and import only the locales your app supports.
+Legacy components render English by default. To localize remaining temporary
+usage, wrap the UI in `HospitalityUiMessagesProvider` and import only the
+locales your app supports.
 
 ```tsx
 import { HospitalityUiMessagesProvider } from "@voyantjs/hospitality-ui"

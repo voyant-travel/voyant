@@ -14,31 +14,26 @@ follow
 keep accommodation resale and trip composition, but remove or quarantine hotel
 PMS-style operations.
 
-## Install
+## Status
 
-Direct installation is transitional while the package is being split/de-scoped.
-Prefer catalog, products, bookings, storefront, supplier, and source-adapter
-surfaces for new accommodation resale work.
+This package is not a normal first-party adoption surface. Do not add it to new
+starters, do not mount its Hono routes in starter APIs, and do not present it as
+a workspace for hotels to manage their own properties.
 
-```bash
-pnpm add @voyantjs/hospitality
-```
+Keep existing accommodation resale contracts here only until they move to a
+narrowly named accommodation surface. Prefer catalog, products, bookings,
+storefront, supplier, and source-adapter surfaces for new accommodation resale
+work.
 
-## Usage
+## Retained Scope
 
-Existing deployments may still mount the module while migration work is in
-progress. First-party starters should not present it as a hotel-operations
-workspace.
+Retained work is limited to resale-facing contracts such as sourced lodging
+content, room options, board/rate choices, cancellation policy, occupancy,
+booking snapshots, and catalog policy needed by OTAs, tour operators, and DMCs.
 
-```typescript
-import { hospitalityModule } from "@voyantjs/hospitality"
-import { createApp } from "@voyantjs/hono"
-
-const app = createApp({
-  modules: [hospitalityModule],
-  // ...
-})
-```
+Out-of-scope work includes hotel/property operator workflows: room-unit
+management, inventory grids for direct hotel operations, maintenance blocks,
+housekeeping, folios, in-stay operations, and PMS-style route or UI exposure.
 
 ## Exports
 

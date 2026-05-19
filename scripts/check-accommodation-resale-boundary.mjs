@@ -63,6 +63,14 @@ const FILE_CHECKS = [
     file: "apps/registry/public/r/registry.json",
     patterns: [/voyant-hospitality-/],
   },
+  {
+    file: "packages/hospitality/README.md",
+    patterns: [/pnpm add @voyantjs\/hospitality/, /\bhospitalityModule\b/],
+  },
+  {
+    file: "packages/hospitality-ui/README.md",
+    patterns: [/pnpm add @voyantjs\/hospitality-ui/, /npx shadcn add @voyant\/.*hospitality/],
+  },
 ]
 
 const GENERATED_REGISTRY_DIRS = ["packages/ui/public/r", "apps/registry/public/r"]
