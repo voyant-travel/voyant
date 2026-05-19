@@ -77,6 +77,12 @@ If any of these cannot be implemented, the connection is not a flight connection
 
 The capability set is open-ended; new capability ids are added when a real provider needs them. This is exactly the "narrow at the edges, broad at the center" shape from the foundation §5.6 — applied to flights specifically.
 
+The package also ships zod runtime schemas for the public flight contract
+under `@voyantjs/flights/contract/schemas`. Any consumer exposing the
+adapter contract over HTTP, queues, RPC, or another wire boundary should
+validate with those shipped schemas instead of maintaining a parallel local
+copy of the contract shape.
+
 **Provider escape hatch.** Each `FlightOffer` and `FlightOrder` carries an opaque `providerData` field. Provider-specific data round-trips through the contract without leaking into the consumer-facing surface. If a consumer needs to read `providerData.amadeusXYZ` to make their integration work, the contract has leaked and needs widening.
 
 ### 3.1. Slice-based search and intent-driven booking

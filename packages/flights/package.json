@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./contract/types": "./src/contract/types.ts",
     "./contract/adapter": "./src/contract/adapter.ts",
+    "./contract/schemas": "./src/contract/schemas.ts",
     "./orchestration/fingerprint": "./src/orchestration/fingerprint.ts",
     "./orchestration/fan-out": "./src/orchestration/fan-out.ts",
     "./snapshot": "./src/snapshot.ts",
@@ -42,6 +43,11 @@
         "types": "./dist/contract/adapter.d.ts",
         "import": "./dist/contract/adapter.js",
         "default": "./dist/contract/adapter.js"
+      },
+      "./contract/schemas": {
+        "types": "./dist/contract/schemas.d.ts",
+        "import": "./dist/contract/schemas.js",
+        "default": "./dist/contract/schemas.js"
       },
       "./orchestration/fingerprint": {
         "types": "./dist/orchestration/fingerprint.d.ts",
@@ -80,7 +86,8 @@
   "dependencies": {
     "@voyantjs/db": "workspace:*",
     "@voyantjs/catalog": "workspace:*",
-    "drizzle-orm": "^0.45.2"
+    "drizzle-orm": "^0.45.2",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@voyantjs/voyant-typescript-config": "workspace:*",

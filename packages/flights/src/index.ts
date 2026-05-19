@@ -18,6 +18,7 @@ export {
   type FlightSearchResponse,
   requireCapability,
 } from "./contract/adapter.js"
+export * from "./contract/schemas.js"
 export * from "./contract/types.js"
 export {
   type ConnectionResult,
