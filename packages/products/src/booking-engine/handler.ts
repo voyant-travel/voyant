@@ -65,6 +65,10 @@ export interface BookingCreateBridgeInput {
   bookingNumber: string
   personId?: string | null
   organizationId?: string | null
+  contactFirstName?: string | null
+  contactLastName?: string | null
+  contactEmail?: string | null
+  contactPhone?: string | null
   internalNotes?: string | null
   /**
    * Override the seed sellAmountCents the booking lands at. The owned
@@ -649,11 +653,14 @@ export function createProductsBookingHandler(
         }
       }
 
-      const travelers = (draft.travelers ?? []).map((t) => ({
+      const partyBilling = extractBillingParty(request.party)
+      const partyTravelers = extractPartyTravelers(request.party)
+      const travelers = (draft.travelers ?? []).map((t, index) => ({
         firstName: t.firstName,
         lastName: t.lastName,
         email: t.email,
         phone: t.phone,
+        personId: partyTravelers[index]?.personId ?? null,
         participantType: "traveler" as const,
         travelerCategory:
           t.band === "child" || t.band === "infant"
@@ -683,8 +690,12 @@ export function createProductsBookingHandler(
         productId: product.id,
         optionId: primaryOptionId,
         bookingNumber: generateNumber(),
-        personId: extractPersonId(request.party),
-        organizationId: extractOrganizationId(request.party),
+        personId: partyBilling.personId,
+        organizationId: partyBilling.organizationId,
+        contactFirstName: partyBilling.contactFirstName,
+        contactLastName: partyBilling.contactLastName,
+        contactEmail: partyBilling.contactEmail,
+        contactPhone: partyBilling.contactPhone,
         internalNotes: extractInternalNotes(request.party),
         travelers: travelers.length > 0 ? travelers : undefined,
         paymentSchedules: draft.paymentSchedules,
@@ -1035,22 +1046,54 @@ function readInitialStatus(
     : undefined
 }
 
-function extractPersonId(party: Record<string, unknown> | undefined): string | undefined {
-  if (!party) return undefined
-  const v = party.personId
-  return typeof v === "string" && v.length > 0 ? v : undefined
-}
-
-function extractOrganizationId(party: Record<string, unknown> | undefined): string | undefined {
-  if (!party) return undefined
-  const v = party.organizationId
-  return typeof v === "string" && v.length > 0 ? v : undefined
-}
-
 function extractInternalNotes(party: Record<string, unknown> | undefined): string | undefined {
   if (!party) return undefined
   const v = party.internalNotes
   return typeof v === "string" && v.length > 0 ? v : undefined
+}
+
+function extractBillingParty(party: Record<string, unknown> | undefined): {
+  personId?: string | null
+  organizationId?: string | null
+  contactFirstName?: string | null
+  contactLastName?: string | null
+  contactEmail?: string | null
+  contactPhone?: string | null
+} {
+  const directBilling = asRecord(party?.billing)
+  const travelerParty = asRecord(party?.travelerParty)
+  const envelopeBilling = asRecord(travelerParty?.billing)
+  const billing = envelopeBilling ?? directBilling
+  const contact = asRecord(billing?.contact)
+
+  return {
+    personId: stringValue(party?.personId) ?? stringValue(billing?.personId),
+    organizationId: stringValue(party?.organizationId) ?? stringValue(billing?.organizationId),
+    contactFirstName: stringValue(contact?.firstName),
+    contactLastName: stringValue(contact?.lastName),
+    contactEmail: stringValue(contact?.email),
+    contactPhone: stringValue(contact?.phone),
+  }
+}
+
+function extractPartyTravelers(
+  party: Record<string, unknown> | undefined,
+): Array<{ personId?: string | null }> {
+  const travelerParty = asRecord(party?.travelerParty)
+  const travelers = Array.isArray(travelerParty?.travelers) ? travelerParty.travelers : []
+  return travelers.map((traveler) => ({
+    personId: stringValue(asRecord(traveler)?.personId),
+  }))
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null
 }
 
 function extractTaxLines(

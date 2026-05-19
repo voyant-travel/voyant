@@ -386,4 +386,64 @@ describe("createProductsBookingHandler.commit", () => {
       }),
     )
   })
+
+  it("threads trip-composer billing and traveler records into the booking bridge", async () => {
+    const createBooking = vi.fn(async () => ({
+      status: "ok" as const,
+      bookingId: "book_1",
+      bookingNumber: "BK-1",
+    }))
+    const handler = createProductsBookingHandler({ createBooking })
+
+    const request: CommitOwnedRequest = {
+      entityModule: "products",
+      entityId: product.id,
+      bookingId: "catalog_booking_1",
+      party: {
+        travelerParty: {
+          billing: {
+            personId: "pers_billing",
+            contact: {
+              firstName: "Diego",
+              lastName: "Muller",
+              email: "diego@example.com",
+              phone: "+40700111222",
+            },
+          },
+          travelers: [{ personId: "pers_billing" }, { personId: "pers_companion" }],
+        },
+      },
+      draft: {
+        configure: { pax: { adult: 2 } },
+        travelers: [
+          { firstName: "Diego", lastName: "Muller", band: "adult" },
+          { firstName: "Anya", lastName: "Costa", band: "adult" },
+        ],
+      },
+      pricing: {
+        base_amount: 29000,
+        taxes: 0,
+        fees: 0,
+        surcharges: 0,
+        currency: "RON",
+      },
+    }
+
+    const result = await handler.commit(makeCtx([product]), request)
+
+    expect(result.status).toBe("held")
+    expect(createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({
+        personId: "pers_billing",
+        contactFirstName: "Diego",
+        contactLastName: "Muller",
+        contactEmail: "diego@example.com",
+        contactPhone: "+40700111222",
+        travelers: [
+          expect.objectContaining({ firstName: "Diego", personId: "pers_billing" }),
+          expect.objectContaining({ firstName: "Anya", personId: "pers_companion" }),
+        ],
+      }),
+    )
+  })
 })
