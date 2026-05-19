@@ -152,7 +152,11 @@ export function ProductDetailPage({ id }: { id: string }) {
             productId={id}
             renderOptionDetails={(option) => (
               <div className="flex flex-col gap-4">
-                <PricingPanel productId={id} optionId={option.id} />
+                <PricingPanel
+                  productId={id}
+                  optionId={option.id}
+                  productCurrency={product.sellCurrency}
+                />
                 <OptionResourceTemplatesPanel productId={id} optionId={option.id} />
               </div>
             )}

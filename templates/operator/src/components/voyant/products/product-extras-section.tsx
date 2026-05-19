@@ -1,11 +1,32 @@
+import { formatMessage } from "@voyantjs/admin"
 import {
   type ProductExtraRecord,
   useProductExtraMutation,
   useProductExtras,
 } from "@voyantjs/extras-react"
-import { Badge, Button, Input, Label, Textarea } from "@voyantjs/ui/components"
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from "@voyantjs/ui/components"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { ActionMenu, EmptyState, Section } from "./product-detail-sections"
 
 const selectionTypes = ["optional", "required", "default_selected", "unavailable"] as const
@@ -45,6 +66,8 @@ const emptyForm: FormState = {
 }
 
 export function ProductExtrasSection({ productId }: { productId: string }) {
+  const messages = useAdminMessages()
+  const extraMessages = messages.products.operations.extras
   const [open, setOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<ProductExtraRecord | null>(null)
   const [form, setForm] = React.useState<FormState>(emptyForm)
@@ -99,126 +122,17 @@ export function ProductExtrasSection({ productId }: { productId: string }) {
 
   return (
     <Section
-      title="Extras"
+      title={extraMessages.sectionTitle}
       actions={
         <Button variant="outline" size="sm" onClick={startCreate}>
           <Plus className="mr-1 h-3.5 w-3.5" />
-          Add extra
+          {extraMessages.addAction}
         </Button>
       }
       contentClassName="px-6 py-4"
     >
-      {open ? (
-        <div className="mb-4 grid gap-3 rounded-md border bg-muted/20 p-3">
-          <div className="grid gap-3 md:grid-cols-2">
-            <Field label="Name">
-              <Input
-                value={form.name}
-                onChange={(event) => setForm({ ...form, name: event.target.value })}
-              />
-            </Field>
-            <Field label="Code">
-              <Input
-                value={form.code}
-                onChange={(event) => setForm({ ...form, code: event.target.value })}
-              />
-            </Field>
-          </div>
-          <Field label="Description">
-            <Textarea
-              value={form.description}
-              onChange={(event) => setForm({ ...form, description: event.target.value })}
-            />
-          </Field>
-          <div className="grid gap-3 md:grid-cols-5">
-            <Field label="Selection">
-              <select
-                className="h-9 rounded-md border bg-background px-2 text-sm"
-                value={form.selectionType}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    selectionType: event.target.value as FormState["selectionType"],
-                  })
-                }
-              >
-                {selectionTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type.replace("_", " ")}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Pricing">
-              <select
-                className="h-9 rounded-md border bg-background px-2 text-sm"
-                value={form.pricingMode}
-                onChange={(event) =>
-                  setForm({ ...form, pricingMode: event.target.value as FormState["pricingMode"] })
-                }
-              >
-                {pricingModes.map((mode) => (
-                  <option key={mode} value={mode}>
-                    {mode.replace("_", " ")}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Default qty">
-              <Input
-                value={form.defaultQuantity}
-                type="number"
-                min="0"
-                onChange={(event) => setForm({ ...form, defaultQuantity: event.target.value })}
-              />
-            </Field>
-            <Field label="Min qty">
-              <Input
-                value={form.minQuantity}
-                type="number"
-                min="0"
-                onChange={(event) => setForm({ ...form, minQuantity: event.target.value })}
-              />
-            </Field>
-            <Field label="Max qty">
-              <Input
-                value={form.maxQuantity}
-                type="number"
-                min="0"
-                onChange={(event) => setForm({ ...form, maxQuantity: event.target.value })}
-              />
-            </Field>
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={form.pricedPerPerson}
-                onChange={(event) => setForm({ ...form, pricedPerPerson: event.target.checked })}
-              />
-              Per traveler
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={form.active}
-                onChange={(event) => setForm({ ...form, active: event.target.checked })}
-              />
-              Active
-            </label>
-            <div className="ml-auto flex gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
-              <Button size="sm" onClick={() => void save()} disabled={!form.name.trim()}>
-                Save
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
       {rows.length === 0 ? (
-        <EmptyState message={isPending ? "Loading extras..." : "No extras configured yet."} />
+        <EmptyState message={isPending ? extraMessages.loading : extraMessages.empty} />
       ) : (
         <div className="flex flex-col gap-2">
           {rows.map((extra) => (
@@ -230,10 +144,14 @@ export function ProductExtrasSection({ productId }: { productId: string }) {
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-sm">{extra.name}</span>
                   <Badge variant={extra.active ? "default" : "outline"}>
-                    {extra.active ? "Active" : "Inactive"}
+                    {extra.active ? extraMessages.activeBadge : extraMessages.inactiveBadge}
                   </Badge>
-                  <Badge variant="secondary">{extra.pricingMode.replace("_", " ")}</Badge>
-                  {extra.pricedPerPerson ? <Badge variant="outline">per traveler</Badge> : null}
+                  <Badge variant="secondary">
+                    {getPricingModeLabel(extra.pricingMode, extraMessages)}
+                  </Badge>
+                  {extra.pricedPerPerson ? (
+                    <Badge variant="outline">{extraMessages.perTravelerBadge}</Badge>
+                  ) : null}
                 </div>
                 {extra.description ? (
                   <p className="text-muted-foreground text-xs">{extra.description}</p>
@@ -246,24 +164,162 @@ export function ProductExtrasSection({ productId }: { productId: string }) {
                   onClick={() => startEdit(extra)}
                 >
                   <Pencil className="h-4 w-4" />
-                  Edit
+                  {extraMessages.editAction}
                 </button>
                 <button
                   type="button"
                   className="flex w-full items-center gap-2 px-2 py-1.5 text-destructive text-sm"
                   onClick={() => {
-                    if (confirm(`Delete extra "${extra.name}"?`))
+                    if (confirm(formatMessage(extraMessages.deleteConfirm, { name: extra.name })))
                       remove.mutate(extra.id, { onSuccess: () => void refetch() })
                   }}
                 >
                   <Trash2 className="h-4 w-4" />
-                  Delete
+                  {extraMessages.deleteAction}
                 </button>
               </ActionMenu>
             </div>
           ))}
         </div>
       )}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent size="lg">
+          <DialogHeader>
+            <DialogTitle>{editing ? extraMessages.editTitle : extraMessages.newTitle}</DialogTitle>
+            <DialogDescription>{extraMessages.dialogDescription}</DialogDescription>
+          </DialogHeader>
+          <DialogBody className="grid gap-4">
+            <div className="grid gap-3 md:grid-cols-2">
+              <Field label={extraMessages.nameLabel}>
+                <Input
+                  value={form.name}
+                  onChange={(event) => setForm({ ...form, name: event.target.value })}
+                />
+              </Field>
+              <Field label={extraMessages.codeLabel}>
+                <Input
+                  value={form.code}
+                  onChange={(event) => setForm({ ...form, code: event.target.value })}
+                />
+              </Field>
+            </div>
+            <Field label={extraMessages.descriptionLabel}>
+              <Textarea
+                value={form.description}
+                onChange={(event) => setForm({ ...form, description: event.target.value })}
+              />
+            </Field>
+            <div className="grid gap-3 md:grid-cols-3">
+              <Field label={extraMessages.selectionLabel}>
+                <Select
+                  value={form.selectionType}
+                  onValueChange={(value) =>
+                    setForm({
+                      ...form,
+                      selectionType: (value ?? "optional") as FormState["selectionType"],
+                    })
+                  }
+                  items={selectionTypes.map((type) => ({
+                    value: type,
+                    label: getSelectionTypeLabel(type, extraMessages),
+                  }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectionTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {getSelectionTypeLabel(type, extraMessages)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label={extraMessages.pricingLabel}>
+                <Select
+                  value={form.pricingMode}
+                  onValueChange={(value) =>
+                    setForm({
+                      ...form,
+                      pricingMode: (value ?? "per_booking") as FormState["pricingMode"],
+                    })
+                  }
+                  items={pricingModes.map((mode) => ({
+                    value: mode,
+                    label: getPricingModeLabel(mode, extraMessages),
+                  }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pricingModes.map((mode) => (
+                      <SelectItem key={mode} value={mode}>
+                        {getPricingModeLabel(mode, extraMessages)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label={extraMessages.defaultQuantityLabel}>
+                <Input
+                  value={form.defaultQuantity}
+                  type="number"
+                  min="0"
+                  onChange={(event) => setForm({ ...form, defaultQuantity: event.target.value })}
+                />
+              </Field>
+              <Field label={extraMessages.minQuantityLabel}>
+                <Input
+                  value={form.minQuantity}
+                  type="number"
+                  min="0"
+                  onChange={(event) => setForm({ ...form, minQuantity: event.target.value })}
+                />
+              </Field>
+              <Field label={extraMessages.maxQuantityLabel}>
+                <Input
+                  value={form.maxQuantity}
+                  type="number"
+                  min="0"
+                  onChange={(event) => setForm({ ...form, maxQuantity: event.target.value })}
+                />
+              </Field>
+            </div>
+            <div className="flex flex-wrap items-center gap-6">
+              <div className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  id="product-extra-priced-per-person"
+                  checked={form.pricedPerPerson}
+                  onCheckedChange={(checked) =>
+                    setForm({ ...form, pricedPerPerson: checked === true })
+                  }
+                />
+                <Label htmlFor="product-extra-priced-per-person">
+                  {extraMessages.perTravelerLabel}
+                </Label>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  id="product-extra-active"
+                  checked={form.active}
+                  onCheckedChange={(checked) => setForm({ ...form, active: checked === true })}
+                />
+                <Label htmlFor="product-extra-active">{extraMessages.activeLabel}</Label>
+              </div>
+            </div>
+          </DialogBody>
+          <DialogFooter className="-mx-6 -mb-6">
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              {extraMessages.cancel}
+            </Button>
+            <Button onClick={() => void save()} disabled={!form.name.trim()}>
+              {editing ? extraMessages.saveChanges : extraMessages.create}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Section>
   )
 }
@@ -280,4 +336,40 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function parseNullableInt(value: string): number | null {
   const parsed = Number.parseInt(value, 10)
   return Number.isFinite(parsed) ? parsed : null
+}
+
+type ExtraMessages = ReturnType<typeof useAdminMessages>["products"]["operations"]["extras"]
+
+function getSelectionTypeLabel(value: FormState["selectionType"], messages: ExtraMessages) {
+  switch (value) {
+    case "optional":
+      return messages.selectionOptional
+    case "required":
+      return messages.selectionRequired
+    case "default_selected":
+      return messages.selectionDefaultSelected
+    case "unavailable":
+      return messages.selectionUnavailable
+    default:
+      return value
+  }
+}
+
+function getPricingModeLabel(value: FormState["pricingMode"], messages: ExtraMessages) {
+  switch (value) {
+    case "included":
+      return messages.pricingIncluded
+    case "per_person":
+      return messages.pricingPerPerson
+    case "per_booking":
+      return messages.pricingPerBooking
+    case "quantity_based":
+      return messages.pricingQuantityBased
+    case "on_request":
+      return messages.pricingOnRequest
+    case "free":
+      return messages.pricingFree
+    default:
+      return value
+  }
 }

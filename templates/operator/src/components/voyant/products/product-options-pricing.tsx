@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { formatMessage } from "@voyantjs/admin"
 import { useProductExtras } from "@voyantjs/extras-react"
 import {
+  type ExtraPriceRuleRecord,
   useExtraPriceRuleMutation,
   useExtraPriceRules,
   useOptionPriceRuleMutation,
@@ -10,14 +11,28 @@ import {
 import {
   Badge,
   Button,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@voyantjs/ui/components"
 import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { type OptionPriceRuleData, OptionPriceRuleDialog } from "./product-option-price-rule-dialog"
 import {
@@ -84,7 +99,15 @@ function ActionMenu({ children }: { children: React.ReactNode }) {
   )
 }
 
-export function PricingPanel({ productId, optionId }: { productId: string; optionId: string }) {
+export function PricingPanel({
+  productId,
+  optionId,
+  productCurrency,
+}: {
+  productId: string
+  optionId: string
+  productCurrency: string
+}) {
   const messages = useAdminMessages()
   const priceRuleMessages = messages.products.operations.priceRules
   const [ruleDialogOpen, setRuleDialogOpen] = useState(false)
@@ -126,6 +149,7 @@ export function PricingPanel({ productId, optionId }: { productId: string; optio
               rule={rule}
               productId={productId}
               optionId={optionId}
+              productCurrency={productCurrency}
               onEdit={() => {
                 setEditingRule(rule)
                 setRuleDialogOpen(true)
@@ -162,12 +186,14 @@ function PriceRuleCard({
   rule,
   productId,
   optionId,
+  productCurrency,
   onEdit,
   onDelete,
 }: {
   rule: OptionPriceRuleData
   productId: string
   optionId: string
+  productCurrency: string
   onEdit: () => void
   onDelete: () => void
 }) {
@@ -191,13 +217,13 @@ function PriceRuleCard({
             <span>
               {priceRuleMessages.baseSellLabel}:{" "}
               <span className="font-mono text-foreground">
-                {((rule.baseSellAmountCents ?? 0) / 100).toFixed(2)}
+                {formatProductMoney(rule.baseSellAmountCents, productCurrency)}
               </span>
             </span>
             <span>
               {priceRuleMessages.baseCostLabel}:{" "}
               <span className="font-mono text-foreground">
-                {((rule.baseCostAmountCents ?? 0) / 100).toFixed(2)}
+                {formatProductMoney(rule.baseCostAmountCents, productCurrency)}
               </span>
             </span>
             {rule.allPricingCategories && <span>{priceRuleMessages.allCategoriesLabel}</span>}
@@ -222,11 +248,13 @@ function PriceRuleCard({
           optionId={optionId}
           pricingMode={rule.pricingMode}
           allPricingCategories={rule.allPricingCategories}
+          productCurrency={productCurrency}
         />
         <ExtraPriceRulesPanel
           productId={productId}
           optionId={optionId}
           optionPriceRuleId={rule.id}
+          productCurrency={productCurrency}
         />
       </div>
     </div>
@@ -238,11 +266,13 @@ function UnitPriceMatrix({
   optionId,
   pricingMode,
   allPricingCategories,
+  productCurrency,
 }: {
   optionPriceRuleId: string
   optionId: string
   pricingMode: OptionPriceRuleData["pricingMode"]
   allPricingCategories: boolean
+  productCurrency: string
 }) {
   const messages = useAdminMessages()
   const priceRuleMessages = messages.products.operations.priceRules
@@ -342,7 +372,7 @@ function UnitPriceMatrix({
                             }}
                             className="font-mono text-foreground hover:underline"
                           >
-                            {((cell.sellAmountCents ?? 0) / 100).toFixed(2)}
+                            {formatProductMoney(cell.sellAmountCents, productCurrency)}
                           </button>
                           <button
                             type="button"
@@ -404,14 +434,19 @@ function ExtraPriceRulesPanel({
   productId,
   optionId,
   optionPriceRuleId,
+  productCurrency,
 }: {
   productId: string
   optionId: string
   optionPriceRuleId: string
+  productCurrency: string
 }) {
+  const messages = useAdminMessages()
+  const extraPriceMessages = messages.products.operations.extraPrices
   const extrasQuery = useProductExtras({ productId, active: true, limit: 100 })
   const rulesQuery = useExtraPriceRules({ optionPriceRuleId, optionId, active: true, limit: 100 })
-  const { create, update, remove } = useExtraPriceRuleMutation()
+  const { remove } = useExtraPriceRuleMutation()
+  const [pricingExtraId, setPricingExtraId] = useState<string | null>(null)
   const extras = extrasQuery.data?.data ?? []
   const rules = rulesQuery.data?.data ?? []
   const ruleByExtraId = new Map(
@@ -419,38 +454,12 @@ function ExtraPriceRulesPanel({
   )
 
   if (extras.length === 0) return null
-
-  const savePrice = async (extraId: string) => {
-    const extra = extras.find((row) => row.id === extraId)
-    if (!extra) return
-    const existing = ruleByExtraId.get(extraId)
-    const raw = window.prompt(
-      "Sell amount",
-      existing?.sellAmountCents != null ? String(existing.sellAmountCents / 100) : "",
-    )
-    if (raw == null) return
-    const amount = Math.round(Number(raw) * 100)
-    if (!Number.isFinite(amount) || amount < 0) return
-    const payload = {
-      optionPriceRuleId,
-      optionId,
-      productExtraId: extra.id,
-      optionExtraConfigId: null,
-      pricingMode: extra.pricedPerPerson ? ("per_person" as const) : ("per_booking" as const),
-      sellAmountCents: amount,
-      costAmountCents: null,
-      active: true,
-      sortOrder: existing?.sortOrder ?? rules.length,
-    }
-    if (existing) await update.mutateAsync({ id: existing.id, input: payload })
-    else await create.mutateAsync(payload)
-    void rulesQuery.refetch()
-  }
+  const pricingExtra = extras.find((extra) => extra.id === pricingExtraId) ?? null
 
   return (
     <div className="mt-4 border-t pt-3">
       <div className="mb-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-        Extras pricing
+        {extraPriceMessages.sectionTitle}
       </div>
       <div className="flex flex-col gap-2">
         {extras.map((extra) => {
@@ -463,15 +472,19 @@ function ExtraPriceRulesPanel({
               <div className="min-w-0">
                 <span className="font-medium">{extra.name}</span>
                 {extra.pricedPerPerson ? (
-                  <span className="ml-2 text-muted-foreground">per traveler</span>
+                  <span className="ml-2 text-muted-foreground">
+                    {extraPriceMessages.perTraveler}
+                  </span>
                 ) : null}
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-mono">
-                  {rule?.sellAmountCents != null ? (rule.sellAmountCents / 100).toFixed(2) : "-"}
+                  {rule?.sellAmountCents != null
+                    ? formatProductMoney(rule.sellAmountCents, productCurrency)
+                    : extraPriceMessages.noAmount}
                 </span>
-                <Button variant="outline" size="sm" onClick={() => void savePrice(extra.id)}>
-                  Set price
+                <Button variant="outline" size="sm" onClick={() => setPricingExtraId(extra.id)}>
+                  {extraPriceMessages.setPrice}
                 </Button>
                 {rule ? (
                   <Button
@@ -481,7 +494,7 @@ function ExtraPriceRulesPanel({
                       remove.mutate(rule.id, { onSuccess: () => void rulesQuery.refetch() })
                     }
                   >
-                    Remove
+                    {extraPriceMessages.remove}
                   </Button>
                 ) : null}
               </div>
@@ -489,6 +502,157 @@ function ExtraPriceRulesPanel({
           )
         })}
       </div>
+      {pricingExtra ? (
+        <ExtraPriceRuleDialog
+          open={!!pricingExtra}
+          onOpenChange={(open) => {
+            if (!open) setPricingExtraId(null)
+          }}
+          optionPriceRuleId={optionPriceRuleId}
+          optionId={optionId}
+          extra={pricingExtra}
+          existingRule={ruleByExtraId.get(pricingExtra.id)}
+          nextSortOrder={rules.length}
+          productCurrency={productCurrency}
+          onSuccess={() => {
+            setPricingExtraId(null)
+            void rulesQuery.refetch()
+          }}
+        />
+      ) : null}
     </div>
   )
+}
+
+function ExtraPriceRuleDialog({
+  open,
+  onOpenChange,
+  optionPriceRuleId,
+  optionId,
+  extra,
+  existingRule,
+  nextSortOrder,
+  productCurrency,
+  onSuccess,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  optionPriceRuleId: string
+  optionId: string
+  extra: { id: string; name: string; pricingMode: string; pricedPerPerson: boolean }
+  existingRule?: ExtraPriceRuleRecord
+  nextSortOrder: number
+  productCurrency: string
+  onSuccess: () => void
+}) {
+  const messages = useAdminMessages()
+  const extraPriceMessages = messages.products.operations.extraPrices
+  const { create, update } = useExtraPriceRuleMutation()
+  const [amount, setAmount] = useState("")
+  const [pricingMode, setPricingMode] = useState<ExtraPriceRuleRecord["pricingMode"]>("per_booking")
+
+  const isEditing = !!existingRule
+  const pricingModes = [
+    { value: "per_booking", label: extraPriceMessages.pricingPerBooking },
+    { value: "per_person", label: extraPriceMessages.pricingPerPerson },
+    { value: "included", label: extraPriceMessages.pricingIncluded },
+    { value: "on_request", label: extraPriceMessages.pricingOnRequest },
+    { value: "unavailable", label: extraPriceMessages.pricingUnavailable },
+  ] as const
+
+  useEffect(() => {
+    setAmount(
+      existingRule?.sellAmountCents != null ? String(existingRule.sellAmountCents / 100) : "",
+    )
+    setPricingMode(existingRule?.pricingMode ?? defaultExtraPriceRuleMode(extra))
+  }, [existingRule, extra])
+
+  const save = async () => {
+    const parsedAmount = amount.trim() === "" ? null : Math.round(Number(amount) * 100)
+    if (parsedAmount != null && (!Number.isFinite(parsedAmount) || parsedAmount < 0)) return
+    const payload = {
+      optionPriceRuleId,
+      optionId,
+      productExtraId: extra.id,
+      optionExtraConfigId: null,
+      pricingMode,
+      sellAmountCents: parsedAmount,
+      costAmountCents: null,
+      active: true,
+      sortOrder: existingRule?.sortOrder ?? nextSortOrder,
+    }
+    if (existingRule) await update.mutateAsync({ id: existingRule.id, input: payload })
+    else await create.mutateAsync(payload)
+    onSuccess()
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {isEditing ? extraPriceMessages.editTitle : extraPriceMessages.newTitle}
+          </DialogTitle>
+          <DialogDescription>{extra.name}</DialogDescription>
+        </DialogHeader>
+        <DialogBody className="grid gap-4">
+          <div className="flex flex-col gap-2">
+            <Label>{extraPriceMessages.pricingModeLabel}</Label>
+            <Select
+              value={pricingMode}
+              onValueChange={(value) =>
+                setPricingMode((value ?? "per_booking") as ExtraPriceRuleRecord["pricingMode"])
+              }
+              items={pricingModes}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {pricingModes.map((mode) => (
+                  <SelectItem key={mode.value} value={mode.value}>
+                    {mode.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label>{extraPriceMessages.sellAmountLabel}</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                value={amount}
+                type="number"
+                min="0"
+                step="0.01"
+                onChange={(event) => setAmount(event.target.value)}
+              />
+              <span className="min-w-12 text-muted-foreground text-sm">{productCurrency}</span>
+            </div>
+          </div>
+        </DialogBody>
+        <DialogFooter className="-mx-6 -mb-6">
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            {extraPriceMessages.cancel}
+          </Button>
+          <Button onClick={() => void save()}>{extraPriceMessages.save}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function defaultExtraPriceRuleMode(extra: {
+  pricingMode: string
+  pricedPerPerson: boolean
+}): ExtraPriceRuleRecord["pricingMode"] {
+  if (extra.pricedPerPerson || extra.pricingMode === "per_person") return "per_person"
+  if (extra.pricingMode === "included" || extra.pricingMode === "free") return "included"
+  if (extra.pricingMode === "on_request") return "on_request"
+  return "per_booking"
+}
+
+function formatProductMoney(amountCents: number | null | undefined, currency: string) {
+  if (amountCents == null) return "-"
+  return `${(amountCents / 100).toFixed(2)} ${currency}`
 }
