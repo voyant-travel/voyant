@@ -654,6 +654,7 @@ export const bookingsUiEn = {
     configure: {
       travelers: "Travelers",
       departureDate: "Departure date",
+      option: "Option",
       timeOptional: "Time (optional)",
       checkIn: "Check-in",
       checkOutWithNights: "Check-out ({minNights}-{maxNights} nights)",

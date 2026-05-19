@@ -230,11 +230,12 @@ function ProductOptionFields({
     isDefault?: boolean
   }>
 }): React.ReactElement | null {
+  const messages = useBookingsUiMessagesOrDefault()
   const selectedId = draft.configure.variantId
   if (options.length === 0) return null
   return (
     <div className="space-y-2">
-      <Label>Option</Label>
+      <Label>{messages.bookingJourney.configure.option}</Label>
       <div className="grid grid-cols-1 gap-2">
         {options.map((option) => {
           const selected = option.id === selectedId

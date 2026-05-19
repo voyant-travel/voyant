@@ -537,6 +537,7 @@ export type BookingsUiMessages = {
     configure: {
       travelers: string
       departureDate: string
+      option: string
       timeOptional: string
       checkIn: string
       checkOutWithNights: string

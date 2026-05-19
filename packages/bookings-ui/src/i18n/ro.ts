@@ -655,6 +655,7 @@ export const bookingsUiRo = {
     configure: {
       travelers: "Calatori",
       departureDate: "Data plecare",
+      option: "Optiune",
       timeOptional: "Ora (optional)",
       checkIn: "Check-in",
       checkOutWithNights: "Check-out ({minNights}-{maxNights} nopti)",
