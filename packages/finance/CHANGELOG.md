@@ -1,5 +1,18 @@
 # @voyantjs/finance
 
+## 0.57.0
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.57.0
+- @voyantjs/bookings@0.57.0
+- @voyantjs/core@0.57.0
+- @voyantjs/db@0.57.0
+- @voyantjs/hono@0.57.0
+- @voyantjs/products@0.57.0
+- @voyantjs/storage@0.57.0
+- @voyantjs/utils@0.57.0
+
 ## 0.56.0
 
 ### Patch Changes
