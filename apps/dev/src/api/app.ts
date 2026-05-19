@@ -12,7 +12,6 @@ import { facilitiesHonoModule } from "@voyantjs/facilities"
 import { createFinanceHonoModule } from "@voyantjs/finance"
 import { groundHonoModule } from "@voyantjs/ground"
 import { createApp } from "@voyantjs/hono"
-import { hospitalityHonoModule } from "@voyantjs/hospitality"
 import { identityHonoModule } from "@voyantjs/identity"
 import { marketsHonoModule } from "@voyantjs/markets"
 import {
@@ -104,7 +103,6 @@ export const app = createApp<CloudflareBindings>({
     crmHonoModule,
     availabilityHonoModule,
     facilitiesHonoModule,
-    hospitalityHonoModule,
     groundHonoModule,
     identityHonoModule,
     notificationsHonoModule,

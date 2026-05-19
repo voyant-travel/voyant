@@ -66,12 +66,16 @@ resale contracts from hotel-operations surfaces.
    the current hospitality surface.
 3. Remove hotel-operations UI registry entries first. Completed by deleting the
    `voyant-hospitality-*` registry source blocks and generated registry entries.
-4. Update starter runtime wiring only after replacement accommodation resale
-   routes/contracts are in place.
+4. Remove active first-party starter/runtime exposure for hotel operations.
+   Completed for dev and DMC by removing `/v1/hospitality` Hono mounts,
+   deleting the dev hospitality workspace route/source, and stripping
+   hotel-operations tabs from dev property detail.
 5. Regenerate `packages/ui/public/r`, `apps/registry/public/r`, route trees,
-   and `SCHEMA.md` after source changes.
-6. Add a scoped checker after removal. It should block active starter/runtime
-   references to hotel-operations surfaces while allowing:
+   and `SCHEMA.md` after source changes. Route tree cleanup is complete for
+   the removed dev hospitality workspace route.
+6. Add a scoped checker after removal. Completed in
+   `scripts/check-accommodation-resale-boundary.mjs`. It blocks active
+   starter/runtime references to hotel-operations surfaces while allowing:
    - accommodation resale vocabulary
    - catalog/storefront/booking resale contracts
    - historical migrations

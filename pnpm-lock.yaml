@@ -319,15 +319,6 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:*
         version: link:../../packages/hono
-      '@voyantjs/hospitality':
-        specifier: workspace:*
-        version: link:../../packages/hospitality
-      '@voyantjs/hospitality-react':
-        specifier: workspace:*
-        version: link:../../packages/hospitality-react
-      '@voyantjs/hospitality-ui':
-        specifier: workspace:*
-        version: link:../../packages/hospitality-ui
       '@voyantjs/identity':
         specifier: workspace:*
         version: link:../../packages/identity

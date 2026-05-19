@@ -207,22 +207,20 @@ hotel's own rooms or in-stay operations.
 ### Remove Or Quarantine
 
 - `apps/dev/src/components/voyant/hospitality/**`
-  - Active hotel/property admin workspace. Remove from first-party navigation
-    or quarantine as legacy demo code until deleted.
+  - Current: removed in this slice. The dev app no longer ships the
+    hotel/property admin workspace route or source.
 
 - `apps/dev/src/components/voyant/properties/property-detail-page.tsx`
-  - Current property detail embeds hospitality setup/inventory/stays/tasks tabs.
-  - Target property detail should not expose hotel-ops tabs.
+  - Current: hotel-ops setup/inventory/stays/tasks tabs removed. Property
+    detail keeps property metadata and editing only.
 
 - `apps/dev/src/api/app.ts` and `apps/dev/src/api/api-types.ts`
-  - Current: mounts `/v1/hospitality` CRUD routes.
-  - Target: no hotel-ops route mount. Add accommodation resale routes only after
-    replacement package exists.
+  - Current: `/v1/hospitality` CRUD route mount removed. Add accommodation
+    resale routes only after replacement package exists.
 
 - `templates/dmc/src/api/app.ts` and `templates/dmc/src/api/api-types.ts`
-  - Current: mounts `/v1/hospitality` CRUD routes in a first-party template.
-  - Target: no hotel-ops route mount. DMC keeps accommodation resale via catalog,
-    booking, supplier, and storefront flows.
+  - Current: `/v1/hospitality` CRUD route mount removed. DMC keeps
+    accommodation resale via catalog, booking, supplier, and storefront flows.
 
 - `packages/ui/registry/hospitality/**`
   - Current: registry wrappers for hotel-ops tabs/dialogs and a few reusable

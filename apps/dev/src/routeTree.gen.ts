@@ -33,7 +33,6 @@ import { Route as WorkspaceOrganizationsIndexRouteImport } from './routes/_works
 import { Route as WorkspaceOpportunitiesIndexRouteImport } from './routes/_workspace/opportunities/index'
 import { Route as WorkspaceMarketsIndexRouteImport } from './routes/_workspace/markets/index'
 import { Route as WorkspaceIdentityIndexRouteImport } from './routes/_workspace/identity/index'
-import { Route as WorkspaceHospitalityIndexRouteImport } from './routes/_workspace/hospitality/index'
 import { Route as WorkspaceGroundIndexRouteImport } from './routes/_workspace/ground/index'
 import { Route as WorkspaceFinanceIndexRouteImport } from './routes/_workspace/finance/index'
 import { Route as WorkspaceFacilitiesIndexRouteImport } from './routes/_workspace/facilities/index'
@@ -212,12 +211,6 @@ const WorkspaceIdentityIndexRoute = WorkspaceIdentityIndexRouteImport.update({
   path: '/identity/',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
-const WorkspaceHospitalityIndexRoute =
-  WorkspaceHospitalityIndexRouteImport.update({
-    id: '/hospitality/',
-    path: '/hospitality/',
-    getParentRoute: () => WorkspaceRouteRoute,
-  } as any)
 const WorkspaceGroundIndexRoute = WorkspaceGroundIndexRouteImport.update({
   id: '/ground/',
   path: '/ground/',
@@ -556,7 +549,6 @@ export interface FileRoutesByFullPath {
   '/facilities/': typeof WorkspaceFacilitiesIndexRoute
   '/finance/': typeof WorkspaceFinanceIndexRoute
   '/ground/': typeof WorkspaceGroundIndexRoute
-  '/hospitality/': typeof WorkspaceHospitalityIndexRoute
   '/identity/': typeof WorkspaceIdentityIndexRoute
   '/markets/': typeof WorkspaceMarketsIndexRoute
   '/opportunities/': typeof WorkspaceOpportunitiesIndexRoute
@@ -634,7 +626,6 @@ export interface FileRoutesByTo {
   '/facilities': typeof WorkspaceFacilitiesIndexRoute
   '/finance': typeof WorkspaceFinanceIndexRoute
   '/ground': typeof WorkspaceGroundIndexRoute
-  '/hospitality': typeof WorkspaceHospitalityIndexRoute
   '/identity': typeof WorkspaceIdentityIndexRoute
   '/markets': typeof WorkspaceMarketsIndexRoute
   '/opportunities': typeof WorkspaceOpportunitiesIndexRoute
@@ -715,7 +706,6 @@ export interface FileRoutesById {
   '/_workspace/facilities/': typeof WorkspaceFacilitiesIndexRoute
   '/_workspace/finance/': typeof WorkspaceFinanceIndexRoute
   '/_workspace/ground/': typeof WorkspaceGroundIndexRoute
-  '/_workspace/hospitality/': typeof WorkspaceHospitalityIndexRoute
   '/_workspace/identity/': typeof WorkspaceIdentityIndexRoute
   '/_workspace/markets/': typeof WorkspaceMarketsIndexRoute
   '/_workspace/opportunities/': typeof WorkspaceOpportunitiesIndexRoute
@@ -795,7 +785,6 @@ export interface FileRouteTypes {
     | '/facilities/'
     | '/finance/'
     | '/ground/'
-    | '/hospitality/'
     | '/identity/'
     | '/markets/'
     | '/opportunities/'
@@ -873,7 +862,6 @@ export interface FileRouteTypes {
     | '/facilities'
     | '/finance'
     | '/ground'
-    | '/hospitality'
     | '/identity'
     | '/markets'
     | '/opportunities'
@@ -953,7 +941,6 @@ export interface FileRouteTypes {
     | '/_workspace/facilities/'
     | '/_workspace/finance/'
     | '/_workspace/ground/'
-    | '/_workspace/hospitality/'
     | '/_workspace/identity/'
     | '/_workspace/markets/'
     | '/_workspace/opportunities/'
@@ -1171,13 +1158,6 @@ declare module '@tanstack/react-router' {
       path: '/identity'
       fullPath: '/identity/'
       preLoaderRoute: typeof WorkspaceIdentityIndexRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
-    '/_workspace/hospitality/': {
-      id: '/_workspace/hospitality/'
-      path: '/hospitality'
-      fullPath: '/hospitality/'
-      preLoaderRoute: typeof WorkspaceHospitalityIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/ground/': {
@@ -1654,7 +1634,6 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceFacilitiesIndexRoute: typeof WorkspaceFacilitiesIndexRoute
   WorkspaceFinanceIndexRoute: typeof WorkspaceFinanceIndexRoute
   WorkspaceGroundIndexRoute: typeof WorkspaceGroundIndexRoute
-  WorkspaceHospitalityIndexRoute: typeof WorkspaceHospitalityIndexRoute
   WorkspaceIdentityIndexRoute: typeof WorkspaceIdentityIndexRoute
   WorkspaceMarketsIndexRoute: typeof WorkspaceMarketsIndexRoute
   WorkspaceOpportunitiesIndexRoute: typeof WorkspaceOpportunitiesIndexRoute
@@ -1714,7 +1693,6 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceFacilitiesIndexRoute: WorkspaceFacilitiesIndexRoute,
   WorkspaceFinanceIndexRoute: WorkspaceFinanceIndexRoute,
   WorkspaceGroundIndexRoute: WorkspaceGroundIndexRoute,
-  WorkspaceHospitalityIndexRoute: WorkspaceHospitalityIndexRoute,
   WorkspaceIdentityIndexRoute: WorkspaceIdentityIndexRoute,
   WorkspaceMarketsIndexRoute: WorkspaceMarketsIndexRoute,
   WorkspaceOpportunitiesIndexRoute: WorkspaceOpportunitiesIndexRoute,
