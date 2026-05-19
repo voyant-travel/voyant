@@ -6,7 +6,7 @@
  *   - `SourceAdapterRegistry` keyed by connection id — sourced rows
  *     (Voyant Connect peers, GDS, bedbanks, the demo upstream).
  *   - `OwnedBookingHandlerRegistry` keyed by entity module — owned
- *     rows (products vertical in Phase A; hospitality / cruises /
+ *     rows (products vertical in Phase A; accommodations / cruises /
  *     etc. land in subsequent phases against the same interface).
  *
  * Adapters live in their own packages (see `@voyantjs/plugin-catalog-demo`)
@@ -18,6 +18,8 @@
  * lifetime.
  */
 
+import { createAccommodationBookingHandler } from "@voyantjs/accommodations/booking-engine"
+import { getAccommodationContent } from "@voyantjs/accommodations/service-content"
 import { availabilitySlots } from "@voyantjs/availability/schema"
 import {
   extendAvailabilityHold,
@@ -43,9 +45,6 @@ import {
   createBooking as createFinanceBooking,
   resolveBookingSellTaxRate,
 } from "@voyantjs/finance"
-import { hospitalityBookingsService } from "@voyantjs/hospitality"
-import { createHospitalityBookingHandler } from "@voyantjs/hospitality/booking-engine"
-import { getHospitalityContent } from "@voyantjs/hospitality/service-content"
 import { createDemoCatalogAdapter } from "@voyantjs/plugin-catalog-demo"
 import {
   optionPriceRules,
@@ -86,8 +85,8 @@ export function getBookingEngineRegistry(env: BookingEngineEnv): SourceAdapterRe
 
 /**
  * Returns the (lazy-initialized) owned-handler registry. Phase A
- * registers the products vertical only — hospitality, cruises, etc.
- * land here in later phases without changing the dispatch.
+ * registers products plus retained resale verticals such as accommodations
+ * and cruises.
  *
  * Per booking-journey-architecture §6.
  */
@@ -311,78 +310,27 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
         },
       }),
     )
-    // Hospitality vertical — Phase B stub. computeQuote serves the
-    // descriptor + best-effort pricing from getHospitalityContent;
-    // commit returns failed:not_yet_implemented (real
-    // stayBookingItems insert is a follow-up).
+    // Accommodations resale vertical. computeQuote serves the descriptor +
+    // best-effort pricing from getAccommodationContent. Commit intentionally
+    // has no bridge until the retained resale booking-line write path moves
+    // out of the legacy package.
     //
-    // The hospitality content service requires the source-adapter
+    // The accommodations content service requires the source-adapter
     // registry (it falls through to the upstream when the cache is
     // stale). We capture `_registry` lazily inside the closure so
     // hot-reloads of the source registry are picked up.
     registry.register(
-      createHospitalityBookingHandler({
+      createAccommodationBookingHandler({
         async loadContent(ctx, entityId) {
           const db = ctx.db as unknown as PostgresJsDatabase
           const sourceRegistry = getBookingEngineRegistry(env)
-          const resolved = await getHospitalityContent(
+          const resolved = await getAccommodationContent(
             db,
             entityId,
             { preferredLocales: ["en-GB"] },
             { registry: sourceRegistry },
           )
           return resolved?.content ?? null
-        },
-        async commitBridge(input, opts) {
-          // The handler validates `ratePlanId` upstream — defensive
-          // double-check here would be redundant. `withDbFromEnv` owns
-          // the per-call Pool.
-          return withDbFromEnv(env as Parameters<typeof withDbFromEnv>[0], async (rawDb) => {
-            const db = rawDb as unknown as PostgresJsDatabase
-            try {
-              const outcome = await hospitalityBookingsService.createStayBooking(
-                db,
-                {
-                  propertyId: input.propertyId,
-                  roomTypeId: input.roomTypeId,
-                  ratePlanId: input.ratePlanId,
-                  mealPlanId: input.mealPlanId,
-                  checkInDate: input.checkInDate,
-                  checkOutDate: input.checkOutDate,
-                  roomCount: input.roomCount,
-                  adults: input.adults,
-                  children: input.children,
-                  infants: input.infants,
-                  dailyRates: input.dailyRates,
-                  personId: input.personId,
-                  organizationId: input.organizationId,
-                  contact: {
-                    firstName: input.contact.firstName,
-                    lastName: input.contact.lastName,
-                    email: input.contact.email,
-                    phone: input.contact.phone,
-                    country: input.contact.country,
-                  },
-                  passengers: input.passengers,
-                  notes: input.notes,
-                },
-                opts?.userId,
-              )
-              if (outcome.status === "ok") {
-                return {
-                  status: "ok",
-                  bookingId: outcome.result.bookingId,
-                  bookingNumber: outcome.result.bookingNumber,
-                }
-              }
-              return { status: "failed", reason: `hospitality_${outcome.status}` }
-            } catch (err) {
-              return {
-                status: "failed",
-                reason: err instanceof Error ? err.message : String(err),
-              }
-            }
-          })
         },
       }),
     )

@@ -359,7 +359,7 @@ Indexes:
 - `(priceCatalogId)` and `(priceScheduleId)` — for promo-overlay resolution
 - Partial unique `(sailingId, cabinCategoryId, occupancy, fareCode) where price_schedule_id is null` — the "current standing offer" must be unique per fare code; dated overlays can stack via additional rows pointing at schedules
 
-**Why no `validFrom`/`validUntil`/`isPromo` on this table:** Voyant already has `pricing.price_catalogs` (with a `'promo'` catalog type) and `pricing.price_schedules` (with `validFrom`/`validTo`/`recurrenceRule`/`priority`/`active`). The hospitality module already uses these exact soft-FKs (`priceCatalogId`/`priceScheduleId` on rate plans and room-type rates). Cruises follows the same pattern. A "Black Friday $500 OBC overlay" is a `priceCatalog` of type `'promo'` with a `priceSchedule` covering the date window; cruise price rows that participate in the promo carry that catalog/schedule pair. No cruises-local promotions table.
+**Why no `validFrom`/`validUntil`/`isPromo` on this table:** Voyant already has `pricing.price_catalogs` (with a `'promo'` catalog type) and `pricing.price_schedules` (with `validFrom`/`validTo`/`recurrenceRule`/`priority`/`active`). Accommodation resale uses the same soft-FK pattern for rate and room-option pricing. Cruises follows that pattern too. A "Black Friday $500 OBC overlay" is a `priceCatalog` of type `'promo'` with a `priceSchedule` covering the date window; cruise price rows that participate in the promo carry that catalog/schedule pair. No cruises-local promotions table.
 
 #### `cruise_price_components`
 
@@ -769,7 +769,7 @@ Lead-gen is therefore not a "mode" of the cruises module — it's a state on the
 | **CRM** | template-defined link `personCruiseLink` (people who have inquired/booked); pre-defined `personCruiseSavedLink` for "favorited" — both via `defineLink` in the template's `links/` directory |
 | **suppliers** | cruise lines are `suppliers` rows, linked from `cruises.lineSupplierId` (soft FK, schema-discipline rule) |
 | **finance** | bookings → invoices via existing finance module; cruise-specific line items live in the booking quote snapshot, not finance |
-| **pricing** | `cruise_prices.priceCatalogId` and `cruise_prices.priceScheduleId` soft-FK into `pricing.price_catalogs` / `pricing.price_schedules`. Same pattern hospitality already uses. No promo/discount primitives are reinvented in cruises. |
+| **pricing** | `cruise_prices.priceCatalogId` and `cruise_prices.priceScheduleId` soft-FK into `pricing.price_catalogs` / `pricing.price_schedules`. Same pattern accommodations already use. No promo/discount primitives are reinvented in cruises. |
 | **products** | pre/post extensions (a 3-night Reykjavik hotel before the cruise) are just `products` rows linked to the cruise via a template link `cruiseProductExtensionLink` |
 | **identity / facilities** | ports are `facilities` rows; cruise schema soft-FKs by `facilityId` |
 | **storage** | `cruise_media` uses the same R2/S3 pattern as `product_media`, no new infra |

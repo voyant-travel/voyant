@@ -10,7 +10,7 @@ export const catalogUiRo = {
       extras: "Extra",
       cruises: "Croaziere",
       charters: "Chartere",
-      hospitality: "Hospitality",
+      accommodations: "Cazari",
     },
     actions: {
       bookThis: "Rezerva",

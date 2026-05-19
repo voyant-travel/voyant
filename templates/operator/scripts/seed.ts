@@ -119,10 +119,10 @@ import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 
 import {
+  seedAccommodationRooms,
   seedCharters,
   seedCruises,
   seedExtras,
-  seedHospitalityRooms,
 } from "./seed-catalog-verticals"
 import { seedAircraft, seedAirlines, seedAirports } from "./seed-flights-reference"
 
@@ -825,7 +825,7 @@ type SupplierRow = {
 const SUPPLIERS: SupplierRow[] = [
   {
     id: newId("suppliers"),
-    name: "Thames Hospitality Ltd",
+    name: "Thames Accommodation Ltd",
     type: "hotel",
     currency: "GBP",
     facilityId: FACILITIES.hotelThames,
@@ -2755,10 +2755,10 @@ async function seedBookingsAndFinance() {
   }
 }
 
-// ---------- Catalog verticals (extras / cruises / charters / hospitality) ----------
+// ---------- Catalog verticals (extras / cruises / charters / accommodations) ----------
 
 async function seedCatalogVerticals() {
-  console.log("→ seeding catalog verticals (extras, cruises, charters, hospitality)…")
+  console.log("→ seeding catalog verticals (extras, cruises, charters, accommodations)…")
   const ctx = {
     sellerOperatorId: process.env.TENANT_ID ?? "default",
     supplierIds: SUPPLIERS.map((s) => s.id),
@@ -2767,7 +2767,7 @@ async function seedCatalogVerticals() {
   const extrasIds = await seedExtras(db, ctx)
   const cruiseIds = await seedCruises(db, ctx)
   const charterIds = await seedCharters(db, ctx)
-  const roomIds = await seedHospitalityRooms(db, ctx)
+  const roomIds = await seedAccommodationRooms(db, ctx)
   console.log(
     `  · extras: ${extrasIds.length}, cruises: ${cruiseIds.length}, charters: ${charterIds.length}, rooms: ${roomIds.length}`,
   )

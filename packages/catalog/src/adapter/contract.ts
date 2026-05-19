@@ -36,7 +36,7 @@ import type { Provenance } from "../provenance.js"
  * See `docs/architecture/channel-push-architecture.md` §3.
  */
 export interface AdapterCapabilities {
-  /** Verticals this adapter feeds (e.g. ["products", "hospitality"]). */
+  /** Verticals this adapter feeds (e.g. ["products", "accommodations"]). */
   verticals: string[]
   /** Whether the adapter can resolve volatile-live fields on demand. */
   supportsLiveResolution: boolean

@@ -961,11 +961,11 @@ export const app = createApp<CloudflareBindings>({
     // Storefront post-card-payment status poll. The booking id is a
     // TypeID in the redirect URL; the response exposes only non-PII state.
     "/v1/public/bookings",
-    // Storefront product / cruise / hospitality detail —
+    // Storefront product / cruise / accommodations detail —
     // drives the `/shop/products/...` page's content fetch.
     "/v1/public/products",
     "/v1/public/cruises",
-    "/v1/public/hospitality",
+    "/v1/public/accommodations",
     // Storefront public CRM intake. Host deployments can wire captcha /
     // rate-limit checks through the storefront intake guard.
     "/v1/public/leads",

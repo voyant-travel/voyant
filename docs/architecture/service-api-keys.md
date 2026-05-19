@@ -63,7 +63,7 @@ Known permissions include:
 - `catalog: ["read", "search"]`
 - `bookings: ["read", "write"]`
 - `availability: ["read"]`
-- `hospitality: ["read"]`
+- `accommodations: ["read"]`
 - `ground: ["read"]`
 - `cruises: ["read"]`
 - `workflows: ["trigger"]`

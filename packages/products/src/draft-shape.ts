@@ -13,7 +13,7 @@
  *     offers.
  *
  * No accommodation sub-step today (multi-day tours w/ rooms route
- * through hospitality, not products). Pricing flows through
+ * through accommodations, not products). Pricing flows through
  * liveResolve at quote time, not the descriptor.
  *
  * See `docs/architecture/booking-journey-architecture.md` §3 + §F.

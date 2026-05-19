@@ -1,6 +1,10 @@
 # @voyantjs/suppliers
 
-Suppliers module for Voyant. Models suppliers, their services, rate cards, and notes.
+Suppliers module for Voyant. Models suppliers, their services, rate cards, and
+notes for OTA, tour-operator, and DMC workflows.
+
+Suppliers are ecosystem counterparties and operating parties. They are not a
+separate Voyant implementation scenario.
 
 ## Install
 

@@ -5,14 +5,14 @@ Audience: anyone designing or implementing the cross-vertical booking lifecycle 
 
 This document describes the **booking engine** that runs on top of the Phase 1 catalog foundation defined in [`catalog-architecture.md`](./catalog-architecture.md). The booking engine is the "live" layer that turns a row in the indexer (or in an adapter's upstream system) into a confirmed reservation with a frozen snapshot, mirroring the pattern already established for the flights vertical in [`catalog-flights-architecture.md`](./catalog-flights-architecture.md).
 
-The booking engine is **vertical-agnostic**. The same `quoteEntity` / `bookEntity` / `cancelEntity` lifecycle works for products, extras, cruises, charters, and hospitality, dispatching to the right adapter based on the catalog row's provenance. Owned inventory (`source.kind: "owned"`) flows through each module's own service layer; sourced inventory (`source.kind: "voyant-connect"`, `"direct:*"`, `"bedbank:*"`, `"gds:*"`, `"demo"`) flows through a registered `SourceAdapter` instance.
+The booking engine is **vertical-agnostic**. The same `quoteEntity` / `bookEntity` / `cancelEntity` lifecycle works for products, extras, cruises, charters, and accommodations, dispatching to the right adapter based on the catalog row's provenance. Owned inventory (`source.kind: "owned"`) flows through each module's own service layer; sourced inventory (`source.kind: "voyant-connect"`, `"direct:*"`, `"bedbank:*"`, `"gds:*"`, `"demo"`) flows through a registered `SourceAdapter` instance.
 
 ## 1. Phase relationship
 
 **Prerequisites** (must be live before this layer lands):
 
 - Phase 1 catalog foundation: `SourceAdapter` contract (§5.6), provenance shape (§5.1), snapshot graph (§5.3), webhooks (§5.8).
-- The five existing verticals have adopted Phase 1's contract (`products`, `cruises`, `hospitality`, `charters`, `extras`).
+- The five existing verticals have adopted Phase 1's contract (`products`, `cruises`, `accommodations`, `charters`, `extras`).
 - The `supplierId` and `source.kind` indexed fields ship on each vertical so the indexer hits already carry enough to dispatch a quote/book.
 
 **This layer does NOT change:**
@@ -206,7 +206,7 @@ Templates that want the booking engine register `@voyantjs/catalog/booking-engin
 
 The first real implementation is scoped to:
 
-- **Products vertical only.** Cruises / charters / hospitality / extras are the next steps once the tracer ships.
+- **Products vertical only.** Cruises / charters / accommodations / extras are the next steps once the tracer ships.
 - **Demo adapter only.** Voyant Connect, GDS, bedbank adapters come from external implementers later.
 - **Single-line bookings.** Composite packages are deferred.
 - **`paymentIntent: { type: "hold" }` only.** Card / ticket-on-credit come once a payment provider is wired (separate concern, see [`payments-architecture.md`](./payments-architecture.md)).

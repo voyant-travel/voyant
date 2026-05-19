@@ -10,7 +10,8 @@ This document covers the **Phase 3** work that adds flights as a partial-adoptio
 **Prerequisites** (must be live before Phase 3 lands):
 
 - Phase 1 catalog foundation: snapshot graph, source adapter contract, drift events, webhooks, source disconnect lifecycle, provenance shape.
-- The five existing verticals have adopted Phase 1's contract (`products`, `cruises`, `hospitality`, `charters`, `extras`).
+- The in-scope verticals and resale surfaces have adopted Phase 1's contract
+  (`products`, `cruises`, accommodation resale, `charters`, `extras`).
 
 **Phase 2 (RAG) is NOT a prerequisite.** Flights explicitly opt out of embeddings and semantic search (see §5); Phase 3 can land before, after, or in parallel with Phase 2.
 
@@ -25,12 +26,16 @@ This document covers the **Phase 3** work that adds flights as a partial-adoptio
 **What Phase 3 does NOT change:**
 
 - The Phase 1 field-policy contract is unchanged. Flights don't add fields to the policy registry because flights don't go through the indexer or overlay store at all.
-- The five existing verticals keep their Phase 1 adoption shape.
+- The in-scope verticals and resale surfaces keep their Phase 1 adoption shape.
 - Phase 2 (RAG) is unaffected.
 
 ## 2. Why flights are a special case
 
-Flights are unlike the other verticals (`products`, `cruises`, `hospitality`, `charters`, `extras`). The catalog plane's standard machinery — projections, overlays, embeddings, search-index tiers, drift detection — assumes there's a meaningful body of slow-moving inventory data to project, merchandise, and retrieve. Flights don't fit that shape:
+Flights are unlike the other verticals and resale surfaces (`products`,
+`cruises`, accommodation resale, `charters`, `extras`). The catalog plane's
+standard machinery — projections, overlays, embeddings, search-index tiers,
+drift detection — assumes there's a meaningful body of slow-moving inventory
+data to project, merchandise, and retrieve. Flights don't fit that shape:
 
 - **No pre-projectable inventory.** Schedules and prices change continuously; pre-syncing the global flight inventory is neither tractable nor useful for most consumers. The exception (Hisky-style pre-synced availability for a single carrier) is one provider's choice, not the contract.
 - **No meaningful editorial overlay.** Marketing does not rewrite "London → JFK on BA177" with SEO copy. There is no "marketing title" for a flight.

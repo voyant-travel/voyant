@@ -104,7 +104,7 @@ describe.skipIf(!DB_AVAILABLE)("SnapshotService integration", () => {
         frozenPayload: { title: "TUI Package" },
       },
       {
-        entityModule: "hospitality",
+        entityModule: "accommodations",
         entityId: "rmtp_garden",
         sourceKind: "voyant-connect",
         sourceRef: "hb_room_12345",
@@ -119,7 +119,11 @@ describe.skipIf(!DB_AVAILABLE)("SnapshotService integration", () => {
     ])
 
     expect(rows).toHaveLength(3)
-    expect(rows.map((r) => r.entity_module).sort()).toEqual(["extras", "hospitality", "products"])
+    expect(rows.map((r) => r.entity_module).sort()).toEqual([
+      "accommodations",
+      "extras",
+      "products",
+    ])
 
     const allForBooking = await fetchSnapshotsForBooking(db, bookingId)
     expect(allForBooking).toHaveLength(3)
@@ -171,7 +175,7 @@ describe.skipIf(!DB_AVAILABLE)("SnapshotService integration", () => {
     await expect(
       captureSnapshotGraph(db, bookingId, [
         {
-          entityModule: "hospitality",
+          entityModule: "accommodations",
           entityId: "rmtp_new",
           sourceKind: "owned",
           frozenPayload: {},

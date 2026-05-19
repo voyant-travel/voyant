@@ -558,7 +558,7 @@ async function materializeChildren(
   }
 
   // One item summarizing the booked entity, so the items tab isn't
-  // empty. Real verticals (cruises with cabin lines, hospitality with
+  // empty. Real verticals (cruises with cabin lines, accommodations with
   // room lines) fan this out per their own conventions; this is the
   // generic fallback so sourced products show up in the UI.
   //

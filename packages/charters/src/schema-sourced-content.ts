@@ -1,6 +1,6 @@
 /**
  * Charters sourced-content cache. Sibling to the products / cruises /
- * hospitality variants — same shape, different vertical.
+ * accommodations variants — same shape, different vertical.
  *
  * One row per sourced charter product × locale × market. Stores the
  * rich detail-page content the upstream adapter served via

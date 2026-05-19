@@ -2,7 +2,7 @@
 
 This guide defines how Voyant should treat payments as a universal
 infrastructure capability — shared across every vertical that takes money
-from a customer (flights, owned products, hospitality, cruises / charters,
+from a customer (flights, owned products, accommodations, cruises / charters,
 catalog-resold inventory, agency invoices).
 
 The goal is simple:
@@ -69,7 +69,7 @@ interface PaymentRequest {
     type:
       | "flight_order"
       | "booking"            // operator-owned product / catalog-resold booking
-      | "stay_folio"          // hospitality folio
+      | "accommodation_stay"  // accommodation booking line
       | "charter_booking"     // cruises / yacht charter
       | "invoice"             // standalone invoice (e.g. balance due)
       | "subscription"        // recurring (loyalty / membership)
@@ -142,7 +142,7 @@ into its own flow:
 - flights → in the booking journey shell (already done, today bypasses the
   capability gate — Phase A fixes this)
 - bookings → at checkout for owned products
-- hospitality → at room checkout, with `authorize-only` mode for the
+- accommodations → at room checkout, with `authorize-only` mode for the
   guarantee
 - cruises → at deposit + balance touchpoints
 - catalog-resold → identical to bookings (different supplier-side flow,
@@ -203,10 +203,10 @@ eventBus.on("payment.captured.received", async (e) => {
   await flightOrderService.markTicketed(e.reference.id, e)
 })
 
-// In hospitality:
+// In accommodation resale:
 eventBus.on("payment.authorized.received", async (e) => {
-  if (e.reference.type !== "stay_folio") return
-  await hospitalityService.recordGuarantee(e.reference.id, e)
+  if (e.reference.type !== "accommodation_stay") return
+  await accommodationBookingService.recordGuarantee(e.reference.id, e)
 })
 ```
 
@@ -416,7 +416,7 @@ Flight order persistence is currently in-memory in the demo adapter —
 Phase B integrates flights into finance's `payment_sessions` so the
 universal payment UI applies end-to-end.
 
-### Hospitality
+### Accommodations
 
 Two payment touchpoints — both use the same primitives:
 
@@ -426,7 +426,7 @@ Two payment touchpoints — both use the same primitives:
 - At checkout: `<PaymentStep>` with `captureMode: "auto"` to capture room
   charges + incidentals.
 
-Existing `hospitality_guarantee_mode` enum maps onto capability calls:
+Accommodation guarantee terms map onto capability calls:
 - `card_hold` → `payment/authorize-only`
 - `deposit` → standard charge
 - `full_prepay` → standard charge
@@ -549,14 +549,14 @@ Scope:
 
 ### Phase E — Second vertical adopts the same UI
 
-Pick hospitality (existing `hospitality_guarantee_mode` maps cleanly)
-or owned-product bookings (simplest). Build the room-checkout flow using
-`<PaymentStep>` against the same checkout endpoints. If anything about
-`PaymentChoice` / `PaymentStepCapabilities` has to bend, fix it now while
-there are only two consumers.
+Pick accommodation resale guarantee collection or owned-product bookings
+(simplest). Build the accommodation payment flow using `<PaymentStep>` against
+the same checkout endpoints. If anything about `PaymentChoice` /
+`PaymentStepCapabilities` has to bend, fix it now while there are only two
+consumers.
 
 Scope:
-- Hospitality (or bookings) checkout flow imports `<PaymentStep>` from
+- Accommodations (or bookings) checkout flow imports `<PaymentStep>` from
   `@voyantjs/checkout-ui`, builds capabilities from configured wiring
 - Vertical-specific "extras" via `extraOptions` (e.g. "Charge to folio")
 - Validates the abstraction against a real second usage
@@ -591,7 +591,7 @@ parent fills in honestly from what's wired (configured `paymentStarter`,
 **Do not** map vertical-specific options into the `PaymentChoice` core
 union. Use `extraOptions` + the `{ type: "extra", optionId }` event for
 options like "Issue on agency credit" (flights) or "Charge to folio"
-(hospitality).
+(accommodations).
 
 ---
 
@@ -613,5 +613,6 @@ options like "Issue on agency credit" (flights) or "Charge to folio"
   pure UI on top of the above.
 - `@voyantjs/crm` `person_payment_methods` table — canonical record of
   cards on file per person (tokenized).
-- `@voyantjs/hospitality` `hospitality_guarantee_mode` enum — maps onto
-  payment-step booleans in the hospitality checkout flow.
+- Accommodation resale guarantee terms map onto payment-step booleans in the
+  checkout flow. Legacy hotel-ops guarantee-mode references should not be
+  extended into hotel-operations flows.

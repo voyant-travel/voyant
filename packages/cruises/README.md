@@ -1,6 +1,13 @@
 # @voyantjs/cruises
 
-Opt-in cruises module for the Voyant platform. Provides the canonical schema, services, and admin/storefront/booking integration for cruise inventory — both self-managed (operator publishes their own cruises) and external (sourced from a registered adapter such as Voyant Connect).
+Opt-in cruises module for OTA, tour-operator, and DMC deployments. Provides the
+canonical schema, services, and admin/storefront/booking integration for cruise
+inventory - both self-managed (a tour operator or DMC publishes its own
+small-scale or specialized cruises) and external (sourced from a registered
+adapter such as Voyant Connect).
+
+Cruises are an inventory and operations capability inside the target scenarios,
+not a separate cruise-line implementation scenario.
 
 See [docs/architecture/cruises-module.md](../../docs/architecture/cruises-module.md) for the full design.
 

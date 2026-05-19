@@ -1,6 +1,8 @@
 # @voyantjs/facilities
 
-Facilities module for Voyant. Shared facility and property layer — the baseline hospitality, ground, and venue entities that feed specialized overlays.
+Facilities module for Voyant. Shared location and venue layer for DMC and
+tour-operator workflows: hubs, attractions, restaurants, airports, meeting
+points, accommodation locations, and other operational places.
 
 ## Install
 
@@ -25,7 +27,8 @@ const app = createApp({
 - **Facilities** (`fac`)
 - **Facility features** (`ffea`)
 - **Facility operations** (`fops`)
-- **Properties** (`prop`) + **property groups** (`pgrp`, `pgpm`)
+- **Properties** (`prop`) + **property groups** (`pgrp`, `pgpm`) for
+  accommodation/location metadata, not hotel PMS operations
 
 ## Exports
 

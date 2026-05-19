@@ -62,7 +62,7 @@ Before specifying anything new, this doc commits to reusing the following primit
 | Payment-collection UI (saved cards, new card, processor flow) | `checkout-ui`'s `PaymentStep` — `packages/checkout-ui/src/components/payment-step.tsx` | **Compose.** The journey's "Payment" step picks **intent + schedule** (hold vs card vs ticket-on-credit; deposit vs full vs split) — that's a journey concern. Actual provider mechanics (Netopia tokenization, Stripe Elements, etc.) hand off to `checkout-ui`'s `PaymentStep` at commit time. The journey shell does not introduce a new payment-provider seam. |
 | Quantity-tier pricing (more units → cheaper per-unit) | `option_unit_tiers` — `packages/pricing/src/schema-option-rules.ts` | **Reuse.** Quantity tiers are an orthogonal axis to per-occupancy tiers; the engine consults both when pricing an option. |
 | Snapshot graph at commit | `booking_catalog_snapshot` + `captureSnapshot` / `captureSnapshotGraph` — `packages/catalog/src/services/snapshot-service.ts` | **Reuse.** Both owned and sourced commits pass through these. |
-| Atomic owned-product transaction | `bookingsCreate` — `packages/finance/src/service-booking-create.ts` | **Bridge only.** Phase A's owned-arm dispatch maps a draft to booking-create's input shape and hits the endpoint. Booking-create's input doesn't model extras / hospitality stay details / encrypted travel details / tax lines / catalog snapshots / arbitrary draft shape — Phase C+ replaces the bridge with a richer owned commit primitive that does. |
+| Atomic owned-product transaction | `bookingsCreate` — `packages/finance/src/service-booking-create.ts` | **Bridge only.** Phase A's owned-arm dispatch maps a draft to booking-create's input shape and hits the endpoint. Booking-create's input doesn't model extras / accommodation stay details / encrypted travel details / tax lines / catalog snapshots / arbitrary draft shape — Phase C+ replaces the bridge with a richer owned commit primitive that does. |
 | Public booking sessions (existing model) | `booking_session_states` keyed by `booking_id` — `packages/bookings/src/schema-operations.ts`. Public routes at `POST /v1/public/bookings/sessions`, `/state`, `/reprice`, `/confirm`. | **Sibling, not replacement.** The existing model materializes a `bookings` row first (status `draft`) and wraps it with session state. The journey's `booking_drafts` (§5.7) is the inverse — a pre-booking-row hold that may *never* materialize into a booking (abandonment is the common case). See §12.10 for the open question on whether to extend `booking_session_states` to allow `booking_id IS NULL` instead of adding `booking_drafts`. |
 
 The rule of thumb: if a reasonable read of "I need X" finds an existing primitive in the table above, the new code uses it. Adding a parallel primitive needs a one-paragraph justification in this doc.
@@ -77,7 +77,9 @@ A short inventory so we don't reinvent (full survey lives in the agent reports c
 - **`packages/pricing/`** — per-unit tier matching, `optionPriceRules` and `optionUnitPriceRules`. No unified `computeTotal()` exists yet.
 - **`packages/booking-requirements/`** — `productContactRequirements`, `bookingQuestions`. Per-product per-field requirements (passport, dietary, etc.) with `scope` (booking/lead/traveler/booker), `isRequired`, `perTraveler`. **This is the canonical source of "what fields to collect" — the wizard reads from it.**
 - **`packages/extras/`** — extras schema (selection types, pricing modes). No UI surface yet.
-- **`packages/hospitality/`** — stay-item schema (`stayBookingItems` with check-in/out, room type, occupancy, daily rates). No operator-facing flow yet.
+- **Accommodation resale / trip composition** — stay-item shape (check-in/out,
+  room option, occupancy, daily rates) for sourced accommodation or package
+  components. Hotel/property operations are outside the booking journey scope.
 - **`packages/finance/`** — tax regimes, voucher redemption. Tax compute is post-book today (invoice-time).
 - **`bookingsCreateExtension`** — `POST /v1/admin/bookings/create`. One-shot atomic transaction creating booking + travelers + payment schedules + voucher redemption + group membership. Will become the engine's owned-arm dispatcher.
 - **`packages/catalog/src/booking-engine/`** — `quoteEntity`, `bookEntity`, `cancelEntity`, `SourceAdapterRegistry`, `catalog_quotes`. Dispatches sourced rows today; owned dispatch is the gap.
@@ -375,7 +377,7 @@ export interface OwnedBookingHandler {
 
   /**
    * Commit the draft to a booking row. May call bookingsCreate as
-   * a bridge today; richer commit primitives (extras, hospitality
+   * a bridge today; richer commit primitives (extras, accommodation
    * stays, encrypted travel details, tax lines, snapshot graph) land
    * on this same handler in Phase C+.
    */
@@ -412,7 +414,9 @@ bookEntity({ quoteId | draftId, draft })
 **Where the handlers live.** Each vertical owns its handler:
 
 - `packages/products/src/booking-engine/handler.ts` -> `createProductsBookingHandler({ db })`. Composes products' existing pricing/availability + `bookingsCreate` as the Phase-A bridge.
-- `packages/hospitality/src/booking-engine/handler.ts` → `createHospitalityBookingHandler({ db })`. Daily-rate computation, room-type stays.
+- Accommodation resale handler -> daily-rate computation and room-option stay
+  booking for sourced or packaged accommodation. This should not include
+  hotel/property operations.
 - `packages/cruises/src/booking-engine/handler.ts` → uses `cruise_prices.occupancy` for tiers, sailing-level holds.
 - And so on per vertical.
 
@@ -421,13 +425,13 @@ Templates wire the registry at boot, the same way they wire the `SourceAdapterRe
 ```ts
 const ownedRegistry = createOwnedBookingHandlerRegistry()
 ownedRegistry.register(createProductsBookingHandler({ db }))
-ownedRegistry.register(createHospitalityBookingHandler({ db }))
+ownedRegistry.register(createAccommodationResaleBookingHandler({ db }))
 // ... per vertical the deployment uses
 ```
 
 This inverts the dependency direction: instead of `@voyantjs/catalog` importing every vertical, each vertical imports the handler interface from `@voyantjs/catalog/booking-engine` and provides an implementation. Catalog stays a contract package; verticals stay self-contained.
 
-This also makes Phase A genuinely small (§10) — the first owned handler ships only the products vertical, only for simple bookings, and only for the booking-create-mappable shape. Hospitality, cruises, extras, taxes, encrypted travel details all land on the same handler interface in subsequent phases without re-architecting the dispatch.
+This also makes Phase A genuinely small (§10) — the first owned handler ships only the products vertical, only for simple bookings, and only for the booking-create-mappable shape. Accommodations, cruises, extras, taxes, encrypted travel details all land on the same handler interface in subsequent phases without re-architecting the dispatch.
 
 ## 7. Per-product variation — concrete examples
 
@@ -452,7 +456,7 @@ The same wizard handles each of these by reading the descriptor; no special-case
   - Steps shown: Configure (with extra fields), Billing, Travelers (names), Payment, Review.
 
 - **Hotel-only stay** (check-in / check-out, room type):
-  - The "product" is a room type from the hospitality vertical
+  - The "product" is a room type from the accommodations vertical
   - Configure step shows date-range picker + occupancy
   - Accommodation step is folded into Configure (single room type, but with meal-plan / rate-plan picks)
   - `addons` may contain "breakfast included", "spa credit"
@@ -500,7 +504,7 @@ Per Rule 4 (§overview), every piece of the journey except the wired-up route co
 | Owned-handler interface + registry (`OwnedBookingHandler`, `OwnedBookingHandlerRegistry`) | `@voyantjs/catalog/booking-engine` | New (interface only — no vertical imports) |
 | Per-vertical owned handlers (e.g. `createProductsBookingHandler`) | each vertical's `<vertical>/src/booking-engine/handler.ts` | New per vertical, lands incrementally per phase |
 | Adapter contract bits not already in `SourceAdapter` (`describeShape`, hold metadata) | `@voyantjs/catalog/adapter` | Existing — extend |
-| Per-vertical descriptor builders (e.g. cruise-specific shape construction) | each vertical's `service-catalog-plane.ts` (cruises, products, hospitality, etc.) | Existing — extend |
+| Per-vertical descriptor builders (e.g. cruise-specific shape construction) | each vertical's `service-catalog-plane.ts` (cruises, products, accommodations, etc.) | Existing — extend |
 | Demo upstream + plugin (already shipping in the tracer) | `apps/catalog-demo-api` + `@voyantjs/plugin-catalog-demo` | Existing |
 
 #### Slot injection — the seam between operator and storefront
@@ -672,7 +676,7 @@ The full channel-push integration work (real adapters per channel) parallels Pha
 - Add **first** vertical handler: `createProductsBookingHandler({ db })` in `packages/products/src/booking-engine/handler.ts`. Composes the products vertical's existing pricing primitives + maps a draft into `bookingsCreate`'s input shape for the commit. Phase A delivers ONE working handler against ONE vertical.
 - Wire into `quoteEntity` / `bookEntity` so `source.kind === "owned" && entity_module === "products"` dispatches to the products handler. Other modules still fail with `NO_HANDLER_REGISTERED` (a new error code, sibling to `NO_ADAPTER_REGISTERED`).
 - Operator template registers the products handler at boot. Existing one-page booking flow on this branch dispatches through the new handler for owned products.
-- **Out of scope for Phase A:** taxes, addons, hospitality stays, encrypted travel details, draft persistence (still uses `catalog_quotes` with the ephemeral 10-min TTL), idempotency keys. Each lands in its own follow-up phase. This is the smallest credible "doesn't 503 anymore" milestone.
+- **Out of scope for Phase A:** taxes, addons, accommodation stays, encrypted travel details, draft persistence (still uses `catalog_quotes` with the ephemeral 10-min TTL), idempotency keys. Each lands in its own follow-up phase. This is the smallest credible "doesn't 503 anymore" milestone.
 
 **Phase B — The shareable wizard, both surfaces** (7-10 days):
 - Build `@voyantjs/bookings-ui/journey` with `<BookingJourney />` shell and all seven step section components. Slots typed as render-props (§8.1).
@@ -716,7 +720,7 @@ The full channel-push integration work (real adapters per channel) parallels Pha
 - **Group bookings** beyond shared-room (corporate event, school trip).
 - **Loyalty program** integration (frequent-cruiser numbers are stored as a traveler field but don't drive pricing or perks in v1).
 - **Partial cancellations** (cancel only some travelers from a booking).
-- **Wizard for hospitality direct-from-search** without going through the catalog page. Stage 1 entry point is the Catalog UI's "Book this".
+- **Wizard for accommodations direct-from-search** without going through the catalog page. Stage 1 entry point is the Catalog UI's "Book this".
 - **Multi-cabin cruise parties** (one booking, two cabins, party split). v1 is single-cabin-per-booking; multi-cabin is a v2 feature that materializes as N drafts under a `bookingGroups` row.
 - **Cruise-line-arranged air** (CL-FLIGHT). Air is a separate vertical; v1 cruise bookings don't include flights. Customer adds them as a second booking against the flights vertical.
 
@@ -732,7 +736,7 @@ All ten questions resolved as part of the Phase A–F implementation
 will reopen any of them only if the underlying assumption breaks.
 
 1. ~~**Storefront vs. operator-only for v1.**~~ **Resolved:** both surfaces ship in v1 together, not sequenced. Same wizard shell, hooks, and sections; differences land in slot implementations per surface (Rule 4 + §8.1). Phase B builds the shareable pieces and wires both surfaces in the same phase — see the rewritten §10 phases.
-2. ~~**Where does Configure live for hospitality?**~~ **Resolved:** date-range + occupancy stay in the dedicated Configure step on both surfaces (storefront's catalog browser may pre-fill them via search params, but the journey still owns them). Rate-plan and meal-plan picks live in the Accommodation step — they're per-room choices that depend on the room-type selection, so folding them into Configure would force the storefront catalog filters to also pick a rate plan, which is the wrong granularity. The hospitality descriptor's `RoomOption.ratePlans` is the seam.
+2. ~~**Where does Configure live for accommodation resale?**~~ **Resolved:** date-range + occupancy stay in the dedicated Configure step on both surfaces (storefront's catalog browser may pre-fill them via search params, but the journey still owns them). Rate-plan and board-basis picks live in the Accommodation step - they're per-room choices that depend on room-option selection, so folding them into Configure would force the storefront catalog filters to also pick a rate plan, which is the wrong granularity. The accommodation descriptor's `RoomOption.ratePlans` is the seam.
 3. ~~**Single quote table or split.**~~ **Resolved (§5.7):** keep `catalog_quotes` for the live-pricing snapshot; introduce `booking_drafts` for the resumable session-bound hold. Two tables, two lifetimes.
 4. ~~**Per-band pricing rules — adult vs child vs infant — does pricing live with the band declaration, or with the optionUnit row?**~~ **Resolved: band-based is canonical; count-based is a per-band transformation.** The descriptor's `paxBands[]` carries `code` ("adult" / "child" / "infant" / vertical-specific) as the unit of pricing; per-product per-occupancy tables (`product_pax_pricing_tiers`, `cruise_prices`) are read keyed by `(option_unit_id|sailing_id, occupancy_count)` and then *broken down* into per-band charges that the wizard can render in the breakdown.
 5. ~~**Validation depth.**~~ **Resolved:** hard reject only on physically-required-to-commit fields (firstName, lastName, pax band totals); everything else is a soft warning surfaced inline above the Next button. The shell's `canAdvanceFromStep` enforces hard rules; `warningsForStep` renders the soft hints. Per-product rules ride on the descriptor's `travelerFields[].required` flag.

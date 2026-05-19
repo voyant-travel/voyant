@@ -178,11 +178,11 @@ export function CatalogPage({
       },
     },
     {
-      id: "hospitality",
-      label: messages.tabs.hospitality,
-      vertical: "hospitality",
-      columns: makeHospitalityColumns(formatSupplier, messages),
-      filterFields: makeHospitalityFilters(formatSupplier, messages),
+      id: "accommodations",
+      label: messages.tabs.accommodations,
+      vertical: "accommodations",
+      columns: makeAccommodationColumns(formatSupplier, messages),
+      filterFields: makeAccommodationFilters(formatSupplier, messages),
       detailFormatters: {
         supplierId: supplierFormatter,
         "source.kind": sourceKindFormatter,
@@ -289,7 +289,7 @@ function makeCharterColumns(
   ]
 }
 
-function makeHospitalityColumns(
+function makeAccommodationColumns(
   formatSupplier: (id: string | number) => string,
   messages: CatalogPageMessages,
 ): ColumnDef<CatalogSearchHit, unknown>[] {
@@ -438,7 +438,7 @@ function makeCharterFilters(
   ]
 }
 
-function makeHospitalityFilters(
+function makeAccommodationFilters(
   formatSupplier: (id: string | number) => string,
   messages: CatalogPageMessages,
 ): CatalogFilterField[] {

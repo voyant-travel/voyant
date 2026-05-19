@@ -1,6 +1,11 @@
 # @voyantjs/external-refs
 
-External references module for Voyant. Cross-system external identity and mapping layer — correlates Voyant entities with IDs in third-party systems (channels, PMSs, OTAs).
+External references module for Voyant. Cross-system external identity and
+mapping layer - correlates Voyant entities with IDs in third-party systems such
+as channels, supplier systems, bedbanks, GDSs, PMSs, and OTAs.
+
+External refs are cross-cutting integration support for the target OTA,
+tour-operator, and DMC scenarios.
 
 ## Install
 

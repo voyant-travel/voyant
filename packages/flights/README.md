@@ -1,7 +1,11 @@
 # @voyantjs/flights
 
-Phase 3 of the catalog plane. The flights vertical — a partial-adoption module
-for live-API flight search and booking.
+Phase 3 of the catalog plane. The flights vertical is a partial-adoption module
+for live-API flight supplier search and booking in OTA, tour-operator, and DMC
+deployments.
+
+Flights are modeled as supplier integrations and sourced inventory. Voyant is
+not positioned as an airline or flight-operator system.
 
 See [`docs/architecture/catalog-flights-architecture.md`](../../docs/architecture/catalog-flights-architecture.md)
 for the full design.

@@ -4,7 +4,7 @@ import { join } from "node:path"
 import { getTableColumns } from "drizzle-orm"
 import { getTableConfig } from "drizzle-orm/pg-core"
 import { getTableName, isTable } from "drizzle-orm/table"
-
+import * as accommodationsSchema from "../packages/accommodations/src/schema.ts"
 import * as availabilitySchema from "../packages/availability/src/schema.ts"
 import * as bookingRequirementsSchema from "../packages/booking-requirements/src/schema.ts"
 import * as bookingsTravelDetailsSchema from "../packages/bookings/src/schema/travel-details.ts"
@@ -33,9 +33,6 @@ import * as financeSchema from "../packages/finance/src/schema.ts"
 import * as groundDispatchSchema from "../packages/ground/src/schema-dispatch.ts"
 import * as groundOperationsSchema from "../packages/ground/src/schema-operations.ts"
 import * as groundOperatorsSchema from "../packages/ground/src/schema-operators.ts"
-import * as hospitalityBookingsSchema from "../packages/hospitality/src/schema-bookings.ts"
-import * as hospitalityOperationsSchema from "../packages/hospitality/src/schema-operations.ts"
-import * as hospitalityPricingSchema from "../packages/hospitality/src/schema-pricing.ts"
 import * as identitySchema from "../packages/identity/src/schema.ts"
 import * as legalContractsSchema from "../packages/legal/src/contracts/schema.ts"
 import * as legalPoliciesSchema from "../packages/legal/src/policies/schema.ts"
@@ -170,8 +167,8 @@ const sections: SectionDefinition[] = [
     modules: [notificationsSchema, storefrontVerificationSchema],
   },
   {
-    title: "Hospitality",
-    modules: [hospitalityBookingsSchema, hospitalityPricingSchema, hospitalityOperationsSchema],
+    title: "Accommodations",
+    modules: [accommodationsSchema],
   },
   {
     title: "Ground & Transport",

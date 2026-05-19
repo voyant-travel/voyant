@@ -59,7 +59,7 @@ export interface CatalogRangeFilterField {
 
 /**
  * One tab in the catalog search page. Each tab maps to a single vertical
- * (`products`, `cruises`, `hospitality`, etc.) and supplies its own column
+ * (`products`, `cruises`, `accommodations`, etc.) and supplies its own column
  * definitions so per-vertical UI packages own their own visual language.
  */
 export interface CatalogSearchTab {

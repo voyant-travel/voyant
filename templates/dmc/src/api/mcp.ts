@@ -1,3 +1,4 @@
+import { getResolvedRoomTypeById } from "@voyantjs/accommodations/service-catalog-plane"
 import type { SearchFilter, SearchMode, SearchRequest } from "@voyantjs/catalog"
 import {
   checkAvailabilityTool,
@@ -11,7 +12,6 @@ import {
 } from "@voyantjs/catalog-mcp"
 import { executeSemanticSearch } from "@voyantjs/catalog-rag"
 import { getResolvedExtraById } from "@voyantjs/extras/service-catalog-plane"
-import { getResolvedRoomTypeById } from "@voyantjs/hospitality/service-catalog-plane"
 import { getResolvedProductById } from "@voyantjs/products/service-catalog-plane"
 import type { Context, Hono } from "hono"
 
@@ -58,7 +58,8 @@ function buildToolContext(c: Context): McpToolContext {
         let view: Awaited<ReturnType<typeof getResolvedProductById>> | null = null
         if (vertical === "products") view = await getResolvedProductById(db, entityId, ctx)
         else if (vertical === "extras") view = await getResolvedExtraById(db, entityId, ctx)
-        else if (vertical === "hospitality") view = await getResolvedRoomTypeById(db, entityId, ctx)
+        else if (vertical === "accommodations")
+          view = await getResolvedRoomTypeById(db, entityId, ctx)
         else return null
         if (!view) return null
         const fields: Record<string, unknown> = {}

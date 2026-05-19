@@ -1,25 +1,9 @@
 import { Link } from "@tanstack/react-router"
 import { useFacility, useProperty } from "@voyantjs/facilities-react"
-import { MaintenanceBlocksTab } from "@voyantjs/hospitality-ui/components/maintenance-blocks-tab"
-import { MealPlansTab } from "@voyantjs/hospitality-ui/components/meal-plans-tab"
-import { RatePlansTab } from "@voyantjs/hospitality-ui/components/rate-plans-tab"
-import { RoomBlocksTab } from "@voyantjs/hospitality-ui/components/room-blocks-tab"
-import { RoomInventoryTab } from "@voyantjs/hospitality-ui/components/room-inventory-tab"
-import { RoomTypesTab } from "@voyantjs/hospitality-ui/components/room-types-tab"
-import { RoomUnitsTab } from "@voyantjs/hospitality-ui/components/room-units-tab"
-import { StayRulesTab } from "@voyantjs/hospitality-ui/components/stay-rules-tab"
 import { Badge, Button } from "@voyantjs/ui/components"
 import { buttonVariants } from "@voyantjs/ui/components/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
 import { ArrowLeft, Building2, Loader2, Pencil } from "lucide-react"
 import { useState } from "react"
-import { HousekeepingTasksTab } from "@/components/voyant/hospitality/housekeeping-tasks-tab"
-import { RatePlanInventoryOverridesTab } from "@/components/voyant/hospitality/rate-plan-inventory-overrides-tab"
-import { RatePlanRoomTypesTab } from "@/components/voyant/hospitality/rate-plan-room-types-tab"
-import { RoomTypeRatesTab } from "@/components/voyant/hospitality/room-type-rates-tab"
-import { StayBookingItemsTab } from "@/components/voyant/hospitality/stay-booking-items-tab"
-import { StayFoliosTab } from "@/components/voyant/hospitality/stay-folios-tab"
-import { StayOperationsTab } from "@/components/voyant/hospitality/stay-operations-tab"
 import { PropertyDialog } from "./property-dialog"
 
 type Props = {
@@ -114,96 +98,6 @@ export function PropertyDetailPage({ id }: Props) {
           </div>
         )}
       </div>
-
-      <Tabs defaultValue="setup" className="w-full">
-        <TabsList>
-          <TabsTrigger value="setup">Setup</TabsTrigger>
-          <TabsTrigger value="inventory">Inventory</TabsTrigger>
-          <TabsTrigger value="stays">Stays</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="setup" className="mt-4">
-          <Tabs defaultValue="room-types" className="w-full">
-            <TabsList>
-              <TabsTrigger value="room-types">Room Types</TabsTrigger>
-              <TabsTrigger value="room-units">Room Units</TabsTrigger>
-              <TabsTrigger value="meal-plans">Meal Plans</TabsTrigger>
-              <TabsTrigger value="rate-plans">Rate Plans</TabsTrigger>
-              <TabsTrigger value="rates">Rates</TabsTrigger>
-              <TabsTrigger value="stay-rules">Stay Rules</TabsTrigger>
-            </TabsList>
-            <TabsContent value="room-types" className="mt-4">
-              <RoomTypesTab propertyId={id} />
-            </TabsContent>
-            <TabsContent value="room-units" className="mt-4">
-              <RoomUnitsTab propertyId={id} />
-            </TabsContent>
-            <TabsContent value="meal-plans" className="mt-4">
-              <MealPlansTab propertyId={id} />
-            </TabsContent>
-            <TabsContent value="rate-plans" className="mt-4">
-              <RatePlansTab propertyId={id} />
-            </TabsContent>
-            <TabsContent value="rates" className="mt-4">
-              <RoomTypeRatesTab propertyId={id} />
-            </TabsContent>
-            <TabsContent value="stay-rules" className="mt-4">
-              <StayRulesTab propertyId={id} />
-            </TabsContent>
-          </Tabs>
-        </TabsContent>
-
-        <TabsContent value="inventory" className="mt-4">
-          <Tabs defaultValue="room-inventory" className="w-full">
-            <TabsList>
-              <TabsTrigger value="room-inventory">Room Inventory</TabsTrigger>
-              <TabsTrigger value="rate-plan-room-types">Rate Plan ↔ Room Types</TabsTrigger>
-              <TabsTrigger value="rate-plan-overrides">Rate Plan Overrides</TabsTrigger>
-              <TabsTrigger value="room-blocks">Room Blocks</TabsTrigger>
-              <TabsTrigger value="maintenance-blocks">Maintenance Blocks</TabsTrigger>
-            </TabsList>
-            <TabsContent value="room-inventory" className="mt-4">
-              <RoomInventoryTab propertyId={id} />
-            </TabsContent>
-            <TabsContent value="rate-plan-room-types" className="mt-4">
-              <RatePlanRoomTypesTab propertyId={id} />
-            </TabsContent>
-            <TabsContent value="rate-plan-overrides" className="mt-4">
-              <RatePlanInventoryOverridesTab propertyId={id} />
-            </TabsContent>
-            <TabsContent value="room-blocks" className="mt-4">
-              <RoomBlocksTab propertyId={id} />
-            </TabsContent>
-            <TabsContent value="maintenance-blocks" className="mt-4">
-              <MaintenanceBlocksTab propertyId={id} />
-            </TabsContent>
-          </Tabs>
-        </TabsContent>
-
-        <TabsContent value="stays" className="mt-4">
-          <Tabs defaultValue="booking-items" className="w-full">
-            <TabsList>
-              <TabsTrigger value="booking-items">Booking Items</TabsTrigger>
-              <TabsTrigger value="operations">Operations</TabsTrigger>
-              <TabsTrigger value="folios">Folios</TabsTrigger>
-            </TabsList>
-            <TabsContent value="booking-items" className="mt-4">
-              <StayBookingItemsTab propertyId={id} />
-            </TabsContent>
-            <TabsContent value="operations" className="mt-4">
-              <StayOperationsTab propertyId={id} />
-            </TabsContent>
-            <TabsContent value="folios" className="mt-4">
-              <StayFoliosTab propertyId={id} />
-            </TabsContent>
-          </Tabs>
-        </TabsContent>
-
-        <TabsContent value="tasks" className="mt-4">
-          <HousekeepingTasksTab propertyId={id} />
-        </TabsContent>
-      </Tabs>
 
       <PropertyDialog
         open={dialogOpen}

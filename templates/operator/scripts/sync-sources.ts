@@ -22,6 +22,7 @@
  *                               sourced rows are keyword-only.
  */
 
+import { accommodationCatalogPolicy } from "@voyantjs/accommodations/catalog-policy"
 import {
   createFieldPolicyRegistry,
   createIndexerService,
@@ -41,7 +42,6 @@ import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs
 import { charterCatalogPolicy } from "@voyantjs/charters/catalog-policy"
 import { cruiseCatalogPolicy } from "@voyantjs/cruises/catalog-policy"
 import { extrasCatalogPolicy } from "@voyantjs/extras/catalog-policy"
-import { hospitalityCatalogPolicy } from "@voyantjs/hospitality/catalog-policy"
 import { createDemoCatalogAdapter } from "@voyantjs/plugin-catalog-demo"
 import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
 import { config } from "dotenv"
@@ -129,10 +129,10 @@ const fieldPolicyRegistries = new Map<string, FieldPolicyRegistry>([
   ["extras", createFieldPolicyRegistry(extrasCatalogPolicy)],
   ["cruises", createFieldPolicyRegistry(cruiseCatalogPolicy)],
   ["charters", createFieldPolicyRegistry(charterCatalogPolicy)],
-  ["hospitality", createFieldPolicyRegistry(hospitalityCatalogPolicy)],
+  ["accommodations", createFieldPolicyRegistry(accommodationCatalogPolicy)],
 ])
 
-const VERTICALS = ["products", "extras", "cruises", "charters", "hospitality"] as const
+const VERTICALS = ["products", "extras", "cruises", "charters", "accommodations"] as const
 const slices: IndexerSlice[] = VERTICALS.flatMap((vertical) => [
   { vertical, locale: "en-GB", audience: "staff", market: "default" },
   { vertical, locale: "en-GB", audience: "customer", market: "default" },

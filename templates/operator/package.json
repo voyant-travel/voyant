@@ -84,7 +84,7 @@
     "@voyantjs/plugin-flights-demo": "workspace:*",
     "@voyantjs/plugin-netopia": "workspace:*",
     "@voyantjs/plugin-smartbill": "workspace:*",
-    "@voyantjs/hospitality": "workspace:*",
+    "@voyantjs/accommodations": "workspace:*",
     "@voyantjs/i18n": "workspace:*",
     "@voyantjs/identity": "workspace:*",
     "@voyantjs/legal": "workspace:*",

@@ -85,7 +85,7 @@ export const bookingTravelerTravelDetails = pgTable(
     sharingGroupId: text("sharing_group_id"),
     /**
      * Plain cross-package reference to a room type/catalog unit. No FK:
-     * hospitality/product catalogs are optional packages.
+     * accommodations/product catalogs are optional packages.
      */
     roomTypeId: text("room_type_id"),
     bedPreference:

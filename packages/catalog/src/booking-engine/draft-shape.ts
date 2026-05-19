@@ -66,7 +66,7 @@ export interface CabinNumberOption {
   hasAccessibilityFeatures?: boolean
 }
 
-/** A rate-plan option attached to a `RoomOption` (hospitality only, today). */
+/** A rate-plan option attached to a `RoomOption` (accommodations only, today). */
 export interface RatePlanOption {
   id: string
   name: string
@@ -82,7 +82,7 @@ export interface RatePlanOption {
   currency?: string
 }
 
-/** A room option (hospitality + multi-day tours w/ rooms). */
+/** A room option (accommodations + multi-day tours w/ rooms). */
 export interface RoomOption {
   id: string
   name: string

@@ -4,6 +4,7 @@
   "commit": false,
   "fixed": [
     [
+      "@voyantjs/accommodations",
       "@voyantjs/action-ledger",
       "@voyantjs/admin",
       "@voyantjs/auth",
@@ -57,9 +58,6 @@
       "@voyantjs/ground",
       "@voyantjs/ground-react",
       "@voyantjs/hono",
-      "@voyantjs/hospitality",
-      "@voyantjs/hospitality-react",
-      "@voyantjs/hospitality-ui",
       "@voyantjs/i18n",
       "@voyantjs/identity",
       "@voyantjs/identity-react",

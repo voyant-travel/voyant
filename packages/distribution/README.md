@@ -1,6 +1,11 @@
 # @voyantjs/distribution
 
-Distribution module for Voyant. Channels, contracts, commissions, mappings, webhook events, and channel identity.
+Distribution module for Voyant. Channels, contracts, commissions, mappings,
+webhook events, and channel identity for OTA, tour-operator, and DMC
+deployments.
+
+Distribution is cross-cutting channel support. It is not a separate
+implementation scenario or user base.
 
 ## Install
 

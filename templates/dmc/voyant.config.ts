@@ -28,7 +28,6 @@ export default defineVoyantConfig({
     "@voyantjs/resources",
     "@voyantjs/ground",
     "@voyantjs/facilities",
-    "@voyantjs/hospitality",
     "@voyantjs/markets",
     "@voyantjs/booking-requirements",
     "@voyantjs/external-refs",

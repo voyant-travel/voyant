@@ -1,6 +1,10 @@
 # @voyantjs/ground
 
-Ground transport module for Voyant. Operators, vehicles, drivers, transfer preferences, dispatch, and execution — a full operational layer for ground-transport workflows.
+Ground transport module for Voyant. Vehicles, drivers, transfer preferences,
+dispatch, and execution for DMC and tour-operator operational workflows.
+
+Ground supports transfers, pickups, dropoffs, dispatch, and local logistics for
+the target OTA, tour-operator, and DMC scenarios.
 
 ## Install
 

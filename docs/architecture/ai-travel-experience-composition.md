@@ -215,7 +215,7 @@ not introduce a universal CatalogEntry table or universal pricing engine.
 Each vertical keeps its own truth:
 
 - products resolve product options, units, slots, pricing, and itinerary days
-- hospitality resolves room types, rate plans, stay rules, and room-night
+- accommodations resolve room types, rate plans, stay rules, and room-night
   availability
 - flights resolve live offers, repricing, booking, and order status through
   adapters

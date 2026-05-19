@@ -1,6 +1,6 @@
 /**
  * Extras sourced-content cache. Sibling to the products / cruises /
- * hospitality / charters variants — same shape, different vertical.
+ * accommodations / charters variants — same shape, different vertical.
  *
  * One row per sourced extra × locale × market. Stores the content the
  * upstream adapter served via `getContent`, plus the SWR metadata the

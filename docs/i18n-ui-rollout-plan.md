@@ -337,26 +337,17 @@ Convert rules, categories, schedules, policy, and combobox surfaces.
 
 - localized empty states, dialog titles, button labels, and policy/rule wording
 
-## PR-8: `hospitality-ui`
+## Removed: legacy hotel-operations UI
 
-### Scope
+Status: removed by the accommodation resale boundary work. Do not reintroduce
+the old hotel-operations UI as an i18n rollout slice. Accommodation resale UI
+should move through catalog, storefront, products, bookings, or a narrowly
+named accommodation resale surface. See
+[`architecture/accommodation-resale-boundary.md`](./architecture/accommodation-resale-boundary.md).
 
-Convert room, inventory, meal plan, maintenance, and rate plan surfaces.
-
-### Files to add
-
-- `packages/hospitality-ui/src/i18n/messages.ts`
-- `packages/hospitality-ui/src/i18n/en.ts`
-- `packages/hospitality-ui/src/i18n/ro.ts`
-- `packages/hospitality-ui/src/i18n/provider.tsx`
-- `packages/hospitality-ui/src/i18n/index.ts`
-- `packages/hospitality-ui/src/i18n.test.tsx`
-
-### Files to change
-
-- `packages/hospitality-ui/package.json`
-- `packages/hospitality-ui/src/index.ts`
-- all user-facing components
+Former scope: room inventory, maintenance, rate-plan admin, housekeeping, and
+other hotel-operations surfaces. These are no longer part of the active
+first-party UI registry.
 
 ## PR-9: `resources-ui`
 
@@ -443,7 +434,6 @@ Bring all registry domains into alignment with package-owned i18n seams.
 - `packages/ui/registry/extras`
 - `packages/ui/registry/finance`
 - `packages/ui/registry/ground`
-- `packages/ui/registry/hospitality`
 - `packages/ui/registry/identity`
 - `packages/ui/registry/legal`
 - `packages/ui/registry/markets`
@@ -499,7 +489,6 @@ Make the operator and DMC apps import only the locales they support.
 - `external-refs-ui` owns `packages/ui/registry/external-refs`
 - `extras-ui` owns `packages/ui/registry/extras`
 - `finance-ui` owns `packages/ui/registry/finance`
-- `hospitality-ui` owns `packages/ui/registry/hospitality`
 - `identity-ui` owns `packages/ui/registry/identity`
 - `legal-ui` owns `packages/ui/registry/legal`
 - `markets-ui` owns `packages/ui/registry/markets`
@@ -559,7 +548,7 @@ pnpm i18n:check:ui-literals
 5. PR-5 `bookings-ui`
 6. PR-6 `products-ui`
 7. PR-7 `pricing-ui`
-8. PR-8 `hospitality-ui`
+8. Removed legacy hotel-operations UI
 9. PR-9 `resources-ui`
 10. PR-10 remaining `*-ui` packages
 11. PR-11 registry rollout

@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, useParams, useSearch } from "@tanstack/react-router"
+import type { AccommodationContent } from "@voyantjs/accommodations/content-shape"
 import type { BookingEntitySummary } from "@voyantjs/bookings-ui/journey"
 import type { CruiseContent } from "@voyantjs/cruises/content-shape"
-import type { HospitalityContent } from "@voyantjs/hospitality/content-shape"
 import type { ProductContent } from "@voyantjs/products/content-shape"
 import { useMemo } from "react"
 import { z } from "zod"
@@ -12,7 +12,7 @@ import { getApiUrl } from "@/lib/env"
 
 /**
  * Storefront booking-journey route. The customer arrives here from
- * the product / cruise / hospitality detail page with **the
+ * the product / cruise / accommodations detail page with **the
  * relevant configure inputs already locked in** via search params.
  * The journey itself only handles travelers + add-ons + payment;
  * the Configure step is hidden because Configure already happened
@@ -29,7 +29,7 @@ const shopBookSearchSchema = z.object({
    *   - cruises  → `departureSlotId` (sailing id) +
    *               `cabinCategoryId`, optionally `cabinNumberId` +
    *               `airArrangement`
-   *   - hospitality → `checkIn` + `checkOut` + `roomTypeId` +
+   *   - accommodations → `checkIn` + `checkOut` + `roomTypeId` +
    *               `ratePlanId`
    * The detail page fills the right subset before navigating.
    */
@@ -123,8 +123,8 @@ function useEntitySummary(
   const url =
     entityModule === "cruises"
       ? `${getApiUrl()}/v1/public/cruises/${encodeURIComponent(entityId)}/content`
-      : entityModule === "hospitality"
-        ? `${getApiUrl()}/v1/public/hospitality/${encodeURIComponent(entityId)}/content`
+      : entityModule === "accommodations"
+        ? `${getApiUrl()}/v1/public/accommodations/${encodeURIComponent(entityId)}/content`
         : entityModule === "products"
           ? `${getApiUrl()}/v1/public/products/${encodeURIComponent(entityId)}/content`
           : null
@@ -191,14 +191,14 @@ function useEntitySummary(
         destination: route ?? undefined,
       }
     }
-    if (entityModule === "hospitality") {
-      const c = data as HospitalityContent
+    if (entityModule === "accommodations") {
+      const c = data as AccommodationContent
       const stars = c.hotel.star_rating ? "★".repeat(Math.floor(c.hotel.star_rating)) : null
       return {
         name: c.hotel.name,
         subtitle: stars ?? undefined,
         heroImageUrl: c.hotel.hero_image_url ?? undefined,
-        vertical: "hospitality",
+        vertical: "accommodations",
         whenLabel:
           search.checkIn && search.checkOut
             ? `${formatDate(search.checkIn)} → ${formatDate(search.checkOut)}`

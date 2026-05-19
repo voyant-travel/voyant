@@ -54,7 +54,7 @@ export interface StorefrontBookingJourneyProps {
   /** Pre-locked configure inputs (departure / sailing / cabin /
    *  date-range / pax) collected on the detail page. */
   initialConfigure: Record<string, unknown>
-  /** Pre-locked accommodation slice (room/rate for hospitality). */
+  /** Pre-locked accommodation slice (room/rate for accommodations). */
   initialAccommodation?: Record<string, unknown>
   /** Optional summary of the entity being booked — surfaces in the
    *  side panel so the customer keeps context while filling out the

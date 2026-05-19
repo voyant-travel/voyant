@@ -22,7 +22,7 @@ import {
 export interface ListOrdersQuery {
   /** Restrict to a specific booking. */
   bookingId?: string
-  /** Restrict to a specific catalog vertical (`"products"`, `"hospitality"`, etc.). */
+  /** Restrict to a specific catalog vertical (`"products"`, `"accommodations"`, etc.). */
   entityModule?: string
   /** Restrict to one or more source kinds — e.g. `["demo"]`. */
   sourceKinds?: ReadonlyArray<string>

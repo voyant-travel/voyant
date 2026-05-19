@@ -214,7 +214,7 @@ describe("checkAvailabilityTool", () => {
     registry.register(checkAvailabilityTool)
 
     const result = await registry.dispatchTool("check_availability", {
-      vertical: "hospitality",
+      vertical: "accommodations",
       entityId: "rmtp_xyz",
       parameters: { dates: "2026-10-15..2026-10-22" },
     })
