@@ -1,5 +1,16 @@
 # @voyantjs/flights
 
+## 0.57.0
+
+### Minor Changes
+
+- 0829145: Add zod runtime schemas for the public flight connector contract, including requests, responses, enums, value objects, adapter context, and capability declarations.
+
+### Patch Changes
+
+- @voyantjs/catalog@0.57.0
+- @voyantjs/db@0.57.0
+
 ## 0.56.0
 
 ### Minor Changes
