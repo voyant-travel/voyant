@@ -1,5 +1,18 @@
 # @voyantjs/flights-ui
 
+## 0.56.0
+
+### Patch Changes
+
+- Updated dependencies [fe403fc]
+  - @voyantjs/checkout-ui@0.56.0
+  - @voyantjs/crm-react@0.56.0
+  - @voyantjs/finance@0.56.0
+  - @voyantjs/flights@0.56.0
+  - @voyantjs/flights-react@0.56.0
+  - @voyantjs/i18n@0.56.0
+  - @voyantjs/ui@0.56.0
+
 ## 0.55.1
 
 ### Patch Changes
