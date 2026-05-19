@@ -27,12 +27,14 @@ Target route family:
 - `/v1/admin/accommodations/:id/content`
 - `/v1/public/accommodations/:id/content`
 
-Compatibility:
+Migration stance:
 
-- Existing catalog rows and generated artifacts may still contain
-  `entity_module = "hospitality"` during migration.
-- Public storefront aliases may continue to resolve `/hospitality/...` while
-  indexed/catalog data is migrated.
+- Do not add `/hospitality` compatibility aliases by default.
+- Production does not depend on the current hospitality surface, so runtime
+  references can be removed or repointed directly.
+- Historical migrations and generated artifacts may still contain
+  `entity_module = "hospitality"` until the relevant source change regenerates
+  or replaces them.
 - New source code, package names, route names, docs, and registry entries should
   use `accommodations`.
 
@@ -133,7 +135,7 @@ Move imports and URLs from hospitality to accommodations:
 - catalog entity module labels
 - booking journey selection keys only where they name the package/vertical
 
-Historical URL aliases may stay temporarily to avoid breaking existing links.
+Do not keep historical URL aliases unless a concrete migration blocker appears.
 
 ### Admin And Registry UI
 
@@ -164,7 +166,6 @@ hotel's own rooms or in-stay operations.
   - Current: inline `/v1/{admin,public}/hospitality/:id/content`
   - Target: `/v1/{admin,public}/accommodations/:id/content`, backed by
     `getAccommodationContent`
-  - Keep temporary hospitality aliases while catalog rows migrate.
 
 - `templates/operator/src/api/lib/booking-engine-runtime.ts`
   - Current: imports `hospitalityBookingsService`,
@@ -174,18 +175,15 @@ hotel's own rooms or in-stay operations.
 
 - `templates/operator/src/api/lib/catalog-runtime.ts`
   - Current: `hospitalityCatalogPolicy`, `hospitality` slices
-  - Target: `accommodationCatalogPolicy`, `accommodations` slices, with
-    optional compatibility slices for `hospitality` during migration.
+  - Target: `accommodationCatalogPolicy`, `accommodations` slices.
 
 - `templates/operator/scripts/reindex.ts`
   - Current: indexes `roomTypes` as vertical `hospitality`
-  - Target: indexes accommodation entries as `accommodations`; compatibility
-    path may read old `room_types` until schema migration.
+  - Target: indexes accommodation entries as `accommodations`.
 
 - `templates/operator/scripts/sync-sources.ts`
   - Current: policy registry includes `hospitality`
-  - Target: source adapters emit `accommodations` projections. Keep adapter
-    compatibility for old `hospitality` projections until sources migrate.
+  - Target: source adapters emit `accommodations` projections.
 
 - `templates/operator/src/routes/(storefront)/shop_.products.$entityModule.$entityId.tsx`
   - Current: renders `HospitalityContent` through `/v1/public/hospitality`
@@ -204,7 +202,7 @@ hotel's own rooms or in-stay operations.
 - `templates/dmc/src/api/mcp.ts`
   - Current: resolves `hospitality` via `getResolvedRoomTypeById`
   - Target: resolves `accommodations` via the accommodation catalog-plane
-    resolver. Keep an explicit `hospitality` alias only during migration.
+    resolver.
 
 ### Remove Or Quarantine
 
@@ -229,12 +227,13 @@ hotel's own rooms or in-stay operations.
 - `packages/ui/registry/hospitality/**`
   - Current: registry wrappers for hotel-ops tabs/dialogs and a few reusable
     comboboxes.
-  - Target: remove registry blocks for hotel ops. Rebuild any future resale UI
-    under catalog/product/storefront-owned registry paths.
+  - Target: removed in this slice. Rebuild any future resale UI under
+    catalog/product/storefront-owned registry paths.
 
 - `packages/ui/registry.json`, `packages/ui/public/r/**`,
   `apps/registry/public/r/**`
-  - Generated artifacts. Regenerate after removing hospitality registry sources.
+  - Generated artifacts. Removed matching `voyant-hospitality-*` entries after
+    deleting hospitality registry sources.
 
 ### Historical Or Generated Only
 
@@ -276,7 +275,7 @@ until a retained resale route surface is intentionally designed.
 2. Add `@voyantjs/accommodations` and move retained content/catalog/booking
    contracts.
 3. Repoint operator storefront/catalog/booking consumers to the new package,
-   keeping compatibility aliases where needed.
+   without keeping hospitality compatibility aliases.
 4. Remove `/v1/hospitality` starter mounts from dev and DMC.
 5. Split or migrate schema after routes and consumers no longer require the
    mixed package.

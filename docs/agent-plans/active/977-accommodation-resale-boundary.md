@@ -61,12 +61,11 @@ resale contracts from hotel-operations surfaces.
    `docs/agent-plans/active/977-hospitality-file-classification.md`.
 2. Define the retained target surface. Completed in
    `docs/agent-plans/active/977-retained-accommodation-target-surface.md`.
-   The target is a narrow `accommodations` resale surface, with temporary
-   compatibility for existing `hospitality` catalog rows and URLs during
-   migration.
-3. Remove hotel-operations UI registry entries first. This is the clearest
-   first-party exposure and is unlikely to affect catalog resale if resale
-   contracts are kept.
+   The target is a narrow `accommodations` resale surface. Do not add
+   hospitality compatibility aliases by default; production does not depend on
+   the current hospitality surface.
+3. Remove hotel-operations UI registry entries first. Completed by deleting the
+   `voyant-hospitality-*` registry source blocks and generated registry entries.
 4. Update starter runtime wiring only after replacement accommodation resale
    routes/contracts are in place.
 5. Regenerate `packages/ui/public/r`, `apps/registry/public/r`, route trees,
