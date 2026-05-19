@@ -57,7 +57,8 @@ resale contracts from hotel-operations surfaces.
 
 1. Classify `packages/hospitality`, `packages/hospitality-react`, and
    `packages/hospitality-ui` file-by-file into retained resale contracts versus
-   hotel-operations surfaces.
+   hotel-operations surfaces. Completed in
+   `docs/agent-plans/active/977-hospitality-file-classification.md`.
 2. Define the retained target surface. Likely homes are `catalog`, `products`,
    `bookings`, `storefront`, source adapters, or a narrowly named accommodation
    resale package. Avoid `hospitality` as the new public family name.
