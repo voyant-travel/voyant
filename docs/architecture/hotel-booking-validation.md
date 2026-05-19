@@ -1,5 +1,13 @@
 # Hotel booking schema validation
 
+Status: legacy validation note.
+
+This document predates the accommodation resale boundary. It remains useful as
+research for accommodation booking lines, daily rates, rooming, and
+multi-segment stays, but it should not be read as approval for a first-party
+hotel PMS or hotel-operations module. See
+[`accommodation-resale-boundary.md`](./accommodation-resale-boundary.md).
+
 This doc captures the findings from exercising the bookings + hospitality
 schema against a realistic multi-night hotel booking. The accompanying
 test in `packages/hospitality/tests/integration/multi-night-mixed-room.test.ts`
@@ -22,7 +30,7 @@ A 7-night stay with a mid-stay room change:
 
 ### Multi-room-type stays decompose cleanly
 
-The schema models a mid-stay room change as **two `bookings.booking_items` rows**, each with its own **`hospitality.stay_booking_items`** extension. The check-out date of one matches the check-in date of the next, which is how hotel PMS systems represent the move.
+The schema models a mid-stay room change as **two `bookings.booking_items` rows**, each with its own **stay booking item** extension. The check-out date of one matches the check-in date of the next. That shape remains useful for accommodation resale and package composition even though hotel PMS operations are out of scope.
 
 ```
 bookings           — 1 row, the parent
@@ -75,9 +83,9 @@ Tour bookings decrement `availability_slots.remaining_pax` at reserve. Hotel boo
 
 Each `stay_booking_items.ratePlanId` references a rate plan that has its own `cancellationPolicyId`. If both segments use the same rate plan that's fine; if they differ (e.g., a flexible Deluxe + non-refundable Suite), the cancellation calculation has to walk per-segment and aggregate. The legal package's cancellation evaluator (`evaluateCancellation`) was designed for one policy per booking. **Follow-up:** confirm whether `evaluateCancellation` can fan out across segments, or if we need a per-segment loop.
 
-### Stay folios are wired but not exercised here
+### Stay folios are out of scope for first-party starters
 
-`stay_folios` and `stay_folio_lines` exist in `schema-operations.ts` but aren't part of this validation. They model the on-property tab — incidentals, room-service charges, mini-bar — that get charged at checkout. Whether that integrates cleanly with `finance.invoices` (one invoice with folio lines? two invoices: one for the booking, one for the folio?) is a separate exercise.
+`stay_folios` and `stay_folio_lines` exist in the legacy operations schema but aren't part of this validation. They model the on-property tab - incidentals, room-service charges, mini-bar - that get charged at checkout. That is hotel-operations/PMS territory and should not be promoted in first-party starters.
 
 ## Verdict
 

@@ -1,6 +1,8 @@
 # Ubiquitous Language
 
-The canonical domain vocabulary for Voyant — a tour-operator / DMC platform. Terms are grouped by subdomain. Use the **bold** term; treat *italic* aliases as smells.
+The canonical domain vocabulary for Voyant - an OTA, tour-operator, and DMC
+platform. Terms are grouped by subdomain. Use the **bold** term; treat
+*italic* aliases as smells.
 
 ---
 
@@ -51,6 +53,11 @@ The canonical domain vocabulary for Voyant — a tour-operator / DMC platform. T
 | **Option Unit**       | A pricing/age dimension within an Option (e.g. "Adult", "Child 3–11", "Group 1–4").              | *price band, ticket type*      |
 | **Product Day**       | A day in a multi-day Product's itinerary.                                                        | *day, leg*                     |
 | **Product Day Service** | A scheduled service on a Product Day (transfer, meal, guided activity, accommodation reference). | *itinerary item*             |
+| **Accommodation Component** | A lodging component sold or arranged inside a Product, package, itinerary, cruise extension, or sourced catalog entry. | *hotel module, property ops* |
+| **Room Option**       | A bookable accommodation option for resale or trip composition, usually with occupancy and board/rate choices. | *room unit (unless physical ops)* |
+| **Rate Plan**         | A resale/commercial accommodation price and policy choice, usually from a Supplier or Inventory Source. | *tariff*                      |
+| **Board Basis**       | The included-meals tier for an accommodation component (breakfast, half-board, full-board, all-inclusive). | *meal plan (when ambiguous)* |
+| **Stay Component**    | A date-range accommodation line within a Product, Offer, Booking, or sourced Catalog Item.        | *hotel reservation*            |
 | **Product Version**   | An immutable snapshot of a Product's structure at a point in time.                               | *revision, snapshot*           |
 | **Product Media**     | An image, video, or document attached to a Product or one of its Days.                           | *asset, attachment*            |
 
@@ -106,11 +113,8 @@ The five-step ladder is **Quote → Offer → Order → Booking → Fulfillment*
 | **Driver**            | A crew member assigned to Vehicles and Dispatches.                                               | *operator, chauffeur*         |
 | **Resource**          | A finite assignable asset (guide, equipment, room, driver, vehicle) with a type and availability. | *asset, person-resource*     |
 | **Resource Pool**     | A named collection of interchangeable Resources (e.g. "French-speaking guides – Cairo").         | *team, group*                 |
-| **Property**          | A hospitality-specialized Facility (hotel, resort, villa, apartment, lodge, camp).               | *hotel (too narrow)*          |
-| **Room Type / Room Unit** | A room category (Deluxe Suite) vs. a specific instance (Suite 401).                          | *room (ambiguous)*            |
-| **Rate Plan**         | A hospitality pricing plan (rack, negotiated, package) tied to Room Types and stay rules.        | *tariff*                      |
-| **Meal Plan**         | The included-meals tier (breakfast, half-board, full-board, all-inclusive).                      | *board basis*                 |
-| **Stay**              | A hospitality booking spanning one or more nights at a Property.                                 | *reservation (overloaded)*    |
+| **Accommodation Facility** | A Facility used as a lodging, meeting, pickup, dining, attraction, or operational location in an OTA, tour-operator, or DMC workflow. | *property ops*          |
+| **Rooming List**      | Traveler-to-room grouping or assignment data for a Booking.                                      | *hotel room management*       |
 | **Facility**          | The shared base venue concept — Properties, transfer hubs, attractions, restaurants, airports all specialize Facility. | *location, place* |
 
 ## Money
@@ -188,6 +192,7 @@ The five-step ladder is **Quote → Offer → Order → Booking → Fulfillment*
 - An **Offer** converts to exactly one **Order**; an Order may be created without a prior Offer (direct booking).
 - An **Order** produces one or more **Bookings**; a Booking is the fulfillment side of one Order.
 - A **Booking** holds **Allocations** against **Slots** (or Pickups, or Resources); each Allocation belongs to exactly one Booking Item.
+- Accommodation may be sold as **Sourced Inventory** or as a component of a **Product**, but hotel/property operations are not a first-party implementation scenario.
 - A **Booking Item** produces zero or more **Fulfillments**; each Fulfillment is delivered over exactly one channel.
 - An **Order** produces one or more **Invoices**; an Invoice belongs to exactly one Order (and may reference its Booking).
 - A **Payment Schedule** belongs to a Booking; each schedule line resolves via a **Payment Session** to one or more **Payments**.
@@ -206,7 +211,7 @@ The five-step ladder is **Quote → Offer → Order → Booking → Fulfillment*
 
 > **Sales agent:** "And the **Booking** is created from the **Order**?"
 
-> **Operations manager:** "Yes — the Order is the commercial commitment with the **Order Terms** they have to accept. The **Booking** is operational: it holds **Allocations** against the **Slots** for each guided day, books a **Stay** at the **Property** in Aswan, and sets up **Dispatches** with **Vehicles** and **Drivers** for the transfers."
+> **Operations manager:** "Yes - the Order is the commercial commitment with the **Order Terms** they have to accept. The **Booking** is operational: it holds **Allocations** against the **Slots** for each guided day, includes a **Stay Component** in Aswan, and sets up **Dispatches** with **Vehicles** and **Drivers** for the transfers."
 
 > **Sales agent:** "What about the cancellation thing they asked about?"
 
@@ -228,6 +233,7 @@ These terms are used loosely in conversation. Pick the canonical form below; tre
 
 - **Customer / client / buyer** — none are first-class entities. The canonical CRM record is **Person** (with optional **Organization**). On a Booking, the buyer is captured as `personId` + `organizationId` snapshot fields. Avoid "customer" / "client" except in UI copy facing the operator's own staff.
 - **Tour / trip / experience / package** — all collapse to **Product**. The booking shape is encoded in `productBookingMode` (`date`, `date-time`, `open`, `stay`, `transfer`, `itinerary`).
+- **Accommodation vs. hotel operations** - accommodation is valid as catalog inventory, sourced resale, or trip composition. Hotel/property operations are not a first-party Voyant implementation scenario.
 - **Quote vs. Offer** — both look like "a price proposal". **Quote** is a CRM artifact attached to an Opportunity (informational, pre-sales). **Offer** is the transactional, sellability-resolved, sendable, acceptable document on the commitment ladder. They are not synonyms.
 - **Order vs. Booking** — both are post-sale. **Order** is the commercial commitment (with Order Terms, links to Invoices); **Booking** is the operational record (Travelers, Allocations, Fulfillments). One Order produces one Booking in normal flows; do not use them interchangeably.
 - **Reservation** — overloaded between "Hold" (a temporary inventory claim) and "Booking" (the persistent record). Use **Hold** or **Booking** — never "Reservation".
@@ -239,7 +245,7 @@ These terms are used loosely in conversation. Pick the canonical form below; tre
 - **Product vs. Catalog Item** — **Product** is canonical local truth with admin ownership and operational modeling. **Catalog Item** is the normalized discovery projection that can represent either a local Product or Sourced Inventory. Do not import external inventory into Product just to make it searchable.
 - **Reseller vs. Channel** — **Reseller** is a role an Operator can play relative to inventory. **Channel** is a distribution entity that sells our inventory. They overlap in commerce but are not the same record.
 - **Contact** — too overloaded to use raw. Pick: **Person** (CRM record), **Contact Point** (email/phone/website on identity), **Named Contact** (titled role at an Organization), or **Participant** (role on a deal/order/booking).
-- **Traveler vs. Participant vs. Guest** — **Traveler** is the person actually traveling (booking_travelers, with category and PII). **Participant** is the broader role-bearer on a transaction (booker, decision-maker, finance, traveler). Avoid "Guest" except inside hospitality where it specifically means a Traveler occupying a room.
+- **Traveler vs. Participant vs. Guest** — **Traveler** is the person actually traveling (booking_travelers, with category and PII). **Participant** is the broader role-bearer on a transaction (booker, decision-maker, finance, traveler). Avoid "Guest"; use **Traveler** in bookings and rooming lists.
 - **Capacity** is always a number, never a status. Slots have a capacity *and* a status — don't conflate them.
 - **Cost / Rate / Price** — three distinct money concepts. **Cost** = our outflow to a Supplier. **Rate** = the Supplier's per-unit tariff (per_person, per_night, etc.). **Price** = what the customer pays. Never use them interchangeably even when numerically equal.
 - **Issue vs. Fulfill vs. Deliver** — **Issue** = produce the artifact (Fulfillment, Invoice, Contract). **Fulfill** = mark operational completion of a Booking Item or Allocation. **Deliver** = transmit an issued artifact over a channel (email, download, wallet, API). Three steps, not synonyms.

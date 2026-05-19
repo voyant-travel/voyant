@@ -339,6 +339,12 @@ Convert rules, categories, schedules, policy, and combobox surfaces.
 
 ## PR-8: `hospitality-ui`
 
+Status: legacy/de-scope candidate. Do not use this PR slice as a reason to
+expand hotel-operations UI. Accommodation resale UI should move toward catalog,
+storefront, products, bookings, or a narrowly named accommodation resale
+surface. See
+[`architecture/accommodation-resale-boundary.md`](./architecture/accommodation-resale-boundary.md).
+
 ### Scope
 
 Convert room, inventory, meal plan, maintenance, and rate plan surfaces.

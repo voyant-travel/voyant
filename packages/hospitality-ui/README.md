@@ -1,8 +1,20 @@
 # @voyantjs/hospitality-ui
 
-Importable React UI components for Voyant hospitality. Bundler-consumed (Vite, Next.js, webpack, etc.).
+Legacy React UI components for Voyant hospitality surfaces.
+
+This package currently includes hotel/property operations UI such as room
+inventory, maintenance blocks, and other PMS-style workflows. Those surfaces are
+being de-scoped from first-party Voyant starters. Do not add new first-party
+hotel-operations UI here.
+
+Accommodation resale UI should move toward catalog, storefront, products,
+bookings, or a narrowly named accommodation resale surface. See
+[`docs/architecture/accommodation-resale-boundary.md`](../../docs/architecture/accommodation-resale-boundary.md).
 
 ## Install
+
+Direct installation is transitional while hospitality UI is being split or
+removed from first-party positioning.
 
 ```bash
 pnpm add @voyantjs/hospitality-ui @voyantjs/hospitality-react @voyantjs/ui @tanstack/react-query react react-dom

@@ -1,8 +1,9 @@
 # `flights-demo-api`
 
-Standalone HTTP service that mocks a GDS flight provider so templates and
-examples can exercise the full flight booking flow without external
-credentials. Mirrors `FlightConnectorAdapter` 1:1 over REST; the
+Standalone HTTP service that mocks a flight supplier/GDS provider so templates
+and examples can exercise the full flight booking flow without external
+credentials. This is a demo/reference supplier-integration surface, not an
+airline or flight-operator deployment. Mirrors `FlightConnectorAdapter` 1:1 over REST; the
 `@voyantjs/plugin-flights-demo` package is a thin fetch client that
 implements the adapter interface against this service.
 

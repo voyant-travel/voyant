@@ -1,6 +1,6 @@
 # Voyant
 
-Voyant is an open-source framework for travel companies. It ships starter apps, durable workflow orchestration, and a wide set of headless domain modules — CRM, products, availability, bookings, finance, distribution, resources, legal, charters, cruises, and more — that you can compose into your own travel platform.
+Voyant is an open-source framework for OTAs, tour operators, and DMCs. It ships starter apps, durable workflow orchestration, and a wide set of headless domain modules - CRM, products, availability, bookings, finance, distribution, resources, legal, charters, cruises, accommodation resale, and more - that you can compose into your own travel platform.
 
 #### [CLI](./packages/cli/README.md) | [DMC Template](./templates/dmc/README.md) | [Operator Template](./templates/operator/README.md) | [Packages](./packages) | [Examples](./examples) | [Migrations](./docs/migrations/README.md)
 
@@ -52,13 +52,18 @@ Voyant ships two first-party starters:
 
 - Deployable application shells, not just isolated packages
 - A normalized travel operations data model on PostgreSQL + Drizzle
-- Headless domain modules for CRM, catalog, availability, bookings, finance, legal, resources, charters, cruises, and more
+- Headless domain modules for CRM, catalog, availability, bookings, finance, legal, resources, charters, cruises, accommodation resale, and more
 - Hono-based API transport with optional Next.js route helpers
 - Step-based durable workflow orchestration that runs on Cloudflare Workers + Durable Objects, Node, or Voyant Cloud
 - Better Auth wiring in first-party starters, with core packages staying auth-provider agnostic
 - A shadcn-style component registry per domain (`crm-ui`, `products-ui`, `bookings-ui`, …) for installable UI blocks
 - React hook libraries (`crm-react`, `products-react`, `bookings-react`, …) that wrap the HTTP contract of each module
 - Optional integrations for payments, e-invoicing, storage, CMS sync, and notifications
+
+Voyant supports accommodation as catalog inventory for resale, packaging, and
+trip composition. It is not positioned as a hotel PMS or first-party
+hotel-operations system; see
+[`docs/architecture/accommodation-resale-boundary.md`](./docs/architecture/accommodation-resale-boundary.md).
 
 ## The framework surface
 
@@ -74,7 +79,7 @@ Voyant ships two first-party starters:
 - [`@voyantjs/booking-requirements`](./packages/booking-requirements/README.md), [`@voyantjs/resources`](./packages/resources/README.md), [`@voyantjs/transactions`](./packages/transactions/README.md), [`@voyantjs/bookings`](./packages/bookings/README.md)
 - [`@voyantjs/finance`](./packages/finance/README.md), [`@voyantjs/notifications`](./packages/notifications/README.md), [`@voyantjs/checkout`](./packages/checkout), [`@voyantjs/legal`](./packages/legal/README.md)
 - [`@voyantjs/distribution`](./packages/distribution/README.md), [`@voyantjs/markets`](./packages/markets/README.md), [`@voyantjs/pricing`](./packages/pricing/README.md), [`@voyantjs/extras`](./packages/extras/README.md), [`@voyantjs/sellability`](./packages/sellability/README.md)
-- [`@voyantjs/facilities`](./packages/facilities/README.md), [`@voyantjs/hospitality`](./packages/hospitality/README.md), [`@voyantjs/ground`](./packages/ground/README.md), [`@voyantjs/identity`](./packages/identity/README.md), [`@voyantjs/external-refs`](./packages/external-refs/README.md), [`@voyantjs/octo`](./packages/octo)
+- [`@voyantjs/facilities`](./packages/facilities/README.md), [`@voyantjs/ground`](./packages/ground/README.md), [`@voyantjs/identity`](./packages/identity/README.md), [`@voyantjs/external-refs`](./packages/external-refs/README.md), [`@voyantjs/octo`](./packages/octo)
 - [`@voyantjs/charters`](./packages/charters/README.md), [`@voyantjs/cruises`](./packages/cruises/README.md), [`@voyantjs/storefront`](./packages/storefront), [`@voyantjs/customer-portal`](./packages/customer-portal), [`@voyantjs/storefront-verification`](./packages/storefront-verification)
 
 ### Workflows (durable orchestration)
@@ -92,7 +97,7 @@ Reference apps under [`apps/`](./apps) compose these into deployable shapes — 
 
 ### UI registries and React families
 
-Each domain module has matching `-ui` (shadcn registry source) and `-react` (hooks + provider) packages — for example [`@voyantjs/crm-ui`](./packages/crm-ui/README.md) + [`@voyantjs/crm-react`](./packages/crm-react/README.md), [`@voyantjs/bookings-ui`](./packages/bookings-ui) + [`@voyantjs/bookings-react`](./packages/bookings-react), and so on across `products`, `finance`, `availability`, `distribution`, `markets`, `pricing`, `legal`, `resources`, `facilities`, `hospitality`, `suppliers`, `identity`, `external-refs`, `charters`, `cruises`, `extras`, `sellability`, `booking-requirements`. The shared admin shell lives in [`@voyantjs/admin`](./packages/admin/README.md); cross-cutting primitives in [`packages/ui`](./packages/ui/README.md).
+Each domain module has matching `-ui` (shadcn registry source) and `-react` (hooks + provider) packages where a reusable frontend surface is warranted - for example [`@voyantjs/crm-ui`](./packages/crm-ui/README.md) + [`@voyantjs/crm-react`](./packages/crm-react/README.md), [`@voyantjs/bookings-ui`](./packages/bookings-ui) + [`@voyantjs/bookings-react`](./packages/bookings-react), and so on across `products`, `finance`, `availability`, `distribution`, `markets`, `pricing`, `legal`, `resources`, `facilities`, `suppliers`, `identity`, `external-refs`, `charters`, `cruises`, `extras`, `sellability`, `booking-requirements`. The shared admin shell lives in [`@voyantjs/admin`](./packages/admin/README.md); cross-cutting primitives in [`packages/ui`](./packages/ui/README.md).
 
 ### Plugins
 

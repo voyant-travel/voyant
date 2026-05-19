@@ -1,11 +1,22 @@
 # Catalog architecture — design
 
 Status: draft / proposal
-Audience: anyone designing or implementing cross-vertical sellable inventory in Voyant — products, cruises, hospitality, charters, extras — and the cross-cutting infrastructure that supports them.
+Audience: anyone designing or implementing cross-vertical sellable inventory in Voyant - products, cruises, accommodation resale, charters, extras - and the cross-cutting infrastructure that supports them.
 
 This document captures the architecture for how Voyant models sellable inventory across multiple verticals, and how that inventory is searched, merchandised, snapshotted at booking, and reconciled across mixed sources (owned, Voyant Connect, GDS, direct supplier APIs, bedbanks).
 
-It is the meta-contract that existing vertical modules — `packages/products` (tours / experiences, OCTO-aligned), `packages/cruises` (see [`cruises-module.md`](./cruises-module.md)), `packages/hospitality` (hotels: room types, meal plans, rate plans, stay rules), `packages/charters` (yacht charters, see [`charters-module.md`](./charters-module.md)), and `packages/extras` (booking add-ons) — adopt. It is not itself a vertical module.
+It is the meta-contract that vertical modules and resale surfaces adopt:
+`packages/products` (tours / experiences, OCTO-aligned), `packages/cruises`
+(see [`cruises-module.md`](./cruises-module.md)), accommodation resale
+surfaces (hotel/lodging catalog inventory, room options, board/rate choices,
+and stay booking lines), `packages/charters` (yacht charters, see
+[`charters-module.md`](./charters-module.md)), and `packages/extras` (booking
+add-ons). It is not itself a vertical module.
+
+Accommodation is in scope here as resale, sourced inventory, or trip
+composition. Hotel/property operations are out of scope for first-party
+starters; see
+[`accommodation-resale-boundary.md`](./accommodation-resale-boundary.md).
 
 This document covers **Phase 1 — the foundation**. Phase 2 (semantic search, embeddings, AI agent access via MCP) is designed in [`catalog-rag-architecture.md`](./catalog-rag-architecture.md). Phase 3 (the flights vertical and the swappable `ReferenceDataProvider`) is designed in [`catalog-flights-architecture.md`](./catalog-flights-architecture.md). Phase 1 is complete and useful as keyword + hybrid-keyword search without either follow-up phase landing; Phases 2 and 3 are independent of each other (either can ship first), and both build on Phase 1's foundation without modifying it.
 
@@ -54,14 +65,14 @@ The two layers connect at two clean seams:
 ### Goals
 
 - **Distinguish operator from reseller** without forcing the data model to lie. A product can be operated, sourced, or both, and the catalog plane should treat each honestly.
-- **Per-vertical operational truth.** Existing vertical modules — `products`, `cruises`, `hospitality`, `charters`, `extras` — each remain first-class with their own schemas, pricing engines, availability engines, and booking flows. The catalog plane does not flatten them into one table or one polymorphic root, and any future verticals (e.g. a composite tour-package module) join the same way.
+- **Per-vertical operational truth.** Existing vertical modules and resale surfaces - `products`, `cruises`, accommodation resale, `charters`, `extras` - each keep their own schemas, pricing engines, availability engines, and booking flows where those differences are real. The catalog plane does not flatten them into one table or one polymorphic root, and any future verticals (e.g. a composite tour-package module) join the same way.
 - **Shared cross-cutting infrastructure** for the concerns that genuinely benefit from being unified — provenance, editorial overlays, snapshot capture at booking, search index projection, drift detection.
 - **A single field-policy contract** that every vertical implements, so editorial overrides, freshness expectations, snapshot semantics, and reindex behavior are coherent across kinds.
 - **Booking-time immutability.** A booking captures a frozen, self-contained view of what was sold — even if the upstream source mutates or disappears later.
 - **Source-extensibility through a public adapter contract.** Adding a new source — a GDS, a new direct API, a new bedbank, a wholesaler's own integration, a cruise line's direct feed, an operator's hand-rolled connector — is an adapter that emits into the catalog plane against a documented, stable contract. The contract is intended as a public extension point: any third party (Voyant Connect, a wholesaler's engineering team, an operator, a system integrator) can build an adapter and plug it in without changes to bookings, finance, CRM, or the catalog plane itself. No source is privileged; Voyant Connect is one adapter among many that satisfy the same contract.
 - **Near-real-time cross-deployment freshness via webhooks.** When Operator A's catalog mutates (price, availability, edits, bookings reducing inventory), Agency B reselling A's inventory learns within seconds — not via polling. The catalog plane defines the event taxonomy and visibility-filtered payloads (§5.8); Voyant's existing webhook subscription / delivery infrastructure handles transport. Same mechanism serves third-party CMS sync, partner storefront updates, and any other external consumer.
 - **A foundation that supports first-class semantic search and AI agent access in Phase 2.** Phase 1 ships keyword and hybrid-keyword search via the indexer; vector support flags on the `IndexerAdapter` capabilities reserve the seam for Phase 2 without contract churn. Phase 2 — designed in [`catalog-rag-architecture.md`](./catalog-rag-architecture.md) — adds embeddings, the `EmbeddingProvider` contract, per-audience embedding pools with isolation guarantees, and the `@voyantjs/catalog-mcp` tool package. Phase 1 is complete and useful as keyword search without any of Phase 2 landing.
-- **Coordinated adoption across all existing verticals in Phase 1, with explicit per-vertical participation scope.** The catalog plane and adoption by every existing vertical (`products`, `cruises`, `hospitality`, `charters`, `extras`) ship together. Each vertical's intended-for-Phase-1 participation is fully live at release; there is no transitional period where a vertical's intended scope is partially delivered. **`extras` is a deliberate bounded exception**: it adopts the snapshot and provenance shapes only, with full overlay / indexer participation explicitly deferred per §3.3.1. That is its intended Phase 1 scope, not a transitional gap. The architecture accepts varied participation depths across verticals; what it rules out is shipping with a vertical's intended scope half-implemented.
+- **Coordinated adoption across all existing verticals in Phase 1, with explicit per-vertical participation scope.** The catalog plane and adoption by each in-scope vertical or resale surface (`products`, `cruises`, accommodation resale, `charters`, `extras`) ship together. Each surface's intended-for-Phase-1 participation is fully live at release; there is no transitional period where intended scope is partially delivered. **`extras` is a deliberate bounded exception**: it adopts the snapshot and provenance shapes only, with full overlay / indexer participation explicitly deferred per §3.3.1. That is its intended Phase 1 scope, not a transitional gap. The architecture accepts varied participation depths across verticals; what it rules out is shipping with a surface's intended scope half-implemented.
 
 ### Non-goals (for v1)
 
@@ -76,7 +87,7 @@ The two layers connect at two clean seams:
 
 ### 3.1. CatalogEntry is a contract, not a root entity
 
-Vertical modules — hotel, cruise, product, package, excursion — remain separate first-class entities, each with their own schema, lifecycle, and operational logic. There is **no shared `catalog_entries` table** and **no `kind` discriminator** at the data level.
+Vertical modules and resale surfaces - accommodation, cruise, product, package, excursion - remain separate where their schema, lifecycle, and operational logic differ. There is **no shared `catalog_entries` table** and **no `kind` discriminator** at the data level.
 
 Instead, the catalog plane defines:
 
@@ -106,13 +117,13 @@ Examples: `inclusions[]`, `exclusions[]`, `transfers[]`, `itinerary_days[]`, `ai
 
 **Pattern 2 — Promoted child entity.** The structure has its own table inside the parent vertical's package, its own micro-registry, and a foreign key back to the parent. It is **not** independently sellable. Promotion is gated by the rule in §6.2.
 
-Examples: cruise `departures[]`, package `flights[]`, hotel `room_types[]`, cruise `cabin_categories[]`.
+Examples: cruise `departures[]`, package `flights[]`, accommodation `room_options[]`, cruise `cabin_categories[]`.
 
 **Pattern 3 — Referenced CatalogEntry.** The structure is its own root entity in its own vertical module, linked to the referencing vertical via the existing `defineLink` infrastructure. It is independently sellable, or reused across multiple parents with shared editorial. Promotion is gated by the rule in §6.3.
 
-Examples: a TUI package referencing a hotel; a tour referencing an excursion; a DMC re-using a 3-day mini-tour module across multiple longer tours.
+Examples: a TUI package referencing sourced accommodation; a tour referencing an excursion; a DMC re-using a 3-day mini-tour module across multiple longer tours.
 
-A fourth category exists for non-sellable infrastructure: **shared master entities** (ships, ports, airports, hotel chains). These are plain reference tables outside the catalog plane, referenced by FK from vertical modules. They are not CatalogEntries and have no overlay surface.
+A fourth category exists for non-sellable infrastructure: **shared master entities** (ships, ports, airports, accommodation brands/chains). These are plain reference tables outside the catalog plane, referenced by FK from vertical modules. They are not CatalogEntries and have no overlay surface.
 
 ### 3.3. Vertical packages and the shared catalog package
 
@@ -124,8 +135,11 @@ packages/products      operator-owned tours, experiences, multi-day itineraries 
                          (a 1-day product, optionally linked from a longer parent product)
 packages/cruises       cruise root + departures + cabin_categories + itinerary_days
                        see cruises-module.md
-packages/hospitality   hotel-style stay inventory: room types, meal plans, rate plans,
-                       stay rules, inventory grid
+accommodation resale   sourced or composed lodging inventory for OTAs, tour
+                       operators, and DMCs: content, room options, board/rate
+                       choices, cancellation terms, and booking snapshots.
+                       Hotel-operations surfaces are out of scope; see
+                       accommodation-resale-boundary.md
 packages/charters      yacht-style products that don't fit the cruise schema:
                        per-suite flat pricing, MYBA contract, APA — see charters-module.md
 packages/extras        booking add-ons: optional line items layered on a booked product
@@ -162,7 +176,7 @@ Phase 2 (RAG, see `catalog-rag-architecture.md`) lives in sibling packages:
 catalog tool registry. Phase 3 (Flights, see `catalog-flights-architecture.md`)
 lives as `packages/flights`. None of these modifies `packages/catalog`.
 
-Vertical packages depend on `packages/catalog` for the contract types and the shared infrastructure interfaces. `packages/catalog` does not depend on any vertical module — it knows nothing about cruises, hospitality, or charters specifically.
+Vertical packages depend on `packages/catalog` for the contract types and the shared infrastructure interfaces. `packages/catalog` does not depend on any vertical module - it knows nothing about cruises, accommodation resale, or charters specifically.
 
 #### 3.3.1. Adoption nuance for `packages/extras`
 
@@ -1049,7 +1063,10 @@ A TUI-style package would be its own vertical (call it `packages/tour-packages` 
 - **Nested fields:** `inclusions[]`, `exclusions[]`, `transfers[]`, `airport_pickup_included`, `baggage_allowance_kg`.
 - **Promoted child entities** (in the composite vertical): `departures[]`, `flights[]`.
 - **Referenced CatalogEntries** (cross-package via `defineLink`):
-  - **Hospitality stay** — a `packages/hospitality` CatalogEntry. The composite package links to it; the stay has its own merchandising surface, its own bookings (when sold standalone), its own `room_types[]` child entity.
+  - **Accommodation stay** — a sourced or composed accommodation CatalogEntry.
+    The composite package links to it; the stay has its own merchandising
+    surface, its own booking semantics when sold standalone, and its own
+    `room_options[]` child shape.
   - **Excursions** — `packages/products` CatalogEntries (1-day products, sold standalone or linked into longer parents).
 
 A booking on such a package would capture a snapshot graph:
@@ -1058,7 +1075,7 @@ A booking on such a package would capture a snapshot graph:
 booking_id: bk_abc
 booking_catalog_snapshot rows:
   - entity_module: tour-packages, entity_id: tpkg_xyz, frozen_payload: {…package view…}
-  - entity_module: hospitality,   entity_id: hsp_mno,  frozen_payload: {…stay view at book time…}
+  - entity_module: accommodation, entity_id: acc_mno,  frozen_payload: {…stay view at book time…}
   - entity_module: products,      entity_id: prod_111, frozen_payload: {…excursion view…}
   - entity_module: products,      entity_id: prod_222, frozen_payload: {…excursion view…}
   // departures and flights are captured inside the package's frozen_payload
@@ -1098,10 +1115,20 @@ The `EmbeddingProvider` contract and embedding pipeline ship as part of Phase 2 
 1. Write `packages/products/src/catalog-policy.ts` — declare every product field under the contract.
 2. Wire products' service create/update calls to write provenance fields.
 3. Wire products' service into the overlay resolver for read paths.
-4. Wire bookings' commit path to emit `booking_catalog_snapshot` rows for the product (and any referenced CatalogEntries — initially none, since products do not yet reference hospitality stays or extras through the catalog plane).
+4. Wire bookings' commit path to emit `booking_catalog_snapshot` rows for the product (and any referenced CatalogEntries - initially none, since products do not yet reference accommodation stays or extras through the catalog plane).
 5. Wire products into the indexer adapter (one search document per product, per locale, per audience).
 
-Once products' adoption proves the contract, the remaining four verticals adopt in parallel: `packages/cruises`, `packages/hospitality`, `packages/charters`, `packages/extras`. Each adoption is structurally the same as products' (write the catalog-policy file, wire provenance, wire overlay reads, wire snapshot capture, wire the indexer adapter). Cruises is already designed in alignment with this contract (see [`cruises-module.md`](./cruises-module.md)); charters has its own design notes (see [`charters-module.md`](./charters-module.md)) and adopts via the same pattern. Extras adopts partially per §3.3.1 — provenance and snapshot only at first.
+Once products' adoption proves the contract, the remaining in-scope surfaces
+adopt in parallel: `packages/cruises`, accommodation resale,
+`packages/charters`, and `packages/extras`. Each full adoption is structurally
+the same as products' (write the catalog-policy file, wire provenance, wire
+overlay reads, wire snapshot capture, wire the indexer adapter). Cruises is
+already designed in alignment with this contract (see
+[`cruises-module.md`](./cruises-module.md)); charters has its own design notes
+(see [`charters-module.md`](./charters-module.md)) and adopts via the same
+pattern. Extras adopts partially per §3.3.1 - provenance and snapshot only at
+first. Accommodation adoption must follow the resale boundary and exclude
+hotel-operations surfaces from first-party starters.
 
 **Phase C — release.** All five verticals are merged behind the same release boundary. No vertical participates in the catalog plane in production until all five do.
 
