@@ -15,6 +15,9 @@ const ROOT = join(__dirname, "..")
 const FORBIDDEN_PATHS = [
   "apps/dev/src/components/voyant/hospitality",
   "apps/dev/src/routes/_workspace/hospitality",
+  "packages/hospitality",
+  "packages/hospitality-react",
+  "packages/hospitality-ui",
   "packages/ui/registry/hospitality",
 ]
 

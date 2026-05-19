@@ -105,6 +105,11 @@ resale contracts from hotel-operations surfaces.
     comments, booking travel-detail comments, legal contract variable
     descriptors, payments architecture, and cruise pricing notes. The boundary
     checker now covers those files too.
+12. Remove the legacy hospitality package family. Completed for
+    `packages/hospitality`, `packages/hospitality-react`, and
+    `packages/hospitality-ui` after retained resale contracts moved to
+    `@voyantjs/accommodations`; the lockfile was refreshed and the boundary
+    checker now treats those package paths as forbidden.
 
 ## Verification Plan
 
