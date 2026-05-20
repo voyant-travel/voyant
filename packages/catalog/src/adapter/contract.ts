@@ -17,6 +17,21 @@
 
 import type { CatalogDriftEvent } from "../drift/events.js"
 import type { Provenance } from "../provenance.js"
+import type {
+  CancelRequest,
+  CancelResult,
+  ReserveRequest,
+  ReserveResult,
+  SourceAdapterRequestScope,
+} from "./booking-forwarding.js"
+
+export type {
+  CancelRequest,
+  CancelResult,
+  ReserveRequest,
+  ReserveResult,
+  SourceAdapterRequestScope,
+} from "./booking-forwarding.js"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Connection lifecycle
@@ -44,6 +59,13 @@ export interface AdapterCapabilities {
   supportsDriftDetection: boolean
   /** Whether the adapter forwards bookings to the upstream source. */
   supportsBookingForwarding: boolean
+  /**
+   * Whether `cancel` returns a terminal upstream status synchronously.
+   * When false, the adapter may return `status: "pending"` and drive the
+   * final transition later through drift, polling, or connector-specific
+   * reconciliation.
+   */
+  supportsSyncCancellation?: boolean
   /** Post-book operations the adapter supports (modify, cancel, status, refund). */
   postBookOperations: ReadonlyArray<"modify" | "cancel" | "status" | "refund" | "exchange" | "void">
   /**
@@ -157,12 +179,7 @@ export interface DiscoveryPage {
 export interface LiveResolveRequest {
   ids: string[]
   /** Variant scope for the request (mirrors the resolver's scope). */
-  scope: {
-    locale: string
-    audience: string
-    market: string
-    currency?: string
-  }
+  scope: SourceAdapterRequestScope
   /** Date range or other vertical-specific parameters. */
   parameters?: Record<string, unknown>
 }
@@ -263,40 +280,6 @@ export interface GetContentResult {
   fresh_until?: Date
   /** ETag-style marker for HTTP-cache revalidation on the next pull. */
   etag?: string
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Booking forwarding
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface ReserveRequest {
-  entity_module: string
-  entity_id: string
-  parameters: Record<string, unknown>
-  /** Customer / passenger identity, vertical-shaped. */
-  party?: Record<string, unknown>
-  /** Payment intent for verticals that distinguish hold vs ticket. */
-  payment_intent?: Record<string, unknown>
-}
-
-export interface ReserveResult {
-  /** Upstream order / booking identifier — used as `source_ref` in snapshots. */
-  upstream_ref: string
-  /** Status returned by the upstream system. */
-  status: "held" | "confirmed" | "ticketed" | "failed"
-  /** Opaque per-vertical payload echoed back to the snapshot graph. */
-  upstream_payload?: Record<string, unknown>
-}
-
-export interface CancelRequest {
-  upstream_ref: string
-  reason?: string
-}
-
-export interface CancelResult {
-  status: "cancelled" | "refused" | "failed"
-  refund_amount?: number
-  refund_currency?: string
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

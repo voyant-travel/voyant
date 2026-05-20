@@ -224,7 +224,38 @@ export interface AdapterCapabilities {
 
 Adapters that don't implement `getContent` (the demo upstream, simple bedbanks that only have prices) declare `supportsContentFetch: false`. The catalog plane then renders thin content from the indexer projection — same as today, no regression.
 
+`@voyantjs/catalog` also ships zod runtime schemas for the public
+`SourceAdapter` payload contract under `@voyantjs/catalog/adapter/schemas`.
+Consumers that cross HTTP, queue, RPC, or adapter-process boundaries should
+validate with those shipped schemas rather than maintaining parallel local
+validators.
+
 The locale field is required, not optional. Adapters that genuinely have only one locale (a single-language tour operator) accept any value and return their canonical content with `returned_locale` pointing at what they actually have. The contract is "tell me your best for this locale" — never "give me whatever you have."
+
+### 3.1.1. Scoped reserve and async cancellation
+
+Booking-forwarding adapter writes carry their own request scope. `ReserveRequest`
+and `CancelRequest` may include the same `{ locale, audience, market, currency? }`
+shape used by `LiveResolveRequest.scope`, plus an `idempotency_key` for
+replay-safe retries. These fields are optional so existing adapters remain
+valid, but multi-market suppliers should treat them as the source of truth for
+market-sensitive booking writes rather than deriving scope from connection
+credentials.
+
+Cancellation can be synchronous or async. Adapters that can confirm the upstream
+state during the `cancel` call return terminal statuses: `"cancelled"`,
+`"refused"`, or `"failed"`. Adapters that submit the cancellation out of band
+(email, partner portal, batch export, fax) declare
+`supportsSyncCancellation: false` and may return `status: "pending"` with an
+optional `pending_channel` such as `"partner portal"`. The booking engine
+surfaces that channel in the cancel result for audit and consumer messaging;
+callers should show "cancellation in progress" until a later transition settles
+the booking.
+
+The adapter owns that later transition. Depending on the supplier, it can arrive
+through a drift event, connector-managed polling, the next live/status check, or
+another reconciliation job. The framework models and preserves the pending
+state; it does not add a generic polling loop here.
 
 ### 3.2. Per-vertical content cache
 

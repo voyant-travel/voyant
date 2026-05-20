@@ -2,10 +2,14 @@ import { describe, expect, it } from "vitest"
 
 import type {
   AdapterCapabilities,
+  CancelRequest,
+  CancelResult,
   GetContentRequest,
   GetContentResult,
+  ReserveRequest,
   SourceAdapter,
 } from "./contract.js"
+import { cancelRequestSchema, reserveRequestSchema } from "./schemas.js"
 
 describe("AdapterCapabilities — content fetch declaration", () => {
   it("accepts adapters that omit supportsContentFetch (backward compatible)", () => {
@@ -152,5 +156,92 @@ describe("SourceAdapter — getContent capability gating", () => {
     )
     expect(result.returned_locale).toBe("en-GB")
     expect(result.content_schema_version).toBe("products/v1")
+  })
+})
+
+describe("ReserveRequest / CancelRequest scoped write shape", () => {
+  it("round-trips reserve requests with request scope and idempotency key", () => {
+    const request: ReserveRequest = {
+      entity_module: "products",
+      entity_id: "prod_abc",
+      parameters: { departureId: "dep_1" },
+      party: { travelers: 2 },
+      scope: {
+        locale: "en-GB",
+        audience: "customer",
+        market: "GB",
+        currency: "GBP",
+      },
+      idempotency_key: "reserve_abc",
+    }
+
+    expect(reserveRequestSchema.parse(request)).toEqual(request)
+  })
+
+  it("round-trips cancel requests with request scope and idempotency key", () => {
+    const request: CancelRequest = {
+      upstream_ref: "booking_abc",
+      reason: "customer_request",
+      scope: {
+        locale: "en-GB",
+        audience: "customer",
+        market: "GB",
+        currency: "GBP",
+      },
+      idempotency_key: "cancel_abc",
+    }
+
+    expect(cancelRequestSchema.parse(request)).toEqual(request)
+  })
+})
+
+describe("SourceAdapter — cancellation capability declaration", () => {
+  it("typechecks sync cancellation adapters that return terminal statuses", async () => {
+    const adapter: SourceAdapter = {
+      kind: "sync-cancel",
+      capabilities: {
+        verticals: ["products"],
+        supportsLiveResolution: false,
+        supportsDriftDetection: false,
+        supportsBookingForwarding: true,
+        supportsSyncCancellation: true,
+        postBookOperations: ["cancel"],
+      },
+      async cancel(): Promise<CancelResult> {
+        return { status: "cancelled", refund_amount: 100, refund_currency: "GBP" }
+      },
+    }
+
+    await expect(
+      adapter.cancel!({ connection_id: "conn_1" }, { upstream_ref: "up_1" }),
+    ).resolves.toEqual({
+      status: "cancelled",
+      refund_amount: 100,
+      refund_currency: "GBP",
+    })
+  })
+
+  it("typechecks async cancellation adapters that return pending", async () => {
+    const adapter: SourceAdapter = {
+      kind: "async-cancel",
+      capabilities: {
+        verticals: ["products"],
+        supportsLiveResolution: false,
+        supportsDriftDetection: true,
+        supportsBookingForwarding: true,
+        supportsSyncCancellation: false,
+        postBookOperations: ["cancel"],
+      },
+      async cancel(): Promise<CancelResult> {
+        return { status: "pending", pending_channel: "partner portal" }
+      },
+    }
+
+    await expect(
+      adapter.cancel!({ connection_id: "conn_1" }, { upstream_ref: "up_1" }),
+    ).resolves.toEqual({
+      status: "pending",
+      pending_channel: "partner portal",
+    })
   })
 })

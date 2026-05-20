@@ -27,7 +27,9 @@ export {
   type ReserveResult,
   type SourceAdapter,
   type SourceAdapterContext,
+  type SourceAdapterRequestScope,
 } from "./adapter/contract.js"
+export * from "./adapter/schemas.js"
 // BookingJourney HTTP contract — root export matches the Hono module pattern
 // used by the vertical packages while keeping the ./booking-engine subpath.
 export {

@@ -19,6 +19,7 @@
     "./drift/events": "./src/drift/events.ts",
     "./events/taxonomy": "./src/events/taxonomy.ts",
     "./adapter/contract": "./src/adapter/contract.ts",
+    "./adapter/schemas": "./src/adapter/schemas.ts",
     "./services/overlay": "./src/services/overlay-service.ts",
     "./services/snapshot": "./src/services/snapshot-service.ts",
     "./services/indexer": "./src/services/indexer-service.ts",
@@ -119,6 +120,11 @@
         "types": "./dist/adapter/contract.d.ts",
         "import": "./dist/adapter/contract.js",
         "default": "./dist/adapter/contract.js"
+      },
+      "./adapter/schemas": {
+        "types": "./dist/adapter/schemas.d.ts",
+        "import": "./dist/adapter/schemas.js",
+        "default": "./dist/adapter/schemas.js"
       },
       "./services/overlay": {
         "types": "./dist/services/overlay-service.d.ts",

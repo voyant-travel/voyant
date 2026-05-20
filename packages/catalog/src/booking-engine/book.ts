@@ -18,7 +18,11 @@ import type { AnyDrizzleDb } from "@voyantjs/db"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { eq } from "drizzle-orm"
 
-import type { ReserveRequest, SourceAdapterContext } from "../adapter/contract.js"
+import type {
+  ReserveRequest,
+  SourceAdapterContext,
+  SourceAdapterRequestScope,
+} from "../adapter/contract.js"
 import { type CaptureSnapshotInput, captureSnapshot } from "../services/snapshot-service.js"
 import {
   bookingCatalogSnapshotTable,
@@ -48,6 +52,10 @@ export type BookingPaymentIntent =
   | { type: "hold" }
   | { type: "card"; tokenizedCard: string }
   | { type: "ticket_on_credit"; agencyAccount: string }
+
+function paymentIntentToAdapterRecord(intent: BookingPaymentIntent): Record<string, unknown> {
+  return { ...intent }
+}
 
 export interface BookEntityRequest {
   /** Quote previously returned from `quoteEntity`. */
@@ -92,6 +100,13 @@ export interface BookEntityRequest {
     market?: string
     currency?: string
   }
+
+  /**
+   * Per-request supplier scope forwarded to `SourceAdapter.reserve`.
+   * Kept separate from `contentScope`: this controls upstream write
+   * semantics, while `contentScope` controls snapshot-content capture.
+   */
+  adapterScope?: SourceAdapterRequestScope
 }
 
 export interface BookEntityResult {
@@ -250,7 +265,9 @@ export async function bookEntity(
     entity_id: quote.entity_id,
     parameters: request.parameters ?? {},
     party: request.party,
-    payment_intent: paymentIntent as unknown as Record<string, unknown>,
+    payment_intent: paymentIntentToAdapterRecord(paymentIntent),
+    scope: request.adapterScope,
+    idempotency_key: request.idempotencyKey,
   }
 
   const reserveResult = await adapter.reserve(request.adapterContext, reserveRequest)
