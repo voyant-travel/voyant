@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite"
 import { devtools } from "@tanstack/devtools-vite"
 import { tanstackStart } from "@tanstack/react-start/plugin/vite"
 import viteReact from "@vitejs/plugin-react"
+import { visualizer } from "rollup-plugin-visualizer"
 import { defineConfig } from "vite"
 
 const config = defineConfig({
@@ -13,6 +14,38 @@ const config = defineConfig({
   // `true` allows everything — fine for dev, never for production.
   server: {
     allowedHosts: true,
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        // Force heavy vendor libs into their own chunks so they're only
+        // downloaded when a route/component that uses them is reached
+        // (combined with React.lazy at the consumer site). Without this,
+        // Vite hoists them into the shared entry chunk because the
+        // @voyantjs/ui barrel re-exports components that statically import
+        // them, leaking the deps into every route's dep graph.
+        manualChunks(id: string) {
+          if (id.includes("node_modules")) {
+            // Pin React/JSX runtime + react-dom into their own chunk FIRST.
+            // Without this, Rolldown was hoisting the JSX runtime into the
+            // tiptap vendor chunk, forcing every React-using chunk to
+            // import the 370 KB tiptap chunk just to get `jsx`/`jsxs`.
+            if (
+              id.includes("/react/") ||
+              id.includes("/react-dom/") ||
+              id.includes("/scheduler/") ||
+              id.match(/\/react\/jsx-(dev-)?runtime\b/)
+            )
+              return "react"
+            if (id.includes("/@tiptap/") || id.includes("/prosemirror-")) return "tiptap"
+            if (id.includes("/recharts/")) return "recharts"
+            if (id.includes("/pdf-lib/") || id.includes("/@pdf-lib/")) return "pdf-lib"
+            if (id.includes("/react-phone-number-input/") || id.includes("/libphonenumber-js/"))
+              return "phone-input"
+          }
+        },
+      },
+    },
   },
   resolve: {
     alias: {
@@ -55,6 +88,15 @@ const config = defineConfig({
       },
     }),
     viteReact(),
+    // Opt-in: `ANALYZE=1 pnpm build` emits dist/stats.html with a treemap
+    // of all client chunks. Off by default so normal builds stay clean.
+    process.env.ANALYZE === "1" &&
+      visualizer({
+        filename: "dist/stats.html",
+        template: "treemap",
+        gzipSize: true,
+        brotliSize: true,
+      }),
   ],
 })
 

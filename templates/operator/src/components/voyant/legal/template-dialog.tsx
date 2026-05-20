@@ -15,7 +15,6 @@ import {
   DialogTitle,
   Input,
   Label,
-  RichTextEditor,
   Select,
   SelectContent,
   SelectItem,
@@ -23,6 +22,7 @@ import {
   SelectValue,
   Textarea,
 } from "@voyantjs/ui/components"
+import { RichTextEditor } from "@voyantjs/ui/components/rich-text-editor"
 import {
   insertPlainText,
   insertVariableToken,

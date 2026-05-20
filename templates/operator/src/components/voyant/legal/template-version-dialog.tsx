@@ -14,8 +14,8 @@ import {
   DialogTitle,
   Input,
   Label,
-  RichTextEditor,
 } from "@voyantjs/ui/components"
+import { RichTextEditor } from "@voyantjs/ui/components/rich-text-editor"
 import {
   insertPlainText,
   insertVariableToken,

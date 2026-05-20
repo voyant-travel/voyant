@@ -15,21 +15,26 @@ import {
   getResourceSuppliersQueryOptions,
 } from "@/components/voyant/resources/resources-shared"
 
+// Tab dashboard — `resources` is the default active tab. Await only the
+// queries that tab needs; everything else (other tabs + dimensions used
+// by filter pickers) is fired as a background prefetch so the route paints
+// after one round-trip instead of waiting on 11.
 export const Route = createFileRoute("/_workspace/resources/")({
-  loader: ({ context }) =>
-    Promise.all([
-      context.queryClient.ensureQueryData(getResourceSuppliersQueryOptions()),
-      context.queryClient.ensureQueryData(getResourceProductsQueryOptions()),
-      context.queryClient.ensureQueryData(getResourceBookingsQueryOptions()),
-      context.queryClient.ensureQueryData(getResourceSlotsQueryOptions()),
-      context.queryClient.ensureQueryData(getResourceRulesQueryOptions()),
-      context.queryClient.ensureQueryData(getResourceStartTimesQueryOptions()),
-      context.queryClient.ensureQueryData(getResourceResourcesQueryOptions()),
-      context.queryClient.ensureQueryData(getResourcePoolsQueryOptions()),
-      context.queryClient.ensureQueryData(getResourceAllocationsQueryOptions()),
-      context.queryClient.ensureQueryData(getResourceAssignmentsQueryOptions()),
-      context.queryClient.ensureQueryData(getResourceCloseoutsQueryOptions()),
-    ]),
+  ssr: "data-only",
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(getResourceResourcesQueryOptions())
+
+    void context.queryClient.prefetchQuery(getResourceSuppliersQueryOptions())
+    void context.queryClient.prefetchQuery(getResourceProductsQueryOptions())
+    void context.queryClient.prefetchQuery(getResourceBookingsQueryOptions())
+    void context.queryClient.prefetchQuery(getResourceSlotsQueryOptions())
+    void context.queryClient.prefetchQuery(getResourceRulesQueryOptions())
+    void context.queryClient.prefetchQuery(getResourceStartTimesQueryOptions())
+    void context.queryClient.prefetchQuery(getResourcePoolsQueryOptions())
+    void context.queryClient.prefetchQuery(getResourceAllocationsQueryOptions())
+    void context.queryClient.prefetchQuery(getResourceAssignmentsQueryOptions())
+    void context.queryClient.prefetchQuery(getResourceCloseoutsQueryOptions())
+  },
   pendingComponent: ResourcesPageSkeleton,
   component: ResourcesPage,
 })

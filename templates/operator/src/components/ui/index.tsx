@@ -37,7 +37,9 @@ import { Label } from "./label"
 import { OverviewMetric } from "./overview-metric"
 import { ConfirmActionButton } from "./confirm-action-button"
 import { ContractTemplateAuthoringHelp } from "./contract-template-authoring-help"
-import { RichTextEditor } from "./rich-text-editor"
+// RichTextEditor intentionally not eagerly imported — see @voyantjs/ui's
+// components/index.tsx for the same rationale (tiptap leakage into every
+// barrel consumer).
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
 import { SelectionActionBar } from "./selection-action-bar"
 import {
@@ -225,7 +227,6 @@ export {
   InputOTPSlot,
   Label,
   OverviewMetric,
-  RichTextEditor,
   Select,
   SelectContent,
   SelectItem,

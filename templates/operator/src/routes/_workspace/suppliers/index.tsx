@@ -4,6 +4,7 @@ import { getSuppliersQueryOptions } from "@/components/voyant/suppliers/shared"
 import { SuppliersListSkeleton } from "@/components/voyant/suppliers/suppliers-list-skeleton"
 
 export const Route = createFileRoute("/_workspace/suppliers/")({
+  ssr: "data-only",
   loader: ({ context }) => context.queryClient.ensureQueryData(getSuppliersQueryOptions()),
   pendingComponent: SuppliersListSkeleton,
   component: SuppliersRoute,

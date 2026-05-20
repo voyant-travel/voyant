@@ -3,7 +3,6 @@ import { useAdminBreadcrumbs } from "@voyantjs/admin"
 import { useBooking } from "@voyantjs/bookings-react"
 import { usePerson } from "@voyantjs/crm-react"
 import {
-  defaultFetcher,
   getLegalContractAttachmentsQueryOptions,
   getLegalContractQueryOptions,
   getLegalContractSignaturesQueryOptions,
@@ -15,26 +14,22 @@ import { ContractDetailPage, type ContractReferenceRenderProps } from "@voyantjs
 
 import { ContractDialog } from "@/components/voyant/legal/contract-dialog"
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
 export const Route = createFileRoute("/_workspace/legal/contracts/$id")({
-  loader: ({ context, params }) =>
-    Promise.all([
-      context.queryClient.ensureQueryData(
-        getLegalContractQueryOptions({ baseUrl: getApiUrl(), fetcher: defaultFetcher }, params.id),
-      ),
-      context.queryClient.ensureQueryData(
-        getLegalContractSignaturesQueryOptions(
-          { baseUrl: getApiUrl(), fetcher: defaultFetcher },
-          { contractId: params.id },
-        ),
-      ),
-      context.queryClient.ensureQueryData(
-        getLegalContractAttachmentsQueryOptions(
-          { baseUrl: getApiUrl(), fetcher: defaultFetcher },
-          { contractId: params.id },
-        ),
-      ),
-    ]),
+  ssr: "data-only",
+  loader: async ({ context, params }) => {
+    const client = { baseUrl: getApiUrl(), fetcher: operatorFetcher }
+
+    await context.queryClient.ensureQueryData(getLegalContractQueryOptions(client, params.id))
+
+    void context.queryClient.prefetchQuery(
+      getLegalContractSignaturesQueryOptions(client, { contractId: params.id }),
+    )
+    void context.queryClient.prefetchQuery(
+      getLegalContractAttachmentsQueryOptions(client, { contractId: params.id }),
+    )
+  },
   component: RouteComponent,
 })
 

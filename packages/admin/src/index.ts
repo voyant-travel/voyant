@@ -77,13 +77,16 @@ export {
   type TeamSettingsPageApi,
   type TeamSettingsPageProps,
 } from "./components/team-settings-page.js"
-export {
-  type DashboardEmptyAction,
-  type DashboardEmptyStateConfig,
-  type DashboardEmptyStateKey,
-  DashboardPage,
-  type DashboardPageProps,
+export type {
+  DashboardEmptyAction,
+  DashboardEmptyStateConfig,
+  DashboardEmptyStateKey,
+  DashboardPageProps,
 } from "./dashboard/dashboard-page.js"
+// DashboardPage pulls recharts (~390 KB) — intentionally NOT re-exported
+// here so consumers of this barrel for non-dashboard concerns (sidebar,
+// providers, hooks) don't transitively pull the chart bundle. Import
+// directly from "@voyantjs/admin/dashboard/dashboard-page" instead.
 export {
   type BookingsAggregates,
   bookingStatusConfig,

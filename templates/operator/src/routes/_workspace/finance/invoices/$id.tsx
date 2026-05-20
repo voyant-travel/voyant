@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
 import {
-  defaultFetcher,
   getInvoiceCreditNotesQueryOptions,
   getInvoiceLineItemsQueryOptions,
   getInvoiceNotesQueryOptions,
@@ -11,35 +10,20 @@ import {
 import { InvoiceDetailPage } from "@/components/voyant/finance/invoice-detail-page"
 import { InvoiceDetailSkeleton } from "@/components/voyant/finance/invoice-detail-skeleton"
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
 export const Route = createFileRoute("/_workspace/finance/invoices/$id")({
-  loader: ({ context, params }) =>
-    Promise.all([
-      context.queryClient.ensureQueryData(
-        getInvoiceQueryOptions({ baseUrl: getApiUrl(), fetcher: defaultFetcher }, params.id),
-      ),
-      context.queryClient.ensureQueryData(
-        getInvoiceLineItemsQueryOptions(
-          { baseUrl: getApiUrl(), fetcher: defaultFetcher },
-          params.id,
-        ),
-      ),
-      context.queryClient.ensureQueryData(
-        getInvoicePaymentsQueryOptions(
-          { baseUrl: getApiUrl(), fetcher: defaultFetcher },
-          params.id,
-        ),
-      ),
-      context.queryClient.ensureQueryData(
-        getInvoiceCreditNotesQueryOptions(
-          { baseUrl: getApiUrl(), fetcher: defaultFetcher },
-          params.id,
-        ),
-      ),
-      context.queryClient.ensureQueryData(
-        getInvoiceNotesQueryOptions({ baseUrl: getApiUrl(), fetcher: defaultFetcher }, params.id),
-      ),
-    ]),
+  ssr: "data-only",
+  loader: async ({ context, params }) => {
+    const client = { baseUrl: getApiUrl(), fetcher: operatorFetcher }
+
+    await context.queryClient.ensureQueryData(getInvoiceQueryOptions(client, params.id))
+
+    void context.queryClient.prefetchQuery(getInvoiceLineItemsQueryOptions(client, params.id))
+    void context.queryClient.prefetchQuery(getInvoicePaymentsQueryOptions(client, params.id))
+    void context.queryClient.prefetchQuery(getInvoiceCreditNotesQueryOptions(client, params.id))
+    void context.queryClient.prefetchQuery(getInvoiceNotesQueryOptions(client, params.id))
+  },
   pendingComponent: InvoiceDetailSkeleton,
   component: InvoiceDetailRoute,
 })

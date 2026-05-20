@@ -1,8 +1,8 @@
-import { defaultFetcher } from "@voyantjs/legal-react"
-
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
+// operatorFetcher so SSR loaders forward the request cookie.
 export const legalQueryClient = {
   baseUrl: getApiUrl(),
-  fetcher: defaultFetcher,
+  fetcher: operatorFetcher,
 } as const

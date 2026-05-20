@@ -36,16 +36,13 @@ import {
 import { Input } from "./input.js"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "./input-otp.js"
 import { Label } from "./label.js"
-import { NotificationDeliveriesPage } from "./notification-deliveries-page.js"
-import { NotificationDeliveryDetailDialog } from "./notification-delivery-detail-dialog.js"
-import { NotificationReminderRulesPage } from "./notification-reminder-rules-page.js"
-import { NotificationReminderRunsPage } from "./notification-reminder-runs-page.js"
-import { NotificationTemplateAuthoringHelp } from "./notification-template-authoring-help.js"
-import { NotificationTemplateDetailPage } from "./notification-template-detail-page.js"
-import { NotificationTemplatesPage } from "./notification-templates-page.js"
+// Notification* and RichTextEditor are intentionally NOT eagerly imported here
+// (only `export *` re-exported below) — eager imports break tree-shaking,
+// pulling tiptap + prosemirror (~600 KB raw) into every consumer of this
+// barrel via the static dep chain. With re-export-only, Rollup can DCE
+// them when unused. Same goes for any future heavy passthrough exports.
 import { OverviewMetric } from "./overview-metric.js"
 import { RadioGroup, RadioGroupItem } from "./radio-group.js"
-import { RichTextEditor } from "./rich-text-editor.js"
 import { ScrollArea, ScrollBar } from "./scroll-area.js"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select.js"
 import { SelectionActionBar } from "./selection-action-bar.js"
@@ -93,7 +90,8 @@ export * from "./button-group.js"
 export * from "./calendar.js"
 export * from "./card.js"
 export * from "./carousel.js"
-export * from "./chart.js"
+// chart + dashboard-widgets pull recharts (~390 KB). Import from
+// "@voyantjs/ui/components/chart" / "/dashboard-widgets" directly.
 export * from "./checkbox.js"
 export * from "./collapsible.js"
 export * from "./combobox.js"
@@ -104,7 +102,6 @@ export * from "./contract-template-authoring-help.js"
 export * from "./country-combobox.js"
 export * from "./currency-combobox.js"
 export * from "./currency-input.js"
-export * from "./dashboard-widgets.js"
 export * from "./data-table.js"
 export * from "./data-table-column-header.js"
 export * from "./data-table-pagination.js"
@@ -127,23 +124,17 @@ export * from "./label.js"
 export * from "./menubar.js"
 export * from "./native-select.js"
 export * from "./navigation-menu.js"
-export * from "./notification-deliveries-page.js"
-export * from "./notification-delivery-detail-dialog.js"
-export * from "./notification-reminder-rule-dialog.js"
-export * from "./notification-reminder-rules-page.js"
-export * from "./notification-reminder-runs-page.js"
-export * from "./notification-template-authoring-help.js"
-export * from "./notification-template-detail-page.js"
-export * from "./notification-template-dialog.js"
-export * from "./notification-templates-page.js"
+// Heavy passthroughs intentionally NOT re-exported here — they statically
+// pull tiptap/prosemirror (rich-text-editor, notification-template-*) or
+// libphonenumber-js (phone-input). Import directly from
+// "@voyantjs/ui/components/<subpath>" instead. Keeping them out of the
+// barrel lets every consumer that imports `Button` etc. tree-shake them.
 export * from "./overview-metric.js"
 export * from "./pagination.js"
-export * from "./phone-input.js"
 export * from "./popover.js"
 export * from "./progress.js"
 export * from "./radio-group.js"
 export * from "./resizable.js"
-export * from "./rich-text-editor.js"
 export * from "./scroll-area.js"
 export * from "./select.js"
 export * from "./selection-action-bar.js"
@@ -318,17 +309,11 @@ export {
   InputOTPGroup,
   InputOTPSlot,
   Label,
-  NotificationDeliveriesPage,
-  NotificationDeliveryDetailDialog,
-  NotificationReminderRulesPage,
-  NotificationReminderRunsPage,
-  NotificationTemplateAuthoringHelp,
-  NotificationTemplateDetailPage,
-  NotificationTemplatesPage,
+  // Notification* + RichTextEditor are re-exported via `export *` above;
+  // intentionally omitted here so they remain tree-shakeable.
   OverviewMetric,
   RadioGroup,
   RadioGroupItem,
-  RichTextEditor,
   ScrollArea,
   ScrollBar,
   Select,

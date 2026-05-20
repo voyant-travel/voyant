@@ -1,4 +1,4 @@
-import { QueryClient } from "@tanstack/react-query"
+import { type DehydratedState, dehydrate, hydrate, QueryClient } from "@tanstack/react-query"
 import { createRouter as createTanStackRouter, Link } from "@tanstack/react-router"
 import { buttonVariants } from "@voyantjs/ui/components/button"
 import {
@@ -23,6 +23,9 @@ export function getRouter() {
       queries: {
         refetchOnWindowFocus: false,
         retry: 1,
+        // 30s default keeps preloaded data fresh long enough for the hover→
+        // click navigation to reuse it. Override per-query for hotter data.
+        staleTime: 30_000,
       },
     },
   })
@@ -32,11 +35,25 @@ export function getRouter() {
     context: { queryClient },
     scrollRestoration: true,
     defaultPreload: "intent",
-    defaultPreloadStaleTime: 0,
+    // Without this (default 0), preload-on-intent considers data immediately
+    // stale, so hover-prefetch re-fires the loader on click. 30s lines up
+    // with the QueryClient default above.
+    defaultPreloadStaleTime: 30_000,
     defaultNotFoundComponent: DefaultNotFound,
-    // SPA-mode via defaultSsr: false in src/start.ts — loaders run on the
-    // client with browser cookies. No need to dehydrate/hydrate queryClient
-    // because the server never populates it.
+    // QueryClient SSR hydration. While `defaultSsr: false` is set in start.ts
+    // this is a no-op — server loaders don't populate the cache. As routes
+    // opt into SSR (`ssr: true` or `"data-only"`), the router serializes the
+    // server-side QueryClient into the HTML payload and rehydrates it here
+    // on the client, so loader-prefetched queries survive across the
+    // server→client boundary instead of refetching on mount.
+    // Cast around Router's ValidateSerializableInput, which is stricter than
+    // DehydratedState's recursive `unknown` slots. Runtime payload is
+    // JSON-safe; the official @tanstack/react-router-with-query helper
+    // (not installed here) does the same erasure.
+    dehydrate: () => ({ queryClient: dehydrate(queryClient) as unknown as object }),
+    hydrate: (state: { queryClient: object }) => {
+      hydrate(queryClient, state.queryClient as DehydratedState)
+    },
   })
 
   return router

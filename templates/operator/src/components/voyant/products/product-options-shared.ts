@@ -4,17 +4,17 @@ import {
   getOptionUnitPriceRulesQueryOptions as getSharedOptionUnitPriceRulesQueryOptions,
   getPriceCatalogsQueryOptions as getSharedPriceCatalogsQueryOptions,
   getPricingCategoriesQueryOptions as getSharedPricingCategoriesQueryOptions,
-  defaultFetcher as pricingDefaultFetcher,
 } from "@voyantjs/pricing-react"
 import {
   getOptionUnitsQueryOptions as getSharedOptionUnitsQueryOptions,
   getProductOptionsQueryOptions as getSharedProductOptionsQueryOptions,
-  defaultFetcher as productsDefaultFetcher,
 } from "@voyantjs/products-react"
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
-const productsClient = { baseUrl: getApiUrl(), fetcher: productsDefaultFetcher }
-const pricingClient = { baseUrl: getApiUrl(), fetcher: pricingDefaultFetcher }
+// operatorFetcher so SSR loaders forward the request cookie.
+const productsClient = { baseUrl: getApiUrl(), fetcher: operatorFetcher }
+const pricingClient = { baseUrl: getApiUrl(), fetcher: operatorFetcher }
 
 export const optionStatusVariant: Record<
   string,

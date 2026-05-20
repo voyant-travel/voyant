@@ -1,16 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { defaultFetcher, getBookingsQueryOptions } from "@voyantjs/bookings-react"
+import { getBookingsQueryOptions } from "@voyantjs/bookings-react"
 import { BookingsPage } from "@voyantjs/bookings-ui"
 import { Button } from "@voyantjs/ui/components/button"
 import { Route as RouteIcon } from "lucide-react"
 
 import { BookingsListSkeleton } from "@/components/voyant/bookings/bookings-list-skeleton"
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
 export const Route = createFileRoute("/_workspace/bookings/")({
+  ssr: "data-only",
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(
-      getBookingsQueryOptions({ baseUrl: getApiUrl(), fetcher: defaultFetcher }),
+      getBookingsQueryOptions({ baseUrl: getApiUrl(), fetcher: operatorFetcher }),
     ),
   pendingComponent: BookingsListSkeleton,
   component: BookingsRoute,

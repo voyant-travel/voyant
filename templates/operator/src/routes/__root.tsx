@@ -21,7 +21,7 @@ import type { ReactNode } from "react"
 
 import { Providers } from "../components/providers"
 import { ApiError } from "../lib/api-client"
-import appCss from "../styles.css?url"
+import "../styles.css"
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
@@ -35,10 +35,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { title: "Voyant" },
     ],
-    links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "icon", type: "image/png", href: "/fav128.png" },
-    ],
+    links: [{ rel: "icon", type: "image/png", href: "/fav128.png" }],
     scripts: [
       {
         // Inline theme and language detection to prevent flashes before hydration.

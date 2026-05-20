@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { defaultFetcher, getInvoicesQueryOptions } from "@voyantjs/finance-react"
+import { getInvoicesQueryOptions } from "@voyantjs/finance-react"
 import { InvoicesPage, InvoicesPageSkeleton } from "@voyantjs/finance-ui"
 
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
 export const Route = createFileRoute("/_workspace/finance/invoices/")({
+  ssr: "data-only",
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(
-      getInvoicesQueryOptions({ baseUrl: getApiUrl(), fetcher: defaultFetcher }),
+      getInvoicesQueryOptions({ baseUrl: getApiUrl(), fetcher: operatorFetcher }),
     ),
   pendingComponent: InvoicesPageSkeleton,
   component: RouteComponent,

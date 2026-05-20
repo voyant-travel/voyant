@@ -1,5 +1,4 @@
 import {
-  defaultFetcher,
   formatAmount,
   formatUnit,
   getSupplierNotesQueryOptions as getSupplierNotesQueryOptionsBase,
@@ -17,8 +16,10 @@ import {
 } from "@voyantjs/suppliers-react"
 import type { AdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
-const client = { baseUrl: getApiUrl(), fetcher: defaultFetcher }
+// operatorFetcher so SSR loaders forward the request cookie.
+const client = { baseUrl: getApiUrl(), fetcher: operatorFetcher }
 
 export type { Supplier, SupplierNote, SupplierRate, SupplierService }
 export { formatAmount, formatUnit, statusVariant, suppliersQueryKeys }

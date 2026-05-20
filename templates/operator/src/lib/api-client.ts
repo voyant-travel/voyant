@@ -10,6 +10,7 @@ import { hc } from "hono/client"
 
 import type { AppType } from "../api/api-types"
 import { getApiUrl } from "./env"
+import { operatorFetcher } from "./voyant-fetcher"
 
 export const client = hc<AppType>(getApiUrl(), {
   init: { credentials: "include" },
@@ -56,10 +57,13 @@ export async function apiCall<T = unknown>(path: string, options: ApiCallOptions
     ...customHeaders,
   })
 
-  const response = await fetch(`${apiUrl}${path}`, {
+  // Goes through `operatorFetcher`: on the client this is a normal
+  // `credentials: "include"` fetch; on the server it forwards the incoming
+  // request's cookie + rewrites to the request origin so the loader hits
+  // the same Worker's /api/* route.
+  const response = await operatorFetcher(`${apiUrl}${path}`, {
     ...fetchOptions,
     headers,
-    credentials: "include",
   })
 
   if (!response.ok) {

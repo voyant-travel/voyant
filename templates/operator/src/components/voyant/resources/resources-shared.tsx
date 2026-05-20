@@ -3,7 +3,6 @@ import {
   allocationModeOptions,
   assignmentStatusOptions,
   type BookingOption,
-  defaultFetcher,
   formatDateTime,
   formatSelectionLabel,
   getAllocationsQueryOptions as getAllocationsQueryOptionsBase,
@@ -41,6 +40,7 @@ import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column
 import { ExternalLink } from "lucide-react"
 import type { AdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
 export type BatchMutationResponse<T = unknown> = {
   data?: T[]
@@ -50,7 +50,8 @@ export type BatchMutationResponse<T = unknown> = {
   failed: Array<{ id: string; error: string }>
 }
 
-const client = { baseUrl: getApiUrl(), fetcher: defaultFetcher }
+// operatorFetcher so SSR loaders forward the request cookie.
+const client = { baseUrl: getApiUrl(), fetcher: operatorFetcher }
 
 export type {
   BookingOption,

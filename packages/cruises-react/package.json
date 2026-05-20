@@ -25,19 +25,19 @@
     "test": "vitest run --passWithNoTests"
   },
   "peerDependencies": {
-    "@voyantjs/cruises": "workspace:*",
     "@tanstack/react-query": "^5.0.0",
+    "@voyantjs/cruises": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@tanstack/react-query": "^5.100.11",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@voyantjs/cruises": "workspace:*",
     "@voyantjs/react": "workspace:*",
     "@voyantjs/voyant-typescript-config": "workspace:*",
-    "@tanstack/react-query": "^5.96.2",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "typescript": "^6.0.2",

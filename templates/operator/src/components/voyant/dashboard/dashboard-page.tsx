@@ -1,1 +1,1 @@
-export { DashboardPage } from "@voyantjs/admin"
+export { DashboardPage } from "@voyantjs/admin/dashboard"

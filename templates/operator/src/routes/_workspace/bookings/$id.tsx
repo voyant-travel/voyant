@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import {
-  defaultFetcher,
   getBookingActivityQueryOptions,
   getBookingNotesQueryOptions,
   getBookingQueryOptions,
@@ -12,24 +11,28 @@ import { z } from "zod"
 import { BookingDetailPage } from "@/components/voyant/bookings/booking-detail-page"
 import { BookingDetailSkeleton } from "@/components/voyant/bookings/booking-detail-skeleton"
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
 const bookingRouteSearchSchema = z.object({
   productId: z.string().optional(),
 })
 
 export const Route = createFileRoute("/_workspace/bookings/$id")({
+  ssr: "data-only",
   loader: async ({ context, params }) => {
     if (params.id === "new") return
 
-    const client = { baseUrl: getApiUrl(), fetcher: defaultFetcher }
+    const client = { baseUrl: getApiUrl(), fetcher: operatorFetcher }
 
-    await Promise.all([
-      context.queryClient.ensureQueryData(getBookingQueryOptions(client, params.id)),
-      context.queryClient.ensureQueryData(getTravelersQueryOptions(client, params.id)),
-      context.queryClient.ensureQueryData(getSupplierStatusesQueryOptions(client, params.id)),
-      context.queryClient.ensureQueryData(getBookingActivityQueryOptions(client, params.id)),
-      context.queryClient.ensureQueryData(getBookingNotesQueryOptions(client, params.id)),
-    ])
+    // Critical: booking itself drives the header. Everything else
+    // (travelers, supplier statuses, activity, notes) is per-section
+    // and renders progressively.
+    await context.queryClient.ensureQueryData(getBookingQueryOptions(client, params.id))
+
+    void context.queryClient.prefetchQuery(getTravelersQueryOptions(client, params.id))
+    void context.queryClient.prefetchQuery(getSupplierStatusesQueryOptions(client, params.id))
+    void context.queryClient.prefetchQuery(getBookingActivityQueryOptions(client, params.id))
+    void context.queryClient.prefetchQuery(getBookingNotesQueryOptions(client, params.id))
   },
   validateSearch: bookingRouteSearchSchema,
   pendingComponent: BookingDetailSkeleton,
