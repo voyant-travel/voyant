@@ -1,6 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
 import {
-  defaultFetcher,
   getActivitiesQueryOptions as getActivitiesQueryOptionsBase,
   getOpportunitiesQueryOptions as getOpportunitiesQueryOptionsBase,
   getOrganizationQueryOptions as getOrganizationQueryOptionsBase,
@@ -12,8 +11,13 @@ import {
   getPersonQueryOptions as getPersonQueryOptionsBase,
 } from "@voyantjs/crm-react"
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
-const client = { baseUrl: getApiUrl(), fetcher: defaultFetcher }
+// operatorFetcher (not defaultFetcher) so SSR loaders on these routes can
+// forward the incoming request's cookie. Without this, direct loads of
+// /people, /organizations, /people/$id, /organizations/$id 401 on the
+// initial SSR pass.
+const client = { baseUrl: getApiUrl(), fetcher: operatorFetcher }
 
 export function getActivitiesQueryOptions(filters = {}) {
   return queryOptions(getActivitiesQueryOptionsBase(client, filters))

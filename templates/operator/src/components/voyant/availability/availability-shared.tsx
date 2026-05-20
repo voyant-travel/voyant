@@ -5,7 +5,6 @@ import {
   type AvailabilitySlotRow,
   type AvailabilityStartTimeRow,
   booleanOptions,
-  defaultFetcher,
   formatDateTime,
   formatSelectionLabel,
   getCloseoutsQueryOptions as getCloseoutsQueryOptionsBase,
@@ -35,6 +34,7 @@ export {
 } from "@voyantjs/availability-ui"
 
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
 export type BatchMutationResponse<T = unknown> = {
   data?: T[]
@@ -44,7 +44,8 @@ export type BatchMutationResponse<T = unknown> = {
   failed: Array<{ id: string; error: string }>
 }
 
-const client = { baseUrl: getApiUrl(), fetcher: defaultFetcher }
+// operatorFetcher so SSR loaders forward the request cookie.
+const client = { baseUrl: getApiUrl(), fetcher: operatorFetcher }
 
 export type {
   AvailabilityCloseoutRow,
