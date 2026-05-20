@@ -88,6 +88,11 @@ const AdminRouterLink = forwardRef<HTMLAnchorElement, AdminNavLinkProps>(functio
 })
 
 export const Route = createFileRoute("/_workspace")({
+  // Parent loader runs server-side (auth check + user fetch through cookie-
+  // forwarding server fn). Component still renders on the client because
+  // the workspace chrome reads localStorage (theme, locale) — keeping that
+  // client-only avoids hydration mismatches.
+  ssr: "data-only",
   loader: async ({ location }) => {
     const user = await getCurrentUser()
 
@@ -100,10 +105,6 @@ export const Route = createFileRoute("/_workspace")({
 
     return { user }
   },
-  // Minimal SSR fallback. Rendered for the first paint because `defaultSsr: false`
-  // (src/start.ts) turns off server-side loader/component execution for the whole
-  // auth-gated app. Once the client hydrates, each child route's own pendingComponent
-  // takes over while its loader runs.
   pendingComponent: WorkspacePendingFallback,
   component: WorkspaceLayout,
 })

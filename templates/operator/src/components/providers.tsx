@@ -19,6 +19,7 @@ import { SuppliersUiMessagesProvider } from "@voyantjs/suppliers-ui/i18n"
 import { TooltipProvider } from "@voyantjs/ui/components/tooltip"
 import type * as React from "react"
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
 // VoyantAvailabilityProvider needs a baseUrl prop — wrap it once so it
 // fits the child-only AdminChildProvider shape used by the admin shell.
@@ -52,6 +53,7 @@ export function Providers({
   return (
     <OperatorAdminShellProvider
       baseUrl={getApiUrl()}
+      fetcher={operatorFetcher}
       queryClient={queryClient}
       providers={appProviders}
       domainMessageProviders={domainMessageProviders}

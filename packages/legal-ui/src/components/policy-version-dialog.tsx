@@ -9,8 +9,8 @@ import {
   DialogTitle,
   Input,
   Label,
-  RichTextEditor,
 } from "@voyantjs/ui/components"
+import { RichTextEditor } from "@voyantjs/ui/components/rich-text-editor"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"

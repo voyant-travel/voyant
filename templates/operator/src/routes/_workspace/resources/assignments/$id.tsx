@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { defaultFetcher, resourcesQueryKeys } from "@voyantjs/resources-react"
+import { resourcesQueryKeys } from "@voyantjs/resources-react"
 import {
   ensureResourceAssignmentDetailPageData,
   ResourceAssignmentDetailPage,
@@ -8,10 +8,12 @@ import {
 } from "@voyantjs/resources-ui"
 import { api } from "@/lib/api-client"
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
-const resourcesClient = { baseUrl: getApiUrl(), fetcher: defaultFetcher }
+const resourcesClient = { baseUrl: getApiUrl(), fetcher: operatorFetcher }
 
 export const Route = createFileRoute("/_workspace/resources/assignments/$id")({
+  ssr: "data-only",
   loader: ({ context, params }) =>
     ensureResourceAssignmentDetailPageData(context.queryClient, resourcesClient, params.id),
   pendingComponent: ResourceAssignmentDetailSkeleton,

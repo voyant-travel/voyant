@@ -55,13 +55,13 @@
     "@voyantjs/react": "workspace:*"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:*",
-    "@tanstack/react-query": "^5.96.2",
-    "@tanstack/react-router": "^1.168.10",
+    "@tanstack/react-query": "^5.100.11",
+    "@tanstack/react-router": "^1.170.4",
     "@testing-library/react": "^16.0.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@voyantjs/ui": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:*",
     "jsdom": "^25.0.0",
     "lucide-react": "^1.7.0",
     "react": "^19.2.4",

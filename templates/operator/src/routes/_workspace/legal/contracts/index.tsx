@@ -1,16 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { usePerson } from "@voyantjs/crm-react"
-import { defaultFetcher, getLegalContractsQueryOptions } from "@voyantjs/legal-react"
+import { getLegalContractsQueryOptions } from "@voyantjs/legal-react"
 import { ContractsPage } from "@voyantjs/legal-ui"
 
 import { ContractDialog } from "@/components/voyant/legal/contract-dialog"
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
 export const Route = createFileRoute("/_workspace/legal/contracts/")({
+  ssr: "data-only",
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(
       getLegalContractsQueryOptions(
-        { baseUrl: getApiUrl(), fetcher: defaultFetcher },
+        { baseUrl: getApiUrl(), fetcher: operatorFetcher },
         {
           search: "",
           scope: "all",

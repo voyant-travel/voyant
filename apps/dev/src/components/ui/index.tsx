@@ -1,5 +1,5 @@
 import * as React from "react"
-import { RichTextEditor } from "@voyantjs/ui/components"
+import { RichTextEditor } from "@voyantjs/ui/components/rich-text-editor"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "./avatar"
 import { Badge } from "./badge"

@@ -1,31 +1,37 @@
 import { createFileRoute } from "@tanstack/react-router"
 import {
-  defaultFetcher,
   getLegalContractTemplateQueryOptions,
   getLegalContractTemplateVersionsQueryOptions,
 } from "@voyantjs/legal-react"
 import { TemplateDetailPage } from "@voyantjs/legal-ui"
+import { lazy, Suspense } from "react"
 
-import { TemplateDialog } from "@/components/voyant/legal/template-dialog"
-import { TemplateVersionDialog } from "@/components/voyant/legal/template-version-dialog"
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
+
+// Lazy: both dialogs use the RichTextEditor (tiptap + prosemirror).
+const TemplateDialog = lazy(() =>
+  import("@/components/voyant/legal/template-dialog").then((m) => ({ default: m.TemplateDialog })),
+)
+const TemplateVersionDialog = lazy(() =>
+  import("@/components/voyant/legal/template-version-dialog").then((m) => ({
+    default: m.TemplateVersionDialog,
+  })),
+)
 
 export const Route = createFileRoute("/_workspace/legal/templates/$id")({
-  loader: ({ context, params }) =>
-    Promise.all([
-      context.queryClient.ensureQueryData(
-        getLegalContractTemplateQueryOptions(
-          { baseUrl: getApiUrl(), fetcher: defaultFetcher },
-          params.id,
-        ),
-      ),
-      context.queryClient.ensureQueryData(
-        getLegalContractTemplateVersionsQueryOptions(
-          { baseUrl: getApiUrl(), fetcher: defaultFetcher },
-          { templateId: params.id },
-        ),
-      ),
-    ]),
+  ssr: "data-only",
+  loader: async ({ context, params }) => {
+    const client = { baseUrl: getApiUrl(), fetcher: operatorFetcher }
+
+    await context.queryClient.ensureQueryData(
+      getLegalContractTemplateQueryOptions(client, params.id),
+    )
+
+    void context.queryClient.prefetchQuery(
+      getLegalContractTemplateVersionsQueryOptions(client, { templateId: params.id }),
+    )
+  },
   component: RouteComponent,
 })
 
@@ -37,8 +43,16 @@ function RouteComponent() {
     <TemplateDetailPage
       id={id}
       onBackToTemplates={() => void navigate({ to: "/legal/templates" })}
-      renderTemplateDialog={(props) => <TemplateDialog {...props} />}
-      renderTemplateVersionDialog={(props) => <TemplateVersionDialog {...props} />}
+      renderTemplateDialog={(props) => (
+        <Suspense fallback={null}>
+          <TemplateDialog {...props} />
+        </Suspense>
+      )}
+      renderTemplateVersionDialog={(props) => (
+        <Suspense fallback={null}>
+          <TemplateVersionDialog {...props} />
+        </Suspense>
+      )}
     />
   )
 }

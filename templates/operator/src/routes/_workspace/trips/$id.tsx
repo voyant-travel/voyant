@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { useOrganization, usePerson } from "@voyantjs/crm-react"
 import { formatMessage } from "@voyantjs/i18n"
 import type { Trip, TripComponent } from "@voyantjs/travel-composer"
-import { defaultFetcher, getTripQueryOptions } from "@voyantjs/travel-composer-react"
+import { getTripQueryOptions } from "@voyantjs/travel-composer-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
@@ -39,12 +39,14 @@ import {
 } from "@/components/voyant/travel-composer/admin-trip-composer-panels"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
 export const Route = createFileRoute("/_workspace/trips/$id")({
+  ssr: "data-only",
   loader: ({ context, params }) => {
     if (params.id === "new") return null
     return context.queryClient.ensureQueryData(
-      getTripQueryOptions({ baseUrl: getApiUrl(), fetcher: defaultFetcher }, params.id),
+      getTripQueryOptions({ baseUrl: getApiUrl(), fetcher: operatorFetcher }, params.id),
     )
   },
   component: TripDetailRoute,

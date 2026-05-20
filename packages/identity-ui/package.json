@@ -43,7 +43,7 @@
     "@voyantjs/i18n": "workspace:*"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.96.2",
+    "@tanstack/react-query": "^5.100.11",
     "@tanstack/react-table": "^8.21.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -53,8 +53,8 @@
     "@voyantjs/identity-react": "workspace:*",
     "@voyantjs/products-ui": "workspace:*",
     "@voyantjs/suppliers-ui": "workspace:*",
-    "@voyantjs/voyant-typescript-config": "workspace:*",
     "@voyantjs/ui": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:*",
     "lucide-react": "^0.475.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

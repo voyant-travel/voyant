@@ -4,6 +4,7 @@ import { getOrganizationsQueryOptions } from "@/components/voyant/crm/crm-query-
 import { OrganizationsListSkeleton } from "@/components/voyant/crm/organizations-list-skeleton"
 
 export const Route = createFileRoute("/_workspace/organizations/")({
+  ssr: "data-only",
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(getOrganizationsQueryOptions({ limit: 25, offset: 0 })),
   pendingComponent: OrganizationsListSkeleton,

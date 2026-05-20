@@ -2,11 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { formatMessage } from "@voyantjs/i18n"
 import type { Trip, TripEnvelopeStatus, TripsListSortField } from "@voyantjs/travel-composer"
-import {
-  defaultFetcher,
-  type ListTripsParams,
-  listTripsQueryOptions,
-} from "@voyantjs/travel-composer-react"
+import { type ListTripsParams, listTripsQueryOptions } from "@voyantjs/travel-composer-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Input } from "@voyantjs/ui/components/input"
@@ -34,6 +30,7 @@ import {
 } from "@/components/voyant/trips/trip-list-filters"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
 const PAGE_SIZE = 25
 const SKELETON_ROWS = 6
@@ -60,9 +57,10 @@ const statusBadgeVariant: Record<TripEnvelopeStatus, "default" | "secondary" | "
 }
 
 export const Route = createFileRoute("/_workspace/trips/")({
+  ssr: "data-only",
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(
-      listTripsQueryOptions({ baseUrl: getApiUrl(), fetcher: defaultFetcher }, initialListParams),
+      listTripsQueryOptions({ baseUrl: getApiUrl(), fetcher: operatorFetcher }, initialListParams),
     ),
   component: TripsIndexRoute,
 })
@@ -71,7 +69,7 @@ function TripsIndexRoute() {
   const messages = useAdminMessages().trips
   const listMessages = messages.list
   const navigate = useNavigate()
-  const client = React.useMemo(() => ({ baseUrl: getApiUrl(), fetcher: defaultFetcher }), [])
+  const client = React.useMemo(() => ({ baseUrl: getApiUrl(), fetcher: operatorFetcher }), [])
 
   const [search, setSearch] = React.useState("")
   const [status, setStatus] = React.useState<TripStatusFilter>(TRIP_STATUS_ALL)

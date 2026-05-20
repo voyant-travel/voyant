@@ -33,8 +33,8 @@
     "@voyantjs/catalog": "workspace:*",
     "@voyantjs/catalog-react": "workspace:*",
     "@voyantjs/crm-react": "workspace:*",
-    "@voyantjs/extras-react": "workspace:*",
     "@voyantjs/crm-ui": "workspace:*",
+    "@voyantjs/extras-react": "workspace:*",
     "@voyantjs/finance-react": "workspace:*",
     "@voyantjs/identity-react": "workspace:*",
     "@voyantjs/legal-react": "workspace:*",
@@ -52,7 +52,7 @@
     "@voyantjs/i18n": "workspace:*"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.96.2",
+    "@tanstack/react-query": "^5.100.11",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@voyantjs/availability-react": "workspace:*",
@@ -68,8 +68,8 @@
     "@voyantjs/pricing-react": "workspace:*",
     "@voyantjs/products-react": "workspace:*",
     "@voyantjs/suppliers-react": "workspace:*",
-    "@voyantjs/voyant-typescript-config": "workspace:*",
     "@voyantjs/ui": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:*",
     "lucide-react": "^0.475.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

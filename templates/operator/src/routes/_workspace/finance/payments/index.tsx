@@ -1,16 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { defaultFetcher, getAllPaymentsQueryOptions } from "@voyantjs/finance-react"
+import { getAllPaymentsQueryOptions } from "@voyantjs/finance-react"
 import { PaymentsPage, PaymentsPageSkeleton } from "@voyantjs/finance-ui"
 import { useSuppliers } from "@voyantjs/suppliers-react"
 import { useState } from "react"
 
 import { RecordPaymentDialog } from "@/components/voyant/finance/record-payment-dialog"
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
 export const Route = createFileRoute("/_workspace/finance/payments/")({
+  ssr: "data-only",
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(
-      getAllPaymentsQueryOptions({ baseUrl: getApiUrl(), fetcher: defaultFetcher }),
+      getAllPaymentsQueryOptions({ baseUrl: getApiUrl(), fetcher: operatorFetcher }),
     ),
   pendingComponent: PaymentsPageSkeleton,
   component: RouteComponent,

@@ -10,16 +10,22 @@ import {
   getAvailabilityStartTimesQueryOptions,
 } from "@/components/voyant/availability/availability-shared"
 
+// Tab dashboard — `slots` is the default. Await only what slots tab + the
+// products picker (top of page) need; everything else prefetches in the
+// background.
 export const Route = createFileRoute("/_workspace/availability/")({
-  loader: ({ context }) =>
-    Promise.all([
-      context.queryClient.ensureQueryData(getAvailabilityProductsQueryOptions()),
-      context.queryClient.ensureQueryData(getAvailabilityRulesQueryOptions()),
-      context.queryClient.ensureQueryData(getAvailabilityStartTimesQueryOptions()),
+  ssr: "data-only",
+  loader: async ({ context }) => {
+    await Promise.all([
       context.queryClient.ensureQueryData(getAvailabilitySlotsQueryOptions()),
-      context.queryClient.ensureQueryData(getAvailabilityCloseoutsQueryOptions()),
-      context.queryClient.ensureQueryData(getAvailabilityPickupPointsQueryOptions()),
-    ]),
+      context.queryClient.ensureQueryData(getAvailabilityProductsQueryOptions()),
+    ])
+
+    void context.queryClient.prefetchQuery(getAvailabilityRulesQueryOptions())
+    void context.queryClient.prefetchQuery(getAvailabilityStartTimesQueryOptions())
+    void context.queryClient.prefetchQuery(getAvailabilityCloseoutsQueryOptions())
+    void context.queryClient.prefetchQuery(getAvailabilityPickupPointsQueryOptions())
+  },
   pendingComponent: AvailabilityPageSkeleton,
   component: AvailabilityPage,
 })

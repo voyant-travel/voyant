@@ -4,6 +4,7 @@ import { getPeopleQueryOptions } from "@/components/voyant/crm/crm-query-options
 import { PeopleListSkeleton } from "@/components/voyant/crm/people-list-skeleton"
 
 export const Route = createFileRoute("/_workspace/people/")({
+  ssr: "data-only",
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(getPeopleQueryOptions({ limit: 25, offset: 0 })),
   pendingComponent: PeopleListSkeleton,

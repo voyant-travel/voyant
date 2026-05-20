@@ -27,6 +27,8 @@ const productCoreSchema = z.object({
   name: z.string().min(1).max(255),
   status: productStatusSchema.default("draft"),
   description: z.string().optional().nullable(),
+  inclusionsHtml: z.string().optional().nullable(),
+  exclusionsHtml: z.string().optional().nullable(),
   bookingMode: productBookingModeSchema.default("date"),
   capacityMode: productCapacityModeSchema.default("limited"),
   timezone: z.string().max(100).optional().nullable(),

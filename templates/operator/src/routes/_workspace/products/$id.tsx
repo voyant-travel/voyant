@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { defaultFetcher, getProductQueryOptions } from "@voyantjs/products-react"
+import { getProductQueryOptions } from "@voyantjs/products-react"
 import { ProductDetailPage } from "@/components/voyant/products/product-detail-page"
 import {
   getChannelsQueryOptions,
@@ -10,50 +10,33 @@ import {
 } from "@/components/voyant/products/product-detail-shared"
 import { ProductDetailSkeleton } from "@/components/voyant/products/product-detail-skeleton"
 import {
-  getOptionPriceRulesQueryOptions,
-  getOptionUnitPriceRulesQueryOptions,
-  getOptionUnitsQueryOptions,
   getPricingCategoriesQueryOptions,
   getProductOptionsQueryOptions,
 } from "@/components/voyant/products/product-options-shared"
 import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
+// Critical path only: await the product itself so the header has data and
+// the loader unblocks after one round-trip. Everything else is fired as a
+// background prefetch — the corresponding `useQuery` calls in the page's
+// sections light up as data arrives instead of blocking the whole route
+// on the slowest of ~15 nested queries. Nested option pricing rules now
+// load lazily when the Pricing tab opens; the old eager prefetch chain
+// was the main cause of the multi-second wait on this route.
 export const Route = createFileRoute("/_workspace/products/$id")({
+  ssr: "data-only",
   loader: async ({ context, params }) => {
-    await context.queryClient.ensureQueryData(
-      getProductQueryOptions({ baseUrl: getApiUrl(), fetcher: defaultFetcher }, params.id),
-    )
+    const client = { baseUrl: getApiUrl(), fetcher: operatorFetcher }
 
-    const productOptionsData = await context.queryClient.ensureQueryData(
-      getProductOptionsQueryOptions(params.id),
-    )
+    await context.queryClient.ensureQueryData(getProductQueryOptions(client, params.id))
 
-    await Promise.all([
-      context.queryClient.ensureQueryData(getProductSlotsQueryOptions(params.id)),
-      context.queryClient.ensureQueryData(getProductRulesQueryOptions(params.id)),
-      context.queryClient.ensureQueryData(getChannelsQueryOptions()),
-      context.queryClient.ensureQueryData(getProductChannelMappingsQueryOptions(params.id)),
-      context.queryClient.ensureQueryData(getProductMediaQueryOptions(params.id)),
-      context.queryClient.ensureQueryData(getPricingCategoriesQueryOptions()),
-      ...productOptionsData.data.flatMap((option) => [
-        context.queryClient.ensureQueryData(getOptionUnitsQueryOptions(option.id)),
-        context.queryClient.ensureQueryData(getOptionPriceRulesQueryOptions(option.id)),
-      ]),
-    ])
-
-    const optionPriceRules = await Promise.all(
-      productOptionsData.data.map((option) =>
-        context.queryClient.ensureQueryData(getOptionPriceRulesQueryOptions(option.id)),
-      ),
-    )
-
-    await Promise.all(
-      optionPriceRules.flatMap((priceRulesData) =>
-        priceRulesData.data.map((rule) =>
-          context.queryClient.ensureQueryData(getOptionUnitPriceRulesQueryOptions(rule.id)),
-        ),
-      ),
-    )
+    void context.queryClient.prefetchQuery(getProductOptionsQueryOptions(params.id))
+    void context.queryClient.prefetchQuery(getProductSlotsQueryOptions(params.id))
+    void context.queryClient.prefetchQuery(getProductRulesQueryOptions(params.id))
+    void context.queryClient.prefetchQuery(getChannelsQueryOptions())
+    void context.queryClient.prefetchQuery(getProductChannelMappingsQueryOptions(params.id))
+    void context.queryClient.prefetchQuery(getProductMediaQueryOptions(params.id))
+    void context.queryClient.prefetchQuery(getPricingCategoriesQueryOptions())
   },
   pendingComponent: ProductDetailSkeleton,
   component: ProductDetailRoute,
