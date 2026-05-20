@@ -136,6 +136,7 @@ export function ProductDetailPage({
           <ProductOverviewCard product={product} />
           <ProductInclusionsCard product={product} />
           <ProductExclusionsCard product={product} />
+          <ProductTermsCard product={product} />
           <ProductCommercialCard product={product} />
           {slots?.overviewEnd}
 
@@ -341,6 +342,32 @@ export function ProductExclusionsCard({ product, className }: ProductOverviewCar
           />
         ) : (
           <p className="text-sm text-muted-foreground">{pageMessages.states.noExclusions}</p>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+export function ProductTermsCard({ product, className }: ProductOverviewCardProps) {
+  const messages = useProductsUiMessagesOrDefault()
+  const pageMessages = messages.productDetailPage
+  const html = product.termsHtml?.trim()
+
+  return (
+    <Card data-slot="product-terms-card" className={className}>
+      <CardHeader>
+        <CardTitle>{pageMessages.sections.terms.title}</CardTitle>
+        <CardDescription>{pageMessages.sections.terms.description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {html ? (
+          <div
+            className="prose prose-sm max-w-none dark:prose-invert"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: operator-authored rich text from the products module
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground">{pageMessages.states.noTerms}</p>
         )}
       </CardContent>
     </Card>

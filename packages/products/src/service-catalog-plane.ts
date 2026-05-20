@@ -85,6 +85,7 @@ export function productRowToProjection(
     // Merchandisable
     ["name", row.name],
     ["description", row.description],
+    ["termsHtml", row.termsHtml],
     ["tags[]", row.tags],
 
     // Structural
@@ -103,6 +104,7 @@ export function productRowToProjection(
     ["endDateEpochDays", dateToEpochDays(row.endDate)],
     ["timezone", row.timezone],
     ["reservationTimeoutMinutes", row.reservationTimeoutMinutes],
+    ["termsShowOnContract", row.termsShowOnContract],
 
     // Pricing (configured defaults — quote-time prices come from pricing module)
     ["sellAmountCents", row.sellAmountCents],
@@ -402,6 +404,7 @@ export function createProductStorefrontCardProjectionExtension(): ProductProject
             name: productTranslations.name,
             slug: productTranslations.slug,
             shortDescription: productTranslations.shortDescription,
+            termsHtml: productTranslations.termsHtml,
           })
           .from(productTranslations)
           .where(eq(productTranslations.productId, productId))
@@ -450,6 +453,7 @@ export function createProductStorefrontCardProjectionExtension(): ProductProject
       const out = new Map<string, unknown>([
         ["slug", translation?.slug ?? null],
         ["shortDescription", translation?.shortDescription ?? null],
+        ["termsHtml", translation?.termsHtml ?? null],
         ["primaryMediaUrl", primaryMedia?.url ?? null],
         ["thumbnailUrl", primaryMedia?.url ?? null],
         ["coverMediaUrl", primaryMedia?.url ?? null],

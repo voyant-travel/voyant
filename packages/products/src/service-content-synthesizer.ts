@@ -166,6 +166,11 @@ function pickProductSummary(
     name: stringOr(projection.name, "") || stringOr(projection.title, "") || "Unnamed product",
     status: stringOr(projection.status, undefined),
     description: stringOr(projection.description, null),
+    inclusions_html:
+      stringOr(projection.inclusions_html, null) ?? stringOr(projection.inclusionsHtml, null),
+    exclusions_html:
+      stringOr(projection.exclusions_html, null) ?? stringOr(projection.exclusionsHtml, null),
+    terms_html: stringOr(projection.terms_html, null) ?? stringOr(projection.termsHtml, null),
     highlights: stringArrayOr(projection.highlights, []),
     hero_image_url: stringOr(projection.hero_image_url, null),
     duration_days: numberOr(projection.duration_days, null),

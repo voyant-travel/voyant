@@ -176,6 +176,13 @@
       "when": 1779207682703,
       "tag": "0023_concerned_namorita",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1779295200000,
+      "tag": "0024_product_terms",
+      "breakpoints": true
     }
   ]
 }

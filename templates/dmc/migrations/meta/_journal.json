@@ -78,6 +78,13 @@
       "when": 1779292800000,
       "tag": "0011_product_inclusions_exclusions",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1779295200000,
+      "tag": "0012_product_terms",
+      "breakpoints": true
     }
   ]
 }

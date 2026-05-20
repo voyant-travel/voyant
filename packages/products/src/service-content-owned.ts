@@ -154,6 +154,7 @@ export async function buildOwnedProductContent(
     bestProductTrn?.candidate.description ??
     productRow.description ??
     null
+  const localizedTerms = bestProductTrn?.candidate.termsHtml ?? productRow.termsHtml ?? null
 
   const content: ProductContent = productContentSchema.parse({
     product: {
@@ -163,6 +164,7 @@ export async function buildOwnedProductContent(
       description: localizedDescription,
       inclusions_html: productRow.inclusionsHtml ?? null,
       exclusions_html: productRow.exclusionsHtml ?? null,
+      terms_html: localizedTerms,
       hero_image_url: cover?.url ?? null,
       duration_days: estimateDurationDays(days, productRow),
       start_date: dateToIso(productRow.startDate),
@@ -238,6 +240,7 @@ interface ProductTrnCandidate {
   name: string
   shortDescription: string | null
   description: string | null
+  termsHtml: string | null
 }
 
 /**
@@ -348,6 +351,7 @@ function pickBestProductTranslation(
     name: r.name,
     shortDescription: r.shortDescription,
     description: r.description,
+    termsHtml: r.termsHtml,
   }))
   return pickBestCachedLocale(candidates, preferred)
 }
