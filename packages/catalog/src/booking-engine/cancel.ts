@@ -11,7 +11,11 @@
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { and, eq } from "drizzle-orm"
 
-import type { CancelResult, SourceAdapterContext } from "../adapter/contract.js"
+import type {
+  CancelResult,
+  SourceAdapterContext,
+  SourceAdapterRequestScope,
+} from "../adapter/contract.js"
 import {
   bookingCatalogSnapshotTable,
   type SelectBookingCatalogSnapshot,
@@ -25,6 +29,8 @@ export interface CancelEntityRequest {
   entityModule: string
   entityId: string
   reason?: string
+  scope?: SourceAdapterRequestScope
+  idempotencyKey?: string
   adapterContext: SourceAdapterContext
 }
 
@@ -32,6 +38,7 @@ export interface CancelEntityResult {
   status: CancelResult["status"]
   refundAmount?: number
   refundCurrency?: string
+  pendingChannel?: string
   /** The snapshot row's id — exposed for callers that want to log the cancel against it. */
   snapshotId: string
 }
@@ -66,12 +73,15 @@ export async function cancelEntity(
   const result = await adapter.cancel(request.adapterContext, {
     upstream_ref: snapshot.source_ref ?? snapshot.id,
     reason: request.reason,
+    scope: request.scope,
+    idempotency_key: request.idempotencyKey,
   })
 
   return {
     status: result.status,
     refundAmount: result.refund_amount,
     refundCurrency: result.refund_currency,
+    pendingChannel: result.pending_channel,
     snapshotId: snapshot.id,
   }
 }

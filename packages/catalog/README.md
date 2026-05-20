@@ -25,6 +25,7 @@ pnpm add @voyantjs/catalog
 - **`./drift/events`** — drift event types for upstream change detection.
 - **`./events/taxonomy`** — catalog event names + visibility-filtered payload builders, emitted via `@voyantjs/core/events` and consumed by the existing webhook pipeline.
 - **`./adapter/contract`** — public source-adapter contract. Voyant Connect, third-party providers, operator-built adapters all implement this.
+- **`./adapter/schemas`** — zod schemas for source-adapter runtime payloads. Use these at HTTP, queue, RPC, and adapter boundaries instead of re-declaring validators.
 - **`./booking-engine`** — quote/book services plus the Hono route module that backs `@voyantjs/catalog-react/booking-engine` and `@voyantjs/bookings-ui/journey`.
 
 ## Architectural rules
@@ -63,6 +64,19 @@ export const productCatalogPolicy = defineFieldPolicy([
 ```
 
 See `docs/architecture/catalog-architecture.md` for the full contract and worked examples.
+
+## Source-adapter runtime validation
+
+```typescript
+import { reserveRequestSchema } from "@voyantjs/catalog/adapter/schemas"
+import type { ReserveRequest } from "@voyantjs/catalog/adapter/contract"
+
+const request: ReserveRequest = reserveRequestSchema.parse(await req.json())
+```
+
+Reserve and cancel requests may include a `scope` matching live resolution plus
+an `idempotency_key`; cancel results may return `status: "pending"` with
+`pending_channel` for async upstream workflows.
 
 ## BookingJourney HTTP routes
 
