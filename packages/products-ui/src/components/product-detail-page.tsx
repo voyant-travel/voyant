@@ -134,6 +134,8 @@ export function ProductDetailPage({
         <div className="flex min-w-0 flex-col gap-6">
           {slots?.overviewStart}
           <ProductOverviewCard product={product} />
+          <ProductInclusionsCard product={product} />
+          <ProductExclusionsCard product={product} />
           <ProductCommercialCard product={product} />
           {slots?.overviewEnd}
 
@@ -288,6 +290,58 @@ export function ProductOverviewCard({ product, className }: ProductOverviewCardP
           <ProductField label={pageMessages.fields.startDate} value={product.startDate} />
           <ProductField label={pageMessages.fields.endDate} value={product.endDate} />
         </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+export function ProductInclusionsCard({ product, className }: ProductOverviewCardProps) {
+  const messages = useProductsUiMessagesOrDefault()
+  const pageMessages = messages.productDetailPage
+  const html = product.inclusionsHtml?.trim()
+
+  return (
+    <Card data-slot="product-inclusions-card" className={className}>
+      <CardHeader>
+        <CardTitle>{pageMessages.sections.inclusions.title}</CardTitle>
+        <CardDescription>{pageMessages.sections.inclusions.description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {html ? (
+          <div
+            className="prose prose-sm max-w-none dark:prose-invert"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: operator-authored rich text from the products module
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground">{pageMessages.states.noInclusions}</p>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+export function ProductExclusionsCard({ product, className }: ProductOverviewCardProps) {
+  const messages = useProductsUiMessagesOrDefault()
+  const pageMessages = messages.productDetailPage
+  const html = product.exclusionsHtml?.trim()
+
+  return (
+    <Card data-slot="product-exclusions-card" className={className}>
+      <CardHeader>
+        <CardTitle>{pageMessages.sections.exclusions.title}</CardTitle>
+        <CardDescription>{pageMessages.sections.exclusions.description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {html ? (
+          <div
+            className="prose prose-sm max-w-none dark:prose-invert"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: operator-authored rich text from the products module
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground">{pageMessages.states.noExclusions}</p>
+        )}
       </CardContent>
     </Card>
   )

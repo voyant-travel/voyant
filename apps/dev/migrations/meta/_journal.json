@@ -183,6 +183,13 @@
       "when": 1778918900000,
       "tag": "0028_rename_birthday",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1779292800000,
+      "tag": "0029_product_inclusions_exclusions",
+      "breakpoints": true
     }
   ]
 }

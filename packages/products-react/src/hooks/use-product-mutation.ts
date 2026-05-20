@@ -12,6 +12,8 @@ export interface CreateProductInput {
   name: string
   status?: "draft" | "active" | "archived"
   description?: string | null
+  inclusionsHtml?: string | null
+  exclusionsHtml?: string | null
   bookingMode?: "date" | "date_time" | "open" | "stay" | "transfer" | "itinerary" | "other"
   capacityMode?: "free_sale" | "limited" | "on_request"
   timezone?: string | null

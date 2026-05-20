@@ -46,6 +46,8 @@ export const productRecordSchema = z.object({
   name: z.string(),
   status: z.enum(["draft", "active", "archived"]),
   description: z.string().nullable(),
+  inclusionsHtml: z.string().nullable(),
+  exclusionsHtml: z.string().nullable(),
   bookingMode: z.enum(["date", "date_time", "open", "stay", "transfer", "itinerary", "other"]),
   capacityMode: z.enum(["free_sale", "limited", "on_request"]),
   timezone: z.string().nullable(),

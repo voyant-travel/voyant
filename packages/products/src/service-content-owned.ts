@@ -161,6 +161,8 @@ export async function buildOwnedProductContent(
       name: localizedName,
       status: productRow.status,
       description: localizedDescription,
+      inclusions_html: productRow.inclusionsHtml ?? null,
+      exclusions_html: productRow.exclusionsHtml ?? null,
       hero_image_url: cover?.url ?? null,
       duration_days: estimateDurationDays(days, productRow),
       start_date: dateToIso(productRow.startDate),
