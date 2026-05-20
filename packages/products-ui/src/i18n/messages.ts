@@ -90,6 +90,14 @@ export type ProductsUiMessages = {
         title: string
         description: string
       }
+      inclusions: {
+        title: string
+        description: string
+      }
+      exclusions: {
+        title: string
+        description: string
+      }
       details: {
         title: string
         description: string
@@ -133,6 +141,8 @@ export type ProductsUiMessages = {
       notFoundTitle: string
       notFoundDescription: string
       noDescription: string
+      noInclusions: string
+      noExclusions: string
       noItineraries: string
       noDays: string
       deleteConfirm: string
@@ -157,6 +167,8 @@ export type ProductsUiMessages = {
     fields: {
       name: string
       description: string
+      inclusions: string
+      exclusions: string
       tags: string
       status: string
       bookingMode: string
@@ -175,6 +187,8 @@ export type ProductsUiMessages = {
     placeholders: {
       name: string
       description: string
+      inclusions: string
+      exclusions: string
       tagInput: string
       productTypeSearch: string
       facilitySearch: string

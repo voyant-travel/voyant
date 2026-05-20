@@ -38,6 +38,8 @@ export const productSummarySchema = z.object({
   name: z.string(),
   status: z.string().optional(),
   description: z.string().nullable().optional(),
+  inclusions_html: z.string().nullable().optional(),
+  exclusions_html: z.string().nullable().optional(),
   highlights: z.array(z.string()).optional(),
   hero_image_url: z.string().nullable().optional(),
   duration_days: z.number().int().nonnegative().nullable().optional(),

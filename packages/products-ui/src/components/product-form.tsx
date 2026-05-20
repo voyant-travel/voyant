@@ -10,6 +10,7 @@ import { Button } from "@voyantjs/ui/components/button"
 import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
+import { RichTextEditor } from "@voyantjs/ui/components/rich-text-editor"
 import {
   Select,
   SelectContent,
@@ -36,6 +37,8 @@ export interface ProductFormProps {
 interface FormState {
   name: string
   description: string
+  inclusionsHtml: string
+  exclusionsHtml: string
   status: "draft" | "active" | "archived"
   bookingMode: "date" | "date_time" | "open" | "stay" | "transfer" | "itinerary" | "other"
   capacityMode: ProductRecord["capacityMode"]
@@ -58,6 +61,8 @@ function initialState(mode: ProductFormMode): FormState {
     return {
       name: product.name,
       description: product.description ?? "",
+      inclusionsHtml: product.inclusionsHtml ?? "",
+      exclusionsHtml: product.exclusionsHtml ?? "",
       status: product.status,
       bookingMode: product.bookingMode,
       capacityMode: product.capacityMode,
@@ -79,6 +84,8 @@ function initialState(mode: ProductFormMode): FormState {
   return {
     name: "",
     description: "",
+    inclusionsHtml: "",
+    exclusionsHtml: "",
     status: "draft",
     bookingMode: "itinerary",
     capacityMode: "limited",
@@ -121,6 +128,8 @@ function toPayload(state: FormState): CreateProductInput {
   return {
     name: state.name.trim(),
     description: state.description.trim() || null,
+    inclusionsHtml: state.inclusionsHtml.trim() || null,
+    exclusionsHtml: state.exclusionsHtml.trim() || null,
     status: state.status,
     bookingMode: state.bookingMode,
     capacityMode: state.capacityMode,
@@ -260,6 +269,26 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
             value={state.description}
             onChange={(event) => field("description")(event.target.value)}
             placeholder={productMessages.placeholders.description}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="product-inclusions">{productMessages.fields.inclusions}</Label>
+          <RichTextEditor
+            value={state.inclusionsHtml}
+            onChange={field("inclusionsHtml")}
+            placeholder={productMessages.placeholders.inclusions}
+            editorClassName="max-h-[320px] overflow-y-auto"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="product-exclusions">{productMessages.fields.exclusions}</Label>
+          <RichTextEditor
+            value={state.exclusionsHtml}
+            onChange={field("exclusionsHtml")}
+            placeholder={productMessages.placeholders.exclusions}
+            editorClassName="max-h-[320px] overflow-y-auto"
           />
         </div>
 

@@ -49,6 +49,8 @@ export {
   type ProductDetailPageSlots,
   ProductDetailSidebar,
   type ProductDetailSidebarProps,
+  ProductExclusionsCard,
+  ProductInclusionsCard,
   ProductOverviewCard,
   type ProductOverviewCardProps,
 } from "./components/product-detail-page.js"

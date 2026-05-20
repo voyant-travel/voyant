@@ -105,6 +105,14 @@ export const productsUiRo = {
         title: "Prezentare",
         description: "Informatii de baza si setari comerciale ale produsului.",
       },
+      inclusions: {
+        title: "Ce este inclus",
+        description: "Evidentiaza ce primesc calatorii cu acest produs.",
+      },
+      exclusions: {
+        title: "Ce nu este inclus",
+        description: "Stabileste asteptari despre ce nu este acoperit.",
+      },
       details: {
         title: "Detalii",
         description: "Clasificare, programare si configurare operationala.",
@@ -148,6 +156,8 @@ export const productsUiRo = {
       notFoundTitle: "Produsul nu a fost gasit",
       notFoundDescription: "Produsul cerut nu exista sau nu mai este disponibil.",
       noDescription: "Nu exista descriere.",
+      noInclusions: "Nu sunt specificate incluziuni.",
+      noExclusions: "Nu sunt specificate excluziuni.",
       noItineraries: "Nu exista itinerare configurate pentru acest produs.",
       noDays: "Nu exista zile de itinerar configurate.",
       deleteConfirm: 'Stergi produsul "{name}"?',
@@ -172,6 +182,8 @@ export const productsUiRo = {
     fields: {
       name: "Nume",
       description: "Descriere",
+      inclusions: "Ce este inclus",
+      exclusions: "Ce nu este inclus",
       tags: "Etichete",
       status: "Status",
       bookingMode: "Mod rezervare",
@@ -190,6 +202,8 @@ export const productsUiRo = {
     placeholders: {
       name: "Croatia Explorer 2026",
       description: "Prezentare scurta a produsului...",
+      inclusions: "Listeaza ce este inclus in pret...",
+      exclusions: "Listeaza ce nu este inclus in pret...",
       tagInput: "Scrie o eticheta si apasa Enter",
       productTypeSearch: "Cauta tipuri de produs...",
       facilitySearch: "Cauta facilitati...",

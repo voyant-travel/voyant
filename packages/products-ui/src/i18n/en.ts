@@ -105,6 +105,14 @@ export const productsUiEn = {
         title: "Overview",
         description: "Core product information and commercial settings.",
       },
+      inclusions: {
+        title: "What's included",
+        description: "Highlight what travelers get with this product.",
+      },
+      exclusions: {
+        title: "What's not included",
+        description: "Set expectations about what's not covered.",
+      },
       details: {
         title: "Details",
         description: "Classification, scheduling, and operational setup.",
@@ -148,6 +156,8 @@ export const productsUiEn = {
       notFoundTitle: "Product not found",
       notFoundDescription: "The requested product does not exist or is no longer available.",
       noDescription: "No description provided.",
+      noInclusions: "No inclusions specified.",
+      noExclusions: "No exclusions specified.",
       noItineraries: "No itineraries configured for this product.",
       noDays: "No itinerary days configured.",
       deleteConfirm: 'Delete product "{name}"?',
@@ -172,6 +182,8 @@ export const productsUiEn = {
     fields: {
       name: "Name",
       description: "Description",
+      inclusions: "What's included",
+      exclusions: "What's not included",
       tags: "Tags",
       status: "Status",
       bookingMode: "Booking Mode",
@@ -190,6 +202,8 @@ export const productsUiEn = {
     placeholders: {
       name: "Croatia Explorer 2026",
       description: "Brief overview of the product...",
+      inclusions: "List what's included in the price...",
+      exclusions: "List what's not included in the price...",
       tagInput: "Type a tag and press Enter",
       productTypeSearch: "Search product types...",
       facilitySearch: "Search facilities...",
