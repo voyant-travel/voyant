@@ -118,6 +118,8 @@ const capabilities: AdapterCapabilities = {
   cacheTtlSeconds: 300,
   supportsContentFetch: true,
   supportedContentLocales: ["en-GB", "ro-RO"],
+  ownsContentCache: true,
+  ownsAvailabilityCache: false,
   holdReleaseGraceMs: 1000,
   supportsBookingPush: true,
   supportsAvailabilityPush: true,

@@ -168,6 +168,23 @@ export async function getAccommodationContent(
   }
   const market = scope.market ?? ACCOMMODATION_CONTENT_MARKET_ANY
   const acceptMT = scope.acceptMachineTranslated ?? true
+  const ownsContentCache = adapter?.capabilities.ownsContentCache === true
+
+  if (ownsContentCache) {
+    if (!adapter?.getContent) {
+      throw new Error(
+        `accommodation adapter for ${entityId} declares ownsContentCache but does not implement getContent`,
+      )
+    }
+    const fresh = await fetchPassThroughContent(adapter, adapterCtx, {
+      entity_module: "accommodations",
+      entity_id: entityId,
+      locale: scope.preferredLocales[0] ?? "en-GB",
+      market,
+      currency: scope.currency,
+    })
+    return finalizeFresh(db, entityId, fresh, scope, options)
+  }
 
   const cachedRows = await fetchCacheCandidates(db, entityId, market)
   const eligibleRows = acceptMT ? cachedRows : cachedRows.filter((r) => !r.machine_translated)
@@ -415,6 +432,21 @@ async function fetchFreshContent(
     },
   )
   return result ?? null
+}
+
+async function fetchPassThroughContent(
+  adapter: SourceAdapter,
+  ctx: SourceAdapterContext,
+  request: GetContentRequest,
+): Promise<GetContentResult> {
+  const got = await adapter.getContent!(ctx, request)
+  const validation = validateAccommodationContent(got.content)
+  if (!validation.valid) {
+    throw new Error(
+      `accommodation getContent for ${request.entity_id} failed validation: ${validation.reason}`,
+    )
+  }
+  return got
 }
 
 function scheduleRefresh(

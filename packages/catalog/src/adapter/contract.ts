@@ -91,6 +91,22 @@ export interface AdapterCapabilities {
    * supported. Empty / absent → unknown; the plane probes per-call.
    */
   supportedContentLocales?: ReadonlyArray<string>
+  /**
+   * When true, the adapter owns its content cache. The catalog plane treats
+   * `getContent` as pass-through: reads call the adapter directly, skip
+   * `*_sourced_content` cache reads/writes, and do not serve SWR fallback rows.
+   *
+   * Default false: the catalog plane owns the sourced-content cache.
+   */
+  ownsContentCache?: boolean
+  /**
+   * When true, the adapter owns its availability / live-resolve cache. The
+   * catalog plane treats `liveResolve` as pass-through and must not memoize
+   * live availability results.
+   *
+   * Default false.
+   */
+  ownsAvailabilityCache?: boolean
 
   /**
    * Per-supplier hold-release grace period in milliseconds. When the

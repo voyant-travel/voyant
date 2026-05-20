@@ -22,9 +22,11 @@ describe("AdapterCapabilities — content fetch declaration", () => {
     }
     expect(cap.supportsContentFetch).toBeUndefined()
     expect(cap.supportedContentLocales).toBeUndefined()
+    expect(cap.ownsContentCache).toBeUndefined()
+    expect(cap.ownsAvailabilityCache).toBeUndefined()
   })
 
-  it("records supportsContentFetch + supportedContentLocales when declared", () => {
+  it("records content and availability cache ownership when declared", () => {
     const cap: AdapterCapabilities = {
       verticals: ["products"],
       supportsLiveResolution: true,
@@ -33,9 +35,13 @@ describe("AdapterCapabilities — content fetch declaration", () => {
       postBookOperations: ["cancel"],
       supportsContentFetch: true,
       supportedContentLocales: ["en-GB", "ro-RO", "de-DE"],
+      ownsContentCache: true,
+      ownsAvailabilityCache: true,
     }
     expect(cap.supportsContentFetch).toBe(true)
     expect(cap.supportedContentLocales).toEqual(["en-GB", "ro-RO", "de-DE"])
+    expect(cap.ownsContentCache).toBe(true)
+    expect(cap.ownsAvailabilityCache).toBe(true)
   })
 })
 

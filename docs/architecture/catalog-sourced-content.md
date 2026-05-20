@@ -219,6 +219,12 @@ export interface AdapterCapabilities {
    *  requested locale is not supported. Empty / absent → unknown,
    *  probe per-call. */
   supportedContentLocales?: ReadonlyArray<string>
+  /** Adapter owns content caching; the catalog plane reads `getContent`
+   *  as pass-through and does not read/write `*_sourced_content`. */
+  ownsContentCache?: boolean
+  /** Adapter owns live availability caching; the catalog plane must not
+   *  memoize `liveResolve` results. */
+  ownsAvailabilityCache?: boolean
 }
 ```
 
@@ -328,9 +334,24 @@ export async function getProductContent(
     // Owned content is locale-resolved against product_translations.
     return readOwnedProductContent(db, entityId, scope)
   }
-  // Sourced path — pick the best cached locale row against the
-  // preference chain (one query, no N+1; see §3.5.3).
   const adapter = sourceAdapterRegistry.resolveOrThrow(provenance.source_kind)
+  const ownsCache = adapter.capabilities.ownsContentCache === true
+
+  if (ownsCache && adapter.getContent) {
+    // Pass-through mode — the adapter is authoritative for freshness,
+    // locale fallback, and cache invalidation at its source boundary.
+    const fresh = await adapter.getContent(adapterCtx, {
+      entity_module: "products",
+      entity_id: entityId,
+      locale: scope.preferredLocales[0],
+      market: scope.market,
+      currency: scope.currency,
+    })
+    return resolveFresh(fresh, scope)
+  }
+
+  // Catalog-owned mode — pick the best cached locale row against the
+  // preference chain (one query, no N+1; see §3.5.3).
   const best = await pickBestCachedLocale(db, "products", entityId, scope)
 
   if (best && !isStale(best, scope)) {
@@ -372,6 +393,37 @@ export async function getProductContent(
 ```
 
 Detail routes (operator and storefront) call this single function. Owned products keep working unchanged. Sourced products read from cache (locale-resolved); adapters that don't support content fetch synthesize the most complete content shape they can from projection + overlay + plane metadata (§3.6) — same return type as `getContent`, so consumers don't branch.
+
+### 3.3.1. Cache ownership modes
+
+The default mode is **catalog-owned caching**: sourced content returned by
+`getContent` is validated, written to the vertical's `*_sourced_content`
+table, served with locale fallback, and refreshed through SWR / drift events.
+This is the right mode for ordinary upstreams where Voyant is the durable
+read surface for detail-page content.
+
+Adapters can declare `ownsContentCache: true` when their own source boundary
+already has authoritative freshness semantics — for example, a Voyant Connect
+peer, an aggregator that sits in front of another cached deployment, or an API
+fronted by an upstream edge cache with explicit invalidation. In that mode,
+the catalog plane treats `getContent` as pass-through: every read calls the
+adapter, no `*_sourced_content` row is read or written, and stale cached rows
+are not used as SWR fallback. Content drift events still flow so downstream
+projections, search documents, overlays, and other derived state can be
+invalidated; there may simply be no content-cache row to evict.
+
+`ownsAvailabilityCache: true` applies the same rule to `liveResolve`: the
+adapter owns live availability / price freshness and the catalog plane must not
+memoize those results. Content and availability are independent flags because
+an adapter may cache stable content while resolving volatile availability
+directly, or the reverse.
+
+Pass-through content mode also moves locale fallback responsibility to the
+adapter. The catalog plane sends the most-preferred locale; the adapter may
+fallback internally, but it must set `returned_locale` to the locale actually
+served. `supportedContentLocales` remains useful for planning and UI hints, but
+the catalog plane no longer walks cached rows across `ro-RO -> ro -> en-GB` for
+that adapter.
 
 ### 3.4. Refresh policy: SWR with cross-worker singleflight
 
@@ -506,6 +558,12 @@ export interface ContentLocaleResolution<T = unknown> {
 ```
 
 The read service does the chain walk in SQL: pull all available locales for the entity in one query, score them against the preference chain, return the best. One query, no N+1. When **no** locale is available (cache miss for every entry), fall through to the live adapter fetch with the most-preferred locale — same path as §3.3 today, just locale-aware.
+
+For adapters that declare `ownsContentCache: true`, this SQL fallback chain is
+not available because the catalog plane deliberately does not read cache rows.
+Those adapters receive the most-preferred locale and own any upstream fallback
+they want to perform; `returned_locale` is the contract marker that tells the
+catalog plane what was actually served.
 
 ### 3.5.4. Editorial overlays compose on top — content-shape-aware merger
 
@@ -688,7 +746,7 @@ Each vertical opts in. Verticals that don't yet have detail-page needs (extras, 
 ## 8. Migration / rollout
 
 **Phase A — Extend the contract** (1 day):
-- Add `getContent` (optional), `supportsContentFetch`, `supportedContentLocales`, and content versioning fields to `SourceAdapter` / `AdapterCapabilities` / `GetContentRequest` / `GetContentResult`.
+- Add `getContent` (optional), `supportsContentFetch`, `supportedContentLocales`, `ownsContentCache`, `ownsAvailabilityCache`, and content versioning fields to `SourceAdapter` / `AdapterCapabilities` / `GetContentRequest` / `GetContentResult`.
 - Add `ContentDriftEvent` to the drift event taxonomy alongside existing `CatalogDriftEvent` (§3.4.1).
 - Extend `field_path` semantics in `catalog_overlay` to accept JSON-pointers (§3.5.4) — schema-compatible since `field_path` is already `text`.
 - Pure typing / contract changes. Demo adapter declares `supportsContentFetch: false`.

@@ -32,6 +32,8 @@ export const adapterCapabilitiesSchema = z.object({
   cacheTtlSeconds: z.number().int().min(0).nullable().optional(),
   supportsContentFetch: z.boolean().optional(),
   supportedContentLocales: z.array(localeSchema).readonly().optional(),
+  ownsContentCache: z.boolean().optional(),
+  ownsAvailabilityCache: z.boolean().optional(),
   holdReleaseGraceMs: z.number().int().min(0).optional(),
   supportsBookingPush: z.boolean().optional(),
   supportsAvailabilityPush: z.boolean().optional(),

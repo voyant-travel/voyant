@@ -203,6 +203,23 @@ export async function getProductContent(
   }
   const market = scope.market ?? PRODUCTS_CONTENT_MARKET_ANY
   const acceptMT = scope.acceptMachineTranslated ?? true
+  const ownsContentCache = adapter?.capabilities.ownsContentCache === true
+
+  if (ownsContentCache) {
+    if (!adapter?.getContent) {
+      throw new Error(
+        `products adapter for ${entityId} declares ownsContentCache but does not implement getContent`,
+      )
+    }
+    const fresh = await fetchPassThroughContent(adapter, adapterCtx, {
+      entity_module: "products",
+      entity_id: entityId,
+      locale: scope.preferredLocales[0] ?? "en-GB",
+      market,
+      currency: scope.currency,
+    })
+    return finalizeFresh(db, entityId, fresh, scope, options)
+  }
 
   if (options.forceFresh && adapter?.getContent) {
     const fresh = await fetchFreshContent(
@@ -342,6 +359,21 @@ function hasLegacyDepartureAvailabilityGap(row: SelectProductsSourcedContent): b
 // ─────────────────────────────────────────────────────────────────────────────
 // Fresh fetch + write-through
 // ─────────────────────────────────────────────────────────────────────────────
+
+async function fetchPassThroughContent(
+  adapter: SourceAdapter,
+  ctx: SourceAdapterContext,
+  request: GetContentRequest,
+): Promise<GetContentResult> {
+  const got = await adapter.getContent!(ctx, request)
+  const validation = validateProductContent(got.content)
+  if (!validation.valid) {
+    throw new Error(
+      `products getContent for ${request.entity_id} failed validation: ${validation.reason}`,
+    )
+  }
+  return got
+}
 
 async function fetchFreshContent(
   db: AnyDrizzleDb,
