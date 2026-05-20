@@ -15,6 +15,8 @@ const product = {
   name: "Danube Cruise",
   status: "active",
   description: null,
+  inclusionsHtml: null,
+  exclusionsHtml: null,
   bookingMode: "date_time",
   capacityMode: "limited",
   timezone: null,
