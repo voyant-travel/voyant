@@ -1,5 +1,13 @@
 # @voyantjs/storefront-ui
 
+## 0.59.0
+
+### Patch Changes
+
+- Updated dependencies [48927be]
+  - @voyantjs/storefront-react@0.59.0
+  - @voyantjs/ui@0.59.0
+
 ## 0.58.0
 
 ### Patch Changes
