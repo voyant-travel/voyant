@@ -6,10 +6,21 @@ import type {
   CancelResult,
   GetContentRequest,
   GetContentResult,
+  GetReservationRequest,
+  GetReservationResult,
+  ListReservationsPage,
+  ReservationStatus,
   ReserveRequest,
   SourceAdapter,
 } from "./contract.js"
-import { cancelRequestSchema, reserveRequestSchema } from "./schemas.js"
+import {
+  cancelRequestSchema,
+  getReservationRequestSchema,
+  getReservationResultSchema,
+  listReservationsPageSchema,
+  reservationStatusSchema,
+  reserveRequestSchema,
+} from "./schemas.js"
 
 describe("AdapterCapabilities — content fetch declaration", () => {
   it("accepts adapters that omit supportsContentFetch (backward compatible)", () => {
@@ -22,20 +33,28 @@ describe("AdapterCapabilities — content fetch declaration", () => {
     }
     expect(cap.supportsContentFetch).toBeUndefined()
     expect(cap.supportedContentLocales).toBeUndefined()
+    expect(cap.ownsContentCache).toBeUndefined()
+    expect(cap.ownsAvailabilityCache).toBeUndefined()
   })
 
-  it("records supportsContentFetch + supportedContentLocales when declared", () => {
+  it("records content and availability cache ownership when declared", () => {
     const cap: AdapterCapabilities = {
       verticals: ["products"],
       supportsLiveResolution: true,
       supportsDriftDetection: false,
       supportsBookingForwarding: true,
+      supportsReservationRetrieval: true,
       postBookOperations: ["cancel"],
       supportsContentFetch: true,
       supportedContentLocales: ["en-GB", "ro-RO", "de-DE"],
+      ownsContentCache: true,
+      ownsAvailabilityCache: true,
     }
     expect(cap.supportsContentFetch).toBe(true)
     expect(cap.supportedContentLocales).toEqual(["en-GB", "ro-RO", "de-DE"])
+    expect(cap.ownsContentCache).toBe(true)
+    expect(cap.ownsAvailabilityCache).toBe(true)
+    expect(cap.supportsReservationRetrieval).toBe(true)
   })
 })
 
@@ -156,6 +175,93 @@ describe("SourceAdapter — getContent capability gating", () => {
     )
     expect(result.returned_locale).toBe("en-GB")
     expect(result.content_schema_version).toBe("products/v1")
+  })
+})
+
+describe("SourceAdapter — reservation retrieval capability gating", () => {
+  it("typechecks without reservation read methods when capability is false", () => {
+    const adapter: SourceAdapter = {
+      kind: "booking-write-only",
+      capabilities: {
+        verticals: ["products"],
+        supportsLiveResolution: false,
+        supportsDriftDetection: false,
+        supportsBookingForwarding: true,
+        supportsReservationRetrieval: false,
+        postBookOperations: ["cancel"],
+      },
+      async reserve() {
+        return { upstream_ref: "booking_abc", status: "held" }
+      },
+      async cancel() {
+        return { status: "cancelled" }
+      },
+    }
+
+    expect(adapter.getReservation).toBeUndefined()
+    expect(adapter.listReservations).toBeUndefined()
+    expect(adapter.capabilities.supportsReservationRetrieval).toBe(false)
+  })
+
+  it("typechecks with getReservation and listReservations implemented", async () => {
+    const reservation: GetReservationResult = {
+      upstream_ref: "booking_abc",
+      status: "confirmed",
+      source_updated_at: new Date("2026-01-01T00:00:00Z"),
+      upstream_payload: { travelers: 2 },
+    }
+    const page: ListReservationsPage = {
+      reservations: [reservation],
+      next_cursor: "cursor_2",
+    }
+    const adapter: SourceAdapter = {
+      kind: "booking-readable",
+      capabilities: {
+        verticals: ["products"],
+        supportsLiveResolution: false,
+        supportsDriftDetection: true,
+        supportsBookingForwarding: true,
+        supportsReservationRetrieval: true,
+        postBookOperations: ["cancel", "status"],
+      },
+      async getReservation(_ctx, request) {
+        return request.upstream_ref === reservation.upstream_ref ? reservation : null
+      },
+      async listReservations() {
+        return page
+      },
+    }
+
+    const request: GetReservationRequest = {
+      upstream_ref: "missing",
+      scope: { locale: "en-GB", audience: "operator", market: "GB", currency: "GBP" },
+    }
+    expect(getReservationRequestSchema.parse(request)).toEqual(request)
+    await expect(adapter.getReservation!({ connection_id: "conn_1" }, request)).resolves.toBeNull()
+    await expect(
+      adapter.getReservation!({ connection_id: "conn_1" }, { upstream_ref: "booking_abc" }),
+    ).resolves.toEqual(reservation)
+    await expect(
+      adapter.listReservations!({ connection_id: "conn_1" }, { status: ["confirmed"] }),
+    ).resolves.toEqual(page)
+    expect(getReservationResultSchema.parse(reservation)).toEqual(reservation)
+    expect(listReservationsPageSchema.parse(page)).toEqual(page)
+  })
+
+  it("accepts every reservation status and rejects unknown statuses", () => {
+    const statuses: ReservationStatus[] = [
+      "held",
+      "confirmed",
+      "ticketed",
+      "failed",
+      "cancelled",
+      "pending",
+      "refused",
+      "cancelling",
+    ]
+
+    expect(statuses.map((status) => reservationStatusSchema.parse(status))).toEqual(statuses)
+    expect(reservationStatusSchema.safeParse("expired").success).toBe(false)
   })
 })
 
