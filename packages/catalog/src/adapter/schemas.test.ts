@@ -11,6 +11,10 @@ import type {
   DiscoveryPage,
   GetContentRequest,
   GetContentResult,
+  GetReservationRequest,
+  GetReservationResult,
+  ListReservationsPage,
+  ListReservationsQuery,
   LiveResolveRequest,
   LiveResolveResult,
   PushAvailabilityRequest,
@@ -19,6 +23,7 @@ import type {
   PushBookingResult,
   PushContentRequest,
   PushContentResult,
+  ReservationStatus,
   ReserveRequest,
   ReserveResult,
   SourceAdapter,
@@ -35,6 +40,10 @@ import {
   discoveryPageSchema,
   getContentRequestSchema,
   getContentResultSchema,
+  getReservationRequestSchema,
+  getReservationResultSchema,
+  listReservationsPageSchema,
+  listReservationsQuerySchema,
   liveResolveRequestSchema,
   liveResolveResultSchema,
   provenanceSchema,
@@ -44,6 +53,7 @@ import {
   pushBookingResultSchema,
   pushContentRequestSchema,
   pushContentResultSchema,
+  reservationStatusSchema,
   reserveRequestSchema,
   reserveResultSchema,
   sourceAdapterContextSchema,
@@ -74,6 +84,11 @@ const typeChecks: [
   AssertEquivalent<z.infer<typeof reserveResultSchema>, ReserveResult>,
   AssertEquivalent<z.infer<typeof cancelRequestSchema>, CancelRequest>,
   AssertEquivalent<z.infer<typeof cancelResultSchema>, CancelResult>,
+  AssertEquivalent<z.infer<typeof reservationStatusSchema>, ReservationStatus>,
+  AssertEquivalent<z.infer<typeof getReservationRequestSchema>, GetReservationRequest>,
+  AssertEquivalent<z.infer<typeof getReservationResultSchema>, GetReservationResult>,
+  AssertEquivalent<z.infer<typeof listReservationsQuerySchema>, ListReservationsQuery>,
+  AssertEquivalent<z.infer<typeof listReservationsPageSchema>, ListReservationsPage>,
   AssertEquivalent<z.infer<typeof pushBookingRequestSchema>, PushBookingRequest>,
   AssertEquivalent<z.infer<typeof pushBookingResultSchema>, PushBookingResult>,
   AssertEquivalent<z.infer<typeof pushAvailabilityRequestSchema>, PushAvailabilityRequest>,
@@ -105,6 +120,11 @@ const typeChecks: [
   true,
   true,
   true,
+  true,
+  true,
+  true,
+  true,
+  true,
 ]
 void typeChecks
 
@@ -113,6 +133,7 @@ const capabilities: AdapterCapabilities = {
   supportsLiveResolution: true,
   supportsDriftDetection: true,
   supportsBookingForwarding: true,
+  supportsReservationRetrieval: true,
   supportsSyncCancellation: false,
   postBookOperations: ["cancel", "status"],
   cacheTtlSeconds: 300,
@@ -226,6 +247,31 @@ const cancelResult: CancelResult = {
   pending_channel: "partner portal",
 }
 
+const getReservationRequest: GetReservationRequest = {
+  upstream_ref: "booking_123",
+  scope: sourceAdapterRequestScope,
+}
+
+const getReservationResult: GetReservationResult = {
+  upstream_ref: "booking_123",
+  status: "confirmed",
+  source_updated_at: new Date("2026-01-04T00:00:00Z"),
+  upstream_payload: { travelers: 2, supplierStatus: "OK" },
+}
+
+const listReservationsQuery: ListReservationsQuery = {
+  cursor: "cursor_1",
+  limit: 50,
+  status: ["held", "confirmed", "cancelling"],
+  updated_after: new Date("2026-01-01T00:00:00Z"),
+  scope: sourceAdapterRequestScope,
+}
+
+const listReservationsPage: ListReservationsPage = {
+  reservations: [getReservationResult],
+  next_cursor: "cursor_2",
+}
+
 const pushBookingRequest: PushBookingRequest = {
   idempotencyKey: "idem_1",
   bookingId: "book_1",
@@ -292,6 +338,12 @@ const sourceAdapter: SourceAdapter = {
   async getContent(_ctx, request) {
     return { ...getContentResult, entity_id: request.entity_id }
   },
+  async getReservation(_ctx, request) {
+    return request.upstream_ref === getReservationResult.upstream_ref ? getReservationResult : null
+  },
+  async listReservations() {
+    return listReservationsPage
+  },
 }
 
 const roundTripCases = [
@@ -311,6 +363,11 @@ const roundTripCases = [
   ["reserveResultSchema", reserveResultSchema, reserveResult],
   ["cancelRequestSchema", cancelRequestSchema, cancelRequest],
   ["cancelResultSchema", cancelResultSchema, cancelResult],
+  ["reservationStatusSchema", reservationStatusSchema, "cancelling" satisfies ReservationStatus],
+  ["getReservationRequestSchema", getReservationRequestSchema, getReservationRequest],
+  ["getReservationResultSchema", getReservationResultSchema, getReservationResult],
+  ["listReservationsQuerySchema", listReservationsQuerySchema, listReservationsQuery],
+  ["listReservationsPageSchema", listReservationsPageSchema, listReservationsPage],
   ["pushBookingRequestSchema", pushBookingRequestSchema, pushBookingRequest],
   ["pushBookingResultSchema", pushBookingResultSchema, pushBookingResult],
   ["pushAvailabilityRequestSchema", pushAvailabilityRequestSchema, pushAvailabilityRequest],
@@ -349,6 +406,23 @@ const invalidCases = [
   ["reserveResultSchema", reserveResultSchema, { ...reserveResult, status: "pending" }],
   ["cancelRequestSchema", cancelRequestSchema, { reason: "customer_request" }],
   ["cancelResultSchema", cancelResultSchema, { ...cancelResult, refund_currency: "GB" }],
+  ["reservationStatusSchema", reservationStatusSchema, "expired"],
+  [
+    "getReservationRequestSchema",
+    getReservationRequestSchema,
+    { ...getReservationRequest, upstream_ref: undefined },
+  ],
+  [
+    "getReservationResultSchema",
+    getReservationResultSchema,
+    { ...getReservationResult, status: "expired" },
+  ],
+  ["listReservationsQuerySchema", listReservationsQuerySchema, { limit: 0 }],
+  [
+    "listReservationsPageSchema",
+    listReservationsPageSchema,
+    { reservations: [{ ...getReservationResult, upstream_payload: "raw" }] },
+  ],
   [
     "pushBookingRequestSchema",
     pushBookingRequestSchema,

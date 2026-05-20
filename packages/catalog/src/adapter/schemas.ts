@@ -27,6 +27,7 @@ export const adapterCapabilitiesSchema = z.object({
   supportsLiveResolution: z.boolean(),
   supportsDriftDetection: z.boolean(),
   supportsBookingForwarding: z.boolean(),
+  supportsReservationRetrieval: z.boolean().optional(),
   supportsSyncCancellation: z.boolean().optional(),
   postBookOperations: z.array(postBookOperationSchema).readonly(),
   cacheTtlSeconds: z.number().int().min(0).nullable().optional(),
@@ -161,6 +162,42 @@ export const cancelResultSchema = z.object({
   pending_channel: z.string().optional(),
 })
 
+export const reservationStatusSchema = z.enum([
+  "held",
+  "confirmed",
+  "ticketed",
+  "failed",
+  "cancelled",
+  "pending",
+  "refused",
+  "cancelling",
+])
+
+export const getReservationRequestSchema = z.object({
+  upstream_ref: z.string(),
+  scope: sourceAdapterRequestScopeSchema.optional(),
+})
+
+export const getReservationResultSchema = z.object({
+  upstream_ref: z.string(),
+  status: reservationStatusSchema,
+  source_updated_at: z.date().optional(),
+  upstream_payload: recordSchema.optional(),
+})
+
+export const listReservationsQuerySchema = z.object({
+  cursor: discoveryCursorSchema.optional(),
+  limit: z.number().int().positive().optional(),
+  status: z.array(reservationStatusSchema).readonly().optional(),
+  updated_after: z.date().optional(),
+  scope: sourceAdapterRequestScopeSchema.optional(),
+})
+
+export const listReservationsPageSchema = z.object({
+  reservations: z.array(getReservationResultSchema),
+  next_cursor: discoveryCursorSchema,
+})
+
 export const pushBookingRequestSchema = z.object({
   idempotencyKey: z.string(),
   bookingId: z.string(),
@@ -229,6 +266,8 @@ export const sourceAdapterSchema = z.custom<SourceAdapter>(
       "getContent",
       "reserve",
       "cancel",
+      "getReservation",
+      "listReservations",
       "pushBooking",
       "pushAvailability",
       "pushContent",

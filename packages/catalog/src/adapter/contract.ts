@@ -34,6 +34,41 @@ export type {
 } from "./booking-forwarding.js"
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Reservation retrieval
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface GetReservationRequest {
+  upstream_ref: string
+  scope?: SourceAdapterRequestScope
+}
+
+export type ReservationStatus = ReserveResult["status"] | CancelResult["status"] | "cancelling"
+
+export interface GetReservationResult {
+  upstream_ref: string
+  status: ReservationStatus
+  /** When the upstream itself last modified this reservation. */
+  source_updated_at?: Date
+  /** Opaque per-vertical payload (itinerary, pricing snapshot, traveler details). */
+  upstream_payload?: Record<string, unknown>
+}
+
+export interface ListReservationsQuery {
+  cursor?: DiscoveryCursor
+  limit?: number
+  /** Filter by status. Empty / omitted means all statuses. */
+  status?: ReadonlyArray<ReservationStatus>
+  /** Incremental sync helper — return reservations modified since this instant. */
+  updated_after?: Date
+  scope?: SourceAdapterRequestScope
+}
+
+export interface ListReservationsPage {
+  reservations: GetReservationResult[]
+  next_cursor: DiscoveryCursor
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Connection lifecycle
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -59,6 +94,11 @@ export interface AdapterCapabilities {
   supportsDriftDetection: boolean
   /** Whether the adapter forwards bookings to the upstream source. */
   supportsBookingForwarding: boolean
+  /**
+   * Whether the adapter can retrieve upstream reservations on demand.
+   * Gates `getReservation` and `listReservations`.
+   */
+  supportsReservationRetrieval?: boolean
   /**
    * Whether `cancel` returns a terminal upstream status synchronously.
    * When false, the adapter may return `status: "pending"` and drive the
@@ -498,6 +538,26 @@ export interface SourceAdapter {
 
   /** Forward a cancel request. */
   cancel?(ctx: SourceAdapterContext, request: CancelRequest): Promise<CancelResult>
+
+  /**
+   * Fetch one reservation by upstream reference. Capability-gated by
+   * `supportsReservationRetrieval`. Returns `null` when the upstream cannot
+   * find the reservation; transport / auth errors should reject.
+   */
+  getReservation?(
+    ctx: SourceAdapterContext,
+    request: GetReservationRequest,
+  ): Promise<GetReservationResult | null>
+
+  /**
+   * Paginated list of reservations attributed to this connection. Capability-
+   * gated by `supportsReservationRetrieval`; supports pagination, status
+   * filtering, and incremental sync by `updated_after`.
+   */
+  listReservations?(
+    ctx: SourceAdapterContext,
+    query: ListReservationsQuery,
+  ): Promise<ListReservationsPage>
 
   // ── Channel push (outbound — owned product syndication) ──────────────
   // Per channel-push-architecture §3. Each method is independently

@@ -15,10 +15,10 @@ The booking engine is **vertical-agnostic**. The same `quoteEntity` / `bookEntit
 - The five existing verticals have adopted Phase 1's contract (`products`, `cruises`, `accommodations`, `charters`, `extras`).
 - The `supplierId` and `source.kind` indexed fields ship on each vertical so the indexer hits already carry enough to dispatch a quote/book.
 
-**This layer does NOT change:**
+**This layer preserves:**
 
-- The `SourceAdapter` interface itself — `connect`, `discover`, `liveResolve`, `reserve`, `cancel`, `disconnect` are already declared in `packages/catalog/src/adapter/contract.ts`. No new methods.
 - The flights booking engine (`packages/flights`) — that pattern is preserved verbatim. The cross-vertical booking engine here is a sibling, not a replacement. Flights' `searchFlights` / `bookFlight` shape stays specialized because flights' search request shape (slices, passengers, cabin) doesn't generalize cleanly across the rest of the catalog.
+- The `SourceAdapter` boundary as the only upstream-facing seam. Booking writes use `reserve` / `cancel`; authoritative reads use the optional `getReservation` / `listReservations` retrieval methods when an adapter declares `supportsReservationRetrieval`.
 
 **What this layer adds:**
 
@@ -95,7 +95,49 @@ cancelEntity(ctx, { bookingId, entityModule, entityId, reason? }) → {
 
 Looks up the snapshot row, dispatches by `source_kind`. Owned: marks the booking entry cancelled in `packages/bookings`. Sourced: calls `adapter.cancel({ upstream_ref, reason })`. Either way, the snapshot stays — it's the audit record — and a `catalog.booking.cancelled` webhook fires.
 
-### 3.4. `getOrder` / `listOrders`
+### 3.4. `getReservation` / `listReservations`
+
+`reserve` creates the local booking row and stamps the upstream reference from
+`ReserveResult.upstream_ref`. After that, the local booking and snapshot remain
+the durable audit surface. Drift events push asynchronous upstream status
+changes back into downstream projections and operator state.
+
+When the local view is disputed, incomplete, or being attached for the first
+time, the adapter can expose authoritative pull reads:
+
+```ts
+adapter.getReservation(ctx, { upstream_ref, scope? }) → {
+  upstream_ref,
+  status,
+  source_updated_at?,
+  upstream_payload?,
+} | null
+
+adapter.listReservations(ctx, {
+  cursor?,
+  limit?,
+  status?,
+  updated_after?,
+  scope?,
+}) → { reservations, next_cursor }
+```
+
+`getReservation` is the point lookup for audit, support, and dispute
+resolution. It returns `null` when the supplier cannot find the upstream
+reference; transport and authentication errors reject normally.
+
+`listReservations` is the bulk and incremental sync entry point for first-time
+supplier attach and reconciliation jobs. `cursor` is for pagination;
+`updated_after` is the explicit checkpoint for "show me reservations modified
+since this instant." The framework does not mirror the supplier's full booking
+record into local tables. `upstream_payload` is opaque round-trip data; verticals
+or templates project only the fields they need into local state.
+
+Reservation retrieval is optional and capability-gated by
+`AdapterCapabilities.supportsReservationRetrieval`. Existing adapters that only
+support write forwarding compile unchanged.
+
+### 3.5. `getOrder` / `listOrders`
 
 Reads the `booking_catalog_snapshot` rows joined to `bookings` and the per-vertical line items. The engine doesn't introduce a new "orders" table — `bookings` is already that table. The engine just exposes the cross-vertical view.
 
