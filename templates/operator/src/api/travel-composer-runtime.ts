@@ -417,11 +417,26 @@ async function cancelComponent(
     },
   )
 
+  // Catalog adapters can return "pending" when an async cancel was submitted
+  // (email/partner-portal/batch) and the inventory hasn't been released yet.
+  // The travel-composer's `CancelComponentResult` doesn't model that state —
+  // surface it as `refused` with a reason so the trip lands in remediation
+  // and the operator follows up out-of-band. `pending_channel` flows through
+  // the reason so the UI can show where the request went.
+  const status: CancelComponentResult["status"] =
+    result.status === "pending" ? "refused" : result.status
+  const reason =
+    result.status === "cancelled"
+      ? undefined
+      : result.status === "pending"
+        ? `cancel_pending${result.pendingChannel ? `:${result.pendingChannel}` : ""}`
+        : `cancel_${result.status}`
+
   return {
-    status: result.status,
+    status,
     refundAmountCents: result.refundAmount,
     refundCurrency: result.refundCurrency,
-    reason: result.status === "cancelled" ? undefined : `cancel_${result.status}`,
+    reason,
     snapshot: { snapshotId: result.snapshotId },
   }
 }
