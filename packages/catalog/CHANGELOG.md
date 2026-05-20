@@ -1,5 +1,17 @@
 # @voyantjs/catalog
 
+## 0.58.0
+
+### Minor Changes
+
+- 5b21488: Add zod runtime schemas for the public catalog source-adapter contract, including request/result payloads, capabilities, provenance, adapter context, and channel-push shapes. Extend reserve/cancel adapter writes with optional request scope and idempotency keys, and model async cancellation with pending status metadata.
+
+### Patch Changes
+
+- @voyantjs/core@0.58.0
+- @voyantjs/db@0.58.0
+- @voyantjs/hono@0.58.0
+
 ## 0.57.0
 
 ### Patch Changes
