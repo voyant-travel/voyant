@@ -439,6 +439,7 @@ export const bookingsUiEn = {
       noUnits: "This departure has no per-unit availability configured.",
       remaining: "left",
       unlimited: "unlimited",
+      fillsSlotCapacity: "fills slot capacity",
       decreaseUnitPrefix: "Decrease",
       increaseUnitPrefix: "Increase",
     },

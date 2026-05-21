@@ -177,6 +177,13 @@ function stripUnitSuffix(name: string): string {
   return idx > 0 ? name.slice(0, idx) : name
 }
 
+function isRoomUnit(unit: {
+  optionUnitId: string
+  unitType?: OptionUnitsStepperUnit["unitType"]
+}): boolean {
+  return unit.unitType === "room"
+}
+
 /**
  * Any payment-schedule entry the operator has marked as already
  * paid. Drives the smart-default booking status on submit — if money
@@ -526,6 +533,10 @@ export function BookingCreateForm({
     })
     return optionSlots.length > 0 ? optionSlots : allOpenSlots
   }, [slotsData?.data, slotsFromIso, product.optionId, allOpenSlots])
+  const selectedSlot = React.useMemo(
+    () => slots.find((slot) => slot.id === slotId) ?? null,
+    [slots, slotId],
+  )
   const setSelectedSlot = React.useCallback(
     (nextSlotId: string | null) => {
       const selectedSlot = nextSlotId ? allOpenSlots.find((slot) => slot.id === nextSlotId) : null
@@ -583,10 +594,12 @@ export function BookingCreateForm({
       optionUnitId: string
       unitName: string
       unitCode?: string | null
+      unitType?: OptionUnitsStepperUnit["unitType"]
       occupancyMax: number | null
     }
-    const units: UnitLike[] =
+    const units: UnitLike[] = (
       roomUnits.length > 0 ? roomUnits : (slotUnitAvailability.data?.data ?? [])
+    ).filter(isRoomUnit)
     if (units.length === 0) return []
     const optionGroups = new Map<
       string,
@@ -1001,6 +1014,11 @@ export function BookingCreateForm({
               optionId={product.optionId}
               enabled={enabled}
               onUnitsChange={handleRoomUnitsChange}
+              slotHasFiniteCapacity={
+                Boolean(selectedSlot) &&
+                !selectedSlot?.unlimited &&
+                typeof selectedSlot?.remainingPax === "number"
+              }
               labels={{
                 heading: messages.bookingCreateDialog.labels.roomsHeading,
                 noOption: messages.bookingCreateDialog.labels.roomsNoOption,

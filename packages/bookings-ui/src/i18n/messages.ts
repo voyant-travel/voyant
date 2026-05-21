@@ -416,6 +416,7 @@ export type BookingsUiMessages = {
       noUnits: string
       remaining: string
       unlimited: string
+      fillsSlotCapacity: string
       decreaseUnitPrefix: string
       increaseUnitPrefix: string
     }
