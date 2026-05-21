@@ -35,8 +35,8 @@ import {
   buildEmbeddingProvider,
   buildTypesenseIndexer,
   createProductsDocumentBuilder,
-  DEFAULT_SLICES,
   getFieldPolicyRegistries,
+  loadCatalogSlices,
   withEmbedding,
 } from "./lib/catalog-runtime"
 import { withDbFromEnv } from "./lib/db"
@@ -63,13 +63,14 @@ export async function runScheduledPromotionBoundary(
     if (indexer && result.crossings.length > 0) {
       const service = createIndexerService({
         adapter: indexer,
-        slices: [...DEFAULT_SLICES],
+        slices: await loadCatalogSlices(db),
         registries: getFieldPolicyRegistries(),
       })
       const builder = withEmbedding(
         createProductsDocumentBuilder(db, { sellerOperatorId }),
         embeddings,
       )
+      await service.ensureCollections()
 
       // Aggregate distinct product IDs across `affected.kind === "products"`
       // crossings so multiple offers landing on the same product reindex

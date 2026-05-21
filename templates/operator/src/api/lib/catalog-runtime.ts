@@ -26,6 +26,7 @@ import { charterCatalogPolicy } from "@voyantjs/charters/catalog-policy"
 import { cruiseCatalogPolicy } from "@voyantjs/cruises/catalog-policy"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { extrasCatalogPolicy } from "@voyantjs/extras/catalog-policy"
+import { marketLocales, markets } from "@voyantjs/markets"
 import { createProductPricingProjectionExtension } from "@voyantjs/pricing/service-catalog-plane-pricing"
 import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
 import { productDeparturesCatalogPolicy } from "@voyantjs/products/catalog-policy-departures"
@@ -40,6 +41,17 @@ import {
 import { createProductDestinationsProjectionExtension } from "@voyantjs/products/service-catalog-plane-destinations"
 import { createProductTaxonomyProjectionExtension } from "@voyantjs/products/service-catalog-plane-taxonomy"
 import { createProductPromotionsProjectionExtension } from "@voyantjs/promotions/service-catalog-plane-promotions"
+import { asc, eq } from "drizzle-orm"
+
+export const CATALOG_VERTICALS = [
+  "products",
+  "extras",
+  "cruises",
+  "charters",
+  "accommodations",
+] as const
+
+const INDEXED_AUDIENCES = ["staff", "customer"] as const
 
 /**
  * The slice set the operator template indexes by default — staff (admin
@@ -59,6 +71,63 @@ export const DEFAULT_SLICES: ReadonlyArray<IndexerSlice> = [
   { vertical: "accommodations", locale: "en-GB", audience: "staff", market: "default" },
   { vertical: "accommodations", locale: "en-GB", audience: "customer", market: "default" },
 ]
+
+export async function loadCatalogSlices(db: AnyDrizzleDb): Promise<IndexerSlice[]> {
+  const [marketRows, localeRows] = await Promise.all([
+    db
+      .select({
+        id: markets.id,
+        defaultLanguageTag: markets.defaultLanguageTag,
+      })
+      .from(markets)
+      .where(eq(markets.status, "active"))
+      .orderBy(asc(markets.code)),
+    db
+      .select({
+        marketId: marketLocales.marketId,
+        languageTag: marketLocales.languageTag,
+      })
+      .from(marketLocales)
+      .where(eq(marketLocales.active, true))
+      .orderBy(asc(marketLocales.sortOrder), asc(marketLocales.languageTag)),
+  ])
+
+  const localesByMarket = new Map<string, Set<string>>()
+  for (const market of marketRows) {
+    localesByMarket.set(market.id, new Set([market.defaultLanguageTag]))
+  }
+  for (const locale of localeRows) {
+    localesByMarket.get(locale.marketId)?.add(locale.languageTag)
+  }
+
+  const marketSlices = marketRows.flatMap((market) => {
+    const locales = localesByMarket.get(market.id) ?? new Set([market.defaultLanguageTag])
+    return CATALOG_VERTICALS.flatMap((vertical) =>
+      Array.from(locales).flatMap((locale) =>
+        INDEXED_AUDIENCES.map((audience) => ({
+          vertical,
+          locale,
+          audience,
+          market: market.id,
+        })),
+      ),
+    )
+  })
+
+  return uniqueSlices([...DEFAULT_SLICES, ...marketSlices])
+}
+
+function uniqueSlices(slices: ReadonlyArray<IndexerSlice>): IndexerSlice[] {
+  const seen = new Set<string>()
+  const out: IndexerSlice[] = []
+  for (const slice of slices) {
+    const key = `${slice.vertical}|${slice.locale}|${slice.audience}|${slice.market}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(slice)
+  }
+  return out
+}
 
 /**
  * Just the env keys this module reads. Callers may pass any superset

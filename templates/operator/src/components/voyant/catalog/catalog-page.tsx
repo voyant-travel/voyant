@@ -3,8 +3,16 @@
 import { Link, useNavigate } from "@tanstack/react-router"
 import type { CatalogSearchHit } from "@voyantjs/catalog-react"
 import { type CatalogDetailEnrichment, CatalogPage as CatalogUiPage } from "@voyantjs/catalog-ui"
+import { useMarketLocales, useMarkets } from "@voyantjs/markets-react"
 import { useProductMutation } from "@voyantjs/products-react"
 import { useSuppliers } from "@voyantjs/suppliers-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@voyantjs/ui/components/select"
 import { useMemo } from "react"
 import { toast } from "sonner"
 
@@ -12,11 +20,36 @@ import type { ProductSourcedContentResponse } from "@/components/voyant/products
 import { ApiError, api } from "@/lib/api-client"
 import { type CatalogSearchParams, Route } from "@/routes/_workspace/catalog"
 
+const DEFAULT_MARKET_VALUE = "__default__"
+
 export function CatalogPage() {
   const navigate = useNavigate()
   const search = Route.useSearch()
   const routeNavigate = Route.useNavigate()
   const suppliersQuery = useSuppliers({ limit: 100 })
+  const marketsQuery = useMarkets({ status: "active", limit: 100 })
+  const selectedMarketId = search.market
+  const selectedMarket = (marketsQuery.data?.data ?? []).find(
+    (market) => market.id === selectedMarketId,
+  )
+  const localesQuery = useMarketLocales({
+    marketId: selectedMarketId,
+    active: true,
+    limit: 100,
+    enabled: Boolean(selectedMarketId),
+  })
+  const localeOptions = useMemo(() => {
+    const tags = new Set<string>()
+    if (selectedMarket) {
+      tags.add(selectedMarket.defaultLanguageTag)
+      for (const locale of localesQuery.data?.data ?? []) tags.add(locale.languageTag)
+    } else {
+      tags.add(search.locale ?? "en-GB")
+      for (const market of marketsQuery.data?.data ?? []) tags.add(market.defaultLanguageTag)
+    }
+    return Array.from(tags).sort((left, right) => left.localeCompare(right))
+  }, [localesQuery.data, marketsQuery.data, search.locale, selectedMarket])
+  const selectedLocale = search.locale ?? selectedMarket?.defaultLanguageTag ?? "en-GB"
   const supplierMap = useMemo(() => {
     const m = new Map<string, string>()
     for (const s of suppliersQuery.data?.data ?? []) m.set(s.id, s.name)
@@ -27,8 +60,47 @@ export function CatalogPage() {
 
   return (
     <CatalogUiPage
-      search={search}
+      search={{ ...search, locale: selectedLocale }}
       formatSupplier={formatSupplier}
+      toolbarEnd={
+        <CatalogScopeControls
+          markets={marketsQuery.data?.data ?? []}
+          localeOptions={localeOptions}
+          market={selectedMarketId}
+          locale={selectedLocale}
+          onMarketChange={(marketId) => {
+            const nextMarket = (marketsQuery.data?.data ?? []).find(
+              (market) => market.id === marketId,
+            )
+            void routeNavigate({
+              search: (prev): CatalogSearchParams => ({
+                ...prev,
+                market: marketId,
+                locale: nextMarket?.defaultLanguageTag,
+                page: 1,
+              }),
+              replace: true,
+            })
+          }}
+          onDefaultMarket={() => {
+            void routeNavigate({
+              search: (prev): CatalogSearchParams => ({
+                ...prev,
+                market: undefined,
+                locale: undefined,
+                page: 1,
+              }),
+              replace: true,
+            })
+          }}
+          onLocaleChange={(locale) => {
+            void routeNavigate({
+              search: (prev): CatalogSearchParams => ({ ...prev, locale, page: 1 }),
+              replace: true,
+            })
+          }}
+        />
+      }
       onTabChange={(id) =>
         routeNavigate({
           search: (prev): CatalogSearchParams => ({ ...prev, tab: id, page: 1 }),
@@ -94,6 +166,62 @@ export function CatalogPage() {
         }
       }}
     />
+  )
+}
+
+interface CatalogScopeControlsProps {
+  markets: Array<{ id: string; name: string; code: string; defaultLanguageTag: string }>
+  localeOptions: string[]
+  market?: string
+  locale: string
+  onMarketChange: (marketId: string) => void
+  onDefaultMarket: () => void
+  onLocaleChange: (locale: string) => void
+}
+
+function CatalogScopeControls({
+  markets,
+  localeOptions,
+  market,
+  locale,
+  onMarketChange,
+  onDefaultMarket,
+  onLocaleChange,
+}: CatalogScopeControlsProps) {
+  return (
+    <>
+      <Select
+        value={market ?? DEFAULT_MARKET_VALUE}
+        onValueChange={(value) => {
+          if (!value) return
+          value === DEFAULT_MARKET_VALUE ? onDefaultMarket() : onMarketChange(value)
+        }}
+      >
+        <SelectTrigger className="w-[220px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={DEFAULT_MARKET_VALUE}>Default market</SelectItem>
+          {markets.map((item) => (
+            <SelectItem key={item.id} value={item.id}>
+              {item.name} · {item.code}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select value={locale} onValueChange={(value) => value && onLocaleChange(value)}>
+        <SelectTrigger className="w-[150px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {localeOptions.map((item) => (
+            <SelectItem key={item} value={item}>
+              {item}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </>
   )
 }
 
