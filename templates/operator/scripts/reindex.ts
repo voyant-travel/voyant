@@ -43,8 +43,10 @@ import type { PgTable } from "drizzle-orm/pg-core"
 import { Client as TypesenseSdkClient } from "typesense"
 
 import {
+  CATALOG_VERTICALS,
   createProductsDocumentBuilder,
   getFieldPolicyRegistries,
+  loadCatalogSlices,
 } from "../src/api/lib/catalog-runtime.js"
 
 config({ path: ".env" })
@@ -67,18 +69,12 @@ if (!typesenseKey) throw new Error("TYPESENSE_ADMIN_API_KEY is not set")
 
 const sellerOperatorId = process.env.TENANT_ID ?? "default"
 
-// Default slice set — staff (admin) + customer (storefront) on en-GB / default
-// market for every adopted vertical. Mirrors `DEFAULT_SLICES` in the live
-// catalog-runtime so the reindex CLI and the request-time route never drift.
-const VERTICALS = ["products", "extras", "cruises", "charters", "accommodations"] as const
-const SLICES: IndexerSlice[] = VERTICALS.flatMap((vertical) => [
-  { vertical, locale: "en-GB", audience: "staff", market: "default" },
-  { vertical, locale: "en-GB", audience: "customer", market: "default" },
-])
+const VERTICALS = CATALOG_VERTICALS
 
 const requestedVertical = process.argv[2]
 
 const db = createDbClient(databaseUrl, { adapter: "node" })
+const slices = await loadCatalogSlices(db)
 
 const embeddings: EmbeddingProvider | undefined = cloudApiKey
   ? createGeminiEmbeddingProvider({
@@ -115,7 +111,7 @@ const indexer = createTypesenseIndexer({
 // registry that lands (destinations, taxonomy, …).
 const registries = getFieldPolicyRegistries()
 
-const activeSlices = SLICES.filter(
+const activeSlices = slices.filter(
   (slice) => !requestedVertical || slice.vertical === requestedVertical,
 )
 

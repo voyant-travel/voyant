@@ -91,6 +91,7 @@
     "@voyantjs/legal-react": "workspace:*",
     "@voyantjs/legal-ui": "workspace:*",
     "@voyantjs/markets": "workspace:*",
+    "@voyantjs/markets-react": "workspace:*",
     "@voyantjs/notifications": "workspace:*",
     "@voyantjs/notifications-react": "workspace:*",
     "@voyantjs/notifications-ui": "workspace:*",

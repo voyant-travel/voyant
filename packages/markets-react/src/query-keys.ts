@@ -22,6 +22,16 @@ export interface MarketCurrenciesListFilters {
   offset?: number | undefined
 }
 
+export interface MarketProductRulesListFilters {
+  marketId?: string | undefined
+  productId?: string | undefined
+  optionId?: string | undefined
+  sellability?: string | undefined
+  active?: boolean | undefined
+  limit?: number | undefined
+  offset?: number | undefined
+}
+
 export const marketsQueryKeys = {
   all: ["markets"] as const,
   markets: () => [...marketsQueryKeys.all, "markets"] as const,
@@ -35,4 +45,8 @@ export const marketsQueryKeys = {
   marketCurrenciesList: (filters: MarketCurrenciesListFilters) =>
     [...marketsQueryKeys.marketCurrencies(), filters] as const,
   marketCurrency: (id: string) => [...marketsQueryKeys.marketCurrencies(), id] as const,
+  marketProductRules: () => [...marketsQueryKeys.all, "product-rules"] as const,
+  marketProductRulesList: (filters: MarketProductRulesListFilters) =>
+    [...marketsQueryKeys.marketProductRules(), filters] as const,
+  marketProductRule: (id: string) => [...marketsQueryKeys.marketProductRules(), id] as const,
 }

@@ -177,6 +177,12 @@ export interface CatalogSearchPageProps {
   /** Controlled current page (1-indexed) for the active tab. */
   page?: number
   onPageChange?: (page: number) => void
+  /** Catalog slice market override. */
+  market?: string
+  /** Catalog slice locale override. */
+  locale?: string
+  /** Optional controls rendered next to the search input. */
+  toolbarEnd?: ReactNode
   /** Optional default detail sheet width for all tabs. Tabs may override it. */
   detailSheetWidth?: CatalogDetailSheetProps["width"]
   /** Optional default header action area for all tab detail sheets. */
@@ -218,6 +224,9 @@ export function CatalogSearchPage({
   onQueryChange,
   page: pageProp,
   onPageChange,
+  market,
+  locale,
+  toolbarEnd,
   detailSheetWidth,
   detailHeaderExtras,
   renderDetailBrochure,
@@ -279,15 +288,18 @@ export function CatalogSearchPage({
   return (
     <div className="flex flex-col gap-4">
       {title}
-      <div className="relative">
-        <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="search"
-          value={rawQuery}
-          onChange={(e) => setInternalRawQuery(e.target.value)}
-          placeholder={resolvedSearchPlaceholder}
-          className="pl-9"
-        />
+      <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="relative">
+          <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            value={rawQuery}
+            onChange={(e) => setInternalRawQuery(e.target.value)}
+            placeholder={resolvedSearchPlaceholder}
+            className="pl-9"
+          />
+        </div>
+        {toolbarEnd ? <div className="flex flex-wrap items-center gap-2">{toolbarEnd}</div> : null}
       </div>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
@@ -302,6 +314,8 @@ export function CatalogSearchPage({
             <CatalogTabPanel
               tab={tab}
               query={debouncedQuery}
+              market={market}
+              locale={locale}
               pageSize={pageSize}
               page={tab.id === activeTab ? pageProp : undefined}
               onPageChange={tab.id === activeTab ? onPageChange : undefined}
@@ -325,6 +339,8 @@ export function CatalogSearchPage({
 interface CatalogTabPanelProps {
   tab: CatalogSearchTab
   query: string
+  market?: string
+  locale?: string
   pageSize: number
   /** Controlled page (1-indexed). Falls back to internal state when omitted. */
   page?: number
@@ -355,6 +371,8 @@ const EMPTY_SELECTIONS: FilterSelections = { facets: {}, ranges: {} }
 function CatalogTabPanel({
   tab,
   query,
+  market,
+  locale,
   pageSize,
   page: pageProp,
   onPageChange,
@@ -378,10 +396,10 @@ function CatalogTabPanel({
   const [openHit, setOpenHit] = useState<CatalogSearchHit | null>(null)
 
   // Reset page when query / filters change. Keeps "Next" honest.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: tab.id / query / selections all reset page intentionally
+  // biome-ignore lint/correctness/useExhaustiveDependencies: tab.id / query / selections / scope all reset page intentionally
   useEffect(() => {
     setPage(1)
-  }, [tab.id, query, selections])
+  }, [tab.id, query, selections, market, locale])
 
   const filters = useMemo(() => buildFilters(selections), [selections])
   const facetRequests = useMemo(
@@ -400,6 +418,8 @@ function CatalogTabPanel({
     vertical: tab.vertical,
     query,
     mode: "hybrid",
+    market,
+    locale,
     filters,
     facets: facetRequests,
     pagination: { limit: pageSize, cursor: page > 1 ? String(page) : undefined },

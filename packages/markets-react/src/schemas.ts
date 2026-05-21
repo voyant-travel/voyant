@@ -1,6 +1,7 @@
 import {
   insertMarketCurrencySchema,
   insertMarketLocaleSchema,
+  insertMarketProductRuleSchema,
   insertMarketSchema,
 } from "@voyantjs/markets"
 import { z } from "zod"
@@ -41,9 +42,24 @@ export const marketCurrencyRecordSchema = insertMarketCurrencySchema.extend({
 
 export type MarketCurrencyRecord = z.infer<typeof marketCurrencyRecordSchema>
 
+export const marketProductRuleRecordSchema = insertMarketProductRuleSchema.extend({
+  id: z.string(),
+  marketId: z.string(),
+  productId: z.string(),
+  optionId: z.string().nullable(),
+  priceCatalogId: z.string().nullable(),
+  availableFrom: z.string().nullable(),
+  availableTo: z.string().nullable(),
+  notes: z.string().nullable(),
+})
+
+export type MarketProductRuleRecord = z.infer<typeof marketProductRuleRecordSchema>
+
 export const marketListResponse = paginatedEnvelope(marketRecordSchema)
 export const marketSingleResponse = singleEnvelope(marketRecordSchema)
 export const marketLocaleListResponse = paginatedEnvelope(marketLocaleRecordSchema)
 export const marketLocaleSingleResponse = singleEnvelope(marketLocaleRecordSchema)
 export const marketCurrencyListResponse = paginatedEnvelope(marketCurrencyRecordSchema)
 export const marketCurrencySingleResponse = singleEnvelope(marketCurrencyRecordSchema)
+export const marketProductRuleListResponse = paginatedEnvelope(marketProductRuleRecordSchema)
+export const marketProductRuleSingleResponse = singleEnvelope(marketProductRuleRecordSchema)

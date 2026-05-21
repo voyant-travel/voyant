@@ -23,6 +23,7 @@ import {
 } from "./product-detail-sections"
 import { ProductDetailSkeleton } from "./product-detail-skeleton"
 import { ProductExtrasSection } from "./product-extras-section"
+import { ProductMarketRulesSection } from "./product-market-rules-section"
 import { PricingPanel } from "./product-options-pricing"
 import { getDeparturePriceOverridesQueryOptions } from "./product-options-shared"
 import { ProductPaymentPolicySection } from "./product-payment-policy-section"
@@ -168,6 +169,7 @@ export function ProductDetailPage({ id }: { id: string }) {
           <ProductExtrasSection productId={id} />
 
           <ProductPaymentPolicySection product={product} onSuccess={invalidateProduct} />
+          <ProductMarketRulesSection productId={id} />
         </div>
 
         {/* ── Right column (sidebar) ── */}

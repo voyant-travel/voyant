@@ -23,6 +23,8 @@ export interface CatalogPageSearchState {
   tab?: string
   q?: string
   page?: number
+  market?: string
+  locale?: string
 }
 
 export interface CatalogPageProps {
@@ -30,6 +32,7 @@ export interface CatalogPageProps {
   onTabChange?: (tabId: string) => void
   onQueryChange?: (query: string) => void
   onPageChange?: (page: number) => void
+  toolbarEnd?: ReactNode
   formatSupplier?: (id: string | number) => string
   onBookHit?: (hit: CatalogSearchHit, entityModule: string) => void
   onBookDeparture?: (
@@ -74,6 +77,7 @@ export function CatalogPage({
   onTabChange,
   onQueryChange,
   onPageChange,
+  toolbarEnd,
   formatSupplier = (id) => String(id),
   onBookHit,
   onBookDeparture,
@@ -200,6 +204,9 @@ export function CatalogPage({
         onQueryChange={(q) => onQueryChange?.(q)}
         page={search.page ?? 1}
         onPageChange={(p) => onPageChange?.(p)}
+        market={search.market}
+        locale={search.locale}
+        toolbarEnd={toolbarEnd}
         detailSheetWidth={detailSheetWidth}
         detailHeaderExtras={detailHeaderExtras}
         renderDetailBrochure={renderDetailBrochure}

@@ -12,6 +12,8 @@ const catalogSearchSchema = z.object({
   tab: z.string().optional(),
   q: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
+  market: z.string().optional(),
+  locale: z.string().optional(),
 })
 
 export type CatalogSearchParams = z.infer<typeof catalogSearchSchema>

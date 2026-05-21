@@ -18,8 +18,8 @@ import {
   buildEmbeddingProvider,
   buildTypesenseIndexer,
   createProductsDocumentBuilder,
-  DEFAULT_SLICES,
   getFieldPolicyRegistries,
+  loadCatalogSlices,
   withEmbedding,
 } from "./catalog-runtime.js"
 import { withDbFromEnv } from "./db.js"
@@ -50,13 +50,12 @@ export function createBulkReindexProductsService(env: BulkReindexEnv): BulkReind
       // off the relational store.
       if (!adapter) return
 
-      const service = createIndexerService({
-        adapter,
-        slices: [...DEFAULT_SLICES],
-        registries: getFieldPolicyRegistries(),
-      })
-
       await withDbFromEnv(env, async (db) => {
+        const service = createIndexerService({
+          adapter,
+          slices: await loadCatalogSlices(db),
+          registries: getFieldPolicyRegistries(),
+        })
         const builder = withEmbedding(
           createProductsDocumentBuilder(db, { sellerOperatorId }),
           embeddings,
@@ -64,6 +63,7 @@ export function createBulkReindexProductsService(env: BulkReindexEnv): BulkReind
         // Reindex across every slice the indexer was constructed with.
         // The promotions projection extension picks up the offer changes
         // on the next document build, so no extra wiring is needed here.
+        await service.ensureCollections()
         await service.reindexEntity("products", productId, builder)
       })
     },
