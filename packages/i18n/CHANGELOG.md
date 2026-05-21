@@ -1,5 +1,11 @@
 # @voyantjs/i18n
 
+## 0.61.0
+
+### Patch Changes
+
+- 89f033e: Add product-level terms and conditions fields to products and product translations. The products API, React runtime schemas, and products UI now expose product terms content, and deployment migrations add `terms_html` plus `terms_show_on_contract`.
+
 ## 0.60.0
 
 ## 0.59.0
