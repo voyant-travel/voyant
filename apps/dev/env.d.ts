@@ -16,6 +16,7 @@ interface CloudflareBindings {
   // Voyant Cloud (canonical email/sms/verify/vault provider)
   VOYANT_CLOUD_API_KEY: string
   VOYANT_CLOUD_API_URL?: string
+  VOYANT_CLOUD_VAULT_SLUG?: string
   EMAIL_FROM: string
   EMAIL_REPLY_TO?: string
 
@@ -25,7 +26,7 @@ interface CloudflareBindings {
   DASH_BASE_URL: string
 
   // KMS provider selection
-  KMS_PROVIDER: "gcp" | "aws" | "env" | "local"
+  KMS_PROVIDER: "gcp" | "aws" | "env" | "local" | "voyant-cloud"
   KMS_ENV_KEY?: string
   KMS_LOCAL_KEY?: string
   AWS_REGION?: string
