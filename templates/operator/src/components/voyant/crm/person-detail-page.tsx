@@ -19,7 +19,9 @@ import { useAdminMessages } from "@/lib/admin-i18n"
 
 export function PersonDetailPage({ id }: { id: string }) {
   const navigate = useNavigate()
-  const messages = useAdminMessages().crm.personDetail
+  const adminMessages = useAdminMessages()
+  const messages = adminMessages.crm.personDetail
+  const listMessages = adminMessages.bookings.list
   const bookingsQuery = useBookings({ personId: id, limit: 50 })
   const bookings = bookingsQuery.data?.data ?? []
 
@@ -44,6 +46,7 @@ export function PersonDetailPage({ id }: { id: string }) {
                 void navigate({ to: "/bookings/$id", params: { id: booking.id } })
               }
               loadingError={messages.notFound}
+              messages={listMessages}
             />
           ),
         },
@@ -52,12 +55,15 @@ export function PersonDetailPage({ id }: { id: string }) {
   )
 }
 
+type BookingsListMessages = ReturnType<typeof useAdminMessages>["bookings"]["list"]
+
 interface PersonBookingsListProps {
   bookings: BookingRecord[]
   isPending: boolean
   isError: boolean
   onSelect: (booking: BookingRecord) => void
   loadingError: string
+  messages: BookingsListMessages
 }
 
 function PersonBookingsList({
@@ -66,6 +72,7 @@ function PersonBookingsList({
   isError,
   onSelect,
   loadingError,
+  messages,
 }: PersonBookingsListProps) {
   if (isPending) {
     return (
@@ -82,7 +89,9 @@ function PersonBookingsList({
   }
 
   if (bookings.length === 0) {
-    return <div className="p-6 text-center text-sm text-muted-foreground">No bookings yet.</div>
+    return (
+      <div className="p-6 text-center text-sm text-muted-foreground">{messages.relatedEmpty}</div>
+    )
   }
 
   return (
@@ -90,12 +99,12 @@ function PersonBookingsList({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Booking #</TableHead>
-            <TableHead>Items</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Sell amount</TableHead>
-            <TableHead>Pax</TableHead>
-            <TableHead>Start</TableHead>
+            <TableHead>{messages.tableBookingNumber}</TableHead>
+            <TableHead>{messages.tableItems}</TableHead>
+            <TableHead>{messages.tableStatus}</TableHead>
+            <TableHead>{messages.tableSellAmount}</TableHead>
+            <TableHead>{messages.tablePax}</TableHead>
+            <TableHead>{messages.tableStartDate}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
