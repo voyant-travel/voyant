@@ -546,6 +546,18 @@ export const operatorAdminProductsMessages = {
           tableCost: "Cost",
           tableQuantity: "Qty",
         },
+        paymentPolicy: {
+          title: "Customer payment policy",
+          save: "Save",
+          inheritLabel: "Inherit from parent",
+          inheritingBadge: "Inheriting",
+          customBadge: "Custom",
+          inheritHint:
+            "When on, falls back to the next-broader policy (category, supplier, operator default). Switch off to set an explicit policy on this product.",
+          previewHeading: "Preview",
+          savedToast: "Customer payment policy saved",
+          saveFailed: "Failed to save policy",
+        },
         marketRules: {
           title: "Markets",
           description: "Product-level market availability, visibility, and sellability.",
@@ -1119,6 +1131,18 @@ export const operatorAdminProductsMessages = {
           tableType: "Tip",
           tableCost: "Cost",
           tableQuantity: "Cant.",
+        },
+        paymentPolicy: {
+          title: "Politica de plata pentru clienti",
+          save: "Salveaza",
+          inheritLabel: "Mosteneste de la nivelul superior",
+          inheritingBadge: "Mostenita",
+          customBadge: "Personalizata",
+          inheritHint:
+            "Cand este pornita, foloseste politica nivelului superior (categorie, furnizor, implicit operator). Dezactiveaza pentru a seta o politica explicita pentru acest produs.",
+          previewHeading: "Previzualizare",
+          savedToast: "Politica de plata a fost salvata",
+          saveFailed: "Politica nu a putut fi salvata",
         },
         marketRules: {
           title: "Piete",

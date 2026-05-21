@@ -12,6 +12,7 @@ import { Separator } from "@voyantjs/ui/components/separator"
 import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { Section } from "./product-detail-sections"
 
 const DEFAULT_POLICY: PaymentPolicy = {
@@ -39,6 +40,7 @@ export function ProductPaymentPolicySection({
   product: ProductRecord
   onSuccess?: () => void
 }) {
+  const t = useAdminMessages().products.operations.paymentPolicy
   const persisted = (product.customerPaymentPolicy as PaymentPolicy | null | undefined) ?? null
   const [draft, setDraft] = useState<PaymentPolicy | null>(persisted)
   const { update } = useProductMutation()
@@ -62,21 +64,21 @@ export function ProductPaymentPolicySection({
       },
       {
         onSuccess: () => {
-          toast.success("Customer payment policy saved")
+          toast.success(t.savedToast)
           onSuccess?.()
         },
-        onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to save policy"),
+        onError: (err) => toast.error(err instanceof Error ? err.message : t.saveFailed),
       },
     )
   }
 
   return (
     <Section
-      title="Customer payment policy"
+      title={t.title}
       actions={
         <Button size="sm" disabled={!isDirty || update.isPending} onClick={save}>
           {update.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Save
+          {t.save}
         </Button>
       }
     >
@@ -85,16 +87,13 @@ export function ProductPaymentPolicySection({
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Label htmlFor="payment-policy-inherit" className="text-sm font-medium">
-                Inherit from parent
+                {t.inheritLabel}
               </Label>
               <Badge variant={isInheriting ? "secondary" : "outline"} className="text-[10px]">
-                {isInheriting ? "Inheriting" : "Custom"}
+                {isInheriting ? t.inheritingBadge : t.customBadge}
               </Badge>
             </div>
-            <p className="text-xs text-muted-foreground">
-              When on, falls back to the next-broader policy (category, supplier, operator default).
-              Switch off to set an explicit policy on this product.
-            </p>
+            <p className="text-xs text-muted-foreground">{t.inheritHint}</p>
           </div>
           <Switch
             id="payment-policy-inherit"
@@ -119,7 +118,7 @@ export function ProductPaymentPolicySection({
             <Separator />
             <div className="space-y-2">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Preview
+                {t.previewHeading}
               </p>
               <PaymentPolicyPreview policy={draft} currency={product.sellCurrency} />
             </div>
