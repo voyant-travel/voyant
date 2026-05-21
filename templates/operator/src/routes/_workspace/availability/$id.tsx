@@ -18,6 +18,7 @@ import {
 } from "@voyantjs/ui/components"
 import { useState } from "react"
 import { BookingDetailPage } from "@/components/voyant/bookings/booking-detail-page"
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { getAvailabilityContextValue } from "@/lib/availability-context"
 
 export const Route = createFileRoute("/_workspace/availability/$id")({
@@ -30,6 +31,8 @@ export const Route = createFileRoute("/_workspace/availability/$id")({
 function RouteComponent() {
   const { id } = Route.useParams()
   const navigate = useNavigate()
+  const messages = useAdminMessages()
+  const slotPreview = messages.availability.details.slot
   const client = getAvailabilityContextValue()
   const slotQuery = useQuery(getAvailabilitySlotDetailQueryOptions(client, id))
   const slot = slotQuery.data?.data
@@ -41,7 +44,7 @@ function RouteComponent() {
   const [bookingPreviewId, setBookingPreviewId] = useState<string | null>(null)
 
   useAdminBreadcrumbs([
-    { label: "Availability", href: "/availability" },
+    { label: messages.availability.title, href: "/availability" },
     ...(slot
       ? [
           {
@@ -86,9 +89,9 @@ function RouteComponent() {
           className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl"
         >
           <SheetHeader className="border-b px-6 py-4">
-            <SheetTitle>Booking</SheetTitle>
+            <SheetTitle>{slotPreview.bookingPreviewTitle}</SheetTitle>
             <SheetDescription className="sr-only">
-              Booking detail for the selected traveler.
+              {slotPreview.bookingPreviewDescription}
             </SheetDescription>
           </SheetHeader>
           {bookingPreviewId ? (
