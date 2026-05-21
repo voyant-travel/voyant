@@ -83,6 +83,7 @@ export const bookingsLinkable = {
 export const bookingsModule: Module = {
   name: "bookings",
   linkable: bookingsLinkable,
+  requiresTransactionalDb: true,
 }
 
 export interface BookingsHonoModuleOptions extends BookingRouteRuntimeOptions {}

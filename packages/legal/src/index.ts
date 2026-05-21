@@ -28,6 +28,7 @@ export const legalLinkable = {
 export const legalModule: Module = {
   name: "legal",
   linkable: legalLinkable,
+  requiresTransactionalDb: true,
 }
 
 export interface CreateLegalHonoModuleOptions extends ContractsRouteOptions {

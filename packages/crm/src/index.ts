@@ -31,6 +31,7 @@ export const crmModule: Module = {
     person: personLinkable,
     organization: organizationLinkable,
   },
+  requiresTransactionalDb: true,
 }
 
 export interface CrmHonoModuleOptions extends CrmRouteRuntimeOptions {}

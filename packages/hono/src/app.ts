@@ -269,8 +269,14 @@ export function createApp<TBindings extends VoyantBindings>(
   // Auth middleware for all other routes
   app.use("*", requireAuth(config.db, { publicPaths: config.publicPaths, auth: config.auth }))
 
-  // DB middleware — sets c.var.db for all downstream handlers
-  app.use("*", db(config.db))
+  // DB middleware — sets c.var.db for all downstream handlers.
+  // Pass the list of modules that need interactive transactions so the
+  // middleware can throw a clear startup-style error on first request if
+  // the wired adapter is neon-http (which doesn't support db.transaction).
+  const txRequiringModules = allModules
+    .filter((m) => m.module.requiresTransactionalDb)
+    .map((m) => m.module.name)
+  app.use("*", db(config.db, { requiresTransactionalDb: txRequiringModules }))
 
   // Actor guards for the two API surfaces
   app.use("/v1/admin/*", requireActor("staff"))

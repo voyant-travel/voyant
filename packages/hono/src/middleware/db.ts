@@ -1,3 +1,4 @@
+import { dbSupportsTransactions } from "@voyantjs/db/transaction-capability"
 import type { MiddlewareHandler } from "hono"
 
 import {
@@ -6,6 +7,32 @@ import {
   type VoyantBindings,
   type VoyantDb,
 } from "../types.js"
+
+export interface DbMiddlewareOptions {
+  /**
+   * Names of modules that require a transaction-capable db adapter
+   * (those that set `Module.requiresTransactionalDb`). If non-empty
+   * and the first resolved db reports
+   * `dbSupportsTransactions(db) === false`, the middleware throws a
+   * clear error naming the offending modules. A capability of
+   * `undefined` (untagged drivers like raw `drizzle-orm/node-postgres`)
+   * is treated as "assume capable" — only an explicit `false`
+   * (neon-http) trips the assertion.
+   */
+  requiresTransactionalDb?: readonly string[]
+}
+
+function buildIncapableDbError(modules: readonly string[]): Error {
+  const list = [...modules].sort().join(", ")
+  return new Error(
+    `[voyant] db adapter does not support interactive transactions, but the ` +
+      `following modules require it: ${list}. ` +
+      `Use createServerlessDbClient (neon-serverless / WebSocket) for ` +
+      `Cloudflare Workers, or createDbClient(url, { adapter: "node" }) for ` +
+      `Node deployments. The "edge" adapter (neon-http) is read-mostly ` +
+      `and cannot run db.transaction(async (tx) => …).`,
+  )
+}
 
 /**
  * Structural shape of the Cloudflare Workers `ExecutionContext`. Defined
@@ -33,13 +60,34 @@ interface ExecutionContextLike {
  */
 export function db<TBindings extends VoyantBindings>(
   factory: DbFactory<TBindings>,
+  options: DbMiddlewareOptions = {},
 ): MiddlewareHandler<{
   Bindings: TBindings
   Variables: { db: VoyantDb }
 }> {
+  const requiresTx = options.requiresTransactionalDb ?? []
+  // Stays `false` until a request resolves a db whose capability tag is
+  // anything other than an explicit `false`. As long as the adapter is
+  // wired wrong, every request keeps surfacing the actionable error —
+  // we don't want the first failing request to silence subsequent
+  // checks and let later writes crash with the deep transaction error.
+  let txCapabilityVerified = false
   return async (c, next) => {
     const result = factory(c.env)
     const { db, dispose } = resolveDbFactoryResult(result)
+    if (!txCapabilityVerified && requiresTx.length > 0) {
+      if (dbSupportsTransactions(db) === false) {
+        if (dispose) {
+          try {
+            await dispose()
+          } catch {
+            // swallow dispose errors — the original throw is the actionable one
+          }
+        }
+        throw buildIncapableDbError(requiresTx)
+      }
+      txCapabilityVerified = true
+    }
     if (dispose) {
       c.set("db", db)
       try {

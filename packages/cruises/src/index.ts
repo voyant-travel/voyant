@@ -118,6 +118,7 @@ export const cruisesModule: Module = {
     cruise_sailing: cruiseSailingLinkable,
     cruise_ship: cruiseShipLinkable,
   },
+  requiresTransactionalDb: true,
 }
 
 export const cruisesHonoModule: HonoModule = {

@@ -8,6 +8,7 @@ export type { AvailabilityAdminRoutes, AvailabilityRoutes } from "./routes.js"
 
 export const availabilityModule: Module = {
   name: "availability",
+  requiresTransactionalDb: true,
 }
 
 export const availabilityHonoModule: HonoModule = {

@@ -52,6 +52,7 @@ export const financeLinkable = {
 export const financeModule: Module = {
   name: "finance",
   linkable: financeLinkable,
+  requiresTransactionalDb: true,
 }
 
 export interface FinanceHonoModuleOptions

@@ -111,6 +111,25 @@ export interface Module {
    * {@link workflows} above.
    */
   eventFilters?: readonly EventFilterDescriptor[]
+
+  /**
+   * Declares that this module's write paths use interactive transactions
+   * (`db.transaction(async (tx) => …)`) and therefore require a
+   * transaction-capable database adapter at runtime.
+   *
+   * `createApp()` collects this flag across mounted modules and, on the
+   * first request, asserts that the resolved db driver supports
+   * interactive transactions. If the resolved driver explicitly reports
+   * `dbSupportsTransactions(db) === false` (e.g. `neon-http`), the app
+   * throws a clear error naming the offending modules and points at the
+   * supported adapters (`createServerlessDbClient` /
+   * `createDbClient(url, { adapter: "node" })`).
+   *
+   * This converts the otherwise-late "No transactions support in
+   * neon-http driver" exception thrown on first write into an
+   * actionable startup error.
+   */
+  requiresTransactionalDb?: boolean
 }
 
 /**

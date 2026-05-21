@@ -21,6 +21,7 @@
     "./helpers": "./src/helpers.ts",
     "./types": "./src/types.ts",
     "./transaction-capability": "./src/transaction-capability.ts",
+    "./transaction": "./src/transaction.ts",
     "./crud": "./src/crud.ts",
     "./links": "./src/links.ts",
     "./queries": "./src/queries/index.ts",
@@ -115,6 +116,11 @@
         "types": "./dist/transaction-capability.d.ts",
         "import": "./dist/transaction-capability.js",
         "default": "./dist/transaction-capability.js"
+      },
+      "./transaction": {
+        "types": "./dist/transaction.d.ts",
+        "import": "./dist/transaction.js",
+        "default": "./dist/transaction.js"
       },
       "./crud": {
         "types": "./dist/crud.d.ts",
