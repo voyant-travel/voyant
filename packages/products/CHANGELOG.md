@@ -1,5 +1,18 @@
 # @voyantjs/products
 
+## 0.62.1
+
+### Patch Changes
+
+- ebbeab8: Expose product inclusions, exclusions, and terms HTML fields in public catalog responses.
+  - @voyantjs/action-ledger@0.62.1
+  - @voyantjs/catalog@0.62.1
+  - @voyantjs/core@0.62.1
+  - @voyantjs/db@0.62.1
+  - @voyantjs/hono@0.62.1
+  - @voyantjs/storage@0.62.1
+  - @voyantjs/utils@0.62.1
+
 ## 0.62.0
 
 ### Patch Changes
