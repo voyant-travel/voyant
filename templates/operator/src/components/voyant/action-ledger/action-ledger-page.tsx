@@ -4,6 +4,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import type { ActionLedgerEntryResponse, ActionLedgerListResponse } from "@voyantjs/action-ledger"
 import { useLocale } from "@voyantjs/admin"
+import { formatMessage } from "@voyantjs/i18n"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Input } from "@voyantjs/ui/components/input"
@@ -20,6 +21,7 @@ import {
 import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Eye, Search, X } from "lucide-react"
 import * as React from "react"
 
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 import { queryKeys } from "@/lib/query-keys"
 import { ActionLedgerEntrySheet } from "./action-ledger-entry-sheet"
@@ -88,6 +90,7 @@ const RISK_VARIANT: Partial<
 
 export function ActionLedgerPage() {
   const { resolvedLocale } = useLocale()
+  const t = useAdminMessages().actionLedgerPage
   const [filters, setFilters] = React.useState<ActionLedgerFilters>(EMPTY_FILTERS)
   const [sortDir, setSortDir] = React.useState<SortDir>("desc")
   const [cursorStack, setCursorStack] = React.useState<Array<ActionLedgerCursor | null>>([null])
@@ -153,10 +156,8 @@ export function ActionLedgerPage() {
     <div className="flex flex-col gap-6 p-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="font-semibold text-2xl tracking-tight">Logs</h1>
-          <p className="mt-1 text-muted-foreground text-sm">
-            Search central action records by actor, target, workflow, risk, and status.
-          </p>
+          <h1 className="font-semibold text-2xl tracking-tight">{t.title}</h1>
+          <p className="mt-1 text-muted-foreground text-sm">{t.description}</p>
         </div>
       </div>
 
@@ -164,12 +165,12 @@ export function ActionLedgerPage() {
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative min-w-[14rem] flex-1">
             <Label htmlFor="logs-search" className="sr-only">
-              Search action name
+              {t.searchAria}
             </Label>
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="logs-search"
-              placeholder="Search action (e.g. booking.pii.read)"
+              placeholder={t.searchPlaceholder}
               value={filters.actionName}
               onChange={(event) => updateFilter("actionName", event.target.value)}
               className="pl-9"
@@ -207,7 +208,7 @@ export function ActionLedgerPage() {
           {hasActiveFilters ? (
             <Button variant="ghost" size="sm" onClick={clearFilters}>
               <X className="mr-1 size-4" />
-              Clear
+              {t.clear}
             </Button>
           ) : null}
         </div>
@@ -217,14 +218,18 @@ export function ActionLedgerPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>
-                  <SortHeader label="When" sortDir={sortDir} onSort={handleSortWhen} />
+                  <SortHeader
+                    label={t.table.headerWhen}
+                    sortDir={sortDir}
+                    onSort={handleSortWhen}
+                  />
                 </TableHead>
-                <TableHead>Action</TableHead>
-                <TableHead>Actor</TableHead>
-                <TableHead>Target</TableHead>
-                <TableHead>Workflow</TableHead>
-                <TableHead>Risk</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>{t.table.headerAction}</TableHead>
+                <TableHead>{t.table.headerActor}</TableHead>
+                <TableHead>{t.table.headerTarget}</TableHead>
+                <TableHead>{t.table.headerWorkflow}</TableHead>
+                <TableHead>{t.table.headerRisk}</TableHead>
+                <TableHead>{t.table.headerStatus}</TableHead>
                 <TableHead className="w-12" />
               </TableRow>
             </TableHeader>
@@ -237,7 +242,7 @@ export function ActionLedgerPage() {
                     colSpan={TABLE_COLUMN_COUNT}
                     className="h-24 text-center text-destructive text-sm"
                   >
-                    Failed to load logs.
+                    {t.table.loadFailed}
                   </TableCell>
                 </TableRow>
               ) : entries.length === 0 ? (
@@ -246,7 +251,7 @@ export function ActionLedgerPage() {
                     colSpan={TABLE_COLUMN_COUNT}
                     className="h-24 text-center text-muted-foreground text-sm"
                   >
-                    No log entries match these filters.
+                    {t.table.empty}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -256,6 +261,7 @@ export function ActionLedgerPage() {
                     entry={entry}
                     locale={resolvedLocale}
                     onSelect={setSelectedEntryId}
+                    viewAriaTemplate={t.viewEntryAria}
                   />
                 ))
               )}
@@ -266,8 +272,10 @@ export function ActionLedgerPage() {
         <div className="flex items-center justify-between text-muted-foreground text-sm">
           <span>
             {entries.length === 0
-              ? "No entries"
-              : `Showing ${entries.length} ${entries.length === 1 ? "entry" : "entries"}`}
+              ? t.footer.empty
+              : entries.length === 1
+                ? t.footer.showingOne
+                : formatMessage(t.footer.showingMany, { count: entries.length })}
           </span>
           <div className="flex items-center gap-2">
             <Button
@@ -276,16 +284,16 @@ export function ActionLedgerPage() {
               disabled={!hasPrev || ledgerQuery.isFetching}
               onClick={goPrev}
             >
-              Previous
+              {t.footer.previous}
             </Button>
-            <span>Page {page}</span>
+            <span>{formatMessage(t.footer.pageLabel, { page })}</span>
             <Button
               variant="outline"
               size="sm"
               disabled={!hasNext || ledgerQuery.isFetching}
               onClick={goNext}
             >
-              Next
+              {t.footer.next}
             </Button>
           </div>
         </div>
@@ -363,10 +371,12 @@ function LedgerRow({
   entry,
   locale,
   onSelect,
+  viewAriaTemplate,
 }: {
   entry: ActionLedgerEntryResponse
   locale: string
   onSelect: (id: string) => void
+  viewAriaTemplate: string
 }) {
   return (
     <TableRow className="cursor-pointer" onClick={() => onSelect(entry.id)}>
@@ -422,7 +432,7 @@ function LedgerRow({
           variant="ghost"
           size="icon"
           className="h-8 w-8"
-          aria-label={`View ${entry.id}`}
+          aria-label={formatMessage(viewAriaTemplate, { id: entry.id })}
           onClick={(event) => {
             event.stopPropagation()
             onSelect(entry.id)

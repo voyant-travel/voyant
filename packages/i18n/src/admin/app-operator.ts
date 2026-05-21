@@ -1,4 +1,8 @@
 import { composeLocaleMessageDefinitions, type LocaleMessageDefinitions } from "../runtime.js"
+import {
+  type OperatorAdminActionLedgerMessages,
+  operatorAdminActionLedgerMessages,
+} from "./action-ledger-operator.js"
 import { type AdminAuthMessages, adminAuthMessages } from "./auth.js"
 import { type AdminAvailabilityMessages, adminAvailabilityMessages } from "./availability.js"
 import { type AdminBookingsMessages, adminBookingsMessages } from "./bookings.js"
@@ -34,6 +38,7 @@ import { type AdminTripsMessages, adminTripsMessages } from "./trips.js"
 export type OperatorAdminMessages = AdminChromeMessages & {
   auth: AdminAuthMessages
 } & OperatorAdminCoreMessages &
+  OperatorAdminActionLedgerMessages &
   AdminTeamMessages &
   AdminAvailabilityMessages &
   AdminBookingsMessages &
@@ -54,6 +59,7 @@ export const operatorAdminMessageDefinitions =
     adminChromeMessages,
     adminAuthMessages,
     operatorAdminCoreMessages,
+    operatorAdminActionLedgerMessages,
     adminTeamMessages,
     adminAvailabilityMessages,
     adminBookingsMessages,
