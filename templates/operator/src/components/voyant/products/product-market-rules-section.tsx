@@ -1,5 +1,6 @@
 "use client"
 
+import { formatMessage } from "@voyantjs/i18n"
 import {
   type MarketProductRuleRecord,
   useMarketProductRuleMutation,
@@ -18,6 +19,12 @@ import { Globe2, Loader2, Plus, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
 
+import { useAdminMessages } from "@/lib/admin-i18n"
+
+type MarketRulesMessages = ReturnType<
+  typeof useAdminMessages
+>["products"]["operations"]["marketRules"]
+
 const SELLABILITY = ["sellable", "on_request", "unavailable"] as const
 const VISIBILITY = ["public", "private", "hidden"] as const
 
@@ -29,6 +36,7 @@ interface ProductMarketRulesSectionProps {
 }
 
 export function ProductMarketRulesSection({ productId }: ProductMarketRulesSectionProps) {
+  const t = useAdminMessages().products.operations.marketRules
   const marketsQuery = useMarkets({ status: "active", limit: 100 })
   const rulesQuery = useMarketProductRules({ productId, limit: 200 })
   const mutations = useMarketProductRuleMutation()
@@ -60,7 +68,7 @@ export function ProductMarketRulesSection({ productId }: ProductMarketRulesSecti
       })
       setSelectedMarketId("")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not add market rule.")
+      toast.error(error instanceof Error ? error.message : t.addFailed)
     }
   }
 
@@ -71,17 +79,17 @@ export function ProductMarketRulesSection({ productId }: ProductMarketRulesSecti
     try {
       await mutations.update.mutateAsync({ id: rule.id, input })
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not update market rule.")
+      toast.error(error instanceof Error ? error.message : t.updateFailed)
     }
   }
 
   const removeRule = async (rule: MarketProductRuleRecord) => {
     const marketName = marketById.get(rule.marketId)?.name ?? rule.marketId
-    if (!confirm(`Remove ${marketName} from this product?`)) return
+    if (!confirm(formatMessage(t.removeConfirm, { market: marketName }))) return
     try {
       await mutations.remove.mutateAsync(rule.id)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not remove market rule.")
+      toast.error(error instanceof Error ? error.message : t.removeFailed)
     }
   }
 
@@ -92,11 +100,9 @@ export function ProductMarketRulesSection({ productId }: ProductMarketRulesSecti
           <div>
             <CardTitle className="flex items-center gap-2">
               <Globe2 className="h-4 w-4" />
-              Markets
+              {t.title}
             </CardTitle>
-            <p className="mt-1 text-muted-foreground text-sm">
-              Product-level market availability, visibility, and sellability.
-            </p>
+            <p className="mt-1 text-muted-foreground text-sm">{t.description}</p>
           </div>
           {isLoading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : null}
         </div>
@@ -108,7 +114,7 @@ export function ProductMarketRulesSection({ productId }: ProductMarketRulesSecti
             onValueChange={(value) => setSelectedMarketId(value ?? "")}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Add market" />
+              <SelectValue placeholder={t.addMarketPlaceholder} />
             </SelectTrigger>
             <SelectContent>
               {availableMarkets.map((market) => (
@@ -128,13 +134,13 @@ export function ProductMarketRulesSection({ productId }: ProductMarketRulesSecti
             ) : (
               <Plus className="mr-2 h-4 w-4" />
             )}
-            Add Market
+            {t.addMarketButton}
           </Button>
         </div>
 
         {productRules.length === 0 ? (
           <div className="rounded-md border border-dashed p-4 text-muted-foreground text-sm">
-            No market rules yet. Without a rule, the product follows global market defaults.
+            {t.empty}
           </div>
         ) : (
           <div className="divide-y rounded-md border">
@@ -147,6 +153,7 @@ export function ProductMarketRulesSection({ productId }: ProductMarketRulesSecti
                 disabled={isMutating}
                 onUpdate={updateRule}
                 onRemove={removeRule}
+                messages={t}
               />
             ))}
           </div>
@@ -166,6 +173,7 @@ interface MarketRuleRowProps {
     input: Partial<Pick<MarketProductRuleRecord, "sellability" | "visibility" | "active">>,
   ) => void
   onRemove: (rule: MarketProductRuleRecord) => void
+  messages: MarketRulesMessages
 }
 
 function MarketRuleRow({
@@ -175,6 +183,7 @@ function MarketRuleRow({
   disabled,
   onUpdate,
   onRemove,
+  messages,
 }: MarketRuleRowProps) {
   return (
     <div className="grid gap-3 p-3 md:grid-cols-[minmax(0,1fr)_150px_140px_110px_auto] md:items-center">
@@ -183,7 +192,7 @@ function MarketRuleRow({
         <div className="mt-1 flex flex-wrap items-center gap-2">
           {languageTag ? <Badge variant="secondary">{languageTag}</Badge> : null}
           <Badge variant={rule.active ? "default" : "outline"}>
-            {rule.active ? "Active" : "Inactive"}
+            {rule.active ? messages.activeBadge : messages.inactiveBadge}
           </Badge>
         </div>
       </div>
@@ -200,7 +209,7 @@ function MarketRuleRow({
         <SelectContent>
           {SELLABILITY.map((value) => (
             <SelectItem key={value} value={value}>
-              {formatToken(value)}
+              {messages.sellabilityOptions[value]}
             </SelectItem>
           ))}
         </SelectContent>
@@ -218,7 +227,7 @@ function MarketRuleRow({
         <SelectContent>
           {VISIBILITY.map((value) => (
             <SelectItem key={value} value={value}>
-              {formatToken(value)}
+              {messages.visibilityOptions[value]}
             </SelectItem>
           ))}
         </SelectContent>
@@ -234,8 +243,8 @@ function MarketRuleRow({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="active">Active</SelectItem>
-          <SelectItem value="inactive">Inactive</SelectItem>
+          <SelectItem value="active">{messages.activeStatus}</SelectItem>
+          <SelectItem value="inactive">{messages.inactiveStatus}</SelectItem>
         </SelectContent>
       </Select>
       <Button
@@ -249,11 +258,4 @@ function MarketRuleRow({
       </Button>
     </div>
   )
-}
-
-function formatToken(value: string) {
-  return value
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ")
 }

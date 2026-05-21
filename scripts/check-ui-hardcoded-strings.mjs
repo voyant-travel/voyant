@@ -287,7 +287,6 @@ const HARDCODED_FILE_ALLOWLIST = new Set(
     "templates/operator/src/components/voyant/products/product-departure-form.tsx",
     "templates/operator/src/components/voyant/products/product-detail-itinerary-section.tsx",
     "templates/operator/src/components/voyant/products/product-detail-sections.tsx",
-    "templates/operator/src/components/voyant/products/product-market-rules-section.tsx",
     "templates/operator/src/components/voyant/products/product-payment-policy-section.tsx",
     "templates/operator/src/components/voyant/products/product-schedule-form.tsx",
     "templates/operator/src/components/voyant/resources/resource-allocation-detail-page.tsx",
