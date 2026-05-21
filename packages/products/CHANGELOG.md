@@ -1,5 +1,18 @@
 # @voyantjs/products
 
+## 0.62.0
+
+### Patch Changes
+
+- Updated dependencies [77aad68]
+  - @voyantjs/action-ledger@0.62.0
+  - @voyantjs/catalog@0.62.0
+  - @voyantjs/core@0.62.0
+  - @voyantjs/db@0.62.0
+  - @voyantjs/hono@0.62.0
+  - @voyantjs/storage@0.62.0
+  - @voyantjs/utils@0.62.0
+
 ## 0.61.0
 
 ### Minor Changes

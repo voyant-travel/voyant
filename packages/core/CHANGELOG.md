@@ -1,5 +1,11 @@
 # @voyantjs/core
 
+## 0.62.0
+
+### Patch Changes
+
+- 77aad68: Add a transaction-capable Neon serverless database adapter and make action-ledger skip Neon HTTP transactions safely.
+
 ## 0.61.0
 
 ## 0.60.0
