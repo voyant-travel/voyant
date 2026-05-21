@@ -119,6 +119,10 @@ export const adminBookingsMessages = {
           marking: "Marking…",
           markReceivedFailed: "Could not mark payment received.",
         },
+        bookingJourney: {
+          travelerPickerLabel: "Traveler",
+          leadContactPickerLabel: "Lead contact",
+        },
         paymentLinkSummary: {
           ariaLabel: "Your booking",
           heading: "Your booking",
@@ -301,6 +305,10 @@ export const adminBookingsMessages = {
           markReceived: "Marcheaza plata primita",
           marking: "Se marcheaza…",
           markReceivedFailed: "Plata nu a putut fi marcata ca primita.",
+        },
+        bookingJourney: {
+          travelerPickerLabel: "Calator",
+          leadContactPickerLabel: "Contact principal",
         },
         paymentLinkSummary: {
           ariaLabel: "Rezervarea ta",

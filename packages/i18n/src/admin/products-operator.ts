@@ -553,6 +553,11 @@ export const operatorAdminProductsMessages = {
           tableCost: "Cost",
           tableQuantity: "Qty",
         },
+        catalogBookingToasts: {
+          bookedSuccess: "Booked - order {ref}... ({status})",
+          viewBookings: "View bookings",
+          bookFailed: "Book request failed: {message}",
+        },
         paymentPolicy: {
           title: "Customer payment policy",
           save: "Save",
@@ -1145,6 +1150,11 @@ export const operatorAdminProductsMessages = {
           tableType: "Tip",
           tableCost: "Cost",
           tableQuantity: "Cant.",
+        },
+        catalogBookingToasts: {
+          bookedSuccess: "Rezervat - comanda {ref}... ({status})",
+          viewBookings: "Vezi rezervarile",
+          bookFailed: "Cererea de rezervare a esuat: {message}",
         },
         paymentPolicy: {
           title: "Politica de plata pentru clienti",
