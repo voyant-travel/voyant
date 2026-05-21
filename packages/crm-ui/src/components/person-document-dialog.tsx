@@ -27,6 +27,8 @@ import {
 import { Textarea } from "@voyantjs/ui/components/textarea"
 import * as React from "react"
 
+import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
+
 const DOCUMENT_TYPES: PersonDocumentType[] = [
   "passport",
   "id_card",
@@ -34,14 +36,6 @@ const DOCUMENT_TYPES: PersonDocumentType[] = [
   "visa",
   "other",
 ]
-
-const TYPE_LABELS: Record<PersonDocumentType, string> = {
-  passport: "Passport",
-  id_card: "ID card",
-  driver_license: "Driver license",
-  visa: "Visa",
-  other: "Other",
-}
 
 export interface PersonDocumentDialogDocument {
   id: string
@@ -97,6 +91,9 @@ export function PersonDocumentDialog({
   const revealQuery = useRevealPersonDocument(document.id, { enabled: open })
   const revealedNumber = revealQuery.data?.data.number ?? null
   const { updateFromPlaintext } = usePersonDocumentMutation(personId)
+  const messages = useCrmUiMessagesOrDefault()
+  const dialog = messages.personDocument.dialog
+  const typeLabels = messages.personDetail.documentTypeLabels
 
   const [state, setState] = React.useState<FormState>(() => buildInitialState(document, null))
   const initializedRef = React.useRef(false)
@@ -141,22 +138,20 @@ export function PersonDocumentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
-          <DialogTitle>Edit document</DialogTitle>
-          <DialogDescription>
-            Update document details. Numbers are encrypted at rest and audit-logged on reveal.
-          </DialogDescription>
+          <DialogTitle>{dialog.title}</DialogTitle>
+          <DialogDescription>{dialog.description}</DialogDescription>
         </DialogHeader>
         {revealQuery.isLoading ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">Loading document…</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">{dialog.loading}</p>
         ) : revealError ? (
           <p className="py-4 text-sm text-destructive">
-            {revealError instanceof Error ? revealError.message : "Failed to reveal document."}
+            {revealError instanceof Error ? revealError.message : dialog.revealFailed}
           </p>
         ) : null}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2 flex flex-col gap-1.5">
-              <Label htmlFor="doc-type">Type</Label>
+              <Label htmlFor="doc-type">{dialog.fields.type}</Label>
               <Select
                 value={state.type}
                 onValueChange={(value) => set("type", value as PersonDocumentType)}
@@ -167,34 +162,34 @@ export function PersonDocumentDialog({
                 <SelectContent>
                   {DOCUMENT_TYPES.map((type) => (
                     <SelectItem key={type} value={type}>
-                      {TYPE_LABELS[type]}
+                      {typeLabels[type]}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="col-span-2 flex flex-col gap-1.5">
-              <Label htmlFor="doc-number">Number</Label>
+              <Label htmlFor="doc-number">{dialog.fields.number}</Label>
               <Input
                 id="doc-number"
                 value={state.number}
                 onChange={(event) => set("number", event.target.value)}
-                placeholder="Document number"
+                placeholder={dialog.placeholders.number}
                 autoComplete="off"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="doc-country">Issuing country</Label>
+              <Label htmlFor="doc-country">{dialog.fields.issuingCountry}</Label>
               <Input
                 id="doc-country"
                 value={state.issuingCountry}
                 onChange={(event) => set("issuingCountry", event.target.value)}
-                placeholder="ISO code (e.g. RO)"
+                placeholder={dialog.placeholders.issuingCountry}
                 maxLength={3}
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="doc-authority">Issuing authority</Label>
+              <Label htmlFor="doc-authority">{dialog.fields.issuingAuthority}</Label>
               <Input
                 id="doc-authority"
                 value={state.issuingAuthority}
@@ -202,7 +197,7 @@ export function PersonDocumentDialog({
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="doc-issued">Issue date</Label>
+              <Label htmlFor="doc-issued">{dialog.fields.issueDate}</Label>
               <Input
                 id="doc-issued"
                 type="date"
@@ -211,7 +206,7 @@ export function PersonDocumentDialog({
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="doc-expiry">Expiry date</Label>
+              <Label htmlFor="doc-expiry">{dialog.fields.expiryDate}</Label>
               <Input
                 id="doc-expiry"
                 type="date"
@@ -226,11 +221,11 @@ export function PersonDocumentDialog({
                 onCheckedChange={(checked) => set("isPrimary", checked === true)}
               />
               <Label htmlFor="doc-primary" className="cursor-pointer">
-                Set as primary for this type
+                {dialog.fields.primary}
               </Label>
             </div>
             <div className="col-span-2 flex flex-col gap-1.5">
-              <Label htmlFor="doc-notes">Notes</Label>
+              <Label htmlFor="doc-notes">{dialog.fields.notes}</Label>
               <Textarea
                 id="doc-notes"
                 value={state.notes}
@@ -241,15 +236,15 @@ export function PersonDocumentDialog({
           </div>
           {updateError ? (
             <p className="text-sm text-destructive">
-              {updateError instanceof Error ? updateError.message : "Failed to save document."}
+              {updateError instanceof Error ? updateError.message : dialog.saveFailed}
             </p>
           ) : null}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {dialog.cancel}
             </Button>
             <Button type="submit" disabled={updateFromPlaintext.isPending}>
-              {updateFromPlaintext.isPending ? "Saving…" : "Save"}
+              {updateFromPlaintext.isPending ? dialog.saving : dialog.save}
             </Button>
           </DialogFooter>
         </form>

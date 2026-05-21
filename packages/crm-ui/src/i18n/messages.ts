@@ -451,6 +451,46 @@ export type CrmUiMessages = {
     }
     hint: string
   }
+  personDocument: {
+    /** Row-level inline reveal panel + per-row action icons. */
+    row: {
+      decrypting: string
+      noNumberOnFile: string
+      revealFailed: string
+      revealAria: string
+      hideAria: string
+      editAria: string
+      deleteButton: string
+      deleteTitle: string
+      deleteDescription: string
+      deleteConfirm: string
+    }
+    /** Edit dialog (opens when the operator clicks the pencil). */
+    dialog: {
+      title: string
+      description: string
+      revealFailed: string
+      fields: {
+        type: string
+        number: string
+        issuingCountry: string
+        issuingAuthority: string
+        issueDate: string
+        expiryDate: string
+        primary: string
+        notes: string
+      }
+      placeholders: {
+        number: string
+        issuingCountry: string
+      }
+      loading: string
+      saveFailed: string
+      cancel: string
+      save: string
+      saving: string
+    }
+  }
   createQuoteDialog: {
     title: string
     fields: {

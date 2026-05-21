@@ -1077,6 +1077,7 @@ function PersonDocumentRow({
   const [editOpen, setEditOpen] = useState(false)
   const revealQuery = useRevealPersonDocument(document.id, { enabled: revealed })
   const mutation = usePersonDocumentMutation(personId)
+  const docMessages = useCrmUiMessagesOrDefault().personDocument
   const editable = Boolean(personId)
   const revealError = revealed && revealQuery.error
   const revealedNumber = revealQuery.data?.data.number ?? null
@@ -1094,15 +1095,13 @@ function PersonDocumentRow({
         {revealed ? (
           <p className="mt-1 font-mono text-xs">
             {revealQuery.isLoading
-              ? "Decrypting…"
-              : revealedNumber
-                ? revealedNumber
-                : "(no number on file)"}
+              ? docMessages.row.decrypting
+              : (revealedNumber ?? docMessages.row.noNumberOnFile)}
           </p>
         ) : null}
         {revealError ? (
           <p className="mt-1 text-[10px] text-destructive">
-            {revealError instanceof Error ? revealError.message : "Failed to reveal."}
+            {revealError instanceof Error ? revealError.message : docMessages.row.revealFailed}
           </p>
         ) : null}
       </div>
@@ -1116,7 +1115,7 @@ function PersonDocumentRow({
             type="button"
             onClick={() => setRevealed((prev) => !prev)}
             className="text-muted-foreground hover:text-foreground"
-            aria-label={revealed ? "Hide number" : "Reveal number"}
+            aria-label={revealed ? docMessages.row.hideAria : docMessages.row.revealAria}
           >
             {revealed ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
           </button>
@@ -1125,17 +1124,17 @@ function PersonDocumentRow({
               type="button"
               onClick={() => setEditOpen(true)}
               className="text-muted-foreground hover:text-foreground"
-              aria-label="Edit document"
+              aria-label={docMessages.row.editAria}
             >
               <Pencil className="size-3.5" />
             </button>
           ) : null}
           {editable ? (
             <ConfirmActionButton
-              buttonLabel="Delete"
-              title="Delete document"
-              description="This will permanently remove this document."
-              confirmLabel="Delete"
+              buttonLabel={docMessages.row.deleteButton}
+              title={docMessages.row.deleteTitle}
+              description={docMessages.row.deleteDescription}
+              confirmLabel={docMessages.row.deleteConfirm}
               variant="ghost"
               confirmVariant="destructive"
               disabled={mutation.remove.isPending}
