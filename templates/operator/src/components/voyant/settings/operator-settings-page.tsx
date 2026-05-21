@@ -26,6 +26,7 @@ import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
 
 interface OperatorProfileForm {
@@ -80,6 +81,7 @@ const EMPTY_FORM: OperatorProfileForm = {
 
 export function OperatorProfilePage() {
   const queryClient = useQueryClient()
+  const t = useAdminMessages().settings.operatorProfilePage
 
   const { data, isPending } = useQuery({
     queryKey: ["operator-profile-settings"],
@@ -172,12 +174,12 @@ export function OperatorProfilePage() {
       }
     },
     onSuccess: () => {
-      toast.success("Operator profile saved")
+      toast.success(t.savedToast)
       void queryClient.invalidateQueries({ queryKey: ["operator-profile-settings"] })
       void queryClient.invalidateQueries({ queryKey: ["public-operator-profile"] })
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Save failed")
+      toast.error(err instanceof Error ? err.message : t.saveFailed)
     },
   })
 
@@ -201,21 +203,22 @@ export function OperatorProfilePage() {
       }}
     >
       <header>
-        <h1 className="text-2xl font-bold tracking-tight">Operator profile</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Operator identity for contracts, public legal blocks, and payment collection. These
-          details populate <code>operator.*</code> in contract templates.
+          {t.descriptionPrefix}
+          <code>{t.descriptionCodeFragment}</code>
+          {t.descriptionSuffix}
         </p>
       </header>
 
       <Card>
         <CardHeader>
-          <CardTitle>Identity</CardTitle>
-          <CardDescription>Trading name, legal name, and tax IDs.</CardDescription>
+          <CardTitle>{t.identity.title}</CardTitle>
+          <CardDescription>{t.identity.description}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1">
-            <Label htmlFor="op-name">Trading name</Label>
+            <Label htmlFor="op-name">{t.identity.nameLabel}</Label>
             <Input
               id="op-name"
               value={form.name ?? ""}
@@ -223,7 +226,7 @@ export function OperatorProfilePage() {
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="op-legalName">Legal name</Label>
+            <Label htmlFor="op-legalName">{t.identity.legalNameLabel}</Label>
             <Input
               id="op-legalName"
               value={form.legalName ?? ""}
@@ -231,7 +234,7 @@ export function OperatorProfilePage() {
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="op-vatId">VAT id</Label>
+            <Label htmlFor="op-vatId">{t.identity.vatIdLabel}</Label>
             <Input
               id="op-vatId"
               value={form.vatId ?? ""}
@@ -239,7 +242,7 @@ export function OperatorProfilePage() {
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="op-regNum">Trade-register number</Label>
+            <Label htmlFor="op-regNum">{t.identity.registrationNumberLabel}</Label>
             <Input
               id="op-regNum"
               value={form.registrationNumber ?? ""}
@@ -251,11 +254,11 @@ export function OperatorProfilePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Contact</CardTitle>
+          <CardTitle>{t.contact.title}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1 md:col-span-2">
-            <Label htmlFor="op-address">Postal address</Label>
+            <Label htmlFor="op-address">{t.contact.addressLabel}</Label>
             <Textarea
               id="op-address"
               value={form.address ?? ""}
@@ -264,7 +267,7 @@ export function OperatorProfilePage() {
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="op-phone">Phone</Label>
+            <Label htmlFor="op-phone">{t.contact.phoneLabel}</Label>
             <Input
               id="op-phone"
               value={form.phone ?? ""}
@@ -272,7 +275,7 @@ export function OperatorProfilePage() {
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="op-email">Email</Label>
+            <Label htmlFor="op-email">{t.contact.emailLabel}</Label>
             <Input
               id="op-email"
               type="email"
@@ -281,7 +284,7 @@ export function OperatorProfilePage() {
             />
           </div>
           <div className="space-y-1 md:col-span-2">
-            <Label htmlFor="op-website">Website</Label>
+            <Label htmlFor="op-website">{t.contact.websiteLabel}</Label>
             <Input
               id="op-website"
               type="url"
@@ -294,21 +297,23 @@ export function OperatorProfilePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Payment collection</CardTitle>
-          <CardDescription>For bank-transfer payment instructions.</CardDescription>
+          <CardTitle>{t.paymentCollection.title}</CardTitle>
+          <CardDescription>{t.paymentCollection.description}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1 md:col-span-2">
-            <Label htmlFor="op-bankTransferBeneficiary">Bank-transfer beneficiary</Label>
+            <Label htmlFor="op-bankTransferBeneficiary">
+              {t.paymentCollection.beneficiaryLabel}
+            </Label>
             <Input
               id="op-bankTransferBeneficiary"
               value={form.bankTransferBeneficiary ?? ""}
-              placeholder="Defaults to legal name"
+              placeholder={t.paymentCollection.beneficiaryPlaceholder}
               onChange={(e) => setField("bankTransferBeneficiary", e.target.value)}
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="op-iban">IBAN</Label>
+            <Label htmlFor="op-iban">{t.paymentCollection.ibanLabel}</Label>
             <Input
               id="op-iban"
               value={form.iban ?? ""}
@@ -316,7 +321,7 @@ export function OperatorProfilePage() {
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="op-bank">Bank name</Label>
+            <Label htmlFor="op-bank">{t.paymentCollection.bankLabel}</Label>
             <Input
               id="op-bank"
               value={form.bank ?? ""}
@@ -324,7 +329,7 @@ export function OperatorProfilePage() {
             />
           </div>
           <div className="space-y-1 md:col-span-2">
-            <Label htmlFor="op-notes">Payment notes</Label>
+            <Label htmlFor="op-notes">{t.paymentCollection.notesLabel}</Label>
             <Textarea
               id="op-notes"
               value={form.notes ?? ""}
@@ -337,14 +342,12 @@ export function OperatorProfilePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>License</CardTitle>
-          <CardDescription>
-            Tour license, hotel rating registry, cruise flag-state, or whichever applies.
-          </CardDescription>
+          <CardTitle>{t.license.title}</CardTitle>
+          <CardDescription>{t.license.description}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1">
-            <Label htmlFor="op-license">License number</Label>
+            <Label htmlFor="op-license">{t.license.licenseLabel}</Label>
             <Input
               id="op-license"
               value={form.license ?? ""}
@@ -352,7 +355,7 @@ export function OperatorProfilePage() {
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="op-licenseAuthority">Issuing authority</Label>
+            <Label htmlFor="op-licenseAuthority">{t.license.authorityLabel}</Label>
             <Input
               id="op-licenseAuthority"
               value={form.licenseAuthority ?? ""}
@@ -364,14 +367,12 @@ export function OperatorProfilePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Signatory</CardTitle>
-          <CardDescription>
-            The human whose name appears on the operator-side signature line of issued contracts.
-          </CardDescription>
+          <CardTitle>{t.signatory.title}</CardTitle>
+          <CardDescription>{t.signatory.description}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1">
-            <Label htmlFor="op-signatoryName">Name</Label>
+            <Label htmlFor="op-signatoryName">{t.signatory.nameLabel}</Label>
             <Input
               id="op-signatoryName"
               value={form.signatoryName ?? ""}
@@ -379,10 +380,10 @@ export function OperatorProfilePage() {
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="op-signatoryRole">Role</Label>
+            <Label htmlFor="op-signatoryRole">{t.signatory.roleLabel}</Label>
             <Input
               id="op-signatoryRole"
-              placeholder="Managing Director"
+              placeholder={t.signatory.rolePlaceholder}
               value={form.signatoryRole ?? ""}
               onChange={(e) => setField("signatoryRole", e.target.value)}
             />
@@ -392,12 +393,8 @@ export function OperatorProfilePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Default customer payment policy</CardTitle>
-          <CardDescription>
-            Applied when no per-supplier, per-category, per-listing, or per-booking override exists.
-            Defines the deposit / balance split shown on the storefront and persisted as the
-            booking's payment schedule.
-          </CardDescription>
+          <CardTitle>{t.defaultPaymentPolicy.title}</CardTitle>
+          <CardDescription>{t.defaultPaymentPolicy.description}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-6 lg:grid-cols-[2fr_1fr]">
           <PaymentPolicyForm
@@ -412,7 +409,7 @@ export function OperatorProfilePage() {
       <div className="flex justify-end gap-2">
         <Button type="submit" disabled={save.isPending}>
           {save.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Save changes
+          {t.saveChanges}
         </Button>
       </div>
     </form>

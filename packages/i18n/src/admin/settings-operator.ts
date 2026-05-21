@@ -209,6 +209,72 @@ export const operatorAdminSettingsMessages = {
         savePolicyProfileFailed: "Failed to save tax policy profile",
         savePolicyRuleFailed: "Failed to save tax policy rule",
       },
+      bookingTaxSettings: {
+        title: "Booking tax settings",
+        description:
+          "Controls how booking-create previews, quote recomputation, and booking item tax lines resolve sell-side tax.",
+        catalogPriceModeLabel: "Catalog price mode",
+        priceModeInclusive: "Tax inclusive",
+        priceModeExclusive: "Tax exclusive",
+        taxPolicyProfileLabel: "Tax policy profile",
+        taxPolicyAutomatic: "Automatic active profile",
+        savedToast: "Booking tax settings saved",
+        saveFailed: "Save failed",
+      },
+      operatorProfilePage: {
+        title: "Operator profile",
+        descriptionPrefix:
+          "Operator identity for contracts, public legal blocks, and payment collection. These details populate ",
+        descriptionCodeFragment: "operator.*",
+        descriptionSuffix: " in contract templates.",
+        savedToast: "Operator profile saved",
+        saveFailed: "Save failed",
+        saveChanges: "Save changes",
+        identity: {
+          title: "Identity",
+          description: "Trading name, legal name, and tax IDs.",
+          nameLabel: "Trading name",
+          legalNameLabel: "Legal name",
+          vatIdLabel: "VAT id",
+          registrationNumberLabel: "Trade-register number",
+        },
+        contact: {
+          title: "Contact",
+          addressLabel: "Postal address",
+          phoneLabel: "Phone",
+          emailLabel: "Email",
+          websiteLabel: "Website",
+        },
+        paymentCollection: {
+          title: "Payment collection",
+          description: "For bank-transfer payment instructions.",
+          beneficiaryLabel: "Bank-transfer beneficiary",
+          beneficiaryPlaceholder: "Defaults to legal name",
+          ibanLabel: "IBAN",
+          bankLabel: "Bank name",
+          notesLabel: "Payment notes",
+        },
+        license: {
+          title: "License",
+          description:
+            "Tour license, hotel rating registry, cruise flag-state, or whichever applies.",
+          licenseLabel: "License number",
+          authorityLabel: "Issuing authority",
+        },
+        signatory: {
+          title: "Signatory",
+          description:
+            "The human whose name appears on the operator-side signature line of issued contracts.",
+          nameLabel: "Name",
+          roleLabel: "Role",
+          rolePlaceholder: "Managing Director",
+        },
+        defaultPaymentPolicy: {
+          title: "Default customer payment policy",
+          description:
+            "Applied when no per-supplier, per-category, per-listing, or per-booking override exists. Defines the deposit / balance split shown on the storefront and persisted as the booking's payment schedule.",
+        },
+      },
       priceCatalogsPage: {
         title: "Price Catalogs",
         description: "Create named price books with currency and pricing posture.",
@@ -455,6 +521,72 @@ export const operatorAdminSettingsMessages = {
           "Conditia trebuie sa includa cel putin un rand valid. Tarile trebuie sa fie coduri ISO din doua litere.",
         savePolicyProfileFailed: "Profilul de politica fiscala nu a putut fi salvat",
         savePolicyRuleFailed: "Regula fiscala nu a putut fi salvata",
+      },
+      bookingTaxSettings: {
+        title: "Setari de taxe pentru rezervari",
+        description:
+          "Controleaza cum sunt calculate taxele pe partea de vanzare in preview-urile de creare rezervare, recalculul ofertelor si liniile fiscale ale articolelor.",
+        catalogPriceModeLabel: "Mod pret catalog",
+        priceModeInclusive: "Inclusiv TVA",
+        priceModeExclusive: "Exclusiv TVA",
+        taxPolicyProfileLabel: "Profil de politica fiscala",
+        taxPolicyAutomatic: "Profil activ automat",
+        savedToast: "Setarile fiscale au fost salvate",
+        saveFailed: "Salvarea a esuat",
+      },
+      operatorProfilePage: {
+        title: "Profil operator",
+        descriptionPrefix:
+          "Identitatea operatorului pentru contracte, blocuri legale publice si colectarea platilor. Aceste detalii populeaza ",
+        descriptionCodeFragment: "operator.*",
+        descriptionSuffix: " in sabloanele de contract.",
+        savedToast: "Profilul operatorului a fost salvat",
+        saveFailed: "Salvarea a esuat",
+        saveChanges: "Salveaza modificarile",
+        identity: {
+          title: "Identitate",
+          description: "Numele comercial, denumirea legala si codurile fiscale.",
+          nameLabel: "Nume comercial",
+          legalNameLabel: "Denumire legala",
+          vatIdLabel: "Cod TVA",
+          registrationNumberLabel: "Numar registrul comertului",
+        },
+        contact: {
+          title: "Contact",
+          addressLabel: "Adresa postala",
+          phoneLabel: "Telefon",
+          emailLabel: "Email",
+          websiteLabel: "Website",
+        },
+        paymentCollection: {
+          title: "Colectarea platilor",
+          description: "Pentru instructiunile de plata prin transfer bancar.",
+          beneficiaryLabel: "Beneficiar transfer bancar",
+          beneficiaryPlaceholder: "Implicit: denumirea legala",
+          ibanLabel: "IBAN",
+          bankLabel: "Nume banca",
+          notesLabel: "Note de plata",
+        },
+        license: {
+          title: "Licenta",
+          description:
+            "Licenta de turism, registru de clasificare hotel, pavilion crucisier sau echivalentul aplicabil.",
+          licenseLabel: "Numar licenta",
+          authorityLabel: "Autoritate emitenta",
+        },
+        signatory: {
+          title: "Semnatar",
+          description:
+            "Persoana al carei nume apare pe linia de semnatura a operatorului din contractele emise.",
+          nameLabel: "Nume",
+          roleLabel: "Rol",
+          rolePlaceholder: "Director general",
+        },
+        defaultPaymentPolicy: {
+          title: "Politica implicita de plata pentru clienti",
+          description:
+            "Se aplica atunci cand nu exista nicio suprascriere per furnizor, categorie, listing sau rezervare. Defineste impartirea avans / sold afisata pe storefront si stocata ca grafic de plata al rezervarii.",
+        },
       },
       priceCatalogsPage: {
         title: "Cataloage de pret",
