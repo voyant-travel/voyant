@@ -51,10 +51,17 @@ export interface OptionResourceTemplatesPanelProps {
 }
 
 type ResourceTemplateKind = "room" | "vehicle_seat" | "cabin" | "flight_seat"
+// Defaults populate the namePattern field when the operator picks a kind. They
+// are starting points the operator edits before saving, not display labels —
+// the localized prompt copy lives in the dialog's namePatternPlaceholder.
 const COMMON_KINDS: ReadonlyArray<{ value: ResourceTemplateKind; defaultPattern: string }> = [
+  // i18n-literal-ok
   { value: "room", defaultPattern: "Room {sequence}" },
+  // i18n-literal-ok
   { value: "vehicle_seat", defaultPattern: "Seat {sequence}" },
+  // i18n-literal-ok
   { value: "cabin", defaultPattern: "Cabin {sequence}" },
+  // i18n-literal-ok
   { value: "flight_seat", defaultPattern: "Seat {sequence}" },
 ]
 
