@@ -111,6 +111,12 @@ export const adminTripsMessages = {
         failed: "Failed",
         cancelled: "Cancelled",
       },
+      paymentLinkSummary: {
+        ariaLabel: "Your trip",
+        heading: "Your trip",
+        totalPayable: "Total payable",
+        fxRatesLabel: "FX rates",
+      },
     },
   },
   ro: {
@@ -222,6 +228,12 @@ export const adminTripsMessages = {
         booked: "Confirmata",
         failed: "Esuata",
         cancelled: "Anulata",
+      },
+      paymentLinkSummary: {
+        ariaLabel: "Calatoria ta",
+        heading: "Calatoria ta",
+        totalPayable: "Total de plata",
+        fxRatesLabel: "Cursuri valutare",
       },
     },
   },
