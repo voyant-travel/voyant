@@ -27,6 +27,9 @@ async function ensureBrochureColumns(db: PostgresJsDatabase) {
   const statements: SQL[] = [
     sql`ALTER TABLE product_media ADD COLUMN IF NOT EXISTS is_brochure_current boolean DEFAULT false NOT NULL`,
     sql`ALTER TABLE product_media ADD COLUMN IF NOT EXISTS brochure_version integer`,
+    sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS inclusions_html text`,
+    sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS exclusions_html text`,
+    sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS terms_html text`,
     sql`CREATE TABLE IF NOT EXISTS destinations (
       id text PRIMARY KEY NOT NULL,
       parent_id text,
@@ -298,6 +301,9 @@ describe.skipIf(!DB_AVAILABLE)("Public product routes", () => {
       .values({
         name: "Danube Cruise",
         description: "River cruise through major capitals.",
+        inclusionsHtml: "<p>Transfers included</p>",
+        exclusionsHtml: "<p>Flights excluded</p>",
+        termsHtml: "<p>Standard cruise terms</p>",
         status: "active",
         activated: true,
         visibility: "public",
@@ -345,6 +351,9 @@ describe.skipIf(!DB_AVAILABLE)("Public product routes", () => {
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.data.id).toBe(product.id)
+    expect(body.data.inclusionsHtml).toBe("<p>Transfers included</p>")
+    expect(body.data.exclusionsHtml).toBe("<p>Flights excluded</p>")
+    expect(body.data.termsHtml).toBe("<p>Standard cruise terms</p>")
     expect(body.data.brochure?.url).toContain("danube.pdf")
     expect(body.data.media).toHaveLength(1)
     expect(body.data.features[0]?.title).toBe("Premium cabin")
@@ -401,6 +410,7 @@ describe.skipIf(!DB_AVAILABLE)("Public product routes", () => {
       .values({
         name: "Danube Cruise",
         description: "River cruise through major capitals.",
+        termsHtml: "<p>Default terms</p>",
         status: "active",
         activated: true,
         visibility: "public",
@@ -415,6 +425,7 @@ describe.skipIf(!DB_AVAILABLE)("Public product routes", () => {
       name: "Croaziera pe Dunare",
       shortDescription: "Croaziera fluviala prin capitale europene.",
       description: "Itinerar localizat pentru croaziera pe Dunare.",
+      termsHtml: "<p>Termeni localizati</p>",
       seoTitle: "Croaziera pe Dunare",
       seoDescription: "Rezerva croaziera pe Dunare.",
     })
@@ -424,6 +435,7 @@ describe.skipIf(!DB_AVAILABLE)("Public product routes", () => {
     const detailBody = await detailRes.json()
     expect(detailBody.data.name).toBe("Croaziera pe Dunare")
     expect(detailBody.data.slug).toBe("croaziera-dunare")
+    expect(detailBody.data.termsHtml).toBe("<p>Termeni localizati</p>")
     expect(detailBody.data.seoTitle).toBe("Croaziera pe Dunare")
     expect(detailBody.data.contentLanguageTag).toBe("ro")
 
