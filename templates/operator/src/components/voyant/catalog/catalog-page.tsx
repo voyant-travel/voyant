@@ -17,14 +17,20 @@ import { useMemo } from "react"
 import { toast } from "sonner"
 
 import type { ProductSourcedContentResponse } from "@/components/voyant/products/product-detail-shared"
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { ApiError, api } from "@/lib/api-client"
 import { type CatalogSearchParams, Route } from "@/routes/_workspace/catalog"
+
+type CatalogBrowserMessages = ReturnType<
+  typeof useAdminMessages
+>["products"]["operations"]["catalogBrowser"]
 
 const DEFAULT_MARKET_VALUE = "__default__"
 const DEFAULT_CATALOG_LOCALE = "en-GB"
 
 export function CatalogPage() {
   const navigate = useNavigate()
+  const browserMessages = useAdminMessages().products.operations.catalogBrowser
   const search = Route.useSearch()
   const routeNavigate = Route.useNavigate()
   const suppliersQuery = useSuppliers({ limit: 100 })
@@ -66,6 +72,7 @@ export function CatalogPage() {
       formatSupplier={formatSupplier}
       toolbarEnd={
         <CatalogScopeControls
+          messages={browserMessages}
           markets={marketsQuery.data?.data ?? []}
           localeOptions={localeOptions}
           market={selectedMarketId}
@@ -125,12 +132,14 @@ export function CatalogPage() {
           replace: true,
         })
       }
-      onBookHit={(hit, entityModule) => goToBookingPage(hit, entityModule, navigate)}
+      onBookHit={(hit, entityModule) =>
+        goToBookingPage(hit, entityModule, navigate, browserMessages)
+      }
       onBookDeparture={(hit, entityModule, departure) =>
-        goToBookingPage(hit, entityModule, navigate, departure)
+        goToBookingPage(hit, entityModule, navigate, browserMessages, departure)
       }
       onBookOption={(hit, entityModule, departure, option) =>
-        goToBookingPage(hit, entityModule, navigate, departure, option)
+        goToBookingPage(hit, entityModule, navigate, browserMessages, departure, option)
       }
       onOpenProductEditor={(hit) => navigate({ to: "/products/$id", params: { id: hit.id } })}
       onLoadProductDetail={(hit) => loadProductDetail(hit, formatSupplier)}
@@ -148,7 +157,7 @@ export function CatalogPage() {
         // the upstream so we can't write tags through to them.
         const sourceKind = stringField(hit, "source.kind", null)
         if (sourceKind && sourceKind !== "owned") {
-          toast.info("Tags can only be edited on owned products.")
+          toast.info(browserMessages.tagsReadOnly)
           throw new Error("read-only source kind")
         }
         try {
@@ -163,7 +172,7 @@ export function CatalogPage() {
           // set keyed on hit.id; the next time the user opens this
           // product the index has caught up.
         } catch (err) {
-          toast.error(err instanceof Error ? err.message : "Could not update tags.")
+          toast.error(err instanceof Error ? err.message : browserMessages.tagsUpdateFailed)
           throw err
         }
       }}
@@ -172,6 +181,7 @@ export function CatalogPage() {
 }
 
 interface CatalogScopeControlsProps {
+  messages: CatalogBrowserMessages
   markets: Array<{ id: string; name: string; code: string; defaultLanguageTag: string }>
   localeOptions: string[]
   market?: string
@@ -182,6 +192,7 @@ interface CatalogScopeControlsProps {
 }
 
 function CatalogScopeControls({
+  messages,
   markets,
   localeOptions,
   market,
@@ -203,7 +214,7 @@ function CatalogScopeControls({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={DEFAULT_MARKET_VALUE}>Default market</SelectItem>
+          <SelectItem value={DEFAULT_MARKET_VALUE}>{messages.defaultMarket}</SelectItem>
           {markets.map((item) => (
             <SelectItem key={item.id} value={item.id}>
               {item.name} · {item.code}
@@ -251,13 +262,14 @@ function goToBookingPage(
   hit: CatalogSearchHit,
   entityModule: string,
   navigate: AppNavigate,
+  messages: CatalogBrowserMessages,
   departure?: BookingDeparture,
   option?: { id: string; name: string },
 ): void {
   const sourceKind = stringField(hit, "source.kind", null) ?? "owned"
   if (!sourceKind) {
-    toast.info("This catalog row cannot be booked yet.", {
-      description: "The catalog record is missing source information.",
+    toast.info(messages.cannotBookYet, {
+      description: messages.missingSourceInfo,
     })
     return
   }

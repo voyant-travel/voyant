@@ -558,6 +558,13 @@ export const operatorAdminProductsMessages = {
           viewBookings: "View bookings",
           bookFailed: "Book request failed: {message}",
         },
+        catalogBrowser: {
+          defaultMarket: "Default market",
+          tagsReadOnly: "Tags can only be edited on owned products.",
+          tagsUpdateFailed: "Could not update tags.",
+          cannotBookYet: "This catalog row cannot be booked yet.",
+          missingSourceInfo: "The catalog record is missing source information.",
+        },
         paymentPolicy: {
           title: "Customer payment policy",
           save: "Save",
@@ -1155,6 +1162,13 @@ export const operatorAdminProductsMessages = {
           bookedSuccess: "Rezervat - comanda {ref}... ({status})",
           viewBookings: "Vezi rezervarile",
           bookFailed: "Cererea de rezervare a esuat: {message}",
+        },
+        catalogBrowser: {
+          defaultMarket: "Piata implicita",
+          tagsReadOnly: "Tag-urile pot fi editate doar pentru produsele proprii.",
+          tagsUpdateFailed: "Tag-urile nu au putut fi actualizate.",
+          cannotBookYet: "Acest articol din catalog nu poate fi rezervat inca.",
+          missingSourceInfo: "Inregistrarea din catalog nu are informatii despre sursa.",
         },
         paymentPolicy: {
           title: "Politica de plata pentru clienti",
