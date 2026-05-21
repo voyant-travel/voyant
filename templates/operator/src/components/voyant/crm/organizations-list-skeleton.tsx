@@ -1,3 +1,4 @@
+import { useCrmUiMessagesOrDefault } from "@voyantjs/crm-ui/i18n"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
 import { Table, TableHead, TableHeader, TableRow } from "@voyantjs/ui/components/table"
 import { SkeletonTableRows } from "@/components/ui/skeletons"
@@ -8,6 +9,7 @@ import { SkeletonTableRows } from "@/components/ui/skeletons"
  * 5-column table (Name / Industry / Relation / Website / Updated), pagination.
  */
 export function OrganizationsListSkeleton() {
+  const t = useCrmUiMessagesOrDefault().organizationList.columns
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="space-y-2">
@@ -24,11 +26,11 @@ export function OrganizationsListSkeleton() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Industry</TableHead>
-              <TableHead>Relation</TableHead>
-              <TableHead>Website</TableHead>
-              <TableHead>Updated</TableHead>
+              <TableHead>{t.name}</TableHead>
+              <TableHead>{t.industry}</TableHead>
+              <TableHead>{t.relation}</TableHead>
+              <TableHead>{t.website}</TableHead>
+              <TableHead>{t.updated}</TableHead>
             </TableRow>
           </TableHeader>
           <SkeletonTableRows

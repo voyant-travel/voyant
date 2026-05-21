@@ -1,3 +1,4 @@
+import { useCrmUiMessagesOrDefault } from "@voyantjs/crm-ui/i18n"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
 import { Table, TableHead, TableHeader, TableRow } from "@voyantjs/ui/components/table"
 import { SkeletonTableRows } from "@/components/ui/skeletons"
@@ -10,6 +11,7 @@ import { SkeletonTableRows } from "@/components/ui/skeletons"
  *   - Pagination bar
  */
 export function PeopleListSkeleton() {
+  const t = useCrmUiMessagesOrDefault().personList.columns
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="space-y-2">
@@ -26,10 +28,10 @@ export function PeopleListSkeleton() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Relation</TableHead>
+              <TableHead>{t.name}</TableHead>
+              <TableHead>{t.email}</TableHead>
+              <TableHead>{t.phone}</TableHead>
+              <TableHead>{t.relation}</TableHead>
             </TableRow>
           </TableHeader>
           <SkeletonTableRows rows={8} columns={4} columnWidths={["w-40", "w-48", "w-32", "w-16"]} />
