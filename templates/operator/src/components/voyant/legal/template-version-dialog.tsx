@@ -24,10 +24,11 @@ import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { zodResolver } from "@/lib/zod-resolver"
 
 const versionFormSchema = z.object({
-  body: z.string().min(1, "Body is required"),
+  body: z.string().min(1, "bodyRequired"),
   changelog: z.string().optional(),
   createdBy: z.string().optional(),
 })
@@ -48,9 +49,13 @@ export function TemplateVersionDialog({
   templateId,
   onSuccess,
 }: TemplateVersionDialogProps) {
+  const t = useAdminMessages().legal.templateVersionDialog
   const { create } = useLegalContractTemplateVersionMutation()
   const { variableCatalog, liquidSnippets } = useLegalContractTemplateAuthoring()
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null)
+
+  const resolveValidation = (code: string | undefined) =>
+    code === "bodyRequired" ? t.validation.bodyRequired : code || ""
   const variableGroups = useMemo(
     () =>
       variableCatalog.map((group) => ({
@@ -94,12 +99,12 @@ export function TemplateVersionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>New Template Version</DialogTitle>
+          <DialogTitle>{t.titleNew}</DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="flex flex-col gap-2">
-              <Label>Body</Label>
+              <Label>{t.bodyLabel}</Label>
               <RichTextEditor
                 value={form.watch("body")}
                 onChange={(value) =>
@@ -109,12 +114,14 @@ export function TemplateVersionDialog({
                     shouldValidate: true,
                   })
                 }
-                placeholder="Template body with Liquid variables and conditionals..."
+                placeholder={t.bodyPlaceholder}
                 enableVariables
                 onEditorReady={setEditorInstance}
               />
               {form.formState.errors.body ? (
-                <p className="text-xs text-destructive">{form.formState.errors.body.message}</p>
+                <p className="text-xs text-destructive">
+                  {resolveValidation(form.formState.errors.body.message)}
+                </p>
               ) : null}
             </div>
 
@@ -133,24 +140,24 @@ export function TemplateVersionDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Changelog</Label>
-                <Input {...form.register("changelog")} placeholder="What changed..." />
+                <Label>{t.changelogLabel}</Label>
+                <Input {...form.register("changelog")} placeholder={t.changelogPlaceholder} />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Created By</Label>
-                <Input {...form.register("createdBy")} placeholder="Author name" />
+                <Label>{t.createdByLabel}</Label>
+                <Input {...form.register("createdBy")} placeholder={t.createdByPlaceholder} />
               </div>
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t.cancel}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              Create Version
+              {t.createAction}
             </Button>
           </DialogFooter>
         </form>

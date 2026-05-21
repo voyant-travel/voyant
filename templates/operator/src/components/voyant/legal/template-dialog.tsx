@@ -33,18 +33,22 @@ import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { zodResolver } from "@/lib/zod-resolver"
 
+const SCOPE_VALUES = ["customer", "supplier", "partner", "channel", "other"] as const
+type TemplateScope = (typeof SCOPE_VALUES)[number]
+
 const templateFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.string().min(1, "nameRequired"),
   slug: z
     .string()
-    .min(1, "Slug is required")
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Must be kebab-case"),
-  scope: z.enum(["customer", "supplier", "partner", "channel", "other"]),
+    .min(1, "slugRequired")
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "slugKebabCase"),
+  scope: z.enum(SCOPE_VALUES),
   language: z.string().min(2).max(10).optional(),
   description: z.string().optional(),
-  body: z.string().min(1, "Body is required"),
+  body: z.string().min(1, "bodyRequired"),
   active: z.boolean(),
 })
 
@@ -57,14 +61,6 @@ type TemplateDialogProps = {
   template?: LegalContractTemplateRecord
   onSuccess: () => void
 }
-
-const SCOPES = [
-  { value: "customer", label: "Customer" },
-  { value: "supplier", label: "Supplier" },
-  { value: "partner", label: "Partner" },
-  { value: "channel", label: "Channel" },
-  { value: "other", label: "Other" },
-] as const
 
 /**
  * Language picker options derived from the canonical ISO 639-1 list
@@ -80,7 +76,17 @@ const LANGUAGE_ITEMS: Array<{ value: string; label: string }> = Object.entries(l
 
 export function TemplateDialog({ open, onOpenChange, template, onSuccess }: TemplateDialogProps) {
   const isEditing = !!template
+  const t = useAdminMessages().legal.templateDialog
   const { create, update } = useLegalContractTemplateMutation()
+
+  const validationByCode: Record<string, string> = {
+    nameRequired: t.validation.nameRequired,
+    slugRequired: t.validation.slugRequired,
+    slugKebabCase: t.validation.slugKebabCase,
+    bodyRequired: t.validation.bodyRequired,
+  }
+  const resolveValidation = (code: string | undefined) =>
+    (code && validationByCode[code]) || code || ""
   const { variableCatalog, liquidSnippets } = useLegalContractTemplateAuthoring()
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null)
   const variableGroups = useMemo(
@@ -148,32 +154,36 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Template" : "New Template"}</DialogTitle>
+          <DialogTitle>{isEditing ? t.titleEdit : t.titleNew}</DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4 max-h-[70vh]">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Name</Label>
-                <Input {...form.register("name")} placeholder="Template name" />
+                <Label>{t.nameLabel}</Label>
+                <Input {...form.register("name")} placeholder={t.namePlaceholder} />
                 {form.formState.errors.name ? (
-                  <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
+                  <p className="text-xs text-destructive">
+                    {resolveValidation(form.formState.errors.name.message)}
+                  </p>
                 ) : null}
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Slug</Label>
-                <Input {...form.register("slug")} placeholder="template-slug" />
+                <Label>{t.slugLabel}</Label>
+                <Input {...form.register("slug")} placeholder={t.slugPlaceholder} />
                 {form.formState.errors.slug ? (
-                  <p className="text-xs text-destructive">{form.formState.errors.slug.message}</p>
+                  <p className="text-xs text-destructive">
+                    {resolveValidation(form.formState.errors.slug.message)}
+                  </p>
                 ) : null}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Scope</Label>
+                <Label>{t.scopeLabel}</Label>
                 <Select
-                  items={SCOPES}
+                  items={SCOPE_VALUES.map((value) => ({ value, label: t.scopeOptions[value] }))}
                   value={form.watch("scope")}
                   onValueChange={(value) => form.setValue("scope", value as FormValues["scope"])}
                 >
@@ -181,16 +191,16 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {SCOPES.map((scope) => (
-                      <SelectItem key={scope.value} value={scope.value}>
-                        {scope.label}
+                    {SCOPE_VALUES.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {t.scopeOptions[value as TemplateScope]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Language</Label>
+                <Label>{t.languageLabel}</Label>
                 <Select
                   items={LANGUAGE_ITEMS}
                   value={form.watch("language") ?? "en"}
@@ -213,12 +223,12 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Description</Label>
-              <Textarea {...form.register("description")} placeholder="Optional description..." />
+              <Label>{t.descriptionLabel}</Label>
+              <Textarea {...form.register("description")} placeholder={t.descriptionPlaceholder} />
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Body</Label>
+              <Label>{t.bodyLabel}</Label>
               <RichTextEditor
                 value={form.watch("body")}
                 onChange={(value) =>
@@ -228,17 +238,16 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
                     shouldValidate: true,
                   })
                 }
-                placeholder="Template body with Liquid variables and conditionals..."
+                placeholder={t.bodyPlaceholder}
                 enableVariables
                 onEditorReady={setEditorInstance}
               />
               {form.formState.errors.body ? (
-                <p className="text-xs text-destructive">{form.formState.errors.body.message}</p>
-              ) : (
-                <p className="text-[11px] text-muted-foreground">
-                  Editing the body automatically creates a new version. Metadata-only changes (name,
-                  scope, description) update in place without versioning.
+                <p className="text-xs text-destructive">
+                  {resolveValidation(form.formState.errors.body.message)}
                 </p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">{t.bodyHelp}</p>
               )}
             </div>
 
@@ -260,18 +269,18 @@ export function TemplateDialog({ open, onOpenChange, template, onSuccess }: Temp
                 checked={form.watch("active")}
                 onCheckedChange={(checked) => form.setValue("active", checked)}
               />
-              <Label>Active</Label>
+              <Label>{t.activeLabel}</Label>
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t.cancel}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              {isEditing ? "Save Changes" : "Create Template"}
+              {isEditing ? t.saveChanges : t.createAction}
             </Button>
           </DialogFooter>
         </form>
