@@ -1,5 +1,20 @@
 # @voyantjs/products-ui
 
+## 0.64.0
+
+### Patch Changes
+
+- Updated dependencies [6d0c8f3]
+  - @voyantjs/availability-react@0.64.0
+  - @voyantjs/catalog-react@0.64.0
+  - @voyantjs/finance@0.64.0
+  - @voyantjs/finance-ui@0.64.0
+  - @voyantjs/i18n@0.64.0
+  - @voyantjs/pricing-react@0.64.0
+  - @voyantjs/products-react@0.64.0
+  - @voyantjs/suppliers-react@0.64.0
+  - @voyantjs/ui@0.64.0
+
 ## 0.63.1
 
 ### Patch Changes

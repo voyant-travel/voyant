@@ -1,5 +1,16 @@
 # @voyantjs/transactions
 
+## 0.64.0
+
+### Patch Changes
+
+- 6d0c8f3: Extract `withOptionalTransaction` into `@voyantjs/db/transaction` so the soft-fallback helper that action-ledger has used since 0.62.0 can be shared by any package that needs it. Add `Module.requiresTransactionalDb` so modules whose write paths use interactive transactions declare it, and have `createApp()` assert on first request that the resolved db adapter supports `db.transaction(async (tx) => …)`. With the neon-http (edge) adapter that assertion now throws an actionable error pointing at `createServerlessDbClient` (neon-serverless / WebSocket) or `createDbClient(url, { adapter: "node" })` — instead of the cryptic "No transactions support in neon-http driver" exception thrown on first write.
+- Updated dependencies [6d0c8f3]
+  - @voyantjs/core@0.64.0
+  - @voyantjs/db@0.64.0
+  - @voyantjs/hono@0.64.0
+  - @voyantjs/utils@0.64.0
+
 ## 0.63.1
 
 ### Patch Changes
