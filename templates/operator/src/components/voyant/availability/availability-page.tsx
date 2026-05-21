@@ -177,11 +177,12 @@ export function AvailabilityPage() {
 
   const slotsToolbarHasFilters =
     slotStatusFilter !== "all" || Boolean(slotDateRange?.from) || Boolean(slotDateRange?.to)
+  const toolbar = messages.availability.toolbar
   const slotsToolbar = (
     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="slot-status" className="text-xs">
-          Status
+          {messages.availability.statusLabel}
         </Label>
         <Select
           value={slotStatusFilter}
@@ -193,21 +194,21 @@ export function AvailabilityPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="open">Open</SelectItem>
-            <SelectItem value="closed">Closed</SelectItem>
-            <SelectItem value="sold_out">Sold Out</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="all">{toolbar.statusAll}</SelectItem>
+            <SelectItem value="open">{messages.availability.statusOpen}</SelectItem>
+            <SelectItem value="closed">{messages.availability.statusClosed}</SelectItem>
+            <SelectItem value="sold_out">{messages.availability.statusSoldOut}</SelectItem>
+            <SelectItem value="cancelled">{messages.availability.statusCancelled}</SelectItem>
           </SelectContent>
         </Select>
       </div>
       <div className="flex flex-col gap-1.5">
-        <Label className="text-xs">Date range</Label>
+        <Label className="text-xs">{toolbar.dateRangeLabel}</Label>
         <DateRangePicker
           value={slotDateRange}
           onChange={setSlotDateRange}
           className="w-full sm:w-72"
-          placeholder="Any date"
+          placeholder={toolbar.dateRangePlaceholder}
         />
       </div>
       {slotsToolbarHasFilters ? (
@@ -219,7 +220,7 @@ export function AvailabilityPage() {
             setSlotDateRange(null)
           }}
         >
-          Reset
+          {toolbar.reset}
         </Button>
       ) : null}
     </div>
@@ -229,7 +230,7 @@ export function AvailabilityPage() {
     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="rule-active" className="text-xs">
-          State
+          {toolbar.stateLabel}
         </Label>
         <Select
           value={ruleActiveFilter}
@@ -241,15 +242,15 @@ export function AvailabilityPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="all">{toolbar.stateAll}</SelectItem>
+            <SelectItem value="active">{messages.availability.statusActive}</SelectItem>
+            <SelectItem value="inactive">{messages.availability.statusInactive}</SelectItem>
           </SelectContent>
         </Select>
       </div>
       {ruleActiveFilter !== "all" ? (
         <Button variant="outline" size="sm" onClick={() => setRuleActiveFilter("all")}>
-          Reset
+          {toolbar.reset}
         </Button>
       ) : null}
     </div>
@@ -259,7 +260,7 @@ export function AvailabilityPage() {
     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="start-time-active" className="text-xs">
-          State
+          {toolbar.stateLabel}
         </Label>
         <Select
           value={startTimeActiveFilter}
@@ -271,15 +272,15 @@ export function AvailabilityPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="all">{toolbar.stateAll}</SelectItem>
+            <SelectItem value="active">{messages.availability.statusActive}</SelectItem>
+            <SelectItem value="inactive">{messages.availability.statusInactive}</SelectItem>
           </SelectContent>
         </Select>
       </div>
       {startTimeActiveFilter !== "all" ? (
         <Button variant="outline" size="sm" onClick={() => setStartTimeActiveFilter("all")}>
-          Reset
+          {toolbar.reset}
         </Button>
       ) : null}
     </div>
@@ -290,17 +291,17 @@ export function AvailabilityPage() {
   const closeoutsToolbar = (
     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
       <div className="flex flex-col gap-1.5">
-        <Label className="text-xs">Date range</Label>
+        <Label className="text-xs">{toolbar.dateRangeLabel}</Label>
         <DateRangePicker
           value={closeoutDateRange}
           onChange={setCloseoutDateRange}
           className="w-full sm:w-72"
-          placeholder="Any date"
+          placeholder={toolbar.dateRangePlaceholder}
         />
       </div>
       {closeoutsToolbarHasFilters ? (
         <Button variant="outline" size="sm" onClick={() => setCloseoutDateRange(null)}>
-          Reset
+          {toolbar.reset}
         </Button>
       ) : null}
     </div>
@@ -310,7 +311,7 @@ export function AvailabilityPage() {
     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="pickup-point-active" className="text-xs">
-          State
+          {toolbar.stateLabel}
         </Label>
         <Select
           value={pickupPointActiveFilter}
@@ -322,15 +323,15 @@ export function AvailabilityPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="all">{toolbar.stateAll}</SelectItem>
+            <SelectItem value="active">{messages.availability.statusActive}</SelectItem>
+            <SelectItem value="inactive">{messages.availability.statusInactive}</SelectItem>
           </SelectContent>
         </Select>
       </div>
       {pickupPointActiveFilter !== "all" ? (
         <Button variant="outline" size="sm" onClick={() => setPickupPointActiveFilter("all")}>
-          Reset
+          {toolbar.reset}
         </Button>
       ) : null}
     </div>

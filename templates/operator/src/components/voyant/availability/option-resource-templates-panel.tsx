@@ -4,6 +4,7 @@ import {
   useProductResourceTemplates,
   useResourceTemplateMutation,
 } from "@voyantjs/availability-react"
+import { formatMessage } from "@voyantjs/i18n"
 import {
   Badge,
   Button,
@@ -28,6 +29,7 @@ import {
 } from "@voyantjs/ui/components"
 import { Bed, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
+import { useAdminMessages } from "@/lib/admin-i18n"
 
 /**
  * Per-option Resource templates editor. Templates drive the Allocation
@@ -48,17 +50,20 @@ export interface OptionResourceTemplatesPanelProps {
   optionId: string
 }
 
-const COMMON_KINDS: ReadonlyArray<{ value: string; label: string; defaultPattern: string }> = [
-  { value: "room", label: "Room", defaultPattern: "Room {sequence}" },
-  { value: "vehicle_seat", label: "Vehicle seat", defaultPattern: "Seat {sequence}" },
-  { value: "cabin", label: "Cabin", defaultPattern: "Cabin {sequence}" },
-  { value: "flight_seat", label: "Flight seat", defaultPattern: "Seat {sequence}" },
+type ResourceTemplateKind = "room" | "vehicle_seat" | "cabin" | "flight_seat"
+const COMMON_KINDS: ReadonlyArray<{ value: ResourceTemplateKind; defaultPattern: string }> = [
+  { value: "room", defaultPattern: "Room {sequence}" },
+  { value: "vehicle_seat", defaultPattern: "Seat {sequence}" },
+  { value: "cabin", defaultPattern: "Cabin {sequence}" },
+  { value: "flight_seat", defaultPattern: "Seat {sequence}" },
 ]
 
 export function OptionResourceTemplatesPanel({
   productId,
   optionId,
 }: OptionResourceTemplatesPanelProps) {
+  const adminMessages = useAdminMessages()
+  const t = adminMessages.availability.details.resourceTemplates
   const { data, isPending, isError } = useProductResourceTemplates({ productId })
   const { upsert, remove } = useResourceTemplateMutation(productId)
 
@@ -98,7 +103,7 @@ export function OptionResourceTemplatesPanel({
     const trimmedKind = kindValue.trim()
     const trimmedPattern = namePatternValue.trim()
     if (!trimmedKind || !trimmedPattern || capacityValue < 1) {
-      setError("Capacity must be at least 1; kind and name pattern are required.")
+      setError(t.validation)
       return
     }
     try {
@@ -112,16 +117,16 @@ export function OptionResourceTemplatesPanel({
       })
       setDialogOpen(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed")
+      setError(err instanceof Error ? err.message : t.saveFailed)
     }
   }
 
   async function handleRemove(kind: string) {
-    if (!globalThis.confirm?.(`Delete the "${kind}" template for this option?`)) return
+    if (!globalThis.confirm?.(formatMessage(t.deleteConfirm, { kind }))) return
     try {
       await remove.mutateAsync({ optionId, kind })
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed")
+      setError(err instanceof Error ? err.message : t.deleteFailed)
     }
   }
 
@@ -134,17 +139,13 @@ export function OptionResourceTemplatesPanel({
         <div className="space-y-1">
           <CardTitle className="flex items-center gap-2 text-base">
             <Bed className="size-4 text-muted-foreground" aria-hidden="true" />
-            Resource templates
+            {t.title}
           </CardTitle>
-          <CardDescription>
-            Define how this option maps to physical resources (rooms, seats, cabins). "Generate
-            resources" on the Allocation tab uses these to materialize the right number of resources
-            per slot.
-          </CardDescription>
+          <CardDescription>{t.description}</CardDescription>
         </div>
         <Button size="sm" onClick={openCreate}>
           <Plus className="mr-1 size-4" aria-hidden="true" />
-          Add template
+          {t.addButton}
         </Button>
       </CardHeader>
       <CardContent className="p-0">
@@ -153,13 +154,9 @@ export function OptionResourceTemplatesPanel({
             <Loader2 className="size-3.5 animate-spin" />
           </p>
         ) : isError ? (
-          <p className="px-6 py-6 text-center text-destructive text-sm">
-            Could not load templates.
-          </p>
+          <p className="px-6 py-6 text-center text-destructive text-sm">{t.loadFailed}</p>
         ) : templates.length === 0 ? (
-          <p className="px-6 py-6 text-center text-muted-foreground text-sm">
-            No resource templates yet. Add one so "Generate resources" knows what to create.
-          </p>
+          <p className="px-6 py-6 text-center text-muted-foreground text-sm">{t.emptyMessage}</p>
         ) : (
           <ul className="divide-y">
             {templates.map((template) => (
@@ -170,7 +167,10 @@ export function OptionResourceTemplatesPanel({
                       {template.kind}
                     </Badge>
                     <span className="text-sm">
-                      Capacity {template.capacity} · {template.namePattern}
+                      {formatMessage(t.capacitySummary, {
+                        capacity: template.capacity,
+                        pattern: template.namePattern,
+                      })}
                     </span>
                   </div>
                 </div>
@@ -209,13 +209,13 @@ export function OptionResourceTemplatesPanel({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingKind ? `Edit "${editingKind}" template` : "Add resource template"}
+              {editingKind ? formatMessage(t.editTitle, { kind: editingKind }) : t.newTitle}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={submit}>
             <DialogBody className="grid gap-4">
               <div className="grid gap-1.5">
-                <Label htmlFor="resource-template-kind">Kind</Label>
+                <Label htmlFor="resource-template-kind">{t.kindLabel}</Label>
                 <Select
                   value={isExtendedKind ? "__custom__" : kindValue}
                   onValueChange={(value) => {
@@ -232,28 +232,28 @@ export function OptionResourceTemplatesPanel({
                   disabled={editingKind !== null}
                 >
                   <SelectTrigger id="resource-template-kind" className="w-full">
-                    <SelectValue placeholder="Select a kind…" />
+                    <SelectValue placeholder={t.kindPlaceholder} />
                   </SelectTrigger>
                   <SelectContent>
                     {COMMON_KINDS.map((entry) => (
                       <SelectItem key={entry.value} value={entry.value}>
-                        {entry.label}
+                        {t.kinds[entry.value]}
                       </SelectItem>
                     ))}
-                    <SelectItem value="__custom__">Custom…</SelectItem>
+                    <SelectItem value="__custom__">{t.kindCustomOption}</SelectItem>
                   </SelectContent>
                 </Select>
                 {isExtendedKind || editingKind ? (
                   <Input
                     value={kindValue}
                     onChange={(event) => setKindValue(event.target.value)}
-                    placeholder="custom_kind"
+                    placeholder={t.kindCustomInputPlaceholder}
                     disabled={editingKind !== null}
                   />
                 ) : null}
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="resource-template-capacity">Capacity</Label>
+                <Label htmlFor="resource-template-capacity">{t.capacityLabel}</Label>
                 <Input
                   id="resource-template-capacity"
                   type="number"
@@ -263,28 +263,37 @@ export function OptionResourceTemplatesPanel({
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="resource-template-pattern">Name pattern</Label>
+                <Label htmlFor="resource-template-pattern">{t.namePatternLabel}</Label>
                 <Input
                   id="resource-template-pattern"
                   value={namePatternValue}
                   onChange={(event) => setNamePatternValue(event.target.value)}
-                  placeholder="Room {sequence}"
+                  placeholder={t.namePatternPlaceholder}
                 />
                 <p className="text-muted-foreground text-xs">
-                  Use <code>{"{sequence}"}</code> as a placeholder for the auto-numbered index.
+                  {(() => {
+                    const [before, after] = t.namePatternHint.split("{placeholder}")
+                    return (
+                      <>
+                        {before}
+                        <code>{"{sequence}"}</code>
+                        {after}
+                      </>
+                    )
+                  })()}
                 </p>
               </div>
               {error ? <p className="text-destructive text-xs">{error}</p> : null}
             </DialogBody>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)}>
-                Cancel
+                {t.cancel}
               </Button>
               <Button type="submit" disabled={upsert.isPending}>
                 {upsert.isPending ? (
                   <Loader2 className="mr-1 size-3.5 animate-spin" aria-hidden="true" />
                 ) : null}
-                {editingKind ? "Save" : "Create template"}
+                {editingKind ? t.save : t.createButton}
               </Button>
             </DialogFooter>
           </form>
