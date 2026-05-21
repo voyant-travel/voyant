@@ -21,6 +21,7 @@ import { ApiError, api } from "@/lib/api-client"
 import { type CatalogSearchParams, Route } from "@/routes/_workspace/catalog"
 
 const DEFAULT_MARKET_VALUE = "__default__"
+const DEFAULT_CATALOG_LOCALE = "en-GB"
 
 export function CatalogPage() {
   const navigate = useNavigate()
@@ -44,12 +45,13 @@ export function CatalogPage() {
       tags.add(selectedMarket.defaultLanguageTag)
       for (const locale of localesQuery.data?.data ?? []) tags.add(locale.languageTag)
     } else {
-      tags.add(search.locale ?? "en-GB")
-      for (const market of marketsQuery.data?.data ?? []) tags.add(market.defaultLanguageTag)
+      tags.add(DEFAULT_CATALOG_LOCALE)
     }
     return Array.from(tags).sort((left, right) => left.localeCompare(right))
-  }, [localesQuery.data, marketsQuery.data, search.locale, selectedMarket])
-  const selectedLocale = search.locale ?? selectedMarket?.defaultLanguageTag ?? "en-GB"
+  }, [localesQuery.data, selectedMarket])
+  const fallbackLocale = selectedMarket?.defaultLanguageTag ?? DEFAULT_CATALOG_LOCALE
+  const selectedLocale =
+    search.locale && localeOptions.includes(search.locale) ? search.locale : fallbackLocale
   const supplierMap = useMemo(() => {
     const m = new Map<string, string>()
     for (const s of suppliersQuery.data?.data ?? []) m.set(s.id, s.name)
