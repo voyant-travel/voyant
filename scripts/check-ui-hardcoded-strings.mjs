@@ -40,6 +40,13 @@ const ignoredLineIncludes = [
   "method: '",
   "headers: {",
   "function useEditingToggle<",
+  // react-hook-form plumbing — `.setValue("field", "Default")` and
+  // `.register("field")` keep field names as quoted identifiers that
+  // can collide with the multi-word string heuristic.
+  ".setValue(",
+  ".register(",
+  ".getValues(",
+  ".watch(",
 ]
 const nonUserFacingLiterals = new Set([
   "",
@@ -262,30 +269,18 @@ async function collectOptInRoots() {
  */
 const HARDCODED_FILE_ALLOWLIST = new Set(
   [
-    "templates/dmc/src/components/voyant/availability/availability-rule-detail-page.tsx",
-    "templates/dmc/src/components/voyant/availability/availability-start-time-detail-page.tsx",
     "templates/dmc/src/components/voyant/products/product-dialog.tsx",
     "templates/dmc/src/components/voyant/products/product-service-dialog.tsx",
     "templates/dmc/src/components/voyant/products/product-sourced-content-section.tsx",
-    "templates/dmc/src/components/voyant/resources/resource-allocation-detail-page.tsx",
-    "templates/dmc/src/components/voyant/resources/resource-assignment-detail-page.tsx",
-    "templates/dmc/src/components/voyant/resources/resource-detail-page.tsx",
-    "templates/dmc/src/components/voyant/resources/resource-pool-detail-page.tsx",
-    "templates/dmc/src/components/voyant/settings/team-settings-page.tsx",
     "templates/operator/src/components/voyant/booking-journey/operator-booking-journey.tsx",
     "templates/operator/src/components/voyant/bookings/booking-catalog-source-card.tsx",
     "templates/operator/src/components/voyant/catalog/catalog-booking-page.tsx",
     "templates/operator/src/components/voyant/catalog/catalog-page.tsx",
     "templates/operator/src/components/voyant/checkout/payment-link-trip-summary.tsx",
-    "templates/operator/src/components/voyant/finance/credit-note-dialog.tsx",
     "templates/operator/src/components/voyant/products/product-departure-form.tsx",
     "templates/operator/src/components/voyant/products/product-detail-itinerary-section.tsx",
     "templates/operator/src/components/voyant/products/product-detail-sections.tsx",
     "templates/operator/src/components/voyant/products/product-schedule-form.tsx",
-    "templates/operator/src/components/voyant/resources/resource-allocation-detail-page.tsx",
-    "templates/operator/src/components/voyant/resources/resource-assignment-detail-page.tsx",
-    "templates/operator/src/components/voyant/resources/resource-detail-page.tsx",
-    "templates/operator/src/components/voyant/resources/resource-pool-detail-page.tsx",
     "templates/operator/src/components/voyant/travel-composer/admin-trip-composer-page.tsx",
     "templates/operator/src/components/voyant/travel-composer/admin-trip-composer-panels.tsx",
     "templates/operator/src/components/voyant/travel-composer/storefront-composer-block.tsx",
