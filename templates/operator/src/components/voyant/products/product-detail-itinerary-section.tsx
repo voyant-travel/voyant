@@ -308,7 +308,7 @@ export function ProductDetailItinerarySection({ productId }: { productId: string
               <EmptyState message="…" />
             ) : daysQuery.isError ? (
               <p className="py-6 text-center text-sm text-destructive">
-                Failed to load itinerary days.
+                {messages.products.operations.itineraries.daysLoadFailed}
               </p>
             ) : days.length === 0 ? (
               <EmptyState message={productMessages.itineraryEmpty} />

@@ -309,6 +309,13 @@ export const operatorAdminProductsMessages = {
           cancel: "Cancel",
           create: "Create itinerary",
           save: "Save changes",
+          formLabel: "Itinerary",
+          defaultBadge: "Default",
+          defaultWithName: "Default: {name}",
+          customOverride: "Custom override",
+          daysLoadFailed: "Failed to load itinerary days.",
+          overrideHint:
+            "Override which itinerary this departure follows. Default tracks whichever itinerary is marked as default.",
         },
         // days: removed — owned by `@voyantjs/products-ui`'s day-* primitives.
         services: {
@@ -897,6 +904,13 @@ export const operatorAdminProductsMessages = {
           cancel: "Anuleaza",
           create: "Creeaza itinerariul",
           save: "Salveaza",
+          formLabel: "Itinerariu",
+          defaultBadge: "Implicit",
+          defaultWithName: "Implicit: {name}",
+          customOverride: "Suprascriere personalizata",
+          daysLoadFailed: "Zilele de itinerariu nu au putut fi incarcate.",
+          overrideHint:
+            "Suprascrie ce itinerariu urmeaza aceasta plecare. Implicit urmareste itinerariul marcat ca implicit.",
         },
         services: {
           editTitle: "Editeaza serviciul",

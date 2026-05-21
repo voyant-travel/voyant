@@ -158,6 +158,7 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
   const messages = useAdminMessages()
   const productMessages = messages.products.core
   const departureMessages = messages.products.operations.departures
+  const itineraryMessages = messages.products.operations.itineraries
   const isEditing = !!slot
   const departureFormSchema = buildDepartureFormSchema(departureMessages)
   const slotStatuses = [
@@ -350,11 +351,15 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
         )}
         {itineraries.length > 1 ? (
           <div className="flex flex-col gap-1.5">
-            <Label>Itinerary</Label>
+            <Label>{itineraryMessages.formLabel}</Label>
             <Select
               items={[
                 {
-                  label: `Default${defaultItinerary ? `: ${defaultItinerary.name}` : ""}`,
+                  label: defaultItinerary
+                    ? formatMessage(itineraryMessages.defaultWithName, {
+                        name: defaultItinerary.name,
+                      })
+                    : itineraryMessages.defaultBadge,
                   value: "",
                 },
                 ...itineraries.map((itinerary) => ({
@@ -370,8 +375,11 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">
-                  Default
-                  {defaultItinerary ? `: ${defaultItinerary.name}` : ""}
+                  {defaultItinerary
+                    ? formatMessage(itineraryMessages.defaultWithName, {
+                        name: defaultItinerary.name,
+                      })
+                    : itineraryMessages.defaultBadge}
                 </SelectItem>
                 {itineraries.map((itinerary) => (
                   <SelectItem key={itinerary.id} value={itinerary.id}>
@@ -380,10 +388,7 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">
-              Override which itinerary this departure follows. Default tracks whichever itinerary is
-              marked as default.
-            </p>
+            <p className="text-xs text-muted-foreground">{itineraryMessages.overrideHint}</p>
           </div>
         ) : null}
         <div className="flex flex-col gap-1.5">

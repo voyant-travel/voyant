@@ -282,8 +282,9 @@ export function ProductDeparturesSection({
                 </td>
                 <td className="px-3 py-2.5 text-xs">
                   {slot.itineraryId
-                    ? (itineraryNameById.get(slot.itineraryId) ?? "Custom override")
-                    : "Default"}
+                    ? (itineraryNameById.get(slot.itineraryId) ??
+                      messages.products.operations.itineraries.customOverride)
+                    : messages.products.operations.itineraries.defaultBadge}
                 </td>
                 <td className="px-3 py-2.5 text-xs">{formatDuration(slot)}</td>
                 <td className="px-3 py-2.5">
