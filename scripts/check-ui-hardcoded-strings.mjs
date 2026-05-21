@@ -195,8 +195,94 @@ async function collectOptInRoots() {
     }
   }
 
+  // Templates opt in to the scan via their admin-i18n shim. We only walk
+  // `components/voyant/**` — custom voyant components are pure UI. Server
+  // routes (api/, workflows.ts), shadcn ui/ copies, the api-client lib, and
+  // TanStack Router page files mix non-UI concerns and would produce noise.
+  const templatesDir = path.join(rootDir, "templates")
+  const templateNames = await readdir(templatesDir).catch(() => [])
+
+  for (const templateName of templateNames) {
+    const adminI18nEntry = path.join(templatesDir, templateName, "src", "lib", "admin-i18n.tsx")
+    if (!(await exists(adminI18nEntry))) continue
+
+    const voyantComponents = path.join(templatesDir, templateName, "src", "components", "voyant")
+    if (await exists(voyantComponents)) {
+      roots.push(voyantComponents)
+    }
+  }
+
   return roots.sort()
 }
+
+/**
+ * Files inside opted-in roots that still contain hardcoded English copy and
+ * haven't been threaded through the i18n bundle yet. Listed here so the
+ * scanner gates new drift in the rest of the operator template while we work
+ * through the backlog. Remove entries as each file is translated.
+ *
+ * The list is dominated by surfaces that pre-date the i18n migration in the
+ * operator template — settings dialogs, the travel composer, resource detail
+ * pages — and by `.ts` query helpers whose `queryFn: () => api.get<Type>(...)`
+ * shape produces false positives from the JSX-text heuristic. Translate the
+ * UI strings and rerun the scanner to confirm before removing an entry.
+ */
+const HARDCODED_FILE_ALLOWLIST = new Set(
+  [
+    "templates/dmc/src/components/voyant/availability/availability-rule-detail-page.tsx",
+    "templates/dmc/src/components/voyant/availability/availability-start-time-detail-page.tsx",
+    "templates/dmc/src/components/voyant/contacts/contact-shared.ts",
+    "templates/dmc/src/components/voyant/products/product-detail-shared.ts",
+    "templates/dmc/src/components/voyant/products/product-dialog.tsx",
+    "templates/dmc/src/components/voyant/products/product-service-dialog.tsx",
+    "templates/dmc/src/components/voyant/products/product-sourced-content-section.tsx",
+    "templates/dmc/src/components/voyant/resources/resource-allocation-detail-page.tsx",
+    "templates/dmc/src/components/voyant/resources/resource-assignment-detail-page.tsx",
+    "templates/dmc/src/components/voyant/resources/resource-detail-page.tsx",
+    "templates/dmc/src/components/voyant/resources/resource-pool-detail-page.tsx",
+    "templates/dmc/src/components/voyant/settings/team-settings-page.tsx",
+    "templates/operator/src/components/voyant/action-ledger/action-ledger-entry-sheet.tsx",
+    "templates/operator/src/components/voyant/availability/availability-page.tsx",
+    "templates/operator/src/components/voyant/availability/option-resource-templates-panel.tsx",
+    "templates/operator/src/components/voyant/booking-journey/operator-booking-journey.tsx",
+    "templates/operator/src/components/voyant/booking-journey/resolve-contract-variables.ts",
+    "templates/operator/src/components/voyant/bookings/booking-catalog-source-card.tsx",
+    "templates/operator/src/components/voyant/bookings/booking-payment-policy-card.tsx",
+    "templates/operator/src/components/voyant/bookings/booking-paid-payment-sessions.tsx",
+    "templates/operator/src/components/voyant/bookings/booking-pending-payment-sessions.tsx",
+    "templates/operator/src/components/voyant/catalog/catalog-booking-page.tsx",
+    "templates/operator/src/components/voyant/catalog/catalog-page.tsx",
+    "templates/operator/src/components/voyant/checkout/payment-link-booking-summary.tsx",
+    "templates/operator/src/components/voyant/checkout/payment-link-trip-summary.tsx",
+    "templates/operator/src/components/voyant/crm/crm-constants.ts",
+    "templates/operator/src/components/voyant/crm/organizations-list-skeleton.tsx",
+    "templates/operator/src/components/voyant/crm/people-list-skeleton.tsx",
+    "templates/operator/src/components/voyant/crm/person-detail-page.tsx",
+    "templates/operator/src/components/voyant/finance/credit-note-dialog.tsx",
+    "templates/operator/src/components/voyant/legal/policy-assignment-dialog.tsx",
+    "templates/operator/src/components/voyant/legal/policy-dialog.tsx",
+    "templates/operator/src/components/voyant/legal/template-dialog.tsx",
+    "templates/operator/src/components/voyant/legal/template-version-dialog.tsx",
+    "templates/operator/src/components/voyant/products/product-departure-form.tsx",
+    "templates/operator/src/components/voyant/products/product-detail-itinerary-section.tsx",
+    "templates/operator/src/components/voyant/products/product-detail-sections.tsx",
+    "templates/operator/src/components/voyant/products/product-detail-shared.ts",
+    "templates/operator/src/components/voyant/products/product-market-rules-section.tsx",
+    "templates/operator/src/components/voyant/products/product-payment-policy-section.tsx",
+    "templates/operator/src/components/voyant/products/product-schedule-form.tsx",
+    "templates/operator/src/components/voyant/products/use-product-detail-dialogs.ts",
+    "templates/operator/src/components/voyant/resources/resource-allocation-detail-page.tsx",
+    "templates/operator/src/components/voyant/resources/resource-assignment-detail-page.tsx",
+    "templates/operator/src/components/voyant/resources/resource-detail-page.tsx",
+    "templates/operator/src/components/voyant/resources/resource-pool-detail-page.tsx",
+    "templates/operator/src/components/voyant/resources/resources-page-skeleton.tsx",
+    "templates/operator/src/components/voyant/settings/operator-settings-page.tsx",
+    "templates/operator/src/components/voyant/settings/taxes-page.tsx",
+    "templates/operator/src/components/voyant/travel-composer/admin-trip-composer-page.tsx",
+    "templates/operator/src/components/voyant/travel-composer/admin-trip-composer-panels.tsx",
+    "templates/operator/src/components/voyant/travel-composer/storefront-composer-block.tsx",
+  ].map((relative) => path.join(rootDir, relative)),
+)
 
 async function collectSourceFiles(rootPath) {
   const results = []
@@ -270,6 +356,7 @@ async function main() {
   for (const rootPath of roots) {
     const sourceFiles = await collectSourceFiles(rootPath)
     for (const filePath of sourceFiles) {
+      if (HARDCODED_FILE_ALLOWLIST.has(filePath)) continue
       findings.push(...(await findSuspiciousLines(filePath)))
     }
   }
