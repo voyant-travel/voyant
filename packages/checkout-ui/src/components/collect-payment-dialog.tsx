@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "@voyantjs/ui/components/select"
 import { CheckCircle2, Copy, ExternalLink, Loader2 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { useCheckoutUiMessagesOrDefault } from "../i18n/provider.js"
@@ -119,18 +119,16 @@ export function CollectPaymentDialog({
     [amountCents],
   )
 
-  // Sync schedule -> amount. When the user picks "full amount" we
-  // fall back to the booking's sell amount; otherwise mirror the
-  // picked schedule's outstanding amount.
+  // Re-seed the amount from the latest props only on the closed→open
+  // transition. Watching state mid-flight would clobber manual edits.
+  const wasOpenRef = useRef(false)
   useEffect(() => {
-    if (!open) return
-    if (scheduleId === FULL_AMOUNT_VALUE) {
+    if (open && !wasOpenRef.current) {
       setAmountCents(defaultAmountCents ?? 0)
-      return
+      setScheduleId(FULL_AMOUNT_VALUE)
     }
-    const schedule = schedules.find((s) => s.id === scheduleId)
-    if (schedule) setAmountCents(schedule.amountCents)
-  }, [open, scheduleId, schedules, defaultAmountCents])
+    wasOpenRef.current = open
+  }, [open, defaultAmountCents])
 
   function reset() {
     setAmountCents(defaultAmountCents ?? 0)
@@ -176,7 +174,16 @@ export function CollectPaymentDialog({
                 <Label htmlFor="collect-schedule">{messages.scheduleLabel}</Label>
                 <Select
                   value={scheduleId}
-                  onValueChange={(v) => setScheduleId(v ?? FULL_AMOUNT_VALUE)}
+                  onValueChange={(v) => {
+                    const next = v ?? FULL_AMOUNT_VALUE
+                    setScheduleId(next)
+                    if (next === FULL_AMOUNT_VALUE) {
+                      setAmountCents(defaultAmountCents ?? 0)
+                    } else {
+                      const schedule = schedules.find((s) => s.id === next)
+                      if (schedule) setAmountCents(schedule.amountCents)
+                    }
+                  }}
                 >
                   <SelectTrigger id="collect-schedule">
                     <SelectValue />

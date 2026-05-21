@@ -4944,7 +4944,7 @@ export const bookingsService = {
         data.optionUnitId !== undefined ||
         data.availabilitySlotId !== undefined
 
-      let snapshotUpdates: {
+      const snapshotUpdates: {
         productNameSnapshot?: string | null
         optionNameSnapshot?: string | null
         unitNameSnapshot?: string | null
@@ -4977,21 +4977,25 @@ export const bookingsService = {
                 ? (data.availabilitySlotId ?? null)
                 : current.availabilitySlotId,
           })
-          snapshotUpdates = {
-            productNameSnapshot:
-              data.productNameSnapshot !== undefined
-                ? data.productNameSnapshot
-                : enrichment.productName,
-            optionNameSnapshot:
-              data.optionNameSnapshot !== undefined
-                ? data.optionNameSnapshot
-                : enrichment.optionName,
-            unitNameSnapshot:
-              data.unitNameSnapshot !== undefined ? data.unitNameSnapshot : enrichment.unitName,
-            departureLabelSnapshot:
-              data.departureLabelSnapshot !== undefined
-                ? data.departureLabelSnapshot
-                : enrichment.departureLabel,
+          if (data.productNameSnapshot !== undefined) {
+            snapshotUpdates.productNameSnapshot = data.productNameSnapshot
+          } else if (enrichment.productName !== null) {
+            snapshotUpdates.productNameSnapshot = enrichment.productName
+          }
+          if (data.optionNameSnapshot !== undefined) {
+            snapshotUpdates.optionNameSnapshot = data.optionNameSnapshot
+          } else if (enrichment.optionName !== null) {
+            snapshotUpdates.optionNameSnapshot = enrichment.optionName
+          }
+          if (data.unitNameSnapshot !== undefined) {
+            snapshotUpdates.unitNameSnapshot = data.unitNameSnapshot
+          } else if (enrichment.unitName !== null) {
+            snapshotUpdates.unitNameSnapshot = enrichment.unitName
+          }
+          if (data.departureLabelSnapshot !== undefined) {
+            snapshotUpdates.departureLabelSnapshot = data.departureLabelSnapshot
+          } else if (enrichment.departureLabel !== null) {
+            snapshotUpdates.departureLabelSnapshot = enrichment.departureLabel
           }
           // If the caller didn't override timing and a slot was
           // (re)assigned, mirror the slot's timing onto the item.
