@@ -169,7 +169,7 @@ export function AvailabilityPage() {
       id: slot.id,
       startDate: slot.startsAt,
       endDate: slot.endsAt ?? slot.startsAt,
-      title: productName ?? slot.productName ?? "Slot",
+      title: productName ?? slot.productName ?? messages.availability.slotFallbackTitle,
       description: slot.notes ?? "",
       color: slotStatusToColor[slot.status],
     }
@@ -479,7 +479,11 @@ export function AvailabilityPage() {
             getLabel={(product) => product.name}
             onSearchChange={setProductSearch}
             placeholder={messages.availability.allProducts}
-            emptyText={productsQuery.isFetching ? "Searching…" : "No products match that search."}
+            emptyText={
+              productsQuery.isFetching
+                ? messages.availability.productsComboboxSearching
+                : messages.availability.productsComboboxEmpty
+            }
             triggerClassName="w-full"
           />
         </div>
@@ -524,7 +528,7 @@ export function AvailabilityPage() {
               <TabsTrigger value="pickup-points">
                 {messages.availability.tabPickupPoints}
               </TabsTrigger>
-              <TabsTrigger value="calendar">Calendar</TabsTrigger>
+              <TabsTrigger value="calendar">{messages.availability.tabCalendar}</TabsTrigger>
             </TabsList>
 
             <AvailabilitySlotsTab

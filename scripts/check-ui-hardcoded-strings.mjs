@@ -272,8 +272,6 @@ const HARDCODED_FILE_ALLOWLIST = new Set(
     "templates/dmc/src/components/voyant/resources/resource-detail-page.tsx",
     "templates/dmc/src/components/voyant/resources/resource-pool-detail-page.tsx",
     "templates/dmc/src/components/voyant/settings/team-settings-page.tsx",
-    "templates/operator/src/components/voyant/availability/availability-page.tsx",
-    "templates/operator/src/components/voyant/availability/option-resource-templates-panel.tsx",
     "templates/operator/src/components/voyant/booking-journey/operator-booking-journey.tsx",
     "templates/operator/src/components/voyant/bookings/booking-catalog-source-card.tsx",
     "templates/operator/src/components/voyant/bookings/booking-paid-payment-sessions.tsx",
