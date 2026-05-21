@@ -39,6 +39,7 @@ export const transactionsLinkable = {
 export const transactionsModule: Module = {
   name: "transactions",
   linkable: transactionsLinkable,
+  requiresTransactionalDb: true,
 }
 
 export function createTransactionsHonoModule(): HonoModule {

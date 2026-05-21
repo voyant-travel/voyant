@@ -1,6 +1,6 @@
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { newId } from "@voyantjs/db/lib/typeid"
-import { dbSupportsTransactions } from "@voyantjs/db/transaction-capability"
+import { withOptionalTransaction } from "@voyantjs/db/transaction"
 import { and, asc, desc, eq, gt, gte, inArray, lt, lte, or, type SQL, sql } from "drizzle-orm"
 
 import {
@@ -964,51 +964,6 @@ type ActionLedgerRelayOutboxSqlRow = {
   last_error: string | null
   created_at: Date | string
   processed_at: Date | string | null
-}
-
-type TransactionalDrizzleDb = AnyDrizzleDb & {
-  transaction?: <T>(callback: (tx: AnyDrizzleDb) => Promise<T>) => Promise<T>
-}
-
-const activeTransactionDbs = new WeakSet<object>()
-
-function isUnsupportedTransactionError(error: unknown): boolean {
-  return error instanceof Error && /No transactions support/i.test(error.message)
-}
-
-async function withOptionalTransaction<T>(
-  db: AnyDrizzleDb,
-  callback: (tx: AnyDrizzleDb) => Promise<T>,
-): Promise<T> {
-  if (activeTransactionDbs.has(db as object)) {
-    return callback(db)
-  }
-
-  if (dbSupportsTransactions(db) === false) {
-    return callback(db)
-  }
-
-  const maybeTransactional = db as TransactionalDrizzleDb
-  if (typeof maybeTransactional.transaction === "function") {
-    let callbackStarted = false
-    try {
-      return await maybeTransactional.transaction(async (tx) => {
-        callbackStarted = true
-        activeTransactionDbs.add(tx as object)
-        try {
-          return await callback(tx)
-        } finally {
-          activeTransactionDbs.delete(tx as object)
-        }
-      })
-    } catch (error) {
-      if (!callbackStarted && isUnsupportedTransactionError(error)) {
-        return callback(db)
-      }
-      throw error
-    }
-  }
-  return callback(db)
 }
 
 function actionLedgerRelayOutboxFromSqlRow(

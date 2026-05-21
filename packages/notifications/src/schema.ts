@@ -481,6 +481,7 @@ export const notificationsLinkable = {
 export const notificationsModule: Module = {
   name: "notifications",
   linkable: notificationsLinkable,
+  requiresTransactionalDb: true,
 }
 
 // Created in index.ts once routes are available.

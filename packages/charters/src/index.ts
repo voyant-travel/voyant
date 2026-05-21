@@ -113,6 +113,7 @@ export const chartersModule: Module = {
     charter_voyage: charterVoyageLinkable,
     charter_yacht: charterYachtLinkable,
   },
+  requiresTransactionalDb: true,
 }
 
 export const chartersHonoModule: HonoModule = {

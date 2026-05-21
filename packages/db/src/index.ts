@@ -192,6 +192,7 @@ export * from "./lib/index.js"
 export * from "./lifecycle.js"
 // Re-export queries
 export * from "./queries/index.js"
+export { withOptionalTransaction } from "./transaction.js"
 export * from "./transaction-capability.js"
 export * from "./types.js"
 export * from "./utils.js"
