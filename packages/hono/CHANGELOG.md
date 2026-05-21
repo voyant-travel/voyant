@@ -1,5 +1,17 @@
 # @voyantjs/hono
 
+## 0.62.0
+
+### Patch Changes
+
+- 77aad68: Add a transaction-capable Neon serverless database adapter and make action-ledger skip Neon HTTP transactions safely.
+- Updated dependencies [77aad68]
+  - @voyantjs/core@0.62.0
+  - @voyantjs/db@0.62.0
+  - @voyantjs/types@0.62.0
+  - @voyantjs/utils@0.62.0
+  - @voyantjs/workflows@0.62.0
+
 ## 0.61.0
 
 ### Patch Changes
