@@ -66,13 +66,17 @@ export function db<TBindings extends VoyantBindings>(
   Variables: { db: VoyantDb }
 }> {
   const requiresTx = options.requiresTransactionalDb ?? []
-  let txCapabilityChecked = false
+  // Stays `false` until a request resolves a db whose capability tag is
+  // anything other than an explicit `false`. As long as the adapter is
+  // wired wrong, every request keeps surfacing the actionable error —
+  // we don't want the first failing request to silence subsequent
+  // checks and let later writes crash with the deep transaction error.
+  let txCapabilityVerified = false
   return async (c, next) => {
     const result = factory(c.env)
     const { db, dispose } = resolveDbFactoryResult(result)
-    if (!txCapabilityChecked) {
-      txCapabilityChecked = true
-      if (requiresTx.length > 0 && dbSupportsTransactions(db) === false) {
+    if (!txCapabilityVerified && requiresTx.length > 0) {
+      if (dbSupportsTransactions(db) === false) {
         if (dispose) {
           try {
             await dispose()
@@ -82,6 +86,7 @@ export function db<TBindings extends VoyantBindings>(
         }
         throw buildIncapableDbError(requiresTx)
       }
+      txCapabilityVerified = true
     }
     if (dispose) {
       c.set("db", db)

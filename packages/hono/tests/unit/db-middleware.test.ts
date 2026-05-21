@@ -92,6 +92,24 @@ describe("db middleware — transactional adapter assertion", () => {
     expect(factory).toHaveBeenCalledTimes(3)
   })
 
+  it("keeps throwing on every request as long as the adapter is misconfigured", async () => {
+    const factory = vi.fn(() => fakeDb(false))
+    const app = buildApp({ requiresTransactionalDb: ["bookings"] }, factory)
+
+    const res1 = await app.request("/")
+    const res2 = await app.request("/")
+    const res3 = await app.request("/")
+
+    for (const res of [res1, res2, res3]) {
+      expect(res.status).toBe(500)
+      const body = (await res.json()) as { error: string }
+      expect(body.error).toMatch(/db adapter does not support interactive transactions/)
+    }
+    // Factory keeps being invoked per-request, not short-circuited after
+    // the first throw.
+    expect(factory).toHaveBeenCalledTimes(3)
+  })
+
   it("disposes a per-request handle even when the capability check fails", async () => {
     const dispose = vi.fn(async () => {})
     const factory = () => ({ db: fakeDb(false), dispose })
