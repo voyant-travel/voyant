@@ -276,7 +276,6 @@ const HARDCODED_FILE_ALLOWLIST = new Set(
     "templates/operator/src/components/voyant/bookings/booking-catalog-source-card.tsx",
     "templates/operator/src/components/voyant/catalog/catalog-booking-page.tsx",
     "templates/operator/src/components/voyant/catalog/catalog-page.tsx",
-    "templates/operator/src/components/voyant/checkout/payment-link-trip-summary.tsx",
     "templates/operator/src/components/voyant/travel-composer/admin-trip-composer-page.tsx",
     "templates/operator/src/components/voyant/travel-composer/admin-trip-composer-panels.tsx",
     "templates/operator/src/components/voyant/travel-composer/storefront-composer-block.tsx",

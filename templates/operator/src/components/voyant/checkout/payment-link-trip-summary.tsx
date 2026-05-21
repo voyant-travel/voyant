@@ -3,7 +3,10 @@
 import { useQuery } from "@tanstack/react-query"
 import { ArrowRight, CalendarClock, ImageOff } from "lucide-react"
 
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
+
+type PaymentLinkTripMessages = ReturnType<typeof useAdminMessages>["trips"]["paymentLinkSummary"]
 
 interface TripSummaryComponent {
   id: string
@@ -49,6 +52,7 @@ export interface PaymentLinkTripSummaryState {
  *     universal page show its default `notes` paragraph.
  */
 export function usePaymentLinkTripSummary(sessionId: string): PaymentLinkTripSummaryState {
+  const t = useAdminMessages().trips.paymentLinkSummary
   const query = useQuery({
     queryKey: ["payment-link-trip-summary", sessionId],
     queryFn: async (): Promise<TripSummary | null> => {
@@ -66,17 +70,23 @@ export function usePaymentLinkTripSummary(sessionId: string): PaymentLinkTripSum
   if (query.isLoading) return { status: "loading", node: <TripSummarySkeleton /> }
   const trip = query.data
   if (!trip || trip.components.length === 0) return { status: "empty", node: null }
-  return { status: "ready", node: <TripSummaryCard trip={trip} /> }
+  return { status: "ready", node: <TripSummaryCard trip={trip} messages={t} /> }
 }
 
-function TripSummaryCard({ trip }: { trip: TripSummary }) {
+function TripSummaryCard({
+  trip,
+  messages,
+}: {
+  trip: TripSummary
+  messages: PaymentLinkTripMessages
+}) {
   const hasFx = trip.components.some((component) => component.fx)
   return (
     <section
-      aria-label="Your trip"
+      aria-label={messages.ariaLabel}
       className="flex flex-col gap-3 rounded-xl border bg-card p-5 shadow-sm"
     >
-      <h2 className="font-medium text-base">Your trip</h2>
+      <h2 className="font-medium text-base">{messages.heading}</h2>
       <ul className="flex flex-col gap-3">
         {trip.components.map((component) => (
           <li
@@ -99,13 +109,13 @@ function TripSummaryCard({ trip }: { trip: TripSummary }) {
       </ul>
       <div className="flex items-baseline justify-between border-t pt-3">
         <span className="text-muted-foreground text-sm uppercase tracking-wider">
-          Total payable
+          {messages.totalPayable}
         </span>
         <span className="font-semibold text-base tabular-nums">
           {formatMoney(trip.totalAmountCents, trip.currency)}
         </span>
       </div>
-      {hasFx ? <FxRatesBlock trip={trip} /> : null}
+      {hasFx ? <FxRatesBlock trip={trip} messages={messages} /> : null}
     </section>
   )
 }
@@ -169,7 +179,13 @@ function ComponentAmount({ component }: { component: TripSummaryComponent }) {
   return <span className="font-medium tabular-nums">{formatMoney(amount, currency)}</span>
 }
 
-function FxRatesBlock({ trip }: { trip: TripSummary }) {
+function FxRatesBlock({
+  trip,
+  messages,
+}: {
+  trip: TripSummary
+  messages: PaymentLinkTripMessages
+}) {
   const lines = trip.components
     .filter(
       (component): component is TripSummaryComponent & { fx: { rate: number; quotedAt: string } } =>
@@ -193,7 +209,7 @@ function FxRatesBlock({ trip }: { trip: TripSummary }) {
   if (dedupedLines.length === 0) return null
   return (
     <div className="flex flex-col gap-1 border-t pt-3 text-muted-foreground text-xs">
-      <span className="uppercase tracking-wider">FX rates</span>
+      <span className="uppercase tracking-wider">{messages.fxRatesLabel}</span>
       {dedupedLines.map((line) => (
         <span key={line.id} className="font-mono">
           {line.text}
