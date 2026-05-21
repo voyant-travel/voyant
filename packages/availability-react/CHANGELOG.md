@@ -1,5 +1,12 @@
 # @voyantjs/availability-react
 
+## 0.63.1
+
+### Patch Changes
+
+- @voyantjs/availability@0.63.1
+- @voyantjs/react@0.63.1
+
 ## 0.63.0
 
 ### Minor Changes

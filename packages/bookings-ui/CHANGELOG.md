@@ -1,5 +1,26 @@
 # @voyantjs/bookings-ui
 
+## 0.63.1
+
+### Patch Changes
+
+- a938b32: Fix booking-create room assignment and per-person capacity labels for finite slots.
+  - @voyantjs/availability-react@0.63.1
+  - @voyantjs/bookings-react@0.63.1
+  - @voyantjs/catalog@0.63.1
+  - @voyantjs/catalog-react@0.63.1
+  - @voyantjs/crm-react@0.63.1
+  - @voyantjs/crm-ui@0.63.1
+  - @voyantjs/extras-react@0.63.1
+  - @voyantjs/finance-react@0.63.1
+  - @voyantjs/i18n@0.63.1
+  - @voyantjs/identity-react@0.63.1
+  - @voyantjs/legal-react@0.63.1
+  - @voyantjs/pricing-react@0.63.1
+  - @voyantjs/products-react@0.63.1
+  - @voyantjs/suppliers-react@0.63.1
+  - @voyantjs/ui@0.63.1
+
 ## 0.63.0
 
 ### Minor Changes
