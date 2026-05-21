@@ -105,6 +105,30 @@ export const personDocumentsService = {
   },
 
   /**
+   * Decrypts the `numberEncrypted` slot for a single document and
+   * returns the plaintext. Returns `null` when the document has no
+   * encrypted number on file. Caller is responsible for authorization
+   * and audit-logging; this is just the KMS unwrap.
+   */
+  async revealPersonDocumentNumber(
+    db: PostgresJsDatabase,
+    documentId: string,
+    options: { kms: KmsProvider; keyRef?: KeyRef },
+  ): Promise<{ documentId: string; number: string | null } | null> {
+    const row = await personDocumentsService.getPersonDocument(db, documentId)
+    if (!row) return null
+    if (!row.numberEncrypted) return { documentId, number: null }
+    const keyRef = options.keyRef ?? { keyType: "people" as const }
+    const decrypted = await decryptOptionalJsonEnvelope(
+      options.kms,
+      keyRef,
+      row.numberEncrypted,
+      personDocumentNumberPlaintextSchema,
+    )
+    return { documentId, number: decrypted?.number ?? null }
+  },
+
+  /**
    * Returns the primary document of a given type for a person, or
    * `null` if no primary is set. Used by booking-traveler create to
    * snapshot the person's passport.

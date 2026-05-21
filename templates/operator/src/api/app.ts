@@ -1616,6 +1616,108 @@ export const app = createApp<CloudflareBindings>({
       return c.json({ data: trip })
     })
 
+    // GET /v1/public/payment-link/:sessionId/booking-summary — sibling
+    // of `/trip-summary` for admin-initiated payment links that point
+    // at a single booking (not a trip envelope). Returns the structured
+    // booking context so the customer page can show "what am I paying
+    // for?" with product names, departure, quantities, totals — instead
+    // of the bare "Booking deposit" + amount. Uses snapshot columns
+    // (`product_name_snapshot`/`departure_label_snapshot`) so it works
+    // even on catalog-less deployments and after a product is renamed
+    // or deleted. Returns `{ data: null }` for non-booking sessions or
+    // trip sessions so the caller falls back accordingly.
+    hono.get("/v1/public/payment-link/:sessionId/booking-summary", async (c) => {
+      const sessionId = c.req.param("sessionId")
+      const db = c.get("db") as PostgresJsDatabase
+      const [session] = await db
+        .select({
+          id: paymentSessions.id,
+          bookingId: paymentSessions.bookingId,
+          amountCents: paymentSessions.amountCents,
+          currency: paymentSessions.currency,
+          metadata: paymentSessions.metadata,
+        })
+        .from(paymentSessions)
+        .where(eq(paymentSessions.id, sessionId))
+        .limit(1)
+      if (!session) return c.json({ error: "Session not found" }, 404)
+
+      // Trip-attached sessions are handled by /trip-summary instead.
+      const metadata = (session.metadata ?? {}) as Record<string, unknown>
+      if (typeof metadata.tripEnvelopeId === "string" && metadata.tripEnvelopeId.length > 0) {
+        return c.json({ data: null })
+      }
+      if (!session.bookingId) return c.json({ data: null })
+
+      const [booking] = await db
+        .select({
+          id: bookings.id,
+          bookingNumber: bookings.bookingNumber,
+          status: bookings.status,
+          sellCurrency: bookings.sellCurrency,
+          sellAmountCents: bookings.sellAmountCents,
+          pax: bookings.pax,
+          startDate: bookings.startDate,
+          endDate: bookings.endDate,
+        })
+        .from(bookings)
+        .where(eq(bookings.id, session.bookingId))
+        .limit(1)
+      if (!booking) return c.json({ data: null })
+
+      const items = await db
+        .select({
+          id: bookingItems.id,
+          title: bookingItems.title,
+          itemType: bookingItems.itemType,
+          quantity: bookingItems.quantity,
+          totalSellAmountCents: bookingItems.totalSellAmountCents,
+          sellCurrency: bookingItems.sellCurrency,
+          startsAt: bookingItems.startsAt,
+          endsAt: bookingItems.endsAt,
+          serviceDate: bookingItems.serviceDate,
+          productNameSnapshot: bookingItems.productNameSnapshot,
+          optionNameSnapshot: bookingItems.optionNameSnapshot,
+          unitNameSnapshot: bookingItems.unitNameSnapshot,
+          departureLabelSnapshot: bookingItems.departureLabelSnapshot,
+        })
+        .from(bookingItems)
+        .where(eq(bookingItems.bookingId, booking.id))
+        .orderBy(asc(bookingItems.createdAt))
+
+      return c.json({
+        data: {
+          bookingId: booking.id,
+          bookingNumber: booking.bookingNumber,
+          status: booking.status,
+          pax: booking.pax,
+          startDate: booking.startDate,
+          endDate: booking.endDate,
+          // `chargeAmountCents` is what's being collected NOW (session
+          // amount). `bookingTotalAmountCents` is the full booking value
+          // so the customer can see deposit-vs-total context.
+          chargeAmountCents: session.amountCents,
+          currency: session.currency ?? booking.sellCurrency,
+          bookingTotalAmountCents: booking.sellAmountCents,
+          bookingCurrency: booking.sellCurrency,
+          items: items.map((item) => ({
+            id: item.id,
+            productName: item.productNameSnapshot ?? item.title,
+            optionName: item.optionNameSnapshot,
+            unitName: item.unitNameSnapshot,
+            departureLabel: item.departureLabelSnapshot,
+            startsAt: item.startsAt instanceof Date ? item.startsAt.toISOString() : item.startsAt,
+            endsAt: item.endsAt instanceof Date ? item.endsAt.toISOString() : item.endsAt,
+            serviceDate: item.serviceDate,
+            quantity: item.quantity,
+            itemType: item.itemType,
+            amountCents: item.totalSellAmountCents,
+            currency: item.sellCurrency,
+          })),
+        },
+      })
+    })
+
     // GET /v1/public/bookings/:bookingId/checkout-status — minimal
     // customer-facing status for the storefront confirmation page.
     // It intentionally exposes only non-PII state: booking status and

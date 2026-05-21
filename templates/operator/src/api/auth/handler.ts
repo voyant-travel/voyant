@@ -298,6 +298,11 @@ export async function resolveAuthRequest(
       organizationId: null,
       callerType: "session",
       actor: "staff",
+      // Single-tenant operator: every authenticated session is staff with
+      // full access. Without "*", capabilities that gate on explicit
+      // grants (e.g. bookings-pii:read) reject the reveal endpoint and
+      // surface as "Forbidden" in the dashboard.
+      scopes: ["*"],
       email: session.user.email ?? null,
     }
   } finally {

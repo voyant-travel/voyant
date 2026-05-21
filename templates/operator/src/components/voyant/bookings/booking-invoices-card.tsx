@@ -3,10 +3,12 @@
 import { Link } from "@tanstack/react-router"
 import { useLocale } from "@voyantjs/admin"
 import { useInvoiceMutation, useInvoices } from "@voyantjs/finance-react"
+import { BookingInvoiceSheet } from "@voyantjs/finance-ui"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
-import { ArrowRightLeft, ExternalLink, FileText, Loader2 } from "lucide-react"
+import { ArrowRightLeft, ExternalLink, FileText, Loader2, Plus } from "lucide-react"
+import { useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
@@ -21,13 +23,28 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
 
 export interface BookingInvoicesCardProps {
   bookingId: string
+  /** Pre-fill the invoice's linked person when opening the add sheet. */
+  personId?: string | null
+  /** Pre-fill the invoice's linked organization when opening the add sheet. */
+  organizationId?: string | null
+  /** Pre-fill the invoice's currency from the booking's sell currency. */
+  defaultCurrency?: string
+  /** Pre-fill the invoice's subtotal/total from the booking's sell amount. */
+  defaultAmountCents?: number | null
 }
 
-export function BookingInvoicesCard({ bookingId }: BookingInvoicesCardProps): React.ReactElement {
+export function BookingInvoicesCard({
+  bookingId,
+  personId,
+  organizationId,
+  defaultCurrency,
+  defaultAmountCents,
+}: BookingInvoicesCardProps): React.ReactElement {
   const messages = useAdminMessages().finance
   const { resolvedLocale } = useLocale()
   const { data, isLoading } = useInvoices({ bookingId, limit: 50 })
   const { convertToInvoice } = useInvoiceMutation()
+  const [addOpen, setAddOpen] = useState(false)
   const invoices = data?.data ?? []
   // A proforma is "convertible" if it's still active (not void) AND no
   // sibling invoice already references it via convertedFromInvoiceId.
@@ -53,7 +70,7 @@ export function BookingInvoicesCard({ bookingId }: BookingInvoicesCardProps): Re
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <FileText className="h-4 w-4 text-muted-foreground" />
           {messages.invoicesPageTitle}
@@ -63,6 +80,10 @@ export function BookingInvoicesCard({ bookingId }: BookingInvoicesCardProps): Re
             </Badge>
           ) : null}
         </CardTitle>
+        <Button size="sm" onClick={() => setAddOpen(true)}>
+          <Plus className="mr-1 h-3.5 w-3.5" />
+          {messages.newInvoice}
+        </Button>
       </CardHeader>
       <CardContent className="overflow-hidden p-0">
         {isLoading ? (
@@ -70,9 +91,15 @@ export function BookingInvoicesCard({ bookingId }: BookingInvoicesCardProps): Re
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
           </p>
         ) : invoices.length === 0 ? (
-          <p className="px-6 py-6 text-center text-muted-foreground text-sm">
-            {messages.bookingInvoicesEmpty}
-          </p>
+          <div className="flex flex-col items-center justify-center gap-3 px-6 py-10">
+            <p className="text-center text-muted-foreground text-sm">
+              {messages.bookingInvoicesEmpty}
+            </p>
+            <Button size="sm" variant="outline" onClick={() => setAddOpen(true)}>
+              <Plus className="mr-1 h-3.5 w-3.5" />
+              {messages.newInvoice}
+            </Button>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -168,6 +195,15 @@ export function BookingInvoicesCard({ bookingId }: BookingInvoicesCardProps): Re
           </div>
         )}
       </CardContent>
+      <BookingInvoiceSheet
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        bookingId={bookingId}
+        defaultPersonId={personId ?? null}
+        defaultOrganizationId={organizationId ?? null}
+        defaultCurrency={defaultCurrency}
+        defaultAmountCents={defaultAmountCents ?? null}
+      />
     </Card>
   )
 }

@@ -402,6 +402,7 @@ export type CrmUiMessages = {
       activities: string
       relationships: string
       documents: string
+      addresses: string
       bookings: string
       invoices: string
       payments: string

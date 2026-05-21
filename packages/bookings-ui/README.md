@@ -18,39 +18,36 @@ that spacing when a shell owns the page chrome.
 
 ## Components
 
-- `BookingsPage`, `BookingDetailPage`, `BookingWorkspacePage`
+- `BookingsPage`, `BookingDetailPage`
 - `BookingList`, `BookingDialog`, `BookingCreateDialog`, `BookingCancellationDialog`, `StatusChangeDialog`
 - `TravelerList`, `TravelerDialog`, `BookingItemList`, `BookingGroupSection`
 - `BookingPaymentsSummary`, `BookingPaymentScheduleList`, `BookingGuaranteeList`
 - `SupplierStatusList`, `BookingActivityTimeline`, `BookingNotes`
 
-`BookingWorkspacePage` wraps the existing `BookingDetailPage` in a reusable
-operator workspace shell. It publishes cross-module navigation for booking,
-finance, legal, travelers, and activity work while keeping module-specific
-surfaces app-owned through typed slots:
+`BookingDetailPage` is the canonical multi-tab booking surface (Overview,
+Travelers, Payments, Suppliers, Documents, Activity, plus optional `Invoices`
+and `Ledger` tabs). Templates inject template-owned cards via the `slots`
+prop and wire router navigation through `onBack`, `onPersonOpen`,
+`onOrganizationOpen`, `onCollectPayment`, and `onRecordPayment` callbacks:
 
 ```tsx
-<BookingWorkspacePage
+<BookingDetailPage
   id={bookingId}
+  hideBreadcrumb
+  onBack={() => router.push("/bookings")}
+  onPersonOpen={(personId) => router.push(`/people/${personId}`)}
+  onCollectPayment={() => setCollectOpen(true)}
+  onRecordPayment={() => setRecordOpen(true)}
   slots={{
-    actionBar: ({ booking }) => <button type="button">Assign {booking.bookingNumber}</button>,
-    bookingTab: ({ booking }) => <BookingOverviewPanel booking={booking} />,
-    financeSidebar: ({ bookingId }) => <FinanceStatusCard bookingId={bookingId} />,
-    legalTab: ({ bookingId }) => <ContractChecklist bookingId={bookingId} />,
-    travelersTabExtensions: ({ bulkActions }) => (
-      <BatchTravelerTools selectedTravelerIds={bulkActions.selectedTravelerIds} />
-    ),
-    activityTab: ({ bookingId }) => <OperatorTimeline bookingId={bookingId} />,
+    header: (booking) => <WidgetSlot slot="booking.header" props={{ booking }} />,
+    overviewStart: () => <CatalogSourceCard bookingId={bookingId} />,
+    financeStart: () => <PendingPaymentSessions bookingId={bookingId} />,
+    invoicesTab: { content: (booking) => <InvoicesCard booking={booking} /> },
+    ledgerTab: { content: <ActionLedgerPanel bookingId={bookingId} /> },
+    documents: () => <DocumentsTable bookingId={bookingId} />,
   }}
 />
 ```
-
-Slot render functions receive the booking, active workspace section, section
-setter, and bulk-action state for traveler and finance selections. Use
-`bookingTab` when an app wants to use top-level finance, legal, traveler, or
-activity tabs without nesting the default `BookingDetailPage` tabs. When
-`bookingTab` is omitted, the workspace keeps mounting `BookingDetailPage`; use
-`bookingDetailSlots` to pass slots through to that default detail page.
 
 ## I18n
 

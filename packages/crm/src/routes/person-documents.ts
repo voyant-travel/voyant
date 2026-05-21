@@ -1,3 +1,8 @@
+import {
+  type ActionLedgerRequestContextValues,
+  evaluateActionLedgerCapabilityAccess,
+  ledgerSensitiveRead,
+} from "@voyantjs/action-ledger"
 import type { ModuleContainer } from "@voyantjs/core"
 import { parseJsonBody, parseQuery } from "@voyantjs/hono"
 import { encryptOptionalJsonEnvelope } from "@voyantjs/utils"
@@ -5,6 +10,13 @@ import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type Context, Hono } from "hono"
 
+import {
+  PERSON_DOCUMENT_REVEAL_ACTION_NAME,
+  PERSON_DOCUMENT_REVEAL_ACTION_VERSION,
+  PERSON_DOCUMENT_REVEAL_AUTHORIZATION_SOURCE,
+  PERSON_DOCUMENT_REVEAL_CAPABILITY,
+  PERSON_DOCUMENT_REVEAL_DECISION_POLICY,
+} from "../action-ledger-capabilities.js"
 import { CRM_ROUTE_RUNTIME_CONTAINER_KEY, type CrmRouteRuntime } from "../route-runtime.js"
 import { people } from "../schema.js"
 import { crmService } from "../service/index.js"
@@ -22,6 +34,32 @@ type Env = {
     container?: ModuleContainer
     db: PostgresJsDatabase
     userId?: string
+    sessionId?: string
+    organizationId?: string | null
+    actor?: string
+    callerType?: string
+    scopes?: string[] | null
+    isInternalRequest?: boolean
+    apiKeyId?: string
+    apiTokenId?: string
+  }
+}
+
+function getCrmActionLedgerContext(c: Context<Env>): ActionLedgerRequestContextValues {
+  return {
+    userId: c.get("userId") ?? null,
+    agentId: null,
+    workflowPrincipalId: null,
+    principalSubtype: null,
+    sessionId: c.get("sessionId") ?? null,
+    apiTokenId: c.get("apiTokenId") ?? c.get("apiKeyId") ?? null,
+    callerType: c.get("callerType") ?? null,
+    actor: c.get("actor") ?? null,
+    isInternalRequest: c.get("isInternalRequest") ?? false,
+    organizationId: c.get("organizationId") ?? null,
+    workflowRunId: null,
+    workflowStepId: null,
+    correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
   }
 }
 
@@ -182,4 +220,73 @@ export const personDocumentRoutes = new Hono<Env>()
     const row = await crmService.updatePersonDocument(c.get("db"), c.req.param("id"), updateInput)
     if (!row) return c.json({ error: "Document not found" }, 404)
     return c.json({ data: row })
+  })
+
+  /**
+   * Decrypts and returns the plaintext document number for a single
+   * person document. Gated by the `crm-pii:read` action-ledger
+   * capability; every successful reveal writes an action-ledger row
+   * tagged `crm.person_document.reveal` so disclosures are auditable.
+   * Returns 403 when the caller lacks the grant, 404 when the document
+   * doesn't exist, 503 when KMS isn't wired.
+   */
+  .get("/person-documents/:id/reveal", async (c) => {
+    const documentId = c.req.param("id")
+
+    const access = evaluateActionLedgerCapabilityAccess({
+      definition: PERSON_DOCUMENT_REVEAL_CAPABILITY,
+      actor: c.get("actor") ?? null,
+      callerType: c.get("callerType") ?? null,
+      scopes: c.get("scopes") ?? null,
+      isInternalRequest: c.get("isInternalRequest") ?? false,
+    })
+
+    if (!access.allowed) {
+      return c.json({ error: "Forbidden", reason: access.reason }, 403)
+    }
+
+    const kms = await getCrmKms(c)
+    if (!kms) return kmsRequired(c)
+
+    const existing = await crmService.getPersonDocument(c.get("db"), documentId)
+    if (!existing) return c.json({ error: "Document not found" }, 404)
+
+    let revealed: { documentId: string; number: string | null }
+    try {
+      revealed = await ledgerSensitiveRead(
+        c.get("db"),
+        {
+          context: getCrmActionLedgerContext(c),
+          actionName: PERSON_DOCUMENT_REVEAL_ACTION_NAME,
+          actionVersion: PERSON_DOCUMENT_REVEAL_ACTION_VERSION,
+          status: "succeeded",
+          evaluatedRisk: access.evaluatedRisk ?? "high",
+          targetType: "person_document",
+          targetId: documentId,
+          routeOrToolName: "crm.person-documents.reveal",
+          capabilityId: PERSON_DOCUMENT_REVEAL_CAPABILITY.id,
+          capabilityVersion: PERSON_DOCUMENT_REVEAL_CAPABILITY.version,
+          authorizationSource:
+            access.authorizationSource ?? PERSON_DOCUMENT_REVEAL_AUTHORIZATION_SOURCE,
+          reasonCode: "person_document_reveal",
+          disclosedFieldSet: ["number"],
+          disclosureSummary: "Person document number reveal",
+          decisionPolicy: PERSON_DOCUMENT_REVEAL_DECISION_POLICY,
+        },
+        async () => {
+          const result = await crmService.revealPersonDocumentNumber(c.get("db"), documentId, {
+            kms,
+          })
+          if (!result) throw new Error("Document not found")
+          return result
+        },
+      )
+    } catch (error) {
+      if (error instanceof Error && error.message === "Document not found") {
+        return c.json({ error: "Document not found" }, 404)
+      }
+      throw error
+    }
+
+    return c.json({ data: revealed })
   })

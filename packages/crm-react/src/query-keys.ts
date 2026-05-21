@@ -114,6 +114,8 @@ export const crmQueryKeys = {
   personDocuments: (personId: string, filters: PersonDocumentsListFilters = {}) =>
     [...crmQueryKeys.person(personId), "documents", filters] as const,
   personDocument: (id: string) => [...crmQueryKeys.all, "person-documents", "detail", id] as const,
+  personDocumentReveal: (id: string) =>
+    [...crmQueryKeys.all, "person-documents", "reveal", id] as const,
   personTravelSnapshot: (personId: string) =>
     [...crmQueryKeys.person(personId), "travel-snapshot"] as const,
   personRelationships: (personId: string, filters: PersonRelationshipsListFilters = {}) =>

@@ -421,6 +421,7 @@ export const crmUiRo = {
       activities: "Activitati",
       relationships: "Relatii",
       documents: "Documente",
+      addresses: "Adrese",
       bookings: "Rezervari",
       invoices: "Facturi",
       payments: "Plati",

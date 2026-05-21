@@ -72,6 +72,13 @@ export interface SlotAllocationPageProps {
   slotId: string
   className?: string
   onBack?: () => void
+  /**
+   * Fired when the operator clicks a booking number on an allocation
+   * chip. The host owns the side-panel / drawer / route — this hook
+   * just supplies the booking id. When omitted, booking numbers render
+   * as plain text.
+   */
+  onBookingOpen?: (bookingId: string) => void
   renderExtraActions?: (context: { slotId: string; kind: string }) => ReactNode
   renderTravelerActions?: (traveler: AllocationManifestTraveler) => ReactNode
   renderHeaderEnd?: (context: SlotAllocationPageRenderContext) => ReactNode
@@ -91,6 +98,7 @@ export function SlotAllocationPage({
   slotId,
   className,
   onBack,
+  onBookingOpen,
   renderExtraActions,
   renderTravelerActions,
   renderHeaderEnd,
@@ -538,6 +546,7 @@ export function SlotAllocationPage({
                 void assignTraveler(travelerId, resourceId)
               }
               onUnassignTraveler={(travelerId) => void assignTraveler(travelerId, null)}
+              onBookingOpen={onBookingOpen}
               renderTravelerActions={renderTravelerActions}
             />
           ) : (
@@ -556,6 +565,7 @@ export function SlotAllocationPage({
                 void resourceMutation.remove.mutateAsync(resourceId)
               }
               onEditResource={editResource}
+              onBookingOpen={onBookingOpen}
               renderTravelerActions={renderTravelerActions}
             />
           )}

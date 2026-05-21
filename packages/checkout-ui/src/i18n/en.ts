@@ -97,7 +97,18 @@ export const checkoutUiEn: CheckoutUiMessages = {
   collectPaymentDialog: {
     title: "Generate payment link",
     description:
-      "Hold the booking and produce a payment link the customer can open to pay by card or bank transfer. Share it however you prefer (email, chat, etc.).",
+      "Produce a payment link the customer can open to pay by card or bank transfer. Share it however you prefer (email, chat, etc.).",
+    scheduleLabel: "Charge",
+    scheduleHelp:
+      "Pick a scheduled installment or the full amount. Edit the amount below for a custom charge.",
+    scheduleFullAmount: "Full amount ({amount})",
+    scheduleTypeLabels: {
+      deposit: "Deposit",
+      installment: "Installment",
+      balance: "Balance",
+      hold: "Hold",
+      other: "Other",
+    },
     amountLabel: "Amount ({currency})",
     amountHelp:
       "Defaults to the booking's sell amount. Override for a deposit or partial collection.",
@@ -105,7 +116,6 @@ export const checkoutUiEn: CheckoutUiMessages = {
     done: "Done",
     generateLink: "Generate link",
     validation: {
-      pickHold: "Pick 'Hold - generate payment link' to produce a shareable link.",
       amountAboveZero: "Enter an amount above zero.",
       linkReady: "Payment link ready - copy or share it with the customer.",
     },

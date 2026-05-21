@@ -52,6 +52,24 @@ export const bookingItems = pgTable(
     optionId: text("option_id"),
     optionUnitId: text("option_unit_id"),
     pricingCategoryId: text("pricing_category_id"),
+    // Decoupled reference to the departure slot. Plain text (no FK)
+    // because availability lives in a different module — see the
+    // module-decoupling decision in memory. Dangling when the slot is
+    // deleted; the `*Snapshot` columns below preserve what was booked.
+    availabilitySlotId: text("availability_slot_id"),
+    // Catalog-snapshots taken at item-create time. Authoritative for
+    // "what did the customer buy?" — never updated, so operators can
+    // always see the booking exactly as it was sold, even if the
+    // catalog row was edited/deleted, or if this deployment doesn't
+    // mount the catalog plane at all (OTA case).
+    productNameSnapshot: text("product_name_snapshot"),
+    optionNameSnapshot: text("option_name_snapshot"),
+    unitNameSnapshot: text("unit_name_snapshot"),
+    // Pre-rendered departure label (e.g. "May 28, 2026 09:00 — Bucharest").
+    // `startsAt`/`endsAt` capture the timing but not the start-point or
+    // any human context; this column carries the operator-friendly
+    // string written at booking time.
+    departureLabelSnapshot: text("departure_label_snapshot"),
     sourceSnapshotId: text("source_snapshot_id"),
     sourceOfferId: text("source_offer_id"),
     metadata: jsonb("metadata").$type<Record<string, unknown>>(),

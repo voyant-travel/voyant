@@ -6,11 +6,14 @@ import {
   useBooking,
   useBookingMutation,
 } from "@voyantjs/bookings-react"
+import { useOrganization, usePerson } from "@voyantjs/crm-react"
 import {
   Badge,
   Button,
   Card,
   CardContent,
+  CardHeader,
+  CardTitle,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +26,7 @@ import {
   Ban,
   Calendar,
   ChevronRight,
+  CreditCard,
   Mail,
   MapPin,
   MoreHorizontal,
@@ -36,6 +40,7 @@ import { type ReactNode, useState } from "react"
 
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/index.js"
 import { BookingActivityTimeline } from "./booking-activity-timeline.js"
+import { BookingBillingDialog } from "./booking-billing-dialog.js"
 import { BookingCancellationDialog } from "./booking-cancellation-dialog.js"
 import { BookingDialog } from "./booking-dialog.js"
 import { BookingGroupSection } from "./booking-group-section.js"
@@ -48,8 +53,22 @@ import { StatusChangeDialog } from "./status-change-dialog.js"
 import { SupplierStatusList } from "./supplier-status-list.js"
 import { TravelerList } from "./traveler-list.js"
 
+/**
+ * Optional extra tab. When provided, the canonical layout renders a
+ * trigger and a content panel. Modeled after PersonDetailPage's
+ * commercial-tab slot shape. The trigger label falls back to the i18n
+ * default (`messages.bookingDetailPage.tabInvoices` etc.).
+ */
+export interface BookingDetailTabSlot {
+  label?: string
+  /** Receives the loaded booking so the slot can use sell amount, ids, etc. */
+  content: ReactNode | ((booking: BookingRecord) => ReactNode)
+}
+
 export interface BookingDetailPageSlots {
+  /** Rendered between the title row and the summary card. */
   header?: (booking: BookingRecord) => ReactNode
+  /** Rendered between the summary card and the tabs. */
   afterSummary?: (booking: BookingRecord) => ReactNode
   overviewStart?: (booking: BookingRecord) => ReactNode
   overviewEnd?: (booking: BookingRecord) => ReactNode
@@ -58,16 +77,26 @@ export interface BookingDetailPageSlots {
   financeEnd?: (booking: BookingRecord) => ReactNode
   documents?: (booking: BookingRecord) => ReactNode
   activityEnd?: (booking: BookingRecord) => ReactNode
+  /** Mounts a dedicated `Invoices` tab between Payments and Suppliers. */
+  invoicesTab?: BookingDetailTabSlot
+  /** Mounts a dedicated `Ledger` tab at the far right. */
+  ledgerTab?: BookingDetailTabSlot
 }
 
 export interface BookingDetailPageProps {
   id: string
   className?: string
   locale?: string
+  /** When true, the inline `Bookings > #` breadcrumb is suppressed
+   * (use when the host shell already renders breadcrumbs). */
+  hideBreadcrumb?: boolean
   onBack?: () => void
   onPersonOpen?: (personId: string) => void
   onOrganizationOpen?: (organizationId: string) => void
+  /** Wired to a primary `Generate payment link` button on the Payments tab. */
   onCollectPayment?: (booking: BookingRecord) => void
+  /** Wired to a secondary `Record payment` button on the Payments tab. */
+  onRecordPayment?: (booking: BookingRecord) => void
   slots?: BookingDetailPageSlots
 }
 
@@ -75,10 +104,12 @@ export function BookingDetailPage({
   id,
   className,
   locale,
+  hideBreadcrumb,
   onBack,
   onPersonOpen,
   onOrganizationOpen,
   onCollectPayment,
+  onRecordPayment,
   slots,
 }: BookingDetailPageProps) {
   const i18n = useBookingsUiI18nOrDefault()
@@ -120,21 +151,23 @@ export function BookingDetailPage({
 
   return (
     <div data-slot="booking-detail-page" className={cn("flex flex-col gap-6 p-6", className)}>
-      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        {onBack ? (
-          <button
-            type="button"
-            onClick={onBack}
-            className="transition-colors hover:text-foreground"
-          >
-            {detailMessages.breadcrumbBookings}
-          </button>
-        ) : (
-          <span>{detailMessages.breadcrumbBookings}</span>
-        )}
-        <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-        <span className="font-normal text-foreground">{booking.bookingNumber}</span>
-      </div>
+      {hideBreadcrumb ? null : (
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          {onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              className="transition-colors hover:text-foreground"
+            >
+              {detailMessages.breadcrumbBookings}
+            </button>
+          ) : (
+            <span>{detailMessages.breadcrumbBookings}</span>
+          )}
+          <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+          <span className="font-normal text-foreground">{booking.bookingNumber}</span>
+        </div>
+      )}
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -219,16 +252,16 @@ export function BookingDetailPage({
           />
 
           {booking.personId ? (
-            <SummaryLink
+            <SummaryPersonLink
               label={detailMessages.summaryPerson}
-              id={booking.personId}
+              personId={booking.personId}
               onOpen={onPersonOpen}
             />
           ) : null}
           {booking.organizationId ? (
-            <SummaryLink
+            <SummaryOrganizationLink
               label={detailMessages.summaryOrganization}
-              id={booking.organizationId}
+              organizationId={booking.organizationId}
               onOpen={onOrganizationOpen}
             />
           ) : null}
@@ -250,9 +283,19 @@ export function BookingDetailPage({
           <TabsTrigger value="overview">{detailMessages.tabOverview}</TabsTrigger>
           <TabsTrigger value="travelers">{detailMessages.tabTravelers}</TabsTrigger>
           <TabsTrigger value="finance">{detailMessages.tabFinance}</TabsTrigger>
+          {slots?.invoicesTab ? (
+            <TabsTrigger value="invoices">
+              {slots.invoicesTab.label ?? detailMessages.tabInvoices}
+            </TabsTrigger>
+          ) : null}
           <TabsTrigger value="suppliers">{detailMessages.tabSuppliers}</TabsTrigger>
           <TabsTrigger value="documents">{detailMessages.tabDocuments}</TabsTrigger>
           <TabsTrigger value="activity">{detailMessages.tabActivity}</TabsTrigger>
+          {slots?.ledgerTab ? (
+            <TabsTrigger value="ledger">
+              {slots.ledgerTab.label ?? detailMessages.tabLedger}
+            </TabsTrigger>
+          ) : null}
         </TabsList>
 
         <TabsContent value="overview" className="mt-4 flex flex-col gap-6">
@@ -281,11 +324,18 @@ export function BookingDetailPage({
         </TabsContent>
 
         <TabsContent value="finance" className="mt-4 flex flex-col gap-6">
-          {onCollectPayment ? (
-            <div className="flex items-center justify-end">
-              <Button onClick={() => onCollectPayment(booking)}>
-                {detailMessages.collectPaymentAction}
-              </Button>
+          {onCollectPayment || onRecordPayment ? (
+            <div className="flex items-center justify-end gap-2">
+              {onRecordPayment ? (
+                <Button variant="outline" onClick={() => onRecordPayment(booking)}>
+                  {detailMessages.recordPaymentAction}
+                </Button>
+              ) : null}
+              {onCollectPayment ? (
+                <Button onClick={() => onCollectPayment(booking)}>
+                  {detailMessages.collectPaymentAction}
+                </Button>
+              ) : null}
             </div>
           ) : null}
           {slots?.financeStart?.(booking)}
@@ -294,6 +344,12 @@ export function BookingDetailPage({
           <BookingGuaranteeList bookingId={id} />
           {slots?.financeEnd?.(booking)}
         </TabsContent>
+
+        {slots?.invoicesTab ? (
+          <TabsContent value="invoices" className="mt-4 flex flex-col gap-6">
+            {renderTabSlot(slots.invoicesTab.content, booking)}
+          </TabsContent>
+        ) : null}
 
         <TabsContent value="suppliers" className="mt-4">
           <SupplierStatusList bookingId={id} />
@@ -314,6 +370,12 @@ export function BookingDetailPage({
           <BookingNotes bookingId={id} />
           {slots?.activityEnd?.(booking)}
         </TabsContent>
+
+        {slots?.ledgerTab ? (
+          <TabsContent value="ledger" className="mt-4 flex flex-col gap-6">
+            {renderTabSlot(slots.ledgerTab.content, booking)}
+          </TabsContent>
+        ) : null}
       </Tabs>
 
       <BookingDialog open={editOpen} onOpenChange={setEditOpen} booking={booking} />
@@ -334,9 +396,38 @@ export function BookingDetailPage({
   )
 }
 
+function renderTabSlot(
+  content: BookingDetailTabSlot["content"],
+  booking: BookingRecord,
+): ReactNode {
+  return typeof content === "function" ? content(booking) : content
+}
+
+/**
+ * Billing/contact card for the Travelers tab. Snapshot fields on the
+ * booking row are the source of truth (they capture contact info at
+ * the time of booking). When they're empty — typically for bookings
+ * created via flows that don't snapshot — fall back to the linked CRM
+ * person / organization so the operator still sees who they're
+ * billing.
+ */
 export function BookingBillingContextCard({ booking }: { booking: BookingRecord }) {
   const messages = useBookingsUiMessagesOrDefault().bookingDetailPage
-  const payerName = [booking.contactFirstName, booking.contactLastName].filter(Boolean).join(" ")
+  const [editOpen, setEditOpen] = useState(false)
+  const person = usePerson(booking.personId ?? undefined, {
+    enabled: Boolean(booking.personId),
+  }).data
+  const organization = useOrganization(booking.organizationId ?? undefined, {
+    enabled: Boolean(booking.organizationId) && !booking.personId,
+  }).data
+
+  const payerName =
+    [booking.contactFirstName, booking.contactLastName].filter(Boolean).join(" ") ||
+    (person ? [person.firstName, person.lastName].filter(Boolean).join(" ") : "") ||
+    organization?.name ||
+    ""
+  const email = booking.contactEmail ?? person?.email ?? null
+  const phone = booking.contactPhone ?? person?.phone ?? null
   const address = [
     booking.contactAddressLine1,
     booking.contactCity,
@@ -348,26 +439,39 @@ export function BookingBillingContextCard({ booking }: { booking: BookingRecord 
     .join(", ")
 
   return (
-    <Card>
-      <CardContent className="grid gap-4 py-5 md:grid-cols-4">
-        <BillingField label={messages.billingPayer} value={payerName || messages.noValue} />
-        <BillingField
-          label={messages.billingEmail}
-          value={booking.contactEmail ?? messages.noValue}
-          icon={<Mail className="h-3.5 w-3.5" aria-hidden="true" />}
-        />
-        <BillingField
-          label={messages.billingPhone}
-          value={booking.contactPhone ?? messages.noValue}
-          icon={<Phone className="h-3.5 w-3.5" aria-hidden="true" />}
-        />
-        <BillingField
-          label={messages.billingAddress}
-          value={address || messages.noValue}
-          icon={<MapPin className="h-3.5 w-3.5" aria-hidden="true" />}
-        />
-      </CardContent>
-    </Card>
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CreditCard className="h-4 w-4" aria-hidden="true" />
+            {messages.billingPayer}
+          </CardTitle>
+          <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
+            <Pencil className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+            {messages.editAction}
+          </Button>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-4">
+          <BillingField label={messages.billingPayer} value={payerName || messages.noValue} />
+          <BillingField
+            label={messages.billingEmail}
+            value={email ?? messages.noValue}
+            icon={<Mail className="h-3.5 w-3.5" aria-hidden="true" />}
+          />
+          <BillingField
+            label={messages.billingPhone}
+            value={phone ?? messages.noValue}
+            icon={<Phone className="h-3.5 w-3.5" aria-hidden="true" />}
+          />
+          <BillingField
+            label={messages.billingAddress}
+            value={address || messages.noValue}
+            icon={<MapPin className="h-3.5 w-3.5" aria-hidden="true" />}
+          />
+        </CardContent>
+      </Card>
+      <BookingBillingDialog open={editOpen} onOpenChange={setEditOpen} booking={booking} />
+    </>
   )
 }
 
@@ -421,28 +525,63 @@ function ActionMenu({ children }: { children: ReactNode }) {
   )
 }
 
-function SummaryLink({
+function SummaryPersonLink({
   label,
-  id,
+  personId,
   onOpen,
 }: {
   label: string
-  id: string
-  onOpen?: (id: string) => void
+  personId: string
+  onOpen?: (personId: string) => void
 }) {
+  // Hydrate the CRM person so the header shows a human name with a
+  // link to the detail page, falling back to the raw id while the
+  // record is in flight (or when the person was hard-deleted).
+  const person = usePerson(personId).data
+  const name = person ? [person.firstName, person.lastName].filter(Boolean).join(" ").trim() : ""
+  const display = name || personId
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex min-w-0 flex-col gap-1">
       <div className="text-xs font-medium text-muted-foreground">{label}</div>
       {onOpen ? (
         <button
           type="button"
-          onClick={() => onOpen(id)}
-          className="truncate text-left font-mono text-primary text-xs hover:underline"
+          onClick={() => onOpen(personId)}
+          className="truncate text-left text-sm font-medium text-primary hover:underline"
         >
-          {id}
+          {display}
         </button>
       ) : (
-        <span className="truncate font-mono text-xs">{id}</span>
+        <span className="truncate text-sm font-medium">{display}</span>
+      )}
+    </div>
+  )
+}
+
+function SummaryOrganizationLink({
+  label,
+  organizationId,
+  onOpen,
+}: {
+  label: string
+  organizationId: string
+  onOpen?: (organizationId: string) => void
+}) {
+  const organization = useOrganization(organizationId).data
+  const display = organization?.name || organizationId
+  return (
+    <div className="flex min-w-0 flex-col gap-1">
+      <div className="text-xs font-medium text-muted-foreground">{label}</div>
+      {onOpen ? (
+        <button
+          type="button"
+          onClick={() => onOpen(organizationId)}
+          className="truncate text-left text-sm font-medium text-primary hover:underline"
+        >
+          {display}
+        </button>
+      ) : (
+        <span className="truncate text-sm font-medium">{display}</span>
       )}
     </div>
   )
@@ -480,6 +619,13 @@ function formatDate(iso: string | null, locale: string, empty: string): string {
   })
 }
 
+/**
+ * Strip internal markers (`__contract_acceptance__:`,
+ * `__payment_policy_source__:`) before rendering — those are
+ * server-side relays, not human-readable notes. Their canonical home
+ * is on the contract signature row / schedule history; surfacing them
+ * here just confuses operators with raw JSON.
+ */
 function visibleInternalNotes(notes: string | null | undefined): string | null {
   if (!notes) return null
   const visible = notes

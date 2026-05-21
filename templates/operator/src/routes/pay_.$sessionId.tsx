@@ -4,6 +4,7 @@ import { type BankTransferInstructions, PaymentLinkLandingPage } from "@voyantjs
 import { usePublicPaymentSession } from "@voyantjs/finance-react"
 import { Loader2 } from "lucide-react"
 
+import { usePaymentLinkBookingSummary } from "@/components/voyant/checkout/payment-link-booking-summary"
 import { usePaymentLinkTripSummary } from "@/components/voyant/checkout/payment-link-trip-summary"
 import { getApiUrl } from "@/lib/env"
 
@@ -39,6 +40,7 @@ function PayLandingInner() {
   const { sessionId } = Route.useParams()
   const sessionQuery = usePublicPaymentSession(sessionId)
   const tripSummary = usePaymentLinkTripSummary(sessionId)
+  const bookingSummary = usePaymentLinkBookingSummary(sessionId)
   const configQuery = useQuery({
     queryKey: ["payment-link-config"],
     queryFn: async (): Promise<PaymentLinkConfigResponse["data"]> => {
@@ -122,12 +124,19 @@ function PayLandingInner() {
       }
     : undefined
 
+  // Trip sessions render the trip card; booking-attached sessions render
+  // the booking card (built from snapshot columns so OTAs work). When
+  // either is "ready" we hide the default notes paragraph so the
+  // structured content carries the message.
+  const summaryNode = tripSummary.status !== "empty" ? tripSummary.node : bookingSummary.node
+  const suppressNotes = tripSummary.status !== "empty" || bookingSummary.status !== "empty"
+
   return (
     <PaymentLinkLandingPage
       session={session}
       bankTransferInstructions={bankTransferInstructions}
-      summary={tripSummary.node}
-      suppressNotes={tripSummary.status !== "empty"}
+      summary={summaryNode}
+      suppressNotes={suppressNotes}
       onRetry={async () => {
         const res = await fetch(`${getApiUrl()}/v1/public/payment-link/${sessionId}/retry`, {
           method: "POST",

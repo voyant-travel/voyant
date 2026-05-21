@@ -240,6 +240,13 @@ export type PersonDocumentRecord = z.infer<typeof personDocumentRecordSchema>
 export const personDocumentListResponse = listEnvelope(personDocumentRecordSchema)
 export const personDocumentSingleResponse = singleEnvelope(personDocumentRecordSchema)
 
+export const personDocumentRevealSchema = z.object({
+  documentId: z.string(),
+  number: z.string().nullable(),
+})
+export type PersonDocumentReveal = z.infer<typeof personDocumentRevealSchema>
+export const personDocumentRevealResponse = singleEnvelope(personDocumentRevealSchema)
+
 export const customerSignalKindSchema = z.enum([
   "wishlist",
   "notify",

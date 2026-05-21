@@ -6,7 +6,7 @@ import { z } from "zod"
 import { fetchWithValidation } from "../client.js"
 import { useVoyantFinanceContext } from "../provider.js"
 import { financeQueryKeys } from "../query-keys.js"
-import { paymentRecordSchema } from "../schemas.js"
+import { type PaymentMethod, type PaymentStatus, paymentRecordSchema } from "../schemas.js"
 
 export interface CreateInvoicePaymentInput {
   amountCents: number
@@ -14,8 +14,8 @@ export interface CreateInvoicePaymentInput {
   baseCurrency?: string | null
   baseAmountCents?: number | null
   fxRateSetId?: string | null
-  paymentMethod: "bank_transfer" | "credit_card" | "cash" | "cheque" | "other"
-  status: "pending" | "completed" | "failed" | "refunded"
+  paymentMethod: PaymentMethod
+  status: PaymentStatus
   referenceNumber?: string | null
   paymentDate: string
   notes?: string | null

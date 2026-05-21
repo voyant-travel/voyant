@@ -40,6 +40,7 @@ export type BookingsUiMessages = {
     deleteAction: string
     deleteConfirm: string
     collectPaymentAction: string
+    recordPaymentAction: string
     noValue: string
     tbd: string
     summarySell: string
@@ -54,23 +55,17 @@ export type BookingsUiMessages = {
     tabOverview: string
     tabTravelers: string
     tabFinance: string
+    tabInvoices: string
     tabSuppliers: string
     tabDocuments: string
     tabActivity: string
+    tabLedger: string
     internalNotesLabel: string
     billingPayer: string
     billingEmail: string
     billingPhone: string
     billingAddress: string
     documentsSlotEmpty: string
-  }
-  bookingWorkspacePage: {
-    description: string
-    loadingTitle: string
-    notFoundTitle: string
-    notFoundDescription: string
-    tabs: Record<"booking" | "finance" | "legal" | "travelers" | "activity", string>
-    empty: Record<"finance" | "legal" | "travelers" | "activity", string>
   }
   travelerDialog: {
     titles: {
@@ -1116,6 +1111,8 @@ export type BookingsUiMessages = {
       pax: string
       startDate: string
       endDate: string
+      lead: string
+      createdAt: string
     }
     filters: {
       button: string
@@ -1140,6 +1137,10 @@ export type BookingsUiMessages = {
       organizationLabel: string
       organization: string
       organizationEmpty: string
+      departureLabel: string
+      departure: string
+      departureEmpty: string
+      departureNeedsProduct: string
       dateRangeLabel: string
       dateRange: string
       paxLabel: string

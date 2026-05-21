@@ -119,6 +119,13 @@ export const bookingListQuerySchema = z.object({
   search: z.string().optional(),
   productId: z.string().optional(),
   optionId: z.string().optional(),
+  /**
+   * Filter to bookings whose items reference this availability slot
+   * (post-0026, items carry `availability_slot_id` directly). Scoped
+   * to a specific departure so the operator can answer "who's on this
+   * 28-May 09:00 sailing?" from the list page.
+   */
+  availabilitySlotId: z.string().optional(),
   supplierId: z.string().optional(),
   productCategoryId: z.string().optional(),
   personId: z.string().optional(),
@@ -466,6 +473,15 @@ const bookingItemCoreSchema = z.object({
   optionId: z.string().optional().nullable(),
   optionUnitId: z.string().optional().nullable(),
   pricingCategoryId: z.string().optional().nullable(),
+  availabilitySlotId: z.string().optional().nullable(),
+  // Catalog-snapshot overrides for catalog-less deployments (OTA case)
+  // or when the caller wants to write a specific historical label. If
+  // omitted, the service looks the values up from the catalog refs
+  // using the foreign IDs.
+  productNameSnapshot: z.string().optional().nullable(),
+  optionNameSnapshot: z.string().optional().nullable(),
+  unitNameSnapshot: z.string().optional().nullable(),
+  departureLabelSnapshot: z.string().optional().nullable(),
   sourceSnapshotId: z.string().optional().nullable(),
   sourceOfferId: z.string().optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).optional().nullable(),

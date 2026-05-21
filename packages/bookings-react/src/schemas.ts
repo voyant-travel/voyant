@@ -264,6 +264,14 @@ export const bookingItemRecordSchema = z.object({
   optionId: z.string().nullable(),
   optionUnitId: z.string().nullable(),
   pricingCategoryId: z.string().nullable(),
+  availabilitySlotId: z.string().nullable(),
+  // Snapshots taken at item-create time. Authoritative for "what did
+  // the customer buy?" — never updated. Optional/nullable because old
+  // rows pre-date the snapshot columns.
+  productNameSnapshot: z.string().nullable().optional(),
+  optionNameSnapshot: z.string().nullable().optional(),
+  unitNameSnapshot: z.string().nullable().optional(),
+  departureLabelSnapshot: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })

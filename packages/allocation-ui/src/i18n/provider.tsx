@@ -91,6 +91,7 @@ export type AllocationUiMessages = Record<string, unknown> & {
   generateRoomsFailed: string
   generateResourcesFailed: string
   autoAllocateFailed: string
+  paymentStatusLabels: Record<"paid" | "partial" | "unpaid", string>
 }
 
 export const allocationUiEn = {
@@ -186,6 +187,11 @@ export const allocationUiEn = {
   generateRoomsFailed: "Could not generate rooms.",
   generateResourcesFailed: "Could not generate resources.",
   autoAllocateFailed: "Could not auto-allocate travelers.",
+  paymentStatusLabels: {
+    paid: "Paid",
+    partial: "Partially paid",
+    unpaid: "Unpaid",
+  },
 } satisfies AllocationUiMessages
 
 export const allocationUiRo = {
@@ -281,6 +287,11 @@ export const allocationUiRo = {
   generateRoomsFailed: "Camerele nu au putut fi generate.",
   generateResourcesFailed: "Resursele nu au putut fi generate.",
   autoAllocateFailed: "Calatorii nu au putut fi auto-alocati.",
+  paymentStatusLabels: {
+    paid: "Achitata",
+    partial: "Partial achitata",
+    unpaid: "Neachitata",
+  },
 } satisfies AllocationUiMessages
 
 const fallbackLocale = "en"

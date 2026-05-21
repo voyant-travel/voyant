@@ -421,6 +421,7 @@ export const crmUiEn = {
       activities: "Activities",
       relationships: "Relationships",
       documents: "Documents",
+      addresses: "Addresses",
       bookings: "Bookings",
       invoices: "Invoices",
       payments: "Payments",

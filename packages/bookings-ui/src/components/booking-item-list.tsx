@@ -11,7 +11,6 @@ import * as React from "react"
 
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 import { BookingItemDialog } from "./booking-item-dialog.js"
-import { BookingItemTravelers } from "./booking-item-travelers.js"
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   draft: "outline",
@@ -120,7 +119,26 @@ export function BookingItemList({ bookingId }: BookingItemListProps) {
                             )}
                           </button>
                         </td>
-                        <td className="p-2 font-medium">{item.title}</td>
+                        <td className="p-2">
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {item.productNameSnapshot ?? item.title}
+                            </span>
+                            {(() => {
+                              const subtitleParts = [
+                                item.optionNameSnapshot,
+                                item.unitNameSnapshot ??
+                                  (item.productNameSnapshot ? item.title : null),
+                              ].filter((part): part is string => Boolean(part))
+                              if (subtitleParts.length === 0) return null
+                              return (
+                                <span className="text-muted-foreground text-xs">
+                                  {subtitleParts.join(" · ")}
+                                </span>
+                              )
+                            })()}
+                          </div>
+                        </td>
                         <td className="p-2">
                           {messages.bookingItemDialog.itemTypeLabels[item.itemType]}
                         </td>
@@ -178,7 +196,7 @@ export function BookingItemList({ bookingId }: BookingItemListProps) {
                         <tr className="border-b last:border-b-0 bg-muted/10">
                           <td />
                           <td colSpan={8} className="p-3">
-                            <ItemDetailPanel bookingId={bookingId} item={item} />
+                            <ItemDetailPanel item={item} />
                           </td>
                         </tr>
                       )}
@@ -217,13 +235,7 @@ export function BookingItemList({ bookingId }: BookingItemListProps) {
  * per-item travelers list. Compact two-column layout on wide
  * screens, stacks on narrow ones.
  */
-function ItemDetailPanel({
-  bookingId,
-  item,
-}: {
-  bookingId: string
-  item: BookingItemRecord
-}): React.ReactElement {
+function ItemDetailPanel({ item }: { item: BookingItemRecord }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   const { formatCurrency } = useBookingsUiI18nOrDefault()
   const dateRange = formatItemDateRange(item)
@@ -274,8 +286,6 @@ function ItemDetailPanel({
           </DetailBlock>
         </div>
       </div>
-
-      <BookingItemTravelers bookingId={bookingId} itemId={item.id} />
     </div>
   )
 }
@@ -307,6 +317,10 @@ function DetailBlock({
  * whatever the consumer's locale is.
  */
 function formatItemDateRange(item: BookingItemRecord): string | null {
+  // Pre-rendered departure label wins — it carries timezone + any
+  // start-point context the operator entered at booking time. The
+  // structured fields are still rendered as fallback for legacy rows.
+  if (item.departureLabelSnapshot) return item.departureLabelSnapshot
   const start = item.startsAt ? new Date(item.startsAt) : null
   const end = item.endsAt ? new Date(item.endsAt) : null
   if (start && Number.isFinite(start.getTime())) {

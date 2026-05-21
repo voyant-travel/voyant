@@ -128,11 +128,13 @@ function mapChoiceToRequest(
   },
 ): InitiateCheckoutCollectionInput {
   if (choice.type === "hold") {
-    const startPayload: Record<string, unknown> = {}
-    if (ctx.payerLanguage) startPayload.language = ctx.payerLanguage
-    if (ctx.returnUrl) startPayload.returnUrl = ctx.returnUrl
-    if (ctx.cancelUrl) startPayload.cancelUrl = ctx.cancelUrl
-
+    // Deliberately no `startProvider` here. Processors like Netopia
+    // require a real billing block at provider-start time, which the
+    // admin doesn't have at link-generation time. The customer-facing
+    // `/pay/:sessionId` landing lazy-starts the processor (via the
+    // template's `POST /v1/public/payment-link/:sessionId/start-card`
+    // endpoint) with synthesized placeholder billing — the processor's
+    // hosted form then collects the real billing from the customer.
     return {
       method: "card",
       stage: "manual",
@@ -144,10 +146,6 @@ function mapChoiceToRequest(
         payerName: ctx.payerName ?? undefined,
         returnUrl: ctx.returnUrl ?? undefined,
         cancelUrl: ctx.cancelUrl ?? undefined,
-      },
-      startProvider: {
-        provider: ctx.cardProvider,
-        payload: Object.keys(startPayload).length > 0 ? startPayload : undefined,
       },
       // No auto-email by design — the admin shares the link manually.
       // Templates that want auto-email back can call

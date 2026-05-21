@@ -15,10 +15,11 @@ import {
   useOpportunities,
   useOrganization,
   usePerson,
+  usePersonDocumentMutation,
   usePersonDocuments,
   usePersonMutation,
   usePersonRelationships,
-  usePersonTravelSnapshot,
+  useRevealPersonDocument,
 } from "@voyantjs/crm-react"
 import {
   Avatar,
@@ -40,6 +41,8 @@ import {
   BriefcaseBusiness,
   Calendar,
   CircleDot,
+  Eye,
+  EyeOff,
   FileText,
   Globe,
   Languages,
@@ -47,13 +50,12 @@ import {
   Mail,
   Pencil,
   Phone,
-  ShieldCheck,
   Tag,
   TrendingUp,
   User,
   Users,
 } from "lucide-react"
-import { type ReactNode, useEffect, useMemo, useState } from "react"
+import { type ReactNode, useEffect, useState } from "react"
 
 import { useCrmUiI18nOrDefault, useCrmUiMessagesOrDefault } from "../i18n/index.js"
 import { formatCrmDate, formatCrmMoney, formatCrmRelative } from "./crm-format.js"
@@ -61,7 +63,9 @@ import { InlineCurrencyField } from "./inline-currency-field.js"
 import { InlineField } from "./inline-field.js"
 import { InlineLanguageField } from "./inline-language-field.js"
 import { InlineSelectField } from "./inline-select-field.js"
+import { PersonAddressesSection } from "./person-addresses-section.js"
 import { PersonDialog } from "./person-dialog.js"
+import { PersonDocumentDialog } from "./person-document-dialog.js"
 import { TagsEditor } from "./tags-editor.js"
 
 export type PersonDetailTab =
@@ -70,6 +74,7 @@ export type PersonDetailTab =
   | "activities"
   | "relationships"
   | "documents"
+  | "addresses"
   | "bookings"
   | "invoices"
   | "payments"
@@ -176,6 +181,7 @@ export interface PersonDetailPageProps {
   onBack?: () => void
   onDeleted?: () => void
   onOrganizationOpen?: (organizationId: string) => void
+  onPersonOpen?: (personId: string) => void
   slots?: PersonDetailPageSlots
 }
 
@@ -185,6 +191,7 @@ export function PersonDetailPage({
   onBack,
   onDeleted,
   onOrganizationOpen,
+  onPersonOpen,
   slots,
 }: PersonDetailPageProps) {
   const messages = useCrmUiMessagesOrDefault()
@@ -229,9 +236,6 @@ export function PersonDetailPage({
     limit: 50,
     enabled: Boolean(person),
   })
-  const travelSnapshotQuery = usePersonTravelSnapshot(id, {
-    enabled: Boolean(person),
-  })
 
   const updateField = async (patch: UpdatePersonInput) => {
     await update.mutateAsync({ id, input: patch })
@@ -262,17 +266,8 @@ export function PersonDetailPage({
   const activities = activitiesQuery.data?.data ?? []
   const relationships = relationshipsQuery.data?.data ?? []
   const documents = documentsQuery.data?.data ?? []
-  const travelSnapshot = travelSnapshotQuery.data?.data ?? null
   const organization = organizationQuery.data ?? null
   const displayName = personDisplayName(person, messages.personCard.unnamed)
-  const totalOpenValue = opportunities
-    .filter((opportunity) => opportunity.status === "open")
-    .reduce((sum, opportunity) => sum + (opportunity.valueAmountCents ?? 0), 0)
-  const primaryCurrency =
-    opportunities[0]?.valueCurrency ??
-    person.preferredCurrency ??
-    organization?.defaultCurrency ??
-    null
 
   return (
     <div data-slot="person-detail-page" className={cn("flex min-h-screen flex-col", className)}>
@@ -307,15 +302,12 @@ export function PersonDetailPage({
           activities={activities}
           relationships={relationships}
           documents={documents}
-          travelSnapshot={travelSnapshot}
           opportunitiesPending={opportunitiesQuery.isPending}
           activitiesPending={activitiesQuery.isPending}
           relationshipsPending={relationshipsQuery.isPending}
           documentsPending={documentsQuery.isPending}
-          travelSnapshotPending={travelSnapshotQuery.isPending}
-          totalOpenValue={totalOpenValue}
-          primaryCurrency={primaryCurrency}
           onUpdateField={updateField}
+          onPersonOpen={onPersonOpen}
           slots={slots}
         />
       </div>
@@ -570,15 +562,12 @@ export interface PersonMainProps {
   activities: PersonActivity[]
   relationships: PersonRelationship[]
   documents: PersonDocument[]
-  travelSnapshot: PersonTravelSnapshot | null
   opportunitiesPending: boolean
   activitiesPending: boolean
   relationshipsPending: boolean
   documentsPending: boolean
-  travelSnapshotPending: boolean
-  totalOpenValue: number
-  primaryCurrency: string | null
   onUpdateField: (patch: UpdatePersonInput) => Promise<void>
+  onPersonOpen?: (personId: string) => void
   slots?: PersonDetailPageSlots
 }
 
@@ -591,37 +580,19 @@ export function PersonMain({
   activities,
   relationships,
   documents,
-  travelSnapshot,
   opportunitiesPending,
   activitiesPending,
   relationshipsPending,
   documentsPending,
-  travelSnapshotPending,
-  totalOpenValue,
-  primaryCurrency,
   onUpdateField,
+  onPersonOpen,
   slots,
 }: PersonMainProps) {
-  const i18n = useCrmUiI18nOrDefault()
   const messages = useCrmUiMessagesOrDefault()
-  const openOpportunities = opportunities.filter((opportunity) => opportunity.status === "open")
   const primaryDocuments = documents.filter((document) => document.isPrimary)
 
   return (
     <main className="col-span-12 flex flex-col gap-4 lg:col-span-9">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-        <MetricCard
-          label={messages.personDetail.metrics.openOpportunities}
-          value={openOpportunities.length}
-        />
-        <MetricCard
-          label={messages.personDetail.metrics.pipelineValue}
-          value={formatCrmMoney(i18n, totalOpenValue, primaryCurrency)}
-        />
-        <MetricCard label={messages.personDetail.metrics.documents} value={documents.length} />
-        <MetricCard label={messages.personDetail.metrics.activities} value={activities.length} />
-      </div>
-
       <Card>
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as PersonDetailTab)}>
           <CardHeader className="pb-0">
@@ -639,6 +610,7 @@ export function PersonMain({
               <TabsTrigger value="documents">
                 {messages.personDetail.tabs.documents} ({documents.length})
               </TabsTrigger>
+              <TabsTrigger value="addresses">{messages.personDetail.tabs.addresses}</TabsTrigger>
               {slots?.bookingsTab ? (
                 <TabsTrigger value="bookings">
                   {formatTabLabel(messages.personDetail.tabs.bookings, slots.bookingsTab)}
@@ -669,8 +641,6 @@ export function PersonMain({
                 <PersonOverviewPanel
                   person={person}
                   organization={organization}
-                  travelSnapshot={travelSnapshot}
-                  travelSnapshotPending={travelSnapshotPending}
                   onUpdateField={onUpdateField}
                 />
               )}
@@ -706,6 +676,7 @@ export function PersonMain({
                   personId={person.id}
                   relationships={relationships}
                   relationshipsPending={relationshipsPending}
+                  onPersonOpen={onPersonOpen}
                 />
               )}
               {slots?.relationshipsEnd}
@@ -718,9 +689,13 @@ export function PersonMain({
                   documents={documents}
                   documentsPending={documentsPending}
                   primaryCount={primaryDocuments.length}
+                  personId={person.id}
                 />
               )}
               {slots?.documentsEnd}
+            </TabsContent>
+            <TabsContent value="addresses" className="m-0">
+              <PersonAddressesSection personId={person.id} />
             </TabsContent>
             {slots?.bookingsTab ? (
               <TabsContent value="bookings" className="m-0">
@@ -745,11 +720,6 @@ export function PersonMain({
           </CardContent>
         </Tabs>
       </Card>
-
-      <div className="flex items-center gap-2">
-        <Pencil className="size-3.5 text-muted-foreground" aria-hidden="true" />
-        <span className="text-xs text-muted-foreground">{messages.personDetail.hint}</span>
-      </div>
     </main>
   )
 }
@@ -784,56 +754,16 @@ export function MetricCard({ label, value }: MetricCardProps) {
 export interface PersonOverviewPanelProps {
   person: PersonData
   organization: PersonOrganization | null
-  travelSnapshot: PersonTravelSnapshot | null
-  travelSnapshotPending: boolean
   onUpdateField: (patch: UpdatePersonInput) => Promise<void>
 }
 
 export function PersonOverviewPanel({
   person,
   organization,
-  travelSnapshot,
-  travelSnapshotPending,
   onUpdateField,
 }: PersonOverviewPanelProps) {
   const i18n = useCrmUiI18nOrDefault()
   const messages = useCrmUiMessagesOrDefault()
-  const snapshotRows = useMemo(
-    () =>
-      travelSnapshot
-        ? [
-            {
-              label: messages.personDetail.sections.dateOfBirth,
-              value: travelSnapshot.dateOfBirth
-                ? formatCrmDate(i18n, travelSnapshot.dateOfBirth)
-                : null,
-            },
-            {
-              label: messages.personDetail.sections.dietaryRequirements,
-              value: travelSnapshot.dietaryRequirements,
-            },
-            {
-              label: messages.personDetail.sections.accessibilityNeeds,
-              value: travelSnapshot.accessibilityNeeds,
-            },
-            {
-              label: messages.personDetail.sections.passportExpiry,
-              value: travelSnapshot.passportExpiry
-                ? formatCrmDate(i18n, travelSnapshot.passportExpiry)
-                : null,
-            },
-            {
-              label: messages.personDetail.sections.passportIssuingCountry,
-              value: travelSnapshot.passportIssuingCountry,
-            },
-            {
-              label: messages.personDetail.sections.passportIssuingAuthority,
-              value: travelSnapshot.passportIssuingAuthority,
-            },
-          ].filter((row) => Boolean(row.value))
-        : [],
-    [i18n, messages, travelSnapshot],
-  )
 
   return (
     <div className="flex flex-col gap-4">
@@ -868,34 +798,6 @@ export function PersonOverviewPanel({
         value={person.notes}
         onSave={(next) => onUpdateField({ notes: next })}
       />
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-            <ShieldCheck className="size-4 text-muted-foreground" aria-hidden="true" />
-            {messages.personDetail.sections.travelProfile}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {travelSnapshotPending ? (
-            <div className="flex justify-center py-6">
-              <Loader2 className="size-5 animate-spin text-muted-foreground" />
-            </div>
-          ) : snapshotRows.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">
-              {messages.personDetail.empty.noTravelProfile}
-            </p>
-          ) : (
-            <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
-              {snapshotRows.map((row) => (
-                <OverviewTerm key={row.label} label={row.label}>
-                  {row.value}
-                </OverviewTerm>
-              ))}
-            </dl>
-          )}
-        </CardContent>
-      </Card>
     </div>
   )
 }
@@ -1016,12 +918,14 @@ export interface PersonRelationshipsPanelProps {
   personId: string
   relationships: PersonRelationship[]
   relationshipsPending: boolean
+  onPersonOpen?: (personId: string) => void
 }
 
 export function PersonRelationshipsPanel({
   personId,
   relationships,
   relationshipsPending,
+  onPersonOpen,
 }: PersonRelationshipsPanelProps) {
   const i18n = useCrmUiI18nOrDefault()
   const messages = useCrmUiMessagesOrDefault()
@@ -1048,7 +952,7 @@ export function PersonRelationshipsPanel({
         return (
           <li key={relationship.id} className="flex items-start justify-between gap-3 py-3">
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{relatedPersonId}</p>
+              <RelatedPersonName personId={relatedPersonId} onPersonOpen={onPersonOpen} />
               <p className="text-xs text-muted-foreground">
                 {kindLabel}
                 {relationship.startDate ? ` - ${formatCrmDate(i18n, relationship.startDate)}` : ""}
@@ -1070,16 +974,49 @@ export function PersonRelationshipsPanel({
   )
 }
 
+function RelatedPersonName({
+  personId,
+  onPersonOpen,
+}: {
+  personId: string
+  onPersonOpen?: (personId: string) => void
+}) {
+  const messages = useCrmUiMessagesOrDefault()
+  const personQuery = usePerson(personId)
+  const person = personQuery.data
+  const label = person
+    ? personDisplayName(person, messages.personCard.unnamed)
+    : personQuery.isPending
+      ? "…"
+      : personId
+
+  if (!onPersonOpen) {
+    return <p className="truncate text-sm font-medium">{label}</p>
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => onPersonOpen(personId)}
+      className="truncate text-left text-sm font-medium text-foreground hover:underline"
+    >
+      {label}
+    </button>
+  )
+}
+
 export interface PersonDocumentsPanelProps {
   documents: PersonDocument[]
   documentsPending: boolean
   primaryCount: number
+  personId?: string
 }
 
 export function PersonDocumentsPanel({
   documents,
   documentsPending,
   primaryCount,
+  personId,
 }: PersonDocumentsPanelProps) {
   const i18n = useCrmUiI18nOrDefault()
   const messages = useCrmUiMessagesOrDefault()
@@ -1101,36 +1038,123 @@ export function PersonDocumentsPanel({
         </span>
       </div>
       <ul className="divide-y">
-        {documents.map((document) => {
-          const typeLabel =
-            messages.personDetail.documentTypeLabels[
-              document.type as keyof typeof messages.personDetail.documentTypeLabels
-            ] ?? document.type
-          return (
-            <li key={document.id} className="flex items-start justify-between gap-3 py-3">
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{typeLabel}</p>
-                <p className="text-xs text-muted-foreground">
-                  {document.issuingCountry ?? messages.common.none} -{" "}
-                  {formatCrmDate(i18n, document.expiryDate)}
-                </p>
-                {document.issuingAuthority ? (
-                  <p className="truncate text-xs text-muted-foreground">
-                    {document.issuingAuthority}
-                  </p>
-                ) : null}
-              </div>
-              <div className="flex flex-col items-end gap-1">
-                {document.isPrimary ? (
-                  <Badge variant="secondary">{messages.personDetail.sections.primary}</Badge>
-                ) : null}
-                <Badge variant="outline">{typeLabel}</Badge>
-              </div>
-            </li>
-          )
-        })}
+        {documents.map((document) => (
+          <PersonDocumentRow
+            key={document.id}
+            document={document}
+            personId={personId}
+            typeLabel={
+              messages.personDetail.documentTypeLabels[
+                document.type as keyof typeof messages.personDetail.documentTypeLabels
+              ] ?? document.type
+            }
+            formattedExpiry={formatCrmDate(i18n, document.expiryDate)}
+            noneLabel={messages.common.none}
+            primaryLabel={messages.personDetail.sections.primary}
+          />
+        ))}
       </ul>
     </div>
+  )
+}
+
+function PersonDocumentRow({
+  document,
+  personId,
+  typeLabel,
+  formattedExpiry,
+  noneLabel,
+  primaryLabel,
+}: {
+  document: PersonDocument
+  personId?: string
+  typeLabel: string
+  formattedExpiry: string
+  noneLabel: string
+  primaryLabel: string
+}) {
+  const [revealed, setRevealed] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const revealQuery = useRevealPersonDocument(document.id, { enabled: revealed })
+  const mutation = usePersonDocumentMutation(personId)
+  const editable = Boolean(personId)
+  const revealError = revealed && revealQuery.error
+  const revealedNumber = revealQuery.data?.data.number ?? null
+
+  return (
+    <li className="flex items-start justify-between gap-3 py-3">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{typeLabel}</p>
+        <p className="text-xs text-muted-foreground">
+          {document.issuingCountry ?? noneLabel} - {formattedExpiry}
+        </p>
+        {document.issuingAuthority ? (
+          <p className="truncate text-xs text-muted-foreground">{document.issuingAuthority}</p>
+        ) : null}
+        {revealed ? (
+          <p className="mt-1 font-mono text-xs">
+            {revealQuery.isLoading
+              ? "Decrypting…"
+              : revealedNumber
+                ? revealedNumber
+                : "(no number on file)"}
+          </p>
+        ) : null}
+        {revealError ? (
+          <p className="mt-1 text-[10px] text-destructive">
+            {revealError instanceof Error ? revealError.message : "Failed to reveal."}
+          </p>
+        ) : null}
+      </div>
+      <div className="flex items-start gap-2">
+        <div className="flex flex-col items-end gap-1">
+          {document.isPrimary ? <Badge variant="secondary">{primaryLabel}</Badge> : null}
+          <Badge variant="outline">{typeLabel}</Badge>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setRevealed((prev) => !prev)}
+            className="text-muted-foreground hover:text-foreground"
+            aria-label={revealed ? "Hide number" : "Reveal number"}
+          >
+            {revealed ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+          </button>
+          {editable ? (
+            <button
+              type="button"
+              onClick={() => setEditOpen(true)}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Edit document"
+            >
+              <Pencil className="size-3.5" />
+            </button>
+          ) : null}
+          {editable ? (
+            <ConfirmActionButton
+              buttonLabel="Delete"
+              title="Delete document"
+              description="This will permanently remove this document."
+              confirmLabel="Delete"
+              variant="ghost"
+              confirmVariant="destructive"
+              disabled={mutation.remove.isPending}
+              onConfirm={async () => {
+                await mutation.remove.mutateAsync(document.id)
+              }}
+            />
+          ) : null}
+        </div>
+      </div>
+      {editable && personId ? (
+        <PersonDocumentDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          personId={personId}
+          document={document}
+        />
+      ) : null}
+    </li>
   )
 }
 

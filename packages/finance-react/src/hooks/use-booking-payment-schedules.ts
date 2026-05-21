@@ -6,7 +6,7 @@ import { fetchWithValidation } from "../client.js"
 import { useVoyantFinanceContext } from "../provider.js"
 import { financeQueryKeys } from "../query-keys.js"
 import { getBookingPaymentSchedulesQueryOptions } from "../query-options.js"
-import { bookingPaymentScheduleRecordSchema, successEnvelope } from "../schemas.js"
+import { bookingPaymentScheduleRecordSchema, singleEnvelope, successEnvelope } from "../schemas.js"
 
 export interface UseBookingPaymentSchedulesOptions {
   enabled?: boolean
@@ -37,9 +37,10 @@ export interface CreateBookingPaymentScheduleInput {
 
 export type UpdateBookingPaymentScheduleInput = Partial<CreateBookingPaymentScheduleInput>
 
-const scheduleSingleResponse = bookingPaymentScheduleRecordSchema.transform((data) => ({
-  data,
-}))
+// The server already returns `{ data: row }`, so wrap the record in
+// singleEnvelope. The previous `.transform()` re-wrapped the OUTER
+// envelope, leaving every record field undefined to the parser.
+const scheduleSingleResponse = singleEnvelope(bookingPaymentScheduleRecordSchema)
 
 export function useBookingPaymentScheduleMutation(bookingId: string) {
   const { baseUrl, fetcher } = useVoyantFinanceContext()

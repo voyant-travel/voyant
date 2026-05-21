@@ -1,4 +1,8 @@
 export {
+  BookingInvoiceSheet,
+  type BookingInvoiceSheetProps,
+} from "./components/booking-invoice-sheet.js"
+export {
   actionLedgerRiskVariant,
   actionLedgerStatusVariant,
   InvoiceActionLedgerCard,
@@ -80,6 +84,10 @@ export {
   PaymentsPageSkeleton,
   PaymentsTableSkeleton,
 } from "./components/payments-page-skeleton.js"
+export {
+  RecordBookingPaymentDialog,
+  type RecordBookingPaymentDialogProps,
+} from "./components/record-booking-payment-dialog.js"
 export {
   SupplierPaymentDialog,
   type SupplierPaymentDialogProps,

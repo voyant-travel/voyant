@@ -38,6 +38,7 @@ export function VehicleSeatsView({
   sharingGroupLabels,
   onAssignTraveler,
   onUnassignTraveler,
+  onBookingOpen,
   renderTravelerActions,
 }: {
   seats: AllocationResource[]
@@ -48,6 +49,8 @@ export function VehicleSeatsView({
   onAssignTraveler: (travelerId: string, resourceId: string) => void
   /** Remove a traveler from their current seat (no resource id required). */
   onUnassignTraveler: (travelerId: string) => void
+  /** Fired when the operator clicks a booking number on a seat / tile. */
+  onBookingOpen?: (bookingId: string) => void
   renderTravelerActions?: (traveler: AllocationManifestTraveler) => ReactNode
 }) {
   const messages = useAllocationUiMessagesOrDefault()
@@ -127,6 +130,7 @@ export function VehicleSeatsView({
                             }
                             onAssignTraveler={(travelerId) => onAssignTraveler(travelerId, seat.id)}
                             onUnassignTraveler={onUnassignTraveler}
+                            onBookingOpen={onBookingOpen}
                           />
                         )
                       })}
@@ -150,6 +154,7 @@ function VehicleSeatCell({
   sharingGroupLabel,
   onAssignTraveler,
   onUnassignTraveler,
+  onBookingOpen,
 }: {
   seat: AllocationResource
   occupant: AllocationManifestTraveler | null
@@ -158,6 +163,7 @@ function VehicleSeatCell({
   sharingGroupLabel?: string | null
   onAssignTraveler: (travelerId: string) => void
   onUnassignTraveler: (travelerId: string) => void
+  onBookingOpen?: (bookingId: string) => void
 }) {
   const messages = useAllocationUiMessagesOrDefault()
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -181,7 +187,17 @@ function VehicleSeatCell({
             <span className="truncate font-medium">{occupant.fullName}</span>
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-1 text-muted-foreground">
-            <span>{occupant.bookingNumber}</span>
+            {onBookingOpen ? (
+              <button
+                type="button"
+                onClick={() => onBookingOpen(occupant.bookingId)}
+                className="hover:text-foreground hover:underline"
+              >
+                {occupant.bookingNumber}
+              </button>
+            ) : (
+              <span>{occupant.bookingNumber}</span>
+            )}
             {sharingGroupLabel ? (
               <Badge variant="secondary" className="max-w-full truncate text-[10px]">
                 {sharingGroupLabel}

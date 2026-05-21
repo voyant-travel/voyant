@@ -9,6 +9,15 @@ import {
   getAvailabilitySlotProductQueryOptions,
   loadAvailabilitySlotDetailPage,
 } from "@voyantjs/availability-ui"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@voyantjs/ui/components"
+import { useState } from "react"
+import { BookingDetailPage } from "@/components/voyant/bookings/booking-detail-page"
 import { getAvailabilityContextValue } from "@/lib/availability-context"
 
 export const Route = createFileRoute("/_workspace/availability/$id")({
@@ -29,6 +38,7 @@ function RouteComponent() {
     enabled: Boolean(slot?.productId),
   })
   const productName = productQuery.data?.data?.name ?? null
+  const [bookingPreviewId, setBookingPreviewId] = useState<string | null>(null)
 
   useAdminBreadcrumbs([
     { label: "Availability", href: "/availability" },
@@ -42,20 +52,52 @@ function RouteComponent() {
   ])
 
   return (
-    <AvailabilitySlotDetailPage
-      id={id}
-      onBack={() => void navigate({ to: "/availability" })}
-      onDeleted={() => void navigate({ to: "/availability" })}
-      onOpenProduct={(productId) =>
-        void navigate({ to: "/products/$id", params: { id: productId } })
-      }
-      onOpenStartTime={(startTimeId) =>
-        void navigate({
-          to: "/availability/start-times/$id",
-          params: { id: startTimeId },
-        })
-      }
-      renderAllocation={({ slotId }) => <SlotAllocationPage slotId={slotId} embed />}
-    />
+    <>
+      <AvailabilitySlotDetailPage
+        id={id}
+        onBack={() => void navigate({ to: "/availability" })}
+        onDeleted={() => void navigate({ to: "/availability" })}
+        onOpenProduct={(productId) =>
+          void navigate({ to: "/products/$id", params: { id: productId } })
+        }
+        onOpenStartTime={(startTimeId) =>
+          void navigate({
+            to: "/availability/start-times/$id",
+            params: { id: startTimeId },
+          })
+        }
+        renderAllocation={({ slotId }) => (
+          <SlotAllocationPage
+            slotId={slotId}
+            embed
+            onBookingOpen={(bookingId) => setBookingPreviewId(bookingId)}
+          />
+        )}
+      />
+
+      <Sheet
+        open={Boolean(bookingPreviewId)}
+        onOpenChange={(next) => {
+          if (!next) setBookingPreviewId(null)
+        }}
+      >
+        <SheetContent
+          side="right"
+          className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl"
+        >
+          <SheetHeader className="border-b px-6 py-4">
+            <SheetTitle>Booking</SheetTitle>
+            <SheetDescription className="sr-only">
+              Booking detail for the selected traveler.
+            </SheetDescription>
+          </SheetHeader>
+          {bookingPreviewId ? (
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <BookingDetailPage id={bookingPreviewId} />
+            </div>
+          ) : null}
+        </SheetContent>
+      </Sheet>
+    </>
   )
 }
