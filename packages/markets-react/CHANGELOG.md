@@ -1,5 +1,13 @@
 # @voyantjs/markets-react
 
+## 0.62.3
+
+### Patch Changes
+
+- d0f1b36: Add catalog market/locale scope controls and React hooks for market product rules.
+  - @voyantjs/markets@0.62.3
+  - @voyantjs/react@0.62.3
+
 ## 0.62.2
 
 ### Patch Changes
