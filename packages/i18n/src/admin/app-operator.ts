@@ -14,6 +14,7 @@ import {
   operatorAdminDashboardMessages,
 } from "./dashboard-operator.js"
 import { type AdminFinanceMessages, adminFinanceMessages } from "./finance.js"
+import { type OperatorAdminLegalMessages, operatorAdminLegalMessages } from "./legal-operator.js"
 import { type OperatorAdminNavMessages, operatorAdminNavMessages } from "./operator-nav.js"
 import {
   type OperatorAdminPricingMessages,
@@ -48,6 +49,7 @@ export type OperatorAdminMessages = AdminChromeMessages & {
   OperatorAdminSettingsMessages &
   OperatorAdminPricingMessages &
   OperatorAdminCrmMessages &
+  OperatorAdminLegalMessages &
   OperatorAdminProductsMessages &
   OperatorAdminSuppliersMessages &
   AdminTripsMessages & {
@@ -67,6 +69,7 @@ export const operatorAdminMessageDefinitions =
     operatorAdminPricingMessages,
     operatorAdminSettingsMessages,
     operatorAdminCrmMessages,
+    operatorAdminLegalMessages,
     operatorAdminProductsMessages,
     operatorAdminSuppliersMessages,
     adminTripsMessages,
