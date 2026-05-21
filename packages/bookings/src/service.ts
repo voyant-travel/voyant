@@ -926,6 +926,123 @@ function isUndefinedTableError(error: unknown) {
   )
 }
 
+/**
+ * Catalog enrichment for a booking item, taken at item-create time so
+ * the snapshot is authoritative. Each lookup is independently
+ * try/catch'd so a missing catalog/availability table (catalog-less
+ * OTA deployment) just yields `null` for that piece — the caller's
+ * explicit values still win.
+ */
+async function resolveBookingItemSnapshot(
+  db: PostgresJsDatabase,
+  input: {
+    productId: string | null
+    optionId: string | null
+    optionUnitId: string | null
+    availabilitySlotId: string | null
+  },
+): Promise<{
+  productName: string | null
+  optionName: string | null
+  unitName: string | null
+  departureLabel: string | null
+  startsAt: Date | null
+  endsAt: Date | null
+  serviceDate: string | null
+}> {
+  const result = {
+    productName: null as string | null,
+    optionName: null as string | null,
+    unitName: null as string | null,
+    departureLabel: null as string | null,
+    startsAt: null as Date | null,
+    endsAt: null as Date | null,
+    serviceDate: null as string | null,
+  }
+
+  if (input.productId) {
+    try {
+      const [row] = await db
+        .select({ name: productsRef.name })
+        .from(productsRef)
+        .where(eq(productsRef.id, input.productId))
+        .limit(1)
+      if (row) result.productName = row.name
+    } catch (error) {
+      if (!isUndefinedTableError(error)) throw error
+    }
+  }
+
+  if (input.optionId) {
+    try {
+      const [row] = await db
+        .select({ name: productOptionsRef.name })
+        .from(productOptionsRef)
+        .where(eq(productOptionsRef.id, input.optionId))
+        .limit(1)
+      if (row) result.optionName = row.name
+    } catch (error) {
+      if (!isUndefinedTableError(error)) throw error
+    }
+  }
+
+  if (input.optionUnitId) {
+    try {
+      const [row] = await db
+        .select({ name: optionUnitsRef.name })
+        .from(optionUnitsRef)
+        .where(eq(optionUnitsRef.id, input.optionUnitId))
+        .limit(1)
+      if (row) result.unitName = row.name
+    } catch (error) {
+      if (!isUndefinedTableError(error)) throw error
+    }
+  }
+
+  if (input.availabilitySlotId) {
+    try {
+      const [slot] = await db
+        .select({
+          startsAt: availabilitySlotsRef.startsAt,
+          endsAt: availabilitySlotsRef.endsAt,
+          dateLocal: availabilitySlotsRef.dateLocal,
+          timezone: availabilitySlotsRef.timezone,
+        })
+        .from(availabilitySlotsRef)
+        .where(eq(availabilitySlotsRef.id, input.availabilitySlotId))
+        .limit(1)
+      if (slot) {
+        result.startsAt = slot.startsAt
+        result.endsAt = slot.endsAt
+        result.serviceDate = slot.dateLocal
+        result.departureLabel = formatDepartureLabel(slot.startsAt, slot.timezone)
+      }
+    } catch (error) {
+      if (!isUndefinedTableError(error)) throw error
+    }
+  }
+
+  return result
+}
+
+function formatDepartureLabel(startsAt: Date | null, timezone: string | null): string | null {
+  if (!startsAt) return null
+  try {
+    const formatter = new Intl.DateTimeFormat("en", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: timezone ?? undefined,
+      timeZoneName: timezone ? "short" : undefined,
+    })
+    return formatter.format(startsAt)
+  } catch {
+    return startsAt.toISOString()
+  }
+}
+
 async function resolvePolicyHoldMinutes(
   db: PostgresJsDatabase,
   items: ReadonlyArray<{
@@ -1016,6 +1133,10 @@ async function resolvePolicyHoldMinutes(
 async function listBookingItemsForSummaries(db: PostgresJsDatabase, bookingIds: string[]) {
   if (bookingIds.length === 0) return []
 
+  // `productName` prefers the snapshot (authoritative — what was sold)
+  // and falls back to the current catalog name only when the snapshot
+  // is missing (legacy rows pre-dating the snapshot columns). Same
+  // catalog-less fallback as before via the 42P01 catch.
   return db
     .select({
       id: bookingItems.id,
@@ -1023,7 +1144,9 @@ async function listBookingItemsForSummaries(db: PostgresJsDatabase, bookingIds: 
       title: bookingItems.title,
       itemType: bookingItems.itemType,
       productId: bookingItems.productId,
-      productName: productsRef.name,
+      productName: sql<
+        string | null
+      >`coalesce(${bookingItems.productNameSnapshot}, ${productsRef.name})`,
       startsAt: bookingItems.startsAt,
       endsAt: bookingItems.endsAt,
     })
@@ -1041,7 +1164,7 @@ async function listBookingItemsForSummaries(db: PostgresJsDatabase, bookingIds: 
           title: bookingItems.title,
           itemType: bookingItems.itemType,
           productId: bookingItems.productId,
-          productName: sql<null>`null`,
+          productName: bookingItems.productNameSnapshot,
           startsAt: bookingItems.startsAt,
           endsAt: bookingItems.endsAt,
         })
@@ -2334,13 +2457,22 @@ export const bookingsService = {
       conditions.push(lte(bookings.pax, query.paxMax))
     }
 
-    if (query.productId || query.optionId || query.supplierId || query.productCategoryId) {
+    if (
+      query.productId ||
+      query.optionId ||
+      query.supplierId ||
+      query.productCategoryId ||
+      query.availabilitySlotId
+    ) {
       const itemConditions = [eq(bookingItems.bookingId, bookings.id)]
       if (query.productId) {
         itemConditions.push(eq(bookingItems.productId, query.productId))
       }
       if (query.optionId) {
         itemConditions.push(eq(bookingItems.optionId, query.optionId))
+      }
+      if (query.availabilitySlotId) {
+        itemConditions.push(eq(bookingItems.availabilitySlotId, query.availabilitySlotId))
       }
       if (query.supplierId) {
         itemConditions.push(
@@ -2617,14 +2749,33 @@ export const bookingsService = {
           ? selectedUnits
           : []
 
+    // Slot-derived columns + catalog snapshot. `availabilitySlotId`
+    // and `departureLabelSnapshot` carry the departure forward so the
+    // booking detail page can show "Dates" without a JOIN — and the
+    // snapshot survives even if the slot row is later deleted.
+    // `metadata.availabilitySlotId` is kept for backwards compatibility
+    // with the older write path; new readers should prefer the column.
     const slotFields = slot
       ? {
           serviceDate: slot.dateLocal,
           startsAt: slot.startsAt,
           endsAt: slot.endsAt,
+          availabilitySlotId: slot.id,
+          departureLabelSnapshot: formatDepartureLabel(slot.startsAt, slot.timezone),
           metadata: { availabilitySlotId: slot.id } as Record<string, unknown>,
         }
-      : { metadata: null as Record<string, unknown> | null }
+      : {
+          availabilitySlotId: null as string | null,
+          departureLabelSnapshot: null as string | null,
+          metadata: null as Record<string, unknown> | null,
+        }
+    // Catalog snapshot shared across every item row (product + option
+    // names are the same for the whole booking; the per-row unit name
+    // is filled in below).
+    const productOptionSnapshot = {
+      productNameSnapshot: product.name,
+      optionNameSnapshot: option?.name ?? null,
+    } as const
 
     // Seeded line-item totals must match the booking's `sellAmountCents`
     // so checkout / payment / invoicing don't see a list-price item beneath
@@ -2651,6 +2802,8 @@ export const bookingsService = {
               productId: product.id,
               optionId: unit.optionId,
               optionUnitId: unit.id,
+              ...productOptionSnapshot,
+              unitNameSnapshot: unit.name,
               ...slotFields,
             }
           })
@@ -2689,6 +2842,8 @@ export const bookingsService = {
                 productId: product.id,
                 optionId: option?.id ?? null,
                 optionUnitId: unit.id,
+                ...productOptionSnapshot,
+                unitNameSnapshot: unit.name,
                 ...slotFields,
               }
             })
@@ -2709,6 +2864,8 @@ export const bookingsService = {
                 productId: product.id,
                 optionId: option?.id ?? null,
                 optionUnitId: null,
+                ...productOptionSnapshot,
+                unitNameSnapshot: null,
                 ...slotFields,
               },
             ]
@@ -4566,6 +4723,13 @@ export const bookingsService = {
     return this.deleteTravelerRecord(db, travelerId)
   },
 
+  /**
+   * Lists booking items. Snapshot columns
+   * (`productNameSnapshot`/`optionNameSnapshot`/`unitNameSnapshot`/
+   * `departureLabelSnapshot`) travel with the row, so consumers see
+   * exactly what was sold at booking time — no JOIN required, works in
+   * catalog-less deployments, survives product deletion or renames.
+   */
   listItems(db: PostgresJsDatabase, bookingId: string) {
     return db
       .select()
@@ -4699,6 +4863,22 @@ export const bookingsService = {
         return null
       }
 
+      // Look up catalog/availability data for snapshotting + auto-fill.
+      // Explicit input values win — callers in catalog-less deployments
+      // (OTA) pass their own snapshots/timings and we don't touch them.
+      const enrichment = await resolveBookingItemSnapshot(tx as PostgresJsDatabase, {
+        productId: data.productId ?? null,
+        optionId: data.optionId ?? null,
+        optionUnitId: data.optionUnitId ?? null,
+        availabilitySlotId: data.availabilitySlotId ?? null,
+      })
+
+      const startsAtInput =
+        data.startsAt !== undefined ? toTimestamp(data.startsAt) : enrichment.startsAt
+      const endsAtInput = data.endsAt !== undefined ? toTimestamp(data.endsAt) : enrichment.endsAt
+      const serviceDateInput =
+        data.serviceDate !== undefined ? data.serviceDate : enrichment.serviceDate
+
       const [row] = await tx
         .insert(bookingItems)
         .values({
@@ -4707,9 +4887,9 @@ export const bookingsService = {
           description: data.description ?? null,
           itemType: data.itemType,
           status: data.status,
-          serviceDate: data.serviceDate ?? null,
-          startsAt: toTimestamp(data.startsAt),
-          endsAt: toTimestamp(data.endsAt),
+          serviceDate: serviceDateInput ?? null,
+          startsAt: startsAtInput,
+          endsAt: endsAtInput,
           quantity: data.quantity,
           sellCurrency: data.sellCurrency ?? booking.sellCurrency,
           unitSellAmountCents: data.unitSellAmountCents ?? null,
@@ -4722,6 +4902,11 @@ export const bookingsService = {
           optionId: data.optionId ?? null,
           optionUnitId: data.optionUnitId ?? null,
           pricingCategoryId: data.pricingCategoryId ?? null,
+          availabilitySlotId: data.availabilitySlotId ?? null,
+          productNameSnapshot: data.productNameSnapshot ?? enrichment.productName ?? null,
+          optionNameSnapshot: data.optionNameSnapshot ?? enrichment.optionName ?? null,
+          unitNameSnapshot: data.unitNameSnapshot ?? enrichment.unitName ?? null,
+          departureLabelSnapshot: data.departureLabelSnapshot ?? enrichment.departureLabel ?? null,
           sourceSnapshotId: data.sourceSnapshotId ?? null,
           sourceOfferId: data.sourceOfferId ?? null,
           metadata: data.metadata ?? null,
@@ -4748,12 +4933,97 @@ export const bookingsService = {
 
   async updateItem(db: PostgresJsDatabase, itemId: string, data: UpdateBookingItemInput) {
     return db.transaction(async (tx) => {
+      // Refresh snapshots only when the foreign IDs change. Existing
+      // snapshots are the historical record — overwriting them when
+      // the catalog gets renamed would defeat their purpose. Callers
+      // that want a manual re-snapshot can pass the `*Snapshot` fields
+      // explicitly.
+      const refreshing =
+        data.productId !== undefined ||
+        data.optionId !== undefined ||
+        data.optionUnitId !== undefined ||
+        data.availabilitySlotId !== undefined
+
+      const snapshotUpdates: {
+        productNameSnapshot?: string | null
+        optionNameSnapshot?: string | null
+        unitNameSnapshot?: string | null
+        departureLabelSnapshot?: string | null
+        startsAt?: Date | null
+        endsAt?: Date | null
+        serviceDate?: string | null
+      } = {}
+
+      if (refreshing) {
+        const [current] = await tx
+          .select({
+            productId: bookingItems.productId,
+            optionId: bookingItems.optionId,
+            optionUnitId: bookingItems.optionUnitId,
+            availabilitySlotId: bookingItems.availabilitySlotId,
+          })
+          .from(bookingItems)
+          .where(eq(bookingItems.id, itemId))
+          .limit(1)
+
+        if (current) {
+          const enrichment = await resolveBookingItemSnapshot(tx as PostgresJsDatabase, {
+            productId: data.productId !== undefined ? (data.productId ?? null) : current.productId,
+            optionId: data.optionId !== undefined ? (data.optionId ?? null) : current.optionId,
+            optionUnitId:
+              data.optionUnitId !== undefined ? (data.optionUnitId ?? null) : current.optionUnitId,
+            availabilitySlotId:
+              data.availabilitySlotId !== undefined
+                ? (data.availabilitySlotId ?? null)
+                : current.availabilitySlotId,
+          })
+          if (data.productNameSnapshot !== undefined) {
+            snapshotUpdates.productNameSnapshot = data.productNameSnapshot
+          } else if (enrichment.productName !== null) {
+            snapshotUpdates.productNameSnapshot = enrichment.productName
+          }
+          if (data.optionNameSnapshot !== undefined) {
+            snapshotUpdates.optionNameSnapshot = data.optionNameSnapshot
+          } else if (enrichment.optionName !== null) {
+            snapshotUpdates.optionNameSnapshot = enrichment.optionName
+          }
+          if (data.unitNameSnapshot !== undefined) {
+            snapshotUpdates.unitNameSnapshot = data.unitNameSnapshot
+          } else if (enrichment.unitName !== null) {
+            snapshotUpdates.unitNameSnapshot = enrichment.unitName
+          }
+          if (data.departureLabelSnapshot !== undefined) {
+            snapshotUpdates.departureLabelSnapshot = data.departureLabelSnapshot
+          } else if (enrichment.departureLabel !== null) {
+            snapshotUpdates.departureLabelSnapshot = enrichment.departureLabel
+          }
+          // If the caller didn't override timing and a slot was
+          // (re)assigned, mirror the slot's timing onto the item.
+          if (data.availabilitySlotId !== undefined && enrichment.startsAt) {
+            if (data.startsAt === undefined) snapshotUpdates.startsAt = enrichment.startsAt
+            if (data.endsAt === undefined) snapshotUpdates.endsAt = enrichment.endsAt
+            if (data.serviceDate === undefined) snapshotUpdates.serviceDate = enrichment.serviceDate
+          }
+        }
+      }
+
       const [row] = await tx
         .update(bookingItems)
         .set({
           ...data,
-          startsAt: data.startsAt === undefined ? undefined : toTimestamp(data.startsAt),
-          endsAt: data.endsAt === undefined ? undefined : toTimestamp(data.endsAt),
+          ...snapshotUpdates,
+          startsAt:
+            snapshotUpdates.startsAt !== undefined
+              ? snapshotUpdates.startsAt
+              : data.startsAt === undefined
+                ? undefined
+                : toTimestamp(data.startsAt),
+          endsAt:
+            snapshotUpdates.endsAt !== undefined
+              ? snapshotUpdates.endsAt
+              : data.endsAt === undefined
+                ? undefined
+                : toTimestamp(data.endsAt),
           updatedAt: new Date(),
         })
         .where(eq(bookingItems.id, itemId))

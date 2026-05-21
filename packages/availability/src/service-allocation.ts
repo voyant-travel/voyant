@@ -49,6 +49,8 @@ export interface AllocationManifestTraveler {
   bookingId: string
   bookingNumber: string
   bookingStatus: string
+  /** Aggregated payment status of the parent booking (see derivePaymentStatus). */
+  paymentStatus: AllocationPaymentStatus
   firstName: string
   lastName: string
   fullName: string
@@ -70,6 +72,8 @@ export interface AllocationManifestBooking {
   id: string
   bookingNumber: string
   status: string
+  /** Aggregated payment status of the booking (see derivePaymentStatus). */
+  paymentStatus: AllocationPaymentStatus
   contactFirstName: string | null
   contactLastName: string | null
   contactEmail: string | null
@@ -143,6 +147,7 @@ export async function getSlotAllocationManifest(
       bookingId: row.booking_id,
       bookingNumber: booking?.booking_number ?? "",
       bookingStatus: booking?.status ?? "unknown",
+      paymentStatus: booking ? derivePaymentStatus(booking) : "unpaid",
       firstName: row.first_name,
       lastName: row.last_name,
       fullName: [row.first_name, row.last_name].filter(Boolean).join(" "),
@@ -169,6 +174,7 @@ export async function getSlotAllocationManifest(
       id: row.id,
       bookingNumber: row.booking_number,
       status: row.status,
+      paymentStatus: derivePaymentStatus(row),
       contactFirstName: row.contact_first_name,
       contactLastName: row.contact_last_name,
       contactEmail: row.contact_email,
@@ -1040,6 +1046,33 @@ interface BookingRow {
   contact_phone: string | null
   sell_currency: string | null
   pax: number | null
+  sell_amount_cents: number | null
+  invoice_total_cents: number | null
+  invoice_paid_cents: number | null
+}
+
+export type AllocationPaymentStatus = "paid" | "partial" | "unpaid"
+
+/**
+ * Roll up a booking's invoices into a single paid / partial / unpaid
+ * status for the allocation chip's color coding.
+ *
+ *   - No invoices issued → `unpaid` (booking exists but hasn't been
+ *     billed yet; operator has charged no money).
+ *   - Free booking (sell amount 0) → `paid` (nothing owed).
+ *   - All invoices fully paid → `paid`.
+ *   - Some paid, some still due → `partial`.
+ *   - Nothing paid → `unpaid`.
+ */
+function derivePaymentStatus(row: BookingRow): AllocationPaymentStatus {
+  const sellAmount = row.sell_amount_cents ?? 0
+  if (sellAmount <= 0) return "paid"
+  const invoiceTotal = row.invoice_total_cents ?? 0
+  const invoicePaid = row.invoice_paid_cents ?? 0
+  if (invoiceTotal === 0) return "unpaid"
+  if (invoicePaid <= 0) return "unpaid"
+  if (invoicePaid >= invoiceTotal) return "paid"
+  return "partial"
 }
 
 interface TravelerRow {
@@ -1062,26 +1095,79 @@ interface TravelerRow {
 }
 
 async function loadSlotBookingRows(db: PostgresJsDatabase, slotId: string): Promise<BookingRow[]> {
-  return executeRows<BookingRow>(
-    db,
-    sql`
-    SELECT DISTINCT
-      b.id,
-      b.booking_number,
-      b.status,
-      b.contact_first_name,
-      b.contact_last_name,
-      b.contact_email,
-      b.contact_phone,
-      b.sell_currency,
-      b.pax
-    FROM bookings b
-    JOIN booking_allocations ba ON ba.booking_id = b.id
-    WHERE ba.availability_slot_id = ${slotId}
-      AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
-      AND ba.status IN ('held', 'confirmed', 'fulfilled')
-    ORDER BY b.booking_number
-  `,
+  // `invoice_totals` is a LEFT JOIN aggregation that may reference a
+  // missing `invoices` table in catalog-less / finance-less deploys —
+  // we'd want to silently fall back to `unpaid` for every booking
+  // rather than crash the manifest fetch. Hence the try / catch on
+  // `undefined_table` (Postgres 42P01) with a non-aggregating retry.
+  try {
+    return await executeRows<BookingRow>(
+      db,
+      sql`
+      SELECT DISTINCT
+        b.id,
+        b.booking_number,
+        b.status,
+        b.contact_first_name,
+        b.contact_last_name,
+        b.contact_email,
+        b.contact_phone,
+        b.sell_currency,
+        b.pax,
+        b.sell_amount_cents,
+        COALESCE(inv.total_cents, 0) AS invoice_total_cents,
+        COALESCE(inv.paid_cents, 0) AS invoice_paid_cents
+      FROM bookings b
+      JOIN booking_allocations ba ON ba.booking_id = b.id
+      LEFT JOIN (
+        SELECT
+          booking_id,
+          SUM(total_cents) AS total_cents,
+          SUM(paid_cents) AS paid_cents
+        FROM invoices
+        WHERE status <> 'void'
+        GROUP BY booking_id
+      ) inv ON inv.booking_id = b.id
+      WHERE ba.availability_slot_id = ${slotId}
+        AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+        AND ba.status IN ('held', 'confirmed', 'fulfilled')
+      ORDER BY b.booking_number
+    `,
+    )
+  } catch (error) {
+    if (!isUndefinedTableError(error)) throw error
+    const rows = await executeRows<Omit<BookingRow, "invoice_total_cents" | "invoice_paid_cents">>(
+      db,
+      sql`
+      SELECT DISTINCT
+        b.id,
+        b.booking_number,
+        b.status,
+        b.contact_first_name,
+        b.contact_last_name,
+        b.contact_email,
+        b.contact_phone,
+        b.sell_currency,
+        b.pax,
+        b.sell_amount_cents
+      FROM bookings b
+      JOIN booking_allocations ba ON ba.booking_id = b.id
+      WHERE ba.availability_slot_id = ${slotId}
+        AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+        AND ba.status IN ('held', 'confirmed', 'fulfilled')
+      ORDER BY b.booking_number
+    `,
+    )
+    return rows.map((row) => ({ ...row, invoice_total_cents: 0, invoice_paid_cents: 0 }))
+  }
+}
+
+function isUndefinedTableError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "42P01"
   )
 }
 

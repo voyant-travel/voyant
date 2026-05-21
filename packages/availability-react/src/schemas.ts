@@ -206,11 +206,15 @@ export const allocationResourceSchema = z.object({
 
 export type AllocationResource = z.infer<typeof allocationResourceSchema>
 
+export const allocationPaymentStatusSchema = z.enum(["paid", "partial", "unpaid"])
+export type AllocationPaymentStatus = z.infer<typeof allocationPaymentStatusSchema>
+
 export const allocationManifestTravelerSchema = z.object({
   id: z.string(),
   bookingId: z.string(),
   bookingNumber: z.string(),
   bookingStatus: z.string(),
+  paymentStatus: allocationPaymentStatusSchema.default("unpaid"),
   firstName: z.string(),
   lastName: z.string(),
   fullName: z.string(),
@@ -234,6 +238,7 @@ export const allocationManifestBookingSchema = z.object({
   id: z.string(),
   bookingNumber: z.string(),
   status: z.string(),
+  paymentStatus: allocationPaymentStatusSchema.default("unpaid"),
   contactFirstName: z.string().nullable(),
   contactLastName: z.string().nullable(),
   contactEmail: z.string().nullable(),

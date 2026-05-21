@@ -36,6 +36,24 @@ export const invoiceStatusSchema = z.enum([
 ])
 
 export const paymentStatusSchema = z.enum(["pending", "completed", "failed", "refunded"])
+export type PaymentStatus = z.infer<typeof paymentStatusSchema>
+
+// Mirrors the backend's `paymentMethodSchema` from
+// `@voyantjs/finance/validation-shared`. Kept inline rather than
+// re-imported from `@voyantjs/finance` so the browser bundle doesn't
+// drag in drizzle and the rest of the server-only package.
+export const paymentMethodSchema = z.enum([
+  "bank_transfer",
+  "credit_card",
+  "debit_card",
+  "cash",
+  "cheque",
+  "wallet",
+  "direct_bill",
+  "voucher",
+  "other",
+])
+export type PaymentMethod = z.infer<typeof paymentMethodSchema>
 export const creditNoteStatusSchema = z.enum(["draft", "issued", "applied"])
 
 export const invoiceTypeSchema = z.enum(["invoice", "proforma", "credit_note"])

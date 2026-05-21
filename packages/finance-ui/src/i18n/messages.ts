@@ -498,4 +498,38 @@ export type FinanceUiMessages = {
       paymentDateRequired: string
     }
   }
+  recordBookingPaymentDialog: {
+    title: string
+    /** Body intro. Includes the `{generateLink}` placeholder bolded by the dialog. */
+    description: string
+    /** Inline emphasized label used inside `description`. */
+    generateLinkLabel: string
+    fields: {
+      invoice: string
+      amountCents: string
+      paymentDate: string
+      paymentMethod: string
+      status: string
+      referenceNumber: string
+      notes: string
+    }
+    placeholders: {
+      invoice: string
+      referenceNumber: string
+    }
+    /** Per-row option label. Placeholders: `{number} {status} {balance} {currency}`. */
+    invoiceOption: string
+    /** Caption under the picker. Placeholders: `{total} {paid} {due} {currency}`. */
+    invoiceMeta: string
+    loadingInvoices: string
+    noInvoices: string
+    actions: {
+      record: string
+    }
+    validation: {
+      invoiceRequired: string
+      amountMinimum: string
+      recordFailed: string
+    }
+  }
 }

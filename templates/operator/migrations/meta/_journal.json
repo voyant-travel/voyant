@@ -183,6 +183,34 @@
       "when": 1779295200000,
       "tag": "0024_product_terms",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1779364401246,
+      "tag": "0025_product_translation_inclusions_exclusions",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1779465600000,
+      "tag": "0026_booking_item_snapshots",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1779465700000,
+      "tag": "0027_backfill_booking_item_snapshots",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1779465800000,
+      "tag": "0028_backfill_booking_item_slot_from_metadata",
+      "breakpoints": true
     }
   ]
 }

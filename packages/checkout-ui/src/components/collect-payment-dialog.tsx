@@ -1,7 +1,11 @@
 "use client"
 
 import type { InitiatedCheckoutCollectionRecord } from "@voyantjs/checkout"
-import { type PaymentChoice, useCollectPayment } from "@voyantjs/checkout-react"
+import { useCollectPayment } from "@voyantjs/checkout-react"
+import {
+  type BookingPaymentScheduleRecord,
+  useBookingPaymentSchedules,
+} from "@voyantjs/finance-react"
 import { formatMessage } from "@voyantjs/i18n"
 import { Button } from "@voyantjs/ui/components/button"
 import {
@@ -14,16 +18,25 @@ import {
 } from "@voyantjs/ui/components/dialog"
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@voyantjs/ui/components/select"
 import { CheckCircle2, Copy, ExternalLink, Loader2 } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { useCheckoutUiMessagesOrDefault } from "../i18n/provider.js"
-import { PaymentStep } from "./payment-step.js"
 
 /**
- * Operator-side "Collect payment" dialog. Wraps `<PaymentStep>` and
- * `useCollectPayment` so any vertical's booking detail page can drop it in:
+ * Operator-side "Generate payment link" dialog. Bookings created via
+ * the new booking flow already land in `on_hold`, so the dialog skips
+ * the choose-flow step and goes straight to producing a link the
+ * operator can share. Optionally pre-fills the amount from a payment
+ * schedule (deposit / balance / etc.) when the booking has any.
  *
  * ```tsx
  * <CollectPaymentDialog
@@ -34,11 +47,6 @@ import { PaymentStep } from "./payment-step.js"
  *   defaultAmountCents={booking.sellAmountCents}
  * />
  * ```
- *
- * Capabilities are pinned to `sendLink + bankTransfer` because the
- * operator initiates the collection rather than the customer self-charging
- * a saved card. Verticals that need additional flows (e.g. a "Charge to
- * folio" extra) should compose `<PaymentStep>` directly.
  */
 export interface CollectPaymentDialogProps {
   open: boolean
@@ -67,16 +75,7 @@ export interface CollectPaymentDialogProps {
   cardProvider?: string
 }
 
-/**
- * Operator dialog defaults to immediate-charge disabled. Templates that
- * have wired a processor with stored-token support can override via
- * `<PaymentStep>` directly; this dialog is the simple "produce a link to
- * share" flow.
- */
-const CAPABILITIES = {
-  chargeSavedCard: false,
-  newCard: false,
-}
+const FULL_AMOUNT_VALUE = "__full__"
 
 export function CollectPaymentDialog({
   open,
@@ -93,8 +92,18 @@ export function CollectPaymentDialog({
 }: CollectPaymentDialogProps) {
   const messages = useCheckoutUiMessagesOrDefault().collectPaymentDialog
   const [amountCents, setAmountCents] = useState<number>(defaultAmountCents ?? 0)
-  const [choice, setChoice] = useState<PaymentChoice | null>(null)
+  const [scheduleId, setScheduleId] = useState<string>(FULL_AMOUNT_VALUE)
   const [result, setResult] = useState<InitiatedCheckoutCollectionRecord | null>(null)
+
+  const schedulesQuery = useBookingPaymentSchedules(bookingId, { enabled: open })
+  // Only the open schedules are useful pre-fills. Paid / waived /
+  // cancelled / expired wouldn't represent money the customer still
+  // needs to send.
+  const schedules = useMemo(
+    () =>
+      (schedulesQuery.data?.data ?? []).filter((s) => s.status === "pending" || s.status === "due"),
+    [schedulesQuery.data?.data],
+  )
 
   const collect = useCollectPayment(bookingId, {
     cardProvider,
@@ -110,24 +119,31 @@ export function CollectPaymentDialog({
     [amountCents],
   )
 
+  // Re-seed the amount from the latest props only on the closed→open
+  // transition. Watching state mid-flight would clobber manual edits.
+  const wasOpenRef = useRef(false)
+  useEffect(() => {
+    if (open && !wasOpenRef.current) {
+      setAmountCents(defaultAmountCents ?? 0)
+      setScheduleId(FULL_AMOUNT_VALUE)
+    }
+    wasOpenRef.current = open
+  }, [open, defaultAmountCents])
+
   function reset() {
     setAmountCents(defaultAmountCents ?? 0)
-    setChoice(null)
+    setScheduleId(FULL_AMOUNT_VALUE)
     setResult(null)
     collect.reset()
   }
 
   async function submit() {
-    if (!choice || choice.type !== "hold") {
-      toast.error(messages.validation.pickHold)
-      return
-    }
     if (amountCents <= 0) {
       toast.error(messages.validation.amountAboveZero)
       return
     }
     try {
-      const data = await collect.mutateAsync({ choice, amountCents })
+      const data = await collect.mutateAsync({ choice: { type: "hold" }, amountCents })
       setResult(data)
       toast.success(messages.validation.linkReady)
     } catch (err) {
@@ -153,6 +169,41 @@ export function CollectPaymentDialog({
           <ResultPanel result={result} />
         ) : (
           <div className="flex flex-col gap-5">
+            {schedules.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="collect-schedule">{messages.scheduleLabel}</Label>
+                <Select
+                  value={scheduleId}
+                  onValueChange={(v) => {
+                    const next = v ?? FULL_AMOUNT_VALUE
+                    setScheduleId(next)
+                    if (next === FULL_AMOUNT_VALUE) {
+                      setAmountCents(defaultAmountCents ?? 0)
+                    } else {
+                      const schedule = schedules.find((s) => s.id === next)
+                      if (schedule) setAmountCents(schedule.amountCents)
+                    }
+                  }}
+                >
+                  <SelectTrigger id="collect-schedule">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={FULL_AMOUNT_VALUE}>
+                      {formatMessage(messages.scheduleFullAmount, {
+                        amount: formatAmount(defaultAmountCents ?? 0, defaultCurrency),
+                      })}
+                    </SelectItem>
+                    {schedules.map((schedule) => (
+                      <SelectItem key={schedule.id} value={schedule.id}>
+                        {formatScheduleOption(schedule, messages.scheduleTypeLabels)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-muted-foreground text-xs">{messages.scheduleHelp}</p>
+              </div>
+            ) : null}
             <div className="flex flex-col gap-2">
               <Label htmlFor="collect-amount">
                 {formatMessage(messages.amountLabel, { currency: defaultCurrency })}
@@ -165,14 +216,15 @@ export function CollectPaymentDialog({
                 min="0"
                 value={amountInputValue}
                 onChange={(e) => {
+                  // Manual edit detaches the amount from the picked
+                  // schedule so the user can charge a custom amount.
+                  setScheduleId(FULL_AMOUNT_VALUE)
                   const raw = Number.parseFloat(e.target.value)
                   setAmountCents(Number.isFinite(raw) ? Math.round(raw * 100) : 0)
                 }}
               />
               <p className="text-muted-foreground text-xs">{messages.amountHelp}</p>
             </div>
-
-            <PaymentStep value={choice} onChange={setChoice} capabilities={CAPABILITIES} />
           </div>
         )}
 
@@ -188,7 +240,7 @@ export function CollectPaymentDialog({
               >
                 {messages.cancel}
               </Button>
-              <Button onClick={submit} disabled={collect.isPending || choice?.type !== "hold"}>
+              <Button onClick={submit} disabled={collect.isPending || amountCents <= 0}>
                 {collect.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {messages.generateLink}
               </Button>
@@ -198,6 +250,24 @@ export function CollectPaymentDialog({
       </DialogContent>
     </Dialog>
   )
+}
+
+function formatAmount(cents: number, currency: string): string {
+  if (cents <= 0) return `0 ${currency}`
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100)
+  } catch {
+    return `${(cents / 100).toFixed(2)} ${currency}`
+  }
+}
+
+function formatScheduleOption(
+  schedule: BookingPaymentScheduleRecord,
+  typeLabels: Record<string, string>,
+): string {
+  const typeLabel = typeLabels[schedule.scheduleType] ?? schedule.scheduleType
+  const amount = formatAmount(schedule.amountCents, schedule.currency)
+  return `${typeLabel} • ${amount} • ${schedule.dueDate}`
 }
 
 function ResultPanel({ result }: { result: InitiatedCheckoutCollectionRecord }) {

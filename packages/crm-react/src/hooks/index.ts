@@ -53,3 +53,7 @@ export {
   type UsePersonTravelSnapshotOptions,
   usePersonTravelSnapshot,
 } from "./use-person-travel-snapshot.js"
+export {
+  type UseRevealPersonDocumentOptions,
+  useRevealPersonDocument,
+} from "./use-reveal-person-document.js"

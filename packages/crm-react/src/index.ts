@@ -123,6 +123,10 @@ export {
   useQuotes,
 } from "./hooks/use-quotes.js"
 export {
+  type UseRevealPersonDocumentOptions,
+  useRevealPersonDocument,
+} from "./hooks/use-reveal-person-document.js"
+export {
   type UseStageOptions,
   type UseStagesOptions,
   useStage,

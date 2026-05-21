@@ -27,6 +27,14 @@ export function SupplierStatusList({ bookingId }: SupplierStatusListProps) {
   const messages = useBookingsUiMessagesOrDefault()
 
   const statuses = data?.data ?? []
+  // `bookingSupplierStatuses` gets one row per `product_day_services`
+  // entry — so a 2-day itinerary that includes the same service on
+  // both days lands two visually-identical rows. The operator only
+  // cares about the per-service total, so collapse identical rows
+  // (same service id, name, status, cost) into one with a `× N`
+  // badge. The edit pencil opens the first row of the group; for true
+  // duplicates that's a no-op-distinction.
+  const groupedStatuses = groupSupplierStatuses(statuses)
 
   return (
     <Card data-slot="supplier-status-list">
@@ -72,42 +80,60 @@ export function SupplierStatusList({ bookingId }: SupplierStatusListProps) {
                 </tr>
               </thead>
               <tbody>
-                {statuses.map((status) => (
-                  <tr key={status.id} className="border-b last:border-b-0">
-                    <td className="p-2">{status.serviceName}</td>
-                    <td className="p-2">
-                      <Badge variant={supplierStatusVariant[status.status] ?? "secondary"}>
-                        {messages.common.supplierStatusLabels[status.status]}
-                      </Badge>
-                    </td>
-                    <td className="p-2 font-mono">
-                      {status.costAmountCents == null || !status.costCurrency
-                        ? messages.supplierStatusList.values.costUnavailable
-                        : formatCurrency(status.costAmountCents / 100, status.costCurrency)}
-                    </td>
-                    <td className="p-2">
-                      {status.supplierReference ??
-                        messages.supplierStatusList.values.referenceUnavailable}
-                    </td>
-                    <td className="p-2">
-                      {status.confirmedAt
-                        ? formatDate(status.confirmedAt)
-                        : messages.supplierStatusList.values.confirmedUnavailable}
-                    </td>
-                    <td className="p-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditing(status)
-                          setDialogOpen(true)
-                        }}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {groupedStatuses.map((group) => {
+                  const head = group.statuses[0] as BookingSupplierStatusRecord
+                  const totalCostCents = group.statuses.reduce(
+                    (sum, s) => sum + (s.costAmountCents ?? 0),
+                    0,
+                  )
+                  const reference =
+                    group.statuses.find((s) => s.supplierReference)?.supplierReference ?? null
+                  const confirmedAt = group.statuses.find((s) => s.confirmedAt)?.confirmedAt ?? null
+                  return (
+                    <tr key={group.key} className="border-b last:border-b-0">
+                      <td className="p-2">
+                        <span className="inline-flex items-center gap-1.5">
+                          {head.serviceName}
+                          {group.statuses.length > 1 ? (
+                            <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                              × {group.statuses.length}
+                            </span>
+                          ) : null}
+                        </span>
+                      </td>
+                      <td className="p-2">
+                        <Badge variant={supplierStatusVariant[head.status] ?? "secondary"}>
+                          {messages.common.supplierStatusLabels[head.status]}
+                        </Badge>
+                      </td>
+                      <td className="p-2 font-mono">
+                        {totalCostCents === 0 || !head.costCurrency
+                          ? messages.supplierStatusList.values.costUnavailable
+                          : formatCurrency(totalCostCents / 100, head.costCurrency)}
+                      </td>
+                      <td className="p-2">
+                        {reference ?? messages.supplierStatusList.values.referenceUnavailable}
+                      </td>
+                      <td className="p-2">
+                        {confirmedAt
+                          ? formatDate(confirmedAt)
+                          : messages.supplierStatusList.values.confirmedUnavailable}
+                      </td>
+                      <td className="p-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditing(head)
+                            setDialogOpen(true)
+                          }}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -130,4 +156,35 @@ export function SupplierStatusList({ bookingId }: SupplierStatusListProps) {
       />
     </Card>
   )
+}
+
+interface SupplierStatusGroup {
+  key: string
+  statuses: BookingSupplierStatusRecord[]
+}
+
+function groupSupplierStatuses(
+  statuses: readonly BookingSupplierStatusRecord[],
+): SupplierStatusGroup[] {
+  const groups = new Map<string, SupplierStatusGroup>()
+  for (const status of statuses) {
+    // Visually-identical rows collapse together. Reference/confirmed
+    // timestamps and `id` are intentionally excluded — those differ
+    // between sibling rows that the operator nonetheless sees as one
+    // line of business.
+    const key = [
+      status.supplierServiceId ?? "",
+      status.serviceName,
+      status.status,
+      status.costCurrency ?? "",
+      status.costAmountCents ?? "",
+    ].join("|")
+    const existing = groups.get(key)
+    if (existing) {
+      existing.statuses.push(status)
+    } else {
+      groups.set(key, { key, statuses: [status] })
+    }
+  }
+  return Array.from(groups.values())
 }

@@ -97,7 +97,18 @@ export const checkoutUiRo: CheckoutUiMessages = {
   collectPaymentDialog: {
     title: "Genereaza link de plata",
     description:
-      "Retine rezervarea si genereaza un link de plata pe care clientul il poate deschide pentru plata cu cardul sau transfer bancar. Distribuie-l cum preferi (email, chat etc.).",
+      "Genereaza un link de plata pe care clientul il poate deschide pentru plata cu cardul sau transfer bancar. Distribuie-l cum preferi (email, chat etc.).",
+    scheduleLabel: "Incaseaza",
+    scheduleHelp:
+      "Alege o transa din planul de plata sau suma totala. Editeaza suma de mai jos pentru o incasare personalizata.",
+    scheduleFullAmount: "Suma totala ({amount})",
+    scheduleTypeLabels: {
+      deposit: "Avans",
+      installment: "Transa",
+      balance: "Sold",
+      hold: "Retinere",
+      other: "Alta",
+    },
     amountLabel: "Suma ({currency})",
     amountHelp:
       "Implicit este suma de vanzare a rezervarii. Modifica pentru avans sau plata partiala.",
@@ -105,7 +116,6 @@ export const checkoutUiRo: CheckoutUiMessages = {
     done: "Gata",
     generateLink: "Genereaza link",
     validation: {
-      pickHold: "Alege 'Retine - genereaza link de plata' pentru a crea un link distribuibil.",
       amountAboveZero: "Introdu o suma mai mare decat zero.",
       linkReady: "Linkul de plata este gata - copiaza-l sau trimite-l clientului.",
     },

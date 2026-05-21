@@ -43,7 +43,7 @@ export interface BookingListProps {
   headerActions?: React.ReactNode
 }
 
-type SortableField = Exclude<BookingsListSortField, "createdAt">
+type SortableField = BookingsListSortField
 
 const SORTABLE_COLUMNS = {
   bookingNumber: "bookingNumber",
@@ -52,10 +52,11 @@ const SORTABLE_COLUMNS = {
   pax: "pax",
   startDate: "startDate",
   endDate: "endDate",
+  createdAt: "createdAt",
 } as const satisfies Record<SortableField, SortableField>
 
 const SKELETON_ROW_COUNT = 6
-const TABLE_COLUMN_COUNT = 7
+const TABLE_COLUMN_COUNT = 9
 
 export function BookingList({
   pageSize = 25,
@@ -71,6 +72,7 @@ export function BookingList({
   const [productCategoryId, setProductCategoryId] = React.useState<string | null>(null)
   const [personId, setPersonId] = React.useState<string | null>(null)
   const [organizationId, setOrganizationId] = React.useState<string | null>(null)
+  const [availabilitySlotId, setAvailabilitySlotId] = React.useState<string | null>(null)
   const [dateRange, setDateRange] = React.useState<{
     from: string | null
     to: string | null
@@ -94,6 +96,7 @@ export function BookingList({
     status: status === BOOKING_STATUS_ALL ? undefined : status,
     productId: productId ?? undefined,
     optionId: optionId ?? undefined,
+    availabilitySlotId: availabilitySlotId ?? undefined,
     supplierId: supplierId ?? undefined,
     productCategoryId: productCategoryId ?? undefined,
     personId: personId ?? undefined,
@@ -144,6 +147,7 @@ export function BookingList({
     (status !== BOOKING_STATUS_ALL ? 1 : 0) +
     (productId !== null ? 1 : 0) +
     (optionId !== null ? 1 : 0) +
+    (availabilitySlotId !== null ? 1 : 0) +
     (supplierId !== null ? 1 : 0) +
     (productCategoryId !== null ? 1 : 0) +
     (personId !== null ? 1 : 0) +
@@ -157,6 +161,7 @@ export function BookingList({
     setStatus(BOOKING_STATUS_ALL)
     setProductId(null)
     setOptionId(null)
+    setAvailabilitySlotId(null)
     setSupplierId(null)
     setProductCategoryId(null)
     setPersonId(null)
@@ -198,9 +203,15 @@ export function BookingList({
           status={status}
           onStatusChange={setStatus}
           productId={productId}
-          onProductIdChange={setProductId}
+          onProductIdChange={(next) => {
+            setProductId(next)
+            // Slot picker is product-scoped; clear when the product changes.
+            setAvailabilitySlotId(null)
+          }}
           optionId={optionId}
           onOptionIdChange={setOptionId}
+          availabilitySlotId={availabilitySlotId}
+          onAvailabilitySlotIdChange={setAvailabilitySlotId}
           supplierId={supplierId}
           onSupplierIdChange={setSupplierId}
           productCategoryId={productCategoryId}
@@ -302,6 +313,16 @@ export function BookingList({
                   onSort={handleSort}
                 />
               </TableHead>
+              <TableHead>{columnMessages.lead}</TableHead>
+              <TableHead>
+                <SortHeader
+                  label={columnMessages.createdAt}
+                  field={SORTABLE_COLUMNS.createdAt}
+                  sortBy={sortBy}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                />
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -356,6 +377,8 @@ export function BookingList({
                   <TableCell>
                     {formatBookingDateTime(booking.endsAt ?? booking.endDate, formatDateTime)}
                   </TableCell>
+                  <TableCell>{formatLead(booking)}</TableCell>
+                  <TableCell>{formatBookingDateTime(booking.createdAt, formatDateTime)}</TableCell>
                 </TableRow>
               ))
             )}
@@ -473,14 +496,17 @@ function formatBookingItems(booking: BookingRecord, moreTemplate: string): React
   const [first, ...rest] = items
   if (!first) return <span className="text-muted-foreground">—</span>
   const label = first.productName ?? first.title
-  if (rest.length === 0) return label
+  const moreSuffix =
+    rest.length === 0 ? "" : ` ${formatMessage(moreTemplate, { count: rest.length })}`
   return (
-    <span>
+    <div className="max-w-[320px] truncate" title={`${label}${moreSuffix}`}>
       {label}
-      <span className="ml-1 text-xs text-muted-foreground">
-        {formatMessage(moreTemplate, { count: rest.length })}
-      </span>
-    </span>
+      {rest.length > 0 ? (
+        <span className="ml-1 text-xs text-muted-foreground">
+          {formatMessage(moreTemplate, { count: rest.length })}
+        </span>
+      ) : null}
+    </div>
   )
 }
 
@@ -493,4 +519,10 @@ function formatBookingDateTime(
     return formatDateTime(`${value}T00:00:00`)
   }
   return formatDateTime(value)
+}
+
+function formatLead(booking: BookingRecord): string {
+  const name = [booking.contactFirstName, booking.contactLastName].filter(Boolean).join(" ").trim()
+  if (name) return name
+  return booking.contactEmail ?? "—"
 }

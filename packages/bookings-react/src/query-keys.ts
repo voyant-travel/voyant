@@ -14,6 +14,11 @@ export interface BookingsListFilters {
   search?: string | undefined
   productId?: string | undefined
   optionId?: string | undefined
+  /**
+   * Restrict to bookings whose items reference this availability slot
+   * (i.e. departure). Typically paired with `productId`.
+   */
+  availabilitySlotId?: string | undefined
   supplierId?: string | undefined
   productCategoryId?: string | undefined
   personId?: string | undefined

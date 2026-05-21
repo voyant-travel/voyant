@@ -87,13 +87,20 @@ export type CheckoutUiMessages = {
   collectPaymentDialog: {
     title: string
     description: string
+    /** Picker label above the schedule dropdown. */
+    scheduleLabel: string
+    /** Caption under the picker. */
+    scheduleHelp: string
+    /** "Full amount ({amount})" option label. */
+    scheduleFullAmount: string
+    /** Localized labels for each `payment_schedule_type` enum value. */
+    scheduleTypeLabels: Record<"deposit" | "installment" | "balance" | "hold" | "other", string>
     amountLabel: string
     amountHelp: string
     cancel: string
     done: string
     generateLink: string
     validation: {
-      pickHold: string
       amountAboveZero: string
       linkReady: string
     }

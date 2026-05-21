@@ -1,6 +1,10 @@
 "use client"
 
-import type { AllocationManifestTraveler, AllocationResource } from "@voyantjs/availability-react"
+import type {
+  AllocationManifestTraveler,
+  AllocationPaymentStatus,
+  AllocationResource,
+} from "@voyantjs/availability-react"
 import {
   Badge,
   Button,
@@ -10,6 +14,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  cn,
   Input,
   Label,
   Popover,
@@ -60,6 +65,7 @@ export function ResourceColumnsView({
   onUnassignTraveler,
   onRemoveResource,
   onEditResource,
+  onBookingOpen,
   renderTravelerActions,
 }: {
   kind: string
@@ -80,6 +86,11 @@ export function ResourceColumnsView({
   onUnassignTraveler: (travelerId: string) => void
   onRemoveResource: (resourceId: string) => void
   onEditResource?: (resourceId: string, input: EditResourceInput) => Promise<void> | void
+  /**
+   * Fired when the operator clicks a booking number on a chip. The
+   * host decides whether to open a side panel, navigate, etc.
+   */
+  onBookingOpen?: (bookingId: string) => void
   renderTravelerActions?: (traveler: AllocationManifestTraveler) => ReactNode
 }) {
   const messages = useAllocationUiMessagesOrDefault()
@@ -99,6 +110,7 @@ export function ResourceColumnsView({
           <UnallocatedTravelersTable
             travelers={occupants.unallocated}
             sharingGroupLabels={sharingGroupLabels}
+            onBookingOpen={onBookingOpen}
             renderActions={renderTravelerActions}
           />
         )}
@@ -135,6 +147,7 @@ export function ResourceColumnsView({
                   onUnassignTraveler={onUnassignTraveler}
                   onRemoveResource={onRemoveResource}
                   onEditResource={onEditResource}
+                  onBookingOpen={onBookingOpen}
                 />
               </section>
             )
@@ -156,6 +169,7 @@ function ResourceGroupTable({
   onUnassignTraveler,
   onRemoveResource,
   onEditResource,
+  onBookingOpen,
 }: {
   kind: string
   resources: AllocationResource[]
@@ -167,6 +181,7 @@ function ResourceGroupTable({
   onUnassignTraveler: (travelerId: string) => void
   onRemoveResource: (resourceId: string) => void
   onEditResource?: (resourceId: string, input: EditResourceInput) => Promise<void> | void
+  onBookingOpen?: (bookingId: string) => void
 }) {
   const messages = useAllocationUiMessagesOrDefault()
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -212,6 +227,7 @@ function ResourceGroupTable({
                 onAssignTraveler={(travelerId) => onAssignTraveler(travelerId, resource.id)}
                 onUnassignTraveler={onUnassignTraveler}
                 onRemoveResource={() => onRemoveResource(resource.id)}
+                onBookingOpen={onBookingOpen}
               />
             )
           })}
@@ -237,6 +253,7 @@ function ResourceRow({
   onAssignTraveler,
   onUnassignTraveler,
   onRemoveResource,
+  onBookingOpen,
 }: {
   kind: string
   resource: AllocationResource
@@ -253,6 +270,7 @@ function ResourceRow({
   onAssignTraveler: (travelerId: string) => void
   onUnassignTraveler: (travelerId: string) => void
   onRemoveResource: () => void
+  onBookingOpen?: (bookingId: string) => void
 }) {
   const messages = useAllocationUiMessagesOrDefault()
   const overCapacity = seated.length > resource.capacity
@@ -303,6 +321,7 @@ function ResourceRow({
                   : null
               }
               onUnassign={() => onUnassignTraveler(traveler.id)}
+              onBookingOpen={onBookingOpen}
             />
           ))}
           {!isFull ? (
@@ -346,18 +365,36 @@ function TravelerChip({
   traveler,
   sharingGroupLabel,
   onUnassign,
+  onBookingOpen,
 }: {
   traveler: AllocationManifestTraveler
   sharingGroupLabel: string | null
   onUnassign: () => void
+  onBookingOpen?: (bookingId: string) => void
 }) {
   const messages = useAllocationUiMessagesOrDefault()
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border bg-background px-2 py-0.5 text-xs">
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border bg-background px-2 py-0.5 text-xs",
+        paymentStatusChipClass(traveler.paymentStatus),
+      )}
+      title={paymentStatusTooltip(traveler.paymentStatus, messages)}
+    >
       <span className="truncate font-medium" title={sharingGroupLabel ?? undefined}>
         {traveler.fullName}
       </span>
-      <span className="text-muted-foreground">{traveler.bookingNumber}</span>
+      {onBookingOpen ? (
+        <button
+          type="button"
+          onClick={() => onBookingOpen(traveler.bookingId)}
+          className="text-muted-foreground hover:text-foreground hover:underline"
+        >
+          {traveler.bookingNumber}
+        </button>
+      ) : (
+        <span className="text-muted-foreground">{traveler.bookingNumber}</span>
+      )}
       <Button
         type="button"
         variant="ghost"
@@ -370,6 +407,29 @@ function TravelerChip({
       </Button>
     </span>
   )
+}
+
+/**
+ * Border + background tint that mirrors the booking's payment status:
+ * red for unpaid, amber for partial, emerald for paid. Tailwind classes
+ * are explicit (no template strings) so the v4 JIT scanner picks them up.
+ */
+function paymentStatusChipClass(status: AllocationPaymentStatus): string {
+  switch (status) {
+    case "paid":
+      return "border-emerald-500/40 bg-emerald-500/5"
+    case "partial":
+      return "border-amber-500/40 bg-amber-500/5"
+    case "unpaid":
+      return "border-rose-500/40 bg-rose-500/5"
+  }
+}
+
+function paymentStatusTooltip(
+  status: AllocationPaymentStatus,
+  messages: ReturnType<typeof useAllocationUiMessagesOrDefault>,
+): string {
+  return messages.paymentStatusLabels?.[status] ?? status
 }
 
 function AssignTravelerPopover({
@@ -539,13 +599,31 @@ function ResourceEditForm({
  * small slot scroll. Keeps the same metadata (lead flag, sharing group,
  * accessibility / dietary icons, booking number) but in a single row.
  */
+/**
+ * Lighter tint than the chip — the row already has a left-column status
+ * bar via the booking-number cell, and a full-width tint would fight
+ * the table's striping. Just enough color to skim a denied row.
+ */
+function paymentStatusUnallocatedRowClass(status: AllocationPaymentStatus): string {
+  switch (status) {
+    case "paid":
+      return "text-emerald-700 dark:text-emerald-300"
+    case "partial":
+      return "text-amber-700 dark:text-amber-300"
+    case "unpaid":
+      return "text-rose-700 dark:text-rose-300"
+  }
+}
+
 function UnallocatedTravelersTable({
   travelers,
   sharingGroupLabels,
+  onBookingOpen,
   renderActions,
 }: {
   travelers: AllocationManifestTraveler[]
   sharingGroupLabels: Record<string, string>
+  onBookingOpen?: (bookingId: string) => void
   renderActions?: (traveler: AllocationManifestTraveler) => ReactNode
 }) {
   const messages = useAllocationUiMessagesOrDefault()
@@ -591,8 +669,23 @@ function UnallocatedTravelersTable({
                   ) : null}
                 </div>
               </TableCell>
-              <TableCell className="px-3 py-1.5 text-muted-foreground text-xs">
-                {traveler.bookingNumber}
+              <TableCell
+                className={cn(
+                  "px-3 py-1.5 text-xs",
+                  paymentStatusUnallocatedRowClass(traveler.paymentStatus),
+                )}
+              >
+                {onBookingOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => onBookingOpen(traveler.bookingId)}
+                    className="text-muted-foreground hover:text-foreground hover:underline"
+                  >
+                    {traveler.bookingNumber}
+                  </button>
+                ) : (
+                  <span className="text-muted-foreground">{traveler.bookingNumber}</span>
+                )}
               </TableCell>
               {hasActions ? (
                 <TableCell className="px-3 py-1.5 text-right">

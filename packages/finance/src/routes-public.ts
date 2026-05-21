@@ -148,14 +148,17 @@ export function createPublicFinanceRoutes(options: PublicFinanceRouteOptions = {
         : notFound(c, "Booking payment options not found")
     })
     .get("/payment-sessions/:sessionId", async (c) => {
+      // No capability check: the session id is itself the bearer
+      // credential — anyone the operator shared `/pay/:sessionId` with
+      // needs to read it, and the projection is already redacted
+      // (no PII beyond payerEmail/payerName which the operator chose
+      // to share when issuing the link). Trip-issued sessions already
+      // worked this way (no bookingId attached → no check); admin-
+      // initiated booking sessions need the same access.
       const session = await publicFinanceService.getPaymentSession(
         c.get("db"),
         c.req.param("sessionId"),
       )
-
-      if (session?.bookingId) {
-        await requireBookingCheckoutCapability(c, session.bookingId, "payment:read")
-      }
 
       return session ? c.json({ data: session }) : notFound(c, "Payment session not found")
     })

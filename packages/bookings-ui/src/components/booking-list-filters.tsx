@@ -1,5 +1,7 @@
 "use client"
 
+import type { AvailabilitySlotRecord } from "@voyantjs/availability-react"
+import { useSlots } from "@voyantjs/availability-react"
 import { type BookingStatus, bookingStatuses } from "@voyantjs/bookings-react"
 import type { OrganizationRecord, PersonRecord } from "@voyantjs/crm-react"
 import { useOrganizations, usePeople } from "@voyantjs/crm-react"
@@ -42,6 +44,12 @@ export interface BookingListFiltersPopoverProps {
   onProductIdChange: (productId: string | null) => void
   optionId: string | null
   onOptionIdChange: (optionId: string | null) => void
+  /**
+   * Filter to bookings on a specific departure (availability slot).
+   * Picker is only populated when a product is selected.
+   */
+  availabilitySlotId: string | null
+  onAvailabilitySlotIdChange: (availabilitySlotId: string | null) => void
   supplierId: string | null
   onSupplierIdChange: (supplierId: string | null) => void
   productCategoryId: string | null
@@ -69,6 +77,8 @@ export function BookingListFiltersPopover({
   onProductIdChange,
   optionId,
   onOptionIdChange,
+  availabilitySlotId,
+  onAvailabilitySlotIdChange,
   supplierId,
   onSupplierIdChange,
   productCategoryId,
@@ -92,6 +102,7 @@ export function BookingListFiltersPopover({
   const [selectedProduct, setSelectedProduct] = React.useState<ProductRecord | null>(null)
   const [productSearch, setProductSearch] = React.useState("")
   const [selectedOption, setSelectedOption] = React.useState<ProductOptionRecord | null>(null)
+  const [selectedSlot, setSelectedSlot] = React.useState<AvailabilitySlotRecord | null>(null)
   const [selectedSupplier, setSelectedSupplier] = React.useState<Supplier | null>(null)
   const [supplierSearch, setSupplierSearch] = React.useState("")
   const [selectedProductCategory, setSelectedProductCategory] =
@@ -116,6 +127,15 @@ export function BookingListFiltersPopover({
     enabled: productId !== null,
   })
   const productOptions = optionsData?.data ?? []
+  // Departure picker is product-scoped. The list endpoint orders
+  // results most-recent-first; capping at 50 keeps the dropdown
+  // workable while still surfacing the active season's slots.
+  const { data: slotsData } = useSlots({
+    productId: productId ?? undefined,
+    limit: 50,
+    enabled: productId !== null,
+  })
+  const slots = slotsData?.data ?? []
   const { data: suppliersData } = useSuppliers({
     search: supplierSearch || undefined,
     limit: 20,
@@ -226,6 +246,32 @@ export function BookingListFiltersPopover({
               getSecondary={(option) => option.code ?? undefined}
               placeholder={filterMessages.option}
               emptyText={productId ? filterMessages.optionEmpty : filterMessages.optionNeedsProduct}
+              disabled={productId === null}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="bookings-filter-departure">{filterMessages.departureLabel}</Label>
+            <AsyncCombobox<AvailabilitySlotRecord>
+              value={availabilitySlotId}
+              onChange={(value) => {
+                onAvailabilitySlotIdChange(value)
+                if (!value) setSelectedSlot(null)
+                else {
+                  const match = slots.find((slot) => slot.id === value)
+                  if (match) setSelectedSlot(match)
+                }
+                markChanged()
+              }}
+              items={slots}
+              selectedItem={selectedSlot}
+              getKey={(slot) => slot.id}
+              getLabel={(slot) => formatSlotLabel(slot)}
+              getSecondary={(slot) => slot.status}
+              placeholder={filterMessages.departure}
+              emptyText={
+                productId ? filterMessages.departureEmpty : filterMessages.departureNeedsProduct
+              }
               disabled={productId === null}
             />
           </div>
@@ -378,4 +424,25 @@ export function BookingListFiltersPopover({
 function formatPersonName(person: PersonRecord) {
   const name = [person.firstName, person.lastName].filter(Boolean).join(" ").trim()
   return name || person.email || person.id
+}
+
+/**
+ * Human-friendly departure label. Renders the local date + start time
+ * in the slot's own timezone so the operator sees what the customer
+ * sees, not whatever the admin's browser locale converts it to.
+ */
+function formatSlotLabel(slot: AvailabilitySlotRecord): string {
+  try {
+    const formatter = new Intl.DateTimeFormat(undefined, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: slot.timezone,
+    })
+    return formatter.format(new Date(slot.startsAt))
+  } catch {
+    return slot.startsAt
+  }
 }

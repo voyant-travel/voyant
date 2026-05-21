@@ -519,4 +519,37 @@ export const financeUiRo = {
       paymentDateRequired: "Data platii este obligatorie",
     },
   },
+  recordBookingPaymentDialog: {
+    title: "Inregistreaza plata",
+    description:
+      "Inregistreaza o plata deja incasata (transfer bancar, numerar, cec, plata cu cardul efectuata manual etc.). Pentru a trimite clientului un link de plata cu cardul sau prin transfer bancar, foloseste {generateLink}.",
+    generateLinkLabel: "Genereaza link de plata",
+    fields: {
+      invoice: "Factura",
+      amountCents: "Suma",
+      paymentDate: "Data platii",
+      paymentMethod: "Metoda",
+      status: "Status",
+      referenceNumber: "Referinta",
+      notes: "Note",
+    },
+    placeholders: {
+      invoice: "Selecteaza factura",
+      referenceNumber: "Referinta bancara, numar de chitanta etc.",
+    },
+    invoiceOption: "{number} — {status} — {balance} {currency} de incasat",
+    invoiceMeta:
+      "Total {total} {currency} • platit {paid} {currency} • de incasat {due} {currency}",
+    loadingInvoices: "Se incarca facturile…",
+    noInvoices:
+      "Nu exista facturi pe aceasta rezervare. Emite o factura inainte de a inregistra o plata.",
+    actions: {
+      record: "Inregistreaza plata",
+    },
+    validation: {
+      invoiceRequired: "Selecteaza o factura pentru aceasta plata.",
+      amountMinimum: "Suma trebuie sa fie mai mare decat zero.",
+      recordFailed: "Inregistrarea platii a esuat.",
+    },
+  },
 } satisfies FinanceUiMessages

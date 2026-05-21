@@ -515,4 +515,35 @@ export const financeUiEn = {
       paymentDateRequired: "Payment date is required",
     },
   },
+  recordBookingPaymentDialog: {
+    title: "Record payment",
+    description:
+      "Log a payment you've already received (bank transfer, cash, cheque, manual card charge, etc.). To send the customer a card or bank-transfer link, use {generateLink} instead.",
+    generateLinkLabel: "Generate payment link",
+    fields: {
+      invoice: "Invoice",
+      amountCents: "Amount",
+      paymentDate: "Payment date",
+      paymentMethod: "Method",
+      status: "Status",
+      referenceNumber: "Reference",
+      notes: "Notes",
+    },
+    placeholders: {
+      invoice: "Select invoice",
+      referenceNumber: "Bank reference, receipt number, etc.",
+    },
+    invoiceOption: "{number} — {status} — {balance} {currency} due",
+    invoiceMeta: "Total {total} {currency} • paid {paid} {currency} • due {due} {currency}",
+    loadingInvoices: "Loading invoices…",
+    noInvoices: "No invoices on this booking. Issue an invoice before recording a payment.",
+    actions: {
+      record: "Record payment",
+    },
+    validation: {
+      invoiceRequired: "Select an invoice to record this payment against.",
+      amountMinimum: "Amount must be greater than zero.",
+      recordFailed: "Failed to record payment.",
+    },
+  },
 } satisfies FinanceUiMessages

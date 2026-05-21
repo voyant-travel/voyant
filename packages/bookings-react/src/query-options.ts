@@ -56,6 +56,7 @@ export function getBookingsQueryOptions(
       if (filters.search) params.set("search", filters.search)
       if (filters.productId) params.set("productId", filters.productId)
       if (filters.optionId) params.set("optionId", filters.optionId)
+      if (filters.availabilitySlotId) params.set("availabilitySlotId", filters.availabilitySlotId)
       if (filters.supplierId) params.set("supplierId", filters.supplierId)
       if (filters.productCategoryId) params.set("productCategoryId", filters.productCategoryId)
       if (filters.personId) params.set("personId", filters.personId)
