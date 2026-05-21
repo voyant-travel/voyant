@@ -269,9 +269,7 @@ async function collectOptInRoots() {
  */
 const HARDCODED_FILE_ALLOWLIST = new Set(
   [
-    "templates/operator/src/components/voyant/booking-journey/operator-booking-journey.tsx",
     "templates/operator/src/components/voyant/bookings/booking-catalog-source-card.tsx",
-    "templates/operator/src/components/voyant/catalog/catalog-booking-page.tsx",
     "templates/operator/src/components/voyant/catalog/catalog-page.tsx",
     "templates/operator/src/components/voyant/travel-composer/admin-trip-composer-page.tsx",
     "templates/operator/src/components/voyant/travel-composer/admin-trip-composer-panels.tsx",

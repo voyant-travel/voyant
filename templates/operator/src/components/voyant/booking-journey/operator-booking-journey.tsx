@@ -13,6 +13,8 @@ import { PersonPickerSection, type PersonPickerValue } from "@voyantjs/bookings-
 import { BookingJourney, type BookingJourneyProps } from "@voyantjs/bookings-ui/journey"
 import { useState } from "react"
 
+import { useAdminMessages } from "@/lib/admin-i18n"
+
 const emptyPersonPickerValue: PersonPickerValue = {
   mode: "existing",
   personId: "",
@@ -113,6 +115,7 @@ function CrmLeadPicker({
   }) => void
   variant?: "lead" | "traveler"
 }): React.ReactElement {
+  const t = useAdminMessages().bookings.detail.bookingJourney
   const [value, setValue] = useState<PersonPickerValue>(emptyPersonPickerValue)
 
   function commit(next: PersonPickerValue): void {
@@ -146,7 +149,7 @@ function CrmLeadPicker({
       onChange={commit}
       showOrganization={variant === "lead"}
       labels={{
-        person: variant === "traveler" ? "Traveler" : "Lead contact",
+        person: variant === "traveler" ? t.travelerPickerLabel : t.leadContactPickerLabel,
       }}
     />
   )
