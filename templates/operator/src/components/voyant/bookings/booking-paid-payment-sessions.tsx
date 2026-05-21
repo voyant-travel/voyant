@@ -2,11 +2,17 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { PaymentSessionActionLedgerCard } from "@voyantjs/finance-ui/components/invoice-action-ledger-card"
+import { formatMessage } from "@voyantjs/i18n"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
 import { CheckCircle2, ExternalLink } from "lucide-react"
 
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
+
+type PaymentSessionsMessages = ReturnType<
+  typeof useAdminMessages
+>["bookings"]["detail"]["paymentSessions"]
 
 interface PaidPaymentSession {
   id: string
@@ -51,6 +57,7 @@ export interface BookingPaidPaymentSessionsProps {
 export function BookingPaidPaymentSessions({
   bookingId,
 }: BookingPaidPaymentSessionsProps): React.ReactElement | null {
+  const t = useAdminMessages().bookings.detail.paymentSessions
   const { data, isLoading } = useQuery({
     queryKey: ["booking-paid-payment-sessions", bookingId],
     queryFn: () =>
@@ -69,7 +76,7 @@ export function BookingPaidPaymentSessions({
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-          Paid sessions
+          {t.paidTitle}
           <Badge variant="outline" className="text-[10px]">
             {sessions.length}
           </Badge>
@@ -90,39 +97,51 @@ export function BookingPaidPaymentSessions({
               </div>
               <span className="text-muted-foreground text-xs">
                 {session.completedAt
-                  ? `Paid ${new Date(session.completedAt).toLocaleString()}`
-                  : `Created ${new Date(session.createdAt).toLocaleString()}`}
+                  ? formatMessage(t.paidAt, {
+                      date: new Date(session.completedAt).toLocaleString(),
+                    })
+                  : formatMessage(t.createdAt, {
+                      date: new Date(session.createdAt).toLocaleString(),
+                    })}
               </span>
             </div>
 
             <dl className="grid grid-cols-1 gap-x-6 gap-y-1 text-xs sm:grid-cols-2">
-              <Row label="Session" value={session.id} />
+              <Row label={t.sessionLabel} value={session.id} />
               {session.providerSessionId ? (
                 <Row
-                  label={`${session.provider ?? "Provider"} session`}
+                  label={
+                    session.provider
+                      ? formatMessage(t.providerSession, { provider: session.provider })
+                      : t.providerSessionFallback
+                  }
                   value={session.providerSessionId}
                 />
               ) : null}
               {session.providerPaymentId ? (
                 <Row
-                  label={`${session.provider ?? "Provider"} payment`}
+                  label={
+                    session.provider
+                      ? formatMessage(t.providerPayment, { provider: session.provider })
+                      : t.providerPaymentFallback
+                  }
                   value={session.providerPaymentId}
                 />
               ) : null}
               {session.externalReference ? (
-                <Row label="External ref" value={session.externalReference} />
+                <Row label={t.externalRef} value={session.externalReference} />
               ) : null}
               {session.invoiceId ? (
-                <Row label="Invoice" value={session.invoiceId} />
+                <Row label={t.invoiceLabel} value={session.invoiceId} />
               ) : (
-                <Row label="Invoice" value={<NotLinked />} />
+                <Row label={t.invoiceLabel} value={<NotLinked messages={t} />} />
               )}
               {session.paymentId ? (
-                <Row label="Payment row" value={session.paymentId} />
+                <Row label={t.paymentRowLabel} value={session.paymentId} />
               ) : session.invoiceId ? (
                 <Row
-                  label="Payment row"
-                  value={<span className="text-amber-600">pending reconciliation</span>}
+                  label={t.paymentRowLabel}
+                  value={<span className="text-amber-600">{t.pendingReconciliation}</span>}
                 />
               ) : null}
             </dl>
@@ -144,13 +163,13 @@ function Row({ label, value }: { label: string; value: React.ReactNode }): React
   )
 }
 
-function NotLinked(): React.ReactElement {
+function NotLinked({ messages }: { messages: PaymentSessionsMessages }): React.ReactElement {
   // The session was paid but no `link_payment_to_invoice` step has
   // back-linked it yet. Common transient state right after the
   // Netopia callback fires; resolves when checkout-finalize completes.
   return (
     <span className="inline-flex items-center gap-1 text-amber-600">
-      not linked yet
+      {messages.notLinked}
       <ExternalLink className="h-3 w-3 opacity-60" />
     </span>
   )
