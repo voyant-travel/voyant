@@ -1,11 +1,38 @@
+import { createRequire } from "node:module"
 import { fileURLToPath, URL } from "node:url"
 import { cloudflare } from "@cloudflare/vite-plugin"
 import tailwindcss from "@tailwindcss/vite"
 import { devtools } from "@tanstack/devtools-vite"
 import { tanstackStart } from "@tanstack/react-start/plugin/vite"
 import viteReact from "@vitejs/plugin-react"
-import { visualizer } from "rollup-plugin-visualizer"
-import { defineConfig } from "vite"
+import { defineConfig, type PluginOption } from "vite"
+
+const require = createRequire(import.meta.url)
+
+type VisualizerModule = {
+  visualizer: (options: {
+    filename: string
+    template: "treemap"
+    gzipSize: boolean
+    brotliSize: boolean
+  }) => PluginOption
+}
+
+function createAnalyzePlugin(): PluginOption | false {
+  if (process.env.ANALYZE !== "1") return false
+
+  try {
+    const { visualizer } = require("rollup-plugin-visualizer") as VisualizerModule
+    return visualizer({
+      filename: "dist/stats.html",
+      template: "treemap",
+      gzipSize: true,
+      brotliSize: true,
+    })
+  } catch {
+    return false
+  }
+}
 
 const config = defineConfig({
   // Allow Cloudflare-tunnel / ngrok hostnames to reach the dev server.
@@ -90,13 +117,7 @@ const config = defineConfig({
     viteReact(),
     // Opt-in: `ANALYZE=1 pnpm build` emits dist/stats.html with a treemap
     // of all client chunks. Off by default so normal builds stay clean.
-    process.env.ANALYZE === "1" &&
-      visualizer({
-        filename: "dist/stats.html",
-        template: "treemap",
-        gzipSize: true,
-        brotliSize: true,
-      }),
+    createAnalyzePlugin(),
   ],
 })
 

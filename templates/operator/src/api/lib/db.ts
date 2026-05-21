@@ -1,22 +1,7 @@
-import { Pool } from "@neondatabase/serverless"
-import { createDbClient, type DbAdapter } from "@voyantjs/db"
-import { drizzle as drizzleNeonWs, type NeonDatabase } from "drizzle-orm/neon-serverless"
+import { createDbClient, createServerlessDbClient, type DbAdapter } from "@voyantjs/db"
+import type { NeonDatabase } from "drizzle-orm/neon-serverless"
 import { drizzle as drizzleNodePg } from "drizzle-orm/node-postgres"
 import { Pool as NodePgPool } from "pg"
-
-/**
- * `@neondatabase/serverless`'s `Pool` extends `pg.Pool`. Some pnpm
- * resolution paths don't merge the inherited `pg.Pool` methods into
- * the visible TS surface, so the constructor + `end()` call go via
- * a structural cast. Runtime behavior is unchanged.
- */
-type PgPoolApi = {
-  end(): Promise<void>
-}
-function newPool(connectionString: string): Pool & PgPoolApi {
-  const Ctor = Pool as unknown as new (cfg: { connectionString: string }) => Pool & PgPoolApi
-  return new Ctor({ connectionString })
-}
 
 /**
  * Local Postgres doesn't speak Neon's WebSocket protocol. When the
@@ -46,11 +31,7 @@ function openDb(connectionString: string): {
       dispose: () => pool.end().catch(() => {}),
     }
   }
-  const pool = newPool(connectionString)
-  return {
-    db: drizzleNeonWs(pool),
-    dispose: () => pool.end().catch(() => {}),
-  }
+  return createServerlessDbClient(connectionString)
 }
 
 /**

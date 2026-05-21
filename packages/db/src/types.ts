@@ -1,4 +1,5 @@
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http"
+import type { NeonDatabase as NeonWsDatabase } from "drizzle-orm/neon-serverless"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 /**
@@ -9,3 +10,4 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 export type DrizzleClient =
   | PostgresJsDatabase<Record<string, unknown>>
   | NeonHttpDatabase<Record<string, unknown>>
+  | NeonWsDatabase<Record<string, unknown>>

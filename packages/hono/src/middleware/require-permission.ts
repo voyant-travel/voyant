@@ -5,10 +5,9 @@ import type { MiddlewareHandler } from "hono"
 import { requireUserId } from "../auth/require-user.js"
 import {
   type DbFactory,
-  isDisposableDb,
+  resolveDbFactoryResult,
   type VoyantAuthIntegration,
   type VoyantBindings,
-  type VoyantDb,
   type VoyantVariables,
 } from "../types.js"
 
@@ -62,9 +61,7 @@ export function requirePermission<TBindings extends VoyantBindings>(
       return c.json({ error: "No auth permission checker configured" }, 500)
     }
 
-    const factoryResult = dbFactory(c.env)
-    const db: VoyantDb = isDisposableDb(factoryResult) ? factoryResult.db : factoryResult
-    const dispose = isDisposableDb(factoryResult) ? factoryResult.dispose : undefined
+    const { db, dispose } = resolveDbFactoryResult(dbFactory(c.env))
 
     try {
       const allowed = await opts.auth.hasPermission({

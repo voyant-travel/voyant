@@ -27,12 +27,12 @@ describe("defineVoyantConfig", () => {
       modules: ["crm"],
       featureFlags: { links_enabled: true },
       projectConfig: {
-        database: { urlEnv: "DATABASE_URL", adapter: "edge" },
+        database: { urlEnv: "DATABASE_URL", adapter: "serverless" },
       },
     })
 
     expect(config.featureFlags).toEqual({ links_enabled: true })
-    expect(config.projectConfig?.database?.adapter).toBe("edge")
+    expect(config.projectConfig?.database?.adapter).toBe("serverless")
   })
 
   it("accepts inline module descriptors with options", () => {

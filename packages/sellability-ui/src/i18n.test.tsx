@@ -46,6 +46,8 @@ const product = {
   description: null,
   inclusionsHtml: null,
   exclusionsHtml: null,
+  termsHtml: null,
+  termsShowOnContract: false,
   bookingMode: "date_time",
   capacityMode: "limited",
   timezone: null,

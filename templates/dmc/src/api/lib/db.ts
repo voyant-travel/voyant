@@ -1,6 +1,5 @@
-import { Pool } from "@neondatabase/serverless"
-import { createDbClient, type DbAdapter } from "@voyantjs/db"
-import { drizzle as drizzleNeonWs, type NeonDatabase } from "drizzle-orm/neon-serverless"
+import { createDbClient, createServerlessDbClient, type DbAdapter } from "@voyantjs/db"
+import type { NeonDatabase } from "drizzle-orm/neon-serverless"
 
 /**
  * Database client helpers with NO schema passing.
@@ -15,20 +14,6 @@ export function getDb(adapter?: DbAdapter) {
 }
 
 /**
- * `@neondatabase/serverless`'s `Pool` extends `pg.Pool`. Some pnpm
- * resolution paths don't merge the inherited `pg.Pool` methods into
- * the visible TS surface, so the constructor + `end()` call go via
- * a structural cast. Runtime behavior is unchanged.
- */
-type PgPoolApi = {
-  end(): Promise<void>
-}
-function newPool(connectionString: string): Pool & PgPoolApi {
-  const Ctor = Pool as unknown as new (cfg: { connectionString: string }) => Pool & PgPoolApi
-  return new Ctor({ connectionString })
-}
-
-/**
  * Per-request Neon Postgres client over WebSocket. Supports real
  * Postgres transactions (drizzle's `db.transaction(...)`).
  *
@@ -40,8 +25,7 @@ function newPool(connectionString: string): Pool & PgPoolApi {
  * runtime reclaims the isolate.
  */
 export function getDbFromEnv(env: CloudflareBindings): NeonDatabase {
-  const pool = newPool(env.DATABASE_URL)
-  return drizzleNeonWs(pool)
+  return createServerlessDbClient(env.DATABASE_URL).db
 }
 
 /**
@@ -55,11 +39,7 @@ export function dbFromEnvForApp(env: CloudflareBindings): {
   db: NeonDatabase
   dispose: () => Promise<void>
 } {
-  const pool = newPool(env.DATABASE_URL)
-  return {
-    db: drizzleNeonWs(pool),
-    dispose: () => pool.end().catch(() => {}),
-  }
+  return createServerlessDbClient(env.DATABASE_URL)
 }
 
 /**
@@ -72,10 +52,10 @@ export async function withDbFromEnv<T>(
   env: CloudflareBindings,
   fn: (db: NeonDatabase) => Promise<T>,
 ): Promise<T> {
-  const pool = newPool(env.DATABASE_URL)
+  const { db, dispose } = createServerlessDbClient(env.DATABASE_URL)
   try {
-    return await fn(drizzleNeonWs(pool))
+    return await fn(db)
   } finally {
-    await pool.end().catch(() => {})
+    await dispose()
   }
 }
