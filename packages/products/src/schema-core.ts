@@ -29,6 +29,8 @@ export const products = pgTable(
     description: text("description"),
     inclusionsHtml: text("inclusions_html"),
     exclusionsHtml: text("exclusions_html"),
+    termsHtml: text("terms_html"),
+    termsShowOnContract: boolean("terms_show_on_contract").notNull().default(false),
     bookingMode: productBookingModeEnum("booking_mode").notNull().default("date"),
     capacityMode: productCapacityModeEnum("capacity_mode").notNull().default("limited"),
     timezone: text("timezone"),

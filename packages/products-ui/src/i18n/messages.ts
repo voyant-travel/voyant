@@ -98,6 +98,10 @@ export type ProductsUiMessages = {
         title: string
         description: string
       }
+      terms: {
+        title: string
+        description: string
+      }
       details: {
         title: string
         description: string
@@ -143,6 +147,7 @@ export type ProductsUiMessages = {
       noDescription: string
       noInclusions: string
       noExclusions: string
+      noTerms: string
       noItineraries: string
       noDays: string
       deleteConfirm: string
@@ -169,6 +174,7 @@ export type ProductsUiMessages = {
       description: string
       inclusions: string
       exclusions: string
+      terms: string
       tags: string
       status: string
       bookingMode: string
@@ -189,6 +195,7 @@ export type ProductsUiMessages = {
       description: string
       inclusions: string
       exclusions: string
+      terms: string
       tagInput: string
       productTypeSearch: string
       facilitySearch: string

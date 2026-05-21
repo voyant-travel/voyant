@@ -84,6 +84,21 @@ export const operatorAdminProductsMessages = {
         namePlaceholder: "Croatia Explorer 2026",
         descriptionLabel: "Description",
         descriptionPlaceholder: "Brief overview of the product...",
+        termsLabel: "Terms",
+        termsPlaceholder:
+          "Add cancellation fine print, regulatory disclaimers, or supplier terms...",
+        fieldLabels: {
+          terms: "Terms",
+        },
+        sections: {
+          terms: {
+            title: "Terms",
+            description: "Product-level terms, conditions, and supplier fine print.",
+          },
+        },
+        placeholders: {
+          terms: "Add cancellation fine print, regulatory disclaimers, or supplier terms...",
+        },
         tagsLabel: "Tags",
         tagInputPlaceholder: "Type a tag and press Enter",
         statusLabel: "Status",
@@ -617,6 +632,20 @@ export const operatorAdminProductsMessages = {
         namePlaceholder: "Croatia Explorer 2026",
         descriptionLabel: "Descriere",
         descriptionPlaceholder: "Prezentare scurta a produsului...",
+        termsLabel: "Termeni",
+        termsPlaceholder: "Adauga conditii de anulare, note legale sau termeni de furnizor...",
+        fieldLabels: {
+          terms: "Termeni",
+        },
+        sections: {
+          terms: {
+            title: "Termeni",
+            description: "Termeni, conditii si note de furnizor la nivel de produs.",
+          },
+        },
+        placeholders: {
+          terms: "Adauga conditii de anulare, note legale sau termeni de furnizor...",
+        },
         tagsLabel: "Etichete",
         tagInputPlaceholder: "Scrie o eticheta si apasa Enter",
         statusLabel: "Status",

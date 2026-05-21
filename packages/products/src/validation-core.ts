@@ -29,6 +29,8 @@ const productCoreSchema = z.object({
   description: z.string().optional().nullable(),
   inclusionsHtml: z.string().optional().nullable(),
   exclusionsHtml: z.string().optional().nullable(),
+  termsHtml: z.string().optional().nullable(),
+  termsShowOnContract: z.boolean().default(false),
   bookingMode: productBookingModeSchema.default("date"),
   capacityMode: productCapacityModeSchema.default("limited"),
   timezone: z.string().max(100).optional().nullable(),
@@ -67,6 +69,7 @@ export const updateProductSchema = productCoreSchema
     capacityMode: productCapacityModeSchema,
     visibility: productVisibilitySchema,
     activated: z.boolean(),
+    termsShowOnContract: z.boolean(),
     tags: z.array(z.string()),
   })
   .partial()

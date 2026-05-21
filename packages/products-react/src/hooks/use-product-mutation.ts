@@ -14,6 +14,8 @@ export interface CreateProductInput {
   description?: string | null
   inclusionsHtml?: string | null
   exclusionsHtml?: string | null
+  termsHtml?: string | null
+  termsShowOnContract?: boolean
   bookingMode?: "date" | "date_time" | "open" | "stay" | "transfer" | "itinerary" | "other"
   capacityMode?: "free_sale" | "limited" | "on_request"
   timezone?: string | null

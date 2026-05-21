@@ -39,6 +39,7 @@ interface FormState {
   description: string
   inclusionsHtml: string
   exclusionsHtml: string
+  termsHtml: string
   status: "draft" | "active" | "archived"
   bookingMode: "date" | "date_time" | "open" | "stay" | "transfer" | "itinerary" | "other"
   capacityMode: ProductRecord["capacityMode"]
@@ -63,6 +64,7 @@ function initialState(mode: ProductFormMode): FormState {
       description: product.description ?? "",
       inclusionsHtml: product.inclusionsHtml ?? "",
       exclusionsHtml: product.exclusionsHtml ?? "",
+      termsHtml: product.termsHtml ?? "",
       status: product.status,
       bookingMode: product.bookingMode,
       capacityMode: product.capacityMode,
@@ -86,6 +88,7 @@ function initialState(mode: ProductFormMode): FormState {
     description: "",
     inclusionsHtml: "",
     exclusionsHtml: "",
+    termsHtml: "",
     status: "draft",
     bookingMode: "itinerary",
     capacityMode: "limited",
@@ -130,6 +133,7 @@ function toPayload(state: FormState): CreateProductInput {
     description: state.description.trim() || null,
     inclusionsHtml: state.inclusionsHtml.trim() || null,
     exclusionsHtml: state.exclusionsHtml.trim() || null,
+    termsHtml: state.termsHtml.trim() || null,
     status: state.status,
     bookingMode: state.bookingMode,
     capacityMode: state.capacityMode,
@@ -288,6 +292,16 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
             value={state.exclusionsHtml}
             onChange={field("exclusionsHtml")}
             placeholder={productMessages.placeholders.exclusions}
+            editorClassName="max-h-[320px] overflow-y-auto"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="product-terms">{productMessages.fields.terms}</Label>
+          <RichTextEditor
+            value={state.termsHtml}
+            onChange={field("termsHtml")}
+            placeholder={productMessages.placeholders.terms}
             editorClassName="max-h-[320px] overflow-y-auto"
           />
         </div>
