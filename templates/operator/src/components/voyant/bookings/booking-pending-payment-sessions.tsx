@@ -2,13 +2,19 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { PaymentSessionActionLedgerCard } from "@voyantjs/finance-ui/components/invoice-action-ledger-card"
+import { formatMessage } from "@voyantjs/i18n"
 import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
 import { Copy, Loader2, Wallet } from "lucide-react"
 import { toast } from "sonner"
 
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 import { queryKeys } from "@/lib/query-keys"
+
+type PaymentSessionsMessages = ReturnType<
+  typeof useAdminMessages
+>["bookings"]["detail"]["paymentSessions"]
 
 interface PendingPaymentSession {
   id: string
@@ -48,6 +54,7 @@ export interface BookingPendingPaymentSessionsProps {
 export function BookingPendingPaymentSessions({
   bookingId,
 }: BookingPendingPaymentSessionsProps): React.ReactElement | null {
+  const t = useAdminMessages().bookings.detail.paymentSessions
   const queryClient = useQueryClient()
   const queryKey = ["booking-pending-payment-sessions", bookingId]
   const { data, isLoading } = useQuery({
@@ -95,14 +102,14 @@ export function BookingPendingPaymentSessions({
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Wallet className="h-4 w-4" />
-          Pending payments
+          {t.pendingTitle}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         {isLoading ? (
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            Loading payment sessions…
+            {t.loadingSessions}
           </div>
         ) : null}
         {sessions.map((session) => (
@@ -121,17 +128,19 @@ export function BookingPendingPaymentSessions({
                   <div className="text-muted-foreground text-xs">{session.notes}</div>
                 ) : null}
                 <div className="text-muted-foreground text-xs">
-                  Created {new Date(session.createdAt).toLocaleString()}
+                  {formatMessage(t.createdAtPlain, {
+                    date: new Date(session.createdAt).toLocaleString(),
+                  })}
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => void copyPaymentLink(session.id)}
+                  onClick={() => void copyPaymentLink(session.id, t)}
                 >
                   <Copy className="mr-1.5 h-3.5 w-3.5" />
-                  Copy payment link
+                  {t.copyPaymentLink}
                 </Button>
                 <Button
                   size="sm"
@@ -141,10 +150,10 @@ export function BookingPendingPaymentSessions({
                   {markReceived.isPending && markReceived.variables === session.id ? (
                     <>
                       <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                      Marking…
+                      {t.marking}
                     </>
                   ) : (
-                    "Mark payment received"
+                    t.markReceived
                   )}
                 </Button>
               </div>
@@ -156,7 +165,7 @@ export function BookingPendingPaymentSessions({
           <p className="text-destructive text-xs">
             {markReceived.error instanceof Error
               ? markReceived.error.message
-              : "Could not mark payment received."}
+              : t.markReceivedFailed}
           </p>
         ) : null}
       </CardContent>
@@ -164,14 +173,17 @@ export function BookingPendingPaymentSessions({
   )
 }
 
-async function copyPaymentLink(paymentSessionId: string): Promise<void> {
+async function copyPaymentLink(
+  paymentSessionId: string,
+  messages: PaymentSessionsMessages,
+): Promise<void> {
   if (typeof window === "undefined") return
   const url = new URL(`/pay/${paymentSessionId}`, window.location.origin).toString()
   try {
     await navigator.clipboard.writeText(url)
-    toast.success("Payment link copied")
+    toast.success(messages.paymentLinkCopied)
   } catch {
-    toast.error("Could not copy payment link")
+    toast.error(messages.paymentLinkCopyFailed)
   }
 }
 
