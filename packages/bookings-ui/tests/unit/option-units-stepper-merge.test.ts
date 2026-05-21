@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   mergeStepperUnits,
   type OptionUnitsStepperUnit,
+  resolveOptionRemainingLabel,
   resolveSlotOptionId,
 } from "../../src/components/option-units-stepper-section.js"
 
@@ -94,5 +95,46 @@ describe("mergeStepperUnits", () => {
     const productRows = [sgl, dbl]
 
     expect(mergeStepperUnits([], productRows, "popt_SGL", true)).toEqual(productRows)
+  })
+})
+
+describe("resolveOptionRemainingLabel", () => {
+  it("uses the slot-capacity label for uncapped person units on finite slots", () => {
+    expect(
+      resolveOptionRemainingLabel({
+        totalRemaining: null,
+        units: [{ unitType: "person" }],
+        slotHasFiniteCapacity: true,
+        remaining: "left",
+        unlimited: "unlimited",
+        fillsSlotCapacity: "fills slot capacity",
+      }),
+    ).toBe("fills slot capacity")
+  })
+
+  it("keeps unlimited for uncapped room units", () => {
+    expect(
+      resolveOptionRemainingLabel({
+        totalRemaining: null,
+        units: [{ unitType: "room" }],
+        slotHasFiniteCapacity: true,
+        remaining: "left",
+        unlimited: "unlimited",
+        fillsSlotCapacity: "fills slot capacity",
+      }),
+    ).toBe("unlimited")
+  })
+
+  it("shows explicit remaining counts when option units are capped", () => {
+    expect(
+      resolveOptionRemainingLabel({
+        totalRemaining: 43,
+        units: [{ unitType: "person" }],
+        slotHasFiniteCapacity: true,
+        remaining: "left",
+        unlimited: "unlimited",
+        fillsSlotCapacity: "fills slot capacity",
+      }),
+    ).toBe("43 left")
   })
 })

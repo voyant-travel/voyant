@@ -63,7 +63,9 @@ export interface OptionUnitsStepperSectionProps {
     noUnits?: string
     remaining?: string
     unlimited?: string
+    fillsSlotCapacity?: string
   }
+  slotHasFiniteCapacity?: boolean
 }
 
 /**
@@ -95,6 +97,7 @@ export function OptionUnitsStepperSection({
   enabled = true,
   onUnitsChange,
   labels,
+  slotHasFiniteCapacity = false,
 }: OptionUnitsStepperSectionProps) {
   const productsClient = useVoyantProductsContext()
   const messages = useBookingsUiMessagesOrDefault()
@@ -141,14 +144,14 @@ export function OptionUnitsStepperSection({
   // row, so we look it up from the units we already fetched per option.
   const optionByUnitId = React.useMemo(() => {
     const map = new Map<string, string>()
-    productOptions.forEach((option, index) => {
-      const units = optionUnitQueries[index]?.data?.data ?? []
-      for (const unit of units) {
-        map.set(unit.id, option.id)
-      }
-    })
+    for (const unit of optionUnitRows) {
+      if (unit.optionId) map.set(unit.optionUnitId, unit.optionId)
+    }
     return map
-  }, [productOptions, optionUnitQueries])
+  }, [optionUnitRows])
+  const productUnitById = React.useMemo(() => {
+    return new Map(optionUnitRows.map((unit) => [unit.optionUnitId, unit]))
+  }, [optionUnitRows])
   // The slot's bound option, derived from the first availability row.
   // `null` when the slot is product-level (no option_id) — that path goes
   // through the product-level fallback below.
@@ -158,11 +161,18 @@ export function OptionUnitsStepperSection({
   )
   const availabilityUnitRows = React.useMemo(
     () =>
-      (availability.data?.data ?? []).map((unit) => ({
-        ...unit,
-        optionId: slotOptionId ?? optionId ?? null,
-      })),
-    [availability.data?.data, slotOptionId, optionId],
+      (availability.data?.data ?? []).map((unit) => {
+        const productUnit = productUnitById.get(unit.optionUnitId)
+        return {
+          ...unit,
+          optionId: productUnit?.optionId ?? slotOptionId ?? optionId ?? null,
+          unitCode: productUnit?.unitCode ?? null,
+          minAge: productUnit?.minAge ?? null,
+          maxAge: productUnit?.maxAge ?? null,
+          unitType: productUnit?.unitType ?? null,
+        }
+      }),
+    [availability.data?.data, productUnitById, slotOptionId, optionId],
   )
   // Slot-bound per-unit availability stays authoritative for the slot's
   // option (real-time `remaining` from active bookings). For *other*
@@ -215,6 +225,7 @@ export function OptionUnitsStepperSection({
         optionKey,
         optionName,
         primary: group.primary,
+        allUnits: group.allUnits,
         totalRemaining,
       }
     })
@@ -259,10 +270,16 @@ export function OptionUnitsStepperSection({
     <div className="flex flex-col gap-2 rounded-md border p-3">
       <Label>{merged.heading}</Label>
       <div className="flex flex-col gap-2">
-        {optionRows.map(({ optionKey, optionName, primary, totalRemaining }) => {
+        {optionRows.map(({ optionKey, optionName, primary, allUnits, totalRemaining }) => {
           const qty = value.quantities[primary.optionUnitId] ?? 0
-          const remainingLabel =
-            totalRemaining === null ? merged.unlimited : `${totalRemaining} ${merged.remaining}`
+          const remainingLabel = resolveOptionRemainingLabel({
+            totalRemaining,
+            units: allUnits,
+            slotHasFiniteCapacity,
+            remaining: merged.remaining,
+            unlimited: merged.unlimited,
+            fillsSlotCapacity: merged.fillsSlotCapacity,
+          })
           const atMax = totalRemaining !== null && qty >= totalRemaining
 
           return (
@@ -302,6 +319,28 @@ export function OptionUnitsStepperSection({
       </div>
     </div>
   )
+}
+
+export function resolveOptionRemainingLabel({
+  totalRemaining,
+  units,
+  slotHasFiniteCapacity,
+  remaining,
+  unlimited,
+  fillsSlotCapacity,
+}: {
+  totalRemaining: number | null
+  units: ReadonlyArray<Pick<OptionUnitsStepperUnit, "unitType">>
+  slotHasFiniteCapacity: boolean
+  remaining: string
+  unlimited: string
+  fillsSlotCapacity?: string
+}): string {
+  if (totalRemaining !== null) return `${totalRemaining} ${remaining}`
+  if (slotHasFiniteCapacity && units.length > 0 && units.every(isPersonUnit)) {
+    return fillsSlotCapacity ?? unlimited
+  }
+  return unlimited
 }
 
 /**
@@ -350,6 +389,10 @@ function isAdultUnit(unit: OptionUnitsStepperUnit): boolean {
   // unit object doesn't carry the code, so fall back to name-matching
   // when the upstream code isn't surfaced.
   return /\badult\b/i.test(unit.unitName)
+}
+
+function isPersonUnit(unit: Pick<OptionUnitsStepperUnit, "unitType">): boolean {
+  return unit.unitType === "person"
 }
 
 function optionUnitToStepperUnit(

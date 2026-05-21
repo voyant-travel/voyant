@@ -438,6 +438,7 @@ export const bookingsUiRo = {
       noUnits: "Aceasta plecare nu are disponibilitate configurata pe unitati.",
       remaining: "ramase",
       unlimited: "nelimitat",
+      fillsSlotCapacity: "umple capacitatea plecarii",
       decreaseUnitPrefix: "Scade",
       increaseUnitPrefix: "Creste",
     },
