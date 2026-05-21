@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
+import { formatMessage } from "@voyantjs/i18n"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
@@ -15,7 +16,12 @@ import {
 import { Calendar, Code, ExternalLink, Hotel, Package, Plane, Ship, Tag, Users } from "lucide-react"
 import { useMemo, useState } from "react"
 
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
+
+type CatalogSourceMessages = ReturnType<
+  typeof useAdminMessages
+>["bookings"]["detail"]["catalogSource"]
 
 interface ResolvedEntity {
   title: string | null
@@ -82,6 +88,7 @@ export function BookingCatalogSourceCard({
 }: {
   bookingId: string
 }): React.ReactElement | null {
+  const t = useAdminMessages().bookings.detail.catalogSource
   const { data, isLoading } = useQuery({
     queryKey: ["booking-catalog-snapshot", bookingId],
     queryFn: async () => {
@@ -120,7 +127,7 @@ export function BookingCatalogSourceCard({
   const totalMajor = baseMajor + taxesMajor + feesMajor + surchargesMajor
   const currency = snapshot.pricing_currency ?? "EUR"
 
-  const summary = extractStructuredSummary(snapshot.frozen_payload)
+  const summary = extractStructuredSummary(snapshot.frozen_payload, t)
 
   return (
     <>
@@ -138,7 +145,7 @@ export function BookingCatalogSourceCard({
               <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
                 <Badge variant="outline" className="gap-1">
                   <VerticalIcon className="h-3 w-3" />
-                  {labelForModule(snapshot.entity_module)}
+                  {labelForModule(snapshot.entity_module, t)}
                 </Badge>
                 <Badge variant="outline">{sourceLabel}</Badge>
                 {providerLabel ? <Badge variant="outline">{providerLabel}</Badge> : null}
@@ -156,7 +163,7 @@ export function BookingCatalogSourceCard({
                 params={{ id: productLinkId }}
                 className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground hover:underline"
               >
-                Open
+                {t.openProduct}
                 <ExternalLink className="h-3 w-3" />
               </Link>
             ) : null}
@@ -180,31 +187,39 @@ export function BookingCatalogSourceCard({
           {totalMajor > 0 ? (
             <div className="rounded-md border bg-muted/30 px-3 py-2.5">
               <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Pricing at booking time
+                {t.pricingHeading}
               </div>
               <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-4">
                 {baseMajor > 0 ? (
-                  <PriceCell label="Base" amount={baseMajor} currency={currency} />
+                  <PriceCell label={t.priceBase} amount={baseMajor} currency={currency} />
                 ) : null}
                 {taxesMajor > 0 ? (
-                  <PriceCell label="Taxes" amount={taxesMajor} currency={currency} />
+                  <PriceCell label={t.priceTaxes} amount={taxesMajor} currency={currency} />
                 ) : null}
                 {feesMajor > 0 ? (
-                  <PriceCell label="Fees" amount={feesMajor} currency={currency} />
+                  <PriceCell label={t.priceFees} amount={feesMajor} currency={currency} />
                 ) : null}
                 {surchargesMajor > 0 ? (
-                  <PriceCell label="Surcharges" amount={surchargesMajor} currency={currency} />
+                  <PriceCell
+                    label={t.priceSurcharges}
+                    amount={surchargesMajor}
+                    currency={currency}
+                  />
                 ) : null}
-                <PriceCell label="Total" amount={totalMajor} currency={currency} bold />
+                <PriceCell label={t.priceTotal} amount={totalMajor} currency={currency} bold />
               </dl>
             </div>
           ) : null}
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground text-xs">
-            <span>Captured {new Date(snapshot.captured_at).toLocaleString()}</span>
+            <span>
+              {formatMessage(t.capturedAt, {
+                date: new Date(snapshot.captured_at).toLocaleString(),
+              })}
+            </span>
             {snapshot.source_ref ? (
               <span>
-                Source ref <span className="font-mono">{snapshot.source_ref}</span>
+                {t.sourceRef} <span className="font-mono">{snapshot.source_ref}</span>
               </span>
             ) : null}
             <Button
@@ -214,13 +229,18 @@ export function BookingCatalogSourceCard({
               onClick={() => setPayloadOpen(true)}
             >
               <Code className="mr-1.5 h-3.5 w-3.5" />
-              View raw payload
+              {t.viewRawPayload}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      <FrozenPayloadSheet open={payloadOpen} onOpenChange={setPayloadOpen} snapshot={snapshot} />
+      <FrozenPayloadSheet
+        open={payloadOpen}
+        onOpenChange={setPayloadOpen}
+        snapshot={snapshot}
+        messages={t}
+      />
     </>
   )
 }
@@ -270,27 +290,29 @@ function FrozenPayloadSheet({
   open,
   onOpenChange,
   snapshot,
+  messages,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   snapshot: BookingCatalogSnapshot
+  messages: CatalogSourceMessages
 }): React.ReactElement {
   const json = useMemo(() => JSON.stringify(snapshot.frozen_payload, null, 2), [snapshot])
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full overflow-hidden p-0 sm:max-w-2xl lg:max-w-3xl">
         <SheetHeader className="border-b px-6 py-4">
-          <SheetTitle>Frozen catalog payload</SheetTitle>
-          <SheetDescription>
-            The exact upstream object captured at booking time — used for audit, refunds and
-            debugging. Operators rarely need this; engineers inspect it when reconciling against the
-            upstream provider.
-          </SheetDescription>
+          <SheetTitle>{messages.frozenPayloadTitle}</SheetTitle>
+          <SheetDescription>{messages.frozenPayloadDescription}</SheetDescription>
           <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-muted-foreground">
             <Badge variant="outline">{snapshot.entity_module}</Badge>
             <Badge variant="outline">{snapshot.resolved.source.label}</Badge>
             <span className="font-mono">{snapshot.entity_id}</span>
-            <span className="ml-auto">{json.length.toLocaleString()} bytes</span>
+            <span className="ml-auto">
+              {formatMessage(messages.frozenPayloadBytes, {
+                bytes: json.length.toLocaleString(),
+              })}
+            </span>
           </div>
         </SheetHeader>
         <div className="h-[calc(100vh-9rem)] overflow-auto bg-muted/20 px-6 py-4">
@@ -314,7 +336,10 @@ interface SummaryLine {
  * dates, traveler counts, source ref. The structure varies by upstream
  * adapter; we read defensively and skip what's missing.
  */
-function extractStructuredSummary(payload: Record<string, unknown>): { lines: SummaryLine[] } {
+function extractStructuredSummary(
+  payload: Record<string, unknown>,
+  messages: CatalogSourceMessages,
+): { lines: SummaryLine[] } {
   const lines: SummaryLine[] = []
 
   const quote = payload.quote as Record<string, unknown> | undefined
@@ -335,13 +360,17 @@ function extractStructuredSummary(payload: Record<string, unknown>): { lines: Su
     )
     if (firstDate && lastDate && firstDate !== lastDate) {
       lines.push({
-        label: "Dates",
-        value: `${formatDate(firstDate)} → ${formatDate(lastDate)} (${days.length} days)`,
+        label: messages.summary.datesLabel,
+        value: formatMessage(messages.summary.datesRange, {
+          from: formatDate(firstDate),
+          to: formatDate(lastDate),
+          count: days.length,
+        }),
         icon: Calendar,
       })
     } else if (firstDate) {
       lines.push({
-        label: "Date",
+        label: messages.summary.dateLabel,
         value: formatDate(firstDate),
         icon: Calendar,
       })
@@ -359,12 +388,24 @@ function extractStructuredSummary(payload: Record<string, unknown>): { lines: Su
     const total = (adults ?? 0) + (children ?? 0) + (infants ?? 0)
     if (total > 0) {
       const parts = [
-        adults ? `${adults} ${adults === 1 ? "adult" : "adults"}` : null,
-        children ? `${children} ${children === 1 ? "child" : "children"}` : null,
-        infants ? `${infants} ${infants === 1 ? "infant" : "infants"}` : null,
+        adults
+          ? adults === 1
+            ? messages.summary.travelerAdultSingular
+            : formatMessage(messages.summary.travelerAdultPlural, { count: adults })
+          : null,
+        children
+          ? children === 1
+            ? messages.summary.travelerChildSingular
+            : formatMessage(messages.summary.travelerChildPlural, { count: children })
+          : null,
+        infants
+          ? infants === 1
+            ? messages.summary.travelerInfantSingular
+            : formatMessage(messages.summary.travelerInfantPlural, { count: infants })
+          : null,
       ].filter(Boolean)
       lines.push({
-        label: "Travelers",
+        label: messages.summary.travelersLabel,
         value: parts.join(" · "),
         icon: Users,
       })
@@ -375,7 +416,7 @@ function extractStructuredSummary(payload: Record<string, unknown>): { lines: Su
   const orderId = pickStr(reserve?.orderId, reserve?.orderRef, reserve?.upstream_ref)
   if (orderId) {
     lines.push({
-      label: "Upstream order",
+      label: messages.summary.upstreamOrderLabel,
       value: orderId,
       icon: Tag,
     })
@@ -422,14 +463,9 @@ function parseAmount(raw: string | null): number {
   return Number.isFinite(n) ? n : 0
 }
 
-function labelForModule(entityModule: string): string {
-  const map: Record<string, string> = {
-    products: "Product",
-    cruises: "Cruise",
-    accommodations: "Accommodation",
-    flights: "Flight",
-  }
-  return map[entityModule] ?? entityModule
+function labelForModule(entityModule: string, messages: CatalogSourceMessages): string {
+  const map = messages.moduleLabels
+  return map[entityModule as keyof typeof map] ?? entityModule
 }
 
 function verticalIcon(entityModule: string) {
