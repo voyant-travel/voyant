@@ -11,6 +11,7 @@ import {
 import { emptyPersonPickerValue } from "@voyantjs/bookings-ui/components/person-picker-section"
 import { emptyVoucherPickerValue } from "@voyantjs/bookings-ui/components/voucher-picker-section"
 import { usePerson } from "@voyantjs/crm-react"
+import { formatMessage } from "@voyantjs/i18n"
 import type { Trip, TripComponent } from "@voyantjs/travel-composer"
 import {
   type AddTripComponentBody,
@@ -34,7 +35,11 @@ import { Textarea } from "@voyantjs/ui/components/textarea"
 import { AlertTriangle, Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
+
+type AdminComposerMessages = ReturnType<typeof useAdminMessages>["trips"]["adminComposer"]
+
 import {
   AddComponentMenu,
   CommittedComponentCard,
@@ -81,6 +86,7 @@ export function AdminTripComposerPage({
   initialTrip = null,
 }: AdminTripComposerPageProps): React.ReactElement {
   const navigate = useNavigate()
+  const t = useAdminMessages().trips.adminComposer
   const [state, setState] = useState<ComposerState>({
     trip: initialTrip,
     message: null,
@@ -95,7 +101,7 @@ export function AdminTripComposerPage({
   const [createAsDraft, setCreateAsDraft] = useState(false)
   const [paymentCurrency, setPaymentCurrency] = useState(defaultPaymentCurrency)
   const [selectedCancellationIds, setSelectedCancellationIds] = useState<string[]>([])
-  const [cancellationReason, setCancellationReason] = useState("Customer requested change")
+  const [cancellationReason, setCancellationReason] = useState(t.cancellation.defaultReason)
   const [cancellationPreview, setCancellationPreview] = useState<CancellationPreview | null>(null)
 
   const client = useMemo(() => ({ baseUrl: getApiUrl(), fetcher: defaultFetcher }), [])
@@ -122,7 +128,7 @@ export function AdminTripComposerPage({
   const billingPersonQuery = usePerson(billing.personId || undefined, {
     enabled: billing.mode === "existing" && Boolean(billing.personId),
   })
-  const payerName = derivePayerName(billing, billingPersonQuery.data)
+  const payerName = derivePayerName(billing, billingPersonQuery.data, t)
   const payerEmail = derivePayerEmail(billing, billingPersonQuery.data)
 
   useEffect(() => {
@@ -151,12 +157,12 @@ export function AdminTripComposerPage({
   }, [initialTrip])
 
   function showError(error: unknown) {
-    setState((current) => ({ ...current, error: apiError(error), message: null }))
+    setState((current) => ({ ...current, error: apiError(error, t), message: null }))
   }
 
   async function ensureTrip(): Promise<Trip> {
     if (state.trip) return state.trip
-    assertTripCreationRequirements({ billing, travelers, payerName, payerEmail })
+    assertTripCreationRequirements({ billing, travelers, payerName, payerEmail }, t)
     const created = await createTrip(client, {
       description: notes || undefined,
       travelerParty: {
@@ -185,14 +191,18 @@ export function AdminTripComposerPage({
   const commitMutation = useMutation({
     mutationFn: async (component: PendingComponent) => {
       const currentTrip = await ensureTrip()
-      const input = pendingToAddInput(component, {
-        billing,
-        travelers,
-        payerName,
-        payerEmail,
-        paymentCurrency,
-      })
-      if (!input) throw new Error("This component isn't ready to add yet")
+      const input = pendingToAddInput(
+        component,
+        {
+          billing,
+          travelers,
+          payerName,
+          payerEmail,
+          paymentCurrency,
+        },
+        t,
+      )
+      if (!input) throw new Error(t.errors.componentNotReady)
       await addTripComponent(client, currentTrip.envelope.id, input)
       return priceTrip(client, currentTrip.envelope.id, {
         scope: { locale: "en-US", audience: "staff", market: "default", currency: paymentCurrency },
@@ -202,14 +212,14 @@ export function AdminTripComposerPage({
       setPending((current) => current.filter((p) => p.localId !== component.localId))
       setState({
         trip: { envelope: result.envelope, components: result.components },
-        message: "Component added · trip priced",
-        error: failuresToString(result.failures),
+        message: t.statusMessages.componentAddedAndPriced,
+        error: failuresToString(result.failures, t),
       })
       setCancellationPreview(null)
       setCommittingLocalId(null)
     },
     onError: (error, component) => {
-      const message = apiError(error)
+      const message = apiError(error, t)
       setPending((current) =>
         current.map((p) => (p.localId === component.localId ? { ...p, commitError: message } : p)),
       )
@@ -219,8 +229,8 @@ export function AdminTripComposerPage({
 
   const reserveMutation = useMutation({
     mutationFn: async () => {
-      if (!envelopeId) throw new Error("Price the trip first")
-      assertTripCreationRequirements({ billing, travelers, payerName, payerEmail })
+      if (!envelopeId) throw new Error(t.errors.priceTripFirst)
+      assertTripCreationRequirements({ billing, travelers, payerName, payerEmail }, t)
       const reserved = await reserveTrip(client, envelopeId, {
         idempotencyKey: `admin-reserve-${envelopeId}`,
         refreshScope: {
@@ -245,9 +255,9 @@ export function AdminTripComposerPage({
       setState({
         trip,
         message: checkout?.target.paymentSessionId
-          ? "Trip reserved · payment link ready"
-          : "Trip reserved",
-        error: failuresToString(reserved.failures),
+          ? t.statusMessages.tripReservedWithLink
+          : t.statusMessages.tripReserved,
+        error: failuresToString(reserved.failures, t),
       })
       // Keep operators in the trip aggregate after reserve; individual booking
       // links remain available from each component card.
@@ -260,7 +270,7 @@ export function AdminTripComposerPage({
 
   const removeComponentMutation = useMutation({
     mutationFn: async (componentId: string) => {
-      if (!envelopeId) throw new Error("No trip")
+      if (!envelopeId) throw new Error(t.errors.noTrip)
       await removeTripComponent(client, componentId)
       return getTrip(client, envelopeId)
     },
@@ -286,7 +296,7 @@ export function AdminTripComposerPage({
       return { previousTrip }
     },
     onSuccess: (updatedTrip) => {
-      setState({ trip: updatedTrip, message: "Component removed", error: null })
+      setState({ trip: updatedTrip, message: t.statusMessages.componentRemoved, error: null })
     },
     onError: (error, _componentId, context) => {
       if (context?.previousTrip) {
@@ -344,7 +354,7 @@ export function AdminTripComposerPage({
 
   const cancellationMutation = useMutation({
     mutationFn: async () => {
-      if (!envelopeId) throw new Error("No trip to cancel")
+      if (!envelopeId) throw new Error(t.errors.noTripToCancel)
       return previewTripCancellation(client, envelopeId, {
         componentIds: selectedCancellationIds,
         reason: cancellationReason,
@@ -360,7 +370,7 @@ export function AdminTripComposerPage({
       })
       setState({
         trip: { envelope: result.envelope, components: result.components },
-        message: "Cancellation preview ready",
+        message: t.statusMessages.cancellationPreviewReady,
         error: null,
       })
     },
@@ -425,19 +435,17 @@ export function AdminTripComposerPage({
   return (
     <main className="mx-auto flex w-full max-w-screen-2xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
       <header className="flex flex-col gap-1">
-        <h1 className="font-semibold text-2xl tracking-tight">Trip composer</h1>
-        <p className="text-muted-foreground text-sm">
-          Build one customer-facing itinerary while each vertical keeps its own booking or order.
-        </p>
+        <h1 className="font-semibold text-2xl tracking-tight">{t.heading}</h1>
+        <p className="text-muted-foreground text-sm">{t.subheading}</p>
       </header>
 
       {state.error ? (
-        <StatusAlert title="Request failed" message={state.error} tone="error" />
+        <StatusAlert title={t.requestFailed} message={state.error} tone="error" />
       ) : null}
 
       <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 lg:col-span-8">
-          <Section title="Billing">
+          <Section title={t.billingSectionTitle}>
             <PersonPickerSection value={billing} onChange={setBilling} />
           </Section>
 
@@ -448,7 +456,7 @@ export function AdminTripComposerPage({
           />
 
           <div className="flex flex-col gap-3">
-            <h2 className="font-medium text-base">Itinerary</h2>
+            <h2 className="font-medium text-base">{t.itinerarySectionTitle}</h2>
             {components.length === 0 && pending.length === 0 ? <ComponentsEmpty /> : null}
             {components.map((component, index) => (
               <CommittedComponentCard
@@ -489,8 +497,13 @@ export function AdminTripComposerPage({
 
           {trapReserved && selectedCount > 0 ? (
             <Section
-              title={`Cancel ${selectedCount} component${selectedCount === 1 ? "" : "s"}`}
-              description="Preview the refund / penalty before confirming."
+              title={formatMessage(
+                selectedCount === 1
+                  ? t.cancellation.sectionTitleSingular
+                  : t.cancellation.sectionTitlePlural,
+                { count: selectedCount },
+              )}
+              description={t.cancellation.sectionDescription}
               action={
                 <Button
                   variant="ghost"
@@ -500,11 +513,11 @@ export function AdminTripComposerPage({
                     setCancellationPreview(null)
                   }}
                 >
-                  Clear selection
+                  {t.cancellation.clearSelection}
                 </Button>
               }
             >
-              <Field label="Reason">
+              <Field label={t.cancellation.reasonLabel}>
                 <Textarea
                   rows={2}
                   value={cancellationReason}
@@ -521,21 +534,25 @@ export function AdminTripComposerPage({
                 ) : (
                   <AlertTriangle className="size-4" />
                 )}
-                Preview cancellation
+                {t.cancellation.previewButton}
               </Button>
               {cancellationPreview ? (
                 <div className="space-y-1 rounded-md border bg-muted/30 p-3 text-sm">
                   <CancellationRow
-                    label="Estimated refund"
+                    label={t.cancellation.estimatedRefund}
                     value={formatMoney(cancellationPreview.refund, paymentCurrency)}
                   />
                   <CancellationRow
-                    label="Estimated penalty"
+                    label={t.cancellation.estimatedPenalty}
                     value={formatMoney(cancellationPreview.penalty, paymentCurrency)}
                   />
                   <CancellationRow
-                    label="Staff action"
-                    value={cancellationPreview.staffActionRequired ? "required" : "not required"}
+                    label={t.cancellation.staffAction}
+                    value={
+                      cancellationPreview.staffActionRequired
+                        ? t.cancellation.staffActionRequired
+                        : t.cancellation.staffActionNotRequired
+                    }
                   />
                   {cancellationPreview.warnings.length > 0 ? (
                     <p className="text-amber-600 text-xs">
@@ -547,19 +564,22 @@ export function AdminTripComposerPage({
             </Section>
           ) : null}
 
-          <Section title="Internal notes" description="Visible to staff only.">
-            <Field label="Notes">
+          <Section
+            title={t.internalNotesSectionTitle}
+            description={t.internalNotesSectionDescription}
+          >
+            <Field label={t.internalNotesLabel}>
               <Textarea
                 rows={3}
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
-                placeholder="Anything the operator should know about this trip"
+                placeholder={t.internalNotesPlaceholder}
               />
             </Field>
           </Section>
 
-          <Section title="Payment">
-            <Field label="Payment currency">
+          <Section title={t.paymentSectionTitle}>
+            <Field label={t.paymentCurrencyLabel}>
               <CurrencyCombobox
                 value={paymentCurrency}
                 onChange={(value) => setPaymentCurrency(value ?? defaultPaymentCurrency)}
@@ -567,13 +587,13 @@ export function AdminTripComposerPage({
             </Field>
           </Section>
 
-          <Section title="On reserve" description="Status applied to each underlying booking.">
+          <Section title={t.onReserveSectionTitle} description={t.onReserveSectionDescription}>
             <CheckboxRow
               id="composer-create-as-draft"
               checked={createAsDraft}
               onCheckedChange={setCreateAsDraft}
-              label="Start bookings in draft status"
-              hint="Otherwise the booking lands in Awaiting payment based on whether any payment is already marked paid."
+              label={t.startInDraftLabel}
+              hint={t.startInDraftHint}
             />
           </Section>
 
@@ -742,6 +762,10 @@ function paymentScheduleToRows(
   return rows
 }
 
+// Returns a single-line audit note persisted on the booking's payment schedule
+// when the operator marks an installment as already-paid in the composer.
+// Operator-facing free text — kept terse and in English at the data layer so
+// the persisted note stays comparable across deploys / locales.
 function paidScheduleNotes(
   alreadyPaid: boolean,
   paymentDate: string | null,
@@ -750,6 +774,7 @@ function paidScheduleNotes(
 ): string | null {
   if (!alreadyPaid) return null
   return [
+    // i18n-literal-ok: persisted audit note, see comment above.
     "Marked paid in trip composer",
     paymentDate ? `date: ${paymentDate}` : null,
     paymentMethod ? `method: ${paymentMethod}` : null,
@@ -768,9 +793,10 @@ function pendingToAddInput(
     payerEmail: string
     paymentCurrency: string
   },
+  messages: AdminComposerMessages,
 ): AddTripComponentBody | null {
   const billingPayload = serializeBilling(ctx.billing, ctx.payerName, ctx.payerEmail)
-  const travelersPayload = serializeTravelersForBookingDraft(ctx.travelers)
+  const travelersPayload = serializeTravelersForBookingDraft(ctx.travelers, messages)
   const paxAdult = countAdults(ctx.travelers) || 1
 
   if (pending.kind === "product" || pending.kind === "stay") {
@@ -967,44 +993,50 @@ function serializeBilling(
   }
 }
 
-function assertTripCreationRequirements(ctx: {
-  billing: PersonPickerValue
-  travelers: TripTraveler[]
-  payerName: string
-  payerEmail: string
-}) {
+function assertTripCreationRequirements(
+  ctx: {
+    billing: PersonPickerValue
+    travelers: TripTraveler[]
+    payerName: string
+    payerEmail: string
+  },
+  messages: AdminComposerMessages,
+) {
   const errors: string[] = []
+  const { errors: errorMessages } = messages
   if (ctx.billing.mode === "new") {
     if (!ctx.billing.newPerson.firstName.trim() || !ctx.billing.newPerson.lastName.trim()) {
-      errors.push("billing contact name")
+      errors.push(errorMessages.requirementBillingName)
     }
     if (!isRealTripEmail(ctx.billing.newPerson.email)) {
-      errors.push("billing email")
+      errors.push(errorMessages.requirementBillingEmail)
     }
   } else {
     const hasBillingRecord =
       ctx.billing.billTo === "organization"
         ? Boolean(ctx.billing.organizationId)
         : Boolean(ctx.billing.personId)
-    if (!hasBillingRecord) errors.push("billing person or organization")
-    if (!ctx.payerName.trim()) errors.push("billing contact name")
-    if (!isRealTripEmail(ctx.payerEmail)) errors.push("billing email")
+    if (!hasBillingRecord) errors.push(errorMessages.requirementBillingPersonOrOrg)
+    if (!ctx.payerName.trim()) errors.push(errorMessages.requirementBillingName)
+    if (!isRealTripEmail(ctx.payerEmail)) errors.push(errorMessages.requirementBillingEmail)
   }
 
   if (ctx.travelers.length === 0) {
-    errors.push("at least one traveler")
+    errors.push(errorMessages.requirementAtLeastOneTraveler)
   }
   ctx.travelers.forEach((traveler, index) => {
     if (!traveler.personId && (!traveler.firstName.trim() || !traveler.lastName.trim())) {
-      errors.push(`traveler ${index + 1} name`)
+      errors.push(formatMessage(errorMessages.requirementTravelerName, { position: index + 1 }))
     }
     if (traveler.email && !isRealTripEmail(traveler.email)) {
-      errors.push(`traveler ${index + 1} email`)
+      errors.push(formatMessage(errorMessages.requirementTravelerEmail, { position: index + 1 }))
     }
   })
 
   if (errors.length > 0) {
-    throw new Error(`Complete ${errors.join(", ")} before creating the trip.`)
+    throw new Error(
+      formatMessage(errorMessages.completeRequirements, { fields: errors.join(", ") }),
+    )
   }
 }
 
@@ -1094,7 +1126,10 @@ function tripTravelerRoleFromStored(
 // Map our roster shape onto the catalog booking engine's `travelerEntryV1`:
 // drop empty/null fields it can't validate, translate `role` (lead/adult/...)
 // into `band` (adult/child/infant) + `isPrimary`.
-function serializeTravelersForBookingDraft(travelers: TripTraveler[]) {
+function serializeTravelersForBookingDraft(
+  travelers: TripTraveler[],
+  messages: AdminComposerMessages,
+) {
   return travelers.map((traveler) => {
     const band: "adult" | "child" | "infant" =
       traveler.role === "child" ? "child" : traveler.role === "infant" ? "infant" : "adult"
@@ -1103,8 +1138,8 @@ function serializeTravelersForBookingDraft(travelers: TripTraveler[]) {
     const email = traveler.email.trim()
     const dateOfBirth = traveler.dateOfBirth?.trim() || ""
     const entry: Record<string, unknown> = {
-      firstName: firstName || "Traveler",
-      lastName: lastName || "Guest",
+      firstName: firstName || messages.travelerFallbackName,
+      lastName: lastName || messages.travelerFallbackLastName,
       band,
     }
     if (email) entry.email = email
@@ -1118,24 +1153,25 @@ function failuresToString(
   failures:
     | { reason: string; code?: string; details?: Record<string, unknown> | undefined }[]
     | undefined,
+  messages: AdminComposerMessages,
 ) {
   if (!failures || failures.length === 0) return null
   if (failures.some((failure) => failure.code === "price_changed")) {
-    return "Prices changed. Review the updated totals, then reserve again."
+    return messages.failureMessages.priceChanged
   }
   if (failures.some((failure) => failure.code === "expired")) {
-    return "One or more offers expired. Refresh the component and choose a current option."
+    return messages.failureMessages.expired
   }
   if (failures.some((failure) => failure.code === "unavailable")) {
-    return "One or more components are no longer available. Review the itinerary before reserving."
+    return messages.failureMessages.unavailable
   }
   return failures.map((failure) => failure.reason).join(", ")
 }
 
-function apiError(error: unknown): string {
+function apiError(error: unknown, messages: AdminComposerMessages): string {
   const candidate = error as Partial<VoyantApiError>
   if (typeof candidate.message === "string") return candidate.message
-  return error instanceof Error ? error.message : "Request failed"
+  return error instanceof Error ? error.message : messages.errors.requestFailed
 }
 
 function derivePayerName(
@@ -1143,22 +1179,23 @@ function derivePayerName(
   person:
     | { firstName?: string | null; lastName?: string | null; email?: string | null }
     | undefined,
+  messages: AdminComposerMessages,
 ): string {
   if (billing.mode === "new") {
     const name = [billing.newPerson.firstName, billing.newPerson.lastName]
       .filter((part) => part.trim().length > 0)
       .join(" ")
       .trim()
-    return name || billing.newPerson.email.trim() || "Traveler"
+    return name || billing.newPerson.email.trim() || messages.travelerFallbackName
   }
   if (person) {
     const name = [person.firstName, person.lastName]
       .filter((part) => (part ?? "").trim().length > 0)
       .join(" ")
       .trim()
-    return name || (person.email ?? "") || "Traveler"
+    return name || (person.email ?? "") || messages.travelerFallbackName
   }
-  return "Traveler"
+  return messages.travelerFallbackName
 }
 
 function derivePayerEmail(
