@@ -4,7 +4,7 @@ import type { MiddlewareHandler } from "hono"
 
 import {
   type DbFactory,
-  isDisposableDb,
+  resolveDbFactoryResult,
   type VoyantBindings,
   type VoyantDb,
   type VoyantVariables,
@@ -252,9 +252,7 @@ export async function purgeExpiredIdempotencyKeys<TBindings extends VoyantBindin
   dbFactory: DbFactory<TBindings>,
   env: TBindings,
 ): Promise<{ removed: number }> {
-  const result = dbFactory(env)
-  const db: VoyantDb = isDisposableDb(result) ? result.db : result
-  const dispose = isDisposableDb(result) ? result.dispose : undefined
+  const { db, dispose } = resolveDbFactoryResult(dbFactory(env))
   try {
     const rows = await db
       .delete(infraIdempotencyKeysTable)

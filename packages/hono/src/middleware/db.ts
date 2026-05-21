@@ -1,6 +1,11 @@
 import type { MiddlewareHandler } from "hono"
 
-import { type DbFactory, isDisposableDb, type VoyantBindings, type VoyantDb } from "../types.js"
+import {
+  type DbFactory,
+  resolveDbFactoryResult,
+  type VoyantBindings,
+  type VoyantDb,
+} from "../types.js"
 
 /**
  * Structural shape of the Cloudflare Workers `ExecutionContext`. Defined
@@ -34,8 +39,9 @@ export function db<TBindings extends VoyantBindings>(
 }> {
   return async (c, next) => {
     const result = factory(c.env)
-    if (isDisposableDb(result)) {
-      c.set("db", result.db)
+    const { db, dispose } = resolveDbFactoryResult(result)
+    if (dispose) {
+      c.set("db", db)
       try {
         await next()
       } finally {
@@ -44,14 +50,14 @@ export function db<TBindings extends VoyantBindings>(
         // an inline await so cleanup still runs.
         const ctx = c.executionCtx as ExecutionContextLike | undefined
         if (ctx && typeof ctx.waitUntil === "function") {
-          ctx.waitUntil(result.dispose())
+          ctx.waitUntil(dispose())
         } else {
-          await result.dispose()
+          await dispose()
         }
       }
       return
     }
-    c.set("db", result)
+    c.set("db", db)
     await next()
   }
 }

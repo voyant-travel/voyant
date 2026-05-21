@@ -1,5 +1,6 @@
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { newId } from "@voyantjs/db/lib/typeid"
+import { dbSupportsTransactions } from "@voyantjs/db/transaction-capability"
 import { and, asc, desc, eq, gt, gte, inArray, lt, lte, or, type SQL, sql } from "drizzle-orm"
 
 import {
@@ -971,7 +972,11 @@ type TransactionalDrizzleDb = AnyDrizzleDb & {
 
 const activeTransactionDbs = new WeakSet<object>()
 
-function withOptionalTransaction<T>(
+function isUnsupportedTransactionError(error: unknown): boolean {
+  return error instanceof Error && /No transactions support/i.test(error.message)
+}
+
+async function withOptionalTransaction<T>(
   db: AnyDrizzleDb,
   callback: (tx: AnyDrizzleDb) => Promise<T>,
 ): Promise<T> {
@@ -979,16 +984,29 @@ function withOptionalTransaction<T>(
     return callback(db)
   }
 
+  if (dbSupportsTransactions(db) === false) {
+    return callback(db)
+  }
+
   const maybeTransactional = db as TransactionalDrizzleDb
   if (typeof maybeTransactional.transaction === "function") {
-    return maybeTransactional.transaction(async (tx) => {
-      activeTransactionDbs.add(tx as object)
-      try {
-        return await callback(tx)
-      } finally {
-        activeTransactionDbs.delete(tx as object)
+    let callbackStarted = false
+    try {
+      return await maybeTransactional.transaction(async (tx) => {
+        callbackStarted = true
+        activeTransactionDbs.add(tx as object)
+        try {
+          return await callback(tx)
+        } finally {
+          activeTransactionDbs.delete(tx as object)
+        }
+      })
+    } catch (error) {
+      if (!callbackStarted && isUnsupportedTransactionError(error)) {
+        return callback(db)
       }
-    })
+      throw error
+    }
   }
   return callback(db)
 }
@@ -1604,6 +1622,7 @@ export const __test__ = {
   buildActionDelegationsPredicate,
   buildActionLedgerEntriesPredicate,
   buildActionLedgerRelayOutboxPredicate,
+  withOptionalTransaction,
   normalizeListLimit,
   toActionApprovalListCursor,
   toActionDelegationListCursor,

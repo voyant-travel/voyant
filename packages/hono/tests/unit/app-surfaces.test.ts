@@ -5,6 +5,7 @@ import {
   type EntityFetcher,
   type LinkService,
 } from "@voyantjs/core"
+import { VOYANT_DB_DISPOSE } from "@voyantjs/db/transaction-capability"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 
@@ -57,6 +58,39 @@ function build(actor: Actor | undefined, mods: HonoModule[]) {
 }
 
 describe("createApp surface mounting", () => {
+  it("disposes db clients tagged with package-level dispose metadata", async () => {
+    const dispose = vi.fn(async () => {})
+    const db = Object.defineProperty({}, VOYANT_DB_DISPOSE, {
+      value: dispose,
+    })
+    const waitUntil = vi.fn((promise: Promise<unknown>) => {
+      void promise
+    })
+    const mod: HonoModule = {
+      module: { name: "things" },
+      adminRoutes: new Hono().get("/ping", (c) => {
+        expect(c.get("db")).toBe(db)
+        return c.json({ ok: true })
+      }),
+    }
+    const app = createApp({
+      // biome-ignore lint/suspicious/noExplicitAny: structural db client for disposal test
+      db: () => db as any,
+      modules: [mod],
+    })
+
+    const res = await app.request(
+      "/v1/admin/things/ping",
+      { headers: { Authorization: "Bearer internal-test-key" } },
+      { ...TEST_ENV, INTERNAL_API_KEY: "internal-test-key" },
+      { ...TEST_CTX, waitUntil },
+    )
+
+    expect(res.status).toBe(200)
+    expect(waitUntil).toHaveBeenCalled()
+    expect(dispose).toHaveBeenCalledTimes(1)
+  })
+
   it("mounts adminRoutes under /v1/admin/{name}", async () => {
     const app = build("staff", [makeModule({ name: "things", admin: true })])
     const res = await app.request("/v1/admin/things/ping", {}, TEST_ENV, TEST_CTX)

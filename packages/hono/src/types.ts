@@ -10,6 +10,7 @@ import type {
   VoyantPermission,
 } from "@voyantjs/core"
 import type { SelectApikey } from "@voyantjs/db/schema/iam"
+import { dbClientDispose } from "@voyantjs/db/transaction-capability"
 import type { KVStore } from "@voyantjs/utils/cache"
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http"
 import type { NeonDatabase as NeonWsDatabase } from "drizzle-orm/neon-serverless"
@@ -85,7 +86,12 @@ export function resolveDbFactoryResult(value: VoyantDb | DisposableDb): {
   db: VoyantDb
   dispose?: () => Promise<void>
 } {
-  return isDisposableDb(value) ? value : { db: value }
+  if (isDisposableDb(value)) {
+    return value
+  }
+
+  const dispose = dbClientDispose(value)
+  return dispose ? { db: value, dispose } : { db: value }
 }
 
 /**

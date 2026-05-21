@@ -8,7 +8,7 @@ import { defineVoyantConfig } from "@voyantjs/core/config"
 export default defineVoyantConfig({
   deployment: "cloudflare-worker",
   projectConfig: {
-    database: { urlEnv: "DATABASE_URL", adapter: "edge" },
+    database: { urlEnv: "DATABASE_URL", adapter: "serverless" },
     cache: { provider: "kv", binding: "CACHE" },
     auth: { provider: "better-auth" },
   },

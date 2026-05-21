@@ -21,7 +21,7 @@ export interface ProjectConfig {
     /** Environment variable name that holds the connection URL. */
     urlEnv?: string
     /** Adapter to use at runtime. */
-    adapter?: "edge" | "node"
+    adapter?: "edge" | "node" | "serverless"
   }
   /** Cache backend descriptor. */
   cache?: {

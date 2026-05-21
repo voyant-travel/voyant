@@ -1,4 +1,8 @@
 import type { AnyDrizzleDb } from "@voyantjs/db"
+import {
+  type DbTransactionCapability,
+  VOYANT_DB_SUPPORTS_TRANSACTIONS,
+} from "@voyantjs/db/transaction-capability"
 import { PgDialect } from "drizzle-orm/pg-core"
 import { describe, expect, test } from "vitest"
 import type {
@@ -848,6 +852,58 @@ describe("actionLedgerService.appendEntry", () => {
       name: ActionLedgerIdempotencyConflictError.name,
       existingActionId: "alge_1",
     })
+  })
+})
+
+describe("withOptionalTransaction", () => {
+  test("skips transaction when the db capability says transactions are unsupported", async () => {
+    const db = {
+      [VOYANT_DB_SUPPORTS_TRANSACTIONS]: false,
+      transaction() {
+        throw new Error("transaction should not be called")
+      },
+    } as DbTransactionCapability as AnyDrizzleDb
+
+    const result = await __test__.withOptionalTransaction(db, async (tx) => {
+      expect(tx).toBe(db)
+      return "ok"
+    })
+
+    expect(result).toBe("ok")
+  })
+
+  test("falls back when an untagged neon-http transaction method throws before callback start", async () => {
+    const db = {
+      transaction() {
+        throw new Error("No transactions support in neon-http driver")
+      },
+    } as unknown as AnyDrizzleDb
+
+    const result = await __test__.withOptionalTransaction(db, async (tx) => {
+      expect(tx).toBe(db)
+      return "ok"
+    })
+
+    expect(result).toBe("ok")
+  })
+
+  test("does not retry errors thrown after the transaction callback starts", async () => {
+    const callbackCalls: AnyDrizzleDb[] = []
+    const tx = {} as AnyDrizzleDb
+    const db = {
+      async transaction<T>(callback: (tx: AnyDrizzleDb) => Promise<T>) {
+        return callback(tx)
+      },
+    } as unknown as AnyDrizzleDb
+
+    await expect(
+      __test__.withOptionalTransaction(db, async (callbackTx) => {
+        callbackCalls.push(callbackTx)
+        throw new Error("No transactions support in downstream write")
+      }),
+    ).rejects.toThrow(/downstream write/)
+
+    expect(callbackCalls).toEqual([tx])
   })
 })
 
