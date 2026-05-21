@@ -1,5 +1,20 @@
 # @voyantjs/storefront
 
+## 0.60.0
+
+### Patch Changes
+
+- @voyantjs/availability@0.60.0
+- @voyantjs/bookings@0.60.0
+- @voyantjs/core@0.60.0
+- @voyantjs/crm@0.60.0
+- @voyantjs/extras@0.60.0
+- @voyantjs/finance@0.60.0
+- @voyantjs/hono@0.60.0
+- @voyantjs/pricing@0.60.0
+- @voyantjs/products@0.60.0
+- @voyantjs/sellability@0.60.0
+
 ## 0.59.0
 
 ### Patch Changes

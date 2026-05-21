@@ -1,5 +1,15 @@
 # @voyantjs/utils
 
+## 0.60.0
+
+### Minor Changes
+
+- 4ff7f15: Add a Voyant Cloud Vault KMS provider with per-call encrypt/decrypt support and optional envelope data-key methods.
+
+### Patch Changes
+
+- @voyantjs/types@0.60.0
+
 ## 0.59.0
 
 ### Patch Changes
