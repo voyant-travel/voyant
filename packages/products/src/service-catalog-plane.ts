@@ -457,9 +457,6 @@ export function createProductStorefrontCardProjectionExtension(): ProductProject
       const out = new Map<string, unknown>([
         ["slug", translation?.slug ?? null],
         ["shortDescription", translation?.shortDescription ?? null],
-        ["inclusionsHtml", translation?.inclusionsHtml ?? null],
-        ["exclusionsHtml", translation?.exclusionsHtml ?? null],
-        ["termsHtml", translation?.termsHtml ?? null],
         ["primaryMediaUrl", primaryMedia?.url ?? null],
         ["thumbnailUrl", primaryMedia?.url ?? null],
         ["coverMediaUrl", primaryMedia?.url ?? null],
@@ -470,6 +467,15 @@ export function createProductStorefrontCardProjectionExtension(): ProductProject
       ])
       if (translation?.name) {
         out.set("name", translation.name)
+      }
+      if (translation?.inclusionsHtml != null) {
+        out.set("inclusionsHtml", translation.inclusionsHtml)
+      }
+      if (translation?.exclusionsHtml != null) {
+        out.set("exclusionsHtml", translation.exclusionsHtml)
+      }
+      if (translation?.termsHtml != null) {
+        out.set("termsHtml", translation.termsHtml)
       }
       return out
     },

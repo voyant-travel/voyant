@@ -1,9 +1,14 @@
 import { createFieldPolicyRegistry } from "@voyantjs/catalog/contract"
 import { resolveOverlay } from "@voyantjs/catalog/overlay/resolver"
+import type { AnyDrizzleDb } from "@voyantjs/db"
 import { describe, expect, it } from "vitest"
 
 import { productCatalogPolicy } from "../../src/catalog-policy.js"
-import { productProvenance, productRowToProjection } from "../../src/service-catalog-plane.js"
+import {
+  createProductStorefrontCardProjectionExtension,
+  productProvenance,
+  productRowToProjection,
+} from "../../src/service-catalog-plane.js"
 
 const sampleRow = {
   id: "prod_abc",
@@ -30,6 +35,31 @@ const sampleRow = {
   updatedAt: new Date("2026-04-01"),
   // biome-ignore lint/suspicious/noExplicitAny: test fixture; product row may have additional cols
 } as any
+
+const customerSlice = {
+  vertical: "products",
+  locale: "ro-RO",
+  audience: "customer",
+  market: "default",
+} as const
+
+function projectionDb(selectResponses: ReadonlyArray<ReadonlyArray<Record<string, unknown>>>) {
+  let selectIndex = 0
+  const db = {
+    select: () => {
+      const rows = selectResponses[selectIndex++] ?? []
+      return {
+        from: () => ({
+          where: () => ({
+            orderBy: async () => rows,
+          }),
+        }),
+      }
+    },
+    execute: async () => [{ count: 0 }],
+  }
+  return db as unknown as AnyDrizzleDb
+}
 
 describe("productRowToProjection", () => {
   it("maps every column to its catalog-policy path", () => {
@@ -120,5 +150,49 @@ describe("end-to-end: projection + resolver visibility filter", () => {
       audience: "customer",
       market: "default",
     })
+  })
+})
+
+describe("createProductStorefrontCardProjectionExtension", () => {
+  it("preserves base rich text fields when a translation is absent", async () => {
+    const extension = createProductStorefrontCardProjectionExtension()
+    const projection = await extension.project(
+      projectionDb([[], [], [], []]),
+      "prod_abc",
+      customerSlice,
+    )
+
+    expect(projection.has("inclusionsHtml")).toBe(false)
+    expect(projection.has("exclusionsHtml")).toBe(false)
+    expect(projection.has("termsHtml")).toBe(false)
+  })
+
+  it("preserves base rich text fields when the selected translation is partial", async () => {
+    const extension = createProductStorefrontCardProjectionExtension()
+    const projection = await extension.project(
+      projectionDb([
+        [
+          {
+            languageTag: "ro",
+            name: "Retreat Bali",
+            slug: "retreat-bali",
+            shortDescription: "Descriere scurta",
+            inclusionsHtml: null,
+            exclusionsHtml: null,
+            termsHtml: null,
+          },
+        ],
+        [],
+        [],
+        [],
+      ]),
+      "prod_abc",
+      customerSlice,
+    )
+
+    expect(projection.get("name")).toBe("Retreat Bali")
+    expect(projection.has("inclusionsHtml")).toBe(false)
+    expect(projection.has("exclusionsHtml")).toBe(false)
+    expect(projection.has("termsHtml")).toBe(false)
   })
 })
