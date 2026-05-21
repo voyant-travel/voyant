@@ -1,6 +1,7 @@
 "use client"
 
 import { useMutation } from "@tanstack/react-query"
+import { formatMessage } from "@voyantjs/i18n"
 import type { Trip, TripComponent } from "@voyantjs/travel-composer"
 import {
   addTripComponent,
@@ -40,10 +41,13 @@ import {
 } from "lucide-react"
 import { useMemo, useState } from "react"
 
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
 
 type ComponentTemplate = "product" | "stay" | "transfer"
 type CheckoutIntent = "card" | "bank_transfer" | "hold" | "inquiry"
+
+type StorefrontComposerMessages = ReturnType<typeof useAdminMessages>["trips"]["storefrontComposer"]
 
 interface ComposerTripState {
   trip: Trip | null
@@ -52,12 +56,21 @@ interface ComposerTripState {
 }
 
 const currency = "EUR"
+// i18n-literal-ok: fixture payload for the storefront composer demo.
+// These names + emails are sent as request bodies (and surface back in the
+// trip's billing record), not rendered as operator-facing UI text.
 const referenceTravelerParty = {
+  // i18n-literal-ok
   billing: {
+    // i18n-literal-ok
     buyerType: "B2C",
+    // i18n-literal-ok
     contact: {
+      // i18n-literal-ok
       firstName: "Mira",
+      // i18n-literal-ok
       lastName: "Ionescu",
+      // i18n-literal-ok
       email: "mira.ionescu@pixelmakers.com",
     },
     address: {},
@@ -65,8 +78,11 @@ const referenceTravelerParty = {
   travelers: [
     {
       localId: "traveler_1",
+      // i18n-literal-ok
       firstName: "Mira",
+      // i18n-literal-ok
       lastName: "Ionescu",
+      // i18n-literal-ok
       email: "mira.ionescu@pixelmakers.com",
       role: "lead",
     },
@@ -74,6 +90,7 @@ const referenceTravelerParty = {
 }
 
 export function StorefrontComposerBlock(): React.ReactElement {
+  const t = useAdminMessages().trips.storefrontComposer
   const [state, setState] = useState<ComposerTripState>({
     trip: null,
     message: null,
@@ -100,13 +117,14 @@ export function StorefrontComposerBlock(): React.ReactElement {
   const createMutation = useMutation({
     mutationFn: () =>
       createTrip(client, {
+        // i18n-literal-ok: trip title persisted on the envelope, not user-displayed here.
         title: "Composed trip",
         description: notes,
         travelerParty: referenceTravelerParty,
         constraints: { channel: "storefront-reference" },
       }),
-    onSuccess: (trip) => setState({ trip, message: "Trip created", error: null }),
-    onError: (error) => setState((current) => ({ ...current, error: apiError(error) })),
+    onSuccess: (trip) => setState({ trip, message: t.statusMessages.tripCreated, error: null }),
+    onError: (error) => setState((current) => ({ ...current, error: apiError(error, t) })),
   })
 
   const addMutation = useMutation({
@@ -114,6 +132,7 @@ export function StorefrontComposerBlock(): React.ReactElement {
       const trip =
         state.trip ??
         (await createTrip(client, {
+          // i18n-literal-ok
           title: "Composed trip",
           travelerParty: referenceTravelerParty,
           constraints: { channel: "storefront-reference" },
@@ -122,13 +141,14 @@ export function StorefrontComposerBlock(): React.ReactElement {
       const refreshed = await getTrip(client, trip.envelope.id)
       return { component, trip: refreshed }
     },
-    onSuccess: ({ trip }) => setState({ trip, message: "Component added", error: null }),
-    onError: (error) => setState((current) => ({ ...current, error: apiError(error) })),
+    onSuccess: ({ trip }) =>
+      setState({ trip, message: t.statusMessages.componentAdded, error: null }),
+    onError: (error) => setState((current) => ({ ...current, error: apiError(error, t) })),
   })
 
   const priceMutation = useMutation({
     mutationFn: async () => {
-      if (!envelopeId) throw new Error("Create a trip first")
+      if (!envelopeId) throw new Error(t.errors.createTripFirst)
       return priceTrip(client, envelopeId, {
         scope: { locale: "en-GB", audience: "customer", market: "default", currency },
       })
@@ -136,15 +156,15 @@ export function StorefrontComposerBlock(): React.ReactElement {
     onSuccess: (result) =>
       setState({
         trip: { envelope: result.envelope, components: result.components },
-        message: "Trip priced",
+        message: t.statusMessages.tripPriced,
         error: result.failures.length > 0 ? result.failures.map((f) => f.reason).join(", ") : null,
       }),
-    onError: (error) => setState((current) => ({ ...current, error: apiError(error) })),
+    onError: (error) => setState((current) => ({ ...current, error: apiError(error, t) })),
   })
 
   const reserveMutation = useMutation({
     mutationFn: async () => {
-      if (!envelopeId) throw new Error("Price the trip first")
+      if (!envelopeId) throw new Error(t.errors.priceTripFirst)
       return reserveTrip(client, envelopeId, {
         idempotencyKey: `reserve-${envelopeId}`,
       })
@@ -152,15 +172,15 @@ export function StorefrontComposerBlock(): React.ReactElement {
     onSuccess: (result) =>
       setState({
         trip: { envelope: result.envelope, components: result.components },
-        message: "Trip reserved",
+        message: t.statusMessages.tripReserved,
         error: result.failures.length > 0 ? result.failures.map((f) => f.reason).join(", ") : null,
       }),
-    onError: (error) => setState((current) => ({ ...current, error: apiError(error) })),
+    onError: (error) => setState((current) => ({ ...current, error: apiError(error, t) })),
   })
 
   const checkoutMutation = useMutation({
     mutationFn: async () => {
-      if (!envelopeId) throw new Error("Reserve the trip first")
+      if (!envelopeId) throw new Error(t.errors.reserveTripFirst)
       return startTripCheckout(client, envelopeId, {
         intent: checkoutIntent,
         idempotencyKey: `checkout-${envelopeId}-${checkoutIntent}`,
@@ -172,14 +192,14 @@ export function StorefrontComposerBlock(): React.ReactElement {
     onSuccess: (result) => {
       setState({
         trip: { envelope: result.envelope, components: result.components },
-        message: handoffMessage(result.target.checkoutUrl, result.target.paymentSessionId),
+        message: handoffMessage(result.target.checkoutUrl, result.target.paymentSessionId, t),
         error: result.failures.length > 0 ? result.failures.map((f) => f.reason).join(", ") : null,
       })
       if (result.target.checkoutUrl) {
         window.location.assign(result.target.checkoutUrl)
       }
     },
-    onError: (error) => setState((current) => ({ ...current, error: apiError(error) })),
+    onError: (error) => setState((current) => ({ ...current, error: apiError(error, t) })),
   })
 
   const trip = state.trip
@@ -197,6 +217,7 @@ export function StorefrontComposerBlock(): React.ReactElement {
     if (template === "transfer") {
       return {
         kind: "manual_placeholder" as const,
+        // i18n-literal-ok: persisted as the booking component's description.
         description: "Staff-confirmed ground transfer",
         estimatedPricing: {
           currency,
@@ -210,6 +231,7 @@ export function StorefrontComposerBlock(): React.ReactElement {
 
     return {
       kind: "catalog_booking" as const,
+      // i18n-literal-ok
       description: template === "stay" ? "Catalog-backed stay component" : "Catalog-backed tour",
       catalogRef: {
         entityModule: template === "stay" ? "hospitality" : "products",
@@ -233,8 +255,11 @@ export function StorefrontComposerBlock(): React.ReactElement {
           billing: {
             buyerType: "B2C",
             contact: {
+              // i18n-literal-ok
               firstName: "Mira",
+              // i18n-literal-ok
               lastName: "Ionescu",
+              // i18n-literal-ok
               email: "mira.ionescu@pixelmakers.com",
             },
             address: {},
@@ -252,11 +277,9 @@ export function StorefrontComposerBlock(): React.ReactElement {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Route className="size-6 text-primary" aria-hidden="true" />
-            <h1 className="font-semibold text-3xl tracking-tight">Build a trip</h1>
+            <h1 className="font-semibold text-3xl tracking-tight">{t.heading}</h1>
           </div>
-          <p className="max-w-2xl text-muted-foreground">
-            Bundle tours, stays, and staff-confirmed services into one checkout.
-          </p>
+          <p className="max-w-2xl text-muted-foreground">{t.subheading}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => createMutation.mutate()} disabled={isBusy || Boolean(trip)}>
@@ -265,7 +288,7 @@ export function StorefrontComposerBlock(): React.ReactElement {
             ) : (
               <Sparkles className="size-4" aria-hidden="true" />
             )}
-            New trip
+            {t.actions.newTrip}
           </Button>
           <Button
             variant="outline"
@@ -273,7 +296,7 @@ export function StorefrontComposerBlock(): React.ReactElement {
             disabled={isBusy || components.length === 0}
           >
             <CalendarClock className="size-4" aria-hidden="true" />
-            Price
+            {t.actions.price}
           </Button>
           <Button
             variant="outline"
@@ -281,14 +304,14 @@ export function StorefrontComposerBlock(): React.ReactElement {
             disabled={isBusy || trip?.envelope.status !== "priced"}
           >
             <Check className="size-4" aria-hidden="true" />
-            Reserve
+            {t.actions.reserve}
           </Button>
           <Button
             onClick={() => checkoutMutation.mutate()}
             disabled={isBusy || trip?.envelope.status !== "reserved"}
           >
             <CreditCard className="size-4" aria-hidden="true" />
-            Checkout
+            {t.actions.checkout}
           </Button>
         </div>
       </div>
@@ -313,14 +336,20 @@ export function StorefrontComposerBlock(): React.ReactElement {
             onAdd={() => addMutation.mutate()}
             addDisabled={isBusy || (template !== "transfer" && !entityId)}
             addPending={addMutation.isPending}
+            messages={t}
           />
 
           <div className="space-y-3">
             {components.length === 0 ? (
-              <EmptyTimeline />
+              <EmptyTimeline messages={t} />
             ) : (
               components.map((component, index) => (
-                <ComponentCard key={component.id} component={component} index={index} />
+                <ComponentCard
+                  key={component.id}
+                  component={component}
+                  index={index}
+                  messages={t}
+                />
               ))
             )}
           </div>
@@ -329,24 +358,27 @@ export function StorefrontComposerBlock(): React.ReactElement {
         <aside className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Trip summary</CardTitle>
+              <CardTitle className="text-base">{t.summary.title}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <SummaryCell label="Status" value={trip?.envelope.status ?? "not started"} />
-                <SummaryCell label="Items" value={String(components.length)} />
                 <SummaryCell
-                  label="Subtotal"
+                  label={t.summary.status}
+                  value={trip?.envelope.status ?? t.summary.notStarted}
+                />
+                <SummaryCell label={t.summary.items} value={String(components.length)} />
+                <SummaryCell
+                  label={t.summary.subtotal}
                   value={formatMoney(aggregate?.subtotalAmountCents, aggregate?.currency)}
                 />
                 <SummaryCell
-                  label="Tax"
+                  label={t.summary.tax}
                   value={formatMoney(aggregate?.taxAmountCents, aggregate?.currency)}
                 />
               </div>
               <Separator />
               <div className="flex items-end justify-between gap-3">
-                <span className="text-muted-foreground text-sm">Total</span>
+                <span className="text-muted-foreground text-sm">{t.summary.total}</span>
                 <span className="font-semibold text-2xl">
                   {formatMoney(aggregate?.totalAmountCents, aggregate?.currency)}
                 </span>
@@ -387,6 +419,7 @@ function ComposerForm({
   onAdd,
   addDisabled,
   addPending,
+  messages,
 }: {
   template: ComponentTemplate
   setTemplate(value: ComponentTemplate): void
@@ -405,29 +438,31 @@ function ComposerForm({
   onAdd(): void
   addDisabled: boolean
   addPending: boolean
+  messages: StorefrontComposerMessages
 }): React.ReactElement {
+  const f = messages.composerForm
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Add component</CardTitle>
+        <CardTitle className="text-base">{f.title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
-            <Label>Type</Label>
+            <Label>{f.typeLabel}</Label>
             <Select value={template} onValueChange={(value) => setTemplate(value as never)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="product">Tour product</SelectItem>
-                <SelectItem value="stay">Stay</SelectItem>
-                <SelectItem value="transfer">Manual transfer</SelectItem>
+                <SelectItem value="product">{f.typeProduct}</SelectItem>
+                <SelectItem value="stay">{f.typeStay}</SelectItem>
+                <SelectItem value="transfer">{f.typeTransfer}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2 md:col-span-2">
-            <Label>Title</Label>
+            <Label>{f.titleLabel}</Label>
             <Input
               value={componentTitle}
               onChange={(event) => setComponentTitle(event.target.value)}
@@ -438,7 +473,7 @@ function ComposerForm({
         <div className="grid gap-4 md:grid-cols-3">
           {template === "transfer" ? (
             <div className="space-y-2">
-              <Label>Amount</Label>
+              <Label>{f.amountLabel}</Label>
               <Input
                 inputMode="decimal"
                 value={manualAmount}
@@ -448,17 +483,17 @@ function ComposerForm({
           ) : (
             <>
               <div className="space-y-2 md:col-span-2">
-                <Label>Catalog ID</Label>
+                <Label>{f.catalogIdLabel}</Label>
                 <Input value={entityId} onChange={(event) => setEntityId(event.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Source</Label>
+                <Label>{f.sourceLabel}</Label>
                 <Input value={sourceKind} onChange={(event) => setSourceKind(event.target.value)} />
               </div>
             </>
           )}
           <div className="space-y-2">
-            <Label>Payment</Label>
+            <Label>{f.paymentLabel}</Label>
             <Select
               value={checkoutIntent}
               onValueChange={(value) => setCheckoutIntent(value as never)}
@@ -467,17 +502,17 @@ function ComposerForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="card">Card</SelectItem>
-                <SelectItem value="bank_transfer">Bank transfer</SelectItem>
-                <SelectItem value="hold">Hold</SelectItem>
-                <SelectItem value="inquiry">Inquiry</SelectItem>
+                <SelectItem value="card">{f.paymentCard}</SelectItem>
+                <SelectItem value="bank_transfer">{f.paymentBankTransfer}</SelectItem>
+                <SelectItem value="hold">{f.paymentHold}</SelectItem>
+                <SelectItem value="inquiry">{f.paymentInquiry}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label>Trip notes</Label>
+          <Label>{f.tripNotesLabel}</Label>
           <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
         </div>
 
@@ -487,18 +522,18 @@ function ComposerForm({
           ) : (
             <Plus className="size-4" aria-hidden="true" />
           )}
-          Add to trip
+          {f.addToTrip}
         </Button>
       </CardContent>
     </Card>
   )
 }
 
-function EmptyTimeline(): React.ReactElement {
+function EmptyTimeline({ messages }: { messages: StorefrontComposerMessages }): React.ReactElement {
   return (
     <div className="rounded-lg border border-dashed px-6 py-12 text-center">
       <Route className="mx-auto mb-3 size-8 text-muted-foreground" aria-hidden="true" />
-      <p className="font-medium">No trip components yet</p>
+      <p className="font-medium">{messages.emptyTimeline}</p>
     </div>
   )
 }
@@ -506,9 +541,11 @@ function EmptyTimeline(): React.ReactElement {
 function ComponentCard({
   component,
   index,
+  messages,
 }: {
   component: TripComponent
   index: number
+  messages: StorefrontComposerMessages
 }): React.ReactElement {
   const Icon =
     component.kind === "manual_placeholder"
@@ -524,7 +561,7 @@ function ComponentCard({
         </div>
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-medium">{componentDisplayName(component, index)}</span>
+            <span className="font-medium">{componentDisplayName(component, index, messages)}</span>
             <Badge variant={component.status === "failed" ? "destructive" : "secondary"}>
               {component.status}
             </Badge>
@@ -546,7 +583,9 @@ function ComponentCard({
             {formatMoney(component.componentTotalAmountCents, component.componentCurrency)}
           </p>
           <p className="text-muted-foreground text-xs">
-            tax {formatMoney(component.componentTaxAmountCents, component.componentCurrency)}
+            {formatMessage(messages.componentTaxLine, {
+              amount: formatMoney(component.componentTaxAmountCents, component.componentCurrency),
+            })}
           </p>
         </div>
       </CardContent>
@@ -554,7 +593,11 @@ function ComponentCard({
   )
 }
 
-function componentDisplayName(component: TripComponent, index: number): string {
+function componentDisplayName(
+  component: TripComponent,
+  index: number,
+  messages: StorefrontComposerMessages,
+): string {
   const metadata = component.metadata as
     | {
         manualService?: { name?: string | null }
@@ -567,7 +610,7 @@ function componentDisplayName(component: TripComponent, index: number): string {
   const destination = metadata?.flightDraft?.destination?.trim()
   if (origin && destination) return `${origin} → ${destination}`
   if (component.entityId) return component.entityId
-  return `Component ${index + 1}`
+  return formatMessage(messages.componentFallback, { index: index + 1 })
 }
 
 function SummaryCell({ label, value }: { label: string; value: string }): React.ReactElement {
@@ -579,16 +622,20 @@ function SummaryCell({ label, value }: { label: string; value: string }): React.
   )
 }
 
-function handoffMessage(checkoutUrl: string | null, paymentSessionId: string | null): string {
-  if (checkoutUrl) return "Redirecting to payment"
-  if (paymentSessionId) return "Payment session started"
-  return "Checkout handoff started"
+function handoffMessage(
+  checkoutUrl: string | null,
+  paymentSessionId: string | null,
+  messages: StorefrontComposerMessages,
+): string {
+  if (checkoutUrl) return messages.statusMessages.redirecting
+  if (paymentSessionId) return messages.statusMessages.paymentSessionStarted
+  return messages.statusMessages.checkoutHandoff
 }
 
-function apiError(error: unknown): string {
+function apiError(error: unknown, messages: StorefrontComposerMessages): string {
   const candidate = error as Partial<VoyantApiError>
   if (typeof candidate.message === "string") return candidate.message
-  return error instanceof Error ? error.message : "Request failed"
+  return error instanceof Error ? error.message : messages.errors.requestFailed
 }
 
 function formatMoney(
