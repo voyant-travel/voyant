@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { useOrganization, useOrganizations, usePeople, usePerson } from "@voyantjs/crm-react"
 import { useChannel, useChannels } from "@voyantjs/distribution-react"
+import { formatMessage } from "@voyantjs/i18n"
 import {
   fetchWithValidation,
   type LegalContractRecord,
@@ -47,12 +48,15 @@ import { Loader2, Plus, Trash2 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { type UseFormSetValue, type UseFormWatch, useFieldArray, useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { zodResolver } from "@/lib/zod-resolver"
 import { legalQueryClient } from "./legal-query-client"
 
+type ContractDialogMessages = ReturnType<typeof useAdminMessages>["legal"]["contractDialog"]
+
 const contractFormSchema = z.object({
   scope: z.enum(["customer", "supplier", "partner", "channel", "other"]),
-  title: z.string().min(1, "Title is required"),
+  title: z.string().min(1, "titleRequired"),
   language: z.string().min(2).max(10).optional(),
   templateVersionId: z.string().optional(),
   seriesId: z.string().optional(),
@@ -105,13 +109,8 @@ type ComboboxOption = {
 
 type TemplateVariableRow = FormValues["templateVariables"][number]
 
-const SCOPES = [
-  { value: "customer", label: "Customer" },
-  { value: "supplier", label: "Supplier" },
-  { value: "partner", label: "Partner" },
-  { value: "channel", label: "Channel" },
-  { value: "other", label: "Other" },
-] as const
+const SCOPE_VALUES = ["customer", "supplier", "partner", "channel", "other"] as const
+type ContractScopeKey = (typeof SCOPE_VALUES)[number]
 
 const PREFERRED_LANGUAGE_ORDER = ["en", "ro", "fr", "de", "es", "it"] as const
 
@@ -235,6 +234,7 @@ function SearchableSelect({
   placeholder,
   searchPlaceholder,
   emptyLabel,
+  loadingLabel,
   loading,
   disabled,
   onSearchChange,
@@ -245,6 +245,7 @@ function SearchableSelect({
   placeholder: string
   searchPlaceholder?: string
   emptyLabel: string
+  loadingLabel: string
   loading?: boolean
   disabled?: boolean
   onSearchChange?: (value: string) => void
@@ -286,7 +287,7 @@ function SearchableSelect({
         disabled={disabled}
       />
       <ComboboxContent>
-        <ComboboxEmpty>{loading ? "Loading..." : emptyLabel}</ComboboxEmpty>
+        <ComboboxEmpty>{loading ? loadingLabel : emptyLabel}</ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>
             {(id) => {
@@ -317,11 +318,13 @@ function VariableValueField({
   index,
   setValue,
   watch,
+  messages,
 }: {
   row: TemplateVariableRow
   index: number
   setValue: UseFormSetValue<FormValues>
   watch: UseFormWatch<FormValues>
+  messages: ContractDialogMessages
 }) {
   const valuePath = `templateVariables.${index}.value` as const
   const booleanPath = `templateVariables.${index}.booleanValue` as const
@@ -340,7 +343,7 @@ function VariableValueField({
               })
             }
           />
-          <span>{watch(booleanPath) ? "Yes" : "No"}</span>
+          <span>{watch(booleanPath) ? messages.booleanYes : messages.booleanNo}</span>
         </label>
       </div>
     )
@@ -356,7 +359,7 @@ function VariableValueField({
             shouldValidate: true,
           })
         }
-        placeholder={row.example || "Select date & time"}
+        placeholder={row.example || messages.datetimeFallbackPlaceholder}
         className="w-full"
       />
     )
@@ -399,15 +402,22 @@ function VariableValueField({
           shouldValidate: true,
         })
       }
-      placeholder={row.example || "Enter value"}
+      placeholder={row.example || messages.valueFallbackPlaceholder}
     />
   )
 }
 
 export function ContractDialog({ open, onOpenChange, contract, onSuccess }: ContractDialogProps) {
   const isEditing = !!contract
+  const t = useAdminMessages().legal.contractDialog
   const { create, update } = useLegalContractMutation()
   const { variableCatalog } = useLegalContractTemplateAuthoring()
+
+  const validationByCode: Record<string, string> = {
+    titleRequired: t.validation.titleRequired,
+  }
+  const resolveValidation = (code: string | undefined) =>
+    (code && validationByCode[code]) || code || ""
 
   const [templateSearch, setTemplateSearch] = useState("")
   const [personSearch, setPersonSearch] = useState("")
@@ -590,20 +600,29 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
     const listedOptions =
       templateVersionsQuery.data?.map((version) => ({
         value: version.id,
-        label: `Version ${version.version}`,
-        description: version.changelog || "Most recent draft",
+        label: formatMessage(t.templateVersionLabelFormat, { version: version.version }),
+        description: version.changelog || t.templateVersionMostRecentDraft,
       })) ?? []
     const selectedOption = selectedTemplateVersionQuery.data
       ? [
           {
             value: selectedTemplateVersionQuery.data.id,
-            label: `Version ${selectedTemplateVersionQuery.data.version}`,
-            description: selectedTemplateVersionQuery.data.changelog || "Selected version",
+            label: formatMessage(t.templateVersionLabelFormat, {
+              version: selectedTemplateVersionQuery.data.version,
+            }),
+            description:
+              selectedTemplateVersionQuery.data.changelog || t.templateVersionSelectedFallback,
           },
         ]
       : []
     return mergeUniqueOptions(listedOptions, selectedOption)
-  }, [selectedTemplateVersionQuery.data, templateVersionsQuery.data])
+  }, [
+    selectedTemplateVersionQuery.data,
+    t.templateVersionLabelFormat,
+    t.templateVersionMostRecentDraft,
+    t.templateVersionSelectedFallback,
+    templateVersionsQuery.data,
+  ])
 
   const seriesOptions = useMemo(() => {
     return (
@@ -614,10 +633,10 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
           label: `${series.name} · ${series.prefix}${series.separator || ""}${String(
             (series.currentSequence ?? 0) + 1,
           ).padStart(series.padLength, "0")}`,
-          description: `${series.scope} · ${series.active ? "active" : "inactive"}`,
+          description: `${series.scope} · ${series.active ? t.seriesActive : t.seriesInactive}`,
         })) ?? []
     )
-  }, [numberSeriesQuery.data, selectedScope])
+  }, [numberSeriesQuery.data, selectedScope, t.seriesActive, t.seriesInactive])
 
   const personOptions = useMemo(() => {
     const listOptions =
@@ -839,7 +858,7 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="xl">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Contract" : "New Contract"}</DialogTitle>
+          <DialogTitle>{isEditing ? t.titleEdit : t.titleNew}</DialogTitle>
         </DialogHeader>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -848,18 +867,18 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
           <DialogBody className="grid gap-6">
             <div className="grid gap-4">
               <div>
-                <h3 className="text-sm font-semibold">Contract setup</h3>
-                <p className="text-sm text-muted-foreground">
-                  Pick the contract scope, language, template, and numbering before you fill in the
-                  details.
-                </p>
+                <h3 className="text-sm font-semibold">{t.setupSectionTitle}</h3>
+                <p className="text-sm text-muted-foreground">{t.setupSectionDescription}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
-                  <Label>Scope</Label>
+                  <Label>{t.scopeLabel}</Label>
                   <Select
-                    items={SCOPES}
+                    items={SCOPE_VALUES.map((value) => ({
+                      value,
+                      label: t.scopeOptions[value],
+                    }))}
                     value={selectedScope}
                     onValueChange={(value) => form.setValue("scope", value as FormValues["scope"])}
                   >
@@ -867,9 +886,9 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {SCOPES.map((scope) => (
-                        <SelectItem key={scope.value} value={scope.value}>
-                          {scope.label}
+                      {SCOPE_VALUES.map((value) => (
+                        <SelectItem key={value} value={value}>
+                          {t.scopeOptions[value as ContractScopeKey]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -877,7 +896,7 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <Label>Language</Label>
+                  <Label>{t.languageLabel}</Label>
                   <SearchableSelect
                     value={selectedLanguage}
                     onChange={(value) =>
@@ -887,24 +906,27 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                       })
                     }
                     options={languageOptions}
-                    placeholder="Choose a language"
-                    searchPlaceholder="Search languages..."
-                    emptyLabel="No languages found."
+                    placeholder={t.languagePlaceholder}
+                    searchPlaceholder={t.languageSearchPlaceholder}
+                    emptyLabel={t.languageEmpty}
+                    loadingLabel={t.loading}
                   />
                 </div>
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label>Title</Label>
-                <Input {...form.register("title")} placeholder="Contract title" />
+                <Label>{t.titleLabel}</Label>
+                <Input {...form.register("title")} placeholder={t.titlePlaceholder} />
                 {form.formState.errors.title ? (
-                  <p className="text-xs text-destructive">{form.formState.errors.title.message}</p>
+                  <p className="text-xs text-destructive">
+                    {resolveValidation(form.formState.errors.title.message)}
+                  </p>
                 ) : null}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
-                  <Label>Template</Label>
+                  <Label>{t.templateLabel}</Label>
                   <SearchableSelect
                     value={templateId}
                     onChange={(value) => {
@@ -916,16 +938,17 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                       syncedTemplateVariablesSignatureRef.current = ""
                     }}
                     options={templateOptions}
-                    placeholder="Choose a template"
-                    searchPlaceholder="Search templates..."
-                    emptyLabel="No templates found."
+                    placeholder={t.templatePlaceholder}
+                    searchPlaceholder={t.templateSearchPlaceholder}
+                    emptyLabel={t.templateEmpty}
                     loading={templateListQuery.isPending || selectedTemplateQuery.isPending}
                     onSearchChange={setTemplateSearch}
+                    loadingLabel={t.loading}
                   />
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <Label>Template version</Label>
+                  <Label>{t.templateVersionLabel}</Label>
                   <SearchableSelect
                     value={selectedTemplateVersionId}
                     onChange={(value) => {
@@ -936,24 +959,23 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                       syncedTemplateVariablesSignatureRef.current = ""
                     }}
                     options={templateVersionOptions}
-                    placeholder="Choose a version"
-                    searchPlaceholder="Search versions..."
+                    placeholder={t.templateVersionPlaceholder}
+                    searchPlaceholder={t.templateVersionSearchPlaceholder}
                     emptyLabel={
-                      templateId
-                        ? "No versions found for this template."
-                        : "Choose a template first."
+                      templateId ? t.templateVersionEmpty : t.templateVersionPickTemplateFirst
                     }
                     loading={
                       templateVersionsQuery.isPending || selectedTemplateVersionQuery.isPending
                     }
                     disabled={!templateId}
+                    loadingLabel={t.loading}
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
-                  <Label>Number series</Label>
+                  <Label>{t.numberSeriesLabel}</Label>
                   <SearchableSelect
                     value={selectedSeriesId}
                     onChange={(value) =>
@@ -963,15 +985,16 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                       })
                     }
                     options={seriesOptions}
-                    placeholder="Choose a number series"
-                    searchPlaceholder="Search number series..."
-                    emptyLabel="No number series found."
+                    placeholder={t.numberSeriesPlaceholder}
+                    searchPlaceholder={t.numberSeriesSearchPlaceholder}
+                    emptyLabel={t.numberSeriesEmpty}
                     loading={numberSeriesQuery.isPending}
+                    loadingLabel={t.loading}
                   />
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <Label>Expires at</Label>
+                  <Label>{t.expiresAtLabel}</Label>
                   <DateTimePicker
                     value={form.watch("expiresAt") || null}
                     onChange={(next) =>
@@ -980,7 +1003,7 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                         shouldDirty: true,
                       })
                     }
-                    placeholder="Select expiry date & time"
+                    placeholder={t.expiresAtPlaceholder}
                     className="w-full"
                   />
                 </div>
@@ -989,16 +1012,13 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
 
             <div className="grid gap-4">
               <div>
-                <h3 className="text-sm font-semibold">Linked records</h3>
-                <p className="text-sm text-muted-foreground">
-                  Link the contract to the right customer, organization, supplier, or channel so
-                  your team can find it later.
-                </p>
+                <h3 className="text-sm font-semibold">{t.linkedSectionTitle}</h3>
+                <p className="text-sm text-muted-foreground">{t.linkedSectionDescription}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
-                  <Label>Person</Label>
+                  <Label>{t.personLabel}</Label>
                   <SearchableSelect
                     value={selectedPersonId}
                     onChange={(value) =>
@@ -1008,16 +1028,17 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                       })
                     }
                     options={personOptions}
-                    placeholder="Choose a person"
-                    searchPlaceholder="Search people..."
-                    emptyLabel="No people found."
+                    placeholder={t.personPlaceholder}
+                    searchPlaceholder={t.personSearchPlaceholder}
+                    emptyLabel={t.personEmpty}
                     loading={peopleQuery.isPending || selectedPersonQuery.isPending}
                     onSearchChange={setPersonSearch}
+                    loadingLabel={t.loading}
                   />
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <Label>Organization</Label>
+                  <Label>{t.organizationLabel}</Label>
                   <SearchableSelect
                     value={selectedOrganizationId}
                     onChange={(value) =>
@@ -1027,18 +1048,19 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                       })
                     }
                     options={organizationOptions}
-                    placeholder="Choose an organization"
-                    searchPlaceholder="Search organizations..."
-                    emptyLabel="No organizations found."
+                    placeholder={t.organizationPlaceholder}
+                    searchPlaceholder={t.organizationSearchPlaceholder}
+                    emptyLabel={t.organizationEmpty}
                     loading={organizationsQuery.isPending}
                     onSearchChange={setOrganizationSearch}
+                    loadingLabel={t.loading}
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
-                  <Label>Supplier</Label>
+                  <Label>{t.supplierLabel}</Label>
                   <SearchableSelect
                     value={selectedSupplierId}
                     onChange={(value) =>
@@ -1048,16 +1070,17 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                       })
                     }
                     options={supplierOptions}
-                    placeholder="Choose a supplier"
-                    searchPlaceholder="Search suppliers..."
-                    emptyLabel="No suppliers found."
+                    placeholder={t.supplierPlaceholder}
+                    searchPlaceholder={t.supplierSearchPlaceholder}
+                    emptyLabel={t.supplierEmpty}
                     loading={suppliersQuery.isPending || selectedSupplierQuery.isPending}
                     onSearchChange={setSupplierSearch}
+                    loadingLabel={t.loading}
                   />
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <Label>Channel</Label>
+                  <Label>{t.channelLabel}</Label>
                   <SearchableSelect
                     value={selectedChannelId}
                     onChange={(value) =>
@@ -1067,25 +1090,26 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                       })
                     }
                     options={channelOptions}
-                    placeholder="Choose a channel"
-                    searchPlaceholder="Search channels..."
-                    emptyLabel="No channels found."
+                    placeholder={t.channelPlaceholder}
+                    searchPlaceholder={t.channelSearchPlaceholder}
+                    emptyLabel={t.channelEmpty}
                     loading={channelsQuery.isPending || selectedChannelQuery.isPending}
+                    loadingLabel={t.loading}
                   />
                 </div>
               </div>
             </div>
 
             <div className="grid gap-4">
-              <h3 className="text-sm font-semibold">Template variables</h3>
+              <h3 className="text-sm font-semibold">{t.templateVariablesSectionTitle}</h3>
 
               {!selectedTemplateVersionId ? (
                 <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-                  Choose a template version to load its variables.
+                  {t.templateVariablesNoVersion}
                 </div>
               ) : templateVariablesFieldArray.fields.length === 0 ? (
                 <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-                  No template variables were detected for this version.
+                  {t.templateVariablesNoneDetected}
                 </div>
               ) : (
                 <div className="grid gap-4">
@@ -1112,6 +1136,7 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                         index={index}
                         setValue={form.setValue}
                         watch={form.watch}
+                        messages={t}
                       />
                     </div>
                   ))}
@@ -1121,9 +1146,9 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
               <div className="grid gap-3 rounded-md border p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="text-sm font-medium">Additional variables</h4>
+                    <h4 className="text-sm font-medium">{t.additionalVariablesTitle}</h4>
                     <p className="text-xs text-muted-foreground">
-                      Add extra key/value pairs only if this template expects custom variables.
+                      {t.additionalVariablesDescription}
                     </p>
                   </div>
                   <Button
@@ -1133,23 +1158,23 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                     onClick={() => additionalVariablesFieldArray.append({ key: "", value: "" })}
                   >
                     <Plus className="mr-2 h-4 w-4" />
-                    Add variable
+                    {t.addVariable}
                   </Button>
                 </div>
 
                 {additionalVariablesFieldArray.fields.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">No additional variables.</div>
+                  <div className="text-sm text-muted-foreground">{t.additionalVariablesEmpty}</div>
                 ) : (
                   <div className="grid gap-3">
                     {additionalVariablesFieldArray.fields.map((field, index) => (
                       <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] gap-3">
                         <Input
                           {...form.register(`additionalVariables.${index}.key`)}
-                          placeholder="Variable key"
+                          placeholder={t.variableKeyPlaceholder}
                         />
                         <Input
                           {...form.register(`additionalVariables.${index}.value`)}
-                          placeholder="Value"
+                          placeholder={t.variableValuePlaceholder}
                         />
                         <Button
                           type="button"
@@ -1169,10 +1194,8 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
             <div className="grid gap-3 rounded-md border p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-semibold">Metadata</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Add internal key/value notes for reporting or integrations.
-                  </p>
+                  <h3 className="text-sm font-semibold">{t.metadataSectionTitle}</h3>
+                  <p className="text-sm text-muted-foreground">{t.metadataSectionDescription}</p>
                 </div>
                 <Button
                   type="button"
@@ -1181,20 +1204,23 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                   onClick={() => metadataEntriesFieldArray.append({ key: "", value: "" })}
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Add metadata
+                  {t.addMetadata}
                 </Button>
               </div>
 
               {metadataEntriesFieldArray.fields.length === 0 ? (
-                <div className="text-sm text-muted-foreground">No metadata yet.</div>
+                <div className="text-sm text-muted-foreground">{t.metadataEmpty}</div>
               ) : (
                 <div className="grid gap-3">
                   {metadataEntriesFieldArray.fields.map((field, index) => (
                     <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] gap-3">
-                      <Input {...form.register(`metadataEntries.${index}.key`)} placeholder="Key" />
+                      <Input
+                        {...form.register(`metadataEntries.${index}.key`)}
+                        placeholder={t.metadataKeyPlaceholder}
+                      />
                       <Input
                         {...form.register(`metadataEntries.${index}.value`)}
-                        placeholder="Value"
+                        placeholder={t.metadataValuePlaceholder}
                       />
                       <Button
                         type="button"
@@ -1212,13 +1238,13 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t.cancel}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              {isEditing ? "Save Changes" : "Create Contract"}
+              {isEditing ? t.saveChanges : t.createAction}
             </Button>
           </DialogFooter>
         </form>

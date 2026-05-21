@@ -1,3 +1,4 @@
+import { formatMessage } from "@voyantjs/i18n"
 import {
   type LegalContractNumberSeriesRecord,
   useLegalContractNumberSeries,
@@ -24,11 +25,12 @@ import { Loader2 } from "lucide-react"
 import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { zodResolver } from "@/lib/zod-resolver"
 
 const seriesFormSchema = z.object({
-  name: z.string().min(1, "Name is required").max(255),
-  prefix: z.string().min(1, "Prefix is required").max(20),
+  name: z.string().min(1, "nameRequired").max(255),
+  prefix: z.string().min(1, "prefixRequired").max(20),
   separator: z.string().max(5).optional(),
   padLength: z.coerce.number().int().min(0).max(12).optional(),
   resetStrategy: z.enum(["never", "annual", "monthly"]),
@@ -48,19 +50,11 @@ type NumberSeriesDialogProps = {
   onSuccess: () => void
 }
 
-const RESET_STRATEGIES = [
-  { value: "never", label: "Never" },
-  { value: "annual", label: "Annual" },
-  { value: "monthly", label: "Monthly" },
-] as const
+const RESET_STRATEGY_VALUES = ["never", "annual", "monthly"] as const
+type ResetStrategyKey = (typeof RESET_STRATEGY_VALUES)[number]
 
-const SCOPES = [
-  { value: "customer", label: "Customer" },
-  { value: "supplier", label: "Supplier" },
-  { value: "partner", label: "Partner" },
-  { value: "channel", label: "Channel" },
-  { value: "other", label: "Other" },
-] as const
+const SCOPE_VALUES = ["customer", "supplier", "partner", "channel", "other"] as const
+type ScopeKey = (typeof SCOPE_VALUES)[number]
 
 export function NumberSeriesDialog({
   open,
@@ -69,8 +63,16 @@ export function NumberSeriesDialog({
   onSuccess,
 }: NumberSeriesDialogProps) {
   const isEditing = !!series
+  const t = useAdminMessages().legal.numberSeriesDialog
   const { create, update } = useLegalContractNumberSeriesMutation()
   const { data: existingList } = useLegalContractNumberSeries()
+
+  const validationByCode: Record<string, string> = {
+    nameRequired: t.validation.nameRequired,
+    prefixRequired: t.validation.prefixRequired,
+  }
+  const resolveValidation = (code: string | undefined) =>
+    (code && validationByCode[code]) || code || ""
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(seriesFormSchema),
@@ -153,58 +155,69 @@ export function NumberSeriesDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Number Series" : "New Number Series"}</DialogTitle>
+          <DialogTitle>{isEditing ? t.titleEdit : t.titleNew}</DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Name</Label>
-                <Input {...form.register("name")} placeholder="Contract Series" />
+                <Label>{t.nameLabel}</Label>
+                <Input {...form.register("name")} placeholder={t.namePlaceholder} />
                 {form.formState.errors.name && (
-                  <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
+                  <p className="text-xs text-destructive">
+                    {resolveValidation(form.formState.errors.name.message)}
+                  </p>
                 )}
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Prefix</Label>
-                <Input {...form.register("prefix")} placeholder="CTR" maxLength={20} />
-                <p className="text-xs text-muted-foreground">
-                  Visible text prefix used in the generated contract number.
-                </p>
+                <Label>{t.prefixLabel}</Label>
+                <Input
+                  {...form.register("prefix")}
+                  placeholder={t.prefixPlaceholder}
+                  maxLength={20}
+                />
+                <p className="text-xs text-muted-foreground">{t.prefixHelp}</p>
                 {form.formState.errors.prefix && (
-                  <p className="text-xs text-destructive">{form.formState.errors.prefix.message}</p>
+                  <p className="text-xs text-destructive">
+                    {resolveValidation(form.formState.errors.prefix.message)}
+                  </p>
                 )}
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Separator</Label>
-                <Input {...form.register("separator")} placeholder="-" maxLength={5} />
+                <Label>{t.separatorLabel}</Label>
+                <Input
+                  {...form.register("separator")}
+                  placeholder={t.separatorPlaceholder}
+                  maxLength={5}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Pad Length</Label>
+                <Label>{t.padLengthLabel}</Label>
                 <Input {...form.register("padLength")} type="number" min={0} max={12} />
               </div>
             </div>
 
             <div className="rounded-md border bg-muted/30 p-3">
-              <div className="text-sm font-medium">Preview</div>
+              <div className="text-sm font-medium">{t.previewLabel}</div>
               <div className="mt-1 font-mono text-sm">
                 {sampleNumber || String(sampleSequence).padStart(padLength, "0")}
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {series
-                  ? ` Next issued contract number based on the current sequence.`
-                  : ` Sample format using a preview sequence.`}
+                {series ? t.previewExisting : t.previewSample}
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Reset Strategy</Label>
+                <Label>{t.resetStrategyLabel}</Label>
                 <Select
-                  items={RESET_STRATEGIES}
+                  items={RESET_STRATEGY_VALUES.map((value) => ({
+                    value,
+                    label: t.resetStrategyOptions[value],
+                  }))}
                   value={form.watch("resetStrategy")}
                   onValueChange={(v) =>
                     form.setValue("resetStrategy", v as FormValues["resetStrategy"])
@@ -214,18 +227,21 @@ export function NumberSeriesDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {RESET_STRATEGIES.map((r) => (
-                      <SelectItem key={r.value} value={r.value}>
-                        {r.label}
+                    {RESET_STRATEGY_VALUES.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {t.resetStrategyOptions[value as ResetStrategyKey]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Scope</Label>
+                <Label>{t.scopeLabel}</Label>
                 <Select
-                  items={SCOPES}
+                  items={SCOPE_VALUES.map((value) => ({
+                    value,
+                    label: t.scopeOptions[value],
+                  }))}
                   value={form.watch("scope")}
                   onValueChange={(v) => form.setValue("scope", v as FormValues["scope"])}
                 >
@@ -233,9 +249,9 @@ export function NumberSeriesDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {SCOPES.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
+                    {SCOPE_VALUES.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {t.scopeOptions[value as ScopeKey]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -248,27 +264,29 @@ export function NumberSeriesDialog({
                 checked={form.watch("active")}
                 onCheckedChange={(checked) => form.setValue("active", checked)}
               />
-              <Label>Active</Label>
+              <Label>{t.activeLabel}</Label>
             </div>
 
             {conflictingSeries ? (
               <p className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-xs text-destructive">
-                An active series with prefix &quot;{conflictingSeries.prefix}&quot; and scope &quot;
-                {conflictingSeries.scope}&quot; already exists (&quot;
-                {conflictingSeries.name}&quot;). Save will fail unless you archive it first.
+                {formatMessage(t.conflictMessage, {
+                  prefix: conflictingSeries.prefix,
+                  scope: conflictingSeries.scope,
+                  name: conflictingSeries.name,
+                })}
               </p>
             ) : null}
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t.cancel}
             </Button>
             <Button
               type="submit"
               disabled={form.formState.isSubmitting || conflictingSeries !== null}
             >
               {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Create Series"}
+              {isEditing ? t.saveChanges : t.createAction}
             </Button>
           </DialogFooter>
         </form>
