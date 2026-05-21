@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { z } from "zod"
 import {
   createKmsProvider,
@@ -14,6 +14,7 @@ import {
   type KmsProvider,
   kmsConfigFromEnv,
   LocalKmsProvider,
+  VoyantCloudKmsProvider,
 } from "../src/kms.js"
 
 const TEST_KEY_REF: KeyRef = { keyType: "people" }
@@ -183,6 +184,24 @@ describe("kmsConfigFromEnv", () => {
     expect(config.aws.sessionToken).toBe("session-token")
   })
 
+  it("returns voyant-cloud config with all required vars set", () => {
+    const config = kmsConfigFromEnv({
+      KMS_PROVIDER: "voyant-cloud",
+      VOYANT_CLOUD_API_KEY: "vc_test",
+      VOYANT_CLOUD_VAULT_SLUG: "main-vault",
+      VOYANT_CLOUD_API_URL: "https://cloud.test/",
+    })
+
+    expect(config).toEqual({
+      provider: "voyant-cloud",
+      voyantCloud: {
+        apiKey: "vc_test",
+        vaultSlug: "main-vault",
+        apiUrl: "https://cloud.test/",
+      },
+    })
+  })
+
   it("throws listing missing AWS vars when KMS_PROVIDER=aws but vars are absent", () => {
     expect(() => kmsConfigFromEnv({ KMS_PROVIDER: "aws" })).toThrow(
       /AWS_REGION.*AWS_ACCESS_KEY_ID.*AWS_SECRET_ACCESS_KEY.*AWS_KMS_PEOPLE_KEY_ID.*AWS_KMS_INTEGRATIONS_KEY_ID/,
@@ -192,6 +211,12 @@ describe("kmsConfigFromEnv", () => {
   it("throws listing missing GCP vars when KMS_PROVIDER=gcp but vars are absent", () => {
     expect(() => kmsConfigFromEnv({ KMS_PROVIDER: "gcp" })).toThrow(
       /GCP_PROJECT_ID.*GCP_SERVICE_ACCOUNT_EMAIL.*GCP_PRIVATE_KEY/,
+    )
+  })
+
+  it("throws listing missing Voyant Cloud vars when KMS_PROVIDER=voyant-cloud but vars are absent", () => {
+    expect(() => kmsConfigFromEnv({ KMS_PROVIDER: "voyant-cloud" })).toThrow(
+      /VOYANT_CLOUD_API_KEY.*VOYANT_CLOUD_VAULT_SLUG/,
     )
   })
 
@@ -224,12 +249,14 @@ describe("kmsConfigFromEnv", () => {
   })
 
   it("throws with valid provider values when KMS_PROVIDER is unset", () => {
-    expect(() => kmsConfigFromEnv({})).toThrow(/KMS_PROVIDER must be one of: gcp, aws, env, local/)
+    expect(() => kmsConfigFromEnv({})).toThrow(
+      /KMS_PROVIDER must be one of: gcp, aws, env, local, voyant-cloud/,
+    )
   })
 
   it("throws when KMS_PROVIDER has an unknown value", () => {
     expect(() => kmsConfigFromEnv({ KMS_PROVIDER: "vault" })).toThrow(
-      /KMS_PROVIDER must be one of: gcp, aws, env, local/,
+      /KMS_PROVIDER must be one of: gcp, aws, env, local, voyant-cloud/,
     )
   })
 })
@@ -244,6 +271,92 @@ describe("createKmsProviderFromEnv", () => {
 
     const ciphertext = await provider.encrypt("hello", TEST_KEY_REF)
     expect(await provider.decrypt(ciphertext, TEST_KEY_REF)).toBe("hello")
+  })
+
+  it("builds a Voyant Cloud provider from env-like input", () => {
+    const provider = createKmsProviderFromEnv({
+      KMS_PROVIDER: "voyant-cloud",
+      VOYANT_CLOUD_API_KEY: "vc_test",
+      VOYANT_CLOUD_VAULT_SLUG: "main-vault",
+    })
+
+    expect(provider).toBeInstanceOf(VoyantCloudKmsProvider)
+    expect(provider.name).toBe("voyant-cloud")
+  })
+})
+
+describe("VoyantCloudKmsProvider", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("calls per-call and envelope Vault endpoints", async () => {
+    const requests: Array<{ url: string; init: RequestInit }> = []
+    const fetchMock = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+      requests.push({ url: String(url), init: init ?? {} })
+      const pathname = new URL(String(url)).pathname
+
+      if (pathname.endsWith("/encrypt")) {
+        return Response.json({ ciphertext: "ciphertext-1" })
+      }
+      if (pathname.endsWith("/decrypt")) {
+        return Response.json({ data: { plaintext: "plain-1" } })
+      }
+      if (pathname.endsWith("/generateDataKey")) {
+        return Response.json({ dek: "dek-1", wrappedDek: "wrapped-1" })
+      }
+      if (pathname.endsWith("/unwrap")) {
+        return Response.json({ dek: "dek-1" })
+      }
+      return new Response("not found", { status: 404 })
+    })
+    vi.stubGlobal("fetch", fetchMock)
+
+    const provider = new VoyantCloudKmsProvider({
+      apiKey: "vc_test",
+      vaultSlug: "main vault",
+      apiUrl: "https://cloud.test/",
+    })
+
+    await expect(provider.encrypt("plain-1", TEST_KEY_REF)).resolves.toBe("ciphertext-1")
+    await expect(provider.decrypt("ciphertext-1", TEST_KEY_REF)).resolves.toBe("plain-1")
+    await expect(provider.generateDataKey?.(TEST_KEY_REF)).resolves.toEqual({
+      dek: "dek-1",
+      wrappedDek: "wrapped-1",
+    })
+    await expect(provider.unwrap?.(TEST_KEY_REF, "wrapped-1")).resolves.toEqual({ dek: "dek-1" })
+
+    expect(requests.map((request) => request.url)).toEqual([
+      "https://cloud.test/vault/v1/main%20vault/encrypt",
+      "https://cloud.test/vault/v1/main%20vault/decrypt",
+      "https://cloud.test/vault/v1/main%20vault/generateDataKey",
+      "https://cloud.test/vault/v1/main%20vault/unwrap",
+    ])
+    expect(requests.map((request) => request.init.method)).toEqual(["POST", "POST", "POST", "POST"])
+    expect(requests[0]?.init.headers).toMatchObject({
+      Authorization: "Bearer vc_test",
+      "Content-Type": "application/json",
+    })
+    expect(requests[0]?.init.body).toBe(JSON.stringify({ plaintext: "plain-1" }))
+    expect(requests[1]?.init.body).toBe(JSON.stringify({ ciphertext: "ciphertext-1" }))
+    expect(requests[2]?.init.body).toBeUndefined()
+    expect(requests[3]?.init.body).toBe(JSON.stringify({ wrappedDek: "wrapped-1" }))
+  })
+
+  it("throws response details when a Vault endpoint fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("no access", { status: 403 })),
+    )
+
+    const provider = new VoyantCloudKmsProvider({
+      apiKey: "vc_test",
+      vaultSlug: "main-vault",
+    })
+
+    await expect(provider.encrypt("plain", TEST_KEY_REF)).rejects.toThrow(
+      /Voyant Cloud KMS encrypt failed \(403\): no access/,
+    )
   })
 })
 

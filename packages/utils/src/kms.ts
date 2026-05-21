@@ -13,6 +13,7 @@ import { type AwsKmsConfig, AwsKmsProvider } from "./kms-aws.js"
 import { type EnvKmsConfig, EnvKmsProvider, generateEnvKmsKey } from "./kms-env.js"
 import { type GcpKmsConfig, GcpKmsProvider } from "./kms-gcp.js"
 import { generateLocalKmsKey, type LocalKmsConfig, LocalKmsProvider } from "./kms-local.js"
+import { type VoyantCloudKmsConfig, VoyantCloudKmsProvider } from "./kms-voyant-cloud.js"
 
 export type KmsKeyType = "people" | "integrations"
 
@@ -20,15 +21,26 @@ export interface KeyRef {
   keyType: KmsKeyType
 }
 
+export interface KmsDataKey {
+  dek: string
+  wrappedDek: string
+}
+
+export interface KmsUnwrappedDataKey {
+  dek: string
+}
+
 export interface KmsProvider {
   /**
-   * Provider identifier. Known values are "gcp", "aws", "env", and "local"; custom providers
-   * may use any string (the `(string & {})` pattern keeps autocomplete for the
-   * known values without forbidding others).
+   * Provider identifier. Known values are "gcp", "aws", "env", "local", and
+   * "voyant-cloud"; custom providers may use any string (the `(string & {})`
+   * pattern keeps autocomplete for the known values without forbidding others).
    */
-  readonly name: "gcp" | "aws" | "env" | "local" | (string & {})
+  readonly name: "gcp" | "aws" | "env" | "local" | "voyant-cloud" | (string & {})
   encrypt(plaintext: string, key: KeyRef): Promise<string>
   decrypt(ciphertext: string, key: KeyRef): Promise<string>
+  generateDataKey?(key: KeyRef): Promise<KmsDataKey>
+  unwrap?(key: KeyRef, wrappedDek: string): Promise<KmsUnwrappedDataKey>
 }
 
 export type KmsConfig =
@@ -36,6 +48,7 @@ export type KmsConfig =
   | { provider: "aws"; aws: AwsKmsConfig }
   | { provider: "env"; env: EnvKmsConfig }
   | { provider: "local"; local: LocalKmsConfig }
+  | { provider: "voyant-cloud"; voyantCloud: VoyantCloudKmsConfig }
   | { provider: "custom"; custom: KmsProvider }
 
 /**
@@ -57,10 +70,13 @@ export function createKmsProvider(config: KmsConfig): KmsProvider {
   if (config.provider === "local") {
     return new LocalKmsProvider(config.local)
   }
+  if (config.provider === "voyant-cloud") {
+    return new VoyantCloudKmsProvider(config.voyantCloud)
+  }
   return config.custom
 }
 
-const VALID_PROVIDERS = ["gcp", "aws", "env", "local"] as const
+const VALID_PROVIDERS = ["gcp", "aws", "env", "local", "voyant-cloud"] as const
 
 /**
  * Build a `KmsConfig` from an env-like object. Accepts CF Workers `c.env`,
@@ -175,6 +191,31 @@ export function kmsConfigFromEnv(env: Record<string, string | undefined>): KmsCo
     return { provider: "local", local: { key } }
   }
 
+  if (provider === "voyant-cloud") {
+    const apiKey = env.VOYANT_CLOUD_API_KEY
+    const vaultSlug = env.VOYANT_CLOUD_VAULT_SLUG
+    const apiUrl = env.VOYANT_CLOUD_API_URL
+
+    const missing: string[] = []
+    if (!apiKey) missing.push("VOYANT_CLOUD_API_KEY")
+    if (!vaultSlug) missing.push("VOYANT_CLOUD_VAULT_SLUG")
+
+    if (!apiKey || !vaultSlug) {
+      throw new Error(
+        `KMS_PROVIDER=voyant-cloud is missing required env vars: ${missing.join(", ")}`,
+      )
+    }
+
+    return {
+      provider: "voyant-cloud",
+      voyantCloud: {
+        apiKey,
+        vaultSlug,
+        ...(apiUrl ? { apiUrl } : {}),
+      },
+    }
+  }
+
   throw new Error(
     `KMS_PROVIDER must be one of: ${VALID_PROVIDERS.join(", ")} (got: ${provider ?? "unset"})`,
   )
@@ -227,7 +268,7 @@ export async function decryptOptionalJsonEnvelope<T>(
   return decryptJsonEnvelope(provider, key, envelope, schema)
 }
 
-export type { AwsKmsConfig, EnvKmsConfig, GcpKmsConfig, LocalKmsConfig }
+export type { AwsKmsConfig, EnvKmsConfig, GcpKmsConfig, LocalKmsConfig, VoyantCloudKmsConfig }
 export {
   AwsKmsProvider,
   EnvKmsProvider,
@@ -235,4 +276,5 @@ export {
   generateEnvKmsKey,
   generateLocalKmsKey,
   LocalKmsProvider,
+  VoyantCloudKmsProvider,
 }

@@ -26,12 +26,14 @@ CORS_ALLOWLIST="http://localhost:3200"
 # NotificationProvider interface).
 VOYANT_CLOUD_API_KEY="vc_..."
 # VOYANT_CLOUD_API_URL="https://api.voyantjs.com"
+# VOYANT_CLOUD_VAULT_SLUG="main"
 
 # KMS provider support:
 # - local: dev-only symmetric key
 # - env: self-managed symmetric key from secrets/env
 # - gcp: Cloud KMS
 # - aws: AWS KMS
+# - voyant-cloud: Vault KMS via Voyant Cloud
 #
 # KMS_PROVIDER itself lives in wrangler.jsonc. The local dev default is "local".
 
@@ -40,6 +42,9 @@ KMS_LOCAL_KEY="<generate with: openssl rand -base64 32>"
 
 # KMS_PROVIDER=env: base64-encoded 32-byte master key.
 KMS_ENV_KEY="<generate with: openssl rand -base64 32>"
+
+# KMS_PROVIDER=voyant-cloud only: uses VOYANT_CLOUD_API_KEY,
+# VOYANT_CLOUD_VAULT_SLUG, and optional VOYANT_CLOUD_API_URL above.
 
 # KMS_PROVIDER=aws only:
 # AWS_REGION="eu-central-1"

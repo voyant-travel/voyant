@@ -5,7 +5,7 @@
  * calls. No Node.js dependencies — works in Cloudflare Workers.
  */
 
-import type { KeyRef, KmsKeyType, KmsProvider } from "./kms.js"
+import type { KeyRef, KmsDataKey, KmsKeyType, KmsProvider, KmsUnwrappedDataKey } from "./kms.js"
 
 export interface GcpKmsConfig {
   projectId: string
@@ -28,6 +28,17 @@ function base64UrlEncode(data: Uint8Array): string {
 
 function base64UrlEncodeString(str: string): string {
   return base64UrlEncode(new TextEncoder().encode(str))
+}
+
+function generateBase64DataKey(): string {
+  const bytes = new Uint8Array(32)
+  crypto.getRandomValues(bytes)
+
+  let binary = ""
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte)
+  }
+  return btoa(binary)
 }
 
 /**
@@ -157,5 +168,17 @@ export class GcpKmsProvider implements KmsProvider {
 
     const data = (await res.json()) as { plaintext: string }
     return atob(data.plaintext)
+  }
+
+  async generateDataKey(key: KeyRef): Promise<KmsDataKey> {
+    const dek = generateBase64DataKey()
+    return {
+      dek,
+      wrappedDek: await this.encrypt(dek, key),
+    }
+  }
+
+  async unwrap(key: KeyRef, wrappedDek: string): Promise<KmsUnwrappedDataKey> {
+    return { dek: await this.decrypt(wrappedDek, key) }
   }
 }
