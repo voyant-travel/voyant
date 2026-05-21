@@ -1,5 +1,16 @@
 # @voyantjs/pricing-ui
 
+## 0.60.0
+
+### Patch Changes
+
+- Updated dependencies [4ff7f15]
+  - @voyantjs/i18n@0.60.0
+  - @voyantjs/pricing-react@0.60.0
+  - @voyantjs/products-react@0.60.0
+  - @voyantjs/ui@0.60.0
+  - @voyantjs/utils@0.60.0
+
 ## 0.59.0
 
 ### Patch Changes

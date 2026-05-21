@@ -1,5 +1,15 @@
 # @voyantjs/transactions
 
+## 0.60.0
+
+### Patch Changes
+
+- Updated dependencies [4ff7f15]
+  - @voyantjs/core@0.60.0
+  - @voyantjs/db@0.60.0
+  - @voyantjs/hono@0.60.0
+  - @voyantjs/utils@0.60.0
+
 ## 0.59.0
 
 ### Patch Changes
