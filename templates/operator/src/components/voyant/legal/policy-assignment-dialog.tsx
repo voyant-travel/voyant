@@ -24,11 +24,15 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { EntityCombobox } from "@/components/ui/entity-combobox"
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { zodResolver } from "@/lib/zod-resolver"
 
+const SCOPE_VALUES = ["product", "channel", "supplier", "market", "organization", "global"] as const
+type AssignmentScope = (typeof SCOPE_VALUES)[number]
+
 const assignmentFormSchema = z.object({
-  policyId: z.string().min(1, "Policy ID is required"),
-  scope: z.enum(["product", "channel", "supplier", "market", "organization", "global"]),
+  policyId: z.string().min(1, "policyIdRequired"),
+  scope: z.enum(SCOPE_VALUES),
   productId: z.string().optional(),
   channelId: z.string().optional(),
   supplierId: z.string().optional(),
@@ -63,15 +67,6 @@ type PolicyAssignmentDialogProps = {
   onSuccess: () => void
 }
 
-const SCOPES = [
-  { value: "product", label: "Product" },
-  { value: "channel", label: "Channel" },
-  { value: "supplier", label: "Supplier" },
-  { value: "market", label: "Market" },
-  { value: "organization", label: "Organization" },
-  { value: "global", label: "Global" },
-] as const
-
 export function PolicyAssignmentDialog({
   open,
   onOpenChange,
@@ -80,6 +75,7 @@ export function PolicyAssignmentDialog({
   onSuccess,
 }: PolicyAssignmentDialogProps) {
   const isEditing = !!assignment
+  const t = useAdminMessages().legal.policyAssignmentDialog
   const { create, update } = useLegalPolicyAssignmentMutation()
 
   const form = useForm<FormValues, unknown, FormOutput>({
@@ -151,15 +147,15 @@ export function PolicyAssignmentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Assignment" : "New Assignment"}</DialogTitle>
+          <DialogTitle>{isEditing ? t.titleEdit : t.titleNew}</DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Scope</Label>
+                <Label>{t.scopeLabel}</Label>
                 <Select
-                  items={SCOPES}
+                  items={SCOPE_VALUES.map((value) => ({ value, label: t.scopeOptions[value] }))}
                   value={form.watch("scope")}
                   onValueChange={(v) => {
                     form.setValue("scope", v as FormValues["scope"], {
@@ -177,23 +173,23 @@ export function PolicyAssignmentDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {SCOPES.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
+                    {SCOPE_VALUES.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {t.scopeOptions[value as AssignmentScope]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Priority</Label>
+                <Label>{t.priorityLabel}</Label>
                 <Input {...form.register("priority")} type="number" />
               </div>
             </div>
 
             {watchedScope === "product" && (
               <div className="flex flex-col gap-2">
-                <Label>Product</Label>
+                <Label>{t.productLabel}</Label>
                 <EntityCombobox<ProductRef>
                   value={form.watch("productId") || null}
                   onChange={(id) => setReferenceField("productId", id)}
@@ -204,13 +200,13 @@ export function PolicyAssignmentDialog({
                   getSecondary={(product) =>
                     [product.status, product.bookingMode].filter(Boolean).join(" / ") || undefined
                   }
-                  placeholder="Search products"
+                  placeholder={t.productSearchPlaceholder}
                 />
               </div>
             )}
             {watchedScope === "channel" && (
               <div className="flex flex-col gap-2">
-                <Label>Channel</Label>
+                <Label>{t.channelLabel}</Label>
                 <EntityCombobox<ChannelRef>
                   value={form.watch("channelId") || null}
                   onChange={(id) => setReferenceField("channelId", id)}
@@ -221,13 +217,13 @@ export function PolicyAssignmentDialog({
                   getSecondary={(channel) =>
                     [channel.kind, channel.status].filter(Boolean).join(" / ") || undefined
                   }
-                  placeholder="Search channels"
+                  placeholder={t.channelSearchPlaceholder}
                 />
               </div>
             )}
             {watchedScope === "supplier" && (
               <div className="flex flex-col gap-2">
-                <Label>Supplier</Label>
+                <Label>{t.supplierLabel}</Label>
                 <EntityCombobox<SupplierRef>
                   value={form.watch("supplierId") || null}
                   onChange={(id) => setReferenceField("supplierId", id)}
@@ -238,13 +234,13 @@ export function PolicyAssignmentDialog({
                   getSecondary={(supplier) =>
                     [supplier.city, supplier.country].filter(Boolean).join(" / ") || undefined
                   }
-                  placeholder="Search suppliers"
+                  placeholder={t.supplierSearchPlaceholder}
                 />
               </div>
             )}
             {watchedScope === "market" && (
               <div className="flex flex-col gap-2">
-                <Label>Market</Label>
+                <Label>{t.marketLabel}</Label>
                 <EntityCombobox<MarketRef>
                   value={form.watch("marketId") || null}
                   onChange={(id) => setReferenceField("marketId", id)}
@@ -255,13 +251,13 @@ export function PolicyAssignmentDialog({
                   getSecondary={(market) =>
                     [market.code, market.defaultCurrency].filter(Boolean).join(" / ") || undefined
                   }
-                  placeholder="Search markets"
+                  placeholder={t.marketSearchPlaceholder}
                 />
               </div>
             )}
             {watchedScope === "organization" && (
               <div className="flex flex-col gap-2">
-                <Label>Organization</Label>
+                <Label>{t.organizationLabel}</Label>
                 <EntityCombobox<OrganizationRef>
                   value={form.watch("organizationId") || null}
                   onChange={(id) => setReferenceField("organizationId", id)}
@@ -273,14 +269,14 @@ export function PolicyAssignmentDialog({
                     [organization.website, organization.industry].filter(Boolean).join(" / ") ||
                     undefined
                   }
-                  placeholder="Search organizations"
+                  placeholder={t.organizationSearchPlaceholder}
                 />
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Valid From</Label>
+                <Label>{t.validFromLabel}</Label>
                 <DatePicker
                   value={form.watch("validFrom") || null}
                   onChange={(next) =>
@@ -289,12 +285,12 @@ export function PolicyAssignmentDialog({
                       shouldDirty: true,
                     })
                   }
-                  placeholder="Select start date"
+                  placeholder={t.validFromPlaceholder}
                   className="w-full"
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Valid To</Label>
+                <Label>{t.validToLabel}</Label>
                 <DatePicker
                   value={form.watch("validTo") || null}
                   onChange={(next) =>
@@ -303,7 +299,7 @@ export function PolicyAssignmentDialog({
                       shouldDirty: true,
                     })
                   }
-                  placeholder="Select end date"
+                  placeholder={t.validToPlaceholder}
                   className="w-full"
                 />
               </div>
@@ -311,11 +307,11 @@ export function PolicyAssignmentDialog({
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t.cancel}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Create Assignment"}
+              {isEditing ? t.saveChanges : t.createAction}
             </Button>
           </DialogFooter>
         </form>
