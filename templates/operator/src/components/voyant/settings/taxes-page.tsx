@@ -17,6 +17,7 @@ import {
 } from "@voyantjs/ui/components"
 import { toast } from "sonner"
 
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
 
 interface BookingTaxSettings {
@@ -41,6 +42,7 @@ export function TaxesPage() {
 
 function BookingTaxSettingsCard() {
   const queryClient = useQueryClient()
+  const t = useAdminMessages().settings.bookingTaxSettings
   const settingsQuery = useQuery({
     queryKey: ["booking-tax-settings"],
     queryFn: async (): Promise<BookingTaxSettings> => {
@@ -84,11 +86,11 @@ function BookingTaxSettingsCard() {
       return (await res.json()) as { data: BookingTaxSettings }
     },
     onSuccess: () => {
-      toast.success("Booking tax settings saved")
+      toast.success(t.savedToast)
       void queryClient.invalidateQueries({ queryKey: ["booking-tax-settings"] })
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Save failed")
+      toast.error(err instanceof Error ? err.message : t.saveFailed)
     },
   })
 
@@ -100,15 +102,12 @@ function BookingTaxSettingsCard() {
   return (
     <Card className="mx-6 mt-6">
       <CardHeader>
-        <CardTitle>Booking tax settings</CardTitle>
-        <CardDescription>
-          Controls how booking-create previews, quote recomputation, and booking item tax lines
-          resolve sell-side tax.
-        </CardDescription>
+        <CardTitle>{t.title}</CardTitle>
+        <CardDescription>{t.description}</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 md:grid-cols-2">
         <div className="space-y-1">
-          <Label>Catalog price mode</Label>
+          <Label>{t.catalogPriceModeLabel}</Label>
           <Select
             value={settings.taxPriceMode}
             disabled={settingsQuery.isPending || save.isPending}
@@ -118,21 +117,21 @@ function BookingTaxSettingsCard() {
               })
             }
             items={[
-              { value: "inclusive", label: "Tax inclusive" },
-              { value: "exclusive", label: "Tax exclusive" },
+              { value: "inclusive", label: t.priceModeInclusive },
+              { value: "exclusive", label: t.priceModeExclusive },
             ]}
           >
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="inclusive">Tax inclusive</SelectItem>
-              <SelectItem value="exclusive">Tax exclusive</SelectItem>
+              <SelectItem value="inclusive">{t.priceModeInclusive}</SelectItem>
+              <SelectItem value="exclusive">{t.priceModeExclusive}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-1">
-          <Label>Tax policy profile</Label>
+          <Label>{t.taxPolicyProfileLabel}</Label>
           <Select
             value={settings.taxPolicyProfileId ?? "__auto__"}
             disabled={settingsQuery.isPending || save.isPending}
@@ -142,7 +141,7 @@ function BookingTaxSettingsCard() {
               })
             }
             items={[
-              { value: "__auto__", label: "Automatic active profile" },
+              { value: "__auto__", label: t.taxPolicyAutomatic },
               ...(taxPolicyProfilesQuery.data ?? []).map((profile) => ({
                 value: profile.id,
                 label: profile.jurisdiction
@@ -155,7 +154,7 @@ function BookingTaxSettingsCard() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__auto__">Automatic active profile</SelectItem>
+              <SelectItem value="__auto__">{t.taxPolicyAutomatic}</SelectItem>
               {(taxPolicyProfilesQuery.data ?? []).map((profile) => (
                 <SelectItem key={profile.id} value={profile.id}>
                   {profile.jurisdiction
