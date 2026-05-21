@@ -78,11 +78,15 @@ function extractQuotedStrings(line) {
 }
 
 function looksLikeTailwindUtility(value) {
-  if (!value.trim()) {
+  // Template-literal class lists embed conditional expressions like
+  // `mt-1 ${mono ? "font-mono" : "font-medium"}`. Strip the ${...} chunks
+  // before tokenizing so the remaining Tailwind utility names still pass.
+  const stripped = value.replace(/\$\{[^}]*\}/g, "").replace(/[`"']/g, "").trim()
+  if (!stripped) {
     return false
   }
 
-  return value.split(/\s+/).every((token) => {
+  return stripped.split(/\s+/).every((token) => {
     const bareToken = token.replace(/^[a-z0-9_-]+:/i, "")
     return (
       /^(?:[a-z0-9[\]()./%#,:_-]+!?|\[[^\]]+\])$/i.test(token) &&
@@ -268,7 +272,6 @@ const HARDCODED_FILE_ALLOWLIST = new Set(
     "templates/dmc/src/components/voyant/resources/resource-detail-page.tsx",
     "templates/dmc/src/components/voyant/resources/resource-pool-detail-page.tsx",
     "templates/dmc/src/components/voyant/settings/team-settings-page.tsx",
-    "templates/operator/src/components/voyant/action-ledger/action-ledger-entry-sheet.tsx",
     "templates/operator/src/components/voyant/availability/availability-page.tsx",
     "templates/operator/src/components/voyant/availability/option-resource-templates-panel.tsx",
     "templates/operator/src/components/voyant/booking-journey/operator-booking-journey.tsx",
@@ -293,8 +296,6 @@ const HARDCODED_FILE_ALLOWLIST = new Set(
     "templates/operator/src/components/voyant/resources/resource-assignment-detail-page.tsx",
     "templates/operator/src/components/voyant/resources/resource-detail-page.tsx",
     "templates/operator/src/components/voyant/resources/resource-pool-detail-page.tsx",
-    "templates/operator/src/components/voyant/settings/operator-settings-page.tsx",
-    "templates/operator/src/components/voyant/settings/taxes-page.tsx",
     "templates/operator/src/components/voyant/travel-composer/admin-trip-composer-page.tsx",
     "templates/operator/src/components/voyant/travel-composer/admin-trip-composer-panels.tsx",
     "templates/operator/src/components/voyant/travel-composer/storefront-composer-block.tsx",
