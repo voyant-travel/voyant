@@ -271,7 +271,6 @@ const HARDCODED_FILE_ALLOWLIST = new Set(
   [
     "templates/operator/src/components/voyant/travel-composer/admin-trip-composer-page.tsx",
     "templates/operator/src/components/voyant/travel-composer/admin-trip-composer-panels.tsx",
-    "templates/operator/src/components/voyant/travel-composer/storefront-composer-block.tsx",
   ].map((relative) => path.join(rootDir, relative)),
 )
 
