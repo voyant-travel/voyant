@@ -1,5 +1,21 @@
 # @voyantjs/products-ui
 
+## 0.62.2
+
+### Patch Changes
+
+- 4a87635: Add product translation coverage for localized inclusions/exclusions and expose a product translation authoring card for product title, slug, descriptions, rich text, terms, and SEO copy.
+- Updated dependencies [4a87635]
+  - @voyantjs/availability-react@0.62.2
+  - @voyantjs/catalog-react@0.62.2
+  - @voyantjs/finance@0.62.2
+  - @voyantjs/finance-ui@0.62.2
+  - @voyantjs/i18n@0.62.2
+  - @voyantjs/pricing-react@0.62.2
+  - @voyantjs/products-react@0.62.2
+  - @voyantjs/suppliers-react@0.62.2
+  - @voyantjs/ui@0.62.2
+
 ## 0.62.1
 
 ### Patch Changes

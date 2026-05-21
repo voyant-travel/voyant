@@ -1,5 +1,18 @@
 # @voyantjs/products
 
+## 0.62.2
+
+### Patch Changes
+
+- 4a87635: Add product translation coverage for localized inclusions/exclusions and expose a product translation authoring card for product title, slug, descriptions, rich text, terms, and SEO copy.
+  - @voyantjs/action-ledger@0.62.2
+  - @voyantjs/catalog@0.62.2
+  - @voyantjs/core@0.62.2
+  - @voyantjs/db@0.62.2
+  - @voyantjs/hono@0.62.2
+  - @voyantjs/storage@0.62.2
+  - @voyantjs/utils@0.62.2
+
 ## 0.62.1
 
 ### Patch Changes
