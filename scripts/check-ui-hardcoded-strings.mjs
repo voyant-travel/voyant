@@ -21,6 +21,25 @@ const ignoredLineIncludes = [
   "useForm<",
   "fetchJson<",
   "setField(",
+  // TanStack Query / fetch-helper shapes — the JSX-text heuristic mis-fires
+  // on `=> api.get<Type>(...)`, queryKey arrays, and bare `method: "PATCH"`
+  // wire-protocol strings. These are network plumbing, not user-facing copy.
+  "queryFn:",
+  "queryKey:",
+  "mutationFn:",
+  "mutationKey:",
+  "api.get<",
+  "api.post<",
+  "api.patch<",
+  "api.put<",
+  "api.delete<",
+  "= useQuery(",
+  "= useMutation(",
+  "= useInfiniteQuery(",
+  "method: \"",
+  "method: '",
+  "headers: {",
+  "function useEditingToggle<",
 ]
 const nonUserFacingLiterals = new Set([
   "",
@@ -34,6 +53,16 @@ const nonUserFacingLiterals = new Set([
   "UTC",
   "Europe/Bucharest",
   "FREQ=DAILY;INTERVAL=1",
+  // HTTP methods (PATCH, DELETE, OPTIONS are >4 chars so they slip past the
+  // generic uppercase fallback).
+  "PATCH",
+  "DELETE",
+  "OPTIONS",
+  // RRULE frequency tokens used in product-schedule-form and elsewhere.
+  "DAILY",
+  "WEEKLY",
+  "MONTHLY",
+  "YEARLY",
 ])
 
 const suspiciousPatterns = [
@@ -231,8 +260,6 @@ const HARDCODED_FILE_ALLOWLIST = new Set(
   [
     "templates/dmc/src/components/voyant/availability/availability-rule-detail-page.tsx",
     "templates/dmc/src/components/voyant/availability/availability-start-time-detail-page.tsx",
-    "templates/dmc/src/components/voyant/contacts/contact-shared.ts",
-    "templates/dmc/src/components/voyant/products/product-detail-shared.ts",
     "templates/dmc/src/components/voyant/products/product-dialog.tsx",
     "templates/dmc/src/components/voyant/products/product-service-dialog.tsx",
     "templates/dmc/src/components/voyant/products/product-sourced-content-section.tsx",
@@ -245,7 +272,6 @@ const HARDCODED_FILE_ALLOWLIST = new Set(
     "templates/operator/src/components/voyant/availability/availability-page.tsx",
     "templates/operator/src/components/voyant/availability/option-resource-templates-panel.tsx",
     "templates/operator/src/components/voyant/booking-journey/operator-booking-journey.tsx",
-    "templates/operator/src/components/voyant/booking-journey/resolve-contract-variables.ts",
     "templates/operator/src/components/voyant/bookings/booking-catalog-source-card.tsx",
     "templates/operator/src/components/voyant/bookings/booking-payment-policy-card.tsx",
     "templates/operator/src/components/voyant/bookings/booking-paid-payment-sessions.tsx",
@@ -254,9 +280,6 @@ const HARDCODED_FILE_ALLOWLIST = new Set(
     "templates/operator/src/components/voyant/catalog/catalog-page.tsx",
     "templates/operator/src/components/voyant/checkout/payment-link-booking-summary.tsx",
     "templates/operator/src/components/voyant/checkout/payment-link-trip-summary.tsx",
-    "templates/operator/src/components/voyant/crm/crm-constants.ts",
-    "templates/operator/src/components/voyant/crm/organizations-list-skeleton.tsx",
-    "templates/operator/src/components/voyant/crm/people-list-skeleton.tsx",
     "templates/operator/src/components/voyant/crm/person-detail-page.tsx",
     "templates/operator/src/components/voyant/finance/credit-note-dialog.tsx",
     "templates/operator/src/components/voyant/legal/policy-assignment-dialog.tsx",
@@ -266,16 +289,13 @@ const HARDCODED_FILE_ALLOWLIST = new Set(
     "templates/operator/src/components/voyant/products/product-departure-form.tsx",
     "templates/operator/src/components/voyant/products/product-detail-itinerary-section.tsx",
     "templates/operator/src/components/voyant/products/product-detail-sections.tsx",
-    "templates/operator/src/components/voyant/products/product-detail-shared.ts",
     "templates/operator/src/components/voyant/products/product-market-rules-section.tsx",
     "templates/operator/src/components/voyant/products/product-payment-policy-section.tsx",
     "templates/operator/src/components/voyant/products/product-schedule-form.tsx",
-    "templates/operator/src/components/voyant/products/use-product-detail-dialogs.ts",
     "templates/operator/src/components/voyant/resources/resource-allocation-detail-page.tsx",
     "templates/operator/src/components/voyant/resources/resource-assignment-detail-page.tsx",
     "templates/operator/src/components/voyant/resources/resource-detail-page.tsx",
     "templates/operator/src/components/voyant/resources/resource-pool-detail-page.tsx",
-    "templates/operator/src/components/voyant/resources/resources-page-skeleton.tsx",
     "templates/operator/src/components/voyant/settings/operator-settings-page.tsx",
     "templates/operator/src/components/voyant/settings/taxes-page.tsx",
     "templates/operator/src/components/voyant/travel-composer/admin-trip-composer-page.tsx",

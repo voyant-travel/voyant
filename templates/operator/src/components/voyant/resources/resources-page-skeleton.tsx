@@ -2,9 +2,11 @@ import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
 import { Table, TableHead, TableHeader, TableRow } from "@voyantjs/ui/components/table"
 import { SkeletonTableRows } from "@/components/ui/skeletons"
+import { useAdminMessages } from "@/lib/admin-i18n"
 
 /** Body-only placeholder used inside the live page while queries load. */
 export function ResourcesBodySkeleton() {
+  const t = useAdminMessages().resources
   return (
     <div className="flex flex-col gap-6">
       {/* Filters */}
@@ -81,11 +83,11 @@ export function ResourcesBodySkeleton() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Kind</TableHead>
-              <TableHead>Supplier</TableHead>
-              <TableHead>Capacity</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>{t.nameLabel}</TableHead>
+              <TableHead>{t.kindLabel}</TableHead>
+              <TableHead>{t.supplierLabel}</TableHead>
+              <TableHead>{t.capacityLabel}</TableHead>
+              <TableHead>{t.statusLabel}</TableHead>
             </TableRow>
           </TableHeader>
           <SkeletonTableRows
