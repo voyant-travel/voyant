@@ -25,6 +25,14 @@ describe("productCatalogPolicy", () => {
     const description = registry.byPath.get("description")
     expect(description?.class).toBe("merchandisable")
     expect(description?.localized).toBe(true)
+    const inclusions = registry.byPath.get("inclusionsHtml")
+    expect(inclusions?.class).toBe("merchandisable")
+    expect(inclusions?.localized).toBe(true)
+    expect(inclusions?.query).toBe("blob-only")
+    const exclusions = registry.byPath.get("exclusionsHtml")
+    expect(exclusions?.class).toBe("merchandisable")
+    expect(exclusions?.localized).toBe(true)
+    expect(exclusions?.query).toBe("blob-only")
   })
 
   it("classifies search-faceted fields as structural with facet-affecting reindex", () => {

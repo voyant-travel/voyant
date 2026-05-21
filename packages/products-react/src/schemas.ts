@@ -4,12 +4,14 @@ import {
   insertDayServiceSchema,
   insertItinerarySchema,
   insertProductMediaSchema,
+  insertProductTranslationSchema,
   insertVersionSchema,
   reorderProductMediaSchema,
   updateDaySchema,
   updateDayServiceSchema,
   updateItinerarySchema,
   updateProductMediaSchema,
+  updateProductTranslationSchema,
 } from "@voyantjs/products"
 import { z } from "zod"
 
@@ -73,6 +75,25 @@ export const productRecordSchema = z.object({
 })
 
 export type ProductRecord = z.infer<typeof productRecordSchema>
+
+export const productTranslationRecordSchema = z.object({
+  id: z.string(),
+  productId: z.string(),
+  languageTag: z.string(),
+  slug: z.string().nullable(),
+  name: z.string(),
+  shortDescription: z.string().nullable(),
+  description: z.string().nullable(),
+  inclusionsHtml: z.string().nullable(),
+  exclusionsHtml: z.string().nullable(),
+  termsHtml: z.string().nullable(),
+  seoTitle: z.string().nullable(),
+  seoDescription: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type ProductTranslationRecord = z.infer<typeof productTranslationRecordSchema>
 
 export const productTypeRecordSchema = z.object({
   id: z.string(),
@@ -241,6 +262,8 @@ export type ProductMediaRecord = z.infer<typeof productMediaRecordSchema>
 
 export const productListResponse = paginatedEnvelope(productRecordSchema)
 export const productSingleResponse = singleEnvelope(productRecordSchema)
+export const productTranslationListResponse = paginatedEnvelope(productTranslationRecordSchema)
+export const productTranslationSingleResponse = singleEnvelope(productTranslationRecordSchema)
 export const productTypeListResponse = paginatedEnvelope(productTypeRecordSchema)
 export const productTypeSingleResponse = singleEnvelope(productTypeRecordSchema)
 export const productCategoryListResponse = paginatedEnvelope(productCategoryRecordSchema)
@@ -360,12 +383,14 @@ export {
   insertDayServiceSchema,
   insertItinerarySchema,
   insertProductMediaSchema,
+  insertProductTranslationSchema,
   insertVersionSchema,
   reorderProductMediaSchema,
   updateDaySchema,
   updateDayServiceSchema,
   updateItinerarySchema,
   updateProductMediaSchema,
+  updateProductTranslationSchema,
 }
 
 export type CreateProductItineraryInput = z.input<typeof insertItinerarySchema>
@@ -378,4 +403,6 @@ export type UpdateProductDayServiceInput = z.input<typeof updateDayServiceSchema
 export type CreateProductVersionInput = z.input<typeof insertVersionSchema>
 export type CreateProductMediaInput = z.input<typeof insertProductMediaSchema>
 export type UpdateProductMediaInput = z.input<typeof updateProductMediaSchema>
+export type CreateProductTranslationInput = z.input<typeof insertProductTranslationSchema>
+export type UpdateProductTranslationInput = z.input<typeof updateProductTranslationSchema>
 export type ReorderProductMediaInput = z.input<typeof reorderProductMediaSchema>

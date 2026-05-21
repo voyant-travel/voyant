@@ -84,6 +84,13 @@ export interface ProductActionLedgerListFilters {
   limit?: number | undefined
 }
 
+export interface ProductTranslationsListFilters {
+  productId?: string | undefined
+  languageTag?: string | undefined
+  limit?: number | undefined
+  offset?: number | undefined
+}
+
 export const productsQueryKeys = {
   all: ["voyant", "products"] as const,
 
@@ -91,6 +98,10 @@ export const productsQueryKeys = {
   productsList: (filters: ProductsListFilters) =>
     [...productsQueryKeys.products(), "list", filters] as const,
   product: (id: string) => [...productsQueryKeys.products(), "detail", id] as const,
+  productTranslationsRoot: (productId: string) =>
+    [...productsQueryKeys.product(productId), "translations"] as const,
+  productTranslations: (productId: string, filters: ProductTranslationsListFilters = {}) =>
+    [...productsQueryKeys.productTranslationsRoot(productId), filters] as const,
   productActionLedger: (id: string, filters: ProductActionLedgerListFilters = {}) =>
     [...productsQueryKeys.product(id), "action-ledger", filters] as const,
 

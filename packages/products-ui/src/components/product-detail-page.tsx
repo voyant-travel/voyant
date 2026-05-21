@@ -26,6 +26,7 @@ import {
   ProductOptionsSection,
   type ProductOptionsSectionProps,
 } from "./product-options-section.js"
+import { ProductTranslationsCard } from "./product-translations-card.js"
 import { ProductVersionsSection } from "./product-versions-section.js"
 
 export interface ProductDetailPageSlots {
@@ -137,6 +138,7 @@ export function ProductDetailPage({
           <ProductInclusionsCard product={product} />
           <ProductExclusionsCard product={product} />
           <ProductTermsCard product={product} />
+          <ProductTranslationsCard product={product} />
           <ProductCommercialCard product={product} />
           {slots?.overviewEnd}
 

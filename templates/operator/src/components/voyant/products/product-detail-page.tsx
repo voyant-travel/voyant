@@ -2,6 +2,7 @@ import { useQueries } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { ProductActionLedgerCard } from "@voyantjs/products-ui/components/product-action-ledger-card"
 import { ProductOptionsSection } from "@voyantjs/products-ui/components/product-options-section"
+import { ProductTranslationsCard } from "@voyantjs/products-ui/components/product-translations-card"
 import { Button } from "@voyantjs/ui/components"
 import { useMemo } from "react"
 import { OptionResourceTemplatesPanel } from "@/components/voyant/availability/option-resource-templates-panel"
@@ -104,6 +105,8 @@ export function ProductDetailPage({ id }: { id: string }) {
         {/* ── Left column (main) ── */}
         <div className="flex min-w-0 flex-col gap-6">
           <ProductDetailsSection product={product} onEdit={dialogs.edit.openNow} />
+
+          <ProductTranslationsCard product={product} />
 
           <ProductMediaSection
             productId={id}

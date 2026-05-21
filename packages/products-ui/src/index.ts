@@ -100,6 +100,10 @@ export { ProductTagForm, type ProductTagFormProps } from "./components/product-t
 export { ProductTagList, type ProductTagListProps } from "./components/product-tag-list.js"
 export { ProductTagsPage, type ProductTagsPageProps } from "./components/product-tags-page.js"
 export { ProductTaxClassCombobox } from "./components/product-tax-class-combobox.js"
+export {
+  ProductTranslationsCard,
+  type ProductTranslationsCardProps,
+} from "./components/product-translations-card.js"
 export { ProductTypeCombobox } from "./components/product-type-combobox.js"
 export { ProductTypesPage, type ProductTypesPageProps } from "./components/product-types-page.js"
 export {
