@@ -66,7 +66,7 @@ function component(overrides: Partial<TripComponent> = {}): TripComponent {
     cancellationSnapshot: null,
     holdToken: null,
     holdExpiresAt: null,
-    priceExpiresAt: new Date("2026-05-20T12:00:00.000Z"),
+    priceExpiresAt: new Date("2099-05-20T12:00:00.000Z"),
     warningCodes: [],
     metadata: {},
     createdAt: new Date("2026-05-18T00:00:00.000Z"),

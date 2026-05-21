@@ -1,4 +1,4 @@
-import { createCsrfMiddleware, createStart } from "@tanstack/react-start"
+import { createMiddleware, createStart } from "@tanstack/react-start"
 
 /**
  * Disable server-side execution of route loaders and components by default.
@@ -9,11 +9,29 @@ import { createCsrfMiddleware, createStart } from "@tanstack/react-start"
  * the dashboard on the existing client-only path during the gradual SSR
  * rollout.
  */
-const csrfMiddleware = createCsrfMiddleware({
-  // Only enforce on server function RPC requests — route loaders that opt
-  // into SSR don't need this guard (they're not externally callable RPCs).
-  filter: (ctx) => ctx.handlerType === "serverFn",
-})
+const csrfMiddleware = createMiddleware({ type: "request" }).server(
+  ({ request, serverFnMeta, next }) => {
+    // Only enforce on server function RPC requests — route loaders that opt
+    // into SSR don't need this guard (they're not externally callable RPCs).
+    if (!serverFnMeta) return next()
+
+    const method = request.method.toUpperCase()
+    if (method === "GET" || method === "HEAD" || method === "OPTIONS") return next()
+
+    const origin = request.headers.get("origin")
+    if (!origin) return next()
+
+    try {
+      if (new URL(origin).origin !== new URL(request.url).origin) {
+        return new Response("Forbidden", { status: 403 })
+      }
+    } catch {
+      return new Response("Forbidden", { status: 403 })
+    }
+
+    return next()
+  },
+)
 
 export const startInstance = createStart(() => ({
   defaultSsr: false,
