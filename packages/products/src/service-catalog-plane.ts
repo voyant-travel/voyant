@@ -85,6 +85,8 @@ export function productRowToProjection(
     // Merchandisable
     ["name", row.name],
     ["description", row.description],
+    ["inclusionsHtml", row.inclusionsHtml],
+    ["exclusionsHtml", row.exclusionsHtml],
     ["termsHtml", row.termsHtml],
     ["tags[]", row.tags],
 
@@ -404,6 +406,8 @@ export function createProductStorefrontCardProjectionExtension(): ProductProject
             name: productTranslations.name,
             slug: productTranslations.slug,
             shortDescription: productTranslations.shortDescription,
+            inclusionsHtml: productTranslations.inclusionsHtml,
+            exclusionsHtml: productTranslations.exclusionsHtml,
             termsHtml: productTranslations.termsHtml,
           })
           .from(productTranslations)
@@ -453,6 +457,8 @@ export function createProductStorefrontCardProjectionExtension(): ProductProject
       const out = new Map<string, unknown>([
         ["slug", translation?.slug ?? null],
         ["shortDescription", translation?.shortDescription ?? null],
+        ["inclusionsHtml", translation?.inclusionsHtml ?? null],
+        ["exclusionsHtml", translation?.exclusionsHtml ?? null],
         ["termsHtml", translation?.termsHtml ?? null],
         ["primaryMediaUrl", primaryMedia?.url ?? null],
         ["thumbnailUrl", primaryMedia?.url ?? null],

@@ -161,6 +161,8 @@ const productTranslationCoreSchema = z.object({
   name: z.string().min(1).max(255),
   shortDescription: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
+  inclusionsHtml: z.string().optional().nullable(),
+  exclusionsHtml: z.string().optional().nullable(),
   termsHtml: z.string().optional().nullable(),
   seoTitle: z.string().max(255).optional().nullable(),
   seoDescription: z.string().optional().nullable(),

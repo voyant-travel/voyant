@@ -30,6 +30,8 @@ async function ensureBrochureColumns(db: PostgresJsDatabase) {
     sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS inclusions_html text`,
     sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS exclusions_html text`,
     sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS terms_html text`,
+    sql`ALTER TABLE product_translations ADD COLUMN IF NOT EXISTS inclusions_html text`,
+    sql`ALTER TABLE product_translations ADD COLUMN IF NOT EXISTS exclusions_html text`,
     sql`CREATE TABLE IF NOT EXISTS destinations (
       id text PRIMARY KEY NOT NULL,
       parent_id text,
@@ -410,6 +412,8 @@ describe.skipIf(!DB_AVAILABLE)("Public product routes", () => {
       .values({
         name: "Danube Cruise",
         description: "River cruise through major capitals.",
+        inclusionsHtml: "<p>Default inclusions</p>",
+        exclusionsHtml: "<p>Default exclusions</p>",
         termsHtml: "<p>Default terms</p>",
         status: "active",
         activated: true,
@@ -425,6 +429,8 @@ describe.skipIf(!DB_AVAILABLE)("Public product routes", () => {
       name: "Croaziera pe Dunare",
       shortDescription: "Croaziera fluviala prin capitale europene.",
       description: "Itinerar localizat pentru croaziera pe Dunare.",
+      inclusionsHtml: "<p>Incluse localizate</p>",
+      exclusionsHtml: "<p>Excluse localizate</p>",
       termsHtml: "<p>Termeni localizati</p>",
       seoTitle: "Croaziera pe Dunare",
       seoDescription: "Rezerva croaziera pe Dunare.",
@@ -435,6 +441,8 @@ describe.skipIf(!DB_AVAILABLE)("Public product routes", () => {
     const detailBody = await detailRes.json()
     expect(detailBody.data.name).toBe("Croaziera pe Dunare")
     expect(detailBody.data.slug).toBe("croaziera-dunare")
+    expect(detailBody.data.inclusionsHtml).toBe("<p>Incluse localizate</p>")
+    expect(detailBody.data.exclusionsHtml).toBe("<p>Excluse localizate</p>")
     expect(detailBody.data.termsHtml).toBe("<p>Termeni localizati</p>")
     expect(detailBody.data.seoTitle).toBe("Croaziera pe Dunare")
     expect(detailBody.data.contentLanguageTag).toBe("ro")

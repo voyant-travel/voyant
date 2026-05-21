@@ -154,6 +154,10 @@ export async function buildOwnedProductContent(
     bestProductTrn?.candidate.description ??
     productRow.description ??
     null
+  const localizedInclusions =
+    bestProductTrn?.candidate.inclusionsHtml ?? productRow.inclusionsHtml ?? null
+  const localizedExclusions =
+    bestProductTrn?.candidate.exclusionsHtml ?? productRow.exclusionsHtml ?? null
   const localizedTerms = bestProductTrn?.candidate.termsHtml ?? productRow.termsHtml ?? null
 
   const content: ProductContent = productContentSchema.parse({
@@ -162,8 +166,8 @@ export async function buildOwnedProductContent(
       name: localizedName,
       status: productRow.status,
       description: localizedDescription,
-      inclusions_html: productRow.inclusionsHtml ?? null,
-      exclusions_html: productRow.exclusionsHtml ?? null,
+      inclusions_html: localizedInclusions,
+      exclusions_html: localizedExclusions,
       terms_html: localizedTerms,
       hero_image_url: cover?.url ?? null,
       duration_days: estimateDurationDays(days, productRow),
@@ -240,6 +244,8 @@ interface ProductTrnCandidate {
   name: string
   shortDescription: string | null
   description: string | null
+  inclusionsHtml: string | null
+  exclusionsHtml: string | null
   termsHtml: string | null
 }
 
@@ -351,6 +357,8 @@ function pickBestProductTranslation(
     name: r.name,
     shortDescription: r.shortDescription,
     description: r.description,
+    inclusionsHtml: r.inclusionsHtml,
+    exclusionsHtml: r.exclusionsHtml,
     termsHtml: r.termsHtml,
   }))
   return pickBestCachedLocale(candidates, preferred)

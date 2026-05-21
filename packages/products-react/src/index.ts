@@ -19,6 +19,7 @@ export {
   type ProductsListFilters,
   type ProductsListSortDir,
   type ProductsListSortField,
+  type ProductTranslationsListFilters,
   productsQueryKeys,
 } from "./query-keys.js"
 export {

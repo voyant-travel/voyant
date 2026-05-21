@@ -220,6 +220,55 @@ export type ProductsUiMessages = {
       saveChanges: string
     }
   }
+  productTranslationsCard: {
+    title: string
+    description: string
+    languageSelectLabel: string
+    newLanguageLabel: string
+    fields: {
+      languageTag: string
+      name: string
+      slug: string
+      shortDescription: string
+      description: string
+      inclusions: string
+      exclusions: string
+      terms: string
+      seoTitle: string
+      seoDescription: string
+    }
+    placeholders: {
+      languageTag: string
+      newLanguage: string
+      name: string
+      slug: string
+      shortDescription: string
+      description: string
+      inclusions: string
+      exclusions: string
+      terms: string
+      seoTitle: string
+      seoDescription: string
+    }
+    actions: {
+      addLanguage: string
+      copyBase: string
+      save: string
+      saving: string
+      delete: string
+      deleting: string
+    }
+    states: {
+      loading: string
+      loadFailed: string
+      noTranslations: string
+      deleteConfirm: string
+      deleteFailed: string
+      saveFailed: string
+      languageRequired: string
+      nameRequired: string
+    }
+  }
   productList: {
     searchPlaceholder: string
     newProduct: string

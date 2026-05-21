@@ -284,6 +284,8 @@ export const productTranslations = pgTable(
     name: text("name").notNull(),
     shortDescription: text("short_description"),
     description: text("description"),
+    inclusionsHtml: text("inclusions_html"),
+    exclusionsHtml: text("exclusions_html"),
     termsHtml: text("terms_html"),
     seoTitle: text("seo_title"),
     seoDescription: text("seo_description"),
