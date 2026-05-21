@@ -9,6 +9,7 @@ import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
 import { ScrollText } from "lucide-react"
 import { useMemo } from "react"
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 import { queryKeys } from "@/lib/query-keys"
 
@@ -47,6 +48,7 @@ const RISK_VARIANT: Partial<
 
 export function BookingActionLedgerPanel({ bookingId }: BookingActionLedgerPanelProps) {
   const { resolvedLocale } = useLocale()
+  const t = useAdminMessages().bookings.detail.actionLedger
   const actionLedgerQuery = useInfiniteQuery({
     queryKey: queryKeys.bookings.actionLedger(bookingId),
     queryFn: ({ pageParam }) => getBookingActionLedger(bookingId, pageParam),
@@ -67,7 +69,7 @@ export function BookingActionLedgerPanel({ bookingId }: BookingActionLedgerPanel
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <ScrollText className="h-4 w-4 text-muted-foreground" />
-          Action ledger
+          {t.title}
           {entries.length > 0 ? (
             <Badge variant="outline" className="text-[10px]">
               {entries.length}
@@ -77,25 +79,21 @@ export function BookingActionLedgerPanel({ bookingId }: BookingActionLedgerPanel
       </CardHeader>
       <CardContent className="p-0">
         {actionLedgerQuery.isLoading ? (
-          <p className="px-6 py-6 text-center text-muted-foreground text-sm">
-            Loading action ledger…
-          </p>
+          <p className="px-6 py-6 text-center text-muted-foreground text-sm">{t.loading}</p>
         ) : entries.length === 0 ? (
-          <p className="px-6 py-6 text-center text-muted-foreground text-sm">
-            No central action ledger entries have been recorded for this booking yet.
-          </p>
+          <p className="px-6 py-6 text-center text-muted-foreground text-sm">{t.empty}</p>
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-muted-foreground">
-                    <th className="px-4 py-2 text-left font-medium">When</th>
-                    <th className="px-4 py-2 text-left font-medium">Action</th>
-                    <th className="px-4 py-2 text-left font-medium">Actor</th>
-                    <th className="px-4 py-2 text-left font-medium">Target</th>
-                    <th className="px-4 py-2 text-left font-medium">Risk</th>
-                    <th className="px-4 py-2 text-left font-medium">Status</th>
+                    <th className="px-4 py-2 text-left font-medium">{t.headerWhen}</th>
+                    <th className="px-4 py-2 text-left font-medium">{t.headerAction}</th>
+                    <th className="px-4 py-2 text-left font-medium">{t.headerActor}</th>
+                    <th className="px-4 py-2 text-left font-medium">{t.headerTarget}</th>
+                    <th className="px-4 py-2 text-left font-medium">{t.headerRisk}</th>
+                    <th className="px-4 py-2 text-left font-medium">{t.headerStatus}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -105,6 +103,8 @@ export function BookingActionLedgerPanel({ bookingId }: BookingActionLedgerPanel
                       entry={entry}
                       traveler={travelersById.get(entry.targetId) ?? null}
                       locale={resolvedLocale}
+                      travelerFallback={t.travelerFallback}
+                      bookingFallback={t.targetBooking}
                     />
                   ))}
                 </tbody>
@@ -119,7 +119,7 @@ export function BookingActionLedgerPanel({ bookingId }: BookingActionLedgerPanel
                   disabled={actionLedgerQuery.isFetchingNextPage}
                   onClick={() => void actionLedgerQuery.fetchNextPage()}
                 >
-                  {actionLedgerQuery.isFetchingNextPage ? "Loading…" : "Load more"}
+                  {actionLedgerQuery.isFetchingNextPage ? t.loadingMore : t.loadMore}
                 </Button>
               </div>
             ) : null}
@@ -134,10 +134,14 @@ function LedgerRow({
   entry,
   traveler,
   locale,
+  travelerFallback,
+  bookingFallback,
 }: {
   entry: ActionLedgerEntryResponse
   traveler: BookingActionLedgerTraveler | null
   locale: string
+  travelerFallback: string
+  bookingFallback: string
 }) {
   return (
     <tr className="border-b last:border-b-0">
@@ -155,7 +159,9 @@ function LedgerRow({
         </div>
       </td>
       <td className="px-4 py-3">
-        <div className="font-medium">{formatTarget(entry, traveler)}</div>
+        <div className="font-medium">
+          {formatTarget(entry, traveler, travelerFallback, bookingFallback)}
+        </div>
         <div className="mt-0.5 max-w-[13rem] truncate font-mono text-muted-foreground text-xs">
           {entry.targetId}
         </div>
@@ -201,10 +207,12 @@ function formatActionName(value: string) {
 function formatTarget(
   entry: ActionLedgerEntryResponse,
   traveler: BookingActionLedgerTraveler | null,
+  travelerFallback: string,
+  bookingFallback: string,
 ) {
   if (traveler) {
-    return [traveler.firstName, traveler.lastName].filter(Boolean).join(" ") || "Traveler"
+    return [traveler.firstName, traveler.lastName].filter(Boolean).join(" ") || travelerFallback
   }
-  if (entry.targetType === "booking") return "Booking"
+  if (entry.targetType === "booking") return bookingFallback
   return entry.targetType.replaceAll("_", " ")
 }
