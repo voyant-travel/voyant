@@ -8,6 +8,7 @@
     "./client": "./src/client.ts",
     "./mock": "./src/mock.ts",
     "./plugin": "./src/plugin.ts",
+    "./invoice-ui": "./src/invoice-ui.tsx",
     "./settlement": "./src/settlement.ts",
     "./workflows": "./src/workflows.ts",
     "./types": "./src/types.ts"
@@ -27,8 +28,44 @@
     "drizzle-orm": "^0.45.2",
     "zod": "^4.3.6"
   },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "@voyantjs/finance-react": "workspace:*",
+    "@voyantjs/ui": "workspace:*",
+    "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/react-query": {
+      "optional": true
+    },
+    "@voyantjs/finance-react": {
+      "optional": true
+    },
+    "@voyantjs/ui": {
+      "optional": true
+    },
+    "lucide-react": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@tanstack/react-query": "^5.100.11",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@voyantjs/finance-react": "workspace:*",
+    "@voyantjs/ui": "workspace:*",
     "@voyantjs/voyant-typescript-config": "workspace:*",
+    "lucide-react": "^0.475.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
@@ -57,6 +94,11 @@
         "types": "./dist/plugin.d.ts",
         "import": "./dist/plugin.js",
         "default": "./dist/plugin.js"
+      },
+      "./invoice-ui": {
+        "types": "./dist/invoice-ui.d.ts",
+        "import": "./dist/invoice-ui.js",
+        "default": "./dist/invoice-ui.js"
       },
       "./settlement": {
         "types": "./dist/settlement.d.ts",

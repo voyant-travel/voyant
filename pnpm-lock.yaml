@@ -3910,9 +3910,33 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
+      '@tanstack/react-query':
+        specifier: ^5.100.11
+        version: 5.100.11(react@19.2.4)
+      '@types/react':
+        specifier: ^19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/finance-react':
+        specifier: workspace:*
+        version: link:../../finance-react
+      '@voyantjs/ui':
+        specifier: workspace:*
+        version: link:../../ui
       '@voyantjs/voyant-typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
+      lucide-react:
+        specifier: ^0.475.0
+        version: 0.475.0(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
       typescript:
         specifier: ^6.0.2
         version: 6.0.2

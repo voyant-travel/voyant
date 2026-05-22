@@ -50,6 +50,7 @@ import { InvoiceDialog } from "./invoice-dialog.js"
 
 export interface InvoiceDetailPageSlots {
   afterHeader?: ReactNode
+  integrationsContent?: InvoiceDetailIntegrationContent
   afterSummary?: ReactNode
   lineItemsContent?: ReactNode
   afterLineItems?: ReactNode
@@ -63,6 +64,14 @@ export interface InvoiceDetailPageSlots {
   afterNotes?: ReactNode
   dialogs?: ReactNode
 }
+
+export interface InvoiceDetailIntegrationSlotContext {
+  invoice: InvoiceRecord
+}
+
+export type InvoiceDetailIntegrationContent =
+  | ReactNode
+  | ((context: InvoiceDetailIntegrationSlotContext) => ReactNode)
 
 export interface InvoiceDetailPageProps {
   id: string
@@ -140,6 +149,9 @@ export function InvoiceDetailPage({
   const creditNotes = creditNotesQuery.data?.data ?? []
   const attachments = attachmentsQuery.data?.data ?? []
   const notes = notesQuery.data?.data ?? []
+  const integrationsContent = renderInvoiceDetailIntegrationContent(slots?.integrationsContent, {
+    invoice,
+  })
   const handleCreateNote = async (nextContent: string) => {
     const content = nextContent.trim()
     if (!content) return
@@ -172,6 +184,11 @@ export function InvoiceDetailPage({
           onOrganizationOpen={onOrganizationOpen}
         />
       </div>
+      {integrationsContent ? (
+        <div data-slot="invoice-integrations-content" className="grid gap-3">
+          {integrationsContent}
+        </div>
+      ) : null}
       {slots?.afterSummary}
 
       {slots?.lineItemsContent !== undefined ? (
@@ -284,6 +301,13 @@ export function InvoiceDetailPage({
       {slots?.dialogs}
     </div>
   )
+}
+
+function renderInvoiceDetailIntegrationContent(
+  content: InvoiceDetailIntegrationContent | undefined,
+  context: InvoiceDetailIntegrationSlotContext,
+) {
+  return typeof content === "function" ? content(context) : content
 }
 
 export interface InvoiceDetailHeaderProps {
