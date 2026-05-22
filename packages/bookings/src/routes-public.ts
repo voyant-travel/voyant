@@ -184,6 +184,7 @@ export const publicBookingRoutes = new Hono<Env>()
         c.req.param("sessionId"),
         await parseJsonBody(c, publicUpsertBookingSessionStateSchema),
         publicResolvers(c),
+        c.get("userId"),
       )
 
       if (result.status === "not_found") {

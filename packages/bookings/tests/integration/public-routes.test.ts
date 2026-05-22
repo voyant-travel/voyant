@@ -1,6 +1,6 @@
 import { handleApiError } from "@voyantjs/hono"
 import { optionUnits, productOptions, products } from "@voyantjs/products/schema"
-import { eq } from "drizzle-orm"
+import { asc, eq } from "drizzle-orm"
 import { Hono } from "hono"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -10,8 +10,14 @@ import {
   optionUnitPriceRulesRef,
   priceCatalogsRef,
 } from "../../src/pricing-ref.js"
+import { BOOKING_ROUTE_RUNTIME_CONTAINER_KEY } from "../../src/route-runtime.js"
 import { publicBookingRoutes } from "../../src/routes-public.js"
-import { bookingDocuments, bookingFulfillments, bookings } from "../../src/schema.js"
+import {
+  bookingDocuments,
+  bookingFulfillments,
+  bookings,
+  bookingTravelers,
+} from "../../src/schema.js"
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
 const DB_AVAILABLE = !!TEST_DATABASE_URL
@@ -21,6 +27,14 @@ const json = (body: Record<string, unknown>) => ({
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify(body),
 })
+
+function travelerPersonId(traveler: {
+  firstName: string
+  lastName: string
+  email?: string | null
+}) {
+  return `person:${traveler.email ?? `${traveler.firstName}:${traveler.lastName}`}`
+}
 
 describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
   let app: Hono
@@ -36,6 +50,20 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
       .use("*", async (c, next) => {
         c.set("db" as never, db)
         c.set("userId" as never, "public-test-user")
+        c.set("container" as never, {
+          resolve: (key: string) => {
+            if (key !== BOOKING_ROUTE_RUNTIME_CONTAINER_KEY) {
+              return undefined
+            }
+
+            return {
+              resolveTravelerPerson: async (
+                _db: unknown,
+                traveler: { firstName: string; lastName: string; email?: string | null },
+              ) => travelerPersonId(traveler),
+            }
+          },
+        })
         await next()
       })
       .route("/", publicBookingRoutes)
@@ -372,6 +400,217 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
     const sessionBody = await sessionRes.json()
     expect(sessionBody.data.state.currentStep).toBe("rooms")
     expect(sessionBody.data.state.completedSteps).toEqual(["travelers"])
+  })
+
+  it("materializes wizard travelers into booking traveler rows", async () => {
+    const slot = await seedSlot()
+
+    const createRes = await app.request("/sessions", {
+      method: "POST",
+      ...json({
+        sellCurrency: "EUR",
+        items: [
+          {
+            title: "Brasov weekend",
+            availabilitySlotId: slot.id,
+            quantity: 1,
+            totalSellAmountCents: 18000,
+            productId: slot.productId,
+            optionId: slot.optionId,
+          },
+        ],
+      }),
+    })
+
+    const session = (await createRes.json()).data
+
+    const stateRes = await app.request(`/sessions/${session.sessionId}/state`, {
+      method: "PUT",
+      headers: { ...json({}).headers, ...capabilityHeaders(session) },
+      body: JSON.stringify({
+        currentStep: "rooms",
+        completedSteps: ["travelers"],
+        payload: {
+          stepData: {
+            travelers: {
+              travelers: [
+                {
+                  firstName: "Ana",
+                  lastName: "Popescu",
+                  email: "ana@example.com",
+                  isPrimary: true,
+                  travelerCategory: "adult",
+                },
+                {
+                  firstName: "Bogdan",
+                  lastName: "Popescu",
+                  phone: "+40700111222",
+                  participantType: "occupant",
+                  travelerCategory: "adult",
+                },
+              ],
+            },
+          },
+        },
+      }),
+    })
+
+    expect(stateRes.status).toBe(200)
+
+    const rows = await db
+      .select()
+      .from(bookingTravelers)
+      .where(eq(bookingTravelers.bookingId, session.sessionId))
+      .orderBy(asc(bookingTravelers.createdAt))
+
+    expect(rows).toHaveLength(2)
+    expect(rows[0]).toEqual(
+      expect.objectContaining({
+        firstName: "Ana",
+        lastName: "Popescu",
+        email: "ana@example.com",
+        isPrimary: true,
+        participantType: "traveler",
+        personId: travelerPersonId({
+          firstName: "Ana",
+          lastName: "Popescu",
+          email: "ana@example.com",
+        }),
+      }),
+    )
+    expect(rows[1]).toEqual(
+      expect.objectContaining({
+        firstName: "Bogdan",
+        lastName: "Popescu",
+        phone: "+40700111222",
+        participantType: "occupant",
+        personId: travelerPersonId({
+          firstName: "Bogdan",
+          lastName: "Popescu",
+        }),
+      }),
+    )
+
+    const sessionRes = await app.request(`/sessions/${session.sessionId}`, {
+      method: "GET",
+      headers: capabilityHeaders(session),
+    })
+    expect(sessionRes.status).toBe(200)
+    const sessionBody = await sessionRes.json()
+    expect(sessionBody.data.travelers).toHaveLength(2)
+    expect(sessionBody.data.checklist.hasTravelers).toBe(true)
+    expect(sessionBody.data.pax).toBe(2)
+
+    const reorderRes = await app.request(`/sessions/${session.sessionId}/state`, {
+      method: "PUT",
+      headers: { ...json({}).headers, ...capabilityHeaders(session) },
+      body: JSON.stringify({
+        currentStep: "rooms",
+        completedSteps: ["travelers"],
+        payload: {
+          stepData: {
+            travelers: {
+              travelers: [
+                {
+                  firstName: "Bogdan",
+                  lastName: "Popescu",
+                  phone: "+40700111222",
+                  participantType: "occupant",
+                  travelerCategory: "adult",
+                },
+                {
+                  firstName: "Ana",
+                  lastName: "Popescu",
+                  email: "ana@example.com",
+                  isPrimary: true,
+                  travelerCategory: "adult",
+                },
+              ],
+            },
+          },
+        },
+      }),
+    })
+
+    expect(reorderRes.status).toBe(200)
+
+    const reorderedRows = await db
+      .select()
+      .from(bookingTravelers)
+      .where(eq(bookingTravelers.bookingId, session.sessionId))
+      .orderBy(asc(bookingTravelers.createdAt))
+
+    expect(reorderedRows).toHaveLength(2)
+    expect(reorderedRows[0]).toEqual(
+      expect.objectContaining({
+        id: rows[0].id,
+        firstName: "Bogdan",
+        personId: travelerPersonId({
+          firstName: "Bogdan",
+          lastName: "Popescu",
+        }),
+      }),
+    )
+    expect(reorderedRows[1]).toEqual(
+      expect.objectContaining({
+        id: rows[1].id,
+        firstName: "Ana",
+        personId: travelerPersonId({
+          firstName: "Ana",
+          lastName: "Popescu",
+          email: "ana@example.com",
+        }),
+      }),
+    )
+
+    const updateRes = await app.request(`/sessions/${session.sessionId}/state`, {
+      method: "PUT",
+      headers: { ...json({}).headers, ...capabilityHeaders(session) },
+      body: JSON.stringify({
+        currentStep: "rooms",
+        completedSteps: ["travelers"],
+        payload: {
+          stepData: {
+            travelers: {
+              travelers: [
+                {
+                  id: reorderedRows[1].id,
+                  firstName: "Ana Maria",
+                  lastName: "Popescu",
+                  email: "ana@example.com",
+                  phone: "+40700999888",
+                  isPrimary: true,
+                  travelerCategory: "adult",
+                },
+              ],
+            },
+          },
+        },
+      }),
+    })
+
+    expect(updateRes.status).toBe(200)
+
+    const updatedRows = await db
+      .select()
+      .from(bookingTravelers)
+      .where(eq(bookingTravelers.bookingId, session.sessionId))
+      .orderBy(asc(bookingTravelers.createdAt))
+
+    expect(updatedRows).toHaveLength(1)
+    expect(updatedRows[0]).toEqual(
+      expect.objectContaining({
+        id: reorderedRows[1].id,
+        firstName: "Ana Maria",
+        phone: "+40700999888",
+        participantType: "traveler",
+        personId: travelerPersonId({
+          firstName: "Ana",
+          lastName: "Popescu",
+          email: "ana@example.com",
+        }),
+      }),
+    )
   })
 
   it("syncs billing contact from wizard state into the booking snapshot", async () => {
