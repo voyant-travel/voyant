@@ -1,5 +1,22 @@
 # @voyantjs/legal
 
+## 0.73.0
+
+### Minor Changes
+
+- 856da86: Add a package-level booking contract generation endpoint and wire the booking contract card to generate from the default template and active number series.
+
+### Patch Changes
+
+- @voyantjs/bookings@0.73.0
+- @voyantjs/core@0.73.0
+- @voyantjs/crm@0.73.0
+- @voyantjs/db@0.73.0
+- @voyantjs/hono@0.73.0
+- @voyantjs/storage@0.73.0
+- @voyantjs/suppliers@0.73.0
+- @voyantjs/utils@0.73.0
+
 ## 0.72.0
 
 ### Patch Changes

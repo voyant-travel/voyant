@@ -1,5 +1,17 @@
 # @voyantjs/legal-react
 
+## 0.73.0
+
+### Minor Changes
+
+- 856da86: Add a package-level booking contract generation endpoint and wire the booking contract card to generate from the default template and active number series.
+
+### Patch Changes
+
+- Updated dependencies [856da86]
+  - @voyantjs/legal@0.73.0
+  - @voyantjs/react@0.73.0
+
 ## 0.72.0
 
 ### Patch Changes

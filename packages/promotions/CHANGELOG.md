@@ -1,5 +1,17 @@
 # @voyantjs/promotions
 
+## 0.73.0
+
+### Patch Changes
+
+- @voyantjs/catalog@0.73.0
+- @voyantjs/core@0.73.0
+- @voyantjs/db@0.73.0
+- @voyantjs/hono@0.73.0
+- @voyantjs/products@0.73.0
+- @voyantjs/storefront@0.73.0
+- @voyantjs/workflows@0.73.0
+
 ## 0.72.0
 
 ### Patch Changes
