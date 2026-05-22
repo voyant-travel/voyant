@@ -3,6 +3,7 @@
 import { SeatMapBuilder } from "@voyantjs/allocation-ui"
 import {
   type SeatLayoutSpec,
+  seatLayoutSpecSchema,
   useProductResourceTemplates,
   useResourceTemplateMutation,
 } from "@voyantjs/availability-react"
@@ -417,12 +418,12 @@ function extractLayoutSpec(
   flags: Record<string, unknown> | null | undefined,
 ): SeatLayoutSpec | null {
   const raw = flags?.layoutSpec
-  if (!raw || typeof raw !== "object") return null
-  // The server validates layoutSpec on read; we trust the manifest shape here
-  // and only reject if the runtime object is obviously not a spec.
-  const candidate = raw as { rows?: unknown }
-  if (!Array.isArray(candidate.rows)) return null
-  return candidate as SeatLayoutSpec
+  if (!raw) return null
+  // Validate against the schema rather than trust the shape — the server
+  // stores flags as opaque JSON, so a malformed value (e.g. a row missing
+  // `cells`) could otherwise reach `countSeats` and throw at runtime.
+  const parsed = seatLayoutSpecSchema.safeParse(raw)
+  return parsed.success ? parsed.data : null
 }
 
 function countSeats(spec: SeatLayoutSpec | null): number {
