@@ -260,14 +260,14 @@ function findNamedUnit(
   return units.find(matcher) ?? null
 }
 
-function buildTravelerRequestedUnits(args: {
+export function buildTravelerRequestedUnits(args: {
   units: PricingContext["units"]
   adults: number
   children: number
   infants: number
 }) {
   const requestedUnits: Array<{ unitId?: string; requestRef?: string; quantity: number }> = []
-  const normalized = args.units.filter((unit) => unit.unitType === "person" && !unit.isRequired)
+  const normalized = args.units.filter((unit) => unit.unitType === "person")
 
   const adultUnit =
     findNamedUnit(
