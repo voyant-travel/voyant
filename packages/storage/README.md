@@ -29,6 +29,10 @@ const url = await storage.signedUrl({ key: "files/x.pdf", expiresIn: 300 })
 
 The S3 provider supports `forcePathStyle` and a custom `endpoint` for S3-compatible services (Wasabi, MinIO, etc.). SigV4 signing is verified against AWS canonical test vectors.
 
+The R2 binding provider cannot mint signed URLs by itself. Configure either
+`publicBaseUrl` or a custom `signer` before calling `signedUrl`; otherwise the
+provider throws instead of returning a raw storage key.
+
 ## Exports
 
 | Entry | Description |

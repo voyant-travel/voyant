@@ -131,56 +131,24 @@ export async function readDocumentContentBase64(
 export async function resolveDocumentDownloadUrl(
   env: CloudflareBindings,
   storageKey: string,
-  expiresIn = DEFAULT_DOCUMENT_URL_EXPIRES_IN,
+  _expiresIn = DEFAULT_DOCUMENT_URL_EXPIRES_IN,
 ): Promise<string | null> {
   const storage = createDocumentStorage(env)
   if (!storage) return null
-  const signed = await storage.signedUrl(storageKey, expiresIn)
-  // R2's bucket binding doesn't natively produce signed URLs — the
-  // storage provider's `signedUrl` falls back to returning the raw
-  // storage key when no SigV4 signer is configured. That's not a
-  // usable URL: a redirect to "contracts/cont_…/contract.pdf"
-  // resolves relative to the request URL and 404s.
-  //
-  // Detect the "key passed through" case (no scheme prefix) and
-  // rewrite it to an ABSOLUTE URL on the operator's
-  // `/v1/admin/documents/files/*` streaming proxy. APP_URL is the
-  // operator-dashboard origin used by the browser; this is what we
-  // want for the redirect that the browser follows out of the
-  // attachment-download route. DOCUMENTS_BASE_URL is reserved for
-  // cases where the URL must be reachable by external systems on a
-  // different host (Cloudflare Browser Rendering hitting the
-  // operator from outside the worker, an email-rendering pipeline
-  // embedding the URL, etc.) and is consulted only as a fallback
-  // when APP_URL isn't configured. In dev that order matters: APP_URL
-  // points at localhost (correct for the browser) while
-  // DOCUMENTS_BASE_URL is often set to a production host (which
-  // can't see the local R2). Picking DOCUMENTS_BASE_URL first there
-  // broke browser-side downloads.
-  // In production with a real S3 signer, the signed `https://…`
-  // URL is returned as-is and used directly without any rewrite.
-  if (signed && /^https?:\/\//i.test(signed)) {
-    return signed
-  }
-  if (!signed) return null
   const apiBase = (
     env.APP_URL?.trim() ||
     env.API_BASE_URL?.trim() ||
     env.DOCUMENTS_BASE_URL?.trim() ||
     ""
   ).replace(/\/$/, "")
+  const path = `/v1/admin/documents/files/${encodeStorageKeyPath(storageKey)}`
   if (!apiBase) {
-    // Without a configured API base we have no way to compose an
-    // absolute URL. Fall back to a root-relative URL with no `/api`
-    // prefix — same-origin same-path deploys (no SPA mount) will
-    // work; reverse-proxied deploys won't, but that's a configuration
-    // issue surfaced as a 404, not a silent corruption.
-    return `/v1/admin/documents/files/${encodeStorageKeyPath(signed)}`
+    return path
   }
-  return `${apiBase}/v1/admin/documents/files/${encodeStorageKeyPath(signed)}`
+  return `${apiBase}${path}`
 }
 
-function encodeStorageKeyPath(key: string): string {
+export function encodeStorageKeyPath(key: string): string {
   return key
     .split("/")
     .map((segment) => encodeURIComponent(segment))

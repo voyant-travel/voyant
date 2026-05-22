@@ -1265,9 +1265,8 @@ export const app = createApp<CloudflareBindings>({
     // backed by a real S3 SigV4 signer (every dev setup, plus
     // small-team prod deploys that haven't wired one up). The legal
     // package's contract-attachment download endpoint redirects here
-    // when its `resolveDocumentDownloadUrl` resolves to a relative
-    // storage key. Auth is the standard staff guard inherited from
-    // `/v1/admin/*` middleware in createApp.
+    // through `resolveDocumentDownloadUrl`. Auth is the standard staff
+    // guard inherited from `/v1/admin/*` middleware in createApp.
     hono.get("/v1/admin/documents/files/*", async (c) => {
       const storage = createDocumentStorage(c.env)
       if (!storage) {

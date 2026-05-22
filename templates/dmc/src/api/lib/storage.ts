@@ -111,9 +111,26 @@ export function createDocumentStorage(env: CloudflareBindings): StorageProvider 
 export async function resolveDocumentDownloadUrl(
   env: CloudflareBindings,
   storageKey: string,
-  expiresIn = DEFAULT_DOCUMENT_URL_EXPIRES_IN,
+  _expiresIn = DEFAULT_DOCUMENT_URL_EXPIRES_IN,
 ): Promise<string | null> {
   const storage = createDocumentStorage(env)
   if (!storage) return null
-  return storage.signedUrl(storageKey, expiresIn)
+  const urlEnv = env as CloudflareBindings & {
+    DOCUMENTS_BASE_URL?: string
+  }
+  const apiBase = (
+    urlEnv.APP_URL?.trim() ||
+    urlEnv.API_BASE_URL?.trim() ||
+    urlEnv.DOCUMENTS_BASE_URL?.trim() ||
+    ""
+  ).replace(/\/$/, "")
+  const path = `/v1/admin/documents/files/${encodeStorageKeyPath(storageKey)}`
+  return apiBase ? `${apiBase}${path}` : path
+}
+
+export function encodeStorageKeyPath(key: string): string {
+  return key
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/")
 }

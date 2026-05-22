@@ -94,4 +94,13 @@ describe("createR2Provider", () => {
     })
     expect(await provider.signedUrl("k", 60)).toBe("https://cdn.example.com/k")
   })
+
+  it("signedUrl throws when neither publicBaseUrl nor signer is configured", async () => {
+    const bucket = fakeBucket()
+    const provider = createR2Provider({ bucket })
+
+    await expect(provider.signedUrl("file.pdf", 300)).rejects.toThrow(
+      "R2 provider: signedUrl requires either `publicBaseUrl` or `signer` to be configured",
+    )
+  })
 })
