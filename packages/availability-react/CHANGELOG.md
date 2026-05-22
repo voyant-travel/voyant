@@ -1,5 +1,17 @@
 # @voyantjs/availability-react
 
+## 0.71.0
+
+### Minor Changes
+
+- 9bdc9a6: Add a visual seat-map builder for vehicle_seat resource templates. Operators can now draw the bus layout cell-by-cell with explicit `seat`, `aisle`, `door`, and `void` kinds — supporting odd bus shapes (mid-coach doors, wheelchair voids, asymmetric back rows) the legacy `layout` string couldn't express. A new `<SeatMapBuilder />` ships from `@voyantjs/allocation-ui`; the backend materializer walks the saved `layoutSpec` to create exactly the seats drawn, with positions derived from neighbouring cells; and `VehicleSeatsView` renders the map with visible aisle gaps and a striped door row when a spec is present. The legacy `layout` string path stays as the fallback when no spec is configured.
+
+### Patch Changes
+
+- Updated dependencies [9bdc9a6]
+  - @voyantjs/availability@0.71.0
+  - @voyantjs/react@0.71.0
+
 ## 0.70.0
 
 ### Minor Changes
