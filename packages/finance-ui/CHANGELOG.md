@@ -1,5 +1,16 @@
 # @voyantjs/finance-ui
 
+## 0.66.4
+
+### Patch Changes
+
+- @voyantjs/bookings-ui@0.66.4
+- @voyantjs/finance@0.66.4
+- @voyantjs/finance-react@0.66.4
+- @voyantjs/i18n@0.66.4
+- @voyantjs/suppliers-ui@0.66.4
+- @voyantjs/ui@0.66.4
+
 ## 0.66.3
 
 ### Patch Changes
