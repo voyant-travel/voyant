@@ -15,7 +15,12 @@ import { createCustomerPortalHonoModule } from "@voyantjs/customer-portal"
 import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
 import { externalRefsHonoModule } from "@voyantjs/external-refs"
 import { extrasHonoModule } from "@voyantjs/extras"
-import { bookingsCreateExtension, createFinanceHonoModule, financeService } from "@voyantjs/finance"
+import {
+  bookingsCreateExtension,
+  createFinanceHonoModule,
+  createVoyantDataFxExchangeRateResolver,
+  financeService,
+} from "@voyantjs/finance"
 import { bookingPaymentSchedules, invoices, paymentSessions } from "@voyantjs/finance/schema"
 import { createApp } from "@voyantjs/hono"
 import { identityHonoModule } from "@voyantjs/identity"
@@ -359,6 +364,13 @@ const bookingsHonoModule = createBookingsHonoModule({
 const financeModule = createFinanceHonoModule({
   resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
     resolveDocumentDownloadUrl(bindings as unknown as CloudflareBindings, storageKey),
+  resolveInvoiceExchangeRateResolver: (bindings) => {
+    const env = bindings as unknown as CloudflareBindings
+    return createVoyantDataFxExchangeRateResolver({
+      apiKey: env.VOYANT_CLOUD_API_KEY,
+      baseUrl: env.VOYANT_CLOUD_API_URL,
+    })
+  },
   resolveInvoiceSettlementPollers: (bindings) =>
     createSmartbillSettlementPollers(bindings as unknown as CloudflareBindings),
 })

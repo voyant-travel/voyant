@@ -18,6 +18,7 @@ const testState = vi.hoisted(() => ({
     },
   ],
   mutateAsync: vi.fn(async () => ({ data: { id: "pay_123" } })),
+  fxRate: null as number | null,
 }))
 
 ;(
@@ -40,6 +41,10 @@ vi.mock("@voyantjs/finance-react", () => ({
   useInvoicePaymentMutation: () => ({
     isPending: false,
     mutateAsync: testState.mutateAsync,
+  }),
+  useInvoiceFxRate: ({ enabled }: { enabled?: boolean }) => ({
+    data: enabled && testState.fxRate != null ? { data: { rate: testState.fxRate } } : undefined,
+    isFetching: false,
   }),
 }))
 
@@ -160,6 +165,7 @@ describe("RecordBookingPaymentDialog", () => {
 
   beforeEach(() => {
     testState.mutateAsync.mockClear()
+    testState.fxRate = null
     testState.invoices = [
       {
         id: "inv_123",
@@ -266,6 +272,51 @@ describe("RecordBookingPaymentDialog", () => {
         baseAmountCents: null,
         baseCurrency: null,
         currency: "eur",
+      }),
+    )
+  })
+
+  it("auto-fills invoice-currency base amount from the configured FX rate", async () => {
+    testState.fxRate = 5
+
+    await act(async () => {
+      root.render(
+        <RecordBookingPaymentDialog
+          open
+          onOpenChange={() => {}}
+          bookingId="book_123"
+          defaultCurrency="EUR"
+        />,
+      )
+    })
+
+    await act(async () => {
+      container.querySelector<HTMLSelectElement>('select[aria-label="Payment currency"]')!.value =
+        "RON"
+      container
+        .querySelector<HTMLSelectElement>('select[aria-label="Payment currency"]')!
+        .dispatchEvent(new Event("change", { bubbles: true }))
+    })
+
+    await act(async () => {
+      setNativeInputValue(container.querySelector<HTMLInputElement>("#record-amount")!, "3300")
+    })
+
+    await act(async () => {
+      container.querySelector<HTMLFormElement>("form")!.dispatchEvent(
+        new Event("submit", {
+          bubbles: true,
+          cancelable: true,
+        }),
+      )
+    })
+
+    expect(testState.mutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amountCents: 330000,
+        baseAmountCents: 66000,
+        baseCurrency: "EUR",
+        currency: "RON",
       }),
     )
   })

@@ -1,6 +1,8 @@
+import { createContainer } from "@voyantjs/core"
 import { describe, expect, it, vi } from "vitest"
 
 import {
+  createInvoiceFxRoutes,
   createVoyantDataFxExchangeRateResolver,
   resolveInvoiceFxContext,
 } from "../../src/invoice-fx.js"
@@ -75,5 +77,56 @@ describe("invoice FX", () => {
     expect(String(url)).toBe("https://data.test/data/fx/v1/fx/pair/EUR/RON")
     expect(new Headers(init?.headers).get("authorization")).toBe(`Bearer ${apiKey}`)
     expect(new Headers(init?.headers).get("x-voyant-sdk")).toBe("voyant-finance")
+  })
+
+  it("exposes configured exchange-rate resolution through the admin route", async () => {
+    const resolveInvoiceExchangeRate = vi.fn(async () => 4.97)
+    const app = createInvoiceFxRoutes({ resolveInvoiceExchangeRate })
+
+    const response = await app.request(
+      "/invoice-fx-rate?baseCurrency=eur&quoteCurrency=ron&date=2026-05-22",
+    )
+    const body = (await response.json()) as {
+      data: { baseCurrency: string; quoteCurrency: string; date: string; rate: number }
+    }
+
+    expect(response.status).toBe(200)
+    expect(resolveInvoiceExchangeRate).toHaveBeenCalledWith({
+      baseCurrency: "EUR",
+      quoteCurrency: "RON",
+      date: "2026-05-22",
+    })
+    expect(body.data).toEqual({
+      baseCurrency: "EUR",
+      quoteCurrency: "RON",
+      date: "2026-05-22",
+      rate: 4.97,
+    })
+  })
+
+  it("falls back to route options when the container has no finance runtime", async () => {
+    const resolveInvoiceExchangeRate = vi.fn(async () => 4.97)
+    const app = createInvoiceFxRoutes({ resolveInvoiceExchangeRate })
+    app.use("*", async (c, next) => {
+      c.set("container", createContainer())
+      await next()
+    })
+
+    const response = await app.request("/invoice-fx-rate?baseCurrency=eur&quoteCurrency=ron")
+    const body = (await response.json()) as {
+      data: { baseCurrency: string; quoteCurrency: string; rate: number }
+    }
+
+    expect(response.status).toBe(200)
+    expect(resolveInvoiceExchangeRate).toHaveBeenCalledWith({
+      baseCurrency: "EUR",
+      quoteCurrency: "RON",
+      date: undefined,
+    })
+    expect(body.data).toEqual({
+      baseCurrency: "EUR",
+      quoteCurrency: "RON",
+      rate: 4.97,
+    })
   })
 })

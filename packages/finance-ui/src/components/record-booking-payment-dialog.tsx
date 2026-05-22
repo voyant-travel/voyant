@@ -5,6 +5,7 @@ import {
   type PaymentStatus,
   paymentMethodSchema,
   paymentStatusSchema,
+  useInvoiceFxRate,
   useInvoicePaymentMutation,
   useInvoices,
 } from "@voyantjs/finance-react"
@@ -52,6 +53,7 @@ interface FormState {
   currency: string
   baseAmountCents: number
   fxRate: string
+  fxRateSource: "auto" | "manual" | null
   paymentMethod: PaymentMethod
   status: PaymentStatus
   paymentDate: string
@@ -70,6 +72,7 @@ function buildInitialFormState(currency: string): FormState {
     currency,
     baseAmountCents: 0,
     fxRate: "",
+    fxRateSource: null,
     paymentMethod: "bank_transfer",
     status: "completed",
     paymentDate: todayIso(),
@@ -97,6 +100,10 @@ function deriveBaseAmountCents(amountCents: number, fxRateRaw: string): number |
   const fxRate = parseFxRate(fxRateRaw)
   if (!fxRate || amountCents <= 0) return null
   return Math.round(amountCents / fxRate)
+}
+
+function formatFxRateInput(rate: number): string {
+  return String(rate)
 }
 
 export function RecordBookingPaymentDialog({
@@ -138,6 +145,7 @@ export function RecordBookingPaymentDialog({
         currency: target?.currency ?? defaultCurrency,
         baseAmountCents: 0,
         fxRate: "",
+        fxRateSource: null,
       })
       initializedRef.current = true
     }
@@ -152,6 +160,13 @@ export function RecordBookingPaymentDialog({
   )
   const requiresBaseAmount = isCrossCurrency && state.status === "completed"
   const mutation = useInvoicePaymentMutation(state.invoiceId)
+  const fxRateQuery = useInvoiceFxRate({
+    baseCurrency: normalizedInvoiceCurrency || undefined,
+    quoteCurrency: paymentCurrency || undefined,
+    date: state.paymentDate || undefined,
+    enabled: open && isCrossCurrency,
+  })
+  const automaticFxRate = fxRateQuery.data?.data.rate
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setState((prev) => ({ ...prev, [key]: value }))
@@ -166,32 +181,63 @@ export function RecordBookingPaymentDialog({
 
   const setPaymentCurrency = (currency: string) => {
     const nextCurrency = normalizeCurrency(currency) || normalizedInvoiceCurrency || defaultCurrency
-    setState((prev) => ({
-      ...prev,
-      amountCents:
-        normalizedInvoiceCurrency &&
-        nextCurrency !== normalizedInvoiceCurrency &&
-        normalizeCurrency(prev.currency) === normalizedInvoiceCurrency &&
-        prev.amountCents === selectedInvoice?.balanceDueCents
-          ? 0
-          : prev.amountCents,
-      currency: nextCurrency,
-      baseAmountCents:
-        normalizedInvoiceCurrency && nextCurrency !== normalizedInvoiceCurrency
+    setState((prev) => {
+      const previousCurrency = normalizeCurrency(prev.currency)
+      const sameCurrency = previousCurrency === nextCurrency
+      const nextIsCrossCurrency =
+        Boolean(normalizedInvoiceCurrency) && nextCurrency !== normalizedInvoiceCurrency
+
+      return {
+        ...prev,
+        amountCents:
+          nextIsCrossCurrency &&
+          previousCurrency === normalizedInvoiceCurrency &&
+          prev.amountCents === selectedInvoice?.balanceDueCents
+            ? 0
+            : prev.amountCents,
+        currency: nextCurrency,
+        baseAmountCents: nextIsCrossCurrency
           ? prev.baseAmountCents || selectedInvoice?.balanceDueCents || 0
           : 0,
-      fxRate:
-        normalizedInvoiceCurrency && nextCurrency !== normalizedInvoiceCurrency ? prev.fxRate : "",
-    }))
+        fxRate: nextIsCrossCurrency && sameCurrency ? prev.fxRate : "",
+        fxRateSource: sameCurrency ? prev.fxRateSource : null,
+      }
+    })
   }
 
   const setFxRate = (fxRate: string) => {
     setState((prev) => ({
       ...prev,
       fxRate,
+      fxRateSource: "manual",
       baseAmountCents: deriveBaseAmountCents(prev.amountCents, fxRate) ?? prev.baseAmountCents,
     }))
   }
+
+  React.useEffect(() => {
+    if (!isCrossCurrency || typeof automaticFxRate !== "number" || automaticFxRate <= 0) return
+
+    const fxRate = formatFxRateInput(automaticFxRate)
+    setState((prev) => {
+      if (prev.fxRateSource === "manual") return prev
+
+      const baseAmountCents = deriveBaseAmountCents(prev.amountCents, fxRate)
+      if (
+        prev.fxRate === fxRate &&
+        prev.fxRateSource === "auto" &&
+        (baseAmountCents == null || prev.baseAmountCents === baseAmountCents)
+      ) {
+        return prev
+      }
+
+      return {
+        ...prev,
+        fxRate,
+        fxRateSource: "auto",
+        baseAmountCents: baseAmountCents ?? prev.baseAmountCents,
+      }
+    })
+  }, [automaticFxRate, isCrossCurrency])
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -265,6 +311,7 @@ export function RecordBookingPaymentDialog({
                       currency: next?.currency ?? prev.currency,
                       baseAmountCents: 0,
                       fxRate: "",
+                      fxRateSource: null,
                     }))
                   }}
                 >
@@ -363,10 +410,17 @@ export function RecordBookingPaymentDialog({
                   </div>
                   <div className="flex items-end">
                     <p className="pb-2 text-xs text-muted-foreground">
-                      {formatMessage(dialog.fx.rateHint, {
-                        invoiceCurrency,
-                        paymentCurrency,
-                      })}
+                      {fxRateQuery.isFetching
+                        ? dialog.fx.loadingRate
+                        : state.fxRateSource === "auto"
+                          ? formatMessage(dialog.fx.autoRateHint, {
+                              invoiceCurrency,
+                              paymentCurrency,
+                            })
+                          : formatMessage(dialog.fx.rateHint, {
+                              invoiceCurrency,
+                              paymentCurrency,
+                            })}
                     </p>
                   </div>
                 </div>

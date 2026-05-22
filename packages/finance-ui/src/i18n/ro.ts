@@ -547,6 +547,9 @@ export const financeUiRo = {
       help: "Inregistreaza suma incasata in {paymentCurrency} si valoarea aplicata pe factura in {invoiceCurrency}.",
       rateHint:
         "Foloseste cursul ca {paymentCurrency} pentru 1 {invoiceCurrency}; completarea lui actualizeaza suma in moneda facturii.",
+      loadingRate: "Se incarca cursul valutar...",
+      autoRateHint:
+        "Foloseste cursul curent {paymentCurrency} pentru 1 {invoiceCurrency}; il poti modifica daca este nevoie.",
     },
     invoiceOption: "{number} — {status} — {balance} {currency} de incasat",
     invoiceMeta:
