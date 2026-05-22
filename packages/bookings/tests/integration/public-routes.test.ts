@@ -371,6 +371,80 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
     expect(overview.travelers[0]?.firstName).toBe("Elena")
   })
 
+  it("issues guest booking access after booking code and email lookup", async () => {
+    const slot = await seedSlot()
+
+    const createRes = await app.request("/sessions", {
+      method: "POST",
+      ...json({
+        sellCurrency: "EUR",
+        items: [
+          {
+            title: "Porto river cruise",
+            availabilitySlotId: slot.id,
+            quantity: 1,
+            totalSellAmountCents: 12000,
+          },
+        ],
+        travelers: [
+          {
+            firstName: "Ana",
+            lastName: "Pop",
+            email: "ana@example.com",
+            isPrimary: true,
+          },
+        ],
+      }),
+    })
+
+    const session = (await createRes.json()).data
+
+    const confirmRes = await app.request(`/sessions/${session.sessionId}/confirm`, {
+      method: "POST",
+      ...json({}),
+      headers: { ...json({}).headers, ...capabilityHeaders(session) },
+    })
+
+    expect(confirmRes.status).toBe(200)
+
+    const deniedRes = await app.request(
+      `/overview?bookingCode=${encodeURIComponent(session.bookingNumber)}`,
+      { method: "GET" },
+    )
+    expect(deniedRes.status).toBe(401)
+
+    const badLookupRes = await app.request("/guest-lookup", {
+      method: "POST",
+      ...json({ bookingCode: session.bookingNumber, email: "other@example.com" }),
+    })
+    expect(badLookupRes.status).toBe(404)
+
+    const lookupRes = await app.request("/guest-lookup", {
+      method: "POST",
+      ...json({ bookingCode: session.bookingNumber, email: "ANA@example.com" }),
+    })
+
+    expect(lookupRes.status).toBe(200)
+    expect(lookupRes.headers.get("Set-Cookie")).toContain("voyant_guest_booking=")
+
+    const lookup = (await lookupRes.json()).data
+    expect(lookup.overview.bookingId).toBe(session.sessionId)
+    expect(lookup.guestBookingAccess.actions).toContain("overview:read")
+
+    const overviewRes = await app.request(
+      `/overview?bookingCode=${encodeURIComponent(session.bookingNumber)}`,
+      {
+        method: "GET",
+        headers: { "X-Voyant-Guest-Booking-Access": lookup.guestBookingAccess.token },
+      },
+    )
+
+    expect(overviewRes.status).toBe(200)
+    const overview = (await overviewRes.json()).data
+    expect(overview.bookingId).toBe(session.sessionId)
+    expect(overview.travelers[0]?.firstName).toBe("Ana")
+  })
+
   it("persists wizard session state and includes it in session reads", async () => {
     const slot = await seedSlot()
 

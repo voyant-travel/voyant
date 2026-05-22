@@ -4,6 +4,12 @@ import type { HonoModule } from "@voyantjs/hono/module"
 import { createStorefrontAdminRoutes } from "./routes-admin.js"
 import { createStorefrontPublicRoutes } from "./routes-public.js"
 
+export type {
+  GuestBookingGuardOptions,
+  GuestBookingGuardRequest,
+  GuestBookingLookupInput,
+} from "./guest-booking-guard.js"
+export { createGuestBookingGuard } from "./guest-booking-guard.js"
 export type { StorefrontAdminRoutes } from "./routes-admin.js"
 export { createStorefrontAdminRoutes } from "./routes-admin.js"
 export type { StorefrontPublicRoutes } from "./routes-public.js"

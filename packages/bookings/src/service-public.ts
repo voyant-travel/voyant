@@ -26,6 +26,7 @@ import {
 import { bookingsService } from "./service.js"
 import type {
   InternalBookingOverviewLookupQuery,
+  PublicBookingOverviewAccessQuery,
   PublicBookingOverviewLookupQuery,
   PublicBookingSessionMutationInput,
   PublicBookingSessionRepriceInput,
@@ -587,8 +588,8 @@ async function buildOverviewSnapshot(
 
   const email = query.email?.trim().toLowerCase() ?? null
   if (email) {
-    const authorized = participants.some(
-      (participant) => participant.email?.toLowerCase() === email,
+    const authorized = participants.some((participant) =>
+      constantTimeEqualString(participant.email?.trim().toLowerCase() ?? "", email),
     )
     if (!authorized) {
       return null
@@ -675,6 +676,17 @@ async function buildOverviewSnapshot(
       artifactUrl: fulfillment.artifactUrl ?? null,
     })),
   }
+}
+
+function constantTimeEqualString(left: string, right: string) {
+  let result = left.length ^ right.length
+  const length = Math.max(left.length, right.length)
+
+  for (let index = 0; index < length; index += 1) {
+    result |= (left.charCodeAt(index) || 0) ^ (right.charCodeAt(index) || 0)
+  }
+
+  return result === 0
 }
 
 function buildUnitWarnings(
@@ -1660,6 +1672,10 @@ export const publicBookingsService = {
   },
 
   async getOverview(db: PostgresJsDatabase, query: PublicBookingOverviewLookupQuery) {
+    return buildOverviewSnapshot(db, query)
+  },
+
+  async getOverviewByGuestAccess(db: PostgresJsDatabase, query: PublicBookingOverviewAccessQuery) {
     return buildOverviewSnapshot(db, query)
   },
 

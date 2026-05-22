@@ -6,8 +6,12 @@ import {
   type CheckoutCapabilityAction,
   checkoutCapabilityActions,
   checkoutCapabilityCookie,
+  guestBookingAccessActions,
+  guestBookingAccessCookie,
   issueCheckoutCapability,
+  issueGuestBookingAccess,
   requireCheckoutCapability,
+  requireGuestBookingAccess,
 } from "./checkout-capability.js"
 import {
   BOOKING_ROUTE_RUNTIME_CONTAINER_KEY,
@@ -17,13 +21,19 @@ import {
 import { type Env, getRuntimeEnv, notFound } from "./routes-shared.js"
 import { type PublicBookingsServiceResolvers, publicBookingsService } from "./service-public.js"
 import {
-  publicBookingOverviewLookupQuerySchema,
+  publicBookingOverviewAccessQuerySchema,
   publicBookingSessionMutationSchema,
   publicCreateBookingSessionSchema,
+  publicGuestBookingLookupSchema,
   publicRepriceBookingSessionSchema,
   publicUpdateBookingSessionSchema,
   publicUpsertBookingSessionStateSchema,
 } from "./validation-public.js"
+
+type RateLimitKv = {
+  get: (key: string) => Promise<string | null>
+  put: (key: string, value: string, options?: { expirationTtl?: number }) => Promise<void>
+}
 
 function hasSessionResult(
   result: { status: string } | { status: "ok"; session: unknown },
@@ -66,6 +76,20 @@ function attachCheckoutCapability<T extends { sessionId: string }>(
   }
 }
 
+function attachGuestBookingAccess<T extends { bookingId: string }>(
+  overview: T,
+  issued: Awaited<ReturnType<typeof issueGuestBookingAccess>>,
+) {
+  return {
+    overview,
+    guestBookingAccess: {
+      token: issued.token,
+      expiresAt: issued.expiresAt.toISOString(),
+      actions: [...guestBookingAccessActions],
+    },
+  }
+}
+
 async function requireSessionCapability(c: Context, action: CheckoutCapabilityAction) {
   const sessionId = c.req.param("sessionId")
   if (!sessionId) {
@@ -80,6 +104,66 @@ function sessionCapability(action: CheckoutCapabilityAction): MiddlewareHandler<
     await requireSessionCapability(c, action)
     await next()
   }
+}
+
+function guestBookingLookupLimit(env: Record<string, string | undefined>) {
+  const raw =
+    env.VOYANT_GUEST_BOOKING_LOOKUP_LIMIT_PER_MINUTE ?? env.GUEST_BOOKING_LOOKUP_LIMIT_PER_MINUTE
+  const parsed = raw ? Number(raw) : 10
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return 10
+  }
+
+  return Math.min(Math.floor(parsed), 100)
+}
+
+function clientIp(c: Context) {
+  return (
+    c.req.header("CF-Connecting-IP") ??
+    c.req.header("X-Real-IP") ??
+    c.req.header("X-Forwarded-For")?.split(",")[0]?.trim() ??
+    "unknown"
+  )
+}
+
+async function enforceGuestBookingLookupRateLimit(c: Context, bookingCode: string) {
+  const kv = (c.env as { RATE_LIMIT?: RateLimitKv } | undefined)?.RATE_LIMIT
+  if (!kv) return null
+
+  const now = new Date()
+  const pad = (value: number) => String(value).padStart(2, "0")
+  const windowKey = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}`
+  const key = [
+    "lim",
+    "guest-booking-lookup",
+    clientIp(c),
+    bookingCode.trim().toLowerCase(),
+    windowKey,
+  ].join(":")
+  const limit = guestBookingLookupLimit(getRuntimeEnv(c))
+  const raw = await kv.get(key)
+  let current = 0
+  if (raw) {
+    try {
+      current = Number((JSON.parse(raw) as { count: number }).count || 0)
+    } catch {
+      current = 0
+    }
+  }
+  const nextCount = current + 1
+  await kv.put(key, JSON.stringify({ count: nextCount }), { expirationTtl: 120 })
+
+  const resetIn = 60000 - (now.getUTCSeconds() * 1000 + now.getUTCMilliseconds())
+  c.header("X-RateLimit-Limit", String(limit))
+  c.header("X-RateLimit-Remaining", String(Math.max(0, limit - nextCount)))
+  c.header("X-RateLimit-Reset", String(Date.now() + resetIn))
+
+  if (nextCount <= limit) {
+    return null
+  }
+
+  c.header("Retry-After", "60")
+  return c.json({ error: "Too Many Requests" }, 429)
 }
 
 function getRouteRuntime(c: Context): BookingRouteRuntime {
@@ -272,12 +356,41 @@ export const publicBookingRoutes = new Hono<Env>()
     },
   )
   .get("/overview", async (c) => {
-    const overview = await publicBookingsService.getOverview(
-      c.get("db"),
-      await parseQuery(c, publicBookingOverviewLookupQuerySchema),
-    )
+    const query = await parseQuery(c, publicBookingOverviewAccessQuerySchema)
+    const overview = query.email
+      ? await publicBookingsService.getOverview(c.get("db"), {
+          bookingId: query.bookingId,
+          bookingNumber: query.bookingNumber,
+          bookingCode: query.bookingCode,
+          email: query.email,
+        })
+      : await publicBookingsService.getOverviewByGuestAccess(c.get("db"), query)
+    if (!overview) {
+      return notFound(c, "Booking overview not found")
+    }
 
-    return overview ? c.json({ data: overview }) : notFound(c, "Booking overview not found")
+    if (!query.email) {
+      await requireGuestBookingAccess(c, overview.bookingId, "overview:read", getRuntimeEnv(c))
+    }
+
+    return c.json({ data: overview })
+  })
+  .post("/guest-lookup", async (c) => {
+    const input = await parseJsonBody(c, publicGuestBookingLookupSchema)
+    const rateLimited = await enforceGuestBookingLookupRateLimit(c, input.bookingCode)
+    if (rateLimited) return rateLimited
+
+    const overview = await publicBookingsService.getOverview(c.get("db"), input)
+    if (!overview) {
+      return notFound(c, "Booking overview not found")
+    }
+
+    const capability = await issueGuestBookingAccess(overview.bookingId, getRuntimeEnv(c))
+    c.header("Set-Cookie", guestBookingAccessCookie(capability.token, capability.expiresAt), {
+      append: true,
+    })
+
+    return c.json({ data: attachGuestBookingAccess(overview, capability) })
   })
 
 export type PublicBookingRoutes = typeof publicBookingRoutes

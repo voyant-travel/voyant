@@ -78,6 +78,37 @@ Accepted intake emits `customer.signal.created` on the app event bus with
 signal came from `lead` or `newsletter` intake. Notification adapters can
 subscribe to that event to send CRM email, Slack, or other operator alerts.
 
+## Guest Booking Lookup
+
+Use the bookings public guest lookup endpoint before rendering booking overview
+or payment pages for guests:
+
+- `POST /v1/public/bookings/guest-lookup` with `bookingCode` and `email`
+- `GET /v1/public/bookings/overview?bookingCode=...` with the issued guest
+  access cookie or `X-Voyant-Guest-Booking-Access` header
+
+The lookup endpoint verifies the email against booking participants, issues a
+short-lived `voyant_guest_booking` HttpOnly cookie, and returns the same scoped
+token for non-browser clients. When `RATE_LIMIT` KV is bound, lookups are
+throttled per client IP and booking code.
+
+```ts
+import { createGuestBookingGuard } from "@voyantjs/storefront"
+
+const guestBooking = createGuestBookingGuard()
+
+if (!guestBooking.hasAccess(request)) {
+  return fetch(guestBooking.lookupPath, guestBooking.createLookupRequest({
+    bookingCode: form.bookingCode,
+    email: form.email,
+  }))
+}
+
+return fetch(guestBooking.overviewUrl(form.bookingCode), {
+  headers: { Cookie: request.headers.get("Cookie") ?? "" },
+})
+```
+
 ## Transport Eligibility
 
 Storefronts can check whether traveler document facts satisfy departure-level

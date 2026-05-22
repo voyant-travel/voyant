@@ -130,8 +130,32 @@ export const publicRepriceBookingSessionSchema = z.object({
   selections: z.array(publicBookingSessionRepriceSelectionSchema).min(1),
 })
 
-export const publicBookingOverviewLookupQuerySchema = z.object({
-  bookingNumber: z.string().min(1).max(50),
+const publicBookingOverviewLocatorShape = {
+  bookingId: z.string().min(1).max(50).optional(),
+  bookingNumber: z.string().min(1).max(50).optional(),
+  bookingCode: z.string().min(1).max(50).optional(),
+}
+
+export const publicBookingOverviewLookupQuerySchema = z
+  .object({
+    ...publicBookingOverviewLocatorShape,
+    email: z.string().email(),
+  })
+  .refine((value) => Boolean(value.bookingId || value.bookingNumber || value.bookingCode), {
+    message: "Provide a bookingId, bookingNumber, or bookingCode",
+  })
+
+export const publicBookingOverviewAccessQuerySchema = z
+  .object({
+    ...publicBookingOverviewLocatorShape,
+    email: z.string().email().optional(),
+  })
+  .refine((value) => Boolean(value.bookingId || value.bookingNumber || value.bookingCode), {
+    message: "Provide a bookingId, bookingNumber, or bookingCode",
+  })
+
+export const publicGuestBookingLookupSchema = z.object({
+  bookingCode: z.string().min(1).max(50),
   email: z.string().email(),
 })
 
@@ -228,6 +252,12 @@ export const publicCheckoutCapabilitySchema = z.object({
       "payment:start",
     ]),
   ),
+})
+
+export const publicGuestBookingAccessSchema = z.object({
+  token: z.string().min(1),
+  expiresAt: z.string(),
+  actions: z.array(z.enum(["overview:read", "payment:read", "payment:start"])),
 })
 
 export const publicBookingSessionSchema = z.object({
@@ -329,10 +359,16 @@ export const publicBookingOverviewSchema = z.object({
   fulfillments: z.array(publicBookingOverviewFulfillmentSchema),
 })
 
+export const publicGuestBookingLookupResponseSchema = z.object({
+  overview: publicBookingOverviewSchema,
+  guestBookingAccess: publicGuestBookingAccessSchema,
+})
+
 export type PublicCreateBookingSessionInput = z.infer<typeof publicCreateBookingSessionSchema>
 export type PublicUpdateBookingSessionInput = z.infer<typeof publicUpdateBookingSessionSchema>
 export type PublicBookingSessionMutationInput = z.infer<typeof publicBookingSessionMutationSchema>
 export type PublicCheckoutCapability = z.infer<typeof publicCheckoutCapabilitySchema>
+export type PublicGuestBookingAccess = z.infer<typeof publicGuestBookingAccessSchema>
 export type PublicBookingSessionState = z.infer<typeof publicBookingSessionStateSchema>
 export type PublicUpsertBookingSessionStateInput = z.infer<
   typeof publicUpsertBookingSessionStateSchema
@@ -340,6 +376,13 @@ export type PublicUpsertBookingSessionStateInput = z.infer<
 export type PublicBookingSessionRepriceInput = z.infer<typeof publicRepriceBookingSessionSchema>
 export type PublicBookingOverviewLookupQuery = z.infer<
   typeof publicBookingOverviewLookupQuerySchema
+>
+export type PublicBookingOverviewAccessQuery = z.infer<
+  typeof publicBookingOverviewAccessQuerySchema
+>
+export type PublicGuestBookingLookupInput = z.infer<typeof publicGuestBookingLookupSchema>
+export type PublicGuestBookingLookupResponse = z.infer<
+  typeof publicGuestBookingLookupResponseSchema
 >
 export type InternalBookingOverviewLookupQuery = z.infer<
   typeof internalBookingOverviewLookupQuerySchema
