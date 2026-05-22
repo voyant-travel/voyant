@@ -1,5 +1,15 @@
 # @voyantjs/crm-ui
 
+## 0.69.0
+
+### Patch Changes
+
+- @voyantjs/crm-react@0.69.0
+- @voyantjs/i18n@0.69.0
+- @voyantjs/identity-react@0.69.0
+- @voyantjs/ui@0.69.0
+- @voyantjs/utils@0.69.0
+
 ## 0.68.0
 
 ### Patch Changes
