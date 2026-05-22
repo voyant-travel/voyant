@@ -1,5 +1,15 @@
 # @voyantjs/accommodations
 
+## 0.75.0
+
+### Patch Changes
+
+- Updated dependencies [1eab599]
+  - @voyantjs/bookings@0.75.0
+  - @voyantjs/catalog@0.75.0
+  - @voyantjs/db@0.75.0
+  - @voyantjs/facilities@0.75.0
+
 ## 0.74.2
 
 ### Patch Changes
