@@ -3226,6 +3226,16 @@ export const bookingsService = {
           }
           if (capacity.slotChange) slotChanges.push(capacity.slotChange)
 
+          const productId = item.productId ?? slot.product_id
+          const optionId = item.optionId ?? slot.option_id
+          const optionUnitId = item.optionUnitId ?? null
+          const snapshot = await resolveBookingItemSnapshot(tx as PostgresJsDatabase, {
+            productId,
+            optionId,
+            optionUnitId,
+            availabilitySlotId: item.availabilitySlotId,
+          })
+
           const [bookingItem] = await tx
             .insert(bookingItems)
             .values({
@@ -3245,10 +3255,16 @@ export const bookingsService = {
               unitCostAmountCents: item.unitCostAmountCents ?? null,
               totalCostAmountCents: item.totalCostAmountCents ?? null,
               notes: item.notes ?? null,
-              productId: item.productId ?? slot.product_id,
-              optionId: item.optionId ?? slot.option_id,
-              optionUnitId: item.optionUnitId ?? null,
+              productId,
+              optionId,
+              optionUnitId,
               pricingCategoryId: item.pricingCategoryId ?? null,
+              availabilitySlotId: item.availabilitySlotId,
+              productNameSnapshot: item.productNameSnapshot ?? snapshot.productName ?? null,
+              optionNameSnapshot: item.optionNameSnapshot ?? snapshot.optionName ?? null,
+              unitNameSnapshot: item.unitNameSnapshot ?? snapshot.unitName ?? null,
+              departureLabelSnapshot:
+                item.departureLabelSnapshot ?? snapshot.departureLabel ?? null,
               sourceSnapshotId: item.sourceSnapshotId ?? null,
               sourceOfferId: item.sourceOfferId ?? null,
               metadata: item.metadata ?? null,
@@ -3264,9 +3280,9 @@ export const bookingsService = {
             .values({
               bookingId: booking.id,
               bookingItemId: bookingItem.id,
-              productId: item.productId ?? slot.product_id,
-              optionId: item.optionId ?? slot.option_id,
-              optionUnitId: item.optionUnitId ?? null,
+              productId,
+              optionId,
+              optionUnitId,
               pricingCategoryId: item.pricingCategoryId ?? null,
               availabilitySlotId: item.availabilitySlotId,
               quantity: item.quantity,
