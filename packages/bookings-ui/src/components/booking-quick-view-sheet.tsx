@@ -53,10 +53,14 @@ export function BookingQuickViewSheet({
   const quick = messages.bookingQuickViewSheet
   const resolvedLocale = locale ?? i18n.locale
 
-  const { data, isPending } = useBooking(bookingId ?? undefined, {
+  const query = useBooking(bookingId ?? undefined, {
     enabled: open && Boolean(bookingId),
   })
-  const booking = data?.data ?? null
+  const booking = query.data?.data ?? null
+  // `isPending` stays true for disabled queries in @tanstack/react-query
+  // v5, so opening the sheet with no `bookingId` would render an
+  // indefinite loading state. Gate on an active fetch instead.
+  const isLoading = Boolean(bookingId) && query.fetchStatus === "fetching" && !booking
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -84,7 +88,7 @@ export function BookingQuickViewSheet({
           )}
         </SheetHeader>
         <SheetBody className="flex flex-col gap-5">
-          {isPending && !booking ? (
+          {isLoading ? (
             <p className="text-sm text-muted-foreground">{messages.common.loading}</p>
           ) : !booking ? (
             <p className="text-sm text-muted-foreground">{detail.notFound}</p>
@@ -155,8 +159,11 @@ function ContactSection({ booking }: { booking: BookingRecord }) {
   const person = usePerson(booking.personId ?? undefined, {
     enabled: Boolean(booking.personId),
   }).data
+  // Always look up the organization when one is set — a booking can carry
+  // both `personId` and `organizationId`, and the org name may be the
+  // only payer label available when person/snapshot fields are empty.
   const organization = useOrganization(booking.organizationId ?? undefined, {
-    enabled: Boolean(booking.organizationId) && !booking.personId,
+    enabled: Boolean(booking.organizationId),
   }).data
 
   const name =
@@ -209,15 +216,20 @@ function TravelersSection({
           {travelers.map((traveler) => {
             const name = [traveler.firstName, traveler.lastName].filter(Boolean).join(" ").trim()
             const category = traveler.travelerCategory ?? null
+            const categoryLabel = category
+              ? (quick.travelerCategoryLabels[
+                  category as keyof typeof quick.travelerCategoryLabels
+                ] ?? category)
+              : null
             return (
               <li
                 key={traveler.id}
                 className="flex items-center justify-between gap-3 py-1 text-sm"
               >
                 <span className="truncate">{name || quick.travelerUnnamed}</span>
-                {category ? (
+                {categoryLabel ? (
                   <Badge variant="outline" className="text-[10px] uppercase">
-                    {category}
+                    {categoryLabel}
                   </Badge>
                 ) : null}
               </li>
@@ -280,17 +292,22 @@ function InvoicesSection({ booking }: { booking: BookingRecord }) {
         <p className="text-sm text-muted-foreground">{quick.invoicesEmpty}</p>
       ) : (
         <ul className="flex flex-col">
-          {invoices.map((invoice) => (
-            <li
-              key={invoice.id}
-              className="flex items-center justify-between gap-3 py-1 font-mono text-sm"
-            >
-              <span className="truncate">{invoice.invoiceNumber}</span>
-              <Badge variant="outline" className="font-sans text-[10px] uppercase">
-                {invoice.status}
-              </Badge>
-            </li>
-          ))}
+          {invoices.map((invoice) => {
+            const statusLabel =
+              quick.invoiceStatusLabels[invoice.status as keyof typeof quick.invoiceStatusLabels] ??
+              invoice.status
+            return (
+              <li
+                key={invoice.id}
+                className="flex items-center justify-between gap-3 py-1 font-mono text-sm"
+              >
+                <span className="truncate">{invoice.invoiceNumber}</span>
+                <Badge variant="outline" className="font-sans text-[10px] uppercase">
+                  {statusLabel}
+                </Badge>
+              </li>
+            )
+          })}
         </ul>
       )}
     </Section>
@@ -318,21 +335,27 @@ function PaymentScheduleSection({ booking, locale }: { booking: BookingRecord; l
         <p className="text-sm text-muted-foreground">{quick.scheduleEmpty}</p>
       ) : (
         <ul className="flex flex-col gap-1.5">
-          {schedules.map((schedule) => (
-            <li key={schedule.id} className="flex items-center justify-between gap-3 text-sm">
-              <span className="flex items-center gap-2">
-                <Badge variant="outline" className="text-[10px] uppercase">
-                  {schedule.scheduleType}
-                </Badge>
-                <span className="text-muted-foreground">
-                  {formatScheduleDate(schedule.dueDate, locale, detail.noValue)}
+          {schedules.map((schedule) => {
+            const typeLabel =
+              quick.scheduleTypeLabels[
+                schedule.scheduleType as keyof typeof quick.scheduleTypeLabels
+              ] ?? schedule.scheduleType
+            return (
+              <li key={schedule.id} className="flex items-center justify-between gap-3 text-sm">
+                <span className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-[10px] uppercase">
+                    {typeLabel}
+                  </Badge>
+                  <span className="text-muted-foreground">
+                    {formatScheduleDate(schedule.dueDate, locale, detail.noValue)}
+                  </span>
                 </span>
-              </span>
-              <span className="font-medium tabular-nums">
-                {formatAmount(schedule.amountCents, schedule.currency, locale, detail.noValue)}
-              </span>
-            </li>
-          ))}
+                <span className="font-medium tabular-nums">
+                  {formatAmount(schedule.amountCents, schedule.currency, locale, detail.noValue)}
+                </span>
+              </li>
+            )
+          })}
         </ul>
       )}
     </Section>
@@ -355,16 +378,25 @@ function ContractsSection({ bookingId }: { bookingId: string }) {
         <p className="text-sm text-muted-foreground">{quick.contractsEmpty}</p>
       ) : (
         <ul className="flex flex-col">
-          {contracts.map((contract) => (
-            <li key={contract.id} className="flex items-center justify-between gap-3 py-1 text-sm">
-              <span className="truncate font-mono">
-                {contract.contractNumber ?? contract.title}
-              </span>
-              <Badge variant="outline" className="font-sans text-[10px] uppercase">
-                {contract.status}
-              </Badge>
-            </li>
-          ))}
+          {contracts.map((contract) => {
+            const statusLabel =
+              quick.contractStatusLabels[
+                contract.status as keyof typeof quick.contractStatusLabels
+              ] ?? contract.status
+            return (
+              <li
+                key={contract.id}
+                className="flex items-center justify-between gap-3 py-1 text-sm"
+              >
+                <span className="truncate font-mono">
+                  {contract.contractNumber ?? contract.title}
+                </span>
+                <Badge variant="outline" className="font-sans text-[10px] uppercase">
+                  {statusLabel}
+                </Badge>
+              </li>
+            )
+          })}
         </ul>
       )}
     </Section>
