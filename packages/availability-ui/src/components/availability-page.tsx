@@ -207,16 +207,38 @@ export function AvailabilityPage({
     AvailabilityPickupPointRow | undefined
   >()
 
+  const productIdFilter = productFilter === "all" ? undefined : productFilter
+  const slotStatusFilterParam = slotStatusFilter === "all" ? undefined : slotStatusFilter
+  const pickupPointActiveParam =
+    pickupPointActiveFilter === "all" ? undefined : pickupPointActiveFilter === "active"
+
   const productsQuery = useProducts({ search: productSearch || undefined, limit: 25, offset: 0 })
   const overviewQuery = useAvailabilityOverview({
-    productId: productFilter === "all" ? undefined : productFilter,
+    productId: productIdFilter,
     attentionLimit: 4,
   })
-  const rulesQuery = useRules({ limit: 25, offset: 0 })
-  const startTimesQuery = useStartTimes({ limit: 25, offset: 0 })
-  const slotsQuery = useSlots({ limit: 25, offset: 0 })
-  const closeoutsQuery = useCloseouts({ limit: 25, offset: 0 })
-  const pickupPointsQuery = usePickupPoints({ limit: 25, offset: 0 })
+  // Pass the page filters through to the hooks so the server narrows the
+  // first 25 rows to the selection. Without this the list tabs renders empty
+  // whenever the selected product/status/date's matching rows happen to sit
+  // past the first page (mirror of #1043, but for list tabs).
+  // Client-side filters below stay as the safety net for dimensions the API
+  // doesn't expose (rule/start-time `active`, closeout date range).
+  const rulesQuery = useRules({ limit: 25, offset: 0, productId: productIdFilter })
+  const startTimesQuery = useStartTimes({ limit: 25, offset: 0, productId: productIdFilter })
+  const slotsQuery = useSlots({
+    limit: 25,
+    offset: 0,
+    productId: productIdFilter,
+    status: slotStatusFilterParam,
+    startsAtFrom: slotDateRange?.from ?? undefined,
+  })
+  const closeoutsQuery = useCloseouts({ limit: 25, offset: 0, productId: productIdFilter })
+  const pickupPointsQuery = usePickupPoints({
+    limit: 25,
+    offset: 0,
+    productId: productIdFilter,
+    active: pickupPointActiveParam,
+  })
 
   const products = productsQuery.data?.data ?? []
   const rules = rulesQuery.data?.data ?? []
