@@ -230,6 +230,12 @@ export const legalContractGenerateDocumentResponse = singleEnvelope(
     attachment: legalContractAttachmentRecordSchema,
   }),
 )
+export const legalBookingContractGenerateDocumentResponse = singleEnvelope(
+  z.object({
+    contract: legalContractRecordSchema,
+    attachment: legalContractAttachmentRecordSchema,
+  }),
+)
 export const legalContractTemplateListResponse = paginatedEnvelope(
   legalContractTemplateRecordSchema,
 )

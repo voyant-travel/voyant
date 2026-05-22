@@ -5,8 +5,9 @@ import type { ContractLifecycleHook } from "./lifecycle.js"
 import { contractRecordsService } from "./service-contracts.js"
 import type { ContractDocumentGenerator } from "./service-documents.js"
 import { contractDocumentsService } from "./service-documents.js"
-import { contractSeriesService } from "./service-series.js"
+import { ContractSeriesAmbiguousError, contractSeriesService } from "./service-series.js"
 import { contractTemplatesService } from "./service-templates.js"
+import type { GenerateContractForBookingInput } from "./validation.js"
 
 /**
  * Event shape emitted by `@voyantjs/bookings` on confirm. Duplicated here so
@@ -391,6 +392,79 @@ export interface AutoGenerateContractRuntime {
   bindings?: Record<string, unknown> | null
 }
 
+export type AutoGenerateContractResult =
+  | { status: "ok"; contractId: string; attachmentId: string }
+  | { status: "template_not_found" }
+  | { status: "template_version_missing" }
+  | { status: "booking_not_found" }
+  | { status: "contract_create_failed" }
+  | { status: "document_failed"; reason: string }
+
+export type GenerateContractForBookingResult =
+  | AutoGenerateContractResult
+  | { status: "series_not_found" }
+  | { status: "series_ambiguous" }
+
+/**
+ * One-click admin path for a specific booking. It resolves the deployment's
+ * default active template for the requested scope/channel/language and, by
+ * default, requires exactly one active number series for that scope before
+ * issuing the document. This keeps operator UIs out of picker/chain logic
+ * while avoiding silent issuance with the wrong numbering sequence.
+ */
+export async function generateContractForBookingFromDefaults(
+  db: PostgresJsDatabase,
+  bookingId: string,
+  input: GenerateContractForBookingInput,
+  runtime: AutoGenerateContractRuntime,
+  actorId: string | null = null,
+): Promise<GenerateContractForBookingResult> {
+  const template = await contractTemplatesService.getDefaultTemplate(db, {
+    scope: input.scope,
+    language: input.language,
+    channelId: input.channelId ?? undefined,
+    fallbackLanguages: input.fallbackLanguages,
+  })
+  if (!template) {
+    return { status: "template_not_found" }
+  }
+  if (!template.currentVersionId) {
+    return { status: "template_version_missing" }
+  }
+
+  const options: AutoGenerateContractOptions = {
+    enabled: true,
+    templateSlug: template.slug,
+    scope: input.scope,
+    language: input.language ?? template.language,
+  }
+
+  if (input.requireNumberSeries) {
+    try {
+      const series = await contractSeriesService.findSingleActiveByScope(db, input.scope)
+      if (!series) {
+        return { status: "series_not_found" }
+      }
+      options.seriesPrefixScope = {
+        prefix: series.prefix,
+        scope: series.scope,
+      }
+    } catch (error) {
+      if (error instanceof ContractSeriesAmbiguousError) {
+        return { status: "series_ambiguous" }
+      }
+      throw error
+    }
+  }
+
+  return autoGenerateContractForBooking(
+    db,
+    { bookingId, bookingNumber: "", actorId },
+    options,
+    runtime,
+  )
+}
+
 /**
  * Core auto-generate handler. Fire this from a `booking.confirmed` subscriber.
  * On success, the booking now has an issued contract with an attachment
@@ -413,14 +487,7 @@ export async function autoGenerateContractForBooking(
   event: BookingConfirmedLikeEvent,
   options: AutoGenerateContractOptions,
   runtime: AutoGenerateContractRuntime,
-): Promise<
-  | { status: "ok"; contractId: string; attachmentId: string }
-  | { status: "template_not_found" }
-  | { status: "template_version_missing" }
-  | { status: "booking_not_found" }
-  | { status: "contract_create_failed" }
-  | { status: "document_failed"; reason: string }
-> {
+): Promise<AutoGenerateContractResult> {
   // Idempotency + storefront pre-create flow: if any contract for
   // this booking already exists, REUSE it.
   //
@@ -440,10 +507,12 @@ export async function autoGenerateContractForBooking(
   //     still draft with no document. Re-attempt on the same row
   //     instead of creating duplicates.
   //
-  // A booking should have at most one active customer-scope contract;
+  // A booking should have at most one active contract per scope;
   // operators wanting a fresh one use the regenerate admin route.
+  const scope = options.scope ?? "customer"
   const existingContracts = await contractRecordsService.listContracts(db, {
     bookingId: event.bookingId,
+    scope,
     limit: 1,
     offset: 0,
   })
@@ -751,7 +820,7 @@ export async function autoGenerateContractForBooking(
         defaults,
         bindings: runtime.bindings ?? null,
       })
-    : (defaults as unknown as Record<string, unknown>)
+    : defaultVariablesToRecord(defaults)
 
   // Resolve a series if the consumer gave a (prefix, scope) or a name —
   // failure to find is non-fatal since a contract can issue without a
@@ -843,6 +912,10 @@ export async function autoGenerateContractForBooking(
   }
 
   return { status: "document_failed", reason: result.status }
+}
+
+function defaultVariablesToRecord(defaults: DefaultContractVariables): Record<string, unknown> {
+  return { ...defaults }
 }
 
 function computeNights(startDate: string, endDate: string): number {

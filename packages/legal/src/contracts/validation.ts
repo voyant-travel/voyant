@@ -1,3 +1,4 @@
+import { booleanQueryParam } from "@voyantjs/db/helpers"
 import { validateStructuredTemplateSyntax } from "@voyantjs/utils/template-renderer"
 import { z } from "zod"
 
@@ -70,7 +71,7 @@ export const contractTemplateListQuerySchema = paginationSchema.extend({
   scope: contractScopeSchema.optional(),
   language: z.string().optional(),
   channelId: z.string().optional(),
-  active: z.coerce.boolean().optional(),
+  active: booleanQueryParam.optional(),
   search: z.string().optional(),
 })
 
@@ -114,6 +115,10 @@ const contractNumberSeriesCoreSchema = z.object({
 
 export const insertContractNumberSeriesSchema = contractNumberSeriesCoreSchema
 export const updateContractNumberSeriesSchema = contractNumberSeriesCoreSchema.partial()
+export const contractNumberSeriesListQuerySchema = z.object({
+  scope: contractScopeSchema.optional(),
+  active: booleanQueryParam.optional(),
+})
 
 // ---------- contracts ----------
 
@@ -168,6 +173,16 @@ export const generateContractDocumentInputSchema = z.object({
   replaceExisting: z.boolean().default(true),
   issueIfDraft: z.boolean().default(true),
 })
+
+export const generateContractForBookingInputSchema = z.object({
+  scope: contractScopeSchema.default("customer"),
+  language: z.string().min(2).max(10).optional(),
+  channelId: z.string().optional().nullable(),
+  fallbackLanguages: z.array(z.string().min(2).max(10)).optional().default([]),
+  requireNumberSeries: z.boolean().default(true),
+})
+
+export type GenerateContractForBookingInput = z.infer<typeof generateContractForBookingInputSchema>
 
 /**
  * Optional customization the operator typed in the Send-contract dialog.

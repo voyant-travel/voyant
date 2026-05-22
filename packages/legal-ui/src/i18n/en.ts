@@ -48,6 +48,10 @@ export const legalUiEn = {
   bookingContractCard: {
     heading: "Contract",
     empty: "No contract has been generated for this booking yet.",
+    generateContract: "Generate contract",
+    generating: "Generating",
+    generateUnavailable:
+      "Configure one default template and one active number series to generate from here.",
     generate: "Generate",
     regenerate: "Regenerate",
     download: "Download",
