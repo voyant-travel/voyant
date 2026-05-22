@@ -1,5 +1,19 @@
 # @voyantjs/bookings
 
+## 0.75.0
+
+### Minor Changes
+
+- 1eab599: Add guest booking lookup with scoped access capabilities for public booking overview pages.
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.75.0
+- @voyantjs/core@0.75.0
+- @voyantjs/db@0.75.0
+- @voyantjs/hono@0.75.0
+- @voyantjs/utils@0.75.0
+
 ## 0.74.1
 
 ### Patch Changes

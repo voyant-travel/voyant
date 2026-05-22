@@ -1,5 +1,7 @@
 # @voyantjs/storage
 
+## 0.75.0
+
 ## 0.74.2
 
 ### Patch Changes
