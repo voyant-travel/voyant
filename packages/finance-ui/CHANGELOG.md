@@ -1,5 +1,18 @@
 # @voyantjs/finance-ui
 
+## 0.75.2
+
+### Patch Changes
+
+- 08e7f32: Build default attachment download links from the active API provider base URL.
+- Updated dependencies [08e7f32]
+  - @voyantjs/bookings-ui@0.75.2
+  - @voyantjs/finance@0.75.2
+  - @voyantjs/finance-react@0.75.2
+  - @voyantjs/i18n@0.75.2
+  - @voyantjs/suppliers-ui@0.75.2
+  - @voyantjs/ui@0.75.2
+
 ## 0.75.1
 
 ### Patch Changes

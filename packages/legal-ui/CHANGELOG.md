@@ -1,5 +1,15 @@
 # @voyantjs/legal-ui
 
+## 0.75.2
+
+### Patch Changes
+
+- 08e7f32: Build default attachment download links from the active API provider base URL.
+  - @voyantjs/crm-react@0.75.2
+  - @voyantjs/i18n@0.75.2
+  - @voyantjs/legal-react@0.75.2
+  - @voyantjs/ui@0.75.2
+
 ## 0.75.1
 
 ### Patch Changes
