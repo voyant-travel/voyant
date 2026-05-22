@@ -1,5 +1,8 @@
 import type { StorageObject, StorageProvider, StorageUploadBody, UploadOptions } from "../types.js"
 
+export const R2_SIGNED_URL_CONFIGURATION_ERROR_MESSAGE =
+  "R2 provider: signedUrl requires either `publicBaseUrl` or `signer` to be configured"
+
 /**
  * Subset of the Cloudflare Workers `R2Bucket` binding we depend on. Kept
  * as a minimal structural type so this package does not need a runtime
@@ -41,7 +44,9 @@ export interface R2ProviderOptions {
    * signed URLs directly; templates pass a custom signer that either:
    *   - returns a short-lived Worker route URL, or
    *   - calls R2's S3-compatible API with SigV4 credentials.
-   * When omitted, `signedUrl` returns `${publicBaseUrl}${key}`.
+   * When omitted, `signedUrl` returns `${publicBaseUrl}${key}`. Calling
+   * `signedUrl` without either a signer or public base URL is a
+   * configuration error because a raw R2 object key is not a URL.
    */
   signer?: (key: string, expiresIn: number) => Promise<string> | string
   /** Provider name (defaults to `"r2"`). */
@@ -86,7 +91,10 @@ export function createR2Provider(options: R2ProviderOptions): StorageProvider {
     },
     async signedUrl(key, expiresIn) {
       if (options.signer) return options.signer(key, expiresIn)
-      return publicBaseUrl ? `${publicBaseUrl}${key}` : key
+      if (!publicBaseUrl) {
+        throw new Error(R2_SIGNED_URL_CONFIGURATION_ERROR_MESSAGE)
+      }
+      return `${publicBaseUrl}${key}`
     },
     async get(key) {
       const obj = await options.bucket.get(key)

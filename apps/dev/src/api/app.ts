@@ -31,7 +31,12 @@ import authHandler, { hasAuthPermission, resolveAuthRequest } from "./auth/handl
 import { getDashboardSummary } from "./dashboard-summary"
 import { createInvitationsRoutes } from "./invitations"
 import { getDbFromHyperdrive } from "./lib/db"
-import { createMediaStorage, guessMimeType, resolveDocumentDownloadUrl } from "./lib/storage"
+import {
+  createDocumentStorage,
+  createMediaStorage,
+  guessMimeType,
+  resolveDocumentDownloadUrl,
+} from "./lib/storage"
 
 const notificationsHonoModule = createNotificationsHonoModule({
   resolveProviders: resolveNotificationProviders,
@@ -184,6 +189,32 @@ export const app = createApp<CloudflareBindings>({
         mimeType: file.type,
         size: file.size,
       })
+    })
+
+    // GET /v1/admin/documents/files/* — admin-only stream of private document bytes.
+    hono.get("/v1/admin/documents/files/*", async (c) => {
+      const storage = createDocumentStorage(c.env)
+      if (!storage) {
+        return c.json({ error: "Storage not configured" }, 503)
+      }
+
+      const rawKey = c.req.path.replace("/v1/admin/documents/files/", "")
+      const key = rawKey
+        .split("/")
+        .map((segment) => decodeURIComponent(segment))
+        .join("/")
+      if (!key) return c.json({ error: "Missing key" }, 400)
+
+      const buffer = await storage.get(key)
+      if (!buffer) return c.json({ error: "Not found" }, 404)
+
+      const headers = new Headers()
+      headers.set("Content-Type", guessMimeType(key))
+      headers.set("Cache-Control", "private, no-store")
+      headers.set("Content-Length", String(buffer.byteLength))
+      headers.set("Content-Disposition", `inline; filename="${key.split("/").pop() ?? "document"}"`)
+
+      return new Response(buffer, { headers })
     })
 
     // GET /v1/media/* — serve public media via the configured media storage provider.
