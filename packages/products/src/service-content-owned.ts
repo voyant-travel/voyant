@@ -20,15 +20,11 @@
  * The projection reads in parallel:
  *   - `products` row → product summary + tags + supplier
  *   - `product_translations` → localized name + description per locale
- *   - `product_itineraries` + `product_days` → itinerary days (no
- *     translation table today; falls back to source)
+ *   - `product_itineraries` + `product_days` + day/service translations →
+ *     localized itinerary days and service labels
  *   - `product_options` + `product_option_translations` → options +
  *     localized labels
  *   - `product_media` → hero + gallery
- *
- * Day translations don't exist in the schema yet — when
- * `product_day_translations` lands, this function picks them up the
- * same way.
  */
 
 import type { ContentLocaleMatchKind } from "@voyantjs/catalog"
@@ -42,7 +38,10 @@ import {
   validateProductContent,
 } from "./content-shape.js"
 import {
+  productDayServices,
+  productDayServiceTranslations,
   productDays,
+  productDayTranslations,
   productItineraries,
   productMedia,
   productOptions,
@@ -125,6 +124,33 @@ export async function buildOwnedProductContent(
         .orderBy(asc(productDays.dayNumber))
     : []
 
+  const dayIds = days.map((d: typeof productDays.$inferSelect) => d.id)
+  const [dayTrns, dayServices] =
+    defaultItinerary && dayIds.length > 0
+      ? await Promise.all([
+          db
+            .select()
+            .from(productDayTranslations)
+            .where(inArray(productDayTranslations.dayId, dayIds)),
+          db
+            .select()
+            .from(productDayServices)
+            .where(inArray(productDayServices.dayId, dayIds))
+            .orderBy(asc(productDayServices.sortOrder), asc(productDayServices.createdAt)),
+        ])
+      : [[], []]
+
+  const dayServiceIds = dayServices.map(
+    (service: typeof productDayServices.$inferSelect) => service.id,
+  )
+  const dayServiceTrns =
+    dayServiceIds.length > 0
+      ? await db
+          .select()
+          .from(productDayServiceTranslations)
+          .where(inArray(productDayServiceTranslations.serviceId, dayServiceIds))
+      : []
+
   // Pull option translations in one round-trip for every option in this
   // product. Fan-out per-option would be wasteful when products
   // typically have a small number of options.
@@ -196,19 +222,29 @@ export async function buildOwnedProductContent(
         inclusions: [],
       }
     }),
-    days: days.map((d: typeof productDays.$inferSelect) => ({
-      // Days don't have a translation table today; source values flow
-      // through. When `product_day_translations` lands, slot in here
-      // with the same pickBestCachedLocale call.
-      day_number: d.dayNumber,
-      title: d.title ?? null,
-      description: d.description ?? null,
-      location: d.location ?? null,
-      // Per-day hero — prefer the cover, fall back to the first sorted
-      // image attached to this day in `product_media`.
-      hero_image_url: pickDayHeroImage(mediaRows, d.id),
-      services: [],
-    })),
+    days: days.map((d: typeof productDays.$inferSelect) => {
+      const bestDayTrn = pickBestDayTranslation(
+        dayTrns.filter((t: typeof productDayTranslations.$inferSelect) => t.dayId === d.id),
+        options.preferredLocales,
+      )
+
+      return {
+        day_number: d.dayNumber,
+        title: bestDayTrn?.candidate.title ?? d.title ?? null,
+        description: bestDayTrn?.candidate.description ?? d.description ?? null,
+        location: bestDayTrn?.candidate.location ?? d.location ?? null,
+        // Per-day hero — prefer the cover, fall back to the first sorted
+        // image attached to this day in `product_media`.
+        hero_image_url: pickDayHeroImage(mediaRows, d.id),
+        services: localizedServiceNamesForDay(
+          dayServices.filter(
+            (service: typeof productDayServices.$inferSelect) => service.dayId === d.id,
+          ),
+          dayServiceTrns,
+          options.preferredLocales,
+        ),
+      }
+    }),
     media: mediaRows
       .filter((m: typeof productMedia.$inferSelect) => !m.isBrochure)
       .map((m: typeof productMedia.$inferSelect) => ({
@@ -385,6 +421,59 @@ function pickBestOptionTranslation(
     description: r.description,
   }))
   return pickBestCachedLocale(candidates, preferred)
+}
+
+interface DayTrnCandidate {
+  locale: string
+  title: string | null
+  description: string | null
+  location: string | null
+}
+
+function pickBestDayTranslation(
+  rows: ReadonlyArray<typeof productDayTranslations.$inferSelect>,
+  preferred: ReadonlyArray<string>,
+) {
+  if (rows.length === 0) return null
+  const candidates: DayTrnCandidate[] = rows.map((r) => ({
+    locale: r.languageTag,
+    title: r.title,
+    description: r.description,
+    location: r.location,
+  }))
+  return pickBestCachedLocale(candidates, preferred)
+}
+
+interface DayServiceTrnCandidate {
+  locale: string
+  name: string
+}
+
+function pickBestDayServiceTranslation(
+  rows: ReadonlyArray<typeof productDayServiceTranslations.$inferSelect>,
+  preferred: ReadonlyArray<string>,
+) {
+  if (rows.length === 0) return null
+  const candidates: DayServiceTrnCandidate[] = rows.map((r) => ({
+    locale: r.languageTag,
+    name: r.name,
+  }))
+  return pickBestCachedLocale(candidates, preferred)
+}
+
+function localizedServiceNamesForDay(
+  services: ReadonlyArray<typeof productDayServices.$inferSelect>,
+  translations: ReadonlyArray<typeof productDayServiceTranslations.$inferSelect>,
+  preferred: ReadonlyArray<string>,
+): string[] {
+  return services.map((service) => {
+    const bestServiceTrn = pickBestDayServiceTranslation(
+      translations.filter((translation) => translation.serviceId === service.id),
+      preferred,
+    )
+
+    return bestServiceTrn?.candidate.name ?? service.name
+  })
 }
 
 /**

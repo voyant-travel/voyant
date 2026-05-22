@@ -44,6 +44,31 @@ export const productItineraries = pgTable(
 export type ProductItinerary = typeof productItineraries.$inferSelect
 export type NewProductItinerary = typeof productItineraries.$inferInsert
 
+export const productItineraryTranslations = pgTable(
+  "product_itinerary_translations",
+  {
+    id: typeId("product_itinerary_translations"),
+    itineraryId: typeIdRef("itinerary_id")
+      .notNull()
+      .references(() => productItineraries.id, { onDelete: "cascade" }),
+    languageTag: text("language_tag").notNull(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_product_itinerary_translations_itinerary").on(table.itineraryId),
+    index("idx_product_itinerary_translations_language").on(table.languageTag),
+    uniqueIndex("uidx_product_itinerary_translations_locale").on(
+      table.itineraryId,
+      table.languageTag,
+    ),
+  ],
+)
+
+export type ProductItineraryTranslation = typeof productItineraryTranslations.$inferSelect
+export type NewProductItineraryTranslation = typeof productItineraryTranslations.$inferInsert
+
 export const productDays = pgTable(
   "product_days",
   {
@@ -66,6 +91,30 @@ export const productDays = pgTable(
 
 export type ProductDay = typeof productDays.$inferSelect
 export type NewProductDay = typeof productDays.$inferInsert
+
+export const productDayTranslations = pgTable(
+  "product_day_translations",
+  {
+    id: typeId("product_day_translations"),
+    dayId: typeIdRef("day_id")
+      .notNull()
+      .references(() => productDays.id, { onDelete: "cascade" }),
+    languageTag: text("language_tag").notNull(),
+    title: text("title"),
+    description: text("description"),
+    location: text("location"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_product_day_translations_day").on(table.dayId),
+    index("idx_product_day_translations_language").on(table.languageTag),
+    uniqueIndex("uidx_product_day_translations_locale").on(table.dayId, table.languageTag),
+  ],
+)
+
+export type ProductDayTranslation = typeof productDayTranslations.$inferSelect
+export type NewProductDayTranslation = typeof productDayTranslations.$inferInsert
 
 export const productDayServices = pgTable(
   "product_day_services",
@@ -95,6 +144,33 @@ export const productDayServices = pgTable(
 
 export type ProductDayService = typeof productDayServices.$inferSelect
 export type NewProductDayService = typeof productDayServices.$inferInsert
+
+export const productDayServiceTranslations = pgTable(
+  "product_day_service_translations",
+  {
+    id: typeId("product_day_service_translations"),
+    serviceId: typeIdRef("service_id")
+      .notNull()
+      .references(() => productDayServices.id, { onDelete: "cascade" }),
+    languageTag: text("language_tag").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_product_day_service_translations_service").on(table.serviceId),
+    index("idx_product_day_service_translations_language").on(table.languageTag),
+    uniqueIndex("uidx_product_day_service_translations_locale").on(
+      table.serviceId,
+      table.languageTag,
+    ),
+  ],
+)
+
+export type ProductDayServiceTranslation = typeof productDayServiceTranslations.$inferSelect
+export type NewProductDayServiceTranslation = typeof productDayServiceTranslations.$inferInsert
 
 export const productVersions = pgTable(
   "product_versions",

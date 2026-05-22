@@ -326,3 +326,333 @@ export const productTranslationRoutes = new Hono<Env>()
     })
     return c.json({ success: true }, 200)
   })
+
+  .get("/itinerary-translations", async (c) => {
+    const query = parseQuery(c, validation.itineraryTranslationListQuerySchema)
+    return c.json(await productsService.listItineraryTranslations(c.get("db"), query))
+  })
+
+  .get("/itinerary-translations/:translationId", async (c) => {
+    const row = await productsService.getItineraryTranslationById(
+      c.get("db"),
+      c.req.param("translationId"),
+    )
+
+    if (!row) {
+      return c.json({ error: "Itinerary translation not found" }, 404)
+    }
+
+    return c.json({ data: row })
+  })
+
+  .post("/itineraries/:itineraryId/translations", async (c) => {
+    const itineraryId = c.req.param("itineraryId")
+    const body = await parseJsonBody(c, validation.insertItineraryTranslationSchema)
+    const itinerary = await productsService.getItineraryById(c.get("db"), itineraryId)
+    if (!itinerary) {
+      return c.json({ error: "Product itinerary not found" }, 404)
+    }
+
+    const row = await productsService.createItineraryTranslation(c.get("db"), itineraryId, body)
+
+    if (!row) {
+      return c.json({ error: "Product itinerary not found" }, 404)
+    }
+
+    await appendProductMutationLedgerEntry(c, {
+      action: "create",
+      productId: itinerary.productId,
+      changedFields: changedMutationFields(body, null, row),
+      subject: "product itinerary translation",
+      actionName: "product.itinerary_translation.create",
+      routeOrToolName: "products.itinerary_translation.create",
+    })
+    await emitProductContentChanged(c.get("eventBus"), {
+      id: itinerary.productId,
+      axis: "translation",
+    })
+    return c.json({ data: row }, 201)
+  })
+
+  .patch("/itinerary-translations/:translationId", async (c) => {
+    const translationId = c.req.param("translationId")
+    const body = await parseJsonBody(c, validation.updateItineraryTranslationSchema)
+    const before = await productsService.getItineraryTranslationForProductMutation(
+      c.get("db"),
+      translationId,
+    )
+    if (!before) {
+      return c.json({ error: "Itinerary translation not found" }, 404)
+    }
+
+    const row = await productsService.updateItineraryTranslation(c.get("db"), translationId, body)
+
+    if (!row) {
+      return c.json({ error: "Itinerary translation not found" }, 404)
+    }
+
+    await appendProductMutationLedgerEntry(c, {
+      action: "update",
+      productId: before.productId,
+      changedFields: changedMutationFields(body, before, row),
+      subject: "product itinerary translation",
+      actionName: "product.itinerary_translation.update",
+      routeOrToolName: "products.itinerary_translation.update",
+    })
+    await emitProductContentChanged(c.get("eventBus"), {
+      id: before.productId,
+      axis: "translation",
+    })
+    return c.json({ data: row })
+  })
+
+  .delete("/itinerary-translations/:translationId", async (c) => {
+    const translationId = c.req.param("translationId")
+    const before = await productsService.getItineraryTranslationForProductMutation(
+      c.get("db"),
+      translationId,
+    )
+    if (!before) {
+      return c.json({ error: "Itinerary translation not found" }, 404)
+    }
+
+    const row = await productsService.deleteItineraryTranslation(c.get("db"), translationId)
+
+    if (!row) {
+      return c.json({ error: "Itinerary translation not found" }, 404)
+    }
+
+    await appendProductMutationLedgerEntry(c, {
+      action: "delete",
+      productId: before.productId,
+      changedFields: [],
+      subject: "product itinerary translation",
+      actionName: "product.itinerary_translation.delete",
+      routeOrToolName: "products.itinerary_translation.delete",
+    })
+    await emitProductContentChanged(c.get("eventBus"), {
+      id: before.productId,
+      axis: "translation",
+    })
+    return c.json({ success: true }, 200)
+  })
+
+  .get("/day-translations", async (c) => {
+    const query = parseQuery(c, validation.dayTranslationListQuerySchema)
+    return c.json(await productsService.listDayTranslations(c.get("db"), query))
+  })
+
+  .get("/day-translations/:translationId", async (c) => {
+    const row = await productsService.getDayTranslationById(
+      c.get("db"),
+      c.req.param("translationId"),
+    )
+
+    if (!row) {
+      return c.json({ error: "Day translation not found" }, 404)
+    }
+
+    return c.json({ data: row })
+  })
+
+  .post("/days/:dayId/translations", async (c) => {
+    const dayId = c.req.param("dayId")
+    const body = await parseJsonBody(c, validation.insertDayTranslationSchema)
+    const day = await productsService.getDayForProductMutation(c.get("db"), dayId)
+    if (!day) {
+      return c.json({ error: "Product day not found" }, 404)
+    }
+
+    const row = await productsService.createDayTranslation(c.get("db"), dayId, body)
+
+    if (!row) {
+      return c.json({ error: "Product day not found" }, 404)
+    }
+
+    await appendProductMutationLedgerEntry(c, {
+      action: "create",
+      productId: day.productId,
+      changedFields: changedMutationFields(body, null, row),
+      subject: "product day translation",
+      actionName: "product.day_translation.create",
+      routeOrToolName: "products.day_translation.create",
+    })
+    await emitProductContentChanged(c.get("eventBus"), {
+      id: day.productId,
+      axis: "translation",
+    })
+    return c.json({ data: row }, 201)
+  })
+
+  .patch("/day-translations/:translationId", async (c) => {
+    const translationId = c.req.param("translationId")
+    const body = await parseJsonBody(c, validation.updateDayTranslationSchema)
+    const before = await productsService.getDayTranslationForProductMutation(
+      c.get("db"),
+      translationId,
+    )
+    if (!before) {
+      return c.json({ error: "Day translation not found" }, 404)
+    }
+
+    const row = await productsService.updateDayTranslation(c.get("db"), translationId, body)
+
+    if (!row) {
+      return c.json({ error: "Day translation not found" }, 404)
+    }
+
+    await appendProductMutationLedgerEntry(c, {
+      action: "update",
+      productId: before.productId,
+      changedFields: changedMutationFields(body, before, row),
+      subject: "product day translation",
+      actionName: "product.day_translation.update",
+      routeOrToolName: "products.day_translation.update",
+    })
+    await emitProductContentChanged(c.get("eventBus"), {
+      id: before.productId,
+      axis: "translation",
+    })
+    return c.json({ data: row })
+  })
+
+  .delete("/day-translations/:translationId", async (c) => {
+    const translationId = c.req.param("translationId")
+    const before = await productsService.getDayTranslationForProductMutation(
+      c.get("db"),
+      translationId,
+    )
+    if (!before) {
+      return c.json({ error: "Day translation not found" }, 404)
+    }
+
+    const row = await productsService.deleteDayTranslation(c.get("db"), translationId)
+
+    if (!row) {
+      return c.json({ error: "Day translation not found" }, 404)
+    }
+
+    await appendProductMutationLedgerEntry(c, {
+      action: "delete",
+      productId: before.productId,
+      changedFields: [],
+      subject: "product day translation",
+      actionName: "product.day_translation.delete",
+      routeOrToolName: "products.day_translation.delete",
+    })
+    await emitProductContentChanged(c.get("eventBus"), {
+      id: before.productId,
+      axis: "translation",
+    })
+    return c.json({ success: true }, 200)
+  })
+
+  .get("/day-service-translations", async (c) => {
+    const query = parseQuery(c, validation.dayServiceTranslationListQuerySchema)
+    return c.json(await productsService.listDayServiceTranslations(c.get("db"), query))
+  })
+
+  .get("/day-service-translations/:translationId", async (c) => {
+    const row = await productsService.getDayServiceTranslationById(
+      c.get("db"),
+      c.req.param("translationId"),
+    )
+
+    if (!row) {
+      return c.json({ error: "Day service translation not found" }, 404)
+    }
+
+    return c.json({ data: row })
+  })
+
+  .post("/day-services/:serviceId/translations", async (c) => {
+    const serviceId = c.req.param("serviceId")
+    const body = await parseJsonBody(c, validation.insertDayServiceTranslationSchema)
+    const service = await productsService.getDayServiceForProductMutation(c.get("db"), serviceId)
+    if (!service) {
+      return c.json({ error: "Product day service not found" }, 404)
+    }
+
+    const row = await productsService.createDayServiceTranslation(c.get("db"), serviceId, body)
+
+    if (!row) {
+      return c.json({ error: "Product day service not found" }, 404)
+    }
+
+    await appendProductMutationLedgerEntry(c, {
+      action: "create",
+      productId: service.productId,
+      changedFields: changedMutationFields(body, null, row),
+      subject: "product day service translation",
+      actionName: "product.day_service_translation.create",
+      routeOrToolName: "products.day_service_translation.create",
+    })
+    await emitProductContentChanged(c.get("eventBus"), {
+      id: service.productId,
+      axis: "translation",
+    })
+    return c.json({ data: row }, 201)
+  })
+
+  .patch("/day-service-translations/:translationId", async (c) => {
+    const translationId = c.req.param("translationId")
+    const body = await parseJsonBody(c, validation.updateDayServiceTranslationSchema)
+    const before = await productsService.getDayServiceTranslationForProductMutation(
+      c.get("db"),
+      translationId,
+    )
+    if (!before) {
+      return c.json({ error: "Day service translation not found" }, 404)
+    }
+
+    const row = await productsService.updateDayServiceTranslation(c.get("db"), translationId, body)
+
+    if (!row) {
+      return c.json({ error: "Day service translation not found" }, 404)
+    }
+
+    await appendProductMutationLedgerEntry(c, {
+      action: "update",
+      productId: before.productId,
+      changedFields: changedMutationFields(body, before, row),
+      subject: "product day service translation",
+      actionName: "product.day_service_translation.update",
+      routeOrToolName: "products.day_service_translation.update",
+    })
+    await emitProductContentChanged(c.get("eventBus"), {
+      id: before.productId,
+      axis: "translation",
+    })
+    return c.json({ data: row })
+  })
+
+  .delete("/day-service-translations/:translationId", async (c) => {
+    const translationId = c.req.param("translationId")
+    const before = await productsService.getDayServiceTranslationForProductMutation(
+      c.get("db"),
+      translationId,
+    )
+    if (!before) {
+      return c.json({ error: "Day service translation not found" }, 404)
+    }
+
+    const row = await productsService.deleteDayServiceTranslation(c.get("db"), translationId)
+
+    if (!row) {
+      return c.json({ error: "Day service translation not found" }, 404)
+    }
+
+    await appendProductMutationLedgerEntry(c, {
+      action: "delete",
+      productId: before.productId,
+      changedFields: [],
+      subject: "product day service translation",
+      actionName: "product.day_service_translation.delete",
+      routeOrToolName: "products.day_service_translation.delete",
+    })
+    await emitProductContentChanged(c.get("eventBus"), {
+      id: before.productId,
+      axis: "translation",
+    })
+    return c.json({ success: true }, 200)
+  })
