@@ -79,6 +79,47 @@ Use `retrySmartbillInvoiceArtifact({ runtime, client, externalRef, documentType
 })` to re-download and re-attach a SmartBill PDF from an existing external ref
 without issuing a new document.
 
+## Invoice UI
+
+The optional `./invoice-ui` entry ships React helpers for invoice detail pages.
+It reads SmartBill refs from `/v1/finance/invoices/:id/external-refs` using the
+`@voyantjs/finance-react` provider context and can be mounted in
+`InvoiceDetailPage`'s integration slot.
+
+```tsx
+import { InvoiceDetailPage } from "@voyantjs/finance-ui"
+import { SmartbillInvoicePanel } from "@voyantjs/plugin-smartbill/invoice-ui"
+
+export function InvoicePage({ invoiceId }: { invoiceId: string }) {
+  return (
+    <InvoiceDetailPage
+      id={invoiceId}
+      slots={{
+        integrationsContent: ({ invoice }) => (
+          <SmartbillInvoicePanel
+            invoiceId={invoice.id}
+            sendAction={{
+              onClick: () => requestSmartbillSend(invoice.id),
+            }}
+            retryAction={{
+              onClick: () => requestSmartbillRetry(invoice.id),
+            }}
+          />
+        ),
+      }}
+    />
+  )
+}
+```
+
+`SmartbillInvoicePanel` displays the SmartBill series, number, document type,
+sync status, sync errors, and document/PDF links when the external ref contains
+them. Hosts provide action callbacks such as send, retry, or proforma
+conversion because route shape and permissions remain app-owned. For custom
+layouts, use `useSmartbillInvoiceRef(invoiceId)` together with
+`resolveSmartbillInvoiceReferenceParts(ref)` and
+`getSmartbillInvoiceDocumentLinks(ref)`.
+
 ## Workflow Factories
 
 The package also ships scheduler-agnostic workflow factories for recurring
@@ -126,6 +167,7 @@ finance records.
 | `.` | Barrel re-exports |
 | `./plugin` | `smartbillPlugin(options)` — packaged adapter/subscriber bundle |
 | `./client` | `createSmartbillClient` — `createInvoice`, `cancelInvoice`, `viewPdf`, `getPaymentStatus`, etc. |
+| `./invoice-ui` | Optional React hooks, display helpers, and `SmartbillInvoicePanel` for invoice detail integrations |
 | `./mock` | `createSmartbillMockServer` — stateful local SmartBill-compatible mock for tests |
 | `./workflows` | Proforma conversion polling and drift reconciliation factories |
 | `./types` | SmartBill adapter and bundle types |

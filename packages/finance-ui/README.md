@@ -20,6 +20,12 @@ slots. Use `lineItemsContent`, `paymentsContent`, `creditNotesContent`,
 `attachmentsContent`, or `notesContent` when an app needs fully custom inline
 management controls for that section.
 
+`integrationsContent` is the dedicated invoice integration mount point. It is
+rendered immediately after the invoice summary cards and may be either a React
+node or a render function that receives `{ invoice }`. Provider plugins can
+mount one or more external-reference panels there without replacing core invoice
+sections.
+
 ## Components
 
 - `InvoicesPage`, `InvoiceDetailPage`, and `PaymentsPage` publish

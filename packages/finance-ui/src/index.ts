@@ -26,6 +26,8 @@ export {
   type InvoiceDetailCardProps,
   InvoiceDetailHeader,
   type InvoiceDetailHeaderProps,
+  type InvoiceDetailIntegrationContent,
+  type InvoiceDetailIntegrationSlotContext,
   InvoiceDetailLoading,
   InvoiceDetailPage,
   type InvoiceDetailPageProps,
