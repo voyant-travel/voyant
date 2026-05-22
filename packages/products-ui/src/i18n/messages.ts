@@ -62,6 +62,10 @@ export type ProductsUiMessages = {
       placeholder: string
       empty: string
     }
+    contractTemplate: {
+      placeholder: string
+      empty: string
+    }
   }
   catalogCard: {
     untitled: string
@@ -128,6 +132,7 @@ export type ProductsUiMessages = {
       productType: string
       facility: string
       taxClass: string
+      contractTemplate: string
       sellAmount: string
       costAmount: string
       margin: string
@@ -181,6 +186,7 @@ export type ProductsUiMessages = {
       productType: string
       facility: string
       taxClass: string
+      contractTemplate: string
       visibility: string
       capacityMode: string
       timezone: string
@@ -200,6 +206,7 @@ export type ProductsUiMessages = {
       productTypeSearch: string
       facilitySearch: string
       taxClassSearch: string
+      contractTemplateSearch: string
       timezone: string
       pax: string
       reservationTimeout: string

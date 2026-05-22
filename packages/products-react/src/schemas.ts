@@ -67,6 +67,7 @@ export const productRecordSchema = z.object({
   endDate: z.string().nullable(),
   pax: z.number().int().nullable(),
   productTypeId: z.string().nullable(),
+  contractTemplateId: z.string().nullable().optional(),
   taxClassId: z.string().nullable(),
   customerPaymentPolicy: productPaymentPolicySchema.nullable().optional(),
   tags: z.array(z.string()),

@@ -22,6 +22,7 @@ import {
 import { catalogProductsService } from "../../src/service-catalog.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
+const CUSTOMER_TEMPLATE_ID = "ctpl_01j00000000000000000000000"
 
 async function ensureBrochureColumns(db: PostgresJsDatabase) {
   const statements: SQL[] = [
@@ -30,6 +31,7 @@ async function ensureBrochureColumns(db: PostgresJsDatabase) {
     sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS inclusions_html text`,
     sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS exclusions_html text`,
     sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS terms_html text`,
+    sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS contract_template_id text`,
     sql`ALTER TABLE product_translations ADD COLUMN IF NOT EXISTS inclusions_html text`,
     sql`ALTER TABLE product_translations ADD COLUMN IF NOT EXISTS exclusions_html text`,
     sql`CREATE TABLE IF NOT EXISTS destinations (
@@ -121,6 +123,7 @@ describe.skipIf(!DB_AVAILABLE)("Public product routes", () => {
         sellCurrency: "EUR",
         sellAmountCents: 49900,
         productTypeId: productType.id,
+        contractTemplateId: CUSTOMER_TEMPLATE_ID,
       })
       .returning()
 
@@ -176,6 +179,7 @@ describe.skipIf(!DB_AVAILABLE)("Public product routes", () => {
     expect(body.data[0]?.coverMedia?.url).toContain("barcelona")
     expect(body.data[0]?.locations[0]?.city).toBe("Barcelona")
     expect(body.data[0]?.isFeatured).toBe(true)
+    expect(body.data[0]?.contractTemplateId).toBe(CUSTOMER_TEMPLATE_ID)
   })
 
   it("filters public catalog products by location fields", async () => {

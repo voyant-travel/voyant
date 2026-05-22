@@ -171,6 +171,12 @@ function pickProductSummary(
     exclusions_html:
       stringOr(projection.exclusions_html, null) ?? stringOr(projection.exclusionsHtml, null),
     terms_html: stringOr(projection.terms_html, null) ?? stringOr(projection.termsHtml, null),
+    contract_template_id:
+      stringOr(projection.contract_template_id, null) ??
+      stringOr(projection.contractTemplateId, null),
+    contractTemplateId:
+      stringOr(projection.contractTemplateId, null) ??
+      stringOr(projection.contract_template_id, null),
     highlights: stringArrayOr(projection.highlights, []),
     hero_image_url: stringOr(projection.hero_image_url, null),
     duration_days: numberOr(projection.duration_days, null),

@@ -48,6 +48,11 @@ export const products = pgTable(
     pax: integer("pax"),
     productTypeId: text("product_type_id"),
     /**
+     * Soft reference to legal.contract_templates. This intentionally stays a
+     * plain text column because legal lives in a separate package.
+     */
+    contractTemplateId: text("contract_template_id"),
+    /**
      * Per-product tax class — drives the engine's tax computation at
      * quote time. Plain text (no FK) since `tax_classes` lives in
      * @voyantjs/finance and cross-domain refs go through the link
@@ -73,6 +78,7 @@ export const products = pgTable(
     index("idx_products_facility").on(table.facilityId),
     index("idx_products_supplier").on(table.supplierId),
     index("idx_products_product_type").on(table.productTypeId),
+    index("idx_products_contract_template").on(table.contractTemplateId),
     index("idx_products_status_created").on(table.status, table.createdAt),
     index("idx_products_booking_mode_created").on(table.bookingMode, table.createdAt),
     index("idx_products_capacity_mode_created").on(table.capacityMode, table.createdAt),
