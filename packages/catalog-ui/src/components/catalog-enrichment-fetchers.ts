@@ -164,7 +164,8 @@ export function createCatalogEnrichmentFetchers(
 
     const payload = (await response.json()) as ProductSourcedContentResponse
     const availability = loadSlotAvailability
-      ? await loadSlotAvailability(hit.id).catch(() => new Map<string, CatalogSlotAvailability>())
+      ? // i18n-literal-ok: `=> new Map<…>` trips the JSX-text heuristic — no user-facing copy here.
+        await loadSlotAvailability(hit.id).catch(() => new Map<string, CatalogSlotAvailability>())
       : new Map<string, CatalogSlotAvailability>()
     return mapContentToEnrichment(payload, availability, formatSupplier)
   }
