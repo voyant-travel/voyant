@@ -2,10 +2,12 @@ import { __resetRegistry, workflow } from "@voyantjs/workflows"
 import {
   createInMemoryKv,
   createKvManifestStore,
+  type DurableObjectNamespaceLike,
 } from "@voyantjs/workflows-orchestrator-cloudflare"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { publishManifest, scheduleAutoPublishManifest } from "../auto-publish.js"
+import { type CloudWorkflowsEnv, handleCloudFetch } from "../index.js"
 
 beforeEach(() => {
   __resetRegistry()
@@ -14,6 +16,24 @@ beforeEach(() => {
 afterEach(() => {
   vi.restoreAllMocks()
 })
+
+function stubRunDoNamespace(): DurableObjectNamespaceLike<string> {
+  return {
+    idFromName(name: string) {
+      return name
+    },
+    get() {
+      return {
+        async fetch() {
+          return new Response(JSON.stringify({ status: "ok" }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          })
+        },
+      }
+    },
+  }
+}
 
 function registerWorkflows(): void {
   workflow({ id: "bookings.expire-stale-holds", schedule: { cron: "*/5 * * * *" }, async run() {} })
@@ -154,6 +174,34 @@ describe("scheduleAutoPublishManifest", () => {
     expect(waits).toHaveLength(1)
     await Promise.all(waits)
     expect(getCurrent).toHaveBeenCalledTimes(1)
+  })
+
+  it("only publishes once across many handleCloudFetch calls on the same env (cached store)", async () => {
+    registerWorkflows()
+    const kv = createInMemoryKv()
+    const putSpy = vi.spyOn(kv, "put")
+    const env: CloudWorkflowsEnv = {
+      WORKFLOW_RUN_DO: stubRunDoNamespace(),
+      WORKFLOW_MANIFESTS: kv,
+    }
+
+    const waits: Array<Promise<unknown>> = []
+    const waitUntil = (p: Promise<unknown>) => {
+      waits.push(p)
+    }
+
+    for (let i = 0; i < 5; i++) {
+      const request = new Request(`https://tenant.example/api/runs/run_${i}`, {
+        method: "GET",
+      })
+      await handleCloudFetch(request, env, { waitUntil })
+    }
+    await Promise.all(waits)
+
+    // KV writes: one for the version key, one for the current pointer.
+    // The latch must hold across the remaining 4 requests, so two puts
+    // total — not 10.
+    expect(putSpy).toHaveBeenCalledTimes(2)
   })
 
   it("clears the latch when the publish fails so a future request can retry", async () => {

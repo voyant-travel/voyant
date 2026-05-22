@@ -137,6 +137,8 @@ type EnvCache = {
   dispatcherOptions?: CloudExecutionOptions<CloudWorkflowsEnv>
   stepHandler?: StepHandler
   stepHandlerOptions?: CloudExecutionOptions<CloudWorkflowsEnv>
+  manifestStore?: CfManifestStore
+  manifestStoreKv?: KvNamespaceLike
 }
 
 const envCache = new WeakMap<object, EnvCache>()
@@ -223,9 +225,7 @@ export async function handleCloudFetch<Env extends CloudWorkflowsEnv = CloudWork
     .map((s) => s.trim())
     .filter((s) => s.length > 0)
 
-  const manifestStore: CfManifestStore | undefined = resolvedEnv.WORKFLOW_MANIFESTS
-    ? createKvManifestStore({ kv: resolvedEnv.WORKFLOW_MANIFESTS })
-    : undefined
+  const manifestStore = resolveManifestStore(resolvedEnv)
 
   if (manifestStore && options.autoPublishManifest !== false) {
     const autoPublishCtx: AutoPublishContext = {
@@ -294,6 +294,22 @@ function createWorkflowRunDOClass<Env extends CloudWorkflowsEnv>(
       return options
     }
   }
+}
+
+function resolveManifestStore(env: CloudWorkflowsEnv): CfManifestStore | undefined {
+  const kv = env.WORKFLOW_MANIFESTS
+  if (!kv) return undefined
+  const cache = cacheFor(env)
+  // Re-create when the KV binding identity changes (e.g. a test that
+  // swaps namespaces on the same env reference). In production the
+  // binding is stable across requests so this path is a cache hit and
+  // the WeakSet-based latch in scheduleAutoPublishManifest works as
+  // intended.
+  if (!cache.manifestStore || cache.manifestStoreKv !== kv) {
+    cache.manifestStoreKv = kv
+    cache.manifestStore = createKvManifestStore({ kv })
+  }
+  return cache.manifestStore
 }
 
 function resolveDispatcher<Env extends CloudWorkflowsEnv>(
