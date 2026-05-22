@@ -1,8 +1,59 @@
-import type { InvoiceRecord } from "@voyantjs/finance-react"
+import type { InvoiceAttachmentRecord, InvoiceRecord } from "@voyantjs/finance-react"
 import { renderToStaticMarkup } from "react-dom/server"
-import { describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { InvoiceDetailHeader } from "./components/invoice-detail-page.js"
+const financeReactState = vi.hoisted(() => ({
+  invoice: null as InvoiceRecord | null,
+  attachments: [] as InvoiceAttachmentRecord[],
+}))
+
+vi.mock("@voyantjs/finance-react", () => {
+  const emptyListQuery = () => ({
+    data: { data: [] },
+    isPending: false,
+    refetch: vi.fn(),
+  })
+  const mutation = () => ({
+    isPending: false,
+    mutateAsync: vi.fn(async () => undefined),
+  })
+
+  return {
+    useInvoice: () => ({
+      data: { data: financeReactState.invoice },
+      isError: false,
+      isPending: false,
+    }),
+    useInvoiceLineItems: emptyListQuery,
+    useInvoicePayments: emptyListQuery,
+    useInvoiceCreditNotes: emptyListQuery,
+    useInvoiceAttachments: () => ({
+      data: { data: financeReactState.attachments },
+      isPending: false,
+      refetch: vi.fn(),
+    }),
+    useInvoiceNotes: emptyListQuery,
+    useInvoiceMutation: () => ({
+      create: mutation(),
+      remove: mutation(),
+      update: mutation(),
+    }),
+    useInvoiceLineItemMutation: () => ({ remove: mutation() }),
+    useInvoiceAttachmentMutation: () => ({
+      create: mutation(),
+      remove: mutation(),
+      update: mutation(),
+    }),
+    useInvoiceNoteMutation: mutation,
+  }
+})
+
+import { InvoiceDetailHeader, InvoiceDetailPage } from "./components/invoice-detail-page.js"
+
+beforeEach(() => {
+  financeReactState.invoice = null
+  financeReactState.attachments = []
+})
 
 function invoice(data: Partial<InvoiceRecord> = {}): InvoiceRecord {
   return {
@@ -48,5 +99,29 @@ describe("InvoiceDetailHeader", () => {
     )
 
     expect(html).not.toContain('data-slot="invoice-type-badge"')
+  })
+})
+
+describe("InvoiceDetailPage", () => {
+  it("uses the admin finance route for default attachment download links", () => {
+    financeReactState.invoice = invoice()
+    financeReactState.attachments = [
+      {
+        id: "att_123",
+        invoiceId: "inv_123",
+        kind: "supporting_document",
+        name: "boarding-pass.pdf",
+        storageKey: "invoices/inv_123/boarding-pass.pdf",
+        checksum: null,
+        metadata: null,
+        mimeType: "application/pdf",
+        fileSize: 1234,
+        createdAt: "2026-05-22T00:00:00.000Z",
+      },
+    ]
+
+    const html = renderToStaticMarkup(<InvoiceDetailPage id="inv_123" />)
+
+    expect(html).toContain('href="/v1/admin/finance/invoice-attachments/att_123/download"')
   })
 })
