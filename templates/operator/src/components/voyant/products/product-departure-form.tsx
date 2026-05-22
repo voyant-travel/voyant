@@ -218,10 +218,20 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
     const initialPax =
       !values.unlimited && typeof values.initialPax === "number" ? values.initialPax : null
 
-    const nightsOverride = typeof values.nights === "number" ? values.nights : null
-    const daysOverride = typeof values.days === "number" ? values.days : null
+    // Treat blank / zero overrides as `null` so the slot card doesn't show
+    // "0 nights / 0 days" after the operator clears the override (#1087 side
+    // bug). The schema accepts `null` for both; sending `0` was the bug.
+    const nightsOverride =
+      typeof values.nights === "number" && values.nights > 0 ? values.nights : null
+    const daysOverride = typeof values.days === "number" && values.days > 0 ? values.days : null
 
-    const payload = {
+    // `remainingPax` is intentionally omitted on edit — the slot service is
+    // the source of truth for that field. Concurrent flows (holds, bookings,
+    // refunds) mutate it atomically while a form is open, so any snapshot
+    // we computed in JS would be stale by save time (#1087, Codex review on
+    // #1088). The backend's `updateSlot` recomputes remaining_pax in the
+    // same UPDATE statement when initialPax / unlimited change.
+    const baseFields = {
       productId,
       itineraryId: values.itineraryId ? values.itineraryId : null,
       dateLocal: values.startDate,
@@ -231,16 +241,17 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
       status: values.status,
       unlimited: values.unlimited,
       initialPax,
-      remainingPax: initialPax,
       nights: nightsOverride,
       days: daysOverride,
       notes: values.notes || null,
     }
 
     if (isEditing) {
-      await api.patch(`/v1/availability/slots/${slot.id}`, payload)
+      await api.patch(`/v1/availability/slots/${slot.id}`, baseFields)
     } else {
-      await api.post("/v1/availability/slots", payload)
+      // New slots haven't been booked against yet, so seeding remainingPax
+      // from initialPax is correct on create.
+      await api.post("/v1/availability/slots", { ...baseFields, remainingPax: initialPax })
     }
     onSuccess()
   }
