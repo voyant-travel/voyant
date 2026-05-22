@@ -7,12 +7,15 @@ import { cn } from "@voyantjs/ui/lib/utils"
 import { Image as ImageIcon } from "lucide-react"
 import type { ReactNode } from "react"
 
+import { useMemo } from "react"
+
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 import type {
   CatalogDetailEnrichment,
   CatalogDetailRenderSlot,
   CatalogDetailSheetProps,
 } from "./catalog-detail-sheet.js"
+import type { CatalogEnrichmentFetchers } from "./catalog-enrichment-fetchers.js"
 import {
   type CatalogFilterField,
   CatalogSearchPage,
@@ -47,7 +50,23 @@ export interface CatalogPageProps {
     option: NonNullable<CatalogDetailEnrichment["options"]>[number],
   ) => void
   onOpenProductEditor?: (hit: CatalogSearchHit) => void
+  /**
+   * Explicit detail-enrichment callback. When set, takes precedence over
+   * `enrichmentFetchers` — pass this when you need full control over the
+   * request (auth headers, locale resolution, side-channel data). The
+   * default integration uses `enrichmentFetchers` for the common case.
+   */
   onLoadProductDetail?: (hit: CatalogSearchHit) => Promise<CatalogDetailEnrichment | null>
+  /**
+   * Declarative detail-enrichment fetchers. Build with
+   * `createCatalogEnrichmentFetchers({ baseUrl, … })`. When provided
+   * (and `onLoadProductDetail` is not), the detail sheet calls
+   * `fetchers.loadProductDetail` on open. This is the recommended way
+   * to wire up the sheet — it pins the route contract with
+   * `createProductContentRoutes` so a missing server-side mount is
+   * caught immediately instead of rendering an empty sheet.
+   */
+  enrichmentFetchers?: CatalogEnrichmentFetchers
   detailSheetWidth?: CatalogDetailSheetProps["width"]
   detailHeaderExtras?: CatalogDetailSheetProps["headerExtras"]
   renderDetailBrochure?: CatalogDetailRenderSlot
@@ -84,6 +103,7 @@ export function CatalogPage({
   onBookOption,
   onOpenProductEditor,
   onLoadProductDetail,
+  enrichmentFetchers,
   detailSheetWidth,
   detailHeaderExtras,
   renderDetailBrochure,
@@ -96,6 +116,10 @@ export function CatalogPage({
   className,
 }: CatalogPageProps) {
   const messages = useCatalogUiMessagesOrDefault().catalogPage
+  const resolvedLoadProductDetail = useMemo(
+    () => onLoadProductDetail ?? enrichmentFetchers?.loadProductDetail,
+    [onLoadProductDetail, enrichmentFetchers],
+  )
   const supplierFormatter = (value: unknown) =>
     typeof value === "string" ? formatSupplier(value) : String(value ?? "")
   const sourceKindFormatter = (value: unknown) =>
@@ -138,7 +162,7 @@ export function CatalogPage({
             ]
           : []),
       ],
-      onLoadDetail: onLoadProductDetail,
+      onLoadDetail: resolvedLoadProductDetail,
       onBookDeparture: onBookDeparture
         ? (hit, departure) => onBookDeparture(hit, "products", departure)
         : undefined,
