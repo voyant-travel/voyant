@@ -1,5 +1,12 @@
 # @voyantjs/crm-react
 
+## 0.67.0
+
+### Patch Changes
+
+- @voyantjs/crm@0.67.0
+- @voyantjs/react@0.67.0
+
 ## 0.66.6
 
 ### Patch Changes
