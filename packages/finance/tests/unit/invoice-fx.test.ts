@@ -1,3 +1,4 @@
+import { createContainer } from "@voyantjs/core"
 import { describe, expect, it, vi } from "vitest"
 
 import {
@@ -99,6 +100,32 @@ describe("invoice FX", () => {
       baseCurrency: "EUR",
       quoteCurrency: "RON",
       date: "2026-05-22",
+      rate: 4.97,
+    })
+  })
+
+  it("falls back to route options when the container has no finance runtime", async () => {
+    const resolveInvoiceExchangeRate = vi.fn(async () => 4.97)
+    const app = createInvoiceFxRoutes({ resolveInvoiceExchangeRate })
+    app.use("*", async (c, next) => {
+      c.set("container", createContainer())
+      await next()
+    })
+
+    const response = await app.request("/invoice-fx-rate?baseCurrency=eur&quoteCurrency=ron")
+    const body = (await response.json()) as {
+      data: { baseCurrency: string; quoteCurrency: string; rate: number }
+    }
+
+    expect(response.status).toBe(200)
+    expect(resolveInvoiceExchangeRate).toHaveBeenCalledWith({
+      baseCurrency: "EUR",
+      quoteCurrency: "RON",
+      date: undefined,
+    })
+    expect(body.data).toEqual({
+      baseCurrency: "EUR",
+      quoteCurrency: "RON",
       rate: 4.97,
     })
   })

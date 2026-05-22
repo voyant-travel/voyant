@@ -109,11 +109,12 @@ type InvoiceFxRouteEnv = Env & {
 function getInvoiceFxRuntime(
   options: InvoiceFxRouteOptions | undefined,
   bindings: Record<string, unknown>,
-  resolveFromContainer?: (key: string) => FinanceRouteRuntime | undefined,
+  container?: ModuleContainer,
 ) {
   return (
-    resolveFromContainer?.(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY) ??
-    buildFinanceRouteRuntime(bindings, options)
+    (container?.has(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
+      ? container.resolve<FinanceRouteRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
+      : undefined) ?? buildFinanceRouteRuntime(bindings, options)
   )
 }
 
@@ -206,13 +207,13 @@ export function createVoyantDataFxExchangeRateResolver(
 export function createInvoiceFxRoutes(options: InvoiceFxRouteOptions = {}) {
   return new HonoApp<InvoiceFxRouteEnv>()
     .get("/invoice-fx-settings", async (c) => {
-      const runtime = getInvoiceFxRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      const runtime = getInvoiceFxRuntime(options, c.env, c.var.container)
       return c.json({
         data: await resolveInvoiceFxSettingsOrDefault(c.get("db"), runtime),
       })
     })
     .patch("/invoice-fx-settings", async (c) => {
-      const runtime = getInvoiceFxRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      const runtime = getInvoiceFxRuntime(options, c.env, c.var.container)
       if (!runtime.updateInvoiceFxSettings) {
         throw new ApiHttpError("Invoice FX settings updates are not configured", {
           status: 501,
@@ -232,7 +233,7 @@ export function createInvoiceFxRoutes(options: InvoiceFxRouteOptions = {}) {
       })
     })
     .get("/invoice-fx-rate", async (c) => {
-      const runtime = getInvoiceFxRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      const runtime = getInvoiceFxRuntime(options, c.env, c.var.container)
       if (!runtime.resolveInvoiceExchangeRate) {
         throw new ApiHttpError("Invoice FX rate resolution is not configured", {
           status: 501,
