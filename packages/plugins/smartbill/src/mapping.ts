@@ -132,6 +132,10 @@ function buildSmartbillInvoiceBody(
   if (typeof event.dueDate === "string") body.dueDate = event.dueDate
   if (typeof event.issueDate === "string") body.issueDate = event.issueDate
   if (typeof event.deliveryDate === "string") body.deliveryDate = event.deliveryDate
+  const exchangeRate = asNumberOrUndefined(
+    event.effectiveRate ?? event.fxRate ?? event.exchangeRate,
+  )
+  if (exchangeRate) body.exchangeRate = exchangeRate
 
   const mentions = options.hasMentionsOverride
     ? options.mentions
@@ -142,6 +146,11 @@ function buildSmartbillInvoiceBody(
     ? options.observations
     : asStringOrUndefined(event.observations)
   if (observations) body.observations = observations
+
+  const fxCommissionMention = asStringOrUndefined(event.fxCommissionInvoiceMention)
+  if (fxCommissionMention && asNumber(event.fxCommissionBps, 0) > 0) {
+    body.mentions = [body.mentions, fxCommissionMention].filter(Boolean).join("\n")
+  }
 
   if (options.art311SpecialRegime) {
     body.mentions = [
@@ -270,4 +279,9 @@ function asStringOrUndefined(value: unknown): string | undefined {
 function asNumber(value: unknown, fallback: number): number {
   if (typeof value === "number" && !Number.isNaN(value)) return value
   return fallback
+}
+
+function asNumberOrUndefined(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) return value
+  return undefined
 }

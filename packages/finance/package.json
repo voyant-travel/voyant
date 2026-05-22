@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./action-ledger-drift": "./src/action-ledger-drift.ts",
+    "./invoice-fx": "./src/invoice-fx.ts",
     "./payment-link": "./src/payment-link.ts",
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
@@ -55,6 +56,11 @@
         "types": "./dist/action-ledger-drift.d.ts",
         "import": "./dist/action-ledger-drift.js",
         "default": "./dist/action-ledger-drift.js"
+      },
+      "./invoice-fx": {
+        "types": "./dist/invoice-fx.d.ts",
+        "import": "./dist/invoice-fx.js",
+        "default": "./dist/invoice-fx.js"
       },
       "./payment-link": {
         "types": "./dist/payment-link.d.ts",

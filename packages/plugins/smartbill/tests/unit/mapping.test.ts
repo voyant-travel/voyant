@@ -191,6 +191,33 @@ describe("mapVoyantInvoiceToSmartbill", () => {
     expect(result.observations).toBe("Test obs")
   })
 
+  it("maps effective FX rate to SmartBill exchangeRate", () => {
+    const result = mapVoyantInvoiceToSmartbill(
+      event({
+        currency: "EUR",
+        fxRate: 4.97,
+        fxCommissionBps: 200,
+        effectiveRate: 5.0694,
+      }),
+      defaultOptions,
+    )
+
+    expect(result.exchangeRate).toBe(5.0694)
+  })
+
+  it("appends FX commission mention when commission is non-zero", () => {
+    const result = mapVoyantInvoiceToSmartbill(
+      event({
+        mentions: "Existing mention",
+        fxCommissionBps: 200,
+        fxCommissionInvoiceMention: "2% comision curs risc valutar",
+      }),
+      defaultOptions,
+    )
+
+    expect(result.mentions).toBe("Existing mention\n2% comision curs risc valutar")
+  })
+
   it("resolves synchronous mapping callbacks", () => {
     const result = mapVoyantInvoiceToSmartbill(event({ channel: "proforma" }), {
       ...defaultOptions,
