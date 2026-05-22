@@ -1,5 +1,18 @@
 # @voyantjs/checkout-ui
 
+## 0.64.1
+
+### Patch Changes
+
+- 572dde4: Add configurable customer-facing payment-link base URLs for generated links and notification template context.
+- Updated dependencies [572dde4]
+  - @voyantjs/checkout@0.64.1
+  - @voyantjs/checkout-react@0.64.1
+  - @voyantjs/finance@0.64.1
+  - @voyantjs/finance-react@0.64.1
+  - @voyantjs/i18n@0.64.1
+  - @voyantjs/ui@0.64.1
+
 ## 0.64.0
 
 ### Patch Changes
