@@ -1,5 +1,19 @@
 # @voyantjs/legal-ui
 
+## 0.72.0
+
+### Minor Changes
+
+- 856da86: Add a package-level booking contract generation endpoint and wire the booking contract card to generate from the default template and active number series.
+
+### Patch Changes
+
+- Updated dependencies [856da86]
+  - @voyantjs/crm-react@0.72.0
+  - @voyantjs/i18n@0.72.0
+  - @voyantjs/legal-react@0.72.0
+  - @voyantjs/ui@0.72.0
+
 ## 0.71.0
 
 ### Patch Changes
