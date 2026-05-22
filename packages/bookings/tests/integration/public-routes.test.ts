@@ -15,6 +15,7 @@ import { publicBookingRoutes } from "../../src/routes-public.js"
 import {
   bookingDocuments,
   bookingFulfillments,
+  bookingItems,
   bookings,
   bookingTravelers,
 } from "../../src/schema.js"
@@ -183,6 +184,7 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
 
   it("creates a public booking session from a storefront reservation request", async () => {
     const slot = await seedSlot()
+    const pricing = await seedPublicPricing(slot.productId, slot.optionId)
 
     const res = await app.request("/sessions", {
       method: "POST",
@@ -196,6 +198,7 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
             totalSellAmountCents: 24000,
             productId: slot.productId,
             optionId: slot.optionId,
+            optionUnitId: pricing.unit.id,
           },
         ],
         travelers: [
@@ -224,6 +227,21 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
       .where(eq(availabilitySlotsRef.id, slot.id))
 
     expect(slotAfter?.remainingPax).toBe(8)
+
+    const [item] = await db
+      .select()
+      .from(bookingItems)
+      .where(eq(bookingItems.bookingId, body.data.sessionId))
+
+    expect(item).toEqual(
+      expect.objectContaining({
+        productNameSnapshot: pricing.product.name,
+        optionNameSnapshot: pricing.option.name,
+        unitNameSnapshot: pricing.unit.name,
+        availabilitySlotId: slot.id,
+      }),
+    )
+    expect(item?.departureLabelSnapshot).toContain("2026")
   })
 
   it("updates a booking session contact state and derives pax from traveler participants", async () => {
