@@ -1,5 +1,12 @@
 # @voyantjs/notifications-react
 
+## 0.72.0
+
+### Patch Changes
+
+- @voyantjs/notifications@0.72.0
+- @voyantjs/react@0.72.0
+
 ## 0.71.0
 
 ### Patch Changes
