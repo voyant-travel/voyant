@@ -1,5 +1,14 @@
 # @voyantjs/storefront-sdk
 
+## 0.66.5
+
+### Patch Changes
+
+- Updated dependencies [ee36ef5]
+  - @voyantjs/bookings@0.66.5
+  - @voyantjs/checkout@0.66.5
+  - @voyantjs/storefront@0.66.5
+
 ## 0.66.4
 
 ### Patch Changes
