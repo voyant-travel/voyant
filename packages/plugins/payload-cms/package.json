@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/plugin-payload-cms",
-  "version": "0.73.1",
+  "version": "0.74.0",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {

@@ -1,5 +1,29 @@
 # @voyantjs/bookings-ui
 
+## 0.74.0
+
+### Minor Changes
+
+- 36e3ac8: Add `BookingQuickViewSheet` — a side-sheet for peeking at a booking from places like allocation grids, calendars, or activity feeds without leaving the current page (issue #1083). Takes `{ bookingId, open, onOpenChange, onViewFull }` and renders the canonical operator summary: booking number + status badge, sell amount, dates / pax row, payer name + phone, then five quick sections — **Travelers** (with category badges and `count/expected` counter), **Payments** (Paid / Remaining derived from completed payments vs. sell amount), **Invoices**, **Payment schedule** (with `paid/total paid` counter), and **Contracts** (with the "Not generated." empty state) — plus a "View full booking" footer that hands the loaded `BookingRecord` back to the host. Lets operator templates drop their local clones.
+
+### Patch Changes
+
+- @voyantjs/availability-react@0.74.0
+- @voyantjs/bookings-react@0.74.0
+- @voyantjs/catalog@0.74.0
+- @voyantjs/catalog-react@0.74.0
+- @voyantjs/crm-react@0.74.0
+- @voyantjs/crm-ui@0.74.0
+- @voyantjs/extras-react@0.74.0
+- @voyantjs/finance-react@0.74.0
+- @voyantjs/i18n@0.74.0
+- @voyantjs/identity-react@0.74.0
+- @voyantjs/legal-react@0.74.0
+- @voyantjs/pricing-react@0.74.0
+- @voyantjs/products-react@0.74.0
+- @voyantjs/suppliers-react@0.74.0
+- @voyantjs/ui@0.74.0
+
 ## 0.73.1
 
 ### Patch Changes
