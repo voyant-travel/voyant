@@ -1,5 +1,22 @@
 # @voyantjs/storefront
 
+## 0.66.5
+
+### Patch Changes
+
+- Updated dependencies [ee36ef5]
+- Updated dependencies [2a40d26]
+  - @voyantjs/availability@0.66.5
+  - @voyantjs/bookings@0.66.5
+  - @voyantjs/core@0.66.5
+  - @voyantjs/crm@0.66.5
+  - @voyantjs/extras@0.66.5
+  - @voyantjs/finance@0.66.5
+  - @voyantjs/hono@0.66.5
+  - @voyantjs/pricing@0.66.5
+  - @voyantjs/products@0.66.5
+  - @voyantjs/sellability@0.66.5
+
 ## 0.66.4
 
 ### Patch Changes

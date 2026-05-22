@@ -1,5 +1,16 @@
 # @voyantjs/bookings
 
+## 0.66.5
+
+### Patch Changes
+
+- ee36ef5: Populate booking item catalog snapshots when reserving public booking sessions.
+  - @voyantjs/action-ledger@0.66.5
+  - @voyantjs/core@0.66.5
+  - @voyantjs/db@0.66.5
+  - @voyantjs/hono@0.66.5
+  - @voyantjs/utils@0.66.5
+
 ## 0.66.4
 
 ### Patch Changes
