@@ -1,5 +1,13 @@
 # @voyantjs/workflows-cloud-adapter
 
+## 0.69.1
+
+### Patch Changes
+
+- @voyantjs/workflows@0.69.1
+- @voyantjs/workflows-orchestrator@0.69.1
+- @voyantjs/workflows-orchestrator-cloudflare@0.69.1
+
 ## 0.69.0
 
 ### Minor Changes

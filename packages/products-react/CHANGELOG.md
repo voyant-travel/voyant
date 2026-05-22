@@ -1,5 +1,12 @@
 # @voyantjs/products-react
 
+## 0.69.1
+
+### Patch Changes
+
+- @voyantjs/products@0.69.1
+- @voyantjs/react@0.69.1
+
 ## 0.69.0
 
 ### Patch Changes

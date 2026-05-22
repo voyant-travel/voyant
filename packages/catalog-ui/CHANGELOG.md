@@ -1,5 +1,13 @@
 # @voyantjs/catalog-ui
 
+## 0.69.1
+
+### Patch Changes
+
+- @voyantjs/catalog-react@0.69.1
+- @voyantjs/i18n@0.69.1
+- @voyantjs/ui@0.69.1
+
 ## 0.69.0
 
 ### Patch Changes
