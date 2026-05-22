@@ -10,6 +10,10 @@ export {
   WorkflowRunsPageSkeleton,
 } from "./components/workflow-runs-page.js"
 export {
+  WorkflowSchedulesPage,
+  type WorkflowSchedulesPageProps,
+} from "./components/workflow-schedules-page.js"
+export {
   getWorkflowRunsUiI18n,
   getWorkflowRunsUiI18n as getWorkflowsUiI18n,
   resolveWorkflowRunsUiMessages,
@@ -35,6 +39,14 @@ export {
   workflowRunsUiRo,
   workflowRunsUiRo as workflowsUiRo,
 } from "./i18n/index.js"
+export {
+  createWorkflowSchedulesApiClient,
+  type ListWorkflowSchedulesResponse,
+  type WorkflowScheduleDecl,
+  type WorkflowScheduleSummary,
+  type WorkflowSchedulesApi,
+  type WorkflowSchedulesApiClientOptions,
+} from "./schedules-client.js"
 export type {
   ListWorkflowRunsQuery,
   ListWorkflowRunsResponse,

@@ -83,4 +83,42 @@ export type WorkflowRunsUiMessages = {
   format: {
     relativeNow: string
   }
+  schedules: {
+    title: string
+    subtitle: string
+    environmentLabel: string
+    versionLabel: string
+    workflowColumn: string
+    scheduleColumn: string
+    nextRunColumn: string
+    lastRunColumn: string
+    statusColumn: string
+    actionsColumn: string
+    enabled: string
+    disabledByRegistration: string
+    disabledByEnvironment: string
+    disabledByEnvFlag: string
+    envFlagOff: string
+    envFlagOn: string
+    eventDriven: string
+    cron: (expr: string, timezone: string) => string
+    every: (interval: string) => string
+    at: (timestamp: string) => string
+    triggerNow: string
+    triggering: string
+    triggerSuccess: string
+    triggerFailed: string
+    refresh: string
+    loading: string
+    loadError: string
+    empty: string
+    inFuture: (relative: string) => string
+    inPast: (relative: string) => string
+    notScheduled: string
+    lastRunSucceeded: (relative: string) => string
+    lastRunFailed: (relative: string) => string
+    lastRunRunning: string
+    lastRunCancelled: (relative: string) => string
+    lastRunNone: string
+  }
 }

@@ -22,6 +22,7 @@ import {
 import { handleIngestEvent } from "./event-handler.js"
 import { handleGetManifest, handleRegisterManifest } from "./manifest-handler.js"
 import type { CfManifestStore } from "./manifest-kv-store.js"
+import { handleGetSchedules } from "./schedule-handler.js"
 
 const DEFAULT_TENANT_META = {
   tenantId: "default",
@@ -54,10 +55,19 @@ export interface WorkerFetchDeps<Id = unknown> {
   now?: () => number
   /**
    * Optional KV-backed manifest store. When set, the worker also serves
-   * `/api/manifests` and `/api/events`. When unset, those routes 404 —
-   * useful for orchestrators that only expose the run surface.
+   * `/api/manifests`, `/api/schedules`, and `/api/events`. When unset,
+   * those routes 404 — useful for orchestrators that only expose the
+   * run surface.
    */
   manifestStore?: CfManifestStore
+  /**
+   * Optional process-wide schedules toggle reported by
+   * `/api/schedules/:env`. Used by the workflow-schedules UI to show
+   * "schedules disabled by env flag" when the orchestrator is running
+   * with `VOYANT_WORKFLOWS_ENABLE_SCHEDULES` (or equivalent) turned off.
+   * When omitted, the schedules response leaves the flag out.
+   */
+  schedulesEnabledByEnv?: boolean
   /**
    * Tenant metadata stamped on event-triggered runs. Defaults to
    * `{ tenantId: "default", projectId: "default", organizationId: "default" }`.
@@ -115,6 +125,21 @@ export async function handleWorkerRequest<Id>(
       const env = decodeURIComponent(manifestMatch[1] ?? "")
       return handleGetManifest(env, {
         manifestStore: deps.manifestStore,
+        logger: deps.logger,
+      })
+    }
+
+    // GET /api/schedules/:env — aggregate scheduled-workflow view.
+    const schedulesMatch = url.pathname.match(/^\/api\/schedules\/([^/]+)$/)
+    if (schedulesMatch) {
+      if (!deps.manifestStore) {
+        return json(404, { error: "schedules_not_configured" })
+      }
+      const env = decodeURIComponent(schedulesMatch[1] ?? "")
+      return handleGetSchedules(env, {
+        manifestStore: deps.manifestStore,
+        schedulesEnabledByEnv: deps.schedulesEnabledByEnv,
+        now: deps.now,
         logger: deps.logger,
       })
     }
