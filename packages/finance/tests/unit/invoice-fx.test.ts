@@ -29,6 +29,32 @@ describe("invoice FX", () => {
     })
   })
 
+  it("omits FX context when exchange-rate resolution fails", async () => {
+    const error = new Error("FX provider timeout")
+    const onInvoiceFxResolutionError = vi.fn()
+    const context = await resolveInvoiceFxContext(
+      {} as never,
+      { currency: "eur", issueDate: "2026-05-22" },
+      {
+        invoiceFxSettings: {
+          baseCurrency: "ron",
+          fxCommissionBps: 200,
+        },
+        resolveInvoiceExchangeRate: async () => {
+          throw error
+        },
+        onInvoiceFxResolutionError,
+      },
+    )
+
+    expect(context).toBeNull()
+    expect(onInvoiceFxResolutionError).toHaveBeenCalledWith(error, {
+      baseCurrency: "EUR",
+      quoteCurrency: "RON",
+      date: "2026-05-22",
+    })
+  })
+
   it("uses the Voyant Data FX pair route for exchange-rate resolution", async () => {
     const fetch = vi.fn<typeof globalThis.fetch>(async () => {
       return new Response(JSON.stringify({ conversionRate: 4.97 }), {

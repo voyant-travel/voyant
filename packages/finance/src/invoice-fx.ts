@@ -35,11 +35,17 @@ export type ResolveInvoiceExchangeRate = (
   input: ResolveInvoiceExchangeRateInput,
 ) => number | null | undefined | Promise<number | null | undefined>
 
+export type HandleInvoiceFxResolutionError = (
+  error: unknown,
+  input: ResolveInvoiceExchangeRateInput,
+) => void | Promise<void>
+
 export interface InvoiceFxOptions {
   invoiceFxSettings?: InvoiceFxSettings | null
   resolveInvoiceFxSettings?: ResolveInvoiceFxSettings
   updateInvoiceFxSettings?: UpdateInvoiceFxSettings
   resolveInvoiceExchangeRate?: ResolveInvoiceExchangeRate
+  onInvoiceFxResolutionError?: HandleInvoiceFxResolutionError
 }
 
 export interface InvoiceFxRouteOptions extends InvoiceFxOptions {}
@@ -106,11 +112,19 @@ export async function resolveInvoiceFxContext(
   if (!baseCurrency || !invoiceCurrency || invoiceCurrency === baseCurrency) return null
   if (!options.resolveInvoiceExchangeRate) return null
 
-  const fxRate = await options.resolveInvoiceExchangeRate({
+  const rateInput = {
     baseCurrency: invoiceCurrency,
     quoteCurrency: baseCurrency,
     date: toDateString(invoice.issueDate),
-  })
+  }
+  let fxRate: number | null | undefined
+
+  try {
+    fxRate = await options.resolveInvoiceExchangeRate(rateInput)
+  } catch (error) {
+    await notifyInvoiceFxResolutionError(options, error, rateInput)
+    return null
+  }
 
   if (typeof fxRate !== "number" || !Number.isFinite(fxRate) || fxRate <= 0) return null
 
@@ -216,6 +230,18 @@ async function resolveConfiguredInvoiceFxSettings(
 function normalizeCurrency(value: string | null | undefined) {
   const normalized = value?.trim().toUpperCase()
   return normalized ? normalized : null
+}
+
+async function notifyInvoiceFxResolutionError(
+  options: InvoiceFxOptions,
+  error: unknown,
+  input: ResolveInvoiceExchangeRateInput,
+) {
+  try {
+    await options.onInvoiceFxResolutionError?.(error, input)
+  } catch {
+    // FX enrichment is optional; a reporting hook must not fail invoice issuance.
+  }
 }
 
 function normalizeBasisPoints(value: number | null | undefined) {
