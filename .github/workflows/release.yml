@@ -52,6 +52,26 @@ jobs:
       - name: Build registry artifacts
         run: pnpm registry:build
 
+      # Rescue hatch for when the auto-release loop falls behind npm — devs
+      # land changesets faster than the release PR can merge, so the `release`
+      # job stays in "create release PR" mode and never publishes the
+      # version bumps that already shipped to main's package.json.
+      # `changeset publish` is a no-op for packages whose version is already
+      # on npm, so this is safe to re-run.
+      - name: Verify release train
+        run: pnpm verify:release-train
+
+      - name: Verify package exports
+        run: pnpm verify:package-exports
+
+      - name: Verify publish tarballs
+        env:
+          VOYANT_PACK_REUSE_DIST: "1"
+        run: pnpm verify:publish-tarballs
+
+      - name: Publish pending versions to npm
+        run: pnpm release
+
       - name: Determine release version
         id: version
         run: |
