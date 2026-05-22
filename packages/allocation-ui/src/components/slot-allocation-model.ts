@@ -1,4 +1,9 @@
-import type { AllocationManifestTraveler, AllocationResource } from "@voyantjs/availability-react"
+import {
+  type AllocationManifestTraveler,
+  type AllocationResource,
+  type SeatLayoutSpec,
+  seatLayoutSpecSchema,
+} from "@voyantjs/availability-react"
 
 import type { AllocationUiMessages } from "../i18n/index.js"
 
@@ -102,16 +107,26 @@ export function splitSharingGroups(travelers: AllocationManifestTraveler[], kind
   return split
 }
 
+export interface VehicleSeatGroup {
+  id: string
+  label: string
+  sortOrder: number
+  seats: AllocationResource[]
+  /**
+   * Parsed 2D layout for this vehicle when the operator drew a custom map
+   * via `<SeatMapBuilder />`. Renderers honor this to draw aisles, doors,
+   * and voids; absent means fall back to the row-grouped layout.
+   */
+  layoutSpec: SeatLayoutSpec | null
+}
+
 export function groupSeatsByVehicle(
   seats: AllocationResource[],
   vehicles: AllocationResource[],
   messages: AllocationUiMessages,
-) {
+): VehicleSeatGroup[] {
   const vehiclesById = new Map(vehicles.map((vehicle) => [vehicle.id, vehicle]))
-  const grouped = new Map<
-    string,
-    { id: string; label: string; sortOrder: number; seats: AllocationResource[] }
-  >()
+  const grouped = new Map<string, VehicleSeatGroup>()
 
   for (const seat of seats) {
     const parentId = seat.parentId ?? "ungrouped"
@@ -123,6 +138,7 @@ export function groupSeatsByVehicle(
           id: parentId,
           label: parent?.label ?? messages.vehicle,
           sortOrder: parent?.sortOrder ?? 0,
+          layoutSpec: parseLayoutSpecFromFlags(parent?.flags ?? null),
           seats: [],
         })
         .get(parentId)
@@ -136,6 +152,13 @@ export function groupSeatsByVehicle(
       seats: group.seats.sort(compareSeatResources),
     }))
     .sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label))
+}
+
+function parseLayoutSpecFromFlags(flags: Record<string, unknown> | null): SeatLayoutSpec | null {
+  const raw = flags?.layoutSpec
+  if (!raw) return null
+  const parsed = seatLayoutSpecSchema.safeParse(raw)
+  return parsed.success ? parsed.data : null
 }
 
 export function seatRows(seats: AllocationResource[]) {

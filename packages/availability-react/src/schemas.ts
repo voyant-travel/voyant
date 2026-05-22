@@ -292,6 +292,26 @@ export const slotAllocationManifestSchema = z.object({
 export type SlotAllocationManifest = z.infer<typeof slotAllocationManifestSchema>
 export const slotAllocationManifestResponse = singleEnvelope(slotAllocationManifestSchema)
 
+/**
+ * 2D seat layout for vehicle_seat templates. Mirrors `seatLayoutSpecSchema`
+ * in @voyantjs/availability; the schemas are kept in sync by intent because
+ * availability-react can't depend on the server-side package.
+ */
+export const seatLayoutCellSchema = z.enum(["seat", "aisle", "door", "void"])
+export type SeatLayoutCell = z.infer<typeof seatLayoutCellSchema>
+
+export const seatLayoutSpecSchema = z.object({
+  rows: z
+    .array(
+      z.object({
+        cells: z.array(seatLayoutCellSchema).min(1).max(20),
+      }),
+    )
+    .min(1)
+    .max(40),
+})
+export type SeatLayoutSpec = z.infer<typeof seatLayoutSpecSchema>
+
 export const resourceTemplateSchema = z.object({
   id: z.string(),
   productOptionId: z.string(),

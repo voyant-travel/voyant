@@ -1,6 +1,8 @@
 "use client"
 
+import { SeatMapBuilder } from "@voyantjs/allocation-ui"
 import {
+  type SeatLayoutSpec,
   useProductResourceTemplates,
   useResourceTemplateMutation,
 } from "@voyantjs/availability-react"
@@ -27,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@voyantjs/ui/components"
-import { Bed, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
+import { Armchair, Bed, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
@@ -80,26 +82,38 @@ export function OptionResourceTemplatesPanel({
   }, [data?.data, optionId])
 
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [seatMapOpen, setSeatMapOpen] = useState(false)
   const [editingKind, setEditingKind] = useState<string | null>(null)
   const [kindValue, setKindValue] = useState<string>("room")
   const [capacityValue, setCapacityValue] = useState<number>(2)
   const [namePatternValue, setNamePatternValue] = useState<string>("Room {sequence}")
+  const [layoutSpec, setLayoutSpec] = useState<SeatLayoutSpec | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const derivedSeatCount = useMemo(() => countSeats(layoutSpec), [layoutSpec])
+  const usingSeatMap = kindValue === "vehicle_seat" && layoutSpec !== null
 
   function openCreate() {
     setEditingKind(null)
     setKindValue("room")
     setCapacityValue(2)
     setNamePatternValue("Room {sequence}")
+    setLayoutSpec(null)
     setError(null)
     setDialogOpen(true)
   }
 
-  function openEdit(template: { kind: string; capacity: number; namePattern: string }) {
+  function openEdit(template: {
+    kind: string
+    capacity: number
+    namePattern: string
+    flags: Record<string, unknown>
+  }) {
     setEditingKind(template.kind)
     setKindValue(template.kind)
     setCapacityValue(template.capacity)
     setNamePatternValue(template.namePattern)
+    setLayoutSpec(extractLayoutSpec(template.flags))
     setError(null)
     setDialogOpen(true)
   }
@@ -109,17 +123,23 @@ export function OptionResourceTemplatesPanel({
     setError(null)
     const trimmedKind = kindValue.trim()
     const trimmedPattern = namePatternValue.trim()
-    if (!trimmedKind || !trimmedPattern || capacityValue < 1) {
+    const effectiveCapacity = usingSeatMap ? derivedSeatCount : capacityValue
+    if (!trimmedKind || !trimmedPattern || effectiveCapacity < 1) {
       setError(t.validation)
       return
+    }
+    const flags: Record<string, unknown> = {}
+    if (trimmedKind === "vehicle_seat" && layoutSpec) {
+      flags.layoutSpec = layoutSpec
     }
     try {
       await upsert.mutateAsync({
         optionId,
         kind: trimmedKind,
         input: {
-          capacity: capacityValue,
+          capacity: effectiveCapacity,
           namePattern: trimmedPattern,
+          flags,
         },
       })
       setDialogOpen(false)
@@ -179,6 +199,9 @@ export function OptionResourceTemplatesPanel({
                         pattern: template.namePattern,
                       })}
                     </span>
+                    {template.kind === "vehicle_seat" ? (
+                      <SeatMapSummaryBadge flags={template.flags} messages={t} />
+                    ) : null}
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -191,6 +214,7 @@ export function OptionResourceTemplatesPanel({
                         kind: template.kind,
                         capacity: template.capacity,
                         namePattern: template.namePattern,
+                        flags: template.flags,
                       })
                     }
                   >
@@ -259,15 +283,59 @@ export function OptionResourceTemplatesPanel({
                   />
                 ) : null}
               </div>
+              {kindValue === "vehicle_seat" ? (
+                <div className="grid gap-1.5">
+                  <Label>{t.seatMapLabel}</Label>
+                  {layoutSpec ? (
+                    <div className="flex items-center gap-2 rounded-md border p-3">
+                      <Armchair className="size-4 text-muted-foreground" aria-hidden="true" />
+                      <div className="min-w-0 flex-1 text-sm">
+                        {formatMessage(t.seatMapSummary, {
+                          rows: layoutSpec.rows.length,
+                          count: derivedSeatCount,
+                        })}
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setSeatMapOpen(true)}
+                      >
+                        <Pencil className="mr-1 size-3.5" aria-hidden="true" />
+                        {t.seatMapEditButton}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2 rounded-md border border-dashed p-3 text-sm">
+                      <p className="text-muted-foreground">{t.seatMapEmpty}</p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSeatMapOpen(true)}
+                      >
+                        <Armchair className="mr-1 size-3.5" aria-hidden="true" />
+                        {t.seatMapEditButton}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : null}
               <div className="grid gap-1.5">
                 <Label htmlFor="resource-template-capacity">{t.capacityLabel}</Label>
                 <Input
                   id="resource-template-capacity"
                   type="number"
                   min={1}
-                  value={capacityValue}
+                  value={usingSeatMap ? derivedSeatCount : capacityValue}
                   onChange={(event) => setCapacityValue(Number(event.target.value) || 1)}
+                  disabled={usingSeatMap}
                 />
+                {usingSeatMap ? (
+                  <p className="text-muted-foreground text-xs">
+                    {formatMessage(t.capacityDerivedHint, { count: derivedSeatCount })}
+                  </p>
+                ) : null}
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="resource-template-pattern">{t.namePatternLabel}</Label>
@@ -306,6 +374,64 @@ export function OptionResourceTemplatesPanel({
           </form>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={seatMapOpen} onOpenChange={setSeatMapOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{t.seatMapDialogTitle}</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <SeatMapBuilder value={layoutSpec} onChange={setLayoutSpec} />
+          </DialogBody>
+          <DialogFooter>
+            <Button type="button" onClick={() => setSeatMapOpen(false)}>
+              {t.seatMapDialogDone}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
+}
+
+function SeatMapSummaryBadge({
+  flags,
+  messages,
+}: {
+  flags: Record<string, unknown>
+  messages: { seatMapSummary: string }
+}) {
+  const spec = extractLayoutSpec(flags)
+  if (!spec) return null
+  return (
+    <Badge variant="outline" className="text-[10px]">
+      {formatMessage(messages.seatMapSummary, {
+        rows: spec.rows.length,
+        count: countSeats(spec),
+      })}
+    </Badge>
+  )
+}
+
+function extractLayoutSpec(
+  flags: Record<string, unknown> | null | undefined,
+): SeatLayoutSpec | null {
+  const raw = flags?.layoutSpec
+  if (!raw || typeof raw !== "object") return null
+  // The server validates layoutSpec on read; we trust the manifest shape here
+  // and only reject if the runtime object is obviously not a spec.
+  const candidate = raw as { rows?: unknown }
+  if (!Array.isArray(candidate.rows)) return null
+  return candidate as SeatLayoutSpec
+}
+
+function countSeats(spec: SeatLayoutSpec | null): number {
+  if (!spec) return 0
+  let count = 0
+  for (const row of spec.rows) {
+    for (const cell of row.cells) {
+      if (cell === "seat") count += 1
+    }
+  }
+  return count
 }

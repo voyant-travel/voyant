@@ -14,6 +14,35 @@ export const allocationResourceKindSchema = z.string().trim().min(1).max(80)
 export const allocationResourceFlagsSchema = z.record(z.string(), z.unknown())
 export const travelerAllocationMapSchema = z.record(z.string(), z.string())
 
+/**
+ * Explicit 2D seat layout for vehicle_seat templates. Each row is a list of
+ * cells the materializer walks:
+ *
+ *   - `seat` → creates one vehicle_seat resource
+ *   - `aisle` → renders as a horizontal gap between seat blocks
+ *   - `door` → renders as a wider gap (mid-coach door is common)
+ *   - `void` → empty cell (wheelchair spot, toilet, kitchen, wheel well)
+ *
+ * Stored on the template's `flags.layoutSpec`. When present, the materializer
+ * ignores the legacy `layout` string + `capacity` (capacity is derived from
+ * the number of "seat" cells). The renderer in @voyantjs/allocation-ui mirrors
+ * the same grid so the visual seat map matches what the operator drew.
+ */
+export const seatLayoutCellSchema = z.enum(["seat", "aisle", "door", "void"])
+export type SeatLayoutCell = z.infer<typeof seatLayoutCellSchema>
+
+export const seatLayoutSpecSchema = z.object({
+  rows: z
+    .array(
+      z.object({
+        cells: z.array(seatLayoutCellSchema).min(1).max(20),
+      }),
+    )
+    .min(1)
+    .max(40),
+})
+export type SeatLayoutSpec = z.infer<typeof seatLayoutSpecSchema>
+
 const isoDateSchema = z.string().date()
 const isoDateTimeSchema = z.string().datetime()
 

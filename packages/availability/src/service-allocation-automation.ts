@@ -21,7 +21,13 @@ import {
   recordAllocationAudit,
   type SlotAllocationManifest,
 } from "./service-allocation.js"
-import type { allocationAutomationSchema, upsertResourceTemplateSchema } from "./validation.js"
+import {
+  type allocationAutomationSchema,
+  type SeatLayoutCell,
+  type SeatLayoutSpec,
+  seatLayoutSpecSchema,
+  type upsertResourceTemplateSchema,
+} from "./validation.js"
 
 /**
  * Emit `ARRAY[$1, $2, …]::text[]` so Postgres doesn't try to cast a
@@ -498,6 +504,11 @@ async function materializeVehicleSeatGroup(
   group: AutoMaterializeRow,
   startingSequence: number,
 ): Promise<{ resources: AllocationResource[]; vehicleCount: number }> {
+  const layoutSpec = parseLayoutSpecFromFlags(group.flags)
+  if (layoutSpec) {
+    return materializeVehicleSeatGroupFromSpec(db, slotId, group, startingSequence, layoutSpec)
+  }
+
   const layout = group.layout ?? "2-2"
   const seatsPerRow = parseLayoutSeatsPerRow(layout)
   const vehiclesNeeded = Math.max(1, Math.ceil(group.pax_count / Math.max(1, group.capacity)))
@@ -565,6 +576,126 @@ async function materializeVehicleSeatGroup(
   }
 
   return { resources, vehicleCount: vehiclesNeeded }
+}
+
+/**
+ * Materialize using an explicit 2D layoutSpec. Each row's seat cells become
+ * a vehicle_seat (skipping aisle/door/void). Window/aisle/middle is computed
+ * from neighbouring cells, so a coach door in the middle row collapses to a
+ * gap on the visual map (renderer side) without affecting seat numbering.
+ */
+async function materializeVehicleSeatGroupFromSpec(
+  db: PostgresJsDatabase,
+  slotId: string,
+  group: AutoMaterializeRow,
+  startingSequence: number,
+  layoutSpec: SeatLayoutSpec,
+): Promise<{ resources: AllocationResource[]; vehicleCount: number }> {
+  const seatsPerVehicle = layoutSpec.rows.reduce(
+    (sum, row) => sum + row.cells.filter((cell) => cell === "seat").length,
+    0,
+  )
+  if (seatsPerVehicle === 0) return { resources: [], vehicleCount: 0 }
+
+  const vehiclesNeeded = Math.max(1, Math.ceil(group.pax_count / seatsPerVehicle))
+  const resources: AllocationResource[] = []
+  let sequence = startingSequence
+
+  for (let vehicleIndex = 0; vehicleIndex < vehiclesNeeded; vehicleIndex++) {
+    sequence += 1
+    const [parent] = await db
+      .insert(allocationResources)
+      .values({
+        slotId,
+        kind: "vehicle",
+        refType: group.ref_type,
+        refId: group.ref_id,
+        label: renderNamePattern(group.name_pattern || "Vehicle {sequence}", {
+          sequence: String(sequence),
+          option: group.option_name ?? "",
+          index: String(vehicleIndex + 1),
+        }),
+        capacity: seatsPerVehicle,
+        flags: {
+          ...(group.flags ?? {}),
+          layoutSpec,
+          templateOptionId: group.option_id,
+        },
+        sortOrder: sequence,
+      })
+      .returning()
+    if (!parent) continue
+    resources.push(parent)
+
+    let seatIndex = 0
+    for (let rowIndex = 0; rowIndex < layoutSpec.rows.length; rowIndex++) {
+      const rowCells = layoutSpec.rows[rowIndex]?.cells ?? []
+      const rowNumber = rowIndex + 1
+      let column = 0
+      for (let cellIndex = 0; cellIndex < rowCells.length; cellIndex++) {
+        const cell = rowCells[cellIndex]
+        if (cell !== "seat") continue
+        column += 1
+        const columnName = columnLetter(column)
+        const position = positionFromCells(rowCells, cellIndex)
+        const [seat] = await db
+          .insert(allocationResources)
+          .values({
+            slotId,
+            kind: "vehicle_seat",
+            refType: group.ref_type,
+            refId: group.ref_id,
+            label: renderNamePattern("Seat {row}{column}", {
+              sequence: String(seatIndex + 1),
+              row: String(rowNumber),
+              column: columnName,
+              seat: `${rowNumber}${columnName}`,
+            }),
+            capacity: 1,
+            flags: { row: rowNumber, column: columnName, position },
+            parentId: parent.id,
+            sortOrder: seatIndex,
+          })
+          .returning()
+        if (seat) resources.push(seat)
+        seatIndex += 1
+      }
+    }
+  }
+
+  return { resources, vehicleCount: vehiclesNeeded }
+}
+
+export function parseLayoutSpecFromFlags(
+  flags: Record<string, unknown> | null,
+): SeatLayoutSpec | null {
+  const raw = flags?.layoutSpec
+  if (!raw) return null
+  const parsed = seatLayoutSpecSchema.safeParse(raw)
+  return parsed.success ? parsed.data : null
+}
+
+/**
+ * Derive window/aisle/middle from a seat's neighbours in the same row.
+ *
+ *   - Touching an aisle or door cell → "aisle" (the seat is on the aisle side)
+ *   - Touching the row boundary or a void cell → "window"
+ *   - Surrounded by other seats → "middle"
+ *
+ * Aisle takes precedence so the "window" tag is reserved for actual outer
+ * seats; a 2-1 row's lone middle seat ends up "aisle" on both sides.
+ */
+export function positionFromCells(
+  cells: ReadonlyArray<SeatLayoutCell>,
+  index: number,
+): "window" | "aisle" | "middle" {
+  const prev = index > 0 ? cells[index - 1] : undefined
+  const next = index < cells.length - 1 ? cells[index + 1] : undefined
+  if (prev === "aisle" || prev === "door") return "aisle"
+  if (next === "aisle" || next === "door") return "aisle"
+  if (prev === undefined || prev === "void") return "window"
+  if (next === undefined || next === "void") return "window"
+  return "middle"
 }
 
 function toResourceTemplate(row: ResourceTemplateRow): ResourceTemplate {

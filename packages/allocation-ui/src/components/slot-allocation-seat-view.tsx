@@ -1,6 +1,11 @@
 "use client"
 
-import type { AllocationManifestTraveler, AllocationResource } from "@voyantjs/availability-react"
+import type {
+  AllocationManifestTraveler,
+  AllocationResource,
+  SeatLayoutCell,
+  SeatLayoutSpec,
+} from "@voyantjs/availability-react"
 import {
   Badge,
   Button,
@@ -19,7 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@voyantjs/ui/components"
-import { Armchair, Crown, Users, X } from "lucide-react"
+import { Armchair, Crown, DoorOpen, Users, X } from "lucide-react"
 import { type ReactNode, useState } from "react"
 
 import { useAllocationUiMessagesOrDefault } from "../i18n/index.js"
@@ -111,38 +116,52 @@ export function VehicleSeatsView({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-2">
-                  {seatRows(group.seats).map((row) => (
-                    <div
-                      key={row.rowKey}
-                      className="grid items-stretch gap-2"
-                      style={{
-                        gridTemplateColumns: `repeat(${row.seats.length}, minmax(4.25rem, 1fr))`,
-                      }}
-                    >
-                      {row.seats.map((seat) => {
-                        const seatOccupants = occupants.byResource.get(seat.id) ?? []
-                        return (
-                          <VehicleSeatCell
-                            key={seat.id}
-                            seat={seat}
-                            occupant={seatOccupants[0] ?? null}
-                            overflow={seatOccupants.length > 1}
-                            unallocated={occupants.unallocated}
-                            sharingGroupLabel={
-                              seatOccupants[0]?.sharingGroupId
-                                ? sharingGroupLabels[seatOccupants[0].sharingGroupId]
-                                : null
-                            }
-                            onAssignTraveler={(travelerId) => onAssignTraveler(travelerId, seat.id)}
-                            onUnassignTraveler={onUnassignTraveler}
-                            onBookingOpen={onBookingOpen}
-                          />
-                        )
-                      })}
-                    </div>
-                  ))}
-                </div>
+                {group.layoutSpec ? (
+                  <SpecGrid
+                    spec={group.layoutSpec}
+                    seats={group.seats}
+                    occupants={occupants}
+                    sharingGroupLabels={sharingGroupLabels}
+                    onAssignTraveler={onAssignTraveler}
+                    onUnassignTraveler={onUnassignTraveler}
+                    onBookingOpen={onBookingOpen}
+                  />
+                ) : (
+                  <div className="grid gap-2">
+                    {seatRows(group.seats).map((row) => (
+                      <div
+                        key={row.rowKey}
+                        className="grid items-stretch gap-2"
+                        style={{
+                          gridTemplateColumns: `repeat(${row.seats.length}, minmax(4.25rem, 1fr))`,
+                        }}
+                      >
+                        {row.seats.map((seat) => {
+                          const seatOccupants = occupants.byResource.get(seat.id) ?? []
+                          return (
+                            <VehicleSeatCell
+                              key={seat.id}
+                              seat={seat}
+                              occupant={seatOccupants[0] ?? null}
+                              overflow={seatOccupants.length > 1}
+                              unallocated={occupants.unallocated}
+                              sharingGroupLabel={
+                                seatOccupants[0]?.sharingGroupId
+                                  ? sharingGroupLabels[seatOccupants[0].sharingGroupId]
+                                  : null
+                              }
+                              onAssignTraveler={(travelerId) =>
+                                onAssignTraveler(travelerId, seat.id)
+                              }
+                              onUnassignTraveler={onUnassignTraveler}
+                              onBookingOpen={onBookingOpen}
+                            />
+                          )
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))
@@ -288,4 +307,133 @@ function VehicleSeatCell({
       </Popover>
     </div>
   )
+}
+
+/**
+ * Render the bus as the operator drew it. Walks `layoutSpec.rows` and maps
+ * each `"seat"` cell to its materialized resource by (row, seat-column-letter).
+ * Other cell kinds render as visible spacers — doors as a striped row, voids
+ * and aisles as gap tiles — so the rendered map mirrors the builder view.
+ */
+function SpecGrid({
+  spec,
+  seats,
+  occupants,
+  sharingGroupLabels,
+  onAssignTraveler,
+  onUnassignTraveler,
+  onBookingOpen,
+}: {
+  spec: SeatLayoutSpec
+  seats: AllocationResource[]
+  occupants: AllocationOccupants
+  sharingGroupLabels: Record<string, string>
+  onAssignTraveler: (travelerId: string, resourceId: string) => void
+  onUnassignTraveler: (travelerId: string) => void
+  onBookingOpen?: (bookingId: string) => void
+}) {
+  const seatsByRowColumn = indexSeats(seats)
+  return (
+    <div className="flex flex-col gap-2 overflow-x-auto">
+      {spec.rows.map((row, rowIndex) => {
+        const rowNumber = rowIndex + 1
+        let seatColumn = 0
+        return (
+          <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: rows are positional within the bus layout.
+            key={`spec-row-${rowIndex}`}
+            className="grid items-stretch gap-2"
+            style={{ gridTemplateColumns: `repeat(${row.cells.length}, minmax(4.25rem, 1fr))` }}
+          >
+            {row.cells.map((cell, cellIndex) => {
+              if (cell === "seat") {
+                seatColumn += 1
+                const columnName = columnLetter(seatColumn)
+                const seat = seatsByRowColumn.get(`${rowNumber}:${columnName}`)
+                if (!seat) {
+                  return (
+                    <SpacerCell
+                      // biome-ignore lint/suspicious/noArrayIndexKey: positional cell within a fixed row.
+                      key={`spec-${rowIndex}-${cellIndex}`}
+                      kind="void"
+                      rowNumber={rowNumber}
+                    />
+                  )
+                }
+                const seatOccupants = occupants.byResource.get(seat.id) ?? []
+                return (
+                  <VehicleSeatCell
+                    key={seat.id}
+                    seat={seat}
+                    occupant={seatOccupants[0] ?? null}
+                    overflow={seatOccupants.length > 1}
+                    unallocated={occupants.unallocated}
+                    sharingGroupLabel={
+                      seatOccupants[0]?.sharingGroupId
+                        ? sharingGroupLabels[seatOccupants[0].sharingGroupId]
+                        : null
+                    }
+                    onAssignTraveler={(travelerId) => onAssignTraveler(travelerId, seat.id)}
+                    onUnassignTraveler={onUnassignTraveler}
+                    onBookingOpen={onBookingOpen}
+                  />
+                )
+              }
+              return (
+                <SpacerCell
+                  // biome-ignore lint/suspicious/noArrayIndexKey: positional cell within a fixed row.
+                  key={`spec-${rowIndex}-${cellIndex}`}
+                  kind={cell}
+                  rowNumber={rowNumber}
+                />
+              )
+            })}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function SpacerCell({
+  kind,
+  rowNumber: _rowNumber,
+}: {
+  kind: Exclude<SeatLayoutCell, "seat">
+  rowNumber: number
+}) {
+  if (kind === "door") {
+    return (
+      <div className="flex min-h-24 items-center justify-center rounded-md border border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+        <DoorOpen className="size-5" aria-hidden="true" />
+      </div>
+    )
+  }
+  if (kind === "void") {
+    return <div className="min-h-24 rounded-md border border-dashed border-muted-foreground/20" />
+  }
+  // aisle
+  return <div className="min-h-24" aria-hidden="true" />
+}
+
+function indexSeats(seats: AllocationResource[]): Map<string, AllocationResource> {
+  const map = new Map<string, AllocationResource>()
+  for (const seat of seats) {
+    const row = typeof seat.flags?.row === "number" ? seat.flags.row : null
+    const column = typeof seat.flags?.column === "string" ? seat.flags.column : null
+    if (row === null || column === null) continue
+    map.set(`${row}:${column}`, seat)
+  }
+  return map
+}
+
+function columnLetter(value: number): string {
+  let result = ""
+  let n = value
+  while (n > 0) {
+    const remainder = (n - 1) % 26
+    result = String.fromCharCode(65 + remainder) + result
+    n = Math.floor((n - 1) / 26)
+  }
+  return result
 }
