@@ -1131,104 +1131,174 @@ interface TravelerRow {
 }
 
 async function loadSlotBookingRows(db: PostgresJsDatabase, slotId: string): Promise<BookingRow[]> {
-  // `invoice_totals` and `schedule_totals` are LEFT JOIN aggregations that
+  // `invoices` and `booking_payment_schedules` are LEFT JOIN aggregations that
   // may reference tables missing in catalog-less / finance-less deploys.
-  // The retries below progressively drop joins that hit "undefined_table"
-  // (Postgres 42P01) so the manifest still loads with `unpaid` rollups —
-  // each fallback fills the missing fields with zeros (see issue #1079
-  // for the rationale on schedule_totals).
+  // We try four query shapes in order of decreasing data, falling through on
+  // any "undefined_table" (Postgres 42P01). The ordering matters: if invoices
+  // exists but schedules doesn't, we still want to preserve invoice data
+  // (and vice versa) — so we try the invoices-only and schedules-only paths
+  // separately rather than collapsing both joins together.
   try {
-    return await executeRows<BookingRow>(
-      db,
-      sql`
-      SELECT DISTINCT
-        b.id,
-        b.booking_number,
-        b.status,
-        b.created_at,
-        b.paid_at,
-        b.contact_first_name,
-        b.contact_last_name,
-        b.contact_email,
-        b.contact_phone,
-        b.sell_currency,
-        b.pax,
-        b.sell_amount_cents,
-        COALESCE(inv.total_cents, 0) AS invoice_total_cents,
-        COALESCE(inv.paid_cents, 0) AS invoice_paid_cents,
-        COALESCE(sch.paid_cents, 0) AS schedules_paid_cents
-      FROM bookings b
-      JOIN booking_allocations ba ON ba.booking_id = b.id
-      LEFT JOIN (
-        SELECT
-          booking_id,
-          SUM(total_cents) AS total_cents,
-          SUM(paid_cents) AS paid_cents
-        FROM invoices
-        WHERE status <> 'void'
-        GROUP BY booking_id
-      ) inv ON inv.booking_id = b.id
-      LEFT JOIN (
-        SELECT
-          booking_id,
-          SUM(amount_cents) AS paid_cents
-        FROM booking_payment_schedules
-        WHERE status = 'paid'
-        GROUP BY booking_id
-      ) sch ON sch.booking_id = b.id
-      WHERE ba.availability_slot_id = ${slotId}
-        AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
-        AND ba.status IN ('held', 'confirmed', 'fulfilled')
-      ORDER BY b.created_at, b.booking_number
-    `,
-    )
+    return await loadSlotBookingRowsBothJoins(db, slotId)
   } catch (error) {
     if (!isUndefinedTableError(error)) throw error
   }
 
-  // Retry without the schedules join (booking_payment_schedules missing).
+  // Drop the schedules join (preserves invoice rollups when schedules is missing).
   try {
-    return await executeRows<BookingRow>(
-      db,
-      sql`
-      SELECT DISTINCT
-        b.id,
-        b.booking_number,
-        b.status,
-        b.created_at,
-        b.paid_at,
-        b.contact_first_name,
-        b.contact_last_name,
-        b.contact_email,
-        b.contact_phone,
-        b.sell_currency,
-        b.pax,
-        b.sell_amount_cents,
-        COALESCE(inv.total_cents, 0) AS invoice_total_cents,
-        COALESCE(inv.paid_cents, 0) AS invoice_paid_cents,
-        0 AS schedules_paid_cents
-      FROM bookings b
-      JOIN booking_allocations ba ON ba.booking_id = b.id
-      LEFT JOIN (
-        SELECT
-          booking_id,
-          SUM(total_cents) AS total_cents,
-          SUM(paid_cents) AS paid_cents
-        FROM invoices
-        WHERE status <> 'void'
-        GROUP BY booking_id
-      ) inv ON inv.booking_id = b.id
-      WHERE ba.availability_slot_id = ${slotId}
-        AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
-        AND ba.status IN ('held', 'confirmed', 'fulfilled')
-      ORDER BY b.created_at, b.booking_number
-    `,
-    )
+    return await loadSlotBookingRowsInvoicesOnly(db, slotId)
   } catch (error) {
     if (!isUndefinedTableError(error)) throw error
   }
 
-  // Final fallback: invoices + schedules both missing — pure bookings query.
+  // Drop the invoices join (preserves schedule rollups when invoices is missing).
+  try {
+    return await loadSlotBookingRowsSchedulesOnly(db, slotId)
+  } catch (error) {
+    if (!isUndefinedTableError(error)) throw error
+  }
+
+  // Final fallback: both tables missing — bare bookings query.
+  return loadSlotBookingRowsBare(db, slotId)
+}
+
+async function loadSlotBookingRowsBothJoins(
+  db: PostgresJsDatabase,
+  slotId: string,
+): Promise<BookingRow[]> {
+  return executeRows<BookingRow>(
+    db,
+    sql`
+    SELECT DISTINCT
+      b.id,
+      b.booking_number,
+      b.status,
+      b.created_at,
+      b.paid_at,
+      b.contact_first_name,
+      b.contact_last_name,
+      b.contact_email,
+      b.contact_phone,
+      b.sell_currency,
+      b.pax,
+      b.sell_amount_cents,
+      COALESCE(inv.total_cents, 0) AS invoice_total_cents,
+      COALESCE(inv.paid_cents, 0) AS invoice_paid_cents,
+      COALESCE(sch.paid_cents, 0) AS schedules_paid_cents
+    FROM bookings b
+    JOIN booking_allocations ba ON ba.booking_id = b.id
+    LEFT JOIN (
+      SELECT
+        booking_id,
+        SUM(total_cents) AS total_cents,
+        SUM(paid_cents) AS paid_cents
+      FROM invoices
+      WHERE status <> 'void'
+      GROUP BY booking_id
+    ) inv ON inv.booking_id = b.id
+    LEFT JOIN (
+      SELECT
+        booking_id,
+        SUM(amount_cents) AS paid_cents
+      FROM booking_payment_schedules
+      WHERE status = 'paid'
+      GROUP BY booking_id
+    ) sch ON sch.booking_id = b.id
+    WHERE ba.availability_slot_id = ${slotId}
+      AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+      AND ba.status IN ('held', 'confirmed', 'fulfilled')
+    ORDER BY b.created_at, b.booking_number
+  `,
+  )
+}
+
+async function loadSlotBookingRowsInvoicesOnly(
+  db: PostgresJsDatabase,
+  slotId: string,
+): Promise<BookingRow[]> {
+  return executeRows<BookingRow>(
+    db,
+    sql`
+    SELECT DISTINCT
+      b.id,
+      b.booking_number,
+      b.status,
+      b.created_at,
+      b.paid_at,
+      b.contact_first_name,
+      b.contact_last_name,
+      b.contact_email,
+      b.contact_phone,
+      b.sell_currency,
+      b.pax,
+      b.sell_amount_cents,
+      COALESCE(inv.total_cents, 0) AS invoice_total_cents,
+      COALESCE(inv.paid_cents, 0) AS invoice_paid_cents,
+      0 AS schedules_paid_cents
+    FROM bookings b
+    JOIN booking_allocations ba ON ba.booking_id = b.id
+    LEFT JOIN (
+      SELECT
+        booking_id,
+        SUM(total_cents) AS total_cents,
+        SUM(paid_cents) AS paid_cents
+      FROM invoices
+      WHERE status <> 'void'
+      GROUP BY booking_id
+    ) inv ON inv.booking_id = b.id
+    WHERE ba.availability_slot_id = ${slotId}
+      AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+      AND ba.status IN ('held', 'confirmed', 'fulfilled')
+    ORDER BY b.created_at, b.booking_number
+  `,
+  )
+}
+
+async function loadSlotBookingRowsSchedulesOnly(
+  db: PostgresJsDatabase,
+  slotId: string,
+): Promise<BookingRow[]> {
+  return executeRows<BookingRow>(
+    db,
+    sql`
+    SELECT DISTINCT
+      b.id,
+      b.booking_number,
+      b.status,
+      b.created_at,
+      b.paid_at,
+      b.contact_first_name,
+      b.contact_last_name,
+      b.contact_email,
+      b.contact_phone,
+      b.sell_currency,
+      b.pax,
+      b.sell_amount_cents,
+      0 AS invoice_total_cents,
+      0 AS invoice_paid_cents,
+      COALESCE(sch.paid_cents, 0) AS schedules_paid_cents
+    FROM bookings b
+    JOIN booking_allocations ba ON ba.booking_id = b.id
+    LEFT JOIN (
+      SELECT
+        booking_id,
+        SUM(amount_cents) AS paid_cents
+      FROM booking_payment_schedules
+      WHERE status = 'paid'
+      GROUP BY booking_id
+    ) sch ON sch.booking_id = b.id
+    WHERE ba.availability_slot_id = ${slotId}
+      AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+      AND ba.status IN ('held', 'confirmed', 'fulfilled')
+    ORDER BY b.created_at, b.booking_number
+  `,
+  )
+}
+
+async function loadSlotBookingRowsBare(
+  db: PostgresJsDatabase,
+  slotId: string,
+): Promise<BookingRow[]> {
   const rows = await executeRows<
     Omit<BookingRow, "invoice_total_cents" | "invoice_paid_cents" | "schedules_paid_cents">
   >(
