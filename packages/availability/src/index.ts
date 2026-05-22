@@ -96,6 +96,7 @@ export {
   allocationAutomationSchema,
   assignTravelerAllocationSchema,
   availabilityCloseoutListQuerySchema,
+  availabilityOverviewQuerySchema,
   availabilityPickupPointListQuerySchema,
   availabilityRuleListQuerySchema,
   availabilitySlotListQuerySchema,

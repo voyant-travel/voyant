@@ -1,3 +1,5 @@
+export type { UseAvailabilityOverviewOptions } from "./use-availability-overview.js"
+export { useAvailabilityOverview } from "./use-availability-overview.js"
 export { useAvailabilityRuleMutation } from "./use-availability-rule-mutation.js"
 export { useAvailabilitySlotMutation } from "./use-availability-slot-mutation.js"
 export { useAvailabilityStartTimeMutation } from "./use-availability-start-time-mutation.js"

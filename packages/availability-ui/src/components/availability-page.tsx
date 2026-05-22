@@ -16,6 +16,7 @@ import {
   type UpdateAvailabilityRuleInput,
   type UpdateAvailabilitySlotInput,
   type UpdateAvailabilityStartTimeInput,
+  useAvailabilityOverview,
   useAvailabilityRuleMutation,
   useAvailabilitySlotMutation,
   useAvailabilityStartTimeMutation,
@@ -207,6 +208,10 @@ export function AvailabilityPage({
   >()
 
   const productsQuery = useProducts({ search: productSearch || undefined, limit: 25, offset: 0 })
+  const overviewQuery = useAvailabilityOverview({
+    productId: productFilter === "all" ? undefined : productFilter,
+    attentionLimit: 4,
+  })
   const rulesQuery = useRules({ limit: 25, offset: 0 })
   const startTimesQuery = useStartTimes({ limit: 25, offset: 0 })
   const slotsQuery = useSlots({ limit: 25, offset: 0 })
@@ -219,6 +224,7 @@ export function AvailabilityPage({
   const availabilitySlots = slotsQuery.data?.data ?? []
   const closeouts = closeoutsQuery.data?.data ?? []
   const pickupPoints = pickupPointsQuery.data?.data ?? []
+  const overview = overviewQuery.data?.data
 
   const matchesProduct = (productId: string) =>
     productFilter === "all" || productId === productFilter
@@ -284,7 +290,7 @@ export function AvailabilityPage({
     }
   })
 
-  const queries = [
+  const primaryQueries = [
     productsQuery,
     rulesQuery,
     startTimesQuery,
@@ -292,8 +298,8 @@ export function AvailabilityPage({
     closeoutsQuery,
     pickupPointsQuery,
   ]
-  const isLoading = queries.some((query) => query.isPending)
-  const isError = queries.some((query) => query.isError)
+  const isLoading = primaryQueries.some((query) => query.isPending)
+  const isError = primaryQueries.some((query) => query.isError)
 
   const refreshAll = async () => {
     await queryClient.invalidateQueries({ queryKey: availabilityQueryKeys.all })
@@ -396,11 +402,19 @@ export function AvailabilityPage({
           <AvailabilityOverview
             messages={messages}
             products={products}
-            constrainedSlots={constrainedSlots}
-            openSlotsCount={filteredSlots.filter((slot) => slot.status === "open").length}
+            constrainedSlots={overview?.constrainedSlots ?? constrainedSlots}
+            constrainedSlotsCount={overview?.constrainedSlotsCount}
+            openSlotsCount={overview?.openSlotsCount}
+            activeRulesCount={overview?.activeRulesCount}
+            activePickupPointsCount={overview?.activePickupPointsCount}
             filteredRules={filteredRules}
             filteredPickupPoints={filteredPickupPoints}
-            productsWithoutUpcomingDepartures={productsWithoutUpcomingDepartures}
+            productsWithoutUpcomingDepartures={
+              overview?.productsWithoutUpcomingDepartures ?? productsWithoutUpcomingDepartures
+            }
+            productsWithoutUpcomingDeparturesCount={
+              overview?.productsWithoutUpcomingDeparturesCount
+            }
             search=""
             setSearch={() => {}}
             productFilter={productFilter}

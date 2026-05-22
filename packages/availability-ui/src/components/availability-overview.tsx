@@ -76,10 +76,14 @@ export function AvailabilityOverview({
   messages,
   products,
   constrainedSlots,
+  constrainedSlotsCount: providedConstrainedSlotsCount,
   openSlotsCount: providedOpenSlotsCount,
+  activeRulesCount: providedActiveRulesCount,
+  activePickupPointsCount: providedActivePickupPointsCount,
   filteredRules,
   filteredPickupPoints,
   productsWithoutUpcomingDepartures,
+  productsWithoutUpcomingDeparturesCount: providedProductsWithoutUpcomingDeparturesCount,
   search,
   setSearch,
   productFilter,
@@ -94,10 +98,14 @@ export function AvailabilityOverview({
   messages: AvailabilityOverviewMessages
   products: ProductOption[]
   constrainedSlots: AvailabilitySlotRow[]
+  constrainedSlotsCount?: number
   openSlotsCount?: number
+  activeRulesCount?: number
+  activePickupPointsCount?: number
   filteredRules: AvailabilityRuleRow[]
   filteredPickupPoints: AvailabilityPickupPointRow[]
   productsWithoutUpcomingDepartures: ProductOption[]
+  productsWithoutUpcomingDeparturesCount?: number
   search: string
   setSearch: (value: string) => void
   productFilter: string
@@ -112,14 +120,17 @@ export function AvailabilityOverview({
   useAvailabilityUiMessagesOrDefault()
   const openSlotsCount =
     providedOpenSlotsCount ?? constrainedSlots.filter((slot) => slot.status === "open").length
-  const activeRulesCount = filteredRules.filter((rule) => rule.active).length
-  const activePickupPointsCount = filteredPickupPoints.filter(
-    (pickupPoint) => pickupPoint.active,
-  ).length
+  const constrainedSlotsCount = providedConstrainedSlotsCount ?? constrainedSlots.length
+  const activeRulesCount =
+    providedActiveRulesCount ?? filteredRules.filter((rule) => rule.active).length
+  const activePickupPointsCount =
+    providedActivePickupPointsCount ??
+    filteredPickupPoints.filter((pickupPoint) => pickupPoint.active).length
 
-  const noDeparturesCount = productsWithoutUpcomingDepartures.length
+  const noDeparturesCount =
+    providedProductsWithoutUpcomingDeparturesCount ?? productsWithoutUpcomingDepartures.length
   const hasNoDeparturesProducts = noDeparturesCount > 0
-  const hasConstrainedSlots = constrainedSlots.length > 0
+  const hasConstrainedSlots = constrainedSlotsCount > 0
   const hasAttention = hasNoDeparturesProducts || hasConstrainedSlots
 
   return (
@@ -154,7 +165,7 @@ export function AvailabilityOverview({
         />
         <OverviewMetric
           title={messages.overview.constrainedSlotsTitle}
-          value={constrainedSlots.length}
+          value={constrainedSlotsCount}
           description={messages.overview.constrainedSlotsDescription}
           icon={Clock3}
         />
@@ -179,7 +190,7 @@ export function AvailabilityOverview({
             {messages.overview.attentionTitle}
             {hasAttention ? (
               <Badge variant="secondary" className="tabular-nums">
-                {noDeparturesCount + constrainedSlots.length}
+                {noDeparturesCount + constrainedSlotsCount}
               </Badge>
             ) : null}
           </CardTitle>
@@ -208,7 +219,7 @@ export function AvailabilityOverview({
               />
               <AttentionColumn
                 title={messages.overview.capacityWatchlistTitle}
-                count={constrainedSlots.length}
+                count={constrainedSlotsCount}
                 items={constrainedSlots.slice(0, 4).map((slot) => ({
                   id: slot.id,
                   primary: `${productNameById(products, slot.productId, slot.productName)} · ${slot.dateLocal}`,

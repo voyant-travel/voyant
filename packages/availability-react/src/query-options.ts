@@ -9,10 +9,11 @@ import type { UseProductsOptions } from "./hooks/use-products.js"
 import type { UseRulesOptions } from "./hooks/use-rules.js"
 import type { UseSlotsOptions } from "./hooks/use-slots.js"
 import type { UseStartTimesOptions } from "./hooks/use-start-times.js"
-import { availabilityQueryKeys } from "./query-keys.js"
+import { type AvailabilityOverviewFilters, availabilityQueryKeys } from "./query-keys.js"
 import {
   allocationAuditLogResponse,
   availabilityCloseoutListResponse,
+  availabilityOverviewResponse,
   availabilityPickupPointListResponse,
   availabilityRuleListResponse,
   availabilitySlotAssignmentListResponse,
@@ -116,6 +117,29 @@ export function getSlotsQueryOptions(
       return fetchWithValidation(
         `/v1/availability/slots${qs ? `?${qs}` : ""}`,
         availabilitySlotListResponse,
+        client,
+      )
+    },
+  })
+}
+
+export function getAvailabilityOverviewQueryOptions(
+  client: FetchWithValidationOptions,
+  options: AvailabilityOverviewFilters = {},
+) {
+  const filters = options
+  return queryOptions({
+    queryKey: availabilityQueryKeys.overview(filters),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (filters.productId) params.set("productId", filters.productId)
+      if (filters.attentionLimit !== undefined) {
+        params.set("attentionLimit", String(filters.attentionLimit))
+      }
+      const qs = params.toString()
+      return fetchWithValidation(
+        `/v1/availability/overview${qs ? `?${qs}` : ""}`,
+        availabilityOverviewResponse,
         client,
       )
     },

@@ -31,6 +31,7 @@ import {
   updateSlot,
   updateStartTime,
 } from "./service-core.js"
+import { getAvailabilityOverview } from "./service-overview.js"
 import {
   createCustomPickupArea,
   createLocationPickupTime,
@@ -81,6 +82,7 @@ export const availabilityService = {
   pairSharingGroup,
   getSlotUnitAvailability,
   getAvailabilityAggregates,
+  getAvailabilityOverview,
   listRules,
   getRuleById,
   createRule,

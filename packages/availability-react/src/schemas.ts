@@ -176,6 +176,18 @@ export const availabilityStartTimeSingleResponse = singleEnvelope(availabilitySt
 export const availabilitySlotListResponse = paginatedEnvelope(availabilitySlotRecordSchema)
 export const availabilitySlotRecordResponse = singleEnvelope(availabilitySlotRecordSchema)
 export const availabilitySlotSingleResponse = singleEnvelope(availabilitySlotDetailSchema)
+export const availabilityOverviewResponse = singleEnvelope(
+  z.object({
+    openSlotsCount: z.number().int(),
+    constrainedSlotsCount: z.number().int(),
+    activeRulesCount: z.number().int(),
+    activePickupPointsCount: z.number().int(),
+    productsWithoutUpcomingDeparturesCount: z.number().int(),
+    productsWithoutUpcomingDepartures: z.array(productOptionSchema),
+    constrainedSlots: z.array(availabilitySlotRecordSchema),
+  }),
+)
+export type AvailabilityOverviewData = z.infer<typeof availabilityOverviewResponse>["data"]
 export const availabilityCloseoutListResponse = paginatedEnvelope(availabilityCloseoutRecordSchema)
 export const availabilityPickupPointListResponse = paginatedEnvelope(
   availabilityPickupPointRecordSchema,
