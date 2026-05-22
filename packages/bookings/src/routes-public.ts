@@ -366,6 +366,10 @@ export const publicBookingRoutes = new Hono<Env>()
         })
       : await publicBookingsService.getOverviewByGuestAccess(c.get("db"), query)
     if (!overview) {
+      if (!query.email) {
+        throw new UnauthorizedApiError("Missing guest booking access capability")
+      }
+
       return notFound(c, "Booking overview not found")
     }
 

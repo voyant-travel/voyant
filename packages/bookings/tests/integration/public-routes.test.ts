@@ -412,6 +412,15 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
       { method: "GET" },
     )
     expect(deniedRes.status).toBe(401)
+    const deniedBody = await deniedRes.json()
+
+    const missingDeniedRes = await app.request("/overview?bookingCode=BK-2026-000000", {
+      method: "GET",
+    })
+    expect(missingDeniedRes.status).toBe(401)
+    const missingDeniedBody = await missingDeniedRes.json()
+    expect(missingDeniedBody.error).toBe(deniedBody.error)
+    expect(missingDeniedBody.code).toBe(deniedBody.code)
 
     const badLookupRes = await app.request("/guest-lookup", {
       method: "POST",
