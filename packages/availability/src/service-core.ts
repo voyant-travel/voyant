@@ -258,11 +258,43 @@ export async function updateSlot(
   data: UpdateAvailabilitySlotInput,
   runtime: SlotMutationRuntime = {},
 ) {
-  const patch = {
-    ...data,
+  const { remainingPax: _ignoredRemainingPax, ...rest } = data
+  const patch: Record<string, unknown> = {
+    ...rest,
     startsAt: data.startsAt === undefined ? undefined : new Date(data.startsAt),
     endsAt: data.endsAt === undefined ? undefined : toDateOrNull(data.endsAt),
     updatedAt: new Date(),
+  }
+
+  // `remaining_pax` is a derived value the service owns — concurrent flows
+  // (holds, bookings, refunds) update it atomically while a form is open,
+  // so we never trust a client-supplied snapshot (#1087, Codex review on
+  // #1088). Recompute here using the row's *current* state inside the same
+  // UPDATE statement so the capacity-change rebalance is race-free.
+  //
+  //   - Switching to unlimited → NULL (no cap).
+  //   - Changing initialPax with a finite cap → preserve the consumed
+  //     delta: `new_initial - (old_initial - old_remaining)`, clamped to
+  //     [0, new_initial]. If consumed > new_initial (capacity dropped
+  //     below what's already booked) the slot lands at 0; the operator
+  //     can release allocations to recover headroom.
+  //   - Leaving capacity alone → don't touch remaining_pax.
+  if (data.unlimited === true) {
+    patch.remainingPax = null
+  } else if (data.initialPax !== undefined && data.initialPax !== null) {
+    const newInitial = data.initialPax
+    patch.remainingPax = sql`GREATEST(
+      0,
+      LEAST(
+        ${newInitial}::int,
+        ${newInitial}::int
+          - GREATEST(
+              0,
+              COALESCE(${availabilitySlots.initialPax}, ${newInitial}::int)
+                - COALESCE(${availabilitySlots.remainingPax}, ${newInitial}::int)
+            )
+      )
+    )::int`
   }
 
   const [row] = await db

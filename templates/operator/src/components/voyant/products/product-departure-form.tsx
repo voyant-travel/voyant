@@ -101,39 +101,6 @@ export interface DepartureFormProps {
   onCancel?: () => void
 }
 
-/**
- * Compute the new `remaining_pax` to send to the API on a slot save.
- *
- * Bug history (#1087): the form used to send `remainingPax = initialPax` on
- * every save, which silently re-sold already-booked seats. A capacity-38
- * slot with 26 booked (`remaining_pax = 12`) would reset to 38 after any
- * edit, letting the next booking double-allocate seats already taken.
- *
- * The new rule preserves the consumed delta when editing:
- *   - Unlimited or no initial capacity → `null`.
- *   - New slot → `initialPax` (nothing consumed yet).
- *   - Editing → keep the running consumed count: `min(initialPax, initialPax - consumed)`.
- *     If capacity shrank below what's already consumed, clamp to 0 (defensive;
- *     the form ideally prevents this but the math should be safe).
- *
- * Exported for unit testing — onSubmit is a closure-internal handler.
- */
-export function computeRemainingPaxForUpdate(
-  initialPax: number | null,
-  options: {
-    isEditing: boolean
-    previousInitialPax: number | null
-    previousRemainingPax: number | null
-  },
-): number | null {
-  if (initialPax == null) return null
-  if (!options.isEditing) return initialPax
-  const oldInitial = options.previousInitialPax ?? initialPax
-  const oldRemaining = options.previousRemainingPax ?? initialPax
-  const consumed = Math.max(0, oldInitial - oldRemaining)
-  return Math.max(0, Math.min(initialPax, initialPax - consumed))
-}
-
 function combineLocalToIso(date: string, time: string): string {
   const iso = new Date(`${date}T${time}:00Z`).toISOString()
   return iso
@@ -251,12 +218,6 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
     const initialPax =
       !values.unlimited && typeof values.initialPax === "number" ? values.initialPax : null
 
-    const remainingPax = computeRemainingPaxForUpdate(values.unlimited ? null : initialPax, {
-      isEditing,
-      previousInitialPax: slot?.initialPax ?? null,
-      previousRemainingPax: slot?.remainingPax ?? null,
-    })
-
     // Treat blank / zero overrides as `null` so the slot card doesn't show
     // "0 nights / 0 days" after the operator clears the override (#1087 side
     // bug). The schema accepts `null` for both; sending `0` was the bug.
@@ -264,7 +225,13 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
       typeof values.nights === "number" && values.nights > 0 ? values.nights : null
     const daysOverride = typeof values.days === "number" && values.days > 0 ? values.days : null
 
-    const payload = {
+    // `remainingPax` is intentionally omitted on edit — the slot service is
+    // the source of truth for that field. Concurrent flows (holds, bookings,
+    // refunds) mutate it atomically while a form is open, so any snapshot
+    // we computed in JS would be stale by save time (#1087, Codex review on
+    // #1088). The backend's `updateSlot` recomputes remaining_pax in the
+    // same UPDATE statement when initialPax / unlimited change.
+    const baseFields = {
       productId,
       itineraryId: values.itineraryId ? values.itineraryId : null,
       dateLocal: values.startDate,
@@ -274,16 +241,17 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
       status: values.status,
       unlimited: values.unlimited,
       initialPax,
-      remainingPax,
       nights: nightsOverride,
       days: daysOverride,
       notes: values.notes || null,
     }
 
     if (isEditing) {
-      await api.patch(`/v1/availability/slots/${slot.id}`, payload)
+      await api.patch(`/v1/availability/slots/${slot.id}`, baseFields)
     } else {
-      await api.post("/v1/availability/slots", payload)
+      // New slots haven't been booked against yet, so seeding remainingPax
+      // from initialPax is correct on create.
+      await api.post("/v1/availability/slots", { ...baseFields, remainingPax: initialPax })
     }
     onSuccess()
   }
