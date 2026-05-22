@@ -36,7 +36,7 @@ const ignoredLineIncludes = [
   "= useQuery(",
   "= useMutation(",
   "= useInfiniteQuery(",
-  "method: \"",
+  'method: "',
   "method: '",
   "headers: {",
   "function useEditingToggle<",
@@ -88,7 +88,10 @@ function looksLikeTailwindUtility(value) {
   // Template-literal class lists embed conditional expressions like
   // `mt-1 ${mono ? "font-mono" : "font-medium"}`. Strip the ${...} chunks
   // before tokenizing so the remaining Tailwind utility names still pass.
-  const stripped = value.replace(/\$\{[^}]*\}/g, "").replace(/[`"']/g, "").trim()
+  const stripped = value
+    .replace(/\$\{[^}]*\}/g, "")
+    .replace(/[`"']/g, "")
+    .trim()
   if (!stripped) {
     return false
   }
@@ -267,10 +270,7 @@ async function collectOptInRoots() {
  * shape produces false positives from the JSX-text heuristic. Translate the
  * UI strings and rerun the scanner to confirm before removing an entry.
  */
-const HARDCODED_FILE_ALLOWLIST = new Set(
-  [
-  ].map((relative) => path.join(rootDir, relative)),
-)
+const HARDCODED_FILE_ALLOWLIST = new Set([].map((relative) => path.join(rootDir, relative)))
 
 async function collectSourceFiles(rootPath) {
   const results = []
