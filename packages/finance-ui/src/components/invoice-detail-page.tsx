@@ -90,6 +90,10 @@ export interface InvoiceDetailPageProps {
   slots?: InvoiceDetailPageSlots
 }
 
+function getDefaultInvoiceAttachmentDownloadHref(attachment: InvoiceAttachmentRecord) {
+  return `/v1/admin/finance/invoice-attachments/${attachment.id}/download`
+}
+
 export function InvoiceDetailPage({
   id,
   className,
@@ -240,10 +244,7 @@ export function InvoiceDetailPage({
           attachments={attachments}
           pending={attachmentsQuery.isPending}
           deletePending={removeAttachment.isPending}
-          getDownloadHref={
-            getAttachmentDownloadHref ??
-            ((attachment) => `/v1/finance/invoice-attachments/${attachment.id}/download`)
-          }
+          getDownloadHref={getAttachmentDownloadHref ?? getDefaultInvoiceAttachmentDownloadHref}
           onCreate={() => {
             setEditingAttachment(undefined)
             setAttachmentOpen(true)
