@@ -1,5 +1,11 @@
 # @voyantjs/i18n
 
+## 0.66.0
+
+### Minor Changes
+
+- a74089c: Add operator admin message keys across the trips, bookings, legal, products, settings, action-ledger, availability, and resources bundles (en + ro) to back the operator template's voyant components subtree. All additions are additive — existing keys are unchanged.
+
 ## 0.65.0
 
 ## 0.64.1
