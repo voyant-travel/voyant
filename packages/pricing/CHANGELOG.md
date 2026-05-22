@@ -1,5 +1,16 @@
 # @voyantjs/pricing
 
+## 0.66.6
+
+### Patch Changes
+
+- Updated dependencies [f6634ff]
+  - @voyantjs/availability@0.66.6
+  - @voyantjs/core@0.66.6
+  - @voyantjs/db@0.66.6
+  - @voyantjs/hono@0.66.6
+  - @voyantjs/products@0.66.6
+
 ## 0.66.5
 
 ### Patch Changes

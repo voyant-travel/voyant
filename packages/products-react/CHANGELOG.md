@@ -1,5 +1,14 @@
 # @voyantjs/products-react
 
+## 0.66.6
+
+### Patch Changes
+
+- f6634ff: Add per-product customer contract template overrides and surface them through product admin and public catalog payloads.
+- Updated dependencies [f6634ff]
+  - @voyantjs/products@0.66.6
+  - @voyantjs/react@0.66.6
+
 ## 0.66.5
 
 ### Patch Changes

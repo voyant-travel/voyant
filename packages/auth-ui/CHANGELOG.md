@@ -1,5 +1,15 @@
 # @voyantjs/auth-ui
 
+## 0.66.6
+
+### Patch Changes
+
+- @voyantjs/admin@0.66.6
+- @voyantjs/auth-react@0.66.6
+- @voyantjs/i18n@0.66.6
+- @voyantjs/types@0.66.6
+- @voyantjs/ui@0.66.6
+
 ## 0.66.5
 
 ### Patch Changes

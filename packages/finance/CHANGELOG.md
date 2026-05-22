@@ -1,5 +1,20 @@
 # @voyantjs/finance
 
+## 0.66.6
+
+### Patch Changes
+
+- 2a40d26: Add operator-configurable invoice FX settings, data FX exchange-rate resolution helpers, non-fatal invoice FX resolver error handling, invoice-issued event enrichment, and SmartBill exchange-rate mapping.
+- Updated dependencies [f6634ff]
+  - @voyantjs/action-ledger@0.66.6
+  - @voyantjs/bookings@0.66.6
+  - @voyantjs/core@0.66.6
+  - @voyantjs/db@0.66.6
+  - @voyantjs/hono@0.66.6
+  - @voyantjs/products@0.66.6
+  - @voyantjs/storage@0.66.6
+  - @voyantjs/utils@0.66.6
+
 ## 0.66.5
 
 ### Patch Changes
