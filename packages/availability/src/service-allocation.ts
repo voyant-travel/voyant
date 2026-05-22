@@ -49,6 +49,13 @@ export interface AllocationManifestTraveler {
   bookingId: string
   bookingNumber: string
   bookingStatus: string
+  /**
+   * Per-slot booking ordinal (1-based) derived from each booking's
+   * createdAt. All travelers on the same booking share the same number,
+   * so the operator can scan the resource grid and spot at a glance
+   * which chips belong together.
+   */
+  bookingSequence: number
   /** Aggregated payment status of the parent booking (see derivePaymentStatus). */
   paymentStatus: AllocationPaymentStatus
   firstName: string
@@ -72,6 +79,8 @@ export interface AllocationManifestBooking {
   id: string
   bookingNumber: string
   status: string
+  /** Per-slot ordinal (1-based) by createdAt; same number as the travelers on this booking. */
+  bookingSequence: number
   /** Aggregated payment status of the booking (see derivePaymentStatus). */
   paymentStatus: AllocationPaymentStatus
   contactFirstName: string | null
@@ -138,6 +147,13 @@ export async function getSlotAllocationManifest(
   const bookingIds = bookingRows.map((row) => row.id)
   const travelerRows = await loadSlotTravelerRows(db, bookingIds)
   const bookingById = new Map(bookingRows.map((row) => [row.id, row]))
+  // Assign 1-based slot-local sequence by booking createdAt. The SQL above
+  // already orders by `created_at` then `booking_number`, so iterating in
+  // array order is the same as iterating in chronological order.
+  const sequenceByBookingId = new Map<string, number>()
+  for (const [index, row] of bookingRows.entries()) {
+    sequenceByBookingId.set(row.id, index + 1)
+  }
   const travelersByBooking = new Map<string, AllocationManifestTraveler[]>()
 
   for (const row of travelerRows) {
@@ -147,6 +163,7 @@ export async function getSlotAllocationManifest(
       bookingId: row.booking_id,
       bookingNumber: booking?.booking_number ?? "",
       bookingStatus: booking?.status ?? "unknown",
+      bookingSequence: sequenceByBookingId.get(row.booking_id) ?? 0,
       paymentStatus: booking ? derivePaymentStatus(booking) : "unpaid",
       firstName: row.first_name,
       lastName: row.last_name,
@@ -170,10 +187,11 @@ export async function getSlotAllocationManifest(
   }
 
   const bookings = bookingRows.map(
-    (row): AllocationManifestBooking => ({
+    (row, index): AllocationManifestBooking => ({
       id: row.id,
       bookingNumber: row.booking_number,
       status: row.status,
+      bookingSequence: index + 1,
       paymentStatus: derivePaymentStatus(row),
       contactFirstName: row.contact_first_name,
       contactLastName: row.contact_last_name,
@@ -1036,10 +1054,12 @@ function serializeSlot(slot: {
   }
 }
 
-interface BookingRow {
+export interface BookingRow {
   id: string
   booking_number: string
   status: string
+  created_at: string | Date | null
+  paid_at: string | Date | null
   contact_first_name: string | null
   contact_last_name: string | null
   contact_email: string | null
@@ -1049,30 +1069,46 @@ interface BookingRow {
   sell_amount_cents: number | null
   invoice_total_cents: number | null
   invoice_paid_cents: number | null
+  schedules_paid_cents: number | null
 }
 
 export type AllocationPaymentStatus = "paid" | "partial" | "unpaid"
 
 /**
- * Roll up a booking's invoices into a single paid / partial / unpaid
- * status for the allocation chip's color coding.
+ * Roll up a booking's payment state into a single paid / partial / unpaid
+ * status for the allocation chip's color coding. Signals checked in order:
  *
- *   - No invoices issued → `unpaid` (booking exists but hasn't been
- *     billed yet; operator has charged no money).
- *   - Free booking (sell amount 0) → `paid` (nothing owed).
- *   - All invoices fully paid → `paid`.
- *   - Some paid, some still due → `partial`.
- *   - Nothing paid → `unpaid`.
+ *   1. Free booking (`sell_amount_cents <= 0`) → `paid` (nothing owed).
+ *   2. `bookings.paid_at` is set → `paid` (operator marked the booking
+ *      settled; this is authoritative regardless of invoice plumbing).
+ *   3. Sum of `booking_payment_schedules.amount_cents WHERE status='paid'`
+ *      covers `sell_amount_cents` → `paid` (deposit-milestone flows that
+ *      never run a final invoice).
+ *   4. That schedule sum is positive → `partial`.
+ *   5. No invoices issued (`invoice_total_cents = 0`) → `unpaid`.
+ *   6. `invoice_paid_cents <= 0` → `unpaid`.
+ *   7. `invoice_paid_cents >= invoice_total_cents` → `paid`.
+ *   8. Otherwise → `partial`.
+ *
+ * The schedule and `paid_at` checks were added because the invoice-only
+ * rule mis-colored booked-and-settled trips as red whenever the operator
+ * billed via schedules without issuing an invoice, or recorded settlement
+ * on the schedule rather than a `payments` row (issue #1079).
  */
-function derivePaymentStatus(row: BookingRow): AllocationPaymentStatus {
+export function derivePaymentStatus(row: BookingRow): AllocationPaymentStatus {
   const sellAmount = row.sell_amount_cents ?? 0
   if (sellAmount <= 0) return "paid"
+  if (row.paid_at != null) return "paid"
+
+  const schedulesPaid = row.schedules_paid_cents ?? 0
+  if (schedulesPaid >= sellAmount) return "paid"
+
   const invoiceTotal = row.invoice_total_cents ?? 0
   const invoicePaid = row.invoice_paid_cents ?? 0
-  if (invoiceTotal === 0) return "unpaid"
-  if (invoicePaid <= 0) return "unpaid"
-  if (invoicePaid >= invoiceTotal) return "paid"
-  return "partial"
+  if (invoicePaid >= invoiceTotal && invoiceTotal > 0) return "paid"
+
+  if (schedulesPaid > 0 || invoicePaid > 0) return "partial"
+  return "unpaid"
 }
 
 interface TravelerRow {
@@ -1095,11 +1131,12 @@ interface TravelerRow {
 }
 
 async function loadSlotBookingRows(db: PostgresJsDatabase, slotId: string): Promise<BookingRow[]> {
-  // `invoice_totals` is a LEFT JOIN aggregation that may reference a
-  // missing `invoices` table in catalog-less / finance-less deploys —
-  // we'd want to silently fall back to `unpaid` for every booking
-  // rather than crash the manifest fetch. Hence the try / catch on
-  // `undefined_table` (Postgres 42P01) with a non-aggregating retry.
+  // `invoice_totals` and `schedule_totals` are LEFT JOIN aggregations that
+  // may reference tables missing in catalog-less / finance-less deploys.
+  // The retries below progressively drop joins that hit "undefined_table"
+  // (Postgres 42P01) so the manifest still loads with `unpaid` rollups —
+  // each fallback fills the missing fields with zeros (see issue #1079
+  // for the rationale on schedule_totals).
   try {
     return await executeRows<BookingRow>(
       db,
@@ -1108,6 +1145,8 @@ async function loadSlotBookingRows(db: PostgresJsDatabase, slotId: string): Prom
         b.id,
         b.booking_number,
         b.status,
+        b.created_at,
+        b.paid_at,
         b.contact_first_name,
         b.contact_last_name,
         b.contact_email,
@@ -1116,7 +1155,58 @@ async function loadSlotBookingRows(db: PostgresJsDatabase, slotId: string): Prom
         b.pax,
         b.sell_amount_cents,
         COALESCE(inv.total_cents, 0) AS invoice_total_cents,
-        COALESCE(inv.paid_cents, 0) AS invoice_paid_cents
+        COALESCE(inv.paid_cents, 0) AS invoice_paid_cents,
+        COALESCE(sch.paid_cents, 0) AS schedules_paid_cents
+      FROM bookings b
+      JOIN booking_allocations ba ON ba.booking_id = b.id
+      LEFT JOIN (
+        SELECT
+          booking_id,
+          SUM(total_cents) AS total_cents,
+          SUM(paid_cents) AS paid_cents
+        FROM invoices
+        WHERE status <> 'void'
+        GROUP BY booking_id
+      ) inv ON inv.booking_id = b.id
+      LEFT JOIN (
+        SELECT
+          booking_id,
+          SUM(amount_cents) AS paid_cents
+        FROM booking_payment_schedules
+        WHERE status = 'paid'
+        GROUP BY booking_id
+      ) sch ON sch.booking_id = b.id
+      WHERE ba.availability_slot_id = ${slotId}
+        AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+        AND ba.status IN ('held', 'confirmed', 'fulfilled')
+      ORDER BY b.created_at, b.booking_number
+    `,
+    )
+  } catch (error) {
+    if (!isUndefinedTableError(error)) throw error
+  }
+
+  // Retry without the schedules join (booking_payment_schedules missing).
+  try {
+    return await executeRows<BookingRow>(
+      db,
+      sql`
+      SELECT DISTINCT
+        b.id,
+        b.booking_number,
+        b.status,
+        b.created_at,
+        b.paid_at,
+        b.contact_first_name,
+        b.contact_last_name,
+        b.contact_email,
+        b.contact_phone,
+        b.sell_currency,
+        b.pax,
+        b.sell_amount_cents,
+        COALESCE(inv.total_cents, 0) AS invoice_total_cents,
+        COALESCE(inv.paid_cents, 0) AS invoice_paid_cents,
+        0 AS schedules_paid_cents
       FROM bookings b
       JOIN booking_allocations ba ON ba.booking_id = b.id
       LEFT JOIN (
@@ -1131,35 +1221,46 @@ async function loadSlotBookingRows(db: PostgresJsDatabase, slotId: string): Prom
       WHERE ba.availability_slot_id = ${slotId}
         AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
         AND ba.status IN ('held', 'confirmed', 'fulfilled')
-      ORDER BY b.booking_number
+      ORDER BY b.created_at, b.booking_number
     `,
     )
   } catch (error) {
     if (!isUndefinedTableError(error)) throw error
-    const rows = await executeRows<Omit<BookingRow, "invoice_total_cents" | "invoice_paid_cents">>(
-      db,
-      sql`
-      SELECT DISTINCT
-        b.id,
-        b.booking_number,
-        b.status,
-        b.contact_first_name,
-        b.contact_last_name,
-        b.contact_email,
-        b.contact_phone,
-        b.sell_currency,
-        b.pax,
-        b.sell_amount_cents
-      FROM bookings b
-      JOIN booking_allocations ba ON ba.booking_id = b.id
-      WHERE ba.availability_slot_id = ${slotId}
-        AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
-        AND ba.status IN ('held', 'confirmed', 'fulfilled')
-      ORDER BY b.booking_number
-    `,
-    )
-    return rows.map((row) => ({ ...row, invoice_total_cents: 0, invoice_paid_cents: 0 }))
   }
+
+  // Final fallback: invoices + schedules both missing — pure bookings query.
+  const rows = await executeRows<
+    Omit<BookingRow, "invoice_total_cents" | "invoice_paid_cents" | "schedules_paid_cents">
+  >(
+    db,
+    sql`
+    SELECT DISTINCT
+      b.id,
+      b.booking_number,
+      b.status,
+      b.created_at,
+      b.paid_at,
+      b.contact_first_name,
+      b.contact_last_name,
+      b.contact_email,
+      b.contact_phone,
+      b.sell_currency,
+      b.pax,
+      b.sell_amount_cents
+    FROM bookings b
+    JOIN booking_allocations ba ON ba.booking_id = b.id
+    WHERE ba.availability_slot_id = ${slotId}
+      AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+      AND ba.status IN ('held', 'confirmed', 'fulfilled')
+    ORDER BY b.created_at, b.booking_number
+  `,
+  )
+  return rows.map((row) => ({
+    ...row,
+    invoice_total_cents: 0,
+    invoice_paid_cents: 0,
+    schedules_paid_cents: 0,
+  }))
 }
 
 function isUndefinedTableError(error: unknown): boolean {

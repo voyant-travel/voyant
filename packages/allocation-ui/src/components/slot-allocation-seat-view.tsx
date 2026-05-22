@@ -29,7 +29,13 @@ import {
   seatName,
   seatRows,
 } from "./slot-allocation-model.js"
-import { AllocationColumn, SeatPositionBadge, TravelerTile } from "./slot-allocation-shared.js"
+import {
+  AllocationColumn,
+  paymentStatusChipClass,
+  paymentStatusTooltip,
+  SeatPositionBadge,
+  TravelerTile,
+} from "./slot-allocation-shared.js"
 
 export function VehicleSeatsView({
   seats,
@@ -167,14 +173,20 @@ function VehicleSeatCell({
 }) {
   const messages = useAllocationUiMessagesOrDefault()
   const [pickerOpen, setPickerOpen] = useState(false)
+  const occupiedClasses = occupant ? paymentStatusChipClass(occupant.paymentStatus) : null
   const cellClasses = cn(
     "flex min-h-24 flex-col rounded-md border bg-background p-2 text-left text-xs",
+    occupiedClasses,
     overflow ? "border-destructive bg-destructive/5" /* i18n-literal-ok CSS class token */ : null,
   )
 
   if (occupant) {
     return (
-      <div id={`seat:${seat.id}`} className={cellClasses}>
+      <div
+        id={`seat:${seat.id}`}
+        className={cellClasses}
+        title={paymentStatusTooltip(occupant.paymentStatus, messages)}
+      >
         <div className="flex items-start justify-between gap-2">
           <span className="font-medium">{seat.label ?? seatName(seat, messages)}</span>
           <SeatPositionBadge seat={seat} />
@@ -183,6 +195,11 @@ function VehicleSeatCell({
           <div className="flex items-center gap-1">
             {occupant.isLeadTraveler ? (
               <Crown className="size-3 text-amber-500" aria-label={messages.lead} />
+            ) : null}
+            {occupant.bookingSequence > 0 ? (
+              <span className="text-muted-foreground tabular-nums" aria-hidden="true">
+                ({occupant.bookingSequence})
+              </span>
             ) : null}
             <span className="truncate font-medium">{occupant.fullName}</span>
           </div>
