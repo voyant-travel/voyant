@@ -1,5 +1,8 @@
 import type { StorageObject, StorageProvider, StorageUploadBody, UploadOptions } from "../types.js"
 
+export const R2_SIGNED_URL_CONFIGURATION_ERROR_MESSAGE =
+  "R2 provider: signedUrl requires either `publicBaseUrl` or `signer` to be configured"
+
 /**
  * Subset of the Cloudflare Workers `R2Bucket` binding we depend on. Kept
  * as a minimal structural type so this package does not need a runtime
@@ -89,9 +92,7 @@ export function createR2Provider(options: R2ProviderOptions): StorageProvider {
     async signedUrl(key, expiresIn) {
       if (options.signer) return options.signer(key, expiresIn)
       if (!publicBaseUrl) {
-        throw new Error(
-          "R2 provider: signedUrl requires either `publicBaseUrl` or `signer` to be configured",
-        )
+        throw new Error(R2_SIGNED_URL_CONFIGURATION_ERROR_MESSAGE)
       }
       return `${publicBaseUrl}${key}`
     },

@@ -1,5 +1,8 @@
 import type { StorageProvider } from "@voyantjs/storage"
-import { createR2Provider } from "@voyantjs/storage/providers/r2"
+import {
+  createR2Provider,
+  R2_SIGNED_URL_CONFIGURATION_ERROR_MESSAGE,
+} from "@voyantjs/storage/providers/r2"
 
 const MIME_BY_EXT: Record<string, string> = {
   pdf: "application/pdf",
@@ -111,10 +114,15 @@ export function createDocumentStorage(env: CloudflareBindings): StorageProvider 
 export async function resolveDocumentDownloadUrl(
   env: CloudflareBindings,
   storageKey: string,
-  _expiresIn = DEFAULT_DOCUMENT_URL_EXPIRES_IN,
+  expiresIn = DEFAULT_DOCUMENT_URL_EXPIRES_IN,
 ): Promise<string | null> {
   const storage = createDocumentStorage(env)
   if (!storage) return null
+  try {
+    return await storage.signedUrl(storageKey, expiresIn)
+  } catch (error) {
+    if (!isR2SignedUrlConfigurationError(error)) throw error
+  }
   const urlEnv = env as CloudflareBindings & {
     API_BASE_URL?: string
     DOCUMENTS_BASE_URL?: string
@@ -134,4 +142,8 @@ export function encodeStorageKeyPath(key: string): string {
     .split("/")
     .map((segment) => encodeURIComponent(segment))
     .join("/")
+}
+
+function isR2SignedUrlConfigurationError(error: unknown): boolean {
+  return error instanceof Error && error.message === R2_SIGNED_URL_CONFIGURATION_ERROR_MESSAGE
 }

@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest"
 
 import type { R2BucketLike } from "../../src/providers/r2.js"
-import { createR2Provider } from "../../src/providers/r2.js"
+import {
+  createR2Provider,
+  R2_SIGNED_URL_CONFIGURATION_ERROR_MESSAGE,
+} from "../../src/providers/r2.js"
 
 function fakeBucket(): R2BucketLike & {
   store: Map<string, { bytes: Uint8Array; options: unknown }>
@@ -100,7 +103,7 @@ describe("createR2Provider", () => {
     const provider = createR2Provider({ bucket })
 
     await expect(provider.signedUrl("file.pdf", 300)).rejects.toThrow(
-      "R2 provider: signedUrl requires either `publicBaseUrl` or `signer` to be configured",
+      R2_SIGNED_URL_CONFIGURATION_ERROR_MESSAGE,
     )
   })
 })
