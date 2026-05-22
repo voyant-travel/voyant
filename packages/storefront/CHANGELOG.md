@@ -1,5 +1,22 @@
 # @voyantjs/storefront
 
+## 0.66.1
+
+### Patch Changes
+
+- e0b94f3: Fix storefront departure price previews so required adult person units are considered when mapping traveler pax to option units.
+- Updated dependencies [3608633]
+  - @voyantjs/availability@0.66.1
+  - @voyantjs/bookings@0.66.1
+  - @voyantjs/core@0.66.1
+  - @voyantjs/crm@0.66.1
+  - @voyantjs/extras@0.66.1
+  - @voyantjs/finance@0.66.1
+  - @voyantjs/hono@0.66.1
+  - @voyantjs/pricing@0.66.1
+  - @voyantjs/products@0.66.1
+  - @voyantjs/sellability@0.66.1
+
 ## 0.66.0
 
 ### Patch Changes

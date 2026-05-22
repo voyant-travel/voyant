@@ -1,5 +1,14 @@
 # @voyantjs/availability
 
+## 0.66.1
+
+### Patch Changes
+
+- 3608633: Add a server-backed availability overview endpoint and React hook so operator overview metrics and attention lists are computed from the full dataset instead of the first paginated list page.
+  - @voyantjs/core@0.66.1
+  - @voyantjs/db@0.66.1
+  - @voyantjs/hono@0.66.1
+
 ## 0.66.0
 
 ### Patch Changes
