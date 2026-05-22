@@ -1,7 +1,8 @@
 "use client"
 
 import type { InitiatedCheckoutCollectionRecord } from "@voyantjs/checkout"
-import { useCollectPayment } from "@voyantjs/checkout-react"
+import { useCheckoutPaymentLinkConfig, useCollectPayment } from "@voyantjs/checkout-react"
+import { buildPaymentLinkUrl } from "@voyantjs/finance/payment-link"
 import {
   type BookingPaymentScheduleRecord,
   useBookingPaymentSchedules,
@@ -272,9 +273,14 @@ function formatScheduleOption(
 
 function ResultPanel({ result }: { result: InitiatedCheckoutCollectionRecord }) {
   const messages = useCheckoutUiMessagesOrDefault().collectPaymentDialog
+  const configQuery = useCheckoutPaymentLinkConfig()
   const sessionId = result.paymentSession?.id ?? null
   const landingUrl =
-    sessionId && typeof window !== "undefined" ? `${window.location.origin}/pay/${sessionId}` : null
+    sessionId && typeof window !== "undefined"
+      ? buildPaymentLinkUrl(sessionId, {
+          baseUrl: configQuery.data?.publicCheckoutBaseUrl ?? window.location.origin,
+        })
+      : null
 
   if (!landingUrl) {
     return (

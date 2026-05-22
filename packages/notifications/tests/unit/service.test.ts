@@ -6,6 +6,7 @@ import {
   NotificationError,
   renderNotificationTemplate,
 } from "../../src/service.js"
+import { resolveNotificationPaymentUrl } from "../../src/service-deliveries.js"
 import { resolveReminderRecipient } from "../../src/service-shared.js"
 import type { NotificationProvider } from "../../src/types.js"
 
@@ -174,6 +175,36 @@ describe("renderNotificationTemplate", () => {
     )
 
     expect(rendered).toBe("Pay 1250 RON by 2026-05-15 at https://pay.example.test/session")
+  })
+
+  it("prefers configured payment URLs over provider redirects in payment context", () => {
+    const rendered = renderNotificationTemplate("Pay {{ payment.link }}", {
+      paymentSession: {
+        paymentUrl: "https://brand.example.com/pay/pmss_123",
+        redirectUrl: "https://processor.example.test/session",
+      },
+    })
+
+    expect(rendered).toBe("Pay https://brand.example.com/pay/pmss_123")
+  })
+
+  it("resolves absolute payment URLs for outbound notification context", () => {
+    expect(
+      resolveNotificationPaymentUrl("pmss_123", {
+        paymentLinkBaseUrl: "https://checkout.example.test/",
+        redirectUrl: "https://processor.example.test/session",
+      }),
+    ).toBe("https://checkout.example.test/pay/pmss_123")
+    expect(
+      resolveNotificationPaymentUrl("pmss_123", {
+        redirectUrl: "https://processor.example.test/session",
+      }),
+    ).toBe("https://processor.example.test/session")
+    expect(
+      resolveNotificationPaymentUrl("pmss_123", {
+        redirectUrl: "/provider/session",
+      }),
+    ).toBeNull()
   })
 
   it("fills confirmation payment fields from a paid session and open balance schedule", () => {

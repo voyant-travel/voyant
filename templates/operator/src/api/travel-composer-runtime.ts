@@ -13,7 +13,7 @@ import {
 import type { PricingBasis } from "@voyantjs/catalog/snapshot/schema"
 import type { EventBus } from "@voyantjs/core"
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import { financeService, type PaymentCompletedEvent } from "@voyantjs/finance"
+import { buildPaymentLinkUrl, financeService, type PaymentCompletedEvent } from "@voyantjs/finance"
 import type {
   AncillarySelection,
   FlightBookRequest,
@@ -538,8 +538,19 @@ async function startTripCheckout(
   return {
     kind: input.intent === "bank_transfer" ? "bank_transfer_instructions" : "payment_session",
     paymentSessionId: session.id,
-    checkoutUrl: `/pay/${session.id}`,
+    checkoutUrl: buildPaymentLinkUrl(session.id, {
+      baseUrl: resolvePublicCheckoutBaseUrl(c.env as CloudflareBindings),
+    }),
   }
+}
+
+function resolvePublicCheckoutBaseUrl(env: CloudflareBindings): string | null {
+  return (
+    env.PUBLIC_CHECKOUT_BASE_URL?.trim() ||
+    env.DASH_BASE_URL?.trim() ||
+    env.APP_URL?.trim().replace(/\/api\/?$/, "") ||
+    null
+  )
 }
 
 function checkoutResultToComponentResult(

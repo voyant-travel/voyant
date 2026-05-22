@@ -47,6 +47,8 @@ type Env = {
 export type NotificationsRoutesOptions = {
   providers?: ReadonlyArray<NotificationProvider>
   resolveProviders?: (bindings: Record<string, unknown>) => ReadonlyArray<NotificationProvider>
+  publicCheckoutBaseUrl?: string | null
+  resolvePublicCheckoutBaseUrl?: (bindings: Record<string, unknown>) => string | null | undefined
   documentAttachmentResolver?: BookingDocumentAttachmentResolver
   resolveDocumentAttachmentResolver?: (
     bindings: Record<string, unknown>,
@@ -57,6 +59,7 @@ export type NotificationsRoutesOptions = {
 
 export type NotificationsRouteRuntime = {
   providers: ReadonlyArray<NotificationProvider>
+  publicCheckoutBaseUrl?: string | null
   documentAttachmentResolver?: BookingDocumentAttachmentResolver
   eventBus?: EventBus
 }
@@ -69,6 +72,8 @@ export function buildNotificationsRouteRuntime(
 ): NotificationsRouteRuntime {
   return {
     providers: options?.resolveProviders?.(bindings) ?? options?.providers ?? [],
+    publicCheckoutBaseUrl:
+      options?.resolvePublicCheckoutBaseUrl?.(bindings) ?? options?.publicCheckoutBaseUrl ?? null,
     documentAttachmentResolver:
       options?.resolveDocumentAttachmentResolver?.(bindings) ?? options?.documentAttachmentResolver,
     eventBus: options?.resolveEventBus?.(bindings) ?? options?.eventBus,
@@ -295,7 +300,10 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
           c.get("db"),
           dispatcher,
           c.req.param("id"),
-          await parseJsonBody(c, sendPaymentSessionNotificationSchema),
+          withPaymentLinkBaseUrl(
+            await parseJsonBody(c, sendPaymentSessionNotificationSchema),
+            runtime.publicCheckoutBaseUrl,
+          ),
         )
         if (!row) return c.json({ error: "Payment session not found" }, 404)
         return c.json({ data: row }, 201)
@@ -313,7 +321,10 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
           c.get("db"),
           dispatcher,
           c.req.param("id"),
-          await parseJsonBody(c, sendInvoiceNotificationSchema),
+          withPaymentLinkBaseUrl(
+            await parseJsonBody(c, sendInvoiceNotificationSchema),
+            runtime.publicCheckoutBaseUrl,
+          ),
         )
         if (!row) return c.json({ error: "Invoice not found" }, 404)
         return c.json({ data: row }, 201)
@@ -444,4 +455,12 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
         return c.json({ error: message }, 400)
       }
     })
+}
+
+function withPaymentLinkBaseUrl<T extends { paymentLinkBaseUrl?: string | null }>(
+  input: T,
+  publicCheckoutBaseUrl: string | null | undefined,
+): T {
+  if (input.paymentLinkBaseUrl || !publicCheckoutBaseUrl) return input
+  return { ...input, paymentLinkBaseUrl: publicCheckoutBaseUrl }
 }

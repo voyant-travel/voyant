@@ -13,6 +13,7 @@ import { createFinanceAdminDocumentRoutes } from "./routes-documents.js"
 import { createPublicFinanceRoutes, type PublicFinanceRouteOptions } from "./routes-public.js"
 import { createFinanceAdminSettlementRoutes } from "./routes-settlement.js"
 
+export { type BuildPaymentLinkUrlOptions, buildPaymentLinkUrl } from "./payment-link.js"
 export type { FinanceRoutes } from "./routes.js"
 export type { PublicFinanceRoutes } from "./routes-public.js"
 export {

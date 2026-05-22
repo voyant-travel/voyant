@@ -65,6 +65,11 @@ interface CloudflareBindings {
   // App URLs
   APP_URL: string
   API_BASE_URL: string
+  /**
+   * Customer-facing site that hosts `/pay/:sessionId` links. Defaults to
+   * DASH_BASE_URL/APP_URL when omitted, preserving single-worker deployments.
+   */
+  PUBLIC_CHECKOUT_BASE_URL?: string
   CORS_ALLOWLIST: string
   DASH_BASE_URL: string
   /**

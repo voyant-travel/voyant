@@ -43,6 +43,8 @@ export type CheckoutRoutesOptions = {
   resolveBankTransferDetails?: (
     bindings: Record<string, unknown>,
   ) => CheckoutBankTransferDetails | null
+  publicCheckoutBaseUrl?: string | null
+  resolvePublicCheckoutBaseUrl?: (bindings: Record<string, unknown>) => string | null | undefined
 }
 
 export type CheckoutRouteRuntime = {
@@ -50,6 +52,7 @@ export type CheckoutRouteRuntime = {
   providers: ReadonlyArray<NotificationProvider>
   paymentStarters: Record<string, CheckoutPaymentStarter>
   bankTransferDetails: CheckoutBankTransferDetails | null
+  publicCheckoutBaseUrl?: string | null
 }
 
 export const CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY = "providers.checkout.runtime"
@@ -186,5 +189,7 @@ export function buildCheckoutRouteRuntime(
     paymentStarters: options.resolvePaymentStarters?.(bindings) ?? options.paymentStarters ?? {},
     bankTransferDetails:
       options.resolveBankTransferDetails?.(bindings) ?? options.bankTransferDetails ?? null,
+    publicCheckoutBaseUrl:
+      options.resolvePublicCheckoutBaseUrl?.(bindings) ?? options.publicCheckoutBaseUrl ?? null,
   }
 }

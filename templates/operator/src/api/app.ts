@@ -113,6 +113,7 @@ import {
 
 const notificationsHonoModule = createNotificationsHonoModule({
   resolveProviders: resolveNotificationProviders,
+  resolvePublicCheckoutBaseUrl: resolvePublicCheckoutBaseUrlFromBindings,
   resolveDocumentAttachmentResolver: (bindings) => async (document) => {
     if (document.storageKey) {
       const contentBase64 = await readDocumentContentBase64(
@@ -215,6 +216,18 @@ function resolveBankTransferDetails(
   }
 }
 
+function resolvePublicCheckoutBaseUrlFromBindings(
+  bindings: Record<string, unknown>,
+): string | null {
+  const env = bindings as unknown as CloudflareBindings
+  return (
+    env.PUBLIC_CHECKOUT_BASE_URL?.trim() ||
+    env.DASH_BASE_URL?.trim() ||
+    env.APP_URL?.trim().replace(/\/api\/?$/, "") ||
+    null
+  )
+}
+
 function bankTransferDetailsFromOperatorSettings(
   operatorProfile: Awaited<ReturnType<typeof getOperatorProfile>>,
   paymentInstructions: Awaited<ReturnType<typeof getOperatorPaymentInstructions>>,
@@ -289,6 +302,7 @@ const checkoutHonoModule = createCheckoutHonoModule({
     netopia: netopiaCheckoutStarter,
   }),
   resolveBankTransferDetails,
+  resolvePublicCheckoutBaseUrl: resolvePublicCheckoutBaseUrlFromBindings,
 })
 /**
  * Process-wide registry of workflow runners. Bundles register their
@@ -1315,6 +1329,9 @@ export const app = createApp<CloudflareBindings>({
       )
       return c.json({
         data: {
+          publicCheckoutBaseUrl: resolvePublicCheckoutBaseUrlFromBindings(
+            c.env as Record<string, unknown>,
+          ),
           bankTransfer,
         },
       })

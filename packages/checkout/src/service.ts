@@ -138,6 +138,7 @@ export interface CheckoutRuntimeOptions {
   bindings?: Record<string, unknown>
   bankTransferDetails?: CheckoutBankTransferDetails | null
   paymentStarters?: Record<string, CheckoutPaymentStarter>
+  publicCheckoutBaseUrl?: string | null
 }
 
 export interface CheckoutReminderRunSummary {
@@ -631,7 +632,7 @@ export async function initiateCheckoutCollection(
         db,
         dispatcher,
         invoice.id,
-        input.invoiceNotification,
+        withPaymentLinkBaseUrl(input.invoiceNotification, runtime.publicCheckoutBaseUrl),
       )
     }
   } else if (plan.paymentSessionTarget === "invoice") {
@@ -658,7 +659,7 @@ export async function initiateCheckoutCollection(
         db,
         dispatcher,
         invoice.id,
-        input.invoiceNotification,
+        withPaymentLinkBaseUrl(input.invoiceNotification, runtime.publicCheckoutBaseUrl),
       )
     }
 
@@ -667,7 +668,7 @@ export async function initiateCheckoutCollection(
         db,
         dispatcher,
         paymentSession.id,
-        input.paymentSessionNotification,
+        withPaymentLinkBaseUrl(input.paymentSessionNotification, runtime.publicCheckoutBaseUrl),
       )
     }
   } else {
@@ -693,7 +694,7 @@ export async function initiateCheckoutCollection(
         db,
         dispatcher,
         paymentSession.id,
-        input.paymentSessionNotification,
+        withPaymentLinkBaseUrl(input.paymentSessionNotification, runtime.publicCheckoutBaseUrl),
       )
     }
   }
@@ -743,6 +744,14 @@ export async function initiateCheckoutCollection(
     bankTransferInstructions,
     providerStart,
   }
+}
+
+function withPaymentLinkBaseUrl<T extends { paymentLinkBaseUrl?: string | null }>(
+  input: T,
+  publicCheckoutBaseUrl: string | null | undefined,
+): T {
+  if (input.paymentLinkBaseUrl || !publicCheckoutBaseUrl) return input
+  return { ...input, paymentLinkBaseUrl: publicCheckoutBaseUrl }
 }
 
 export async function bootstrapCheckoutCollection(

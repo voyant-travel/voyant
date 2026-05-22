@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { useOrganization, usePerson } from "@voyantjs/crm-react"
+import { buildPaymentLinkUrl } from "@voyantjs/finance/payment-link"
 import { formatMessage } from "@voyantjs/i18n"
 import type { Trip, TripComponent } from "@voyantjs/travel-composer"
 import { getTripQueryOptions } from "@voyantjs/travel-composer-react"
@@ -247,12 +248,30 @@ function TripRecordPage({ trip, onEdit }: { trip: Trip; onEdit(): void }) {
 
 async function copyPaymentLink(paymentSessionId: string): Promise<boolean> {
   if (!paymentSessionId || typeof window === "undefined") return false
-  const url = new URL(`/pay/${paymentSessionId}`, window.location.origin).toString()
+  const publicCheckoutBaseUrl = await fetchPublicCheckoutBaseUrl()
+  const url = buildPaymentLinkUrl(paymentSessionId, {
+    baseUrl: publicCheckoutBaseUrl ?? window.location.origin,
+  })
   try {
     await navigator.clipboard.writeText(url)
     return true
   } catch {
     return false
+  }
+}
+
+async function fetchPublicCheckoutBaseUrl(): Promise<string | null> {
+  try {
+    const res = await fetch(`${getApiUrl()}/v1/public/payment-link-config`, {
+      headers: { Accept: "application/json" },
+    })
+    if (!res.ok) return null
+    const body = (await res.json()) as {
+      data?: { publicCheckoutBaseUrl?: string | null }
+    }
+    return body.data?.publicCheckoutBaseUrl ?? null
+  } catch {
+    return null
   }
 }
 

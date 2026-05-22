@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useVoyantCheckoutContext } from "../provider.js"
 
 export interface CheckoutPaymentLinkConfig {
+  publicCheckoutBaseUrl?: string | null
   bankTransfer: {
     provider?: string | null
     beneficiary: string
