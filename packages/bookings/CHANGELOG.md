@@ -1,5 +1,16 @@
 # @voyantjs/bookings
 
+## 0.66.3
+
+### Patch Changes
+
+- 83ff2de: Materialize public booking traveler rows from wizard session state updates.
+  - @voyantjs/action-ledger@0.66.3
+  - @voyantjs/core@0.66.3
+  - @voyantjs/db@0.66.3
+  - @voyantjs/hono@0.66.3
+  - @voyantjs/utils@0.66.3
+
 ## 0.66.2
 
 ### Patch Changes
