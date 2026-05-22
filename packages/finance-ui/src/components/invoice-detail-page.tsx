@@ -330,7 +330,7 @@ export function InvoiceDetailHeader({
   const messages = useFinanceUiMessagesOrDefault()
   const detail = messages.invoiceDetailPage
   const canDelete = invoice.status === "draft"
-  const invoiceType = invoice.invoiceType ?? "invoice"
+  const invoiceType = invoice.invoiceType
 
   return (
     <div
@@ -349,7 +349,15 @@ export function InvoiceDetailHeader({
           <Badge variant={invoiceStatusVariant[invoice.status] ?? "secondary"}>
             {messages.common.invoiceStatusLabels[invoice.status]}
           </Badge>
-          <Badge variant="outline">{detail.invoiceTypeLabels[invoiceType]}</Badge>
+          {invoiceType ? (
+            <Badge
+              data-slot="invoice-type-badge"
+              data-invoice-type={invoiceType}
+              variant={invoiceTypeVariant[invoiceType] ?? "secondary"}
+            >
+              {detail.invoiceTypeLabels[invoiceType]}
+            </Badge>
+          ) : null}
         </div>
         <p className="mt-1 truncate font-mono text-muted-foreground text-sm">
           {invoice.invoiceNumber}
@@ -1308,6 +1316,15 @@ export const invoiceStatusVariant: Record<
   paid: "default",
   overdue: "destructive",
   void: "secondary",
+}
+
+export const invoiceTypeVariant: Record<
+  string,
+  "default" | "secondary" | "outline" | "destructive"
+> = {
+  invoice: "default",
+  proforma: "outline",
+  credit_note: "destructive",
 }
 
 export const paymentStatusVariant: Record<
