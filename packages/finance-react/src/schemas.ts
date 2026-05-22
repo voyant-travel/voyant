@@ -231,6 +231,17 @@ export type BookingPaymentScheduleRecord = z.infer<typeof bookingPaymentSchedule
 
 export const bookingPaymentSchedulesResponse = arrayEnvelope(bookingPaymentScheduleRecordSchema)
 
+export const invoiceFxRateRecordSchema = z.object({
+  baseCurrency: z.string(),
+  quoteCurrency: z.string(),
+  date: z.string().optional(),
+  rate: z.number(),
+})
+
+export type InvoiceFxRateRecord = z.infer<typeof invoiceFxRateRecordSchema>
+
+export const invoiceFxRateResponse = singleEnvelope(invoiceFxRateRecordSchema)
+
 export const guaranteeTypeSchema = z.enum([
   "deposit",
   "credit_card",

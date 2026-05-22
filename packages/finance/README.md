@@ -154,6 +154,10 @@ The default data resolver calls the Voyant Data FX pair route
 `/data/fx/v1/fx/pair/{invoiceCurrency}/{baseCurrency}`. If the invoice currency
 matches the operator base currency, no FX fields are emitted.
 
+The same resolver also backs `GET /v1/finance/invoice-fx-rate`, which lets
+operator UI surfaces auto-fill cross-currency payment rates without exposing
+the Voyant Cloud API key to the browser.
+
 ## Exports
 
 | Entry | Description |

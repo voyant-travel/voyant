@@ -109,6 +109,12 @@ export interface FinanceActionLedgerListFilters {
   limit?: number | undefined
 }
 
+export interface FinanceInvoiceFxRateFilters {
+  baseCurrency?: string | undefined
+  quoteCurrency?: string | undefined
+  date?: string | undefined
+}
+
 export const financeQueryKeys = {
   all: ["voyant", "finance"] as const,
 
@@ -130,6 +136,8 @@ export const financeQueryKeys = {
     [...financeQueryKeys.all, "booking-payment-schedules", bookingId] as const,
   bookingGuarantees: (bookingId: string) =>
     [...financeQueryKeys.all, "booking-guarantees", bookingId] as const,
+  invoiceFxRate: (filters: FinanceInvoiceFxRateFilters) =>
+    [...financeQueryKeys.all, "invoice-fx-rate", filters] as const,
 
   supplierPayments: () => [...financeQueryKeys.all, "supplier-payments"] as const,
   supplierPaymentsList: (filters: FinanceSupplierPaymentListFilters) =>

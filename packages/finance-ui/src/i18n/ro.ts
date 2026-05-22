@@ -527,6 +527,9 @@ export const financeUiRo = {
     fields: {
       invoice: "Factura",
       amountCents: "Suma",
+      currency: "Moneda platii",
+      baseAmountCents: "Suma in moneda facturii",
+      fxRate: "Curs valutar",
       paymentDate: "Data platii",
       paymentMethod: "Metoda",
       status: "Status",
@@ -535,7 +538,18 @@ export const financeUiRo = {
     },
     placeholders: {
       invoice: "Selecteaza factura",
+      currency: "Selecteaza moneda...",
+      fxRate: "1 {invoiceCurrency} = ? {paymentCurrency}",
       referenceNumber: "Referinta bancara, numar de chitanta etc.",
+    },
+    fx: {
+      title: "Decontare in alta moneda",
+      help: "Inregistreaza suma incasata in {paymentCurrency} si valoarea aplicata pe factura in {invoiceCurrency}.",
+      rateHint:
+        "Foloseste cursul ca {paymentCurrency} pentru 1 {invoiceCurrency}; completarea lui actualizeaza suma in moneda facturii.",
+      loadingRate: "Se incarca cursul valutar...",
+      autoRateHint:
+        "Foloseste cursul curent {paymentCurrency} pentru 1 {invoiceCurrency}; il poti modifica daca este nevoie.",
     },
     invoiceOption: "{number} — {status} — {balance} {currency} de incasat",
     invoiceMeta:
@@ -549,6 +563,7 @@ export const financeUiRo = {
     validation: {
       invoiceRequired: "Selecteaza o factura pentru aceasta plata.",
       amountMinimum: "Suma trebuie sa fie mai mare decat zero.",
+      baseAmountRequired: "Introdu suma care se aplica in moneda facturii.",
       recordFailed: "Inregistrarea platii a esuat.",
     },
   },

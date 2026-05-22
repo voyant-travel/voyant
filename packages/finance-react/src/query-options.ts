@@ -9,6 +9,7 @@ import type { UseBookingPaymentSchedulesOptions } from "./hooks/use-booking-paym
 import type { UseInvoiceOptions } from "./hooks/use-invoice.js"
 import type { UseInvoiceAttachmentsOptions } from "./hooks/use-invoice-attachments.js"
 import type { UseInvoiceCreditNotesOptions } from "./hooks/use-invoice-credit-notes.js"
+import type { UseInvoiceFxRateOptions } from "./hooks/use-invoice-fx-rate.js"
 import type { UseInvoiceLineItemsOptions } from "./hooks/use-invoice-line-items.js"
 import type { UseInvoiceNotesOptions } from "./hooks/use-invoice-notes.js"
 import type { UseInvoicePaymentsOptions } from "./hooks/use-invoice-payments.js"
@@ -24,6 +25,7 @@ import type { UseVoucherOptions } from "./hooks/use-voucher.js"
 import type { UseVouchersOptions } from "./hooks/use-vouchers.js"
 import {
   getAdminBookingPayments,
+  getInvoiceFxRate,
   getPublicBookingDocuments,
   getPublicBookingPaymentOptions,
   getPublicBookingPayments,
@@ -81,6 +83,27 @@ export function getBookingGuaranteesQueryOptions(
         bookingGuaranteesResponse,
         client,
       ),
+  })
+}
+
+export function getInvoiceFxRateQueryOptions(
+  client: FetchWithValidationOptions,
+  options: UseInvoiceFxRateOptions,
+) {
+  const { enabled: _enabled = true, ...input } = options
+
+  return queryOptions({
+    queryKey: financeQueryKeys.invoiceFxRate(input),
+    queryFn: async () => {
+      if (!input.baseCurrency || !input.quoteCurrency) {
+        throw new Error("getInvoiceFxRateQueryOptions requires both currencies")
+      }
+      return getInvoiceFxRate(client, {
+        baseCurrency: input.baseCurrency,
+        quoteCurrency: input.quoteCurrency,
+        date: input.date,
+      })
+    },
   })
 }
 

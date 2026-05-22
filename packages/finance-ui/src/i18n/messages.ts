@@ -507,6 +507,9 @@ export type FinanceUiMessages = {
     fields: {
       invoice: string
       amountCents: string
+      currency: string
+      baseAmountCents: string
+      fxRate: string
       paymentDate: string
       paymentMethod: string
       status: string
@@ -515,7 +518,20 @@ export type FinanceUiMessages = {
     }
     placeholders: {
       invoice: string
+      currency: string
+      /** Placeholder for manual FX rate. Placeholders: `{invoiceCurrency} {paymentCurrency}`. */
+      fxRate: string
       referenceNumber: string
+    }
+    fx: {
+      title: string
+      /** Help text. Placeholders: `{invoiceCurrency} {paymentCurrency}`. */
+      help: string
+      /** Inline hint. Placeholders: `{invoiceCurrency} {paymentCurrency}`. */
+      rateHint: string
+      loadingRate: string
+      /** Auto-rate hint. Placeholders: `{invoiceCurrency} {paymentCurrency}`. */
+      autoRateHint: string
     }
     /** Per-row option label. Placeholders: `{number} {status} {balance} {currency}`. */
     invoiceOption: string
@@ -529,6 +545,7 @@ export type FinanceUiMessages = {
     validation: {
       invoiceRequired: string
       amountMinimum: string
+      baseAmountRequired: string
       recordFailed: string
     }
   }

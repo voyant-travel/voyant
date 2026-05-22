@@ -523,6 +523,9 @@ export const financeUiEn = {
     fields: {
       invoice: "Invoice",
       amountCents: "Amount",
+      currency: "Payment currency",
+      baseAmountCents: "Invoice-currency amount",
+      fxRate: "FX rate",
       paymentDate: "Payment date",
       paymentMethod: "Method",
       status: "Status",
@@ -531,7 +534,18 @@ export const financeUiEn = {
     },
     placeholders: {
       invoice: "Select invoice",
+      currency: "Select currency...",
+      fxRate: "1 {invoiceCurrency} = ? {paymentCurrency}",
       referenceNumber: "Bank reference, receipt number, etc.",
+    },
+    fx: {
+      title: "Cross-currency settlement",
+      help: "Record the received amount in {paymentCurrency} and the value applied to the invoice in {invoiceCurrency}.",
+      rateHint:
+        "Use the rate as {paymentCurrency} per 1 {invoiceCurrency}; entering it updates the invoice-currency amount.",
+      loadingRate: "Loading FX rate...",
+      autoRateHint:
+        "Using the current {paymentCurrency} per 1 {invoiceCurrency} rate; edit it if needed.",
     },
     invoiceOption: "{number} — {status} — {balance} {currency} due",
     invoiceMeta: "Total {total} {currency} • paid {paid} {currency} • due {due} {currency}",
@@ -543,6 +557,7 @@ export const financeUiEn = {
     validation: {
       invoiceRequired: "Select an invoice to record this payment against.",
       amountMinimum: "Amount must be greater than zero.",
+      baseAmountRequired: "Enter the amount to apply in the invoice currency.",
       recordFailed: "Failed to record payment.",
     },
   },
