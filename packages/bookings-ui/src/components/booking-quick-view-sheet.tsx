@@ -8,11 +8,19 @@ import {
 } from "@voyantjs/bookings-react"
 import { useOrganization, usePerson } from "@voyantjs/crm-react"
 import {
+  type InvoiceAttachmentRecord,
+  type InvoiceRecord,
   useAdminBookingPayments,
   useBookingPaymentSchedules,
+  useInvoiceAttachments,
   useInvoices,
 } from "@voyantjs/finance-react"
-import { useLegalContracts } from "@voyantjs/legal-react"
+import {
+  type LegalContractAttachmentRecord,
+  type LegalContractRecord,
+  useLegalContractAttachments,
+  useLegalContracts,
+} from "@voyantjs/legal-react"
 import {
   Badge,
   Button,
@@ -23,7 +31,16 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@voyantjs/ui/components"
-import { ArrowRight, Calendar, CreditCard, FileText, Phone, ScrollText, Users } from "lucide-react"
+import {
+  ArrowRight,
+  Calendar,
+  CreditCard,
+  ExternalLink,
+  FileText,
+  Phone,
+  ScrollText,
+  Users,
+} from "lucide-react"
 import type { ReactNode } from "react"
 
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/index.js"
@@ -292,25 +309,34 @@ function InvoicesSection({ booking }: { booking: BookingRecord }) {
         <p className="text-sm text-muted-foreground">{quick.invoicesEmpty}</p>
       ) : (
         <ul className="flex flex-col">
-          {invoices.map((invoice) => {
-            const statusLabel =
-              quick.invoiceStatusLabels[invoice.status as keyof typeof quick.invoiceStatusLabels] ??
-              invoice.status
-            return (
-              <li
-                key={invoice.id}
-                className="flex items-center justify-between gap-3 py-1 font-mono text-sm"
-              >
-                <span className="truncate">{invoice.invoiceNumber}</span>
-                <Badge variant="outline" className="font-sans text-[10px] uppercase">
-                  {statusLabel}
-                </Badge>
-              </li>
-            )
-          })}
+          {invoices.map((invoice) => (
+            <InvoiceRow key={invoice.id} invoice={invoice} />
+          ))}
         </ul>
       )}
     </Section>
+  )
+}
+
+function InvoiceRow({ invoice }: { invoice: InvoiceRecord }) {
+  const messages = useBookingsUiMessagesOrDefault()
+  const quick = messages.bookingQuickViewSheet
+  const { data } = useInvoiceAttachments(invoice.id)
+  const attachment = latestAttachment(data?.data ?? [])
+  const statusLabel =
+    quick.invoiceStatusLabels[invoice.status as keyof typeof quick.invoiceStatusLabels] ??
+    invoice.status
+
+  return (
+    <li className="flex items-center justify-between gap-3 py-1 font-mono text-sm">
+      <LinkedRowTitle
+        href={attachment ? getDefaultInvoiceAttachmentDownloadHref(attachment) : null}
+        label={invoice.invoiceNumber}
+      />
+      <Badge variant="outline" className="shrink-0 font-sans text-[10px] uppercase">
+        {statusLabel}
+      </Badge>
+    </li>
   )
 }
 
@@ -378,29 +404,69 @@ function ContractsSection({ bookingId }: { bookingId: string }) {
         <p className="text-sm text-muted-foreground">{quick.contractsEmpty}</p>
       ) : (
         <ul className="flex flex-col">
-          {contracts.map((contract) => {
-            const statusLabel =
-              quick.contractStatusLabels[
-                contract.status as keyof typeof quick.contractStatusLabels
-              ] ?? contract.status
-            return (
-              <li
-                key={contract.id}
-                className="flex items-center justify-between gap-3 py-1 text-sm"
-              >
-                <span className="truncate font-mono">
-                  {contract.contractNumber ?? contract.title}
-                </span>
-                <Badge variant="outline" className="font-sans text-[10px] uppercase">
-                  {statusLabel}
-                </Badge>
-              </li>
-            )
-          })}
+          {contracts.map((contract) => (
+            <ContractRow key={contract.id} contract={contract} />
+          ))}
         </ul>
       )}
     </Section>
   )
+}
+
+function ContractRow({ contract }: { contract: LegalContractRecord }) {
+  const messages = useBookingsUiMessagesOrDefault()
+  const quick = messages.bookingQuickViewSheet
+  const { data } = useLegalContractAttachments({ contractId: contract.id })
+  const attachment = latestAttachment(data)
+  const statusLabel =
+    quick.contractStatusLabels[contract.status as keyof typeof quick.contractStatusLabels] ??
+    contract.status
+
+  return (
+    <li className="flex items-center justify-between gap-3 py-1 text-sm">
+      <LinkedRowTitle
+        href={attachment ? getDefaultLegalContractAttachmentDownloadHref(attachment) : null}
+        label={contract.contractNumber ?? contract.title}
+      />
+      <Badge variant="outline" className="shrink-0 font-sans text-[10px] uppercase">
+        {statusLabel}
+      </Badge>
+    </li>
+  )
+}
+
+function LinkedRowTitle({ href, label }: { href: string | null; label: string }) {
+  if (!href) {
+    return <span className="min-w-0 truncate font-mono">{label}</span>
+  }
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex min-w-0 items-center gap-1 font-mono text-primary hover:underline"
+    >
+      <span className="truncate">{label}</span>
+      <ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" />
+    </a>
+  )
+}
+
+function latestAttachment<T extends { createdAt: string }>(attachments: T[] | undefined) {
+  return (attachments ?? []).reduce<T | null>(
+    (latest, attachment) =>
+      !latest || attachment.createdAt > latest.createdAt ? attachment : latest,
+    null,
+  )
+}
+
+function getDefaultInvoiceAttachmentDownloadHref(attachment: InvoiceAttachmentRecord) {
+  return `/v1/admin/finance/invoice-attachments/${attachment.id}/download`
+}
+
+function getDefaultLegalContractAttachmentDownloadHref(attachment: LegalContractAttachmentRecord) {
+  return `/v1/admin/legal/contracts/attachments/${attachment.id}/download`
 }
 
 function Section({
