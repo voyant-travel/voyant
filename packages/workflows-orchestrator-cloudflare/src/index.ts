@@ -77,6 +77,12 @@ export {
   type PresignArgs,
   type R2PresignerOptions,
 } from "./r2-sign.js"
+export {
+  handleGetSchedules,
+  type ScheduleHandlerDeps,
+  type ScheduleListResponse,
+  type ScheduleSummary,
+} from "./schedule-handler.js"
 export * from "./types.js"
 export {
   type DurableObjectNamespaceLike,
