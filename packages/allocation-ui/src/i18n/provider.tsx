@@ -92,6 +92,32 @@ export type AllocationUiMessages = Record<string, unknown> & {
   generateResourcesFailed: string
   autoAllocateFailed: string
   paymentStatusLabels: Record<"paid" | "partial" | "unpaid", string>
+  seatMapBuilder: {
+    heading: string
+    description: string
+    cellKindHeading: string
+    cellKindHint: string
+    cellKinds: Record<"seat" | "aisle" | "door" | "void", string>
+    cellKindShort: Record<"seat" | "aisle" | "door" | "void", string>
+    addRow: string
+    removeRow: string
+    rowAria: string
+    columnAria: string
+    seatCountSummary: string
+    capacityChip: string
+    presetHeading: string
+    presetHint: string
+    presets: {
+      standardCoach: string
+      miniCoach: string
+      largeBus: string
+      doubleDecker: string
+      withMidDoor: string
+    }
+    resetSpec: string
+    rowLabel: string
+    voidDoorReminder: string
+  }
 }
 
 export const allocationUiEn = {
@@ -192,6 +218,44 @@ export const allocationUiEn = {
     partial: "Partially paid",
     unpaid: "Unpaid",
   },
+  seatMapBuilder: {
+    heading: "Seat map",
+    description:
+      "Click a cell to cycle through seat → aisle → door → void. Capacity is computed from the seat cells.",
+    cellKindHeading: "Cell kinds",
+    cellKindHint: "Tip: doors and voids do not count toward capacity.",
+    cellKinds: {
+      seat: "Seat",
+      aisle: "Aisle",
+      door: "Door",
+      void: "Empty space",
+    },
+    cellKindShort: {
+      seat: "S",
+      aisle: "·",
+      door: "D",
+      void: " ",
+    },
+    addRow: "Add row",
+    removeRow: "Remove last row",
+    rowAria: "Row {row}",
+    columnAria: "Row {row}, column {column}",
+    seatCountSummary: "{count} seats",
+    capacityChip: "Capacity {count}",
+    presetHeading: "Start from a preset",
+    presetHint: "Pick a starter layout and tweak any cell.",
+    presets: {
+      standardCoach: "Standard coach (2-2, 11 rows)",
+      miniCoach: "Mini-coach (2-1, 7 rows)",
+      largeBus: "Large bus (3-2, 11 rows)",
+      doubleDecker: "Double-aisle (2-1-2, 11 rows)",
+      withMidDoor: "Coach with mid-door (2-2, door at row 7)",
+    },
+    resetSpec: "Clear layout",
+    rowLabel: "Row {row}",
+    voidDoorReminder:
+      "Use a void cell for permanent obstacles (toilet, wheelchair spot). Use a door cell for boarding doors that interrupt seating mid-coach.",
+  },
 } satisfies AllocationUiMessages
 
 export const allocationUiRo = {
@@ -291,6 +355,44 @@ export const allocationUiRo = {
     paid: "Achitata",
     partial: "Partial achitata",
     unpaid: "Neachitata",
+  },
+  seatMapBuilder: {
+    heading: "Harta locurilor",
+    description:
+      "Apasa o celula pentru a comuta scaun → culoar → usa → spatiu gol. Capacitatea este calculata din celulele de tip scaun.",
+    cellKindHeading: "Tipuri de celule",
+    cellKindHint: "Sfat: usile si spatiile goale nu se numara in capacitate.",
+    cellKinds: {
+      seat: "Scaun",
+      aisle: "Culoar",
+      door: "Usa",
+      void: "Spatiu gol",
+    },
+    cellKindShort: {
+      seat: "S",
+      aisle: "·",
+      door: "U",
+      void: " ",
+    },
+    addRow: "Adauga rand",
+    removeRow: "Sterge ultimul rand",
+    rowAria: "Randul {row}",
+    columnAria: "Randul {row}, coloana {column}",
+    seatCountSummary: "{count} scaune",
+    capacityChip: "Capacitate {count}",
+    presetHeading: "Porneste de la o configuratie predefinita",
+    presetHint: "Alege o configuratie de start si modifica orice celula.",
+    presets: {
+      standardCoach: "Autocar standard (2-2, 11 randuri)",
+      miniCoach: "Minibus (2-1, 7 randuri)",
+      largeBus: "Autocar mare (3-2, 11 randuri)",
+      doubleDecker: "Doua culoare (2-1-2, 11 randuri)",
+      withMidDoor: "Autocar cu usa centrala (2-2, usa la randul 7)",
+    },
+    resetSpec: "Sterge configuratia",
+    rowLabel: "Randul {row}",
+    voidDoorReminder:
+      "Foloseste o celula de tip spatiu gol pentru obstacole permanente (toaleta, loc pentru scaun cu rotile). Foloseste o usa pentru usile de imbarcare care intrerup scaunele in mijlocul autocarului.",
   },
 } satisfies AllocationUiMessages
 

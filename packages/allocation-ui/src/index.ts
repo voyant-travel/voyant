@@ -1,4 +1,9 @@
 export {
+  SEAT_MAP_PRESETS,
+  SeatMapBuilder,
+  type SeatMapBuilderProps,
+} from "./components/seat-map-builder.js"
+export {
   SlotAllocationPage,
   type SlotAllocationPageExtraTab,
   type SlotAllocationPageProps,
