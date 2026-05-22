@@ -2,6 +2,7 @@ import type { LinkableDefinition, Module } from "@voyantjs/core"
 import type { HonoModule } from "@voyantjs/hono/module"
 import { Hono } from "hono"
 
+import { createInvoiceFxRoutes } from "./invoice-fx.js"
 import {
   buildFinanceRouteRuntime,
   FINANCE_ROUTE_RUNTIME_CONTAINER_KEY,
@@ -64,6 +65,7 @@ export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}):
   const adminRoutes = new Hono()
     .route("/", financeRoutes)
     .route("/", financeActionLedgerRoutes)
+    .route("/", createInvoiceFxRoutes(options))
     .route("/", createFinanceAdminDocumentRoutes(options))
     .route("/", createFinanceAdminSettlementRoutes(options))
 
@@ -108,6 +110,24 @@ export {
   type TaxPolicyCondition,
   type UpdateBookingTaxSettings,
 } from "./booking-tax.js"
+export {
+  createInvoiceFxHonoExtension,
+  createInvoiceFxRoutes,
+  createVoyantDataFxExchangeRateResolver,
+  type InvoiceFxContext,
+  type InvoiceFxOptions,
+  type InvoiceFxRouteOptions,
+  type InvoiceFxSettings,
+  mountInvoiceFxRoutes,
+  type ResolvedInvoiceFxSettings,
+  type ResolveInvoiceExchangeRate,
+  type ResolveInvoiceExchangeRateInput,
+  type ResolveInvoiceFxSettings,
+  resolveInvoiceFxContext,
+  resolveInvoiceFxSettingsOrDefault,
+  type UpdateInvoiceFxSettings,
+  type VoyantDataFxResolverOptions,
+} from "./invoice-fx.js"
 export type {
   ComputedScheduleEntry,
   ComputeScheduleInput,

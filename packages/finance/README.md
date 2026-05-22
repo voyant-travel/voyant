@@ -125,11 +125,41 @@ import {
 } from "@voyantjs/finance/booking-tax"
 ```
 
+## Invoice FX Settings
+
+Invoice issuing can enrich `invoice.issued` events with operator accounting
+currency, FX rate, FX commission, and effective provider rate. Configure the
+finance module with `invoiceFxSettings` or `resolveInvoiceFxSettings`, plus an
+exchange-rate resolver:
+
+```typescript
+import {
+  createFinanceHonoModule,
+  createVoyantDataFxExchangeRateResolver,
+} from "@voyantjs/finance"
+
+createFinanceHonoModule({
+  invoiceFxSettings: {
+    baseCurrency: "RON",
+    fxCommissionBps: 200,
+    fxCommissionInvoiceMention: "2% comision curs risc valutar",
+  },
+  resolveInvoiceExchangeRate: createVoyantDataFxExchangeRateResolver({
+    apiKey: process.env.VOYANT_DATA_API_KEY!,
+  }),
+})
+```
+
+The default data resolver calls the Voyant Data FX pair route
+`/data/fx/v1/fx/pair/{invoiceCurrency}/{baseCurrency}`. If the invoice currency
+matches the operator base currency, no FX fields are emitted.
+
 ## Exports
 
 | Entry | Description |
 | --- | --- |
 | `.` | Module export |
+| `./invoice-fx` | Invoice FX settings, route helpers, and data FX resolver |
 | `./schema` | Drizzle tables |
 | `./validation` | Zod schemas |
 | `./booking-tax` | Booking sell-side tax policy helpers and route mounting |

@@ -7,6 +7,7 @@ import type { EventBus } from "@voyantjs/core"
 import { asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { type InvoiceFxOptions, resolveInvoiceFxContext } from "./invoice-fx.js"
 import { invoiceLineItems, invoices, payments } from "./schema.js"
 import {
   buildInvoiceIssuedActionLedgerInput,
@@ -25,7 +26,7 @@ import {
  * (a status change that's also a system signal).
  */
 
-export interface InvoiceIssueRuntime {
+export interface InvoiceIssueRuntime extends InvoiceFxOptions {
   eventBus?: EventBus
   actionLedgerContext?: ActionLedgerRequestContextValues
   actionLedgerAuthorizationSource?: string | null
@@ -38,6 +39,16 @@ export interface InvoiceIssuedEvent {
   bookingId: string | null
   totalCents: number
   currency: string
+  /** Operator accounting/reporting currency when different from `currency`. */
+  baseCurrency?: string
+  /** Spot rate for `currency` → `baseCurrency`. */
+  fxRate?: number
+  /** Operator FX commission added on top of the spot rate. */
+  fxCommissionBps?: number
+  /** `fxRate` after commission. Invoice providers should prefer this rate. */
+  effectiveRate?: number
+  /** Optional invoice mention appended by providers when commission is non-zero. */
+  fxCommissionInvoiceMention?: string
   /** Linkage when this invoice replaced a proforma. */
   convertedFromInvoiceId?: string | null
   clientName?: string
@@ -205,6 +216,8 @@ async function emitIssued(
     issueDate: toDateString(invoice.issueDate),
     dueDate: toDateString(invoice.dueDate),
   }
+  const fx = await resolveInvoiceFxContext(db, invoice, runtime)
+  if (fx) Object.assign(payload, fx)
   await runtime.eventBus.emit(eventName, payload)
 }
 

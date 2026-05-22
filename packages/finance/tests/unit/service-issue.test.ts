@@ -147,4 +147,94 @@ describe("issueInvoiceFromBooking", () => {
       ],
     })
   })
+
+  it("enriches issued invoice events with operator FX settings", async () => {
+    const draftInvoice = {
+      id: "inv_fx",
+      invoiceNumber: "INV-FX",
+      invoiceType: "invoice",
+      bookingId: "book_fx",
+      totalCents: 10000,
+      currency: "EUR",
+      baseCurrency: null,
+      convertedFromInvoiceId: null,
+      issueDate: "2026-05-22",
+      dueDate: "2026-05-29",
+    }
+    const issuedInvoice = { ...draftInvoice, status: "sent" }
+    vi.mocked(financeService.createInvoiceFromBooking).mockResolvedValue(
+      draftInvoice as Awaited<ReturnType<typeof financeService.createInvoiceFromBooking>>,
+    )
+
+    const db = {
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn(async () => [issuedInvoice]),
+          })),
+        })),
+      })),
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn(async () => [{ bookingNumber: "BK-FX" }]),
+            orderBy: vi.fn(async () => []),
+          })),
+        })),
+      })),
+    } as PostgresJsDatabase
+
+    const eventBus = createEventBus()
+    const emitted: Array<EventEnvelope<InvoiceIssuedEvent>> = []
+    eventBus.subscribe<InvoiceIssuedEvent>("invoice.issued", (event) => {
+      emitted.push(event)
+    })
+    const resolveInvoiceExchangeRate = vi.fn(async () => 4.97)
+
+    await issueInvoiceFromBooking(
+      db,
+      {
+        invoiceNumber: "INV-FX",
+        bookingId: "book_fx",
+        issueDate: "2026-05-22",
+        dueDate: "2026-05-29",
+      },
+      {
+        booking: {
+          id: "book_fx",
+          bookingNumber: "BK-FX",
+          personId: null,
+          organizationId: null,
+          sellCurrency: "EUR",
+          baseCurrency: null,
+          fxRateSetId: null,
+          sellAmountCents: 10000,
+          baseSellAmountCents: null,
+        },
+        items: [],
+      },
+      {
+        eventBus,
+        invoiceFxSettings: {
+          baseCurrency: "RON",
+          fxCommissionBps: 200,
+          fxCommissionInvoiceMention: "2% comision curs risc valutar",
+        },
+        resolveInvoiceExchangeRate,
+      },
+    )
+
+    expect(resolveInvoiceExchangeRate).toHaveBeenCalledWith({
+      baseCurrency: "EUR",
+      quoteCurrency: "RON",
+      date: "2026-05-22",
+    })
+    expect(emitted[0]?.data).toMatchObject({
+      baseCurrency: "RON",
+      fxRate: 4.97,
+      fxCommissionBps: 200,
+      effectiveRate: 5.0694,
+      fxCommissionInvoiceMention: "2% comision curs risc valutar",
+    })
+  })
 })

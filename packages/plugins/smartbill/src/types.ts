@@ -60,6 +60,7 @@ export interface SmartbillInvoiceBody {
   deliveryDate?: string
   precision?: number
   useEstimateDetails?: boolean
+  exchangeRate?: number
   mentions?: string
   observations?: string
   products: SmartbillProduct[]
