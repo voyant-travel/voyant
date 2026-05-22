@@ -1,5 +1,18 @@
 # @voyantjs/products
 
+## 0.66.6
+
+### Patch Changes
+
+- f6634ff: Add per-product customer contract template overrides and surface them through product admin and public catalog payloads.
+  - @voyantjs/action-ledger@0.66.6
+  - @voyantjs/catalog@0.66.6
+  - @voyantjs/core@0.66.6
+  - @voyantjs/db@0.66.6
+  - @voyantjs/hono@0.66.6
+  - @voyantjs/storage@0.66.6
+  - @voyantjs/utils@0.66.6
+
 ## 0.66.5
 
 ### Patch Changes

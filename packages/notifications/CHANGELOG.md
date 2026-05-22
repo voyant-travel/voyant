@@ -1,5 +1,17 @@
 # @voyantjs/notifications
 
+## 0.66.6
+
+### Patch Changes
+
+- Updated dependencies [2a40d26]
+  - @voyantjs/bookings@0.66.6
+  - @voyantjs/core@0.66.6
+  - @voyantjs/db@0.66.6
+  - @voyantjs/finance@0.66.6
+  - @voyantjs/hono@0.66.6
+  - @voyantjs/legal@0.66.6
+
 ## 0.66.5
 
 ### Patch Changes
