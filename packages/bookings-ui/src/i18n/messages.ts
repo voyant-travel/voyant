@@ -30,6 +30,12 @@ export type BookingsUiMessages = {
     empty: string
     loading: string
   }
+  bookingQuickViewSheet: {
+    loadingTitle: string
+    viewFullAction: string
+    noInternalNotes: string
+    noContact: string
+  }
   bookingDetailPage: {
     notFound: string
     backToBookings: string

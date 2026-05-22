@@ -36,6 +36,12 @@ export const bookingsUiRo = {
     empty: "Nu s-au gasit rezervari.",
     loading: "Se incarca rezervarile...",
   },
+  bookingQuickViewSheet: {
+    loadingTitle: "Rezervare",
+    viewFullAction: "Vezi rezervarea completa",
+    noInternalNotes: "Fara note interne.",
+    noContact: "Fara contact inregistrat.",
+  },
   bookingDetailPage: {
     notFound: "Rezervarea nu a fost gasita",
     backToBookings: "Inapoi la rezervari",

@@ -72,6 +72,10 @@ export {
   BookingPaymentsSummary,
   type BookingPaymentsSummaryProps,
 } from "./components/booking-payments-summary.js"
+export {
+  BookingQuickViewSheet,
+  type BookingQuickViewSheetProps,
+} from "./components/booking-quick-view-sheet.js"
 export { BookingsPage, type BookingsPageProps } from "./components/bookings-page.js"
 export {
   FileDropzone,

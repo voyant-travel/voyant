@@ -37,6 +37,12 @@ export const bookingsUiEn = {
     empty: "No bookings found.",
     loading: "Loading bookings...",
   },
+  bookingQuickViewSheet: {
+    loadingTitle: "Booking",
+    viewFullAction: "View full booking",
+    noInternalNotes: "No internal notes.",
+    noContact: "No contact on file.",
+  },
   bookingDetailPage: {
     notFound: "Booking not found",
     backToBookings: "Back to bookings",
