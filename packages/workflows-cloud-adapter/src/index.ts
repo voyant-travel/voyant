@@ -13,6 +13,7 @@ import {
 import { createInMemoryRateLimiter } from "@voyantjs/workflows/rate-limit"
 import type { StepHandler } from "@voyantjs/workflows-orchestrator"
 import {
+  type CfManifestStore,
   type ContainerNamespaceLike,
   createCfContainerStepRunner,
   createInlineDispatcher,
@@ -27,6 +28,15 @@ import {
   type StepDispatcher,
   type WorkerFetchDeps,
 } from "@voyantjs/workflows-orchestrator-cloudflare"
+
+import { type AutoPublishContext, scheduleAutoPublishManifest } from "./auto-publish.js"
+
+export {
+  type AutoPublishContext,
+  publishManifest,
+  scheduleAutoPublishManifest,
+  type WorkflowEnvironment,
+} from "./auto-publish.js"
 
 export interface CloudWorkflowsEnv {
   /** Per-run Durable Object namespace declared by the tenant Worker. */
@@ -47,6 +57,12 @@ export interface CloudWorkflowsEnv {
    * development only.
    */
   VOYANT_API_TOKENS?: string
+  /**
+   * Deployment environment label used when the cloud adapter auto-publishes
+   * the in-process workflow registry to `WORKFLOW_MANIFESTS`. Voyant Cloud
+   * injects this on tenant workers; defaults to `"production"` when unset.
+   */
+  VOYANT_WORKFLOWS_ENVIRONMENT?: "production" | "preview" | "development" | string
   /**
    * Prefix for the R2 S3 API URL that hosts the container bundle.
    * Expected form: `https://<account>.r2.cloudflarestorage.com/<bucket>`.
@@ -84,10 +100,35 @@ export interface CloudOrchestratorOptions<Env extends CloudWorkflowsEnv = CloudW
   tenantMeta?: WorkerFetchDeps["tenantMeta"]
   services?: import("@voyantjs/workflows/driver").ServiceResolver
   resolveEnv?: (env: Env) => Env
+  /**
+   * Opt out of the cold-start auto-publish of the in-process workflow
+   * registry to `WORKFLOW_MANIFESTS` KV. Default: auto-publish is on
+   * whenever the KV binding is present. Set to `false` if your deploy
+   * pipeline already POSTs `/api/manifests` and you want a single
+   * source of truth.
+   */
+  autoPublishManifest?: boolean
+  /**
+   * Cloudflare `ctx.waitUntil` — when provided, the auto-publish
+   * background task is registered with it so the response isn't held
+   * back by the KV write. Pass `(p) => ctx.waitUntil(p)` from the
+   * outer `fetch(request, env, ctx)` handler.
+   */
+  waitUntil?: (promise: Promise<unknown>) => void
+}
+
+/**
+ * Cloudflare ExecutionContext-like shape consumed by the cloud
+ * orchestrator. Declared structurally so this package doesn't pull in
+ * `@cloudflare/workers-types` — pass the real `ctx` from your worker's
+ * `fetch(request, env, ctx)` and the structural shape will match.
+ */
+export interface CloudExecutionCtx {
+  waitUntil?: (promise: Promise<unknown>) => void
 }
 
 export interface CloudOrchestrator<Env extends CloudWorkflowsEnv = CloudWorkflowsEnv> {
-  fetch: (request: Request, env?: Env) => Promise<Response>
+  fetch: (request: Request, env?: Env, ctx?: CloudExecutionCtx) => Promise<Response>
   WorkflowRunDO: WorkflowRunDOClass<Env>
 }
 
@@ -120,9 +161,12 @@ export function createCloudOrchestrator<Env extends CloudWorkflowsEnv = CloudWor
   const WorkflowRunDOWithOptions = createWorkflowRunDOClass<Env>(options)
 
   return {
-    fetch(request, requestEnv) {
+    fetch(request, requestEnv, ctx) {
       const env = resolveBoundEnv(boundEnv, requestEnv, options)
-      return handleCloudFetch(request, env, options)
+      const callOptions = ctx?.waitUntil
+        ? { ...options, waitUntil: options.waitUntil ?? ctx.waitUntil.bind(ctx) }
+        : options
+      return handleCloudFetch(request, env, callOptions)
     },
     WorkflowRunDO: WorkflowRunDOWithOptions,
   }
@@ -142,7 +186,8 @@ export function mountWorkflows<
     app.all(`${pathPrefix}/*`, (...args) => {
       const request = extractRequest(args)
       const requestEnv = extractEnv<Env>(args, env)
-      return orchestrator.fetch(request, requestEnv)
+      const ctx = extractCtx(args)
+      return orchestrator.fetch(request, requestEnv, ctx)
     })
     return app
   }
@@ -151,7 +196,11 @@ export function mountWorkflows<
     const originalFetch = app.fetch.bind(app)
     ;(app as { fetch: typeof app.fetch }).fetch = (request, requestEnv, ctx) => {
       if (isMountedPath(new URL(request.url).pathname, pathPrefix)) {
-        return orchestrator.fetch(request, (requestEnv as Env | undefined) ?? env)
+        return orchestrator.fetch(
+          request,
+          (requestEnv as Env | undefined) ?? env,
+          ctx as CloudExecutionCtx | undefined,
+        )
       }
       return originalFetch(request, requestEnv, ctx)
     }
@@ -174,6 +223,20 @@ export async function handleCloudFetch<Env extends CloudWorkflowsEnv = CloudWork
     .map((s) => s.trim())
     .filter((s) => s.length > 0)
 
+  const manifestStore: CfManifestStore | undefined = resolvedEnv.WORKFLOW_MANIFESTS
+    ? createKvManifestStore({ kv: resolvedEnv.WORKFLOW_MANIFESTS })
+    : undefined
+
+  if (manifestStore && options.autoPublishManifest !== false) {
+    const autoPublishCtx: AutoPublishContext = {
+      manifestStore,
+      environment: resolvedEnv.VOYANT_WORKFLOWS_ENVIRONMENT,
+      logger: options.logger,
+      ...(options.waitUntil ? { waitUntil: options.waitUntil } : {}),
+    }
+    scheduleAutoPublishManifest(autoPublishCtx)
+  }
+
   return handleWorkerRequest(request, {
     runDO: resolvedEnv.WORKFLOW_RUN_DO,
     verifyRequest:
@@ -182,9 +245,7 @@ export async function handleCloudFetch<Env extends CloudWorkflowsEnv = CloudWork
     idGenerator: options.idGenerator,
     now: options.now,
     tenantMeta: options.tenantMeta,
-    manifestStore: resolvedEnv.WORKFLOW_MANIFESTS
-      ? createKvManifestStore({ kv: resolvedEnv.WORKFLOW_MANIFESTS })
-      : undefined,
+    manifestStore,
   })
 }
 
@@ -607,4 +668,15 @@ function extractEnv<Env extends CloudWorkflowsEnv>(
   if (boundEnv) return boundEnv
   const firstEnv = (args[0] as { env?: unknown } | undefined)?.env
   return (firstEnv as Env | undefined) ?? (args[1] as Env | undefined)
+}
+
+function extractCtx(args: readonly unknown[]): CloudExecutionCtx | undefined {
+  // Hono passes (c, next) with executionCtx on the context; raw workers
+  // pass (request, env, ctx) directly. Probe both shapes so the auto-publish
+  // background task can register with the right waitUntil.
+  const honoCtx = args[0] as { executionCtx?: CloudExecutionCtx } | undefined
+  if (honoCtx?.executionCtx?.waitUntil) return honoCtx.executionCtx
+  const rawCtx = args[2] as CloudExecutionCtx | undefined
+  if (rawCtx && typeof rawCtx.waitUntil === "function") return rawCtx
+  return undefined
 }
