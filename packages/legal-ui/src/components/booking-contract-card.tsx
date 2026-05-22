@@ -8,6 +8,7 @@ import {
   useLegalContractMutation,
   useLegalContractNumberSeries,
   useLegalContracts,
+  useVoyantLegalContext,
 } from "@voyantjs/legal-react"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { Download, FilePlus2, FileText, Loader2, RotateCw } from "lucide-react"
@@ -45,10 +46,9 @@ export interface BookingContractCardProps {
   /** Optional language fallbacks for default-template resolution. */
   fallbackLanguages?: string[]
   /**
-   * API base for attachment download redirects (default: same origin). Use
-   * this when the operator admin app proxies through a different host than
-   * the API — the browser needs an absolute URL to open the 302 in a new
-   * tab correctly.
+   * API base for attachment download redirects. Defaults to the active
+   * `VoyantLegalProvider` base URL; override when a host needs a different
+   * download origin than its data hooks use.
    */
   apiBaseUrl?: string
   labels?: BookingContractCardLabels
@@ -78,6 +78,8 @@ export function BookingContractCard({
   labels,
 }: BookingContractCardProps) {
   const i18n = useLegalUiI18nOrDefault()
+  const { baseUrl } = useVoyantLegalContext()
+  const resolvedApiBaseUrl = apiBaseUrl ?? baseUrl
   const merged = { ...i18n.messages.bookingContractCard, ...labels }
   const contractsQuery = useLegalContracts({ bookingId, limit: 25 })
   const contracts = contractsQuery.data?.data ?? []
@@ -157,7 +159,7 @@ export function BookingContractCard({
             <BookingContractRow
               key={contract.id}
               contract={contract}
-              apiBaseUrl={apiBaseUrl}
+              apiBaseUrl={resolvedApiBaseUrl}
               labels={merged}
             />
           ))
@@ -244,6 +246,12 @@ function BookingContractRow({
   )
 }
 
+function withApiBaseUrl(baseUrl: string, path: string) {
+  const trimmedBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`
+  return `${trimmedBase}${normalizedPath}`
+}
+
 function AttachmentDownloadRow({
   attachment,
   apiBaseUrl,
@@ -256,9 +264,11 @@ function AttachmentDownloadRow({
   const i18n = useLegalUiI18nOrDefault()
   // The download endpoint returns a 302 to the signed URL. A plain <a> link
   // with target="_blank" lets the browser follow it and open the file in a
-  // new tab. When apiBaseUrl is omitted we fall back to a relative URL,
-  // which is correct for same-origin admin apps.
-  const href = `${apiBaseUrl ?? ""}/v1/admin/legal/contracts/attachments/${attachment.id}/download`
+  // new tab. The href uses the same API base as the data hooks by default.
+  const href = withApiBaseUrl(
+    apiBaseUrl ?? "",
+    `/v1/admin/legal/contracts/attachments/${attachment.id}/download`,
+  )
   const sizeKb =
     typeof attachment.fileSize === "number"
       ? `${i18n.formatNumber(Math.round(attachment.fileSize / 1024))} ${i18n.messages.common.kilobytes}`

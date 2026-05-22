@@ -14,12 +14,14 @@ import {
   useBookingPaymentSchedules,
   useInvoiceAttachments,
   useInvoices,
+  useVoyantFinanceContext,
 } from "@voyantjs/finance-react"
 import {
   type LegalContractAttachmentRecord,
   type LegalContractRecord,
   useLegalContractAttachments,
   useLegalContracts,
+  useVoyantLegalContext,
 } from "@voyantjs/legal-react"
 import {
   Badge,
@@ -321,6 +323,7 @@ function InvoicesSection({ booking }: { booking: BookingRecord }) {
 function InvoiceRow({ invoice }: { invoice: InvoiceRecord }) {
   const messages = useBookingsUiMessagesOrDefault()
   const quick = messages.bookingQuickViewSheet
+  const { baseUrl } = useVoyantFinanceContext()
   const { data } = useInvoiceAttachments(invoice.id)
   const attachment = latestAttachment(data?.data ?? [])
   const statusLabel =
@@ -330,7 +333,7 @@ function InvoiceRow({ invoice }: { invoice: InvoiceRecord }) {
   return (
     <li className="flex items-center justify-between gap-3 py-1 font-mono text-sm">
       <LinkedRowTitle
-        href={attachment ? getDefaultInvoiceAttachmentDownloadHref(attachment) : null}
+        href={attachment ? getDefaultInvoiceAttachmentDownloadHref(baseUrl, attachment) : null}
         label={invoice.invoiceNumber}
       />
       <Badge variant="outline" className="shrink-0 font-sans text-[10px] uppercase">
@@ -416,6 +419,7 @@ function ContractsSection({ bookingId }: { bookingId: string }) {
 function ContractRow({ contract }: { contract: LegalContractRecord }) {
   const messages = useBookingsUiMessagesOrDefault()
   const quick = messages.bookingQuickViewSheet
+  const { baseUrl } = useVoyantLegalContext()
   const { data } = useLegalContractAttachments({ contractId: contract.id })
   const attachment = latestAttachment(data)
   const statusLabel =
@@ -425,7 +429,9 @@ function ContractRow({ contract }: { contract: LegalContractRecord }) {
   return (
     <li className="flex items-center justify-between gap-3 py-1 text-sm">
       <LinkedRowTitle
-        href={attachment ? getDefaultLegalContractAttachmentDownloadHref(attachment) : null}
+        href={
+          attachment ? getDefaultLegalContractAttachmentDownloadHref(baseUrl, attachment) : null
+        }
         label={contract.contractNumber ?? contract.title}
       />
       <Badge variant="outline" className="shrink-0 font-sans text-[10px] uppercase">
@@ -461,12 +467,24 @@ function latestAttachment<T extends { createdAt: string }>(attachments: T[] | un
   )
 }
 
-function getDefaultInvoiceAttachmentDownloadHref(attachment: InvoiceAttachmentRecord) {
-  return `/v1/admin/finance/invoice-attachments/${attachment.id}/download`
+function withApiBaseUrl(baseUrl: string, path: string) {
+  const trimmedBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`
+  return `${trimmedBase}${normalizedPath}`
 }
 
-function getDefaultLegalContractAttachmentDownloadHref(attachment: LegalContractAttachmentRecord) {
-  return `/v1/admin/legal/contracts/attachments/${attachment.id}/download`
+function getDefaultInvoiceAttachmentDownloadHref(
+  baseUrl: string,
+  attachment: InvoiceAttachmentRecord,
+) {
+  return withApiBaseUrl(baseUrl, `/v1/admin/finance/invoice-attachments/${attachment.id}/download`)
+}
+
+function getDefaultLegalContractAttachmentDownloadHref(
+  baseUrl: string,
+  attachment: LegalContractAttachmentRecord,
+) {
+  return withApiBaseUrl(baseUrl, `/v1/admin/legal/contracts/attachments/${attachment.id}/download`)
 }
 
 function Section({

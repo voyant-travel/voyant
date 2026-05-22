@@ -45,6 +45,10 @@ vi.mock("@voyantjs/finance-react", () => {
       update: mutation(),
     }),
     useInvoiceNoteMutation: mutation,
+    useVoyantFinanceContext: () => ({
+      baseUrl: "/api",
+      fetcher: vi.fn(),
+    }),
   }
 })
 
@@ -103,7 +107,7 @@ describe("InvoiceDetailHeader", () => {
 })
 
 describe("InvoiceDetailPage", () => {
-  it("uses the admin finance route for default attachment download links", () => {
+  it("uses the finance API base for default attachment download links", () => {
     financeReactState.invoice = invoice()
     financeReactState.attachments = [
       {
@@ -122,6 +126,6 @@ describe("InvoiceDetailPage", () => {
 
     const html = renderToStaticMarkup(<InvoiceDetailPage id="inv_123" />)
 
-    expect(html).toContain('href="/v1/admin/finance/invoice-attachments/att_123/download"')
+    expect(html).toContain('href="/api/v1/admin/finance/invoice-attachments/att_123/download"')
   })
 })

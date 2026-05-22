@@ -42,12 +42,20 @@ vi.mock("@voyantjs/finance-react", () => ({
   useInvoiceAttachments: (invoiceId: string) => ({
     data: { data: financeState.attachmentsByInvoiceId[invoiceId] ?? [] },
   }),
+  useVoyantFinanceContext: () => ({
+    baseUrl: "/api",
+    fetcher: vi.fn(),
+  }),
 }))
 
 vi.mock("@voyantjs/legal-react", () => ({
   useLegalContracts: () => ({ data: { data: legalState.contracts } }),
   useLegalContractAttachments: ({ contractId }: { contractId: string }) => ({
     data: legalState.attachmentsByContractId[contractId] ?? [],
+  }),
+  useVoyantLegalContext: () => ({
+    baseUrl: "/api",
+    fetcher: vi.fn(),
   }),
 }))
 
@@ -218,10 +226,10 @@ describe("BookingQuickViewSheet", () => {
     )
 
     expect(html).toContain(
-      'href="/v1/admin/finance/invoice-attachments/new_invoice_attachment/download"',
+      'href="/api/v1/admin/finance/invoice-attachments/new_invoice_attachment/download"',
     )
     expect(html).toContain(
-      'href="/v1/admin/legal/contracts/attachments/new_contract_attachment/download"',
+      'href="/api/v1/admin/legal/contracts/attachments/new_contract_attachment/download"',
     )
   })
 
