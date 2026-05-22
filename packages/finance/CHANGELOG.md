@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.74.1
+
+### Patch Changes
+
+- 225a483: Auto-fill cross-currency booking payment FX rates from the configured Voyant Data FX resolver.
+  - @voyantjs/action-ledger@0.74.1
+  - @voyantjs/bookings@0.74.1
+  - @voyantjs/core@0.74.1
+  - @voyantjs/db@0.74.1
+  - @voyantjs/hono@0.74.1
+  - @voyantjs/products@0.74.1
+  - @voyantjs/storage@0.74.1
+  - @voyantjs/utils@0.74.1
+
 ## 0.74.0
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @voyantjs/finance-react
 
+## 0.74.1
+
+### Patch Changes
+
+- 225a483: Auto-fill cross-currency booking payment FX rates from the configured Voyant Data FX resolver.
+- Updated dependencies [225a483]
+  - @voyantjs/finance@0.74.1
+  - @voyantjs/react@0.74.1
+
 ## 0.74.0
 
 ### Patch Changes
