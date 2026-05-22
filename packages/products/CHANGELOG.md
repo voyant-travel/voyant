@@ -1,5 +1,17 @@
 # @voyantjs/products
 
+## 0.75.1
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.75.1
+- @voyantjs/catalog@0.75.1
+- @voyantjs/core@0.75.1
+- @voyantjs/db@0.75.1
+- @voyantjs/hono@0.75.1
+- @voyantjs/storage@0.75.1
+- @voyantjs/utils@0.75.1
+
 ## 0.75.0
 
 ### Patch Changes
