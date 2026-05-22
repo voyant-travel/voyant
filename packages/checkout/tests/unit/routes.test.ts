@@ -48,6 +48,7 @@ describe("createCheckoutRoutes", () => {
     const paymentStarter = vi.fn()
     const routes = createCheckoutRoutes({
       resolvePaymentStarters: () => ({ netopia: paymentStarter }),
+      resolvePublicCheckoutBaseUrl: () => "https://brand.example.com",
       resolveBankTransferDetails: () => ({
         provider: "manual",
         beneficiary: "Program Travel",
@@ -100,6 +101,7 @@ describe("createCheckoutRoutes", () => {
         beneficiary: "Program Travel",
         iban: "RO49RNCB0857180852250001",
       },
+      publicCheckoutBaseUrl: "https://brand.example.com",
     })
     expect(runtime.paymentStarters.netopia).toBe(paymentStarter)
   })

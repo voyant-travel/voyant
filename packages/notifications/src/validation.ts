@@ -342,6 +342,7 @@ const transportNotificationCoreSchema = z.object({
   data: z.record(z.string(), z.unknown()).optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).optional().nullable(),
   scheduledFor: z.string().optional().nullable(),
+  paymentLinkBaseUrl: z.string().optional().nullable(),
 })
 
 export const sendPaymentSessionNotificationSchema = transportNotificationCoreSchema.refine(

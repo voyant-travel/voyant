@@ -1,6 +1,7 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { buildPaymentLinkUrl } from "@voyantjs/finance/payment-link"
 import { PaymentSessionActionLedgerCard } from "@voyantjs/finance-ui/components/invoice-action-ledger-card"
 import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
@@ -26,6 +27,12 @@ interface PendingPaymentSession {
 interface ListResponse {
   data: PendingPaymentSession[]
   total: number
+}
+
+interface PaymentLinkConfigResponse {
+  data: {
+    publicCheckoutBaseUrl?: string | null
+  }
 }
 
 /**
@@ -58,6 +65,11 @@ export function BookingPendingPaymentSessions({
           bookingId,
         )}&status=pending&limit=10`,
       ),
+  })
+  const { data: paymentLinkConfig } = useQuery({
+    queryKey: ["payment-link-config"],
+    queryFn: () => api.get<PaymentLinkConfigResponse>("/v1/public/payment-link-config"),
+    staleTime: 5 * 60 * 1000,
   })
 
   const markReceived = useMutation({
@@ -128,7 +140,9 @@ export function BookingPendingPaymentSessions({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => void copyPaymentLink(session.id)}
+                  onClick={() =>
+                    void copyPaymentLink(session.id, paymentLinkConfig?.data.publicCheckoutBaseUrl)
+                  }
                 >
                   <Copy className="mr-1.5 h-3.5 w-3.5" />
                   Copy payment link
@@ -164,9 +178,14 @@ export function BookingPendingPaymentSessions({
   )
 }
 
-async function copyPaymentLink(paymentSessionId: string): Promise<void> {
+async function copyPaymentLink(
+  paymentSessionId: string,
+  publicCheckoutBaseUrl?: string | null,
+): Promise<void> {
   if (typeof window === "undefined") return
-  const url = new URL(`/pay/${paymentSessionId}`, window.location.origin).toString()
+  const url = buildPaymentLinkUrl(paymentSessionId, {
+    baseUrl: publicCheckoutBaseUrl ?? window.location.origin,
+  })
   try {
     await navigator.clipboard.writeText(url)
     toast.success("Payment link copied")

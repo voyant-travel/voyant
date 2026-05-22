@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./action-ledger-drift": "./src/action-ledger-drift.ts",
+    "./payment-link": "./src/payment-link.ts",
     "./schema": "./src/schema.ts",
     "./validation": "./src/validation.ts",
     "./booking-tax": "./src/booking-tax.ts",
@@ -54,6 +55,11 @@
         "types": "./dist/action-ledger-drift.d.ts",
         "import": "./dist/action-ledger-drift.js",
         "default": "./dist/action-ledger-drift.js"
+      },
+      "./payment-link": {
+        "types": "./dist/payment-link.d.ts",
+        "import": "./dist/payment-link.js",
+        "default": "./dist/payment-link.js"
       },
       "./schema": {
         "types": "./dist/schema.d.ts",

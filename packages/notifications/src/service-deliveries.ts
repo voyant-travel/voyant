@@ -1,5 +1,6 @@
 import { bookings } from "@voyantjs/bookings/schema"
 import { invoices, paymentSessions } from "@voyantjs/finance"
+import { buildPaymentLinkUrl } from "@voyantjs/finance/payment-link"
 import { desc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -102,6 +103,29 @@ function serializeNotificationError(error: unknown) {
     responseBody: readErrorField(error, "responseBody") ?? readErrorField(error, "body"),
     data: readErrorField(error, "data"),
     notificationRequest: readErrorField(error, "notificationRequest"),
+  }
+}
+
+export function resolveNotificationPaymentUrl(
+  paymentSessionId: string,
+  options: { paymentLinkBaseUrl?: string | null; redirectUrl?: string | null } = {},
+) {
+  if (options.paymentLinkBaseUrl?.trim()) {
+    return buildPaymentLinkUrl(paymentSessionId, { baseUrl: options.paymentLinkBaseUrl })
+  }
+
+  return normalizeAbsolutePaymentUrl(options.redirectUrl)
+}
+
+function normalizeAbsolutePaymentUrl(value: string | null | undefined) {
+  const trimmed = value?.trim()
+  if (!trimmed) return null
+
+  try {
+    const url = new URL(trimmed)
+    return url.protocol === "http:" || url.protocol === "https:" ? trimmed : null
+  } catch {
+    return null
   }
 }
 
@@ -406,6 +430,10 @@ export async function sendPaymentSessionNotification(
         provider: session.provider,
         currency: session.currency,
         amountCents: session.amountCents,
+        paymentUrl: resolveNotificationPaymentUrl(session.id, {
+          paymentLinkBaseUrl: input.paymentLinkBaseUrl,
+          redirectUrl: session.redirectUrl,
+        }),
         redirectUrl: session.redirectUrl,
         returnUrl: session.returnUrl,
         cancelUrl: session.cancelUrl,
@@ -537,6 +565,10 @@ export async function sendInvoiceNotification(
             id: latestSession.id,
             status: latestSession.status,
             provider: latestSession.provider,
+            paymentUrl: resolveNotificationPaymentUrl(latestSession.id, {
+              paymentLinkBaseUrl: input.paymentLinkBaseUrl,
+              redirectUrl: latestSession.redirectUrl,
+            }),
             redirectUrl: latestSession.redirectUrl,
             expiresAt: latestSession.expiresAt,
             amountCents: latestSession.amountCents,
