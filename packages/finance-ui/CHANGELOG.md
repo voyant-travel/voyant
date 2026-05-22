@@ -1,5 +1,17 @@
 # @voyantjs/finance-ui
 
+## 0.73.1
+
+### Patch Changes
+
+- 7930076: Fix the default invoice attachment download URL to target the admin finance route.
+  - @voyantjs/bookings-ui@0.73.1
+  - @voyantjs/finance@0.73.1
+  - @voyantjs/finance-react@0.73.1
+  - @voyantjs/i18n@0.73.1
+  - @voyantjs/suppliers-ui@0.73.1
+  - @voyantjs/ui@0.73.1
+
 ## 0.73.0
 
 ### Patch Changes
