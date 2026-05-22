@@ -1,5 +1,11 @@
 # @voyantjs/storage
 
+## 0.74.2
+
+### Patch Changes
+
+- 37c08cd: Throw from the R2 provider's `signedUrl` when neither a signer nor public base URL is configured instead of returning the raw storage key.
+
 ## 0.74.1
 
 ## 0.74.0
