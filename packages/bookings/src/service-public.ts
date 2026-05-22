@@ -34,6 +34,7 @@ import type {
   PublicUpdateBookingSessionInput,
   PublicUpsertBookingSessionStateInput,
 } from "./validation-public.js"
+import { publicBookingSessionTravelerInputSchema } from "./validation-public.js"
 
 /**
  * Optional resolver bundle for storefront/public booking flows. When
@@ -104,8 +105,13 @@ async function safeResolveBillingPerson(
   }
 }
 
-const travelerParticipantTypes = new Set(["traveler", "occupant"])
+const travelerParticipantTypeValues = ["traveler", "occupant"] as const
+const travelerParticipantTypes = new Set<string>(travelerParticipantTypeValues)
 const WIZARD_STATE_KEY = "wizard" as const
+
+type PublicBookingSessionTravelerInput = NonNullable<
+  PublicUpdateBookingSessionInput["travelers"]
+>[number]
 
 type SessionPricingCatalog = {
   id: string
@@ -187,6 +193,10 @@ function getRecordString(record: Record<string, unknown> | null, keys: string[])
   return null
 }
 
+function getArray(value: unknown) {
+  return Array.isArray(value) ? value : null
+}
+
 function extractBookingContactFromStatePayload(
   payload: Record<string, unknown> | null | undefined,
 ) {
@@ -214,10 +224,139 @@ function extractBookingContactFromStatePayload(
   }
 }
 
+function extractBookingTravelersFromStatePayload(
+  payload: Record<string, unknown> | null | undefined,
+): PublicBookingSessionTravelerInput[] | null {
+  const root = getRecord(payload)
+  const stepData = getNestedRecord(root, ["stepData", "steps"])
+  const travelersRecord =
+    getNestedRecord(root, ["travelers"]) ?? getNestedRecord(stepData, ["travelers"])
+  const travelers =
+    getArray(travelersRecord?.travelers) ??
+    getArray(root?.travelers) ??
+    getArray(stepData?.travelers)
+
+  if (!travelers) {
+    return null
+  }
+
+  const parsed = publicBookingSessionTravelerInputSchema.array().safeParse(travelers)
+  return parsed.success ? parsed.data : null
+}
+
 function countTravelerParticipants(participants: Array<{ participantType: string }>) {
   return participants.filter((participant) =>
     travelerParticipantTypes.has(participant.participantType),
   ).length
+}
+
+async function resolveTravelerPersonForParticipant(
+  db: PostgresJsDatabase,
+  resolver: ResolveBookingTravelerPerson | undefined,
+  participant: PublicBookingSessionTravelerInput,
+  bookingId: string,
+  existingPersonId?: string | null,
+) {
+  if (existingPersonId) {
+    return existingPersonId
+  }
+
+  return safeResolveTravelerPerson(
+    db,
+    resolver,
+    {
+      firstName: participant.firstName,
+      lastName: participant.lastName,
+      email: participant.email ?? null,
+      phone: participant.phone ?? null,
+      preferredLanguage: participant.preferredLanguage ?? null,
+    },
+    bookingId,
+  )
+}
+
+async function syncTravelerRowsFromStatePayload(
+  db: PostgresJsDatabase,
+  bookingId: string,
+  payload: Record<string, unknown>,
+  resolvers: PublicBookingsServiceResolvers,
+  userId?: string,
+) {
+  const travelers = extractBookingTravelersFromStatePayload(payload)
+  if (!travelers) {
+    return
+  }
+
+  const existingTravelers = await db
+    .select()
+    .from(bookingTravelers)
+    .where(
+      and(
+        eq(bookingTravelers.bookingId, bookingId),
+        inArray(bookingTravelers.participantType, [...travelerParticipantTypeValues]),
+      ),
+    )
+    .orderBy(asc(bookingTravelers.createdAt))
+
+  const existingById = new Map(existingTravelers.map((traveler) => [traveler.id, traveler]))
+  const usedExistingIds = new Set<string>()
+
+  for (const participant of travelers) {
+    const matchingExisting =
+      (participant.id ? existingById.get(participant.id) : undefined) ??
+      (participant.id
+        ? undefined
+        : existingTravelers.find((traveler) => !usedExistingIds.has(traveler.id)))
+    const reusablePersonId =
+      participant.id && matchingExisting?.id === participant.id ? matchingExisting.personId : null
+    const personId = await resolveTravelerPersonForParticipant(
+      db,
+      resolvers.resolveTravelerPerson,
+      participant,
+      bookingId,
+      reusablePersonId,
+    )
+    const travelerRecord = {
+      participantType: participant.participantType,
+      travelerCategory: participant.travelerCategory ?? null,
+      firstName: participant.firstName,
+      lastName: participant.lastName,
+      email: participant.email ?? null,
+      phone: participant.phone ?? null,
+      preferredLanguage: participant.preferredLanguage ?? null,
+      specialRequests: participant.specialRequests ?? null,
+      isPrimary: participant.isPrimary,
+      notes: participant.notes ?? null,
+      personId,
+    }
+
+    if (matchingExisting) {
+      await bookingsService.updateTravelerRecord(db, matchingExisting.id, travelerRecord)
+      usedExistingIds.add(matchingExisting.id)
+      continue
+    }
+
+    const created = await bookingsService.createTravelerRecord(
+      db,
+      bookingId,
+      travelerRecord,
+      userId,
+    )
+    if (created) {
+      usedExistingIds.add(created.id)
+    }
+  }
+
+  for (const existing of existingTravelers) {
+    if (!usedExistingIds.has(existing.id)) {
+      await bookingsService.deleteTravelerRecord(db, existing.id)
+    }
+  }
+
+  const travelerCount = countTravelerParticipants(travelers)
+  await bookingsService.updateBooking(db, bookingId, {
+    pax: travelerCount > 0 ? travelerCount : null,
+  })
 }
 
 function normalizeSessionState(
@@ -1022,6 +1161,7 @@ export const publicBookingsService = {
     bookingId: string,
     input: PublicUpsertBookingSessionStateInput,
     resolvers: PublicBookingsServiceResolvers = {},
+    userId?: string,
   ) {
     const booking = await bookingsService.getBookingById(db, bookingId)
     if (!booking) {
@@ -1058,6 +1198,9 @@ export const publicBookingsService = {
         ...(personId && booking.personId !== personId ? { personId } : {}),
       })
     }
+
+    await syncTravelerRowsFromStatePayload(db, bookingId, state.payload, resolvers, userId)
+
     return { status: "ok" as const, state }
   },
 
