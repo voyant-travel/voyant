@@ -459,17 +459,26 @@ function stringFromDoc(documents: Record<string, unknown> | undefined, key: stri
   return typeof value === "string" ? value : ""
 }
 
+// These labels are emitted into contract PDFs as template variable values,
+// not rendered in the operator UI. Contract localization is driven by the
+// contract's `language` field on render and lives in the template body —
+// not the operator's UI locale — so these stay in English at this layer.
 function paymentMethodLabel(intent: BookingDraftV1["payment"]["intent"]): string {
   switch (intent) {
     case "card":
+      // i18n-literal-ok
       return "Card payment"
     case "bank_transfer":
+      // i18n-literal-ok
       return "Bank transfer"
     case "inquiry":
+      // i18n-literal-ok
       return "Inquiry / Hold"
     case "hold":
+      // i18n-literal-ok
       return "Hold"
     case "ticket_on_credit":
+      // i18n-literal-ok
       return "Ticket on credit"
     default:
       return ""

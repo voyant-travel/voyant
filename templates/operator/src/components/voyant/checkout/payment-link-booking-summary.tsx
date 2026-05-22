@@ -1,9 +1,15 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
+import { formatMessage } from "@voyantjs/i18n"
 import { CalendarClock, Package, Users } from "lucide-react"
 
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
+
+type PaymentLinkSummaryMessages = ReturnType<
+  typeof useAdminMessages
+>["bookings"]["detail"]["paymentLinkSummary"]
 
 interface BookingSummaryItem {
   id: string
@@ -55,6 +61,7 @@ export interface PaymentLinkBookingSummaryState {
  *   - `empty`   → session isn't a single-booking checkout; render nothing.
  */
 export function usePaymentLinkBookingSummary(sessionId: string): PaymentLinkBookingSummaryState {
+  const t = useAdminMessages().bookings.detail.paymentLinkSummary
   const query = useQuery({
     queryKey: ["payment-link-booking-summary", sessionId],
     queryFn: async (): Promise<BookingSummary | null> => {
@@ -72,10 +79,16 @@ export function usePaymentLinkBookingSummary(sessionId: string): PaymentLinkBook
   if (query.isLoading) return { status: "loading", node: <BookingSummarySkeleton /> }
   const booking = query.data
   if (!booking || booking.items.length === 0) return { status: "empty", node: null }
-  return { status: "ready", node: <BookingSummaryCard booking={booking} /> }
+  return { status: "ready", node: <BookingSummaryCard booking={booking} messages={t} /> }
 }
 
-function BookingSummaryCard({ booking }: { booking: BookingSummary }) {
+function BookingSummaryCard({
+  booking,
+  messages,
+}: {
+  booking: BookingSummary
+  messages: PaymentLinkSummaryMessages
+}) {
   const partial =
     booking.chargeAmountCents != null &&
     booking.bookingTotalAmountCents != null &&
@@ -83,11 +96,11 @@ function BookingSummaryCard({ booking }: { booking: BookingSummary }) {
 
   return (
     <section
-      aria-label="Your booking"
+      aria-label={messages.ariaLabel}
       className="flex flex-col gap-3 rounded-xl border bg-card p-5 shadow-sm"
     >
       <header className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-medium text-base">Your booking</h2>
+        <h2 className="font-medium text-base">{messages.heading}</h2>
         <span className="font-mono text-muted-foreground text-xs">{booking.bookingNumber}</span>
       </header>
       <ul className="flex flex-col gap-3">
@@ -125,13 +138,15 @@ function BookingSummaryCard({ booking }: { booking: BookingSummary }) {
       {booking.pax != null ? (
         <p className="flex items-center gap-1.5 text-muted-foreground text-xs">
           <Users className="size-3" aria-hidden />
-          {booking.pax === 1 ? "1 traveler" : `${booking.pax} travelers`}
+          {booking.pax === 1
+            ? messages.travelerSingular
+            : formatMessage(messages.travelerPlural, { count: booking.pax })}
         </p>
       ) : null}
       <div className="flex flex-col gap-1 border-t pt-3">
         {partial ? (
           <div className="flex items-baseline justify-between text-muted-foreground text-xs">
-            <span className="uppercase tracking-wider">Booking total</span>
+            <span className="uppercase tracking-wider">{messages.bookingTotal}</span>
             <span className="font-mono tabular-nums">
               {formatMoney(booking.bookingTotalAmountCents, booking.bookingCurrency)}
             </span>
@@ -139,7 +154,7 @@ function BookingSummaryCard({ booking }: { booking: BookingSummary }) {
         ) : null}
         <div className="flex items-baseline justify-between">
           <span className="text-muted-foreground text-sm uppercase tracking-wider">
-            {partial ? "Due now" : "Total payable"}
+            {partial ? messages.dueNow : messages.totalPayable}
           </span>
           <span className="font-semibold text-base tabular-nums">
             {formatMoney(booking.chargeAmountCents, booking.currency)}

@@ -10,6 +10,7 @@ import {
 import type { PaymentPolicy, PaymentPolicySource } from "@voyantjs/finance"
 import { financeQueryKeys } from "@voyantjs/finance-react"
 import { PaymentPolicyForm, PaymentPolicyPreview } from "@voyantjs/finance-ui"
+import { formatMessage } from "@voyantjs/i18n"
 import {
   Badge,
   Button,
@@ -29,7 +30,12 @@ import { History, Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
+
+type PaymentPolicyCardMessages = ReturnType<
+  typeof useAdminMessages
+>["bookings"]["detail"]["paymentPolicyCard"]
 
 /**
  * Booking detail → Finance tab → Payment-policy card.
@@ -41,6 +47,7 @@ import { getApiUrl } from "@/lib/env"
  */
 export function BookingPaymentPolicyCard({ booking }: { booking: BookingRecord }) {
   const queryClient = useQueryClient()
+  const t = useAdminMessages().bookings.detail.paymentPolicyCard
   const persisted = (booking.customerPaymentPolicy as PaymentPolicy | null | undefined) ?? null
   const [draft, setDraft] = useState<PaymentPolicy | null>(persisted)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -89,7 +96,7 @@ export function BookingPaymentPolicyCard({ booking }: { booking: BookingRecord }
     },
     onSuccess: ({ data }) => {
       setResolvedSource(data.cascadeSource)
-      toast.success("Payment schedule regenerated")
+      toast.success(t.regenerateSucceeded)
       void queryClient.invalidateQueries({
         queryKey: bookingsQueryKeys.booking(booking.id),
       })
@@ -99,25 +106,13 @@ export function BookingPaymentPolicyCard({ booking }: { booking: BookingRecord }
       setDialogOpen(false)
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Regenerate failed")
+      toast.error(err instanceof Error ? err.message : t.regenerateFailed)
     },
   })
 
   const policySourceLabel = (source: PaymentPolicySource | null): string => {
-    switch (source) {
-      case "booking":
-        return "Booking override"
-      case "listing":
-        return "Listing"
-      case "category":
-        return "Category"
-      case "supplier":
-        return "Supplier"
-      case "operator_default":
-        return "Operator default"
-      default:
-        return "Not yet computed"
-    }
+    if (!source) return t.sourceLabels.unknown
+    return t.sourceLabels[source as keyof typeof t.sourceLabels] ?? source
   }
 
   const persistedHasOverride = persisted !== null
@@ -126,15 +121,13 @@ export function BookingPaymentPolicyCard({ booking }: { booking: BookingRecord }
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3">
         <div className="space-y-1">
-          <CardTitle>Payment policy</CardTitle>
-          <CardDescription>
-            Controls the deposit / balance split applied to this booking's payment schedule.
-          </CardDescription>
+          <CardTitle>{t.title}</CardTitle>
+          <CardDescription>{t.description}</CardDescription>
         </div>
         <Badge variant={persistedHasOverride ? "default" : "outline"}>
           {persistedHasOverride
-            ? "Booking override"
-            : `Cascade: ${policySourceLabel(resolvedSource)}`}
+            ? t.sourceLabels.booking
+            : formatMessage(t.cascadePrefix, { source: policySourceLabel(resolvedSource) })}
         </Badge>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
@@ -146,8 +139,9 @@ export function BookingPaymentPolicyCard({ booking }: { booking: BookingRecord }
           />
         ) : (
           <p className="text-muted-foreground text-sm">
-            No booking-level override. The schedule below was computed from the{" "}
-            {policySourceLabel(resolvedSource).toLowerCase()} policy.
+            {formatMessage(t.noOverrideHint, {
+              source: policySourceLabel(resolvedSource).toLowerCase(),
+            })}
           </p>
         )}
 
@@ -160,21 +154,21 @@ export function BookingPaymentPolicyCard({ booking }: { booking: BookingRecord }
               onClick={() => regenerate.mutate(null)}
             >
               {regenerate.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Clear override
+              {t.clearOverride}
             </Button>
           ) : null}
           <Button size="sm" onClick={() => setDialogOpen(true)}>
-            {persistedHasOverride ? "Edit override" : "Override on this booking"}
+            {persistedHasOverride ? t.editOverride : t.addOverride}
           </Button>
         </div>
 
-        <PaymentPolicyHistory bookingId={booking.id} />
+        <PaymentPolicyHistory bookingId={booking.id} messages={t} />
       </CardContent>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent size="lg">
           <DialogHeader>
-            <DialogTitle>Booking-level payment policy</DialogTitle>
+            <DialogTitle>{t.dialogTitle}</DialogTitle>
           </DialogHeader>
           <DialogBody className="grid gap-6 lg:grid-cols-[2fr_1fr]">
             <PaymentPolicyForm
@@ -198,7 +192,7 @@ export function BookingPaymentPolicyCard({ booking }: { booking: BookingRecord }
               onClick={() => setDialogOpen(false)}
               disabled={regenerate.isPending}
             >
-              Cancel
+              {t.cancel}
             </Button>
             <Button
               type="button"
@@ -207,7 +201,7 @@ export function BookingPaymentPolicyCard({ booking }: { booking: BookingRecord }
               onClick={() => regenerate.mutate(draft)}
             >
               {regenerate.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Save + regenerate schedule
+              {t.saveAndRegenerate}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -229,7 +223,13 @@ export function BookingPaymentPolicyCard({ booking }: { booking: BookingRecord }
  * timeline; this card-local view is just the policy slice for
  * convenience.
  */
-function PaymentPolicyHistory({ bookingId }: { bookingId: string }) {
+function PaymentPolicyHistory({
+  bookingId,
+  messages,
+}: {
+  bookingId: string
+  messages: PaymentPolicyCardMessages
+}) {
   const { data, isLoading } = useBookingActivity(bookingId)
   const rows = Array.isArray(data) ? data : (data?.data ?? [])
   const policyRows = rows
@@ -241,15 +241,14 @@ function PaymentPolicyHistory({ bookingId }: { bookingId: string }) {
     .slice(0, 10)
 
   if (isLoading) {
-    return <div className="text-muted-foreground text-xs">Loading history…</div>
+    return <div className="text-muted-foreground text-xs">{messages.historyLoading}</div>
   }
 
   if (policyRows.length === 0) {
     return (
       <div className="rounded-md border border-dashed p-3 text-muted-foreground text-xs">
         <History className="mr-1 inline-block h-3 w-3" />
-        No payment-schedule regenerations recorded yet — the schedule will be generated when the
-        booking is confirmed.
+        {messages.historyEmpty}
       </div>
     )
   }
@@ -258,19 +257,22 @@ function PaymentPolicyHistory({ bookingId }: { bookingId: string }) {
     <div className="rounded-md border bg-muted/10 p-3">
       <div className="mb-2 flex items-center gap-2 text-xs font-medium">
         <History className="h-3 w-3" />
-        Schedule history
+        {messages.historyTitle}
       </div>
       <ul className="space-y-2 text-xs">
         {policyRows.map((row) => {
           const meta = (row.metadata as Record<string, unknown> | null) ?? {}
           const source = String(meta.policySource ?? "operator_default")
           const entries = Array.isArray(meta.entries) ? meta.entries : []
+          const sourceLabel =
+            messages.sourceLabels[source as keyof typeof messages.sourceLabels] ?? source
+          const template =
+            entries.length === 1 ? messages.historyRowSingular : messages.historyRowPlural
           return (
             <li key={row.id} className="flex flex-col gap-0.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-medium">
-                  {sourceLabel(source as PaymentPolicySource)} → {entries.length} row
-                  {entries.length === 1 ? "" : "s"}
+                  {formatMessage(template, { source: sourceLabel, count: entries.length })}
                 </span>
                 <span className="font-mono text-muted-foreground">
                   {new Date(row.createdAt).toLocaleString()}
@@ -283,23 +285,6 @@ function PaymentPolicyHistory({ bookingId }: { bookingId: string }) {
       </ul>
     </div>
   )
-}
-
-function sourceLabel(source: PaymentPolicySource): string {
-  switch (source) {
-    case "booking":
-      return "Booking override"
-    case "listing":
-      return "Listing"
-    case "category":
-      return "Category"
-    case "supplier":
-      return "Supplier"
-    case "operator_default":
-      return "Operator default"
-    default:
-      return source
-  }
 }
 
 const POLICY_SOURCE_MARKER_PREFIX = "__payment_policy_source__:"

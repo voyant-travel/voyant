@@ -5,15 +5,18 @@ import {
   CatalogBookingPage as CatalogUiBookingPage,
   createCatalogBookingFetchers,
 } from "@voyantjs/catalog-ui"
+import { formatMessage } from "@voyantjs/i18n"
 import { useMemo } from "react"
 import { toast } from "sonner"
 
 import { PassengerContactPicker } from "@/components/voyant/flights/passenger-contact-picker"
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
 import { Route } from "@/routes/_workspace/catalog_.book.$entityModule.$entityId"
 
 export function CatalogBookingPage() {
   const navigate = useNavigate()
+  const t = useAdminMessages().products.operations.catalogBookingToasts
   const params = Route.useParams()
   const search = Route.useSearch()
   const fetchers = useMemo(() => createCatalogBookingFetchers({ baseUrl: getApiUrl() }), [])
@@ -39,15 +42,21 @@ export function CatalogBookingPage() {
         <PassengerContactPicker onPick={onPick} onAddContact={onAddContact} />
       )}
       onBookingSuccess={(booking) => {
-        toast.success(`Booked - order ${booking.orderRef.slice(0, 16)}... (${booking.status})`, {
-          action: {
-            label: "View bookings",
-            onClick: () => navigate({ to: "/bookings" }),
+        toast.success(
+          formatMessage(t.bookedSuccess, {
+            ref: booking.orderRef.slice(0, 16),
+            status: booking.status,
+          }),
+          {
+            action: {
+              label: t.viewBookings,
+              onClick: () => navigate({ to: "/bookings" }),
+            },
           },
-        })
+        )
         navigate({ to: "/bookings" })
       }}
-      onBookingError={(message) => toast.error(`Book request failed: ${message}`)}
+      onBookingError={(message) => toast.error(formatMessage(t.bookFailed, { message }))}
     />
   )
 }

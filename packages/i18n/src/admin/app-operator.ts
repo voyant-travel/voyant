@@ -1,4 +1,8 @@
 import { composeLocaleMessageDefinitions, type LocaleMessageDefinitions } from "../runtime.js"
+import {
+  type OperatorAdminActionLedgerMessages,
+  operatorAdminActionLedgerMessages,
+} from "./action-ledger-operator.js"
 import { type AdminAuthMessages, adminAuthMessages } from "./auth.js"
 import { type AdminAvailabilityMessages, adminAvailabilityMessages } from "./availability.js"
 import { type AdminBookingsMessages, adminBookingsMessages } from "./bookings.js"
@@ -10,6 +14,7 @@ import {
   operatorAdminDashboardMessages,
 } from "./dashboard-operator.js"
 import { type AdminFinanceMessages, adminFinanceMessages } from "./finance.js"
+import { type OperatorAdminLegalMessages, operatorAdminLegalMessages } from "./legal-operator.js"
 import { type OperatorAdminNavMessages, operatorAdminNavMessages } from "./operator-nav.js"
 import {
   type OperatorAdminPricingMessages,
@@ -34,6 +39,7 @@ import { type AdminTripsMessages, adminTripsMessages } from "./trips.js"
 export type OperatorAdminMessages = AdminChromeMessages & {
   auth: AdminAuthMessages
 } & OperatorAdminCoreMessages &
+  OperatorAdminActionLedgerMessages &
   AdminTeamMessages &
   AdminAvailabilityMessages &
   AdminBookingsMessages &
@@ -43,6 +49,7 @@ export type OperatorAdminMessages = AdminChromeMessages & {
   OperatorAdminSettingsMessages &
   OperatorAdminPricingMessages &
   OperatorAdminCrmMessages &
+  OperatorAdminLegalMessages &
   OperatorAdminProductsMessages &
   OperatorAdminSuppliersMessages &
   AdminTripsMessages & {
@@ -54,6 +61,7 @@ export const operatorAdminMessageDefinitions =
     adminChromeMessages,
     adminAuthMessages,
     operatorAdminCoreMessages,
+    operatorAdminActionLedgerMessages,
     adminTeamMessages,
     adminAvailabilityMessages,
     adminBookingsMessages,
@@ -61,6 +69,7 @@ export const operatorAdminMessageDefinitions =
     operatorAdminPricingMessages,
     operatorAdminSettingsMessages,
     operatorAdminCrmMessages,
+    operatorAdminLegalMessages,
     operatorAdminProductsMessages,
     operatorAdminSuppliersMessages,
     adminTripsMessages,

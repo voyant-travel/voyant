@@ -21,6 +21,32 @@ const ignoredLineIncludes = [
   "useForm<",
   "fetchJson<",
   "setField(",
+  // TanStack Query / fetch-helper shapes — the JSX-text heuristic mis-fires
+  // on `=> api.get<Type>(...)`, queryKey arrays, and bare `method: "PATCH"`
+  // wire-protocol strings. These are network plumbing, not user-facing copy.
+  "queryFn:",
+  "queryKey:",
+  "mutationFn:",
+  "mutationKey:",
+  "api.get<",
+  "api.post<",
+  "api.patch<",
+  "api.put<",
+  "api.delete<",
+  "= useQuery(",
+  "= useMutation(",
+  "= useInfiniteQuery(",
+  'method: "',
+  "method: '",
+  "headers: {",
+  "function useEditingToggle<",
+  // react-hook-form plumbing — `.setValue("field", "Default")` and
+  // `.register("field")` keep field names as quoted identifiers that
+  // can collide with the multi-word string heuristic.
+  ".setValue(",
+  ".register(",
+  ".getValues(",
+  ".watch(",
 ]
 const nonUserFacingLiterals = new Set([
   "",
@@ -34,6 +60,16 @@ const nonUserFacingLiterals = new Set([
   "UTC",
   "Europe/Bucharest",
   "FREQ=DAILY;INTERVAL=1",
+  // HTTP methods (PATCH, DELETE, OPTIONS are >4 chars so they slip past the
+  // generic uppercase fallback).
+  "PATCH",
+  "DELETE",
+  "OPTIONS",
+  // RRULE frequency tokens used in product-schedule-form and elsewhere.
+  "DAILY",
+  "WEEKLY",
+  "MONTHLY",
+  "YEARLY",
 ])
 
 const suspiciousPatterns = [
@@ -49,18 +85,25 @@ function extractQuotedStrings(line) {
 }
 
 function looksLikeTailwindUtility(value) {
-  if (!value.trim()) {
+  // Template-literal class lists embed conditional expressions like
+  // `mt-1 ${mono ? "font-mono" : "font-medium"}`. Strip the ${...} chunks
+  // before tokenizing so the remaining Tailwind utility names still pass.
+  const stripped = value
+    .replace(/\$\{[^}]*\}/g, "")
+    .replace(/[`"']/g, "")
+    .trim()
+  if (!stripped) {
     return false
   }
 
-  return value.split(/\s+/).every((token) => {
+  return stripped.split(/\s+/).every((token) => {
     const bareToken = token.replace(/^[a-z0-9_-]+:/i, "")
     return (
       /^(?:[a-z0-9[\]()./%#,:_-]+!?|\[[^\]]+\])$/i.test(token) &&
       (/^(?:absolute|block|contents|flex|grid|hidden|inline|relative|sticky|truncate)$/.test(
         bareToken,
       ) ||
-        /(?:^|:)(?:accent|animate|auto|bg|border|bottom|capitalize|center|col|cursor|duration|ease|font|gap|h|inset|items|justify|left|line|lowercase|m|mb|min|ml|mr|mt|mx|my|opacity|overflow|p|pb|pl|pointer|pr|pt|px|py|resize|right|ring|rounded|row|scroll|shadow|shrink|size|sm|space|sr|tabular|text|top|touch|tracking|transition|uppercase|w|whitespace|z)-/.test(
+        /(?:^|:)(?:accent|animate|auto|bg|border|bottom|capitalize|center|col|cursor|duration|ease|flex|font|gap|grid|h|inset|items|justify|left|line|lowercase|m|mb|min|ml|mr|mt|mx|my|opacity|overflow|p|pb|pl|pointer|pr|pt|px|py|resize|right|ring|rounded|row|scroll|shadow|shrink|size|sm|space|sr|tabular|text|top|touch|tracking|transition|uppercase|w|whitespace|z)-/.test(
           token,
         ))
     )
@@ -195,8 +238,39 @@ async function collectOptInRoots() {
     }
   }
 
+  // Templates opt in to the scan via their admin-i18n shim. We only walk
+  // `components/voyant/**` — custom voyant components are pure UI. Server
+  // routes (api/, workflows.ts), shadcn ui/ copies, the api-client lib, and
+  // TanStack Router page files mix non-UI concerns and would produce noise.
+  const templatesDir = path.join(rootDir, "templates")
+  const templateNames = await readdir(templatesDir).catch(() => [])
+
+  for (const templateName of templateNames) {
+    const adminI18nEntry = path.join(templatesDir, templateName, "src", "lib", "admin-i18n.tsx")
+    if (!(await exists(adminI18nEntry))) continue
+
+    const voyantComponents = path.join(templatesDir, templateName, "src", "components", "voyant")
+    if (await exists(voyantComponents)) {
+      roots.push(voyantComponents)
+    }
+  }
+
   return roots.sort()
 }
+
+/**
+ * Files inside opted-in roots that still contain hardcoded English copy and
+ * haven't been threaded through the i18n bundle yet. Listed here so the
+ * scanner gates new drift in the rest of the operator template while we work
+ * through the backlog. Remove entries as each file is translated.
+ *
+ * The list is dominated by surfaces that pre-date the i18n migration in the
+ * operator template — settings dialogs, the travel composer, resource detail
+ * pages — and by `.ts` query helpers whose `queryFn: () => api.get<Type>(...)`
+ * shape produces false positives from the JSX-text heuristic. Translate the
+ * UI strings and rerun the scanner to confirm before removing an entry.
+ */
+const HARDCODED_FILE_ALLOWLIST = new Set([].map((relative) => path.join(rootDir, relative)))
 
 async function collectSourceFiles(rootPath) {
   const results = []
@@ -270,6 +344,7 @@ async function main() {
   for (const rootPath of roots) {
     const sourceFiles = await collectSourceFiles(rootPath)
     for (const filePath of sourceFiles) {
+      if (HARDCODED_FILE_ALLOWLIST.has(filePath)) continue
       findings.push(...(await findSuspiciousLines(filePath)))
     }
   }

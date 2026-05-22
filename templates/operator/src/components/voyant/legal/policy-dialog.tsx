@@ -20,24 +20,28 @@ import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { zodResolver } from "@/lib/zod-resolver"
 
+const KIND_VALUES = [
+  "cancellation",
+  "payment",
+  "terms_and_conditions",
+  "privacy",
+  "refund",
+  "commission",
+  "guarantee",
+  "other",
+] as const
+type PolicyKind = (typeof KIND_VALUES)[number]
+
 const policyFormSchema = z.object({
-  kind: z.enum([
-    "cancellation",
-    "payment",
-    "terms_and_conditions",
-    "privacy",
-    "refund",
-    "commission",
-    "guarantee",
-    "other",
-  ]),
-  name: z.string().min(1, "Name is required"),
+  kind: z.enum(KIND_VALUES),
+  name: z.string().min(1, "nameRequired"),
   slug: z
     .string()
-    .min(1, "Slug is required")
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Must be kebab-case"),
+    .min(1, "slugRequired")
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "slugKebabCase"),
   description: z.string().optional(),
   language: z.string().min(2).max(10).optional(),
 })
@@ -52,20 +56,18 @@ type PolicyDialogProps = {
   onSuccess: () => void
 }
 
-const KINDS = [
-  { value: "cancellation", label: "Cancellation" },
-  { value: "payment", label: "Payment" },
-  { value: "terms_and_conditions", label: "Terms & Conditions" },
-  { value: "privacy", label: "Privacy" },
-  { value: "refund", label: "Refund" },
-  { value: "commission", label: "Commission" },
-  { value: "guarantee", label: "Guarantee" },
-  { value: "other", label: "Other" },
-] as const
-
 export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: PolicyDialogProps) {
   const isEditing = !!policy
+  const t = useAdminMessages().legal.policyDialog
   const { create, update } = useLegalPolicyMutation()
+
+  const validationByCode: Record<string, string> = {
+    nameRequired: t.validation.nameRequired,
+    slugRequired: t.validation.slugRequired,
+    slugKebabCase: t.validation.slugKebabCase,
+  }
+  const resolveValidation = (code: string | undefined) =>
+    (code && validationByCode[code]) || code || ""
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(policyFormSchema),
@@ -113,14 +115,14 @@ export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: PolicyDi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Policy" : "New Policy"}</DialogTitle>
+          <DialogTitle>{isEditing ? t.titleEdit : t.titleNew}</DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="flex flex-col gap-2">
-              <Label>Kind</Label>
+              <Label>{t.kindLabel}</Label>
               <Select
-                items={KINDS}
+                items={KIND_VALUES.map((value) => ({ value, label: t.kindOptions[value] }))}
                 value={form.watch("kind")}
                 onValueChange={(v) => form.setValue("kind", v as FormValues["kind"])}
               >
@@ -128,9 +130,9 @@ export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: PolicyDi
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {KINDS.map((k) => (
-                    <SelectItem key={k.value} value={k.value}>
-                      {k.label}
+                  {KIND_VALUES.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {t.kindOptions[value as PolicyKind]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -138,31 +140,35 @@ export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: PolicyDi
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Name</Label>
-              <Input {...form.register("name")} placeholder="Policy name" />
+              <Label>{t.nameLabel}</Label>
+              <Input {...form.register("name")} placeholder={t.namePlaceholder} />
               {form.formState.errors.name && (
-                <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
+                <p className="text-xs text-destructive">
+                  {resolveValidation(form.formState.errors.name.message)}
+                </p>
               )}
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Slug</Label>
-              <Input {...form.register("slug")} placeholder="policy-slug" />
+              <Label>{t.slugLabel}</Label>
+              <Input {...form.register("slug")} placeholder={t.slugPlaceholder} />
               {form.formState.errors.slug && (
-                <p className="text-xs text-destructive">{form.formState.errors.slug.message}</p>
+                <p className="text-xs text-destructive">
+                  {resolveValidation(form.formState.errors.slug.message)}
+                </p>
               )}
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Description</Label>
-              <Textarea {...form.register("description")} placeholder="Optional description..." />
+              <Label>{t.descriptionLabel}</Label>
+              <Textarea {...form.register("description")} placeholder={t.descriptionPlaceholder} />
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Language</Label>
+              <Label>{t.languageLabel}</Label>
               <Input
                 {...form.register("language")}
-                placeholder="en"
+                placeholder={t.languagePlaceholder}
                 maxLength={10}
                 className="max-w-[120px]"
               />
@@ -170,11 +176,11 @@ export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: PolicyDi
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t.cancel}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Create Policy"}
+              {isEditing ? t.saveChanges : t.createAction}
             </Button>
           </DialogFooter>
         </form>

@@ -20,6 +20,11 @@ import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
 import { Download, ExternalLink, FileText, Loader2, Plus, RotateCw, Trash2 } from "lucide-react"
 import { useState } from "react"
+import { useAdminMessages } from "@/lib/admin-i18n"
+
+type DocumentsTableMessages = ReturnType<
+  typeof useAdminMessages
+>["bookings"]["detail"]["documentsTable"]
 
 /**
  * Unified Documents tab for a booking. Replaces the old split between
@@ -69,6 +74,7 @@ export function BookingDocumentsTable({
   apiBaseUrl,
 }: BookingDocumentsTableProps): React.ReactElement {
   const [uploadOpen, setUploadOpen] = useState(false)
+  const t = useAdminMessages().bookings.detail.documentsTable
 
   const bookingQuery = useBooking(bookingId)
   const booking = bookingQuery.data?.data ?? null
@@ -129,7 +135,7 @@ export function BookingDocumentsTable({
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <FileText className="h-4 w-4 text-muted-foreground" />
-          Documents
+          {t.title}
           {totalRows > 0 ? (
             <Badge variant="outline" className="text-[10px]">
               {totalRows}
@@ -142,18 +148,18 @@ export function BookingDocumentsTable({
             variant="outline"
             onClick={() => handleGenerateContract()}
             disabled={generatingContract || !booking}
-            title="Generate the customer contract for this booking"
+            title={t.generateContractTooltip}
           >
             {generatingContract ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
             ) : (
               <FileText className="mr-1.5 h-3.5 w-3.5" />
             )}
-            Generate contract
+            {t.generateContract}
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setUploadOpen(true)}>
             <Plus className="mr-1 h-3.5 w-3.5" />
-            Upload document
+            {t.uploadDocument}
           </Button>
         </div>
       </CardHeader>
@@ -161,30 +167,31 @@ export function BookingDocumentsTable({
         {isLoading ? (
           <p className="flex items-center justify-center gap-2 py-6 text-muted-foreground text-sm">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            Loading documents…
+            {t.loading}
           </p>
         ) : totalRows === 0 ? (
-          <p className="px-6 py-6 text-center text-muted-foreground text-sm">
-            No documents on this booking yet. Use "Generate contract" above, or upload traveler
-            documents (passport, visa, insurance). Invoices are generated per payment from the
-            Finance tab.
-          </p>
+          <p className="px-6 py-6 text-center text-muted-foreground text-sm">{t.empty}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-muted-foreground">
-                  <th className="px-4 py-2 text-left font-medium">Category</th>
-                  <th className="px-4 py-2 text-left font-medium">Document</th>
-                  <th className="px-4 py-2 text-left font-medium">For</th>
-                  <th className="px-4 py-2 text-left font-medium">Status</th>
-                  <th className="px-4 py-2 text-left font-medium">Date</th>
+                  <th className="px-4 py-2 text-left font-medium">{t.headerCategory}</th>
+                  <th className="px-4 py-2 text-left font-medium">{t.headerDocument}</th>
+                  <th className="px-4 py-2 text-left font-medium">{t.headerFor}</th>
+                  <th className="px-4 py-2 text-left font-medium">{t.headerStatus}</th>
+                  <th className="px-4 py-2 text-left font-medium">{t.headerDate}</th>
                   <th className="w-32 px-4 py-2" />
                 </tr>
               </thead>
               <tbody>
                 {contracts.map((contract) => (
-                  <ContractRow key={contract.id} contract={contract} apiBaseUrl={apiBaseUrl} />
+                  <ContractRow
+                    key={contract.id}
+                    contract={contract}
+                    apiBaseUrl={apiBaseUrl}
+                    messages={t}
+                  />
                 ))}
                 {travelerDocs.map((doc) => (
                   <TravelerDocRow
@@ -192,6 +199,7 @@ export function BookingDocumentsTable({
                     doc={doc}
                     traveler={doc.travelerId ? (travelersById.get(doc.travelerId) ?? null) : null}
                     onDelete={() => removeTravelerDoc.mutate(doc.id)}
+                    messages={t}
                   />
                 ))}
               </tbody>
@@ -215,9 +223,11 @@ export function BookingDocumentsTable({
 function ContractRow({
   contract,
   apiBaseUrl,
+  messages,
 }: {
   contract: LegalContractRecord
   apiBaseUrl?: string
+  messages: DocumentsTableMessages
 }): React.ReactElement {
   const attachmentsQuery = useLegalContractAttachments({ contractId: contract.id })
   const attachments = (attachmentsQuery.data ?? []).filter(
@@ -268,13 +278,13 @@ function ContractRow({
   const titleText = latest?.name ?? contract.contractNumber ?? `Contract ${contract.id.slice(-8)}`
   const statusVariant = CONTRACT_STATUS_VARIANT[contract.status] ?? "outline"
   const dateIso = contract.issuedAt ?? contract.createdAt ?? null
-  const dateLabel = hasDocument ? "Issued" : "Pending since"
+  const dateLabel = hasDocument ? messages.contractIssuedLabel : messages.contractPendingSinceLabel
 
   return (
     <tr className="border-b last:border-b-0">
       <td className="px-4 py-2.5">
         <Badge variant="outline" className="text-[10px]">
-          Contract
+          {messages.contractBadge}
         </Badge>
       </td>
       <td className="px-4 py-2.5">
@@ -299,7 +309,7 @@ function ContractRow({
           <span className="ml-2 text-muted-foreground text-xs">{formatBytes(latest.fileSize)}</span>
         ) : null}
       </td>
-      <td className="px-4 py-2.5 text-muted-foreground">Booking</td>
+      <td className="px-4 py-2.5 text-muted-foreground">{messages.forBooking}</td>
       <td className="px-4 py-2.5">
         <Badge variant={statusVariant}>{contract.status.replace(/_/g, " ")}</Badge>
       </td>
@@ -321,7 +331,9 @@ function ContractRow({
             size="sm"
             onClick={handleGenerate}
             disabled={isPending}
-            title={hasDocument ? "Regenerate PDF from current template" : "Generate PDF"}
+            title={
+              hasDocument ? messages.contractRegenerateTooltip : messages.contractGenerateTooltip
+            }
             className="h-7 px-2"
           >
             {isPending ? (
@@ -329,7 +341,9 @@ function ContractRow({
             ) : (
               <RotateCw className="h-3.5 w-3.5" />
             )}
-            <span className="ml-1 text-xs">{hasDocument ? "Regenerate" : "Generate"}</span>
+            <span className="ml-1 text-xs">
+              {hasDocument ? messages.contractRegenerateAction : messages.contractGenerateAction}
+            </span>
           </Button>
         </div>
       </td>
@@ -346,6 +360,7 @@ function TravelerDocRow({
   doc,
   traveler,
   onDelete,
+  messages,
 }: {
   doc: {
     id: string
@@ -359,10 +374,11 @@ function TravelerDocRow({
   }
   traveler: BookingTravelerRecord | null
   onDelete: () => void
+  messages: DocumentsTableMessages
 }): React.ReactElement {
   const scope = traveler
-    ? `${traveler.firstName ?? ""} ${traveler.lastName ?? ""}`.trim() || "Traveler"
-    : "Booking"
+    ? `${traveler.firstName ?? ""} ${traveler.lastName ?? ""}`.trim() || messages.travelerFallback
+    : messages.forBooking
   const isExpired =
     doc.expiresAt && Number.isFinite(new Date(doc.expiresAt).getTime())
       ? new Date(doc.expiresAt).getTime() < Date.now()
@@ -371,7 +387,7 @@ function TravelerDocRow({
     ? "destructive"
     : (TRAVELER_DOC_VARIANT[doc.type] ?? "outline")
   const dateIso = doc.expiresAt ?? doc.createdAt ?? null
-  const dateLabel = doc.expiresAt ? "Expires" : "Uploaded"
+  const dateLabel = doc.expiresAt ? messages.travelerExpiresLabel : messages.travelerUploadedLabel
 
   return (
     <tr className="border-b last:border-b-0">
@@ -394,7 +410,9 @@ function TravelerDocRow({
       </td>
       <td className="px-4 py-2.5 text-muted-foreground">{scope}</td>
       <td className="px-4 py-2.5">
-        <Badge variant={variant}>{isExpired ? "Expired" : "On file"}</Badge>
+        <Badge variant={variant}>
+          {isExpired ? messages.travelerStatusExpired : messages.travelerStatusOnFile}
+        </Badge>
       </td>
       <td className="px-4 py-2.5 text-muted-foreground text-xs">
         {dateIso ? (
@@ -413,17 +431,17 @@ function TravelerDocRow({
             target="_blank"
             rel="noopener noreferrer"
             className="text-muted-foreground hover:text-foreground"
-            aria-label="Download document"
+            aria-label={messages.downloadDocumentAria}
           >
             <Download className="h-3.5 w-3.5" />
           </a>
           <button
             type="button"
             onClick={() => {
-              if (confirm("Delete this document?")) onDelete()
+              if (confirm(messages.deleteConfirm)) onDelete()
             }}
             className="text-muted-foreground hover:text-destructive"
-            aria-label="Delete document"
+            aria-label={messages.deleteDocumentAria}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>

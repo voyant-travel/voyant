@@ -17,8 +17,11 @@ import {
 import { Eye, KeyRound, ScrollText, ShieldCheck } from "lucide-react"
 import type { ReactNode } from "react"
 
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 import { queryKeys } from "@/lib/query-keys"
+
+type EntrySheetMessages = ReturnType<typeof useAdminMessages>["actionLedgerPage"]["entrySheet"]
 
 type LedgerBadgeVariant = "default" | "secondary" | "outline" | "destructive"
 
@@ -56,6 +59,7 @@ export function ActionLedgerEntrySheet({
   entryId: string | null
   locale: string
 }) {
+  const t = useAdminMessages().actionLedgerPage.entrySheet
   const entryDetailQuery = useQuery({
     queryKey: queryKeys.actionLedger.entry(entryId ?? ""),
     queryFn: () => getActionLedgerEntry(entryId ?? ""),
@@ -68,10 +72,8 @@ export function ActionLedgerEntrySheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full overflow-hidden p-0 sm:max-w-2xl lg:max-w-3xl">
         <SheetHeader className="border-b px-6 py-4">
-          <SheetTitle>Action details</SheetTitle>
-          <SheetDescription>
-            Ledger context, idempotency, mutation detail, sensitive-read detail, and relay state.
-          </SheetDescription>
+          <SheetTitle>{t.title}</SheetTitle>
+          <SheetDescription>{t.description}</SheetDescription>
           {entry ? (
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <Badge variant={RISK_VARIANT[entry.evaluatedRisk] ?? "outline"}>
@@ -84,11 +86,11 @@ export function ActionLedgerEntrySheet({
         </SheetHeader>
         <div className="h-[calc(100vh-9rem)] overflow-auto px-6 py-5">
           {isLoading ? (
-            <p className="text-muted-foreground text-sm">Loading action details...</p>
+            <p className="text-muted-foreground text-sm">{t.loading}</p>
           ) : entry ? (
-            <ActionLedgerEntryDetail entry={entry} locale={locale} />
+            <ActionLedgerEntryDetail entry={entry} locale={locale} messages={t} />
           ) : (
-            <p className="text-muted-foreground text-sm">Action ledger entry not found.</p>
+            <p className="text-muted-foreground text-sm">{t.notFound}</p>
           )}
         </div>
       </SheetContent>
@@ -99,112 +101,314 @@ export function ActionLedgerEntrySheet({
 function ActionLedgerEntryDetail({
   entry,
   locale,
+  messages,
 }: {
   entry: ActionLedgerEntryDetailResponse
   locale: string
+  messages: EntrySheetMessages
 }) {
   return (
     <div className="space-y-6">
       <DetailGrid>
-        <DetailField label="When" value={formatDateTime(entry.occurredAt, locale)} />
-        <DetailField label="Action" value={entry.actionName} />
-        <DetailField label="Version" value={entry.actionVersion} />
-        <DetailField label="Kind" value={entry.actionKind} />
-        <DetailField label="Route or tool" value={entry.routeOrToolName} />
-        <DetailField label="Authorization" value={entry.authorizationSource} />
+        <DetailField
+          label={messages.baseFields.when}
+          value={formatDateTime(entry.occurredAt, locale)}
+          noValue={messages.noValue}
+        />
+        <DetailField
+          label={messages.baseFields.action}
+          value={entry.actionName}
+          noValue={messages.noValue}
+        />
+        <DetailField
+          label={messages.baseFields.version}
+          value={entry.actionVersion}
+          noValue={messages.noValue}
+        />
+        <DetailField
+          label={messages.baseFields.kind}
+          value={entry.actionKind}
+          noValue={messages.noValue}
+        />
+        <DetailField
+          label={messages.baseFields.routeOrTool}
+          value={entry.routeOrToolName}
+          noValue={messages.noValue}
+        />
+        <DetailField
+          label={messages.baseFields.authorization}
+          value={entry.authorizationSource}
+          noValue={messages.noValue}
+        />
       </DetailGrid>
 
-      <DetailSection title="Actor" icon={<ShieldCheck className="h-4 w-4" />}>
+      <DetailSection title={messages.actor.title} icon={<ShieldCheck className="h-4 w-4" />}>
         <DetailGrid>
-          <DetailField label="Principal type" value={entry.principalType} />
-          <DetailField label="Principal ID" value={entry.principalId} mono />
-          <DetailField label="Actor type" value={entry.actorType} />
-          <DetailField label="Caller type" value={entry.callerType} />
-          <DetailField label="Session ID" value={entry.sessionId} mono />
-          <DetailField label="API token" value={entry.apiTokenId} mono />
-          <DetailField label="Organization" value={entry.organizationId} mono />
-          <DetailField label="Internal" value={entry.internalRequest ? "yes" : "no"} />
+          <DetailField
+            label={messages.actor.principalType}
+            value={entry.principalType}
+            noValue={messages.noValue}
+          />
+          <DetailField
+            label={messages.actor.principalId}
+            value={entry.principalId}
+            mono
+            noValue={messages.noValue}
+          />
+          <DetailField
+            label={messages.actor.actorType}
+            value={entry.actorType}
+            noValue={messages.noValue}
+          />
+          <DetailField
+            label={messages.actor.callerType}
+            value={entry.callerType}
+            noValue={messages.noValue}
+          />
+          <DetailField
+            label={messages.actor.sessionId}
+            value={entry.sessionId}
+            mono
+            noValue={messages.noValue}
+          />
+          <DetailField
+            label={messages.actor.apiToken}
+            value={entry.apiTokenId}
+            mono
+            noValue={messages.noValue}
+          />
+          <DetailField
+            label={messages.actor.organization}
+            value={entry.organizationId}
+            mono
+            noValue={messages.noValue}
+          />
+          <DetailField
+            label={messages.actor.internal}
+            value={entry.internalRequest ? messages.booleanYes : messages.booleanNo}
+            noValue={messages.noValue}
+          />
         </DetailGrid>
       </DetailSection>
 
-      <DetailSection title="Target And Flow" icon={<ScrollText className="h-4 w-4" />}>
+      <DetailSection title={messages.targetFlow.title} icon={<ScrollText className="h-4 w-4" />}>
         <DetailGrid>
-          <DetailField label="Target type" value={entry.targetType} />
-          <DetailField label="Target ID" value={entry.targetId} mono />
-          <DetailField label="Workflow run" value={entry.workflowRunId} mono />
-          <DetailField label="Workflow step" value={entry.workflowStepId} mono />
-          <DetailField label="Correlation" value={entry.correlationId} mono />
-          <DetailField label="Causation action" value={entry.causationActionId} mono />
-          <DetailField label="Capability" value={entry.capabilityId} mono />
-          <DetailField label="Capability version" value={entry.capabilityVersion} />
+          <DetailField
+            label={messages.targetFlow.targetType}
+            value={entry.targetType}
+            noValue={messages.noValue}
+          />
+          <DetailField
+            label={messages.targetFlow.targetId}
+            value={entry.targetId}
+            mono
+            noValue={messages.noValue}
+          />
+          <DetailField
+            label={messages.targetFlow.workflowRun}
+            value={entry.workflowRunId}
+            mono
+            noValue={messages.noValue}
+          />
+          <DetailField
+            label={messages.targetFlow.workflowStep}
+            value={entry.workflowStepId}
+            mono
+            noValue={messages.noValue}
+          />
+          <DetailField
+            label={messages.targetFlow.correlation}
+            value={entry.correlationId}
+            mono
+            noValue={messages.noValue}
+          />
+          <DetailField
+            label={messages.targetFlow.causationAction}
+            value={entry.causationActionId}
+            mono
+            noValue={messages.noValue}
+          />
+          <DetailField
+            label={messages.targetFlow.capability}
+            value={entry.capabilityId}
+            mono
+            noValue={messages.noValue}
+          />
+          <DetailField
+            label={messages.targetFlow.capabilityVersion}
+            value={entry.capabilityVersion}
+            noValue={messages.noValue}
+          />
         </DetailGrid>
       </DetailSection>
 
-      <DetailSection title="Idempotency" icon={<KeyRound className="h-4 w-4" />}>
+      <DetailSection title={messages.idempotency.title} icon={<KeyRound className="h-4 w-4" />}>
         <DetailGrid>
-          <DetailField label="Scope" value={entry.idempotencyScope} mono />
-          <DetailField label="Key" value={entry.idempotencyKey} mono />
-          <DetailField label="Fingerprint" value={entry.idempotencyFingerprint} mono />
+          <DetailField
+            label={messages.idempotency.scope}
+            value={entry.idempotencyScope}
+            mono
+            noValue={messages.noValue}
+          />
+          <DetailField
+            label={messages.idempotency.key}
+            value={entry.idempotencyKey}
+            mono
+            noValue={messages.noValue}
+          />
+          <DetailField
+            label={messages.idempotency.fingerprint}
+            value={entry.idempotencyFingerprint}
+            mono
+            noValue={messages.noValue}
+          />
         </DetailGrid>
       </DetailSection>
 
-      {entry.mutationDetail ? <MutationDetail entry={entry} /> : null}
-      {entry.sensitiveReadDetail ? <SensitiveReadDetail entry={entry} /> : null}
-      <PayloadRefs entry={entry} />
-      <RelayRows entry={entry} />
+      {entry.mutationDetail ? <MutationDetail entry={entry} messages={messages} /> : null}
+      {entry.sensitiveReadDetail ? <SensitiveReadDetail entry={entry} messages={messages} /> : null}
+      <PayloadRefs entry={entry} messages={messages} />
+      <RelayRows entry={entry} messages={messages} />
     </div>
   )
 }
 
-function MutationDetail({ entry }: { entry: ActionLedgerEntryDetailResponse }) {
+function MutationDetail({
+  entry,
+  messages,
+}: {
+  entry: ActionLedgerEntryDetailResponse
+  messages: EntrySheetMessages
+}) {
   const detail = entry.mutationDetail
   if (!detail) return null
 
   return (
-    <DetailSection title="Mutation" icon={<ScrollText className="h-4 w-4" />}>
+    <DetailSection title={messages.mutation.title} icon={<ScrollText className="h-4 w-4" />}>
       <DetailGrid>
-        <DetailField label="Summary" value={detail.summary} />
-        <DetailField label="Input ref" value={detail.commandInputRef} mono />
-        <DetailField label="Result ref" value={detail.commandResultRef} mono />
-        <DetailField label="Reversal kind" value={detail.reversalKind} />
-        <DetailField label="Reversal state" value={detail.reversalStateProjection} />
-        <DetailField label="Reverses" value={detail.reversesActionId} mono />
+        <DetailField
+          label={messages.mutation.summary}
+          value={detail.summary}
+          noValue={messages.noValue}
+        />
+        <DetailField
+          label={messages.mutation.inputRef}
+          value={detail.commandInputRef}
+          mono
+          noValue={messages.noValue}
+        />
+        <DetailField
+          label={messages.mutation.resultRef}
+          value={detail.commandResultRef}
+          mono
+          noValue={messages.noValue}
+        />
+        <DetailField
+          label={messages.mutation.reversalKind}
+          value={detail.reversalKind}
+          noValue={messages.noValue}
+        />
+        <DetailField
+          label={messages.mutation.reversalState}
+          value={detail.reversalStateProjection}
+          noValue={messages.noValue}
+        />
+        <DetailField
+          label={messages.mutation.reverses}
+          value={detail.reversesActionId}
+          mono
+          noValue={messages.noValue}
+        />
       </DetailGrid>
     </DetailSection>
   )
 }
 
-function SensitiveReadDetail({ entry }: { entry: ActionLedgerEntryDetailResponse }) {
+function SensitiveReadDetail({
+  entry,
+  messages,
+}: {
+  entry: ActionLedgerEntryDetailResponse
+  messages: EntrySheetMessages
+}) {
   const detail = entry.sensitiveReadDetail
   if (!detail) return null
 
   return (
-    <DetailSection title="Sensitive Read" icon={<Eye className="h-4 w-4" />}>
+    <DetailSection title={messages.sensitiveRead.title} icon={<Eye className="h-4 w-4" />}>
       <DetailGrid>
-        <DetailField label="Reason" value={detail.reasonCode} />
-        <DetailField label="Decision policy" value={detail.decisionPolicy} />
-        <DetailField label="Disclosure" value={detail.disclosureSummary} />
-        <DetailField label="Fields" value={detail.disclosedFieldSet?.join(", ")} />
+        <DetailField
+          label={messages.sensitiveRead.reason}
+          value={detail.reasonCode}
+          noValue={messages.noValue}
+        />
+        <DetailField
+          label={messages.sensitiveRead.decisionPolicy}
+          value={detail.decisionPolicy}
+          noValue={messages.noValue}
+        />
+        <DetailField
+          label={messages.sensitiveRead.disclosure}
+          value={detail.disclosureSummary}
+          noValue={messages.noValue}
+        />
+        <DetailField
+          label={messages.sensitiveRead.fields}
+          value={detail.disclosedFieldSet?.join(", ")}
+          noValue={messages.noValue}
+        />
       </DetailGrid>
     </DetailSection>
   )
 }
 
-function PayloadRefs({ entry }: { entry: ActionLedgerEntryDetailResponse }) {
+function PayloadRefs({
+  entry,
+  messages,
+}: {
+  entry: ActionLedgerEntryDetailResponse
+  messages: EntrySheetMessages
+}) {
   return (
-    <DetailSection title="Payloads" icon={<ScrollText className="h-4 w-4" />}>
+    <DetailSection title={messages.payloads.title} icon={<ScrollText className="h-4 w-4" />}>
       {entry.payloads.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No payload refs recorded.</p>
+        <p className="text-muted-foreground text-sm">{messages.payloads.empty}</p>
       ) : (
         <div className="space-y-3">
           {entry.payloads.map((payload) => (
             <DetailGrid key={payload.id}>
-              <DetailField label="Kind" value={payload.payloadKind} />
-              <DetailField label="Schema" value={payload.schemaTag} />
-              <DetailField label="Storage ref" value={payload.storageRef} mono />
-              <DetailField label="Redaction" value={payload.redactionStatus} />
-              <DetailField label="Retention" value={payload.retentionPolicy} />
-              <DetailField label="Hash" value={payload.hash} mono />
+              <DetailField
+                label={messages.payloads.kind}
+                value={payload.payloadKind}
+                noValue={messages.noValue}
+              />
+              <DetailField
+                label={messages.payloads.schema}
+                value={payload.schemaTag}
+                noValue={messages.noValue}
+              />
+              <DetailField
+                label={messages.payloads.storageRef}
+                value={payload.storageRef}
+                mono
+                noValue={messages.noValue}
+              />
+              <DetailField
+                label={messages.payloads.redaction}
+                value={payload.redactionStatus}
+                noValue={messages.noValue}
+              />
+              <DetailField
+                label={messages.payloads.retention}
+                value={payload.retentionPolicy}
+                noValue={messages.noValue}
+              />
+              <DetailField
+                label={messages.payloads.hash}
+                value={payload.hash}
+                mono
+                noValue={messages.noValue}
+              />
             </DetailGrid>
           ))}
         </div>
@@ -213,21 +417,52 @@ function PayloadRefs({ entry }: { entry: ActionLedgerEntryDetailResponse }) {
   )
 }
 
-function RelayRows({ entry }: { entry: ActionLedgerEntryDetailResponse }) {
+function RelayRows({
+  entry,
+  messages,
+}: {
+  entry: ActionLedgerEntryDetailResponse
+  messages: EntrySheetMessages
+}) {
   return (
-    <DetailSection title="Relay Outbox" icon={<ScrollText className="h-4 w-4" />}>
+    <DetailSection title={messages.relay.title} icon={<ScrollText className="h-4 w-4" />}>
       {entry.relayOutbox.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No relay rows recorded.</p>
+        <p className="text-muted-foreground text-sm">{messages.relay.empty}</p>
       ) : (
         <div className="space-y-3">
           {entry.relayOutbox.map((row) => (
             <DetailGrid key={row.id}>
-              <DetailField label="Status" value={row.relayStatus} />
-              <DetailField label="Payload ref" value={row.payloadRef} mono />
-              <DetailField label="Attempts" value={String(row.attemptCount)} />
-              <DetailField label="Next retry" value={row.nextRetryAt} />
-              <DetailField label="Processed" value={row.processedAt} />
-              <DetailField label="Last error" value={row.lastError} />
+              <DetailField
+                label={messages.relay.status}
+                value={row.relayStatus}
+                noValue={messages.noValue}
+              />
+              <DetailField
+                label={messages.relay.payloadRef}
+                value={row.payloadRef}
+                mono
+                noValue={messages.noValue}
+              />
+              <DetailField
+                label={messages.relay.attempts}
+                value={String(row.attemptCount)}
+                noValue={messages.noValue}
+              />
+              <DetailField
+                label={messages.relay.nextRetry}
+                value={row.nextRetryAt}
+                noValue={messages.noValue}
+              />
+              <DetailField
+                label={messages.relay.processed}
+                value={row.processedAt}
+                noValue={messages.noValue}
+              />
+              <DetailField
+                label={messages.relay.lastError}
+                value={row.lastError}
+                noValue={messages.noValue}
+              />
             </DetailGrid>
           ))}
         </div>
@@ -264,19 +499,21 @@ function DetailField({
   label,
   value,
   mono = false,
+  noValue,
 }: {
   label: string
   value: string | null | undefined
   mono?: boolean
+  noValue: string
 }) {
   return (
     <div className="min-w-0 rounded-md border bg-muted/20 px-3 py-2">
       <div className="text-muted-foreground text-xs">{label}</div>
       <div
         className={`mt-1 min-h-5 truncate text-sm ${mono ? "font-mono text-xs" : "font-medium"}`}
-        title={value ?? "-"}
+        title={value ?? noValue}
       >
-        {value || "-"}
+        {value || noValue}
       </div>
     </div>
   )

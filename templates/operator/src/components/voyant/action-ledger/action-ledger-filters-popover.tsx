@@ -24,6 +24,7 @@ import {
 import { ListFilter } from "lucide-react"
 import * as React from "react"
 
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 
 export const ANY = "__all__"
@@ -32,23 +33,14 @@ export const STATUS_ALL = ANY
 export const PRINCIPAL_TYPE_ALL = ANY
 export const TARGET_TYPE_ALL = ANY
 
-const PRINCIPAL_TYPE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
-  { value: PRINCIPAL_TYPE_ALL, label: "Any principal" },
-  { value: "user", label: "Staff user" },
-  { value: "api_key", label: "API key" },
-  { value: "agent", label: "Agent" },
-  { value: "workflow", label: "Workflow" },
-  { value: "system", label: "System" },
-]
-
-const PRINCIPAL_ID_PLACEHOLDER: Record<string, string> = {
-  [PRINCIPAL_TYPE_ALL]: "principal id",
-  user: "staff user id",
-  api_key: "api key id",
-  agent: "agent id",
-  workflow: "workflow run id",
-  system: "system id",
-}
+const PRINCIPAL_TYPE_VALUES = [
+  PRINCIPAL_TYPE_ALL,
+  "user",
+  "api_key",
+  "agent",
+  "workflow",
+  "system",
+] as const
 
 type TargetTypeKey =
   | typeof TARGET_TYPE_ALL
@@ -59,38 +51,32 @@ type TargetTypeKey =
   | "invoice"
   | "supplier"
 
-const TARGET_TYPE_OPTIONS: ReadonlyArray<{ value: TargetTypeKey; label: string }> = [
-  { value: TARGET_TYPE_ALL, label: "Any target" },
-  { value: "booking", label: "Booking" },
-  { value: "product", label: "Product" },
-  { value: "person", label: "Person" },
-  { value: "organization", label: "Organization" },
-  { value: "invoice", label: "Invoice" },
-  { value: "supplier", label: "Supplier" },
+const TARGET_TYPE_VALUES: ReadonlyArray<TargetTypeKey> = [
+  TARGET_TYPE_ALL,
+  "booking",
+  "product",
+  "person",
+  "organization",
+  "invoice",
+  "supplier",
 ]
 
-const RISK_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
-  { value: RISK_ALL, label: "Any risk" },
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
-  { value: "high", label: "High" },
-  { value: "critical", label: "Critical" },
-]
+const RISK_VALUES = [RISK_ALL, "low", "medium", "high", "critical"] as const
 
-const STATUS_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
-  { value: STATUS_ALL, label: "Any status" },
-  { value: "requested", label: "Requested" },
-  { value: "awaiting_approval", label: "Awaiting approval" },
-  { value: "approved", label: "Approved" },
-  { value: "denied", label: "Denied" },
-  { value: "succeeded", label: "Succeeded" },
-  { value: "failed", label: "Failed" },
-  { value: "reversed", label: "Reversed" },
-  { value: "compensated", label: "Compensated" },
-  { value: "expired", label: "Expired" },
-  { value: "cancelled", label: "Cancelled" },
-  { value: "superseded", label: "Superseded" },
-]
+const STATUS_VALUES = [
+  STATUS_ALL,
+  "requested",
+  "awaiting_approval",
+  "approved",
+  "denied",
+  "succeeded",
+  "failed",
+  "reversed",
+  "compensated",
+  "expired",
+  "cancelled",
+  "superseded",
+] as const
 
 export interface ActionLedgerFiltersPopoverProps {
   open: boolean
@@ -114,6 +100,10 @@ export interface ActionLedgerFiltersPopoverProps {
   onStatusChange: (value: string) => void
 }
 
+function optionKey(value: string): string {
+  return value === ANY ? "any" : value
+}
+
 export function ActionLedgerFiltersPopover({
   open,
   onOpenChange,
@@ -135,8 +125,11 @@ export function ActionLedgerFiltersPopover({
   status,
   onStatusChange,
 }: ActionLedgerFiltersPopoverProps) {
+  const messages = useAdminMessages().actionLedgerPage
+  const f = messages.filtersPopover
+  const principalIdKey = optionKey(principalType) as keyof typeof f.principalIdPlaceholder
   const principalIdPlaceholder =
-    PRINCIPAL_ID_PLACEHOLDER[principalType] ?? PRINCIPAL_ID_PLACEHOLDER[PRINCIPAL_TYPE_ALL]!
+    f.principalIdPlaceholder[principalIdKey] ?? f.principalIdPlaceholder.any
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
@@ -144,7 +137,7 @@ export function ActionLedgerFiltersPopover({
         render={
           <Button variant="outline" size="default">
             <ListFilter className="mr-2 size-4" />
-            Filters
+            {messages.filters}
             {activeFilterCount > 0 ? (
               <Badge variant="secondary" className="ml-2 px-1.5">
                 {activeFilterCount}
@@ -156,7 +149,7 @@ export function ActionLedgerFiltersPopover({
       <PopoverContent align="start" className="w-[22rem] p-4">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="logs-filter-principal-type">Principal type</Label>
+            <Label htmlFor="logs-filter-principal-type">{f.principalTypeLabel}</Label>
             <Select
               value={principalType}
               onValueChange={(value) => onPrincipalTypeChange(value ?? PRINCIPAL_TYPE_ALL)}
@@ -165,9 +158,13 @@ export function ActionLedgerFiltersPopover({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {PRINCIPAL_TYPE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                {PRINCIPAL_TYPE_VALUES.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {
+                      f.principalTypeOptions[
+                        optionKey(value) as keyof typeof f.principalTypeOptions
+                      ]
+                    }
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -175,7 +172,7 @@ export function ActionLedgerFiltersPopover({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="logs-filter-principal-id">Principal ID</Label>
+            <Label htmlFor="logs-filter-principal-id">{f.principalIdLabel}</Label>
             <Input
               id="logs-filter-principal-id"
               placeholder={principalIdPlaceholder}
@@ -185,7 +182,7 @@ export function ActionLedgerFiltersPopover({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="logs-filter-target-type">Target type</Label>
+            <Label htmlFor="logs-filter-target-type">{f.targetTypeLabel}</Label>
             <Select
               value={isKnownTargetType(targetType) ? targetType : TARGET_TYPE_ALL}
               onValueChange={(value) => onTargetTypeChange(value ?? TARGET_TYPE_ALL)}
@@ -194,9 +191,9 @@ export function ActionLedgerFiltersPopover({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {TARGET_TYPE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                {TARGET_TYPE_VALUES.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {f.targetTypeOptions[optionKey(value) as keyof typeof f.targetTypeOptions]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -204,31 +201,38 @@ export function ActionLedgerFiltersPopover({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="logs-filter-target-id">Target</Label>
+            <Label htmlFor="logs-filter-target-id">{f.targetLabel}</Label>
             <TargetCombobox
               targetType={targetType as TargetTypeKey}
               value={targetId}
               onChange={onTargetIdChange}
+              messages={f.targetSearch}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="logs-filter-workflow">Workflow run</Label>
-            <WorkflowRunCombobox value={workflowRunId} onChange={onWorkflowRunIdChange} />
+            <Label htmlFor="logs-filter-workflow">{f.workflowRunLabel}</Label>
+            <WorkflowRunCombobox
+              value={workflowRunId}
+              onChange={onWorkflowRunIdChange}
+              placeholder={f.workflowRunPlaceholder}
+              loadingText={f.workflowRunLoading}
+              emptyText={f.workflowRunEmpty}
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="logs-filter-correlation">Correlation ID</Label>
+            <Label htmlFor="logs-filter-correlation">{f.correlationIdLabel}</Label>
             <Input
               id="logs-filter-correlation"
-              placeholder="correlation id"
+              placeholder={f.correlationIdPlaceholder}
               value={correlationId}
               onChange={(event) => onCorrelationIdChange(event.target.value)}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="logs-filter-risk">Risk</Label>
+            <Label htmlFor="logs-filter-risk">{f.riskLabel}</Label>
             <Select
               value={evaluatedRisk}
               onValueChange={(value) => onEvaluatedRiskChange(value ?? RISK_ALL)}
@@ -237,9 +241,9 @@ export function ActionLedgerFiltersPopover({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {RISK_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                {RISK_VALUES.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {f.riskOptions[optionKey(value) as keyof typeof f.riskOptions]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -247,15 +251,15 @@ export function ActionLedgerFiltersPopover({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="logs-filter-status">Status</Label>
+            <Label htmlFor="logs-filter-status">{f.statusLabel}</Label>
             <Select value={status} onValueChange={(value) => onStatusChange(value ?? STATUS_ALL)}>
               <SelectTrigger id="logs-filter-status">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                {STATUS_VALUES.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {f.statusOptions[optionKey(value) as keyof typeof f.statusOptions]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -268,33 +272,39 @@ export function ActionLedgerFiltersPopover({
 }
 
 function isKnownTargetType(value: string): value is TargetTypeKey {
-  return TARGET_TYPE_OPTIONS.some((option) => option.value === value)
+  return TARGET_TYPE_VALUES.includes(value as TargetTypeKey)
 }
+
+type TargetSearchMessages = ReturnType<
+  typeof useAdminMessages
+>["actionLedgerPage"]["filtersPopover"]["targetSearch"]
 
 function TargetCombobox({
   targetType,
   value,
   onChange,
+  messages,
 }: {
   targetType: TargetTypeKey
   value: string
   onChange: (value: string) => void
+  messages: TargetSearchMessages
 }) {
   switch (targetType) {
     case "booking":
-      return <BookingTargetCombobox value={value} onChange={onChange} />
+      return <BookingTargetCombobox value={value} onChange={onChange} messages={messages} />
     case "product":
-      return <ProductTargetCombobox value={value} onChange={onChange} />
+      return <ProductTargetCombobox value={value} onChange={onChange} messages={messages} />
     case "person":
-      return <PersonTargetCombobox value={value} onChange={onChange} />
+      return <PersonTargetCombobox value={value} onChange={onChange} messages={messages} />
     case "organization":
-      return <OrganizationTargetCombobox value={value} onChange={onChange} />
+      return <OrganizationTargetCombobox value={value} onChange={onChange} messages={messages} />
     default:
       return (
         <Input
           id="logs-filter-target-id"
           placeholder={
-            targetType === TARGET_TYPE_ALL ? "pick a target type to browse" : "target id"
+            targetType === TARGET_TYPE_ALL ? messages.unknownPickType : messages.unknownPlaceholder
           }
           value={value}
           onChange={(event) => onChange(event.target.value)}
@@ -306,9 +316,11 @@ function TargetCombobox({
 function BookingTargetCombobox({
   value,
   onChange,
+  messages,
 }: {
   value: string
   onChange: (value: string) => void
+  messages: TargetSearchMessages
 }) {
   const [search, setSearch] = React.useState("")
   const [selected, setSelected] = React.useState<BookingRecord | null>(null)
@@ -330,8 +342,8 @@ function BookingTargetCombobox({
       getKey={(booking) => booking.id}
       getLabel={(booking) => booking.bookingNumber}
       onSearchChange={setSearch}
-      placeholder="Search bookings"
-      emptyText="No bookings"
+      placeholder={messages.bookingPlaceholder}
+      emptyText={messages.bookingEmpty}
     />
   )
 }
@@ -339,9 +351,11 @@ function BookingTargetCombobox({
 function ProductTargetCombobox({
   value,
   onChange,
+  messages,
 }: {
   value: string
   onChange: (value: string) => void
+  messages: TargetSearchMessages
 }) {
   const [search, setSearch] = React.useState("")
   const [selected, setSelected] = React.useState<ProductRecord | null>(null)
@@ -363,8 +377,8 @@ function ProductTargetCombobox({
       getKey={(product) => product.id}
       getLabel={(product) => product.name}
       onSearchChange={setSearch}
-      placeholder="Search products"
-      emptyText="No products"
+      placeholder={messages.productPlaceholder}
+      emptyText={messages.productEmpty}
     />
   )
 }
@@ -372,9 +386,11 @@ function ProductTargetCombobox({
 function PersonTargetCombobox({
   value,
   onChange,
+  messages,
 }: {
   value: string
   onChange: (value: string) => void
+  messages: TargetSearchMessages
 }) {
   const [search, setSearch] = React.useState("")
   const [selected, setSelected] = React.useState<PersonRecord | null>(null)
@@ -397,8 +413,8 @@ function PersonTargetCombobox({
       getLabel={formatPersonName}
       getSecondary={(person) => person.email ?? undefined}
       onSearchChange={setSearch}
-      placeholder="Search people"
-      emptyText="No people"
+      placeholder={messages.personPlaceholder}
+      emptyText={messages.personEmpty}
     />
   )
 }
@@ -406,9 +422,11 @@ function PersonTargetCombobox({
 function OrganizationTargetCombobox({
   value,
   onChange,
+  messages,
 }: {
   value: string
   onChange: (value: string) => void
+  messages: TargetSearchMessages
 }) {
   const [search, setSearch] = React.useState("")
   const [selected, setSelected] = React.useState<OrganizationRecord | null>(null)
@@ -430,8 +448,8 @@ function OrganizationTargetCombobox({
       getKey={(organization) => organization.id}
       getLabel={(organization) => organization.name}
       onSearchChange={setSearch}
-      placeholder="Search organizations"
-      emptyText="No organizations"
+      placeholder={messages.organizationPlaceholder}
+      emptyText={messages.organizationEmpty}
     />
   )
 }
@@ -455,9 +473,15 @@ interface WorkflowRunsListResponse {
 function WorkflowRunCombobox({
   value,
   onChange,
+  placeholder,
+  loadingText,
+  emptyText,
 }: {
   value: string
   onChange: (value: string) => void
+  placeholder: string
+  loadingText: string
+  emptyText: string
 }) {
   const [search, setSearch] = React.useState("")
   const [selected, setSelected] = React.useState<WorkflowRunSummary | null>(null)
@@ -488,8 +512,8 @@ function WorkflowRunCombobox({
       getLabel={(run) => run.workflowName}
       getSecondary={(run) => `${run.status} · ${formatRunTimestamp(run.startedAt)}`}
       onSearchChange={setSearch}
-      placeholder="Recent workflow runs"
-      emptyText={runsQuery.isLoading ? "Loading…" : "No runs"}
+      placeholder={placeholder}
+      emptyText={runsQuery.isLoading ? loadingText : emptyText}
     />
   )
 }

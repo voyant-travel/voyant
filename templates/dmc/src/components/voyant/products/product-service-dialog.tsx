@@ -69,14 +69,35 @@ type ServiceDialogProps = {
   onSuccess: () => void
 }
 
-const SERVICE_TYPES = [
-  { value: "accommodation", label: "Accommodation" },
-  { value: "transfer", label: "Transfer" },
-  { value: "experience", label: "Experience" },
-  { value: "guide", label: "Guide" },
-  { value: "meal", label: "Meal" },
-  { value: "other", label: "Other" },
+const SERVICE_TYPE_VALUES = [
+  "accommodation",
+  "transfer",
+  "experience",
+  "guide",
+  "meal",
+  "other",
 ] as const
+type ServiceType = (typeof SERVICE_TYPE_VALUES)[number]
+
+function serviceTypeLabel(
+  value: ServiceType,
+  messages: ReturnType<typeof useAdminMessages>["products"],
+): string {
+  switch (value) {
+    case "accommodation":
+      return messages.serviceTypeAccommodation
+    case "transfer":
+      return messages.serviceTypeTransfer
+    case "experience":
+      return messages.serviceTypeExperience
+    case "guide":
+      return messages.serviceTypeGuide
+    case "meal":
+      return messages.serviceTypeMeal
+    case "other":
+      return messages.serviceTypeOther
+  }
+}
 
 export function ServiceDialog({
   open,
@@ -221,7 +242,10 @@ export function ServiceDialog({
               <div className="flex flex-col gap-2">
                 <Label>{messages.serviceTypeLabel}</Label>
                 <Select
-                  items={SERVICE_TYPES}
+                  items={SERVICE_TYPE_VALUES.map((value) => ({
+                    value,
+                    label: serviceTypeLabel(value, messages),
+                  }))}
                   value={form.watch("serviceType")}
                   onValueChange={(v) =>
                     form.setValue("serviceType", v as ServiceFormValues["serviceType"])
@@ -231,19 +255,9 @@ export function ServiceDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {SERVICE_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.value === "accommodation"
-                          ? messages.serviceTypeAccommodation
-                          : t.value === "transfer"
-                            ? messages.serviceTypeTransfer
-                            : t.value === "experience"
-                              ? messages.serviceTypeExperience
-                              : t.value === "guide"
-                                ? messages.serviceTypeGuide
-                                : t.value === "meal"
-                                  ? messages.serviceTypeMeal
-                                  : messages.serviceTypeOther}
+                    {SERVICE_TYPE_VALUES.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {serviceTypeLabel(value, messages)}
                       </SelectItem>
                     ))}
                   </SelectContent>

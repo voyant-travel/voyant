@@ -55,11 +55,22 @@ type ProductDialogProps = {
   onSuccess: () => void
 }
 
-const PRODUCT_STATUSES = [
-  { value: "draft", label: "Draft" },
-  { value: "active", label: "Active" },
-  { value: "archived", label: "Archived" },
-] as const
+const PRODUCT_STATUS_VALUES = ["draft", "active", "archived"] as const
+type ProductStatus = (typeof PRODUCT_STATUS_VALUES)[number]
+
+function statusLabel(
+  value: ProductStatus,
+  messages: ReturnType<typeof useAdminMessages>["products"],
+): string {
+  switch (value) {
+    case "draft":
+      return messages.statusDraft
+    case "active":
+      return messages.statusActive
+    case "archived":
+      return messages.statusArchived
+  }
+}
 
 export function ProductDialog({ open, onOpenChange, product, onSuccess }: ProductDialogProps) {
   const isEditing = !!product
@@ -135,7 +146,10 @@ export function ProductDialog({ open, onOpenChange, product, onSuccess }: Produc
               <div className="flex flex-col gap-2">
                 <Label>{messages.statusLabel}</Label>
                 <Select
-                  items={PRODUCT_STATUSES}
+                  items={PRODUCT_STATUS_VALUES.map((value) => ({
+                    value,
+                    label: statusLabel(value, messages),
+                  }))}
                   value={form.watch("status")}
                   onValueChange={(v) => form.setValue("status", v as ProductFormValues["status"])}
                 >
@@ -143,13 +157,9 @@ export function ProductDialog({ open, onOpenChange, product, onSuccess }: Produc
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {PRODUCT_STATUSES.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.value === "draft"
-                          ? messages.statusDraft
-                          : s.value === "active"
-                            ? messages.statusActive
-                            : messages.statusArchived}
+                    {PRODUCT_STATUS_VALUES.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {statusLabel(value, messages)}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -9,11 +9,14 @@
  */
 
 import { useQuery } from "@tanstack/react-query"
+import { formatMessage } from "@voyantjs/i18n"
 import { Badge, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
+import { useAdminMessages } from "@/lib/admin-i18n"
 
 import { getProductSourcedContentQueryOptions } from "./product-detail-shared"
 
 export function ProductSourcedContentSection({ productId }: { productId: string }) {
+  const t = useAdminMessages().products.sourcedContent
   const query = useQuery(getProductSourcedContentQueryOptions(productId))
 
   if (query.isPending) return null
@@ -35,16 +38,18 @@ export function ProductSourcedContentSection({ productId }: { productId: string 
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between gap-2">
-          <span>Sourced content preview</span>
+          <span>{t.title}</span>
           <div className="flex flex-wrap items-center gap-1.5 text-xs font-normal">
             <Badge variant="secondary">{served_locale}</Badge>
             <Badge variant={match_kind === "exact" ? "default" : "outline"}>
-              match: {match_kind}
+              {t.matchPrefix}: {match_kind}
             </Badge>
             <Badge variant={source === "synthesized" ? "outline" : "default"}>{source}</Badge>
-            {served_stale ? <Badge variant="outline">stale</Badge> : null}
-            {synthesized ? <Badge variant="outline">synthesizer fallback</Badge> : null}
-            {machine_translated ? <Badge variant="outline">MT</Badge> : null}
+            {served_stale ? <Badge variant="outline">{t.staleBadge}</Badge> : null}
+            {synthesized ? <Badge variant="outline">{t.synthesizedBadge}</Badge> : null}
+            {machine_translated ? (
+              <Badge variant="outline">{t.machineTranslatedBadge}</Badge>
+            ) : null}
           </div>
         </CardTitle>
       </CardHeader>
@@ -55,13 +60,17 @@ export function ProductSourcedContentSection({ productId }: { productId: string 
             <p className="text-muted-foreground">{content.product.description}</p>
           ) : null}
           {content.product.supplier ? (
-            <p className="text-xs text-muted-foreground">via {content.product.supplier}</p>
+            <p className="text-xs text-muted-foreground">
+              {formatMessage(t.viaSupplier, { supplier: content.product.supplier })}
+            </p>
           ) : null}
         </div>
 
         {content.product.highlights?.length ? (
           <div>
-            <div className="mb-1 text-xs font-medium text-muted-foreground">Highlights</div>
+            <div className="mb-1 text-xs font-medium text-muted-foreground">
+              {t.highlightsHeading}
+            </div>
             <ul className="ml-4 list-disc text-muted-foreground">
               {content.product.highlights.map((h) => (
                 <li key={h}>{h}</li>
@@ -73,12 +82,17 @@ export function ProductSourcedContentSection({ productId }: { productId: string 
         {content.days.length ? (
           <details className="text-muted-foreground">
             <summary className="cursor-pointer text-xs font-medium">
-              Itinerary ({content.days.length} {content.days.length === 1 ? "day" : "days"})
+              {formatMessage(
+                content.days.length === 1 ? t.itinerarySummarySingular : t.itinerarySummaryPlural,
+                { count: content.days.length },
+              )}
             </summary>
             <ol className="ml-4 mt-2 list-decimal space-y-1">
               {content.days.map((d) => (
                 <li key={d.day_number}>
-                  <span className="font-medium">{d.title ?? `Day ${d.day_number}`}</span>
+                  <span className="font-medium">
+                    {d.title ?? formatMessage(t.dayFallback, { number: d.day_number })}
+                  </span>
                   {d.location ? <span className="text-xs"> · {d.location}</span> : null}
                   {d.description ? <p className="text-xs">{d.description}</p> : null}
                 </li>
@@ -90,7 +104,7 @@ export function ProductSourcedContentSection({ productId }: { productId: string 
         {content.policies.length ? (
           <details className="text-muted-foreground">
             <summary className="cursor-pointer text-xs font-medium">
-              Policies ({content.policies.length})
+              {formatMessage(t.policiesSummary, { count: content.policies.length })}
             </summary>
             <dl className="ml-4 mt-2 space-y-1 text-xs">
               {content.policies.map((p, idx) => (
