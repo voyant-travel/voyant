@@ -30,6 +30,34 @@ export type BookingsUiMessages = {
     empty: string
     loading: string
   }
+  bookingQuickViewSheet: {
+    loadingTitle: string
+    viewFullAction: string
+    paxSuffix: string
+    travelerUnnamed: string
+    sectionTravelers: string
+    travelersEmpty: string
+    travelerCategoryLabels: Record<"adult" | "child" | "infant" | "lead", string>
+    sectionPayments: string
+    paymentsPaid: string
+    paymentsRemaining: string
+    sectionInvoices: string
+    invoicesEmpty: string
+    invoiceStatusLabels: Record<
+      "draft" | "sent" | "partially_paid" | "paid" | "overdue" | "void",
+      string
+    >
+    sectionPaymentSchedule: string
+    scheduleCountSuffix: string
+    scheduleEmpty: string
+    scheduleTypeLabels: Record<"deposit" | "installment" | "balance" | "hold" | "other", string>
+    sectionContracts: string
+    contractsEmpty: string
+    contractStatusLabels: Record<
+      "draft" | "issued" | "sent" | "signed" | "executed" | "expired" | "void",
+      string
+    >
+  }
   bookingDetailPage: {
     notFound: string
     backToBookings: string
