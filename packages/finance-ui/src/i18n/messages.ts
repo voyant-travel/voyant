@@ -529,6 +529,9 @@ export type FinanceUiMessages = {
       help: string
       /** Inline hint. Placeholders: `{invoiceCurrency} {paymentCurrency}`. */
       rateHint: string
+      loadingRate: string
+      /** Auto-rate hint. Placeholders: `{invoiceCurrency} {paymentCurrency}`. */
+      autoRateHint: string
     }
     /** Per-row option label. Placeholders: `{number} {status} {balance} {currency}`. */
     invoiceOption: string

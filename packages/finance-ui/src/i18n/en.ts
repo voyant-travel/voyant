@@ -543,6 +543,9 @@ export const financeUiEn = {
       help: "Record the received amount in {paymentCurrency} and the value applied to the invoice in {invoiceCurrency}.",
       rateHint:
         "Use the rate as {paymentCurrency} per 1 {invoiceCurrency}; entering it updates the invoice-currency amount.",
+      loadingRate: "Loading FX rate...",
+      autoRateHint:
+        "Using the current {paymentCurrency} per 1 {invoiceCurrency} rate; edit it if needed.",
     },
     invoiceOption: "{number} — {status} — {balance} {currency} due",
     invoiceMeta: "Total {total} {currency} • paid {paid} {currency} • due {due} {currency}",

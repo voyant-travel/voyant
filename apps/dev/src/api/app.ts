@@ -9,7 +9,7 @@ import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/
 import { externalRefsHonoModule } from "@voyantjs/external-refs"
 import { extrasHonoModule } from "@voyantjs/extras"
 import { facilitiesHonoModule } from "@voyantjs/facilities"
-import { createFinanceHonoModule } from "@voyantjs/finance"
+import { createFinanceHonoModule, createVoyantDataFxExchangeRateResolver } from "@voyantjs/finance"
 import { groundHonoModule } from "@voyantjs/ground"
 import { createApp } from "@voyantjs/hono"
 import { identityHonoModule } from "@voyantjs/identity"
@@ -65,6 +65,13 @@ const customerPortalHonoModule = createCustomerPortalHonoModule({
 const financeModule = createFinanceHonoModule({
   resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
     resolveDocumentDownloadUrl(bindings as unknown as CloudflareBindings, storageKey),
+  resolveInvoiceExchangeRateResolver: (bindings) => {
+    const env = bindings as unknown as CloudflareBindings
+    return createVoyantDataFxExchangeRateResolver({
+      apiKey: env.VOYANT_CLOUD_API_KEY,
+      baseUrl: env.VOYANT_CLOUD_API_URL,
+    })
+  },
 })
 
 const crmHonoModule = createCrmHonoModule()

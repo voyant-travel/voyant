@@ -4,6 +4,7 @@ import { type FetchWithValidationOptions, fetchWithValidation, withQueryParams }
 import type { FinanceActionLedgerListCursor } from "./query-keys.js"
 import {
   financeActionLedgerListResponse,
+  invoiceFxRateResponse,
   type PublicFinanceDocumentLookupQuery,
   type PublicStartPaymentSessionInput,
   type PublicValidateVoucherInput,
@@ -18,6 +19,12 @@ import {
 export interface FinanceActionLedgerListInput {
   cursor?: FinanceActionLedgerListCursor | null | undefined
   limit?: number | undefined
+}
+
+export interface InvoiceFxRateInput {
+  baseCurrency: string
+  quoteCurrency: string
+  date?: string | undefined
 }
 
 function toFinanceActionLedgerQuery(input?: FinanceActionLedgerListInput) {
@@ -95,6 +102,14 @@ export function getAdminBookingPayments(client: FetchWithValidationOptions, book
   return fetchWithValidation(
     `/v1/admin/finance/bookings/${bookingId}/payments`,
     publicBookingFinancePaymentsResponse,
+    client,
+  )
+}
+
+export function getInvoiceFxRate(client: FetchWithValidationOptions, input: InvoiceFxRateInput) {
+  return fetchWithValidation(
+    withQueryParams("/v1/finance/invoice-fx-rate", input),
+    invoiceFxRateResponse,
     client,
   )
 }

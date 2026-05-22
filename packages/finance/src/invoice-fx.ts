@@ -1,11 +1,16 @@
-import type { Extension } from "@voyantjs/core"
-import { ApiHttpError, parseJsonBody } from "@voyantjs/hono"
+import type { Extension, ModuleContainer } from "@voyantjs/core"
+import { ApiHttpError, parseJsonBody, parseQuery } from "@voyantjs/hono"
 import type { HonoExtension } from "@voyantjs/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Hono } from "hono"
 import { Hono as HonoApp } from "hono"
 import { z } from "zod"
 
+import {
+  buildFinanceRouteRuntime,
+  FINANCE_ROUTE_RUNTIME_CONTAINER_KEY,
+  type FinanceRouteRuntime,
+} from "./route-runtime.js"
 import type { Env } from "./routes-shared.js"
 
 export type InvoiceFxSettings = {
@@ -45,6 +50,9 @@ export interface InvoiceFxOptions {
   resolveInvoiceFxSettings?: ResolveInvoiceFxSettings
   updateInvoiceFxSettings?: UpdateInvoiceFxSettings
   resolveInvoiceExchangeRate?: ResolveInvoiceExchangeRate
+  resolveInvoiceExchangeRateResolver?: (
+    bindings: Record<string, unknown>,
+  ) => ResolveInvoiceExchangeRate | undefined
   onInvoiceFxResolutionError?: HandleInvoiceFxResolutionError
 }
 
@@ -85,6 +93,29 @@ const invoiceFxSettingsPatchSchema = z.object({
   fxCommissionBps: z.number().int().min(0).max(100_000).nullable().optional(),
   fxCommissionInvoiceMention: z.string().nullable().optional(),
 })
+
+const invoiceExchangeRateQuerySchema = z.object({
+  baseCurrency: z.string().min(3).max(8),
+  quoteCurrency: z.string().min(3).max(8),
+  date: z.string().optional(),
+})
+
+type InvoiceFxRouteEnv = Env & {
+  Variables: Env["Variables"] & {
+    container?: ModuleContainer
+  }
+}
+
+function getInvoiceFxRuntime(
+  options: InvoiceFxRouteOptions | undefined,
+  bindings: Record<string, unknown>,
+  resolveFromContainer?: (key: string) => FinanceRouteRuntime | undefined,
+) {
+  return (
+    resolveFromContainer?.(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY) ??
+    buildFinanceRouteRuntime(bindings, options)
+  )
+}
 
 export async function resolveInvoiceFxSettingsOrDefault(
   db: PostgresJsDatabase,
@@ -173,29 +204,71 @@ export function createVoyantDataFxExchangeRateResolver(
 }
 
 export function createInvoiceFxRoutes(options: InvoiceFxRouteOptions = {}) {
-  return new HonoApp<Env>()
+  return new HonoApp<InvoiceFxRouteEnv>()
     .get("/invoice-fx-settings", async (c) => {
+      const runtime = getInvoiceFxRuntime(options, c.env, (key) => c.var.container?.resolve(key))
       return c.json({
-        data: await resolveInvoiceFxSettingsOrDefault(c.get("db"), options),
+        data: await resolveInvoiceFxSettingsOrDefault(c.get("db"), runtime),
       })
     })
     .patch("/invoice-fx-settings", async (c) => {
-      if (!options.updateInvoiceFxSettings) {
+      const runtime = getInvoiceFxRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      if (!runtime.updateInvoiceFxSettings) {
         throw new ApiHttpError("Invoice FX settings updates are not configured", {
           status: 501,
           code: "invoice_fx_settings_update_not_configured",
         })
       }
 
-      const current = await resolveInvoiceFxSettingsOrDefault(c.get("db"), options)
+      const current = await resolveInvoiceFxSettingsOrDefault(c.get("db"), runtime)
       const patch = await parseJsonBody(c, invoiceFxSettingsPatchSchema)
-      const next = await options.updateInvoiceFxSettings(c.get("db"), {
+      const next = await runtime.updateInvoiceFxSettings(c.get("db"), {
         ...current,
         ...patch,
       })
 
       return c.json({
         data: await resolveInvoiceFxSettingsOrDefault(c.get("db"), { invoiceFxSettings: next }),
+      })
+    })
+    .get("/invoice-fx-rate", async (c) => {
+      const runtime = getInvoiceFxRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      if (!runtime.resolveInvoiceExchangeRate) {
+        throw new ApiHttpError("Invoice FX rate resolution is not configured", {
+          status: 501,
+          code: "invoice_fx_rate_resolution_not_configured",
+        })
+      }
+
+      const query = parseQuery(c, invoiceExchangeRateQuerySchema)
+      const input = {
+        baseCurrency: normalizeCurrency(query.baseCurrency) ?? query.baseCurrency,
+        quoteCurrency: normalizeCurrency(query.quoteCurrency) ?? query.quoteCurrency,
+        date: query.date,
+      }
+      let rate: number | null | undefined
+      try {
+        rate = await runtime.resolveInvoiceExchangeRate(input)
+      } catch (error) {
+        await notifyInvoiceFxResolutionError(runtime, error, input)
+        throw new ApiHttpError("Invoice FX rate resolution failed", {
+          status: 502,
+          code: "invoice_fx_rate_resolution_failed",
+        })
+      }
+
+      if (typeof rate !== "number" || !Number.isFinite(rate) || rate <= 0) {
+        throw new ApiHttpError("Invoice FX rate was not found", {
+          status: 404,
+          code: "invoice_fx_rate_not_found",
+        })
+      }
+
+      return c.json({
+        data: {
+          ...input,
+          rate: roundRate(rate),
+        },
       })
     })
 }
