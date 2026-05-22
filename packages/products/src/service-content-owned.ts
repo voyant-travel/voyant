@@ -169,6 +169,8 @@ export async function buildOwnedProductContent(
       inclusions_html: localizedInclusions,
       exclusions_html: localizedExclusions,
       terms_html: localizedTerms,
+      contract_template_id: productRow.contractTemplateId ?? null,
+      contractTemplateId: productRow.contractTemplateId ?? null,
       hero_image_url: cover?.url ?? null,
       duration_days: estimateDurationDays(days, productRow),
       start_date: dateToIso(productRow.startDate),

@@ -289,6 +289,10 @@ export function ProductOverviewCard({ product, className }: ProductOverviewCardP
           <ProductField label={pageMessages.fields.timezone} value={product.timezone} />
           <ProductField label={pageMessages.fields.productType} value={product.productTypeId} />
           <ProductField label={pageMessages.fields.facility} value={product.facilityId} />
+          <ProductField
+            label={pageMessages.fields.contractTemplate}
+            value={product.contractTemplateId}
+          />
           <ProductField label={pageMessages.fields.taxClass} value={product.taxClassId} />
           <ProductField label={pageMessages.fields.startDate} value={product.startDate} />
           <ProductField label={pageMessages.fields.endDate} value={product.endDate} />

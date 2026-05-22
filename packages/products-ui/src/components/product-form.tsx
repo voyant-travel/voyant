@@ -22,6 +22,7 @@ import { Textarea } from "@voyantjs/ui/components/textarea"
 import { Loader2, X } from "lucide-react"
 import * as React from "react"
 import { useProductsUiMessagesOrDefault } from "../i18n/index.js"
+import { ProductContractTemplateCombobox } from "./product-contract-template-combobox.js"
 import { ProductFacilityCombobox } from "./product-facility-combobox.js"
 import { ProductTaxClassCombobox } from "./product-tax-class-combobox.js"
 import { ProductTypeCombobox } from "./product-type-combobox.js"
@@ -47,6 +48,7 @@ interface FormState {
   timezone: string
   facilityId: string
   productTypeId: string
+  contractTemplateId: string
   taxClassId: string
   sellCurrency: string
   sellAmount: string
@@ -72,6 +74,7 @@ function initialState(mode: ProductFormMode): FormState {
       timezone: product.timezone ?? "",
       facilityId: product.facilityId ?? "__none__",
       productTypeId: product.productTypeId ?? "__none__",
+      contractTemplateId: product.contractTemplateId ?? "__none__",
       taxClassId: product.taxClassId ?? "__none__",
       sellCurrency: product.sellCurrency,
       sellAmount: product.sellAmountCents != null ? String(product.sellAmountCents / 100) : "",
@@ -96,6 +99,7 @@ function initialState(mode: ProductFormMode): FormState {
     timezone: "",
     facilityId: "__none__",
     productTypeId: "__none__",
+    contractTemplateId: "__none__",
     taxClassId: "__none__",
     sellCurrency: "EUR", // i18n-literal-ok ISO default currency
     sellAmount: "",
@@ -141,6 +145,7 @@ function toPayload(state: FormState): CreateProductInput {
     timezone: state.timezone.trim() || null,
     facilityId: state.facilityId === "__none__" ? null : state.facilityId,
     productTypeId: state.productTypeId === "__none__" ? null : state.productTypeId,
+    contractTemplateId: state.contractTemplateId === "__none__" ? null : state.contractTemplateId,
     taxClassId: state.taxClassId === "__none__" ? null : state.taxClassId,
     sellCurrency: state.sellCurrency.trim().toUpperCase(),
     sellAmountCents: toAmountCents(state.sellAmount),
@@ -406,6 +411,15 @@ export function ProductForm({ mode, onSuccess, onCancel }: ProductFormProps) {
               value={state.taxClassId === "__none__" ? null : state.taxClassId}
               onChange={(value) => field("taxClassId")(value ?? "__none__")}
               placeholder={productMessages.placeholders.taxClassSearch}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>{productMessages.fields.contractTemplate}</Label>
+            <ProductContractTemplateCombobox
+              value={state.contractTemplateId === "__none__" ? null : state.contractTemplateId}
+              onChange={(value) => field("contractTemplateId")(value ?? "__none__")}
+              placeholder={productMessages.placeholders.contractTemplateSearch}
             />
           </div>
 

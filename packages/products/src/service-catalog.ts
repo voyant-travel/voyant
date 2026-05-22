@@ -486,6 +486,7 @@ export const catalogProductsService = {
         startDate: normalizeDate(product.startDate),
         endDate: normalizeDate(product.endDate),
         pax: product.pax ?? null,
+        contractTemplateId: product.contractTemplateId ?? null,
         productType: product.productTypeId
           ? (hydrationData.typeById.get(product.productTypeId) ?? null)
           : null,

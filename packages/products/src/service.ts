@@ -361,6 +361,10 @@ export const productsService = {
       conditions.push(eq(products.productTypeId, query.productTypeId))
     }
 
+    if (query.contractTemplateId) {
+      conditions.push(eq(products.contractTemplateId, query.contractTemplateId))
+    }
+
     if (query.categoryId) {
       conditions.push(
         sql`exists (select 1 from ${productCategoryProducts}

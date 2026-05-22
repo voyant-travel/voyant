@@ -42,6 +42,20 @@ describe("validateProductContent", () => {
     expect(result.valid).toBe(true)
   })
 
+  it("accepts product contract template ids in public and content payloads", () => {
+    const parsed = productContentSchema.parse({
+      product: {
+        id: "prod_abc",
+        name: "X",
+        contract_template_id: "ctpl_customer_terms",
+        contractTemplateId: "ctpl_customer_terms",
+      },
+    })
+
+    expect(parsed.product.contract_template_id).toBe("ctpl_customer_terms")
+    expect(parsed.product.contractTemplateId).toBe("ctpl_customer_terms")
+  })
+
   it("accepts a full valid payload", () => {
     const result = validateProductContent(baseContent)
     expect(result.valid).toBe(true)

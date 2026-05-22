@@ -152,6 +152,7 @@ export const publicCatalogProductSummarySchema = z.object({
   startDate: z.string().nullable(),
   endDate: z.string().nullable(),
   pax: z.number().int().nullable(),
+  contractTemplateId: z.string().nullable(),
   productType: publicCatalogProductTypeSchema.nullable(),
   categories: z.array(publicCatalogProductCategorySchema),
   tags: z.array(publicCatalogProductTagSchema),
