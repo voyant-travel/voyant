@@ -1,5 +1,18 @@
 # @voyantjs/finance-ui
 
+## 0.74.0
+
+### Patch Changes
+
+- 7ea20c6: Allow booking payment recording to capture cross-currency payments with invoice-currency base amounts.
+- Updated dependencies [36e3ac8]
+  - @voyantjs/bookings-ui@0.74.0
+  - @voyantjs/finance@0.74.0
+  - @voyantjs/finance-react@0.74.0
+  - @voyantjs/i18n@0.74.0
+  - @voyantjs/suppliers-ui@0.74.0
+  - @voyantjs/ui@0.74.0
+
 ## 0.73.1
 
 ### Patch Changes
