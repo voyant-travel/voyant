@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.64.1
+
+### Patch Changes
+
+- 572dde4: Add configurable customer-facing payment-link base URLs for generated links and notification template context.
+  - @voyantjs/action-ledger@0.64.1
+  - @voyantjs/bookings@0.64.1
+  - @voyantjs/core@0.64.1
+  - @voyantjs/db@0.64.1
+  - @voyantjs/hono@0.64.1
+  - @voyantjs/products@0.64.1
+  - @voyantjs/storage@0.64.1
+  - @voyantjs/utils@0.64.1
+
 ## 0.64.0
 
 ### Patch Changes
