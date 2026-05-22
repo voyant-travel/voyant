@@ -48,6 +48,10 @@ export const legalUiRo = {
   bookingContractCard: {
     heading: "Contract",
     empty: "Nu a fost generat inca niciun contract pentru aceasta rezervare.",
+    generateContract: "Genereaza contract",
+    generating: "Se genereaza",
+    generateUnavailable:
+      "Configureaza un sablon implicit si o singura serie activa pentru generare aici.",
     generate: "Genereaza",
     regenerate: "Regenereaza",
     download: "Descarca",

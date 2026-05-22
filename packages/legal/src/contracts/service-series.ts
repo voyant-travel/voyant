@@ -3,6 +3,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { contractNumberSeries } from "./schema.js"
 import type {
+  ContractNumberSeriesListQuery,
   CreateContractNumberSeriesInput,
   UpdateContractNumberSeriesInput,
 } from "./service-shared.js"
@@ -17,8 +18,17 @@ export class ContractSeriesAmbiguousError extends Error {
 }
 
 export const contractSeriesService = {
-  async listSeries(db: PostgresJsDatabase) {
-    return db.select().from(contractNumberSeries).orderBy(desc(contractNumberSeries.updatedAt))
+  async listSeries(db: PostgresJsDatabase, query: ContractNumberSeriesListQuery = {}) {
+    const conditions = []
+    if (query.scope) conditions.push(eq(contractNumberSeries.scope, query.scope))
+    if (query.active !== undefined) conditions.push(eq(contractNumberSeries.active, query.active))
+    const where = conditions.length ? and(...conditions) : undefined
+
+    return db
+      .select()
+      .from(contractNumberSeries)
+      .where(where)
+      .orderBy(desc(contractNumberSeries.updatedAt))
   },
   async getSeriesById(db: PostgresJsDatabase, id: string) {
     const [row] = await db
@@ -49,6 +59,25 @@ export const contractSeriesService = {
     if (rows.length > 1) {
       throw new ContractSeriesAmbiguousError(
         `Multiple active contract_number_series rows match prefix=${prefix}, scope=${scope}. The partial unique index is missing or has been bypassed.`,
+      )
+    }
+    return rows[0] ?? null
+  },
+  /**
+   * Resolve the sole active series for a scope. Used by one-click booking
+   * contract generation, where guessing between multiple active numbering
+   * series would issue the wrong legal number.
+   */
+  async findSingleActiveByScope(db: PostgresJsDatabase, scope: ContractScope) {
+    const rows = await db
+      .select()
+      .from(contractNumberSeries)
+      .where(and(eq(contractNumberSeries.scope, scope), eq(contractNumberSeries.active, true)))
+      .orderBy(desc(contractNumberSeries.updatedAt))
+      .limit(2)
+    if (rows.length > 1) {
+      throw new ContractSeriesAmbiguousError(
+        `Multiple active contract_number_series rows match scope=${scope}. Archive duplicates or pass an explicit series.`,
       )
     }
     return rows[0] ?? null

@@ -20,6 +20,13 @@ export interface LegalContractTemplatesListFilters {
   offset?: number | undefined
 }
 
+export interface LegalContractTemplateDefaultFilters {
+  scope?: string | undefined
+  language?: string | undefined
+  channelId?: string | undefined
+  fallbackLanguages?: string[] | undefined
+}
+
 export interface LegalPoliciesListFilters {
   search?: string | undefined
   kind?: string | undefined
@@ -29,6 +36,8 @@ export interface LegalPoliciesListFilters {
 }
 
 export interface LegalContractNumberSeriesListFilters {
+  scope?: string | undefined
+  active?: boolean | undefined
   limit?: number | undefined
   offset?: number | undefined
 }
@@ -75,6 +84,8 @@ export const legalQueryKeys = {
   templates: () => [...legalQueryKeys.all, "templates"] as const,
   templatesList: (filters: LegalContractTemplatesListFilters) =>
     [...legalQueryKeys.templates(), filters] as const,
+  templateDefault: (filters: LegalContractTemplateDefaultFilters) =>
+    [...legalQueryKeys.templates(), "default", filters] as const,
   template: (id: string) => [...legalQueryKeys.templates(), id] as const,
   templateVersions: (id: string) => [...legalQueryKeys.template(id), "versions"] as const,
   numberSeries: () => [...legalQueryKeys.all, "number-series"] as const,

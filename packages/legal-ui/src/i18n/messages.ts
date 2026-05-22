@@ -68,6 +68,9 @@ export type LegalUiMessages = {
   bookingContractCard: {
     heading: string
     empty: string
+    generateContract: string
+    generating: string
+    generateUnavailable: string
     generate: string
     regenerate: string
     download: string

@@ -17,7 +17,11 @@ import type { UseLegalPolicyAcceptancesOptions } from "./hooks/use-policy-accept
 import type { UseLegalPolicyAssignmentsOptions } from "./hooks/use-policy-assignments.js"
 import type { UseLegalPolicyRulesOptions } from "./hooks/use-policy-rules.js"
 import type { UseLegalPolicyVersionsOptions } from "./hooks/use-policy-versions.js"
-import { legalQueryKeys, type ResolvePolicyFilters } from "./query-keys.js"
+import {
+  type LegalContractTemplateDefaultFilters,
+  legalQueryKeys,
+  type ResolvePolicyFilters,
+} from "./query-keys.js"
 import {
   legalContractAttachmentListResponse,
   legalContractListResponse,
@@ -38,11 +42,11 @@ import {
   resolvedPolicyResponse,
 } from "./schemas.js"
 
-function toQueryString(filters: Record<string, string | number | boolean | null | undefined>) {
+function toQueryString(filters: object) {
   const params = new URLSearchParams()
   for (const [key, value] of Object.entries(filters)) {
     if (value === undefined || value === null || value === "" || value === "all") continue
-    params.set(key, String(value))
+    params.set(key, Array.isArray(value) ? value.join(",") : String(value))
   }
   const qs = params.toString()
   return qs ? `?${qs}` : ""
@@ -131,6 +135,24 @@ export function getLegalContractTemplatesQueryOptions(
         legalContractTemplateListResponse,
         client,
       ),
+  })
+}
+
+export function getDefaultLegalContractTemplateQueryOptions(
+  client: FetchWithValidationOptions,
+  options: LegalContractTemplateDefaultFilters = {},
+) {
+  return queryOptions({
+    queryKey: legalQueryKeys.templateDefault(options),
+    queryFn: async () => {
+      const { data } = await fetchWithValidation(
+        `/v1/admin/legal/contracts/templates/default${toQueryString(options)}`,
+        legalContractTemplateSingleResponse,
+        client,
+      )
+      return data
+    },
+    retry: false,
   })
 }
 

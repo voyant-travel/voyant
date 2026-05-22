@@ -15,6 +15,7 @@ export {
 export {
   type LegalContractNumberSeriesListFilters,
   type LegalContractsListFilters,
+  type LegalContractTemplateDefaultFilters,
   type LegalContractTemplatesListFilters,
   type LegalPoliciesListFilters,
   type LegalPolicyAcceptancesListFilters,
@@ -23,6 +24,7 @@ export {
   type ResolvePolicyFilters,
 } from "./query-keys.js"
 export {
+  getDefaultLegalContractTemplateQueryOptions,
   getLegalContractAttachmentsQueryOptions,
   getLegalContractNumberSeriesDetailQueryOptions,
   getLegalContractNumberSeriesQueryOptions,

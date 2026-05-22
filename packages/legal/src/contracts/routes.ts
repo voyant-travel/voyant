@@ -12,11 +12,14 @@ import {
 } from "./route-runtime.js"
 import { renderPreviewResponse } from "./route-template-preview.js"
 import { contractsService } from "./service.js"
+import { generateContractForBookingFromDefaults } from "./service-auto-generate.js"
 import {
   contractListQuerySchema,
+  contractNumberSeriesListQuerySchema,
   contractTemplateDefaultQuerySchema,
   contractTemplateListQuerySchema,
   generateContractDocumentInputSchema,
+  generateContractForBookingInputSchema,
   insertContractAttachmentSchema,
   insertContractNumberSeriesSchema,
   insertContractSchema,
@@ -290,6 +293,66 @@ async function regenerateContractDocument(
   return c.json({ data: result })
 }
 
+async function generateContractDocumentForBooking(c: Context<Env>, options: ContractsRouteOptions) {
+  const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+  const generator = runtime.documentGenerator
+  if (!generator) {
+    return c.json({ error: "Contract document generator is not configured" }, 501)
+  }
+
+  const input =
+    (await parseOptionalJsonBody(c, generateContractForBookingInputSchema)) ??
+    generateContractForBookingInputSchema.parse({})
+  const bookingId = c.req.param("bookingId")
+  if (!bookingId) {
+    return c.json({ error: "Booking id is required" }, 400)
+  }
+
+  const result = await generateContractForBookingFromDefaults(
+    c.get("db"),
+    bookingId,
+    input,
+    {
+      generator,
+      bindings: c.env,
+      eventBus: runtime.eventBus,
+      lifecycleHooks: runtime.lifecycleHooks,
+    },
+    c.get("userId") ?? null,
+  )
+
+  if (result.status === "template_not_found") {
+    return c.json({ error: "Default contract template not found" }, 404)
+  }
+  if (result.status === "template_version_missing") {
+    return c.json({ error: "Default contract template has no current version" }, 409)
+  }
+  if (result.status === "series_not_found") {
+    return c.json({ error: "Active contract number series not found" }, 404)
+  }
+  if (result.status === "series_ambiguous") {
+    return c.json({ error: "Multiple active contract number series match this scope" }, 409)
+  }
+  if (result.status === "booking_not_found") return c.json({ error: "Booking not found" }, 404)
+  if (result.status === "contract_create_failed") {
+    return c.json({ error: "Contract could not be created" }, 500)
+  }
+  if (result.status === "document_failed") {
+    return c.json({ error: "Contract document generation failed", reason: result.reason }, 502)
+  }
+
+  const [contract, attachment] = await Promise.all([
+    contractsService.getContractById(c.get("db"), result.contractId),
+    contractsService.getAttachmentById(c.get("db"), result.attachmentId),
+  ])
+
+  if (!contract || !attachment) {
+    return c.json({ error: "Generated contract document could not be loaded" }, 500)
+  }
+
+  return c.json({ data: { contract, attachment } }, 201)
+}
+
 export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) {
   return new Hono<Env>()
     .get("/templates", async (c) => {
@@ -349,7 +412,8 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
       return c.json({ data: row })
     })
     .get("/number-series", async (c) => {
-      const rows = await contractsService.listSeries(c.get("db"))
+      const query = parseQuery(c, contractNumberSeriesListQuerySchema)
+      const rows = await contractsService.listSeries(c.get("db"), query)
       return c.json({ data: rows })
     })
     .post("/number-series", async (c) => {
@@ -377,6 +441,9 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
       const row = await contractsService.deleteSeries(c.get("db"), c.req.param("id"))
       if (!row) return c.json({ error: "Series not found" }, 404)
       return c.json({ success: true })
+    })
+    .post("/bookings/:bookingId/generate-document", async (c) => {
+      return generateContractDocumentForBooking(c, options)
     })
     .get("/", async (c) => {
       const query = parseQuery(c, contractListQuerySchema)

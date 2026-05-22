@@ -3,12 +3,14 @@
 import {
   type LegalContractAttachmentRecord,
   type LegalContractRecord,
+  useDefaultLegalContractTemplate,
   useLegalContractAttachments,
   useLegalContractMutation,
+  useLegalContractNumberSeries,
   useLegalContracts,
 } from "@voyantjs/legal-react"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
-import { Download, FileText, Loader2, RotateCw } from "lucide-react"
+import { Download, FilePlus2, FileText, Loader2, RotateCw } from "lucide-react"
 
 import { useLegalUiI18nOrDefault } from "../i18n/index.js"
 import type { LegalUiMessages } from "../i18n/messages.js"
@@ -34,6 +36,14 @@ export type BookingContractCardLabels = Partial<
 export interface BookingContractCardProps {
   /** Booking whose contracts we list. Required — the card filters server-side. */
   bookingId: string
+  /** Contract scope used to resolve the default template + active number series. */
+  contractScope?: "customer" | "supplier" | "partner" | "channel" | "other"
+  /** Optional language preference for default-template resolution. */
+  language?: string
+  /** Optional channel preference for default-template resolution. */
+  channelId?: string | null
+  /** Optional language fallbacks for default-template resolution. */
+  fallbackLanguages?: string[]
   /**
    * API base for attachment download redirects (default: same origin). Use
    * this when the operator admin app proxies through a different host than
@@ -53,17 +63,56 @@ export interface BookingContractCardProps {
  *  - Let the operator force a regeneration when the template or booking
  *    data has changed
  *
- * Contract creation itself is handled by the `booking.confirmed` auto-
- * generate subscriber (or manually from the contract-template admin page).
- * This card is the consumer surface — if no contract exists, the empty
- * state explains the flow rather than offering a "Create" button (which
- * would require a template picker, out of scope here).
+ * Contract creation is handled by the package booking generation endpoint.
+ * The card only offers the action when the server-visible prerequisites
+ * exist: a default template with a current version and exactly one active
+ * number series for the selected scope.
  */
-export function BookingContractCard({ bookingId, apiBaseUrl, labels }: BookingContractCardProps) {
+export function BookingContractCard({
+  bookingId,
+  contractScope = "customer",
+  language,
+  channelId,
+  fallbackLanguages,
+  apiBaseUrl,
+  labels,
+}: BookingContractCardProps) {
   const i18n = useLegalUiI18nOrDefault()
   const merged = { ...i18n.messages.bookingContractCard, ...labels }
   const contractsQuery = useLegalContracts({ bookingId, limit: 25 })
   const contracts = contractsQuery.data?.data ?? []
+  const shouldCheckGeneration = !contractsQuery.isLoading && contracts.length === 0
+  const defaultTemplateQuery = useDefaultLegalContractTemplate({
+    scope: contractScope,
+    language,
+    channelId: channelId ?? undefined,
+    fallbackLanguages,
+    enabled: shouldCheckGeneration,
+  })
+  const numberSeriesQuery = useLegalContractNumberSeries({
+    scope: contractScope,
+    active: true,
+    enabled: shouldCheckGeneration,
+  })
+  const { generateForBooking } = useLegalContractMutation()
+  const activeSeries = numberSeriesQuery.data?.data ?? []
+  const canGenerate =
+    Boolean(defaultTemplateQuery.data?.currentVersionId) && activeSeries.length === 1
+  const generationPrerequisitesLoaded =
+    shouldCheckGeneration && !defaultTemplateQuery.isLoading && !numberSeriesQuery.isLoading
+
+  const handleGenerateForBooking = () => {
+    generateForBooking.mutate({
+      bookingId,
+      input: {
+        scope: contractScope,
+        language,
+        channelId,
+        fallbackLanguages,
+        requireNumberSeries: true,
+      },
+    })
+  }
 
   return (
     <Card>
@@ -80,7 +129,29 @@ export function BookingContractCard({ bookingId, apiBaseUrl, labels }: BookingCo
             {i18n.messages.common.loading}
           </div>
         ) : contracts.length === 0 ? (
-          <p className="text-xs text-muted-foreground">{merged.empty}</p>
+          <div className="flex flex-col gap-2">
+            <p className="text-xs text-muted-foreground">{merged.empty}</p>
+            {generationPrerequisitesLoaded && canGenerate ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleGenerateForBooking}
+                disabled={generateForBooking.isPending}
+                className="w-fit"
+              >
+                {generateForBooking.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <FilePlus2 className="h-3.5 w-3.5" />
+                )}
+                <span className="ml-1 text-xs">
+                  {generateForBooking.isPending ? merged.generating : merged.generateContract}
+                </span>
+              </Button>
+            ) : generationPrerequisitesLoaded ? (
+              <p className="text-[11px] text-muted-foreground">{merged.generateUnavailable}</p>
+            ) : null}
+          </div>
         ) : (
           contracts.map((contract) => (
             <BookingContractRow

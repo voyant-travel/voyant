@@ -138,10 +138,13 @@ export {
 export type { ContractsRouteOptions } from "./contracts/routes.js"
 export {
   type AutoGenerateContractOptions,
+  type AutoGenerateContractResult,
   type AutoGenerateContractRuntime,
   autoGenerateContractForBooking,
   type BookingConfirmedLikeEvent,
   type DefaultContractVariables,
+  type GenerateContractForBookingResult,
+  generateContractForBookingFromDefaults,
   type ResolveContractVariablesFn,
 } from "./contracts/service-auto-generate.js"
 export * from "./policies/index.js"

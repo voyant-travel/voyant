@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type {
   generateContractDocumentInputSchema,
+  generateContractForBookingInputSchema,
   insertContractSchema,
   updateContractSchema,
 } from "@voyantjs/legal/contracts/validation"
@@ -12,6 +13,7 @@ import { fetchWithValidation } from "../client.js"
 import { useVoyantLegalContext } from "../provider.js"
 import { legalQueryKeys } from "../query-keys.js"
 import {
+  legalBookingContractGenerateDocumentResponse,
   legalContractGenerateDocumentResponse,
   legalContractSingleResponse,
   successEnvelope,
@@ -20,6 +22,9 @@ import {
 export type CreateLegalContractInput = z.input<typeof insertContractSchema>
 export type UpdateLegalContractInput = z.input<typeof updateContractSchema>
 export type GenerateLegalContractDocumentInput = z.input<typeof generateContractDocumentInputSchema>
+export type GenerateLegalBookingContractInput = z.input<
+  typeof generateContractForBookingInputSchema
+>
 
 export interface SendLegalContractInputBody {
   /** Customer email to deliver the contract to. */
@@ -220,6 +225,34 @@ export function useLegalContractMutation() {
     },
   })
 
+  const generateForBooking = useMutation({
+    mutationFn: async ({
+      bookingId,
+      input = {},
+    }: {
+      bookingId: string
+      input?: GenerateLegalBookingContractInput
+    }) => {
+      const { data } = await fetchWithValidation(
+        `/v1/admin/legal/contracts/bookings/${bookingId}/generate-document`,
+        legalBookingContractGenerateDocumentResponse,
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify(input) },
+      )
+      return data
+    },
+    onSuccess: (data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: legalQueryKeys.contracts() })
+      void queryClient.invalidateQueries({
+        queryKey: legalQueryKeys.contractsList({ bookingId: variables.bookingId }),
+      })
+      queryClient.setQueryData(legalQueryKeys.contract(data.contract.id), data.contract)
+      void queryClient.invalidateQueries({
+        queryKey: legalQueryKeys.contractAttachments(data.contract.id),
+      })
+    },
+  })
+
   return {
     create,
     update,
@@ -230,5 +263,6 @@ export function useLegalContractMutation() {
     voidContract,
     generateDocument,
     regenerateDocument,
+    generateForBooking,
   }
 }
