@@ -226,6 +226,13 @@ export const allocationManifestTravelerSchema = z.object({
   bookingId: z.string(),
   bookingNumber: z.string(),
   bookingStatus: z.string(),
+  /**
+   * Per-slot booking ordinal (1-based, ordered by booking createdAt). All
+   * travelers on the same booking share the same number so the operator
+   * can see at a glance which chips belong together. Defaults to 0 for
+   * back-compat when the server is older.
+   */
+  bookingSequence: z.number().int().nonnegative().default(0),
   paymentStatus: allocationPaymentStatusSchema.default("unpaid"),
   firstName: z.string(),
   lastName: z.string(),
@@ -250,6 +257,8 @@ export const allocationManifestBookingSchema = z.object({
   id: z.string(),
   bookingNumber: z.string(),
   status: z.string(),
+  /** Per-slot ordinal (1-based, by booking createdAt). */
+  bookingSequence: z.number().int().nonnegative().default(0),
   paymentStatus: allocationPaymentStatusSchema.default("unpaid"),
   contactFirstName: z.string().nullable(),
   contactLastName: z.string().nullable(),

@@ -3,9 +3,10 @@
 import type {
   AllocationAuditLogEntry,
   AllocationManifestTraveler,
+  AllocationPaymentStatus,
   AllocationResource,
 } from "@voyantjs/availability-react"
-import { Badge, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
+import { Badge, Card, CardContent, CardHeader, CardTitle, cn } from "@voyantjs/ui/components"
 import { Accessibility, CircleAlert, Crown, History, UtensilsCrossed } from "lucide-react"
 import type { ReactNode } from "react"
 
@@ -72,11 +73,22 @@ export function TravelerTile({
   const messages = useAllocationUiMessagesOrDefault()
 
   return (
-    <div className="group flex items-start justify-between gap-3 rounded-md border bg-background p-3 text-sm shadow-sm">
+    <div
+      className={cn(
+        "group flex items-start justify-between gap-3 rounded-md border bg-background p-3 text-sm shadow-sm",
+        paymentStatusChipClass(traveler.paymentStatus),
+      )}
+      title={paymentStatusTooltip(traveler.paymentStatus, messages)}
+    >
       <div className="min-w-0">
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           {traveler.isLeadTraveler ? (
             <Crown className="size-3.5 text-amber-500" aria-label={messages.lead} />
+          ) : null}
+          {traveler.bookingSequence > 0 ? (
+            <span className="text-muted-foreground tabular-nums" aria-hidden="true">
+              ({traveler.bookingSequence})
+            </span>
           ) : null}
           <span className="truncate font-medium">{traveler.fullName}</span>
           {traveler.sharingGroupId ? (
@@ -239,4 +251,33 @@ function entryDetail(entry: AllocationAuditLogEntry) {
     return [after.sharingGroupId, after.label].filter(Boolean).join(" · ")
   }
   return JSON.stringify(after)
+}
+
+/**
+ * Border + background tint that mirrors the booking's payment status:
+ * red for unpaid, amber for partial, emerald for paid. Tailwind class
+ * names are written explicitly (no template strings) so the v4 JIT
+ * scanner picks them up.
+ *
+ * The saturation was bumped to `/20` background + `/70` border (from the
+ * earlier `/5` + `/40`) because the lower opacities rendered as no color
+ * on dark themes — the chips looked uncolored even though the helper
+ * was being applied.
+ */
+export function paymentStatusChipClass(status: AllocationPaymentStatus): string {
+  switch (status) {
+    case "paid":
+      return "border-emerald-500/70 bg-emerald-500/20 text-emerald-700 dark:text-emerald-200"
+    case "partial":
+      return "border-amber-500/70 bg-amber-500/20 text-amber-700 dark:text-amber-200"
+    case "unpaid":
+      return "border-rose-500/70 bg-rose-500/20 text-rose-700 dark:text-rose-200"
+  }
+}
+
+export function paymentStatusTooltip(
+  status: AllocationPaymentStatus,
+  messages: ReturnType<typeof useAllocationUiMessagesOrDefault>,
+): string {
+  return messages.paymentStatusLabels?.[status] ?? status
 }

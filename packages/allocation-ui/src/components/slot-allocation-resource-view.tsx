@@ -47,7 +47,11 @@ import {
   groupResourcesBySubType,
   kindLabel,
 } from "./slot-allocation-model.js"
-import { AllocationColumn } from "./slot-allocation-shared.js"
+import {
+  AllocationColumn,
+  paymentStatusChipClass,
+  paymentStatusTooltip,
+} from "./slot-allocation-shared.js"
 
 export interface EditResourceInput {
   label: string | null
@@ -381,6 +385,11 @@ function TravelerChip({
       )}
       title={paymentStatusTooltip(traveler.paymentStatus, messages)}
     >
+      {traveler.bookingSequence > 0 ? (
+        <span className="text-muted-foreground tabular-nums" aria-hidden="true">
+          ({traveler.bookingSequence})
+        </span>
+      ) : null}
       <span className="truncate font-medium" title={sharingGroupLabel ?? undefined}>
         {traveler.fullName}
       </span>
@@ -407,29 +416,6 @@ function TravelerChip({
       </Button>
     </span>
   )
-}
-
-/**
- * Border + background tint that mirrors the booking's payment status:
- * red for unpaid, amber for partial, emerald for paid. Tailwind classes
- * are explicit (no template strings) so the v4 JIT scanner picks them up.
- */
-function paymentStatusChipClass(status: AllocationPaymentStatus): string {
-  switch (status) {
-    case "paid":
-      return "border-emerald-500/40 bg-emerald-500/5"
-    case "partial":
-      return "border-amber-500/40 bg-amber-500/5"
-    case "unpaid":
-      return "border-rose-500/40 bg-rose-500/5"
-  }
-}
-
-function paymentStatusTooltip(
-  status: AllocationPaymentStatus,
-  messages: ReturnType<typeof useAllocationUiMessagesOrDefault>,
-): string {
-  return messages.paymentStatusLabels?.[status] ?? status
 }
 
 function AssignTravelerPopover({
