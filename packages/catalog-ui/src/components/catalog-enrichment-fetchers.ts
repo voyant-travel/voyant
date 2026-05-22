@@ -1,0 +1,287 @@
+/**
+ * Catalog detail enrichment client.
+ *
+ * Mirrors `createCatalogBookingFetchers` (quote/book) — provides a
+ * first-class factory for the `/v1/admin/products/:id/content` URL the
+ * detail sheet expects, so hosts no longer hand-roll `onLoadProductDetail`
+ * for the common case and can't accidentally point at a route that isn't
+ * mounted.
+ *
+ * The server side of this contract is `createProductContentRoutes` from
+ * `@voyantjs/products/routes-content`. If a host mounts `CatalogPage`
+ * with `enrichmentFetchers` but forgets the server mount, the first 404
+ * triggers a one-time `console.warn` pointing at the docs — fast feedback
+ * on the foot-gun called out in issue #1023.
+ */
+
+import type { CatalogSearchHit } from "@voyantjs/catalog-react"
+
+import type { CatalogDetailEnrichment } from "./catalog-detail-sheet.js"
+
+export interface CatalogEnrichmentFetchers {
+  /**
+   * Fetch the rich detail enrichment for a single hit. Returns `null`
+   * when the server has no content row (404 / 503) — the sheet falls
+   * back to the bare indexed projection.
+   */
+  loadProductDetail: (hit: CatalogSearchHit) => Promise<CatalogDetailEnrichment | null>
+}
+
+export interface CatalogEnrichmentFetchersOptions {
+  /** Base URL the content route lives under, e.g. `/api` or `https://operator.example/api`. */
+  baseUrl: string
+  /**
+   * Hono-mount path for `createProductContentRoutes`. Defaults to
+   * `/v1/admin/products` — the operator mount. Public surfaces typically
+   * pass `/v1/public/products`.
+   */
+  contentBasePath?: string
+  fetch?: typeof globalThis.fetch
+  credentials?: RequestCredentials
+  /**
+   * Resolves supplier ids to display names. The server returns the
+   * supplier as an id string; the sheet shows the resolved name. When
+   * omitted, the id is passed through unchanged.
+   */
+  formatSupplier?: (id: string) => string
+  /** Optional locale forwarded as `?locale=...` (BCP 47). */
+  locale?: string
+  /** Optional market id forwarded as `?market=...`. */
+  market?: string
+  /**
+   * Optional per-departure availability loader. When provided, the
+   * fetcher merges runtime availability (status / remaining / capacity)
+   * onto each departure in the result. Mirrors the operator's existing
+   * call to `/v1/admin/catalog/slots`.
+   */
+  loadSlotAvailability?: (productId: string) => Promise<Map<string, CatalogSlotAvailability>>
+}
+
+export interface CatalogSlotAvailability {
+  id: string
+  startsAt?: string
+  status?: string | null
+  unlimited?: boolean | null
+  remainingPax?: number | null
+  initialPax?: number | null
+}
+
+interface ProductSourcedContentResponse {
+  data: {
+    content: {
+      product: {
+        id: string
+        name: string
+        description?: string | null
+        highlights?: string[]
+        hero_image_url?: string | null
+        duration_days?: number | null
+        sell_currency?: string | null
+        supplier?: string | null
+        country?: string | null
+      }
+      options: Array<{ id: string; name: string; description?: string | null }>
+      days: Array<{
+        day_number: number
+        title?: string | null
+        description?: string | null
+        location?: string | null
+        hero_image_url?: string | null
+      }>
+      media: Array<{ url: string; type: string; caption?: string | null }>
+      policies: Array<{ kind: string; body: string }>
+      departures?: Array<{
+        id: string
+        starts_at: string
+        ends_at?: string | null
+        status?: string | null
+        capacity?: number | null
+        remaining?: number | null
+        lowest_price_cents?: number | null
+        currency?: string | null
+        note?: string | null
+      }>
+    }
+    served_locale: string
+    match_kind: "exact" | "language_match" | "fallback_chain" | "any"
+    source: "sourced-cache" | "sourced-fresh" | "synthesized" | "owned"
+    served_stale: boolean
+    synthesized: boolean
+    machine_translated: boolean
+  }
+}
+
+let warnedAboutMissingMount = false
+
+/**
+ * Build a `CatalogEnrichmentFetchers` for the configured `baseUrl`.
+ * Symmetric with `createCatalogBookingFetchers`.
+ */
+export function createCatalogEnrichmentFetchers(
+  options: CatalogEnrichmentFetchersOptions,
+): CatalogEnrichmentFetchers {
+  const {
+    baseUrl,
+    contentBasePath = "/v1/admin/products",
+    fetch: fetchImpl = globalThis.fetch,
+    credentials = "include",
+    formatSupplier,
+    locale,
+    market,
+    loadSlotAvailability,
+  } = options
+
+  const root = trimTrailingSlash(baseUrl)
+  const basePath = ensureLeadingSlash(contentBasePath)
+
+  const loadProductDetail = async (
+    hit: CatalogSearchHit,
+  ): Promise<CatalogDetailEnrichment | null> => {
+    const url = buildContentUrl(root, basePath, hit.id, { locale, market })
+    let response: Response
+    try {
+      response = await fetchImpl(url, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        credentials,
+      })
+    } catch (err) {
+      throw new Error(
+        `catalog enrichment fetch failed: ${err instanceof Error ? err.message : String(err)}`,
+      )
+    }
+
+    if (response.status === 404 || response.status === 503) {
+      // 404 ALSO means the server didn't mount `createProductContentRoutes`.
+      // Warn once so the foot-gun called out in #1023 surfaces in dev
+      // instead of silently rendering the bare projection.
+      maybeWarnMissingMount(response, url)
+      return null
+    }
+    if (!response.ok) {
+      throw new Error(`catalog enrichment fetch failed: ${response.status} ${response.statusText}`)
+    }
+
+    const payload = (await response.json()) as ProductSourcedContentResponse
+    const availability = loadSlotAvailability
+      ? await loadSlotAvailability(hit.id).catch(() => new Map<string, CatalogSlotAvailability>())
+      : new Map<string, CatalogSlotAvailability>()
+    return mapContentToEnrichment(payload, availability, formatSupplier)
+  }
+
+  return { loadProductDetail }
+}
+
+function maybeWarnMissingMount(response: Response, url: string): void {
+  if (warnedAboutMissingMount) return
+  if (response.status !== 404) return
+  // Heuristic: a 404 returned with no JSON body almost always means the
+  // route is unmounted on the server side. A real "product not found"
+  // response carries a JSON `{ error: "not_found", detail }`. We don't
+  // re-read the body here (the caller will not parse it for 404), so we
+  // log a generic hint — false positives are tolerable in dev.
+  warnedAboutMissingMount = true
+  if (typeof console !== "undefined" && typeof console.warn === "function") {
+    console.warn(
+      `[catalog-ui] enrichment fetch returned 404 for ${url}. ` +
+        `If the catalog detail sheet renders empty, make sure the host mounts ` +
+        `createProductContentRoutes from @voyantjs/products/routes-content ` +
+        `under the same prefix used here.`,
+    )
+  }
+}
+
+function mapContentToEnrichment(
+  payload: ProductSourcedContentResponse,
+  availability: Map<string, CatalogSlotAvailability>,
+  formatSupplier?: (id: string) => string,
+): CatalogDetailEnrichment {
+  const {
+    content,
+    served_locale,
+    match_kind,
+    source,
+    served_stale,
+    synthesized,
+    machine_translated,
+  } = payload.data
+  const supplierName =
+    typeof content.product.supplier === "string"
+      ? formatSupplier
+        ? formatSupplier(content.product.supplier)
+        : content.product.supplier
+      : (content.product.supplier ?? null)
+
+  return {
+    description: content.product.description ?? null,
+    highlights: content.product.highlights ?? [],
+    heroImageUrl: content.product.hero_image_url ?? null,
+    supplier: supplierName,
+    itinerary: content.days.map((d) => ({
+      dayNumber: d.day_number,
+      title: d.title ?? null,
+      description: d.description ?? null,
+      location: d.location ?? null,
+      heroImageUrl: d.hero_image_url ?? null,
+    })),
+    media: content.media.map((m) => ({
+      url: m.url,
+      type: m.type,
+      caption: m.caption ?? null,
+    })),
+    options: content.options.map((o) => ({
+      id: o.id,
+      name: o.name,
+      description: o.description ?? null,
+    })),
+    policies: content.policies.map((p) => ({ kind: p.kind, body: p.body })),
+    departures: (content.departures ?? []).map((d) => {
+      const slot = availability.get(d.id)
+      return {
+        id: d.id,
+        startsAt: d.starts_at,
+        endsAt: d.ends_at ?? null,
+        status: slot?.status ?? d.status ?? null,
+        unlimited: slot?.unlimited ?? null,
+        capacity: slot?.initialPax ?? d.capacity ?? null,
+        remaining: slot?.remainingPax ?? d.remaining ?? null,
+        lowestPriceCents: d.lowest_price_cents ?? null,
+        currency: d.currency ?? null,
+        note: d.note ?? null,
+      }
+    }),
+    servedLocale: served_locale,
+    matchKind: match_kind,
+    source,
+    servedStale: served_stale,
+    synthesized,
+    machineTranslated: machine_translated,
+  }
+}
+
+function buildContentUrl(
+  root: string,
+  basePath: string,
+  id: string,
+  query: { locale?: string; market?: string },
+): string {
+  const params = new URLSearchParams()
+  if (query.locale) params.set("locale", query.locale)
+  if (query.market) params.set("market", query.market)
+  const qs = params.toString()
+  const suffix = qs ? `?${qs}` : ""
+  return `${root}${basePath}/${encodeURIComponent(id)}/content${suffix}`
+}
+
+function trimTrailingSlash(s: string): string {
+  return s.endsWith("/") ? s.slice(0, -1) : s
+}
+
+function ensureLeadingSlash(s: string): string {
+  return s.startsWith("/") ? s : `/${s}`
+}
+
+/** @internal — exported for testing. Resets the one-time warn flag. */
+export function __resetEnrichmentFetcherWarnings(): void {
+  warnedAboutMissingMount = false
+}

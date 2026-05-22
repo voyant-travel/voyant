@@ -25,6 +25,12 @@ export {
   type CatalogDetailSheetWidth,
 } from "./components/catalog-detail-sheet.js"
 export {
+  type CatalogEnrichmentFetchers,
+  type CatalogEnrichmentFetchersOptions,
+  type CatalogSlotAvailability,
+  createCatalogEnrichmentFetchers,
+} from "./components/catalog-enrichment-fetchers.js"
+export {
   CatalogFacetedFilter,
   type CatalogFacetedFilterProps,
 } from "./components/catalog-faceted-filter.js"

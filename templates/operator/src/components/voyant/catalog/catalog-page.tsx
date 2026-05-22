@@ -2,7 +2,11 @@
 
 import { Link, useNavigate } from "@tanstack/react-router"
 import type { CatalogSearchHit } from "@voyantjs/catalog-react"
-import { type CatalogDetailEnrichment, CatalogPage as CatalogUiPage } from "@voyantjs/catalog-ui"
+import {
+  CatalogPage as CatalogUiPage,
+  createCatalogEnrichmentFetchers,
+  type CatalogSlotAvailability as UiCatalogSlotAvailability,
+} from "@voyantjs/catalog-ui"
 import { useMarketLocales, useMarkets } from "@voyantjs/markets-react"
 import { useProductMutation } from "@voyantjs/products-react"
 import { useSuppliers } from "@voyantjs/suppliers-react"
@@ -16,9 +20,9 @@ import {
 import { useMemo } from "react"
 import { toast } from "sonner"
 
-import type { ProductSourcedContentResponse } from "@/components/voyant/products/product-detail-shared"
 import { useAdminMessages } from "@/lib/admin-i18n"
-import { ApiError, api } from "@/lib/api-client"
+import { api } from "@/lib/api-client"
+import { getApiUrl } from "@/lib/env"
 import { type CatalogSearchParams, Route } from "@/routes/_workspace/catalog"
 
 type CatalogBrowserMessages = ReturnType<
@@ -65,6 +69,18 @@ export function CatalogPage() {
   }, [suppliersQuery.data])
   const formatSupplier = (id: string | number) => supplierMap.get(String(id)) ?? String(id)
   const productMutation = useProductMutation()
+
+  const enrichmentFetchers = useMemo(
+    () =>
+      createCatalogEnrichmentFetchers({
+        baseUrl: getApiUrl(),
+        formatSupplier: (id) => supplierMap.get(String(id)) ?? String(id),
+        locale: selectedLocale,
+        market: selectedMarketId,
+        loadSlotAvailability: loadProductSlotAvailability,
+      }),
+    [supplierMap, selectedLocale, selectedMarketId],
+  )
 
   return (
     <CatalogUiPage
@@ -142,7 +158,7 @@ export function CatalogPage() {
         goToBookingPage(hit, entityModule, navigate, browserMessages, departure, option)
       }
       onOpenProductEditor={(hit) => navigate({ to: "/products/$id", params: { id: hit.id } })}
-      onLoadProductDetail={(hit) => loadProductDetail(hit, formatSupplier)}
+      enrichmentFetchers={enrichmentFetchers}
       renderSupplierLink={(supplierId, displayName) => (
         <Link
           to="/suppliers/$id"
@@ -245,17 +261,8 @@ interface BookingDeparture {
   startsAt: string
 }
 
-interface CatalogSlotAvailability {
-  id: string
-  startsAt: string
-  status: string
-  unlimited: boolean
-  remainingPax: number | null
-  initialPax: number | null
-}
-
 interface CatalogSlotsResponse {
-  rows: CatalogSlotAvailability[]
+  rows: Array<UiCatalogSlotAvailability & { startsAt: string }>
 }
 
 function goToBookingPage(
@@ -289,80 +296,9 @@ function goToBookingPage(
   })
 }
 
-async function loadProductDetail(
-  hit: CatalogSearchHit,
-  formatSupplier: (id: string | number) => string,
-): Promise<CatalogDetailEnrichment | null> {
-  let response: ProductSourcedContentResponse | null = null
-  try {
-    response = await api.get<ProductSourcedContentResponse>(`/v1/admin/products/${hit.id}/content`)
-  } catch (err) {
-    if (err instanceof ApiError && (err.status === 404 || err.status === 503)) return null
-    throw err
-  }
-
-  const {
-    content,
-    served_locale,
-    match_kind,
-    source,
-    served_stale,
-    synthesized,
-    machine_translated,
-  } = response.data
-  const supplierName =
-    typeof content.product.supplier === "string"
-      ? formatSupplier(content.product.supplier)
-      : (content.product.supplier ?? null)
-  const availabilityById = await loadProductSlotAvailability(hit.id)
-
-  return {
-    description: content.product.description ?? null,
-    highlights: content.product.highlights ?? [],
-    heroImageUrl: content.product.hero_image_url ?? null,
-    supplier: supplierName,
-    itinerary: content.days.map((d) => ({
-      dayNumber: d.day_number,
-      title: d.title ?? null,
-      description: d.description ?? null,
-      location: d.location ?? null,
-      heroImageUrl: d.hero_image_url ?? null,
-    })),
-    media: content.media.map((m) => ({
-      url: m.url,
-      type: m.type,
-      caption: m.caption ?? null,
-    })),
-    options: content.options.map((o) => ({
-      id: o.id,
-      name: o.name,
-      description: o.description ?? null,
-    })),
-    policies: content.policies.map((p) => ({ kind: p.kind, body: p.body })),
-    departures: (content.departures ?? []).map((d) => ({
-      id: d.id,
-      startsAt: d.starts_at,
-      endsAt: d.ends_at ?? null,
-      status: availabilityById.get(d.id)?.status ?? d.status ?? null,
-      unlimited: availabilityById.get(d.id)?.unlimited ?? null,
-      capacity: availabilityById.get(d.id)?.initialPax ?? d.capacity ?? null,
-      remaining: availabilityById.get(d.id)?.remainingPax ?? d.remaining ?? null,
-      lowestPriceCents: d.lowest_price_cents ?? null,
-      currency: d.currency ?? null,
-      note: d.note ?? null,
-    })),
-    servedLocale: served_locale,
-    matchKind: match_kind,
-    source,
-    servedStale: served_stale,
-    synthesized,
-    machineTranslated: machine_translated,
-  }
-}
-
 async function loadProductSlotAvailability(
   productId: string,
-): Promise<Map<string, CatalogSlotAvailability>> {
+): Promise<Map<string, UiCatalogSlotAvailability>> {
   try {
     const response = await api.get<CatalogSlotsResponse>(
       `/v1/admin/catalog/slots?entityModule=products&entityId=${encodeURIComponent(productId)}`,
