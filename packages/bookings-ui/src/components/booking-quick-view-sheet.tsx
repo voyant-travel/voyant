@@ -1,7 +1,18 @@
 "use client"
 
-import { type BookingRecord, bookingStatusBadgeVariant, useBooking } from "@voyantjs/bookings-react"
+import {
+  type BookingRecord,
+  bookingStatusBadgeVariant,
+  useBooking,
+  useTravelers,
+} from "@voyantjs/bookings-react"
 import { useOrganization, usePerson } from "@voyantjs/crm-react"
+import {
+  useAdminBookingPayments,
+  useBookingPaymentSchedules,
+  useInvoices,
+} from "@voyantjs/finance-react"
+import { useLegalContracts } from "@voyantjs/legal-react"
 import {
   Badge,
   Button,
@@ -12,7 +23,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@voyantjs/ui/components"
-import { Calendar, ExternalLink, Mail, Phone, Users } from "lucide-react"
+import { ArrowRight, Calendar, CreditCard, FileText, Phone, ScrollText, Users } from "lucide-react"
 import type { ReactNode } from "react"
 
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/index.js"
@@ -50,15 +61,27 @@ export function BookingQuickViewSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <span>{booking?.bookingNumber ?? quick.loadingTitle}</span>
-            {booking ? (
-              <Badge variant={bookingStatusBadgeVariant[booking.status]}>
-                {messages.common.bookingStatusLabels[booking.status] ?? booking.status}
-              </Badge>
-            ) : null}
-          </SheetTitle>
+        <SheetHeader className="border-b">
+          {booking ? (
+            <>
+              <div className="flex items-center justify-between gap-3">
+                <SheetTitle className="font-mono text-sm">{booking.bookingNumber}</SheetTitle>
+                <Badge variant={bookingStatusBadgeVariant[booking.status]}>
+                  {messages.common.bookingStatusLabels[booking.status] ?? booking.status}
+                </Badge>
+              </div>
+              <div className="text-2xl font-semibold tabular-nums">
+                {formatAmount(
+                  booking.sellAmountCents,
+                  booking.sellCurrency,
+                  resolvedLocale,
+                  detail.noValue,
+                )}
+              </div>
+            </>
+          ) : (
+            <SheetTitle>{quick.loadingTitle}</SheetTitle>
+          )}
         </SheetHeader>
         <SheetBody className="flex flex-col gap-5">
           {isPending && !booking ? (
@@ -69,17 +92,14 @@ export function BookingQuickViewSheet({
             <QuickViewBody booking={booking} locale={resolvedLocale} />
           )}
         </SheetBody>
-        <SheetFooter>
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-            {messages.common.cancel}
-          </Button>
-          {onViewFull && booking ? (
-            <Button type="button" onClick={() => onViewFull(booking)}>
-              <ExternalLink className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+        {onViewFull && booking ? (
+          <SheetFooter>
+            <Button type="button" className="w-full" onClick={() => onViewFull(booking)}>
               {quick.viewFullAction}
+              <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
             </Button>
-          ) : null}
-        </SheetFooter>
+          </SheetFooter>
+        ) : null}
       </SheetContent>
     </Sheet>
   )
@@ -88,66 +108,50 @@ export function BookingQuickViewSheet({
 function QuickViewBody({ booking, locale }: { booking: BookingRecord; locale: string }) {
   const messages = useBookingsUiMessagesOrDefault()
   const detail = messages.bookingDetailPage
-  const quick = messages.bookingQuickViewSheet
 
   const dateRange = booking.startDate
-    ? `${formatDate(booking.startDate, locale, detail.noValue)} - ${formatDate(
-        booking.endDate,
-        locale,
-        detail.noValue,
-      )}`
+    ? booking.endDate && booking.endDate !== booking.startDate
+      ? `${formatDate(booking.startDate, locale, detail.noValue)} - ${formatDate(
+          booking.endDate,
+          locale,
+          detail.noValue,
+        )}`
+      : formatDate(booking.startDate, locale, detail.noValue)
     : detail.tbd
 
-  const sellAmount = formatAmount(
-    booking.sellAmountCents,
-    booking.sellCurrency,
-    locale,
-    detail.noValue,
-  )
-
-  const notes = visibleInternalNotes(booking.internalNotes)
-
   return (
-    <>
-      <div className="grid grid-cols-2 gap-4">
-        <SummaryRow
-          icon={<Calendar className="h-3.5 w-3.5" aria-hidden="true" />}
-          label={detail.summaryDates}
-          value={dateRange}
-        />
-        <SummaryRow
-          icon={<Users className="h-3.5 w-3.5" aria-hidden="true" />}
-          label={detail.summaryTravelers}
-          value={booking.pax != null ? String(booking.pax) : detail.noValue}
-        />
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center gap-2 text-sm">
+          <Calendar className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          <span>{dateRange}</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <Users className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          <span>
+            {booking.pax != null
+              ? `${booking.pax} ${messages.bookingQuickViewSheet.paxSuffix}`
+              : detail.noValue}
+          </span>
+        </div>
       </div>
 
       <ContactSection booking={booking} />
 
-      <div className="rounded-md border bg-muted/40 px-3 py-2.5">
-        <div className="text-xs font-medium text-muted-foreground">{detail.summarySell}</div>
-        <div className="mt-0.5 text-lg font-semibold tabular-nums">{sellAmount}</div>
-      </div>
+      <TravelersSection bookingId={booking.id} expectedPax={booking.pax} />
 
-      <div>
-        <div className="mb-1 text-xs font-medium text-muted-foreground">
-          {detail.internalNotesLabel}
-        </div>
-        {notes ? (
-          <p className="whitespace-pre-wrap text-sm">{notes}</p>
-        ) : (
-          <p className="text-sm text-muted-foreground">{quick.noInternalNotes}</p>
-        )}
-      </div>
-    </>
+      <PaymentsSection booking={booking} locale={locale} />
+
+      <InvoicesSection booking={booking} />
+
+      <PaymentScheduleSection booking={booking} locale={locale} />
+
+      <ContractsSection bookingId={booking.id} />
+    </div>
   )
 }
 
 function ContactSection({ booking }: { booking: BookingRecord }) {
-  const messages = useBookingsUiMessagesOrDefault()
-  const detail = messages.bookingDetailPage
-  const quick = messages.bookingQuickViewSheet
-
   const person = usePerson(booking.personId ?? undefined, {
     enabled: Boolean(booking.personId),
   }).data
@@ -160,30 +164,15 @@ function ContactSection({ booking }: { booking: BookingRecord }) {
     (person ? [person.firstName, person.lastName].filter(Boolean).join(" ") : "") ||
     organization?.name ||
     ""
-  const email = booking.contactEmail ?? person?.email ?? null
   const phone = booking.contactPhone ?? person?.phone ?? null
 
-  if (!name && !email && !phone) {
-    return (
-      <div>
-        <div className="mb-1 text-xs font-medium text-muted-foreground">{detail.billingPayer}</div>
-        <p className="text-sm text-muted-foreground">{quick.noContact}</p>
-      </div>
-    )
-  }
+  if (!name && !phone) return null
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="text-xs font-medium text-muted-foreground">{detail.billingPayer}</div>
+    <div className="flex flex-col gap-1.5">
       {name ? <div className="text-sm font-medium">{name}</div> : null}
-      {email ? (
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Mail className="h-3.5 w-3.5" aria-hidden="true" />
-          <span className="truncate">{email}</span>
-        </div>
-      ) : null}
       {phone ? (
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Phone className="h-3.5 w-3.5" aria-hidden="true" />
           <span className="truncate">{phone}</span>
         </div>
@@ -192,15 +181,218 @@ function ContactSection({ booking }: { booking: BookingRecord }) {
   )
 }
 
-function SummaryRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+function TravelersSection({
+  bookingId,
+  expectedPax,
+}: {
+  bookingId: string
+  expectedPax: number | null
+}) {
+  const messages = useBookingsUiMessagesOrDefault()
+  const quick = messages.bookingQuickViewSheet
+  const { data } = useTravelers(bookingId)
+  const travelers = data?.data ?? []
+
+  const counter =
+    expectedPax != null ? `${travelers.length}/${expectedPax}` : String(travelers.length)
+
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-        {icon}
-        {label}
+    <Section
+      icon={<Users className="h-3.5 w-3.5" />}
+      label={quick.sectionTravelers}
+      count={counter}
+    >
+      {travelers.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{quick.travelersEmpty}</p>
+      ) : (
+        <ul className="flex flex-col">
+          {travelers.map((traveler) => {
+            const name = [traveler.firstName, traveler.lastName].filter(Boolean).join(" ").trim()
+            const category = traveler.travelerCategory ?? null
+            return (
+              <li
+                key={traveler.id}
+                className="flex items-center justify-between gap-3 py-1 text-sm"
+              >
+                <span className="truncate">{name || quick.travelerUnnamed}</span>
+                {category ? (
+                  <Badge variant="outline" className="text-[10px] uppercase">
+                    {category}
+                  </Badge>
+                ) : null}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </Section>
+  )
+}
+
+function PaymentsSection({ booking, locale }: { booking: BookingRecord; locale: string }) {
+  const messages = useBookingsUiMessagesOrDefault()
+  const detail = messages.bookingDetailPage
+  const quick = messages.bookingQuickViewSheet
+  const { data } = useAdminBookingPayments(booking.id)
+  const payments = data?.data?.payments ?? []
+
+  const paidCents = payments
+    .filter((payment) => payment.status === "completed")
+    .reduce((sum, payment) => sum + payment.amountCents, 0)
+  const totalCents = booking.sellAmountCents ?? 0
+  const remainingCents = Math.max(0, totalCents - paidCents)
+
+  return (
+    <Section
+      icon={<CreditCard className="h-3.5 w-3.5" />}
+      label={quick.sectionPayments}
+      count={String(payments.length)}
+    >
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">{quick.paymentsPaid}</span>
+        <span className="font-medium tabular-nums">
+          {formatAmount(paidCents, booking.sellCurrency, locale, detail.noValue)}
+        </span>
       </div>
-      <div className="text-sm font-medium tabular-nums">{value}</div>
-    </div>
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">{quick.paymentsRemaining}</span>
+        <span className="font-medium tabular-nums">
+          {formatAmount(remainingCents, booking.sellCurrency, locale, detail.noValue)}
+        </span>
+      </div>
+    </Section>
+  )
+}
+
+function InvoicesSection({ booking }: { booking: BookingRecord }) {
+  const messages = useBookingsUiMessagesOrDefault()
+  const quick = messages.bookingQuickViewSheet
+  const { data } = useInvoices({ bookingId: booking.id, limit: 20 })
+  const invoices = data?.data ?? []
+
+  return (
+    <Section
+      icon={<FileText className="h-3.5 w-3.5" />}
+      label={quick.sectionInvoices}
+      count={String(invoices.length)}
+    >
+      {invoices.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{quick.invoicesEmpty}</p>
+      ) : (
+        <ul className="flex flex-col">
+          {invoices.map((invoice) => (
+            <li
+              key={invoice.id}
+              className="flex items-center justify-between gap-3 py-1 font-mono text-sm"
+            >
+              <span className="truncate">{invoice.invoiceNumber}</span>
+              <Badge variant="outline" className="font-sans text-[10px] uppercase">
+                {invoice.status}
+              </Badge>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
+  )
+}
+
+function PaymentScheduleSection({ booking, locale }: { booking: BookingRecord; locale: string }) {
+  const messages = useBookingsUiMessagesOrDefault()
+  const detail = messages.bookingDetailPage
+  const quick = messages.bookingQuickViewSheet
+  const { data } = useBookingPaymentSchedules(booking.id)
+  const schedules = data?.data ?? []
+
+  const paidCount = schedules.filter((schedule) => schedule.status === "paid").length
+  const counter =
+    schedules.length === 0 ? "0" : `${paidCount}/${schedules.length} ${quick.scheduleCountSuffix}`
+
+  return (
+    <Section
+      icon={<Calendar className="h-3.5 w-3.5" />}
+      label={quick.sectionPaymentSchedule}
+      count={counter}
+    >
+      {schedules.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{quick.scheduleEmpty}</p>
+      ) : (
+        <ul className="flex flex-col gap-1.5">
+          {schedules.map((schedule) => (
+            <li key={schedule.id} className="flex items-center justify-between gap-3 text-sm">
+              <span className="flex items-center gap-2">
+                <Badge variant="outline" className="text-[10px] uppercase">
+                  {schedule.scheduleType}
+                </Badge>
+                <span className="text-muted-foreground">
+                  {formatScheduleDate(schedule.dueDate, locale, detail.noValue)}
+                </span>
+              </span>
+              <span className="font-medium tabular-nums">
+                {formatAmount(schedule.amountCents, schedule.currency, locale, detail.noValue)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
+  )
+}
+
+function ContractsSection({ bookingId }: { bookingId: string }) {
+  const messages = useBookingsUiMessagesOrDefault()
+  const quick = messages.bookingQuickViewSheet
+  const { data } = useLegalContracts({ bookingId, limit: 20 })
+  const contracts = data?.data ?? []
+
+  return (
+    <Section
+      icon={<ScrollText className="h-3.5 w-3.5" />}
+      label={quick.sectionContracts}
+      count={String(contracts.length)}
+    >
+      {contracts.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{quick.contractsEmpty}</p>
+      ) : (
+        <ul className="flex flex-col">
+          {contracts.map((contract) => (
+            <li key={contract.id} className="flex items-center justify-between gap-3 py-1 text-sm">
+              <span className="truncate font-mono">
+                {contract.contractNumber ?? contract.title}
+              </span>
+              <Badge variant="outline" className="font-sans text-[10px] uppercase">
+                {contract.status}
+              </Badge>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
+  )
+}
+
+function Section({
+  icon,
+  label,
+  count,
+  children,
+}: {
+  icon: ReactNode
+  label: string
+  count: string
+  children: ReactNode
+}) {
+  return (
+    <section className="flex flex-col gap-2 border-t pt-4">
+      <header className="flex items-center justify-between gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+        <span className="flex items-center gap-1.5">
+          {icon}
+          {label}
+        </span>
+        <span className="font-mono normal-case">{count}</span>
+      </header>
+      {children}
+    </section>
   )
 }
 
@@ -214,7 +406,8 @@ function formatAmount(
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(cents / 100)
 }
 
@@ -227,17 +420,10 @@ function formatDate(iso: string | null, locale: string, empty: string): string {
   })
 }
 
-/**
- * Mirrors booking-detail-page: drop server-relay markers like
- * `__contract_acceptance__:` so operators see only human-readable notes.
- */
-function visibleInternalNotes(notes: string | null | undefined): string | null {
-  if (!notes) return null
-  const visible = notes
-    .split("\n")
-    .filter((line) => !/^__[a-z0-9_]+__:/i.test(line))
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim()
-  return visible.length > 0 ? visible : null
+function formatScheduleDate(iso: string | null, locale: string, empty: string): string {
+  if (!iso) return empty
+  return new Date(iso).toLocaleDateString(locale, {
+    month: "short",
+    day: "numeric",
+  })
 }

@@ -33,8 +33,20 @@ export type BookingsUiMessages = {
   bookingQuickViewSheet: {
     loadingTitle: string
     viewFullAction: string
-    noInternalNotes: string
-    noContact: string
+    paxSuffix: string
+    travelerUnnamed: string
+    sectionTravelers: string
+    travelersEmpty: string
+    sectionPayments: string
+    paymentsPaid: string
+    paymentsRemaining: string
+    sectionInvoices: string
+    invoicesEmpty: string
+    sectionPaymentSchedule: string
+    scheduleCountSuffix: string
+    scheduleEmpty: string
+    sectionContracts: string
+    contractsEmpty: string
   }
   bookingDetailPage: {
     notFound: string
