@@ -26,6 +26,7 @@ import {
   SelectValue,
   Textarea,
 } from "@voyantjs/ui/components"
+import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
 import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { Loader2 } from "lucide-react"
@@ -49,6 +50,8 @@ interface FormState {
   invoiceId: string
   amountCents: number
   currency: string
+  baseAmountCents: number
+  fxRate: string
   paymentMethod: PaymentMethod
   status: PaymentStatus
   paymentDate: string
@@ -65,6 +68,8 @@ function buildInitialFormState(currency: string): FormState {
     invoiceId: "",
     amountCents: 0,
     currency,
+    baseAmountCents: 0,
+    fxRate: "",
     paymentMethod: "bank_transfer",
     status: "completed",
     paymentDate: todayIso(),
@@ -75,6 +80,23 @@ function buildInitialFormState(currency: string): FormState {
 
 function formatAmount(cents: number): string {
   return (cents / 100).toFixed(2)
+}
+
+function normalizeCurrency(currency: string | null | undefined): string {
+  return currency?.trim().toUpperCase() ?? ""
+}
+
+function parseFxRate(raw: string): number | null {
+  const normalized = raw.trim().replace(",", ".")
+  if (!normalized) return null
+  const value = Number.parseFloat(normalized)
+  return Number.isFinite(value) && value > 0 ? value : null
+}
+
+function deriveBaseAmountCents(amountCents: number, fxRateRaw: string): number | null {
+  const fxRate = parseFxRate(fxRateRaw)
+  if (!fxRate || amountCents <= 0) return null
+  return Math.round(amountCents / fxRate)
 }
 
 export function RecordBookingPaymentDialog({
@@ -114,16 +136,62 @@ export function RecordBookingPaymentDialog({
         invoiceId: target?.id ?? "",
         amountCents: target?.balanceDueCents ?? 0,
         currency: target?.currency ?? defaultCurrency,
+        baseAmountCents: 0,
+        fxRate: "",
       })
       initializedRef.current = true
     }
   }, [open, invoicesQuery.isLoading, selectableInvoices, defaultCurrency])
 
   const selectedInvoice = invoices.find((inv) => inv.id === state.invoiceId) ?? null
+  const invoiceCurrency = selectedInvoice?.currency ?? ""
+  const normalizedInvoiceCurrency = normalizeCurrency(invoiceCurrency)
+  const paymentCurrency = normalizeCurrency(state.currency)
+  const isCrossCurrency = Boolean(
+    normalizedInvoiceCurrency && paymentCurrency && normalizedInvoiceCurrency !== paymentCurrency,
+  )
+  const requiresBaseAmount = isCrossCurrency && state.status === "completed"
   const mutation = useInvoicePaymentMutation(state.invoiceId)
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setState((prev) => ({ ...prev, [key]: value }))
+
+  const setAmountCents = (amountCents: number) => {
+    setState((prev) => ({
+      ...prev,
+      amountCents,
+      baseAmountCents: deriveBaseAmountCents(amountCents, prev.fxRate) ?? prev.baseAmountCents,
+    }))
+  }
+
+  const setPaymentCurrency = (currency: string) => {
+    const nextCurrency = normalizeCurrency(currency) || normalizedInvoiceCurrency || defaultCurrency
+    setState((prev) => ({
+      ...prev,
+      amountCents:
+        normalizedInvoiceCurrency &&
+        nextCurrency !== normalizedInvoiceCurrency &&
+        normalizeCurrency(prev.currency) === normalizedInvoiceCurrency &&
+        prev.amountCents === selectedInvoice?.balanceDueCents
+          ? 0
+          : prev.amountCents,
+      currency: nextCurrency,
+      baseAmountCents:
+        normalizedInvoiceCurrency && nextCurrency !== normalizedInvoiceCurrency
+          ? prev.baseAmountCents || selectedInvoice?.balanceDueCents || 0
+          : 0,
+      fxRate:
+        normalizedInvoiceCurrency && nextCurrency !== normalizedInvoiceCurrency ? prev.fxRate : "",
+    }))
+  }
+
+  const setFxRate = (fxRate: string) => {
+    setState((prev) => ({
+      ...prev,
+      fxRate,
+      baseAmountCents: deriveBaseAmountCents(prev.amountCents, fxRate) ?? prev.baseAmountCents,
+    }))
+  }
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -136,10 +204,19 @@ export function RecordBookingPaymentDialog({
       setSubmitError(dialog.validation.amountMinimum)
       return
     }
+    if (requiresBaseAmount && state.baseAmountCents <= 0) {
+      setSubmitError(dialog.validation.baseAmountRequired)
+      return
+    }
     try {
       await mutation.mutateAsync({
         amountCents: state.amountCents,
-        currency: state.currency,
+        currency: isCrossCurrency
+          ? paymentCurrency || state.currency
+          : invoiceCurrency || state.currency,
+        baseCurrency: isCrossCurrency ? invoiceCurrency : null,
+        baseAmountCents:
+          isCrossCurrency && state.baseAmountCents > 0 ? state.baseAmountCents : null,
         paymentMethod: state.paymentMethod,
         status: state.status,
         paymentDate: state.paymentDate,
@@ -186,6 +263,8 @@ export function RecordBookingPaymentDialog({
                       invoiceId: id,
                       amountCents: next?.balanceDueCents ?? prev.amountCents,
                       currency: next?.currency ?? prev.currency,
+                      baseAmountCents: 0,
+                      fxRate: "",
                     }))
                   }}
                 >
@@ -218,13 +297,24 @@ export function RecordBookingPaymentDialog({
               ) : null}
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid gap-4 sm:grid-cols-3">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="record-amount">{dialog.fields.amountCents}</Label>
                 <CurrencyInput
+                  id="record-amount"
                   value={state.amountCents}
-                  onChange={(next) => set("amountCents", next ?? 0)}
+                  onChange={(next) => setAmountCents(next ?? 0)}
                   currency={state.currency}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label>{dialog.fields.currency}</Label>
+                <CurrencyCombobox
+                  value={state.currency || null}
+                  onChange={(next) =>
+                    setPaymentCurrency(next ?? selectedInvoice?.currency ?? defaultCurrency)
+                  }
+                  placeholder={dialog.placeholders.currency}
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -235,6 +325,55 @@ export function RecordBookingPaymentDialog({
                   className="w-full"
                 />
               </div>
+            </div>
+
+            {isCrossCurrency ? (
+              <div className="rounded-md border bg-muted/20 p-3">
+                <div className="mb-3 space-y-1">
+                  <h3 className="text-sm font-medium">{dialog.fx.title}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {formatMessage(dialog.fx.help, {
+                      invoiceCurrency,
+                      paymentCurrency,
+                    })}
+                  </p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="record-base-amount">{dialog.fields.baseAmountCents}</Label>
+                    <CurrencyInput
+                      id="record-base-amount"
+                      value={state.baseAmountCents}
+                      onChange={(next) => set("baseAmountCents", next ?? 0)}
+                      currency={normalizedInvoiceCurrency || invoiceCurrency}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="record-fx-rate">{dialog.fields.fxRate}</Label>
+                    <Input
+                      id="record-fx-rate"
+                      value={state.fxRate}
+                      onChange={(event) => setFxRate(event.target.value)}
+                      inputMode="decimal"
+                      placeholder={formatMessage(dialog.placeholders.fxRate, {
+                        invoiceCurrency,
+                        paymentCurrency,
+                      })}
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <p className="pb-2 text-xs text-muted-foreground">
+                      {formatMessage(dialog.fx.rateHint, {
+                        invoiceCurrency,
+                        paymentCurrency,
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="grid gap-4 sm:grid-cols-3">
               <div className="flex flex-col gap-2">
                 <Label>{dialog.fields.status}</Label>
                 <Select
@@ -253,9 +392,6 @@ export function RecordBookingPaymentDialog({
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{dialog.fields.paymentMethod}</Label>
                 <Select
@@ -305,7 +441,12 @@ export function RecordBookingPaymentDialog({
             </Button>
             <Button
               type="submit"
-              disabled={mutation.isPending || !state.invoiceId || state.amountCents <= 0}
+              disabled={
+                mutation.isPending ||
+                !state.invoiceId ||
+                state.amountCents <= 0 ||
+                (requiresBaseAmount && state.baseAmountCents <= 0)
+              }
             >
               {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {dialog.actions.record}
