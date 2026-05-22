@@ -112,12 +112,14 @@ export function AvailabilityPage({
     AvailabilityPickupPointRow | undefined
   >()
 
+  const productIdFilter = productFilter === "all" ? undefined : productFilter
+
   const productsQuery = useQuery(getAvailabilityProductsQueryOptions())
-  const rulesQuery = useQuery(getAvailabilityRulesQueryOptions())
-  const startTimesQuery = useQuery(getAvailabilityStartTimesQueryOptions())
-  const slotsQuery = useQuery(getAvailabilitySlotsQueryOptions())
-  const closeoutsQuery = useQuery(getAvailabilityCloseoutsQueryOptions())
-  const pickupPointsQuery = useQuery(getAvailabilityPickupPointsQueryOptions())
+  const rulesQuery = useQuery(getAvailabilityRulesQueryOptions(productIdFilter))
+  const startTimesQuery = useQuery(getAvailabilityStartTimesQueryOptions(productIdFilter))
+  const slotsQuery = useQuery(getAvailabilitySlotsQueryOptions(productIdFilter))
+  const closeoutsQuery = useQuery(getAvailabilityCloseoutsQueryOptions(productIdFilter))
+  const pickupPointsQuery = useQuery(getAvailabilityPickupPointsQueryOptions(productIdFilter))
 
   const products = productsQuery.data?.data ?? []
   const rules = rulesQuery.data?.data ?? []

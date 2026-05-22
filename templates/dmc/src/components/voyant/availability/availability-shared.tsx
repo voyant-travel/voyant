@@ -381,26 +381,30 @@ export const pickupPointColumns = (
   },
 ]
 
+// All wrappers accept an optional `productId` so the page can narrow the
+// server response to the selected product (issue #1076 sibling). Without
+// this, the hooks fetch the first 25 rows unfiltered and `.filter()` on
+// the client misses every product whose rows sit past page 1.
 export function getAvailabilityProductsQueryOptions() {
   return getProductsQueryOptionsBase(client, { limit: 25, offset: 0 })
 }
 
-export function getAvailabilityRulesQueryOptions() {
-  return getRulesQueryOptionsBase(client, { limit: 25, offset: 0 })
+export function getAvailabilityRulesQueryOptions(productId?: string) {
+  return getRulesQueryOptionsBase(client, { limit: 25, offset: 0, productId })
 }
 
-export function getAvailabilityStartTimesQueryOptions() {
-  return getStartTimesQueryOptionsBase(client, { limit: 25, offset: 0 })
+export function getAvailabilityStartTimesQueryOptions(productId?: string) {
+  return getStartTimesQueryOptionsBase(client, { limit: 25, offset: 0, productId })
 }
 
-export function getAvailabilitySlotsQueryOptions() {
-  return getSlotsQueryOptionsBase(client, { limit: 25, offset: 0 })
+export function getAvailabilitySlotsQueryOptions(productId?: string) {
+  return getSlotsQueryOptionsBase(client, { limit: 25, offset: 0, productId })
 }
 
-export function getAvailabilityCloseoutsQueryOptions() {
-  return getCloseoutsQueryOptionsBase(client, { limit: 25, offset: 0 })
+export function getAvailabilityCloseoutsQueryOptions(productId?: string) {
+  return getCloseoutsQueryOptionsBase(client, { limit: 25, offset: 0, productId })
 }
 
-export function getAvailabilityPickupPointsQueryOptions() {
-  return getPickupPointsQueryOptionsBase(client, { limit: 25, offset: 0 })
+export function getAvailabilityPickupPointsQueryOptions(productId?: string) {
+  return getPickupPointsQueryOptionsBase(client, { limit: 25, offset: 0, productId })
 }
