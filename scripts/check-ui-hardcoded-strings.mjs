@@ -100,7 +100,7 @@ function looksLikeTailwindUtility(value) {
       (/^(?:absolute|block|contents|flex|grid|hidden|inline|relative|sticky|truncate)$/.test(
         bareToken,
       ) ||
-        /(?:^|:)(?:accent|animate|auto|bg|border|bottom|capitalize|center|col|cursor|duration|ease|font|gap|h|inset|items|justify|left|line|lowercase|m|mb|min|ml|mr|mt|mx|my|opacity|overflow|p|pb|pl|pointer|pr|pt|px|py|resize|right|ring|rounded|row|scroll|shadow|shrink|size|sm|space|sr|tabular|text|top|touch|tracking|transition|uppercase|w|whitespace|z)-/.test(
+        /(?:^|:)(?:accent|animate|auto|bg|border|bottom|capitalize|center|col|cursor|duration|ease|flex|font|gap|grid|h|inset|items|justify|left|line|lowercase|m|mb|min|ml|mr|mt|mx|my|opacity|overflow|p|pb|pl|pointer|pr|pt|px|py|resize|right|ring|rounded|row|scroll|shadow|shrink|size|sm|space|sr|tabular|text|top|touch|tracking|transition|uppercase|w|whitespace|z)-/.test(
           token,
         ))
     )
@@ -269,7 +269,6 @@ async function collectOptInRoots() {
  */
 const HARDCODED_FILE_ALLOWLIST = new Set(
   [
-    "templates/operator/src/components/voyant/travel-composer/admin-trip-composer-panels.tsx",
   ].map((relative) => path.join(rootDir, relative)),
 )
 

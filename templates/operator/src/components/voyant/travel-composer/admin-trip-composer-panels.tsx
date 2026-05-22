@@ -32,6 +32,7 @@ import {
   FlightOfferRow,
   FlightServicesStep,
 } from "@voyantjs/flights-ui"
+import { formatMessage } from "@voyantjs/i18n"
 import type { Trip, TripComponent } from "@voyantjs/travel-composer"
 import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTitle } from "@voyantjs/ui/components"
 import { Alert, AlertDescription, AlertTitle } from "@voyantjs/ui/components/alert"
@@ -82,11 +83,13 @@ import {
   X,
 } from "lucide-react"
 import * as React from "react"
-
+import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
 
 type CatalogVertical = "products" | "hospitality" | "cruises" | "extras" | "flights"
 export type PendingVerticalKind = "product" | "stay" | "flight" | "cruise" | "manual"
+
+type PanelsMessages = ReturnType<typeof useAdminMessages>["trips"]["adminComposer"]["panels"]
 
 interface AvailabilitySlot {
   id: string
@@ -164,17 +167,20 @@ export type PendingComponent =
       commitError: string | null
     }
 
-const verticals: Array<{ kind: PendingVerticalKind; label: string; description: string }> = [
-  {
-    kind: "product",
-    label: "Product",
-    description: "Tour, activity, or transfer from the catalog",
-  },
-  { kind: "stay", label: "Stay", description: "Hospitality / accommodation from the catalog" },
-  { kind: "flight", label: "Flight", description: "Air segment" },
-  { kind: "cruise", label: "Cruise", description: "Cruise itinerary" },
-  { kind: "manual", label: "Manual service", description: "Staff-confirmed line item" },
-]
+function verticalsFor(messages: PanelsMessages): Array<{
+  kind: PendingVerticalKind
+  label: string
+  description: string
+}> {
+  const v = messages.verticals
+  return [
+    { kind: "product", label: v.productLabel, description: v.productDescription },
+    { kind: "stay", label: v.stayLabel, description: v.stayDescription },
+    { kind: "flight", label: v.flightLabel, description: v.flightDescription },
+    { kind: "cruise", label: v.cruiseLabel, description: v.cruiseDescription },
+    { kind: "manual", label: v.manualLabel, description: v.manualDescription },
+  ]
+}
 
 function verticalForKind(kind: "product" | "stay"): CatalogVertical {
   return kind === "stay" ? "hospitality" : "products"
@@ -368,13 +374,15 @@ export function AddComponentMenu({
   onAdd(kind: PendingVerticalKind): void
   disabled?: boolean
 }) {
+  const t = useAdminMessages().trips.adminComposer.panels
+  const verticals = verticalsFor(t)
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
           <Button variant="outline" disabled={disabled} className="w-full">
             <Plus className="size-4" />
-            Add itinerary component
+            {t.addComponentMenu}
           </Button>
         }
       />
@@ -417,8 +425,9 @@ export function PendingComponentCard({
   committing: boolean
   travelers: TripTraveler[]
 }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   const Icon = verticalIconFor(pending.kind)
-  const label = verticalLabelFor(pending.kind)
+  const label = verticalLabelFor(pending.kind, t)
   const valid = pendingComponentIsValid(pending)
 
   return (
@@ -430,10 +439,10 @@ export function PendingComponentCard({
           </span>
           <div>
             <h3 className="font-medium text-base">{label}</h3>
-            <p className="text-muted-foreground text-xs">Configure, then add to the trip.</p>
+            <p className="text-muted-foreground text-xs">{t.configureHint}</p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={onRemove} aria-label="Remove component">
+        <Button variant="ghost" size="sm" onClick={onRemove} aria-label={t.removeComponent}>
           <Trash2 className="size-4" />
         </Button>
       </div>
@@ -493,6 +502,7 @@ function CatalogConfigurator({
   onChange(next: PendingComponent): void
   paxAdult: number
 }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   const vertical = verticalForKind(pending.kind)
   const [catalogSearch, setCatalogSearch] = React.useState("")
   const [selectedCatalogHit, setSelectedCatalogHit] = React.useState<CatalogSearchHit | null>(null)
@@ -538,9 +548,14 @@ function CatalogConfigurator({
     onChange({ ...pending, bookingDraft: updateDraftPax(pending.bookingDraft, paxAdult) })
   }, [onChange, paxAdult, pending])
 
-  const fieldLabel = pending.kind === "stay" ? "Hotel" : "Product"
-  const placeholder = pending.kind === "stay" ? "Search hotels" : "Search products"
-  const emptyText = pending.kind === "stay" ? "No hotels found" : "No products found"
+  const fieldLabel =
+    pending.kind === "stay" ? t.catalogSearch.hotelLabel : t.catalogSearch.productLabel
+  const placeholder =
+    pending.kind === "stay"
+      ? t.catalogSearch.hotelSearchPlaceholder
+      : t.catalogSearch.productSearchPlaceholder
+  const emptyText =
+    pending.kind === "stay" ? t.catalogSearch.hotelEmpty : t.catalogSearch.productEmpty
 
   return (
     <div className="flex flex-col gap-4">
@@ -612,7 +627,7 @@ function CatalogConfigurator({
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="From">
+          <Field label={t.fromLabel}>
             <DateTimeField
               value={pending.startsAt}
               onChange={(value) => {
@@ -627,7 +642,7 @@ function CatalogConfigurator({
               }}
             />
           </Field>
-          <Field label="To">
+          <Field label={t.toLabel}>
             <DateTimeField
               value={pending.endsAt}
               onChange={(value) => {
@@ -652,7 +667,7 @@ function CatalogConfigurator({
           onDraftChange={(bookingDraft) => onChange({ ...pending, bookingDraft })}
         />
       ) : pending.bookingDraft && quote.isQuoting ? (
-        <p className="text-muted-foreground text-sm">Loading options…</p>
+        <p className="text-muted-foreground text-sm">{t.loadingOptions}</p>
       ) : null}
     </div>
   )
@@ -729,6 +744,7 @@ function ProductDeparturePicker({
   disabled: boolean
   onChange(slotId: string): void
 }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   const [search, setSearch] = React.useState("")
   const filteredSlots = React.useMemo(() => {
     const trimmed = search.trim().toLowerCase()
@@ -738,13 +754,13 @@ function ProductDeparturePicker({
   const selectedSlot = slots.find((slot) => slot.id === value) ?? null
 
   return (
-    <Field label="Departure">
+    <Field label={t.departureLabel}>
       {isLoading ? (
         <div className="h-10 rounded-md border bg-muted/40" />
       ) : isError ? (
-        <p className="text-destructive text-sm">Departures unavailable.</p>
+        <p className="text-destructive text-sm">{t.departuresUnavailable}</p>
       ) : slots.length === 0 && !disabled ? (
-        <p className="text-muted-foreground text-sm">No upcoming departures.</p>
+        <p className="text-muted-foreground text-sm">{t.noUpcomingDepartures}</p>
       ) : (
         <AsyncCombobox<AvailabilitySlot>
           value={value || null}
@@ -757,8 +773,8 @@ function ProductDeparturePicker({
           getLabel={formatDepartureLabel}
           getSecondary={(slot) => slot.timezone}
           onSearchChange={setSearch}
-          placeholder="Search departures..."
-          emptyText="No departures found"
+          placeholder={t.searchDeparturesPlaceholder}
+          emptyText={t.noDeparturesFound}
           triggerClassName="w-full"
           disabled={disabled || slots.length === 0}
           clearable={false}
@@ -874,13 +890,14 @@ function CatalogProductOptionOptions({
   }>
   onDraftChange(draft: Draft): void
 }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   const selections = draft.configure.optionSelections ?? []
   if (options.length === 0) return null
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <h4 className="font-medium text-sm">Options</h4>
-        <p className="text-muted-foreground text-xs">Select the quantity for the option to book.</p>
+        <h4 className="font-medium text-sm">{t.optionsHeading}</h4>
+        <p className="text-muted-foreground text-xs">{t.optionsHint}</p>
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
         {options.map((option) => {
@@ -902,7 +919,7 @@ function CatalogProductOptionOptions({
                     {option.code ? (
                       <span className="text-muted-foreground text-xs uppercase">{option.code}</span>
                     ) : null}
-                    {option.isDefault ? <Badge variant="secondary">Default</Badge> : null}
+                    {option.isDefault ? <Badge variant="secondary">{t.defaultOption}</Badge> : null}
                   </span>
                   {option.description ? (
                     <span className="mt-1 block text-muted-foreground text-xs">
@@ -975,14 +992,15 @@ function CatalogAccommodationOptions({
   shape: BookingDraftShape
   onDraftChange(draft: Draft): void
 }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   const rooms = shape.accommodation?.roomOptions ?? []
   const accommodation = draft.accommodation ?? { rooms: [], travelerAssignments: {} }
   if (rooms.length === 0) return null
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <h4 className="font-medium text-sm">Rooms</h4>
-        <p className="text-muted-foreground text-xs">Select room quantities and rate plans.</p>
+        <h4 className="font-medium text-sm">{t.roomsHeading}</h4>
+        <p className="text-muted-foreground text-xs">{t.roomsHint}</p>
       </div>
       <div className="flex flex-col gap-2">
         {rooms.map((room) => {
@@ -1080,6 +1098,7 @@ function CatalogExtrasOptions({
   shape: BookingDraftShape
   onDraftChange(draft: Draft): void
 }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   const flat = shape.addons?.catalog ?? []
   const groups = shape.addons?.groups ?? []
   const hasGroupedExtras = groups.some((group) => group.items.length > 0)
@@ -1087,10 +1106,8 @@ function CatalogExtrasOptions({
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <h4 className="font-medium text-sm">Options and extras</h4>
-        <p className="text-muted-foreground text-xs">
-          Select bookable options, add-ons, or services returned by the catalog source.
-        </p>
+        <h4 className="font-medium text-sm">{t.optionsAndExtras}</h4>
+        <p className="text-muted-foreground text-xs">{t.optionsAndExtrasHint}</p>
       </div>
       <div className="flex flex-col gap-3">
         {groups.map((group) =>
@@ -1184,6 +1201,7 @@ function FlightConfigurator({
   travelers: TripTraveler[]
   onChange(next: PendingComponent): void
 }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   const passengers = React.useMemo(() => flightPassengersFromTripTravelers(travelers), [travelers])
   const passengerCounts = React.useMemo(
     () => passengerCountsFromTripTravelers(travelers),
@@ -1270,7 +1288,7 @@ function FlightConfigurator({
           variant={!isRoundTrip ? "default" : "outline"}
           onClick={() => resetSelection({ tripType: "one_way", returnDate: "" })}
         >
-          One-way
+          {t.flightOneWay}
         </Button>
         <Button
           type="button"
@@ -1278,48 +1296,48 @@ function FlightConfigurator({
           variant={isRoundTrip ? "default" : "outline"}
           onClick={() => resetSelection({ tripType: "round_trip" })}
         >
-          Round trip
+          {t.flightRoundTrip}
         </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Origin">
+        <Field label={t.flightOrigin}>
           <AirportCombobox
             value={pending.origin}
-            placeholder="From"
+            placeholder={t.fromPlaceholder}
             onChange={(code) => resetSelection({ origin: code })}
             className="w-full"
           />
         </Field>
-        <Field label="Destination">
+        <Field label={t.flightDestination}>
           <AirportCombobox
             value={pending.destination}
-            placeholder="To"
+            placeholder={t.toPlaceholder}
             onChange={(code) => resetSelection({ destination: code })}
             className="w-full"
           />
         </Field>
-        <Field label="Depart">
+        <Field label={t.flightDepart}>
           <DatePicker
             value={pending.departDate}
             onChange={(departDate) => resetSelection({ departDate: departDate ?? "" })}
-            placeholder="Pick a date"
+            placeholder={t.pickDate}
           />
         </Field>
         {isRoundTrip ? (
-          <Field label="Return">
+          <Field label={t.flightReturn}>
             <div className="flex gap-2">
               <DatePicker
                 value={pending.returnDate}
                 onChange={(returnDate) => resetSelection({ returnDate: returnDate ?? "" })}
-                placeholder="Pick a date"
+                placeholder={t.pickDate}
                 className="flex-1"
               />
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
-                aria-label="Clear return date"
+                aria-label={t.clearReturnDate}
                 onClick={() => resetSelection({ returnDate: "" })}
               >
                 <X className="size-4" />
@@ -1331,11 +1349,23 @@ function FlightConfigurator({
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/20 p-3">
         <div className="flex flex-col gap-0.5 text-sm">
-          <span className="font-medium">Travelers</span>
+          <span className="font-medium">{t.travelersWord}</span>
           <span className="text-muted-foreground text-xs">
-            {passengerCounts.adults} adult{passengerCounts.adults === 1 ? "" : "s"}
-            {passengerCounts.children ? ` · ${passengerCounts.children} child` : ""}
-            {passengerCounts.infants ? ` · ${passengerCounts.infants} infant` : ""}
+            {passengerCounts.adults === 1
+              ? t.travelerCountAdultSingular
+              : formatMessage(t.travelerCountAdultPlural, { count: passengerCounts.adults })}
+            {passengerCounts.children
+              ? formatMessage(
+                  passengerCounts.children === 1 ? t.travelerCountChild : t.travelerCountChildren,
+                  { count: passengerCounts.children },
+                )
+              : ""}
+            {passengerCounts.infants
+              ? formatMessage(
+                  passengerCounts.infants === 1 ? t.travelerCountInfant : t.travelerCountInfants,
+                  { count: passengerCounts.infants },
+                )
+              : ""}
           </span>
         </div>
         <CabinSelector value={pending.cabin} onChange={(cabin) => resetSelection({ cabin })} />
@@ -1344,24 +1374,26 @@ function FlightConfigurator({
       {ready ? (
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
-            <h4 className="font-medium text-sm">Flight options</h4>
+            <h4 className="font-medium text-sm">{t.flightOptionsHeading}</h4>
             {search.isFetching ? (
               <span className="flex items-center gap-1 text-muted-foreground text-xs">
                 <Loader2 className="size-3 animate-spin" />
-                Searching
+                {t.flightSearching}
               </span>
             ) : offers.length > 0 ? (
-              <span className="text-muted-foreground text-xs">{offers.length} options</span>
+              <span className="text-muted-foreground text-xs">
+                {formatMessage(t.flightOptionsCount, { count: offers.length })}
+              </span>
             ) : null}
           </div>
           {search.isError ? (
             <p className="rounded-md bg-destructive/10 px-3 py-2 text-destructive text-sm">
-              Flight search failed. Check the route and try again.
+              {t.flightSearchFailed}
             </p>
           ) : null}
           {!search.isFetching && offers.length === 0 && !search.isError ? (
             <p className="rounded-md border border-dashed p-3 text-muted-foreground text-sm">
-              No flight options found for this search.
+              {t.flightNoOptions}
             </p>
           ) : null}
           {offers.slice(0, 5).map((offer) => (
@@ -1369,7 +1401,9 @@ function FlightConfigurator({
               key={offer.offerId}
               offer={offer}
               selected={selectedOffer?.offerId === offer.offerId}
-              selectLabel={selectedOffer?.offerId === offer.offerId ? "Selected" : "Select"}
+              selectLabel={
+                selectedOffer?.offerId === offer.offerId ? t.flightSelected : t.flightSelect
+              }
               onSelect={(nextOffer) =>
                 patch({
                   selectedOffer: nextOffer,
@@ -1385,7 +1419,7 @@ function FlightConfigurator({
         </div>
       ) : (
         <p className="rounded-md border border-dashed p-3 text-muted-foreground text-sm">
-          Select airports and a departure date to search live flight options.
+          {t.flightSelectSearchHint}
         </p>
       )}
 
@@ -1406,7 +1440,7 @@ function FlightConfigurator({
 
           {ancillaryQuery.isError ? (
             <p className="rounded-md border border-dashed p-3 text-muted-foreground text-sm">
-              Luggage and services are not available for this offer.
+              {t.flightAncillariesUnavailable}
             </p>
           ) : (
             <FlightBaggageStep
@@ -1445,7 +1479,7 @@ function FlightConfigurator({
           ) : null}
 
           <div className="flex items-center justify-between rounded-md border bg-muted/30 p-3">
-            <span className="text-muted-foreground text-sm">Flight total</span>
+            <span className="text-muted-foreground text-sm">{t.flightTotal}</span>
             <span className="font-semibold text-base">
               {formatMoney(priced.totalAmountCents, priced.currency)}
             </span>
@@ -1463,11 +1497,12 @@ function CabinSelector({
   value: CabinClass
   onChange(next: CabinClass): void
 }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   const cabins: Array<{ value: CabinClass; label: string }> = [
-    { value: "economy", label: "Economy" },
-    { value: "premium_economy", label: "Premium" },
-    { value: "business", label: "Business" },
-    { value: "first", label: "First" },
+    { value: "economy", label: t.cabinClasses.economy },
+    { value: "premium_economy", label: t.cabinClasses.premium_economy },
+    { value: "business", label: t.cabinClasses.business },
+    { value: "first", label: t.cabinClasses.first },
   ]
   return (
     <div className="flex flex-wrap gap-1">
@@ -1595,7 +1630,11 @@ function flightPassengersFromTripTravelers(travelers: TripTraveler[]): FlightPas
     return {
       passengerId: traveler.localId || `traveler_${index + 1}`,
       type,
+      // fallback names sent verbatim to the flight provider's API as ASCII
+      // passenger placeholders when the operator hasn't yet filled in the
+      // real traveler.
       firstName:
+        // i18n-literal-ok
         traveler.firstName || (type === "adult" ? "Adult" : type === "child" ? "Child" : "Infant"),
       lastName: traveler.lastName || `${index + 1}`,
       dateOfBirth: traveler.dateOfBirth || fallbackDobForPassengerType(type),
@@ -1647,32 +1686,33 @@ function CruiseConfigurator({
   pending: Extract<PendingComponent, { kind: "cruise" }>
   onChange(next: PendingComponent): void
 }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Embarkation date">
+        <Field label={t.cruisePlaceholder.embarkationDate}>
           <Input
             type="date"
             value={pending.embarkationDate}
             onChange={(event) => onChange({ ...pending, embarkationDate: event.target.value })}
           />
         </Field>
-        <Field label="Cabin">
+        <Field label={t.cruisePlaceholder.cabin}>
           <Input
             value={pending.cabin}
-            placeholder="Balcony, midship"
+            placeholder={t.cabinPlaceholder}
             onChange={(event) => onChange({ ...pending, cabin: event.target.value })}
           />
         </Field>
       </div>
-      <Field label="Description">
+      <Field label={t.cruisePlaceholder.description}>
         <Textarea
           rows={2}
           value={pending.description}
           onChange={(event) => onChange({ ...pending, description: event.target.value })}
         />
       </Field>
-      <Field label="Estimated amount">
+      <Field label={t.cruisePlaceholder.estimatedAmount}>
         <Input
           inputMode="decimal"
           value={pending.estimatedAmount}
@@ -1691,32 +1731,33 @@ function PlaceholderConfigurator({
   pending: Extract<PendingComponent, { kind: "manual" }>
   onChange(next: PendingComponent): void
 }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   const totals = computePlaceholderTotals(pending.subtotalCents, pending.taxRatePct)
   return (
     <div className="flex flex-col gap-4">
-      <Field label="Name">
+      <Field label={t.manualPlaceholder.nameLabel}>
         <Input
           value={pending.name}
-          placeholder="e.g. Eurostar tickets"
+          placeholder={t.manualPlaceholder.namePlaceholder}
           onChange={(event) => onChange({ ...pending, name: event.target.value })}
         />
       </Field>
-      <Field label="Description">
+      <Field label={t.manualPlaceholder.descriptionLabel}>
         <Textarea
           rows={2}
           value={pending.description}
-          placeholder="Optional notes for the operator"
+          placeholder={t.notesPlaceholder}
           onChange={(event) => onChange({ ...pending, description: event.target.value })}
         />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="From">
+        <Field label={t.fromLabel}>
           <DateTimeField
             value={pending.startsAt}
             onChange={(value) => onChange({ ...pending, startsAt: value ?? "" })}
           />
         </Field>
-        <Field label="To">
+        <Field label={t.toLabel}>
           <DateTimeField
             value={pending.endsAt}
             onChange={(value) => onChange({ ...pending, endsAt: value ?? "" })}
@@ -1724,13 +1765,13 @@ function PlaceholderConfigurator({
         </Field>
       </div>
       <div className="grid gap-4 sm:grid-cols-[140px_minmax(0,1fr)_140px]">
-        <Field label="Currency">
+        <Field label={t.manualPlaceholder.currencyLabel}>
           <CurrencyCombobox
             value={pending.currency}
             onChange={(value) => onChange({ ...pending, currency: value ?? "EUR" })}
           />
         </Field>
-        <Field label="Subtotal">
+        <Field label={t.manualPlaceholder.subtotalLabel}>
           <CurrencyInput
             value={pending.subtotalCents}
             onChange={(value) => onChange({ ...pending, subtotalCents: value })}
@@ -1738,7 +1779,7 @@ function PlaceholderConfigurator({
             placeholder="0.00"
           />
         </Field>
-        <Field label="Tax rate">
+        <Field label={t.manualPlaceholder.taxRateLabel}>
           <div className="relative">
             <Input
               inputMode="decimal"
@@ -1755,11 +1796,11 @@ function PlaceholderConfigurator({
       </div>
       <div className="flex flex-col gap-1 rounded-md border bg-muted/30 p-3 text-sm">
         <div className="flex items-center justify-between text-muted-foreground">
-          <span>Tax</span>
+          <span>{t.tax}</span>
           <span>{formatMoney(totals.tax, pending.currency)}</span>
         </div>
         <div className="flex items-center justify-between font-semibold">
-          <span>Total</span>
+          <span>{t.total}</span>
           <span>{formatMoney(totals.total, pending.currency)}</span>
         </div>
       </div>
@@ -1789,16 +1830,15 @@ export function pendingComponentIsValid(pending: PendingComponent): boolean {
 }
 
 export function ComponentsEmpty() {
+  const t = useAdminMessages().trips.adminComposer.panels
   return (
     <Empty className="border bg-card">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <RouteIcon />
         </EmptyMedia>
-        <EmptyTitle>No components yet</EmptyTitle>
-        <EmptyDescription>
-          Add a catalog item, flight, or manual service to start building the itinerary.
-        </EmptyDescription>
+        <EmptyTitle>{t.emptyTimeline}</EmptyTitle>
+        <EmptyDescription>{t.emptyTimelineHint}</EmptyDescription>
       </EmptyHeader>
     </Empty>
   )
@@ -1863,13 +1903,15 @@ export function TripTravelersSection({
     value[0]?.localId ||
     null
 
+  const t = useAdminMessages().trips.adminComposer.panels
+
   return (
     <section className="flex flex-col gap-3 rounded-md border bg-card p-5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-medium text-base">Travelers</h2>
+        <h2 className="font-medium text-base">{t.travelersSectionTitle}</h2>
         <Button variant="outline" size="sm" onClick={() => onChange([...value, newTripTraveler()])}>
           <UserPlus className="size-3.5" />
-          Add traveler
+          {t.addTravelerLabel}
         </Button>
       </div>
 
@@ -1883,8 +1925,8 @@ export function TripTravelersSection({
 
       {value.length === 0 ? (
         <p className="text-muted-foreground text-sm">
-          No travelers yet. Add one above or click <span className="font-medium">Add traveler</span>
-          .
+          {t.noTravelersPrefix}
+          <span className="font-medium">{t.addTravelerLabel}</span>.
         </p>
       ) : (
         <div className="flex flex-col gap-2">
@@ -1912,6 +1954,7 @@ function BillingQuickAdd({
   existingPersonIds: Set<string | null>
   onAdd(personId: string): void
 }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   const billingPersonQuery = usePerson(billingPersonId)
   const relationshipsQuery = usePersonRelationships(billingPersonId)
   const billingPerson = billingPersonQuery.data
@@ -1932,6 +1975,8 @@ function BillingQuickAdd({
   const hasRelationships = relatedPersonIds.length > 0
   if (billingAlreadyAdded && !hasRelationships) return null
 
+  const billingName = formatPersonName(billingPerson) ?? t.travelersAddRow.billingPersonFallback
+
   return (
     <div className="flex flex-col gap-2">
       {!billingAlreadyAdded ? (
@@ -1942,13 +1987,17 @@ function BillingQuickAdd({
           onClick={() => onAdd(billingPersonId)}
         >
           <UserPlus className="size-3.5" />
-          Add {formatPersonName(billingPerson) ?? "billing person"} as traveler
+          {t.travelersAddRow.addBillingPersonPrefix}
+          {billingName}
+          {t.travelersAddRow.addBillingPersonSuffix}
         </Button>
       ) : null}
       {hasRelationships ? (
         <div className="flex flex-col gap-1.5">
           <span className="text-muted-foreground text-xs">
-            From {formatPersonName(billingPerson) ?? "billing person"}'s relationships
+            {t.travelersAddRow.fromRelationshipsPrefix}
+            {billingName}
+            {t.travelersAddRow.fromRelationshipsSuffix}
           </span>
           <div className="flex flex-wrap gap-1.5">
             {relatedPersonIds.map((personId) => (
@@ -2052,6 +2101,7 @@ function TripTravelerRow({
   onPatch(patch: Partial<TripTraveler>): void
   onRemove(): void
 }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   const personQuery = usePerson(traveler.personId ?? undefined, {
     enabled: Boolean(traveler.personId),
   })
@@ -2110,7 +2160,7 @@ function TripTravelerRow({
           <PersonCombobox
             value={traveler.personId}
             onChange={(personId) => onPatch({ personId })}
-            placeholder="Pick a person from CRM"
+            placeholder={t.personPickerPlaceholder}
           />
         </div>
         {traveler.personId && personQuery.data ? (
@@ -2124,7 +2174,7 @@ function TripTravelerRow({
             }}
           >
             <Pencil className="size-3.5" />
-            Edit
+            {t.travelerRow.editAction}
           </Button>
         ) : null}
         <Button
@@ -2137,13 +2187,15 @@ function TripTravelerRow({
           }}
         >
           <UserPlus className="size-3.5" />
-          New
+          {t.travelerRow.newAction}
         </Button>
       </div>
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="right" size="lg">
           <SheetHeader>
-            <SheetTitle>{sheetMode === "edit" ? "Edit person" : "Create person"}</SheetTitle>
+            <SheetTitle>
+              {sheetMode === "edit" ? t.travelerRow.editPerson : t.travelerRow.createPerson}
+            </SheetTitle>
           </SheetHeader>
           <SheetBody>
             <PersonForm
@@ -2163,7 +2215,7 @@ function TripTravelerRow({
       </Sheet>
       <div className="flex flex-wrap items-center gap-2">
         {isLead ? (
-          <Badge>Lead</Badge>
+          <Badge>{t.leadBadge}</Badge>
         ) : (
           <>
             <CategoryToggle
@@ -2181,16 +2233,14 @@ function TripTravelerRow({
                   render={
                     <button
                       type="button"
-                      aria-label="Why is the category manual?"
+                      aria-label={t.categoryManualAria}
                       className="text-muted-foreground hover:text-foreground"
                     />
                   }
                 >
                   <Info className="size-3.5" />
                 </TooltipTrigger>
-                <TooltipContent>
-                  Add a date of birth on the person to auto-derive the category.
-                </TooltipContent>
+                <TooltipContent>{t.travelerRow.manualCategoryHint}</TooltipContent>
               </Tooltip>
             )}
           </>
@@ -2200,7 +2250,7 @@ function TripTravelerRow({
           size="sm"
           className="ml-auto"
           onClick={onRemove}
-          aria-label="Remove traveler"
+          aria-label={t.removeTraveler}
         >
           <Trash2 className="size-3.5" />
         </Button>
@@ -2218,10 +2268,11 @@ function CategoryToggle({
   onChange(value: TravelerCategory): void
   disabled?: boolean
 }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   const options: Array<{ value: TravelerCategory; label: string }> = [
-    { value: "adult", label: "Adult" },
-    { value: "child", label: "Child" },
-    { value: "infant", label: "Infant" },
+    { value: "adult", label: t.travelerRow.categoryAdult },
+    { value: "child", label: t.travelerRow.categoryChild },
+    { value: "infant", label: t.travelerRow.categoryInfant },
   ]
   return (
     <div className="flex gap-1">
@@ -2273,6 +2324,7 @@ export function CommittedComponentCard({
   bookingSetupSaving?: boolean
   onBookingSetupChange?: (component: TripComponent, setup: ComponentBookingSetup) => void
 }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   const Icon = componentIcon(component)
   const coverUrl = componentThumbnailFor(component)
   const componentName = componentTitleFor(component)
@@ -2312,9 +2364,9 @@ export function CommittedComponentCard({
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium">{componentName}</span>
             {component.status === "failed" ? (
-              <Badge variant="destructive">failed</Badge>
+              <Badge variant="destructive">{t.committedCard.statusFailed}</Badge>
             ) : component.status === "cancelled" ? (
-              <Badge variant="secondary">cancelled</Badge>
+              <Badge variant="secondary">{t.committedCard.statusCancelled}</Badge>
             ) : null}
           </div>
           {(() => {
@@ -2334,12 +2386,12 @@ export function CommittedComponentCard({
           ) : null}
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-xs">
             <Reference
-              label="Booking"
+              label={t.committedCard.bookingLabel}
               value={component.bookingId}
               href={component.bookingId ? `/bookings/${component.bookingId}` : undefined}
             />
-            <Reference label="Order" value={component.orderId} />
-            <Reference label="Payment" value={component.paymentSessionId} />
+            <Reference label={t.committedCard.orderLabel} value={component.orderId} />
+            <Reference label={t.committedCard.paymentLabel} value={component.paymentSessionId} />
           </div>
         </div>
         <div className="flex flex-col items-end gap-1 text-right">
@@ -2357,7 +2409,7 @@ export function CommittedComponentCard({
               size="sm"
               onClick={onRemove}
               disabled={removePending}
-              aria-label="Remove component"
+              aria-label={t.removeComponent}
               className="text-muted-foreground hover:text-destructive"
             >
               {removePending ? (
@@ -2373,10 +2425,8 @@ export function CommittedComponentCard({
         <div className="flex flex-col gap-3 border-t pt-3">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="font-medium text-sm">Booking setup</p>
-              <p className="text-muted-foreground text-xs">
-                Applies to this component's underlying booking.
-              </p>
+              <p className="font-medium text-sm">{t.bookingSetupHeading}</p>
+              <p className="text-muted-foreground text-xs">{t.committedCard.bookingSetupHint}</p>
             </div>
             {bookingSetupSaving ? (
               <Loader2 className="size-4 animate-spin text-muted-foreground" />
@@ -2389,13 +2439,13 @@ export function CommittedComponentCard({
             }
             currency={component.componentCurrency ?? undefined}
             totalAmountCents={component.componentTotalAmountCents ?? undefined}
-            labels={{ heading: "Payment schedule" }}
+            labels={{ heading: t.committedCard.paymentScheduleHeading }}
           />
           <div className="grid gap-2 sm:grid-cols-2">
             <ComponentSetupCheckbox
               id={`${component.id}-contract-document`}
               checked={bookingSetup.generateContractDocument}
-              label="Generate contract"
+              label={t.committedCard.generateContract}
               onCheckedChange={(generateContractDocument) =>
                 onBookingSetupChange?.(component, { ...bookingSetup, generateContractDocument })
               }
@@ -2403,7 +2453,7 @@ export function CommittedComponentCard({
             <ComponentSetupCheckbox
               id={`${component.id}-invoice-document`}
               checked={bookingSetup.generateInvoiceDocument}
-              label="Generate invoice"
+              label={t.committedCard.generateInvoice}
               onCheckedChange={(generateInvoiceDocument) =>
                 onBookingSetupChange?.(component, { ...bookingSetup, generateInvoiceDocument })
               }
@@ -2412,7 +2462,7 @@ export function CommittedComponentCard({
         </div>
       ) : component.bookingId ? (
         <p className="border-t pt-3 text-muted-foreground text-xs">
-          Payment schedule and documents are managed on the booking record.
+          {t.committedCard.committedFooter}
         </p>
       ) : null}
       {(() => {
@@ -2504,20 +2554,19 @@ export function TripPreviewRail({
     [trip?.components],
   )
   const status = envelope?.status
+  const t = useAdminMessages().trips.adminComposer.panels
 
   return (
     <div className="flex flex-col gap-4 rounded-md border bg-muted/10 p-4">
       <div className="flex items-center justify-between">
-        <PreviewLabel>Trip preview</PreviewLabel>
+        <PreviewLabel>{t.tripPreviewLabel}</PreviewLabel>
         <Badge variant="outline" className="text-[10px] capitalize">
           {status ?? "draft"}
         </Badge>
       </div>
 
       {components.length === 0 && pendingCount === 0 ? (
-        <p className="text-muted-foreground text-xs">
-          Configure components on the left to see the trip take shape here.
-        </p>
+        <p className="text-muted-foreground text-xs">{t.previewRail.empty}</p>
       ) : null}
 
       {components.length > 0 ? (
@@ -2532,14 +2581,16 @@ export function TripPreviewRail({
 
       {pendingCount > 0 ? (
         <p className="text-muted-foreground text-xs">
-          {pendingCount} component{pendingCount === 1 ? "" : "s"} not yet added to the trip.
+          {pendingCount === 1
+            ? t.previewRail.pendingComponentsSingular
+            : formatMessage(t.previewRail.pendingComponentsPlural, { count: pendingCount })}
         </p>
       ) : null}
 
       {components.length > 0 ? <CurrencyTotals components={components} /> : null}
 
       <div className="flex items-center justify-between border-t pt-3 text-sm">
-        <PreviewLabel>Payment currency</PreviewLabel>
+        <PreviewLabel>{t.paymentCurrencyLabel}</PreviewLabel>
         <span className="font-medium">{paymentCurrency}</span>
       </div>
 
@@ -2552,7 +2603,7 @@ export function TripPreviewRail({
         return (
           <Alert>
             <AlertTriangle className="size-4" />
-            <AlertTitle>Pricing warnings</AlertTitle>
+            <AlertTitle>{t.pricingWarningsTitle}</AlertTitle>
             <AlertDescription>{warnings.join(", ")}</AlertDescription>
           </Alert>
         )
@@ -2612,17 +2663,18 @@ function PreviewComponentRow({ component }: { component: TripComponent }) {
 }
 
 function BillingPreview({ billing }: { billing: PersonPickerValue }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   const personQuery = usePerson(billing.personId || undefined, {
     enabled: billing.mode === "existing" && Boolean(billing.personId),
   })
   const orgQuery = useOrganization(billing.organizationId ?? undefined, {
     enabled: billing.billTo === "organization" && Boolean(billing.organizationId),
   })
-  const display = resolveBillingDisplay(billing, personQuery.data, orgQuery.data)
+  const display = resolveBillingDisplay(billing, personQuery.data, orgQuery.data, t)
   if (!display.primary && !display.secondary) return null
   return (
     <div className="flex flex-col gap-0.5 border-t pt-3">
-      <PreviewLabel>Billing</PreviewLabel>
+      <PreviewLabel>{t.billingLabel}</PreviewLabel>
       <span className="truncate text-sm">{display.primary || "—"}</span>
       {display.secondary ? (
         <span className="truncate text-muted-foreground text-xs">{display.secondary}</span>
@@ -2638,14 +2690,18 @@ function TravelersPreview({
   travelers: TripTraveler[]
   billingPersonId: string | null
 }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   if (travelers.length === 0) return null
   const leadLocalId =
-    (billingPersonId && travelers.find((t) => t.personId === billingPersonId)?.localId) ||
+    (billingPersonId &&
+      travelers.find((traveler) => traveler.personId === billingPersonId)?.localId) ||
     travelers[0]?.localId ||
     null
   return (
     <div className="flex flex-col gap-1 border-t pt-3">
-      <PreviewLabel>Travelers ({travelers.length})</PreviewLabel>
+      <PreviewLabel>
+        {formatMessage(t.travelersWithCount, { count: travelers.length })}
+      </PreviewLabel>
       <ul className="flex flex-col gap-0.5 text-sm">
         {travelers.map((traveler, idx) => (
           <TravelerPreviewRow
@@ -2669,6 +2725,7 @@ function TravelerPreviewRow({
   index: number
   isLead: boolean
 }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   const personQuery = usePerson(traveler.personId || undefined, {
     enabled: Boolean(traveler.personId),
   })
@@ -2676,18 +2733,22 @@ function TravelerPreviewRow({
     .filter((part) => part.trim().length > 0)
     .join(" ")
     .trim()
-  const name = inlineName || formatPersonName(personQuery.data) || `Traveler ${index + 1}`
+  const name =
+    inlineName ||
+    formatPersonName(personQuery.data) ||
+    formatMessage(t.travelerNumberedFallback, { number: index + 1 })
   return (
     <li className="flex items-center justify-between gap-3">
       <span className="truncate">{name}</span>
       <span className="shrink-0 text-muted-foreground text-xs capitalize">
-        {isLead ? "Lead" : traveler.role}
+        {isLead ? t.leadBadge : traveler.role}
       </span>
     </li>
   )
 }
 
 function CurrencyTotals({ components }: { components: TripComponent[] }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   const buckets = React.useMemo(() => aggregateByCurrency(components), [components])
   if (buckets.length === 0) return null
   return (
@@ -2696,15 +2757,15 @@ function CurrencyTotals({ components }: { components: TripComponent[] }) {
         <div key={bucket.currency} className="flex flex-col gap-1">
           {buckets.length > 1 ? <PreviewLabel>{bucket.currency}</PreviewLabel> : null}
           <div className="flex items-center justify-between text-muted-foreground">
-            <span>Subtotal</span>
+            <span>{t.subtotal}</span>
             <span>{formatMoney(bucket.subtotal, bucket.currency)}</span>
           </div>
           <div className="flex items-center justify-between text-muted-foreground">
-            <span>Tax</span>
+            <span>{t.tax}</span>
             <span>{formatMoney(bucket.tax, bucket.currency)}</span>
           </div>
           <div className="mt-0.5 flex items-center justify-between font-semibold">
-            <span>Total</span>
+            <span>{t.total}</span>
             <span className="text-lg">{formatMoney(bucket.total, bucket.currency)}</span>
           </div>
         </div>
@@ -2749,10 +2810,11 @@ export function PrimaryAction({
   reservePending: boolean
   onReserve(): void
 }) {
+  const t = useAdminMessages().trips.adminComposer.panels
   if (status === "checkout_started" || status === "booked") {
     return (
       <div className="rounded-md border bg-card p-3 text-center text-muted-foreground text-sm">
-        Trip {status === "booked" ? "booked" : "checkout in progress"}.
+        {status === "booked" ? t.primaryAction.tripBooked : t.primaryAction.tripCheckoutInProgress}
       </div>
     )
   }
@@ -2760,7 +2822,7 @@ export function PrimaryAction({
   if (status === "reserved") {
     return (
       <div className="rounded-md border bg-card p-3 text-center text-muted-foreground text-sm">
-        Trip reserved.
+        {t.primaryAction.tripReserved}
       </div>
     )
   }
@@ -2773,7 +2835,7 @@ export function PrimaryAction({
     return (
       <Button disabled className="w-full">
         <Loader2 className="size-4 animate-spin" />
-        Pricing trip…
+        {t.primaryAction.pricingTrip}
       </Button>
     )
   }
@@ -2782,7 +2844,7 @@ export function PrimaryAction({
     return (
       <Button disabled className="w-full">
         <Loader2 className="size-4 animate-spin" />
-        Reserving trip and creating payment link…
+        {t.primaryAction.reservingTrip}
       </Button>
     )
   }
@@ -2794,7 +2856,7 @@ export function PrimaryAction({
   return (
     <Button onClick={onReserve} disabled={isBusy || !canReserve} className="w-full">
       <Check className="size-4" />
-      {status === "failed" ? "Retry reserve" : "Reserve and create payment link"}
+      {status === "failed" ? t.primaryAction.retryReserve : t.primaryAction.reserveAndCreateLink}
     </Button>
   )
 }
@@ -2818,9 +2880,10 @@ function resolveBillingDisplay(
     | { firstName?: string | null; lastName?: string | null; email?: string | null }
     | undefined,
   org: { name?: string | null } | undefined,
+  messages: PanelsMessages,
 ): BillingDisplay {
   if (billing.billTo === "organization" && org?.name) {
-    return { primary: org.name, secondary: "Organization" }
+    return { primary: org.name, secondary: messages.billingPreview.organizationSecondary }
   }
   if (billing.mode === "new") {
     const name = [billing.newPerson.firstName, billing.newPerson.lastName]
@@ -2882,8 +2945,8 @@ function verticalIconFor(kind: PendingVerticalKind) {
   return Wrench
 }
 
-function verticalLabelFor(kind: PendingVerticalKind) {
-  const found = verticals.find((vertical) => vertical.kind === kind)
+function verticalLabelFor(kind: PendingVerticalKind, messages: PanelsMessages) {
+  const found = verticalsFor(messages).find((vertical) => vertical.kind === kind)
   return found?.label ?? kind
 }
 
