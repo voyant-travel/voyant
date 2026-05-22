@@ -1,5 +1,19 @@
 # @voyantjs/plugin-smartbill
 
+## 0.65.0
+
+### Minor Changes
+
+- 19496a4: Add a first-class invoice integrations slot and ship SmartBill invoice UI hooks, helpers, and a reusable panel for displaying provider external-reference state.
+
+### Patch Changes
+
+- @voyantjs/core@0.65.0
+- @voyantjs/finance@0.65.0
+- @voyantjs/finance-react@0.65.0
+- @voyantjs/storage@0.65.0
+- @voyantjs/ui@0.65.0
+
 ## 0.64.1
 
 ### Patch Changes
