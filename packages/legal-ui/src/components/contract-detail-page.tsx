@@ -8,6 +8,7 @@ import {
   useLegalContractAttachments,
   useLegalContractMutation,
   useLegalContractSignatures,
+  useVoyantLegalContext,
 } from "@voyantjs/legal-react"
 import { Badge, Button } from "@voyantjs/ui/components"
 import {
@@ -48,6 +49,19 @@ const statusVariant: Record<
   executed: "default",
   expired: "destructive",
   void: "destructive",
+}
+
+function withApiBaseUrl(baseUrl: string, path: string) {
+  const trimmedBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`
+  return `${trimmedBase}${normalizedPath}`
+}
+
+function getDefaultLegalContractAttachmentDownloadHref(
+  baseUrl: string,
+  attachment: LegalContractAttachmentRecord,
+) {
+  return withApiBaseUrl(baseUrl, `/v1/admin/legal/contracts/attachments/${attachment.id}/download`)
 }
 
 export interface ContractDetailPageProps {
@@ -105,6 +119,7 @@ export function ContractDetailPage({
   resolveSendRecipientEmail,
 }: ContractDetailPageProps) {
   const queryClient = useQueryClient()
+  const { baseUrl } = useVoyantLegalContext()
   const i18n = useLegalUiI18nOrDefault()
   const messages = useLegalUiMessagesOrDefault()
   const f = messages.contractDetailPage
@@ -413,7 +428,10 @@ export function ContractDetailPage({
                       <AttachmentRow
                         key={attachment.id}
                         attachment={attachment}
-                        downloadHref={getAttachmentDownloadHref?.(attachment)}
+                        downloadHref={
+                          getAttachmentDownloadHref?.(attachment) ??
+                          getDefaultLegalContractAttachmentDownloadHref(baseUrl, attachment)
+                        }
                         onEdit={() => {
                           setEditingAttachment(attachment)
                           setAttachOpen(true)

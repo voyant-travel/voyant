@@ -19,6 +19,7 @@ import {
   useInvoiceNoteMutation,
   useInvoiceNotes,
   useInvoicePayments,
+  useVoyantFinanceContext,
 } from "@voyantjs/finance-react"
 import {
   Badge,
@@ -90,8 +91,17 @@ export interface InvoiceDetailPageProps {
   slots?: InvoiceDetailPageSlots
 }
 
-function getDefaultInvoiceAttachmentDownloadHref(attachment: InvoiceAttachmentRecord) {
-  return `/v1/admin/finance/invoice-attachments/${attachment.id}/download`
+function withApiBaseUrl(baseUrl: string, path: string) {
+  const trimmedBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`
+  return `${trimmedBase}${normalizedPath}`
+}
+
+function getDefaultInvoiceAttachmentDownloadHref(
+  baseUrl: string,
+  attachment: InvoiceAttachmentRecord,
+) {
+  return withApiBaseUrl(baseUrl, `/v1/admin/finance/invoice-attachments/${attachment.id}/download`)
 }
 
 export function InvoiceDetailPage({
@@ -110,6 +120,7 @@ export function InvoiceDetailPage({
   renderInvoiceNoteDialog,
   slots,
 }: InvoiceDetailPageProps) {
+  const { baseUrl } = useVoyantFinanceContext()
   const messages = useFinanceUiMessagesOrDefault()
   const [editOpen, setEditOpen] = useState(false)
   const [attachmentOpen, setAttachmentOpen] = useState(false)
@@ -244,7 +255,10 @@ export function InvoiceDetailPage({
           attachments={attachments}
           pending={attachmentsQuery.isPending}
           deletePending={removeAttachment.isPending}
-          getDownloadHref={getAttachmentDownloadHref ?? getDefaultInvoiceAttachmentDownloadHref}
+          getDownloadHref={
+            getAttachmentDownloadHref ??
+            ((attachment) => getDefaultInvoiceAttachmentDownloadHref(baseUrl, attachment))
+          }
           onCreate={() => {
             setEditingAttachment(undefined)
             setAttachmentOpen(true)
