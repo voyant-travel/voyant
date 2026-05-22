@@ -12,6 +12,7 @@ import { availabilityService } from "./service.js"
 import {
   availabilityAggregatesQuerySchema,
   availabilityCloseoutListQuerySchema,
+  availabilityOverviewQuerySchema,
   availabilityRuleListQuerySchema,
   availabilitySlotListQuerySchema,
   availabilityStartTimeListQuerySchema,
@@ -39,6 +40,12 @@ export const availabilityCoreRoutes = new Hono<Env>()
     const query = await parseQuery(c, availabilityAggregatesQuerySchema)
     return c.json({
       data: await availabilityService.getAvailabilityAggregates(c.get("db"), query),
+    })
+  })
+  .get("/overview", async (c) => {
+    const query = await parseQuery(c, availabilityOverviewQuerySchema)
+    return c.json({
+      data: await availabilityService.getAvailabilityOverview(c.get("db"), query),
     })
   })
   .get("/rules", async (c) => {

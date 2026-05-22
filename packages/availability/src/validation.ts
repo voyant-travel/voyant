@@ -104,6 +104,11 @@ export const availabilityAggregatesQuerySchema = z.object({
   to: z.string().datetime().optional(),
 })
 
+export const availabilityOverviewQuerySchema = z.object({
+  productId: z.string().optional(),
+  attentionLimit: z.coerce.number().int().min(1).max(20).default(4),
+})
+
 export const availabilityCloseoutCoreSchema = z.object({
   productId: z.string(),
   slotId: z.string().nullable().optional(),

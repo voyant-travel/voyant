@@ -27,6 +27,11 @@ export interface AvailabilitySlotsListFilters extends PaginationFilters {
   status?: string | undefined
 }
 
+export interface AvailabilityOverviewFilters {
+  productId?: string | undefined
+  attentionLimit?: number | undefined
+}
+
 export interface AvailabilityCloseoutsListFilters extends PaginationFilters {
   productId?: string | undefined
   slotId?: string | undefined
@@ -61,6 +66,8 @@ export const availabilityQueryKeys = {
   slots: () => [...availabilityQueryKeys.all, "slots"] as const,
   slotsList: (filters: AvailabilitySlotsListFilters) =>
     [...availabilityQueryKeys.slots(), "list", filters] as const,
+  overview: (filters: AvailabilityOverviewFilters) =>
+    [...availabilityQueryKeys.all, "overview", filters] as const,
 
   closeouts: () => [...availabilityQueryKeys.all, "closeouts"] as const,
   closeoutsList: (filters: AvailabilityCloseoutsListFilters) =>

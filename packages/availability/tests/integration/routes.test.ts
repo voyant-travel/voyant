@@ -6,6 +6,7 @@ import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import { availabilityRoutes } from "../../src/routes.js"
+import { availabilityPickupPoints, availabilitySlots } from "../../src/schema.js"
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
 const DB_AVAILABLE = !!TEST_DATABASE_URL
@@ -303,6 +304,77 @@ describe.skipIf(!DB_AVAILABLE)("Availability routes", () => {
         method: "GET",
       })
       expect(res.status).toBe(404)
+    })
+  })
+
+  describe("Overview", () => {
+    it("derives overview counts from the full dataset, not the first slots page", async () => {
+      const productWithoutFutureSlotId = newId("products")
+      await db.insert(products).values({
+        id: productWithoutFutureSlotId,
+        name: "No Departures",
+        sellCurrency: "USD",
+      })
+
+      await db.insert(availabilitySlots).values(
+        Array.from({ length: 26 }, (_, index) => ({
+          id: newId("availability_slots"),
+          productId,
+          dateLocal: `2024-01-${String(index + 1).padStart(2, "0")}`,
+          startsAt: new Date(`2024-01-${String(index + 1).padStart(2, "0")}T09:00:00.000Z`),
+          timezone: "Europe/London",
+          status: "closed" as const,
+        })),
+      )
+      await db.insert(availabilitySlots).values([
+        {
+          id: newId("availability_slots"),
+          productId,
+          dateLocal: "2099-06-15",
+          startsAt: new Date("2099-06-15T09:00:00.000Z"),
+          timezone: "Europe/London",
+          status: "open",
+          remainingPax: 8,
+        },
+        {
+          id: newId("availability_slots"),
+          productId,
+          dateLocal: "2099-06-16",
+          startsAt: new Date("2099-06-16T09:00:00.000Z"),
+          timezone: "Europe/London",
+          status: "sold_out",
+          remainingPax: 0,
+        },
+      ])
+      await app.request("/rules", {
+        method: "POST",
+        ...json({
+          productId,
+          timezone: "Europe/London",
+          recurrenceRule: "FREQ=DAILY",
+          maxCapacity: 20,
+        }),
+      })
+      await db.insert(availabilityPickupPoints).values({
+        id: newId("availability_pickup_points"),
+        productId,
+        name: "Hotel Lobby",
+      })
+
+      const res = await app.request("/overview?attentionLimit=10", { method: "GET" })
+      expect(res.status).toBe(200)
+      const body = await res.json()
+
+      expect(body.data.openSlotsCount).toBe(1)
+      expect(body.data.constrainedSlotsCount).toBe(1)
+      expect(body.data.activeRulesCount).toBe(1)
+      expect(body.data.activePickupPointsCount).toBe(1)
+      expect(body.data.constrainedSlots).toHaveLength(1)
+      expect(body.data.constrainedSlots[0].status).toBe("sold_out")
+      expect(body.data.productsWithoutUpcomingDeparturesCount).toBe(1)
+      expect(body.data.productsWithoutUpcomingDepartures).toEqual([
+        { id: productWithoutFutureSlotId, name: "No Departures" },
+      ])
     })
   })
 

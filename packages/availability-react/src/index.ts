@@ -14,6 +14,7 @@ export {
 } from "./provider.js"
 export { availabilityQueryKeys } from "./query-keys.js"
 export {
+  getAvailabilityOverviewQueryOptions,
   getCloseoutsQueryOptions,
   getPickupPointsQueryOptions,
   getProductQueryOptions,

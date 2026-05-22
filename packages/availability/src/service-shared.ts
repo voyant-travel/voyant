@@ -2,6 +2,7 @@ import type { z } from "zod"
 
 import type {
   availabilityCloseoutListQuerySchema,
+  availabilityOverviewQuerySchema,
   availabilityPickupPointListQuerySchema,
   availabilityRuleListQuerySchema,
   availabilitySlotListQuerySchema,
@@ -39,6 +40,7 @@ import type {
 export type AvailabilityRuleListQuery = z.infer<typeof availabilityRuleListQuerySchema>
 export type AvailabilityStartTimeListQuery = z.infer<typeof availabilityStartTimeListQuerySchema>
 export type AvailabilitySlotListQuery = z.infer<typeof availabilitySlotListQuerySchema>
+export type AvailabilityOverviewQuery = z.infer<typeof availabilityOverviewQuerySchema>
 export type AvailabilityCloseoutListQuery = z.infer<typeof availabilityCloseoutListQuerySchema>
 export type AvailabilityPickupPointListQuery = z.infer<
   typeof availabilityPickupPointListQuerySchema
