@@ -7,7 +7,12 @@ import {
   createProductPricingProjectionExtension,
 } from "../src/service-catalog-plane-pricing.js"
 
-const { aggregatePricing, EMPTY_AGGREGATE, firstPositiveMin } = __test__
+const {
+  aggregatePricing,
+  EMPTY_AGGREGATE,
+  firstPositiveMin,
+  isMissingCatalogPricingDependencyError,
+} = __test__
 
 const customerSlice: IndexerSlice = {
   vertical: "products",
@@ -77,6 +82,22 @@ describe("aggregatePricing (kernel)", () => {
     expect(firstPositiveMin([0, -1, 12000, 8000])).toBe(8000)
     expect(firstPositiveMin([0, -1])).toBeNull()
   })
+
+  it("classifies only expected missing schema errors as fixture gaps", () => {
+    expect(isMissingCatalogPricingDependencyError({ code: "42P01" })).toBe(true)
+    expect(isMissingCatalogPricingDependencyError({ code: "42703" })).toBe(true)
+    expect(
+      isMissingCatalogPricingDependencyError({
+        message: 'relation "availability_slots" does not exist',
+      }),
+    ).toBe(true)
+    expect(isMissingCatalogPricingDependencyError({ message: "no such table: option_units" })).toBe(
+      true,
+    )
+
+    expect(isMissingCatalogPricingDependencyError({ code: "53300" })).toBe(false)
+    expect(isMissingCatalogPricingDependencyError(new Error("connection terminated"))).toBe(false)
+  })
 })
 
 describe("createProductPricingProjectionExtension", () => {
@@ -117,5 +138,36 @@ describe("createProductPricingProjectionExtension", () => {
     })
     const out = await ext.project({} as AnyDrizzleDb, "prod_fallback", customerSlice)
     expect(out.get("priceFromAmountCents")).toBe(18000)
+  })
+
+  it("falls back to row pricing only for expected missing-schema query errors", async () => {
+    const ext = createProductPricingProjectionExtension({
+      loadProductPricing: async () => ({ sellAmountCents: 18000, sellCurrency: "USD" }),
+    })
+    const db = {
+      execute: async () => {
+        throw Object.assign(new Error('relation "availability_slots" does not exist'), {
+          code: "42P01",
+        })
+      },
+    } as AnyDrizzleDb
+
+    const out = await ext.project(db, "prod_fixture", customerSlice)
+    expect(out.get("priceFromAmountCents")).toBe(18000)
+  })
+
+  it("propagates unexpected rate-plan query errors", async () => {
+    const ext = createProductPricingProjectionExtension({
+      loadProductPricing: async () => ({ sellAmountCents: 18000, sellCurrency: "USD" }),
+    })
+    const db = {
+      execute: async () => {
+        throw Object.assign(new Error("connection terminated"), { code: "53300" })
+      },
+    } as AnyDrizzleDb
+
+    await expect(ext.project(db, "prod_error", customerSlice)).rejects.toThrow(
+      "connection terminated",
+    )
   })
 })

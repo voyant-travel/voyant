@@ -184,11 +184,14 @@ async function defaultLoadRatePlanPricing(
       roomPrices: roomPrice == null ? [] : [roomPrice],
       basePrices: basePrice == null ? [] : [basePrice],
     }
-  } catch {
+  } catch (error) {
     // Slim test fixtures may omit availability_slots/product_options/
     // option_units. Keep reindex failure-isolated and fall back to the
-    // product row instead of failing the whole document build.
-    return { roomPrices: [], basePrices: [] }
+    // product row only for those expected schema gaps.
+    if (isMissingCatalogPricingDependencyError(error)) {
+      return { roomPrices: [], basePrices: [] }
+    }
+    throw error
   }
 }
 
@@ -360,6 +363,19 @@ function readNullableInt(row: unknown, key: string): number | null {
   return null
 }
 
+function isMissingCatalogPricingDependencyError(error: unknown): boolean {
+  const err = error as { code?: unknown; message?: unknown } | null | undefined
+  const code = typeof err?.code === "string" ? err.code : null
+  if (code === "42P01" || code === "42703") return true
+
+  const message = typeof err?.message === "string" ? err.message.toLowerCase() : ""
+  return (
+    (message.includes("relation") && message.includes("does not exist")) ||
+    message.includes("no such table") ||
+    message.includes("no such column")
+  )
+}
+
 function toProjectionMap(a: PricingAggregate): ReadonlyMap<string, unknown> {
   return new Map<string, unknown>([
     ["priceFromAmountCents", a.priceFromAmountCents],
@@ -373,4 +389,5 @@ export const __test__ = {
   aggregatePricing,
   EMPTY_AGGREGATE,
   firstPositiveMin,
+  isMissingCatalogPricingDependencyError,
 }
