@@ -1,5 +1,20 @@
 # @voyantjs/finance
 
+## 0.77.1
+
+### Patch Changes
+
+- 574684d: Derive booking-create pax from supplied travelers when pax is omitted, while preserving explicit pax values.
+- Updated dependencies [574684d]
+  - @voyantjs/action-ledger@0.77.1
+  - @voyantjs/bookings@0.77.1
+  - @voyantjs/core@0.77.1
+  - @voyantjs/db@0.77.1
+  - @voyantjs/hono@0.77.1
+  - @voyantjs/products@0.77.1
+  - @voyantjs/storage@0.77.1
+  - @voyantjs/utils@0.77.1
+
 ## 0.77.0
 
 ### Minor Changes
