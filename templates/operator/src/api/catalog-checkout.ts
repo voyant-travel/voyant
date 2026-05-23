@@ -1648,7 +1648,6 @@ async function startBankTransferCheckout(
 
   const proformaInput: CreateInvoiceFromBookingInput = {
     bookingId: booking.id,
-    invoiceNumber: `PRO-${booking.bookingNumber}`,
     issueDate,
     dueDate,
     invoiceType: "proforma",
@@ -2048,7 +2047,6 @@ function buildCheckoutFinalizeDeps(
         db,
         {
           bookingId,
-          invoiceNumber: `INV-${booking.bookingNumber}`,
           issueDate: today,
           dueDate,
           invoiceType: "invoice",
@@ -2294,10 +2292,9 @@ async function dispatchCheckoutFinalize(
  * dashboard's "Rerun" / "Resume" buttons work.
  *
  * The runner is declared `idempotency: "unsafe"` because a fresh
- * rerun would attempt to re-issue the invoice (which collides on
- * `INV-${bookingNumber}`). The dashboard requires a confirm dialog
- * before sending `confirm: true`. The Resume path is always safe —
- * it skips already-completed steps.
+ * rerun would attempt to issue another invoice number. The dashboard
+ * requires a confirm dialog before sending `confirm: true`. The
+ * Resume path is always safe — it skips already-completed steps.
  */
 export function createCatalogCheckoutBundle(opts: {
   workflowRunnerRegistry?: WorkflowRunnerRegistry
@@ -2368,7 +2365,7 @@ export function createCatalogCheckoutBundle(opts: {
           name: "checkout-finalize",
           idempotency: "unsafe",
           description:
-            "Confirms the booking and issues the final invoice. A fresh rerun re-issues the invoice (collides on existing INV- numbers); use Resume to retry from a failed step.",
+            "Confirms the booking and issues the final invoice. A fresh rerun issues another invoice number; use Resume to retry from a failed step.",
           rerun: async (rawInput, ctx) => {
             const input = rawInput as CheckoutFinalizeInput | null
             if (!input?.bookingId) {
