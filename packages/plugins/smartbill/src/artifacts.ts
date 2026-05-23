@@ -52,6 +52,15 @@ export interface PersistSmartbillInvoiceArtifactInput {
   result: SmartbillInvoiceResponse
 }
 
+export interface RecordSmartbillInvoiceArtifactFailureInput {
+  runtime: SmartbillArtifactPersistenceRuntime
+  event: VoyantInvoiceEvent
+  documentType: SmartbillDocumentType
+  body: SmartbillInvoiceBody
+  result: SmartbillInvoiceResponse
+  error: unknown
+}
+
 export type SmartbillExternalRef = Pick<
   InvoiceExternalRef,
   "id" | "invoiceId" | "externalId" | "externalNumber" | "externalUrl" | "metadata"
@@ -66,6 +75,27 @@ export interface RetrySmartbillInvoiceArtifactInput {
 
 type InvoiceAttachmentRecord = Awaited<ReturnType<typeof financeService.createInvoiceAttachment>>
 type InvoiceRenditionRecord = Awaited<ReturnType<typeof financeService.createInvoiceRendition>>
+
+export type SmartbillPdfPersistStage =
+  | "attachment_lookup"
+  | "viewInvoicePdf"
+  | "viewEstimatePdf"
+  | "storage_upload"
+  | "rendition_insert"
+  | "attachment_insert"
+  | "unknown"
+
+export class SmartbillPdfPersistError extends Error {
+  readonly stage: SmartbillPdfPersistStage
+  readonly originalError: unknown
+
+  constructor(stage: SmartbillPdfPersistStage, error: unknown) {
+    super(`SmartBill PDF persist failed at ${stage}: ${errorMessage(error)}`)
+    this.name = "SmartbillPdfPersistError"
+    this.stage = stage
+    this.originalError = error
+  }
+}
 
 export type SmartbillArtifactPersistenceResult =
   | {
@@ -129,6 +159,74 @@ function metadataString(metadata: Record<string, unknown> | null, key: string) {
   return typeof value === "string" && value.length > 0 ? value : null
 }
 
+function errorMessage(error: unknown) {
+  if (error instanceof SmartbillPdfPersistError) return errorMessage(error.originalError)
+  if (error instanceof Error) return error.message
+  return String(error)
+}
+
+function errorStage(error: unknown): SmartbillPdfPersistStage {
+  return error instanceof SmartbillPdfPersistError ? error.stage : "unknown"
+}
+
+async function withPdfPersistStage<T>(
+  stage: SmartbillPdfPersistStage,
+  operation: () => Promise<T>,
+) {
+  try {
+    return await operation()
+  } catch (error) {
+    throw new SmartbillPdfPersistError(stage, error)
+  }
+}
+
+function buildSmartbillExternalRefMetadata({
+  body,
+  result,
+  documentType,
+  extra,
+}: {
+  body: SmartbillInvoiceBody
+  result: SmartbillInvoiceResponse
+  documentType: SmartbillDocumentType
+  extra?: Record<string, unknown>
+}) {
+  return {
+    companyVatCode: body.companyVatCode,
+    seriesName: body.seriesName,
+    series: result.series ?? body.seriesName,
+    number: result.number ?? null,
+    documentType,
+    ...extra,
+  }
+}
+
+async function registerSmartbillExternalRef(
+  db: PostgresJsDatabase,
+  invoiceId: string,
+  body: SmartbillInvoiceBody,
+  result: SmartbillInvoiceResponse,
+  documentType: SmartbillDocumentType,
+  metadataExtra?: Record<string, unknown>,
+) {
+  const number = result.number
+  return financeService.registerInvoiceExternalRef(db, invoiceId, {
+    provider: "smartbill",
+    externalId: number ?? null,
+    externalNumber: number ?? null,
+    externalUrl: result.url ?? null,
+    status: result.errorText ? "error" : "issued",
+    syncedAt: new Date().toISOString(),
+    syncError: result.errorText ?? null,
+    metadata: buildSmartbillExternalRefMetadata({
+      body,
+      result,
+      documentType,
+      extra: metadataExtra,
+    }),
+  })
+}
+
 export async function persistSmartbillInvoiceArtifact({
   runtime,
   client,
@@ -146,22 +244,7 @@ export async function persistSmartbillInvoiceArtifact({
   const seriesName = result.series ?? body.seriesName
   const number = result.number
 
-  const externalRef = await financeService.registerInvoiceExternalRef(db, event.id, {
-    provider: "smartbill",
-    externalId: number ?? null,
-    externalNumber: number ?? null,
-    externalUrl: result.url ?? null,
-    status: result.errorText ? "error" : "issued",
-    syncedAt: new Date().toISOString(),
-    syncError: result.errorText ?? null,
-    metadata: {
-      companyVatCode: body.companyVatCode,
-      seriesName: body.seriesName,
-      series: seriesName,
-      number: number ?? null,
-      documentType,
-    },
-  })
+  const externalRef = await registerSmartbillExternalRef(db, event.id, body, result, documentType)
   if (!externalRef) return { status: "skipped" as const, reason: "missing_invoice" as const }
 
   const storage = await resolveMaybe(runtime.documentStorage, context)
@@ -169,7 +252,7 @@ export async function persistSmartbillInvoiceArtifact({
   if (!number) return { status: "registered_ref" as const, reason: "missing_number" as const }
 
   const keyPrefix = await resolveMaybe(runtime.documentStorageKeyPrefix, context)
-  return persistSmartbillPdfArtifact({
+  const persisted = await persistSmartbillPdfArtifact({
     db,
     storage,
     client,
@@ -181,6 +264,42 @@ export async function persistSmartbillInvoiceArtifact({
     language: body.language ?? null,
     keyPrefix,
   })
+
+  if (persisted.status === "persisted" || persisted.status === "already_exists") {
+    await registerSmartbillExternalRef(db, event.id, body, result, documentType, {
+      pdfPersistStatus: "ready",
+      pdfPersistedAt: new Date().toISOString(),
+      pdfStorageKey: persisted.attachment?.storageKey ?? null,
+      pdfPersistError: null,
+      pdfPersistStage: null,
+    })
+  }
+
+  return persisted
+}
+
+export async function recordSmartbillInvoiceArtifactFailure({
+  runtime,
+  event,
+  documentType,
+  body,
+  result,
+  error,
+}: RecordSmartbillInvoiceArtifactFailureInput): Promise<SmartbillArtifactPersistenceResult> {
+  if (!runtime.db) return { status: "skipped" as const, reason: "missing_db" as const }
+
+  const context: SmartbillArtifactStorageContext = { event, documentType, body, result }
+  const db = await resolveMaybe(runtime.db, context)
+  if (!db) return { status: "skipped" as const, reason: "missing_db" as const }
+
+  const externalRef = await registerSmartbillExternalRef(db, event.id, body, result, documentType, {
+    pdfPersistStatus: "failed",
+    pdfPersistError: errorMessage(error),
+    pdfPersistStage: errorStage(error),
+    pdfPersistedAt: null,
+  })
+  if (!externalRef) return { status: "skipped" as const, reason: "missing_invoice" as const }
+  return { status: "registered_ref" as const }
 }
 
 export async function retrySmartbillInvoiceArtifact({
@@ -229,18 +348,57 @@ export async function retrySmartbillInvoiceArtifact({
   if (!storage) return { status: "skipped" as const, reason: "missing_document_storage" as const }
 
   const keyPrefix = await resolveMaybe(runtime.documentStorageKeyPrefix, context)
-  return persistSmartbillPdfArtifact({
-    db,
-    storage,
-    client,
-    invoiceId: externalRef.invoiceId,
-    documentType,
-    companyVatCode,
-    seriesName,
-    number,
-    language: metadataString(metadata, "language"),
-    keyPrefix,
-  })
+  const result = context.result
+  try {
+    const persisted = await persistSmartbillPdfArtifact({
+      db,
+      storage,
+      client,
+      invoiceId: externalRef.invoiceId,
+      documentType,
+      companyVatCode,
+      seriesName,
+      number,
+      language: metadataString(metadata, "language"),
+      keyPrefix,
+    })
+
+    if (persisted.status === "persisted" || persisted.status === "already_exists") {
+      await registerSmartbillExternalRef(
+        db,
+        externalRef.invoiceId,
+        context.body,
+        result,
+        documentType,
+        {
+          ...(metadata ?? {}),
+          pdfPersistStatus: "ready",
+          pdfPersistedAt: new Date().toISOString(),
+          pdfStorageKey: persisted.attachment?.storageKey ?? null,
+          pdfPersistError: null,
+          pdfPersistStage: null,
+        },
+      )
+    }
+
+    return persisted
+  } catch (error) {
+    await registerSmartbillExternalRef(
+      db,
+      externalRef.invoiceId,
+      context.body,
+      result,
+      documentType,
+      {
+        ...(metadata ?? {}),
+        pdfPersistStatus: "failed",
+        pdfPersistError: errorMessage(error),
+        pdfPersistStage: errorStage(error),
+        pdfPersistedAt: null,
+      },
+    )
+    throw error
+  }
 }
 
 async function persistSmartbillPdfArtifact({
@@ -266,7 +424,9 @@ async function persistSmartbillPdfArtifact({
   language?: string | null
   keyPrefix?: string
 }): Promise<SmartbillArtifactPersistenceResult> {
-  const existingAttachments = await financeService.listInvoiceAttachments(db, invoiceId)
+  const existingAttachments = await withPdfPersistStage("attachment_lookup", () =>
+    financeService.listInvoiceAttachments(db, invoiceId),
+  )
   const existingSmartbillAttachment = existingAttachments.find(
     (attachment) => attachment.kind === SMARTBILL_ATTACHMENT_KIND,
   )
@@ -276,25 +436,31 @@ async function persistSmartbillPdfArtifact({
 
   const pdf =
     documentType === "proforma"
-      ? await client.viewEstimatePdf(companyVatCode, seriesName, number)
-      : await client.viewInvoicePdf(companyVatCode, seriesName, number)
+      ? await withPdfPersistStage("viewEstimatePdf", () =>
+          client.viewEstimatePdf(companyVatCode, seriesName, number),
+        )
+      : await withPdfPersistStage("viewInvoicePdf", () =>
+          client.viewInvoicePdf(companyVatCode, seriesName, number),
+        )
 
   const defaultPrefix = `invoices/${invoiceId}/smartbill`
   const resolvedKeyPrefix = keyPrefix ?? defaultPrefix
   const key = `${resolvedKeyPrefix.replace(/\/$/, "")}/${documentType}-${sanitizeKeyPart(seriesName)}-${sanitizeKeyPart(number)}.pdf`
   const contentType = pdf.contentType || "application/pdf"
   const checksum = await sha256(pdf.bytes)
-  const uploaded = await storage.upload(pdf.bytes, {
-    key,
-    contentType,
-    metadata: {
-      provider: "smartbill",
-      documentType,
-      invoiceId,
-      seriesName,
-      number,
-    },
-  })
+  const uploaded = await withPdfPersistStage("storage_upload", () =>
+    storage.upload(pdf.bytes, {
+      key,
+      contentType,
+      metadata: {
+        provider: "smartbill",
+        documentType,
+        invoiceId,
+        seriesName,
+        number,
+      },
+    }),
+  )
 
   const commonMetadata = {
     provider: "smartbill",
@@ -306,29 +472,33 @@ async function persistSmartbillPdfArtifact({
     ...(uploaded.url ? { url: uploaded.url } : {}),
   }
 
-  const rendition = await financeService.createInvoiceRendition(db, invoiceId, {
-    format: "pdf",
-    status: "ready",
-    storageKey: uploaded.key,
-    fileSize: pdf.bytes.byteLength,
-    checksum,
-    language: language ?? null,
-    generatedAt: new Date().toISOString(),
-    metadata: commonMetadata,
-  })
+  const rendition = await withPdfPersistStage("rendition_insert", () =>
+    financeService.createInvoiceRendition(db, invoiceId, {
+      format: "pdf",
+      status: "ready",
+      storageKey: uploaded.key,
+      fileSize: pdf.bytes.byteLength,
+      checksum,
+      language: language ?? null,
+      generatedAt: new Date().toISOString(),
+      metadata: commonMetadata,
+    }),
+  )
 
-  const attachment = await financeService.createInvoiceAttachment(db, invoiceId, {
-    kind: SMARTBILL_ATTACHMENT_KIND,
-    name: smartbillAttachmentName(documentType, seriesName, number),
-    mimeType: contentType,
-    fileSize: pdf.bytes.byteLength,
-    storageKey: uploaded.key,
-    checksum,
-    metadata: {
-      ...commonMetadata,
-      renditionId: rendition?.id ?? null,
-    },
-  })
+  const attachment = await withPdfPersistStage("attachment_insert", () =>
+    financeService.createInvoiceAttachment(db, invoiceId, {
+      kind: SMARTBILL_ATTACHMENT_KIND,
+      name: smartbillAttachmentName(documentType, seriesName, number),
+      mimeType: contentType,
+      fileSize: pdf.bytes.byteLength,
+      storageKey: uploaded.key,
+      checksum,
+      metadata: {
+        ...commonMetadata,
+        renditionId: rendition?.id ?? null,
+      },
+    }),
+  )
 
   return { status: "persisted" as const, rendition, attachment }
 }

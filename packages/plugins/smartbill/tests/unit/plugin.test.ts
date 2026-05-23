@@ -106,7 +106,10 @@ beforeEach(() => {
   })
   financeServiceMock.listInvoiceAttachments.mockResolvedValue([])
   financeServiceMock.createInvoiceRendition.mockResolvedValue({ id: "invr_1" })
-  financeServiceMock.createInvoiceAttachment.mockResolvedValue({ id: "inva_1" })
+  financeServiceMock.createInvoiceAttachment.mockResolvedValue({
+    id: "inva_1",
+    storageKey: "invoices/inv_123/smartbill/invoice-A-1.pdf",
+  })
 })
 
 describe("smartbillPlugin structure", () => {
@@ -579,6 +582,18 @@ describe("smartbillPlugin — invoice PDF artifacts", () => {
         status: "issued",
       }),
     )
+    expect(financeServiceMock.registerInvoiceExternalRef).toHaveBeenCalledWith(
+      expect.anything(),
+      "inv_123",
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          pdfPersistStatus: "ready",
+          pdfStorageKey: "invoices/inv_123/smartbill/invoice-A-1.pdf",
+          pdfPersistError: null,
+          pdfPersistStage: null,
+        }),
+      }),
+    )
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(String(fetchMock.mock.calls[1]![0])).toContain("/invoice/pdf")
     expect(upload).toHaveBeenCalledWith(
@@ -602,6 +617,62 @@ describe("smartbillPlugin — invoice PDF artifacts", () => {
         name: "SmartBill invoice A-1.pdf",
         storageKey: "invoices/inv_123/smartbill/invoice-A-1.pdf",
       }),
+    )
+  })
+
+  it("records PDF persistence failures on the SmartBill external ref", async () => {
+    const fetchMock = vi
+      .fn<SmartbillFetch>()
+      .mockResolvedValueOnce(jsonResponse(200, { ...okEnvelope, number: "1", series: "A" }))
+      .mockResolvedValueOnce(textResponse(503, "pdf unavailable"))
+    const logger = makeLogger()
+    const plugin = smartbillPlugin({
+      ...baseOptions,
+      fetch: fetchMock,
+      logger,
+      artifacts: {
+        db: {} as never,
+        documentStorage: {
+          name: "test-storage",
+          upload: vi.fn(),
+          delete: vi.fn(),
+          signedUrl: vi.fn(),
+          get: vi.fn(),
+        },
+      },
+    })
+    const handler = subscriberFor(plugin, "invoice.issued").handler
+
+    await handler(
+      eventEnvelope({
+        id: "inv_pdf_fail",
+        clientName: "Test SRL",
+        currency: "RON",
+        lineItems: [{ name: "Tour", quantity: 1, unitPrice: 50000 }],
+      }),
+    )
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(financeServiceMock.registerInvoiceExternalRef).toHaveBeenCalledWith(
+      expect.anything(),
+      "inv_pdf_fail",
+      expect.objectContaining({
+        provider: "smartbill",
+        externalNumber: "1",
+        status: "issued",
+        metadata: expect.objectContaining({
+          pdfPersistStatus: "failed",
+          pdfPersistStage: "viewInvoicePdf",
+          pdfPersistError: expect.stringContaining("503"),
+          pdfPersistedAt: null,
+        }),
+      }),
+    )
+    expect(financeServiceMock.createInvoiceRendition).not.toHaveBeenCalled()
+    expect(financeServiceMock.createInvoiceAttachment).not.toHaveBeenCalled()
+    expect(logger.error).toHaveBeenCalledWith(
+      "[smartbill] artifact persistence failed for inv_pdf_fail",
+      expect.any(Error),
     )
   })
 

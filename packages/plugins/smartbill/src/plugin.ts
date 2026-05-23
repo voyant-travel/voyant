@@ -4,6 +4,7 @@ import { ZodError } from "zod"
 
 import {
   persistSmartbillInvoiceArtifact,
+  recordSmartbillInvoiceArtifactFailure,
   retrySmartbillInvoiceArtifact,
   type SmartbillArtifactPersistenceOptions,
   type SmartbillArtifactStorageContext,
@@ -172,6 +173,21 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
       }
     } catch (err) {
       logger.error(`[smartbill] artifact persistence failed for ${event.id}`, err)
+      try {
+        await recordSmartbillInvoiceArtifactFailure({
+          runtime: artifacts,
+          event,
+          documentType,
+          body,
+          result,
+          error: err,
+        })
+      } catch (recordError) {
+        logger.error(
+          `[smartbill] artifact failure external-ref update failed for ${event.id}`,
+          recordError,
+        )
+      }
     }
   }
 
