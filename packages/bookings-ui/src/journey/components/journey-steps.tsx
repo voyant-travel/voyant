@@ -21,6 +21,7 @@ import { Textarea } from "@voyantjs/ui/components/textarea"
 import { Loader2 } from "lucide-react"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import {
+  canCopyBillingContactToTraveler,
   type Draft,
   patchBilling,
   patchConfigure,
@@ -827,7 +828,7 @@ function TravelerCard({
   // traveler (the common B2C case). Doesn't touch travel-document
   // fields since those are personal to each traveler.
   const billingContact = draft.billing.contact
-  const canCopyFromBilling = Boolean(billingContact.firstName || billingContact.email)
+  const canCopyFromBilling = canCopyBillingContactToTraveler(billingContact)
   const copyFromBilling = () => {
     updateTraveler(draft, setDraft, idx, {
       firstName: billingContact.firstName,
