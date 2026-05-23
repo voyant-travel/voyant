@@ -28,6 +28,7 @@ export const successEnvelope = z.object({ success: z.boolean() })
 
 export const invoiceStatusSchema = z.enum([
   "draft",
+  "pending_external_allocation",
   "sent",
   "partially_paid",
   "paid",

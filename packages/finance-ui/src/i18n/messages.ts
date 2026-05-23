@@ -6,6 +6,7 @@ import type {
 
 export const invoiceStatuses = [
   "draft",
+  "pending_external_allocation",
   "sent",
   "partially_paid",
   "paid",

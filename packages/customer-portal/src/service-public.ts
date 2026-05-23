@@ -575,7 +575,14 @@ function selectBookingSummaryProductTitle(
 function deriveBookingSummaryPaymentStatus(
   invoicesForBooking: Array<{
     invoiceType: "invoice" | "proforma" | "credit_note"
-    status: "draft" | "sent" | "partially_paid" | "paid" | "overdue" | "void"
+    status:
+      | "draft"
+      | "pending_external_allocation"
+      | "sent"
+      | "partially_paid"
+      | "paid"
+      | "overdue"
+      | "void"
     paidCents: number
     balanceDueCents: number
   }>,

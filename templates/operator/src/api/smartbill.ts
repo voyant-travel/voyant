@@ -40,6 +40,7 @@ type InvoiceIssuedPayload = {
   invoiceId?: string
   invoiceNumber?: string
   invoiceType?: "invoice" | "proforma" | "credit_note"
+  externalAllocationRequired?: boolean
 }
 
 type SmartbillRuntime = {
@@ -192,6 +193,12 @@ async function syncIssuedInvoiceWithDb(
       },
     })
 
+    if (result.number && !result.errorText) {
+      await financeService.applyExternalInvoiceAllocation(db, invoiceId, {
+        invoiceNumber: formatExternalInvoiceNumber(result.series ?? body.seriesName, result.number),
+      })
+    }
+
     console.info(
       `[smartbill] ${documentType} created: ${result.series ?? body.seriesName}-${result.number ?? "unknown"} for ${invoiceId}`,
     )
@@ -339,6 +346,10 @@ async function buildSmartbillInvoiceBody(
     }),
   }
 
+  if (invoice.status === "pending_external_allocation") {
+    body.number = ""
+  }
+
   if (runtime.art311SpecialRegime) {
     body.mentions = "Regimul special de taxare - agentie de turism (Art. 311 Cod Fiscal)"
   }
@@ -482,6 +493,13 @@ function centsToMajor(cents: number) {
 
 function nonEmpty(value: unknown): string | undefined {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined
+}
+
+function formatExternalInvoiceNumber(seriesName: string | undefined, number: string) {
+  const trimmedNumber = number.trim()
+  const trimmedSeries = seriesName?.trim()
+  if (!trimmedSeries || trimmedNumber.startsWith(`${trimmedSeries}-`)) return trimmedNumber
+  return `${trimmedSeries}-${trimmedNumber}`
 }
 
 function parseBoolean(value: unknown): boolean {

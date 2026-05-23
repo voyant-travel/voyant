@@ -129,6 +129,7 @@ function buildSmartbillInvoiceBody(
   }
 
   if (event.isDraft === true) body.isDraft = true
+  if (event.externalAllocationRequired === true) body.number = ""
   if (typeof event.dueDate === "string") body.dueDate = event.dueDate
   if (typeof event.issueDate === "string") body.issueDate = event.issueDate
   if (typeof event.deliveryDate === "string") body.deliveryDate = event.deliveryDate

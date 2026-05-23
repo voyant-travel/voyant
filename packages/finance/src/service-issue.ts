@@ -8,7 +8,7 @@ import { asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { type InvoiceFxOptions, resolveInvoiceFxContext } from "./invoice-fx.js"
-import { invoiceLineItems, invoices, payments } from "./schema.js"
+import { invoiceLineItems, invoiceNumberSeries, invoices, payments } from "./schema.js"
 import {
   buildInvoiceIssuedActionLedgerInput,
   type CreateInvoiceFromBookingInput,
@@ -64,6 +64,11 @@ export interface InvoiceIssuedEvent {
   bookingNumber?: string | null
   issueDate?: string
   dueDate?: string
+  externalAllocationRequired?: boolean
+  externalProvider?: string | null
+  externalConfigKey?: string | null
+  externalSeriesId?: string | null
+  externalPlaceholderNumber?: string | null
 }
 
 export interface InvoiceIssuedLineItem {
@@ -92,11 +97,12 @@ export async function issueInvoiceFromBooking(
 ) {
   const draft = await financeService.createInvoiceFromBooking(db, input, bookingData)
   if (!draft) return null
+  const status = draft.status === "pending_external_allocation" ? draft.status : "sent"
 
   const updateIssuedInvoice = (writer: PostgresJsDatabase) =>
     writer
       .update(invoices)
-      .set({ status: "sent", updatedAt: new Date() })
+      .set({ status, updatedAt: new Date() })
       .where(eq(invoices.id, draft.id))
       .returning()
 
@@ -139,11 +145,12 @@ export async function issueProformaFromBooking(
 ) {
   const draft = await financeService.createInvoiceFromBooking(db, input, bookingData)
   if (!draft) return null
+  const status = draft.status === "pending_external_allocation" ? draft.status : "sent"
 
   const updateIssuedInvoice = (writer: PostgresJsDatabase) =>
     writer
       .update(invoices)
-      .set({ invoiceType: "proforma", status: "sent", updatedAt: new Date() })
+      .set({ invoiceType: "proforma", status, updatedAt: new Date() })
       .where(eq(invoices.id, draft.id))
       .returning()
 
@@ -182,6 +189,14 @@ async function emitIssued(
   const [booking] = invoice.bookingId
     ? await db.select().from(bookings).where(eq(bookings.id, invoice.bookingId)).limit(1)
     : []
+  const [series] =
+    invoice.seriesId && invoice.status === "pending_external_allocation"
+      ? await db
+          .select()
+          .from(invoiceNumberSeries)
+          .where(eq(invoiceNumberSeries.id, invoice.seriesId))
+          .limit(1)
+      : []
   const lines = await db
     .select()
     .from(invoiceLineItems)
@@ -215,6 +230,13 @@ async function emitIssued(
     bookingNumber: booking?.bookingNumber ?? null,
     issueDate: toDateString(invoice.issueDate),
     dueDate: toDateString(invoice.dueDate),
+  }
+  if (series?.externalProvider) {
+    payload.externalAllocationRequired = true
+    payload.externalProvider = series.externalProvider
+    payload.externalConfigKey = series.externalConfigKey
+    payload.externalSeriesId = series.id
+    payload.externalPlaceholderNumber = invoice.invoiceNumber
   }
   const fx = await resolveInvoiceFxContext(db, invoice, runtime)
   if (fx) Object.assign(payload, fx)

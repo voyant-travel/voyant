@@ -101,7 +101,8 @@ export const invoiceListQuerySchema = z.object({
 })
 export const invoiceFromBookingSchema = z.object({
   bookingId: z.string().min(1),
-  invoiceNumber: z.string().min(1).max(50),
+  invoiceNumber: z.string().min(1).max(50).optional(),
+  seriesId: z.string().min(1).optional(),
   issueDate: z.string().min(1),
   dueDate: z.string().min(1),
   notes: z.string().optional().nullable(),
@@ -175,6 +176,9 @@ const invoiceNumberSeriesCoreSchema = z.object({
   resetStrategy: invoiceNumberResetStrategySchema.default("never"),
   resetAt: z.string().optional().nullable(),
   scope: invoiceNumberSeriesScopeSchema.default("invoice"),
+  isDefault: z.boolean().default(false),
+  externalProvider: z.string().min(1).max(100).optional().nullable(),
+  externalConfigKey: z.string().min(1).max(100).optional().nullable(),
   active: z.boolean().default(true),
 })
 export const insertInvoiceNumberSeriesSchema = invoiceNumberSeriesCoreSchema

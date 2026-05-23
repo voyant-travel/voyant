@@ -5,7 +5,7 @@ import { Hono } from "hono"
 import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, type FinanceRouteRuntime } from "./route-runtime.js"
 import type { publicFinanceRoutes } from "./routes-public.js"
 import type { Env } from "./routes-shared.js"
-import { financeService, PaymentValidationError } from "./service.js"
+import { financeService, InvoiceNumberAllocationError, PaymentValidationError } from "./service.js"
 import { VoucherServiceError } from "./service-vouchers.js"
 import {
   agingReportQuerySchema,
@@ -962,35 +962,46 @@ export const financeRoutes = new Hono<Env>()
     const issuer =
       input.invoiceType === "proforma" ? issueProformaFromBooking : issueInvoiceFromBooking
 
-    const row = await issuer(
-      db,
-      input,
-      {
-        booking: {
-          id: booking.id,
-          bookingNumber: booking.bookingNumber,
-          personId: booking.personId,
-          organizationId: booking.organizationId,
-          sellCurrency: booking.sellCurrency,
-          baseCurrency: booking.baseCurrency,
-          fxRateSetId: null,
-          sellAmountCents: booking.sellAmountCents,
-          baseSellAmountCents: booking.baseSellAmountCents,
+    let row: Awaited<ReturnType<typeof issuer>>
+    try {
+      row = await issuer(
+        db,
+        input,
+        {
+          booking: {
+            id: booking.id,
+            bookingNumber: booking.bookingNumber,
+            personId: booking.personId,
+            organizationId: booking.organizationId,
+            sellCurrency: booking.sellCurrency,
+            baseCurrency: booking.baseCurrency,
+            fxRateSetId: null,
+            sellAmountCents: booking.sellAmountCents,
+            baseSellAmountCents: booking.baseSellAmountCents,
+          },
+          items: items.map((item) => ({
+            id: item.id,
+            title: item.title,
+            quantity: item.quantity,
+            unitSellAmountCents: item.unitSellAmountCents,
+            totalSellAmountCents: item.totalSellAmountCents,
+          })),
         },
-        items: items.map((item) => ({
-          id: item.id,
-          title: item.title,
-          quantity: item.quantity,
-          unitSellAmountCents: item.unitSellAmountCents,
-          totalSellAmountCents: item.totalSellAmountCents,
-        })),
-      },
-      {
-        eventBus: runtime?.eventBus,
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: "finance.invoice.from_booking.route",
-      },
-    )
+        {
+          eventBus: runtime?.eventBus,
+          actionLedgerContext: getActionLedgerRequestContext(c),
+          actionLedgerAuthorizationSource: "finance.invoice.from_booking.route",
+        },
+      )
+    } catch (error) {
+      if (error instanceof InvoiceNumberAllocationError) {
+        return c.json(
+          { error: error.code, scope: error.scope, seriesId: error.seriesId ?? null },
+          409,
+        )
+      }
+      throw error
+    }
 
     return c.json({ data: row }, 201)
   })

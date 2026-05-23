@@ -303,6 +303,30 @@ type CreatePaymentSessionFromGuaranteeInput = z.infer<
 type CreatePaymentSessionFromInvoiceInput = z.infer<typeof createPaymentSessionFromInvoiceSchema>
 type ApplyDefaultBookingPaymentPlanInput = z.infer<typeof applyDefaultBookingPaymentPlanSchema>
 
+type InvoiceNumberScope = "invoice" | "proforma"
+type InvoiceNumberAllocationErrorCode =
+  | "invoice_number_series_not_found"
+  | "invoice_number_series_inactive"
+  | "invoice_number_series_scope_mismatch"
+  | "no_active_series_for_scope"
+
+export class InvoiceNumberAllocationError extends Error {
+  readonly code: InvoiceNumberAllocationErrorCode
+  readonly scope: InvoiceNumberScope
+  readonly seriesId?: string
+
+  constructor(
+    code: InvoiceNumberAllocationErrorCode,
+    details: { scope: InvoiceNumberScope; seriesId?: string },
+  ) {
+    super(code)
+    this.name = "InvoiceNumberAllocationError"
+    this.code = code
+    this.scope = details.scope
+    this.seriesId = details.seriesId
+  }
+}
+
 /** Booking data needed for createInvoiceFromBooking — supplied by the caller (template). */
 export interface InvoiceFromBookingData {
   booking: {
@@ -437,6 +461,92 @@ function formatNumber(
 ): string {
   const padded = String(sequence).padStart(padLength, "0")
   return `${prefix}${separator}${padded}`
+}
+
+function invoiceScopeForType(invoiceType: CreateInvoiceFromBookingInput["invoiceType"]) {
+  return invoiceType === "proforma" ? "proforma" : "invoice"
+}
+
+function pendingExternalInvoiceNumber(scope: InvoiceNumberScope) {
+  const uuid = globalThis.crypto?.randomUUID?.().replace(/-/g, "") ?? randomId()
+  return `PENDING-${scope.toUpperCase()}-${uuid.slice(0, 32)}`
+}
+
+function randomId() {
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`.padEnd(32, "0")
+}
+
+async function resolveInvoiceNumberForBooking(
+  db: PostgresJsDatabase,
+  data: CreateInvoiceFromBookingInput,
+): Promise<{
+  invoiceNumber: string
+  seriesId: string | null
+  sequence: number | null
+  status: "draft" | "pending_external_allocation"
+}> {
+  const scope = invoiceScopeForType(data.invoiceType)
+  if (data.invoiceNumber) {
+    return {
+      invoiceNumber: data.invoiceNumber,
+      seriesId: data.seriesId ?? null,
+      sequence: null,
+      status: "draft",
+    }
+  }
+
+  const series = data.seriesId
+    ? await financeService.getInvoiceNumberSeriesById(db, data.seriesId)
+    : await financeService.resolveDefaultInvoiceNumberSeries(db, scope)
+
+  if (!series) {
+    throw new InvoiceNumberAllocationError(
+      data.seriesId ? "invoice_number_series_not_found" : "no_active_series_for_scope",
+      { scope, seriesId: data.seriesId },
+    )
+  }
+  if (!series.active) {
+    throw new InvoiceNumberAllocationError("invoice_number_series_inactive", {
+      scope,
+      seriesId: series.id,
+    })
+  }
+  if (series.scope !== scope) {
+    throw new InvoiceNumberAllocationError("invoice_number_series_scope_mismatch", {
+      scope,
+      seriesId: series.id,
+    })
+  }
+
+  if (series.externalProvider) {
+    return {
+      invoiceNumber: pendingExternalInvoiceNumber(scope),
+      seriesId: series.id,
+      sequence: null,
+      status: "pending_external_allocation",
+    }
+  }
+
+  const allocated = await financeService.allocateInvoiceNumber(db, series.id)
+  if (allocated.status === "not_found") {
+    throw new InvoiceNumberAllocationError("invoice_number_series_not_found", {
+      scope,
+      seriesId: series.id,
+    })
+  }
+  if (allocated.status === "inactive") {
+    throw new InvoiceNumberAllocationError("invoice_number_series_inactive", {
+      scope,
+      seriesId: series.id,
+    })
+  }
+
+  return {
+    invoiceNumber: allocated.formattedNumber,
+    seriesId: allocated.seriesId,
+    sequence: allocated.sequence,
+    status: "draft",
+  }
 }
 
 export function renderInvoiceBody(
@@ -3066,6 +3176,7 @@ export const financeService = {
     bookingData: InvoiceFromBookingData,
   ) {
     const { booking, items } = bookingData
+    const numberAssignment = await resolveInvoiceNumberForBooking(db, data)
 
     const itemIds = items.map((item) => item.id)
 
@@ -3136,12 +3247,14 @@ export const financeService = {
       const [invoice] = await tx
         .insert(invoices)
         .values({
-          invoiceNumber: data.invoiceNumber,
+          invoiceNumber: numberAssignment.invoiceNumber,
           invoiceType: data.invoiceType,
+          seriesId: numberAssignment.seriesId,
+          sequence: numberAssignment.sequence,
           bookingId: booking.id,
           personId: booking.personId,
           organizationId: booking.organizationId,
-          status: "draft",
+          status: numberAssignment.status,
           currency: booking.sellCurrency,
           baseCurrency: booking.baseCurrency,
           fxRateSetId: booking.fxRateSetId,
@@ -3955,23 +4068,51 @@ export const financeService = {
     return row ?? null
   },
 
-  async createInvoiceNumberSeries(db: PostgresJsDatabase, data: CreateInvoiceNumberSeriesInput) {
+  async resolveDefaultInvoiceNumberSeries(db: PostgresJsDatabase, scope: InvoiceNumberScope) {
     const [row] = await db
-      .insert(invoiceNumberSeries)
-      .values({
-        code: data.code,
-        name: data.name,
-        prefix: data.prefix,
-        separator: data.separator,
-        padLength: data.padLength,
-        currentSequence: data.currentSequence,
-        resetStrategy: data.resetStrategy,
-        resetAt: toTimestamp(data.resetAt),
-        scope: data.scope,
-        active: data.active,
-      })
-      .returning()
+      .select()
+      .from(invoiceNumberSeries)
+      .where(and(eq(invoiceNumberSeries.scope, scope), eq(invoiceNumberSeries.active, true)))
+      .orderBy(
+        desc(invoiceNumberSeries.isDefault),
+        desc(invoiceNumberSeries.updatedAt),
+        desc(invoiceNumberSeries.createdAt),
+      )
+      .limit(1)
     return row ?? null
+  },
+
+  async createInvoiceNumberSeries(db: PostgresJsDatabase, data: CreateInvoiceNumberSeriesInput) {
+    return db.transaction(async (tx) => {
+      const isDefault = data.active === false ? false : data.isDefault
+
+      if (isDefault) {
+        await tx
+          .update(invoiceNumberSeries)
+          .set({ isDefault: false, updatedAt: new Date() })
+          .where(eq(invoiceNumberSeries.scope, data.scope))
+      }
+
+      const [row] = await tx
+        .insert(invoiceNumberSeries)
+        .values({
+          code: data.code,
+          name: data.name,
+          prefix: data.prefix,
+          separator: data.separator,
+          padLength: data.padLength,
+          currentSequence: data.currentSequence,
+          resetStrategy: data.resetStrategy,
+          resetAt: toTimestamp(data.resetAt),
+          scope: data.scope,
+          isDefault,
+          externalProvider: data.externalProvider ?? null,
+          externalConfigKey: data.externalConfigKey ?? null,
+          active: data.active,
+        })
+        .returning()
+      return row ?? null
+    })
   },
 
   async updateInvoiceNumberSeries(
@@ -3979,17 +4120,38 @@ export const financeService = {
     id: string,
     data: UpdateInvoiceNumberSeriesInput,
   ) {
-    const { resetAt, ...rest } = data
-    const [row] = await db
-      .update(invoiceNumberSeries)
-      .set({
-        ...rest,
-        ...(resetAt !== undefined ? { resetAt: toTimestamp(resetAt) } : {}),
-        updatedAt: new Date(),
-      })
-      .where(eq(invoiceNumberSeries.id, id))
-      .returning()
-    return row ?? null
+    return db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(invoiceNumberSeries)
+        .where(eq(invoiceNumberSeries.id, id))
+        .limit(1)
+      if (!existing) return null
+
+      const { resetAt, ...rest } = data
+      const nextScope = rest.scope ?? existing.scope
+      const nextActive = rest.active ?? existing.active
+      const nextIsDefault = nextActive === false ? false : (rest.isDefault ?? existing.isDefault)
+
+      if (nextIsDefault) {
+        await tx
+          .update(invoiceNumberSeries)
+          .set({ isDefault: false, updatedAt: new Date() })
+          .where(and(eq(invoiceNumberSeries.scope, nextScope), ne(invoiceNumberSeries.id, id)))
+      }
+
+      const [row] = await tx
+        .update(invoiceNumberSeries)
+        .set({
+          ...rest,
+          isDefault: nextIsDefault,
+          ...(resetAt !== undefined ? { resetAt: toTimestamp(resetAt) } : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(invoiceNumberSeries.id, id))
+        .returning()
+      return row ?? null
+    })
   },
 
   async deleteInvoiceNumberSeries(db: PostgresJsDatabase, id: string) {
@@ -4051,6 +4213,30 @@ export const financeService = {
         formattedNumber,
       }
     })
+  },
+
+  async applyExternalInvoiceAllocation(
+    db: PostgresJsDatabase,
+    invoiceId: string,
+    data: { invoiceNumber: string; status?: "sent" | "draft" },
+  ) {
+    const [existing] = await db.select().from(invoices).where(eq(invoices.id, invoiceId)).limit(1)
+    if (!existing) return { status: "not_found" as const }
+    if (existing.status !== "pending_external_allocation") {
+      return { status: "not_pending_external_allocation" as const, invoice: existing }
+    }
+
+    const [invoice] = await db
+      .update(invoices)
+      .set({
+        invoiceNumber: data.invoiceNumber,
+        status: data.status ?? "sent",
+        updatedAt: new Date(),
+      })
+      .where(eq(invoices.id, invoiceId))
+      .returning()
+
+    return invoice ? { status: "applied" as const, invoice } : { status: "not_found" as const }
   },
 
   // ============================================================================

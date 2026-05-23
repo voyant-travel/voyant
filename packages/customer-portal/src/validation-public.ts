@@ -90,6 +90,7 @@ const customerPortalAddressLabelSchema = z.enum([
 const customerPortalFinanceInvoiceTypeSchema = z.enum(["invoice", "proforma", "credit_note"])
 const customerPortalFinanceInvoiceStatusSchema = z.enum([
   "draft",
+  "pending_external_allocation",
   "sent",
   "partially_paid",
   "paid",
