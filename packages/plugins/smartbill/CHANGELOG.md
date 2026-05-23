@@ -1,5 +1,16 @@
 # @voyantjs/plugin-smartbill
 
+## 0.77.6
+
+### Patch Changes
+
+- cbebb3f: Emit SmartBill-parseable default client and product fields from the default mapper.
+  - @voyantjs/core@0.77.6
+  - @voyantjs/finance@0.77.6
+  - @voyantjs/finance-react@0.77.6
+  - @voyantjs/storage@0.77.6
+  - @voyantjs/ui@0.77.6
+
 ## 0.77.5
 
 ### Patch Changes
