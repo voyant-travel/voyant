@@ -157,6 +157,15 @@ describe("Person schemas", () => {
       expect(result.email).toBeNull()
     })
 
+    it("transforms empty email to null", () => {
+      const result = insertPersonSchema.parse({
+        firstName: "John",
+        lastName: "Doe",
+        email: "",
+      })
+      expect(result.email).toBeNull()
+    })
+
     it("accepts phone number", () => {
       const result = insertPersonSchema.parse({
         firstName: "John",
