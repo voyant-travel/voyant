@@ -1,5 +1,26 @@
 # @voyantjs/bookings-ui
 
+## 0.77.4
+
+### Patch Changes
+
+- c9d1404: Show success and failure toasts when issuing schedule invoices and refresh invoice lists after generation.
+  - @voyantjs/availability-react@0.77.4
+  - @voyantjs/bookings-react@0.77.4
+  - @voyantjs/catalog@0.77.4
+  - @voyantjs/catalog-react@0.77.4
+  - @voyantjs/crm-react@0.77.4
+  - @voyantjs/crm-ui@0.77.4
+  - @voyantjs/extras-react@0.77.4
+  - @voyantjs/finance-react@0.77.4
+  - @voyantjs/i18n@0.77.4
+  - @voyantjs/identity-react@0.77.4
+  - @voyantjs/legal-react@0.77.4
+  - @voyantjs/pricing-react@0.77.4
+  - @voyantjs/products-react@0.77.4
+  - @voyantjs/suppliers-react@0.77.4
+  - @voyantjs/ui@0.77.4
+
 ## 0.77.3
 
 ### Patch Changes
