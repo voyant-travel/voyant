@@ -871,6 +871,23 @@ export const bookingsUiRo = {
       issueProforma: "Emite proforma",
     },
   },
+  bookingPaymentReconciliationBanner: {
+    title: "Reconciliere plati",
+    loading: "Se verifica sursele de plata...",
+    empty: "Nu exista facturi, plati sau scadente inregistrate inca.",
+    reconciledDescription:
+      "Totalurile achitate pe facturi, platile inregistrate si scadentele platite sunt aliniate.",
+    driftDescription:
+      "Totalurile achitate pe facturi, platile inregistrate si scadentele platite nu coincid. Verifica randurile sursa inainte de a incasa sau inregistra alti bani.",
+    reconciledBadge: "Reconciliat",
+    driftBadge: "Necesita verificare",
+    billed: "Facturat",
+    invoicePaid: "Achitat pe facturi",
+    recordedPayments: "Plati inregistrate",
+    schedulePaid: "Scadente platite",
+    drift: "Diferenta",
+    emptyValue: "-",
+  },
   supplierStatusList: {
     title: "Confirmari furnizori",
     addSupplier: "Adauga furnizor",

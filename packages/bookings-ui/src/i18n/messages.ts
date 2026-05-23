@@ -791,6 +791,21 @@ export type BookingsUiMessages = {
       issueProforma: string
     }
   }
+  bookingPaymentReconciliationBanner: {
+    title: string
+    loading: string
+    empty: string
+    reconciledDescription: string
+    driftDescription: string
+    reconciledBadge: string
+    driftBadge: string
+    billed: string
+    invoicePaid: string
+    recordedPayments: string
+    schedulePaid: string
+    drift: string
+    emptyValue: string
+  }
   supplierStatusList: {
     title: string
     addSupplier: string
