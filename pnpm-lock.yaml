@@ -1501,6 +1501,9 @@ importers:
       '@voyantjs/i18n':
         specifier: workspace:*
         version: link:../i18n
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.100.11

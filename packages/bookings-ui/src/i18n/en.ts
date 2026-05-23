@@ -867,6 +867,8 @@ export const bookingsUiEn = {
       issueDocument: "Issue document",
       issueInvoice: "Issue invoice",
       issueProforma: "Issue proforma",
+      issueDocumentSuccess: "Document issued.",
+      issueDocumentFailure: "Could not issue document",
     },
   },
   bookingPaymentReconciliationBanner: {
