@@ -83,7 +83,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     await closeTestDb()
   })
 
-  async function seedProduct() {
+  async function seedProduct({ pax = 2 }: { pax?: number | null } = {}) {
     productSeq += 1
     // Raw SQL keeps this free of a cross-package schema import. The booking-
     // create path only needs products + a default option + one option_unit;
@@ -104,7 +104,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
         40,
         '2026-07-01',
         '2026-07-03',
-        2
+        ${pax}
       )
     `)
     await db.execute(sql`
@@ -178,6 +178,75 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       ],
     }
   }
+
+  it("derives booking pax from travelers when pax is omitted", async () => {
+    const { productId } = await seedProduct({ pax: null })
+
+    const outcome = await createBooking(db, {
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      travelers: [
+        {
+          firstName: "Alice",
+          lastName: "Lead",
+          email: "alice@example.com",
+          participantType: "traveler",
+          isPrimary: true,
+        },
+        {
+          firstName: "Bob",
+          lastName: "Companion",
+          participantType: "traveler",
+        },
+      ],
+    })
+
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+    expect(outcome.result.booking.pax).toBe(2)
+
+    const [bookingRow] = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, outcome.result.booking.id))
+    expect(bookingRow?.pax).toBe(2)
+  })
+
+  it("keeps explicit booking pax when travelers are also supplied", async () => {
+    const { productId } = await seedProduct({ pax: null })
+
+    const outcome = await createBooking(db, {
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      pax: 4,
+      travelers: [
+        {
+          firstName: "Alice",
+          lastName: "Lead",
+          email: "alice@example.com",
+          participantType: "traveler",
+          isPrimary: true,
+        },
+        {
+          firstName: "Bob",
+          lastName: "Companion",
+          participantType: "traveler",
+        },
+      ],
+    })
+
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+    expect(outcome.result.booking.pax).toBe(4)
+
+    const [bookingRow] = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, outcome.result.booking.id))
+    expect(bookingRow?.pax).toBe(4)
+  })
 
   it("creates booking + travelers + payment schedules atomically", async () => {
     const { productId } = await seedProduct()

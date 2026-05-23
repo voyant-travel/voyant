@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   cancelBookingSchema,
   confirmBookingSchema,
+  convertProductSchema,
   expireBookingSchema,
   expireStaleBookingsSchema,
   extendBookingHoldSchema,
@@ -16,6 +17,16 @@ import {
 } from "../../src/validation.js"
 
 describe("Reservation schemas", () => {
+  it("parses explicit pax for product conversion", () => {
+    const result = convertProductSchema.parse({
+      productId: "prod_123",
+      bookingNumber: "BK-CONVERT-001",
+      pax: 3,
+    })
+
+    expect(result.pax).toBe(3)
+  })
+
   it("parses reserve booking input with policy-resolved hold minutes", () => {
     const result = reserveBookingSchema.parse({
       bookingNumber: "BK-RES-001",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { bookingCreateSchema } from "../../src/service-booking-create.js"
+import { bookingCreateSchema, deriveBookingCreatePax } from "../../src/service-booking-create.js"
 
 describe("bookingCreateSchema", () => {
   const valid = {
@@ -128,5 +128,35 @@ describe("bookingCreateSchema", () => {
         contactPhone: "test-phone-number",
       }),
     ).toThrow("Billing email cannot be a placeholder address")
+  })
+})
+
+describe("deriveBookingCreatePax", () => {
+  it("keeps explicit pax", () => {
+    expect(deriveBookingCreatePax({ pax: 4, travelers: [{}, {}] })).toBe(4)
+  })
+
+  it("keeps explicit null pax", () => {
+    expect(deriveBookingCreatePax({ pax: null, travelers: [{}, {}] })).toBeNull()
+  })
+
+  it("derives pax from supplied travelers when omitted", () => {
+    expect(deriveBookingCreatePax({ travelers: [{}, {}] })).toBe(2)
+  })
+
+  it("excludes other participants when deriving pax", () => {
+    expect(
+      deriveBookingCreatePax({
+        travelers: [
+          { participantType: "traveler" },
+          { participantType: "other" },
+          { participantType: "occupant" },
+        ],
+      }),
+    ).toBe(2)
+  })
+
+  it("preserves null when pax and travelers are absent", () => {
+    expect(deriveBookingCreatePax({})).toBeNull()
   })
 })

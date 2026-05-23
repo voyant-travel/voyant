@@ -243,6 +243,7 @@ const bookingCreateBaseSchema = z.object({
   bookingNumber: z.string().min(1),
   personId: z.string().optional().nullable(),
   organizationId: z.string().optional().nullable(),
+  pax: z.number().int().positive().optional().nullable(),
   internalNotes: z.string().optional().nullable(),
   /**
    * Override the seed `sellAmountCents` on the new booking + line item.
@@ -448,6 +449,22 @@ function todayIsoDate() {
   return new Date().toISOString().slice(0, 10)
 }
 
+export function deriveBookingCreatePax(input: {
+  pax?: number | null
+  travelers?: readonly { participantType?: string | null }[] | null
+}) {
+  if (Object.hasOwn(input, "pax")) {
+    return input.pax ?? null
+  }
+
+  const pax =
+    input.travelers?.filter((traveler) =>
+      [undefined, null, "traveler", "occupant"].includes(traveler.participantType),
+    ).length ?? 0
+
+  return pax > 0 ? pax : null
+}
+
 export async function createBooking(
   db: PostgresJsDatabase,
   rawInput: BookingCreateInput,
@@ -465,6 +482,7 @@ export async function createBooking(
     contractDocument: false,
     invoiceDocument: false,
   }
+  const pax = deriveBookingCreatePax(input)
 
   // Validate voucher up-front so we can short-circuit before the tx starts.
   // This is a cheap read — the authoritative balance check still happens
@@ -500,6 +518,7 @@ export async function createBooking(
         bookingNumber: input.bookingNumber,
         personId: input.personId ?? null,
         organizationId: input.organizationId ?? null,
+        pax,
         internalNotes: input.internalNotes ?? null,
         sellAmountCentsOverride: input.sellAmountCentsOverride ?? null,
         catalogSellAmountCents: input.catalogSellAmountCents ?? null,
