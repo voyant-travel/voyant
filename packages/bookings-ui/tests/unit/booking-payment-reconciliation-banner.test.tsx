@@ -30,6 +30,7 @@ vi.mock("@voyantjs/finance-react", () => ({
 
 vi.mock("@voyantjs/ui/components", () => ({
   Badge: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
+  cn: (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(" "),
 }))
 
 import { BookingPaymentReconciliationBanner } from "../../src/components/booking-payment-reconciliation-banner.js"

@@ -8,7 +8,7 @@ import {
   useBookingPaymentSchedules,
   useInvoices,
 } from "@voyantjs/finance-react"
-import { Badge } from "@voyantjs/ui/components"
+import { Badge, cn } from "@voyantjs/ui/components"
 import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react"
 
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
@@ -58,11 +58,12 @@ export function BookingPaymentReconciliationBanner({
 
   return (
     <section
-      className={
+      className={cn(
+        "rounded-md border p-4",
         hasDrift
-          ? "rounded-md border border-amber-300 bg-amber-50 p-4 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100"
-          : "rounded-md border bg-muted/30 p-4"
-      }
+          ? "border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100"
+          : "bg-muted/30",
+      )}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-2">
