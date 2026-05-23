@@ -1,5 +1,13 @@
 # @voyantjs/markets
 
+## 0.77.10
+
+### Patch Changes
+
+- @voyantjs/core@0.77.10
+- @voyantjs/db@0.77.10
+- @voyantjs/hono@0.77.10
+
 ## 0.77.9
 
 ### Patch Changes
