@@ -1,5 +1,19 @@
 # @voyantjs/legal
 
+## 0.75.3
+
+### Patch Changes
+
+- 38167cd: Allow manually numbered legal contracts and update operator contract dialog copy for template-free uploads.
+  - @voyantjs/bookings@0.75.3
+  - @voyantjs/core@0.75.3
+  - @voyantjs/crm@0.75.3
+  - @voyantjs/db@0.75.3
+  - @voyantjs/hono@0.75.3
+  - @voyantjs/storage@0.75.3
+  - @voyantjs/suppliers@0.75.3
+  - @voyantjs/utils@0.75.3
+
 ## 0.75.2
 
 ### Patch Changes

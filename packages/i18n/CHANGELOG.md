@@ -1,5 +1,11 @@
 # @voyantjs/i18n
 
+## 0.75.3
+
+### Patch Changes
+
+- 38167cd: Allow manually numbered legal contracts and update operator contract dialog copy for template-free uploads.
+
 ## 0.75.2
 
 ## 0.75.1
