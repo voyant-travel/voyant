@@ -1,5 +1,17 @@
 # @voyantjs/plugin-smartbill
 
+## 0.77.8
+
+### Patch Changes
+
+- 8cc89df: Add an opt-in SmartBill invoice number write-back option for mirroring issued series-numbers onto finance invoices.
+- f22ae84: Request SmartBill invoice and proforma PDFs with an octet-stream accept header.
+  - @voyantjs/core@0.77.8
+  - @voyantjs/finance@0.77.8
+  - @voyantjs/finance-react@0.77.8
+  - @voyantjs/storage@0.77.8
+  - @voyantjs/ui@0.77.8
+
 ## 0.77.7
 
 ### Patch Changes
