@@ -934,17 +934,19 @@ export const financeRoutes = new Hono<Env>()
     )
   })
 
-  // POST /invoices/from-booking — Create + issue invoice (or proforma) from booking + booking items
+  // POST /invoices/from-booking — Create + issue invoice/proforma from a booking or schedule row
   .post("/invoices/from-booking", async (c) => {
     const input = await parseJsonBody(c, invoiceFromBookingSchema)
     const waitRequest = resolveWaitRequest(input, parseQuery(c, invoiceDocumentWaitQuerySchema))
     const db = c.get("db")
     const [
       { bookingItems, bookings },
-      { eq },
+      { bookingPaymentSchedules },
+      { and, eq },
       { issueInvoiceFromBooking, issueProformaFromBooking },
     ] = await Promise.all([
       import("@voyantjs/bookings/schema"),
+      import("./schema.js"),
       import("drizzle-orm"),
       import("./service-issue.js"),
     ])
@@ -960,6 +962,22 @@ export const financeRoutes = new Hono<Env>()
     }
 
     const items = await db.select().from(bookingItems).where(eq(bookingItems.bookingId, booking.id))
+    const [paymentSchedule] = input.bookingPaymentScheduleId
+      ? await db
+          .select()
+          .from(bookingPaymentSchedules)
+          .where(
+            and(
+              eq(bookingPaymentSchedules.id, input.bookingPaymentScheduleId),
+              eq(bookingPaymentSchedules.bookingId, booking.id),
+            ),
+          )
+          .limit(1)
+      : []
+
+    if (input.bookingPaymentScheduleId && !paymentSchedule) {
+      return c.json({ error: "Booking payment schedule not found" }, 404)
+    }
 
     const runtime = (() => {
       try {
@@ -989,6 +1007,17 @@ export const financeRoutes = new Hono<Env>()
             sellAmountCents: booking.sellAmountCents,
             baseSellAmountCents: booking.baseSellAmountCents,
           },
+          paymentSchedule: paymentSchedule
+            ? {
+                id: paymentSchedule.id,
+                bookingId: paymentSchedule.bookingId,
+                bookingItemId: paymentSchedule.bookingItemId,
+                scheduleType: paymentSchedule.scheduleType,
+                dueDate: paymentSchedule.dueDate,
+                currency: paymentSchedule.currency,
+                amountCents: paymentSchedule.amountCents,
+              }
+            : null,
           items: items.map((item) => ({
             id: item.id,
             title: item.title,

@@ -116,6 +116,7 @@ const invoiceDocumentWaitFieldsSchema = z.object({
 
 export const invoiceFromBookingSchema = z.object({
   bookingId: z.string().min(1),
+  bookingPaymentScheduleId: z.string().min(1).optional(),
   invoiceNumber: z.string().min(1).max(50).optional(),
   seriesId: z.string().min(1).optional(),
   issueDate: z.string().min(1),
