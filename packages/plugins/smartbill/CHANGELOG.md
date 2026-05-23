@@ -1,5 +1,17 @@
 # @voyantjs/plugin-smartbill
 
+## 0.75.7
+
+### Patch Changes
+
+- 827c25e: Allow invoice-from-booking calls to omit `invoiceNumber`, allocate numbers from active/default series, and hand external-provider series to SmartBill-style adapters for provider-owned numbering.
+- Updated dependencies [827c25e]
+  - @voyantjs/core@0.75.7
+  - @voyantjs/finance@0.75.7
+  - @voyantjs/finance-react@0.75.7
+  - @voyantjs/storage@0.75.7
+  - @voyantjs/ui@0.75.7
+
 ## 0.75.6
 
 ### Patch Changes
