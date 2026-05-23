@@ -29,6 +29,7 @@ export function createSmartbillSyncRuntime(options: SmartbillPluginOptions): Sma
     seriesName: options.seriesName,
     language: options.language,
     isTaxIncluded: options.isTaxIncluded,
+    measuringUnitName: options.measuringUnitName,
     art311SpecialRegime: options.art311SpecialRegime,
     art311SpecialRegimeText: options.art311SpecialRegimeText,
     mentions: options.mentions,

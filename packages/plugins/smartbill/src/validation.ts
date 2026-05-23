@@ -128,6 +128,7 @@ export const smartbillPluginOptionsSchema = z.object({
   fetch: optionalFetch.optional(),
   language: optionalString,
   isTaxIncluded: z.boolean().optional(),
+  measuringUnitName: optionalEventText.optional(),
   art311SpecialRegime: z.boolean().optional(),
   art311SpecialRegimeText: optionalString,
   mentions: optionalEventText.optional(),

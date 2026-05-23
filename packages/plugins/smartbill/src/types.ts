@@ -16,11 +16,15 @@ export interface VoyantInvoiceEvent {
 export interface SmartbillProduct {
   name: string
   code?: string
-  measureUnit: string
+  /** SmartBill's invoice/estimate API field for the product unit name. */
+  measuringUnitName?: string
+  /** @deprecated SmartBill ignores this field; use `measuringUnitName`. */
+  measureUnit?: string
   quantity: number
   price: number
   currency: string
   isTaxIncluded: boolean
+  isDiscount?: boolean
   taxName?: string
   taxPercentage?: number
   isService?: boolean

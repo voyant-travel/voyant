@@ -35,6 +35,8 @@ describe("mapClient", () => {
     expect(result.vatCode).toBe("RO999")
     expect(result.address).toBe("Str. Test 1")
     expect(result.city).toBe("Bucharest")
+    expect(result.country).toBe("Romania")
+    expect(result.isTaxPayer).toBe(true)
     expect(result.email).toBe("acme@test.com")
     expect(result.saveToDb).toBe(false)
   })
@@ -49,11 +51,20 @@ describe("mapClient", () => {
     expect(result.name).toBe("Client")
   })
 
-  it("returns undefined for missing optional fields", () => {
+  it("fills SmartBill-safe client defaults", () => {
     const result = mapClient(event())
     expect(result.vatCode).toBeUndefined()
-    expect(result.address).toBeUndefined()
+    expect(result.address).toBe("-")
+    expect(result.city).toBe("-")
+    expect(result.country).toBe("Romania")
+    expect(result.isTaxPayer).toBe(false)
     expect(result.email).toBeUndefined()
+  })
+
+  it("resolves country codes and passes through country names", () => {
+    expect(mapClient(event({ clientCountry: "DE" })).country).toBe("Germany")
+    expect(mapClient(event({ clientCountry: "Atlantis" })).country).toBe("Atlantis")
+    expect(mapClient(event({ clientCountry: "ZZ" })).country).toBe("ZZ")
   })
 })
 
@@ -78,10 +89,13 @@ describe("mapLineItems", () => {
     expect(result).toHaveLength(1)
     expect(result[0]!.name).toBe("Safari Tour")
     expect(result[0]!.code).toBe("TOUR-1")
+    expect(result[0]!.measuringUnitName).toBe("buc")
+    expect(result[0]!.measureUnit).toBeUndefined()
     expect(result[0]!.quantity).toBe(2)
     expect(result[0]!.price).toBe(50000)
     expect(result[0]!.isService).toBe(true)
     expect(result[0]!.isTaxIncluded).toBe(true)
+    expect(result[0]!.isDiscount).toBe(false)
   })
 
   it("returns empty array when no lineItems", () => {
@@ -105,6 +119,14 @@ describe("mapLineItems", () => {
       isTaxIncluded: false,
     })
     expect(result[0]!.isTaxIncluded).toBe(false)
+  })
+
+  it("uses measuringUnitName from options when the item has no unit", () => {
+    const result = mapLineItems(event({ lineItems: [{ name: "X", quantity: 1, price: 10 }] }), {
+      ...defaultOptions,
+      measuringUnitName: "serv",
+    })
+    expect(result[0]!.measuringUnitName).toBe("serv")
   })
 
   it("passes through taxPercentage when present", () => {
@@ -152,6 +174,37 @@ describe("mapVoyantInvoiceToSmartbill", () => {
     expect(result.products).toHaveLength(1)
     expect(result.issueDate).toBe("2026-01-15")
     expect(result.dueDate).toBe("2026-02-15")
+  })
+
+  it("emits SmartBill-parseable client and product defaults", () => {
+    const result = mapVoyantInvoiceToSmartbill(
+      event({
+        clientName: "Test SRL",
+        lineItems: [{ name: "Tour Package", quantity: 1, unitPrice: 50000 }],
+      }),
+      defaultOptions,
+    )
+
+    expect(result.client).toEqual({
+      name: "Test SRL",
+      vatCode: undefined,
+      regCom: undefined,
+      address: "-",
+      city: "-",
+      county: undefined,
+      country: "Romania",
+      isTaxPayer: false,
+      email: undefined,
+      phone: undefined,
+      saveToDb: false,
+    })
+    expect(result.products[0]).toMatchObject({
+      name: "Tour Package",
+      measuringUnitName: "buc",
+      isDiscount: false,
+      isTaxIncluded: true,
+    })
+    expect(result.products[0]!.measureUnit).toBeUndefined()
   })
 
   it("sets isDraft when event has isDraft=true", () => {

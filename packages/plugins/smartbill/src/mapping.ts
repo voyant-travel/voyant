@@ -12,6 +12,10 @@ export type SmartbillEventValue<T> = T | ((event: VoyantInvoiceEvent) => Smartbi
 const DEFAULT_ART311_SPECIAL_REGIME_TEXT =
   "Regimul special de taxare - agentie de turism (Art. 311 Cod Fiscal)"
 
+const COUNTRY_CODE_OVERRIDES: Record<string, string> = {
+  RO: "Romania",
+}
+
 /**
  * Options for the default invoice mapper.
  */
@@ -24,6 +28,8 @@ export interface SmartbillMappingOptions {
   language?: string
   /** Whether VAT is included in line item prices. Defaults to `true`. */
   isTaxIncluded?: boolean
+  /** SmartBill product unit name. Defaults to `"buc"`. */
+  measuringUnitName?: SmartbillEventValue<string | null | undefined>
   /** Whether to use Art. 311 special regime (margin scheme for travel). */
   art311SpecialRegime?: boolean
   /** Text appended to mentions when Art. 311 special regime is enabled. */
@@ -39,6 +45,7 @@ interface ResolvedMappingOptions {
   seriesName: string
   language?: string
   isTaxIncluded?: boolean
+  measuringUnitName?: string
   art311SpecialRegime?: boolean
   art311SpecialRegimeText?: string
   mentions?: string
@@ -49,17 +56,22 @@ interface ResolvedMappingOptions {
 
 /**
  * Extract the SmartBill client block from a Voyant invoice event.
- * Falls back to empty strings for missing fields.
+ * Falls back to SmartBill-parseable defaults for fields the API treats as required.
  */
 export function mapClient(event: VoyantInvoiceEvent): SmartbillClient {
+  const vatCode = asStringOrUndefined(event.clientVatCode ?? event.customerVatCode)
+
   return {
     name: asString(event.clientName ?? event.customerName, "Client"),
-    vatCode: asStringOrUndefined(event.clientVatCode ?? event.customerVatCode),
+    vatCode,
     regCom: asStringOrUndefined(event.clientRegCom),
-    address: asStringOrUndefined(event.clientAddress ?? event.customerAddress),
-    city: asStringOrUndefined(event.clientCity ?? event.customerCity),
+    address: asString(event.clientAddress ?? event.customerAddress, "-"),
+    city: asString(event.clientCity ?? event.customerCity, "-"),
     county: asStringOrUndefined(event.clientCounty ?? event.customerCounty),
-    country: asStringOrUndefined(event.clientCountry ?? event.customerCountry),
+    country:
+      normalizeCountryName(asStringOrUndefined(event.clientCountry ?? event.customerCountry)) ??
+      "Romania",
+    isTaxPayer: Boolean(vatCode),
     email: asStringOrUndefined(event.clientEmail ?? event.customerEmail),
     phone: asStringOrUndefined(event.clientPhone ?? event.customerPhone),
     saveToDb: false,
@@ -73,7 +85,7 @@ export function mapClient(event: VoyantInvoiceEvent): SmartbillClient {
  */
 export function mapLineItems(
   event: VoyantInvoiceEvent,
-  options: Pick<SmartbillMappingOptions, "isTaxIncluded">,
+  options: Pick<SmartbillMappingOptions, "isTaxIncluded"> & { measuringUnitName?: string },
 ): SmartbillProduct[] {
   const items = event.lineItems
   if (!Array.isArray(items)) return []
@@ -81,11 +93,15 @@ export function mapLineItems(
   return items.map((item: Record<string, unknown>) => ({
     name: asString(item.description ?? item.name, "Item"),
     code: asStringOrUndefined(item.code ?? item.sku),
-    measureUnit: asString(item.measureUnit ?? item.unit, "buc"),
+    measuringUnitName: asString(
+      item.measuringUnitName ?? item.measureUnit ?? item.unit ?? options.measuringUnitName,
+      "buc",
+    ),
     quantity: asNumber(item.quantity, 1),
     price: asNumber(item.unitPrice ?? item.price, 0),
     currency: asString(item.currency ?? event.currency, "RON"),
     isTaxIncluded: options.isTaxIncluded ?? true,
+    isDiscount: false,
     taxName: asStringOrUndefined(item.taxName),
     taxPercentage: item.taxPercentage != null ? asNumber(item.taxPercentage, 0) : undefined,
     isService: item.isService === true,
@@ -176,6 +192,9 @@ function resolveMappingOptionsSync(
     seriesName: resolveRequiredEventValueSync(event, options.seriesName, "seriesName"),
     language: options.language,
     isTaxIncluded: options.isTaxIncluded,
+    measuringUnitName: normalizeOptionalText(
+      resolveEventValueSync(event, options.measuringUnitName, "measuringUnitName"),
+    ),
     art311SpecialRegime: options.art311SpecialRegime,
     art311SpecialRegimeText: options.art311SpecialRegimeText,
     mentions: normalizeOptionalText(resolveEventValueSync(event, options.mentions, "mentions")),
@@ -196,6 +215,9 @@ async function resolveMappingOptions(
     seriesName: await resolveRequiredEventValue(event, options.seriesName, "seriesName"),
     language: options.language,
     isTaxIncluded: options.isTaxIncluded,
+    measuringUnitName: normalizeOptionalText(
+      await resolveEventValue(event, options.measuringUnitName),
+    ),
     art311SpecialRegime: options.art311SpecialRegime,
     art311SpecialRegimeText: options.art311SpecialRegimeText,
     mentions: normalizeOptionalText(await resolveEventValue(event, options.mentions)),
@@ -265,6 +287,29 @@ function isPromiseLike<T>(value: T | Promise<T> | undefined): value is Promise<T
 
 function normalizeOptionalText(value: string | null | undefined) {
   return typeof value === "string" && value.length > 0 ? value : undefined
+}
+
+function normalizeCountryName(value: string | undefined): string | undefined {
+  if (!value) return undefined
+  const trimmed = value.trim()
+  if (!trimmed) return undefined
+
+  const upper = trimmed.toUpperCase()
+  const overridden = COUNTRY_CODE_OVERRIDES[upper]
+  if (overridden) return overridden
+
+  if (/^[A-Z]{2}$/.test(upper)) {
+    try {
+      const displayName = new Intl.DisplayNames(["en"], { type: "region" }).of(upper)
+      return displayName && displayName !== upper && displayName !== "Unknown Region"
+        ? displayName
+        : trimmed
+    } catch {
+      return trimmed
+    }
+  }
+
+  return trimmed
 }
 
 function asString(value: unknown, fallback: string): string {
