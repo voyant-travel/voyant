@@ -3,6 +3,7 @@ import { financeService } from "@voyantjs/finance"
 import { ZodError } from "zod"
 
 import {
+  isSmartbillPdfPersistMetadataUpdateError,
   persistSmartbillInvoiceArtifact,
   recordSmartbillInvoiceArtifactFailure,
   retrySmartbillInvoiceArtifact,
@@ -149,7 +150,10 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
         logger.info?.(`[smartbill] ${documentType} PDF re-attached for ${event.id}`, persisted)
       }
     } catch (err) {
-      logger.error(`[smartbill] artifact re-attach failed for ${event.id}`, err)
+      const message = isSmartbillPdfPersistMetadataUpdateError(err)
+        ? `[smartbill] artifact re-attach metadata update failed for ${event.id}`
+        : `[smartbill] artifact re-attach failed for ${event.id}`
+      logger.error(message, err)
     }
   }
 
@@ -172,6 +176,10 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
         logger.info?.(`[smartbill] ${documentType} PDF persisted for ${event.id}`, persisted)
       }
     } catch (err) {
+      if (isSmartbillPdfPersistMetadataUpdateError(err)) {
+        logger.error(`[smartbill] artifact persistence metadata update failed for ${event.id}`, err)
+        return
+      }
       logger.error(`[smartbill] artifact persistence failed for ${event.id}`, err)
       try {
         await recordSmartbillInvoiceArtifactFailure({
