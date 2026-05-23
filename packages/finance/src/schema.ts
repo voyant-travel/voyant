@@ -18,6 +18,7 @@ import {
 
 export const invoiceStatusEnum = pgEnum("invoice_status", [
   "draft",
+  "pending_external_allocation",
   "sent",
   "partially_paid",
   "paid",
@@ -1020,6 +1021,9 @@ export const invoiceNumberSeries = pgTable(
     resetStrategy: invoiceNumberResetStrategyEnum("reset_strategy").notNull().default("never"),
     resetAt: timestamp("reset_at", { withTimezone: true }),
     scope: invoiceNumberSeriesScopeEnum("scope").notNull().default("invoice"),
+    isDefault: boolean("is_default").notNull().default(false),
+    externalProvider: text("external_provider"),
+    externalConfigKey: text("external_config_key"),
     active: boolean("active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -1027,8 +1031,13 @@ export const invoiceNumberSeries = pgTable(
   (table) => [
     index("idx_invoice_number_series_scope").on(table.scope),
     index("idx_invoice_number_series_active").on(table.active),
+    index("idx_invoice_number_series_scope_default").on(table.scope, table.isDefault),
+    index("idx_invoice_number_series_external_provider").on(table.externalProvider),
     index("idx_invoice_number_series_scope_updated").on(table.scope, table.updatedAt),
     index("idx_invoice_number_series_active_updated").on(table.active, table.updatedAt),
+    uniqueIndex("uidx_invoice_number_series_default_scope_active")
+      .on(table.scope)
+      .where(sql`${table.active} = true AND ${table.isDefault} = true`),
   ],
 )
 

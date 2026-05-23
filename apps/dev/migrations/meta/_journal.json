@@ -197,6 +197,13 @@
       "when": 1779295200000,
       "tag": "0030_product_terms",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1779465900000,
+      "tag": "0032_invoice_number_external_allocation",
+      "breakpoints": true
     }
   ]
 }

@@ -252,7 +252,7 @@ export type {
   PaymentCompletedEvent,
   UnifiedPaymentRow,
 } from "./service.js"
-export { financeService, renderInvoiceBody } from "./service.js"
+export { financeService, InvoiceNumberAllocationError, renderInvoiceBody } from "./service.js"
 export type {
   FinanceAggregateOutstandingInvoice,
   FinanceAggregates,

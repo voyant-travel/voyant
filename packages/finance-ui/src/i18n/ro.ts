@@ -6,6 +6,7 @@ export const financeUiRo = {
     saveChanges: "Salveaza Modificarile",
     invoiceStatusLabels: {
       draft: "Ciorna",
+      pending_external_allocation: "In asteptarea numarului extern",
       sent: "Trimisa",
       partially_paid: "Platita Partial",
       paid: "Platita",

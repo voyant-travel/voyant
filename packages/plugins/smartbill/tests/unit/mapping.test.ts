@@ -151,6 +151,14 @@ describe("mapVoyantInvoiceToSmartbill", () => {
     expect(result.isDraft).toBe(true)
   })
 
+  it("asks SmartBill to allocate the number when external allocation is required", () => {
+    const result = mapVoyantInvoiceToSmartbill(
+      event({ externalAllocationRequired: true, invoiceNumber: "PENDING-INVOICE-1" }),
+      defaultOptions,
+    )
+    expect(result.number).toBe("")
+  })
+
   it("does not set isDraft when not present", () => {
     const result = mapVoyantInvoiceToSmartbill(event(), defaultOptions)
     expect(result.isDraft).toBeUndefined()

@@ -5,6 +5,7 @@
 export interface VoyantInvoiceEvent {
   id: string
   invoiceNumber?: string
+  externalAllocationRequired?: boolean
   [key: string]: unknown
 }
 
@@ -52,6 +53,7 @@ export interface SmartbillInvoiceBody {
   companyVatCode: string
   client: SmartbillClient
   seriesName: string
+  number?: string
   isDraft?: boolean
   currency: string
   language?: string

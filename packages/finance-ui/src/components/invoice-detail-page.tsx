@@ -1326,6 +1326,7 @@ export const invoiceStatusVariant: Record<
   "default" | "secondary" | "outline" | "destructive"
 > = {
   draft: "outline",
+  pending_external_allocation: "outline",
   sent: "secondary",
   partially_paid: "secondary",
   paid: "default",

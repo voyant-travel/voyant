@@ -129,12 +129,14 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
   async function handleExistingSmartbillRef(
     event: VoyantInvoiceEvent,
     documentType: SmartbillDocumentType,
+    body: SmartbillInvoiceBody,
     externalRef: SmartbillExternalRef,
   ) {
     logger.info?.(
       `[smartbill] ${documentType} already has SmartBill ref for ${event.id}; skipping create`,
       externalRef,
     )
+    await applyExternalAllocationFromRefIfRequired(event, documentType, body, externalRef)
     try {
       const persisted = await retrySmartbillInvoiceArtifact({
         runtime: artifacts,
@@ -171,6 +173,53 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
     } catch (err) {
       logger.error(`[smartbill] artifact persistence failed for ${event.id}`, err)
     }
+  }
+
+  async function applyExternalAllocationIfRequired(
+    event: VoyantInvoiceEvent,
+    documentType: SmartbillDocumentType,
+    body: SmartbillInvoiceBody,
+    result: SmartbillInvoiceResponse,
+  ) {
+    if (event.externalAllocationRequired !== true || !result.number) return
+
+    const db = await resolveArtifactDb(event, documentType, body, result)
+    if (!db) {
+      throw new Error("SmartBill external allocation requires artifact database access")
+    }
+    const allocation = await financeService.applyExternalInvoiceAllocation(db, event.id, {
+      invoiceNumber: formatExternalInvoiceNumber(result.series ?? body.seriesName, result.number),
+    })
+    if (allocation.status === "applied") {
+      logger.info?.(`[smartbill] external number applied for ${event.id}`, allocation.invoice)
+    }
+  }
+
+  async function applyExternalAllocationFromRefIfRequired(
+    event: VoyantInvoiceEvent,
+    documentType: SmartbillDocumentType,
+    body: SmartbillInvoiceBody,
+    externalRef: SmartbillExternalRef,
+  ) {
+    if (event.externalAllocationRequired !== true) return
+
+    const metadata = coerceMetadata(externalRef.metadata)
+    const number =
+      metadataString(metadata, "number") ??
+      externalRef.externalNumber ??
+      externalRef.externalId ??
+      null
+    if (!number) {
+      throw new Error("SmartBill external allocation requires an existing external number")
+    }
+    await applyExternalAllocationIfRequired(event, documentType, body, {
+      number,
+      series:
+        metadataString(metadata, "series") ??
+        metadataString(metadata, "seriesName") ??
+        body.seriesName,
+      url: externalRef.externalUrl ?? undefined,
+    })
   }
 
   async function recordSyncError(
@@ -226,7 +275,7 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
           const body = await mapEvent(event)
           const existingRef = await findExistingSmartbillRef(event, "invoice", body)
           if (existingRef) {
-            await handleExistingSmartbillRef(event, "invoice", existingRef)
+            await handleExistingSmartbillRef(event, "invoice", body, existingRef)
             return
           }
           const result = await client.createInvoice(body)
@@ -235,6 +284,7 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
             result,
           )
           await persistArtifact(event, "invoice", body, result)
+          await applyExternalAllocationIfRequired(event, "invoice", body, result)
         } catch (err) {
           logger.error(
             `[smartbill] createInvoice on "${eventNames.issued}" failed for ${event.id}`,
@@ -255,7 +305,7 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
           const body = await mapEvent(event)
           const existingRef = await findExistingSmartbillRef(event, "proforma", body)
           if (existingRef) {
-            await handleExistingSmartbillRef(event, "proforma", existingRef)
+            await handleExistingSmartbillRef(event, "proforma", body, existingRef)
             return
           }
           const result = await client.createProforma(body)
@@ -264,6 +314,7 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
             result,
           )
           await persistArtifact(event, "proforma", body, result)
+          await applyExternalAllocationIfRequired(event, "proforma", body, result)
         } catch (err) {
           logger.error(
             `[smartbill] createProforma on "${eventNames.proformaIssued}" failed for ${event.id}`,
@@ -350,6 +401,24 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error)
+}
+
+function coerceMetadata(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null
+}
+
+function metadataString(metadata: Record<string, unknown> | null, key: string) {
+  const value = metadata?.[key]
+  return typeof value === "string" && value.length > 0 ? value : null
+}
+
+function formatExternalInvoiceNumber(seriesName: string | undefined, number: string) {
+  const trimmedNumber = number.trim()
+  const trimmedSeries = seriesName?.trim()
+  if (!trimmedSeries || trimmedNumber.startsWith(`${trimmedSeries}-`)) return trimmedNumber
+  return `${trimmedSeries}-${trimmedNumber}`
 }
 
 function isUsableSmartbillRef(ref: {

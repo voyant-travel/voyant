@@ -6,6 +6,7 @@ export const financeUiEn = {
     saveChanges: "Save Changes",
     invoiceStatusLabels: {
       draft: "Draft",
+      pending_external_allocation: "Pending External Allocation",
       sent: "Sent",
       partially_paid: "Partially Paid",
       paid: "Paid",

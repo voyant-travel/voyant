@@ -211,6 +211,13 @@
       "when": 1779465800000,
       "tag": "0028_backfill_booking_item_slot_from_metadata",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1779465900000,
+      "tag": "0030_invoice_number_external_allocation",
+      "breakpoints": true
     }
   ]
 }
