@@ -23,7 +23,7 @@
  * `originalPriceFromAmountCents` resolution: by default we read
  * `products.sell_amount_cents` directly (works for simple products with
  * row-level pricing). Operators with option-driven pricing should pass
- * `loadOriginalPrice` to wire the same MIN-across-options resolver the
+ * `loadOriginalPrice` to wire the same rate-plan-first resolver the
  * pricing extension uses; otherwise the strikethrough may not match the
  * customer-visible list price for option-driven products.
  *
@@ -53,7 +53,7 @@ export interface PromotionsProjectionOptions {
    * Defaults to a direct read of `products.sell_amount_cents` +
    * `products.sell_currency` — works for simple row-priced products.
    * Operators with option-driven pricing should wire this to the same
-   * MIN-across-options resolver the pricing extension uses.
+   * rate-plan-first resolver the pricing extension uses.
    *
    * Returns `null` for amountCents when the product has no configured
    * base price (the extension then short-circuits to an empty projection

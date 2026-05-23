@@ -1,3 +1,4 @@
+import { availabilitySlots } from "@voyantjs/availability/schema"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
 import { optionUnits, productOptions, products } from "@voyantjs/products/schema"
@@ -5,7 +6,11 @@ import type { IndexerSlice } from "@voyantjs/products/service-catalog-plane"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import { priceCatalogs } from "../../src/schema-catalogs.js"
-import { optionPriceRules, optionUnitPriceRules } from "../../src/schema-option-rules.js"
+import {
+  optionPriceRules,
+  optionUnitPriceRules,
+  optionUnitTiers,
+} from "../../src/schema-option-rules.js"
 import { createProductPricingProjectionExtension } from "../../src/service-catalog-plane-pricing.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
@@ -18,8 +23,7 @@ const enSlice: IndexerSlice = {
 }
 
 describe.skipIf(!DB_AVAILABLE)("createProductPricingProjectionExtension (integration)", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: drizzle test client
-  let db: any
+  let db: ReturnType<typeof createTestDb>
   let productId: string
   let optionId: string
   let unitId: string
@@ -48,8 +52,20 @@ describe.skipIf(!DB_AVAILABLE)("createProductPricingProjectionExtension (integra
     })
     await db
       .insert(productOptions)
-      .values({ id: optionId, productId, name: "Standard", code: "std" })
-    await db.insert(optionUnits).values({ id: unitId, optionId, name: "Adult", code: "adult" })
+      .values({ id: optionId, productId, name: "Standard", code: "std", status: "active" })
+    await db
+      .insert(optionUnits)
+      .values({ id: unitId, optionId, name: "Adult", code: "adult", unitType: "person" })
+    await db.insert(availabilitySlots).values({
+      id: newId("availability_slots"),
+      productId,
+      optionId,
+      dateLocal: "2030-01-01",
+      startsAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+      timezone: "UTC",
+      status: "open",
+      unlimited: true,
+    })
     await db.insert(priceCatalogs).values([
       { id: usdCatalogId, name: "Public USD", code: "public-usd", currencyCode: "USD" },
       { id: eurCatalogId, name: "Public EUR", code: "public-eur", currencyCode: "EUR" },
@@ -226,8 +242,7 @@ describe.skipIf(!DB_AVAILABLE)("createProductPricingProjectionExtension (integra
     expect(out.get("priceFromAmountCents")).toBe(8500)
   })
 
-  it("MINs the product row sellAmountCents against rules", async () => {
-    // Row default is 5000, rule is 9900 — row wins.
+  it("prefers future rate-plan rules over stale product row pricing", async () => {
     const { sql } = await import("drizzle-orm")
     await db.execute(sql`UPDATE products SET sell_amount_cents = 5000 WHERE id = ${productId}`)
 
@@ -244,6 +259,56 @@ describe.skipIf(!DB_AVAILABLE)("createProductPricingProjectionExtension (integra
 
     const ext = createProductPricingProjectionExtension()
     const out = await ext.project(db, productId, enSlice)
-    expect(out.get("priceFromAmountCents")).toBe(5000)
+    expect(out.get("priceFromAmountCents")).toBe(9900)
+  })
+
+  it("prefers room prices over base prices and stale zero row pricing", async () => {
+    const { sql } = await import("drizzle-orm")
+    await db.execute(sql`UPDATE products SET sell_amount_cents = 0 WHERE id = ${productId}`)
+
+    const roomUnitId = newId("option_units")
+    await db.insert(optionUnits).values({
+      id: roomUnitId,
+      optionId,
+      name: "Double Room",
+      code: "double",
+      unitType: "room",
+      occupancyMin: 1,
+      occupancyMax: 2,
+    })
+
+    const ruleId = newId("option_price_rules")
+    await db.insert(optionPriceRules).values({
+      id: ruleId,
+      productId,
+      optionId,
+      priceCatalogId: usdCatalogId,
+      name: "room-rate",
+      baseSellAmountCents: 25000,
+      isDefault: true,
+      active: true,
+    })
+
+    const unitRuleId = newId("option_unit_price_rules")
+    await db.insert(optionUnitPriceRules).values({
+      id: unitRuleId,
+      optionPriceRuleId: ruleId,
+      optionId,
+      unitId: roomUnitId,
+      sellAmountCents: 18000,
+      active: true,
+    })
+    await db.insert(optionUnitTiers).values({
+      id: newId("option_unit_tiers"),
+      optionUnitPriceRuleId: unitRuleId,
+      minQuantity: 2,
+      sellAmountCents: 16500,
+      active: true,
+    })
+
+    const ext = createProductPricingProjectionExtension()
+    const out = await ext.project(db, productId, enSlice)
+    expect(out.get("priceFromAmountCents")).toBe(16500)
+    expect(out.get("hasPricing")).toBe(true)
   })
 })

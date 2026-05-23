@@ -1,9 +1,9 @@
 /**
  * Catalog plane field policy for product → pricing denormalization.
  *
- * Aggregates a "price from" value across the product's configured
- * default-rule prices so storefront cards can render `from $X` without
- * fanning out to per-option pricing on every render. See
+ * Aggregates a "price from" value across the product's future bookable
+ * default rate-plan prices so storefront cards can render `from $X`
+ * without fanning out to per-option pricing on every render. See
  * `docs/architecture/catalog-architecture.md` §5.4.
  *
  * Storefront product cards filter and display by:
@@ -26,16 +26,16 @@
  * Why a separate field instead of reusing the existing `sellAmountCents`
  * from `productCatalogPolicy`: that path projects the product-row
  * configured default verbatim. Multi-option products often leave
- * `products.sellAmountCents` null and put the real prices on options —
- * this projection MINs across both, giving storefront a value that's
- * always meaningful even for the option-driven case.
+ * `products.sellAmountCents` null or stale and put the real prices on
+ * active rate-plan room/base/unit rows. This projection prefers those
+ * bookable prices and only falls back to the product row when no rate-
+ * plan price exists.
  *
  * Out of scope here (deferred):
- *   - Schedule-aware rule resolution. The kernel reads `isDefault=true`
- *     rule prices only — it does NOT walk seasonal schedules, per-
- *     departure overrides, or per-unit occupancy tiers. A "true cheapest
- *     bookable price right now" projection requires per-slice rule
- *     evaluation with a moving "now" date and is a follow-up.
+ *   - Full schedule-aware rule resolution. The kernel reads
+ *     `isDefault=true` rule prices on options that have a future
+ *     bookable departure; it does NOT walk seasonal schedules or per-
+ *     departure overrides.
  *   - Per-audience / per-market currency conversion. The currency we
  *     emit is `products.sellCurrency`; multi-catalog operators using
  *     mixed currencies for the same product will see prices clipped
@@ -49,9 +49,9 @@ import { defineFieldPolicy, type FieldPolicyInput } from "@voyantjs/catalog/cont
 
 const PRODUCT_PRICING_FIELD_POLICY: FieldPolicyInput[] = [
   // ── Aggregated "price from" amount ───────────────────────────────────────
-  // MIN across `products.sellAmountCents` and the active default
-  // `optionPriceRules.baseSellAmountCents` (plus option-unit-rule MINs for
-  // per-unit-priced options). `null` when no source has a non-null amount.
+  // MIN across future bookable active default room prices first, then
+  // base/unit fallbacks, then `products.sellAmountCents`. `null` when no
+  // source has a positive amount.
   {
     path: "priceFromAmountCents",
     class: "structural",
@@ -85,8 +85,8 @@ const PRODUCT_PRICING_FIELD_POLICY: FieldPolicyInput[] = [
     sourceFreshness: "sync",
   },
   // ── Existence flag ───────────────────────────────────────────────────────
-  // `false` when neither the product row nor any active default rule has a
-  // configured price. Storefront filters use this for "show only priced
+  // `false` when neither future rate-plan pricing nor the product row has
+  // a positive amount. Storefront filters use this for "show only priced
   // products" and to suppress an empty `from` badge.
   {
     path: "hasPricing",
