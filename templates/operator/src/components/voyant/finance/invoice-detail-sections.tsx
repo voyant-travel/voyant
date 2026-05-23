@@ -469,7 +469,7 @@ export function InvoiceAttachmentsCard({ invoiceId }: { invoiceId: string }) {
                   </p>
                 </div>
                 <a
-                  href={`${apiBase}/v1/finance/invoice-attachments/${attachment.id}/download`}
+                  href={`${apiBase}/v1/admin/finance/invoice-attachments/${attachment.id}/download`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
