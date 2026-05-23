@@ -5,7 +5,7 @@ import {
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
 import type { EventBus } from "@voyantjs/core"
 import { renderStructuredTemplate } from "@voyantjs/utils/template-renderer"
-import { and, asc, desc, eq, gte, ilike, lte, ne, or, sql } from "drizzle-orm"
+import { and, asc, desc, eq, gt, gte, ilike, lte, ne, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 import {
@@ -670,6 +670,87 @@ function assertPaymentCanSettleInvoice(invoiceCurrency: string, data: CreatePaym
   )
 }
 
+async function resolveInvoiceForPaymentSession(
+  db: PostgresJsDatabase,
+  session: typeof paymentSessions.$inferSelect,
+) {
+  if (session.invoiceId) {
+    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, session.invoiceId))
+    return invoice ?? null
+  }
+
+  if (!session.bookingPaymentScheduleId) {
+    return null
+  }
+
+  const [schedule] = await db
+    .select()
+    .from(bookingPaymentSchedules)
+    .where(eq(bookingPaymentSchedules.id, session.bookingPaymentScheduleId))
+    .limit(1)
+
+  if (!schedule) {
+    return null
+  }
+
+  const [invoice] = await db
+    .select()
+    .from(invoices)
+    .where(
+      and(
+        eq(invoices.bookingId, schedule.bookingId),
+        eq(invoices.currency, schedule.currency),
+        ne(invoices.status, "void"),
+        gt(invoices.balanceDueCents, 0),
+      ),
+    )
+    .orderBy(desc(invoices.createdAt))
+    .limit(1)
+
+  return invoice ?? null
+}
+
+async function assertBookingPaymentScheduleHasPaymentCoverage(
+  db: PostgresJsDatabase,
+  schedule: Pick<
+    typeof bookingPaymentSchedules.$inferSelect,
+    "id" | "bookingId" | "amountCents" | "currency"
+  >,
+) {
+  const paymentRows = await db
+    .select({
+      id: payments.id,
+      amountCents: payments.amountCents,
+    })
+    .from(paymentSessions)
+    .innerJoin(payments, eq(paymentSessions.paymentId, payments.id))
+    .innerJoin(invoices, eq(payments.invoiceId, invoices.id))
+    .where(
+      and(
+        eq(paymentSessions.bookingPaymentScheduleId, schedule.id),
+        eq(paymentSessions.status, "paid"),
+        eq(payments.status, "completed"),
+        eq(payments.currency, schedule.currency),
+        eq(invoices.bookingId, schedule.bookingId),
+      ),
+    )
+    .groupBy(payments.id, payments.amountCents)
+
+  const paidCents = paymentRows.reduce((total, payment) => total + payment.amountCents, 0)
+  if (paidCents < schedule.amountCents) {
+    throw new PaymentValidationError(
+      "Cannot mark booking payment schedule as paid without linked completed payment coverage",
+      {
+        scheduleId: schedule.id,
+        bookingId: schedule.bookingId,
+        requiredCents: schedule.amountCents,
+        coveredCents: paidCents,
+        currency: schedule.currency,
+      },
+    )
+  }
+}
+
 export const financeService = {
   vouchers: vouchersService,
   getFinanceAggregates,
@@ -1214,6 +1295,26 @@ export const financeService = {
       let authorizationId = session.paymentAuthorizationId
       let captureId = session.paymentCaptureId
       let paymentId = session.paymentId
+      const invoiceForPayment =
+        data.status === "paid" && !paymentId
+          ? await resolveInvoiceForPaymentSession(tx, session)
+          : null
+
+      if (
+        data.status === "paid" &&
+        session.bookingPaymentScheduleId &&
+        !paymentId &&
+        !invoiceForPayment
+      ) {
+        throw new PaymentValidationError(
+          "Cannot complete a booking payment schedule session without an outstanding booking invoice",
+          {
+            paymentSessionId: session.id,
+            bookingPaymentScheduleId: session.bookingPaymentScheduleId,
+          },
+        )
+      }
+
       // Settlement payload to emit after the tx commits, so subscribers see
       // a consistent post-update view. Stays null when this call doesn't
       // result in a new payment being applied to an invoice.
@@ -1226,7 +1327,7 @@ export const financeService = {
           .values({
             bookingId: session.bookingId ?? null,
             orderId: session.orderId ?? null,
-            invoiceId: session.invoiceId ?? null,
+            invoiceId: invoiceForPayment?.id ?? session.invoiceId ?? null,
             bookingGuaranteeId: session.bookingGuaranteeId ?? null,
             paymentInstrumentId: data.paymentInstrumentId ?? session.paymentInstrumentId ?? null,
             status: data.status === "paid" ? "captured" : "authorized",
@@ -1272,7 +1373,7 @@ export const financeService = {
           .insert(paymentCaptures)
           .values({
             paymentAuthorizationId: authorizationId,
-            invoiceId: session.invoiceId ?? null,
+            invoiceId: invoiceForPayment?.id ?? session.invoiceId ?? null,
             status: "completed",
             currency: session.currency,
             amountCents: session.amountCents,
@@ -1288,90 +1389,63 @@ export const financeService = {
         captureId = capture?.id ?? null
       }
 
-      if (data.status === "paid" && session.invoiceId && !paymentId) {
-        const [invoice] = await tx
-          .select()
-          .from(invoices)
-          .where(eq(invoices.id, session.invoiceId))
-          .limit(1)
+      if (data.status === "paid" && invoiceForPayment && !paymentId) {
+        const [payment] = await tx
+          .insert(payments)
+          .values({
+            invoiceId: invoiceForPayment.id,
+            amountCents: session.amountCents,
+            currency: session.currency,
+            paymentMethod: data.paymentMethod ?? session.paymentMethod ?? "other",
+            paymentInstrumentId: data.paymentInstrumentId ?? session.paymentInstrumentId ?? null,
+            paymentAuthorizationId: authorizationId,
+            paymentCaptureId: captureId,
+            status: "completed",
+            referenceNumber:
+              data.referenceNumber ?? data.externalReference ?? session.externalReference ?? null,
+            paymentDate: (data.paymentDate ? new Date(data.paymentDate) : new Date())
+              .toISOString()
+              .slice(0, 10),
+            notes: data.notes ?? session.notes ?? null,
+          })
+          .returning({ id: payments.id })
 
-        if (invoice) {
-          const [payment] = await tx
-            .insert(payments)
-            .values({
-              invoiceId: session.invoiceId,
-              amountCents: session.amountCents,
-              currency: session.currency,
-              paymentMethod: data.paymentMethod ?? session.paymentMethod ?? "other",
-              paymentInstrumentId: data.paymentInstrumentId ?? session.paymentInstrumentId ?? null,
-              paymentAuthorizationId: authorizationId,
-              paymentCaptureId: captureId,
-              status: "completed",
-              referenceNumber:
-                data.referenceNumber ?? data.externalReference ?? session.externalReference ?? null,
-              paymentDate: (data.paymentDate ? new Date(data.paymentDate) : new Date())
-                .toISOString()
-                .slice(0, 10),
-              notes: data.notes ?? session.notes ?? null,
-            })
-            .returning({ id: payments.id })
+        paymentId = payment?.id ?? null
 
-          paymentId = payment?.id ?? null
-
-          const [sumResult] = await tx
-            .select({ total: sql<number>`coalesce(sum(amount_cents), 0)::int` })
-            .from(payments)
-            .where(and(eq(payments.invoiceId, session.invoiceId), eq(payments.status, "completed")))
-
-          const paidCents = sumResult?.total ?? 0
-          const balanceDueCents = Math.max(0, invoice.totalCents - paidCents)
-
-          await tx
-            .update(invoices)
-            .set({
-              paidCents,
-              balanceDueCents,
-              status:
-                paidCents >= invoice.totalCents
-                  ? "paid"
-                  : paidCents > 0
-                    ? "partially_paid"
-                    : invoice.status,
-              updatedAt: new Date(),
-            })
-            .where(eq(invoices.id, session.invoiceId))
-
-          if (paymentId) {
-            settlementForEmit = {
-              invoiceId: session.invoiceId,
-              paymentId,
-              provider: session.provider ?? "internal",
-              newlyAppliedAmountCents: session.amountCents,
-              paidCents,
-              balanceDueCents,
-            }
-          }
-        }
-      }
-
-      if (data.status === "paid" && session.bookingPaymentScheduleId) {
-        const [paidSchedule] = await tx
-          .update(bookingPaymentSchedules)
-          .set({ status: "paid", updatedAt: new Date() })
+        const [sumResult] = await tx
+          .select({ total: sql<number>`coalesce(sum(amount_cents), 0)::int` })
+          .from(payments)
           .where(
-            and(
-              eq(bookingPaymentSchedules.id, session.bookingPaymentScheduleId),
-              ne(bookingPaymentSchedules.status, "paid"),
-            ),
+            and(eq(payments.invoiceId, invoiceForPayment.id), eq(payments.status, "completed")),
           )
-          .returning()
 
-        if (paidSchedule) {
-          bookingSchedulePaidForEmit = buildBookingPaymentSchedulePaidEvent(
-            paidSchedule,
-            session,
+        const paidCents = sumResult?.total ?? 0
+        const balanceDueCents = Math.max(0, invoiceForPayment.totalCents - paidCents)
+
+        await tx
+          .update(invoices)
+          .set({
+            paidCents,
+            balanceDueCents,
+            status:
+              paidCents >= invoiceForPayment.totalCents
+                ? "paid"
+                : paidCents > 0
+                  ? "partially_paid"
+                  : invoiceForPayment.status,
+            updatedAt: new Date(),
+          })
+          .where(eq(invoices.id, invoiceForPayment.id))
+
+        if (paymentId) {
+          settlementForEmit = {
+            invoiceId: invoiceForPayment.id,
             paymentId,
-          )
+            provider: session.provider ?? "internal",
+            newlyAppliedAmountCents: session.amountCents,
+            paidCents,
+            balanceDueCents,
+          }
         }
       }
 
@@ -1398,6 +1472,7 @@ export const financeService = {
           paymentAuthorizationId: authorizationId,
           paymentCaptureId: captureId,
           paymentId,
+          invoiceId: invoiceForPayment?.id ?? session.invoiceId ?? undefined,
           providerSessionId: data.providerSessionId ?? session.providerSessionId ?? undefined,
           providerPaymentId: data.providerPaymentId ?? session.providerPaymentId ?? undefined,
           externalReference: data.externalReference ?? session.externalReference ?? undefined,
@@ -1431,6 +1506,37 @@ export const financeService = {
         )
       }
 
+      if (data.status === "paid" && session.bookingPaymentScheduleId) {
+        const [schedule] = await tx
+          .select()
+          .from(bookingPaymentSchedules)
+          .where(eq(bookingPaymentSchedules.id, session.bookingPaymentScheduleId))
+          .limit(1)
+
+        if (schedule) {
+          await assertBookingPaymentScheduleHasPaymentCoverage(tx, schedule)
+
+          const [paidSchedule] = await tx
+            .update(bookingPaymentSchedules)
+            .set({ status: "paid", updatedAt: new Date() })
+            .where(
+              and(
+                eq(bookingPaymentSchedules.id, session.bookingPaymentScheduleId),
+                ne(bookingPaymentSchedules.status, "paid"),
+              ),
+            )
+            .returning()
+
+          if (paidSchedule && updated) {
+            bookingSchedulePaidForEmit = buildBookingPaymentSchedulePaidEvent(
+              paidSchedule,
+              updated,
+              paymentId,
+            )
+          }
+        }
+      }
+
       return {
         updated: updated ?? null,
         settlement: settlementForEmit,
@@ -1458,10 +1564,14 @@ export const financeService = {
     // generic target instead of booking/order/invoice columns; those still
     // need the completion event keyed by targetType/targetId.
     if (data.status === "paid" && txResult.updated) {
-      await runtime.eventBus?.emit("payment.completed", buildPaymentCompletedEvent(session), {
-        category: "domain",
-        source: "service",
-      })
+      await runtime.eventBus?.emit(
+        "payment.completed",
+        buildPaymentCompletedEvent(txResult.updated),
+        {
+          category: "domain",
+          source: "service",
+        },
+      )
     }
 
     return txResult.updated
@@ -1792,6 +1902,13 @@ export const financeService = {
     data: CreateBookingPaymentScheduleInput,
     runtime: FinanceServiceRuntime = {},
   ) {
+    if (data.status === "paid") {
+      throw new PaymentValidationError(
+        "Create booking payment schedules as pending or due, then settle them through a payment session",
+        { bookingId },
+      )
+    }
+
     const createSchedule = async (writer: PostgresJsDatabase) => {
       const [booking] = await writer
         .select({ id: bookings.id })
@@ -2105,12 +2222,35 @@ export const financeService = {
     data: UpdateBookingPaymentScheduleInput,
     runtime: FinanceServiceRuntime = {},
   ) {
-    const updateSchedule = (writer: PostgresJsDatabase) =>
-      writer
+    const updateSchedule = async (writer: PostgresJsDatabase) => {
+      const [existing] = await writer
+        .select()
+        .from(bookingPaymentSchedules)
+        .where(eq(bookingPaymentSchedules.id, scheduleId))
+        .limit(1)
+
+      if (!existing) {
+        return []
+      }
+
+      const nextSchedule = {
+        id: existing.id,
+        bookingId: existing.bookingId,
+        amountCents: data.amountCents ?? existing.amountCents,
+        currency: data.currency ?? existing.currency,
+      }
+      const nextStatus = data.status ?? existing.status
+
+      if (nextStatus === "paid") {
+        await assertBookingPaymentScheduleHasPaymentCoverage(writer, nextSchedule)
+      }
+
+      return writer
         .update(bookingPaymentSchedules)
         .set({ ...data, updatedAt: new Date() })
         .where(eq(bookingPaymentSchedules.id, scheduleId))
         .returning()
+    }
 
     const actionLedgerContext = runtime.actionLedgerContext
     if (actionLedgerContext) {
