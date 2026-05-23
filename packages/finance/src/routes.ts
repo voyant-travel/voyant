@@ -224,19 +224,30 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .post("/payment-sessions/:id/complete", async (c) => {
-    const runtime = getFinanceRouteRuntime(c)
-    const row = await financeService.completePaymentSession(
-      c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, completePaymentSessionSchema),
-      {
-        eventBus: runtime?.eventBus,
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: "finance.payment_session.route",
-      },
-    )
-    if (!row) return c.json({ error: "Payment session not found" }, 404)
-    return c.json({ data: row })
+    try {
+      const runtime = getFinanceRouteRuntime(c)
+      const row = await financeService.completePaymentSession(
+        c.get("db"),
+        c.req.param("id"),
+        await parseJsonBody(c, completePaymentSessionSchema),
+        {
+          eventBus: runtime?.eventBus,
+          actionLedgerContext: getActionLedgerRequestContext(c),
+          actionLedgerAuthorizationSource: "finance.payment_session.route",
+        },
+      )
+      if (!row) return c.json({ error: "Payment session not found" }, 404)
+      return c.json({ data: row })
+    } catch (error) {
+      if (error instanceof PaymentValidationError) {
+        return c.json(
+          { error: error.message, code: error.code, details: error.details },
+          error.status,
+        )
+      }
+
+      throw error
+    }
   })
 
   .post("/payment-sessions/:id/fail", async (c) => {
@@ -500,23 +511,34 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .post("/bookings/:bookingId/payment-schedules", async (c) => {
-    const runtime = getFinanceRouteRuntime(c)
-    const row = await financeService.createBookingPaymentSchedule(
-      c.get("db"),
-      c.req.param("bookingId"),
-      await parseJsonBody(c, insertBookingPaymentScheduleSchema),
-      {
-        eventBus: runtime?.eventBus,
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: "finance.booking_payment_schedule.route",
-      },
-    )
+    try {
+      const runtime = getFinanceRouteRuntime(c)
+      const row = await financeService.createBookingPaymentSchedule(
+        c.get("db"),
+        c.req.param("bookingId"),
+        await parseJsonBody(c, insertBookingPaymentScheduleSchema),
+        {
+          eventBus: runtime?.eventBus,
+          actionLedgerContext: getActionLedgerRequestContext(c),
+          actionLedgerAuthorizationSource: "finance.booking_payment_schedule.route",
+        },
+      )
 
-    if (!row) {
-      return c.json({ error: "Booking not found" }, 404)
+      if (!row) {
+        return c.json({ error: "Booking not found" }, 404)
+      }
+
+      return c.json({ data: row }, 201)
+    } catch (error) {
+      if (error instanceof PaymentValidationError) {
+        return c.json(
+          { error: error.message, code: error.code, details: error.details },
+          error.status,
+        )
+      }
+
+      throw error
     }
-
-    return c.json({ data: row }, 201)
   })
 
   .post("/bookings/:bookingId/payment-schedules/default-plan", async (c) => {
@@ -540,23 +562,34 @@ export const financeRoutes = new Hono<Env>()
   })
 
   .patch("/bookings/:bookingId/payment-schedules/:scheduleId", async (c) => {
-    const runtime = getFinanceRouteRuntime(c)
-    const row = await financeService.updateBookingPaymentSchedule(
-      c.get("db"),
-      c.req.param("scheduleId"),
-      await parseJsonBody(c, updateBookingPaymentScheduleSchema),
-      {
-        eventBus: runtime?.eventBus,
-        actionLedgerContext: getActionLedgerRequestContext(c),
-        actionLedgerAuthorizationSource: "finance.booking_payment_schedule.route",
-      },
-    )
+    try {
+      const runtime = getFinanceRouteRuntime(c)
+      const row = await financeService.updateBookingPaymentSchedule(
+        c.get("db"),
+        c.req.param("scheduleId"),
+        await parseJsonBody(c, updateBookingPaymentScheduleSchema),
+        {
+          eventBus: runtime?.eventBus,
+          actionLedgerContext: getActionLedgerRequestContext(c),
+          actionLedgerAuthorizationSource: "finance.booking_payment_schedule.route",
+        },
+      )
 
-    if (!row) {
-      return c.json({ error: "Payment schedule not found" }, 404)
+      if (!row) {
+        return c.json({ error: "Payment schedule not found" }, 404)
+      }
+
+      return c.json({ data: row })
+    } catch (error) {
+      if (error instanceof PaymentValidationError) {
+        return c.json(
+          { error: error.message, code: error.code, details: error.details },
+          error.status,
+        )
+      }
+
+      throw error
     }
-
-    return c.json({ data: row })
   })
 
   .post("/bookings/:bookingId/payment-schedules/:scheduleId/payment-session", async (c) => {

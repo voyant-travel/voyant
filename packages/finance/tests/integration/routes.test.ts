@@ -626,6 +626,10 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     it("completes a paid session and marks the linked booking schedule as paid", async () => {
       const booking = await seedBooking()
       const schedule = await seedBookingPaymentSchedule(booking.id)
+      const invoice = await seedInvoice(booking.id, {
+        totalCents: schedule.amountCents,
+        balanceDueCents: schedule.amountCents,
+      })
       const createRes = await app.request("/payment-sessions", {
         method: "POST",
         ...json({
@@ -643,18 +647,27 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         ...json({ status: "paid", paymentMethod: "credit_card" }),
       })
       expect(res.status).toBe(200)
+      const { data } = await res.json()
 
       const [storedSchedule] = await db
         .select()
         .from(bookingPaymentSchedules)
         .where(eq(bookingPaymentSchedules.id, schedule.id))
       expect(storedSchedule?.status).toBe("paid")
+      const [payment] = await db.select().from(payments).where(eq(payments.id, data.paymentId))
+      expect(payment?.status).toBe("completed")
+      expect(payment?.invoiceId).toBe(invoice.id)
+
+      const [storedInvoice] = await db.select().from(invoices).where(eq(invoices.id, invoice.id))
+      expect(storedInvoice?.paidCents).toBe(schedule.amountCents)
+      expect(storedInvoice?.balanceDueCents).toBe(0)
+      expect(storedInvoice?.status).toBe("paid")
       expect(schedulePaidEvents).toHaveLength(1)
       expect(schedulePaidEvents[0]).toMatchObject({
         bookingId: booking.id,
         bookingPaymentScheduleId: schedule.id,
         paymentSessionId: session.id,
-        paymentId: null,
+        paymentId: data.paymentId,
         scheduleType: schedule.scheduleType,
         amountCents: schedule.amountCents,
         currency: schedule.currency,
@@ -666,6 +679,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         targetType: "booking_payment_schedule",
         targetId: schedule.id,
         bookingId: booking.id,
+        invoiceId: invoice.id,
         bookingPaymentScheduleId: schedule.id,
         bookingGuaranteeId: null,
         amountCents: 25000,
@@ -679,6 +693,87 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       })
       expect(retryRes.status).toBe(200)
       expect(schedulePaidEvents).toHaveLength(1)
+    })
+
+    it("does not double-count one payment linked by multiple paid sessions", async () => {
+      const booking = await seedBooking()
+      const schedule = await seedBookingPaymentSchedule(booking.id, { amountCents: 10000 })
+      const invoice = await seedInvoice(booking.id, { totalCents: 10000, balanceDueCents: 10000 })
+
+      const paymentRes = await app.request(`/invoices/${invoice.id}/payments`, {
+        method: "POST",
+        ...json({
+          amountCents: 6000,
+          currency: "USD",
+          paymentMethod: "bank_transfer",
+          paymentDate: "2025-06-20",
+          status: "completed",
+        }),
+      })
+      expect(paymentRes.status).toBe(201)
+      const { data: payment } = await paymentRes.json()
+
+      for (const clientReference of ["duplicate-a", "duplicate-b"]) {
+        const sessionRes = await app.request("/payment-sessions", {
+          method: "POST",
+          ...json({
+            targetType: "booking_payment_schedule",
+            targetId: schedule.id,
+            bookingId: booking.id,
+            invoiceId: invoice.id,
+            bookingPaymentScheduleId: schedule.id,
+            paymentId: payment.id,
+            status: "paid",
+            currency: "USD",
+            amountCents: 6000,
+            clientReference,
+          }),
+        })
+        expect(sessionRes.status).toBe(201)
+      }
+
+      const res = await app.request(`/bookings/${booking.id}/payment-schedules/${schedule.id}`, {
+        method: "PATCH",
+        ...json({ status: "paid" }),
+      })
+      expect(res.status).toBe(400)
+
+      const [storedSchedule] = await db
+        .select()
+        .from(bookingPaymentSchedules)
+        .where(eq(bookingPaymentSchedules.id, schedule.id))
+      expect(storedSchedule?.status).toBe("pending")
+    })
+
+    it("rejects completing a paid booking schedule session when no invoice can receive the payment", async () => {
+      const booking = await seedBooking()
+      const schedule = await seedBookingPaymentSchedule(booking.id)
+      const createRes = await app.request("/payment-sessions", {
+        method: "POST",
+        ...json({
+          bookingId: booking.id,
+          bookingPaymentScheduleId: schedule.id,
+          currency: "USD",
+          amountCents: 25000,
+          provider: "netopia",
+        }),
+      })
+      const { data: session } = await createRes.json()
+
+      const res = await app.request(`/payment-sessions/${session.id}/complete`, {
+        method: "POST",
+        ...json({ status: "paid", paymentMethod: "credit_card" }),
+      })
+      expect(res.status).toBe(400)
+
+      const [storedSchedule] = await db
+        .select()
+        .from(bookingPaymentSchedules)
+        .where(eq(bookingPaymentSchedules.id, schedule.id))
+      expect(storedSchedule?.status).toBe("pending")
+
+      const storedPayments = await db.select().from(payments)
+      expect(storedPayments).toHaveLength(0)
     })
 
     it("fails and lists payment sessions by status", async () => {
@@ -1903,11 +1998,33 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
 
       const res = await app.request(`/bookings/${booking.id}/payment-schedules/${schedule.id}`, {
         method: "PATCH",
-        ...json({ status: "paid" }),
+        ...json({ status: "due" }),
       })
       expect(res.status).toBe(200)
       const { data } = await res.json()
-      expect(data.status).toBe("paid")
+      expect(data.status).toBe("due")
+    })
+
+    it("rejects directly marking a payment schedule paid without linked completed payment coverage", async () => {
+      const booking = await seedBooking()
+
+      const createRes = await app.request(`/bookings/${booking.id}/payment-schedules`, {
+        method: "POST",
+        ...json({ dueDate: "2025-06-15", currency: "USD", amountCents: 10000 }),
+      })
+      const { data: schedule } = await createRes.json()
+
+      const res = await app.request(`/bookings/${booking.id}/payment-schedules/${schedule.id}`, {
+        method: "PATCH",
+        ...json({ status: "paid" }),
+      })
+      expect(res.status).toBe(400)
+
+      const [storedSchedule] = await db
+        .select()
+        .from(bookingPaymentSchedules)
+        .where(eq(bookingPaymentSchedules.id, schedule.id))
+      expect(storedSchedule?.status).toBe("pending")
     })
 
     it("deletes a payment schedule", async () => {
