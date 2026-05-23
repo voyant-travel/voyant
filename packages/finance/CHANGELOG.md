@@ -1,5 +1,22 @@
 # @voyantjs/finance
 
+## 0.76.0
+
+### Minor Changes
+
+- abf673d: Add bounded invoice rendition wait responses with inline document download URLs for interactive finance flows.
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.76.0
+- @voyantjs/bookings@0.76.0
+- @voyantjs/core@0.76.0
+- @voyantjs/db@0.76.0
+- @voyantjs/hono@0.76.0
+- @voyantjs/products@0.76.0
+- @voyantjs/storage@0.76.0
+- @voyantjs/utils@0.76.0
+
 ## 0.75.7
 
 ### Patch Changes
