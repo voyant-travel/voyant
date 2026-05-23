@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.77.5
+
+### Patch Changes
+
+- 6e522cb: Carry resolved tax names and regime codes on issued invoice event line items for downstream integrations.
+  - @voyantjs/action-ledger@0.77.5
+  - @voyantjs/bookings@0.77.5
+  - @voyantjs/core@0.77.5
+  - @voyantjs/db@0.77.5
+  - @voyantjs/hono@0.77.5
+  - @voyantjs/products@0.77.5
+  - @voyantjs/storage@0.77.5
+  - @voyantjs/utils@0.77.5
+
 ## 0.77.4
 
 ### Patch Changes

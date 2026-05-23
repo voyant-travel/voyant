@@ -1,5 +1,11 @@
 # @voyantjs/utils
 
+## 0.77.5
+
+### Patch Changes
+
+- @voyantjs/types@0.77.5
+
 ## 0.77.4
 
 ### Patch Changes
