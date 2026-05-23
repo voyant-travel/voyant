@@ -9,6 +9,7 @@ import {
   type LegalContractRecord,
   legalContractTemplateVersionRecordSchema,
   singleEnvelope,
+  useLegalContractAttachmentMutation,
   useLegalContractMutation,
   useLegalContractNumberSeries,
   useLegalContractTemplate,
@@ -44,7 +45,8 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import { DateTimePicker } from "@voyantjs/ui/components/date-time-picker"
 import { languages } from "@voyantjs/utils/languages"
-import { Loader2, Plus, Trash2 } from "lucide-react"
+import { FileText, Loader2, Plus, Trash2, Upload } from "lucide-react"
+import type { ChangeEvent, DragEvent } from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { type UseFormSetValue, type UseFormWatch, useFieldArray, useForm } from "react-hook-form"
 import { z } from "zod/v4"
@@ -57,6 +59,7 @@ type ContractDialogMessages = ReturnType<typeof useAdminMessages>["legal"]["cont
 const contractFormSchema = z.object({
   scope: z.enum(["customer", "supplier", "partner", "channel", "other"]),
   title: z.string().min(1, "titleRequired"),
+  contractNumber: z.string().optional(),
   language: z.string().min(2).max(10).optional(),
   templateVersionId: z.string().optional(),
   seriesId: z.string().optional(),
@@ -213,6 +216,12 @@ function buildVariablesPayload(
   }
 
   return Object.keys(variables).length ? variables : undefined
+}
+
+function formatUploadSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 function inferTemplateVariableKeys(body: string | null | undefined, requiredKeys: string[]) {
@@ -411,6 +420,7 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
   const isEditing = !!contract
   const t = useAdminMessages().legal.contractDialog
   const { create, update } = useLegalContractMutation()
+  const { upload } = useLegalContractAttachmentMutation()
   const { variableCatalog } = useLegalContractTemplateAuthoring()
 
   const validationByCode: Record<string, string> = {
@@ -424,13 +434,17 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
   const [organizationSearch, setOrganizationSearch] = useState("")
   const [supplierSearch, setSupplierSearch] = useState("")
   const [templateId, setTemplateId] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [isDraggingFile, setIsDraggingFile] = useState(false)
   const syncedTemplateVariablesSignatureRef = useRef("")
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(contractFormSchema),
     defaultValues: {
       scope: "customer",
       title: "",
+      contractNumber: "",
       language: "en",
       templateVersionId: "",
       seriesId: "",
@@ -531,6 +545,8 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
       setOrganizationSearch("")
       setSupplierSearch("")
       setTemplateId(null)
+      setSelectedFile(null)
+      setIsDraggingFile(false)
       syncedTemplateVariablesSignatureRef.current = ""
       return
     }
@@ -539,6 +555,7 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
       form.reset({
         scope: contract.scope,
         title: contract.title,
+        contractNumber: contract.contractNumber ?? "",
         language: contract.language ?? "en",
         templateVersionId: contract.templateVersionId ?? "",
         seriesId: contract.seriesId ?? "",
@@ -555,6 +572,7 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
       form.reset({
         scope: "customer",
         title: "",
+        contractNumber: "",
         language: "en",
         templateVersionId: "",
         seriesId: "",
@@ -567,6 +585,8 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
         additionalVariables: [],
         metadataEntries: [],
       })
+      setSelectedFile(null)
+      setIsDraggingFile(false)
     }
   }, [open, contract, form])
 
@@ -834,6 +854,7 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
     const payload = {
       scope: values.scope,
       title: values.title,
+      contractNumber: values.contractNumber?.trim() || null,
       language: values.language || "en",
       templateVersionId: values.templateVersionId || undefined,
       seriesId: values.seriesId || undefined,
@@ -846,17 +867,64 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
       metadata: buildRecordFromPairs(values.metadataEntries),
     }
 
+    let savedContract: LegalContractRecord
     if (isEditing && contract) {
-      await update.mutateAsync({ id: contract.id, input: payload })
+      savedContract = await update.mutateAsync({ id: contract.id, input: payload })
     } else {
-      await create.mutateAsync(payload)
+      savedContract = await create.mutateAsync(payload)
+    }
+
+    if (selectedFile) {
+      await upload.mutateAsync({
+        contractId: savedContract.id,
+        input: {
+          file: selectedFile,
+          name: selectedFile.name,
+          kind: "document",
+        },
+      })
     }
     onSuccess()
   }
 
+  const applySelectedFile = (file: File) => {
+    setSelectedFile(file)
+    setIsDraggingFile(false)
+  }
+
+  const onFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0]
+    if (!file) return
+    applySelectedFile(file)
+    event.currentTarget.value = ""
+  }
+
+  const onFileDrop = (event: DragEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    const file = event.dataTransfer.files?.[0]
+    if (file) applySelectedFile(file)
+  }
+
+  const onFileDragOver = (event: DragEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    setIsDraggingFile(true)
+  }
+
+  const onFileDragLeave = (event: DragEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    setIsDraggingFile(false)
+  }
+
+  const isSubmitting =
+    form.formState.isSubmitting || create.isPending || update.isPending || upload.isPending
+  const submitError = create.error ?? update.error ?? upload.error ?? null
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="xl">
+      <DialogContent size="xl" className="h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)]">
         <DialogHeader>
           <DialogTitle>{isEditing ? t.titleEdit : t.titleNew}</DialogTitle>
         </DialogHeader>
@@ -926,6 +994,32 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
+                  <Label>{t.contractNumberLabel}</Label>
+                  <Input
+                    {...form.register("contractNumber")}
+                    placeholder={t.contractNumberPlaceholder}
+                    maxLength={100}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Label>{t.expiresAtLabel}</Label>
+                  <DateTimePicker
+                    value={form.watch("expiresAt") || null}
+                    onChange={(next) =>
+                      form.setValue("expiresAt", next ?? "", {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      })
+                    }
+                    placeholder={t.expiresAtPlaceholder}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
                   <Label>{t.templateLabel}</Label>
                   <SearchableSelect
                     value={templateId}
@@ -973,7 +1067,7 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>{t.numberSeriesLabel}</Label>
                   <SearchableSelect
@@ -994,17 +1088,41 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <Label>{t.expiresAtLabel}</Label>
-                  <DateTimePicker
-                    value={form.watch("expiresAt") || null}
-                    onChange={(next) =>
-                      form.setValue("expiresAt", next ?? "", {
-                        shouldValidate: true,
-                        shouldDirty: true,
-                      })
-                    }
-                    placeholder={t.expiresAtPlaceholder}
-                    className="w-full"
+                  <Label>{t.attachmentLabel}</Label>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    onDrop={onFileDrop}
+                    onDragOver={onFileDragOver}
+                    onDragLeave={onFileDragLeave}
+                    data-dragging={isDraggingFile}
+                    className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-md border border-dashed px-4 py-5 text-center transition-colors hover:border-foreground/30 hover:bg-muted/30 data-[dragging=true]:border-primary data-[dragging=true]:bg-primary/5"
+                  >
+                    {selectedFile ? (
+                      <>
+                        <FileText className="size-5 text-muted-foreground" aria-hidden="true" />
+                        <span className="max-w-full truncate font-medium text-sm">
+                          {selectedFile.name}
+                        </span>
+                        <span className="text-muted-foreground text-xs">
+                          {formatUploadSize(selectedFile.size)}
+                          {selectedFile.type ? ` - ${selectedFile.type}` : ""}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="size-5 text-muted-foreground" aria-hidden="true" />
+                        <span className="text-muted-foreground text-sm">
+                          {t.attachmentPlaceholder}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    onChange={onFileChange}
                   />
                 </div>
               </div>
@@ -1100,96 +1218,102 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
               </div>
             </div>
 
-            <div className="grid gap-4">
-              <h3 className="text-sm font-semibold">{t.templateVariablesSectionTitle}</h3>
+            {selectedTemplateVersionId || templateVariablesFieldArray.fields.length > 0 ? (
+              <div className="grid gap-4">
+                <h3 className="text-sm font-semibold">{t.templateVariablesSectionTitle}</h3>
 
-              {!selectedTemplateVersionId ? (
-                <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-                  {t.templateVariablesNoVersion}
-                </div>
-              ) : templateVariablesFieldArray.fields.length === 0 ? (
-                <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-                  {t.templateVariablesNoneDetected}
-                </div>
-              ) : (
-                <div className="grid gap-4">
-                  {templateVariablesFieldArray.fields.map((field, index) => (
-                    <div key={field.id} className="grid gap-2 rounded-md border p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="text-sm font-medium">
-                            {field.label}
-                            {field.required ? (
-                              <span className="ml-1 text-destructive">*</span>
-                            ) : null}
-                          </div>
-                          <div className="font-mono text-xs text-muted-foreground">{field.key}</div>
-                        </div>
-                        {field.description ? (
-                          <div className="max-w-sm text-right text-xs text-muted-foreground">
-                            {field.description}
-                          </div>
-                        ) : null}
-                      </div>
-                      <VariableValueField
-                        row={field as TemplateVariableRow}
-                        index={index}
-                        setValue={form.setValue}
-                        watch={form.watch}
-                        messages={t}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="grid gap-3 rounded-md border p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-medium">{t.additionalVariablesTitle}</h4>
-                    <p className="text-xs text-muted-foreground">
-                      {t.additionalVariablesDescription}
-                    </p>
+                {!selectedTemplateVersionId ? (
+                  <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                    {t.templateVariablesNoVersion}
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => additionalVariablesFieldArray.append({ key: "", value: "" })}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    {t.addVariable}
-                  </Button>
-                </div>
-
-                {additionalVariablesFieldArray.fields.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">{t.additionalVariablesEmpty}</div>
+                ) : templateVariablesFieldArray.fields.length === 0 ? (
+                  <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                    {t.templateVariablesNoneDetected}
+                  </div>
                 ) : (
-                  <div className="grid gap-3">
-                    {additionalVariablesFieldArray.fields.map((field, index) => (
-                      <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] gap-3">
-                        <Input
-                          {...form.register(`additionalVariables.${index}.key`)}
-                          placeholder={t.variableKeyPlaceholder}
+                  <div className="grid gap-4">
+                    {templateVariablesFieldArray.fields.map((field, index) => (
+                      <div key={field.id} className="grid gap-2 rounded-md border p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="text-sm font-medium">
+                              {field.label}
+                              {field.required ? (
+                                <span className="ml-1 text-destructive">*</span>
+                              ) : null}
+                            </div>
+                            <div className="font-mono text-xs text-muted-foreground">
+                              {field.key}
+                            </div>
+                          </div>
+                          {field.description ? (
+                            <div className="max-w-sm text-right text-xs text-muted-foreground">
+                              {field.description}
+                            </div>
+                          ) : null}
+                        </div>
+                        <VariableValueField
+                          row={field as TemplateVariableRow}
+                          index={index}
+                          setValue={form.setValue}
+                          watch={form.watch}
+                          messages={t}
                         />
-                        <Input
-                          {...form.register(`additionalVariables.${index}.value`)}
-                          placeholder={t.variableValuePlaceholder}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => additionalVariablesFieldArray.remove(index)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </div>
                     ))}
                   </div>
                 )}
+
+                <div className="grid gap-3 rounded-md border p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-medium">{t.additionalVariablesTitle}</h4>
+                      <p className="text-xs text-muted-foreground">
+                        {t.additionalVariablesDescription}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => additionalVariablesFieldArray.append({ key: "", value: "" })}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      {t.addVariable}
+                    </Button>
+                  </div>
+
+                  {additionalVariablesFieldArray.fields.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">
+                      {t.additionalVariablesEmpty}
+                    </div>
+                  ) : (
+                    <div className="grid gap-3">
+                      {additionalVariablesFieldArray.fields.map((field, index) => (
+                        <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] gap-3">
+                          <Input
+                            {...form.register(`additionalVariables.${index}.key`)}
+                            placeholder={t.variableKeyPlaceholder}
+                          />
+                          <Input
+                            {...form.register(`additionalVariables.${index}.value`)}
+                            placeholder={t.variableValuePlaceholder}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => additionalVariablesFieldArray.remove(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            ) : null}
 
             <div className="grid gap-3 rounded-md border p-4">
               <div className="flex items-center justify-between">
@@ -1235,15 +1359,14 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
                 </div>
               )}
             </div>
+            {submitError ? <p className="text-xs text-destructive">{submitError.message}</p> : null}
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {t.cancel}
             </Button>
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {isEditing ? t.saveChanges : t.createAction}
             </Button>
           </DialogFooter>
