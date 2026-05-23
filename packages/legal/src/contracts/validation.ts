@@ -123,6 +123,7 @@ export const contractNumberSeriesListQuerySchema = z.object({
 // ---------- contracts ----------
 
 const contractCoreSchema = z.object({
+  contractNumber: z.string().trim().min(1).max(100).optional().nullable(),
   scope: contractScopeSchema,
   status: contractStatusSchema.default("draft"),
   title: z.string().min(1).max(500),

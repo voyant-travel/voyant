@@ -18,7 +18,7 @@ export const operatorAdminLegalMessages = {
         saveChanges: "Save Changes",
         setupSectionTitle: "Contract setup",
         setupSectionDescription:
-          "Pick the contract scope, language, template, and numbering before you fill in the details.",
+          "Set the core details. Templates, number series, and uploads are optional.",
         linkedSectionTitle: "Linked records",
         linkedSectionDescription:
           "Link the contract to the right customer, organization, supplier, or channel so your team can find it later.",
@@ -40,6 +40,8 @@ export const operatorAdminLegalMessages = {
         metadataValuePlaceholder: "Value",
         titleLabel: "Title",
         titlePlaceholder: "Contract title",
+        contractNumberLabel: "Contract number",
+        contractNumberPlaceholder: "Manual number",
         scopeLabel: "Scope",
         languageLabel: "Language",
         languagePlaceholder: "Choose a language",
@@ -61,6 +63,8 @@ export const operatorAdminLegalMessages = {
         numberSeriesPlaceholder: "Choose a number series",
         numberSeriesSearchPlaceholder: "Search number series...",
         numberSeriesEmpty: "No number series found.",
+        attachmentLabel: "Contract file",
+        attachmentPlaceholder: "Choose or drop a file",
         seriesActive: "active",
         seriesInactive: "inactive",
         expiresAtLabel: "Expires at",
@@ -260,7 +264,7 @@ export const operatorAdminLegalMessages = {
         saveChanges: "Salveaza modificarile",
         setupSectionTitle: "Configurare contract",
         setupSectionDescription:
-          "Alege domeniul, limba, sablonul si seria de numerotare inainte sa completezi detaliile.",
+          "Seteaza detaliile principale. Sablonul, seria de numerotare si fisierul sunt optionale.",
         linkedSectionTitle: "Inregistrari asociate",
         linkedSectionDescription:
           "Asociaza contractul cu clientul, organizatia, furnizorul sau canalul potrivit ca echipa sa il gaseasca mai tarziu.",
@@ -284,6 +288,8 @@ export const operatorAdminLegalMessages = {
         metadataValuePlaceholder: "Valoare",
         titleLabel: "Titlu",
         titlePlaceholder: "Titlul contractului",
+        contractNumberLabel: "Numar contract",
+        contractNumberPlaceholder: "Numar manual",
         scopeLabel: "Domeniu",
         languageLabel: "Limba",
         languagePlaceholder: "Alege o limba",
@@ -305,6 +311,8 @@ export const operatorAdminLegalMessages = {
         numberSeriesPlaceholder: "Alege o serie de numerotare",
         numberSeriesSearchPlaceholder: "Cauta serii de numerotare...",
         numberSeriesEmpty: "Nicio serie de numerotare gasita.",
+        attachmentLabel: "Fisier contract",
+        attachmentPlaceholder: "Alege sau plaseaza un fisier",
         seriesActive: "activa",
         seriesInactive: "inactiva",
         expiresAtLabel: "Expira la",
