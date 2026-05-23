@@ -1,5 +1,17 @@
 # @voyantjs/plugin-smartbill
 
+## 0.77.5
+
+### Patch Changes
+
+- 6e522cb: Carry resolved tax names and regime codes on issued invoice event line items for downstream integrations.
+- Updated dependencies [6e522cb]
+  - @voyantjs/core@0.77.5
+  - @voyantjs/finance@0.77.5
+  - @voyantjs/finance-react@0.77.5
+  - @voyantjs/storage@0.77.5
+  - @voyantjs/ui@0.77.5
+
 ## 0.77.4
 
 ### Patch Changes
