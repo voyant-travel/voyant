@@ -1,5 +1,19 @@
 # @voyantjs/legal
 
+## 0.77.1
+
+### Patch Changes
+
+- Updated dependencies [574684d]
+  - @voyantjs/bookings@0.77.1
+  - @voyantjs/core@0.77.1
+  - @voyantjs/crm@0.77.1
+  - @voyantjs/db@0.77.1
+  - @voyantjs/hono@0.77.1
+  - @voyantjs/storage@0.77.1
+  - @voyantjs/suppliers@0.77.1
+  - @voyantjs/utils@0.77.1
+
 ## 0.77.0
 
 ### Minor Changes
