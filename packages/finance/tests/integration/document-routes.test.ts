@@ -149,6 +149,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
     expect(firstBody.data.download).toEqual({
       url: `https://signed.example.com/${firstBody.data.rendition.storageKey}`,
       expiresAt: null,
+      filename: "rendition-1.pdf",
     })
 
     const secondRes = await app.request(`/invoices/${invoice.id}/regenerate-document`, {
@@ -157,7 +158,13 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
     })
 
     expect(secondRes.status).toBe(200)
-    expect((await secondRes.json()).data.rendition.storageKey).toContain("rendition-2.pdf")
+    const secondBody = await secondRes.json()
+    expect(secondBody.data.rendition.storageKey).toContain("rendition-2.pdf")
+    expect(secondBody.data.download).toEqual({
+      url: `https://signed.example.com/${secondBody.data.rendition.storageKey}`,
+      expiresAt: null,
+      filename: "rendition-2.pdf",
+    })
 
     const renditions = await db
       .select()

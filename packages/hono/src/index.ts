@@ -11,6 +11,14 @@ export {
   unsignCookie,
   verifySession,
 } from "./auth/index.js"
+export type {
+  DocumentDownloadEnvelope,
+  DocumentDownloadResolution,
+  DocumentDownloadResolver,
+  DocumentDownloadResolverResult,
+  StoredDocumentReference,
+} from "./document-download.js"
+export { resolveStoredDocumentDownload } from "./document-download.js"
 export {
   consoleLoggerProvider,
   cors,

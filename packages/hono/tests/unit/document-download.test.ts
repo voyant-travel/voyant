@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 import { resolveStoredDocumentDownload } from "../../src/document-download.js"
 
 describe("resolveStoredDocumentDownload", () => {
-  it("uses resolver URLs for storage-backed documents", async () => {
+  it("uses resolver URLs for storage-backed documents and derives filenames", async () => {
     const resolver = vi.fn(async () => "https://signed.example.com/invoice.pdf")
 
     await expect(
@@ -45,6 +45,32 @@ describe("resolveStoredDocumentDownload", () => {
         url: "https://signed.example.com/custom.pdf",
         expiresAt: "2026-05-23T15:00:00.000Z",
         filename: "custom.pdf",
+      },
+    })
+  })
+
+  it("preserves explicit null expiry from resolver envelopes", async () => {
+    const resolver = vi.fn(async () => ({
+      url: "https://signed.example.com/no-expiry.pdf",
+      expiresAt: null,
+    }))
+
+    await expect(
+      resolveStoredDocumentDownload(
+        {
+          storageKey: "invoices/inv_123.pdf",
+          metadata: {
+            expiresAt: "2026-05-23T14:00:00.000Z",
+          },
+        },
+        { bindings: {}, resolveDocumentDownloadUrl: resolver },
+      ),
+    ).resolves.toEqual({
+      status: "ready",
+      download: {
+        url: "https://signed.example.com/no-expiry.pdf",
+        expiresAt: null,
+        filename: "inv_123.pdf",
       },
     })
   })
