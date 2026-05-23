@@ -1,5 +1,17 @@
 # @voyantjs/plugin-smartbill
 
+## 0.77.7
+
+### Patch Changes
+
+- f22ae84: Request SmartBill invoice and proforma PDFs with an octet-stream accept header.
+- cf47ec5: Record SmartBill PDF persistence success and failure metadata on invoice external refs.
+  - @voyantjs/core@0.77.7
+  - @voyantjs/finance@0.77.7
+  - @voyantjs/finance-react@0.77.7
+  - @voyantjs/storage@0.77.7
+  - @voyantjs/ui@0.77.7
+
 ## 0.77.6
 
 ### Patch Changes
