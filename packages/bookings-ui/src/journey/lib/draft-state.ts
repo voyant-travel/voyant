@@ -50,6 +50,10 @@ export function patchBilling(draft: Draft, patch: Partial<Draft["billing"]>): Dr
   return { ...draft, billing: { ...draft.billing, ...patch } }
 }
 
+export function canCopyBillingContactToTraveler(contact: Draft["billing"]["contact"]): boolean {
+  return Boolean(contact.firstName || contact.lastName || contact.email || contact.phone)
+}
+
 export function patchPaxCount(draft: Draft, band: string, count: number): Draft {
   const safeCount = Number.isFinite(count) && count >= 0 ? Math.floor(count) : 0
   return patchConfigure(draft, {

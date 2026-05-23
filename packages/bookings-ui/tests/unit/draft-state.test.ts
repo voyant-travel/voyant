@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  canCopyBillingContactToTraveler,
   emptyDraft,
   patchBilling,
   patchConfigure,
@@ -59,6 +60,32 @@ describe("draft-state", () => {
     const next = patchBilling(draft, { buyerType: "B2B" })
     expect(next.billing.buyerType).toBe("B2B")
     expect(next.billing.contact).toBe(draft.billing.contact)
+  })
+
+  it("allows copying billing contact when any traveler contact field is present", () => {
+    expect(
+      canCopyBillingContactToTraveler({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+      }),
+    ).toBe(false)
+    expect(
+      canCopyBillingContactToTraveler({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "+40722111222",
+      }),
+    ).toBe(true)
+    expect(
+      canCopyBillingContactToTraveler({
+        firstName: "",
+        lastName: "Ionescu",
+        email: "",
+      }),
+    ).toBe(true)
   })
 
   it("patchConfigure preserves the pax record", () => {
