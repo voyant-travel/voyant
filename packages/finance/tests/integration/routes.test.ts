@@ -9,6 +9,7 @@ import { financeRoutes } from "../../src/routes.js"
 import {
   bookingPaymentSchedules,
   invoiceLineItems,
+  invoiceNumberSeries,
   invoiceRenditions,
   paymentAuthorizations,
   paymentCaptures,
@@ -393,6 +394,27 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     expect(res.status).toBe(201)
     const { data } = await res.json()
     return data as { id: string; [k: string]: unknown }
+  }
+
+  async function seedInvoiceNumberSeries(
+    overrides: Partial<typeof invoiceNumberSeries.$inferInsert> = {},
+  ) {
+    const [row] = await db
+      .insert(invoiceNumberSeries)
+      .values({
+        code: `series-${seq + 1}`,
+        name: "Default invoice series",
+        prefix: "INV",
+        separator: "-",
+        padLength: 4,
+        currentSequence: 0,
+        scope: "invoice",
+        isDefault: true,
+        active: true,
+        ...overrides,
+      })
+      .returning()
+    return row!
   }
 
   // ── Payment Instruments ───────────────────────────────────────
@@ -1371,6 +1393,64 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         quantity: 1,
         unitPriceCents: 16500,
         totalCents: 16500,
+      })
+    })
+
+    it("allocates a number for schedule-row invoices when the UI omits invoiceNumber", async () => {
+      await seedInvoiceNumberSeries({ currentSequence: 41 })
+      const booking = await seedBooking({ sellAmountCents: 33000 })
+      const schedule = await seedBookingPaymentSchedule(booking.id, {
+        amountCents: 16500,
+        scheduleType: "balance",
+      })
+
+      const res = await app.request("/invoices/from-booking", {
+        method: "POST",
+        ...json({
+          bookingId: booking.id,
+          bookingPaymentScheduleId: schedule.id,
+          issueDate: "2025-06-01",
+          dueDate: "2025-07-01",
+        }),
+      })
+
+      expect(res.status).toBe(201)
+      const { data } = await res.json()
+      expect(data.invoiceNumber).toBe("INV-0042")
+      expect(data.seriesId).toMatch(/^ins_/)
+      expect(data.sequence).toBe(42)
+      expect(data.totalCents).toBe(16500)
+    })
+
+    it("returns 409 when a caller supplies a duplicate invoice number", async () => {
+      const booking = await seedBooking({ sellAmountCents: 33000 })
+      const schedule = await seedBookingPaymentSchedule(booking.id, {
+        amountCents: 16500,
+        scheduleType: "balance",
+      })
+
+      const input = {
+        bookingId: booking.id,
+        bookingPaymentScheduleId: schedule.id,
+        invoiceNumber: "MANUAL-DUPLICATE",
+        issueDate: "2025-06-01",
+        dueDate: "2025-07-01",
+      }
+      const first = await app.request("/invoices/from-booking", {
+        method: "POST",
+        ...json(input),
+      })
+      expect(first.status).toBe(201)
+
+      const second = await app.request("/invoices/from-booking", {
+        method: "POST",
+        ...json(input),
+      })
+      expect(second.status).toBe(409)
+      await expect(second.json()).resolves.toMatchObject({
+        error: "Invoice number already exists",
+        code: "invoice_number_conflict",
+        invoiceNumber: "MANUAL-DUPLICATE",
       })
     })
 

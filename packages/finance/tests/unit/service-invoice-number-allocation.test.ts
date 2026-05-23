@@ -5,6 +5,7 @@ import {
   financeService,
   type InvoiceFromBookingData,
   type InvoiceNumberAllocationError,
+  type InvoiceNumberConflictError,
 } from "../../src/service.js"
 
 const bookingData: InvoiceFromBookingData = {
@@ -47,6 +48,7 @@ function series(overrides: Record<string, unknown> = {}) {
 function makeDb(options: {
   explicitSeries?: Record<string, unknown> | null
   defaultSeries?: Record<string, unknown> | null
+  invoiceInsertError?: unknown
 }) {
   const insertedInvoices: Array<Record<string, unknown>> = []
   const execute = vi.fn(async () => {
@@ -77,6 +79,9 @@ function makeDb(options: {
     insert: vi.fn((table) => ({
       values: vi.fn((values) => {
         if (table === invoices) {
+          if (options.invoiceInsertError) {
+            throw options.invoiceInsertError
+          }
           insertedInvoices.push(values)
           return {
             returning: vi.fn(async () => [
@@ -239,5 +244,31 @@ describe("financeService.createInvoiceFromBooking number allocation", () => {
       sequence: null,
       status: "pending_external_allocation",
     })
+  })
+
+  it("normalizes duplicate invoice numbers into a typed conflict", async () => {
+    const { db } = makeDb({
+      invoiceInsertError: {
+        code: "23505",
+        constraint: "invoices_invoice_number_unique",
+      },
+    })
+
+    await expect(
+      financeService.createInvoiceFromBooking(
+        db,
+        {
+          bookingId: "book_123",
+          invoiceNumber: "MANUAL-1",
+          issueDate: "2026-05-23",
+          dueDate: "2026-06-23",
+        },
+        bookingData,
+      ),
+    ).rejects.toMatchObject({
+      name: "InvoiceNumberConflictError",
+      code: "invoice_number_conflict",
+      invoiceNumber: "MANUAL-1",
+    } satisfies Partial<InvoiceNumberConflictError>)
   })
 })

@@ -163,7 +163,7 @@ export interface ConvertProformaInput {
 export interface CreateInvoiceFromBookingInput {
   bookingId: string
   bookingPaymentScheduleId?: string
-  invoiceNumber: string
+  invoiceNumber?: string
   issueDate: string
   dueDate: string
   notes?: string | null
