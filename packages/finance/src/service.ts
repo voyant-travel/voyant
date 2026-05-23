@@ -340,6 +340,15 @@ export interface InvoiceFromBookingData {
     sellAmountCents: number | null
     baseSellAmountCents: number | null
   }
+  paymentSchedule?: {
+    id: string
+    bookingId: string
+    bookingItemId: string | null
+    scheduleType: "deposit" | "installment" | "balance" | "hold" | "other"
+    dueDate: string
+    currency: string
+    amountCents: number
+  } | null
   items: Array<{
     id: string
     title: string
@@ -347,6 +356,17 @@ export interface InvoiceFromBookingData {
     unitSellAmountCents: number | null
     totalSellAmountCents: number | null
   }>
+}
+
+const PAYMENT_SCHEDULE_LINE_LABELS: Record<
+  NonNullable<InvoiceFromBookingData["paymentSchedule"]>["scheduleType"],
+  string
+> = {
+  deposit: "Deposit",
+  installment: "Installment",
+  balance: "Balance",
+  hold: "Hold",
+  other: "Payment schedule",
 }
 
 function bookingItemToInvoiceLine(
@@ -377,6 +397,35 @@ function bookingItemToInvoiceLine(
         : null,
     sortOrder,
   }
+}
+
+function bookingPaymentScheduleToInvoiceLine(
+  booking: InvoiceFromBookingData["booking"],
+  schedule: NonNullable<InvoiceFromBookingData["paymentSchedule"]>,
+) {
+  const label = PAYMENT_SCHEDULE_LINE_LABELS[schedule.scheduleType]
+
+  return {
+    bookingItemId: null as string | null,
+    description: `${label} for booking ${booking.bookingNumber}`,
+    quantity: 1,
+    unitPriceCents: schedule.amountCents,
+    totalCents: schedule.amountCents,
+    taxRate: null,
+    sortOrder: 0,
+  }
+}
+
+function resolveBookingInvoiceBaseAmount(
+  booking: InvoiceFromBookingData["booking"],
+  invoiceCurrency: string,
+  amountCents: number,
+) {
+  if (!booking.baseCurrency) return null
+  if (invoiceCurrency === booking.baseCurrency) return amountCents
+  if (invoiceCurrency !== booking.sellCurrency || booking.baseSellAmountCents == null) return null
+  if (!booking.sellAmountCents || booking.sellAmountCents <= 0) return booking.baseSellAmountCents
+  return Math.round((amountCents / booking.sellAmountCents) * booking.baseSellAmountCents)
 }
 
 function toTimestamp(value?: string | null) {
@@ -3175,10 +3224,11 @@ export const financeService = {
     data: CreateInvoiceFromBookingInput,
     bookingData: InvoiceFromBookingData,
   ) {
-    const { booking, items } = bookingData
+    const { booking, items, paymentSchedule } = bookingData
     const numberAssignment = await resolveInvoiceNumberForBooking(db, data)
 
-    const itemIds = items.map((item) => item.id)
+    const invoiceItems = paymentSchedule ? [] : items
+    const itemIds = invoiceItems.map((item) => item.id)
 
     const taxes =
       itemIds.length === 0
@@ -3203,9 +3253,10 @@ export const financeService = {
       taxesByBookingItemId.set(tax.bookingItemId, existing)
     }
 
-    const lineItems =
-      items.length > 0
-        ? items.map((item, sortOrder) => ({
+    const lineItems = paymentSchedule
+      ? [bookingPaymentScheduleToInvoiceLine(booking, paymentSchedule)]
+      : invoiceItems.length > 0
+        ? invoiceItems.map((item, sortOrder) => ({
             ...bookingItemToInvoiceLine(item, taxesByBookingItemId.get(item.id) ?? [], sortOrder),
           }))
         : [
@@ -3242,6 +3293,10 @@ export const financeService = {
     // baseCurrency null — propagate that NULL across every base_*
     // field so the constraint stays satisfied.
     const hasBaseCurrency = Boolean(booking.baseCurrency)
+    const invoiceCurrency = paymentSchedule?.currency ?? booking.sellCurrency
+    const invoiceBaseAmountCents = paymentSchedule
+      ? resolveBookingInvoiceBaseAmount(booking, invoiceCurrency, paymentSchedule.amountCents)
+      : (booking.baseSellAmountCents ?? null)
 
     return db.transaction(async (tx) => {
       const [invoice] = await tx
@@ -3255,19 +3310,19 @@ export const financeService = {
           personId: booking.personId,
           organizationId: booking.organizationId,
           status: numberAssignment.status,
-          currency: booking.sellCurrency,
+          currency: invoiceCurrency,
           baseCurrency: booking.baseCurrency,
           fxRateSetId: booking.fxRateSetId,
           subtotalCents,
-          baseSubtotalCents: hasBaseCurrency ? (booking.baseSellAmountCents ?? null) : null,
+          baseSubtotalCents: hasBaseCurrency ? invoiceBaseAmountCents : null,
           taxCents,
           baseTaxCents: null,
           totalCents,
-          baseTotalCents: hasBaseCurrency ? (booking.baseSellAmountCents ?? null) : null,
+          baseTotalCents: hasBaseCurrency ? invoiceBaseAmountCents : null,
           paidCents: 0,
           basePaidCents: hasBaseCurrency ? 0 : null,
           balanceDueCents: totalCents,
-          baseBalanceDueCents: hasBaseCurrency ? (booking.baseSellAmountCents ?? null) : null,
+          baseBalanceDueCents: hasBaseCurrency ? invoiceBaseAmountCents : null,
           commissionAmountCents: commissionAmountCents > 0 ? commissionAmountCents : null,
           issueDate: data.issueDate,
           dueDate: data.dueDate,

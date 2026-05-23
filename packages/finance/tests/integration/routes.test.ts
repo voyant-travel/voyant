@@ -8,6 +8,7 @@ import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY } from "../../src/route-runtime.js"
 import { financeRoutes } from "../../src/routes.js"
 import {
   bookingPaymentSchedules,
+  invoiceLineItems,
   invoiceRenditions,
   paymentAuthorizations,
   paymentCaptures,
@@ -1330,6 +1331,81 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(res.status).toBe(201)
       const { data } = await res.json()
       expect(data.subtotalCents).toBe(50000) // uses booking.sellAmountCents
+    })
+
+    it("creates an invoice from a single booking payment schedule row", async () => {
+      const booking = await seedBooking({ sellAmountCents: 33000 })
+      await seedBookingItem(booking.id)
+      await seedBookingItem(booking.id)
+      const schedule = await seedBookingPaymentSchedule(booking.id, {
+        amountCents: 16500,
+        scheduleType: "balance",
+      })
+
+      const res = await app.request("/invoices/from-booking", {
+        method: "POST",
+        ...json({
+          bookingId: booking.id,
+          bookingPaymentScheduleId: schedule.id,
+          invoiceNumber: nextInvoiceNumber(),
+          issueDate: "2025-06-01",
+          dueDate: "2025-07-01",
+        }),
+      })
+
+      expect(res.status).toBe(201)
+      const { data } = await res.json()
+      expect(data.bookingId).toBe(booking.id)
+      expect(data.subtotalCents).toBe(16500)
+      expect(data.totalCents).toBe(16500)
+      expect(data.balanceDueCents).toBe(16500)
+
+      const lines = await db
+        .select()
+        .from(invoiceLineItems)
+        .where(eq(invoiceLineItems.invoiceId, data.id))
+      expect(lines).toHaveLength(1)
+      expect(lines[0]).toMatchObject({
+        bookingItemId: null,
+        description: `Balance for booking ${booking.bookingNumber}`,
+        quantity: 1,
+        unitPriceCents: 16500,
+        totalCents: 16500,
+      })
+    })
+
+    it("does not derive base amounts from booking sell currency for cross-currency schedule invoices", async () => {
+      const booking = await seedBooking({
+        sellCurrency: "USD",
+        sellAmountCents: 33000,
+        baseCurrency: "RON",
+        baseSellAmountCents: 150000,
+      })
+      const schedule = await seedBookingPaymentSchedule(booking.id, {
+        currency: "EUR",
+        amountCents: 16500,
+        scheduleType: "balance",
+      })
+
+      const res = await app.request("/invoices/from-booking", {
+        method: "POST",
+        ...json({
+          bookingId: booking.id,
+          bookingPaymentScheduleId: schedule.id,
+          invoiceNumber: nextInvoiceNumber(),
+          issueDate: "2025-06-01",
+          dueDate: "2025-07-01",
+        }),
+      })
+
+      expect(res.status).toBe(201)
+      const { data } = await res.json()
+      expect(data.currency).toBe("EUR")
+      expect(data.baseCurrency).toBe("RON")
+      expect(data.subtotalCents).toBe(16500)
+      expect(data.baseSubtotalCents).toBeNull()
+      expect(data.baseTotalCents).toBeNull()
+      expect(data.baseBalanceDueCents).toBeNull()
     })
 
     it("returns 404 for non-existent booking", async () => {

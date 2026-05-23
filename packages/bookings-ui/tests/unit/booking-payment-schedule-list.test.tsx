@@ -154,6 +154,7 @@ describe("BookingPaymentScheduleList", () => {
     expect(testState.createFromBooking).toHaveBeenCalledWith(
       expect.objectContaining({
         bookingId: "book_123",
+        bookingPaymentScheduleId: "sched_123",
         invoiceType: "invoice",
       }),
     )

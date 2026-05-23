@@ -65,6 +65,7 @@ export function BookingPaymentScheduleList({ bookingId }: BookingPaymentSchedule
       const prefix = invoiceType === "proforma" ? "PRO" : "INV"
       const invoice = await createInvoiceFromBooking.mutateAsync({
         bookingId: booking.id,
+        bookingPaymentScheduleId: schedule.id,
         invoiceNumber: `${prefix}-${booking.bookingNumber}-${schedule.scheduleType.toUpperCase().slice(0, 3)}`,
         issueDate: todayIso,
         dueDate: dueIso,

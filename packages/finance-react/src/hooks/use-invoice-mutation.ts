@@ -85,9 +85,8 @@ export function useInvoiceMutation() {
 
   /**
    * Create + issue an invoice (or proforma) from an existing booking. The
-   * server walks the booking's items, builds line items, and emits an
-   * `invoice.issued` event post-commit. Used by the Documents tab on the
-   * booking detail page to bootstrap an invoice when none exists yet.
+   * server builds line items from either the booking items or a targeted
+   * payment schedule row, then emits an `invoice.issued` event post-commit.
    */
   const createFromBooking = useMutation({
     mutationFn: async (input: CreateInvoiceFromBookingInput) => {
@@ -163,6 +162,7 @@ export interface ConvertProformaInput {
 
 export interface CreateInvoiceFromBookingInput {
   bookingId: string
+  bookingPaymentScheduleId?: string
   invoiceNumber: string
   issueDate: string
   dueDate: string
