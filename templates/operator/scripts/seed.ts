@@ -447,6 +447,7 @@ const TAX_POLICY_RO_TRAVEL = newId("tax_policy_profiles")
 const TAX_RULE_RO_ACCOMMODATION = newId("tax_policy_rules")
 const TAX_RULE_RO_FALLBACK = newId("tax_policy_rules")
 const INV_SERIES = newId("invoice_number_series")
+const PROFORMA_SERIES = newId("invoice_number_series")
 const INV_TMPL = newId("invoice_templates")
 
 async function seedMarketsAndFinanceSetup() {
@@ -677,16 +678,32 @@ async function seedMarketsAndFinanceSetup() {
     },
   ])
 
-  await db.insert(invoiceNumberSeries).values({
-    id: INV_SERIES,
-    code: "INV-2026",
-    name: "Invoices 2026",
-    prefix: "INV-2026-",
-    separator: "",
-    padLength: 5,
-    currentSequence: 0,
-    resetStrategy: "never",
-  })
+  await db.insert(invoiceNumberSeries).values([
+    {
+      id: INV_SERIES,
+      code: "INV-2026",
+      name: "Invoices 2026",
+      prefix: "INV-2026-",
+      separator: "",
+      padLength: 5,
+      currentSequence: 0,
+      resetStrategy: "never",
+      scope: "invoice",
+      isDefault: true,
+    },
+    {
+      id: PROFORMA_SERIES,
+      code: "PRO-2026",
+      name: "Proformas 2026",
+      prefix: "PRO-2026-",
+      separator: "",
+      padLength: 5,
+      currentSequence: 0,
+      resetStrategy: "never",
+      scope: "proforma",
+      isDefault: true,
+    },
+  ])
 
   await db.insert(invoiceTemplates).values({
     id: INV_TMPL,
