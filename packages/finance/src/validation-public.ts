@@ -58,6 +58,7 @@ export const publicValidateVoucherSchema = z.object({
 
 export const publicFinanceDocumentLookupQuerySchema = z.object({
   reference: z.string().min(1).max(255),
+  invoiceType: publicFinanceInvoiceTypeSchema.optional(),
 })
 
 export const publicPaymentAccountSchema = z.object({

@@ -1454,6 +1454,41 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       })
     })
 
+    it("allows the same external number for an invoice and proforma", async () => {
+      const booking = await seedBooking({ sellAmountCents: 33000 })
+      const schedule = await seedBookingPaymentSchedule(booking.id, {
+        amountCents: 16500,
+        scheduleType: "balance",
+      })
+
+      const invoiceNumber = "SMARTBILL-B-0127"
+      const commonInput = {
+        bookingId: booking.id,
+        bookingPaymentScheduleId: schedule.id,
+        invoiceNumber,
+        issueDate: "2025-06-01",
+        dueDate: "2025-07-01",
+      }
+
+      const invoice = await app.request("/invoices/from-booking", {
+        method: "POST",
+        ...json({ ...commonInput, invoiceType: "invoice" }),
+      })
+      expect(invoice.status).toBe(201)
+
+      const proforma = await app.request("/invoices/from-booking", {
+        method: "POST",
+        ...json({ ...commonInput, invoiceType: "proforma" }),
+      })
+      expect(proforma.status).toBe(201)
+
+      const invoiceBody = await invoice.json()
+      const proformaBody = await proforma.json()
+      expect(invoiceBody.data).toMatchObject({ invoiceNumber, invoiceType: "invoice" })
+      expect(proformaBody.data).toMatchObject({ invoiceNumber, invoiceType: "proforma" })
+      expect(proformaBody.data.id).not.toBe(invoiceBody.data.id)
+    })
+
     it("does not derive base amounts from booking sell currency for cross-currency schedule invoices", async () => {
       const booking = await seedBooking({
         sellCurrency: "USD",

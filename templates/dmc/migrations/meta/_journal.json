@@ -85,6 +85,13 @@
       "when": 1779295200000,
       "tag": "0012_product_terms",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1779561950332,
+      "tag": "0013_invoice_number_type_unique",
+      "breakpoints": true
     }
   ]
 }

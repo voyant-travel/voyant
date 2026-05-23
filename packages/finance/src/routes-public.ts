@@ -83,13 +83,10 @@ export function createPublicFinanceRoutes(options: PublicFinanceRouteOptions = {
       return c.json({ data: result })
     })
     .get("/documents/by-reference", async (c) => {
-      const document = await publicFinanceService.getDocumentByReference(
-        c.get("db"),
-        parseQuery(c, publicFinanceDocumentLookupQuerySchema).reference,
-        {
-          resolveDocumentDownloadUrl: (storageKey) => resolveDocumentDownloadUrl(c.env, storageKey),
-        },
-      )
+      const query = parseQuery(c, publicFinanceDocumentLookupQuerySchema)
+      const document = await publicFinanceService.getDocumentByReference(c.get("db"), query, {
+        resolveDocumentDownloadUrl: (storageKey) => resolveDocumentDownloadUrl(c.env, storageKey),
+      })
 
       if (document?.bookingId) {
         await requireBookingCheckoutCapability(c, document.bookingId, "payment:read")
@@ -112,11 +109,12 @@ export function createPublicFinanceRoutes(options: PublicFinanceRouteOptions = {
     })
     .get("/bookings/:bookingId/documents/by-reference", async (c) => {
       await requireBookingCheckoutCapability(c, c.req.param("bookingId"), "payment:read")
+      const query = parseQuery(c, publicFinanceDocumentLookupQuerySchema)
 
       const document = await publicFinanceService.getBookingDocumentByReference(
         c.get("db"),
         c.req.param("bookingId"),
-        parseQuery(c, publicFinanceDocumentLookupQuerySchema).reference,
+        query,
         {
           resolveDocumentDownloadUrl: (storageKey) => resolveDocumentDownloadUrl(c.env, storageKey),
         },

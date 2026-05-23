@@ -225,6 +225,13 @@
       "when": 1779466000000,
       "tag": "0031_default_proforma_invoice_series",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1779561950332,
+      "tag": "0032_invoice_number_type_unique",
+      "breakpoints": true
     }
   ]
 }
