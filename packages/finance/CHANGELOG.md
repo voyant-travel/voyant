@@ -1,5 +1,20 @@
 # @voyantjs/finance
 
+## 0.75.5
+
+### Patch Changes
+
+- 84a32bb: Require linked completed payment coverage before booking payment schedules can become paid.
+- 192c9aa: Allow booking creation payloads with a billing person to use a phone number as the required contact channel when no real email is available.
+  - @voyantjs/action-ledger@0.75.5
+  - @voyantjs/bookings@0.75.5
+  - @voyantjs/core@0.75.5
+  - @voyantjs/db@0.75.5
+  - @voyantjs/hono@0.75.5
+  - @voyantjs/products@0.75.5
+  - @voyantjs/storage@0.75.5
+  - @voyantjs/utils@0.75.5
+
 ## 0.75.4
 
 ### Patch Changes

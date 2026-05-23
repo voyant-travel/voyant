@@ -1,5 +1,14 @@
 # @voyantjs/accommodations
 
+## 0.75.5
+
+### Patch Changes
+
+- @voyantjs/bookings@0.75.5
+- @voyantjs/catalog@0.75.5
+- @voyantjs/db@0.75.5
+- @voyantjs/facilities@0.75.5
+
 ## 0.75.4
 
 ### Patch Changes
