@@ -327,6 +327,17 @@ export class InvoiceNumberAllocationError extends Error {
   }
 }
 
+export class InvoiceNumberConflictError extends Error {
+  readonly code = "invoice_number_conflict"
+  readonly invoiceNumber: string
+
+  constructor(invoiceNumber: string) {
+    super("Invoice number already exists")
+    this.name = "InvoiceNumberConflictError"
+    this.invoiceNumber = invoiceNumber
+  }
+}
+
 /** Booking data needed for createInvoiceFromBooking — supplied by the caller (template). */
 export interface InvoiceFromBookingData {
   booking: {
@@ -426,6 +437,19 @@ function resolveBookingInvoiceBaseAmount(
   if (invoiceCurrency !== booking.sellCurrency || booking.baseSellAmountCents == null) return null
   if (!booking.sellAmountCents || booking.sellAmountCents <= 0) return booking.baseSellAmountCents
   return Math.round((amountCents / booking.sellAmountCents) * booking.baseSellAmountCents)
+}
+
+function isInvoiceNumberUniqueConstraintError(error: unknown) {
+  if (!error || typeof error !== "object") return false
+  const candidate = error as { code?: unknown; constraint?: unknown; detail?: unknown }
+  if (candidate.code !== "23505") return false
+  const constraint = typeof candidate.constraint === "string" ? candidate.constraint : ""
+  const detail = typeof candidate.detail === "string" ? candidate.detail : ""
+  return (
+    constraint === "invoices_invoice_number_unique" ||
+    constraint === "invoices_invoice_number_key" ||
+    detail.includes("invoice_number")
+  )
 }
 
 function toTimestamp(value?: string | null) {
@@ -3298,57 +3322,64 @@ export const financeService = {
       ? resolveBookingInvoiceBaseAmount(booking, invoiceCurrency, paymentSchedule.amountCents)
       : (booking.baseSellAmountCents ?? null)
 
-    return db.transaction(async (tx) => {
-      const [invoice] = await tx
-        .insert(invoices)
-        .values({
-          invoiceNumber: numberAssignment.invoiceNumber,
-          invoiceType: data.invoiceType,
-          seriesId: numberAssignment.seriesId,
-          sequence: numberAssignment.sequence,
-          bookingId: booking.id,
-          personId: booking.personId,
-          organizationId: booking.organizationId,
-          status: numberAssignment.status,
-          currency: invoiceCurrency,
-          baseCurrency: booking.baseCurrency,
-          fxRateSetId: booking.fxRateSetId,
-          subtotalCents,
-          baseSubtotalCents: hasBaseCurrency ? invoiceBaseAmountCents : null,
-          taxCents,
-          baseTaxCents: null,
-          totalCents,
-          baseTotalCents: hasBaseCurrency ? invoiceBaseAmountCents : null,
-          paidCents: 0,
-          basePaidCents: hasBaseCurrency ? 0 : null,
-          balanceDueCents: totalCents,
-          baseBalanceDueCents: hasBaseCurrency ? invoiceBaseAmountCents : null,
-          commissionAmountCents: commissionAmountCents > 0 ? commissionAmountCents : null,
-          issueDate: data.issueDate,
-          dueDate: data.dueDate,
-          notes: data.notes ?? null,
-        })
-        .returning()
+    try {
+      return await db.transaction(async (tx) => {
+        const [invoice] = await tx
+          .insert(invoices)
+          .values({
+            invoiceNumber: numberAssignment.invoiceNumber,
+            invoiceType: data.invoiceType,
+            seriesId: numberAssignment.seriesId,
+            sequence: numberAssignment.sequence,
+            bookingId: booking.id,
+            personId: booking.personId,
+            organizationId: booking.organizationId,
+            status: numberAssignment.status,
+            currency: invoiceCurrency,
+            baseCurrency: booking.baseCurrency,
+            fxRateSetId: booking.fxRateSetId,
+            subtotalCents,
+            baseSubtotalCents: hasBaseCurrency ? invoiceBaseAmountCents : null,
+            taxCents,
+            baseTaxCents: null,
+            totalCents,
+            baseTotalCents: hasBaseCurrency ? invoiceBaseAmountCents : null,
+            paidCents: 0,
+            basePaidCents: hasBaseCurrency ? 0 : null,
+            balanceDueCents: totalCents,
+            baseBalanceDueCents: hasBaseCurrency ? invoiceBaseAmountCents : null,
+            commissionAmountCents: commissionAmountCents > 0 ? commissionAmountCents : null,
+            issueDate: data.issueDate,
+            dueDate: data.dueDate,
+            notes: data.notes ?? null,
+          })
+          .returning()
 
-      if (!invoice) {
-        return null
+        if (!invoice) {
+          return null
+        }
+
+        await tx.insert(invoiceLineItems).values(
+          lineItems.map((line) => ({
+            invoiceId: invoice.id,
+            bookingItemId: line.bookingItemId,
+            description: line.description,
+            quantity: line.quantity,
+            unitPriceCents: line.unitPriceCents,
+            totalCents: line.totalCents,
+            taxRate: line.taxRate,
+            sortOrder: line.sortOrder,
+          })),
+        )
+
+        return invoice
+      })
+    } catch (error) {
+      if (isInvoiceNumberUniqueConstraintError(error)) {
+        throw new InvoiceNumberConflictError(numberAssignment.invoiceNumber)
       }
-
-      await tx.insert(invoiceLineItems).values(
-        lineItems.map((line) => ({
-          invoiceId: invoice.id,
-          bookingItemId: line.bookingItemId,
-          description: line.description,
-          quantity: line.quantity,
-          unitPriceCents: line.unitPriceCents,
-          totalCents: line.totalCents,
-          taxRate: line.taxRate,
-          sortOrder: line.sortOrder,
-        })),
-      )
-
-      return invoice
-    })
+      throw error
+    }
   },
 
   async getInvoiceById(db: PostgresJsDatabase, id: string) {

@@ -158,6 +158,9 @@ describe("BookingPaymentScheduleList", () => {
         invoiceType: "invoice",
       }),
     )
+    expect(testState.createFromBooking).toHaveBeenCalledWith(
+      expect.not.objectContaining({ invoiceNumber: expect.any(String) }),
+    )
     expect(testState.renderInvoice).toHaveBeenCalledWith({
       id: "inv_123",
       input: { format: "pdf" },

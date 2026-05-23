@@ -6,7 +6,12 @@ import { resolveStoredDocumentDownload } from "./document-download.js"
 import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, type FinanceRouteRuntime } from "./route-runtime.js"
 import type { publicFinanceRoutes } from "./routes-public.js"
 import type { Env } from "./routes-shared.js"
-import { financeService, InvoiceNumberAllocationError, PaymentValidationError } from "./service.js"
+import {
+  financeService,
+  InvoiceNumberAllocationError,
+  InvoiceNumberConflictError,
+  PaymentValidationError,
+} from "./service.js"
 import {
   type InvoiceRenditionWaitMode,
   waitForInvoiceRendition,
@@ -1036,6 +1041,16 @@ export const financeRoutes = new Hono<Env>()
       if (error instanceof InvoiceNumberAllocationError) {
         return c.json(
           { error: error.code, scope: error.scope, seriesId: error.seriesId ?? null },
+          409,
+        )
+      }
+      if (error instanceof InvoiceNumberConflictError) {
+        return c.json(
+          {
+            error: "Invoice number already exists",
+            code: error.code,
+            invoiceNumber: error.invoiceNumber,
+          },
           409,
         )
       }
