@@ -1,5 +1,15 @@
 # @voyantjs/bookings
 
+## 0.77.8
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.77.8
+- @voyantjs/core@0.77.8
+- @voyantjs/db@0.77.8
+- @voyantjs/hono@0.77.8
+- @voyantjs/utils@0.77.8
+
 ## 0.77.7
 
 ### Patch Changes

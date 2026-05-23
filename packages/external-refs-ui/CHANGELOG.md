@@ -1,5 +1,17 @@
 # @voyantjs/external-refs-ui
 
+## 0.77.8
+
+### Patch Changes
+
+- @voyantjs/bookings-ui@0.77.8
+- @voyantjs/crm-ui@0.77.8
+- @voyantjs/external-refs-react@0.77.8
+- @voyantjs/i18n@0.77.8
+- @voyantjs/products-ui@0.77.8
+- @voyantjs/suppliers-ui@0.77.8
+- @voyantjs/ui@0.77.8
+
 ## 0.77.7
 
 ### Patch Changes
