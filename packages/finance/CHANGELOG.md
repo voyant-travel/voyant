@@ -1,5 +1,20 @@
 # @voyantjs/finance
 
+## 0.77.10
+
+### Patch Changes
+
+- 437fb58: Allow invoice numbers to repeat across distinct finance document types while preserving same-type uniqueness.
+- 5751c4e: Let schedule-row invoice actions use server-side invoice number allocation and return conflicts for duplicate manual invoice numbers.
+  - @voyantjs/action-ledger@0.77.10
+  - @voyantjs/bookings@0.77.10
+  - @voyantjs/core@0.77.10
+  - @voyantjs/db@0.77.10
+  - @voyantjs/hono@0.77.10
+  - @voyantjs/products@0.77.10
+  - @voyantjs/storage@0.77.10
+  - @voyantjs/utils@0.77.10
+
 ## 0.77.9
 
 ### Patch Changes

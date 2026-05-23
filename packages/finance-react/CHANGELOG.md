@@ -1,5 +1,15 @@
 # @voyantjs/finance-react
 
+## 0.77.10
+
+### Patch Changes
+
+- 5751c4e: Let schedule-row invoice actions use server-side invoice number allocation and return conflicts for duplicate manual invoice numbers.
+- Updated dependencies [437fb58]
+- Updated dependencies [5751c4e]
+  - @voyantjs/finance@0.77.10
+  - @voyantjs/react@0.77.10
+
 ## 0.77.9
 
 ### Patch Changes
