@@ -1,5 +1,26 @@
 # @voyantjs/bookings-ui
 
+## 0.77.3
+
+### Patch Changes
+
+- e8ad8b2: Show the booking journey Copy from billing action when the billing contact has only a phone number or last name.
+  - @voyantjs/availability-react@0.77.3
+  - @voyantjs/bookings-react@0.77.3
+  - @voyantjs/catalog@0.77.3
+  - @voyantjs/catalog-react@0.77.3
+  - @voyantjs/crm-react@0.77.3
+  - @voyantjs/crm-ui@0.77.3
+  - @voyantjs/extras-react@0.77.3
+  - @voyantjs/finance-react@0.77.3
+  - @voyantjs/i18n@0.77.3
+  - @voyantjs/identity-react@0.77.3
+  - @voyantjs/legal-react@0.77.3
+  - @voyantjs/pricing-react@0.77.3
+  - @voyantjs/products-react@0.77.3
+  - @voyantjs/suppliers-react@0.77.3
+  - @voyantjs/ui@0.77.3
+
 ## 0.77.2
 
 ### Patch Changes
