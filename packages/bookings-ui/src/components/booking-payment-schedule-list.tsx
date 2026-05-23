@@ -1,8 +1,10 @@
 "use client"
 
+import { useQueryClient } from "@tanstack/react-query"
 import { useBooking } from "@voyantjs/bookings-react"
 import {
   type BookingPaymentScheduleRecord,
+  financeQueryKeys,
   useBookingPaymentScheduleMutation,
   useBookingPaymentSchedules,
   useInvoiceMutation,
@@ -16,6 +18,7 @@ import {
 } from "@voyantjs/ui/components/dropdown-menu"
 import { CalendarClock, FileText, Loader2, Pencil, Plus, Receipt, Trash2 } from "lucide-react"
 import * as React from "react"
+import { toast } from "sonner"
 
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 import { BookingPaymentScheduleDialog } from "./booking-payment-schedule-dialog.js"
@@ -43,6 +46,7 @@ export function BookingPaymentScheduleList({ bookingId }: BookingPaymentSchedule
   const booking = bookingData?.data ?? null
   const { createFromBooking: createInvoiceFromBooking, render: renderInvoice } =
     useInvoiceMutation()
+  const queryClient = useQueryClient()
   const { formatCurrency } = useBookingsUiI18nOrDefault()
   const messages = useBookingsUiMessagesOrDefault()
 
@@ -68,6 +72,15 @@ export function BookingPaymentScheduleList({ bookingId }: BookingPaymentSchedule
         invoiceType,
       })
       await renderInvoice.mutateAsync({ id: invoice.id, input: { format: "pdf" } })
+      await queryClient.invalidateQueries({ queryKey: financeQueryKeys.invoices() })
+      toast.success(messages.bookingPaymentScheduleList.actions.issueDocumentSuccess)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : null
+      toast.error(
+        errorMessage
+          ? `${messages.bookingPaymentScheduleList.actions.issueDocumentFailure}: ${errorMessage}`
+          : messages.bookingPaymentScheduleList.actions.issueDocumentFailure,
+      )
     } finally {
       setGeneratingInvoiceForId(null)
     }

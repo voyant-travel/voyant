@@ -869,6 +869,8 @@ export const bookingsUiRo = {
       issueDocument: "Emite document",
       issueInvoice: "Emite factura",
       issueProforma: "Emite proforma",
+      issueDocumentSuccess: "Document emis.",
+      issueDocumentFailure: "Documentul nu a putut fi emis",
     },
   },
   bookingPaymentReconciliationBanner: {

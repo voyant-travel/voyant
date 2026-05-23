@@ -789,6 +789,8 @@ export type BookingsUiMessages = {
       issueDocument: string
       issueInvoice: string
       issueProforma: string
+      issueDocumentSuccess: string
+      issueDocumentFailure: string
     }
   }
   bookingPaymentReconciliationBanner: {
