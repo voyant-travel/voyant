@@ -130,7 +130,10 @@ export const personCoreSchema = z.object({
   loyaltyEncrypted: z.lazy(() => kmsEnvelopeSchema).optional(),
   insuranceEncrypted: z.lazy(() => kmsEnvelopeSchema).optional(),
   // Inline identity fields — synced to identity module on create/update
-  email: z.string().email().nullable().optional(),
+  email: z.preprocess(
+    (value) => (value === "" ? null : value),
+    z.string().email().nullable().optional(),
+  ),
   phone: z.string().nullable().optional(),
   website: z
     .string()
