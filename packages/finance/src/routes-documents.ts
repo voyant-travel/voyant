@@ -3,6 +3,7 @@ import { parseOptionalJsonBody } from "@voyantjs/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 
+import { resolveStoredDocumentDownload } from "./document-download.js"
 import {
   buildFinanceRouteRuntime,
   FINANCE_ROUTE_RUNTIME_CONTAINER_KEY,
@@ -49,27 +50,6 @@ function getRuntime(
   )
 }
 
-function getMetadataRecord(metadata: unknown) {
-  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
-    return null
-  }
-
-  return metadata as Record<string, unknown>
-}
-
-function maybeUrl(value: unknown) {
-  return typeof value === "string" && /^https?:\/\//i.test(value) ? value : null
-}
-
-function getFallbackDownloadUrl(metadata: unknown) {
-  const record = getMetadataRecord(metadata)
-  if (!record) {
-    return null
-  }
-
-  return maybeUrl(record.url)
-}
-
 export function createFinanceAdminDocumentRoutes(options: FinanceDocumentRouteOptions = {}) {
   return new Hono<Env>()
     .post("/invoices/:id/generate-document", async (c) => {
@@ -90,8 +70,11 @@ export function createFinanceAdminDocumentRoutes(options: FinanceDocumentRouteOp
       if (result.status === "generator_failed") {
         return c.json({ error: "Invoice document generation failed" }, 502)
       }
+      if (!("rendition" in result)) {
+        return c.json({ error: "Invoice document generation failed" }, 502)
+      }
 
-      return c.json({ data: result }, 201)
+      return c.json({ data: await attachDownloadEnvelope(c.env, runtime, result) }, 201)
     })
     .post("/invoices/:id/regenerate-document", async (c) => {
       const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
@@ -111,28 +94,40 @@ export function createFinanceAdminDocumentRoutes(options: FinanceDocumentRouteOp
       if (result.status === "generator_failed") {
         return c.json({ error: "Invoice document generation failed" }, 502)
       }
+      if (!("rendition" in result)) {
+        return c.json({ error: "Invoice document generation failed" }, 502)
+      }
 
-      return c.json({ data: result })
+      return c.json({ data: await attachDownloadEnvelope(c.env, runtime, result) })
     })
     .get("/invoice-renditions/:id/download", async (c) => {
+      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
       const rendition = await financeService.getInvoiceRenditionById(c.get("db"), c.req.param("id"))
       if (!rendition) {
         return c.json({ error: "Invoice rendition not found" }, 404)
       }
 
-      let location: string | null = null
-      if (rendition.storageKey) {
-        if (!options.resolveDocumentDownloadUrl) {
-          return c.json({ error: "Document download resolver is not configured" }, 501)
-        }
-        location = await options.resolveDocumentDownloadUrl(c.env, rendition.storageKey)
+      const download = await resolveStoredDocumentDownload(rendition, {
+        bindings: c.env,
+        resolveDocumentDownloadUrl: runtime.resolveDocumentDownloadUrl,
+      })
+      if (download.status === "resolver_not_configured") {
+        return c.json({ error: "Document download resolver is not configured" }, 501)
       }
-
-      location ??= getFallbackDownloadUrl(rendition.metadata)
-      if (!location) {
+      if (download.status !== "ready") {
         return c.json({ error: "Invoice document is not available" }, 404)
       }
 
-      return c.redirect(location, 302)
+      return c.redirect(download.download.url, 302)
     })
+}
+
+async function attachDownloadEnvelope<
+  T extends { rendition: { storageKey?: string | null; metadata?: unknown } },
+>(bindings: Record<string, unknown>, runtime: FinanceRouteRuntime, result: T) {
+  const download = await resolveStoredDocumentDownload(result.rendition, {
+    bindings,
+    resolveDocumentDownloadUrl: runtime.resolveDocumentDownloadUrl,
+  })
+  return download.status === "ready" ? { ...result, download: download.download } : result
 }

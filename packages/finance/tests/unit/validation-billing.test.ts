@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   insertInvoiceNumberSeriesSchema,
   invoiceFromBookingSchema,
+  renderInvoiceInputSchema,
 } from "../../src/validation-billing.js"
 
 describe("invoiceFromBookingSchema", () => {
@@ -28,6 +29,29 @@ describe("invoiceFromBookingSchema", () => {
 
     expect(result.seriesId).toBe("ins_123")
     expect(result.invoiceType).toBe("invoice")
+  })
+
+  it("accepts bounded document wait options", () => {
+    const result = invoiceFromBookingSchema.parse({
+      bookingId: "book_123",
+      invoiceNumber: "INV-123",
+      issueDate: "2026-05-23",
+      dueDate: "2026-06-23",
+      wait: true,
+      waitTimeoutMs: 10_000,
+    })
+
+    expect(result.wait).toBe("pdf")
+    expect(result.waitTimeoutMs).toBe(10_000)
+  })
+})
+
+describe("renderInvoiceInputSchema", () => {
+  it("accepts wait=true as pdf wait mode", () => {
+    const result = renderInvoiceInputSchema.parse({ wait: "true" })
+
+    expect(result.format).toBe("pdf")
+    expect(result.wait).toBe("pdf")
   })
 })
 

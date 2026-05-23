@@ -2,10 +2,16 @@ import { parseJsonBody, parseQuery, requireUserId } from "@voyantjs/hono"
 import type { Context } from "hono"
 import { Hono } from "hono"
 
+import { resolveStoredDocumentDownload } from "./document-download.js"
 import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, type FinanceRouteRuntime } from "./route-runtime.js"
 import type { publicFinanceRoutes } from "./routes-public.js"
 import type { Env } from "./routes-shared.js"
 import { financeService, InvoiceNumberAllocationError, PaymentValidationError } from "./service.js"
+import {
+  type InvoiceRenditionWaitMode,
+  waitForInvoiceRendition,
+  waitFormatForMode,
+} from "./service-rendition-wait.js"
 import { VoucherServiceError } from "./service-vouchers.js"
 import {
   agingReportQuerySchema,
@@ -42,6 +48,7 @@ import {
   insertTaxPolicyRuleSchema,
   insertTaxRegimeSchema,
   insertVoucherSchema,
+  invoiceDocumentWaitQuerySchema,
   invoiceFromBookingSchema,
   invoiceListQuerySchema,
   invoiceNumberSeriesListQuerySchema,
@@ -88,25 +95,27 @@ import {
 // Finance Routes — method-chained for Hono RPC type inference
 // ==========================================================================
 
-function getMetadataRecord(metadata: unknown) {
-  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
-    return null
-  }
+const DEFAULT_RENDITION_WAIT_TIMEOUT_MS = 30_000
 
-  return metadata as Record<string, unknown>
+function resolveWaitRequest(
+  body: { wait?: InvoiceRenditionWaitMode; waitTimeoutMs?: number | undefined },
+  query: { wait?: InvoiceRenditionWaitMode; waitTimeoutMs?: number | undefined },
+) {
+  return {
+    mode: query.wait ?? body.wait ?? "none",
+    timeoutMs: query.waitTimeoutMs ?? body.waitTimeoutMs ?? DEFAULT_RENDITION_WAIT_TIMEOUT_MS,
+  }
 }
 
-function maybeUrl(value: unknown) {
-  return typeof value === "string" && /^https?:\/\//i.test(value) ? value : null
-}
-
-function getFallbackDownloadUrl(metadata: unknown) {
-  const record = getMetadataRecord(metadata)
-  if (!record) {
-    return null
-  }
-
-  return maybeUrl(record.url)
+async function buildInlineDownload(
+  c: Context<Env>,
+  reference: { storageKey?: string | null; metadata?: unknown },
+) {
+  const runtime = getFinanceRouteRuntime(c)
+  return resolveStoredDocumentDownload(reference, {
+    bindings: c.env,
+    resolveDocumentDownloadUrl: runtime?.resolveDocumentDownloadUrl,
+  })
 }
 
 function getFinanceRouteRuntime(c: { var: { container?: { resolve: <T>(key: string) => T } } }) {
@@ -928,6 +937,7 @@ export const financeRoutes = new Hono<Env>()
   // POST /invoices/from-booking — Create + issue invoice (or proforma) from booking + booking items
   .post("/invoices/from-booking", async (c) => {
     const input = await parseJsonBody(c, invoiceFromBookingSchema)
+    const waitRequest = resolveWaitRequest(input, parseQuery(c, invoiceDocumentWaitQuerySchema))
     const db = c.get("db")
     const [
       { bookingItems, bookings },
@@ -1003,7 +1013,29 @@ export const financeRoutes = new Hono<Env>()
       throw error
     }
 
-    return c.json({ data: row }, 201)
+    if (!row || waitRequest.mode === "none") {
+      return c.json({ data: row }, 201)
+    }
+
+    const waitResult = await waitForInvoiceRendition(db, row.id, {
+      format: waitFormatForMode(waitRequest.mode),
+      timeoutMs: waitRequest.timeoutMs,
+    })
+    const payload = {
+      invoice: row,
+      rendition: waitResult.rendition,
+    }
+
+    if (waitResult.status !== "ready") {
+      return c.json({ data: payload }, 202)
+    }
+
+    const download = await buildInlineDownload(c, waitResult.rendition)
+    if (download.status !== "ready") {
+      return c.json({ data: payload }, 202)
+    }
+
+    return c.json({ data: { ...payload, download: download.download } }, 201)
   })
 
   // POST /invoices/:id/convert-to-invoice — Convert a proforma into a final invoice
@@ -1623,21 +1655,15 @@ export const financeRoutes = new Hono<Env>()
     const attachment = await financeService.getInvoiceAttachmentById(c.get("db"), c.req.param("id"))
     if (!attachment) return c.json({ error: "Attachment not found" }, 404)
 
-    let location: string | null = null
-    if (attachment.storageKey) {
-      const runtime = getFinanceRouteRuntime(c)
-      if (!runtime?.resolveDocumentDownloadUrl) {
-        return c.json({ error: "Document download resolver is not configured" }, 501)
-      }
-      location = await runtime.resolveDocumentDownloadUrl(c.env, attachment.storageKey)
+    const download = await buildInlineDownload(c, attachment)
+    if (download.status === "resolver_not_configured") {
+      return c.json({ error: "Document download resolver is not configured" }, 501)
     }
-
-    location ??= getFallbackDownloadUrl(attachment.metadata)
-    if (!location) {
+    if (download.status !== "ready") {
       return c.json({ error: "Attachment file is not available" }, 404)
     }
 
-    return c.redirect(location, 302)
+    return c.redirect(download.download.url, 302)
   })
 
   .delete("/invoices/:id/attachments/:attachmentId", async (c) => {
@@ -1652,8 +1678,29 @@ export const financeRoutes = new Hono<Env>()
 
   .post("/invoices/:id/render", async (c) => {
     const input = await parseJsonBody(c, renderInvoiceInputSchema)
+    const waitRequest = resolveWaitRequest(input, parseQuery(c, invoiceDocumentWaitQuerySchema))
     const result = await financeService.renderInvoice(c.get("db"), c.req.param("id"), input)
     if (result.status === "not_found") return c.json({ error: "Invoice not found" }, 404)
+    if (waitRequest.mode !== "none" && result.rendition) {
+      const waitResult = await waitForInvoiceRendition(c.get("db"), c.req.param("id"), {
+        renditionId: result.rendition.id,
+        format: waitFormatForMode(waitRequest.mode),
+        timeoutMs: waitRequest.timeoutMs,
+      })
+      const payload = {
+        rendition: waitResult.rendition ?? result.rendition,
+      }
+      if (waitResult.status !== "ready") {
+        return c.json({ data: payload }, 202)
+      }
+
+      const download = await buildInlineDownload(c, waitResult.rendition)
+      if (download.status !== "ready") {
+        return c.json({ data: payload }, 202)
+      }
+
+      return c.json({ data: { ...payload, download: download.download } }, 201)
+    }
     return c.json({ data: result.rendition }, 201)
   })
 
