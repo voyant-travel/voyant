@@ -1,5 +1,12 @@
 # @voyantjs/catalog-react
 
+## 0.77.0
+
+### Patch Changes
+
+- @voyantjs/catalog@0.77.0
+- @voyantjs/react@0.77.0
+
 ## 0.76.0
 
 ### Patch Changes

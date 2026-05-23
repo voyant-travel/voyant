@@ -1,5 +1,19 @@
 # @voyantjs/hono
 
+## 0.77.0
+
+### Minor Changes
+
+- 1da934d: Share stored-document download envelope resolution and include signed download envelopes with filenames in finance and legal document-generation responses.
+
+### Patch Changes
+
+- @voyantjs/core@0.77.0
+- @voyantjs/db@0.77.0
+- @voyantjs/types@0.77.0
+- @voyantjs/utils@0.77.0
+- @voyantjs/workflows@0.77.0
+
 ## 0.76.0
 
 ### Patch Changes
