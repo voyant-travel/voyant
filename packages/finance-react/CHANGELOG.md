@@ -1,5 +1,14 @@
 # @voyantjs/finance-react
 
+## 0.77.9
+
+### Patch Changes
+
+- 10e3ed5: Create booking invoices from a targeted payment schedule row when one is provided.
+- Updated dependencies [10e3ed5]
+  - @voyantjs/finance@0.77.9
+  - @voyantjs/react@0.77.9
+
 ## 0.77.8
 
 ### Patch Changes

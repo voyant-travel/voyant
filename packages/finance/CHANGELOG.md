@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.77.9
+
+### Patch Changes
+
+- 10e3ed5: Create booking invoices from a targeted payment schedule row when one is provided.
+  - @voyantjs/action-ledger@0.77.9
+  - @voyantjs/bookings@0.77.9
+  - @voyantjs/core@0.77.9
+  - @voyantjs/db@0.77.9
+  - @voyantjs/hono@0.77.9
+  - @voyantjs/products@0.77.9
+  - @voyantjs/storage@0.77.9
+  - @voyantjs/utils@0.77.9
+
 ## 0.77.8
 
 ### Patch Changes
