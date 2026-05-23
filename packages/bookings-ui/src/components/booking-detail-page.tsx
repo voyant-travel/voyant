@@ -47,6 +47,7 @@ import { BookingGroupSection } from "./booking-group-section.js"
 import { BookingGuaranteeList } from "./booking-guarantee-list.js"
 import { BookingItemList } from "./booking-item-list.js"
 import { BookingNotes } from "./booking-notes.js"
+import { BookingPaymentReconciliationBanner } from "./booking-payment-reconciliation-banner.js"
 import { BookingPaymentScheduleList } from "./booking-payment-schedule-list.js"
 import { BookingPaymentsSummary } from "./booking-payments-summary.js"
 import { StatusChangeDialog } from "./status-change-dialog.js"
@@ -339,6 +340,7 @@ export function BookingDetailPage({
             </div>
           ) : null}
           {slots?.financeStart?.(booking)}
+          <BookingPaymentReconciliationBanner bookingId={id} />
           <BookingPaymentsSummary bookingId={id} variant="admin" />
           <BookingPaymentScheduleList bookingId={id} />
           <BookingGuaranteeList bookingId={id} />

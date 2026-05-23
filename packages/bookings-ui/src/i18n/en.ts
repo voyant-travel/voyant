@@ -869,6 +869,23 @@ export const bookingsUiEn = {
       issueProforma: "Issue proforma",
     },
   },
+  bookingPaymentReconciliationBanner: {
+    title: "Payment reconciliation",
+    loading: "Checking payment sources...",
+    empty: "No invoices, payments, or schedule rows have been recorded yet.",
+    reconciledDescription:
+      "Invoice paid totals, recorded payments, and paid schedule rows currently agree.",
+    driftDescription:
+      "Invoice paid totals, recorded payments, and paid schedule rows disagree. Review the source rows before collecting or recording more money.",
+    reconciledBadge: "Reconciled",
+    driftBadge: "Needs review",
+    billed: "Billed",
+    invoicePaid: "Paid on invoices",
+    recordedPayments: "Recorded payments",
+    schedulePaid: "Paid schedule rows",
+    drift: "Drift",
+    emptyValue: "-",
+  },
   supplierStatusList: {
     title: "Supplier confirmations",
     addSupplier: "Add supplier",

@@ -61,6 +61,10 @@ export {
 export { BookingList, type BookingListProps } from "./components/booking-list.js"
 export { BookingNotes, type BookingNotesProps } from "./components/booking-notes.js"
 export {
+  BookingPaymentReconciliationBanner,
+  type BookingPaymentReconciliationBannerProps,
+} from "./components/booking-payment-reconciliation-banner.js"
+export {
   BookingPaymentScheduleDialog,
   type BookingPaymentScheduleDialogProps,
 } from "./components/booking-payment-schedule-dialog.js"
