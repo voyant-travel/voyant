@@ -1,6 +1,6 @@
 /**
  * Projection extension that aggregates a "price from" amount across the
- * product's configured default-rule prices and contributes
+ * product's future bookable rate-plan prices and contributes
  * `priceFromAmountCents`, `priceFromCurrency`, and `hasPricing` to the
  * product search document.
  *
@@ -17,18 +17,16 @@
  * Scope intentionally narrow:
  *   - **No schedule-aware rule resolution.** Only `is_default = true`
  *     rules contribute. Seasonal / promo rules with schedules don't
- *     surface here — they'd require per-slice resolution against a
- *     moving "now" date and are deferred to a follow-up.
+ *     surface here; they require per-slice rule evaluation beyond the
+ *     future-departure presence check below.
  *   - **No per-departure overrides.** Same reason.
  *   - **Currency consistency.** Only rules whose catalog currency matches
  *     the product's `sellCurrency` (or whose catalog currency is null
- *     and therefore inherits the product's) are MIN'd together. This
- *     prevents emitting a misleading "from $50" when one of the rules
- *     is actually €50.
+ *     and therefore inherits the product's) are MIN'd together.
  *
- * Document churn: this projection is `now()`-independent — it reads
- * static configured prices, not date-dependent rule windows. Same
- * product reindexed an hour later produces the same fields.
+ * Document churn: this projection is `now()`-dependent because it only
+ * considers future bookable departures. A product can move to "unpriced"
+ * once its final departure starts unless a row-level fallback remains.
  */
 
 import type { AnyDrizzleDb } from "@voyantjs/db"
@@ -36,18 +34,13 @@ import type {
   IndexerSlice,
   ProductProjectionExtension,
 } from "@voyantjs/products/service-catalog-plane"
-import { and, eq, isNull, or, sql } from "drizzle-orm"
-
-import { priceCatalogs } from "./schema-catalogs.js"
-import { optionPriceRules, optionUnitPriceRules } from "./schema-option-rules.js"
+import { sql } from "drizzle-orm"
 
 interface PricingProjectionOptions {
   /**
-   * Resolve the product's `sellAmountCents` + `sellCurrency` so the
-   * projection can MIN the product-row default into the candidate set
-   * and filter rules by matching currency. Templates inject this — the
-   * default reads the products table via raw SQL, but tests can stub
-   * with a known shape without standing up the products schema.
+   * Resolve the product's row-level `sellAmountCents` + `sellCurrency`.
+   * Templates use the default raw-SQL loader; tests can stub it without
+   * standing up the products schema.
    *
    * Returns `null` for both fields when the product doesn't exist.
    */
@@ -55,12 +48,27 @@ interface PricingProjectionOptions {
     db: AnyDrizzleDb,
     productId: string,
   ) => Promise<{ sellAmountCents: number | null; sellCurrency: string | null }>
+
+  /**
+   * Resolve future bookable rate-plan prices for the product. Tests can
+   * stub this without standing up availability/product option tables.
+   */
+  loadRatePlanPricing?: (
+    db: AnyDrizzleDb,
+    productId: string,
+    productCurrency: string,
+  ) => Promise<RatePlanPricing>
 }
 
 interface PricingAggregate {
   priceFromAmountCents: number | null
   priceFromCurrency: string | null
   hasPricing: boolean
+}
+
+interface RatePlanPricing {
+  roomPrices: number[]
+  basePrices: number[]
 }
 
 const EMPTY_AGGREGATE: PricingAggregate = {
@@ -70,35 +78,21 @@ const EMPTY_AGGREGATE: PricingAggregate = {
 }
 
 /**
- * Pure aggregation kernel — given the product-row pricing and the rule
- * candidate set, produce the projection fields. Exposed via `__test__`
- * for unit coverage that doesn't need a real DB.
- *
- * `productPrice` is the row's `sellAmountCents` (`null` when unset).
- * `currency` is the row's `sellCurrency` (used as the projected
- * currency; rule prices fed in here are pre-filtered to match).
- * `ruleCandidates` is every active default rule's `baseSellAmountCents`
- * AND every active default rule's per-unit `sellAmountCents`, with
- * nulls already filtered out.
+ * Pure aggregation kernel. Room prices take precedence over base/unit
+ * prices, which take precedence over the product-row fallback. Non-
+ * positive values are treated as absent so stale `0` caches don't block
+ * nullish fallbacks in catalog consumers.
  */
 function aggregatePricing(
   productPrice: number | null,
   currency: string | null,
-  ruleCandidates: ReadonlyArray<number>,
+  roomPrices: ReadonlyArray<number>,
+  basePrices: ReadonlyArray<number>,
 ): PricingAggregate {
-  const candidates: number[] = []
-  if (productPrice !== null) candidates.push(productPrice)
-  for (const c of ruleCandidates) candidates.push(c)
+  const min = firstPositiveMin(roomPrices) ?? firstPositiveMin(basePrices) ?? positive(productPrice)
 
-  if (candidates.length === 0) {
+  if (min === null) {
     return { ...EMPTY_AGGREGATE, priceFromCurrency: currency }
-  }
-
-  // MIN with a sentinel; faster than spread+Math.min for large arrays
-  // and avoids the Math.min stack-arg limit edge case.
-  let min = candidates[0] as number
-  for (const c of candidates) {
-    if (c < min) min = c
   }
 
   return {
@@ -111,13 +105,14 @@ function aggregatePricing(
 /**
  * Construct the pricing projection extension.
  *
- * Pass `loadProductPricing` in tests to stub the products-row fetch;
- * production uses the default raw-SQL implementation.
+ * Pass loaders in tests to stub DB reads; production uses raw SQL against
+ * the deployed schema.
  */
 export function createProductPricingProjectionExtension(
   options: PricingProjectionOptions = {},
 ): ProductProjectionExtension {
   const loadProductPricing = options.loadProductPricing ?? defaultLoadProductPricing
+  const loadRatePlanPricing = options.loadRatePlanPricing ?? defaultLoadRatePlanPricing
 
   return {
     name: "products:pricing",
@@ -126,108 +121,209 @@ export function createProductPricingProjectionExtension(
       const currency = product.sellCurrency
 
       // Without a product row currency we can't safely filter rules by
-      // matching currency — emit only the (null) row pricing. This case
-      // is rare in practice (every product has sellCurrency set in the
-      // operator UI) but keeps the projection failure-isolated.
+      // matching currency. Emit only the positive row-level fallback.
       if (!currency) {
-        const out = aggregatePricing(product.sellAmountCents, null, [])
+        const out = aggregatePricing(product.sellAmountCents, null, [], [])
         return toProjectionMap(out)
       }
 
-      const [flatPrices, unitPrices] = await Promise.all([
-        fetchFlatRulePrices(db, productId, currency),
-        fetchUnitRulePrices(db, productId, currency),
-      ])
-
-      const candidates = [...flatPrices, ...unitPrices]
-      const out = aggregatePricing(product.sellAmountCents, currency, candidates)
+      const ratePlans = await loadRatePlanPricing(db, productId, currency)
+      const out = aggregatePricing(
+        product.sellAmountCents,
+        currency,
+        ratePlans.roomPrices,
+        ratePlans.basePrices,
+      )
       return toProjectionMap(out)
     },
   }
 }
 
 /**
- * Read `optionPriceRules.baseSellAmountCents` for the product's active
- * default rules whose catalog currency matches the product currency
- * (or whose catalog has a NULL currency, meaning "inherit product").
- *
- * Filtering on the `(productId, active=true, isDefault=true)` subset
- * keeps the candidate set small even for products with hundreds of
- * seasonal rules.
+ * Resolve the same "from price" value emitted by the pricing projection.
+ * Promotion projection wiring uses this so strikethrough base prices
+ * follow the same rate-plan-first fallback chain.
  */
-async function fetchFlatRulePrices(
+export async function loadProductPriceFrom(
   db: AnyDrizzleDb,
   productId: string,
-  productCurrency: string,
-): Promise<number[]> {
-  const rows = await db
-    .select({ price: optionPriceRules.baseSellAmountCents })
-    .from(optionPriceRules)
-    .innerJoin(priceCatalogs, eq(priceCatalogs.id, optionPriceRules.priceCatalogId))
-    .where(
-      and(
-        eq(optionPriceRules.productId, productId),
-        eq(optionPriceRules.active, true),
-        eq(optionPriceRules.isDefault, true),
-        eq(priceCatalogs.active, true),
-        or(eq(priceCatalogs.currencyCode, productCurrency), isNull(priceCatalogs.currencyCode)),
-      ),
-    )
-
-  const out: number[] = []
-  for (const row of rows) {
-    if (row.price !== null) out.push(row.price)
+): Promise<{ amountCents: number | null; currency: string | null }> {
+  const product = await defaultLoadProductPricing(db, productId)
+  const currency = product.sellCurrency
+  if (!currency) {
+    return { amountCents: positive(product.sellAmountCents), currency: null }
   }
-  return out
+
+  const ratePlans = await defaultLoadRatePlanPricing(db, productId, currency)
+  const amountCents =
+    firstPositiveMin(ratePlans.roomPrices) ??
+    firstPositiveMin(ratePlans.basePrices) ??
+    positive(product.sellAmountCents)
+
+  return { amountCents, currency }
 }
 
 /**
- * Read `optionUnitPriceRules.sellAmountCents` for active per-unit tiers
- * whose parent rule is one of the product's active default rules in a
- * matching-currency catalog. Used for products priced per occupancy
- * (e.g. cabins at "single $X / double $Y / triple $Z") where the parent
- * rule's `baseSellAmountCents` is null and the actual prices live on
- * the unit tiers.
+ * Read positive prices from active default rules that have at least one
+ * future bookable departure. Room prices are separated from base/unit
+ * fallbacks so per-room pricing wins even when the product row contains
+ * a stale zero or stale manual price.
  */
-async function fetchUnitRulePrices(
+async function defaultLoadRatePlanPricing(
   db: AnyDrizzleDb,
   productId: string,
   productCurrency: string,
-): Promise<number[]> {
-  const rows = await db
-    .select({ price: optionUnitPriceRules.sellAmountCents })
-    .from(optionUnitPriceRules)
-    .innerJoin(optionPriceRules, eq(optionPriceRules.id, optionUnitPriceRules.optionPriceRuleId))
-    .innerJoin(priceCatalogs, eq(priceCatalogs.id, optionPriceRules.priceCatalogId))
-    .where(
-      and(
-        eq(optionPriceRules.productId, productId),
-        eq(optionPriceRules.active, true),
-        eq(optionPriceRules.isDefault, true),
-        eq(optionUnitPriceRules.active, true),
-        eq(priceCatalogs.active, true),
-        or(eq(priceCatalogs.currencyCode, productCurrency), isNull(priceCatalogs.currencyCode)),
-      ),
-    )
+): Promise<RatePlanPricing> {
+  try {
+    const [roomPrice, basePrice] = await Promise.all([
+      fetchBookableRoomPrice(db, productId, productCurrency),
+      fetchBookableBasePrice(db, productId, productCurrency),
+    ])
 
-  const out: number[] = []
-  for (const row of rows) {
-    if (row.price !== null) out.push(row.price)
+    return {
+      roomPrices: roomPrice == null ? [] : [roomPrice],
+      basePrices: basePrice == null ? [] : [basePrice],
+    }
+  } catch (error) {
+    // Slim test fixtures may omit availability_slots/product_options/
+    // option_units. Keep reindex failure-isolated and fall back to the
+    // product row only for those expected schema gaps.
+    if (isMissingCatalogPricingDependencyError(error)) {
+      return { roomPrices: [], basePrices: [] }
+    }
+    throw error
   }
-  return out
+}
+
+async function fetchBookableRoomPrice(
+  db: AnyDrizzleDb,
+  productId: string,
+  productCurrency: string,
+): Promise<number | null> {
+  const rows = await executeRows(
+    db,
+    sql`
+    WITH active_rules AS (
+      SELECT opr.id
+      FROM option_price_rules opr
+      INNER JOIN price_catalogs pc ON pc.id = opr.price_catalog_id
+      WHERE opr.product_id = ${productId}
+        AND opr.active = true
+        AND opr.is_default = true
+        AND pc.active = true
+        AND (pc.currency_code = ${productCurrency} OR pc.currency_code IS NULL)
+        AND EXISTS (
+          SELECT 1
+          FROM product_options po
+          WHERE po.id = opr.option_id
+            AND po.product_id = opr.product_id
+            AND po.status = 'active'
+        )
+        AND EXISTS (
+          SELECT 1
+          FROM availability_slots slot
+          WHERE slot.product_id = opr.product_id
+            AND slot.starts_at >= NOW()
+            AND slot.status::text IN ('open', 'planned', 'confirmed')
+            AND (slot.option_id IS NULL OR slot.option_id = opr.option_id)
+        )
+    ),
+    candidates AS (
+      SELECT COALESCE(tier.sell_amount_cents, unit_rule.sell_amount_cents) AS price
+      FROM active_rules rule
+      INNER JOIN option_unit_price_rules unit_rule
+        ON unit_rule.option_price_rule_id = rule.id
+      INNER JOIN option_units unit
+        ON unit.id = unit_rule.unit_id
+      LEFT JOIN option_unit_tiers tier
+        ON tier.option_unit_price_rule_id = unit_rule.id
+       AND tier.active = true
+      WHERE unit_rule.active = true
+        AND unit.unit_type = 'room'
+    )
+    SELECT MIN(price)::int AS price
+    FROM candidates
+    WHERE price > 0
+  `,
+  )
+
+  return readNullableInt(rows[0], "price")
+}
+
+async function fetchBookableBasePrice(
+  db: AnyDrizzleDb,
+  productId: string,
+  productCurrency: string,
+): Promise<number | null> {
+  const rows = await executeRows(
+    db,
+    sql`
+    WITH active_rules AS (
+      SELECT opr.id, opr.base_sell_amount_cents
+      FROM option_price_rules opr
+      INNER JOIN price_catalogs pc ON pc.id = opr.price_catalog_id
+      WHERE opr.product_id = ${productId}
+        AND opr.active = true
+        AND opr.is_default = true
+        AND pc.active = true
+        AND (pc.currency_code = ${productCurrency} OR pc.currency_code IS NULL)
+        AND EXISTS (
+          SELECT 1
+          FROM product_options po
+          WHERE po.id = opr.option_id
+            AND po.product_id = opr.product_id
+            AND po.status = 'active'
+        )
+        AND EXISTS (
+          SELECT 1
+          FROM availability_slots slot
+          WHERE slot.product_id = opr.product_id
+            AND slot.starts_at >= NOW()
+            AND slot.status::text IN ('open', 'planned', 'confirmed')
+            AND (slot.option_id IS NULL OR slot.option_id = opr.option_id)
+        )
+    ),
+    candidates AS (
+      SELECT base_sell_amount_cents AS price
+      FROM active_rules
+      UNION ALL
+      SELECT COALESCE(tier.sell_amount_cents, unit_rule.sell_amount_cents) AS price
+      FROM active_rules rule
+      INNER JOIN option_unit_price_rules unit_rule
+        ON unit_rule.option_price_rule_id = rule.id
+      INNER JOIN option_units unit
+        ON unit.id = unit_rule.unit_id
+      LEFT JOIN option_unit_tiers tier
+        ON tier.option_unit_price_rule_id = unit_rule.id
+       AND tier.active = true
+      WHERE unit_rule.active = true
+        AND unit.unit_type <> 'room'
+    )
+    SELECT MIN(price)::int AS price
+    FROM candidates
+    WHERE price > 0
+  `,
+  )
+
+  return readNullableInt(rows[0], "price")
+}
+
+async function executeRows(db: AnyDrizzleDb, query: ReturnType<typeof sql>): Promise<unknown[]> {
+  // biome-ignore lint/suspicious/noExplicitAny: #1141 supports multiple drizzle driver result shapes
+  const result = await (db as any).execute(query)
+  return Array.isArray(result) ? result : (result?.rows ?? [])
 }
 
 /**
  * Default loader reads the products row via raw SQL so we don't pull
- * the products schema into this file (would create a circular import
- * via the typed schema). The columns we read are stable enough that a
- * rename would break far more than this.
+ * the products schema into this file. The columns we read are stable
+ * enough that a rename would break far more than this.
  */
 async function defaultLoadProductPricing(
   db: AnyDrizzleDb,
   productId: string,
 ): Promise<{ sellAmountCents: number | null; sellCurrency: string | null }> {
-  // biome-ignore lint/suspicious/noExplicitAny: drizzle's typed sql is overkill for two-column read
+  // biome-ignore lint/suspicious/noExplicitAny: #1141 keeps cross-package product lookup driver-agnostic
   const dbAny = db as any
   const result = await dbAny.execute(
     sql`SELECT sell_amount_cents, sell_currency FROM products WHERE id = ${productId} LIMIT 1`,
@@ -244,6 +340,42 @@ async function defaultLoadProductPricing(
   }
 }
 
+function positive(value: number | null | undefined): number | null {
+  return typeof value === "number" && value > 0 ? value : null
+}
+
+function firstPositiveMin(values: ReadonlyArray<number>): number | null {
+  let min: number | null = null
+  for (const value of values) {
+    if (value <= 0) continue
+    if (min === null || value < min) min = value
+  }
+  return min
+}
+
+function readNullableInt(row: unknown, key: string): number | null {
+  const value = (row as Record<string, unknown> | undefined)?.[key]
+  if (typeof value === "number") return Number.isFinite(value) ? value : null
+  if (typeof value === "string") {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  return null
+}
+
+function isMissingCatalogPricingDependencyError(error: unknown): boolean {
+  const err = error as { code?: unknown; message?: unknown } | null | undefined
+  const code = typeof err?.code === "string" ? err.code : null
+  if (code === "42P01" || code === "42703") return true
+
+  const message = typeof err?.message === "string" ? err.message.toLowerCase() : ""
+  return (
+    (message.includes("relation") && message.includes("does not exist")) ||
+    message.includes("no such table") ||
+    message.includes("no such column")
+  )
+}
+
 function toProjectionMap(a: PricingAggregate): ReadonlyMap<string, unknown> {
   return new Map<string, unknown>([
     ["priceFromAmountCents", a.priceFromAmountCents],
@@ -252,8 +384,10 @@ function toProjectionMap(a: PricingAggregate): ReadonlyMap<string, unknown> {
   ])
 }
 
-// Internal exports for unit tests — kept off the public surface.
+// Internal exports for unit tests - kept off the public surface.
 export const __test__ = {
   aggregatePricing,
   EMPTY_AGGREGATE,
+  firstPositiveMin,
+  isMissingCatalogPricingDependencyError,
 }

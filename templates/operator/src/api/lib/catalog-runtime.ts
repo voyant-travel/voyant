@@ -27,7 +27,10 @@ import { cruiseCatalogPolicy } from "@voyantjs/cruises/catalog-policy"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { extrasCatalogPolicy } from "@voyantjs/extras/catalog-policy"
 import { marketLocales, markets } from "@voyantjs/markets"
-import { createProductPricingProjectionExtension } from "@voyantjs/pricing/service-catalog-plane-pricing"
+import {
+  createProductPricingProjectionExtension,
+  loadProductPriceFrom,
+} from "@voyantjs/pricing/service-catalog-plane-pricing"
 import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
 import { productDeparturesCatalogPolicy } from "@voyantjs/products/catalog-policy-departures"
 import { productDestinationsCatalogPolicy } from "@voyantjs/products/catalog-policy-destinations"
@@ -355,7 +358,7 @@ export function createProductsDocumentBuilder(
       createProductTaxonomyProjectionExtension(),
       createProductDeparturesProjectionExtension(),
       createProductPricingProjectionExtension(),
-      createProductPromotionsProjectionExtension(),
+      createProductPromotionsProjectionExtension({ loadOriginalPrice: loadProductPriceFrom }),
     ],
   })
 }
