@@ -1,5 +1,17 @@
 # @voyantjs/crm
 
+## 0.75.6
+
+### Patch Changes
+
+- 347fbd2: Allow CRM person validation to treat an empty email string as absent while still validating non-empty email values.
+  - @voyantjs/action-ledger@0.75.6
+  - @voyantjs/core@0.75.6
+  - @voyantjs/db@0.75.6
+  - @voyantjs/hono@0.75.6
+  - @voyantjs/identity@0.75.6
+  - @voyantjs/utils@0.75.6
+
 ## 0.75.5
 
 ### Patch Changes
