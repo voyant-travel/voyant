@@ -163,6 +163,7 @@ export const convertProductSchema = z
     bookingNumber: z.string().min(1).max(50),
     personId: z.string().optional().nullable(),
     organizationId: z.string().optional().nullable(),
+    pax: z.number().int().positive().optional().nullable(),
     internalNotes: z.string().optional().nullable(),
     /**
      * Override the seed `sellAmountCents` on the new booking + line item.

@@ -2660,6 +2660,7 @@ export const bookingsService = {
     }
 
     const initialStatus = data.initialStatus ?? "draft"
+    const bookingPax = Object.hasOwn(data, "pax") ? (data.pax ?? null) : product.pax
     // Map the booking lifecycle status onto the booking-item lifecycle.
     // Items don't have an `awaiting_payment` state — when the booking is
     // committed (confirmed / awaiting payment / in progress) the items
@@ -2720,7 +2721,7 @@ export const bookingsService = {
         marginPercent: product.marginPercent,
         startDate,
         endDate,
-        pax: product.pax,
+        pax: bookingPax,
         internalNotes: data.internalNotes ?? null,
       })
       .returning()
@@ -2810,8 +2811,8 @@ export const bookingsService = {
         : unitsToSeed.length > 0
           ? unitsToSeed.map((unit, index) => {
               const quantity =
-                unit.unitType === "person" && product.pax
-                  ? product.pax
+                unit.unitType === "person" && bookingPax
+                  ? bookingPax
                   : unit.minQuantity && unit.minQuantity > 0
                     ? unit.minQuantity
                     : 1
