@@ -90,6 +90,27 @@ describe("bookingCreateSchema", () => {
     ).toThrow()
   })
 
+  it("accepts phone-only billing contact for a person", () => {
+    const result = bookingCreateSchema.parse({
+      ...valid,
+      contactEmail: null,
+      contactPhone: "test-phone-number",
+    })
+
+    expect(result.contactPhone).toBe("test-phone-number")
+    expect(result.contactEmail).toBeNull()
+  })
+
+  it("requires billing person email or phone", () => {
+    expect(() =>
+      bookingCreateSchema.parse({
+        ...valid,
+        contactEmail: null,
+        contactPhone: "   ",
+      }),
+    ).toThrow("Billing person requires an email or phone number")
+  })
+
   it("rejects placeholder billing emails", () => {
     expect(() =>
       bookingCreateSchema.parse({
@@ -97,5 +118,15 @@ describe("bookingCreateSchema", () => {
         contactEmail: "noreply@example.com",
       }),
     ).toThrow()
+  })
+
+  it("rejects placeholder billing emails even when a phone is supplied", () => {
+    expect(() =>
+      bookingCreateSchema.parse({
+        ...valid,
+        contactEmail: "noreply@example.com",
+        contactPhone: "test-phone-number",
+      }),
+    ).toThrow("Billing email cannot be a placeholder address")
   })
 })
