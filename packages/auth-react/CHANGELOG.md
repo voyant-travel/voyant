@@ -1,5 +1,13 @@
 # @voyantjs/auth-react
 
+## 0.75.4
+
+### Patch Changes
+
+- @voyantjs/auth@0.75.4
+- @voyantjs/react@0.75.4
+- @voyantjs/types@0.75.4
+
 ## 0.75.3
 
 ### Patch Changes

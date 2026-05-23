@@ -1,5 +1,13 @@
 # @voyantjs/facilities-ui
 
+## 0.75.4
+
+### Patch Changes
+
+- @voyantjs/facilities-react@0.75.4
+- @voyantjs/i18n@0.75.4
+- @voyantjs/ui@0.75.4
+
 ## 0.75.3
 
 ### Patch Changes
