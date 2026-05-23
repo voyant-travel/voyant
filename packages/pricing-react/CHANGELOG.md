@@ -1,5 +1,13 @@
 # @voyantjs/pricing-react
 
+## 0.77.2
+
+### Patch Changes
+
+- Updated dependencies [04039ff]
+  - @voyantjs/pricing@0.77.2
+  - @voyantjs/react@0.77.2
+
 ## 0.77.1
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # @voyantjs/identity-ui
 
+## 0.77.2
+
+### Patch Changes
+
+- @voyantjs/bookings-ui@0.77.2
+- @voyantjs/crm-ui@0.77.2
+- @voyantjs/i18n@0.77.2
+- @voyantjs/identity-react@0.77.2
+- @voyantjs/products-ui@0.77.2
+- @voyantjs/suppliers-ui@0.77.2
+- @voyantjs/ui@0.77.2
+
 ## 0.77.1
 
 ### Patch Changes

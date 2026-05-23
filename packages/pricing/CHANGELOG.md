@@ -1,5 +1,16 @@
 # @voyantjs/pricing
 
+## 0.77.2
+
+### Patch Changes
+
+- 04039ff: Derive catalog price-from values from future bookable rate-plan prices before falling back to product-row pricing, and treat zero as missing.
+  - @voyantjs/availability@0.77.2
+  - @voyantjs/core@0.77.2
+  - @voyantjs/db@0.77.2
+  - @voyantjs/hono@0.77.2
+  - @voyantjs/products@0.77.2
+
 ## 0.77.1
 
 ### Patch Changes
