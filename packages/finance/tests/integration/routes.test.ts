@@ -8,11 +8,13 @@ import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY } from "../../src/route-runtime.js"
 import { financeRoutes } from "../../src/routes.js"
 import {
   bookingPaymentSchedules,
+  invoiceRenditions,
   paymentAuthorizations,
   paymentCaptures,
   paymentSessions,
   payments,
 } from "../../src/schema.js"
+import { financeService } from "../../src/service.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 const ORIGINAL_TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
@@ -105,6 +107,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
   const settlementEvents: Array<Record<string, unknown>> = []
   const paymentCompletedEvents: Array<Record<string, unknown>> = []
   const schedulePaidEvents: Array<Record<string, unknown>> = []
+  const autoRenditionBookings = new Map<string, { delayMs: number; storageKey: string }>()
 
   beforeAll(async () => {
     process.env.TEST_DATABASE_URL = getIsolatedFinanceTestDbUrl(process.env.TEST_DATABASE_URL)
@@ -253,6 +256,20 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     eventBus.subscribe("booking_payment_schedule.paid", (event) => {
       schedulePaidEvents.push(event as Record<string, unknown>)
     })
+    eventBus.subscribe("invoice.issued", (event) => {
+      const data = event.data as { invoiceId?: string; bookingId?: string | null }
+      if (!data.invoiceId || !data.bookingId) return
+      const request = autoRenditionBookings.get(data.bookingId)
+      if (!request) return
+      setTimeout(() => {
+        void financeService.bindInvoiceRendition(db, data.invoiceId!, {
+          format: "pdf",
+          storageKey: request.storageKey,
+          contentType: "application/pdf",
+          fileSize: 1024,
+        })
+      }, request.delayMs)
+    })
     const financeRouteRuntime = {
       eventBus,
       invoiceSettlementPollers: {},
@@ -283,6 +300,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     settlementEvents.length = 0
     paymentCompletedEvents.length = 0
     schedulePaidEvents.length = 0
+    autoRenditionBookings.clear()
   })
 
   afterAll(async () => {
@@ -1325,6 +1343,66 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         }),
       })
       expect(res.status).toBe(404)
+    })
+
+    it("waits for an issued invoice PDF and returns its download URL inline", async () => {
+      const booking = await seedBooking({ sellAmountCents: 20000 })
+      await seedBookingItem(booking.id)
+      autoRenditionBookings.set(booking.id, {
+        delayMs: 25,
+        storageKey: `invoices/${booking.id}/smartbill.pdf`,
+      })
+
+      const res = await app.request("/invoices/from-booking?wait=pdf&waitTimeoutMs=2000", {
+        method: "POST",
+        ...json({
+          bookingId: booking.id,
+          invoiceNumber: nextInvoiceNumber(),
+          issueDate: "2025-06-01",
+          dueDate: "2025-07-01",
+        }),
+      })
+
+      expect(res.status).toBe(201)
+      const { data } = await res.json()
+      expect(data.invoice.id).toMatch(/^inv_/)
+      expect(data.invoice.bookingId).toBe(booking.id)
+      expect(data.rendition).toMatchObject({
+        invoiceId: data.invoice.id,
+        format: "pdf",
+        status: "ready",
+        storageKey: `invoices/${booking.id}/smartbill.pdf`,
+      })
+      expect(data.download).toEqual({
+        url: `https://files.example/invoices/${booking.id}/smartbill.pdf`,
+        expiresAt: null,
+      })
+    })
+  })
+
+  describe("Invoice rendition wait", () => {
+    it("returns 202 with the pending rendition when render wait times out", async () => {
+      const booking = await seedBooking()
+      const invoice = await seedInvoice(booking.id)
+
+      const res = await app.request(`/invoices/${invoice.id}/render?wait=pdf&waitTimeoutMs=0`, {
+        method: "POST",
+        ...json({ format: "pdf" }),
+      })
+
+      expect(res.status).toBe(202)
+      const { data } = await res.json()
+      expect(data.rendition).toMatchObject({
+        invoiceId: invoice.id,
+        format: "pdf",
+        status: "pending",
+      })
+
+      const rows = await db
+        .select()
+        .from(invoiceRenditions)
+        .where(eq(invoiceRenditions.invoiceId, invoice.id))
+      expect(rows).toHaveLength(1)
     })
   })
 

@@ -146,6 +146,10 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
     expect(firstBody.data.renderedBody).toContain("INV-1001")
     expect(firstBody.data.rendition.status).toBe("ready")
     expect(firstBody.data.rendition.storageKey).toContain("rendition-1.pdf")
+    expect(firstBody.data.download).toEqual({
+      url: `https://signed.example.com/${firstBody.data.rendition.storageKey}`,
+      expiresAt: null,
+    })
 
     const secondRes = await app.request(`/invoices/${invoice.id}/regenerate-document`, {
       method: "POST",

@@ -99,6 +99,21 @@ export const invoiceListQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 })
+
+const invoiceDocumentWaitModeSchema = z.preprocess(
+  (value) => {
+    if (value === true || value === "true") return "pdf"
+    if (value === false || value === "false") return "none"
+    return value
+  },
+  z.enum(["none", "pdf", "any"]),
+)
+
+const invoiceDocumentWaitFieldsSchema = z.object({
+  wait: invoiceDocumentWaitModeSchema.optional(),
+  waitTimeoutMs: z.coerce.number().int().min(0).max(60_000).optional(),
+})
+
 export const invoiceFromBookingSchema = z.object({
   bookingId: z.string().min(1),
   invoiceNumber: z.string().min(1).max(50).optional(),
@@ -112,6 +127,8 @@ export const invoiceFromBookingSchema = z.object({
    * payment lands and a real invoice replaces it.
    */
   invoiceType: z.enum(["invoice", "proforma"]).default("invoice"),
+  wait: invoiceDocumentWaitModeSchema.optional(),
+  waitTimeoutMs: z.coerce.number().int().min(0).max(60_000).optional(),
 })
 
 const lineItemCoreSchema = z.object({
@@ -379,11 +396,15 @@ export const renderInvoiceInputSchema = z.object({
   templateId: z.string().optional().nullable(),
   format: invoiceRenditionFormatSchema.default("pdf"),
   language: z.string().optional().nullable(),
+  wait: invoiceDocumentWaitModeSchema.optional(),
+  waitTimeoutMs: z.coerce.number().int().min(0).max(60_000).optional(),
 })
 
 export const generateInvoiceDocumentInputSchema = renderInvoiceInputSchema.extend({
   replaceExisting: z.boolean().default(true),
 })
+
+export const invoiceDocumentWaitQuerySchema = invoiceDocumentWaitFieldsSchema
 
 export const generatedInvoiceDocumentResultSchema = z.object({
   invoiceId: z.string(),

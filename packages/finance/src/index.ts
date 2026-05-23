@@ -111,6 +111,13 @@ export {
   type UpdateBookingTaxSettings,
 } from "./booking-tax.js"
 export {
+  type DocumentDownloadEnvelope,
+  type DocumentDownloadResolution,
+  type DocumentDownloadResolver,
+  resolveStoredDocumentDownload,
+  type StoredDocumentReference,
+} from "./document-download.js"
+export {
   createInvoiceFxHonoExtension,
   createInvoiceFxRoutes,
   createVoyantDataFxExchangeRateResolver,
@@ -299,6 +306,14 @@ export {
 } from "./service-documents.js"
 export type { InvoiceIssuedEvent, InvoiceIssueRuntime } from "./service-issue.js"
 export { issueInvoiceFromBooking, issueProformaFromBooking } from "./service-issue.js"
+export {
+  getLatestInvoiceRendition,
+  type InvoiceRenditionWaitMode,
+  type WaitForInvoiceRenditionOptions,
+  type WaitForInvoiceRenditionResult,
+  waitForInvoiceRendition,
+  waitFormatForMode,
+} from "./service-rendition-wait.js"
 export type {
   FinanceSettlementRuntimeOptions,
   InvoiceSettledEvent,
