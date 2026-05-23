@@ -1,5 +1,17 @@
 # @voyantjs/finance-ui
 
+## 0.77.3
+
+### Patch Changes
+
+- Updated dependencies [e8ad8b2]
+  - @voyantjs/bookings-ui@0.77.3
+  - @voyantjs/finance@0.77.3
+  - @voyantjs/finance-react@0.77.3
+  - @voyantjs/i18n@0.77.3
+  - @voyantjs/suppliers-ui@0.77.3
+  - @voyantjs/ui@0.77.3
+
 ## 0.77.2
 
 ### Patch Changes
