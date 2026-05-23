@@ -205,16 +205,18 @@ describe("createSmartbillClient PDF endpoints", () => {
   const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34])
 
   it("returns PDF bytes from /invoice/pdf", async () => {
-    const fetchMock = vi.fn<SmartbillFetch>(async () => pdfResponse(200, pdfBytes))
+    const fetchMock = vi.fn<SmartbillFetch>(async () =>
+      pdfResponse(200, pdfBytes, "application/octet-stream"),
+    )
     const client = createSmartbillClient({ ...baseOptions, fetch: fetchMock })
     const result = await client.viewInvoicePdf("RO123", "A", "42")
-    expect(result.contentType).toBe("application/pdf")
+    expect(result.contentType).toBe("application/octet-stream")
     expect(result.bytes).toBeInstanceOf(Uint8Array)
     expect(Array.from(result.bytes)).toEqual(Array.from(pdfBytes))
     const [url, init] = fetchMock.mock.calls[0]!
     expect(url).toContain("/invoice/pdf?cif=RO123&seriesname=A&number=42")
     expect(init.method).toBe("GET")
-    expect(init.headers.Accept).toBe("application/pdf")
+    expect(init.headers.Accept).toBe("application/octet-stream")
   })
 
   it("returns PDF bytes from /estimate/pdf", async () => {

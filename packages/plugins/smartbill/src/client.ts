@@ -147,7 +147,7 @@ export function createSmartbillClient(options: SmartbillClientOptions): Smartbil
     }
     const response = await fetchImpl(`${apiUrl}${path}`, {
       method: "GET",
-      headers: { ...headers(), Accept: "application/pdf" },
+      headers: { ...headers(), Accept: "application/octet-stream" },
     })
     if (!response.ok) {
       const text = await response.text().catch(() => "")
