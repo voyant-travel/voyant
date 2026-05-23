@@ -1,5 +1,16 @@
 # @voyantjs/plugin-smartbill
 
+## 0.77.7
+
+### Patch Changes
+
+- cf47ec5: Record SmartBill PDF persistence success and failure metadata on invoice external refs.
+  - @voyantjs/core@0.77.7
+  - @voyantjs/finance@0.77.7
+  - @voyantjs/finance-react@0.77.7
+  - @voyantjs/storage@0.77.7
+  - @voyantjs/ui@0.77.7
+
 ## 0.77.6
 
 ### Patch Changes
