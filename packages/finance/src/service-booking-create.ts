@@ -153,6 +153,7 @@ function requireCompleteBookingParty(
     contactFirstName?: string | null
     contactLastName?: string | null
     contactEmail?: string | null
+    contactPhone?: string | null
     travelers?: Array<{
       firstName: string
       lastName: string
@@ -178,11 +179,21 @@ function requireCompleteBookingParty(
         message: "Billing person requires first and last name",
       })
     }
-    if (!isRealEmail(value.contactEmail)) {
+    const hasRealEmail = isRealEmail(value.contactEmail)
+    const hasPhone = Boolean(value.contactPhone?.trim())
+
+    if (value.contactEmail && !hasRealEmail) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["contactEmail"],
-        message: "Billing person requires a real email address",
+        message: "Billing email cannot be a placeholder address",
+      })
+    }
+    if (!hasRealEmail && !hasPhone) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["contactEmail"],
+        message: "Billing person requires an email or phone number",
       })
     }
   } else if (value.contactEmail && !isRealEmail(value.contactEmail)) {
