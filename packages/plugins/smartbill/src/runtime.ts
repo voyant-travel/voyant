@@ -19,6 +19,7 @@ export interface SmartbillSyncRuntime {
   artifacts: SmartbillArtifactPersistenceOptions
   idempotency: NonNullable<SmartbillPluginOptions["idempotency"]>
   onError: SmartbillPluginOptions["onError"]
+  writeBackInvoiceNumber: SmartbillPluginOptions["writeBackInvoiceNumber"]
 }
 
 export function createSmartbillSyncRuntime(options: SmartbillPluginOptions): SmartbillSyncRuntime {
@@ -60,5 +61,6 @@ export function createSmartbillSyncRuntime(options: SmartbillPluginOptions): Sma
       skipExistingExternalRef: options.idempotency?.skipExistingExternalRef ?? true,
     },
     onError: options.onError,
+    writeBackInvoiceNumber: options.writeBackInvoiceNumber,
   }
 }

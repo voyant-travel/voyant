@@ -41,6 +41,7 @@ export { createSmartbillMockServer } from "./mock.js"
 export type {
   SmartbillErrorHandler,
   SmartbillIdempotencyOptions,
+  SmartbillInvoiceNumberWriteBackFormatter,
   SmartbillLogger,
   SmartbillMapFn,
   SmartbillPluginOptions,
