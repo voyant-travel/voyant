@@ -418,6 +418,54 @@ describe("smartbillPlugin — invoice.issued subscriber", () => {
     )
   })
 
+  it("ignores existing SmartBill refs for a different document type when writing back", async () => {
+    financeServiceMock.listInvoiceExternalRefs.mockResolvedValueOnce([
+      {
+        id: "iex_existing_proforma",
+        invoiceId: "inv_write_back_mismatch",
+        provider: "smartbill",
+        externalId: "0009",
+        externalNumber: "0009",
+        externalUrl: null,
+        status: "issued",
+        syncError: null,
+        metadata: {
+          companyVatCode: "RO12345678",
+          seriesName: "PF",
+          series: "PF",
+          number: "0009",
+          documentType: "proforma",
+        },
+      },
+    ])
+    const fetchMock = vi.fn<SmartbillFetch>(async () =>
+      jsonResponse(200, { ...okEnvelope, number: "0127", series: "B" }),
+    )
+    const plugin = smartbillPlugin({
+      ...baseOptions,
+      fetch: fetchMock,
+      artifacts: { db: {} as never },
+      logger: makeLogger(),
+      writeBackInvoiceNumber: true,
+    })
+    const handler = subscriberFor(plugin, "invoice.issued").handler
+
+    await handler(
+      eventEnvelope({
+        id: "inv_write_back_mismatch",
+        invoiceNumber: "PRO-BK-2605-5728",
+        lineItems: [],
+      }),
+    )
+
+    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(financeServiceMock.updateInvoice).toHaveBeenCalledWith(
+      expect.anything(),
+      "inv_write_back_mismatch",
+      { invoiceNumber: "B-0127" },
+    )
+  })
+
   it("keeps the SmartBill ref retryable when external allocation fails", async () => {
     financeServiceMock.applyExternalInvoiceAllocation.mockRejectedValueOnce(new Error("db down"))
     financeServiceMock.listInvoiceExternalRefs.mockResolvedValueOnce([]).mockResolvedValueOnce([

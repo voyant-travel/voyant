@@ -144,7 +144,7 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
     if (!db) return null
 
     const refs = await financeService.listInvoiceExternalRefs(db, event.id)
-    return refs.find((ref) => isUsableSmartbillRef(ref)) ?? null
+    return refs.find((ref) => isMatchingSmartbillRef(ref, documentType)) ?? null
   }
 
   async function handleExistingSmartbillRef(
@@ -345,7 +345,7 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
       const db = await resolveArtifactDb(event, documentType)
       if (!db) return
       const refs = await financeService.listInvoiceExternalRefs(db, event.id)
-      if (refs.some((ref) => isUsableSmartbillRef(ref))) return
+      if (refs.some((ref) => isMatchingSmartbillRef(ref, documentType))) return
 
       await financeService.registerInvoiceExternalRef(db, event.id, {
         provider: "smartbill",
@@ -544,6 +544,21 @@ function isUsableSmartbillRef(ref: {
     !ref.syncError &&
     Boolean(ref.externalNumber || ref.externalId)
   )
+}
+
+function isMatchingSmartbillRef(
+  ref: {
+    provider: string
+    status?: string | null
+    syncError?: string | null
+    externalNumber?: string | null
+    externalId?: string | null
+    metadata?: unknown
+  },
+  documentType: SmartbillDocumentType,
+) {
+  if (!isUsableSmartbillRef(ref)) return false
+  return metadataString(coerceMetadata(ref.metadata), "documentType") === documentType
 }
 
 function parseSmartbillPluginOptions(options: SmartbillPluginOptions): SmartbillPluginOptions {
