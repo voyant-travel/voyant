@@ -2,13 +2,20 @@ import {
   type ActionLedgerRequestContextValues,
   appendActionLedgerMutation,
 } from "@voyantjs/action-ledger"
-import { bookings } from "@voyantjs/bookings/schema"
+import { bookingItems, bookings } from "@voyantjs/bookings/schema"
 import type { EventBus } from "@voyantjs/core"
-import { asc, eq } from "drizzle-orm"
+import { asc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { resolveBookingSellTaxRate } from "./booking-tax.js"
 import { type InvoiceFxOptions, resolveInvoiceFxContext } from "./invoice-fx.js"
-import { invoiceLineItems, invoiceNumberSeries, invoices, payments } from "./schema.js"
+import {
+  bookingItemTaxLines,
+  invoiceLineItems,
+  invoiceNumberSeries,
+  invoices,
+  payments,
+} from "./schema.js"
 import {
   buildInvoiceIssuedActionLedgerInput,
   type CreateInvoiceFromBookingInput,
@@ -77,8 +84,37 @@ export interface InvoiceIssuedLineItem {
   unitPrice: number
   currency: string
   taxPercentage?: number
+  taxName?: string | null
+  taxRegimeCode?: TaxRegimeCode | null
   isService?: boolean
 }
+
+export type TaxRegimeCode =
+  | "standard"
+  | "reduced"
+  | "exempt"
+  | "reverse_charge"
+  | "margin_scheme_art311"
+  | "zero_rated"
+  | "out_of_scope"
+  | "other"
+
+type InvoiceLineTaxMetadata = {
+  taxPercentage?: number
+  taxName?: string | null
+  taxRegimeCode?: TaxRegimeCode | null
+}
+
+const TAX_REGIME_CODES = new Set<TaxRegimeCode>([
+  "standard",
+  "reduced",
+  "exempt",
+  "reverse_charge",
+  "margin_scheme_art311",
+  "zero_rated",
+  "out_of_scope",
+  "other",
+])
 
 const ISSUED_EVENT = "invoice.issued"
 const PROFORMA_ISSUED_EVENT = "invoice.proforma.issued"
@@ -202,6 +238,7 @@ async function emitIssued(
     .from(invoiceLineItems)
     .where(eq(invoiceLineItems.invoiceId, invoice.id))
     .orderBy(asc(invoiceLineItems.sortOrder))
+  const taxMetadataByBookingItemId = await loadLineTaxMetadata(db, lines)
   const payload: InvoiceIssuedEvent = {
     invoiceId: invoice.id,
     invoiceNumber: invoice.invoiceNumber,
@@ -219,14 +256,22 @@ async function emitIssued(
     clientCountry: booking?.contactCountry ?? null,
     clientVatCode: null,
     clientRegCom: null,
-    lineItems: lines.map((line) => ({
-      description: line.description,
-      quantity: line.quantity,
-      unitPrice: centsToMajor(line.unitPriceCents),
-      currency: invoice.currency,
-      ...(line.taxRate == null ? {} : { taxPercentage: line.taxRate }),
-      isService: true,
-    })),
+    lineItems: lines.map((line) => {
+      const taxMetadata =
+        line.bookingItemId == null ? undefined : taxMetadataByBookingItemId.get(line.bookingItemId)
+      const taxPercentage = line.taxRate ?? taxMetadata?.taxPercentage
+
+      return {
+        description: line.description,
+        quantity: line.quantity,
+        unitPrice: centsToMajor(line.unitPriceCents),
+        currency: invoice.currency,
+        ...(taxPercentage == null ? {} : { taxPercentage }),
+        ...(taxMetadata?.taxName == null ? {} : { taxName: taxMetadata.taxName }),
+        ...(taxMetadata?.taxRegimeCode == null ? {} : { taxRegimeCode: taxMetadata.taxRegimeCode }),
+        isService: true,
+      }
+    }),
     bookingNumber: booking?.bookingNumber ?? null,
     issueDate: toDateString(invoice.issueDate),
     dueDate: toDateString(invoice.dueDate),
@@ -241,6 +286,100 @@ async function emitIssued(
   const fx = await resolveInvoiceFxContext(db, invoice, runtime)
   if (fx) Object.assign(payload, fx)
   await runtime.eventBus.emit(eventName, payload)
+}
+
+async function loadLineTaxMetadata(
+  db: PostgresJsDatabase,
+  lines: Array<typeof invoiceLineItems.$inferSelect>,
+): Promise<Map<string, InvoiceLineTaxMetadata>> {
+  const bookingItemIds = [
+    ...new Set(lines.map((line) => line.bookingItemId).filter((id): id is string => Boolean(id))),
+  ]
+  if (bookingItemIds.length === 0) return new Map()
+
+  const taxLines = await db
+    .select({
+      bookingItemId: bookingItemTaxLines.bookingItemId,
+      name: bookingItemTaxLines.name,
+      code: bookingItemTaxLines.code,
+      scope: bookingItemTaxLines.scope,
+      rateBasisPoints: bookingItemTaxLines.rateBasisPoints,
+    })
+    .from(bookingItemTaxLines)
+    .where(inArray(bookingItemTaxLines.bookingItemId, bookingItemIds))
+    .orderBy(
+      asc(bookingItemTaxLines.bookingItemId),
+      asc(bookingItemTaxLines.sortOrder),
+      asc(bookingItemTaxLines.createdAt),
+    )
+
+  const taxLinesByBookingItemId = new Map<string, typeof taxLines>()
+  for (const taxLine of taxLines) {
+    const existing = taxLinesByBookingItemId.get(taxLine.bookingItemId) ?? []
+    existing.push(taxLine)
+    taxLinesByBookingItemId.set(taxLine.bookingItemId, existing)
+  }
+
+  const metadataByBookingItemId = new Map<string, InvoiceLineTaxMetadata>()
+  for (const bookingItemId of bookingItemIds) {
+    const taxLine = selectEventTaxLine(taxLinesByBookingItemId.get(bookingItemId) ?? [])
+    if (!taxLine) continue
+
+    metadataByBookingItemId.set(bookingItemId, {
+      ...(taxLine.rateBasisPoints == null
+        ? {}
+        : { taxPercentage: Math.round(taxLine.rateBasisPoints / 100) }),
+      taxName: taxLine.name,
+      taxRegimeCode: parseTaxRegimeCode(taxLine.code),
+    })
+  }
+
+  await backfillMissingLineTaxMetadata(db, bookingItemIds, metadataByBookingItemId)
+  return metadataByBookingItemId
+}
+
+function selectEventTaxLine<T extends { scope: string; rateBasisPoints: number | null }>(
+  taxLines: T[],
+): T | null {
+  return (
+    taxLines.find((taxLine) => taxLine.scope !== "withheld" && taxLine.rateBasisPoints != null) ??
+    taxLines.find((taxLine) => taxLine.scope !== "withheld") ??
+    null
+  )
+}
+
+async function backfillMissingLineTaxMetadata(
+  db: PostgresJsDatabase,
+  bookingItemIds: string[],
+  metadataByBookingItemId: Map<string, InvoiceLineTaxMetadata>,
+): Promise<void> {
+  const missingBookingItemIds = bookingItemIds.filter((id) => !metadataByBookingItemId.has(id))
+  if (missingBookingItemIds.length === 0) return
+
+  const productRows = await db
+    .select({
+      id: bookingItems.id,
+      productId: bookingItems.productId,
+    })
+    .from(bookingItems)
+    .where(inArray(bookingItems.id, missingBookingItemIds))
+
+  for (const row of productRows) {
+    if (!row.productId) continue
+    const taxRate = await resolveBookingSellTaxRate(db, { productId: row.productId })
+    if (!taxRate) continue
+
+    metadataByBookingItemId.set(row.id, {
+      taxPercentage: Math.round(taxRate.rate * 100),
+      taxName: taxRate.label,
+      taxRegimeCode: parseTaxRegimeCode(taxRate.code),
+    })
+  }
+}
+
+function parseTaxRegimeCode(code: string | null | undefined): TaxRegimeCode | null {
+  const value = code?.split("/").at(-1)
+  return value && TAX_REGIME_CODES.has(value as TaxRegimeCode) ? (value as TaxRegimeCode) : null
 }
 
 /**

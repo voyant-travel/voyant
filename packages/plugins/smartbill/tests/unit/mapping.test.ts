@@ -115,6 +115,14 @@ describe("mapLineItems", () => {
     expect(result[0]!.taxPercentage).toBe(19)
   })
 
+  it("passes through taxName when present", () => {
+    const result = mapLineItems(
+      event({ lineItems: [{ name: "X", quantity: 1, price: 10, taxName: "Normala" }] }),
+      defaultOptions,
+    )
+    expect(result[0]!.taxName).toBe("Normala")
+  })
+
   it("omits taxPercentage when not present", () => {
     const result = mapLineItems(
       event({ lineItems: [{ name: "X", quantity: 1, price: 10 }] }),
