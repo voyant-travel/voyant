@@ -9,6 +9,7 @@ import type { SmartbillMappingOptions } from "./mapping.js"
 import type {
   SmartbillErrorHandler,
   SmartbillIdempotencyOptions,
+  SmartbillInvoiceNumberWriteBackFormatter,
   SmartbillLogger,
   SmartbillMapFn,
   SmartbillPluginOptions,
@@ -54,6 +55,13 @@ const optionalMapEvent = z.custom<SmartbillMapFn | undefined>(
 const optionalOnError = z.custom<SmartbillErrorHandler | undefined>(
   (value) => value === undefined || typeof value === "function",
   "Expected an onError function",
+)
+
+const optionalWriteBackInvoiceNumber = z.custom<
+  boolean | SmartbillInvoiceNumberWriteBackFormatter | undefined
+>(
+  (value) => value === undefined || typeof value === "boolean" || typeof value === "function",
+  "Expected a boolean or invoice number formatter function",
 )
 
 const optionalDb = z.custom<SmartbillDbResolver | undefined>(
@@ -138,6 +146,7 @@ export const smartbillPluginOptionsSchema = z.object({
   logger: optionalLogger.optional(),
   idempotency: optionalIdempotency.optional(),
   onError: optionalOnError.optional(),
+  writeBackInvoiceNumber: optionalWriteBackInvoiceNumber.optional(),
   artifacts: optionalArtifacts.optional(),
   db: optionalDb.optional(),
   documentStorage: optionalDocumentStorage.optional(),

@@ -48,12 +48,23 @@ export type SmartbillErrorHandler = (
   error: unknown,
 ) => void | Promise<void>
 
+export type SmartbillInvoiceNumberWriteBackFormatter = (
+  event: VoyantInvoiceEvent,
+  result: SmartbillInvoiceResponse,
+) => string | Promise<string>
+
 export interface SmartbillPluginOptions extends SmartbillClientOptions, SmartbillMappingOptions {
   events?: SmartbillSyncEventNames
   mapEvent?: SmartbillMapFn
   logger?: SmartbillLogger
   idempotency?: SmartbillIdempotencyOptions
   onError?: SmartbillErrorHandler
+  /**
+   * When enabled, mirrors SmartBill's issued series-number back onto
+   * `invoices.invoice_number` after a successful create. `true` uses
+   * `${series}-${number}`; a formatter can return a custom value.
+   */
+  writeBackInvoiceNumber?: boolean | SmartbillInvoiceNumberWriteBackFormatter
   /**
    * Optional finance artifact persistence. When `db` is supplied, the plugin
    * registers the SmartBill external ref after creation. When
@@ -81,8 +92,16 @@ function coerceEvent(data: unknown): VoyantInvoiceEvent | null {
 
 export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
   const validatedOptions = parseSmartbillPluginOptions(options)
-  const { client, logger, mapEvent, eventNames, artifacts, idempotency, onError } =
-    createSmartbillSyncRuntime(validatedOptions)
+  const {
+    client,
+    logger,
+    mapEvent,
+    eventNames,
+    artifacts,
+    idempotency,
+    onError,
+    writeBackInvoiceNumber,
+  } = createSmartbillSyncRuntime(validatedOptions)
 
   async function resolveMaybe<TContext, TValue>(
     value: TValue | ((context: TContext) => TValue | Promise<TValue>) | undefined | null,
@@ -125,7 +144,7 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
     if (!db) return null
 
     const refs = await financeService.listInvoiceExternalRefs(db, event.id)
-    return refs.find((ref) => isUsableSmartbillRef(ref)) ?? null
+    return refs.find((ref) => isMatchingSmartbillRef(ref, documentType)) ?? null
   }
 
   async function handleExistingSmartbillRef(
@@ -139,6 +158,7 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
       externalRef,
     )
     await applyExternalAllocationFromRefIfRequired(event, documentType, body, externalRef)
+    await writeBackInvoiceNumberFromRefIfRequired(event, documentType, body, externalRef)
     try {
       const persisted = await retrySmartbillInvoiceArtifact({
         runtime: artifacts,
@@ -246,6 +266,70 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
     })
   }
 
+  async function resolveWriteBackInvoiceNumber(
+    event: VoyantInvoiceEvent,
+    body: SmartbillInvoiceBody,
+    result: SmartbillInvoiceResponse,
+  ) {
+    if (!writeBackInvoiceNumber) return null
+    if (typeof writeBackInvoiceNumber === "function") {
+      const invoiceNumber = await writeBackInvoiceNumber(event, result)
+      if (typeof invoiceNumber !== "string" || invoiceNumber.trim().length === 0) {
+        throw new Error("SmartBill invoice number write-back formatter returned an empty value")
+      }
+      return invoiceNumber
+    }
+    if (!result.number) return null
+    return formatExternalInvoiceNumber(result.series ?? body.seriesName, result.number)
+  }
+
+  async function writeBackInvoiceNumberIfRequired(
+    event: VoyantInvoiceEvent,
+    documentType: SmartbillDocumentType,
+    body: SmartbillInvoiceBody,
+    result: SmartbillInvoiceResponse,
+  ) {
+    const invoiceNumber = await resolveWriteBackInvoiceNumber(event, body, result)
+    if (!invoiceNumber) return
+
+    const db = await resolveArtifactDb(event, documentType, body, result)
+    if (!db) {
+      throw new Error("SmartBill invoice number write-back requires artifact database access")
+    }
+
+    const invoice = await financeService.updateInvoice(db, event.id, { invoiceNumber })
+    if (!invoice) {
+      throw new Error(`SmartBill invoice number write-back failed for missing invoice ${event.id}`)
+    }
+    logger.info?.(`[smartbill] invoice number write-back applied for ${event.id}`, invoice)
+  }
+
+  async function writeBackInvoiceNumberFromRefIfRequired(
+    event: VoyantInvoiceEvent,
+    documentType: SmartbillDocumentType,
+    body: SmartbillInvoiceBody,
+    externalRef: SmartbillExternalRef,
+  ) {
+    if (!writeBackInvoiceNumber) return
+
+    const metadata = coerceMetadata(externalRef.metadata)
+    const number =
+      metadataString(metadata, "number") ??
+      externalRef.externalNumber ??
+      externalRef.externalId ??
+      null
+    if (!number) return
+
+    await writeBackInvoiceNumberIfRequired(event, documentType, body, {
+      number,
+      series:
+        metadataString(metadata, "series") ??
+        metadataString(metadata, "seriesName") ??
+        body.seriesName,
+      url: externalRef.externalUrl ?? undefined,
+    })
+  }
+
   async function recordSyncError(
     event: VoyantInvoiceEvent,
     documentType: SmartbillDocumentType,
@@ -261,7 +345,7 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
       const db = await resolveArtifactDb(event, documentType)
       if (!db) return
       const refs = await financeService.listInvoiceExternalRefs(db, event.id)
-      if (refs.some((ref) => isUsableSmartbillRef(ref))) return
+      if (refs.some((ref) => isMatchingSmartbillRef(ref, documentType))) return
 
       await financeService.registerInvoiceExternalRef(db, event.id, {
         provider: "smartbill",
@@ -308,6 +392,7 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
             result,
           )
           await persistArtifact(event, "invoice", body, result)
+          await writeBackInvoiceNumberIfRequired(event, "invoice", body, result)
           await applyExternalAllocationIfRequired(event, "invoice", body, result)
         } catch (err) {
           logger.error(
@@ -338,6 +423,7 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
             result,
           )
           await persistArtifact(event, "proforma", body, result)
+          await writeBackInvoiceNumberIfRequired(event, "proforma", body, result)
           await applyExternalAllocationIfRequired(event, "proforma", body, result)
         } catch (err) {
           logger.error(
@@ -458,6 +544,21 @@ function isUsableSmartbillRef(ref: {
     !ref.syncError &&
     Boolean(ref.externalNumber || ref.externalId)
   )
+}
+
+function isMatchingSmartbillRef(
+  ref: {
+    provider: string
+    status?: string | null
+    syncError?: string | null
+    externalNumber?: string | null
+    externalId?: string | null
+    metadata?: unknown
+  },
+  documentType: SmartbillDocumentType,
+) {
+  if (!isUsableSmartbillRef(ref)) return false
+  return metadataString(coerceMetadata(ref.metadata), "documentType") === documentType
 }
 
 function parseSmartbillPluginOptions(options: SmartbillPluginOptions): SmartbillPluginOptions {
