@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/checkout",
-  "version": "0.77.10",
+  "version": "0.77.11",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {

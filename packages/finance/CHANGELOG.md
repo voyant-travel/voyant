@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.77.11
+
+### Patch Changes
+
+- 437fb58: Allow invoice numbers to repeat across distinct finance document types while preserving same-type uniqueness.
+  - @voyantjs/action-ledger@0.77.11
+  - @voyantjs/bookings@0.77.11
+  - @voyantjs/core@0.77.11
+  - @voyantjs/db@0.77.11
+  - @voyantjs/hono@0.77.11
+  - @voyantjs/products@0.77.11
+  - @voyantjs/storage@0.77.11
+  - @voyantjs/utils@0.77.11
+
 ## 0.77.10
 
 ### Patch Changes
