@@ -1,5 +1,21 @@
 # @voyantjs/customer-portal
 
+## 0.75.7
+
+### Patch Changes
+
+- 827c25e: Allow invoice-from-booking calls to omit `invoiceNumber`, allocate numbers from active/default series, and hand external-provider series to SmartBill-style adapters for provider-owned numbering.
+- Updated dependencies [827c25e]
+  - @voyantjs/bookings@0.75.7
+  - @voyantjs/core@0.75.7
+  - @voyantjs/crm@0.75.7
+  - @voyantjs/db@0.75.7
+  - @voyantjs/finance@0.75.7
+  - @voyantjs/hono@0.75.7
+  - @voyantjs/identity@0.75.7
+  - @voyantjs/legal@0.75.7
+  - @voyantjs/utils@0.75.7
+
 ## 0.75.6
 
 ### Patch Changes
