@@ -340,6 +340,11 @@ describe.skipIf(!DB_AVAILABLE)("Legal public routes", () => {
     const firstBody = await firstRes.json()
     expect(firstBody.data.renderedBody).toBe("Salut Ana")
     expect(firstBody.data.attachment.name).toBe("contract-1.pdf")
+    expect(firstBody.data.download).toEqual({
+      url: `https://signed.example.com/${firstBody.data.attachment.storageKey}`,
+      expiresAt: null,
+      filename: "contract-1.pdf",
+    })
 
     const [issuedContract] = await db
       .select()
@@ -356,7 +361,13 @@ describe.skipIf(!DB_AVAILABLE)("Legal public routes", () => {
     })
 
     expect(secondRes.status).toBe(200)
-    expect((await secondRes.json()).data.attachment.name).toBe("contract-2.pdf")
+    const secondBody = await secondRes.json()
+    expect(secondBody.data.attachment.name).toBe("contract-2.pdf")
+    expect(secondBody.data.download).toEqual({
+      url: `https://signed.example.com/${secondBody.data.attachment.storageKey}`,
+      expiresAt: null,
+      filename: "contract-2.pdf",
+    })
 
     const attachments = await db
       .select()

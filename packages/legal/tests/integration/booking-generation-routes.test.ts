@@ -38,6 +38,10 @@ describe.skipIf(!DB_AVAILABLE)("booking contract generation routes", () => {
     adminApp.route(
       "/",
       createContractsAdminRoutes({
+        resolveDocumentDownloadUrl: (_bindings, storageKey) => ({
+          url: `https://signed.example.com/${storageKey}`,
+          expiresAt: "2026-05-23T16:00:00.000Z",
+        }),
         documentGenerator: async ({ contract }) => {
           const name = `contract-${generatedNames.length + 1}.pdf`
           generatedNames.push(name)
@@ -127,6 +131,11 @@ describe.skipIf(!DB_AVAILABLE)("booking contract generation routes", () => {
       contractId: body.data.contract.id,
       kind: "document",
       name: "contract-1.pdf",
+    })
+    expect(body.data.download).toEqual({
+      url: `https://signed.example.com/${body.data.attachment.storageKey}`,
+      expiresAt: "2026-05-23T16:00:00.000Z",
+      filename: "contract-1.pdf",
     })
     expect(body.data.contract.renderedBody).toBe("Contract for BK-ROUTE-001")
   })

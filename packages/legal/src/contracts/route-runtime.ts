@@ -7,6 +7,7 @@ import type { ContractDocumentGenerator, ContractsRouteOptions } from "./routes.
 export type ContractsRouteRuntime = {
   documentGenerator?: ContractDocumentGenerator
   documentStorage?: StorageProvider | null
+  resolveDocumentDownloadUrl?: ContractsRouteOptions["resolveDocumentDownloadUrl"]
   eventBus?: EventBus
   lifecycleHooks?: readonly ContractLifecycleHook[]
 }
@@ -20,6 +21,7 @@ export function buildContractsRouteRuntime(
   return {
     documentGenerator: options.resolveDocumentGenerator?.(bindings) ?? options.documentGenerator,
     documentStorage: options.resolveDocumentStorage?.(bindings) ?? options.documentStorage,
+    resolveDocumentDownloadUrl: options.resolveDocumentDownloadUrl,
     eventBus: options.resolveEventBus?.(bindings) ?? options.eventBus,
     lifecycleHooks: options.resolveLifecycleHooks?.(bindings) ?? options.lifecycleHooks,
   }

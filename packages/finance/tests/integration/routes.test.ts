@@ -1376,6 +1376,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(data.download).toEqual({
         url: `https://files.example/invoices/${booking.id}/smartbill.pdf`,
         expiresAt: null,
+        filename: "smartbill.pdf",
       })
     })
   })

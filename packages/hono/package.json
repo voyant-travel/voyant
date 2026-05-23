@@ -8,6 +8,7 @@
     "./app": "./src/app.ts",
     "./module": "./src/module.ts",
     "./plugin": "./src/plugin.ts",
+    "./document-download": "./src/document-download.ts",
     "./types": "./src/types.ts",
     "./middleware": "./src/middleware/index.ts",
     "./middleware/auth": "./src/middleware/auth.ts",
@@ -72,6 +73,11 @@
         "types": "./dist/plugin.d.ts",
         "import": "./dist/plugin.js",
         "default": "./dist/plugin.js"
+      },
+      "./document-download": {
+        "types": "./dist/document-download.d.ts",
+        "import": "./dist/document-download.js",
+        "default": "./dist/document-download.js"
       },
       "./types": {
         "types": "./dist/types.d.ts",

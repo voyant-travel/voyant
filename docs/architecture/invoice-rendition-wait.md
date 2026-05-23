@@ -24,3 +24,7 @@ can continue with the regular rendition download or polling flow.
 Routes must use the shared `waitForInvoiceRendition(...)` helper and
 `resolveStoredDocumentDownload(...)` rather than implementing custom polling or
 metadata URL parsing.
+
+See `docs/architecture/document-download-envelopes.md` for the shared download
+envelope contract used by invoice renditions, finance attachments, and legal
+contract attachments.

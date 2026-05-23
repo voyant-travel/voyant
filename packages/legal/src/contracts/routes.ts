@@ -1,5 +1,10 @@
 import type { EventBus, ModuleContainer } from "@voyantjs/core"
-import { parseJsonBody, parseOptionalJsonBody, parseQuery } from "@voyantjs/hono"
+import {
+  parseJsonBody,
+  parseOptionalJsonBody,
+  parseQuery,
+  resolveStoredDocumentDownload,
+} from "@voyantjs/hono"
 import type { StorageProvider } from "@voyantjs/storage"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
@@ -76,27 +81,6 @@ function getRuntime(
     resolveFromContainer?.(CONTRACTS_ROUTE_RUNTIME_CONTAINER_KEY) ??
     buildContractsRouteRuntime(bindings, options)
   )
-}
-
-function getMetadataRecord(metadata: unknown) {
-  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
-    return null
-  }
-
-  return metadata as Record<string, unknown>
-}
-
-function maybeUrl(value: unknown) {
-  return typeof value === "string" && /^https?:\/\//i.test(value) ? value : null
-}
-
-function getFallbackDownloadUrl(metadata: unknown) {
-  const record = getMetadataRecord(metadata)
-  if (!record) {
-    return null
-  }
-
-  return maybeUrl(record.url)
 }
 
 function getMultipartString(value: unknown) {
@@ -289,8 +273,11 @@ async function regenerateContractDocument(
   if (result.status === "generator_failed") {
     return c.json({ error: "Contract document generation failed" }, 502)
   }
+  if (!("attachment" in result)) {
+    return c.json({ error: "Contract document generation failed" }, 502)
+  }
 
-  return c.json({ data: result })
+  return c.json({ data: await attachDownloadEnvelope(c.env, runtime, result) })
 }
 
 async function generateContractDocumentForBooking(c: Context<Env>, options: ContractsRouteOptions) {
@@ -350,7 +337,12 @@ async function generateContractDocumentForBooking(c: Context<Env>, options: Cont
     return c.json({ error: "Generated contract document could not be loaded" }, 500)
   }
 
-  return c.json({ data: { contract, attachment } }, 201)
+  return c.json(
+    {
+      data: await attachDownloadEnvelope(c.env, runtime, { contract, attachment }),
+    },
+    201,
+  )
 }
 
 export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) {
@@ -577,8 +569,11 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
       if (result.status === "generator_failed") {
         return c.json({ error: "Contract document generation failed" }, 502)
       }
+      if (!("attachment" in result)) {
+        return c.json({ error: "Contract document generation failed" }, 502)
+      }
 
-      return c.json({ data: result }, 201)
+      return c.json({ data: await attachDownloadEnvelope(c.env, runtime, result) }, 201)
     })
     .post("/:id/regenerate-document", async (c) => {
       return regenerateContractDocument(c, options, c.req.param("id"))
@@ -665,20 +660,22 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
       )
       if (!attachment) return c.json({ error: "Attachment not found" }, 404)
 
-      let location: string | null = null
-      if (attachment.storageKey) {
-        if (!options.resolveDocumentDownloadUrl) {
-          return c.json({ error: "Document download resolver is not configured" }, 501)
-        }
-        location = await options.resolveDocumentDownloadUrl(c.env, attachment.storageKey)
+      const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
+      const download = await resolveStoredDocumentDownload(
+        { ...attachment, filename: attachment.name },
+        {
+          bindings: c.env,
+          resolveDocumentDownloadUrl: runtime.resolveDocumentDownloadUrl,
+        },
+      )
+      if (download.status === "resolver_not_configured") {
+        return c.json({ error: "Document download resolver is not configured" }, 501)
       }
-
-      location ??= getFallbackDownloadUrl(attachment.metadata)
-      if (!location) {
+      if (download.status !== "ready") {
         return c.json({ error: "Attachment file is not available" }, 404)
       }
 
-      return c.redirect(location, 302)
+      return c.redirect(download.download.url, 302)
     })
     .delete("/attachments/:attachmentId", async (c) => {
       const row = await contractsService.deleteAttachment(c.get("db"), c.req.param("attachmentId"))
@@ -688,6 +685,21 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
 }
 
 export const contractsAdminRoutes = createContractsAdminRoutes()
+
+async function attachDownloadEnvelope<
+  T extends {
+    attachment: { storageKey?: string | null; metadata?: unknown; name?: string | null }
+  },
+>(bindings: Record<string, unknown>, runtime: ContractsRouteRuntime, result: T) {
+  const download = await resolveStoredDocumentDownload(
+    { ...result.attachment, filename: result.attachment.name },
+    {
+      bindings,
+      resolveDocumentDownloadUrl: runtime.resolveDocumentDownloadUrl,
+    },
+  )
+  return download.status === "ready" ? { ...result, download: download.download } : result
+}
 
 export function createContractsPublicRoutes(options: ContractsRouteOptions = {}) {
   return (
