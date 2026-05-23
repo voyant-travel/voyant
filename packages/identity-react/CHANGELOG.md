@@ -1,5 +1,12 @@
 # @voyantjs/identity-react
 
+## 0.77.3
+
+### Patch Changes
+
+- @voyantjs/identity@0.77.3
+- @voyantjs/react@0.77.3
+
 ## 0.77.2
 
 ### Patch Changes
