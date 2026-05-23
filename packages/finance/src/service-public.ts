@@ -17,6 +17,7 @@ import type {
   PublicBookingFinancePayments,
   PublicFinanceBookingDocument,
   PublicFinanceDocumentLookup,
+  PublicFinanceDocumentLookupQuery,
   PublicPaymentOptionsQuery,
   PublicStartPaymentSessionInput,
   PublicValidateVoucherInput,
@@ -80,6 +81,12 @@ function maybeUrl(value: string | null | undefined) {
 
 function getMetadataDownloadUrl(record: Record<string, unknown> | null) {
   return maybeUrl(getMetadataString(record, "url"))
+}
+
+function normalizeDocumentLookupQuery(
+  query: PublicFinanceDocumentLookupQuery | string,
+): PublicFinanceDocumentLookupQuery {
+  return typeof query === "string" ? { reference: query } : query
 }
 
 function toPublicPaymentSession(
@@ -202,25 +209,35 @@ export const publicFinanceService = {
 
   async getDocumentByReference(
     db: PostgresJsDatabase,
-    reference: string,
+    query: PublicFinanceDocumentLookupQuery | string,
     runtime: PublicFinanceRuntimeOptions = {},
   ): Promise<PublicFinanceDocumentLookup | null> {
+    const lookup = normalizeDocumentLookupQuery(query)
+    const invoiceConditions = [eq(invoices.invoiceNumber, lookup.reference)]
+    if (lookup.invoiceType) {
+      invoiceConditions.push(eq(invoices.invoiceType, lookup.invoiceType))
+    }
+
     const [invoiceMatch, paymentMatch] = await Promise.all([
       db
         .select()
         .from(invoices)
-        .where(eq(invoices.invoiceNumber, reference))
+        .where(and(...invoiceConditions))
         .orderBy(desc(invoices.createdAt))
-        .limit(1),
+        .limit(2),
       db
         .select({
           invoiceId: payments.invoiceId,
         })
         .from(payments)
-        .where(eq(payments.referenceNumber, reference))
+        .where(eq(payments.referenceNumber, lookup.reference))
         .orderBy(desc(payments.createdAt))
         .limit(1),
     ])
+
+    if (invoiceMatch.length > 1) {
+      return null
+    }
 
     const invoiceId = invoiceMatch[0]?.id ?? paymentMatch[0]?.invoiceId ?? null
     if (!invoiceId) {
@@ -248,26 +265,41 @@ export const publicFinanceService = {
   async getBookingDocumentByReference(
     db: PostgresJsDatabase,
     bookingId: string,
-    reference: string,
+    query: PublicFinanceDocumentLookupQuery | string,
     runtime: PublicFinanceRuntimeOptions = {},
   ): Promise<PublicFinanceDocumentLookup | null> {
+    const lookup = normalizeDocumentLookupQuery(query)
+    const invoiceConditions = [
+      eq(invoices.bookingId, bookingId),
+      eq(invoices.invoiceNumber, lookup.reference),
+    ]
+    if (lookup.invoiceType) {
+      invoiceConditions.push(eq(invoices.invoiceType, lookup.invoiceType))
+    }
+
     const [invoiceMatch, paymentMatch] = await Promise.all([
       db
         .select()
         .from(invoices)
-        .where(and(eq(invoices.bookingId, bookingId), eq(invoices.invoiceNumber, reference)))
+        .where(and(...invoiceConditions))
         .orderBy(desc(invoices.createdAt))
-        .limit(1),
+        .limit(2),
       db
         .select({
           invoiceId: payments.invoiceId,
         })
         .from(payments)
         .innerJoin(invoices, eq(payments.invoiceId, invoices.id))
-        .where(and(eq(invoices.bookingId, bookingId), eq(payments.referenceNumber, reference)))
+        .where(
+          and(eq(invoices.bookingId, bookingId), eq(payments.referenceNumber, lookup.reference)),
+        )
         .orderBy(desc(payments.createdAt))
         .limit(1),
     ])
+
+    if (invoiceMatch.length > 1) {
+      return null
+    }
 
     const invoiceId = invoiceMatch[0]?.id ?? paymentMatch[0]?.invoiceId ?? null
     if (!invoiceId) {

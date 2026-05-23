@@ -446,6 +446,7 @@ function isInvoiceNumberUniqueConstraintError(error: unknown) {
   const constraint = typeof candidate.constraint === "string" ? candidate.constraint : ""
   const detail = typeof candidate.detail === "string" ? candidate.detail : ""
   return (
+    constraint === "invoices_invoice_number_type_unique" ||
     constraint === "invoices_invoice_number_unique" ||
     constraint === "invoices_invoice_number_key" ||
     detail.includes("invoice_number")

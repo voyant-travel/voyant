@@ -11,6 +11,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core"
 
@@ -716,7 +717,7 @@ export const invoices = pgTable(
   {
     id: typeId("invoices"),
 
-    invoiceNumber: text("invoice_number").notNull().unique(),
+    invoiceNumber: text("invoice_number").notNull(),
     invoiceType: invoiceTypeEnum("invoice_type").notNull().default("invoice"),
     /**
      * Source proforma when this row is the final invoice that
@@ -769,6 +770,7 @@ export const invoices = pgTable(
     index("idx_invoices_status_created").on(table.status, table.createdAt),
     index("idx_invoices_fx_rate_set").on(table.fxRateSetId),
     index("idx_invoices_number").on(table.invoiceNumber),
+    unique("invoices_invoice_number_type_unique").on(table.invoiceNumber, table.invoiceType),
     index("idx_invoices_due_date").on(table.dueDate),
     index("idx_invoices_converted_from").on(table.convertedFromInvoiceId),
     // base_currency covers every base_*_cents column. If any base amount is

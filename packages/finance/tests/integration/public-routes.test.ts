@@ -387,6 +387,61 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
     })
   })
 
+  it("requires document type when an invoice reference matches multiple document types", async () => {
+    const booking = await seedBooking()
+    const invoiceNumber = "PF-SHARED-0127"
+    const invoice = await seedInvoice(booking.id, {
+      invoiceNumber,
+      invoiceType: "invoice",
+    })
+    const proforma = await seedInvoice(booking.id, {
+      invoiceNumber,
+      invoiceType: "proforma",
+    })
+
+    const ambiguousPublicRes = await app.request(
+      `/documents/by-reference?reference=${invoiceNumber}`,
+      {
+        headers: await capabilityHeaders(booking.id),
+      },
+    )
+    expect(ambiguousPublicRes.status).toBe(404)
+
+    const ambiguousBookingRes = await app.request(
+      `/bookings/${booking.id}/documents/by-reference?reference=${invoiceNumber}`,
+      {
+        headers: await capabilityHeaders(booking.id),
+      },
+    )
+    expect(ambiguousBookingRes.status).toBe(404)
+
+    const invoiceRes = await app.request(
+      `/bookings/${booking.id}/documents/by-reference?reference=${invoiceNumber}&invoiceType=invoice`,
+      {
+        headers: await capabilityHeaders(booking.id),
+      },
+    )
+    expect(invoiceRes.status).toBe(200)
+    expect((await invoiceRes.json()).data).toMatchObject({
+      invoiceId: invoice.id,
+      invoiceNumber,
+      invoiceType: "invoice",
+    })
+
+    const proformaRes = await app.request(
+      `/documents/by-reference?reference=${invoiceNumber}&invoiceType=proforma`,
+      {
+        headers: await capabilityHeaders(booking.id),
+      },
+    )
+    expect(proformaRes.status).toBe(200)
+    expect((await proformaRes.json()).data).toMatchObject({
+      invoiceId: proforma.id,
+      invoiceNumber,
+      invoiceType: "proforma",
+    })
+  })
+
   it("rejects booking-scoped finance document lookup without matching access", async () => {
     const booking = await seedBooking()
     const otherBooking = await seedBooking()
