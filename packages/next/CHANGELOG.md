@@ -1,5 +1,11 @@
 # @voyantjs/next
 
+## 0.79.0
+
+### Patch Changes
+
+- @voyantjs/core@0.79.0
+
 ## 0.78.0
 
 ### Patch Changes
