@@ -1,5 +1,14 @@
 # @voyantjs/catalog-ui
 
+## 0.77.12
+
+### Patch Changes
+
+- Updated dependencies [bf74cd4]
+  - @voyantjs/catalog-react@0.77.12
+  - @voyantjs/i18n@0.77.12
+  - @voyantjs/ui@0.77.12
+
 ## 0.77.11
 
 ### Patch Changes

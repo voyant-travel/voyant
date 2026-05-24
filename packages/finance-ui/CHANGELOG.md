@@ -1,5 +1,18 @@
 # @voyantjs/finance-ui
 
+## 0.77.12
+
+### Patch Changes
+
+- bf74cd4: Rename the invoice issuance status from `sent` to `issued`.
+- Updated dependencies [bf74cd4]
+  - @voyantjs/bookings-ui@0.77.12
+  - @voyantjs/finance@0.77.12
+  - @voyantjs/finance-react@0.77.12
+  - @voyantjs/i18n@0.77.12
+  - @voyantjs/suppliers-ui@0.77.12
+  - @voyantjs/ui@0.77.12
+
 ## 0.77.11
 
 ### Patch Changes

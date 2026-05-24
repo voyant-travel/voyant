@@ -1,5 +1,17 @@
 # @voyantjs/checkout
 
+## 0.77.12
+
+### Patch Changes
+
+- bf74cd4: Rename the invoice issuance status from `sent` to `issued`.
+- Updated dependencies [bf74cd4]
+  - @voyantjs/bookings@0.77.12
+  - @voyantjs/core@0.77.12
+  - @voyantjs/finance@0.77.12
+  - @voyantjs/hono@0.77.12
+  - @voyantjs/notifications@0.77.12
+
 ## 0.77.11
 
 ### Patch Changes
