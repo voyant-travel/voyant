@@ -902,6 +902,43 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
     })
   })
 
+  describe("Booking updates", () => {
+    it("clears confirmedAt when a generic update leaves the booking non-confirmed", async () => {
+      const booking = await seedBooking({
+        status: "draft",
+        confirmedAt: "2026-06-01T10:00:00.000Z",
+      })
+
+      expect(booking.status).toBe("draft")
+      expect(booking.confirmedAt).toBeNull()
+
+      const res = await app.request(`/${booking.id}`, {
+        method: "PATCH",
+        ...json({ confirmedAt: "2026-06-01T10:00:00.000Z" }),
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.data.status).toBe("draft")
+      expect(body.data.confirmedAt).toBeNull()
+    })
+
+    it("clears confirmedAt when a generic update moves a booking out of confirmed", async () => {
+      const booking = await seedBooking({ status: "confirmed" })
+      expect(booking.confirmedAt).toBeTruthy()
+
+      const res = await app.request(`/${booking.id}`, {
+        method: "PATCH",
+        ...json({ status: "draft" }),
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.data.status).toBe("draft")
+      expect(body.data.confirmedAt).toBeNull()
+    })
+  })
+
   describe("Reservation flow", () => {
     it("reserves a slot and creates on-hold allocations", async () => {
       const slot = await seedSlot()
