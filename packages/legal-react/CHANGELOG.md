@@ -1,5 +1,12 @@
 # @voyantjs/legal-react
 
+## 0.80.2
+
+### Patch Changes
+
+- @voyantjs/legal@0.80.2
+- @voyantjs/react@0.80.2
+
 ## 0.80.1
 
 ### Patch Changes
