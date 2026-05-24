@@ -221,6 +221,14 @@ async function emitIssued(
   invoice: typeof invoices.$inferSelect,
 ): Promise<void> {
   if (!runtime.eventBus) return
+  await runtime.eventBus.emit(eventName, await buildInvoiceIssuedEvent(db, invoice, runtime))
+}
+
+export async function buildInvoiceIssuedEvent(
+  db: PostgresJsDatabase,
+  invoice: typeof invoices.$inferSelect,
+  runtime: InvoiceIssueRuntime = {},
+): Promise<InvoiceIssuedEvent> {
   const [booking] = invoice.bookingId
     ? await db.select().from(bookings).where(eq(bookings.id, invoice.bookingId)).limit(1)
     : []
@@ -284,7 +292,7 @@ async function emitIssued(
   }
   const fx = await resolveInvoiceFxContext(db, invoice, runtime)
   if (fx) Object.assign(payload, fx)
-  await runtime.eventBus.emit(eventName, payload)
+  return payload
 }
 
 async function loadLineTaxMetadata(

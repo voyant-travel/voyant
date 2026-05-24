@@ -75,6 +75,37 @@ deduplication elsewhere. Create failures are recorded as SmartBill external refs
 with `status: "error"` and `syncError`; `onError(event, error)` can be supplied
 for application-specific reporting.
 
+Use `syncSmartbillInvoice({ db, invoiceId, pluginOptions })` to run the same
+create-or-retry flow from an admin action. It loads the finance invoice,
+booking, line items, and tax metadata, maps them through the configured
+SmartBill options, reuses an existing non-error SmartBill ref when present, and
+persists external refs/PDF artifacts through the configured artifact runtime.
+
+Apps that use `@voyantjs/hono` can mount the packaged admin module:
+
+```typescript
+import { createSmartbillAdminModule } from "@voyantjs/plugin-smartbill/hono"
+
+const app = createApp({
+  plugins: [smartbillSync],
+  modules: [
+    createSmartbillAdminModule({
+      pluginOptions: {
+        username: env.SMARTBILL_USERNAME,
+        apiToken: env.SMARTBILL_API_TOKEN,
+        companyVatCode: "RO12345678",
+        seriesName: "A",
+        artifacts: { documentStorage },
+      },
+    }),
+  ],
+})
+```
+
+The admin module mounts `POST /v1/admin/smartbill/invoices/:id/sync`. The route
+uses the request database for external-ref and artifact persistence unless
+`pluginOptions.artifacts.db` supplies a custom database resolver.
+
 Use `retrySmartbillInvoiceArtifact({ runtime, client, externalRef, documentType
 })` to re-download and re-attach a SmartBill PDF from an existing external ref
 without issuing a new document.
@@ -96,15 +127,7 @@ export function InvoicePage({ invoiceId }: { invoiceId: string }) {
       id={invoiceId}
       slots={{
         integrationsContent: ({ invoice }) => (
-          <SmartbillInvoicePanel
-            invoiceId={invoice.id}
-            sendAction={{
-              onClick: () => requestSmartbillSend(invoice.id),
-            }}
-            retryAction={{
-              onClick: () => requestSmartbillRetry(invoice.id),
-            }}
-          />
+          <SmartbillInvoicePanel invoiceId={invoice.id} />
         ),
       }}
     />
@@ -114,9 +137,11 @@ export function InvoicePage({ invoiceId }: { invoiceId: string }) {
 
 `SmartbillInvoicePanel` displays the SmartBill series, number, document type,
 sync status, sync errors, and document/PDF links when the external ref contains
-them. Hosts provide action callbacks such as send, retry, or proforma
-conversion because route shape and permissions remain app-owned. For custom
-layouts, use `useSmartbillInvoiceRef(invoiceId)` together with
+them. By default, send and retry actions call
+`POST /v1/admin/smartbill/invoices/:id/sync`, and proforma conversion calls the
+finance `POST /v1/finance/invoices/:id/convert-to-invoice` endpoint. Pass
+`sendAction`, `retryAction`, or `convertProformaAction` to override those
+defaults. For custom layouts, use `useSmartbillInvoiceRef(invoiceId)` together with
 `resolveSmartbillInvoiceReferenceParts(ref)` and
 `getSmartbillInvoiceDocumentLinks(ref)`.
 
@@ -167,6 +192,8 @@ finance records.
 | `.` | Barrel re-exports |
 | `./plugin` | `smartbillPlugin(options)` — packaged adapter/subscriber bundle |
 | `./client` | `createSmartbillClient` — `createInvoice`, `cancelInvoice`, `viewPdf`, `getPaymentStatus`, etc. |
+| `./hono` | `createSmartbillAdminModule(options)` and admin sync routes |
+| `./sync` | `syncSmartbillInvoice(...)` and event-level sync helpers |
 | `./invoice-ui` | Optional React hooks, display helpers, and `SmartbillInvoicePanel` for invoice detail integrations |
 | `./mock` | `createSmartbillMockServer` — stateful local SmartBill-compatible mock for tests |
 | `./workflows` | Proforma conversion polling and drift reconciliation factories |

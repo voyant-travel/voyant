@@ -1,6 +1,6 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { fetchWithValidation, useVoyantFinanceContext } from "@voyantjs/finance-react"
 import {
   Badge,
@@ -13,8 +13,9 @@ import {
   CardTitle,
 } from "@voyantjs/ui/components"
 import { cn } from "@voyantjs/ui/lib/utils"
-import { ExternalLink, FileText, Loader2, RefreshCw, Send } from "lucide-react"
+import { ArrowRightLeft, ExternalLink, FileText, Loader2, RefreshCw, Send } from "lucide-react"
 import type { ReactNode } from "react"
+import { z } from "zod"
 
 import {
   getSmartbillInvoiceDocumentLinks,
@@ -23,6 +24,8 @@ import {
   selectSmartbillInvoiceRef,
   smartbillInvoiceExternalRefsResponseSchema,
 } from "./invoice-ui-data.js"
+
+const actionResponseSchema = z.object({ data: z.unknown().optional() })
 
 export {
   getSmartbillInvoiceDocumentLinks,
@@ -100,6 +103,8 @@ export function SmartbillInvoicePanel({
   extraActions,
 }: SmartbillInvoicePanelProps) {
   const query = useSmartbillInvoiceRef(invoiceId, { enabled: externalRef === undefined })
+  const defaultSyncAction = useSmartbillInvoiceSyncAction(invoiceId)
+  const defaultConvertProformaAction = useSmartbillConvertProformaAction(invoiceId)
   const ref = externalRef === undefined ? query.data : externalRef
   const isLoading = externalRef === undefined && query.isPending
   const isError = externalRef === undefined && query.isError
@@ -111,7 +116,11 @@ export function SmartbillInvoicePanel({
   const reference = resolveSmartbillInvoiceReferenceParts(ref)
   const documentLinks = getSmartbillInvoiceDocumentLinks(ref)
   const status = ref?.syncError ? "error" : (ref?.status ?? null)
-  const canConvertProforma = reference.documentType === "proforma" && convertProformaAction
+  const effectiveSendAction = sendAction ?? defaultSyncAction
+  const effectiveRetryAction = retryAction ?? (ref ? defaultSyncAction : undefined)
+  const effectiveConvertProformaAction = convertProformaAction ?? defaultConvertProformaAction
+  const canConvertProforma =
+    reference.documentType === "proforma" && Boolean(effectiveConvertProformaAction)
 
   return (
     <Card data-slot="smartbill-invoice-panel" size="sm" className={className}>
@@ -169,22 +178,25 @@ export function SmartbillInvoicePanel({
         )}
 
         <div className="flex flex-wrap items-center gap-2">
-          {!ref && sendAction ? (
-            <SmartbillActionButton action={sendAction} icon={<Send className="size-4" />}>
-              {sendAction.label ?? "Send to SmartBill"}
+          {!ref && !isLoading && !isError ? (
+            <SmartbillActionButton action={effectiveSendAction} icon={<Send className="size-4" />}>
+              {effectiveSendAction.label ?? "Send to SmartBill"}
             </SmartbillActionButton>
           ) : null}
-          {retryAction ? (
-            <SmartbillActionButton action={retryAction} icon={<RefreshCw className="size-4" />}>
-              {retryAction.label ?? "Retry sync"}
-            </SmartbillActionButton>
-          ) : null}
-          {canConvertProforma ? (
+          {effectiveRetryAction ? (
             <SmartbillActionButton
-              action={convertProformaAction}
+              action={effectiveRetryAction}
               icon={<RefreshCw className="size-4" />}
             >
-              {convertProformaAction.label ?? "Convert proforma"}
+              {effectiveRetryAction.label ?? "Retry sync"}
+            </SmartbillActionButton>
+          ) : null}
+          {canConvertProforma && effectiveConvertProformaAction ? (
+            <SmartbillActionButton
+              action={effectiveConvertProformaAction}
+              icon={<ArrowRightLeft className="size-4" />}
+            >
+              {effectiveConvertProformaAction.label ?? "Convert proforma"}
             </SmartbillActionButton>
           ) : null}
           {extraActions}
@@ -192,6 +204,56 @@ export function SmartbillInvoicePanel({
       </CardContent>
     </Card>
   )
+}
+
+export function useSmartbillInvoiceSyncAction(invoiceId: string): SmartbillInvoiceAction {
+  const { baseUrl, fetcher } = useVoyantFinanceContext()
+  const queryClient = useQueryClient()
+  const mutation = useMutation({
+    mutationFn: async () =>
+      fetchWithValidation(
+        `/v1/admin/smartbill/invoices/${encodeURIComponent(invoiceId)}/sync`,
+        actionResponseSchema,
+        { baseUrl, fetcher },
+        { method: "POST" },
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["voyant"] })
+    },
+  })
+
+  return {
+    pending: mutation.isPending,
+    disabled: !invoiceId,
+    onClick: async () => {
+      await mutation.mutateAsync()
+    },
+  }
+}
+
+export function useSmartbillConvertProformaAction(invoiceId: string): SmartbillInvoiceAction {
+  const { baseUrl, fetcher } = useVoyantFinanceContext()
+  const queryClient = useQueryClient()
+  const mutation = useMutation({
+    mutationFn: async () =>
+      fetchWithValidation(
+        `/v1/finance/invoices/${encodeURIComponent(invoiceId)}/convert-to-invoice`,
+        actionResponseSchema,
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify({}) },
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["voyant"] })
+    },
+  })
+
+  return {
+    pending: mutation.isPending,
+    disabled: !invoiceId,
+    onClick: async () => {
+      await mutation.mutateAsync()
+    },
+  }
 }
 
 function SmartbillField({ label, children }: { label: string; children: ReactNode }) {
