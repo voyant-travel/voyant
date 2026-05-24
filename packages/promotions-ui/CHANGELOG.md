@@ -1,5 +1,13 @@
 # @voyantjs/promotions-ui
 
+## 0.80.5
+
+### Patch Changes
+
+- @voyantjs/i18n@0.80.5
+- @voyantjs/promotions-react@0.80.5
+- @voyantjs/ui@0.80.5
+
 ## 0.80.4
 
 ### Patch Changes
