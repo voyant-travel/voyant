@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.80.6
+
+### Patch Changes
+
+- f7df51b: Bump the Voyant Data SDK dependency to avoid the consumer-side global this runtime issue.
+  - @voyantjs/action-ledger@0.80.6
+  - @voyantjs/bookings@0.80.6
+  - @voyantjs/core@0.80.6
+  - @voyantjs/db@0.80.6
+  - @voyantjs/hono@0.80.6
+  - @voyantjs/products@0.80.6
+  - @voyantjs/storage@0.80.6
+  - @voyantjs/utils@0.80.6
+
 ## 0.80.5
 
 ### Patch Changes

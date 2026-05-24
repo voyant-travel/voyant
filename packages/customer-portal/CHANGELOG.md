@@ -1,5 +1,20 @@
 # @voyantjs/customer-portal
 
+## 0.80.6
+
+### Patch Changes
+
+- Updated dependencies [f7df51b]
+  - @voyantjs/bookings@0.80.6
+  - @voyantjs/core@0.80.6
+  - @voyantjs/crm@0.80.6
+  - @voyantjs/db@0.80.6
+  - @voyantjs/finance@0.80.6
+  - @voyantjs/hono@0.80.6
+  - @voyantjs/identity@0.80.6
+  - @voyantjs/legal@0.80.6
+  - @voyantjs/utils@0.80.6
+
 ## 0.80.5
 
 ### Patch Changes
