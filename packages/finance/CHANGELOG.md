@@ -1,5 +1,20 @@
 # @voyantjs/finance
 
+## 0.80.5
+
+### Patch Changes
+
+- f27b01f: Validate booking-create payment schedule currencies and confirmed totals before persisting schedules.
+- d1ae342: Auto-compute base amounts for cross-currency finance records using configured FX commission and persisted rate-set links.
+  - @voyantjs/action-ledger@0.80.5
+  - @voyantjs/bookings@0.80.5
+  - @voyantjs/core@0.80.5
+  - @voyantjs/db@0.80.5
+  - @voyantjs/hono@0.80.5
+  - @voyantjs/products@0.80.5
+  - @voyantjs/storage@0.80.5
+  - @voyantjs/utils@0.80.5
+
 ## 0.80.4
 
 ### Patch Changes
