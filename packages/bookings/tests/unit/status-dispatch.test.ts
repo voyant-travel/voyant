@@ -99,4 +99,33 @@ describe("dispatchBookingStatusChange — override fallback", () => {
       note: "manual confirm",
     })
   })
+
+  it("can suppress lifecycle events on confirmed override fallbacks", () => {
+    const target = dispatchBookingStatusChange(
+      BOOKING_ID,
+      "draft",
+      "confirmed",
+      "data correction",
+      { suppressLifecycleEvents: true },
+    )
+    expect(target.path).toBe(`/v1/bookings/${BOOKING_ID}/override-status`)
+    expect(target.body).toEqual({
+      status: "confirmed",
+      reason: "data correction",
+      note: "data correction",
+      suppressLifecycleEvents: true,
+    })
+  })
+
+  it("does not send lifecycle suppression to named confirm route", () => {
+    const target = dispatchBookingStatusChange(
+      BOOKING_ID,
+      "on_hold",
+      "confirmed",
+      "normal confirm",
+      { suppressLifecycleEvents: true },
+    )
+    expect(target.path).toBe(`/v1/bookings/${BOOKING_ID}/confirm`)
+    expect(target.body).toEqual({ note: "normal confirm" })
+  })
 })

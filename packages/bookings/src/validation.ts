@@ -351,17 +351,24 @@ export const completeBookingSchema = z.object({
  * the operator has to explain why they're bypassing lifecycle laws. Use the
  * verb-specific endpoints (/confirm, /cancel, /start, /complete, /expire) for
  * normal state changes; this is for data-correction and exceptional cases.
+ * Confirmed overrides emit `booking.confirmed` by default for create-dialog
+ * compatibility; pass `suppressLifecycleEvents` for pure data correction.
  */
 export const overrideBookingStatusSchema = z.object({
   status: bookingStatusSchema,
   reason: z.string().min(1).max(2000),
   note: z.string().optional().nullable(),
   /**
-   * Same opt-out as `confirmBookingSchema.suppressNotifications`. The
-   * override-status path also emits `booking.confirmed` when the target
-   * is `confirmed`, so subscribers need the same hint.
+   * Same notification opt-out as `confirmBookingSchema.suppressNotifications`.
+   * Only applies when the override path emits `booking.confirmed`.
    */
   suppressNotifications: z.boolean().optional(),
+  /**
+   * When true, skip verb-specific lifecycle events such as
+   * `booking.confirmed`. The audit event `booking.status_overridden` still
+   * emits either way.
+   */
+  suppressLifecycleEvents: z.boolean().optional(),
 })
 
 export const reserveBookingFromTransactionSchema = bookingCoreSchema

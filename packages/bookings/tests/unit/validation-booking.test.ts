@@ -206,6 +206,15 @@ describe("Override booking status schema", () => {
     })
     expect(result.note).toBe("Customer cancelled by phone")
   })
+
+  it("accepts lifecycle event suppression", () => {
+    const result = overrideBookingStatusSchema.parse({
+      status: "confirmed",
+      reason: "Data correction",
+      suppressLifecycleEvents: true,
+    })
+    expect(result.suppressLifecycleEvents).toBe(true)
+  })
 })
 
 describe("Convert product schema", () => {
