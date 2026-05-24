@@ -1,5 +1,16 @@
 # @voyantjs/hono
 
+## 0.80.3
+
+### Patch Changes
+
+- 6d816bb: Add `Idempotency-Key` replay support to admin create routes for CRM people and organizations, finance invoices, and legal contracts.
+  - @voyantjs/core@0.80.3
+  - @voyantjs/db@0.80.3
+  - @voyantjs/types@0.80.3
+  - @voyantjs/utils@0.80.3
+  - @voyantjs/workflows@0.80.3
+
 ## 0.80.2
 
 ### Patch Changes

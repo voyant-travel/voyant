@@ -1,5 +1,15 @@
 # @voyantjs/checkout-react
 
+## 0.80.3
+
+### Patch Changes
+
+- Updated dependencies [6d816bb]
+  - @voyantjs/checkout@0.80.3
+  - @voyantjs/finance@0.80.3
+  - @voyantjs/finance-react@0.80.3
+  - @voyantjs/react@0.80.3
+
 ## 0.80.2
 
 ### Patch Changes
