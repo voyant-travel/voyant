@@ -33,7 +33,7 @@ export function dispatchBookingStatusChange(
   current: BookingStatus,
   target: BookingStatus,
   note?: string | null,
-  options?: { suppressNotifications?: boolean },
+  options?: { suppressNotifications?: boolean; suppressLifecycleEvents?: boolean },
 ): BookingStatusDispatchTarget {
   const noteBody = note ? { note } : {}
   // Only carry the suppression flag on transitions to `confirmed` —
@@ -42,6 +42,10 @@ export function dispatchBookingStatusChange(
   const suppress =
     target === "confirmed" && options?.suppressNotifications === true
       ? { suppressNotifications: true }
+      : {}
+  const lifecycleSuppression =
+    target === "confirmed" && options?.suppressLifecycleEvents === true
+      ? { suppressLifecycleEvents: true }
       : {}
 
   if (current === "on_hold" && target === "confirmed") {
@@ -78,6 +82,12 @@ export function dispatchBookingStatusChange(
   const reason = note?.trim() || defaultReason
   return {
     path: `/v1/bookings/${bookingId}/override-status`,
-    body: { status: target, reason, ...(note ? { note } : {}), ...suppress },
+    body: {
+      status: target,
+      reason,
+      ...(note ? { note } : {}),
+      ...suppress,
+      ...lifecycleSuppression,
+    },
   }
 }

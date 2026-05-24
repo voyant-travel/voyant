@@ -4362,12 +4362,10 @@ export const bookingsService = {
           } satisfies BookingStatusOverriddenEvent,
           { category: "domain", source: "service" },
         )
-        // Also emit `booking.confirmed` when the override target is
-        // confirmed so subscribers (auto-dispatch, contract auto-gen)
-        // fire — the dialog's "Confirm after creating" flow goes
-        // through override-status for draft → confirmed and would
-        // otherwise leave those subscribers silent.
-        if (result.toStatus === "confirmed") {
+        // Keep draft → confirmed overrides compatible with the create dialog,
+        // but let data-correction callers preserve the audit event without
+        // re-running the full confirm lifecycle.
+        if (result.toStatus === "confirmed" && data.suppressLifecycleEvents !== true) {
           await runtime.eventBus?.emit(
             "booking.confirmed",
             {

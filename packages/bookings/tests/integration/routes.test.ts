@@ -1874,6 +1874,80 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       expect(received).toHaveLength(0)
     })
 
+    it("emits booking.confirmed for confirmed override by default", async () => {
+      const draft = await seedBooking()
+
+      const confirmedEvents: unknown[] = []
+      const statusOverrideEvents: unknown[] = []
+      const confirmedSub = eventBus.subscribe("booking.confirmed", (event) => {
+        confirmedEvents.push(event.data)
+      })
+      const overrideSub = eventBus.subscribe("booking.status_overridden", (event) => {
+        statusOverrideEvents.push(event.data)
+      })
+
+      try {
+        const res = await app.request(`/${draft.id}/override-status`, {
+          method: "POST",
+          ...json({
+            status: "confirmed",
+            reason: "Confirm after create",
+          }),
+        })
+        expect(res.status).toBe(200)
+      } finally {
+        confirmedSub.unsubscribe()
+        overrideSub.unsubscribe()
+      }
+
+      expect(statusOverrideEvents).toHaveLength(1)
+      expect(confirmedEvents).toHaveLength(1)
+      expect(confirmedEvents[0]).toMatchObject({
+        bookingId: draft.id,
+        bookingNumber: draft.bookingNumber,
+        actorId: "test-user-id",
+      })
+    })
+
+    it("suppresses booking.confirmed for confirmed override while keeping audit event", async () => {
+      const draft = await seedBooking()
+
+      const confirmedEvents: unknown[] = []
+      const statusOverrideEvents: unknown[] = []
+      const confirmedSub = eventBus.subscribe("booking.confirmed", (event) => {
+        confirmedEvents.push(event.data)
+      })
+      const overrideSub = eventBus.subscribe("booking.status_overridden", (event) => {
+        statusOverrideEvents.push(event.data)
+      })
+
+      try {
+        const res = await app.request(`/${draft.id}/override-status`, {
+          method: "POST",
+          ...json({
+            status: "confirmed",
+            reason: "Correct imported status",
+            suppressLifecycleEvents: true,
+          }),
+        })
+        expect(res.status).toBe(200)
+      } finally {
+        confirmedSub.unsubscribe()
+        overrideSub.unsubscribe()
+      }
+
+      expect(statusOverrideEvents).toHaveLength(1)
+      expect(statusOverrideEvents[0]).toMatchObject({
+        bookingId: draft.id,
+        bookingNumber: draft.bookingNumber,
+        fromStatus: "draft",
+        toStatus: "confirmed",
+        reason: "Correct imported status",
+        actorId: "test-user-id",
+      })
+      expect(confirmedEvents).toHaveLength(0)
+    })
+
     it("extends an on-hold booking", async () => {
       const slot = await seedSlot()
       const reserveRes = await app.request("/reserve", {

@@ -24,6 +24,11 @@ export interface UpdateBookingStatusInput {
    * sending. Lets the operator confirm a booking silently.
    */
   suppressNotifications?: boolean
+  /**
+   * When true and the status change falls through to override-status, keep
+   * the audit event but skip verb-specific lifecycle events.
+   */
+  suppressLifecycleEvents?: boolean
 }
 
 export function useBookingStatusMutation(bookingId: string) {
@@ -37,7 +42,10 @@ export function useBookingStatusMutation(bookingId: string) {
         input.currentStatus,
         input.status,
         input.note,
-        { suppressNotifications: input.suppressNotifications },
+        {
+          suppressNotifications: input.suppressNotifications,
+          suppressLifecycleEvents: input.suppressLifecycleEvents,
+        },
       )
       const { data } = await fetchWithValidation(
         target.path,
@@ -77,9 +85,11 @@ export function useBookingStatusByIdMutation() {
       status,
       note,
       suppressNotifications,
+      suppressLifecycleEvents,
     }: UpdateBookingStatusByIdInput) => {
       const target = dispatchBookingStatusChange(bookingId, currentStatus, status, note, {
         suppressNotifications,
+        suppressLifecycleEvents,
       })
       const { data } = await fetchWithValidation(
         target.path,
