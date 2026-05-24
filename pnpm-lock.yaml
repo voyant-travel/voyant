@@ -3446,6 +3446,9 @@ importers:
       '@voyantjs/i18n':
         specifier: workspace:*
         version: link:../i18n
+      '@voyantjs/utils':
+        specifier: workspace:*
+        version: link:../utils
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.100.11

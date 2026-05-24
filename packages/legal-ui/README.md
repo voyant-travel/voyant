@@ -19,6 +19,29 @@ keeping the default tab navigation. Use `detailsContent`, `partiesContent`,
 `signaturesContent`, or `documentsContent` when an app needs custom inline
 management controls instead of the shipped read-only table.
 
+## Contract Dialog
+
+`ContractDialog` provides the default create/edit form for `ContractsPage` and
+`ContractDetailPage`. It owns contract setup, template and version selection,
+number series, expiry, template variables, additional variables, metadata, and
+submit wiring. Linked record pickers stay optional render props so apps can
+wire CRM, supplier, or distribution selectors without `legal-ui` taking those
+runtime dependencies.
+
+```tsx
+import { ContractDialog, ContractsPage } from "@voyantjs/legal-ui"
+
+<ContractsPage
+  renderContractDialog={(props) => (
+    <ContractDialog
+      {...props}
+      renderPersonPicker={(pickerProps) => <PersonPicker {...pickerProps} />}
+      renderOrganizationPicker={(pickerProps) => <OrganizationPicker {...pickerProps} />}
+    />
+  )}
+/>
+```
+
 ## I18n
 
 Components render English by default. To localize them, wrap your UI in
