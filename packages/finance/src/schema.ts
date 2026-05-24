@@ -20,7 +20,7 @@ import {
 export const invoiceStatusEnum = pgEnum("invoice_status", [
   "draft",
   "pending_external_allocation",
-  "sent",
+  "issued",
   "partially_paid",
   "paid",
   "overdue",

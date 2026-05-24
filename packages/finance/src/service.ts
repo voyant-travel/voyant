@@ -4305,7 +4305,7 @@ export const financeService = {
   async applyExternalInvoiceAllocation(
     db: PostgresJsDatabase,
     invoiceId: string,
-    data: { invoiceNumber: string; status?: "sent" | "draft" },
+    data: { invoiceNumber: string; status?: "issued" | "draft" },
   ) {
     const [existing] = await db.select().from(invoices).where(eq(invoices.id, invoiceId)).limit(1)
     if (!existing) return { status: "not_found" as const }
@@ -4317,7 +4317,7 @@ export const financeService = {
       .update(invoices)
       .set({
         invoiceNumber: data.invoiceNumber,
-        status: data.status ?? "sent",
+        status: data.status ?? "issued",
         updatedAt: new Date(),
       })
       .where(eq(invoices.id, invoiceId))

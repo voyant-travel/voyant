@@ -17,7 +17,7 @@ export {
 export const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   draft: "outline",
   pending_external_allocation: "outline",
-  sent: "secondary",
+  issued: "secondary",
   partially_paid: "secondary",
   paid: "default",
   overdue: "destructive",

@@ -18,7 +18,7 @@ export interface FinanceInvoiceListFilters {
    * `bookings.id`, no fuzzy matching.
    */
   bookingId?: string | undefined
-  /** Filter by invoice status (draft, sent, paid, …). */
+  /** Filter by invoice status (draft, issued, paid, ...). */
   status?: string | undefined
   personId?: string | undefined
   organizationId?: string | undefined

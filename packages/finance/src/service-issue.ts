@@ -121,9 +121,8 @@ const PROFORMA_ISSUED_EVENT = "invoice.proforma.issued"
 
 /**
  * Create + emit an invoice from a booking. Returns the persisted row
- * after flipping the status from `draft` → `sent`. The status flip is
- * what consumers treat as "issued" — drafts shouldn't trigger
- * SmartBill sync.
+ * after flipping the status from `draft` to `issued`. Drafts shouldn't
+ * trigger SmartBill sync.
  */
 export async function issueInvoiceFromBooking(
   db: PostgresJsDatabase,
@@ -133,7 +132,7 @@ export async function issueInvoiceFromBooking(
 ) {
   const draft = await financeService.createInvoiceFromBooking(db, input, bookingData)
   if (!draft) return null
-  const status = draft.status === "pending_external_allocation" ? draft.status : "sent"
+  const status = draft.status === "pending_external_allocation" ? draft.status : "issued"
 
   const updateIssuedInvoice = (writer: PostgresJsDatabase) =>
     writer
@@ -181,7 +180,7 @@ export async function issueProformaFromBooking(
 ) {
   const draft = await financeService.createInvoiceFromBooking(db, input, bookingData)
   if (!draft) return null
-  const status = draft.status === "pending_external_allocation" ? draft.status : "sent"
+  const status = draft.status === "pending_external_allocation" ? draft.status : "issued"
 
   const updateIssuedInvoice = (writer: PostgresJsDatabase) =>
     writer
@@ -447,7 +446,7 @@ export async function convertProformaToInvoice(
         bookingId: proforma.bookingId,
         personId: proforma.personId,
         organizationId: proforma.organizationId,
-        status: "sent",
+        status: "issued",
         currency: proforma.currency,
         baseCurrency: proforma.baseCurrency,
         fxRateSetId: proforma.fxRateSetId,

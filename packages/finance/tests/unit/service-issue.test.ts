@@ -33,7 +33,7 @@ describe("issueInvoiceFromBooking", () => {
       issueDate: "2026-05-13",
       dueDate: "2026-05-20",
     }
-    const issuedInvoice = { ...draftInvoice, status: "sent" }
+    const issuedInvoice = { ...draftInvoice, status: "issued" }
     const booking = {
       bookingNumber: "BK-1",
       contactFirstName: "Ana",
@@ -165,7 +165,7 @@ describe("issueInvoiceFromBooking", () => {
       issueDate: "2026-05-23",
       dueDate: "2026-05-30",
     }
-    const issuedInvoice = { ...draftInvoice, status: "sent" }
+    const issuedInvoice = { ...draftInvoice, status: "issued" }
     const booking = {
       bookingNumber: "BK-TAX",
       contactFirstName: "Ana",
@@ -278,7 +278,7 @@ describe("issueInvoiceFromBooking", () => {
       issueDate: "2026-05-23",
       dueDate: "2026-05-30",
     }
-    const issuedInvoice = { ...draftInvoice, status: "sent" }
+    const issuedInvoice = { ...draftInvoice, status: "issued" }
     const lineRows = [
       {
         bookingItemId: "item_zero_tax",
@@ -390,7 +390,7 @@ describe("issueInvoiceFromBooking", () => {
       issueDate: "2026-05-22",
       dueDate: "2026-05-29",
     }
-    const issuedInvoice = { ...draftInvoice, status: "sent" }
+    const issuedInvoice = { ...draftInvoice, status: "issued" }
     vi.mocked(financeService.createInvoiceFromBooking).mockResolvedValue(
       draftInvoice as Awaited<ReturnType<typeof financeService.createInvoiceFromBooking>>,
     )
@@ -480,7 +480,7 @@ describe("issueInvoiceFromBooking", () => {
       issueDate: "2026-05-22",
       dueDate: "2026-05-29",
     }
-    const issuedInvoice = { ...draftInvoice, status: "sent" }
+    const issuedInvoice = { ...draftInvoice, status: "issued" }
     vi.mocked(financeService.createInvoiceFromBooking).mockResolvedValue(
       draftInvoice as Awaited<ReturnType<typeof financeService.createInvoiceFromBooking>>,
     )

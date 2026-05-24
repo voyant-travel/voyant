@@ -115,7 +115,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
         bookingId: booking.id,
         templateId: template.id,
         invoiceType: "invoice",
-        status: "sent",
+        status: "issued",
         currency: "EUR",
         issueDate: "2026-05-01",
         dueDate: "2026-05-05",
@@ -253,7 +253,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
       .values({
         invoiceNumber: "INV-BIND-1",
         invoiceType: "invoice",
-        status: "sent",
+        status: "issued",
         currency: "EUR",
         issueDate: "2026-05-01",
         dueDate: "2026-05-05",
@@ -311,7 +311,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
         },
         data: {
           invoiceId: invoice.id,
-          invoiceStatus: "sent",
+          invoiceStatus: "issued",
           invoiceType: "invoice",
           renditionId: result.rendition.id,
           format: "pdf",
@@ -330,7 +330,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
       .values({
         invoiceNumber: "INV-FAIL-1",
         invoiceType: "invoice",
-        status: "sent",
+        status: "issued",
         currency: "EUR",
         issueDate: "2026-05-01",
         dueDate: "2026-05-05",
@@ -365,7 +365,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
       .values({
         invoiceNumber: "INV-URL-1",
         invoiceType: "invoice",
-        status: "sent",
+        status: "issued",
         currency: "EUR",
         issueDate: "2026-05-01",
         dueDate: "2026-05-05",

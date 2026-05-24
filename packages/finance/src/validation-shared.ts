@@ -3,7 +3,7 @@ import { z } from "zod"
 export const invoiceStatusSchema = z.enum([
   "draft",
   "pending_external_allocation",
-  "sent",
+  "issued",
   "partially_paid",
   "paid",
   "overdue",
@@ -182,14 +182,7 @@ export const financeAggregatesQuerySchema = z.object({
               .map((item) => item.trim())
               .filter(Boolean)
           : value,
-      z
-        .array(z.union([invoiceStatusSchema, z.literal("issued")]))
-        .transform((values) =>
-          values.flatMap((value) =>
-            value === "issued" ? (["sent", "partially_paid"] as const) : [value],
-          ),
-        )
-        .optional(),
+      z.array(invoiceStatusSchema).optional(),
     )
     .optional(),
   /**

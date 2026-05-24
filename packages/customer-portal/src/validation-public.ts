@@ -91,7 +91,7 @@ const customerPortalFinanceInvoiceTypeSchema = z.enum(["invoice", "proforma", "c
 const customerPortalFinanceInvoiceStatusSchema = z.enum([
   "draft",
   "pending_external_allocation",
-  "sent",
+  "issued",
   "partially_paid",
   "paid",
   "overdue",

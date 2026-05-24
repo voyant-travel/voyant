@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest"
  * Unit tests for invoice payment status derivation and aging bucket calculation.
  */
 
-type PaymentStatus = "draft" | "sent" | "paid" | "partially_paid" | "overdue" | "cancelled"
+type PaymentStatus = "draft" | "issued" | "paid" | "partially_paid" | "overdue" | "cancelled"
 
 function derivePaymentStatus(
   totalCents: number,
@@ -42,19 +42,19 @@ describe("Invoice payment status", () => {
   })
 
   it("marks as paid when full amount received", () => {
-    expect(derivePaymentStatus(10000, 10000, "sent")).toBe("paid")
+    expect(derivePaymentStatus(10000, 10000, "issued")).toBe("paid")
   })
 
   it("marks as paid when overpaid", () => {
-    expect(derivePaymentStatus(10000, 15000, "sent")).toBe("paid")
+    expect(derivePaymentStatus(10000, 15000, "issued")).toBe("paid")
   })
 
   it("marks as partially_paid when partial payment received", () => {
-    expect(derivePaymentStatus(10000, 5000, "sent")).toBe("partially_paid")
+    expect(derivePaymentStatus(10000, 5000, "issued")).toBe("partially_paid")
   })
 
-  it("keeps sent status when no payments", () => {
-    expect(derivePaymentStatus(10000, 0, "sent")).toBe("sent")
+  it("keeps issued status when no payments", () => {
+    expect(derivePaymentStatus(10000, 0, "issued")).toBe("issued")
   })
 
   it("keeps overdue status when no payments", () => {

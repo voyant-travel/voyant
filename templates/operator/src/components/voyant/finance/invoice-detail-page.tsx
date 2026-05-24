@@ -34,8 +34,8 @@ function getInvoiceStatusLabel(messages: AdminMessages, status: string): string 
   switch (status) {
     case "draft":
       return messages.finance.invoiceStatusDraft
-    case "sent":
-      return messages.finance.invoiceStatusSent
+    case "issued":
+      return messages.finance.invoiceStatusIssued
     case "partially_paid":
       return messages.finance.invoiceStatusPartiallyPaid
     case "paid":

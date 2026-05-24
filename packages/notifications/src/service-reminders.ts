@@ -236,7 +236,7 @@ async function hasOutstandingBookingBalance(db: PostgresJsDatabase, bookingId: s
         eq(invoices.bookingId, bookingId),
         gt(invoices.balanceDueCents, 0),
         or(
-          eq(invoices.status, "sent"),
+          eq(invoices.status, "issued"),
           eq(invoices.status, "partially_paid"),
           eq(invoices.status, "overdue"),
         ),

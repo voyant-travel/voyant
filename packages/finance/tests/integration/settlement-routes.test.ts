@@ -75,7 +75,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance settlement routes", () => {
         invoiceNumber: "INV-2001",
         bookingId: booking.id,
         invoiceType: "proforma",
-        status: "sent",
+        status: "issued",
         currency: "EUR",
         issueDate: "2026-05-01",
         dueDate: "2026-05-05",
