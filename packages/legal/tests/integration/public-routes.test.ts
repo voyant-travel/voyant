@@ -19,6 +19,10 @@ const json = (body: Record<string, unknown>) => ({
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify(body),
 })
+const jsonWithIdempotency = (body: Record<string, unknown>, key: string) => ({
+  headers: { "Content-Type": "application/json", "Idempotency-Key": key },
+  body: JSON.stringify(body),
+})
 
 describe.skipIf(!DB_AVAILABLE)("Legal public routes", () => {
   let adminApp: Hono
@@ -548,5 +552,27 @@ describe.skipIf(!DB_AVAILABLE)("Legal public routes", () => {
         metadata: expect.anything(),
       }),
     )
+  })
+
+  it("replays contract creates with the same idempotency key", async () => {
+    const input = {
+      title: "Idempotent contract",
+      scope: "customer",
+    }
+    const first = await adminApp.request("/", {
+      method: "POST",
+      ...jsonWithIdempotency(input, "legal-contract-create-1"),
+    })
+    const replay = await adminApp.request("/", {
+      method: "POST",
+      ...jsonWithIdempotency(input, "legal-contract-create-1"),
+    })
+
+    expect(first.status).toBe(201)
+    expect(replay.status).toBe(201)
+    expect(replay.headers.get("Idempotency-Replayed")).toBe("true")
+    const firstBody = await first.json()
+    const replayBody = await replay.json()
+    expect(replayBody.data.id).toBe(firstBody.data.id)
   })
 })

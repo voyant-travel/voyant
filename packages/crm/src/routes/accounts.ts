@@ -1,4 +1,4 @@
-import { parseJsonBody, parseQuery, requireUserId } from "@voyantjs/hono"
+import { idempotencyKey, parseJsonBody, parseQuery, requireUserId } from "@voyantjs/hono"
 import {
   insertAddressSchema,
   insertContactPointSchema,
@@ -43,17 +43,21 @@ export const accountRoutes = new Hono<Env>()
     const query = parseQuery(c, organizationListQuerySchema)
     return c.json(await crmService.listOrganizations(c.get("db"), query))
   })
-  .post("/organizations", async (c) => {
-    return c.json(
-      {
-        data: await crmService.createOrganization(
-          c.get("db"),
-          await parseJsonBody(c, insertOrganizationSchema),
-        ),
-      },
-      201,
-    )
-  })
+  .post(
+    "/organizations",
+    idempotencyKey({ scope: "POST /v1/admin/crm/organizations" }),
+    async (c) => {
+      return c.json(
+        {
+          data: await crmService.createOrganization(
+            c.get("db"),
+            await parseJsonBody(c, insertOrganizationSchema),
+          ),
+        },
+        201,
+      )
+    },
+  )
   .get("/organizations/:id", async (c) => {
     const row = await crmService.getOrganizationById(c.get("db"), c.req.param("id"))
     if (!row) return c.json({ error: "Organization not found" }, 404)
@@ -146,7 +150,7 @@ export const accountRoutes = new Hono<Env>()
     const query = parseQuery(c, personListQuerySchema)
     return c.json(await crmService.listPeople(c.get("db"), query))
   })
-  .post("/people", async (c) => {
+  .post("/people", idempotencyKey({ scope: "POST /v1/admin/crm/people" }), async (c) => {
     return c.json(
       {
         data: await crmService.createPerson(

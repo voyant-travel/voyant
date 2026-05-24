@@ -1,5 +1,6 @@
 import type { EventBus, ModuleContainer } from "@voyantjs/core"
 import {
+  idempotencyKey,
   parseJsonBody,
   parseOptionalJsonBody,
   parseQuery,
@@ -441,7 +442,7 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
       const query = parseQuery(c, contractListQuerySchema)
       return c.json(await contractsService.listContracts(c.get("db"), query))
     })
-    .post("/", async (c) => {
+    .post("/", idempotencyKey({ scope: "POST /v1/admin/legal/contracts" }), async (c) => {
       const row = await contractsService.createContract(
         c.get("db"),
         await parseJsonBody(c, insertContractSchema),
