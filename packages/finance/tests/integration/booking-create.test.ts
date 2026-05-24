@@ -186,6 +186,8 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       productId,
       bookingNumber: nextBookingNumber(),
       ...bookingParty(),
+      catalogSellAmountCents: 50000,
+      confirmedSellAmountCents: 50000,
       travelers: [
         {
           firstName: "Alice",
@@ -309,6 +311,76 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       .from(bookingPaymentSchedules)
       .where(eq(bookingPaymentSchedules.bookingId, outcome.result.booking.id))
     expect(scheduleRows).toHaveLength(2)
+  })
+
+  it("rejects payment schedules in a currency different from booking sell currency", async () => {
+    const { productId } = await seedProduct()
+
+    const outcome = await createBooking(db, {
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      catalogSellAmountCents: 33000,
+      confirmedSellAmountCents: 33000,
+      paymentSchedules: [
+        {
+          scheduleType: "deposit",
+          status: "pending",
+          dueDate: "2026-02-21",
+          currency: "RON",
+          amountCents: 16500,
+        },
+        {
+          scheduleType: "balance",
+          status: "pending",
+          dueDate: "2026-05-20",
+          currency: "EUR",
+          amountCents: 16500,
+        },
+      ],
+    })
+
+    expect(outcome.status).toBe("invalid_payment_schedules")
+    if (outcome.status !== "invalid_payment_schedules") return
+    expect(outcome.issues).toContainEqual({
+      path: ["paymentSchedules", 0, "currency"],
+      message: "paymentSchedules[0].currency must equal the booking's sellCurrency (EUR); got RON",
+    })
+
+    const bookingsRows = await db.select().from(bookings)
+    expect(bookingsRows).toHaveLength(0)
+  })
+
+  it("rejects payment schedule totals that do not match confirmed booking total", async () => {
+    const { productId } = await seedProduct()
+
+    const outcome = await createBooking(db, {
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      catalogSellAmountCents: 33000,
+      confirmedSellAmountCents: 33000,
+      paymentSchedules: [
+        {
+          scheduleType: "deposit",
+          status: "pending",
+          dueDate: "2026-02-21",
+          currency: "EUR",
+          amountCents: 16500,
+        },
+      ],
+    })
+
+    expect(outcome.status).toBe("invalid_payment_schedules")
+    if (outcome.status !== "invalid_payment_schedules") return
+    expect(outcome.issues).toContainEqual({
+      path: ["paymentSchedules"],
+      message:
+        "paymentSchedules amountCents sum (16500) must equal confirmedSellAmountCents (33000)",
+    })
+
+    const bookingsRows = await db.select().from(bookings)
+    expect(bookingsRows).toHaveLength(0)
   })
 
   it("creates an invoice and completed payment records for already-paid schedules", async () => {

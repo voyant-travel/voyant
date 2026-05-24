@@ -45,6 +45,14 @@ const createBookingRoutes = new Hono<{
     switch (outcome.status) {
       case "ok":
         return c.json({ data: outcome.result }, 201)
+      case "invalid_payment_schedules":
+        return c.json(
+          {
+            error: "Invalid payment schedules",
+            issues: outcome.issues,
+          },
+          400,
+        )
       case "product_not_found":
         return c.json({ error: "Product not found or unavailable" }, 404)
       case "voucher_not_found":
@@ -89,6 +97,15 @@ const createBookingRoutes = new Hono<{
     const reason = outcome.reason
     const body: Record<string, unknown> = { which, reasonStatus: reason.status }
     switch (reason.status) {
+      case "invalid_payment_schedules":
+        return c.json(
+          {
+            ...body,
+            error: `${which}: invalid payment schedules`,
+            issues: reason.issues,
+          },
+          400,
+        )
       case "product_not_found":
         return c.json({ ...body, error: `${which}: product not found or unavailable` }, 404)
       case "voucher_not_found":
