@@ -364,8 +364,14 @@ export interface BookingCreateResult {
   payments: Payment[]
 }
 
+export interface BookingCreateValidationIssue {
+  path: Array<string | number>
+  message: string
+}
+
 export type BookingCreateOutcome =
   | { status: "ok"; result: BookingCreateResult }
+  | { status: "invalid_payment_schedules"; issues: BookingCreateValidationIssue[] }
   | { status: "product_not_found" }
   | { status: "voucher_not_found" }
   | { status: "voucher_inactive" }
@@ -426,6 +432,38 @@ function parseAlreadyPaidScheduleMetadata(notes: string | null | undefined) {
 function isAlreadyPaidSchedule(schedule: BookingCreatePaymentScheduleInput) {
   const metadata = parseAlreadyPaidScheduleMetadata(schedule.notes)
   return schedule.status === "paid" || metadata?.alreadyPaid === true
+}
+
+function validatePaymentSchedules(
+  input: BookingCreateInput,
+  booking: Booking,
+): BookingCreateValidationIssue[] {
+  const schedules = input.paymentSchedules ?? []
+  if (schedules.length === 0) return []
+
+  const issues: BookingCreateValidationIssue[] = []
+  const expectedCurrency = booking.sellCurrency
+
+  schedules.forEach((schedule, index) => {
+    if (schedule.currency !== expectedCurrency) {
+      issues.push({
+        path: ["paymentSchedules", index, "currency"],
+        message: `paymentSchedules[${index}].currency must equal the booking's sellCurrency (${expectedCurrency}); got ${schedule.currency}`,
+      })
+    }
+  })
+
+  if (typeof input.confirmedSellAmountCents === "number") {
+    const sum = schedules.reduce((total, schedule) => total + schedule.amountCents, 0)
+    if (sum !== input.confirmedSellAmountCents) {
+      issues.push({
+        path: ["paymentSchedules"],
+        message: `paymentSchedules amountCents sum (${sum}) must equal confirmedSellAmountCents (${input.confirmedSellAmountCents})`,
+      })
+    }
+  }
+
+  return issues
 }
 
 function bookingItemStatusForInitialStatus(
@@ -541,6 +579,13 @@ export async function createBooking(
         // Caller gave us a product that doesn't resolve. Throw so drizzle
         // rolls back any writes the convert helper may have made.
         throw new BookingCreateAbort({ status: "product_not_found" })
+      }
+      const paymentScheduleIssues = validatePaymentSchedules(input, booking)
+      if (paymentScheduleIssues.length > 0) {
+        throw new BookingCreateAbort({
+          status: "invalid_payment_schedules",
+          issues: paymentScheduleIssues,
+        })
       }
 
       if (input.extraLines?.length) {
