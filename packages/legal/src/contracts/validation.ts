@@ -33,6 +33,13 @@ const paginationSchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
 })
 
+function optionalNullableString(schema: z.ZodString = z.string()) {
+  return z
+    .union([z.literal("").transform(() => undefined), schema])
+    .optional()
+    .nullable()
+}
+
 const contractTemplateBodySchema = z
   .string()
   .min(1)
@@ -123,19 +130,19 @@ export const contractNumberSeriesListQuerySchema = z.object({
 // ---------- contracts ----------
 
 const contractCoreSchema = z.object({
-  contractNumber: z.string().trim().min(1).max(100).optional().nullable(),
+  contractNumber: optionalNullableString(z.string().trim().min(1).max(100)),
   scope: contractScopeSchema,
   status: contractStatusSchema.default("draft"),
   title: z.string().min(1).max(500),
-  templateVersionId: z.string().optional().nullable(),
-  seriesId: z.string().optional().nullable(),
-  personId: z.string().optional().nullable(),
-  organizationId: z.string().optional().nullable(),
-  supplierId: z.string().optional().nullable(),
-  channelId: z.string().optional().nullable(),
-  bookingId: z.string().optional().nullable(),
-  orderId: z.string().optional().nullable(),
-  expiresAt: z.string().optional().nullable(),
+  templateVersionId: optionalNullableString(),
+  seriesId: optionalNullableString(),
+  personId: optionalNullableString(),
+  organizationId: optionalNullableString(),
+  supplierId: optionalNullableString(),
+  channelId: optionalNullableString(),
+  bookingId: optionalNullableString(),
+  orderId: optionalNullableString(),
+  expiresAt: optionalNullableString(),
   language: z.string().min(2).max(10).default("en"),
   variables: z.record(z.string(), z.unknown()).optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).optional().nullable(),
