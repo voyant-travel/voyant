@@ -1868,9 +1868,15 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       const booking = await seedBooking()
       const fxRateSetId = `fxrs_${seq + 1}`
       const exchangeRateId = `fxrt_${seq + 1}`
+      const undatedFxRateSetId = `fxrs_undated_${seq + 1}`
+      const undatedExchangeRateId = `fxrt_undated_${seq + 1}`
       await db.execute(sql`
         INSERT INTO fx_rate_sets (id, base_currency, effective_at, observed_at)
         VALUES (${fxRateSetId}, 'EUR', '2025-06-13T00:00:00.000Z', '2025-06-13T00:00:00.000Z')
+      `)
+      await db.execute(sql`
+        INSERT INTO fx_rate_sets (id, base_currency, effective_at, observed_at)
+        VALUES (${undatedFxRateSetId}, 'EUR', '2025-06-14T00:00:00.000Z', NULL)
       `)
       await db.execute(sql`
         INSERT INTO exchange_rates (
@@ -1892,10 +1898,29 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
           '2025-06-13T00:00:00.000Z'
         )
       `)
+      await db.execute(sql`
+        INSERT INTO exchange_rates (
+          id,
+          fx_rate_set_id,
+          base_currency,
+          quote_currency,
+          rate_decimal,
+          inverse_rate_decimal,
+          observed_at
+        )
+        VALUES (
+          ${undatedExchangeRateId},
+          ${undatedFxRateSetId},
+          'RON',
+          'EUR',
+          '0.5',
+          '2',
+          NULL
+        )
+      `)
       const expectedBaseAmountCents = Math.round(86000 * 0.197 * 1.02)
       const inv = await seedInvoice(booking.id, {
         currency: "EUR",
-        fxRateSetId,
         totalCents: expectedBaseAmountCents,
         balanceDueCents: expectedBaseAmountCents,
       })

@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, lte, or } from "drizzle-orm"
+import { and, asc, desc, eq, isNull, lte, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type {
@@ -201,7 +201,11 @@ async function queryPersistedExchangeRate(
     })
     .from(exchangeRatesRef)
     .where(and(...conditions))
-    .orderBy(desc(exchangeRatesRef.observedAt), desc(exchangeRatesRef.createdAt))
+    .orderBy(
+      asc(isNull(exchangeRatesRef.observedAt)),
+      desc(exchangeRatesRef.observedAt),
+      desc(exchangeRatesRef.createdAt),
+    )
     .limit(1)
 
   if (!row) return null
