@@ -167,8 +167,23 @@ export interface CreateInvoiceFromBookingInput {
   issueDate: string
   dueDate: string
   notes?: string | null
+  currency?: string
+  baseCurrency?: string
+  fxRateSetId?: string
+  subtotalCents?: number
+  taxCents?: number
+  totalCents?: number
+  lineItems?: CreateInvoiceFromBookingLineItemInput[]
   /** Defaults to `invoice` on the server. Pass `proforma` for placeholders. */
   invoiceType?: "invoice" | "proforma"
+}
+
+export interface CreateInvoiceFromBookingLineItemInput {
+  description: string
+  quantity: number
+  unitAmountCents: number
+  taxRateBps?: number | null
+  taxAmountCents?: number | null
 }
 
 export interface RenderInvoiceInput {

@@ -114,6 +114,20 @@ const invoiceDocumentWaitFieldsSchema = z.object({
   waitTimeoutMs: z.coerce.number().int().min(0).max(60_000).optional(),
 })
 
+const currencyCodeSchema = z
+  .string()
+  .trim()
+  .length(3)
+  .transform((value) => value.toUpperCase())
+
+const invoiceFromBookingLineItemSchema = z.object({
+  description: z.string().min(1).max(500),
+  quantity: z.number().int().min(1),
+  unitAmountCents: z.number().int().min(0),
+  taxRateBps: z.number().int().min(0).optional().nullable(),
+  taxAmountCents: z.number().int().min(0).optional().nullable(),
+})
+
 export const invoiceFromBookingSchema = z.object({
   bookingId: z.string().min(1),
   bookingPaymentScheduleId: z.string().min(1).optional(),
@@ -122,6 +136,13 @@ export const invoiceFromBookingSchema = z.object({
   issueDate: z.string().min(1),
   dueDate: z.string().min(1),
   notes: z.string().optional().nullable(),
+  currency: currencyCodeSchema.optional(),
+  baseCurrency: currencyCodeSchema.optional(),
+  fxRateSetId: z.string().min(1).optional(),
+  subtotalCents: z.number().int().min(0).optional(),
+  taxCents: z.number().int().min(0).optional(),
+  totalCents: z.number().int().min(0).optional(),
+  lineItems: z.array(invoiceFromBookingLineItemSchema).min(1).optional(),
   /**
    * Document kind. Defaults to a regular invoice; bank-transfer
    * checkout flows pass `proforma` to issue a placeholder doc until

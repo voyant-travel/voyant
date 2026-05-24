@@ -340,6 +340,18 @@ export class InvoiceNumberConflictError extends Error {
   }
 }
 
+export class InvoiceFromBookingValidationError extends Error {
+  readonly status = 400
+  readonly code = "invalid_invoice_from_booking"
+  readonly details?: Record<string, unknown>
+
+  constructor(message: string, details?: Record<string, unknown>) {
+    super(message)
+    this.name = "InvoiceFromBookingValidationError"
+    this.details = details
+  }
+}
+
 /** Booking data needed for createInvoiceFromBooking — supplied by the caller (template). */
 export interface InvoiceFromBookingData {
   booking: {
@@ -427,6 +439,58 @@ function bookingPaymentScheduleToInvoiceLine(
     taxRate: null,
     sortOrder: 0,
   }
+}
+
+function invoiceFromBookingOverrideLineItems(
+  lineItems: NonNullable<CreateInvoiceFromBookingInput["lineItems"]>,
+) {
+  return lineItems.map((line, sortOrder) => {
+    const lineSubtotalCents = line.quantity * line.unitAmountCents
+    const taxAmountCents =
+      line.taxAmountCents ??
+      (line.taxRateBps != null ? Math.round((lineSubtotalCents * line.taxRateBps) / 10_000) : 0)
+
+    return {
+      bookingItemId: null as string | null,
+      description: line.description,
+      quantity: line.quantity,
+      unitPriceCents: line.unitAmountCents,
+      totalCents: lineSubtotalCents,
+      taxRate: line.taxRateBps != null ? Math.round(line.taxRateBps / 100) : null,
+      taxAmountCents,
+      sortOrder,
+    }
+  })
+}
+
+function assertInvoiceFromBookingOverrideTotals(
+  data: CreateInvoiceFromBookingInput,
+  totals: { subtotalCents: number; taxCents: number; totalCents: number },
+) {
+  if (data.subtotalCents !== undefined && data.subtotalCents !== totals.subtotalCents) {
+    throw new InvoiceFromBookingValidationError("Invoice subtotal does not match line items", {
+      expectedSubtotalCents: totals.subtotalCents,
+      subtotalCents: data.subtotalCents,
+    })
+  }
+
+  if (data.taxCents !== undefined && data.taxCents !== totals.taxCents) {
+    throw new InvoiceFromBookingValidationError("Invoice tax does not match line items", {
+      expectedTaxCents: totals.taxCents,
+      taxCents: data.taxCents,
+    })
+  }
+
+  if (data.totalCents !== undefined && data.totalCents !== totals.totalCents) {
+    throw new InvoiceFromBookingValidationError("Invoice total does not match subtotal plus tax", {
+      expectedTotalCents: totals.totalCents,
+      totalCents: data.totalCents,
+    })
+  }
+}
+
+function normalizeCurrencyCode(value: string | null | undefined) {
+  return value?.trim().toUpperCase() ?? null
 }
 
 function resolveBookingInvoiceBaseAmount(
@@ -3368,9 +3432,46 @@ export const financeService = {
     runtime: FinanceServiceRuntime = {},
   ) {
     const { booking, items, paymentSchedule } = bookingData
-    const numberAssignment = await resolveInvoiceNumberForBooking(db, data)
+    const requestedCurrency = normalizeCurrencyCode(data.currency)
+    const bookingSellCurrency = normalizeCurrencyCode(booking.sellCurrency) ?? booking.sellCurrency
+    const invoiceCurrency =
+      requestedCurrency ?? normalizeCurrencyCode(paymentSchedule?.currency) ?? bookingSellCurrency
+    const requestedBaseCurrency = normalizeCurrencyCode(data.baseCurrency)
+    const hasCrossCurrencyOverride =
+      requestedCurrency !== null && requestedCurrency !== bookingSellCurrency
 
-    const invoiceItems = paymentSchedule ? [] : items
+    if (
+      hasCrossCurrencyOverride &&
+      (!requestedBaseCurrency || requestedBaseCurrency !== bookingSellCurrency)
+    ) {
+      throw new InvoiceFromBookingValidationError(
+        "Cross-currency invoice overrides require baseCurrency to match the booking sell currency",
+        {
+          currency: invoiceCurrency,
+          baseCurrency: requestedBaseCurrency,
+          bookingSellCurrency,
+        },
+      )
+    }
+
+    const overrideLineItems = data.lineItems
+      ? invoiceFromBookingOverrideLineItems(data.lineItems)
+      : null
+
+    if (hasCrossCurrencyOverride && !overrideLineItems) {
+      throw new InvoiceFromBookingValidationError(
+        "Cross-currency invoice overrides require replacement line items",
+        {
+          currency: invoiceCurrency,
+          baseCurrency: requestedBaseCurrency,
+          bookingSellCurrency,
+          fields: ["lineItems"],
+        },
+      )
+    }
+
+    const shouldUseBookingItems = overrideLineItems === null && !paymentSchedule
+    const invoiceItems = shouldUseBookingItems ? items : []
     const itemIds = invoiceItems.map((item) => item.id)
 
     const taxes =
@@ -3396,68 +3497,91 @@ export const financeService = {
       taxesByBookingItemId.set(tax.bookingItemId, existing)
     }
 
-    const lineItems = paymentSchedule
-      ? [bookingPaymentScheduleToInvoiceLine(booking, paymentSchedule)]
-      : invoiceItems.length > 0
-        ? invoiceItems.map((item, sortOrder) => ({
-            ...bookingItemToInvoiceLine(item, taxesByBookingItemId.get(item.id) ?? [], sortOrder),
-          }))
-        : [
-            {
-              bookingItemId: null as string | null,
-              description: `Booking ${booking.bookingNumber}`,
-              quantity: 1,
-              unitPriceCents: booking.sellAmountCents ?? 0,
-              totalCents: booking.sellAmountCents ?? 0,
-              taxRate: null,
-              sortOrder: 0,
-            },
-          ]
+    const lineItems =
+      overrideLineItems ??
+      (paymentSchedule
+        ? [bookingPaymentScheduleToInvoiceLine(booking, paymentSchedule)]
+        : invoiceItems.length > 0
+          ? invoiceItems.map((item, sortOrder) => ({
+              ...bookingItemToInvoiceLine(item, taxesByBookingItemId.get(item.id) ?? [], sortOrder),
+            }))
+          : [
+              {
+                bookingItemId: null as string | null,
+                description: `Booking ${booking.bookingNumber}`,
+                quantity: 1,
+                unitPriceCents: booking.sellAmountCents ?? 0,
+                totalCents: booking.sellAmountCents ?? 0,
+                taxRate: null,
+                sortOrder: 0,
+              },
+            ])
 
     const grossLineTotalCents = lineItems.reduce((sum, line) => sum + line.totalCents, 0)
-    const includedTaxCents = taxes.reduce((sum, tax) => {
-      if (tax.scope === "withheld" || !tax.includedInPrice) return sum
-      return sum + tax.amountCents
-    }, 0)
-    const excludedTaxCents = taxes.reduce((sum, tax) => {
-      if (tax.scope === "withheld" || tax.includedInPrice) return sum
-      return sum + tax.amountCents
-    }, 0)
+    const includedTaxCents = overrideLineItems
+      ? 0
+      : taxes.reduce((sum, tax) => {
+          if (tax.scope === "withheld" || !tax.includedInPrice) return sum
+          return sum + tax.amountCents
+        }, 0)
+    const excludedTaxCents = overrideLineItems
+      ? overrideLineItems.reduce((sum, line) => sum + line.taxAmountCents, 0)
+      : taxes.reduce((sum, tax) => {
+          if (tax.scope === "withheld" || tax.includedInPrice) return sum
+          return sum + tax.amountCents
+        }, 0)
     const subtotalCents = Math.max(0, grossLineTotalCents - includedTaxCents)
     const taxCents = includedTaxCents + excludedTaxCents
     const totalCents = subtotalCents + taxCents
-    const commissionAmountCents = commissions.reduce((sum, commission) => {
-      return sum + (commission.amountCents ?? 0)
-    }, 0)
+    assertInvoiceFromBookingOverrideTotals(data, { subtotalCents, taxCents, totalCents })
+    const commissionAmountCents = overrideLineItems
+      ? 0
+      : commissions.reduce((sum, commission) => {
+          return sum + (commission.amountCents ?? 0)
+        }, 0)
 
     // The `ck_invoices_base_currency_amounts` constraint requires
     // that whenever ANY base_*_cents column is non-null, base_currency
     // must be set too. Resolve the base side once and propagate nulls
     // consistently when no booking/runtime base currency is available.
-    const invoiceCurrency = paymentSchedule?.currency ?? booking.sellCurrency
     const bookingBaseAmountCents = paymentSchedule
       ? resolveBookingInvoiceBaseAmount(booking, invoiceCurrency, paymentSchedule.amountCents)
       : (booking.baseSellAmountCents ?? null)
+    const invoiceBaseCurrency = requestedBaseCurrency ?? booking.baseCurrency ?? null
+    const invoiceFxRateSetId = data.fxRateSetId ?? booking.fxRateSetId ?? null
     const resolvedInvoiceBase = await resolveFxMoneyBaseAmount(
       db,
       {
         amountCents: totalCents,
         currency: invoiceCurrency,
-        baseCurrency: booking.baseCurrency ?? null,
-        baseAmountCents: bookingBaseAmountCents,
-        fxRateSetId: booking.fxRateSetId ?? null,
+        baseCurrency: invoiceBaseCurrency,
+        baseAmountCents: hasCrossCurrencyOverride ? null : bookingBaseAmountCents,
+        fxRateSetId: invoiceFxRateSetId,
       },
       {
         ...runtime,
-        targetBaseCurrency: booking.baseCurrency ?? null,
-        fallbackFxRateSetId: booking.fxRateSetId ?? null,
+        targetBaseCurrency: invoiceBaseCurrency,
+        fallbackFxRateSetId: invoiceFxRateSetId,
         date: data.issueDate,
-        setBaseCurrencyWhenUnresolved: Boolean(booking.baseCurrency),
+        setBaseCurrencyWhenUnresolved: Boolean(invoiceBaseCurrency),
       },
     )
-    const invoiceBaseCurrency = resolvedInvoiceBase.baseCurrency ?? null
+    const resolvedBaseCurrency = resolvedInvoiceBase.baseCurrency ?? null
     const invoiceBaseAmountCents = resolvedInvoiceBase.baseAmountCents ?? null
-    const hasBaseCurrency = Boolean(invoiceBaseCurrency)
+    const hasBaseCurrency = Boolean(resolvedBaseCurrency)
+
+    if (hasCrossCurrencyOverride && invoiceBaseAmountCents === null) {
+      throw new InvoiceFromBookingValidationError(
+        "Cross-currency invoice overrides require a resolvable base total",
+        {
+          currency: invoiceCurrency,
+          baseCurrency: requestedBaseCurrency,
+          fxRateSetId: invoiceFxRateSetId,
+        },
+      )
+    }
+
+    const numberAssignment = await resolveInvoiceNumberForBooking(db, data)
 
     try {
       return await db.transaction(async (tx) => {
@@ -3473,7 +3597,7 @@ export const financeService = {
             organizationId: booking.organizationId,
             status: numberAssignment.status,
             currency: invoiceCurrency,
-            baseCurrency: invoiceBaseCurrency,
+            baseCurrency: resolvedBaseCurrency,
             fxRateSetId: resolvedInvoiceBase.fxRateSetId ?? null,
             subtotalCents,
             baseSubtotalCents: hasBaseCurrency ? invoiceBaseAmountCents : null,

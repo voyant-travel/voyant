@@ -4,6 +4,7 @@ import { invoiceLineItems, invoiceNumberSeries, invoices } from "../../src/schem
 import {
   financeService,
   type InvoiceFromBookingData,
+  type InvoiceFromBookingValidationError,
   type InvoiceNumberAllocationError,
   type InvoiceNumberConflictError,
 } from "../../src/service.js"
@@ -51,6 +52,7 @@ function makeDb(options: {
   invoiceInsertError?: unknown
 }) {
   const insertedInvoices: Array<Record<string, unknown>> = []
+  const insertedInvoiceLineItems: Array<Record<string, unknown>> = []
   const execute = vi.fn(async () => {
     const row = options.explicitSeries ?? options.defaultSeries
     return row
@@ -95,6 +97,7 @@ function makeDb(options: {
           }
         }
         if (table === invoiceLineItems) {
+          insertedInvoiceLineItems.push(...values)
           return Promise.resolve(values)
         }
         return { returning: vi.fn(async () => []) }
@@ -104,10 +107,20 @@ function makeDb(options: {
 
   const db = {
     transaction: vi.fn(async (callback) => callback(tx)),
-    select: vi.fn(() => ({
+    select: vi.fn((selection?: unknown) => ({
       from: vi.fn((table) => {
         if (table !== invoiceNumberSeries) {
-          return { where: vi.fn(async () => []) }
+          const rows: Array<Record<string, unknown>> = []
+          if (selection) {
+            return {
+              where: vi.fn(() => ({
+                orderBy: vi.fn(() => ({
+                  limit: vi.fn(async () => rows),
+                })),
+              })),
+            }
+          }
+          return { where: vi.fn(async () => rows) }
         }
         return {
           where: vi.fn(() => ({
@@ -133,7 +146,7 @@ function makeDb(options: {
     })),
   }
 
-  return { db: db as never, tx, insertedInvoices }
+  return { db: db as never, tx, insertedInvoices, insertedInvoiceLineItems }
 }
 
 describe("financeService.createInvoiceFromBooking number allocation", () => {
@@ -270,5 +283,166 @@ describe("financeService.createInvoiceFromBooking number allocation", () => {
       code: "invoice_number_conflict",
       invoiceNumber: "MANUAL-1",
     } satisfies Partial<InvoiceNumberConflictError>)
+  })
+
+  it("uses override line items and computes cross-currency base totals", async () => {
+    const { db, insertedInvoices, insertedInvoiceLineItems } = makeDb({})
+
+    await financeService.createInvoiceFromBooking(
+      db,
+      {
+        bookingId: "book_123",
+        invoiceNumber: "MANUAL-1",
+        issueDate: "2026-05-23",
+        dueDate: "2026-06-23",
+        currency: "RON",
+        baseCurrency: "EUR",
+        lineItems: [
+          {
+            description: "SmartBill fiscal line",
+            quantity: 1,
+            unitAmountCents: 50_000,
+            taxRateBps: 1_900,
+          },
+        ],
+      },
+      {
+        booking: {
+          ...bookingData.booking,
+          sellCurrency: "EUR",
+        },
+        items: [
+          {
+            id: "bkit_123",
+            title: "Catalog line that should be replaced",
+            quantity: 1,
+            unitSellAmountCents: 12_000,
+            totalSellAmountCents: 12_000,
+          },
+        ],
+      },
+      {
+        resolveInvoiceExchangeRate: vi.fn(async () => ({ rate: 0.2, fxRateSetId: "fxrs_123" })),
+      },
+    )
+
+    expect(insertedInvoices[0]).toMatchObject({
+      currency: "RON",
+      baseCurrency: "EUR",
+      fxRateSetId: "fxrs_123",
+      subtotalCents: 50_000,
+      taxCents: 9_500,
+      totalCents: 59_500,
+      baseTotalCents: 11_900,
+      balanceDueCents: 59_500,
+      baseBalanceDueCents: 11_900,
+    })
+    expect(insertedInvoiceLineItems).toEqual([
+      expect.objectContaining({
+        bookingItemId: null,
+        description: "SmartBill fiscal line",
+        quantity: 1,
+        unitPriceCents: 50_000,
+        totalCents: 50_000,
+        taxRate: 19,
+        sortOrder: 0,
+      }),
+    ])
+  })
+
+  it("rejects cross-currency overrides without the booking sell currency as base", async () => {
+    const { db } = makeDb({})
+
+    await expect(
+      financeService.createInvoiceFromBooking(
+        db,
+        {
+          bookingId: "book_123",
+          invoiceNumber: "MANUAL-1",
+          issueDate: "2026-05-23",
+          dueDate: "2026-06-23",
+          currency: "RON",
+          lineItems: [
+            {
+              description: "SmartBill fiscal line",
+              quantity: 1,
+              unitAmountCents: 50_000,
+            },
+          ],
+        },
+        {
+          booking: {
+            ...bookingData.booking,
+            sellCurrency: "EUR",
+          },
+          items: [],
+        },
+      ),
+    ).rejects.toMatchObject({
+      code: "invalid_invoice_from_booking",
+    } satisfies Partial<InvoiceFromBookingValidationError>)
+  })
+
+  it("rejects cross-currency overrides without replacement line items", async () => {
+    const { db } = makeDb({})
+
+    await expect(
+      financeService.createInvoiceFromBooking(
+        db,
+        {
+          bookingId: "book_123",
+          invoiceNumber: "MANUAL-1",
+          issueDate: "2026-05-23",
+          dueDate: "2026-06-23",
+          currency: "RON",
+          baseCurrency: "EUR",
+        },
+        {
+          booking: {
+            ...bookingData.booking,
+            sellCurrency: "EUR",
+          },
+          items: [
+            {
+              id: "bkit_123",
+              title: "Catalog line that must not be relabeled",
+              quantity: 1,
+              unitSellAmountCents: 12_000,
+              totalSellAmountCents: 12_000,
+            },
+          ],
+        },
+      ),
+    ).rejects.toMatchObject({
+      code: "invalid_invoice_from_booking",
+      message: "Cross-currency invoice overrides require replacement line items",
+    } satisfies Partial<InvoiceFromBookingValidationError>)
+  })
+
+  it("rejects override totals that do not match the supplied line items", async () => {
+    const { db } = makeDb({})
+
+    await expect(
+      financeService.createInvoiceFromBooking(
+        db,
+        {
+          bookingId: "book_123",
+          invoiceNumber: "MANUAL-1",
+          issueDate: "2026-05-23",
+          dueDate: "2026-06-23",
+          subtotalCents: 40_000,
+          lineItems: [
+            {
+              description: "SmartBill fiscal line",
+              quantity: 1,
+              unitAmountCents: 50_000,
+            },
+          ],
+        },
+        bookingData,
+      ),
+    ).rejects.toMatchObject({
+      code: "invalid_invoice_from_booking",
+    } satisfies Partial<InvoiceFromBookingValidationError>)
   })
 })
