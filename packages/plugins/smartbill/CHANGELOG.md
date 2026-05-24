@@ -1,5 +1,20 @@
 # @voyantjs/plugin-smartbill
 
+## 0.79.0
+
+### Minor Changes
+
+- dec5d6d: Add typed SmartBill rate-limit errors and an opt-in client circuit breaker that backs off locally after a rate-limit response.
+
+### Patch Changes
+
+- @voyantjs/core@0.79.0
+- @voyantjs/finance@0.79.0
+- @voyantjs/finance-react@0.79.0
+- @voyantjs/hono@0.79.0
+- @voyantjs/storage@0.79.0
+- @voyantjs/ui@0.79.0
+
 ## 0.78.0
 
 ### Patch Changes
