@@ -52,9 +52,12 @@ CREATE OR REPLACE FUNCTION _voyant_add_fk(
 RETURNS void
 LANGUAGE plpgsql
 AS $$
+DECLARE
+  source_table_oid oid := to_regclass(source_table);
+  normalized_constraint_name name := constraint_name::name;
 BEGIN
   IF
-    NOT _voyant_table_exists(source_table)
+    source_table_oid IS NULL
     OR NOT _voyant_table_exists(target_table)
     OR NOT EXISTS (
       SELECT 1
@@ -67,11 +70,16 @@ BEGIN
     RETURN;
   END IF;
 
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = constraint_name) THEN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conrelid = source_table_oid
+      AND conname = normalized_constraint_name
+  ) THEN
     EXECUTE format(
       'ALTER TABLE %I ADD CONSTRAINT %I FOREIGN KEY (%I) REFERENCES %I(id) ON DELETE %s ON UPDATE no action NOT VALID',
       source_table,
-      constraint_name,
+      normalized_constraint_name,
       source_column,
       target_table,
       on_delete_action
@@ -79,7 +87,7 @@ BEGIN
   END IF;
 
   IF validate_existing THEN
-    EXECUTE format('ALTER TABLE %I VALIDATE CONSTRAINT %I', source_table, constraint_name);
+    EXECUTE format('ALTER TABLE %I VALIDATE CONSTRAINT %I', source_table, normalized_constraint_name);
   END IF;
 END;
 $$;--> statement-breakpoint
