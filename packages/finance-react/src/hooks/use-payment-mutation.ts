@@ -36,6 +36,16 @@ function invalidatePaymentScopes(
     void queryClient.invalidateQueries({ queryKey: financeQueryKeys.payments(invoiceId) })
     void queryClient.invalidateQueries({ queryKey: financeQueryKeys.invoice(invoiceId) })
   }
+  // The BookingPaymentsSummary card on the booking detail page is keyed
+  // by bookingId, which the PATCH/DELETE response doesn't surface. Use
+  // prefix invalidation so every booking-payments query refetches —
+  // cheap because each query is per-booking and short.
+  void queryClient.invalidateQueries({
+    queryKey: [...financeQueryKeys.all, "admin-booking-payments"],
+  })
+  void queryClient.invalidateQueries({
+    queryKey: [...financeQueryKeys.publicCheckout(), "booking-payments"],
+  })
 }
 
 /**

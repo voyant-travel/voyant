@@ -4231,24 +4231,68 @@ export const financeService = {
     data: UpdatePaymentInput,
     runtime: FinanceServiceRuntime = {},
   ) {
-    return db.transaction(async (tx) => {
-      const [existing] = await tx.select().from(payments).where(eq(payments.id, id)).limit(1)
-      if (!existing) {
-        return null
-      }
+    const [existing] = await db.select().from(payments).where(eq(payments.id, id)).limit(1)
+    if (!existing) {
+      return null
+    }
 
-      const [invoice] = await tx
-        .select()
-        .from(invoices)
-        .where(eq(invoices.id, existing.invoiceId))
-        .limit(1)
-      if (!invoice) {
-        return null
-      }
+    const [invoice] = await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.id, existing.invoiceId))
+      .limit(1)
+    if (!invoice) {
+      return null
+    }
+
+    // Merge the patch onto the existing row so FX validation sees the
+    // post-update settlement shape. Without this, a PATCH that flips a
+    // completed payment to a non-invoice currency without supplying a
+    // base amount would silently corrupt invoice totals (the row stays
+    // "completed" but contributes 0 to paid_cents).
+    const merged: UpdatePaymentInput & {
+      amountCents: number
+      currency: string
+      status: typeof existing.status
+      paymentDate: string
+    } = {
+      amountCents: data.amountCents ?? existing.amountCents,
+      currency: data.currency ?? existing.currency,
+      baseCurrency:
+        data.baseCurrency !== undefined ? data.baseCurrency : (existing.baseCurrency ?? null),
+      baseAmountCents:
+        data.baseAmountCents !== undefined
+          ? data.baseAmountCents
+          : (existing.baseAmountCents ?? null),
+      fxRateSetId:
+        data.fxRateSetId !== undefined ? data.fxRateSetId : (existing.fxRateSetId ?? null),
+      paymentMethod: data.paymentMethod ?? existing.paymentMethod,
+      status: data.status ?? existing.status,
+      paymentDate: data.paymentDate ?? existing.paymentDate,
+    }
+
+    const normalized = shouldNormalizeBaseAmount(data)
+      ? await resolveFxMoneyBaseAmount(db, merged, {
+          ...runtime,
+          targetBaseCurrency: invoice.currency,
+          fallbackFxRateSetId: invoice.fxRateSetId ?? null,
+          date: merged.paymentDate,
+        })
+      : merged
+
+    assertPaymentCanSettleInvoice(invoice.currency, normalized as unknown as CreatePaymentInput)
+
+    return db.transaction(async (tx) => {
+      const writePatch: Record<string, unknown> = { ...data, updatedAt: new Date() }
+      // resolveFxMoneyBaseAmount may have filled in baseCurrency / baseAmountCents /
+      // fxRateSetId — persist those even if the caller didn't include them.
+      writePatch.baseCurrency = normalized.baseCurrency ?? null
+      writePatch.baseAmountCents = normalized.baseAmountCents ?? null
+      writePatch.fxRateSetId = normalized.fxRateSetId ?? null
 
       const [payment] = await tx
         .update(payments)
-        .set({ ...data, updatedAt: new Date() })
+        .set(writePatch)
         .where(eq(payments.id, id))
         .returning()
 
