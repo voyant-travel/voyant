@@ -119,6 +119,72 @@ export type LegalUiMessages = {
       send: string
     }
   }
+  contractDialog: {
+    titleNew: string
+    titleEdit: string
+    createAction: string
+    setupSectionTitle: string
+    setupSectionDescription: string
+    linkedSectionTitle: string
+    linkedSectionDescription: string
+    templateVariablesSectionTitle: string
+    templateVariablesNoVersion: string
+    templateVariablesNoneDetected: string
+    additionalVariablesTitle: string
+    additionalVariablesDescription: string
+    addVariable: string
+    additionalVariablesEmpty: string
+    variableKeyPlaceholder: string
+    variableValuePlaceholder: string
+    metadataSectionTitle: string
+    metadataSectionDescription: string
+    addMetadata: string
+    metadataEmpty: string
+    metadataKeyPlaceholder: string
+    metadataValuePlaceholder: string
+    titleLabel: string
+    titlePlaceholder: string
+    contractNumberLabel: string
+    contractNumberPlaceholder: string
+    scopeLabel: string
+    languageLabel: string
+    languagePlaceholder: string
+    languageSearchPlaceholder: string
+    languageEmpty: string
+    templateLabel: string
+    templatePlaceholder: string
+    templateSearchPlaceholder: string
+    templateEmpty: string
+    templateVersionLabel: string
+    templateVersionPlaceholder: string
+    templateVersionSearchPlaceholder: string
+    templateVersionEmpty: string
+    templateVersionPickTemplateFirst: string
+    templateVersionMostRecentDraft: string
+    templateVersionSelectedFallback: string
+    templateVersionLabelFormat: string
+    numberSeriesLabel: string
+    numberSeriesPlaceholder: string
+    numberSeriesSearchPlaceholder: string
+    numberSeriesEmpty: string
+    seriesActive: string
+    seriesInactive: string
+    expiresAtLabel: string
+    expiresAtPlaceholder: string
+    personLabel: string
+    organizationLabel: string
+    supplierLabel: string
+    channelLabel: string
+    loading: string
+    booleanYes: string
+    booleanNo: string
+    dateFallbackPlaceholder: string
+    datetimeFallbackPlaceholder: string
+    valueFallbackPlaceholder: string
+    validation: {
+      titleRequired: string
+    }
+  }
   contractsPage: {
     title: string
     description: string

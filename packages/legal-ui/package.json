@@ -36,7 +36,8 @@
     "zod": "^4.3.6"
   },
   "dependencies": {
-    "@voyantjs/i18n": "workspace:*"
+    "@voyantjs/i18n": "workspace:*",
+    "@voyantjs/utils": "workspace:*"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.100.11",
@@ -46,6 +47,7 @@
     "@voyantjs/i18n": "workspace:*",
     "@voyantjs/legal-react": "workspace:*",
     "@voyantjs/ui": "workspace:*",
+    "@voyantjs/utils": "workspace:*",
     "@voyantjs/voyant-typescript-config": "workspace:*",
     "lucide-react": "^0.475.0",
     "react": "^19.2.4",
