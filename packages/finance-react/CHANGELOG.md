@@ -1,5 +1,14 @@
 # @voyantjs/finance-react
 
+## 0.80.7
+
+### Patch Changes
+
+- e16eb2f: Allow invoice-from-booking requests to override invoice currency and line items while validating external fiscal totals.
+- Updated dependencies [e16eb2f]
+  - @voyantjs/finance@0.80.7
+  - @voyantjs/react@0.80.7
+
 ## 0.80.6
 
 ### Patch Changes

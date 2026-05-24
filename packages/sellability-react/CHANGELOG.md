@@ -1,5 +1,12 @@
 # @voyantjs/sellability-react
 
+## 0.80.7
+
+### Patch Changes
+
+- @voyantjs/react@0.80.7
+- @voyantjs/sellability@0.80.7
+
 ## 0.80.6
 
 ### Patch Changes
