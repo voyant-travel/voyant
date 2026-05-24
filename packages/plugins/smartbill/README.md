@@ -199,6 +199,43 @@ finance records.
 | `./workflows` | Proforma conversion polling and drift reconciliation factories |
 | `./types` | SmartBill adapter and bundle types |
 
+## Rate limits
+
+SmartBill can block an account after bursty traffic. `createSmartbillClient`
+throws `SmartbillRateLimitError` when a response carries SmartBill's
+rate-limit shape, with `retryAfterMs`, `retryAfterAt`, and `blockedAt` when the
+response text contains enough timing data.
+
+For cron or batch pollers, enable the process-local circuit breaker so repeated
+calls do not keep hitting SmartBill while the account is blocked:
+
+```typescript
+import {
+  createSmartbillClient,
+  SmartbillRateLimitCircuitOpenError,
+  SmartbillRateLimitError,
+} from "@voyantjs/plugin-smartbill/client"
+
+const client = createSmartbillClient({
+  username,
+  apiToken,
+  rateLimit: {
+    circuitBreaker: true,
+  },
+})
+
+try {
+  await client.listEstimateInvoices(companyVatCode, seriesName, number)
+} catch (err) {
+  if (
+    err instanceof SmartbillRateLimitError ||
+    err instanceof SmartbillRateLimitCircuitOpenError
+  ) {
+    // Stop the batch and retry after `err.retryAfterMs`.
+  }
+}
+```
+
 ## Local SmartBill Mock
 
 SmartBill does not provide a practical sandbox, and invoice/proforma calls can

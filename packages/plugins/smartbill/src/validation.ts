@@ -5,6 +5,7 @@ import type {
   SmartbillDocumentStorageResolver,
   SmartbillStorageKeyPrefixResolver,
 } from "./artifacts.js"
+import type { SmartbillClientOptions } from "./client.js"
 import type { SmartbillMappingOptions } from "./mapping.js"
 import type {
   SmartbillErrorHandler,
@@ -35,6 +36,16 @@ const optionalFetch = z.custom<SmartbillFetch | undefined>(
   (value) => value === undefined || typeof value === "function",
   "Expected a fetch implementation function",
 )
+
+const optionalRateLimit = z.custom<SmartbillClientOptions["rateLimit"] | undefined>((value) => {
+  if (value === undefined) return true
+  if (typeof value !== "object" || value === null) return false
+  const options = value as NonNullable<SmartbillClientOptions["rateLimit"]>
+  return (
+    (options.circuitBreaker === undefined || typeof options.circuitBreaker === "boolean") &&
+    (options.now === undefined || typeof options.now === "function")
+  )
+}, "Expected valid SmartBill rate-limit options")
 
 const optionalLogger = z.custom<SmartbillLogger | undefined>(
   (value) =>
@@ -134,6 +145,7 @@ export const smartbillPluginOptionsSchema = z.object({
   seriesName: requiredEventString,
   apiUrl: optionalUrl,
   fetch: optionalFetch.optional(),
+  rateLimit: optionalRateLimit.optional(),
   language: optionalString,
   isTaxIncluded: z.boolean().optional(),
   measuringUnitName: optionalEventText.optional(),

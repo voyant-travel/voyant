@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { createSmartbillClient } from "../../src/client.js"
+import {
+  createSmartbillClient,
+  SmartbillRateLimitCircuitOpenError,
+  SmartbillRateLimitError,
+} from "../../src/client.js"
 import type { SmartbillFetch } from "../../src/types.js"
 
 function jsonResponse(status: number, body: unknown) {
@@ -363,5 +367,64 @@ describe("createSmartbillClient — fetch handling", () => {
     } finally {
       globalThis.fetch = originalFetch
     }
+  })
+})
+
+describe("createSmartbillClient — SmartBill rate limits", () => {
+  const rateLimitBody = {
+    key: "!.oresp@&",
+    successfully: false,
+    errorText:
+      "Ai depasit limita maxima de requesturi admisa. Vei putea executa alte requesturi dupa 10 min de la momentul blocarii 24/05/2026 09:32:48",
+    errorCode: "0",
+    cooldown: 0,
+  }
+
+  it("throws a typed rate-limit error with retry timing from SmartBill text", async () => {
+    const fetchMock = vi.fn<SmartbillFetch>(async () => jsonResponse(403, rateLimitBody))
+    const client = createSmartbillClient({
+      ...baseOptions,
+      fetch: fetchMock,
+      rateLimit: {
+        now: () => new Date("2026-05-24T09:33:48.000Z"),
+      },
+    })
+
+    await expect(client.listEstimateInvoices("RO123", "P", "1")).rejects.toMatchObject({
+      name: "SmartbillRateLimitError",
+      operation: "listEstimateInvoices",
+      status: 403,
+      retryAfterMs: 540_000,
+      blockedAt: new Date("2026-05-24T09:32:48.000Z"),
+      retryAfterAt: new Date("2026-05-24T09:42:48.000Z"),
+    })
+    await expect(client.listEstimateInvoices("RO123", "P", "1")).rejects.toBeInstanceOf(
+      SmartbillRateLimitError,
+    )
+  })
+
+  it("opens an opt-in local circuit after a rate-limit response", async () => {
+    let now = new Date("2026-05-24T09:33:48.000Z")
+    const fetchMock = vi.fn<SmartbillFetch>(async () => jsonResponse(403, rateLimitBody))
+    const client = createSmartbillClient({
+      ...baseOptions,
+      fetch: fetchMock,
+      rateLimit: {
+        circuitBreaker: true,
+        now: () => now,
+      },
+    })
+
+    await expect(client.listTaxes()).rejects.toBeInstanceOf(SmartbillRateLimitError)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    await expect(client.listSeries()).rejects.toBeInstanceOf(SmartbillRateLimitCircuitOpenError)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    now = new Date("2026-05-24T09:42:48.000Z")
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, okEnvelope))
+
+    await expect(client.listSeries()).resolves.toEqual(okEnvelope)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })

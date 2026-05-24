@@ -11,8 +11,17 @@ export type {
   SmartbillStorageKeyPrefixResolver,
 } from "./artifacts.js"
 export { retrySmartbillInvoiceArtifact } from "./artifacts.js"
-export type { SmartbillClientApi, SmartbillClientOptions } from "./client.js"
-export { createSmartbillClient } from "./client.js"
+export type {
+  SmartbillApiErrorOptions,
+  SmartbillClientApi,
+  SmartbillClientOptions,
+} from "./client.js"
+export {
+  createSmartbillClient,
+  SmartbillApiError,
+  SmartbillRateLimitCircuitOpenError,
+  SmartbillRateLimitError,
+} from "./client.js"
 export type {
   SmartbillAdminModuleOptions,
   SmartbillAdminRouteRuntime,
