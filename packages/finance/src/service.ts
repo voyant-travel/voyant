@@ -8,6 +8,8 @@ import { renderStructuredTemplate } from "@voyantjs/utils/template-renderer"
 import { and, asc, desc, eq, gt, gte, ilike, lte, ne, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
+import { resolveFxMoneyBaseAmount } from "./fx-money.js"
+import type { InvoiceFxOptions } from "./invoice-fx.js"
 import {
   bookingGuarantees,
   bookingItemCommissions,
@@ -647,7 +649,7 @@ async function paginate<T extends object>(
  * when no eventBus is provided, so direct callers (tests, scripts) don't
  * have to wire one up.
  */
-export interface FinanceServiceRuntime {
+export interface FinanceServiceRuntime extends InvoiceFxOptions {
   eventBus?: EventBus
   actionLedgerContext?: ActionLedgerRequestContextValues
   actionLedgerAuthorizationSource?: string | null
@@ -852,6 +854,107 @@ function assertPaymentCanSettleInvoice(invoiceCurrency: string, data: CreatePaym
       fields: ["baseCurrency", "baseAmountCents"],
     },
   )
+}
+
+function shouldNormalizeBaseAmount(data: {
+  amountCents?: number | null
+  currency?: string | null
+  baseCurrency?: string | null
+  baseAmountCents?: number | null
+  fxRateSetId?: string | null
+  paymentDate?: string | null
+}) {
+  return (
+    data.amountCents !== undefined ||
+    data.currency !== undefined ||
+    data.baseCurrency !== undefined ||
+    data.baseAmountCents !== undefined ||
+    data.fxRateSetId !== undefined ||
+    data.paymentDate !== undefined
+  )
+}
+
+async function resolveSupplierPaymentUpdateData(
+  db: PostgresJsDatabase,
+  id: string,
+  data: UpdateSupplierPaymentInput,
+  runtime: FinanceServiceRuntime,
+): Promise<UpdateSupplierPaymentInput | null> {
+  const [existing] = await db
+    .select()
+    .from(supplierPayments)
+    .where(eq(supplierPayments.id, id))
+    .limit(1)
+  if (!existing) return null
+  if (!shouldNormalizeBaseAmount(data)) return data
+
+  const bookingId = data.bookingId ?? existing.bookingId
+  const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)
+  const normalized = await resolveFxMoneyBaseAmount(
+    db,
+    {
+      amountCents: data.amountCents ?? existing.amountCents,
+      currency: data.currency ?? existing.currency,
+      baseCurrency: data.baseCurrency ?? existing.baseCurrency,
+      baseAmountCents: data.baseAmountCents ?? null,
+      fxRateSetId: data.fxRateSetId ?? existing.fxRateSetId,
+    },
+    {
+      ...runtime,
+      targetBaseCurrency: booking?.baseCurrency ?? null,
+      fallbackFxRateSetId: booking?.fxRateSetId ?? null,
+      date: data.paymentDate ?? existing.paymentDate,
+    },
+  )
+
+  return {
+    ...data,
+    baseCurrency: normalized.baseCurrency ?? null,
+    baseAmountCents: normalized.baseAmountCents ?? null,
+    fxRateSetId: normalized.fxRateSetId ?? null,
+  }
+}
+
+async function resolveCreditNoteUpdateData(
+  db: PostgresJsDatabase,
+  id: string,
+  data: UpdateCreditNoteInput,
+  runtime: FinanceServiceRuntime,
+): Promise<UpdateCreditNoteInput | null> {
+  const [existing] = await db.select().from(creditNotes).where(eq(creditNotes.id, id)).limit(1)
+  if (!existing) return null
+  if (!shouldNormalizeBaseAmount(data)) return data
+
+  const [invoice] = await db
+    .select()
+    .from(invoices)
+    .where(eq(invoices.id, existing.invoiceId))
+    .limit(1)
+  if (!invoice) return null
+
+  const normalized = await resolveFxMoneyBaseAmount(
+    db,
+    {
+      amountCents: data.amountCents ?? existing.amountCents,
+      currency: data.currency ?? existing.currency,
+      baseCurrency: data.baseCurrency ?? existing.baseCurrency,
+      baseAmountCents: data.baseAmountCents ?? null,
+      fxRateSetId: data.fxRateSetId ?? existing.fxRateSetId,
+    },
+    {
+      ...runtime,
+      targetBaseCurrency: invoice.currency,
+      fallbackFxRateSetId: invoice.fxRateSetId ?? null,
+      date: new Date(),
+    },
+  )
+
+  return {
+    ...data,
+    baseCurrency: normalized.baseCurrency ?? null,
+    baseAmountCents: normalized.baseAmountCents ?? null,
+    fxRateSetId: normalized.fxRateSetId ?? null,
+  }
 }
 
 async function resolveInvoiceForPaymentSession(
@@ -3089,10 +3192,21 @@ export const financeService = {
     data: CreateSupplierPaymentInput,
     runtime: FinanceServiceRuntime = {},
   ) {
+    const [booking] = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, data.bookingId))
+      .limit(1)
+    const paymentData = await resolveFxMoneyBaseAmount(db, data, {
+      ...runtime,
+      targetBaseCurrency: booking?.baseCurrency ?? null,
+      fallbackFxRateSetId: booking?.fxRateSetId ?? null,
+      date: data.paymentDate,
+    })
     const createPayment = (writer: PostgresJsDatabase) =>
       writer
         .insert(supplierPayments)
-        .values({ ...data, paymentInstrumentId: data.paymentInstrumentId ?? null })
+        .values({ ...paymentData, paymentInstrumentId: paymentData.paymentInstrumentId ?? null })
         .returning()
 
     const actionLedgerContext = runtime.actionLedgerContext
@@ -3127,10 +3241,13 @@ export const financeService = {
     data: UpdateSupplierPaymentInput,
     runtime: FinanceServiceRuntime = {},
   ) {
+    const updateData = await resolveSupplierPaymentUpdateData(db, id, data, runtime)
+    if (!updateData) return null
+
     const updatePayment = (writer: PostgresJsDatabase) =>
       writer
         .update(supplierPayments)
-        .set({ ...data, updatedAt: new Date() })
+        .set({ ...updateData, updatedAt: new Date() })
         .where(eq(supplierPayments.id, id))
         .returning()
 
@@ -3144,7 +3261,7 @@ export const financeService = {
             tx,
             buildSupplierPaymentUpdateActionLedgerInput(
               actionLedgerContext,
-              { payment: updated[0], changes: data },
+              { payment: updated[0], changes: updateData },
               { authorizationSource: runtime.actionLedgerAuthorizationSource },
             ),
           )
@@ -3248,6 +3365,7 @@ export const financeService = {
     db: PostgresJsDatabase,
     data: CreateInvoiceFromBookingInput,
     bookingData: InvoiceFromBookingData,
+    runtime: FinanceServiceRuntime = {},
   ) {
     const { booking, items, paymentSchedule } = bookingData
     const numberAssignment = await resolveInvoiceNumberForBooking(db, data)
@@ -3314,14 +3432,32 @@ export const financeService = {
 
     // The `ck_invoices_base_currency_amounts` constraint requires
     // that whenever ANY base_*_cents column is non-null, base_currency
-    // must be set too. Bookings without an FX-rate set leave
-    // baseCurrency null — propagate that NULL across every base_*
-    // field so the constraint stays satisfied.
-    const hasBaseCurrency = Boolean(booking.baseCurrency)
+    // must be set too. Resolve the base side once and propagate nulls
+    // consistently when no booking/runtime base currency is available.
     const invoiceCurrency = paymentSchedule?.currency ?? booking.sellCurrency
-    const invoiceBaseAmountCents = paymentSchedule
+    const bookingBaseAmountCents = paymentSchedule
       ? resolveBookingInvoiceBaseAmount(booking, invoiceCurrency, paymentSchedule.amountCents)
       : (booking.baseSellAmountCents ?? null)
+    const resolvedInvoiceBase = await resolveFxMoneyBaseAmount(
+      db,
+      {
+        amountCents: totalCents,
+        currency: invoiceCurrency,
+        baseCurrency: booking.baseCurrency ?? null,
+        baseAmountCents: bookingBaseAmountCents,
+        fxRateSetId: booking.fxRateSetId ?? null,
+      },
+      {
+        ...runtime,
+        targetBaseCurrency: booking.baseCurrency ?? null,
+        fallbackFxRateSetId: booking.fxRateSetId ?? null,
+        date: data.issueDate,
+        setBaseCurrencyWhenUnresolved: Boolean(booking.baseCurrency),
+      },
+    )
+    const invoiceBaseCurrency = resolvedInvoiceBase.baseCurrency ?? null
+    const invoiceBaseAmountCents = resolvedInvoiceBase.baseAmountCents ?? null
+    const hasBaseCurrency = Boolean(invoiceBaseCurrency)
 
     try {
       return await db.transaction(async (tx) => {
@@ -3337,8 +3473,8 @@ export const financeService = {
             organizationId: booking.organizationId,
             status: numberAssignment.status,
             currency: invoiceCurrency,
-            baseCurrency: booking.baseCurrency,
-            fxRateSetId: booking.fxRateSetId,
+            baseCurrency: invoiceBaseCurrency,
+            fxRateSetId: resolvedInvoiceBase.fxRateSetId ?? null,
             subtotalCents,
             baseSubtotalCents: hasBaseCurrency ? invoiceBaseAmountCents : null,
             taxCents,
@@ -3869,17 +4005,24 @@ export const financeService = {
       return null
     }
 
-    assertPaymentCanSettleInvoice(invoice.currency, data)
+    const paymentData = await resolveFxMoneyBaseAmount(db, data, {
+      ...runtime,
+      targetBaseCurrency: invoice.currency,
+      fallbackFxRateSetId: invoice.fxRateSetId ?? null,
+      date: data.paymentDate,
+    })
+
+    assertPaymentCanSettleInvoice(invoice.currency, paymentData)
 
     return db.transaction(async (tx) => {
       const [payment] = await tx
         .insert(payments)
         .values({
-          ...data,
+          ...paymentData,
           invoiceId,
-          paymentInstrumentId: data.paymentInstrumentId ?? null,
-          paymentAuthorizationId: data.paymentAuthorizationId ?? null,
-          paymentCaptureId: data.paymentCaptureId ?? null,
+          paymentInstrumentId: paymentData.paymentInstrumentId ?? null,
+          paymentAuthorizationId: paymentData.paymentAuthorizationId ?? null,
+          paymentCaptureId: paymentData.paymentCaptureId ?? null,
         })
         .returning()
 
@@ -3943,10 +4086,17 @@ export const financeService = {
       return null
     }
 
+    const creditNoteData = await resolveFxMoneyBaseAmount(db, data, {
+      ...runtime,
+      targetBaseCurrency: invoice.currency,
+      fallbackFxRateSetId: invoice.fxRateSetId ?? null,
+      date: new Date(),
+    })
+
     return db.transaction(async (tx) => {
       const [row] = await tx
         .insert(creditNotes)
-        .values({ ...data, invoiceId })
+        .values({ ...creditNoteData, invoiceId })
         .returning()
 
       if (row && runtime.actionLedgerContext) {
@@ -3975,10 +4125,13 @@ export const financeService = {
     data: UpdateCreditNoteInput,
     runtime: FinanceServiceRuntime = {},
   ) {
+    const updateData = await resolveCreditNoteUpdateData(db, creditNoteId, data, runtime)
+    if (!updateData) return null
+
     const updateCreditNoteRow = async (writer: PostgresJsDatabase) => {
       const [row] = await writer
         .update(creditNotes)
-        .set({ ...data, updatedAt: new Date() })
+        .set({ ...updateData, updatedAt: new Date() })
         .where(eq(creditNotes.id, creditNoteId))
         .returning()
 
@@ -4005,7 +4158,7 @@ export const financeService = {
             tx,
             buildCreditNoteUpdateActionLedgerInput(
               actionLedgerContext,
-              { ...updated, changes: data },
+              { ...updated, changes: updateData },
               { authorizationSource: runtime.actionLedgerAuthorizationSource },
             ),
           )

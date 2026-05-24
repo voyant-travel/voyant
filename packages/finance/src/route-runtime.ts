@@ -35,5 +35,6 @@ export function buildFinanceRouteRuntime(
     resolveInvoiceExchangeRate:
       options.resolveInvoiceExchangeRateResolver?.(bindings) ?? options.resolveInvoiceExchangeRate,
     resolveInvoiceExchangeRateResolver: options.resolveInvoiceExchangeRateResolver,
+    onInvoiceFxResolutionError: options.onInvoiceFxResolutionError,
   }
 }

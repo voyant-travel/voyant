@@ -48,6 +48,8 @@ export interface InvoiceIssuedEvent {
   currency: string
   /** Operator accounting/reporting currency when different from `currency`. */
   baseCurrency?: string
+  /** Rate set used to resolve `currency` -> `baseCurrency`, when available. */
+  fxRateSetId?: string
   /** Spot rate for `currency` → `baseCurrency`. */
   fxRate?: number
   /** Provider or reference source for `fxRate`, for example `bnr`. */
@@ -136,7 +138,7 @@ export async function issueInvoiceFromBooking(
   bookingData: InvoiceFromBookingData,
   runtime: InvoiceIssueRuntime = {},
 ) {
-  const draft = await financeService.createInvoiceFromBooking(db, input, bookingData)
+  const draft = await financeService.createInvoiceFromBooking(db, input, bookingData, runtime)
   if (!draft) return null
   const status = draft.status === "pending_external_allocation" ? draft.status : "issued"
 
@@ -184,7 +186,7 @@ export async function issueProformaFromBooking(
   bookingData: InvoiceFromBookingData,
   runtime: InvoiceIssueRuntime = {},
 ) {
-  const draft = await financeService.createInvoiceFromBooking(db, input, bookingData)
+  const draft = await financeService.createInvoiceFromBooking(db, input, bookingData, runtime)
   if (!draft) return null
   const status = draft.status === "pending_external_allocation" ? draft.status : "issued"
 
