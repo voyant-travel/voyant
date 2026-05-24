@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.77.13
+
+### Patch Changes
+
+- 70a32ab: Add SmartBill admin invoice sync helpers, Hono routes, and default invoice panel actions.
+  - @voyantjs/action-ledger@0.77.13
+  - @voyantjs/bookings@0.77.13
+  - @voyantjs/core@0.77.13
+  - @voyantjs/db@0.77.13
+  - @voyantjs/hono@0.77.13
+  - @voyantjs/products@0.77.13
+  - @voyantjs/storage@0.77.13
+  - @voyantjs/utils@0.77.13
+
 ## 0.77.12
 
 ### Patch Changes
