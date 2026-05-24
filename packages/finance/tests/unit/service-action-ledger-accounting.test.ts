@@ -273,7 +273,7 @@ describe("finance accounting action ledger builders", () => {
           bookingId: "book_123",
           totalCents: 50000,
           currency: "USD",
-          status: "sent",
+          status: "issued",
           issueDate: "2026-05-16",
           dueDate: "2026-05-23",
         } as never,

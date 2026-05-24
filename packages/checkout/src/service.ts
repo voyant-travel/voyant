@@ -174,7 +174,7 @@ const OUTSTANDING_SCHEDULE_STATUSES: Array<
 > = ["pending", "due"]
 const OUTSTANDING_INVOICE_STATUSES: Array<(typeof invoices.$inferSelect)["status"]> = [
   "draft",
-  "sent",
+  "issued",
   "partially_paid",
   "overdue",
 ]
@@ -556,7 +556,7 @@ async function createCollectionInvoice(
       personId: context.booking.personId,
       organizationId: context.booking.organizationId,
       invoiceType: documentType,
-      status: "sent",
+      status: "issued",
       currency: context.booking.sellCurrency,
       baseCurrency: context.booking.baseCurrency,
       fxRateSetId: null,

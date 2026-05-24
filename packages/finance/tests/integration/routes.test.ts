@@ -1127,11 +1127,11 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       const inv = await seedInvoice(booking.id)
       const res = await app.request(`/invoices/${inv.id}`, {
         method: "PATCH",
-        ...json({ status: "sent", notes: "Sent to client" }),
+        ...json({ status: "issued", notes: "Sent to client" }),
       })
       expect(res.status).toBe(200)
       const { data } = await res.json()
-      expect(data.status).toBe("sent")
+      expect(data.status).toBe("issued")
       expect(data.notes).toBe("Sent to client")
     })
 
@@ -1149,7 +1149,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
 
     it("rejects deleting a non-draft invoice", async () => {
       const booking = await seedBooking()
-      const inv = await seedInvoice(booking.id, { status: "sent" })
+      const inv = await seedInvoice(booking.id, { status: "issued" })
       const res = await app.request(`/invoices/${inv.id}`, { method: "DELETE" })
       expect(res.status).toBe(400)
       const body = await res.json()
@@ -1179,11 +1179,11 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     it("filters invoices by status", async () => {
       const booking = await seedBooking()
       await seedInvoice(booking.id, { status: "draft" })
-      await seedInvoice(booking.id, { status: "sent" })
-      const res = await app.request("/invoices?status=sent", { method: "GET" })
+      await seedInvoice(booking.id, { status: "issued" })
+      const res = await app.request("/invoices?status=issued", { method: "GET" })
       const body = await res.json()
       expect(body.total).toBe(1)
-      expect(body.data[0].status).toBe("sent")
+      expect(body.data[0].status).toBe("issued")
     })
 
     it("filters invoices by bookingId", async () => {
@@ -2680,7 +2680,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       const booking = await seedBooking()
       await seedInvoice(booking.id, {
         dueDate: "2025-01-01",
-        status: "sent",
+        status: "issued",
         balanceDueCents: 50000,
       })
 

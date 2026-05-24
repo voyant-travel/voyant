@@ -7,7 +7,7 @@ export const financeUiEn = {
     invoiceStatusLabels: {
       draft: "Draft",
       pending_external_allocation: "Pending External Allocation",
-      sent: "Sent",
+      issued: "Issued",
       partially_paid: "Partially Paid",
       paid: "Paid",
       overdue: "Overdue",

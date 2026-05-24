@@ -31,7 +31,7 @@ describe("financeAggregatesQuerySchema", () => {
       range: "this_month",
       currency: ["RON", "EUR"],
       invoiceType: ["invoice", "proforma"],
-      status: ["sent", "partially_paid", "paid", "overdue"],
+      status: ["issued", "paid", "overdue"],
     })
   })
 

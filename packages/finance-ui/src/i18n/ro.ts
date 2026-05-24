@@ -7,7 +7,7 @@ export const financeUiRo = {
     invoiceStatusLabels: {
       draft: "Ciorna",
       pending_external_allocation: "In asteptarea numarului extern",
-      sent: "Trimisa",
+      issued: "Emisa",
       partially_paid: "Platita Partial",
       paid: "Platita",
       overdue: "Scadenta Depasita",

@@ -1,7 +1,7 @@
 /**
  * Covers the dashboard-facing addition to `getFinanceAggregates`:
  *
- *  - `outstandingTopN` returns up to N rows of `sent | partially_paid |
+ *  - `outstandingTopN` returns up to N rows of `issued | partially_paid |
  *    overdue` invoices with `balance_due_cents > 0`.
  *  - Ordering is `due_date` (nulls last), then `issue_date`, then `id`.
  *  - The slice respects the `outstandingTopLimit` query parameter.
@@ -54,7 +54,7 @@ describe.skipIf(!DB_AVAILABLE)("getFinanceAggregates dashboard fields", () => {
       {
         invoiceNumber: nextInvoiceNumber(),
         bookingId: "book_agg_1",
-        status: "sent",
+        status: "issued",
         currency: "EUR",
         totalCents: 10000,
         balanceDueCents: 10000,
@@ -85,7 +85,7 @@ describe.skipIf(!DB_AVAILABLE)("getFinanceAggregates dashboard fields", () => {
       {
         invoiceNumber: nextInvoiceNumber(),
         bookingId: "book_agg_4",
-        status: "sent",
+        status: "issued",
         currency: "EUR",
         totalCents: 4000,
         balanceDueCents: 4000,
@@ -128,7 +128,7 @@ describe.skipIf(!DB_AVAILABLE)("getFinanceAggregates dashboard fields", () => {
       {
         invoiceNumber: nextInvoiceNumber(),
         bookingId: "book_agg_8",
-        status: "sent",
+        status: "issued",
         currency: "EUR",
         totalCents: 6000,
         balanceDueCents: 0,
@@ -161,7 +161,7 @@ describe.skipIf(!DB_AVAILABLE)("getFinanceAggregates dashboard fields", () => {
     const rows = Array.from({ length: 9 }, (_, idx) => ({
       invoiceNumber: nextInvoiceNumber(),
       bookingId: `book_lim_${idx}`,
-      status: "sent" as const,
+      status: "issued" as const,
       currency: "EUR",
       totalCents: 1000,
       balanceDueCents: 1000,

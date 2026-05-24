@@ -13,7 +13,7 @@ import { useAdminMessages } from "@/lib/admin-i18n"
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   draft: "outline",
-  sent: "secondary",
+  issued: "secondary",
   paid: "default",
   partially_paid: "secondary",
   overdue: "destructive",
@@ -61,7 +61,7 @@ export function BookingInvoicesCard({
   }
   const statusLabels: Record<string, string> = {
     draft: messages.invoiceStatusDraft,
-    sent: messages.invoiceStatusSent,
+    issued: messages.invoiceStatusIssued,
     partially_paid: messages.invoiceStatusPartiallyPaid,
     paid: messages.invoiceStatusPaid,
     overdue: messages.invoiceStatusOverdue,

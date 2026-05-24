@@ -13,7 +13,7 @@ export const invoiceStatusVariant: Record<
   "default" | "secondary" | "outline" | "destructive"
 > = {
   draft: "outline",
-  sent: "secondary",
+  issued: "secondary",
   partially_paid: "secondary",
   paid: "default",
   overdue: "destructive",

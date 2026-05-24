@@ -484,7 +484,7 @@ export async function fetchOpenInvoiceTargets(
     gt(invoices.balanceDueCents, 0),
     or(eq(invoices.invoiceType, "invoice"), eq(invoices.invoiceType, "proforma")),
     or(
-      eq(invoices.status, "sent"),
+      eq(invoices.status, "issued"),
       eq(invoices.status, "partially_paid"),
       eq(invoices.status, "overdue"),
     ),

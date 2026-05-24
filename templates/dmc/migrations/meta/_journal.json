@@ -92,6 +92,13 @@
       "when": 1779561950332,
       "tag": "0013_invoice_number_type_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1779598716868,
+      "tag": "0015_invoice_status_issued",
+      "breakpoints": true
     }
   ]
 }

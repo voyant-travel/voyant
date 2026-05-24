@@ -9,7 +9,8 @@ type PaymentSessionStatus = (typeof paymentSessions.$inferSelect)["status"]
 
 const ALL_INVOICE_STATUSES: readonly InvoiceStatus[] = [
   "draft",
-  "sent",
+  "pending_external_allocation",
+  "issued",
   "partially_paid",
   "paid",
   "overdue",
@@ -17,7 +18,7 @@ const ALL_INVOICE_STATUSES: readonly InvoiceStatus[] = [
 ]
 
 /** Statuses where balance_due_cents > 0 is meaningful money we're owed. */
-const OUTSTANDING_STATUSES: readonly InvoiceStatus[] = ["sent", "partially_paid", "overdue"]
+const OUTSTANDING_STATUSES: readonly InvoiceStatus[] = ["issued", "partially_paid", "overdue"]
 
 export interface FinanceAggregateOutstandingInvoice {
   id: string
@@ -51,7 +52,7 @@ export interface FinanceAggregates {
   /** Invoice count per UTC yearMonth, all statuses in range. */
   monthlyInvoiceCounts: Array<{ yearMonth: string; count: number }>
   /**
-   * Sum of `balance_due_cents` for invoices still expecting payment — sent /
+   * Sum of `balance_due_cents` for invoices still expecting payment — issued /
    * partially_paid / overdue — grouped by currency. Matches the "how much
    * are we owed" dashboard card.
    */
@@ -364,13 +365,13 @@ function financeCounts(
 
   return {
     invoices: {
-      issued: invoiceCount("invoice", ["sent", "partially_paid", "overdue"]),
+      issued: invoiceCount("invoice", ["issued", "partially_paid", "overdue"]),
       paid: invoiceCount("invoice", ["paid"]),
       void: invoiceCount("invoice", ["void"]),
       overdue: invoiceCount("invoice", ["overdue"]),
     },
     proformas: {
-      issued: invoiceCount("proforma", ["sent", "partially_paid", "overdue", "paid"]),
+      issued: invoiceCount("proforma", ["issued", "partially_paid", "overdue", "paid"]),
       converted: invoiceCount("proforma", ["paid"]),
       void: invoiceCount("proforma", ["void"]),
     },
