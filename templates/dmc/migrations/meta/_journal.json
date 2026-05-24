@@ -99,6 +99,13 @@
       "when": 1779598716868,
       "tag": "0015_invoice_status_issued",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1779626814451,
+      "tag": "0016_booking_reference_foreign_keys",
+      "breakpoints": true
     }
   ]
 }
