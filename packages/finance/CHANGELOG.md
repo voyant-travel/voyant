@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.80.4
+
+### Patch Changes
+
+- a411b1c: Use `@voyantjs/data-sdk` for the Voyant Data FX resolver and expose optional FX provenance fields.
+  - @voyantjs/action-ledger@0.80.4
+  - @voyantjs/bookings@0.80.4
+  - @voyantjs/core@0.80.4
+  - @voyantjs/db@0.80.4
+  - @voyantjs/hono@0.80.4
+  - @voyantjs/products@0.80.4
+  - @voyantjs/storage@0.80.4
+  - @voyantjs/utils@0.80.4
+
 ## 0.80.3
 
 ### Patch Changes

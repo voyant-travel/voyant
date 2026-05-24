@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/workflows-react",
-  "version": "0.80.3",
+  "version": "0.80.4",
   "description": "React hooks for Voyant Workflows — trigger, subscribe, and stream runs.",
   "license": "Apache-2.0",
   "repository": {

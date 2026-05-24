@@ -1,5 +1,14 @@
 # @voyantjs/finance-react
 
+## 0.80.4
+
+### Patch Changes
+
+- a411b1c: Use `@voyantjs/data-sdk` for the Voyant Data FX resolver and expose optional FX provenance fields.
+- Updated dependencies [a411b1c]
+  - @voyantjs/finance@0.80.4
+  - @voyantjs/react@0.80.4
+
 ## 0.80.3
 
 ### Patch Changes
