@@ -1,5 +1,11 @@
 # @voyantjs/i18n
 
+## 0.80.0
+
+### Patch Changes
+
+- 9473eb8: Add booking checkout URL helpers and operator-facing URL template labels for booking checkout/payment links.
+
 ## 0.79.0
 
 ## 0.78.0
