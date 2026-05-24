@@ -1,5 +1,19 @@
 # @voyantjs/legal-ui
 
+## 0.78.0
+
+### Minor Changes
+
+- a6fcf9b: Ship a default ContractDialog for creating and editing legal contracts.
+
+### Patch Changes
+
+- @voyantjs/crm-react@0.78.0
+- @voyantjs/i18n@0.78.0
+- @voyantjs/legal-react@0.78.0
+- @voyantjs/ui@0.78.0
+- @voyantjs/utils@0.78.0
+
 ## 0.77.13
 
 ### Patch Changes
