@@ -1,5 +1,15 @@
 # @voyantjs/bookings-react
 
+## 0.80.2
+
+### Patch Changes
+
+- 9d6be13: Allow booking status overrides to suppress confirmed lifecycle events while preserving audit events.
+- Updated dependencies [7a94871]
+- Updated dependencies [9d6be13]
+  - @voyantjs/bookings@0.80.2
+  - @voyantjs/react@0.80.2
+
 ## 0.80.1
 
 ### Patch Changes

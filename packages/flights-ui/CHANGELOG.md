@@ -1,5 +1,17 @@
 # @voyantjs/flights-ui
 
+## 0.80.2
+
+### Patch Changes
+
+- @voyantjs/checkout-ui@0.80.2
+- @voyantjs/crm-react@0.80.2
+- @voyantjs/finance@0.80.2
+- @voyantjs/flights@0.80.2
+- @voyantjs/flights-react@0.80.2
+- @voyantjs/i18n@0.80.2
+- @voyantjs/ui@0.80.2
+
 ## 0.80.1
 
 ### Patch Changes

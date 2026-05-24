@@ -1,5 +1,17 @@
 # @voyantjs/bookings
 
+## 0.80.2
+
+### Patch Changes
+
+- 7a94871: Keep booking `confirmedAt` aligned with the confirmed status during create, update, and status transitions.
+- 9d6be13: Allow booking status overrides to suppress confirmed lifecycle events while preserving audit events.
+  - @voyantjs/action-ledger@0.80.2
+  - @voyantjs/core@0.80.2
+  - @voyantjs/db@0.80.2
+  - @voyantjs/hono@0.80.2
+  - @voyantjs/utils@0.80.2
+
 ## 0.80.1
 
 ### Patch Changes
