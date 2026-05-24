@@ -44,6 +44,33 @@ describe("invoiceFromBookingSchema", () => {
     expect(result.wait).toBe("pdf")
     expect(result.waitTimeoutMs).toBe(10_000)
   })
+
+  it("accepts currency and line item overrides for externally issued invoices", () => {
+    const result = invoiceFromBookingSchema.parse({
+      bookingId: "book_123",
+      invoiceNumber: "INV-123",
+      issueDate: "2026-05-23",
+      dueDate: "2026-06-23",
+      currency: "ron",
+      baseCurrency: "eur",
+      fxRateSetId: "fxrs_123",
+      subtotalCents: 50_000,
+      taxCents: 9_500,
+      totalCents: 59_500,
+      lineItems: [
+        {
+          description: "External fiscal invoice line",
+          quantity: 1,
+          unitAmountCents: 50_000,
+          taxRateBps: 1_900,
+        },
+      ],
+    })
+
+    expect(result.currency).toBe("RON")
+    expect(result.baseCurrency).toBe("EUR")
+    expect(result.lineItems?.[0]?.unitAmountCents).toBe(50_000)
+  })
 })
 
 describe("renderInvoiceInputSchema", () => {

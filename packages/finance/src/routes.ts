@@ -8,6 +8,7 @@ import type { publicFinanceRoutes } from "./routes-public.js"
 import type { Env } from "./routes-shared.js"
 import {
   financeService,
+  InvoiceFromBookingValidationError,
   InvoiceNumberAllocationError,
   InvoiceNumberConflictError,
   PaymentValidationError,
@@ -1065,6 +1066,12 @@ export const financeRoutes = new Hono<Env>()
               invoiceNumber: error.invoiceNumber,
             },
             409,
+          )
+        }
+        if (error instanceof InvoiceFromBookingValidationError) {
+          return c.json(
+            { error: error.message, code: error.code, details: error.details },
+            error.status,
           )
         }
         throw error
