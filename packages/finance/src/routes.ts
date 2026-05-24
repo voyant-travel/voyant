@@ -890,7 +890,7 @@ export const financeRoutes = new Hono<Env>()
           c.get("db"),
           await parseJsonBody(c, insertSupplierPaymentSchema),
           {
-            eventBus: runtime?.eventBus,
+            ...(runtime ?? {}),
             actionLedgerContext: getActionLedgerRequestContext(c),
             actionLedgerAuthorizationSource: "finance.supplier_payment.route",
           },
@@ -908,7 +908,7 @@ export const financeRoutes = new Hono<Env>()
       c.req.param("id"),
       await parseJsonBody(c, updateSupplierPaymentSchema),
       {
-        eventBus: runtime?.eventBus,
+        ...(runtime ?? {}),
         actionLedgerContext: getActionLedgerRequestContext(c),
         actionLedgerAuthorizationSource: "finance.supplier_payment.route",
       },
@@ -1021,7 +1021,7 @@ export const financeRoutes = new Hono<Env>()
               organizationId: booking.organizationId,
               sellCurrency: booking.sellCurrency,
               baseCurrency: booking.baseCurrency,
-              fxRateSetId: null,
+              fxRateSetId: booking.fxRateSetId,
               sellAmountCents: booking.sellAmountCents,
               baseSellAmountCents: booking.baseSellAmountCents,
             },
@@ -1045,7 +1045,7 @@ export const financeRoutes = new Hono<Env>()
             })),
           },
           {
-            eventBus: runtime?.eventBus,
+            ...(runtime ?? {}),
             actionLedgerContext: getActionLedgerRequestContext(c),
             actionLedgerAuthorizationSource: "finance.invoice.from_booking.route",
           },
@@ -1292,7 +1292,7 @@ export const financeRoutes = new Hono<Env>()
         c.req.param("id"),
         await parseJsonBody(c, insertPaymentSchema),
         {
-          eventBus: runtime?.eventBus,
+          ...(runtime ?? {}),
           actionLedgerContext: getActionLedgerRequestContext(c),
           actionLedgerAuthorizationSource: "finance.payment.route",
         },
@@ -1334,7 +1334,7 @@ export const financeRoutes = new Hono<Env>()
       c.req.param("id"),
       await parseJsonBody(c, insertCreditNoteSchema),
       {
-        eventBus: runtime?.eventBus,
+        ...(runtime ?? {}),
         actionLedgerContext: getActionLedgerRequestContext(c),
         actionLedgerAuthorizationSource: "finance.credit_note.route",
       },
@@ -1355,7 +1355,7 @@ export const financeRoutes = new Hono<Env>()
       c.req.param("creditNoteId"),
       await parseJsonBody(c, updateCreditNoteSchema),
       {
-        eventBus: runtime?.eventBus,
+        ...(runtime ?? {}),
         actionLedgerContext: getActionLedgerRequestContext(c),
         actionLedgerAuthorizationSource: "finance.credit_note.route",
       },

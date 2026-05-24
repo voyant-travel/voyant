@@ -39,6 +39,7 @@ export type ResolveInvoiceExchangeRateInput = {
 
 export type InvoiceExchangeRateResolution = {
   rate: number
+  fxRateSetId?: string
   source?: string
   quotedAt?: string
   validUntil?: string
@@ -79,6 +80,7 @@ export type InvoiceFxInvoice = {
 
 export type InvoiceFxContext = {
   baseCurrency: string
+  fxRateSetId?: string
   fxRate: number
   fxRateSource?: string
   fxRateQuotedAt?: string
@@ -182,6 +184,7 @@ export async function resolveInvoiceFxContext(
 
   return {
     baseCurrency,
+    ...(resolvedRate.fxRateSetId ? { fxRateSetId: resolvedRate.fxRateSetId } : {}),
     fxRate: roundRate(resolvedRate.rate),
     ...(resolvedRate.source ? { fxRateSource: resolvedRate.source } : {}),
     ...(resolvedRate.quotedAt ? { fxRateQuotedAt: resolvedRate.quotedAt } : {}),
@@ -292,6 +295,7 @@ export function createInvoiceFxRoutes(options: InvoiceFxRouteOptions = {}) {
         data: {
           ...input,
           rate: roundRate(resolvedRate.rate),
+          ...(resolvedRate.fxRateSetId ? { fxRateSetId: resolvedRate.fxRateSetId } : {}),
           ...(resolvedRate.source ? { source: resolvedRate.source } : {}),
           ...(resolvedRate.quotedAt ? { quotedAt: resolvedRate.quotedAt } : {}),
           ...(resolvedRate.validUntil ? { validUntil: resolvedRate.validUntil } : {}),
@@ -359,11 +363,13 @@ function normalizeInvoiceExchangeRateResolution(
   if (resolution.rate <= 0) return null
 
   const source = normalizeOptionalText(resolution.source)
+  const fxRateSetId = normalizeOptionalText(resolution.fxRateSetId)
   const quotedAt = normalizeOptionalText(resolution.quotedAt)
   const validUntil = normalizeOptionalText(resolution.validUntil)
 
   return {
     rate: resolution.rate,
+    ...(fxRateSetId ? { fxRateSetId } : {}),
     ...(source ? { source } : {}),
     ...(quotedAt ? { quotedAt } : {}),
     ...(validUntil ? { validUntil } : {}),

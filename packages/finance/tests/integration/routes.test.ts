@@ -87,6 +87,8 @@ async function cleanupFinanceTestData(
     "tax_regimes",
     "booking_items",
     "bookings",
+    "exchange_rates",
+    "fx_rate_sets",
   ]
 
   const existingTables = (await db.execute<{ tablename: string }>(sql`
@@ -279,6 +281,9 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     const financeRouteRuntime = {
       eventBus,
       invoiceSettlementPollers: {},
+      invoiceFxSettings: {
+        fxCommissionBps: 200,
+      },
       resolveDocumentDownloadUrl: (_bindings: unknown, storageKey: string) =>
         `https://files.example/${storageKey}`,
     }
@@ -1855,6 +1860,90 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       const check = await app.request(`/invoices/${inv.id}`, { method: "GET" })
       const { data: paidInv } = await check.json()
       expect(paidInv.paidCents).toBe(10000)
+      expect(paidInv.balanceDueCents).toBe(0)
+      expect(paidInv.status).toBe("paid")
+    })
+
+    it("auto-computes completed cross-currency payment base amounts with FX commission", async () => {
+      const booking = await seedBooking()
+      const fxRateSetId = `fxrs_${seq + 1}`
+      const exchangeRateId = `fxrt_${seq + 1}`
+      const undatedFxRateSetId = `fxrs_undated_${seq + 1}`
+      const undatedExchangeRateId = `fxrt_undated_${seq + 1}`
+      await db.execute(sql`
+        INSERT INTO fx_rate_sets (id, base_currency, effective_at, observed_at)
+        VALUES (${fxRateSetId}, 'EUR', '2025-06-13T00:00:00.000Z', '2025-06-13T00:00:00.000Z')
+      `)
+      await db.execute(sql`
+        INSERT INTO fx_rate_sets (id, base_currency, effective_at, observed_at)
+        VALUES (${undatedFxRateSetId}, 'EUR', '2025-06-14T00:00:00.000Z', NULL)
+      `)
+      await db.execute(sql`
+        INSERT INTO exchange_rates (
+          id,
+          fx_rate_set_id,
+          base_currency,
+          quote_currency,
+          rate_decimal,
+          inverse_rate_decimal,
+          observed_at
+        )
+        VALUES (
+          ${exchangeRateId},
+          ${fxRateSetId},
+          'RON',
+          'EUR',
+          '0.197',
+          '5.07614213',
+          '2025-06-13T00:00:00.000Z'
+        )
+      `)
+      await db.execute(sql`
+        INSERT INTO exchange_rates (
+          id,
+          fx_rate_set_id,
+          base_currency,
+          quote_currency,
+          rate_decimal,
+          inverse_rate_decimal,
+          observed_at
+        )
+        VALUES (
+          ${undatedExchangeRateId},
+          ${undatedFxRateSetId},
+          'RON',
+          'EUR',
+          '0.5',
+          '2',
+          NULL
+        )
+      `)
+      const expectedBaseAmountCents = Math.round(86000 * 0.197 * 1.02)
+      const inv = await seedInvoice(booking.id, {
+        currency: "EUR",
+        totalCents: expectedBaseAmountCents,
+        balanceDueCents: expectedBaseAmountCents,
+      })
+
+      const res = await app.request(`/invoices/${inv.id}/payments`, {
+        method: "POST",
+        ...json({
+          amountCents: 86000,
+          currency: "RON",
+          paymentMethod: "bank_transfer",
+          paymentDate: "2025-06-15",
+          status: "completed",
+        }),
+      })
+      expect(res.status).toBe(201)
+      const { data: payment } = await res.json()
+      expect(payment.baseCurrency).toBe("EUR")
+      expect(payment.baseAmountCents).toBe(expectedBaseAmountCents)
+      expect(payment.fxRateSetId).toBe(fxRateSetId)
+
+      const check = await app.request(`/invoices/${inv.id}`, { method: "GET" })
+      const { data: paidInv } = await check.json()
+      expect(paidInv.paidCents).toBe(expectedBaseAmountCents)
       expect(paidInv.balanceDueCents).toBe(0)
       expect(paidInv.status).toBe("paid")
     })
