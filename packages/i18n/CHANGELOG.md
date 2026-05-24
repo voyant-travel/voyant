@@ -1,5 +1,11 @@
 # @voyantjs/i18n
 
+## 0.77.12
+
+### Patch Changes
+
+- bf74cd4: Rename the invoice issuance status from `sent` to `issued`.
+
 ## 0.77.11
 
 ## 0.77.10

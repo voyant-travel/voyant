@@ -1,5 +1,11 @@
 # @voyantjs/workflows-node-step-container
 
+## 0.77.12
+
+### Patch Changes
+
+- @voyantjs/workflows@0.77.12
+
 ## 0.77.11
 
 ### Patch Changes

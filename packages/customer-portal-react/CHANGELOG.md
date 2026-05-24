@@ -1,5 +1,13 @@
 # @voyantjs/customer-portal-react
 
+## 0.77.12
+
+### Patch Changes
+
+- Updated dependencies [bf74cd4]
+  - @voyantjs/customer-portal@0.77.12
+  - @voyantjs/react@0.77.12
+
 ## 0.77.11
 
 ### Patch Changes
