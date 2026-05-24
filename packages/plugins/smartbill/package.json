@@ -8,6 +8,8 @@
     "./client": "./src/client.ts",
     "./mock": "./src/mock.ts",
     "./plugin": "./src/plugin.ts",
+    "./hono": "./src/hono.ts",
+    "./sync": "./src/sync.ts",
     "./invoice-ui": "./src/invoice-ui.tsx",
     "./settlement": "./src/settlement.ts",
     "./workflows": "./src/workflows.ts",
@@ -24,8 +26,10 @@
   "dependencies": {
     "@voyantjs/core": "workspace:*",
     "@voyantjs/finance": "workspace:*",
+    "@voyantjs/hono": "workspace:*",
     "@voyantjs/storage": "workspace:*",
     "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.10",
     "zod": "^4.3.6"
   },
   "peerDependencies": {
@@ -94,6 +98,16 @@
         "types": "./dist/plugin.d.ts",
         "import": "./dist/plugin.js",
         "default": "./dist/plugin.js"
+      },
+      "./hono": {
+        "types": "./dist/hono.d.ts",
+        "import": "./dist/hono.js",
+        "default": "./dist/hono.js"
+      },
+      "./sync": {
+        "types": "./dist/sync.d.ts",
+        "import": "./dist/sync.js",
+        "default": "./dist/sync.js"
       },
       "./invoice-ui": {
         "types": "./dist/invoice-ui.d.ts",

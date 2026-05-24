@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { ZodError, z } from "zod"
 import type {
   SmartbillArtifactPersistenceOptions,
   SmartbillDbResolver,
@@ -152,3 +152,22 @@ export const smartbillPluginOptionsSchema = z.object({
   documentStorage: optionalDocumentStorage.optional(),
   documentStorageKeyPrefix: optionalDocumentStorageKeyPrefix.optional(),
 }) satisfies z.ZodType<SmartbillPluginOptions>
+
+export function parseSmartbillPluginOptions(
+  options: SmartbillPluginOptions,
+): SmartbillPluginOptions {
+  try {
+    return smartbillPluginOptionsSchema.parse(options)
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const detail = error.issues
+        .map((issue) => {
+          const path = issue.path.join(".") || "options"
+          return `${path}: ${issue.message}`
+        })
+        .join("; ")
+      throw new Error(`Invalid SmartBill plugin options: ${detail}`)
+    }
+    throw error
+  }
+}

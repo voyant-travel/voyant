@@ -14,6 +14,17 @@ export { retrySmartbillInvoiceArtifact } from "./artifacts.js"
 export type { SmartbillClientApi, SmartbillClientOptions } from "./client.js"
 export { createSmartbillClient } from "./client.js"
 export type {
+  SmartbillAdminModuleOptions,
+  SmartbillAdminRouteRuntime,
+  SmartbillPluginOptionsResolver,
+} from "./hono.js"
+export {
+  buildSmartbillAdminRouteRuntime,
+  createSmartbillAdminModule,
+  createSmartbillAdminRoutes,
+  SMARTBILL_ADMIN_RUNTIME_CONTAINER_KEY,
+} from "./hono.js"
+export type {
   SmartbillEventValue,
   SmartbillMappingOptions,
   SmartbillMaybePromise,
@@ -60,6 +71,13 @@ export type {
   SmartbillSettlementSeriesContext,
 } from "./settlement.js"
 export { createSmartbillInvoiceSettlementPoller } from "./settlement.js"
+export type {
+  SyncSmartbillInvoiceEventInput,
+  SyncSmartbillInvoiceEventResult,
+  SyncSmartbillInvoiceInput,
+  SyncSmartbillInvoiceResult,
+} from "./sync.js"
+export { syncSmartbillInvoice, syncSmartbillInvoiceEvent } from "./sync.js"
 export type {
   SmartbillClient,
   SmartbillEnvelope,

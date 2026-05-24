@@ -310,7 +310,11 @@ export {
   financeDocumentsService,
 } from "./service-documents.js"
 export type { InvoiceIssuedEvent, InvoiceIssueRuntime } from "./service-issue.js"
-export { issueInvoiceFromBooking, issueProformaFromBooking } from "./service-issue.js"
+export {
+  buildInvoiceIssuedEvent,
+  issueInvoiceFromBooking,
+  issueProformaFromBooking,
+} from "./service-issue.js"
 export {
   getLatestInvoiceRendition,
   type InvoiceRenditionWaitMode,

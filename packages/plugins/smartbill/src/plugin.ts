@@ -1,22 +1,12 @@
 import type { Plugin, Subscriber } from "@voyantjs/core"
-import { financeService } from "@voyantjs/finance"
-import { ZodError } from "zod"
 
-import {
-  isSmartbillPdfPersistMetadataUpdateError,
-  persistSmartbillInvoiceArtifact,
-  recordSmartbillInvoiceArtifactFailure,
-  retrySmartbillInvoiceArtifact,
-  type SmartbillArtifactPersistenceOptions,
-  type SmartbillArtifactStorageContext,
-  type SmartbillDocumentType,
-  type SmartbillExternalRef,
-} from "./artifacts.js"
+import type { SmartbillArtifactPersistenceOptions } from "./artifacts.js"
 import type { SmartbillClientOptions } from "./client.js"
 import type { SmartbillMappingOptions } from "./mapping.js"
 import { createSmartbillSyncRuntime } from "./runtime.js"
+import { syncSmartbillInvoiceEvent } from "./sync.js"
 import type { SmartbillInvoiceBody, SmartbillInvoiceResponse, VoyantInvoiceEvent } from "./types.js"
-import { smartbillPluginOptionsSchema } from "./validation.js"
+import { parseSmartbillPluginOptions } from "./validation.js"
 
 export interface SmartbillSyncEventNames {
   issued?: string
@@ -92,275 +82,8 @@ function coerceEvent(data: unknown): VoyantInvoiceEvent | null {
 
 export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
   const validatedOptions = parseSmartbillPluginOptions(options)
-  const {
-    client,
-    logger,
-    mapEvent,
-    eventNames,
-    artifacts,
-    idempotency,
-    onError,
-    writeBackInvoiceNumber,
-  } = createSmartbillSyncRuntime(validatedOptions)
-
-  async function resolveMaybe<TContext, TValue>(
-    value: TValue | ((context: TContext) => TValue | Promise<TValue>) | undefined | null,
-    context: TContext,
-  ) {
-    return typeof value === "function"
-      ? await (value as (context: TContext) => TValue | Promise<TValue>)(context)
-      : value
-  }
-
-  async function resolveArtifactDb(
-    event: VoyantInvoiceEvent,
-    documentType: SmartbillDocumentType,
-    body?: SmartbillInvoiceBody,
-    result?: SmartbillInvoiceResponse,
-  ) {
-    if (!artifacts.db) return null
-    const context: SmartbillArtifactStorageContext = {
-      event,
-      documentType,
-      body: body ?? {
-        companyVatCode: validatedOptions.companyVatCode,
-        client: { name: "Client" },
-        seriesName: "unknown",
-        currency: "RON",
-        products: [],
-      },
-      result: result ?? {},
-    }
-    return (await resolveMaybe(artifacts.db, context)) ?? null
-  }
-
-  async function findExistingSmartbillRef(
-    event: VoyantInvoiceEvent,
-    documentType: SmartbillDocumentType,
-    body: SmartbillInvoiceBody,
-  ): Promise<SmartbillExternalRef | null> {
-    if (idempotency.skipExistingExternalRef === false) return null
-    const db = await resolveArtifactDb(event, documentType, body)
-    if (!db) return null
-
-    const refs = await financeService.listInvoiceExternalRefs(db, event.id)
-    return refs.find((ref) => isMatchingSmartbillRef(ref, documentType)) ?? null
-  }
-
-  async function handleExistingSmartbillRef(
-    event: VoyantInvoiceEvent,
-    documentType: SmartbillDocumentType,
-    body: SmartbillInvoiceBody,
-    externalRef: SmartbillExternalRef,
-  ) {
-    logger.info?.(
-      `[smartbill] ${documentType} already has SmartBill ref for ${event.id}; skipping create`,
-      externalRef,
-    )
-    await applyExternalAllocationFromRefIfRequired(event, documentType, body, externalRef)
-    await writeBackInvoiceNumberFromRefIfRequired(event, documentType, body, externalRef)
-    try {
-      const persisted = await retrySmartbillInvoiceArtifact({
-        runtime: artifacts,
-        client,
-        externalRef,
-        documentType,
-      })
-      if (persisted.status === "persisted") {
-        logger.info?.(`[smartbill] ${documentType} PDF re-attached for ${event.id}`, persisted)
-      }
-    } catch (err) {
-      const message = isSmartbillPdfPersistMetadataUpdateError(err)
-        ? `[smartbill] artifact re-attach metadata update failed for ${event.id}`
-        : `[smartbill] artifact re-attach failed for ${event.id}`
-      logger.error(message, err)
-    }
-  }
-
-  async function persistArtifact(
-    event: VoyantInvoiceEvent,
-    documentType: SmartbillDocumentType,
-    body: Awaited<ReturnType<SmartbillMapFn>>,
-    result: Awaited<ReturnType<typeof client.createInvoice>>,
-  ) {
-    try {
-      const persisted = await persistSmartbillInvoiceArtifact({
-        runtime: artifacts,
-        client,
-        event,
-        documentType,
-        body,
-        result,
-      })
-      if (persisted.status === "persisted") {
-        logger.info?.(`[smartbill] ${documentType} PDF persisted for ${event.id}`, persisted)
-      }
-    } catch (err) {
-      if (isSmartbillPdfPersistMetadataUpdateError(err)) {
-        logger.error(`[smartbill] artifact persistence metadata update failed for ${event.id}`, err)
-        return
-      }
-      logger.error(`[smartbill] artifact persistence failed for ${event.id}`, err)
-      try {
-        await recordSmartbillInvoiceArtifactFailure({
-          runtime: artifacts,
-          event,
-          documentType,
-          body,
-          result,
-          error: err,
-        })
-      } catch (recordError) {
-        logger.error(
-          `[smartbill] artifact failure external-ref update failed for ${event.id}`,
-          recordError,
-        )
-      }
-    }
-  }
-
-  async function applyExternalAllocationIfRequired(
-    event: VoyantInvoiceEvent,
-    documentType: SmartbillDocumentType,
-    body: SmartbillInvoiceBody,
-    result: SmartbillInvoiceResponse,
-  ) {
-    if (event.externalAllocationRequired !== true || !result.number) return
-
-    const db = await resolveArtifactDb(event, documentType, body, result)
-    if (!db) {
-      throw new Error("SmartBill external allocation requires artifact database access")
-    }
-    const allocation = await financeService.applyExternalInvoiceAllocation(db, event.id, {
-      invoiceNumber: formatExternalInvoiceNumber(result.series ?? body.seriesName, result.number),
-    })
-    if (allocation.status === "applied") {
-      logger.info?.(`[smartbill] external number applied for ${event.id}`, allocation.invoice)
-    }
-  }
-
-  async function applyExternalAllocationFromRefIfRequired(
-    event: VoyantInvoiceEvent,
-    documentType: SmartbillDocumentType,
-    body: SmartbillInvoiceBody,
-    externalRef: SmartbillExternalRef,
-  ) {
-    if (event.externalAllocationRequired !== true) return
-
-    const metadata = coerceMetadata(externalRef.metadata)
-    const number =
-      metadataString(metadata, "number") ??
-      externalRef.externalNumber ??
-      externalRef.externalId ??
-      null
-    if (!number) {
-      throw new Error("SmartBill external allocation requires an existing external number")
-    }
-    await applyExternalAllocationIfRequired(event, documentType, body, {
-      number,
-      series:
-        metadataString(metadata, "series") ??
-        metadataString(metadata, "seriesName") ??
-        body.seriesName,
-      url: externalRef.externalUrl ?? undefined,
-    })
-  }
-
-  async function resolveWriteBackInvoiceNumber(
-    event: VoyantInvoiceEvent,
-    body: SmartbillInvoiceBody,
-    result: SmartbillInvoiceResponse,
-  ) {
-    if (!writeBackInvoiceNumber) return null
-    if (typeof writeBackInvoiceNumber === "function") {
-      const invoiceNumber = await writeBackInvoiceNumber(event, result)
-      if (typeof invoiceNumber !== "string" || invoiceNumber.trim().length === 0) {
-        throw new Error("SmartBill invoice number write-back formatter returned an empty value")
-      }
-      return invoiceNumber
-    }
-    if (!result.number) return null
-    return formatExternalInvoiceNumber(result.series ?? body.seriesName, result.number)
-  }
-
-  async function writeBackInvoiceNumberIfRequired(
-    event: VoyantInvoiceEvent,
-    documentType: SmartbillDocumentType,
-    body: SmartbillInvoiceBody,
-    result: SmartbillInvoiceResponse,
-  ) {
-    const invoiceNumber = await resolveWriteBackInvoiceNumber(event, body, result)
-    if (!invoiceNumber) return
-
-    const db = await resolveArtifactDb(event, documentType, body, result)
-    if (!db) {
-      throw new Error("SmartBill invoice number write-back requires artifact database access")
-    }
-
-    const invoice = await financeService.updateInvoice(db, event.id, { invoiceNumber })
-    if (!invoice) {
-      throw new Error(`SmartBill invoice number write-back failed for missing invoice ${event.id}`)
-    }
-    logger.info?.(`[smartbill] invoice number write-back applied for ${event.id}`, invoice)
-  }
-
-  async function writeBackInvoiceNumberFromRefIfRequired(
-    event: VoyantInvoiceEvent,
-    documentType: SmartbillDocumentType,
-    body: SmartbillInvoiceBody,
-    externalRef: SmartbillExternalRef,
-  ) {
-    if (!writeBackInvoiceNumber) return
-
-    const metadata = coerceMetadata(externalRef.metadata)
-    const number =
-      metadataString(metadata, "number") ??
-      externalRef.externalNumber ??
-      externalRef.externalId ??
-      null
-    if (!number) return
-
-    await writeBackInvoiceNumberIfRequired(event, documentType, body, {
-      number,
-      series:
-        metadataString(metadata, "series") ??
-        metadataString(metadata, "seriesName") ??
-        body.seriesName,
-      url: externalRef.externalUrl ?? undefined,
-    })
-  }
-
-  async function recordSyncError(
-    event: VoyantInvoiceEvent,
-    documentType: SmartbillDocumentType,
-    err: unknown,
-  ) {
-    try {
-      await onError?.(event, err)
-    } catch (handlerError) {
-      logger.error(`[smartbill] onError handler failed for ${event.id}`, handlerError)
-    }
-
-    try {
-      const db = await resolveArtifactDb(event, documentType)
-      if (!db) return
-      const refs = await financeService.listInvoiceExternalRefs(db, event.id)
-      if (refs.some((ref) => isMatchingSmartbillRef(ref, documentType))) return
-
-      await financeService.registerInvoiceExternalRef(db, event.id, {
-        provider: "smartbill",
-        externalId: null,
-        externalNumber: null,
-        externalUrl: null,
-        status: "error",
-        syncedAt: new Date().toISOString(),
-        syncError: errorMessage(err),
-        metadata: { documentType },
-      })
-    } catch (recordError) {
-      logger.error(`[smartbill] error external-ref recording failed for ${event.id}`, recordError)
-    }
-  }
+  const runtime = createSmartbillSyncRuntime(validatedOptions)
+  const { client, logger, eventNames } = runtime
 
   async function resolveConfiguredSeriesName(event: VoyantInvoiceEvent) {
     const value = validatedOptions.seriesName
@@ -380,26 +103,15 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
         const event = coerceEvent(envelope.data)
         if (!event) return
         try {
-          const body = await mapEvent(event)
-          const existingRef = await findExistingSmartbillRef(event, "invoice", body)
-          if (existingRef) {
-            await handleExistingSmartbillRef(event, "invoice", body, existingRef)
-            return
-          }
-          const result = await client.createInvoice(body)
-          logger.info?.(
-            `[smartbill] invoice created: ${result.series}-${result.number} for ${event.id}`,
-            result,
-          )
-          await persistArtifact(event, "invoice", body, result)
-          await writeBackInvoiceNumberIfRequired(event, "invoice", body, result)
-          await applyExternalAllocationIfRequired(event, "invoice", body, result)
-        } catch (err) {
-          logger.error(
-            `[smartbill] createInvoice on "${eventNames.issued}" failed for ${event.id}`,
-            err,
-          )
-          await recordSyncError(event, "invoice", err)
+          await syncSmartbillInvoiceEvent({
+            event,
+            documentType: "invoice",
+            runtime,
+            pluginOptions: validatedOptions,
+            operationLabel: `createInvoice on "${eventNames.issued}"`,
+          })
+        } catch {
+          // `syncSmartbillInvoiceEvent` logs and records retryable state.
         }
       },
     },
@@ -409,28 +121,15 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
         const event = coerceEvent(envelope.data)
         if (!event) return
         try {
-          // Same shape as createInvoice — SmartBill's `/proforma`
-          // endpoint accepts the same body as `/invoice`.
-          const body = await mapEvent(event)
-          const existingRef = await findExistingSmartbillRef(event, "proforma", body)
-          if (existingRef) {
-            await handleExistingSmartbillRef(event, "proforma", body, existingRef)
-            return
-          }
-          const result = await client.createProforma(body)
-          logger.info?.(
-            `[smartbill] proforma created: ${result.series}-${result.number} for ${event.id}`,
-            result,
-          )
-          await persistArtifact(event, "proforma", body, result)
-          await writeBackInvoiceNumberIfRequired(event, "proforma", body, result)
-          await applyExternalAllocationIfRequired(event, "proforma", body, result)
-        } catch (err) {
-          logger.error(
-            `[smartbill] createProforma on "${eventNames.proformaIssued}" failed for ${event.id}`,
-            err,
-          )
-          await recordSyncError(event, "proforma", err)
+          await syncSmartbillInvoiceEvent({
+            event,
+            documentType: "proforma",
+            runtime,
+            pluginOptions: validatedOptions,
+            operationLabel: `createProforma on "${eventNames.proformaIssued}"`,
+          })
+        } catch {
+          // `syncSmartbillInvoiceEvent` logs and records retryable state.
         }
       },
     },
@@ -506,74 +205,5 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
     name: "smartbill",
     version: "0.1.0",
     subscribers,
-  }
-}
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error)
-}
-
-function coerceMetadata(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null
-}
-
-function metadataString(metadata: Record<string, unknown> | null, key: string) {
-  const value = metadata?.[key]
-  return typeof value === "string" && value.length > 0 ? value : null
-}
-
-function formatExternalInvoiceNumber(seriesName: string | undefined, number: string) {
-  const trimmedNumber = number.trim()
-  const trimmedSeries = seriesName?.trim()
-  if (!trimmedSeries || trimmedNumber.startsWith(`${trimmedSeries}-`)) return trimmedNumber
-  return `${trimmedSeries}-${trimmedNumber}`
-}
-
-function isUsableSmartbillRef(ref: {
-  provider: string
-  status?: string | null
-  syncError?: string | null
-  externalNumber?: string | null
-  externalId?: string | null
-}) {
-  return (
-    ref.provider === "smartbill" &&
-    ref.status !== "error" &&
-    !ref.syncError &&
-    Boolean(ref.externalNumber || ref.externalId)
-  )
-}
-
-function isMatchingSmartbillRef(
-  ref: {
-    provider: string
-    status?: string | null
-    syncError?: string | null
-    externalNumber?: string | null
-    externalId?: string | null
-    metadata?: unknown
-  },
-  documentType: SmartbillDocumentType,
-) {
-  if (!isUsableSmartbillRef(ref)) return false
-  return metadataString(coerceMetadata(ref.metadata), "documentType") === documentType
-}
-
-function parseSmartbillPluginOptions(options: SmartbillPluginOptions): SmartbillPluginOptions {
-  try {
-    return smartbillPluginOptionsSchema.parse(options)
-  } catch (error) {
-    if (error instanceof ZodError) {
-      const detail = error.issues
-        .map((issue) => {
-          const path = issue.path.join(".") || "options"
-          return `${path}: ${issue.message}`
-        })
-        .join("; ")
-      throw new Error(`Invalid SmartBill plugin options: ${detail}`)
-    }
-    throw error
   }
 }

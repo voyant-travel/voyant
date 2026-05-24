@@ -1,5 +1,5 @@
 import type { SmartbillArtifactPersistenceOptions } from "./artifacts.js"
-import { createSmartbillClient } from "./client.js"
+import { createSmartbillClient, type SmartbillClientApi } from "./client.js"
 import { mapVoyantInvoiceToSmartbillAsync, type SmartbillMappingOptions } from "./mapping.js"
 import type { SmartbillLogger, SmartbillMapFn, SmartbillPluginOptions } from "./plugin.js"
 import type { VoyantInvoiceEvent } from "./types.js"
@@ -22,8 +22,15 @@ export interface SmartbillSyncRuntime {
   writeBackInvoiceNumber: SmartbillPluginOptions["writeBackInvoiceNumber"]
 }
 
-export function createSmartbillSyncRuntime(options: SmartbillPluginOptions): SmartbillSyncRuntime {
-  const client = createSmartbillClient(options)
+export interface SmartbillSyncRuntimeOverrides {
+  client?: SmartbillClientApi
+}
+
+export function createSmartbillSyncRuntime(
+  options: SmartbillPluginOptions,
+  overrides: SmartbillSyncRuntimeOverrides = {},
+): SmartbillSyncRuntime {
+  const client = overrides.client ?? createSmartbillClient(options)
   const logger = options.logger ?? console
   const mappingOptions: SmartbillMappingOptions = {
     companyVatCode: options.companyVatCode,
