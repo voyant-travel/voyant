@@ -47,6 +47,8 @@ interface OperatorProfileForm {
   signatoryName?: string | null
   signatoryRole?: string | null
   customerPaymentPolicy?: PaymentPolicy | null
+  bookingCheckoutUrlTemplate?: string | null
+  invoicePayUrlTemplate?: string | null
 }
 
 type OperatorProfileRecord = Omit<
@@ -58,6 +60,10 @@ type OperatorPaymentInstructionsRecord = Pick<
   "bankTransferBeneficiary" | "iban" | "bank" | "notes"
 >
 type OperatorPaymentDefaultsRecord = Pick<OperatorProfileForm, "customerPaymentPolicy">
+type OperatorCheckoutLinksRecord = Pick<
+  OperatorProfileForm,
+  "bookingCheckoutUrlTemplate" | "invoicePayUrlTemplate"
+>
 
 const EMPTY_FORM: OperatorProfileForm = {
   name: "",
@@ -77,6 +83,8 @@ const EMPTY_FORM: OperatorProfileForm = {
   signatoryName: "",
   signatoryRole: "",
   customerPaymentPolicy: null,
+  bookingCheckoutUrlTemplate: "",
+  invoicePayUrlTemplate: "",
 }
 
 export function OperatorProfilePage() {
@@ -105,7 +113,9 @@ export function OperatorProfilePage() {
           ? ((await instructionsRes.json()) as { data?: OperatorPaymentInstructionsRecord | null })
           : { data: null },
         defaultsRes.ok
-          ? ((await defaultsRes.json()) as { data?: OperatorPaymentDefaultsRecord | null })
+          ? ((await defaultsRes.json()) as {
+              data?: (OperatorPaymentDefaultsRecord & OperatorCheckoutLinksRecord) | null
+            })
           : { data: null },
       ])
 
@@ -114,6 +124,8 @@ export function OperatorProfilePage() {
         ...(profileJson.data ?? {}),
         ...(instructionsJson.data ?? {}),
         customerPaymentPolicy: defaultsJson.data?.customerPaymentPolicy ?? null,
+        bookingCheckoutUrlTemplate: defaultsJson.data?.bookingCheckoutUrlTemplate ?? "",
+        invoicePayUrlTemplate: defaultsJson.data?.invoicePayUrlTemplate ?? "",
       }
     },
   })
@@ -164,6 +176,8 @@ export function OperatorProfilePage() {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             customerPaymentPolicy: next.customerPaymentPolicy ?? null,
+            bookingCheckoutUrlTemplate: next.bookingCheckoutUrlTemplate || null,
+            invoicePayUrlTemplate: next.invoicePayUrlTemplate || null,
           }),
         }),
       ])
@@ -403,6 +417,43 @@ export function OperatorProfilePage() {
             inheritable={false}
           />
           <PaymentPolicyPreview policy={form.customerPaymentPolicy ?? noDepositPolicy} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t.checkoutLinks.title}</CardTitle>
+          <CardDescription>{t.checkoutLinks.description}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="space-y-1">
+            <Label htmlFor="op-bookingCheckoutUrlTemplate">
+              {t.checkoutLinks.bookingCheckoutUrlTemplateLabel}
+            </Label>
+            <Input
+              id="op-bookingCheckoutUrlTemplate"
+              value={form.bookingCheckoutUrlTemplate ?? ""}
+              placeholder={t.checkoutLinks.bookingCheckoutUrlTemplatePlaceholder}
+              onChange={(e) => setField("bookingCheckoutUrlTemplate", e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              {t.checkoutLinks.bookingCheckoutUrlTemplateHelp}
+            </p>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="op-invoicePayUrlTemplate">
+              {t.checkoutLinks.invoicePayUrlTemplateLabel}
+            </Label>
+            <Input
+              id="op-invoicePayUrlTemplate"
+              value={form.invoicePayUrlTemplate ?? ""}
+              placeholder={t.checkoutLinks.invoicePayUrlTemplatePlaceholder}
+              onChange={(e) => setField("invoicePayUrlTemplate", e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              {t.checkoutLinks.invoicePayUrlTemplateHelp}
+            </p>
+          </div>
         </CardContent>
       </Card>
 

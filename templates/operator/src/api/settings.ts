@@ -63,6 +63,8 @@ const updateOperatorPaymentInstructionsSchema = z.object({
 
 const updateOperatorPaymentDefaultsSchema = z.object({
   customerPaymentPolicy: paymentPolicySchema.nullable().optional(),
+  bookingCheckoutUrlTemplate: z.string().trim().nullable().optional(),
+  invoicePayUrlTemplate: z.string().trim().nullable().optional(),
 })
 
 const updateOperatorSettingsSchema = updateOperatorProfileSchema
@@ -148,14 +150,24 @@ export async function upsertOperatorPaymentDefaults(
   patch: UpdateOperatorPaymentDefaultsInput,
 ) {
   const existing = await getOperatorPaymentDefaults(db)
-  const values = {
-    customerPaymentPolicy: (patch.customerPaymentPolicy ?? null) as unknown,
-  } as typeof operatorPaymentDefaults.$inferInsert
+  const values: Partial<typeof operatorPaymentDefaults.$inferInsert> = {}
+
+  if ("customerPaymentPolicy" in patch) {
+    values.customerPaymentPolicy = (patch.customerPaymentPolicy ?? null) as unknown
+  }
+  if ("bookingCheckoutUrlTemplate" in patch) {
+    values.bookingCheckoutUrlTemplate = patch.bookingCheckoutUrlTemplate?.trim() || null
+  }
+  if ("invoicePayUrlTemplate" in patch) {
+    values.invoicePayUrlTemplate = patch.invoicePayUrlTemplate?.trim() || null
+  }
 
   if (!existing) {
     const [created] = await db.insert(operatorPaymentDefaults).values(values).returning()
     return created ?? null
   }
+
+  if (Object.keys(values).length === 0) return existing
 
   const [updated] = await db
     .update(operatorPaymentDefaults)
@@ -245,6 +257,8 @@ export function toPublicOperatorProfile(
     licenseAuthority: row.licenseAuthority ?? "",
     customerPaymentPolicy:
       (defaults?.customerPaymentPolicy as PaymentPolicy | null | undefined) ?? null,
+    bookingCheckoutUrlTemplate: defaults?.bookingCheckoutUrlTemplate ?? null,
+    invoicePayUrlTemplate: defaults?.invoicePayUrlTemplate ?? null,
   }
 }
 
@@ -258,11 +272,15 @@ export interface PublicOperatorProfile {
   license: string
   licenseAuthority: string
   customerPaymentPolicy: PaymentPolicy | null
+  bookingCheckoutUrlTemplate: string | null
+  invoicePayUrlTemplate: string | null
 }
 
 type CombinedOperatorSettings = Partial<OperatorProfileRow> &
   Partial<OperatorPaymentInstructionsRow> & {
     customerPaymentPolicy?: unknown
+    bookingCheckoutUrlTemplate?: string | null
+    invoicePayUrlTemplate?: string | null
   }
 
 function combineOperatorSettings(
@@ -278,6 +296,8 @@ function combineOperatorSettings(
     bank: instructions?.bank ?? null,
     notes: instructions?.notes ?? null,
     customerPaymentPolicy: defaults?.customerPaymentPolicy ?? null,
+    bookingCheckoutUrlTemplate: defaults?.bookingCheckoutUrlTemplate ?? null,
+    invoicePayUrlTemplate: defaults?.invoicePayUrlTemplate ?? null,
   }
 }
 
@@ -294,6 +314,17 @@ export async function upsertOperatorSettings(
   db: PostgresJsDatabase,
   patch: UpdateOperatorSettingsInput,
 ) {
+  const paymentDefaultsPatch: UpdateOperatorPaymentDefaultsInput = {}
+  if ("customerPaymentPolicy" in patch) {
+    paymentDefaultsPatch.customerPaymentPolicy = patch.customerPaymentPolicy
+  }
+  if ("bookingCheckoutUrlTemplate" in patch) {
+    paymentDefaultsPatch.bookingCheckoutUrlTemplate = patch.bookingCheckoutUrlTemplate
+  }
+  if ("invoicePayUrlTemplate" in patch) {
+    paymentDefaultsPatch.invoicePayUrlTemplate = patch.invoicePayUrlTemplate
+  }
+
   const [profile, instructions, defaults] = await Promise.all([
     upsertOperatorProfile(db, {
       name: patch.name,
@@ -315,9 +346,7 @@ export async function upsertOperatorSettings(
       bank: patch.bank,
       notes: patch.notes,
     }),
-    upsertOperatorPaymentDefaults(db, {
-      customerPaymentPolicy: patch.customerPaymentPolicy,
-    }),
+    upsertOperatorPaymentDefaults(db, paymentDefaultsPatch),
   ])
   return combineOperatorSettings(profile, instructions, defaults)
 }
@@ -335,6 +364,8 @@ export function toPublicOperatorSettings(
     license: row?.license ?? "",
     licenseAuthority: row?.licenseAuthority ?? "",
     customerPaymentPolicy: (row?.customerPaymentPolicy as PaymentPolicy | null | undefined) ?? null,
+    bookingCheckoutUrlTemplate: row?.bookingCheckoutUrlTemplate ?? null,
+    invoicePayUrlTemplate: row?.invoicePayUrlTemplate ?? null,
   }
 }
 
