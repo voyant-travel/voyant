@@ -51,6 +51,13 @@ export interface IdempotencyKeyOptions {
    */
   required?: boolean
   /**
+   * Query parameters that affect the response contract and should be included
+   * in the idempotency fingerprint alongside the request body. Reusing the
+   * same key with different fingerprinted query values returns 409 instead of
+   * replaying a response captured under different request semantics.
+   */
+  fingerprintSearchParams?: readonly string[]
+  /**
    * Optional callback that, given the response body that's about to be
    * stored, returns a `referenceId` (typically the booking id). Used for
    * operational queries to correlate replays with the underlying entity.
@@ -113,9 +120,12 @@ export function idempotencyKey<
       return c.json({ error: `${HEADER_NAME} must be 255 characters or fewer` }, 400)
     }
 
-    const scope = options.scope ?? `${c.req.method} ${new URL(c.req.url).pathname}`
+    const requestUrl = new URL(c.req.url)
+    const scope = options.scope ?? `${c.req.method} ${requestUrl.pathname}`
     const rawBody = await c.req.text()
-    const bodyHash = await sha256Hex(rawBody)
+    const bodyHash = await sha256Hex(
+      buildFingerprintInput(rawBody, requestUrl, options.fingerprintSearchParams),
+    )
     // The `db` middleware always unwraps a `DisposableDb` to a plain
     // `VoyantDb` before storing on context, so this cast is safe.
     const db = c.get("db") as VoyantDb | undefined
@@ -227,6 +237,21 @@ export function idempotencyKey<
       // for this request." Logging is the deployment's responsibility.
     }
   }
+}
+
+function buildFingerprintInput(
+  rawBody: string,
+  url: URL,
+  searchParamKeys: readonly string[] | undefined,
+): string {
+  if (!searchParamKeys?.length) return rawBody
+
+  const queryFingerprint = searchParamKeys.map((key) => [key, url.searchParams.getAll(key).sort()])
+
+  return JSON.stringify({
+    body: rawBody,
+    query: queryFingerprint,
+  })
 }
 
 function pickStringField(body: unknown, keys: string[]): string | null {

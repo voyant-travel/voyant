@@ -223,6 +223,48 @@ describe("idempotencyKey middleware", () => {
     expect(body.error).toMatch(/different request body/)
   })
 
+  it("returns 409 when fingerprinted query params change under the same key", async () => {
+    const fakeDb = createFakeDb()
+    const app = new Hono()
+    let calls = 0
+    app.use("*", async (c, next) => {
+      // biome-ignore lint/suspicious/noExplicitAny: test fake
+      c.set("db", fakeDb as any)
+      await next()
+    })
+    app.post(
+      "/things",
+      idempotencyKey({ scope: "test", fingerprintSearchParams: ["wait"] }),
+      (c) => {
+        calls++
+        return c.json({ id: `book_${calls}` }, 201)
+      },
+    )
+
+    const first = await app.request("/things?wait=none", {
+      method: "POST",
+      headers: { "content-type": "application/json", "Idempotency-Key": "k1" },
+      body: JSON.stringify({ foo: 1 }),
+    })
+    expect(first.status).toBe(201)
+
+    const replay = await app.request("/things?wait=none", {
+      method: "POST",
+      headers: { "content-type": "application/json", "Idempotency-Key": "k1" },
+      body: JSON.stringify({ foo: 1 }),
+    })
+    expect(replay.status).toBe(201)
+    expect(replay.headers.get("Idempotency-Replayed")).toBe("true")
+
+    const conflict = await app.request("/things?wait=pdf", {
+      method: "POST",
+      headers: { "content-type": "application/json", "Idempotency-Key": "k1" },
+      body: JSON.stringify({ foo: 1 }),
+    })
+    expect(conflict.status).toBe(409)
+    expect(calls).toBe(1)
+  })
+
   it("scopes keys per endpoint family — same key on a different scope does not collide", async () => {
     const fakeDb = createFakeDb()
     const app = new Hono()

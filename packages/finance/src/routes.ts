@@ -102,8 +102,10 @@ import {
 
 const DEFAULT_RENDITION_WAIT_TIMEOUT_MS = 30_000
 
-const routeIdempotencyKey = (scope: string) =>
-  idempotencyKey<Env["Bindings"], Env["Variables"]>({ scope })
+const routeIdempotencyKey = (
+  scope: string,
+  options: { fingerprintSearchParams?: readonly string[] } = {},
+) => idempotencyKey<Env["Bindings"], Env["Variables"]>({ scope, ...options })
 
 function resolveWaitRequest(
   body: { wait?: InvoiceRenditionWaitMode; waitTimeoutMs?: number | undefined },
@@ -945,7 +947,9 @@ export const financeRoutes = new Hono<Env>()
   // POST /invoices/from-booking — Create + issue invoice/proforma from a booking or schedule row
   .post(
     "/invoices/from-booking",
-    routeIdempotencyKey("POST /v1/admin/finance/invoices/from-booking"),
+    routeIdempotencyKey("POST /v1/admin/finance/invoices/from-booking", {
+      fingerprintSearchParams: ["wait", "waitTimeoutMs"],
+    }),
     async (c) => {
       const input = await parseJsonBody(c, invoiceFromBookingSchema)
       const waitRequest = resolveWaitRequest(input, parseQuery(c, invoiceDocumentWaitQuerySchema))

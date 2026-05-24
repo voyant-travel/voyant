@@ -1141,6 +1141,12 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       const firstBody = await first.json()
       const replayBody = await replay.json()
       expect(replayBody.data.id).toBe(firstBody.data.id)
+
+      const conflict = await app.request("/invoices/from-booking?wait=pdf", {
+        method: "POST",
+        ...jsonWithIdempotency(input, "finance-invoice-from-booking-1"),
+      })
+      expect(conflict.status).toBe(409)
     })
 
     it("gets an invoice by id", async () => {
