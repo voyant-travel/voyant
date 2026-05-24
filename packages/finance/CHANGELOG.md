@@ -1,5 +1,20 @@
 # @voyantjs/finance
 
+## 0.80.3
+
+### Patch Changes
+
+- 6d816bb: Add `Idempotency-Key` replay support to admin create routes for CRM people and organizations, finance invoices, and legal contracts.
+- Updated dependencies [6d816bb]
+  - @voyantjs/action-ledger@0.80.3
+  - @voyantjs/bookings@0.80.3
+  - @voyantjs/core@0.80.3
+  - @voyantjs/db@0.80.3
+  - @voyantjs/hono@0.80.3
+  - @voyantjs/products@0.80.3
+  - @voyantjs/storage@0.80.3
+  - @voyantjs/utils@0.80.3
+
 ## 0.80.2
 
 ### Patch Changes
