@@ -4,6 +4,7 @@ import {
   contractNumberSeriesListQuerySchema,
   contractTemplateListQuerySchema,
   insertContractSchema,
+  updateContractSchema,
 } from "../../src/contracts/validation.js"
 
 describe("legal contract validation", () => {
@@ -28,6 +29,54 @@ describe("legal contract validation", () => {
       }),
     ).toMatchObject({
       contractNumber: "A-169",
+    })
+  })
+
+  it("treats empty optional contract fields as omitted on create input", () => {
+    expect(
+      insertContractSchema.parse({
+        scope: "customer",
+        title: "Imported contract",
+        contractNumber: "M 162",
+        bookingId: "book_123",
+        personId: "",
+        organizationId: "",
+        supplierId: "",
+        seriesId: "",
+        expiresAt: "",
+        language: "ro",
+      }),
+    ).toMatchObject({
+      bookingId: "book_123",
+      personId: undefined,
+      organizationId: undefined,
+      supplierId: undefined,
+      seriesId: undefined,
+      expiresAt: undefined,
+    })
+  })
+
+  it("treats empty optional contract fields as omitted on update input", () => {
+    expect(
+      updateContractSchema.parse({
+        templateVersionId: "",
+        personId: "",
+        organizationId: "",
+        supplierId: "",
+        channelId: "",
+        bookingId: "",
+        orderId: "",
+        expiresAt: "",
+      }),
+    ).toEqual({
+      templateVersionId: undefined,
+      personId: undefined,
+      organizationId: undefined,
+      supplierId: undefined,
+      channelId: undefined,
+      bookingId: undefined,
+      orderId: undefined,
+      expiresAt: undefined,
     })
   })
 })
