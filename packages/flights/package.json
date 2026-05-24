@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/flights",
-  "version": "0.77.13",
+  "version": "0.78.0",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
