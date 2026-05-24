@@ -1,5 +1,17 @@
 # @voyantjs/checkout-ui
 
+## 0.77.13
+
+### Patch Changes
+
+- Updated dependencies [70a32ab]
+  - @voyantjs/checkout@0.77.13
+  - @voyantjs/checkout-react@0.77.13
+  - @voyantjs/finance@0.77.13
+  - @voyantjs/finance-react@0.77.13
+  - @voyantjs/i18n@0.77.13
+  - @voyantjs/ui@0.77.13
+
 ## 0.77.12
 
 ### Patch Changes

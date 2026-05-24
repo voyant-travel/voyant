@@ -1,5 +1,18 @@
 # @voyantjs/plugin-smartbill
 
+## 0.77.13
+
+### Patch Changes
+
+- 70a32ab: Add SmartBill admin invoice sync helpers, Hono routes, and default invoice panel actions.
+- Updated dependencies [70a32ab]
+  - @voyantjs/core@0.77.13
+  - @voyantjs/finance@0.77.13
+  - @voyantjs/finance-react@0.77.13
+  - @voyantjs/hono@0.77.13
+  - @voyantjs/storage@0.77.13
+  - @voyantjs/ui@0.77.13
+
 ## 0.77.12
 
 ### Patch Changes
