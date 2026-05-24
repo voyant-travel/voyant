@@ -237,6 +237,9 @@ export const invoiceFxRateRecordSchema = z.object({
   quoteCurrency: z.string(),
   date: z.string().optional(),
   rate: z.number(),
+  source: z.string().optional(),
+  quotedAt: z.string().optional(),
+  validUntil: z.string().optional(),
 })
 
 export type InvoiceFxRateRecord = z.infer<typeof invoiceFxRateRecordSchema>

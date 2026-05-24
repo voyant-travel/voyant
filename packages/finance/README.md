@@ -150,9 +150,12 @@ createFinanceHonoModule({
 })
 ```
 
-The default data resolver calls the Voyant Data FX pair route
-`/data/fx/v1/fx/pair/{invoiceCurrency}/{baseCurrency}`. If the invoice currency
-matches the operator base currency, no FX fields are emitted.
+The default data resolver uses `@voyantjs/data-sdk` to call the Voyant Data FX
+pair route `/data/fx/v1/fx/pair/{invoiceCurrency}/{baseCurrency}`. SDK
+responses can add provenance metadata such as `source`, `quotedAt`, and
+`validUntil`; invoice-issued events expose those as `fxRateSource`,
+`fxRateQuotedAt`, and `fxRateValidUntil`. If the invoice currency matches the
+operator base currency, no FX fields are emitted.
 
 The same resolver also backs `GET /v1/finance/invoice-fx-rate`, which lets
 operator UI surfaces auto-fill cross-currency payment rates without exposing

@@ -50,6 +50,12 @@ export interface InvoiceIssuedEvent {
   baseCurrency?: string
   /** Spot rate for `currency` → `baseCurrency`. */
   fxRate?: number
+  /** Provider or reference source for `fxRate`, for example `bnr`. */
+  fxRateSource?: string
+  /** Provider timestamp for the quoted spot rate. */
+  fxRateQuotedAt?: string
+  /** Provider timestamp after which the quoted spot rate is stale. */
+  fxRateValidUntil?: string
   /** Operator FX commission added on top of the spot rate. */
   fxCommissionBps?: number
   /** `fxRate` after commission. Invoice providers should prefer this rate. */

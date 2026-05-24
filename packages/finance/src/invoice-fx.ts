@@ -1,4 +1,5 @@
 import type { Extension, ModuleContainer } from "@voyantjs/core"
+import { createVoyantDataClient } from "@voyantjs/data-sdk"
 import { ApiHttpError, parseJsonBody, parseQuery } from "@voyantjs/hono"
 import type { HonoExtension } from "@voyantjs/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -36,9 +37,21 @@ export type ResolveInvoiceExchangeRateInput = {
   date?: string
 }
 
+export type InvoiceExchangeRateResolution = {
+  rate: number
+  source?: string
+  quotedAt?: string
+  validUntil?: string
+}
+
 export type ResolveInvoiceExchangeRate = (
   input: ResolveInvoiceExchangeRateInput,
-) => number | null | undefined | Promise<number | null | undefined>
+) =>
+  | number
+  | InvoiceExchangeRateResolution
+  | null
+  | undefined
+  | Promise<number | InvoiceExchangeRateResolution | null | undefined>
 
 export type HandleInvoiceFxResolutionError = (
   error: unknown,
@@ -67,6 +80,9 @@ export type InvoiceFxInvoice = {
 export type InvoiceFxContext = {
   baseCurrency: string
   fxRate: number
+  fxRateSource?: string
+  fxRateQuotedAt?: string
+  fxRateValidUntil?: string
   fxCommissionBps: number
   effectiveRate: number
   fxCommissionInvoiceMention?: string
@@ -84,9 +100,9 @@ export type VoyantDataFxResolverOptions = {
   authHeader?: string
   authScheme?: string | null
   fetch?: typeof fetch
+  headers?: HeadersInit
+  userAgent?: string
 }
-
-const DEFAULT_DATA_BASE_URL = "https://api.voyantjs.com"
 
 const invoiceFxSettingsPatchSchema = z.object({
   baseCurrency: z.string().min(3).max(8).nullable().optional(),
@@ -149,23 +165,27 @@ export async function resolveInvoiceFxContext(
     quoteCurrency: baseCurrency,
     date: toDateString(invoice.issueDate),
   }
-  let fxRate: number | null | undefined
+  let fxResolution: number | InvoiceExchangeRateResolution | null | undefined
 
   try {
-    fxRate = await options.resolveInvoiceExchangeRate(rateInput)
+    fxResolution = await options.resolveInvoiceExchangeRate(rateInput)
   } catch (error) {
     await notifyInvoiceFxResolutionError(options, error, rateInput)
     return null
   }
 
-  if (typeof fxRate !== "number" || !Number.isFinite(fxRate) || fxRate <= 0) return null
+  const resolvedRate = normalizeInvoiceExchangeRateResolution(fxResolution)
+  if (!resolvedRate) return null
 
   const fxCommissionBps = normalizeBasisPoints(settings?.fxCommissionBps)
-  const effectiveRate = roundRate(fxRate * (1 + fxCommissionBps / 10_000))
+  const effectiveRate = roundRate(resolvedRate.rate * (1 + fxCommissionBps / 10_000))
 
   return {
     baseCurrency,
-    fxRate: roundRate(fxRate),
+    fxRate: roundRate(resolvedRate.rate),
+    ...(resolvedRate.source ? { fxRateSource: resolvedRate.source } : {}),
+    ...(resolvedRate.quotedAt ? { fxRateQuotedAt: resolvedRate.quotedAt } : {}),
+    ...(resolvedRate.validUntil ? { fxRateValidUntil: resolvedRate.validUntil } : {}),
     fxCommissionBps,
     effectiveRate,
     ...(fxCommissionBps > 0 && normalizeOptionalText(settings?.fxCommissionInvoiceMention)
@@ -177,30 +197,32 @@ export async function resolveInvoiceFxContext(
 export function createVoyantDataFxExchangeRateResolver(
   options: VoyantDataFxResolverOptions,
 ): ResolveInvoiceExchangeRate {
-  const fetchImpl = options.fetch ?? fetch
-  const baseUrl = options.baseUrl ?? DEFAULT_DATA_BASE_URL
-  const authHeader = options.authHeader ?? "authorization"
-  const authScheme = options.authScheme === undefined ? "Bearer" : options.authScheme
+  const client = createVoyantDataClient({
+    apiKey: options.apiKey,
+    ...(options.baseUrl ? { baseUrl: options.baseUrl } : {}),
+    ...(options.authHeader ? { authHeader: options.authHeader } : {}),
+    ...(options.authScheme !== undefined ? { authScheme: options.authScheme } : {}),
+    ...(options.fetch ? { fetch: options.fetch } : {}),
+    ...(options.headers ? { headers: options.headers } : {}),
+    userAgent: options.userAgent ?? "voyant-finance",
+  })
 
   return async ({ baseCurrency, quoteCurrency }) => {
-    const url = new URL(
-      `/data/fx/v1/fx/pair/${encodeURIComponent(baseCurrency)}/${encodeURIComponent(
-        quoteCurrency,
-      )}`,
-      baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`,
-    )
-    const headers = new Headers()
-    headers.set(authHeader, authScheme ? `${authScheme} ${options.apiKey}` : options.apiKey)
-    headers.set("x-voyant-sdk", "voyant-finance")
-
-    const response = await fetchImpl(url, { headers })
-    const body = (await response.json()) as Record<string, unknown>
-    if (!response.ok) {
-      throw new Error(`Voyant Data FX request failed with status ${response.status}`)
+    const quote = await client.fx.pair(baseCurrency, quoteCurrency)
+    if (typeof quote.conversionRate !== "number" || !Number.isFinite(quote.conversionRate)) {
+      return null
     }
 
-    const rate = body.conversionRate ?? body.conversion_rate
-    return typeof rate === "number" && Number.isFinite(rate) ? rate : null
+    const source = normalizeOptionalText(quote.source)
+    const quotedAt = normalizeOptionalText(quote.timeLastUpdateUtc)
+    const validUntil = normalizeOptionalText(quote.timeNextUpdateUtc)
+
+    return {
+      rate: quote.conversionRate,
+      ...(source ? { source } : {}),
+      ...(quotedAt ? { quotedAt } : {}),
+      ...(validUntil ? { validUntil } : {}),
+    }
   }
 }
 
@@ -247,9 +269,9 @@ export function createInvoiceFxRoutes(options: InvoiceFxRouteOptions = {}) {
         quoteCurrency: normalizeCurrency(query.quoteCurrency) ?? query.quoteCurrency,
         date: query.date,
       }
-      let rate: number | null | undefined
+      let rateResolution: number | InvoiceExchangeRateResolution | null | undefined
       try {
-        rate = await runtime.resolveInvoiceExchangeRate(input)
+        rateResolution = await runtime.resolveInvoiceExchangeRate(input)
       } catch (error) {
         await notifyInvoiceFxResolutionError(runtime, error, input)
         throw new ApiHttpError("Invoice FX rate resolution failed", {
@@ -258,7 +280,8 @@ export function createInvoiceFxRoutes(options: InvoiceFxRouteOptions = {}) {
         })
       }
 
-      if (typeof rate !== "number" || !Number.isFinite(rate) || rate <= 0) {
+      const resolvedRate = normalizeInvoiceExchangeRateResolution(rateResolution)
+      if (!resolvedRate) {
         throw new ApiHttpError("Invoice FX rate was not found", {
           status: 404,
           code: "invoice_fx_rate_not_found",
@@ -268,7 +291,10 @@ export function createInvoiceFxRoutes(options: InvoiceFxRouteOptions = {}) {
       return c.json({
         data: {
           ...input,
-          rate: roundRate(rate),
+          rate: roundRate(resolvedRate.rate),
+          ...(resolvedRate.source ? { source: resolvedRate.source } : {}),
+          ...(resolvedRate.quotedAt ? { quotedAt: resolvedRate.quotedAt } : {}),
+          ...(resolvedRate.validUntil ? { validUntil: resolvedRate.validUntil } : {}),
         },
       })
     })
@@ -320,6 +346,28 @@ async function notifyInvoiceFxResolutionError(
 
 function normalizeBasisPoints(value: number | null | undefined) {
   return typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.round(value) : 0
+}
+
+function normalizeInvoiceExchangeRateResolution(
+  resolution: number | InvoiceExchangeRateResolution | null | undefined,
+): InvoiceExchangeRateResolution | null {
+  if (typeof resolution === "number") {
+    return Number.isFinite(resolution) && resolution > 0 ? { rate: resolution } : null
+  }
+  if (!resolution || typeof resolution !== "object") return null
+  if (typeof resolution.rate !== "number" || !Number.isFinite(resolution.rate)) return null
+  if (resolution.rate <= 0) return null
+
+  const source = normalizeOptionalText(resolution.source)
+  const quotedAt = normalizeOptionalText(resolution.quotedAt)
+  const validUntil = normalizeOptionalText(resolution.validUntil)
+
+  return {
+    rate: resolution.rate,
+    ...(source ? { source } : {}),
+    ...(quotedAt ? { quotedAt } : {}),
+    ...(validUntil ? { validUntil } : {}),
+  }
 }
 
 function normalizeOptionalText(value: string | null | undefined) {

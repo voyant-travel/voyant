@@ -418,7 +418,12 @@ describe("issueInvoiceFromBooking", () => {
     eventBus.subscribe<InvoiceIssuedEvent>("invoice.issued", (event) => {
       emitted.push(event)
     })
-    const resolveInvoiceExchangeRate = vi.fn(async () => 4.97)
+    const resolveInvoiceExchangeRate = vi.fn(async () => ({
+      rate: 4.97,
+      source: "bnr",
+      quotedAt: "Fri, 22 May 2026 00:00:01 +0000",
+      validUntil: "Sat, 23 May 2026 00:00:01 +0000",
+    }))
 
     await issueInvoiceFromBooking(
       db,
@@ -461,6 +466,9 @@ describe("issueInvoiceFromBooking", () => {
     expect(emitted[0]?.data).toMatchObject({
       baseCurrency: "RON",
       fxRate: 4.97,
+      fxRateSource: "bnr",
+      fxRateQuotedAt: "Fri, 22 May 2026 00:00:01 +0000",
+      fxRateValidUntil: "Sat, 23 May 2026 00:00:01 +0000",
       fxCommissionBps: 200,
       effectiveRate: 5.0694,
       fxCommissionInvoiceMention: "2% comision curs risc valutar",

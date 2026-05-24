@@ -57,12 +57,49 @@ describe("invoice FX", () => {
     })
   })
 
+  it("preserves exchange-rate provenance in invoice FX context", async () => {
+    const context = await resolveInvoiceFxContext(
+      {} as never,
+      { currency: "eur", issueDate: "2026-05-22" },
+      {
+        invoiceFxSettings: {
+          baseCurrency: "ron",
+          fxCommissionBps: 200,
+        },
+        resolveInvoiceExchangeRate: async () => ({
+          rate: 4.97,
+          source: "bnr",
+          quotedAt: "Fri, 22 May 2026 00:00:01 +0000",
+          validUntil: "Sat, 23 May 2026 00:00:01 +0000",
+        }),
+      },
+    )
+
+    expect(context).toEqual({
+      baseCurrency: "RON",
+      fxRate: 4.97,
+      fxRateSource: "bnr",
+      fxRateQuotedAt: "Fri, 22 May 2026 00:00:01 +0000",
+      fxRateValidUntil: "Sat, 23 May 2026 00:00:01 +0000",
+      fxCommissionBps: 200,
+      effectiveRate: 5.0694,
+    })
+  })
+
   it("uses the Voyant Data FX pair route for exchange-rate resolution", async () => {
     const fetch = vi.fn<typeof globalThis.fetch>(async () => {
-      return new Response(JSON.stringify({ conversionRate: 4.97 }), {
-        headers: { "content-type": "application/json" },
-        status: 200,
-      })
+      return new Response(
+        JSON.stringify({
+          conversion_rate: 4.97,
+          source: "bnr",
+          time_last_update_utc: "Fri, 22 May 2026 00:00:01 +0000",
+          time_next_update_utc: "Sat, 23 May 2026 00:00:01 +0000",
+        }),
+        {
+          headers: { "content-type": "application/json" },
+          status: 200,
+        },
+      )
     })
     const apiKey = `data_${"key"}`
     const resolve = createVoyantDataFxExchangeRateResolver({
@@ -71,7 +108,12 @@ describe("invoice FX", () => {
       fetch,
     })
 
-    await expect(resolve({ baseCurrency: "EUR", quoteCurrency: "RON" })).resolves.toBe(4.97)
+    await expect(resolve({ baseCurrency: "EUR", quoteCurrency: "RON" })).resolves.toEqual({
+      rate: 4.97,
+      source: "bnr",
+      quotedAt: "Fri, 22 May 2026 00:00:01 +0000",
+      validUntil: "Sat, 23 May 2026 00:00:01 +0000",
+    })
 
     const [url, init] = fetch.mock.calls[0]!
     expect(String(url)).toBe("https://data.test/data/fx/v1/fx/pair/EUR/RON")
@@ -80,14 +122,27 @@ describe("invoice FX", () => {
   })
 
   it("exposes configured exchange-rate resolution through the admin route", async () => {
-    const resolveInvoiceExchangeRate = vi.fn(async () => 4.97)
+    const resolveInvoiceExchangeRate = vi.fn(async () => ({
+      rate: 4.97,
+      source: "bnr",
+      quotedAt: "Fri, 22 May 2026 00:00:01 +0000",
+      validUntil: "Sat, 23 May 2026 00:00:01 +0000",
+    }))
     const app = createInvoiceFxRoutes({ resolveInvoiceExchangeRate })
 
     const response = await app.request(
       "/invoice-fx-rate?baseCurrency=eur&quoteCurrency=ron&date=2026-05-22",
     )
     const body = (await response.json()) as {
-      data: { baseCurrency: string; quoteCurrency: string; date: string; rate: number }
+      data: {
+        baseCurrency: string
+        quoteCurrency: string
+        date: string
+        rate: number
+        source: string
+        quotedAt: string
+        validUntil: string
+      }
     }
 
     expect(response.status).toBe(200)
@@ -101,6 +156,9 @@ describe("invoice FX", () => {
       quoteCurrency: "RON",
       date: "2026-05-22",
       rate: 4.97,
+      source: "bnr",
+      quotedAt: "Fri, 22 May 2026 00:00:01 +0000",
+      validUntil: "Sat, 23 May 2026 00:00:01 +0000",
     })
   })
 
