@@ -1297,6 +1297,7 @@ export const bookingsUiEn = {
   bookingPaymentsSummary: {
     title: "Payments",
     empty: "No payments recorded.",
+    totalReceived: "Total received {amount}",
     columns: {
       invoice: "Invoice",
       method: "Method",
@@ -1304,6 +1305,7 @@ export const bookingsUiEn = {
       amount: "Amount",
       date: "Date",
       reference: "Reference",
+      actions: "Actions",
     },
     paymentMethodLabels: {
       card: "Card",
@@ -1317,6 +1319,19 @@ export const bookingsUiEn = {
       completed: "Completed",
       failed: "Failed",
       refunded: "Refunded",
+    },
+    actions: {
+      open: "Open payment menu",
+      view: "View payment",
+      edit: "Edit payment",
+      delete: "Delete payment",
+    },
+    deleteConfirm: {
+      title: "Delete this payment?",
+      description:
+        "This removes the {amount} payment and recomputes the invoice balance. This action cannot be undone.",
+      cancel: "Cancel",
+      confirm: "Delete",
     },
   },
   bookingNotes: {

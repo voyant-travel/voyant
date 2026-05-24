@@ -45,6 +45,7 @@ import { Route as WorkspaceResourcesPoolsIdRouteImport } from './routes/_workspa
 import { Route as WorkspaceResourcesAssignmentsIdRouteImport } from './routes/_workspace/resources/assignments/$id'
 import { Route as WorkspaceResourcesAllocationsIdRouteImport } from './routes/_workspace/resources/allocations/$id'
 import { Route as WorkspaceNotificationsTemplatesIdRouteImport } from './routes/_workspace/notifications/templates/$id'
+import { Route as WorkspaceFinancePaymentsIdRouteImport } from './routes/_workspace/finance/payments/$id'
 import { Route as WorkspaceFinanceInvoicesIdRouteImport } from './routes/_workspace/finance/invoices/$id'
 import { Route as WorkspaceDistributionWebhookEventsIdRouteImport } from './routes/_workspace/distribution/webhook-events/$id'
 import { Route as WorkspaceDistributionMappingsIdRouteImport } from './routes/_workspace/distribution/mappings/$id'
@@ -243,6 +244,12 @@ const WorkspaceNotificationsTemplatesIdRoute =
     path: '/notifications/templates/$id',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const WorkspaceFinancePaymentsIdRoute =
+  WorkspaceFinancePaymentsIdRouteImport.update({
+    id: '/finance/payments/$id',
+    path: '/finance/payments/$id',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 const WorkspaceFinanceInvoicesIdRoute =
   WorkspaceFinanceInvoicesIdRouteImport.update({
     id: '/finance/invoices/$id',
@@ -330,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/distribution/mappings/$id': typeof WorkspaceDistributionMappingsIdRoute
   '/distribution/webhook-events/$id': typeof WorkspaceDistributionWebhookEventsIdRoute
   '/finance/invoices/$id': typeof WorkspaceFinanceInvoicesIdRoute
+  '/finance/payments/$id': typeof WorkspaceFinancePaymentsIdRoute
   '/notifications/templates/$id': typeof WorkspaceNotificationsTemplatesIdRoute
   '/resources/allocations/$id': typeof WorkspaceResourcesAllocationsIdRoute
   '/resources/assignments/$id': typeof WorkspaceResourcesAssignmentsIdRoute
@@ -374,6 +382,7 @@ export interface FileRoutesByTo {
   '/distribution/mappings/$id': typeof WorkspaceDistributionMappingsIdRoute
   '/distribution/webhook-events/$id': typeof WorkspaceDistributionWebhookEventsIdRoute
   '/finance/invoices/$id': typeof WorkspaceFinanceInvoicesIdRoute
+  '/finance/payments/$id': typeof WorkspaceFinancePaymentsIdRoute
   '/notifications/templates/$id': typeof WorkspaceNotificationsTemplatesIdRoute
   '/resources/allocations/$id': typeof WorkspaceResourcesAllocationsIdRoute
   '/resources/assignments/$id': typeof WorkspaceResourcesAssignmentsIdRoute
@@ -421,6 +430,7 @@ export interface FileRoutesById {
   '/_workspace/distribution/mappings/$id': typeof WorkspaceDistributionMappingsIdRoute
   '/_workspace/distribution/webhook-events/$id': typeof WorkspaceDistributionWebhookEventsIdRoute
   '/_workspace/finance/invoices/$id': typeof WorkspaceFinanceInvoicesIdRoute
+  '/_workspace/finance/payments/$id': typeof WorkspaceFinancePaymentsIdRoute
   '/_workspace/notifications/templates/$id': typeof WorkspaceNotificationsTemplatesIdRoute
   '/_workspace/resources/allocations/$id': typeof WorkspaceResourcesAllocationsIdRoute
   '/_workspace/resources/assignments/$id': typeof WorkspaceResourcesAssignmentsIdRoute
@@ -467,6 +477,7 @@ export interface FileRouteTypes {
     | '/distribution/mappings/$id'
     | '/distribution/webhook-events/$id'
     | '/finance/invoices/$id'
+    | '/finance/payments/$id'
     | '/notifications/templates/$id'
     | '/resources/allocations/$id'
     | '/resources/assignments/$id'
@@ -511,6 +522,7 @@ export interface FileRouteTypes {
     | '/distribution/mappings/$id'
     | '/distribution/webhook-events/$id'
     | '/finance/invoices/$id'
+    | '/finance/payments/$id'
     | '/notifications/templates/$id'
     | '/resources/allocations/$id'
     | '/resources/assignments/$id'
@@ -557,6 +569,7 @@ export interface FileRouteTypes {
     | '/_workspace/distribution/mappings/$id'
     | '/_workspace/distribution/webhook-events/$id'
     | '/_workspace/finance/invoices/$id'
+    | '/_workspace/finance/payments/$id'
     | '/_workspace/notifications/templates/$id'
     | '/_workspace/resources/allocations/$id'
     | '/_workspace/resources/assignments/$id'
@@ -823,6 +836,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceNotificationsTemplatesIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/finance/payments/$id': {
+      id: '/_workspace/finance/payments/$id'
+      path: '/finance/payments/$id'
+      fullPath: '/finance/payments/$id'
+      preLoaderRoute: typeof WorkspaceFinancePaymentsIdRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/_workspace/finance/invoices/$id': {
       id: '/_workspace/finance/invoices/$id'
       path: '/finance/invoices/$id'
@@ -938,6 +958,7 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceDistributionMappingsIdRoute: typeof WorkspaceDistributionMappingsIdRoute
   WorkspaceDistributionWebhookEventsIdRoute: typeof WorkspaceDistributionWebhookEventsIdRoute
   WorkspaceFinanceInvoicesIdRoute: typeof WorkspaceFinanceInvoicesIdRoute
+  WorkspaceFinancePaymentsIdRoute: typeof WorkspaceFinancePaymentsIdRoute
   WorkspaceNotificationsTemplatesIdRoute: typeof WorkspaceNotificationsTemplatesIdRoute
   WorkspaceResourcesAllocationsIdRoute: typeof WorkspaceResourcesAllocationsIdRoute
   WorkspaceResourcesAssignmentsIdRoute: typeof WorkspaceResourcesAssignmentsIdRoute
@@ -981,6 +1002,7 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceDistributionWebhookEventsIdRoute:
     WorkspaceDistributionWebhookEventsIdRoute,
   WorkspaceFinanceInvoicesIdRoute: WorkspaceFinanceInvoicesIdRoute,
+  WorkspaceFinancePaymentsIdRoute: WorkspaceFinancePaymentsIdRoute,
   WorkspaceNotificationsTemplatesIdRoute:
     WorkspaceNotificationsTemplatesIdRoute,
   WorkspaceResourcesAllocationsIdRoute: WorkspaceResourcesAllocationsIdRoute,

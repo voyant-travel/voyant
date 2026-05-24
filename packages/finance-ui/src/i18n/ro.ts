@@ -522,6 +522,7 @@ export const financeUiRo = {
   },
   recordBookingPaymentDialog: {
     title: "Inregistreaza plata",
+    editTitle: "Editeaza plata",
     description:
       "Inregistreaza o plata deja incasata (transfer bancar, numerar, cec, plata cu cardul efectuata manual etc.). Pentru a trimite clientului un link de plata cu cardul sau prin transfer bancar, foloseste {generateLink}.",
     generateLinkLabel: "Genereaza link de plata",
@@ -529,8 +530,7 @@ export const financeUiRo = {
       invoice: "Factura",
       amountCents: "Suma",
       currency: "Moneda platii",
-      baseAmountCents: "Suma in moneda facturii",
-      fxRate: "Curs valutar",
+      fxRate: "Curs (1 {invoiceCurrency} = ? {paymentCurrency})",
       paymentDate: "Data platii",
       paymentMethod: "Metoda",
       status: "Status",
@@ -545,12 +545,16 @@ export const financeUiRo = {
     },
     fx: {
       title: "Decontare in alta moneda",
-      help: "Inregistreaza suma incasata in {paymentCurrency} si valoarea aplicata pe factura in {invoiceCurrency}.",
-      rateHint:
-        "Foloseste cursul ca {paymentCurrency} pentru 1 {invoiceCurrency}; completarea lui actualizeaza suma in moneda facturii.",
+      help: "Introdu suma incasata; valoarea pe factura se calculeaza automat.",
       loadingRate: "Se incarca cursul valutar...",
-      autoRateHint:
-        "Foloseste cursul curent {paymentCurrency} pentru 1 {invoiceCurrency}; il poti modifica daca este nevoie.",
+      summary:
+        "{amount} {paymentCurrency} ≈ {baseAmount} {invoiceCurrency} · 1 {invoiceCurrency} = {rate} {paymentCurrency}",
+      commissionNote: "Curs BNR {rawRate} + {commission}% comision valutar",
+      source: "Curs BNR",
+      rateUnavailable:
+        "Cursul {invoiceCurrency}/{paymentCurrency} indisponibil — introdu-l manual.",
+      override: "Suprascrie cursul",
+      useAuto: "Foloseste cursul automat",
     },
     invoiceOption: "{number} — {status} — {balance} {currency} de incasat",
     invoiceMeta:
@@ -560,6 +564,7 @@ export const financeUiRo = {
       "Nu exista facturi pe aceasta rezervare. Emite o factura inainte de a inregistra o plata.",
     actions: {
       record: "Inregistreaza plata",
+      save: "Salveaza modificarile",
     },
     validation: {
       invoiceRequired: "Selecteaza o factura pentru aceasta plata.",

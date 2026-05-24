@@ -518,6 +518,7 @@ export const financeUiEn = {
   },
   recordBookingPaymentDialog: {
     title: "Record payment",
+    editTitle: "Edit payment",
     description:
       "Log a payment you've already received (bank transfer, cash, cheque, manual card charge, etc.). To send the customer a card or bank-transfer link, use {generateLink} instead.",
     generateLinkLabel: "Generate payment link",
@@ -525,8 +526,7 @@ export const financeUiEn = {
       invoice: "Invoice",
       amountCents: "Amount",
       currency: "Payment currency",
-      baseAmountCents: "Invoice-currency amount",
-      fxRate: "FX rate",
+      fxRate: "Rate (1 {invoiceCurrency} = ? {paymentCurrency})",
       paymentDate: "Payment date",
       paymentMethod: "Method",
       status: "Status",
@@ -541,12 +541,16 @@ export const financeUiEn = {
     },
     fx: {
       title: "Cross-currency settlement",
-      help: "Record the received amount in {paymentCurrency} and the value applied to the invoice in {invoiceCurrency}.",
-      rateHint:
-        "Use the rate as {paymentCurrency} per 1 {invoiceCurrency}; entering it updates the invoice-currency amount.",
+      help: "Enter the amount you received; the invoice-currency value is computed automatically.",
       loadingRate: "Loading FX rate...",
-      autoRateHint:
-        "Using the current {paymentCurrency} per 1 {invoiceCurrency} rate; edit it if needed.",
+      summary:
+        "{amount} {paymentCurrency} ≈ {baseAmount} {invoiceCurrency} · 1 {invoiceCurrency} = {rate} {paymentCurrency}",
+      commissionNote: "BNR rate {rawRate} + {commission}% FX commission",
+      source: "BNR rate",
+      rateUnavailable:
+        "Rate for {invoiceCurrency}/{paymentCurrency} not available — enter it manually.",
+      override: "Override rate",
+      useAuto: "Use automatic rate",
     },
     invoiceOption: "{number} — {status} — {balance} {currency} due",
     invoiceMeta: "Total {total} {currency} • paid {paid} {currency} • due {due} {currency}",
@@ -554,6 +558,7 @@ export const financeUiEn = {
     noInvoices: "No invoices on this booking. Issue an invoice before recording a payment.",
     actions: {
       record: "Record payment",
+      save: "Save changes",
     },
     validation: {
       invoiceRequired: "Select an invoice to record this payment against.",

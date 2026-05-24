@@ -159,6 +159,8 @@ describe("invoice FX", () => {
       source: "bnr",
       quotedAt: "Fri, 22 May 2026 00:00:01 +0000",
       validUntil: "Sat, 23 May 2026 00:00:01 +0000",
+      fxCommissionBps: 0,
+      effectiveRate: 4.97,
     })
   })
 
@@ -185,6 +187,46 @@ describe("invoice FX", () => {
       baseCurrency: "EUR",
       quoteCurrency: "RON",
       rate: 4.97,
+      fxCommissionBps: 0,
+      effectiveRate: 4.97,
+    })
+  })
+
+  it("applies configured fxCommissionBps to the route response", async () => {
+    const resolveInvoiceExchangeRate = vi.fn(async () => 4.97)
+    const app = createInvoiceFxRoutes({
+      resolveInvoiceExchangeRate,
+      invoiceFxSettings: {
+        baseCurrency: "ron",
+        fxCommissionBps: 200,
+        fxCommissionInvoiceMention: "2% comision curs risc valutar",
+      },
+    })
+
+    const response = await app.request(
+      "/invoice-fx-rate?baseCurrency=eur&quoteCurrency=ron&date=2026-05-22",
+    )
+    const body = (await response.json()) as {
+      data: {
+        baseCurrency: string
+        quoteCurrency: string
+        date: string
+        rate: number
+        fxCommissionBps: number
+        effectiveRate: number
+        fxCommissionInvoiceMention?: string
+      }
+    }
+
+    expect(response.status).toBe(200)
+    expect(body.data).toEqual({
+      baseCurrency: "EUR",
+      quoteCurrency: "RON",
+      date: "2026-05-22",
+      rate: 4.97,
+      fxCommissionBps: 200,
+      effectiveRate: 5.0694,
+      fxCommissionInvoiceMention: "2% comision curs risc valutar",
     })
   })
 })

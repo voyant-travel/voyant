@@ -16,11 +16,13 @@ import type {
   updateCreditNoteSchema,
   updateInvoiceLineItemSchema,
   updateInvoiceSchema,
+  updatePaymentSchema,
 } from "./validation.js"
 
 type UpdateInvoiceInput = z.infer<typeof updateInvoiceSchema>
 type UpdateInvoiceLineItemInput = z.infer<typeof updateInvoiceLineItemSchema>
 type UpdateCreditNoteInput = z.infer<typeof updateCreditNoteSchema>
+type UpdatePaymentInput = z.infer<typeof updatePaymentSchema>
 
 type InvoiceRecord = typeof invoices.$inferSelect
 type PaymentRecord = typeof payments.$inferSelect
@@ -29,6 +31,15 @@ type InvoiceLineItemRecord = typeof invoiceLineItems.$inferSelect
 type CreditNoteLineItemRecord = typeof creditNoteLineItems.$inferSelect
 
 type RecordPaymentLedgerInput = {
+  invoice: InvoiceRecord
+  payment: PaymentRecord
+}
+type PaymentUpdateLedgerInput = {
+  invoice: InvoiceRecord
+  payment: PaymentRecord
+  changes: UpdatePaymentInput
+}
+type PaymentDeleteLedgerInput = {
   invoice: InvoiceRecord
   payment: PaymentRecord
 }
@@ -113,6 +124,72 @@ export async function buildRecordPaymentActionLedgerInput(
       commandInputRef: `invoice:${input.invoice.id}:payment`,
       commandResultRef: `payment:${input.payment.id}`,
       summary: `Payment ${input.payment.id} recorded for invoice ${input.invoice.id}`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildPaymentUpdateActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: PaymentUpdateLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getInvoiceLedgerTarget(input.invoice)
+  const changedFields = Object.keys(input.changes).sort()
+  const changeSummary = changedFields.length > 0 ? changedFields.join(", ") : "no fields"
+
+  return {
+    context,
+    actionName: "finance.payment.update",
+    actionVersion: "v1",
+    actionKind: "update",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.payment.update",
+    authorizationSource: options.authorizationSource ?? "finance.payment.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `payment:${input.payment.id}:update`,
+      commandResultRef: `payment:${input.payment.id}`,
+      summary: `Payment ${input.payment.id} updated (${changeSummary})`,
+      reversalKind: "none",
+    },
+  }
+}
+
+export function buildPaymentDeleteActionLedgerInput(
+  context: ActionLedgerRequestContextValues,
+  input: PaymentDeleteLedgerInput,
+  options: {
+    authorizationSource?: string | null
+  } = {},
+): BuildActionLedgerMutationInput {
+  const target = getInvoiceLedgerTarget(input.invoice)
+
+  return {
+    context,
+    actionName: "finance.payment.delete",
+    actionVersion: "v1",
+    actionKind: "delete",
+    status: "succeeded",
+    evaluatedRisk: "high",
+    targetType: target.type,
+    targetId: target.id,
+    routeOrToolName: "finance.payment.delete",
+    authorizationSource: options.authorizationSource ?? "finance.payment.route",
+    idempotencyScope: null,
+    idempotencyKey: null,
+    idempotencyFingerprint: null,
+    mutationDetail: {
+      commandInputRef: `payment:${input.payment.id}:delete`,
+      commandResultRef: null,
+      summary: `Payment ${input.payment.id} deleted from invoice ${input.invoice.invoiceNumber}`,
       reversalKind: "none",
     },
   }

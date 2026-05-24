@@ -291,6 +291,10 @@ export function createInvoiceFxRoutes(options: InvoiceFxRouteOptions = {}) {
         })
       }
 
+      const settings = await resolveInvoiceFxSettingsOrDefault(c.get("db"), runtime)
+      const fxCommissionBps = settings.fxCommissionBps
+      const effectiveRate = roundRate(resolvedRate.rate * (1 + fxCommissionBps / 10_000))
+
       return c.json({
         data: {
           ...input,
@@ -299,6 +303,11 @@ export function createInvoiceFxRoutes(options: InvoiceFxRouteOptions = {}) {
           ...(resolvedRate.source ? { source: resolvedRate.source } : {}),
           ...(resolvedRate.quotedAt ? { quotedAt: resolvedRate.quotedAt } : {}),
           ...(resolvedRate.validUntil ? { validUntil: resolvedRate.validUntil } : {}),
+          fxCommissionBps,
+          effectiveRate,
+          ...(fxCommissionBps > 0 && settings.fxCommissionInvoiceMention
+            ? { fxCommissionInvoiceMention: settings.fxCommissionInvoiceMention }
+            : {}),
         },
       })
     })

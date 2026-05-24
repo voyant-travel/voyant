@@ -12,10 +12,18 @@ import { BookingGuaranteeList } from "@voyantjs/bookings-ui/components/booking-g
 import { BookingItemList } from "@voyantjs/bookings-ui/components/booking-item-list"
 import { BookingNotes } from "@voyantjs/bookings-ui/components/booking-notes"
 import { BookingPaymentScheduleList } from "@voyantjs/bookings-ui/components/booking-payment-schedule-list"
-import { BookingPaymentsSummary } from "@voyantjs/bookings-ui/components/booking-payments-summary"
+import {
+  BookingPaymentsSummary,
+  type BookingPaymentsSummaryRow,
+} from "@voyantjs/bookings-ui/components/booking-payments-summary"
 import { StatusChangeDialog } from "@voyantjs/bookings-ui/components/status-change-dialog"
 import { SupplierStatusList } from "@voyantjs/bookings-ui/components/supplier-status-list"
 import { TravelerList } from "@voyantjs/bookings-ui/components/traveler-list"
+import { usePaymentMutation } from "@voyantjs/finance-react"
+import {
+  type EditingPaymentSnapshot,
+  RecordBookingPaymentDialog,
+} from "@voyantjs/finance-ui/components/record-booking-payment-dialog"
 import { Badge, Button, Card, CardContent } from "@voyantjs/ui/components"
 import {
   DropdownMenu,
@@ -97,8 +105,30 @@ export function BookingDetailPage({ id }: { id: string }) {
   const [editOpen, setEditOpen] = useState(false)
   const [statusDialogOpen, setStatusDialogOpen] = useState(false)
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
+  const [editingPayment, setEditingPayment] = useState<EditingPaymentSnapshot | null>(null)
   const { data: bookingData, isPending } = useBooking(id)
   const { remove } = useBookingMutation()
+  const { remove: removePayment } = usePaymentMutation()
+
+  const openEditPaymentDialog = (row: BookingPaymentsSummaryRow) => {
+    const method = (row.paymentMethod ?? "bank_transfer") as EditingPaymentSnapshot["paymentMethod"]
+    const status = (row.status ?? "completed") as EditingPaymentSnapshot["status"]
+    setEditingPayment({
+      id: row.id,
+      invoiceId: row.invoiceId,
+      amountCents: row.amountCents,
+      currency: row.currency,
+      baseCurrency: null,
+      baseAmountCents: null,
+      paymentMethod: method,
+      status,
+      paymentDate: row.paymentDate,
+      referenceNumber: row.referenceNumber,
+      notes: row.notes,
+    })
+    setPaymentDialogOpen(true)
+  }
 
   if (isPending) {
     return <BookingDetailSkeleton />
@@ -261,7 +291,18 @@ export function BookingDetailPage({ id }: { id: string }) {
         </TabsContent>
 
         <TabsContent value="finance" className="mt-4 flex flex-col gap-6">
-          <BookingPaymentsSummary bookingId={id} />
+          <BookingPaymentsSummary
+            bookingId={id}
+            variant="admin"
+            getInvoiceHref={(row) => `/finance/invoices/${row.invoiceId}`}
+            onViewPayment={(row) =>
+              navigate({ to: "/finance/payments/$id", params: { id: row.id } })
+            }
+            onEditPayment={openEditPaymentDialog}
+            onDeletePayment={async (row) => {
+              await removePayment.mutateAsync(row.id)
+            }}
+          />
           <BookingPaymentScheduleList bookingId={id} />
           <BookingGuaranteeList bookingId={id} />
         </TabsContent>
@@ -293,6 +334,16 @@ export function BookingDetailPage({ id }: { id: string }) {
         open={cancelDialogOpen}
         onOpenChange={setCancelDialogOpen}
         booking={booking}
+      />
+
+      <RecordBookingPaymentDialog
+        open={paymentDialogOpen}
+        onOpenChange={(next) => {
+          setPaymentDialogOpen(next)
+          if (!next) setEditingPayment(null)
+        }}
+        bookingId={id}
+        editingPayment={editingPayment}
       />
     </div>
   )
