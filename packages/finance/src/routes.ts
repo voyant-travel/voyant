@@ -1,4 +1,4 @@
-import { parseJsonBody, parseQuery, requireUserId } from "@voyantjs/hono"
+import { idempotencyKey, parseJsonBody, parseQuery, requireUserId } from "@voyantjs/hono"
 import type { Context } from "hono"
 import { Hono } from "hono"
 
@@ -101,6 +101,9 @@ import {
 // ==========================================================================
 
 const DEFAULT_RENDITION_WAIT_TIMEOUT_MS = 30_000
+
+const routeIdempotencyKey = (scope: string) =>
+  idempotencyKey<Env["Bindings"], Env["Variables"]>({ scope })
 
 function resolveWaitRequest(
   body: { wait?: InvoiceRenditionWaitMode; waitTimeoutMs?: number | undefined },
@@ -927,7 +930,7 @@ export const financeRoutes = new Hono<Env>()
   })
 
   // POST /invoices — Create invoice
-  .post("/invoices", async (c) => {
+  .post("/invoices", routeIdempotencyKey("POST /v1/admin/finance/invoices"), async (c) => {
     return c.json(
       {
         data: await financeService.createInvoice(
@@ -940,147 +943,154 @@ export const financeRoutes = new Hono<Env>()
   })
 
   // POST /invoices/from-booking — Create + issue invoice/proforma from a booking or schedule row
-  .post("/invoices/from-booking", async (c) => {
-    const input = await parseJsonBody(c, invoiceFromBookingSchema)
-    const waitRequest = resolveWaitRequest(input, parseQuery(c, invoiceDocumentWaitQuerySchema))
-    const db = c.get("db")
-    const [
-      { bookingItems, bookings },
-      { bookingPaymentSchedules },
-      { and, eq },
-      { issueInvoiceFromBooking, issueProformaFromBooking },
-    ] = await Promise.all([
-      import("@voyantjs/bookings/schema"),
-      import("./schema.js"),
-      import("drizzle-orm"),
-      import("./service-issue.js"),
-    ])
+  .post(
+    "/invoices/from-booking",
+    routeIdempotencyKey("POST /v1/admin/finance/invoices/from-booking"),
+    async (c) => {
+      const input = await parseJsonBody(c, invoiceFromBookingSchema)
+      const waitRequest = resolveWaitRequest(input, parseQuery(c, invoiceDocumentWaitQuerySchema))
+      const db = c.get("db")
+      const [
+        { bookingItems, bookings },
+        { bookingPaymentSchedules },
+        { and, eq },
+        { issueInvoiceFromBooking, issueProformaFromBooking },
+      ] = await Promise.all([
+        import("@voyantjs/bookings/schema"),
+        import("./schema.js"),
+        import("drizzle-orm"),
+        import("./service-issue.js"),
+      ])
 
-    const [booking] = await db
-      .select()
-      .from(bookings)
-      .where(eq(bookings.id, input.bookingId))
-      .limit(1)
+      const [booking] = await db
+        .select()
+        .from(bookings)
+        .where(eq(bookings.id, input.bookingId))
+        .limit(1)
 
-    if (!booking) {
-      return c.json({ error: "Booking not found" }, 404)
-    }
+      if (!booking) {
+        return c.json({ error: "Booking not found" }, 404)
+      }
 
-    const items = await db.select().from(bookingItems).where(eq(bookingItems.bookingId, booking.id))
-    const [paymentSchedule] = input.bookingPaymentScheduleId
-      ? await db
-          .select()
-          .from(bookingPaymentSchedules)
-          .where(
-            and(
-              eq(bookingPaymentSchedules.id, input.bookingPaymentScheduleId),
-              eq(bookingPaymentSchedules.bookingId, booking.id),
-            ),
-          )
-          .limit(1)
-      : []
+      const items = await db
+        .select()
+        .from(bookingItems)
+        .where(eq(bookingItems.bookingId, booking.id))
+      const [paymentSchedule] = input.bookingPaymentScheduleId
+        ? await db
+            .select()
+            .from(bookingPaymentSchedules)
+            .where(
+              and(
+                eq(bookingPaymentSchedules.id, input.bookingPaymentScheduleId),
+                eq(bookingPaymentSchedules.bookingId, booking.id),
+              ),
+            )
+            .limit(1)
+        : []
 
-    if (input.bookingPaymentScheduleId && !paymentSchedule) {
-      return c.json({ error: "Booking payment schedule not found" }, 404)
-    }
+      if (input.bookingPaymentScheduleId && !paymentSchedule) {
+        return c.json({ error: "Booking payment schedule not found" }, 404)
+      }
 
-    const runtime = (() => {
+      const runtime = (() => {
+        try {
+          return c.var.container?.resolve<FinanceRouteRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
+        } catch {
+          return undefined
+        }
+      })()
+
+      const issuer =
+        input.invoiceType === "proforma" ? issueProformaFromBooking : issueInvoiceFromBooking
+
+      let row: Awaited<ReturnType<typeof issuer>>
       try {
-        return c.var.container?.resolve<FinanceRouteRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
-      } catch {
-        return undefined
-      }
-    })()
-
-    const issuer =
-      input.invoiceType === "proforma" ? issueProformaFromBooking : issueInvoiceFromBooking
-
-    let row: Awaited<ReturnType<typeof issuer>>
-    try {
-      row = await issuer(
-        db,
-        input,
-        {
-          booking: {
-            id: booking.id,
-            bookingNumber: booking.bookingNumber,
-            personId: booking.personId,
-            organizationId: booking.organizationId,
-            sellCurrency: booking.sellCurrency,
-            baseCurrency: booking.baseCurrency,
-            fxRateSetId: null,
-            sellAmountCents: booking.sellAmountCents,
-            baseSellAmountCents: booking.baseSellAmountCents,
-          },
-          paymentSchedule: paymentSchedule
-            ? {
-                id: paymentSchedule.id,
-                bookingId: paymentSchedule.bookingId,
-                bookingItemId: paymentSchedule.bookingItemId,
-                scheduleType: paymentSchedule.scheduleType,
-                dueDate: paymentSchedule.dueDate,
-                currency: paymentSchedule.currency,
-                amountCents: paymentSchedule.amountCents,
-              }
-            : null,
-          items: items.map((item) => ({
-            id: item.id,
-            title: item.title,
-            quantity: item.quantity,
-            unitSellAmountCents: item.unitSellAmountCents,
-            totalSellAmountCents: item.totalSellAmountCents,
-          })),
-        },
-        {
-          eventBus: runtime?.eventBus,
-          actionLedgerContext: getActionLedgerRequestContext(c),
-          actionLedgerAuthorizationSource: "finance.invoice.from_booking.route",
-        },
-      )
-    } catch (error) {
-      if (error instanceof InvoiceNumberAllocationError) {
-        return c.json(
-          { error: error.code, scope: error.scope, seriesId: error.seriesId ?? null },
-          409,
-        )
-      }
-      if (error instanceof InvoiceNumberConflictError) {
-        return c.json(
+        row = await issuer(
+          db,
+          input,
           {
-            error: "Invoice number already exists",
-            code: error.code,
-            invoiceNumber: error.invoiceNumber,
+            booking: {
+              id: booking.id,
+              bookingNumber: booking.bookingNumber,
+              personId: booking.personId,
+              organizationId: booking.organizationId,
+              sellCurrency: booking.sellCurrency,
+              baseCurrency: booking.baseCurrency,
+              fxRateSetId: null,
+              sellAmountCents: booking.sellAmountCents,
+              baseSellAmountCents: booking.baseSellAmountCents,
+            },
+            paymentSchedule: paymentSchedule
+              ? {
+                  id: paymentSchedule.id,
+                  bookingId: paymentSchedule.bookingId,
+                  bookingItemId: paymentSchedule.bookingItemId,
+                  scheduleType: paymentSchedule.scheduleType,
+                  dueDate: paymentSchedule.dueDate,
+                  currency: paymentSchedule.currency,
+                  amountCents: paymentSchedule.amountCents,
+                }
+              : null,
+            items: items.map((item) => ({
+              id: item.id,
+              title: item.title,
+              quantity: item.quantity,
+              unitSellAmountCents: item.unitSellAmountCents,
+              totalSellAmountCents: item.totalSellAmountCents,
+            })),
           },
-          409,
+          {
+            eventBus: runtime?.eventBus,
+            actionLedgerContext: getActionLedgerRequestContext(c),
+            actionLedgerAuthorizationSource: "finance.invoice.from_booking.route",
+          },
         )
+      } catch (error) {
+        if (error instanceof InvoiceNumberAllocationError) {
+          return c.json(
+            { error: error.code, scope: error.scope, seriesId: error.seriesId ?? null },
+            409,
+          )
+        }
+        if (error instanceof InvoiceNumberConflictError) {
+          return c.json(
+            {
+              error: "Invoice number already exists",
+              code: error.code,
+              invoiceNumber: error.invoiceNumber,
+            },
+            409,
+          )
+        }
+        throw error
       }
-      throw error
-    }
 
-    if (!row || waitRequest.mode === "none") {
-      return c.json({ data: row }, 201)
-    }
+      if (!row || waitRequest.mode === "none") {
+        return c.json({ data: row }, 201)
+      }
 
-    const waitResult = await waitForInvoiceRendition(db, row.id, {
-      format: waitFormatForMode(waitRequest.mode),
-      timeoutMs: waitRequest.timeoutMs,
-    })
-    const payload = {
-      invoice: row,
-      rendition: waitResult.rendition,
-    }
+      const waitResult = await waitForInvoiceRendition(db, row.id, {
+        format: waitFormatForMode(waitRequest.mode),
+        timeoutMs: waitRequest.timeoutMs,
+      })
+      const payload = {
+        invoice: row,
+        rendition: waitResult.rendition,
+      }
 
-    if (waitResult.status !== "ready") {
-      return c.json({ data: payload }, 202)
-    }
+      if (waitResult.status !== "ready") {
+        return c.json({ data: payload }, 202)
+      }
 
-    const download = await buildInlineDownload(c, waitResult.rendition)
-    if (download.status !== "ready") {
-      return c.json({ data: payload }, 202)
-    }
+      const download = await buildInlineDownload(c, waitResult.rendition)
+      if (download.status !== "ready") {
+        return c.json({ data: payload }, 202)
+      }
 
-    return c.json({ data: { ...payload, download: download.download } }, 201)
-  })
+      return c.json({ data: { ...payload, download: download.download } }, 201)
+    },
+  )
 
   // POST /invoices/:id/convert-to-invoice — Convert a proforma into a final invoice
   .post("/invoices/:id/convert-to-invoice", async (c) => {

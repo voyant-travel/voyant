@@ -87,11 +87,14 @@ declare module "hono" {
  * the `db` middleware that ships with `createApp`) — caller is responsible
  * for ordering this middleware after `db`.
  */
-export function idempotencyKey<TBindings extends VoyantBindings = VoyantBindings>(
+export function idempotencyKey<
+  TBindings extends object = VoyantBindings,
+  TVariables extends { db: VoyantDb } = VoyantVariables,
+>(
   options: IdempotencyKeyOptions = {},
 ): MiddlewareHandler<{
   Bindings: TBindings
-  Variables: VoyantVariables
+  Variables: TVariables
 }> {
   const ttlMs = options.ttlMs ?? DEFAULT_IDEMPOTENCY_TTL_MS
 

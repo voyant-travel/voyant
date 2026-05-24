@@ -24,6 +24,10 @@ const json = (body: Record<string, unknown>) => ({
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify(body),
 })
+const jsonWithIdempotency = (body: Record<string, unknown>, key: string) => ({
+  headers: { "Content-Type": "application/json", "Idempotency-Key": key },
+  body: JSON.stringify(body),
+})
 
 let seq = 0
 function nextInvoiceNumber() {
@@ -1108,6 +1112,37 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(inv.currency).toBe("USD")
     })
 
+    it("replays invoice creates with the same idempotency key", async () => {
+      const booking = await seedBooking()
+      const input = {
+        invoiceNumber: nextInvoiceNumber(),
+        bookingId: booking.id,
+        currency: "USD",
+        issueDate: "2025-06-01",
+        dueDate: "2025-07-01",
+        subtotalCents: 100000,
+        taxCents: 10000,
+        totalCents: 110000,
+        balanceDueCents: 110000,
+      }
+
+      const first = await app.request("/invoices", {
+        method: "POST",
+        ...jsonWithIdempotency(input, "finance-invoice-create-1"),
+      })
+      const replay = await app.request("/invoices", {
+        method: "POST",
+        ...jsonWithIdempotency(input, "finance-invoice-create-1"),
+      })
+
+      expect(first.status).toBe(201)
+      expect(replay.status).toBe(201)
+      expect(replay.headers.get("Idempotency-Replayed")).toBe("true")
+      const firstBody = await first.json()
+      const replayBody = await replay.json()
+      expect(replayBody.data.id).toBe(firstBody.data.id)
+    })
+
     it("gets an invoice by id", async () => {
       const booking = await seedBooking()
       const inv = await seedInvoice(booking.id)
@@ -1336,6 +1371,33 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       // Should have subtotal based on items
       expect(data.subtotalCents).toBeGreaterThan(0)
       expect(data.balanceDueCents).toBeGreaterThan(0)
+    })
+
+    it("replays invoice-from-booking creates with the same idempotency key", async () => {
+      const booking = await seedBooking({ sellAmountCents: 20000 })
+      await seedBookingItem(booking.id)
+      const input = {
+        bookingId: booking.id,
+        invoiceNumber: nextInvoiceNumber(),
+        issueDate: "2025-06-01",
+        dueDate: "2025-07-01",
+      }
+
+      const first = await app.request("/invoices/from-booking", {
+        method: "POST",
+        ...jsonWithIdempotency(input, "finance-invoice-from-booking-1"),
+      })
+      const replay = await app.request("/invoices/from-booking", {
+        method: "POST",
+        ...jsonWithIdempotency(input, "finance-invoice-from-booking-1"),
+      })
+
+      expect(first.status).toBe(201)
+      expect(replay.status).toBe(201)
+      expect(replay.headers.get("Idempotency-Replayed")).toBe("true")
+      const firstBody = await first.json()
+      const replayBody = await replay.json()
+      expect(replayBody.data.id).toBe(firstBody.data.id)
     })
 
     it("creates an invoice from a booking without items (fallback)", async () => {

@@ -8,6 +8,10 @@ const json = (body: Record<string, unknown>) => ({
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify(body),
 })
+const jsonWithIdempotency = (body: Record<string, unknown>, key: string) => ({
+  headers: { "Content-Type": "application/json", "Idempotency-Key": key },
+  body: JSON.stringify(body),
+})
 
 describe.skipIf(!DB_AVAILABLE)("Account routes", () => {
   let app: Hono
@@ -43,6 +47,25 @@ describe.skipIf(!DB_AVAILABLE)("Account routes", () => {
       expect(body.data.name).toBe("Acme Corp")
       expect(body.data.id).toBeTruthy()
       expect(body.data.status).toBe("active")
+    })
+
+    it("replays organization creates with the same idempotency key", async () => {
+      const input = { name: "Idempotent Org" }
+      const first = await app.request("/organizations", {
+        method: "POST",
+        ...jsonWithIdempotency(input, "crm-org-create-1"),
+      })
+      const replay = await app.request("/organizations", {
+        method: "POST",
+        ...jsonWithIdempotency(input, "crm-org-create-1"),
+      })
+
+      expect(first.status).toBe(201)
+      expect(replay.status).toBe(201)
+      expect(replay.headers.get("Idempotency-Replayed")).toBe("true")
+      const firstBody = await first.json()
+      const replayBody = await replay.json()
+      expect(replayBody.data.id).toBe(firstBody.data.id)
     })
 
     it("lists organizations", async () => {
@@ -141,6 +164,25 @@ describe.skipIf(!DB_AVAILABLE)("Account routes", () => {
       expect(body.data.firstName).toBe("John")
       expect(body.data.lastName).toBe("Doe")
       expect(body.data.id).toBeTruthy()
+    })
+
+    it("replays person creates with the same idempotency key", async () => {
+      const input = { firstName: "Idempotent", lastName: "Person" }
+      const first = await app.request("/people", {
+        method: "POST",
+        ...jsonWithIdempotency(input, "crm-person-create-1"),
+      })
+      const replay = await app.request("/people", {
+        method: "POST",
+        ...jsonWithIdempotency(input, "crm-person-create-1"),
+      })
+
+      expect(first.status).toBe(201)
+      expect(replay.status).toBe(201)
+      expect(replay.headers.get("Idempotency-Replayed")).toBe("true")
+      const firstBody = await first.json()
+      const replayBody = await replay.json()
+      expect(replayBody.data.id).toBe(firstBody.data.id)
     })
 
     it("reflects contact-point updates without an explicit rebuild (#446 view)", async () => {
