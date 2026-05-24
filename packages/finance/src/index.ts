@@ -127,6 +127,7 @@ export {
   createInvoiceFxHonoExtension,
   createInvoiceFxRoutes,
   createVoyantDataFxExchangeRateResolver,
+  type InvoiceExchangeRateResolution,
   type InvoiceFxContext,
   type InvoiceFxOptions,
   type InvoiceFxRouteOptions,

@@ -2847,6 +2847,9 @@ importers:
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../core
+      '@voyantjs/data-sdk':
+        specifier: 0.1.2
+        version: 0.1.2
       '@voyantjs/db':
         specifier: workspace:*
         version: link:../db
@@ -9736,6 +9739,11 @@ packages:
   '@voyantjs/core@0.19.0':
     resolution: {integrity: sha512-L3ielbbWsjGJLkyS6Mzee0z6OD98rqyTxksKBIsaKSiCO0R/a32AXSZ/l4Y8Ek8I8ucYrwe7P4+lr+clppIrBQ==}
 
+  '@voyantjs/data-sdk@0.1.2':
+    resolution: {integrity: sha512-aVTylUeRD9IquB61G2zuau6ggB/dzF+pWhlN74W+eORI/Lw2mGS/X+N/BnrI1fE1ciYOzak8QfU2OiJriGm/4w==}
+    bundledDependencies:
+      - '@voyant-sdk/sdk-core'
+
   '@voyantjs/workflows-errors@0.19.0':
     resolution: {integrity: sha512-HVG+8K/I0aSkk+ZKRlPM14+cwK2Bc3JLwYknqg8WhPBBuiXTFhCUlkum/BYdS3WsVGSZ6awk+34+8yM+UBdSPw==}
 
@@ -16488,6 +16496,8 @@ snapshots:
       typesense: 3.0.6(@babel/runtime@7.29.2)
 
   '@voyantjs/core@0.19.0': {}
+
+  '@voyantjs/data-sdk@0.1.2': {}
 
   '@voyantjs/workflows-errors@0.19.0': {}
 

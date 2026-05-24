@@ -28,11 +28,12 @@
     "@voyantjs/action-ledger": "workspace:*",
     "@voyantjs/bookings": "workspace:*",
     "@voyantjs/core": "workspace:*",
+    "@voyantjs/data-sdk": "0.1.2",
     "@voyantjs/db": "workspace:*",
     "@voyantjs/hono": "workspace:*",
     "@voyantjs/products": "workspace:*",
-    "@voyantjs/utils": "workspace:*",
     "@voyantjs/storage": "workspace:*",
+    "@voyantjs/utils": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "zod": "^4.3.6"
