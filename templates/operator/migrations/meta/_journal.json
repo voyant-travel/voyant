@@ -246,6 +246,13 @@
       "when": 1779598800000,
       "tag": "0034_operator_checkout_url_templates",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1779626814451,
+      "tag": "0035_booking_reference_foreign_keys",
+      "breakpoints": true
     }
   ]
 }
