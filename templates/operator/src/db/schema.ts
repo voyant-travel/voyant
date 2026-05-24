@@ -122,6 +122,8 @@ export type NewOperatorPaymentInstructions = typeof operatorPaymentInstructions.
 export const operatorPaymentDefaults = pgTable("operator_payment_defaults", {
   id: typeId("operator_payment_defaults"),
   customerPaymentPolicy: jsonb("customer_payment_policy"),
+  bookingCheckoutUrlTemplate: text("booking_checkout_url_template"),
+  invoicePayUrlTemplate: text("invoice_pay_url_template"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 })

@@ -274,6 +274,20 @@ export const operatorAdminSettingsMessages = {
           description:
             "Applied when no per-supplier, per-category, per-listing, or per-booking override exists. Defines the deposit / balance split shown on the storefront and persisted as the booking's payment schedule.",
         },
+        checkoutLinks: {
+          title: "Checkout links",
+          description:
+            "Customer-facing URL templates used when sharing booking checkout and invoice payment links.",
+          bookingCheckoutUrlTemplateLabel: "Booking checkout URL template",
+          bookingCheckoutUrlTemplatePlaceholder:
+            "https://travel.example.com/booking/pay/{bookingCode}",
+          bookingCheckoutUrlTemplateHelp:
+            "Use {bookingCode} or {bookingId} for booking-level checkout links.",
+          invoicePayUrlTemplateLabel: "Invoice payment URL template",
+          invoicePayUrlTemplatePlaceholder: "https://travel.example.com/pay/{sessionId}",
+          invoicePayUrlTemplateHelp:
+            "Optional. Use {sessionId}; leave empty to use the default /pay/{sessionId} route.",
+        },
       },
       priceCatalogsPage: {
         title: "Price Catalogs",
@@ -586,6 +600,20 @@ export const operatorAdminSettingsMessages = {
           title: "Politica implicita de plata pentru clienti",
           description:
             "Se aplica atunci cand nu exista nicio suprascriere per furnizor, categorie, listing sau rezervare. Defineste impartirea avans / sold afisata pe storefront si stocata ca grafic de plata al rezervarii.",
+        },
+        checkoutLinks: {
+          title: "Linkuri de checkout",
+          description:
+            "Sabloane de URL public folosite pentru linkuri de checkout rezervare si plata factura.",
+          bookingCheckoutUrlTemplateLabel: "Sablon URL checkout rezervare",
+          bookingCheckoutUrlTemplatePlaceholder:
+            "https://travel.example.com/booking/pay/{bookingCode}",
+          bookingCheckoutUrlTemplateHelp:
+            "Foloseste {bookingCode} sau {bookingId} pentru linkuri de checkout la nivel de rezervare.",
+          invoicePayUrlTemplateLabel: "Sablon URL plata factura",
+          invoicePayUrlTemplatePlaceholder: "https://travel.example.com/pay/{sessionId}",
+          invoicePayUrlTemplateHelp:
+            "Optional. Foloseste {sessionId}; lasa gol pentru ruta implicita /pay/{sessionId}.",
         },
       },
       priceCatalogsPage: {
