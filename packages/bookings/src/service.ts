@@ -460,6 +460,23 @@ function toTimestamp(value?: string | null) {
   return value ? new Date(value) : null
 }
 
+function confirmedAtForStatus(status: BookingStatus, value: Date | null, now = new Date()) {
+  if (status !== "confirmed") return null
+  return value ?? now
+}
+
+function confirmedAtForBookingUpdate(
+  currentStatus: BookingStatus,
+  data: UpdateBookingInput,
+  now = new Date(),
+) {
+  const nextStatus = data.status ?? currentStatus
+  if (nextStatus !== "confirmed") return null
+  if (data.confirmedAt !== undefined)
+    return confirmedAtForStatus(nextStatus, toTimestamp(data.confirmedAt), now)
+  return currentStatus === "confirmed" ? undefined : now
+}
+
 function toDateValue(value: Date | string) {
   return value instanceof Date ? value : new Date(value)
 }
@@ -3323,10 +3340,12 @@ export const bookingsService = {
 
   async createBooking(db: PostgresJsDatabase, data: CreateBookingInput, userId?: string) {
     return db.transaction(async (tx) => {
+      const status = data.status ?? "draft"
       const [row] = await tx
         .insert(bookings)
         .values({
           ...data,
+          status,
           contactFirstName: data.contactFirstName ?? null,
           contactLastName: data.contactLastName ?? null,
           contactEmail: data.contactEmail ?? null,
@@ -3338,7 +3357,7 @@ export const bookingsService = {
           contactAddressLine1: data.contactAddressLine1 ?? null,
           contactPostalCode: data.contactPostalCode ?? null,
           holdExpiresAt: toTimestamp(data.holdExpiresAt),
-          confirmedAt: toTimestamp(data.confirmedAt),
+          confirmedAt: confirmedAtForStatus(status, toTimestamp(data.confirmedAt)),
           expiredAt: toTimestamp(data.expiredAt),
           cancelledAt: toTimestamp(data.cancelledAt),
           completedAt: toTimestamp(data.completedAt),
@@ -3362,41 +3381,54 @@ export const bookingsService = {
   },
 
   async updateBooking(db: PostgresJsDatabase, id: string, data: UpdateBookingInput) {
-    const [row] = await db
-      .update(bookings)
-      .set({
-        ...data,
-        contactFirstName:
-          data.contactFirstName === undefined ? undefined : (data.contactFirstName ?? null),
-        contactLastName:
-          data.contactLastName === undefined ? undefined : (data.contactLastName ?? null),
-        contactEmail: data.contactEmail === undefined ? undefined : (data.contactEmail ?? null),
-        contactPhone: data.contactPhone === undefined ? undefined : (data.contactPhone ?? null),
-        contactPreferredLanguage:
-          data.contactPreferredLanguage === undefined
-            ? undefined
-            : (data.contactPreferredLanguage ?? null),
-        contactCountry:
-          data.contactCountry === undefined ? undefined : (data.contactCountry ?? null),
-        contactRegion: data.contactRegion === undefined ? undefined : (data.contactRegion ?? null),
-        contactCity: data.contactCity === undefined ? undefined : (data.contactCity ?? null),
-        contactAddressLine1:
-          data.contactAddressLine1 === undefined ? undefined : (data.contactAddressLine1 ?? null),
-        contactPostalCode:
-          data.contactPostalCode === undefined ? undefined : (data.contactPostalCode ?? null),
-        holdExpiresAt:
-          data.holdExpiresAt === undefined ? undefined : toTimestamp(data.holdExpiresAt),
-        confirmedAt: data.confirmedAt === undefined ? undefined : toTimestamp(data.confirmedAt),
-        expiredAt: data.expiredAt === undefined ? undefined : toTimestamp(data.expiredAt),
-        cancelledAt: data.cancelledAt === undefined ? undefined : toTimestamp(data.cancelledAt),
-        completedAt: data.completedAt === undefined ? undefined : toTimestamp(data.completedAt),
-        redeemedAt: data.redeemedAt === undefined ? undefined : toTimestamp(data.redeemedAt),
-        updatedAt: new Date(),
-      })
-      .where(eq(bookings.id, id))
-      .returning()
+    return db.transaction(async (tx) => {
+      const rows = await tx.execute(
+        sql`SELECT status
+            FROM ${bookings}
+            WHERE ${bookings.id} = ${id}
+            FOR UPDATE`,
+      )
+      const existing = toRows<{ status: BookingStatus }>(rows)[0]
 
-    return row ?? null
+      if (!existing) return null
+
+      const [row] = await tx
+        .update(bookings)
+        .set({
+          ...data,
+          contactFirstName:
+            data.contactFirstName === undefined ? undefined : (data.contactFirstName ?? null),
+          contactLastName:
+            data.contactLastName === undefined ? undefined : (data.contactLastName ?? null),
+          contactEmail: data.contactEmail === undefined ? undefined : (data.contactEmail ?? null),
+          contactPhone: data.contactPhone === undefined ? undefined : (data.contactPhone ?? null),
+          contactPreferredLanguage:
+            data.contactPreferredLanguage === undefined
+              ? undefined
+              : (data.contactPreferredLanguage ?? null),
+          contactCountry:
+            data.contactCountry === undefined ? undefined : (data.contactCountry ?? null),
+          contactRegion:
+            data.contactRegion === undefined ? undefined : (data.contactRegion ?? null),
+          contactCity: data.contactCity === undefined ? undefined : (data.contactCity ?? null),
+          contactAddressLine1:
+            data.contactAddressLine1 === undefined ? undefined : (data.contactAddressLine1 ?? null),
+          contactPostalCode:
+            data.contactPostalCode === undefined ? undefined : (data.contactPostalCode ?? null),
+          holdExpiresAt:
+            data.holdExpiresAt === undefined ? undefined : toTimestamp(data.holdExpiresAt),
+          confirmedAt: confirmedAtForBookingUpdate(existing.status, data),
+          expiredAt: data.expiredAt === undefined ? undefined : toTimestamp(data.expiredAt),
+          cancelledAt: data.cancelledAt === undefined ? undefined : toTimestamp(data.cancelledAt),
+          completedAt: data.completedAt === undefined ? undefined : toTimestamp(data.completedAt),
+          redeemedAt: data.redeemedAt === undefined ? undefined : toTimestamp(data.redeemedAt),
+          updatedAt: new Date(),
+        })
+        .where(eq(bookings.id, id))
+        .returning()
+
+      return row ?? null
+    })
   },
 
   async deleteBooking(db: PostgresJsDatabase, id: string) {
@@ -4270,9 +4302,9 @@ export const bookingsService = {
         const now = new Date()
         const updates: Record<string, unknown> = {
           status: data.status,
+          confirmedAt: confirmedAtForStatus(data.status, null, now),
           updatedAt: now,
         }
-        if (data.status === "confirmed") updates.confirmedAt = now
         if (data.status === "expired") updates.expiredAt = now
         if (data.status === "cancelled") updates.cancelledAt = now
         if (data.status === "completed") updates.completedAt = now

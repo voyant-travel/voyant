@@ -31,7 +31,7 @@ export function canTransitionBooking(from: BookingStatus, to: BookingStatus): bo
 
 export interface BookingStatusPatch {
   status: BookingStatus
-  confirmedAt?: Date
+  confirmedAt?: Date | null
   expiredAt?: Date
   cancelledAt?: Date
   completedAt?: Date
@@ -60,6 +60,8 @@ export function transitionBooking(
   if (to === "confirmed") {
     patch.confirmedAt = now
     if (from === "awaiting_payment") patch.paidAt = now
+  } else {
+    patch.confirmedAt = null
   }
   if (to === "expired") patch.expiredAt = now
   if (to === "cancelled") patch.cancelledAt = now

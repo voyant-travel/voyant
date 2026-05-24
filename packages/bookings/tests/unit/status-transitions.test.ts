@@ -70,13 +70,14 @@ describe("transitionBooking()", () => {
     const now = new Date("2026-01-01T00:00:00Z")
     const patch = transitionBooking("confirmed", "cancelled", { now })
     expect(patch.cancelledAt).toEqual(now)
-    expect(patch.confirmedAt).toBeUndefined()
+    expect(patch.confirmedAt).toBeNull()
   })
 
   it("stamps expiredAt when transitioning to expired", () => {
     const now = new Date("2026-01-01T00:00:00Z")
     const patch = transitionBooking("on_hold", "expired", { now })
     expect(patch.expiredAt).toEqual(now)
+    expect(patch.confirmedAt).toBeNull()
   })
 
   it("stamps completedAt when transitioning to completed", () => {
@@ -87,7 +88,7 @@ describe("transitionBooking()", () => {
 
   it("does not stamp a timestamp when moving to in_progress (no dedicated column)", () => {
     const patch = transitionBooking("confirmed", "in_progress")
-    expect(patch.confirmedAt).toBeUndefined()
+    expect(patch.confirmedAt).toBeNull()
     expect(patch.cancelledAt).toBeUndefined()
     expect(patch.expiredAt).toBeUndefined()
     expect(patch.completedAt).toBeUndefined()
