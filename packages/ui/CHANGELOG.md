@@ -1,5 +1,14 @@
 # @voyantjs/ui
 
+## 0.80.15
+
+### Patch Changes
+
+- @voyantjs/i18n@0.80.15
+- @voyantjs/notifications@0.80.15
+- @voyantjs/notifications-react@0.80.15
+- @voyantjs/utils@0.80.15
+
 ## 0.80.14
 
 ### Patch Changes

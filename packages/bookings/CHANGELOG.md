@@ -1,5 +1,16 @@
 # @voyantjs/bookings
 
+## 0.80.15
+
+### Patch Changes
+
+- 0d8d14e: Cascade terminal booking status overrides to booking items and allocations, including slot capacity release for cancelled and expired overrides.
+  - @voyantjs/action-ledger@0.80.15
+  - @voyantjs/core@0.80.15
+  - @voyantjs/db@0.80.15
+  - @voyantjs/hono@0.80.15
+  - @voyantjs/utils@0.80.15
+
 ## 0.80.14
 
 ### Patch Changes
