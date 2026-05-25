@@ -722,6 +722,53 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       expect(body.total).toBeGreaterThanOrEqual(1)
     })
 
+    it("searches booking contact snapshots and external references", async () => {
+      const target = await seedBooking({
+        bookingNumber: "BK-CONTACT-0001",
+        externalBookingRef: "WHATSAPP-REF-42",
+        contactFirstName: "Ana",
+        contactLastName: "Cimpoeru",
+        contactEmail: "ana.cimpoeru@example.com",
+        contactPhone: "+40 712 345 678",
+        contactCountry: "Romania",
+        contactRegion: "Cluj",
+        contactCity: "Cluj-Napoca",
+        contactAddressLine1: "Strada Memorandumului 10",
+        contactPostalCode: "400114",
+        internalNotes: "Prefers an aisle seat",
+      })
+      const other = await seedBooking({
+        bookingNumber: "BK-CONTACT-0002",
+        externalBookingRef: "OTHER-REF-42",
+        contactFirstName: "Maria",
+        contactLastName: "Ionescu",
+        contactEmail: "maria.ionescu@example.com",
+        contactPhone: "+33 1 44 55 66 77",
+        contactCountry: "France",
+        contactRegion: "Ile-de-France",
+        contactCity: "Paris",
+        contactAddressLine1: "Rue de Rivoli 1",
+        contactPostalCode: "75001",
+      })
+
+      async function expectOnlyTargetForSearch(search: string) {
+        const res = await app.request(`/?search=${encodeURIComponent(search)}`, { method: "GET" })
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        const ids = body.data.map((row: { id: string }) => row.id)
+        expect(ids).toContain(target.id)
+        expect(ids).not.toContain(other.id)
+      }
+
+      await expectOnlyTargetForSearch("Ana Cimpoeru")
+      await expectOnlyTargetForSearch("ANA.CIMPOERU")
+      await expectOnlyTargetForSearch("40712345678")
+      await expectOnlyTargetForSearch("WHATSAPP-REF-42")
+      await expectOnlyTargetForSearch("Memorandumului")
+      await expectOnlyTargetForSearch("Cluj-Napoca")
+      await expectOnlyTargetForSearch("400114")
+    })
+
     it("hydrates booking list item summaries with product names", async () => {
       const { product } = await seedProductBundle()
       const booking = await seedBooking()
