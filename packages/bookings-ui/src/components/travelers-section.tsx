@@ -34,6 +34,10 @@ import {
 import { Pencil, Trash2, UserPlus } from "lucide-react"
 import * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+import {
+  getDynamicTravelerCategoryButtonState,
+  getStaticTravelerCategoryButtonState,
+} from "./traveler-category-buttons.js"
 
 export type TravelerRole = "lead" | "adult" | "child" | "infant"
 
@@ -772,9 +776,10 @@ function TravelerCategoryButtons({
               ["infant", fallbackLabels.infant],
             ] as const
           ).map(([category, label]) => {
-            const active = traveler.role === category
-            const nextRole: TravelerRole =
-              traveler.role === "lead" && category === "adult" ? "lead" : category
+            const { active, nextRole, shouldUpdate } = getStaticTravelerCategoryButtonState(
+              traveler,
+              category,
+            )
             return (
               <Button
                 key={category}
@@ -782,7 +787,9 @@ function TravelerCategoryButtons({
                 size="sm"
                 variant={active ? "default" : "outline"}
                 className="h-7 text-xs"
-                onClick={() => onPickUnit(traveler.roomUnitId, nextRole)}
+                onClick={() => {
+                  if (shouldUpdate) onPickUnit(traveler.roomUnitId, nextRole)
+                }}
               >
                 {label}
               </Button>
@@ -801,16 +808,10 @@ function TravelerCategoryButtons({
         style={{ gridTemplateColumns: `repeat(${categoryUnits.length}, minmax(0, 1fr))` }}
       >
         {categoryUnits.map((unit) => {
-          const active = traveler.roomUnitId === unit.unitId
-          // Keep the lead flag when the operator clicks the ADULT-coded
-          // unit (or one whose age band covers adults); otherwise the
-          // traveler's role tracks the unit code/name for the submit
-          // path's travelerCategory mapping.
-          const codeLower = (unit.unitCode ?? "").toLowerCase()
-          const inferredRole: Exclude<TravelerRole, "lead"> =
-            codeLower === "child" ? "child" : codeLower === "infant" ? "infant" : "adult"
-          const nextRole: TravelerRole =
-            traveler.role === "lead" && inferredRole === "adult" ? "lead" : inferredRole
+          const { active, nextRole, shouldUpdate } = getDynamicTravelerCategoryButtonState(
+            traveler,
+            unit,
+          )
           return (
             <Button
               key={unit.unitId}
@@ -818,7 +819,9 @@ function TravelerCategoryButtons({
               size="sm"
               variant={active ? "default" : "outline"}
               className="h-7 text-xs"
-              onClick={() => onPickUnit(unit.unitId, nextRole)}
+              onClick={() => {
+                if (shouldUpdate) onPickUnit(unit.unitId, nextRole)
+              }}
               title={
                 unit.minAge != null || unit.maxAge != null
                   ? `${unit.minAge ?? "0"}–${unit.maxAge ?? "∞"}`
