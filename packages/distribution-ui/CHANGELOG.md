@@ -1,5 +1,13 @@
 # @voyantjs/distribution-ui
 
+## 0.81.2
+
+### Patch Changes
+
+- @voyantjs/distribution-react@0.81.2
+- @voyantjs/i18n@0.81.2
+- @voyantjs/ui@0.81.2
+
 ## 0.81.1
 
 ### Patch Changes
