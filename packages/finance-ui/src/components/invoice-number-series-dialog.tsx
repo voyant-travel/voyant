@@ -30,6 +30,7 @@ import { z } from "zod/v4"
 
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
 import { invoiceNumberResetStrategies, invoiceNumberSeriesScopes } from "../i18n/messages.js"
+import { formatInvoiceNumberSeriesSample } from "./invoice-number-series-format.js"
 
 const seriesFormSchema = z.object({
   code: z.string().min(1, "codeRequired").max(100),
@@ -158,11 +159,12 @@ export function InvoiceNumberSeriesDialog({
   const separator = form.watch("separator") ?? ""
   const currentSequence = Number(form.watch("currentSequence") ?? 0)
   const padLength = Number(form.watch("padLength") ?? 4)
-  const nextSequence = Number.isFinite(currentSequence) ? currentSequence + 1 : 1
-  const preview = `${prefix}${prefix && separator ? separator : ""}${String(nextSequence).padStart(
-    Number.isFinite(padLength) ? padLength : 4,
-    "0",
-  )}`
+  const preview = formatInvoiceNumberSeriesSample({
+    prefix,
+    separator,
+    currentSequence: Number.isFinite(currentSequence) ? currentSequence : 0,
+    padLength: Number.isFinite(padLength) ? padLength : 4,
+  })
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

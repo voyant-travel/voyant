@@ -24,6 +24,7 @@ import { useState } from "react"
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
 import { invoiceNumberSeriesScopes } from "../i18n/messages.js"
 import { InvoiceNumberSeriesDialog } from "./invoice-number-series-dialog.js"
+import { formatInvoiceNumberSeriesSample } from "./invoice-number-series-format.js"
 
 const SCOPE_ALL = "__all__"
 const ACTIVE_ALL = "__all__"
@@ -32,13 +33,6 @@ const INACTIVE_ONLY = "inactive"
 
 export interface InvoiceNumberSeriesPageProps {
   className?: string
-}
-
-function formatSeriesSample(series: InvoiceNumberSeriesRecord) {
-  const nextSequence = series.currentSequence + 1
-  return `${series.prefix}${series.prefix && series.separator ? series.separator : ""}${String(
-    nextSequence,
-  ).padStart(series.padLength, "0")}`
 }
 
 function activeFilterToBoolean(value: string) {
@@ -156,7 +150,7 @@ export function InvoiceNumberSeriesPage({ className }: InvoiceNumberSeriesPagePr
                   <tr key={series.id} className="border-b last:border-b-0">
                     <td className="p-3 font-mono">{series.code}</td>
                     <td className="p-3">{series.name}</td>
-                    <td className="p-3 font-mono">{formatSeriesSample(series)}</td>
+                    <td className="p-3 font-mono">{formatInvoiceNumberSeriesSample(series)}</td>
                     <td className="p-3 font-mono">{series.currentSequence}</td>
                     <td className="p-3">{page.resetStrategyLabels[series.resetStrategy]}</td>
                     <td className="p-3">

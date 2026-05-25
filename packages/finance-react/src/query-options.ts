@@ -153,7 +153,7 @@ export function getInvoiceNumberSeriesQueryOptions(
     queryFn: () => {
       const params = new URLSearchParams()
       if (filters.scope) params.set("scope", filters.scope)
-      if (filters.active !== undefined) params.set("active", String(filters.active))
+      if (filters.active !== undefined) params.set("active", filters.active ? "true" : "false")
       if (filters.limit !== undefined) params.set("limit", String(filters.limit))
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
       const qs = params.toString()
