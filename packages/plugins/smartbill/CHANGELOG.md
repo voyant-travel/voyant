@@ -1,5 +1,18 @@
 # @voyantjs/plugin-smartbill
 
+## 0.80.8
+
+### Patch Changes
+
+- 6ba4515: Allow invoice-from-booking requests to pre-seed invoice external refs before issued events run.
+- Updated dependencies [6ba4515]
+  - @voyantjs/core@0.80.8
+  - @voyantjs/finance@0.80.8
+  - @voyantjs/finance-react@0.80.8
+  - @voyantjs/hono@0.80.8
+  - @voyantjs/storage@0.80.8
+  - @voyantjs/ui@0.80.8
+
 ## 0.80.7
 
 ### Patch Changes

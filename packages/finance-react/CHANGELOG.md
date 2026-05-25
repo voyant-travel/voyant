@@ -1,5 +1,14 @@
 # @voyantjs/finance-react
 
+## 0.80.8
+
+### Patch Changes
+
+- 6ba4515: Allow invoice-from-booking requests to pre-seed invoice external refs before issued events run.
+- Updated dependencies [6ba4515]
+  - @voyantjs/finance@0.80.8
+  - @voyantjs/react@0.80.8
+
 ## 0.80.7
 
 ### Patch Changes
