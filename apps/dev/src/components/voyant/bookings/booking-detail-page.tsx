@@ -20,6 +20,7 @@ import { BookingPaymentsSummary } from "@voyantjs/bookings-ui/components/booking
 import { StatusChangeDialog } from "@voyantjs/bookings-ui/components/status-change-dialog"
 import { SupplierStatusList } from "@voyantjs/bookings-ui/components/supplier-status-list"
 import { TravelerList } from "@voyantjs/bookings-ui/components/traveler-list"
+import { useInvoiceMutation } from "@voyantjs/finance-react"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ArrowLeft, Ban, Loader2, Pencil, RefreshCw, Trash2 } from "lucide-react"
 import { useState } from "react"
@@ -41,6 +42,7 @@ export function BookingDetailPage({ id }: { id: string }) {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const { data: bookingData, isPending } = useBooking(id)
   const { remove } = useBookingMutation()
+  const { convertToInvoice } = useInvoiceMutation()
 
   if (isPending) {
     return (
@@ -197,7 +199,18 @@ export function BookingDetailPage({ id }: { id: string }) {
       <BookingGroupSection bookingId={id} />
       <BookingPaymentScheduleList bookingId={id} />
       <BookingGuaranteeList bookingId={id} />
-      <BookingPaymentsSummary bookingId={id} />
+      <BookingPaymentsSummary
+        bookingId={id}
+        variant="admin"
+        onConvertProforma={(row) => {
+          if (
+            !confirm("Convert this proforma into a final invoice? The proforma will be voided.")
+          ) {
+            return
+          }
+          return convertToInvoice.mutateAsync({ id: row.invoiceId })
+        }}
+      />
       <BookingDocumentList bookingId={id} />
       <SupplierStatusList bookingId={id} />
       <BookingActivityTimeline bookingId={id} />

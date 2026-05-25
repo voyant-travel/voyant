@@ -69,6 +69,11 @@ export interface SmartbillInvoiceBody {
   exchangeRate?: number
   mentions?: string
   observations?: string
+  estimate?: {
+    seriesName: string
+    number: string
+  }
+  useStock?: boolean
   products: SmartbillProduct[]
   usePaymentTax?: boolean
   payment?: {

@@ -304,6 +304,10 @@ export const financeUiRo = {
     actions: {
       back: "Inapoi la finante",
       edit: "Editeaza",
+      convertToInvoice: "Converteste in factura",
+      convertToInvoiceTitle: "Convertesti aceasta proforma?",
+      convertToInvoiceDescription:
+        "Se creeaza factura finala, platile sunt mutate pe ea, iar proforma este anulata.",
       void: "Anuleaza",
       voidTitle: "Anulezi aceasta factura?",
       voidDescription: "Factura este marcata ca anulata, iar istoricul ramane pastrat.",

@@ -296,9 +296,11 @@ export function InvoiceLineItemsCard({
 export function InvoicePaymentsCard({
   payments,
   onCreate,
+  canCreate = true,
 }: {
   payments: PaymentRow[]
   onCreate: () => void
+  canCreate?: boolean
 }) {
   const messages = useAdminMessages()
   const noValue = messages.finance.detailSections.noValue
@@ -307,10 +309,12 @@ export function InvoicePaymentsCard({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>{messages.finance.detailSections.paymentsTitle}</CardTitle>
-        <Button size="sm" onClick={onCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          {messages.finance.detailSections.recordPayment}
-        </Button>
+        {canCreate ? (
+          <Button size="sm" onClick={onCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            {messages.finance.detailSections.recordPayment}
+          </Button>
+        ) : null}
       </CardHeader>
       <CardContent>
         {payments.length === 0 ? (

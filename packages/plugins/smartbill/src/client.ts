@@ -41,6 +41,13 @@ export interface SmartbillClientApi {
   createInvoice(body: SmartbillInvoiceBody): Promise<SmartbillInvoiceResponse>
   /** Create a proforma invoice. */
   createProforma(body: SmartbillInvoiceBody): Promise<SmartbillInvoiceResponse>
+  /** Create an invoice from an existing proforma estimate. */
+  convertEstimateToInvoice(
+    companyVatCode: string,
+    estimateSeriesName: string,
+    estimateNumber: string,
+    body: SmartbillInvoiceBody,
+  ): Promise<SmartbillInvoiceResponse>
   /** Cancel an invoice by series + number. Returns the live envelope. */
   cancelInvoice(
     companyVatCode: string,
@@ -380,6 +387,24 @@ export function createSmartbillClient(options: SmartbillClientOptions): Smartbil
     return request<SmartbillInvoiceResponse>("createProforma", "POST", "/estimate", body)
   }
 
+  async function convertEstimateToInvoice(
+    companyVatCode: string,
+    estimateSeriesName: string,
+    estimateNumber: string,
+    body: SmartbillInvoiceBody,
+  ): Promise<SmartbillInvoiceResponse> {
+    return request<SmartbillInvoiceResponse>("convertEstimateToInvoice", "POST", "/invoice", {
+      ...body,
+      companyVatCode,
+      useEstimateDetails: true,
+      estimate: {
+        seriesName: estimateSeriesName,
+        number: estimateNumber,
+      },
+      useStock: body.useStock ?? false,
+    })
+  }
+
   async function cancelInvoice(
     companyVatCode: string,
     seriesName: string,
@@ -485,6 +510,7 @@ export function createSmartbillClient(options: SmartbillClientOptions): Smartbil
   return {
     createInvoice,
     createProforma,
+    convertEstimateToInvoice,
     cancelInvoice,
     restoreInvoice,
     deleteInvoice,

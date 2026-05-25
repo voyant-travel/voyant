@@ -415,6 +415,9 @@ export type FinanceUiMessages = {
     actions: {
       back: string
       edit: string
+      convertToInvoice: string
+      convertToInvoiceTitle: string
+      convertToInvoiceDescription: string
       void: string
       voidTitle: string
       voidDescription: string

@@ -1232,6 +1232,7 @@ export type BookingsUiMessages = {
       /** Trigger button screen-reader label. */
       open: string
       view: string
+      convertToInvoice: string
       edit: string
       delete: string
     }

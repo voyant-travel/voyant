@@ -50,7 +50,15 @@ import {
 } from "@voyantjs/ui/components"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
-import { ArrowLeft, ExternalLink, FileText, Loader2, Pencil, Plus } from "lucide-react"
+import {
+  ArrowLeft,
+  ArrowRightLeft,
+  ExternalLink,
+  FileText,
+  Loader2,
+  Pencil,
+  Plus,
+} from "lucide-react"
 import { type ReactNode, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
@@ -94,6 +102,7 @@ export interface InvoiceDetailPageProps {
   onLineItemCreate?: (invoice: InvoiceRecord) => void
   onLineItemEdit?: (lineItem: LineItemRecord, invoice: InvoiceRecord) => void
   onPaymentCreate?: (invoice: InvoiceRecord) => void
+  onConverted?: (invoice: InvoiceRecord, source: InvoiceRecord) => void
   onCreditNoteCreate?: (invoice: InvoiceRecord) => void
   getAttachmentDownloadHref?: (attachment: InvoiceAttachmentRecord) => string | undefined
   renderInvoiceNoteDialog?: (props: InvoiceNoteDialogProps) => ReactNode
@@ -124,6 +133,7 @@ export function InvoiceDetailPage({
   onLineItemCreate,
   onLineItemEdit,
   onPaymentCreate,
+  onConverted,
   onCreditNoteCreate,
   getAttachmentDownloadHref,
   renderInvoiceNoteDialog,
@@ -144,7 +154,7 @@ export function InvoiceDetailPage({
   const creditNotesQuery = useInvoiceCreditNotes(id, { enabled: Boolean(invoice) })
   const attachmentsQuery = useInvoiceAttachments(id, { enabled: Boolean(invoice) })
   const notesQuery = useInvoiceNotes(id, { enabled: Boolean(invoice) })
-  const { remove: removeInvoice, voidInvoice } = useInvoiceMutation()
+  const { convertToInvoice, remove: removeInvoice, voidInvoice } = useInvoiceMutation()
   const { remove: removeLineItem } = useInvoiceLineItemMutation(id)
   const { remove: removeAttachment } = useInvoiceAttachmentMutation(id)
   const addNote = useInvoiceNoteMutation(id)
@@ -192,7 +202,21 @@ export function InvoiceDetailPage({
         onBack={onBack}
         onEdit={() => setEditOpen(true)}
         deletePending={removeInvoice.isPending}
+        convertPending={convertToInvoice.isPending}
         voidPending={voidInvoice.isPending}
+        onConvert={async () => {
+          try {
+            setActionError(null)
+            const converted = await convertToInvoice.mutateAsync({ id })
+            onConverted?.(converted, invoice)
+          } catch (error) {
+            setActionError(
+              error instanceof Error
+                ? error.message
+                : messages.invoiceDetailPage.actions.mutationFailed,
+            )
+          }
+        }}
         onVoid={async (reason) => {
           try {
             setActionError(null)
@@ -375,8 +399,10 @@ export interface InvoiceDetailHeaderProps {
   invoice: InvoiceRecord
   onBack?: () => void
   onEdit: () => void
+  onConvert?: () => Promise<void>
   onVoid: (reason?: string | null) => Promise<void>
   onDelete: () => Promise<void>
+  convertPending?: boolean
   voidPending?: boolean
   deletePending?: boolean
   className?: string
@@ -386,8 +412,10 @@ export function InvoiceDetailHeader({
   invoice,
   onBack,
   onEdit,
+  onConvert,
   onVoid,
   onDelete,
+  convertPending,
   voidPending,
   deletePending,
   className,
@@ -399,6 +427,7 @@ export function InvoiceDetailHeader({
   const canDelete = invoice.status === "draft"
   const canVoid = ["pending_external_allocation", "issued", "overdue"].includes(invoice.status)
   const invoiceType = invoice.invoiceType
+  const canConvert = Boolean(onConvert && invoiceType === "proforma" && invoice.status !== "void")
 
   return (
     <div
@@ -435,6 +464,41 @@ export function InvoiceDetailHeader({
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2 md:justify-end">
+        {canConvert ? (
+          <AlertDialog>
+            <AlertDialogTrigger
+              disabled={convertPending}
+              render={<Button type="button" variant="outline" size="sm" />}
+            >
+              <ArrowRightLeft className="size-4" aria-hidden="true" />
+              {detail.actions.convertToInvoice}
+            </AlertDialogTrigger>
+            <AlertDialogContent size="sm">
+              <AlertDialogHeader>
+                <AlertDialogTitle>{detail.actions.convertToInvoiceTitle}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {detail.actions.convertToInvoiceDescription}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={convertPending}>
+                  {messages.common.cancel}
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={convertPending}
+                  onClick={() => {
+                    if (onConvert) void onConvert()
+                  }}
+                >
+                  {convertPending ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  ) : null}
+                  {detail.actions.convertToInvoice}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        ) : null}
         <Button type="button" variant="outline" onClick={onEdit}>
           <Pencil className="size-4" aria-hidden="true" />
           {detail.actions.edit}
@@ -747,7 +811,7 @@ export function InvoicePaymentsCard({
       title={detail.titles.payments}
       className={className}
       action={
-        onCreate ? (
+        onCreate && invoice.status !== "void" ? (
           <Button size="sm" onClick={() => onCreate(invoice)}>
             <Plus className="size-4" aria-hidden="true" />
             {detail.actions.recordPayment}

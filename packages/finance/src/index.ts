@@ -318,7 +318,11 @@ export {
   defaultStorageBackedInvoiceDocumentSerializer,
   financeDocumentsService,
 } from "./service-documents.js"
-export type { InvoiceIssuedEvent, InvoiceIssueRuntime } from "./service-issue.js"
+export type {
+  InvoiceIssuedEvent,
+  InvoiceIssueRuntime,
+  InvoiceProformaConvertedEvent,
+} from "./service-issue.js"
 export {
   buildInvoiceIssuedEvent,
   issueInvoiceFromBooking,

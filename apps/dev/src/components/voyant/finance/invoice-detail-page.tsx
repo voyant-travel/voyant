@@ -24,7 +24,7 @@ import {
   Button,
   Textarea,
 } from "@voyantjs/ui/components"
-import { ArrowLeft, Ban, Loader2, Pencil, Trash2 } from "lucide-react"
+import { ArrowLeft, ArrowRightLeft, Ban, Loader2, Pencil, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { CreditNoteDialog } from "./credit-note-dialog"
 import {
@@ -55,7 +55,7 @@ export function InvoiceDetailPage({ id }: { id: string }) {
   const { data: paymentsData } = useInvoicePayments(id)
   const { data: creditNotesData } = useInvoiceCreditNotes(id)
   const { data: notesData } = useInvoiceNotes(id)
-  const { remove: deleteInvoice, voidInvoice } = useInvoiceMutation()
+  const { convertToInvoice, remove: deleteInvoice, voidInvoice } = useInvoiceMutation()
   const { remove: deleteLineItem } = useInvoiceLineItemMutation(id)
   const addNoteMutation = useInvoiceNoteMutation(id)
 
@@ -82,6 +82,7 @@ export function InvoiceDetailPage({ id }: { id: string }) {
   const canVoidInvoice = ["pending_external_allocation", "issued", "overdue"].includes(
     invoice.status,
   )
+  const canConvertProforma = invoice.invoiceType === "proforma" && invoice.status !== "void"
 
   const getMutationErrorMessage = (error: unknown, fallback: string) =>
     error instanceof Error ? error.message : fallback
@@ -101,6 +102,40 @@ export function InvoiceDetailPage({ id }: { id: string }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {canConvertProforma ? (
+            <Button
+              variant="outline"
+              disabled={convertToInvoice.isPending}
+              onClick={() => {
+                if (
+                  !confirm(
+                    "Convert this proforma into a final invoice? The proforma will be voided.",
+                  )
+                ) {
+                  return
+                }
+                setActionError(null)
+                convertToInvoice.mutate(
+                  { id },
+                  {
+                    onSuccess: (converted) => {
+                      void navigate({ to: "/finance/invoices/$id", params: { id: converted.id } })
+                    },
+                    onError: (error) => {
+                      setActionError(getMutationErrorMessage(error, "Could not convert invoice"))
+                    },
+                  },
+                )
+              }}
+            >
+              {convertToInvoice.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <ArrowRightLeft className="mr-2 h-4 w-4" />
+              )}
+              Convert to invoice
+            </Button>
+          ) : null}
           <Button variant="outline" onClick={() => setEditOpen(true)}>
             <Pencil className="mr-2 h-4 w-4" />
             Edit
@@ -155,7 +190,7 @@ export function InvoiceDetailPage({ id }: { id: string }) {
                   }}
                 >
                   {voidInvoice.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                   ) : null}
                   Void
                 </AlertDialogAction>
@@ -229,6 +264,7 @@ export function InvoiceDetailPage({ id }: { id: string }) {
       <InvoicePaymentsCard
         payments={paymentsData?.data ?? []}
         onCreate={() => setPaymentDialogOpen(true)}
+        canCreate={invoice.status !== "void"}
       />
 
       <InvoiceCreditNotesCard
