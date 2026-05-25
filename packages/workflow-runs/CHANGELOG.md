@@ -1,5 +1,14 @@
 # @voyantjs/workflow-runs
 
+## 0.81.4
+
+### Patch Changes
+
+- @voyantjs/core@0.81.4
+- @voyantjs/db@0.81.4
+- @voyantjs/hono@0.81.4
+- @voyantjs/workflows@0.81.4
+
 ## 0.81.3
 
 ### Patch Changes
