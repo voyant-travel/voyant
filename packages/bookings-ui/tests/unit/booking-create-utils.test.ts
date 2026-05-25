@@ -5,6 +5,7 @@ import {
   getSelectedSharedRoomUnitId,
   itemLinesToRows,
   productMatchesPickerSearch,
+  validateBillingPersonContact,
 } from "../../src/components/booking-create-utils.js"
 import { clearSharedRoomValue } from "../../src/components/shared-room-section.js"
 
@@ -166,5 +167,19 @@ describe("booking create helpers", () => {
         optu_single: 0,
       }),
     ).toBe("optu_double")
+  })
+
+  it("accepts phone-only billing person contact", () => {
+    expect(validateBillingPersonContact({ email: null, phone: " +40 700 000 000 " })).toBe("valid")
+  })
+
+  it("requires either email or phone for billing person contact", () => {
+    expect(validateBillingPersonContact({ email: " ", phone: " " })).toBe("missing-contact")
+  })
+
+  it("rejects malformed billing person emails when provided", () => {
+    expect(validateBillingPersonContact({ email: "traveler@example.com", phone: "+40 700" })).toBe(
+      "invalid-email",
+    )
   })
 })

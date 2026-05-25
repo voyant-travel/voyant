@@ -52,6 +52,25 @@ export function productMatchesPickerSearch(
   )
 }
 
+export type BillingPersonContactValidationResult = "valid" | "missing-contact" | "invalid-email"
+
+export function isRealBookingEmail(value: string | null | undefined): boolean {
+  const normalized = value?.trim().toLowerCase() ?? ""
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) return false
+  return !["noreply@example.com", "tbd@example.com", "traveler@example.com"].includes(normalized)
+}
+
+export function validateBillingPersonContact(
+  contact: { email?: string | null; phone?: string | null } | null | undefined,
+): BillingPersonContactValidationResult {
+  const email = contact?.email?.trim() ?? ""
+  const phone = contact?.phone?.trim() ?? ""
+
+  if (email && !isRealBookingEmail(email)) return "invalid-email"
+  if (!email && !phone) return "missing-contact"
+  return "valid"
+}
+
 export function getBookableDepartureSlots<TSlot extends DepartureSlotSearchRecord>(
   slots: readonly TSlot[],
   options: {
