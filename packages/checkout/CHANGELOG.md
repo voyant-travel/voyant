@@ -1,5 +1,15 @@
 # @voyantjs/checkout
 
+## 0.80.12
+
+### Patch Changes
+
+- @voyantjs/bookings@0.80.12
+- @voyantjs/core@0.80.12
+- @voyantjs/finance@0.80.12
+- @voyantjs/hono@0.80.12
+- @voyantjs/notifications@0.80.12
+
 ## 0.80.11
 
 ### Patch Changes

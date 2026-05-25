@@ -1,5 +1,15 @@
 # @voyantjs/allocation-ui
 
+## 0.80.12
+
+### Patch Changes
+
+- f6ebb68: Hide allocation tabs when a slot has no matching resources or templates.
+- Updated dependencies [5070731]
+  - @voyantjs/availability-react@0.80.12
+  - @voyantjs/i18n@0.80.12
+  - @voyantjs/ui@0.80.12
+
 ## 0.80.11
 
 ### Patch Changes
