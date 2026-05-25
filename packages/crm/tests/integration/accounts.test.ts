@@ -247,6 +247,46 @@ describe.skipIf(!DB_AVAILABLE)("Account routes", () => {
       expect(listBody.data[0]?.phone).toBe("+40123456789")
     })
 
+    it("searches people by email contact point", async () => {
+      await app.request("/people", {
+        method: "POST",
+        ...json({ firstName: "Email", lastName: "Match", email: "client@example.com" }),
+      })
+      await app.request("/people", {
+        method: "POST",
+        ...json({ firstName: "Other", lastName: "Person", email: "other@example.com" }),
+      })
+
+      const res = await app.request(`/people?search=${encodeURIComponent("CLIENT@example.com")}`, {
+        method: "GET",
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.total).toBe(1)
+      expect(body.data[0]?.email).toBe("client@example.com")
+    })
+
+    it("searches people by formatted phone contact point", async () => {
+      await app.request("/people", {
+        method: "POST",
+        ...json({ firstName: "Phone", lastName: "Match", phone: "+40 (712) 345-678" }),
+      })
+      await app.request("/people", {
+        method: "POST",
+        ...json({ firstName: "Other", lastName: "Person", phone: "+40 799 000 000" }),
+      })
+
+      const res = await app.request(`/people?search=${encodeURIComponent("40712 345")}`, {
+        method: "GET",
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.total).toBe(1)
+      expect(body.data[0]?.phone).toBe("+40 (712) 345-678")
+    })
+
     it("lists people", async () => {
       await app.request("/people", {
         method: "POST",

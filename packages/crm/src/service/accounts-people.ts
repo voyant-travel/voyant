@@ -1,5 +1,6 @@
+import { identityContactPoints } from "@voyantjs/identity/schema"
 import { identityService } from "@voyantjs/identity/service"
-import { and, asc, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm"
+import { and, asc, desc, eq, exists, gte, ilike, lte, or, type SQL, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -37,23 +38,53 @@ import {
 } from "./accounts-shared.js"
 import { paginate } from "./helpers.js"
 
+function buildPersonSearchCondition(db: PostgresJsDatabase, search: string): SQL | undefined {
+  const term = `%${search}%`
+  const digits = search.replace(/\D/g, "")
+  const contactPointConditions: SQL[] = [
+    ilike(identityContactPoints.value, term),
+    ilike(identityContactPoints.normalizedValue, term),
+  ]
+
+  if (digits) {
+    const digitsTerm = `%${digits}%`
+    contactPointConditions.push(
+      sql`regexp_replace(${identityContactPoints.value}, '[^0-9]+', '', 'g') ILIKE ${digitsTerm}`,
+      sql`regexp_replace(coalesce(${identityContactPoints.normalizedValue}, ''), '[^0-9]+', '', 'g') ILIKE ${digitsTerm}`,
+    )
+  }
+
+  return or(
+    ilike(people.firstName, term),
+    ilike(people.lastName, term),
+    ilike(people.jobTitle, term),
+    exists(
+      db
+        .select({ one: sql`1` })
+        .from(identityContactPoints)
+        .where(
+          and(
+            eq(identityContactPoints.entityType, personEntityType),
+            eq(identityContactPoints.entityId, people.id),
+            or(eq(identityContactPoints.kind, "email"), eq(identityContactPoints.kind, "phone")),
+            or(...contactPointConditions),
+          ),
+        ),
+    ),
+  )
+}
+
 export const peopleAccountsService = {
   async listPeople(db: PostgresJsDatabase, query: PersonListQuery) {
-    const conditions = []
+    const conditions: SQL[] = []
 
     if (query.organizationId) conditions.push(eq(people.organizationId, query.organizationId))
     if (query.ownerId) conditions.push(eq(people.ownerId, query.ownerId))
     if (query.relation) conditions.push(eq(people.relation, query.relation))
     if (query.status) conditions.push(eq(people.status, query.status))
     if (query.search) {
-      const term = `%${query.search}%`
-      conditions.push(
-        or(
-          ilike(people.firstName, term),
-          ilike(people.lastName, term),
-          ilike(people.jobTitle, term),
-        ),
-      )
+      const searchCondition = buildPersonSearchCondition(db, query.search)
+      if (searchCondition) conditions.push(searchCondition)
     }
 
     const where = conditions.length ? and(...conditions) : undefined
