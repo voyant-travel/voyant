@@ -10,6 +10,7 @@ import {
   financeService,
   type InvoiceFromBookingData,
   type InvoiceFromBookingValidationError,
+  type InvoiceLineItemsPersistenceError,
   type InvoiceNumberAllocationError,
   type InvoiceNumberConflictError,
 } from "../../src/service.js"
@@ -55,6 +56,7 @@ function makeDb(options: {
   explicitSeries?: Record<string, unknown> | null
   defaultSeries?: Record<string, unknown> | null
   invoiceInsertError?: unknown
+  invoiceLineItemsReturning?: Array<Record<string, unknown>>
 }) {
   const insertedInvoices: Array<Record<string, unknown>> = []
   const insertedInvoiceExternalRefs: Array<Record<string, unknown>> = []
@@ -104,7 +106,9 @@ function makeDb(options: {
         }
         if (table === invoiceLineItems) {
           insertedInvoiceLineItems.push(...values)
-          return Promise.resolve(values)
+          return {
+            returning: vi.fn(async () => options.invoiceLineItemsReturning ?? values),
+          }
         }
         if (table === invoiceExternalRefs) {
           insertedInvoiceExternalRefs.push(...values)
@@ -404,6 +408,44 @@ describe("financeService.createInvoiceFromBooking number allocation", () => {
         syncError: null,
       }),
     ])
+  })
+
+  it("fails the transaction when override line items are not persisted", async () => {
+    const { db } = makeDb({ invoiceLineItemsReturning: [] })
+
+    await expect(
+      financeService.createInvoiceFromBooking(
+        db,
+        {
+          bookingId: "book_123",
+          invoiceNumber: "SB-42",
+          issueDate: "2026-05-23",
+          dueDate: "2026-06-23",
+          lineItems: [
+            {
+              description: "SmartBill fiscal line",
+              quantity: 1,
+              unitAmountCents: 50_000,
+              taxRateBps: 1_900,
+            },
+          ],
+          externalRefs: [
+            {
+              provider: "smartbill",
+              externalNumber: "42",
+              status: "issued",
+            },
+          ],
+        },
+        bookingData,
+      ),
+    ).rejects.toMatchObject({
+      name: "InvoiceLineItemsPersistenceError",
+      code: "invoice_line_items_not_persisted",
+      invoiceId: "inv_123",
+      expectedCount: 1,
+      actualCount: 0,
+    } satisfies Partial<InvoiceLineItemsPersistenceError>)
   })
 
   it("rejects cross-currency overrides without the booking sell currency as base", async () => {
