@@ -1,5 +1,16 @@
 # @voyantjs/bookings
 
+## 0.80.9
+
+### Patch Changes
+
+- 37aa8b6: Create booking allocation rows when converting slot-backed products into admin bookings.
+  - @voyantjs/action-ledger@0.80.9
+  - @voyantjs/core@0.80.9
+  - @voyantjs/db@0.80.9
+  - @voyantjs/hono@0.80.9
+  - @voyantjs/utils@0.80.9
+
 ## 0.80.8
 
 ### Patch Changes
