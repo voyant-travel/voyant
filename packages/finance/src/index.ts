@@ -268,6 +268,7 @@ export type {
 } from "./service.js"
 export {
   financeService,
+  InvoiceLineItemsPersistenceError,
   InvoiceNumberAllocationError,
   InvoiceNumberConflictError,
   renderInvoiceBody,

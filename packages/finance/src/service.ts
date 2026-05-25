@@ -358,6 +358,21 @@ export class InvoiceFromBookingValidationError extends Error {
   }
 }
 
+export class InvoiceLineItemsPersistenceError extends Error {
+  readonly code = "invoice_line_items_not_persisted"
+  readonly invoiceId: string
+  readonly expectedCount: number
+  readonly actualCount: number
+
+  constructor(invoiceId: string, expectedCount: number, actualCount: number) {
+    super("Invoice line items were not persisted")
+    this.name = "InvoiceLineItemsPersistenceError"
+    this.invoiceId = invoiceId
+    this.expectedCount = expectedCount
+    this.actualCount = actualCount
+  }
+}
+
 /** Booking data needed for createInvoiceFromBooking — supplied by the caller (template). */
 export interface InvoiceFromBookingData {
   booking: {
@@ -3678,18 +3693,27 @@ export const financeService = {
             .values(invoiceFromBookingExternalRefValues(invoice.id, data.externalRefs))
         }
 
-        await tx.insert(invoiceLineItems).values(
-          lineItems.map((line) => ({
-            invoiceId: invoice.id,
-            bookingItemId: line.bookingItemId,
-            description: line.description,
-            quantity: line.quantity,
-            unitPriceCents: line.unitPriceCents,
-            totalCents: line.totalCents,
-            taxRate: line.taxRate,
-            sortOrder: line.sortOrder,
-          })),
-        )
+        const lineItemValues = lineItems.map((line) => ({
+          invoiceId: invoice.id,
+          bookingItemId: line.bookingItemId,
+          description: line.description,
+          quantity: line.quantity,
+          unitPriceCents: line.unitPriceCents,
+          totalCents: line.totalCents,
+          taxRate: line.taxRate,
+          sortOrder: line.sortOrder,
+        }))
+        const insertedLineItems = await tx
+          .insert(invoiceLineItems)
+          .values(lineItemValues)
+          .returning({ id: invoiceLineItems.id })
+        if (insertedLineItems.length !== lineItemValues.length) {
+          throw new InvoiceLineItemsPersistenceError(
+            invoice.id,
+            lineItemValues.length,
+            insertedLineItems.length,
+          )
+        }
 
         return invoice
       })
