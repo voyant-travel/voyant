@@ -45,6 +45,7 @@ export const offers = pgTable(
     contactRegion: text("contact_region"),
     contactCity: text("contact_city"),
     contactAddressLine1: text("contact_address_line1"),
+    contactAddressLine2: text("contact_address_line2"),
     contactPostalCode: text("contact_postal_code"),
     currency: text("currency").notNull(),
     baseCurrency: text("base_currency"),

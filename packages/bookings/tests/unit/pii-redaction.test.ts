@@ -100,6 +100,7 @@ describe("redactBookingContact()", () => {
       contactEmail: "alice@example.com",
       contactPhone: "+40712345678",
       contactAddressLine1: "Str. Lipscani 1",
+      contactAddressLine2: "Ap. 4",
       contactPostalCode: "030031",
       contactCity: "Bucharest",
     }
@@ -112,6 +113,7 @@ describe("redactBookingContact()", () => {
     expect(output.contactEmail).toBe("a***e@example.com")
     expect(output.contactPhone).toBe("***5678")
     expect(output.contactAddressLine1).toBe("***")
+    expect(output.contactAddressLine2).toBe("***")
     expect(output.contactPostalCode).toBe("***")
     // contactCity is NOT in the redaction set — it's coarse-grained
     expect((output as unknown as { contactCity: string }).contactCity).toBe("Bucharest")
@@ -125,6 +127,7 @@ describe("redactBookingContact()", () => {
       contactEmail: null,
       contactPhone: null,
       contactAddressLine1: null,
+      contactAddressLine2: null,
       contactPostalCode: null,
     }
     const output = redactBookingContact(input)

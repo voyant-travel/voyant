@@ -644,6 +644,7 @@ export const sellabilityService = {
         contactRegion: input.offer.contactRegion ?? null,
         contactCity: input.offer.contactCity ?? null,
         contactAddressLine1: input.offer.contactAddressLine1 ?? null,
+        contactAddressLine2: input.offer.contactAddressLine2 ?? null,
         contactPostalCode: input.offer.contactPostalCode ?? null,
         marketId: candidate.market?.id ?? input.query.marketId ?? null,
         sourceChannelId: candidate.channel?.id ?? input.query.channelId ?? null,

@@ -541,6 +541,7 @@ export const customerPortalBookingBillingContactSchema = z.object({
   state: z.string().nullable(),
   city: z.string().nullable(),
   address1: z.string().nullable(),
+  address2: z.string().nullable(),
   postal: z.string().nullable(),
 })
 

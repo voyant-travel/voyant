@@ -290,7 +290,9 @@ export async function buildInvoiceIssuedEvent(
     clientName: buildClientName(booking),
     clientEmail: booking?.contactEmail ?? null,
     clientPhone: booking?.contactPhone ?? null,
-    clientAddress: booking?.contactAddressLine1 ?? null,
+    clientAddress:
+      [booking?.contactAddressLine1, booking?.contactAddressLine2].filter(Boolean).join("\n") ||
+      null,
     clientCity: booking?.contactCity ?? null,
     clientCounty: booking?.contactRegion ?? null,
     clientCountry: booking?.contactCountry ?? null,

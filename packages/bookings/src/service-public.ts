@@ -221,6 +221,7 @@ function extractBookingContactFromStatePayload(
     contactRegion: getRecordString(billing, ["state", "region"]),
     contactCity: getRecordString(billing, ["city"]),
     contactAddressLine1: getRecordString(billing, ["addressLine1", "address1", "line1"]),
+    contactAddressLine2: getRecordString(billing, ["addressLine2", "address2", "line2"]),
     contactPostalCode: getRecordString(billing, ["postalCode", "postal", "zip"]),
   }
 }

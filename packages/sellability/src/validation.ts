@@ -127,6 +127,7 @@ export const sellabilityConstructOfferSchema = z.object({
     contactRegion: z.string().max(255).nullable().optional(),
     contactCity: z.string().max(255).nullable().optional(),
     contactAddressLine1: z.string().max(255).nullable().optional(),
+    contactAddressLine2: z.string().max(255).nullable().optional(),
     contactPostalCode: z.string().max(50).nullable().optional(),
     validFrom: z.string().nullable().optional(),
     validUntil: z.string().nullable().optional(),
