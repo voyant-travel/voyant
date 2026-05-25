@@ -18,7 +18,7 @@ import {
   voucherRedemptions,
   vouchers,
 } from "../../src/schema.js"
-import { createBooking } from "../../src/service-booking-create.js"
+import { bookingCreateSchema, createBooking } from "../../src/service-booking-create.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
@@ -665,6 +665,52 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       { item_title: "Adult", traveler_last_name: "Lead" },
       { item_title: "Lunch", traveler_last_name: "Traveler" },
     ])
+  })
+
+  it("rejects duplicate stable traveler keys", async () => {
+    const { productId, unitId } = await seedProduct()
+
+    const result = bookingCreateSchema.safeParse({
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      travelers: [
+        {
+          clientTravelerKey: "trav:duplicate",
+          firstName: "Alice",
+          lastName: "Lead",
+          participantType: "traveler",
+          travelerCategory: "adult",
+          isPrimary: true,
+        },
+        {
+          clientTravelerKey: "trav:duplicate",
+          firstName: "Bob",
+          lastName: "Traveler",
+          participantType: "traveler",
+          travelerCategory: "adult",
+        },
+      ],
+      itemLines: [
+        {
+          clientLineKey: `unit:${unitId}`,
+          optionUnitId: unitId,
+          quantity: 1,
+          title: "Adult",
+          travelerKeys: ["trav:duplicate"],
+        },
+      ],
+    })
+
+    expect(result.success).toBe(false)
+    if (result.success) return
+    expect(result.error?.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          message: "Duplicate clientTravelerKey: trav:duplicate",
+        }),
+      ]),
+    )
   })
 
   it("rejects booking-create payloads that drift from the server draft resolver", async () => {

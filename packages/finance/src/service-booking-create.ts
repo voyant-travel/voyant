@@ -255,6 +255,33 @@ function requireCompleteBookingParty(
   })
 }
 
+function findDuplicateClientTravelerKeys(
+  travelers: readonly { clientTravelerKey?: string | null }[] | null | undefined,
+): string[] {
+  const seen = new Set<string>()
+  const duplicates = new Set<string>()
+  for (const traveler of travelers ?? []) {
+    const key = traveler.clientTravelerKey?.trim()
+    if (!key) continue
+    if (seen.has(key)) duplicates.add(key)
+    else seen.add(key)
+  }
+  return [...duplicates]
+}
+
+function requireUniqueClientTravelerKeys(
+  value: { travelers?: Array<{ clientTravelerKey?: string | null }> },
+  ctx: z.RefinementCtx,
+) {
+  for (const duplicateKey of findDuplicateClientTravelerKeys(value.travelers)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["travelers"],
+      message: `Duplicate clientTravelerKey: ${duplicateKey}`,
+    })
+  }
+}
+
 function isRealEmail(value: string | null | undefined): value is string {
   const normalized = value?.trim().toLowerCase() ?? ""
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized) && !placeholderEmails.has(normalized)
@@ -327,11 +354,13 @@ const bookingCreateBaseSchema = z.object({
 export const bookingCreateSchema = bookingCreateBaseSchema
   .superRefine(requirePriceOverrideReason)
   .superRefine(requireCompleteBookingParty)
+  .superRefine(requireUniqueClientTravelerKeys)
 
 export const bookingCreateSubSchema = bookingCreateBaseSchema
   .omit({ groupMembership: true })
   .superRefine(requirePriceOverrideReason)
   .superRefine(requireCompleteBookingParty)
+  .superRefine(requireUniqueClientTravelerKeys)
 
 export type BookingCreateInput = z.infer<typeof bookingCreateSchema>
 type BookingCreatePaymentScheduleInput = NonNullable<BookingCreateInput["paymentSchedules"]>[number]
@@ -621,6 +650,11 @@ async function linkBookingCreateItemsToTravelers(
   }>,
 ) {
   if (travelers.length === 0 || lines.length === 0) return
+  const duplicateTravelerKeys = findDuplicateClientTravelerKeys(travelerInputs)
+  if (duplicateTravelerKeys.length > 0) {
+    throw new Error(`Duplicate clientTravelerKey: ${duplicateTravelerKeys.join(", ")}`)
+  }
+
   const travelerByClientKey = new Map<string, BookingTraveler>()
   for (const [index, travelerInput] of travelerInputs.entries()) {
     const key = travelerInput.clientTravelerKey?.trim()
