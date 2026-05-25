@@ -44,6 +44,14 @@ export interface BookingCreateDocumentGenerationInput {
 }
 
 export interface BookingCreateItemLineInput {
+  /**
+   * Stable client-side key (e.g. `unit:optu_adult`) the server uses
+   * to look up this item after insert and link it to the travelers
+   * referenced in `travelerIndexes`. Server writes
+   * `metadata.bookingCreateLineKey` so the lookup survives the
+   * round-trip. See voyantjs/voyant#1267.
+   */
+  clientLineKey?: string | null
   optionId?: string | null
   optionUnitId: string
   quantity: number
@@ -51,9 +59,19 @@ export interface BookingCreateItemLineInput {
   description?: string | null
   unitSellAmountCents?: number | null
   totalSellAmountCents?: number | null
+  /**
+   * Indexes (into the request's `travelers` array) of travelers
+   * mapped to this item. The server inserts one
+   * `booking_item_travelers` row per traveler, linking the created
+   * `booking_item` to the corresponding `booking_traveler`. Null or
+   * empty = unlinked (no per-traveler ledger entry).
+   */
+  travelerIndexes?: number[] | null
 }
 
 export interface BookingCreateExtraLineInput {
+  /** See `BookingCreateItemLineInput.clientLineKey`. */
+  clientLineKey?: string | null
   productExtraId: string
   optionExtraConfigId?: string | null
   name: string
@@ -64,6 +82,8 @@ export interface BookingCreateExtraLineInput {
   sellCurrency: string
   unitSellAmountCents?: number | null
   totalSellAmountCents?: number | null
+  /** See `BookingCreateItemLineInput.travelerIndexes`. */
+  travelerIndexes?: number[] | null
 }
 
 export interface BookingCreateVoucherRedemptionInput {

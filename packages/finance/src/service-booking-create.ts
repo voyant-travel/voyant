@@ -3,11 +3,15 @@ import {
   bookingGroupsService,
   bookingsService,
 } from "@voyantjs/bookings"
+import {
+  type PricingAssignmentUnit,
+  verifyBookingDraft,
+} from "@voyantjs/bookings/pricing-assignment"
 import type { Booking, BookingGroupMember, BookingTraveler } from "@voyantjs/bookings/schema"
-import { bookingItems, bookingTravelers } from "@voyantjs/bookings/schema"
+import { bookingItems, bookingItemTravelers, bookingTravelers } from "@voyantjs/bookings/schema"
 import { bookingStatusSchema } from "@voyantjs/bookings/validation"
 import type { EventBus } from "@voyantjs/core"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { z } from "zod"
 
@@ -69,15 +73,29 @@ const documentGenerationInputSchema = z
   .default({ contractDocument: false, invoiceDocument: false })
 
 const itemLineInputSchema = z.object({
+  /**
+   * Stable client-side key (e.g. `unit:optu_adult`). Server stamps
+   * this into `booking_items.metadata.bookingCreateLineKey` so the
+   * post-insert pass can look up the row and link it to travelers
+   * via `booking_item_travelers`. See voyantjs/voyant#1267.
+   */
+  clientLineKey: z.string().min(1).max(255).optional().nullable(),
   optionUnitId: z.string().min(1),
   quantity: z.number().int().min(1),
   title: z.string().min(1).max(255).optional().nullable(),
   description: z.string().max(5000).optional().nullable(),
   unitSellAmountCents: z.number().int().min(0).optional().nullable(),
   totalSellAmountCents: z.number().int().min(0).optional().nullable(),
+  /**
+   * Indexes (into the request's `travelers` array) of travelers this
+   * item applies to. Server inserts one `booking_item_travelers` row
+   * per traveler.
+   */
+  travelerIndexes: z.array(z.number().int().min(0)).optional().nullable(),
 })
 
 const extraLineInputSchema = z.object({
+  clientLineKey: z.string().min(1).max(255).optional().nullable(),
   productExtraId: z.string().min(1),
   optionExtraConfigId: z.string().min(1).optional().nullable(),
   name: z.string().min(1).max(255),
@@ -88,6 +106,7 @@ const extraLineInputSchema = z.object({
   sellCurrency: z.string().length(3),
   unitSellAmountCents: z.number().int().min(0).optional().nullable(),
   totalSellAmountCents: z.number().int().min(0).optional().nullable(),
+  travelerIndexes: z.array(z.number().int().min(0)).optional().nullable(),
 })
 
 const voucherRedemptionInputSchema = z.object({
@@ -434,6 +453,148 @@ function isAlreadyPaidSchedule(schedule: BookingCreatePaymentScheduleInput) {
   return schedule.status === "paid" || metadata?.alreadyPaid === true
 }
 
+/**
+ * Load the option_unit catalog for a product so the resolver can
+ * verify the submitted itemLines server-side. Raw SQL because
+ * `option_units` lives in `@voyantjs/products` and finance doesn't
+ * depend on it directly — adding a runtime dependency for a log-only
+ * sanity check would be overkill.
+ */
+async function loadProductOptionUnits(
+  tx: PostgresJsDatabase,
+  productId: string,
+): Promise<PricingAssignmentUnit[]> {
+  const rows = await tx.execute(sql`
+    SELECT
+      ou.id          AS "optionUnitId",
+      ou.option_id   AS "optionId",
+      ou.name        AS "unitName",
+      ou.code        AS "unitCode",
+      ou.min_age     AS "minAge",
+      ou.max_age     AS "maxAge",
+      ou.unit_type   AS "unitType"
+    FROM option_units ou
+    JOIN product_options po ON po.id = ou.option_id
+    WHERE po.product_id = ${productId}
+  `)
+  return (rows as unknown as PricingAssignmentUnit[]).map((row) => ({
+    optionId: row.optionId ?? null,
+    optionUnitId: row.optionUnitId,
+    unitName: row.unitName,
+    unitCode: row.unitCode ?? null,
+    minAge: row.minAge ?? null,
+    maxAge: row.maxAge ?? null,
+    unitType: row.unitType ?? null,
+  }))
+}
+
+/**
+ * Re-runs `resolveBookingDraft` against the submitted payload and
+ * logs any mismatches between submitted itemLines quantities and
+ * what the resolver would derive. Log-only for now — see the
+ * inline note at the call site.
+ */
+async function verifyBookingCreatePayload(tx: PostgresJsDatabase, input: BookingCreateInput) {
+  const itemLines = input.itemLines ?? []
+  const travelers = input.travelers ?? []
+  if (itemLines.length === 0 || travelers.length === 0) return
+
+  const units = await loadProductOptionUnits(tx, input.productId)
+  const verification = verifyBookingDraft({
+    travelers,
+    itemLines,
+    units,
+  })
+
+  if (!verification.ok) {
+    console.warn(
+      `[bookings/create] payload drift for product=${input.productId}`,
+      JSON.stringify(verification.mismatches),
+    )
+  }
+}
+
+/**
+ * Filter + dedupe `travelerIndexes` against the inserted traveler
+ * array, dropping any indexes outside `[0, travelersLength)`.
+ */
+function uniqueValidTravelerIndexes(
+  indexes: readonly number[] | null | undefined,
+  travelersLength: number,
+): number[] {
+  if (!indexes?.length) return []
+  const seen = new Set<number>()
+  const result: number[] = []
+  for (const index of indexes) {
+    if (index < 0 || index >= travelersLength) continue
+    if (seen.has(index)) continue
+    seen.add(index)
+    result.push(index)
+  }
+  return result
+}
+
+/**
+ * Look up each `booking_item` the converter inserted by its stamped
+ * `metadata.bookingCreateLineKey`, then write one
+ * `booking_item_travelers` row per requested traveler. Idempotent —
+ * dedupes by `(item_id, traveler_id)` and skips when the lookup
+ * fails (e.g. the converter didn't create an item for that key).
+ *
+ * The metadata-key bridge lets the wire-format `clientLineKey` thread
+ * through the create flow without forcing the converter to return a
+ * map back to the orchestrator. See voyantjs/voyant#1267.
+ */
+async function linkBookingCreateItemsToTravelers(
+  tx: PostgresJsDatabase,
+  bookingId: string,
+  travelers: readonly BookingTraveler[],
+  lines: ReadonlyArray<{
+    clientLineKey?: string | null
+    travelerIndexes?: readonly number[] | null
+  }>,
+) {
+  if (travelers.length === 0 || lines.length === 0) return
+  const requestedLinks = lines.flatMap((line) =>
+    uniqueValidTravelerIndexes(line.travelerIndexes, travelers.length).map((travelerIndex) => ({
+      clientLineKey: line.clientLineKey ?? null,
+      travelerIndex,
+    })),
+  )
+  if (requestedLinks.length === 0) return
+
+  const itemRows = await tx.select().from(bookingItems).where(eq(bookingItems.bookingId, bookingId))
+  const itemByClientLineKey = new Map<string, (typeof itemRows)[number]>()
+  for (const item of itemRows) {
+    const key = (item.metadata as { bookingCreateLineKey?: unknown } | null | undefined)
+      ?.bookingCreateLineKey
+    if (typeof key === "string") itemByClientLineKey.set(key, item)
+  }
+
+  const seen = new Set<string>()
+  const linkRows = requestedLinks.flatMap(({ clientLineKey, travelerIndex }) => {
+    if (!clientLineKey) return []
+    const item = itemByClientLineKey.get(clientLineKey)
+    const traveler = travelers[travelerIndex]
+    if (!item || !traveler) return []
+    const dedupeKey = `${item.id}:${traveler.id}`
+    if (seen.has(dedupeKey)) return []
+    seen.add(dedupeKey)
+    return [
+      {
+        bookingItemId: item.id,
+        travelerId: traveler.id,
+        role: "traveler" as const,
+        isPrimary: traveler.isPrimary,
+      },
+    ]
+  })
+
+  if (linkRows.length > 0) {
+    await tx.insert(bookingItemTravelers).values(linkRows)
+  }
+}
+
 function validatePaymentSchedules(
   input: BookingCreateInput,
   booking: Booking,
@@ -616,14 +777,23 @@ export async function createBooking(
                 optionExtraConfigId: line.optionExtraConfigId ?? null,
                 pricingMode: line.pricingMode ?? null,
                 pricedPerPerson: line.pricedPerPerson ?? null,
+                // Mirror what the item-line converter does so
+                // `linkBookingCreateItemsToTravelers` can look up
+                // extra rows by clientLineKey and write
+                // booking_item_travelers links for per-person
+                // extras. See voyantjs/voyant#1267.
+                ...(line.clientLineKey ? { bookingCreateLineKey: line.clientLineKey } : {}),
               },
             }
           }),
         )
       }
 
-      // 2. Travelers. roomUnitId is accepted on the input but not persisted
-      // yet — see travelerInputSchema for the follow-up note.
+      // 2. Travelers. The wire-format `roomUnitId` on a traveler is
+      // accepted for round-trip compatibility but not stored on the
+      // traveler row itself — per-traveler unit assignment is
+      // expressed through `booking_item_travelers` rows linked from
+      // each `booking_item`. See voyantjs/voyant#1267.
       const travelers: BookingTraveler[] = []
       for (const traveler of input.travelers ?? []) {
         const [row] = await tx
@@ -644,6 +814,33 @@ export async function createBooking(
           })
           .returning()
         if (row) travelers.push(row)
+      }
+
+      // 2b. Link booking_items + extras to specific travelers when
+      // the caller supplied `clientLineKey` + `travelerIndexes` on
+      // any line. Item rows were inserted earlier by
+      // `convertProductToBooking` (this slice's product converter
+      // doesn't run them in the orchestrator); we look them up by
+      // the `metadata.bookingCreateLineKey` the converter stamped.
+      await linkBookingCreateItemsToTravelers(tx, booking.id, travelers, [
+        ...(input.itemLines ?? []),
+        ...(input.extraLines ?? []),
+      ])
+
+      // 2c. Log-only verification: re-run the resolver server-side
+      // against the submitted itemLines + travelers to surface any
+      // client/server drift on the per-band quantities. Useful for
+      // catching #1262-class bugs in flight without rejecting
+      // payloads — a follow-up will flip this to a hard rejection
+      // once we've observed real traffic and confirmed no legitimate
+      // clients trip the warning. See voyantjs/voyant#1267.
+      try {
+        await verifyBookingCreatePayload(tx, input)
+      } catch (error) {
+        // Verification is best-effort; never block a booking commit
+        // because of a verifier exception (e.g. catalog query
+        // failure). Surface the unexpected case for observability.
+        console.warn("[bookings/create] verifier threw", error)
       }
 
       // 3. Payment schedules

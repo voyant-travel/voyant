@@ -217,6 +217,14 @@ export const convertProductSchema = z
     itemLines: z
       .array(
         z.object({
+          /**
+           * Stable client-side key (e.g. `unit:optu_adult`). Stamped
+           * into the inserted booking_item's
+           * `metadata.bookingCreateLineKey` so the orchestrator can
+           * link items to travelers via `booking_item_travelers`.
+           * See voyantjs/voyant#1267.
+           */
+          clientLineKey: z.string().min(1).max(255).optional().nullable(),
           optionId: z.string().min(1).optional().nullable(),
           optionUnitId: z.string().min(1),
           quantity: z.number().int().min(1),

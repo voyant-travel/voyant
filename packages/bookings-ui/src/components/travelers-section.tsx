@@ -55,6 +55,19 @@ export interface TravelerEntry {
   dateOfBirth: string | null
   /** option_unit_id the traveler is assigned to (matches OptionUnitsStepper units). */
   roomUnitId: string | null
+  /**
+   * Operator-intent enum for `roomUnitId`:
+   *
+   * - `auto`: assignment was system-derived, eligible to be re-derived
+   *   when units / DOB / role change.
+   * - `manual`: operator clicked a category/room control. Resolver
+   *   respects the value when still valid.
+   * - `none`: operator explicitly picked "No room". Stays null
+   *   through resolver re-runs.
+   *
+   * Defaults to `auto` when omitted. See voyantjs/voyant#1267.
+   */
+  roomUnitAssignmentSource?: "auto" | "manual" | "none"
 }
 
 export interface TravelerListValue {
@@ -75,24 +88,21 @@ export function createBlankTraveler(role: TravelerRole = "adult"): TravelerEntry
     role,
     dateOfBirth: null,
     roomUnitId: null,
+    roomUnitAssignmentSource: "auto",
   }
 }
 
-/**
- * Compute integer age in full years from an ISO date-of-birth string.
- * Returns null when the DOB is missing or unparseable.
- */
-export function computeAgeYears(dob: string | null, now: Date = new Date()): number | null {
-  if (!dob) return null
-  const birth = new Date(dob)
-  if (Number.isNaN(birth.getTime())) return null
-  let age = now.getFullYear() - birth.getFullYear()
-  const beforeBirthday =
-    now.getMonth() < birth.getMonth() ||
-    (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())
-  if (beforeBirthday) age -= 1
-  return age >= 0 ? age : null
-}
+// Re-export `computeAgeYears` from the canonical assignment module so
+// existing consumers of `travelers-section`'s public surface keep
+// working. The implementation lives in `@voyantjs/bookings/pricing-assignment`.
+export { computeAgeYears } from "@voyantjs/bookings/pricing-assignment"
+
+import {
+  computeAgeYears as _computeAgeYears,
+  matchUnitByDob as matchAssignmentUnitByDob,
+  matchUnitByRoleHint as matchAssignmentUnitByRoleHint,
+  type PricingAssignmentUnit,
+} from "@voyantjs/bookings/pricing-assignment"
 
 /**
  * Derive the age-banded traveler role from DOB. Falls back to `adult`
@@ -104,7 +114,7 @@ export function computeAgeYears(dob: string | null, now: Date = new Date()): num
  *   - adult:  18+
  */
 export function deriveTravelerRoleFromDob(dob: string | null): TravelerRole {
-  const age = computeAgeYears(dob)
+  const age = _computeAgeYears(dob)
   if (age == null) return "adult"
   if (age < 2) return "infant"
   if (age < 18) return "child"
@@ -112,53 +122,34 @@ export function deriveTravelerRoleFromDob(dob: string | null): TravelerRole {
 }
 
 /**
- * Find the unit whose `[minAge, maxAge]` window contains the given
- * DOB-derived age. Returns the unit id, or null if no match (or DOB
- * unset). Person-typed units are preferred; everything else is
- * ignored. Caller falls back to a default unit when null.
+ * Adapter from this file's `RoomGroupUnit` shape (UI-side, uses
+ * `unitId`) to the canonical `PricingAssignmentUnit` shape (uses
+ * `optionUnitId`). Phase 1 of voyantjs/voyant#1267 will collapse these
+ * by renaming the UI shape.
  */
-function matchUnitByDob(units: ReadonlyArray<RoomGroupUnit>, dob: string | null): string | null {
-  if (!dob) return null
-  const age = computeAgeYears(dob)
-  if (age == null) return null
-  const personUnits = units.filter((u) => u.unitType == null || u.unitType === "person")
-  const match = personUnits.find(
-    (u) => (u.minAge == null || age >= u.minAge) && (u.maxAge == null || age <= u.maxAge),
-  )
-  return match?.unitId ?? null
+function roomGroupUnitsAsAssignmentUnits(
+  units: ReadonlyArray<RoomGroupUnit>,
+): PricingAssignmentUnit[] {
+  return units.map((u) => ({
+    optionId: null,
+    optionUnitId: u.unitId,
+    unitName: u.unitName,
+    unitCode: u.unitCode,
+    minAge: u.minAge,
+    maxAge: u.maxAge,
+    unitType: u.unitType,
+  }))
 }
 
-/**
- * Find the unit matching a role hint when DOB is missing. Maps the
- * role to a representative age and matches against `[minAge, maxAge]`.
- * Returns null when the role doesn't carry an age signal (e.g. `lead`).
- *
- * Routes `infant` to whichever band covers ~1y (e.g. `child_0_5`) and
- * `child` to whichever covers ~8y (e.g. `child_6_12`), regardless of
- * how the product codes the unit names.
- */
+function matchUnitByDob(units: ReadonlyArray<RoomGroupUnit>, dob: string | null): string | null {
+  return matchAssignmentUnitByDob(roomGroupUnitsAsAssignmentUnits(units), dob)
+}
+
 function matchUnitByRoleHint(
   units: ReadonlyArray<RoomGroupUnit>,
   role: TravelerRole | null,
 ): string | null {
-  if (!role || role === "lead") return null
-  const HINT_AGE: Record<"adult" | "child" | "infant", number> = {
-    adult: 30,
-    child: 8,
-    infant: 1,
-  }
-  const hintAge = HINT_AGE[role]
-  if (hintAge == null) return null
-  // Only consider units with explicit age bands — units with null
-  // min/max would all spuriously match any hint age.
-  const banded = units.filter(
-    (u) =>
-      (u.unitType == null || u.unitType === "person") && (u.minAge != null || u.maxAge != null),
-  )
-  const match = banded.find(
-    (u) => (u.minAge == null || hintAge >= u.minAge) && (u.maxAge == null || hintAge <= u.maxAge),
-  )
-  return match?.unitId ?? null
+  return matchAssignmentUnitByRoleHint(roomGroupUnitsAsAssignmentUnits(units), role)
 }
 
 /**
@@ -359,33 +350,13 @@ export function TravelersSection({
     [roomUnits, roomGroups],
   )
 
-  // Race fix: travelers added before the option-units queries resolve
-  // end up with `roomUnitId: null`. Once units arrive, back-fill any
-  // missing assignments so the static fallback's role hint (Child /
-  // Infant) is honored and `redistributeByAge` doesn't silently price
-  // them as adults. Runs exactly once per units-load transition — after
-  // that, `roomUnitId: null` is treated as the operator's explicit
-  // "No room" choice from the Room select and left alone. Reset on
-  // empty `roomUnits` so the next load (e.g. product change) rehydrates.
-  const hasHydratedNullsRef = React.useRef(false)
-  React.useEffect(() => {
-    if (!roomUnits || roomUnits.length === 0) {
-      hasHydratedNullsRef.current = false
-      return
-    }
-    if (hasHydratedNullsRef.current) return
-    hasHydratedNullsRef.current = true
-    if (!value.travelers.some((t) => !t.roomUnitId)) return
-    const next = value.travelers.map((t) =>
-      t.roomUnitId ? t : { ...t, roomUnitId: pickRoomUnitIdForNewTraveler(t.dateOfBirth, t.role) },
-    )
-    // Guard against a stray onChange if hydration can't find a unit
-    // (e.g. empty roomGroups): no point dispatching an update that
-    // doesn't actually change anything.
-    const changed = next.some((t, i) => t.roomUnitId !== value.travelers[i]?.roomUnitId)
-    if (!changed) return
-    onChange({ travelers: next })
-  }, [roomUnits, value.travelers, onChange, pickRoomUnitIdForNewTraveler])
+  // Note: there is no hydration effect any more. Travelers attached
+  // before the option-units queries resolve get a `null` roomUnitId
+  // and `roomUnitAssignmentSource: "auto"`; the resolver in
+  // `@voyantjs/bookings/pricing-assignment` re-derives them at every
+  // preview/submit pass, and respects `"none"` (explicit No room) /
+  // `"manual"` (operator click) when set. Operator intent is now
+  // declarative on the row, not implicit in a one-shot effect.
 
   const addRow = () => {
     // First traveler defaults to `lead` so the operator doesn't have to
@@ -395,7 +366,11 @@ export function TravelersSection({
     onChange({
       travelers: [
         ...value.travelers,
-        { ...blank, roomUnitId: pickRoomUnitIdForNewTraveler(null, role) },
+        {
+          ...blank,
+          roomUnitId: pickRoomUnitIdForNewTraveler(null, role),
+          roomUnitAssignmentSource: "auto",
+        },
       ],
     })
   }
@@ -407,7 +382,11 @@ export function TravelersSection({
     onChange({
       travelers: [
         ...value.travelers,
-        { ...traveler, roomUnitId: pickRoomUnitIdForNewTraveler(traveler.dateOfBirth, role) },
+        {
+          ...traveler,
+          roomUnitId: pickRoomUnitIdForNewTraveler(traveler.dateOfBirth, role),
+          roomUnitAssignmentSource: "auto",
+        },
       ],
     })
   }
@@ -418,7 +397,11 @@ export function TravelersSection({
     onChange({
       travelers: [
         ...value.travelers,
-        { ...traveler, roomUnitId: pickRoomUnitIdForNewTraveler(traveler.dateOfBirth, role) },
+        {
+          ...traveler,
+          roomUnitId: pickRoomUnitIdForNewTraveler(traveler.dateOfBirth, role),
+          roomUnitAssignmentSource: "auto",
+        },
       ],
     })
   }
@@ -524,6 +507,21 @@ export function TravelersSection({
                     phone: person.phone ?? "",
                     preferredLanguage: person.preferredLanguage ?? "",
                     dateOfBirth: person.dateOfBirth ?? null,
+                    // Re-derive the unit assignment when the operator
+                    // swaps the linked CRM person — DOB changes, so
+                    // the resolver may move the row to a different
+                    // age band. Skip when the operator has already
+                    // explicitly picked a room/category/"No room".
+                    ...(traveler.roomUnitAssignmentSource === "manual" ||
+                    traveler.roomUnitAssignmentSource === "none"
+                      ? {}
+                      : {
+                          roomUnitId: pickRoomUnitIdForNewTraveler(
+                            person.dateOfBirth ?? null,
+                            traveler.role,
+                          ),
+                          roomUnitAssignmentSource: "auto" as const,
+                        }),
                   })
                 }
                 onClear={() =>
@@ -535,6 +533,13 @@ export function TravelersSection({
                     phone: "",
                     preferredLanguage: "",
                     dateOfBirth: null,
+                    ...(traveler.roomUnitAssignmentSource === "manual" ||
+                    traveler.roomUnitAssignmentSource === "none"
+                      ? {}
+                      : {
+                          roomUnitId: pickRoomUnitIdForNewTraveler(null, traveler.role),
+                          roomUnitAssignmentSource: "auto" as const,
+                        }),
                   })
                 }
               />
@@ -549,8 +554,16 @@ export function TravelersSection({
                     child: merged.roleChild,
                     infant: merged.roleInfant,
                   }}
-                  onPickUnit={(unitId, nextRole) =>
-                    updateAt(index, { roomUnitId: unitId, role: nextRole })
+                  onPickUnit={(unitId, nextRole, source) =>
+                    updateAt(index, {
+                      roomUnitId: unitId,
+                      role: nextRole,
+                      // Only freeze as manual when the dynamic button
+                      // actually picked a unit. Role-only clicks via
+                      // the static fallback stay `auto` so the
+                      // resolver can re-derive once real units load.
+                      roomUnitAssignmentSource: source,
+                    })
                   }
                 />
 
@@ -566,6 +579,7 @@ export function TravelersSection({
                             v === NO_ROOM || !v
                               ? null
                               : pickUnitForRoomChange(traveler.roomUnitId, v, roomGroups),
+                          roomUnitAssignmentSource: v === NO_ROOM || !v ? "none" : "manual",
                         })
                       }
                     >
@@ -773,6 +787,7 @@ function createTravelerFromPerson(person: PersonRecord, role: TravelerRole): Tra
     role: effectiveRole,
     dateOfBirth,
     roomUnitId: null,
+    roomUnitAssignmentSource: "auto",
   }
 }
 
@@ -806,7 +821,15 @@ function TravelerCategoryButtons({
   traveler: TravelerEntry
   roomGroups?: RoomGroup[]
   fallbackLabels: { category: string; adult: string; child: string; infant: string }
-  onPickUnit: (unitId: string | null, nextRole: TravelerRole) => void
+  /**
+   * Called when the operator clicks a category button. `source`
+   * signals whether the click selected a real unit (`"manual"` —
+   * dynamic per-product button) or merely chose a role with no
+   * actual unit pick (`"auto"` — static fallback before units load).
+   * The wrapping handler uses `source` to decide whether to freeze
+   * the current `roomUnitId` as a manual choice.
+   */
+  onPickUnit: (unitId: string | null, nextRole: TravelerRole, source: "manual" | "auto") => void
 }) {
   const group = React.useMemo<RoomGroup | undefined>(() => {
     if (!roomGroups || !traveler.roomUnitId) return undefined
@@ -860,7 +883,11 @@ function TravelerCategoryButtons({
                 variant={active ? "default" : "outline"}
                 className="h-7 text-xs"
                 onClick={() => {
-                  if (shouldUpdate) onPickUnit(traveler.roomUnitId, nextRole)
+                  // Static fallback: operator chose a role, not a
+                  // concrete unit. Pass `source: "auto"` so the
+                  // resolver re-derives the unit instead of freezing
+                  // a stale auto-assignment as manual.
+                  if (shouldUpdate) onPickUnit(traveler.roomUnitId, nextRole, "auto")
                 }}
               >
                 {label}
@@ -892,7 +919,8 @@ function TravelerCategoryButtons({
               variant={active ? "default" : "outline"}
               className="h-7 text-xs"
               onClick={() => {
-                if (shouldUpdate) onPickUnit(unit.unitId, nextRole)
+                // Dynamic button: real unit pick, freeze as manual.
+                if (shouldUpdate) onPickUnit(unit.unitId, nextRole, "manual")
               }}
               title={
                 unit.minAge != null || unit.maxAge != null

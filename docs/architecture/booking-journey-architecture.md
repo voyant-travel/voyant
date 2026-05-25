@@ -300,6 +300,19 @@ interface BookingDraft {
 
 `TravelerEntry` widens beyond what `PassengersSection` carries today — it gets `dateOfBirth`, `band` ("adult" / "child" / "infant"), and an open-shape `documents` map (passport, national ID, dietary, accessibility) populated according to `BookingDraftShape.travelerFields[]`.
 
+Admin booking-create keeps the same invariant even while it still renders as a
+single dialog:
+
+- traveler age/pricing band, sellable option unit, room/accommodation
+  assignment, and explicit "no room" intent are separate draft concepts;
+- preview totals and submit payloads must be derived from the same draft
+  resolver (`@voyantjs/bookings/pricing-assignment` → `resolveBookingDraft`);
+- item and extra line applicability is persisted through
+  `booking_item_travelers`, not inferred later from display labels or raw
+  traveler counts.
+
+See voyantjs/voyant#1267 for the implementation history.
+
 ## 4.5. Pricing tiers — single supplement, triple share
 
 Cruises (and to a lesser extent stays / multi-pax tours) price per-pax with explicit per-occupancy tiers. Real-world cruise systems treat this as a fundamental shape, not an afterthought:
