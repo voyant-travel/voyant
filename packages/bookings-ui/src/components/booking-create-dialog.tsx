@@ -471,9 +471,9 @@ export function BookingCreateForm({
   // (Adult / Child / Senior). The age-band lives separately on the
   // traveler and only affects pricing; both an adult and a child sit
   // in the same Standard double room. Each entry's `unitId` is set to
-  // the option's primary unit so existing `roomUnitId`-keyed plumbing
-  // (assignment, redistribution) keeps working — `redistributeByAge`
-  // moves the traveler to the matching age-banded unit at submit.
+  // the option's primary unit so the existing `roomUnitId`-keyed
+  // plumbing keeps working — `resolveBookingDraft` moves the traveler
+  // to the matching age-banded unit at preview + submit.
   const roomUnitOptions: RoomUnitOption[] = React.useMemo(() => {
     type UnitLike = {
       optionId?: string | null

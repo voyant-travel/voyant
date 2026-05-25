@@ -554,11 +554,15 @@ export function TravelersSection({
                     child: merged.roleChild,
                     infant: merged.roleInfant,
                   }}
-                  onPickUnit={(unitId, nextRole) =>
+                  onPickUnit={(unitId, nextRole, source) =>
                     updateAt(index, {
                       roomUnitId: unitId,
                       role: nextRole,
-                      roomUnitAssignmentSource: "manual",
+                      // Only freeze as manual when the dynamic button
+                      // actually picked a unit. Role-only clicks via
+                      // the static fallback stay `auto` so the
+                      // resolver can re-derive once real units load.
+                      roomUnitAssignmentSource: source,
                     })
                   }
                 />
@@ -817,7 +821,15 @@ function TravelerCategoryButtons({
   traveler: TravelerEntry
   roomGroups?: RoomGroup[]
   fallbackLabels: { category: string; adult: string; child: string; infant: string }
-  onPickUnit: (unitId: string | null, nextRole: TravelerRole) => void
+  /**
+   * Called when the operator clicks a category button. `source`
+   * signals whether the click selected a real unit (`"manual"` —
+   * dynamic per-product button) or merely chose a role with no
+   * actual unit pick (`"auto"` — static fallback before units load).
+   * The wrapping handler uses `source` to decide whether to freeze
+   * the current `roomUnitId` as a manual choice.
+   */
+  onPickUnit: (unitId: string | null, nextRole: TravelerRole, source: "manual" | "auto") => void
 }) {
   const group = React.useMemo<RoomGroup | undefined>(() => {
     if (!roomGroups || !traveler.roomUnitId) return undefined
@@ -871,7 +883,11 @@ function TravelerCategoryButtons({
                 variant={active ? "default" : "outline"}
                 className="h-7 text-xs"
                 onClick={() => {
-                  if (shouldUpdate) onPickUnit(traveler.roomUnitId, nextRole)
+                  // Static fallback: operator chose a role, not a
+                  // concrete unit. Pass `source: "auto"` so the
+                  // resolver re-derives the unit instead of freezing
+                  // a stale auto-assignment as manual.
+                  if (shouldUpdate) onPickUnit(traveler.roomUnitId, nextRole, "auto")
                 }}
               >
                 {label}
@@ -903,7 +919,8 @@ function TravelerCategoryButtons({
               variant={active ? "default" : "outline"}
               className="h-7 text-xs"
               onClick={() => {
-                if (shouldUpdate) onPickUnit(unit.unitId, nextRole)
+                // Dynamic button: real unit pick, freeze as manual.
+                if (shouldUpdate) onPickUnit(unit.unitId, nextRole, "manual")
               }}
               title={
                 unit.minAge != null || unit.maxAge != null

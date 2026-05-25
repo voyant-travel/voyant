@@ -89,18 +89,24 @@ export function validateBillingPersonContact(
 export function getTravelerAssignableStepperUnits<
   TUnit extends BookingCreateTravelerAssignableUnitRecord,
 >(units: readonly TUnit[]): TUnit[] {
-  const hasRoomUnitByOption = new Map<string, boolean>()
+  // "Inventory" units (rooms, vehicles) are containers a traveler is
+  // placed into. When an option configures one, person-typed
+  // pricing-tier units on the same option are hidden from the
+  // stepper since their pricing folds into the container's per-pax
+  // accounting at submit time.
+  const isInventoryType = (unit: TUnit) => unit.unitType === "room" || unit.unitType === "vehicle"
+  const hasInventoryByOption = new Map<string, boolean>()
 
   for (const unit of units) {
     const optionKey = unit.optionId ?? unit.optionUnitId
-    if (unit.unitType === "room") hasRoomUnitByOption.set(optionKey, true)
-    else if (!hasRoomUnitByOption.has(optionKey)) hasRoomUnitByOption.set(optionKey, false)
+    if (isInventoryType(unit)) hasInventoryByOption.set(optionKey, true)
+    else if (!hasInventoryByOption.has(optionKey)) hasInventoryByOption.set(optionKey, false)
   }
 
   return units.filter((unit) => {
-    if (unit.unitType === "room") return true
+    if (isInventoryType(unit)) return true
     if (unit.unitType !== "person") return false
-    return !hasRoomUnitByOption.get(unit.optionId ?? unit.optionUnitId)
+    return !hasInventoryByOption.get(unit.optionId ?? unit.optionUnitId)
   })
 }
 

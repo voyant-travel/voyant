@@ -712,6 +712,12 @@ export async function createBooking(
                 optionExtraConfigId: line.optionExtraConfigId ?? null,
                 pricingMode: line.pricingMode ?? null,
                 pricedPerPerson: line.pricedPerPerson ?? null,
+                // Mirror what the item-line converter does so
+                // `linkBookingCreateItemsToTravelers` can look up
+                // extra rows by clientLineKey and write
+                // booking_item_travelers links for per-person
+                // extras. See voyantjs/voyant#1267.
+                ...(line.clientLineKey ? { bookingCreateLineKey: line.clientLineKey } : {}),
               },
             }
           }),

@@ -11,7 +11,7 @@ Separate inventory units (rooms, vehicles) from pricing tiers (Adult / Child / I
 
 ### `@voyantjs/bookings` — new `./pricing-assignment` sub-path
 
-Single source of truth for traveler→option-unit mapping, transport-agnostic so both the UI (preview + submit) and server-side validation reach for the same function:
+Single source of truth for traveler→option-unit mapping, transport-agnostic. The booking-create dialog (preview + submit) is the only call site today; the server-side submit validation pathway is a follow-up — but the module is now placed where that wiring is straightforward:
 
 ```ts
 import { resolveBookingDraft, resolveBookingExtraLines } from "@voyantjs/bookings/pricing-assignment"

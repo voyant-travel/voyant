@@ -1,8 +1,9 @@
 /**
  * Pure, transport-agnostic logic for mapping travelers onto option_units
  * at booking-create time. Lives in `@voyantjs/bookings` so the
- * booking-create dialog (preview + submit) AND server-side submit
- * validation can both reach for the same function.
+ * booking-create dialog (preview + submit) is the only call site today,
+ * but the server can import the same module to validate or re-resolve
+ * submit payloads in a follow-up — that wiring is not yet in place.
  *
  * Vocabulary:
  *   - A **pricing tier** (`unit_type='person'`) is a per-pax price band
@@ -248,8 +249,13 @@ function isPersonUnit(unit: PricingAssignmentUnit): boolean {
   return unit.unitType == null || unit.unitType === "person"
 }
 
-function isRoomUnit(unit: PricingAssignmentUnit): boolean {
-  return unit.unitType === "room"
+/**
+ * Inventory units are finite containers a traveler is placed into.
+ * Rooms (hotels), vehicles (transfers), seats (where modeled
+ * explicitly). Distinct from pricing tiers (`person`).
+ */
+function isInventoryUnit(unit: PricingAssignmentUnit): boolean {
+  return unit.unitType === "room" || unit.unitType === "vehicle"
 }
 
 function roleHintForTraveler(traveler: BookingDraftTraveler): AssignmentRoleHint | null {
@@ -303,13 +309,16 @@ export function resolveBookingDraft<TTraveler extends BookingDraftTraveler>(opti
   }
 
   // An option is "person-priced" when it has at least one person unit
-  // and no room unit. That's the excursion shape: line quantities
-  // derive from travelers, not from the stepper's primary-unit count.
+  // and no inventory unit (room/vehicle). That's the excursion shape:
+  // line quantities derive from travelers, not from the stepper's
+  // primary-unit count. Multi-day packages with both a room AND a
+  // person-typed adult fee fall outside this set — the room
+  // quantity passes through unchanged.
   const personPricedOptions = new Set<string>()
   for (const [key, optionUnits] of unitsByOption) {
     const hasPerson = optionUnits.some(isPersonUnit)
-    const hasRoom = optionUnits.some(isRoomUnit)
-    if (hasPerson && !hasRoom) personPricedOptions.add(key)
+    const hasInventory = optionUnits.some(isInventoryUnit)
+    if (hasPerson && !hasInventory) personPricedOptions.add(key)
   }
 
   const totalByOption = new Map<string, number>()
