@@ -1,5 +1,17 @@
 # @voyantjs/crm
 
+## 0.81.8
+
+### Patch Changes
+
+- 688ac4f: Generalize booking traveler identity snapshots from passport-only fields to typed identity documents.
+  - @voyantjs/action-ledger@0.81.8
+  - @voyantjs/core@0.81.8
+  - @voyantjs/db@0.81.8
+  - @voyantjs/hono@0.81.8
+  - @voyantjs/identity@0.81.8
+  - @voyantjs/utils@0.81.8
+
 ## 0.81.7
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @voyantjs/bookings-react
 
+## 0.81.8
+
+### Patch Changes
+
+- 688ac4f: Generalize booking traveler identity snapshots from passport-only fields to typed identity documents.
+- Updated dependencies [688ac4f]
+  - @voyantjs/bookings@0.81.8
+  - @voyantjs/react@0.81.8
+
 ## 0.81.7
 
 ### Patch Changes
