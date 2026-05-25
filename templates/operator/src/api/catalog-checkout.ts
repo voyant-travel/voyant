@@ -574,6 +574,9 @@ interface DraftPayload {
     documentType?: "passport" | "id_card" | "driver_license" | "visa" | "other"
     documentNumber?: string
     documentExpiry?: string
+    passportNumber?: string
+    passportExpiry?: string
+    passportExpiresAt?: string
     dietaryRequirements?: string
     accessibilityNeeds?: string
     preferredLanguage?: string
@@ -1078,17 +1081,20 @@ function extractDraftTravelerTravelDetails(
     documentType,
     documentNumber: pickString(
       traveler.documentNumber,
+      traveler.passportNumber,
       documents.documentNumber,
+      documents.passportNumber,
       documents.passport_number,
-      documents.documentNumber,
       documents.document_number,
       documents.passport,
     ),
     documentExpiry: pickString(
       traveler.documentExpiry,
+      traveler.passportExpiry,
+      traveler.passportExpiresAt,
       documents.documentExpiry,
+      documents.passportExpiry,
       documents.passport_expiry,
-      documents.documentExpiry,
       documents.document_expiry,
       documents.passportExpiresAt,
     ),
