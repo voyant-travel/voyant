@@ -11,8 +11,21 @@ import {
 } from "@voyantjs/finance-react"
 import { InvoiceActionLedgerCard } from "@voyantjs/finance-ui/components/invoice-action-ledger-card"
 import { InvoiceDialog } from "@voyantjs/finance-ui/components/invoice-dialog"
-import { Badge, Button } from "@voyantjs/ui/components"
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+  Badge,
+  Button,
+  Textarea,
+} from "@voyantjs/ui/components"
+import { ArrowLeft, Ban, Loader2, Pencil, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { AdminWidgetSlotRenderer } from "@/components/admin/admin-widget-slot"
 import { type AdminMessages, useAdminMessages } from "@/lib/admin-i18n"
@@ -58,13 +71,16 @@ export function InvoiceDetailPage({ id }: { id: string }) {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
   const [creditNoteDialogOpen, setCreditNoteDialogOpen] = useState(false)
   const [noteContent, setNoteContent] = useState("")
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [voidDialogOpen, setVoidDialogOpen] = useState(false)
+  const [voidReason, setVoidReason] = useState("")
 
   const { data: invoiceData, isPending } = useInvoice(id)
   const { data: lineItemsData } = useInvoiceLineItems(id)
   const { data: paymentsData } = useInvoicePayments(id)
   const { data: creditNotesData } = useInvoiceCreditNotes(id)
   const { data: notesData } = useInvoiceNotes(id)
-  const { remove: deleteInvoice } = useInvoiceMutation()
+  const { remove: deleteInvoice, voidInvoice } = useInvoiceMutation()
   const { remove: deleteLineItem } = useInvoiceLineItemMutation(id)
   const addNoteMutation = useInvoiceNoteMutation(id)
 
@@ -88,6 +104,12 @@ export function InvoiceDetailPage({ id }: { id: string }) {
   const payments = paymentsData?.data ?? []
   const creditNotes = creditNotesData?.data ?? []
   const notes = notesData?.data ?? []
+  const canVoidInvoice = ["pending_external_allocation", "issued", "overdue"].includes(
+    invoice.status,
+  )
+
+  const getMutationErrorMessage = (fallback: string) => (error: unknown) =>
+    error instanceof Error ? error.message : fallback
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -108,6 +130,64 @@ export function InvoiceDetailPage({ id }: { id: string }) {
             <Pencil className="mr-2 h-4 w-4" />
             {messages.finance.detailPage.edit}
           </Button>
+          <AlertDialog
+            open={voidDialogOpen}
+            onOpenChange={(open) => {
+              setVoidDialogOpen(open)
+              if (!open) setVoidReason("")
+            }}
+          >
+            <AlertDialogTrigger
+              disabled={!canVoidInvoice || voidInvoice.isPending}
+              render={<Button type="button" variant="outline" />}
+            >
+              <Ban className="mr-2 h-4 w-4" />
+              {messages.finance.detailPage.void}
+            </AlertDialogTrigger>
+            <AlertDialogContent size="sm">
+              <AlertDialogHeader>
+                <AlertDialogTitle>{messages.finance.detailPage.voidConfirm}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {messages.finance.detailPage.voidDescription}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <Textarea
+                value={voidReason}
+                onChange={(event) => setVoidReason(event.target.value)}
+                placeholder={messages.finance.detailPage.voidReasonPlaceholder}
+                className="min-h-24"
+              />
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={voidInvoice.isPending}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  variant="destructive"
+                  disabled={voidInvoice.isPending}
+                  onClick={() => {
+                    setActionError(null)
+                    voidInvoice.mutate(
+                      { id, input: { reason: voidReason.trim() || null } },
+                      {
+                        onSuccess: () => {
+                          setVoidDialogOpen(false)
+                          setVoidReason("")
+                        },
+                        onError: (error) => {
+                          setActionError(
+                            getMutationErrorMessage(messages.finance.detailPage.voidFailed)(error),
+                          )
+                        },
+                      },
+                    )
+                  }}
+                >
+                  {voidInvoice.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  ) : null}
+                  {messages.finance.detailPage.void}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <Button
             variant="destructive"
             onClick={() => {
@@ -116,9 +196,17 @@ export function InvoiceDetailPage({ id }: { id: string }) {
                 return
               }
               if (confirm(messages.finance.detailPage.deleteConfirm)) {
+                setActionError(null)
                 deleteInvoice.mutate(id, {
                   onSuccess: () => {
                     void navigate({ to: "/finance" })
+                  },
+                  onError: (error) => {
+                    setActionError(
+                      getMutationErrorMessage(messages.finance.detailPage.deleteOnlyDraftAlert)(
+                        error,
+                      ),
+                    )
                   },
                 })
               }
@@ -130,6 +218,11 @@ export function InvoiceDetailPage({ id }: { id: string }) {
           </Button>
         </div>
       </div>
+      {actionError ? (
+        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-destructive text-sm">
+          {actionError}
+        </div>
+      ) : null}
       <AdminWidgetSlotRenderer slot="invoice.details.header" props={{ invoice }} />
 
       <InvoiceInfoCards
@@ -158,7 +251,14 @@ export function InvoiceDetailPage({ id }: { id: string }) {
         }}
         onDelete={(lineId) => {
           if (confirm(messages.finance.detailPage.deleteLineItemConfirm)) {
-            deleteLineItem.mutate(lineId)
+            setActionError(null)
+            deleteLineItem.mutate(lineId, {
+              onError: (error) => {
+                setActionError(
+                  getMutationErrorMessage(messages.finance.detailPage.deleteLineItemFailed)(error),
+                )
+              },
+            })
           }
         }}
       />

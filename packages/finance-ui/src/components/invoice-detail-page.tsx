@@ -22,6 +22,15 @@ import {
   useVoyantFinanceContext,
 } from "@voyantjs/finance-react"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
   Badge,
   Button,
   Card,
@@ -126,6 +135,7 @@ export function InvoiceDetailPage({
   const [attachmentOpen, setAttachmentOpen] = useState(false)
   const [editingAttachment, setEditingAttachment] = useState<InvoiceAttachmentRecord | undefined>()
   const [noteOpen, setNoteOpen] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const invoiceQuery = useInvoice(id)
   const invoice = invoiceQuery.data?.data
@@ -134,7 +144,7 @@ export function InvoiceDetailPage({
   const creditNotesQuery = useInvoiceCreditNotes(id, { enabled: Boolean(invoice) })
   const attachmentsQuery = useInvoiceAttachments(id, { enabled: Boolean(invoice) })
   const notesQuery = useInvoiceNotes(id, { enabled: Boolean(invoice) })
-  const { remove: removeInvoice } = useInvoiceMutation()
+  const { remove: removeInvoice, voidInvoice } = useInvoiceMutation()
   const { remove: removeLineItem } = useInvoiceLineItemMutation(id)
   const { remove: removeAttachment } = useInvoiceAttachmentMutation(id)
   const addNote = useInvoiceNoteMutation(id)
@@ -182,12 +192,39 @@ export function InvoiceDetailPage({
         onBack={onBack}
         onEdit={() => setEditOpen(true)}
         deletePending={removeInvoice.isPending}
+        voidPending={voidInvoice.isPending}
+        onVoid={async (reason) => {
+          try {
+            setActionError(null)
+            await voidInvoice.mutateAsync({ id, input: { reason } })
+          } catch (error) {
+            setActionError(
+              error instanceof Error
+                ? error.message
+                : messages.invoiceDetailPage.actions.mutationFailed,
+            )
+          }
+        }}
         onDelete={async () => {
-          await removeInvoice.mutateAsync(id)
-          onDeleted?.()
-          onBack?.()
+          try {
+            setActionError(null)
+            await removeInvoice.mutateAsync(id)
+            onDeleted?.()
+            onBack?.()
+          } catch (error) {
+            setActionError(
+              error instanceof Error
+                ? error.message
+                : messages.invoiceDetailPage.actions.mutationFailed,
+            )
+          }
         }}
       />
+      {actionError ? (
+        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-destructive text-sm">
+          {actionError}
+        </div>
+      ) : null}
       {slots?.afterHeader}
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -217,7 +254,16 @@ export function InvoiceDetailPage({
           onCreate={onLineItemCreate}
           onEdit={onLineItemEdit}
           onDelete={async (lineItemId) => {
-            await removeLineItem.mutateAsync(lineItemId)
+            try {
+              setActionError(null)
+              await removeLineItem.mutateAsync(lineItemId)
+            } catch (error) {
+              setActionError(
+                error instanceof Error
+                  ? error.message
+                  : messages.invoiceDetailPage.actions.mutationFailed,
+              )
+            }
           }}
         />
       )}
@@ -329,7 +375,9 @@ export interface InvoiceDetailHeaderProps {
   invoice: InvoiceRecord
   onBack?: () => void
   onEdit: () => void
+  onVoid: (reason?: string | null) => Promise<void>
   onDelete: () => Promise<void>
+  voidPending?: boolean
   deletePending?: boolean
   className?: string
 }
@@ -338,13 +386,18 @@ export function InvoiceDetailHeader({
   invoice,
   onBack,
   onEdit,
+  onVoid,
   onDelete,
+  voidPending,
   deletePending,
   className,
 }: InvoiceDetailHeaderProps) {
   const messages = useFinanceUiMessagesOrDefault()
   const detail = messages.invoiceDetailPage
+  const [voidDialogOpen, setVoidDialogOpen] = useState(false)
+  const [voidReason, setVoidReason] = useState("")
   const canDelete = invoice.status === "draft"
+  const canVoid = ["pending_external_allocation", "issued", "overdue"].includes(invoice.status)
   const invoiceType = invoice.invoiceType
 
   return (
@@ -386,6 +439,51 @@ export function InvoiceDetailHeader({
           <Pencil className="size-4" aria-hidden="true" />
           {detail.actions.edit}
         </Button>
+        <AlertDialog
+          open={voidDialogOpen}
+          onOpenChange={(open) => {
+            setVoidDialogOpen(open)
+            if (!open) setVoidReason("")
+          }}
+        >
+          <AlertDialogTrigger
+            disabled={!canVoid || voidPending}
+            render={<Button type="button" variant="outline" size="sm" />}
+          >
+            {detail.actions.void}
+          </AlertDialogTrigger>
+          <AlertDialogContent size="sm">
+            <AlertDialogHeader>
+              <AlertDialogTitle>{detail.actions.voidTitle}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {canVoid ? detail.actions.voidDescription : detail.actions.voidUnavailable}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <Textarea
+              value={voidReason}
+              onChange={(event) => setVoidReason(event.target.value)}
+              placeholder={detail.actions.voidReasonPlaceholder}
+              className="min-h-24"
+            />
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={voidPending}>{messages.common.cancel}</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                disabled={voidPending}
+                onClick={() => {
+                  void onVoid(voidReason.trim() || null)
+                  setVoidDialogOpen(false)
+                  setVoidReason("")
+                }}
+              >
+                {voidPending ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                ) : null}
+                {detail.actions.void}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         <ConfirmActionButton
           buttonLabel={detail.actions.delete}
           confirmLabel={detail.actions.delete}

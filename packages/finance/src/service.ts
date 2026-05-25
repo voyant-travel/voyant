@@ -189,6 +189,7 @@ import type {
   updateTaxPolicyProfileSchema,
   updateTaxPolicyRuleSchema,
   updateTaxRegimeSchema,
+  voidInvoiceSchema,
 } from "./validation.js"
 
 type RevenueReportQuery = z.infer<typeof revenueReportQuerySchema>
@@ -265,6 +266,7 @@ type InvoiceListQuery = z.infer<typeof invoiceListQuerySchema>
 type CreateInvoiceInput = z.infer<typeof insertInvoiceSchema>
 export type CreateInvoiceFromBookingInput = z.infer<typeof invoiceFromBookingSchema>
 type UpdateInvoiceInput = z.infer<typeof updateInvoiceSchema>
+type VoidInvoiceInput = z.infer<typeof voidInvoiceSchema>
 type CreateInvoiceLineItemInput = z.infer<typeof insertInvoiceLineItemSchema>
 type UpdateInvoiceLineItemInput = z.infer<typeof updateInvoiceLineItemSchema>
 type CreatePaymentInput = z.infer<typeof insertPaymentSchema>
@@ -565,6 +567,12 @@ function toDateString(value: Date) {
   return value.toISOString().slice(0, 10)
 }
 
+function readStringMetadata(value: unknown, key: string) {
+  if (value == null || typeof value !== "object") return null
+  const candidate = (value as Record<string, unknown>)[key]
+  return typeof candidate === "string" && candidate.trim() ? candidate : null
+}
+
 function startOfUtcDay(value: Date) {
   return new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()))
 }
@@ -755,6 +763,20 @@ export interface FinanceServiceRuntime extends InvoiceFxOptions {
   eventBus?: EventBus
   actionLedgerContext?: ActionLedgerRequestContextValues
   actionLedgerAuthorizationSource?: string | null
+}
+
+export interface InvoiceVoidedEvent {
+  invoiceId: string
+  invoiceNumber: string
+  invoiceType: (typeof invoices.$inferSelect)["invoiceType"]
+  bookingId: string | null
+  totalCents: number
+  currency: string
+  reason: string | null
+  voidedAt: string
+  externalProvider?: string | null
+  externalNumber?: string | null
+  externalSeriesName?: string | null
 }
 
 export interface BookingPaymentSchedulePaidEvent {
@@ -3810,6 +3832,146 @@ export const financeService = {
 
     await db.delete(invoices).where(eq(invoices.id, id))
     return { status: "deleted" as const }
+  },
+
+  async voidInvoice(
+    db: PostgresJsDatabase,
+    id: string,
+    input: VoidInvoiceInput = {},
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const reason = input.reason?.trim() || null
+    const voidedAt = new Date()
+    const result = await db.transaction(async (tx) => {
+      const [existing] = await tx.select().from(invoices).where(eq(invoices.id, id)).limit(1)
+
+      if (!existing) {
+        return { status: "not_found" as const }
+      }
+
+      if (existing.status === "void") {
+        return { status: "already_void" as const, invoice: existing }
+      }
+
+      if (existing.status === "draft") {
+        return { status: "draft" as const, invoice: existing }
+      }
+
+      const voidableStatuses = new Set<typeof existing.status>([
+        "pending_external_allocation",
+        "issued",
+        "partially_paid",
+        "overdue",
+      ])
+
+      if (!voidableStatuses.has(existing.status)) {
+        return { status: "invalid_status" as const, invoice: existing }
+      }
+
+      const [payment] = await tx
+        .select({ id: payments.id })
+        .from(payments)
+        .where(eq(payments.invoiceId, id))
+        .limit(1)
+
+      if (payment) {
+        return { status: "has_payments" as const, invoice: existing }
+      }
+
+      const [creditNote] = await tx
+        .select({ id: creditNotes.id })
+        .from(creditNotes)
+        .where(eq(creditNotes.invoiceId, id))
+        .limit(1)
+
+      if (creditNote) {
+        return { status: "has_credit_notes" as const, invoice: existing }
+      }
+
+      const changes = {
+        status: "void" as const,
+        voidedAt,
+        voidReason: reason,
+        balanceDueCents: 0,
+        baseBalanceDueCents: existing.baseBalanceDueCents == null ? null : 0,
+        updatedAt: voidedAt,
+      }
+      const actionLedgerChanges: UpdateInvoiceInput = {
+        status: "void",
+        balanceDueCents: changes.balanceDueCents,
+        baseBalanceDueCents: changes.baseBalanceDueCents,
+      }
+      const [invoice] = await tx
+        .update(invoices)
+        .set(changes)
+        .where(eq(invoices.id, id))
+        .returning()
+
+      if (!invoice) {
+        return { status: "not_found" as const }
+      }
+
+      const actionLedgerContext = runtime.actionLedgerContext
+      if (actionLedgerContext) {
+        await appendActionLedgerMutation(
+          tx,
+          buildInvoiceUpdateActionLedgerInput(
+            actionLedgerContext,
+            { invoice, changes: actionLedgerChanges },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+      }
+
+      return { status: "voided" as const, invoice }
+    })
+
+    if (result.status === "voided" && runtime.eventBus) {
+      const [smartbillRef] = await db
+        .select()
+        .from(invoiceExternalRefs)
+        .where(
+          and(
+            eq(invoiceExternalRefs.invoiceId, result.invoice.id),
+            eq(invoiceExternalRefs.provider, "smartbill"),
+          ),
+        )
+        .orderBy(desc(invoiceExternalRefs.createdAt))
+        .limit(1)
+      const [externalRef] = smartbillRef
+        ? [smartbillRef]
+        : await db
+            .select()
+            .from(invoiceExternalRefs)
+            .where(eq(invoiceExternalRefs.invoiceId, result.invoice.id))
+            .orderBy(desc(invoiceExternalRefs.createdAt))
+            .limit(1)
+      const [series] = result.invoice.seriesId
+        ? await db
+            .select({ name: invoiceNumberSeries.name })
+            .from(invoiceNumberSeries)
+            .where(eq(invoiceNumberSeries.id, result.invoice.seriesId))
+            .limit(1)
+        : []
+
+      const event: InvoiceVoidedEvent = {
+        invoiceId: result.invoice.id,
+        invoiceNumber: result.invoice.invoiceNumber,
+        invoiceType: result.invoice.invoiceType,
+        bookingId: result.invoice.bookingId,
+        totalCents: result.invoice.totalCents,
+        currency: result.invoice.currency,
+        reason,
+        voidedAt: result.invoice.voidedAt?.toISOString() ?? voidedAt.toISOString(),
+        externalProvider: externalRef?.provider ?? null,
+        externalNumber: externalRef?.externalNumber ?? null,
+        externalSeriesName:
+          readStringMetadata(externalRef?.metadata, "seriesName") ?? series?.name ?? null,
+      }
+      await runtime.eventBus.emit("invoice.voided", event)
+    }
+
+    return result
   },
 
   listInvoiceLineItems(db: PostgresJsDatabase, invoiceId: string) {

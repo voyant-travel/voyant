@@ -8,6 +8,8 @@ import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY } from "../../src/route-runtime.js"
 import { financeRoutes } from "../../src/routes.js"
 import {
   bookingPaymentSchedules,
+  creditNotes,
+  invoiceExternalRefs,
   invoiceLineItems,
   invoiceNumberSeries,
   invoiceRenditions,
@@ -115,6 +117,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
   const settlementEvents: Array<Record<string, unknown>> = []
   const paymentCompletedEvents: Array<Record<string, unknown>> = []
   const schedulePaidEvents: Array<Record<string, unknown>> = []
+  const invoiceVoidedEvents: Array<Record<string, unknown>> = []
   const autoRenditionBookings = new Map<string, { delayMs: number; storageKey: string }>()
 
   beforeAll(async () => {
@@ -253,6 +256,10 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     await db.execute(
       sql`CREATE INDEX IF NOT EXISTS idx_invoice_attachments_invoice_created ON invoice_attachments (invoice_id, created_at)`,
     )
+    await db.execute(
+      sql`ALTER TABLE invoices ADD COLUMN IF NOT EXISTS voided_at timestamp with time zone`,
+    )
+    await db.execute(sql`ALTER TABLE invoices ADD COLUMN IF NOT EXISTS void_reason text`)
 
     const eventBus = createEventBus()
     eventBus.subscribe("invoice.settled", (event) => {
@@ -263,6 +270,9 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     })
     eventBus.subscribe("booking_payment_schedule.paid", (event) => {
       schedulePaidEvents.push(event as Record<string, unknown>)
+    })
+    eventBus.subscribe("invoice.voided", (event) => {
+      invoiceVoidedEvents.push(event as Record<string, unknown>)
     })
     eventBus.subscribe("invoice.issued", (event) => {
       const data = event.data as { invoiceId?: string; bookingId?: string | null }
@@ -311,6 +321,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     settlementEvents.length = 0
     paymentCompletedEvents.length = 0
     schedulePaidEvents.length = 0
+    invoiceVoidedEvents.length = 0
     autoRenditionBookings.clear()
   })
 
@@ -1200,6 +1211,104 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(res.status).toBe(400)
       const body = await res.json()
       expect(body.error).toContain("draft")
+    })
+
+    it("voids an issued invoice and emits an event", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id, {
+        status: "issued",
+        balanceDueCents: 110000,
+      })
+      await db.insert(invoiceExternalRefs).values({
+        invoiceId: inv.id,
+        provider: "smartbill",
+        externalId: "SB-42",
+        externalNumber: "42",
+        externalUrl: "https://smartbill.example/invoices/42",
+        metadata: { seriesName: "SB" },
+      })
+
+      const res = await app.request(`/invoices/${inv.id}/void`, {
+        method: "POST",
+        ...json({ reason: "Incorrect client details" }),
+      })
+
+      expect(res.status).toBe(200)
+      const { data } = await res.json()
+      expect(data.status).toBe("void")
+      expect(data.balanceDueCents).toBe(0)
+      expect(data.voidReason).toBe("Incorrect client details")
+      expect(data.voidedAt).toBeTruthy()
+      expect(invoiceVoidedEvents).toHaveLength(1)
+      expect(invoiceVoidedEvents[0]?.data).toMatchObject({
+        invoiceId: inv.id,
+        invoiceNumber: inv.invoiceNumber,
+        reason: "Incorrect client details",
+        externalProvider: "smartbill",
+        externalNumber: "42",
+        externalSeriesName: "SB",
+      })
+    })
+
+    it("rejects voiding a draft invoice", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id)
+
+      const res = await app.request(`/invoices/${inv.id}/void`, {
+        method: "POST",
+        ...json({}),
+      })
+
+      expect(res.status).toBe(400)
+      expect(invoiceVoidedEvents).toHaveLength(0)
+    })
+
+    it("rejects voiding an invoice with payments", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id, {
+        status: "issued",
+        totalCents: 50000,
+        balanceDueCents: 50000,
+      })
+      const payment = await app.request(`/invoices/${inv.id}/payments`, {
+        method: "POST",
+        ...json({
+          amountCents: 1000,
+          currency: "USD",
+          paymentMethod: "bank_transfer",
+          status: "completed",
+          paymentDate: "2025-06-02",
+        }),
+      })
+      expect(payment.status).toBe(201)
+
+      const res = await app.request(`/invoices/${inv.id}/void`, {
+        method: "POST",
+        ...json({}),
+      })
+
+      expect(res.status).toBe(409)
+      expect(invoiceVoidedEvents).toHaveLength(0)
+    })
+
+    it("rejects voiding an invoice with credit notes", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id, { status: "issued" })
+      await db.insert(creditNotes).values({
+        creditNoteNumber: nextCreditNoteNumber(),
+        invoiceId: inv.id,
+        amountCents: 1000,
+        currency: "USD",
+        reason: "Adjustment",
+      })
+
+      const res = await app.request(`/invoices/${inv.id}/void`, {
+        method: "POST",
+        ...json({}),
+      })
+
+      expect(res.status).toBe(409)
+      expect(invoiceVoidedEvents).toHaveLength(0)
     })
 
     it("returns 404 when deleting non-existent invoice", async () => {

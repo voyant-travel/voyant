@@ -78,7 +78,7 @@ describe("finance action ledger operations", () => {
     )
 
     expect(urls).toEqual([
-      "https://example.test/v1/finance/invoices/inv_123/action-ledger?cursorOccurredAt=2026-01-01T00%3A00%3A00.000Z&cursorId=act_100&limit=25",
+      "https://example.test/v1/admin/finance/invoices/inv_123/action-ledger?cursorOccurredAt=2026-01-01T00%3A00%3A00.000Z&cursorId=act_100&limit=25",
     ])
     expect(result.data).toHaveLength(1)
     expect(result.pageInfo.nextCursor).toEqual({
@@ -96,7 +96,7 @@ describe("finance action ledger operations", () => {
     )
 
     expect(urls).toEqual([
-      "https://example.test/v1/finance/payment-sessions/pay_ses_123/action-ledger",
+      "https://example.test/v1/admin/finance/payment-sessions/pay_ses_123/action-ledger",
     ])
   })
 })

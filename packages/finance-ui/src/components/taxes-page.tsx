@@ -510,25 +510,27 @@ function TaxesPageContent({ api }: { api: TaxesPageApi }) {
   const taxClassesQuery = useQuery({
     queryKey: ["tax-classes"],
     queryFn: () =>
-      api.get<{ data: TaxClassRecord[]; total: number }>("/v1/finance/tax-classes?limit=100"),
+      api.get<{ data: TaxClassRecord[]; total: number }>("/v1/admin/finance/tax-classes?limit=100"),
   })
   const taxRegimesQuery = useQuery({
     queryKey: ["tax-regimes"],
     queryFn: () =>
-      api.get<{ data: TaxRegimeRecord[]; total: number }>("/v1/finance/tax-regimes?limit=100"),
+      api.get<{ data: TaxRegimeRecord[]; total: number }>(
+        "/v1/admin/finance/tax-regimes?limit=100",
+      ),
   })
   const policyProfilesQuery = useQuery({
     queryKey: ["tax-policy-profiles"],
     queryFn: () =>
       api.get<{ data: TaxPolicyProfileRecord[]; total: number }>(
-        "/v1/finance/tax-policy-profiles?limit=100",
+        "/v1/admin/finance/tax-policy-profiles?limit=100",
       ),
   })
   const policyRulesQuery = useQuery({
     queryKey: ["tax-policy-rules"],
     queryFn: () =>
       api.get<{ data: TaxPolicyRuleRecord[]; total: number }>(
-        "/v1/finance/tax-policy-rules?limit=100",
+        "/v1/admin/finance/tax-policy-rules?limit=100",
       ),
   })
 
@@ -566,7 +568,7 @@ function TaxesPageContent({ api }: { api: TaxesPageApi }) {
 
   const deleteMutation = useMutation({
     mutationFn: async (row: TaxRow) => {
-      await api.delete(`/v1/finance/tax-classes/${row.taxClass.id}`)
+      await api.delete(`/v1/admin/finance/tax-classes/${row.taxClass.id}`)
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["tax-classes"] })
@@ -575,8 +577,10 @@ function TaxesPageContent({ api }: { api: TaxesPageApi }) {
   const deleteProfileMutation = useMutation({
     mutationFn: async (profile: TaxPolicyProfileRecord) => {
       const rules = policyRulesByProfileId.get(profile.id) ?? []
-      await Promise.all(rules.map((rule) => api.delete(`/v1/finance/tax-policy-rules/${rule.id}`)))
-      await api.delete(`/v1/finance/tax-policy-profiles/${profile.id}`)
+      await Promise.all(
+        rules.map((rule) => api.delete(`/v1/admin/finance/tax-policy-rules/${rule.id}`)),
+      )
+      await api.delete(`/v1/admin/finance/tax-policy-profiles/${profile.id}`)
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["tax-policy-profiles"] })
@@ -585,7 +589,7 @@ function TaxesPageContent({ api }: { api: TaxesPageApi }) {
   })
   const deleteRuleMutation = useMutation({
     mutationFn: async (rule: TaxPolicyRuleRecord) => {
-      await api.delete(`/v1/finance/tax-policy-rules/${rule.id}`)
+      await api.delete(`/v1/admin/finance/tax-policy-rules/${rule.id}`)
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["tax-policy-rules"] })
@@ -1045,19 +1049,19 @@ function TaxSheet({
 
       const regimeEnvelope = row?.regime
         ? await api.patch<{ data: TaxRegimeRecord }>(
-            `/v1/finance/tax-regimes/${row.regime.id}`,
+            `/v1/admin/finance/tax-regimes/${row.regime.id}`,
             regimeInput,
           )
-        : await api.post<{ data: TaxRegimeRecord }>("/v1/finance/tax-regimes", regimeInput)
+        : await api.post<{ data: TaxRegimeRecord }>("/v1/admin/finance/tax-regimes", regimeInput)
       const regime = regimeEnvelope.data
 
       if (row) {
-        await api.patch(`/v1/finance/tax-classes/${row.taxClass.id}`, {
+        await api.patch(`/v1/admin/finance/tax-classes/${row.taxClass.id}`, {
           ...taxClassInput,
           defaultRegimeId: regime.id,
         })
       } else {
-        await api.post("/v1/finance/tax-classes", {
+        await api.post("/v1/admin/finance/tax-classes", {
           ...taxClassInput,
           defaultRegimeId: regime.id,
         })
@@ -1380,9 +1384,9 @@ function PolicyProfileSheet({
       }
 
       if (profile) {
-        await api.patch(`/v1/finance/tax-policy-profiles/${profile.id}`, input)
+        await api.patch(`/v1/admin/finance/tax-policy-profiles/${profile.id}`, input)
       } else {
-        await api.post("/v1/finance/tax-policy-profiles", input)
+        await api.post("/v1/admin/finance/tax-policy-profiles", input)
       }
     },
     onSuccess,
@@ -1523,9 +1527,9 @@ function PolicyRuleSheet({
       }
 
       if (rule) {
-        await api.patch(`/v1/finance/tax-policy-rules/${rule.id}`, input)
+        await api.patch(`/v1/admin/finance/tax-policy-rules/${rule.id}`, input)
       } else {
-        await api.post("/v1/finance/tax-policy-rules", input)
+        await api.post("/v1/admin/finance/tax-policy-rules", input)
       }
     },
     onSuccess,

@@ -11,7 +11,7 @@ import {
   Label,
 } from "@voyantjs/ui/components"
 import { Loader2 } from "lucide-react"
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { type AdminMessages, useAdminMessages } from "@/lib/admin-i18n"
@@ -50,6 +50,7 @@ export function LineItemDialog({
   const isEditing = Boolean(lineItem)
   const { create, update } = useInvoiceLineItemMutation(invoiceId)
   const lineItemFormSchema = useMemo(() => getLineItemFormSchema(messages), [messages])
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const form = useForm<LineItemFormValues, unknown, LineItemFormOutput>({
     resolver: zodResolver(lineItemFormSchema),
@@ -86,6 +87,7 @@ export function LineItemDialog({
   }, [open, lineItem, form])
 
   const onSubmit = async (values: LineItemFormOutput) => {
+    setSubmitError(null)
     const payload = {
       description: values.description,
       quantity: values.quantity,
@@ -98,9 +100,15 @@ export function LineItemDialog({
       sortOrder: values.sortOrder,
     }
 
-    const saved = isEditing
-      ? await update.mutateAsync({ id: lineItem!.id, input: payload })
-      : await create.mutateAsync(payload)
+    let saved: LineItemRecord
+    try {
+      saved = isEditing
+        ? await update.mutateAsync({ id: lineItem!.id, input: payload })
+        : await create.mutateAsync(payload)
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Unable to save line item")
+      return
+    }
 
     onOpenChange(false)
     onSuccess?.(saved)
@@ -120,6 +128,11 @@ export function LineItemDialog({
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
+            {submitError ? (
+              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-destructive text-sm">
+                {submitError}
+              </div>
+            ) : null}
             <div className="flex flex-col gap-2">
               <Label>{messages.finance.lineItemDialog.descriptionLabel}</Label>
               <Input

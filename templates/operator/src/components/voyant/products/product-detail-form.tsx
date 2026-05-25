@@ -140,7 +140,7 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
   const { data: taxClassesData } = useQuery({
     queryKey: ["tax-classes"],
     queryFn: () =>
-      api.get<{ data: TaxClassOption[] }>("/v1/finance/tax-classes?limit=100&active=true"),
+      api.get<{ data: TaxClassOption[] }>("/v1/admin/finance/tax-classes?limit=100&active=true"),
   })
 
   const productTypes = typesData?.data ?? []

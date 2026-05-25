@@ -31,7 +31,7 @@ export function useInvoiceCreditNoteMutation(invoiceId: string) {
   const create = useMutation({
     mutationFn: async (input: CreateInvoiceCreditNoteInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/finance/invoices/${invoiceId}/credit-notes`,
+        `/v1/admin/finance/invoices/${invoiceId}/credit-notes`,
         invoiceCreditNoteSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -47,7 +47,7 @@ export function useInvoiceCreditNoteMutation(invoiceId: string) {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateInvoiceCreditNoteInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/finance/invoices/${invoiceId}/credit-notes/${id}`,
+        `/v1/admin/finance/invoices/${invoiceId}/credit-notes/${id}`,
         invoiceCreditNoteSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },

@@ -1,4 +1,10 @@
-import { idempotencyKey, parseJsonBody, parseQuery, requireUserId } from "@voyantjs/hono"
+import {
+  idempotencyKey,
+  parseJsonBody,
+  parseOptionalJsonBody,
+  parseQuery,
+  requireUserId,
+} from "@voyantjs/hono"
 import type { Context } from "hono"
 import { Hono } from "hono"
 
@@ -95,6 +101,7 @@ import {
   updateTaxPolicyRuleSchema,
   updateTaxRegimeSchema,
   updateVoucherSchema,
+  voidInvoiceSchema,
   voucherListQuerySchema,
 } from "./validation.js"
 
@@ -1232,6 +1239,42 @@ export const financeRoutes = new Hono<Env>()
     }
 
     return c.json({ success: true }, 200)
+  })
+
+  // POST /invoices/:id/void — Void an issued invoice without deleting audit history.
+  .post("/invoices/:id/void", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
+    const result = await financeService.voidInvoice(
+      c.get("db"),
+      c.req.param("id"),
+      await parseOptionalJsonBody(c, voidInvoiceSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.invoice.route",
+      },
+    )
+
+    if (result.status === "not_found") {
+      return c.json({ error: "Invoice not found" }, 404)
+    }
+    if (result.status === "already_void") {
+      return c.json({ error: "Invoice is already void" }, 409)
+    }
+    if (result.status === "draft") {
+      return c.json({ error: "Draft invoices can be deleted instead" }, 400)
+    }
+    if (result.status === "invalid_status") {
+      return c.json({ error: "Invoice cannot be voided from its current status" }, 409)
+    }
+    if (result.status === "has_payments") {
+      return c.json({ error: "Invoices with payments cannot be voided" }, 409)
+    }
+    if (result.status === "has_credit_notes") {
+      return c.json({ error: "Invoices with credit notes cannot be voided" }, 409)
+    }
+
+    return c.json({ data: result.invoice }, 200)
   })
 
   .post("/invoices/:id/payment-session", async (c) => {

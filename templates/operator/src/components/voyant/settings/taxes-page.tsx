@@ -60,7 +60,7 @@ function BookingTaxSettingsCard() {
     queryKey: ["tax-policy-profiles"],
     queryFn: async (): Promise<TaxPolicyProfileRecord[]> => {
       const res = await fetch(
-        `${getApiUrl()}/v1/finance/tax-policy-profiles?limit=100&active=true`,
+        `${getApiUrl()}/v1/admin/finance/tax-policy-profiles?limit=100&active=true`,
         {
           credentials: "include",
         },

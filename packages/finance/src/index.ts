@@ -263,6 +263,7 @@ export type {
   CreateInvoiceFromBookingInput,
   InvoiceFromBookingData,
   InvoiceRenderedEvent,
+  InvoiceVoidedEvent,
   PaymentCompletedEvent,
   UnifiedPaymentRow,
 } from "./service.js"

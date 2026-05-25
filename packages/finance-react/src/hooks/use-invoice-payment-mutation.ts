@@ -32,7 +32,7 @@ export function useInvoicePaymentMutation(invoiceId: string) {
   return useMutation({
     mutationFn: async (input: CreateInvoicePaymentInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/finance/invoices/${invoiceId}/payments`,
+        `/v1/admin/finance/invoices/${invoiceId}/payments`,
         invoicePaymentSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },

@@ -63,7 +63,7 @@ export function getBookingPaymentSchedulesQueryOptions(
     queryKey: financeQueryKeys.bookingPaymentSchedules(bookingId ?? ""),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/finance/bookings/${bookingId}/payment-schedules`,
+        `/v1/admin/finance/bookings/${bookingId}/payment-schedules`,
         bookingPaymentSchedulesResponse,
         client,
       ),
@@ -81,7 +81,7 @@ export function getBookingGuaranteesQueryOptions(
     queryKey: financeQueryKeys.bookingGuarantees(bookingId ?? ""),
     queryFn: () =>
       fetchWithValidation(
-        `/v1/finance/bookings/${bookingId}/guarantees`,
+        `/v1/admin/finance/bookings/${bookingId}/guarantees`,
         bookingGuaranteesResponse,
         client,
       ),
@@ -134,7 +134,7 @@ export function getInvoicesQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/finance/invoices${qs ? `?${qs}` : ""}`,
+        `/v1/admin/finance/invoices${qs ? `?${qs}` : ""}`,
         invoiceListResponse,
         client,
       )
@@ -194,7 +194,7 @@ export function getAllPaymentsQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/finance/payments${qs ? `?${qs}` : ""}`,
+        `/v1/admin/finance/payments${qs ? `?${qs}` : ""}`,
         allPaymentsListResponse,
         client,
       )
@@ -213,7 +213,7 @@ export function getPaymentQueryOptions(
     queryKey: financeQueryKeys.payment(id ?? ""),
     queryFn: async () => {
       if (!id) throw new Error("getPaymentQueryOptions requires an id")
-      return fetchWithValidation(`/v1/finance/payments/${id}`, paymentSingleResponse, client)
+      return fetchWithValidation(`/v1/admin/finance/payments/${id}`, paymentSingleResponse, client)
     },
   })
 }
@@ -242,7 +242,7 @@ export function getSupplierPaymentsQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/finance/supplier-payments${qs ? `?${qs}` : ""}`,
+        `/v1/admin/finance/supplier-payments${qs ? `?${qs}` : ""}`,
         supplierPaymentListResponse,
         client,
       )
@@ -261,7 +261,7 @@ export function getInvoiceQueryOptions(
     queryKey: financeQueryKeys.invoice(id ?? ""),
     queryFn: async () => {
       if (!id) throw new Error("getInvoiceQueryOptions requires an id")
-      return fetchWithValidation(`/v1/finance/invoices/${id}`, invoiceSingleResponse, client)
+      return fetchWithValidation(`/v1/admin/finance/invoices/${id}`, invoiceSingleResponse, client)
     },
   })
 }
@@ -278,7 +278,7 @@ export function getInvoiceLineItemsQueryOptions(
     queryFn: async () => {
       if (!invoiceId) throw new Error("getInvoiceLineItemsQueryOptions requires an invoiceId")
       return fetchWithValidation(
-        `/v1/finance/invoices/${invoiceId}/line-items`,
+        `/v1/admin/finance/invoices/${invoiceId}/line-items`,
         invoiceLineItemsResponse,
         client,
       )
@@ -298,7 +298,7 @@ export function getInvoicePaymentsQueryOptions(
     queryFn: async () => {
       if (!invoiceId) throw new Error("getInvoicePaymentsQueryOptions requires an invoiceId")
       return fetchWithValidation(
-        `/v1/finance/invoices/${invoiceId}/payments`,
+        `/v1/admin/finance/invoices/${invoiceId}/payments`,
         invoicePaymentsResponse,
         client,
       )
@@ -318,7 +318,7 @@ export function getInvoiceCreditNotesQueryOptions(
     queryFn: async () => {
       if (!invoiceId) throw new Error("getInvoiceCreditNotesQueryOptions requires an invoiceId")
       return fetchWithValidation(
-        `/v1/finance/invoices/${invoiceId}/credit-notes`,
+        `/v1/admin/finance/invoices/${invoiceId}/credit-notes`,
         invoiceCreditNotesResponse,
         client,
       )
@@ -338,7 +338,7 @@ export function getInvoiceNotesQueryOptions(
     queryFn: async () => {
       if (!invoiceId) throw new Error("getInvoiceNotesQueryOptions requires an invoiceId")
       return fetchWithValidation(
-        `/v1/finance/invoices/${invoiceId}/notes`,
+        `/v1/admin/finance/invoices/${invoiceId}/notes`,
         invoiceNotesResponse,
         client,
       )
@@ -358,7 +358,7 @@ export function getInvoiceAttachmentsQueryOptions(
     queryFn: async () => {
       if (!invoiceId) throw new Error("getInvoiceAttachmentsQueryOptions requires an invoiceId")
       return fetchWithValidation(
-        `/v1/finance/invoices/${invoiceId}/attachments`,
+        `/v1/admin/finance/invoices/${invoiceId}/attachments`,
         invoiceAttachmentsResponse,
         client,
       )
@@ -498,7 +498,7 @@ export function getVouchersQueryOptions(
       const qs = params.toString()
 
       return fetchWithValidation(
-        `/v1/finance/vouchers${qs ? `?${qs}` : ""}`,
+        `/v1/admin/finance/vouchers${qs ? `?${qs}` : ""}`,
         voucherListResponse,
         client,
       )
@@ -517,7 +517,7 @@ export function getVoucherQueryOptions(
     queryKey: financeQueryKeys.voucher(id ?? ""),
     queryFn: async () => {
       if (!id) throw new Error("getVoucherQueryOptions requires an id")
-      return fetchWithValidation(`/v1/finance/vouchers/${id}`, voucherDetailResponse, client)
+      return fetchWithValidation(`/v1/admin/finance/vouchers/${id}`, voucherDetailResponse, client)
     },
   })
 }

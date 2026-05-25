@@ -23,7 +23,7 @@ export function useInvoiceNoteMutation(invoiceId: string) {
   return useMutation({
     mutationFn: async (input: CreateInvoiceNoteInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/finance/invoices/${invoiceId}/notes`,
+        `/v1/admin/finance/invoices/${invoiceId}/notes`,
         invoiceNoteSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },

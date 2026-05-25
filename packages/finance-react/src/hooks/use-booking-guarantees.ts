@@ -58,7 +58,7 @@ export function useBookingGuaranteeMutation(bookingId: string) {
   const create = useMutation({
     mutationFn: async (input: CreateBookingGuaranteeInput) => {
       const res = await fetchWithValidation(
-        `/v1/finance/bookings/${bookingId}/guarantees`,
+        `/v1/admin/finance/bookings/${bookingId}/guarantees`,
         guaranteeSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -71,7 +71,7 @@ export function useBookingGuaranteeMutation(bookingId: string) {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateBookingGuaranteeInput }) => {
       const res = await fetchWithValidation(
-        `/v1/finance/bookings/${bookingId}/guarantees/${id}`,
+        `/v1/admin/finance/bookings/${bookingId}/guarantees/${id}`,
         guaranteeSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -84,7 +84,7 @@ export function useBookingGuaranteeMutation(bookingId: string) {
   const remove = useMutation({
     mutationFn: async (guaranteeId: string) =>
       fetchWithValidation(
-        `/v1/finance/bookings/${bookingId}/guarantees/${guaranteeId}`,
+        `/v1/admin/finance/bookings/${bookingId}/guarantees/${guaranteeId}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },
