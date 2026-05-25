@@ -303,6 +303,10 @@ export const financeUiEn = {
     actions: {
       back: "Back to finance",
       edit: "Edit",
+      convertToInvoice: "Convert to invoice",
+      convertToInvoiceTitle: "Convert this proforma?",
+      convertToInvoiceDescription:
+        "This creates the final invoice, moves any payments to it, and voids the proforma.",
       void: "Void",
       voidTitle: "Void this invoice?",
       voidDescription: "This marks the invoice as void and keeps its audit history.",

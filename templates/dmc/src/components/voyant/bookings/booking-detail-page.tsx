@@ -19,7 +19,7 @@ import {
 import { StatusChangeDialog } from "@voyantjs/bookings-ui/components/status-change-dialog"
 import { SupplierStatusList } from "@voyantjs/bookings-ui/components/supplier-status-list"
 import { TravelerList } from "@voyantjs/bookings-ui/components/traveler-list"
-import { usePaymentMutation } from "@voyantjs/finance-react"
+import { useInvoiceMutation, usePaymentMutation } from "@voyantjs/finance-react"
 import {
   type EditingPaymentSnapshot,
   RecordBookingPaymentDialog,
@@ -110,6 +110,7 @@ export function BookingDetailPage({ id }: { id: string }) {
   const { data: bookingData, isPending } = useBooking(id)
   const { remove } = useBookingMutation()
   const { remove: removePayment } = usePaymentMutation()
+  const { convertToInvoice } = useInvoiceMutation()
 
   const openEditPaymentDialog = (row: BookingPaymentsSummaryRow) => {
     const method = (row.paymentMethod ?? "bank_transfer") as EditingPaymentSnapshot["paymentMethod"]
@@ -298,6 +299,10 @@ export function BookingDetailPage({ id }: { id: string }) {
             onViewPayment={(row) =>
               navigate({ to: "/finance/payments/$id", params: { id: row.id } })
             }
+            onConvertProforma={(row) => {
+              if (!confirm(messages.finance.convertConfirm)) return
+              return convertToInvoice.mutateAsync({ id: row.invoiceId })
+            }}
             onEditPayment={openEditPaymentDialog}
             onDeletePayment={async (row) => {
               await removePayment.mutateAsync(row.id)

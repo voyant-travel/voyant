@@ -127,8 +127,9 @@ export function useInvoiceMutation() {
   /**
    * Convert an issued proforma into a final invoice. Server-side this
    * copies the proforma's line items + totals, marks the proforma as
-   * `void`, and emits `invoice.issued` with `convertedFromInvoiceId` so
-   * the SmartBill subscriber (and audit chain) sees the linkage.
+   * `void`, moves any payments onto the final invoice, and emits
+   * `invoice.proforma.converted` so downstream subscribers can preserve
+   * the original external linkage.
    */
   const convertToInvoice = useMutation({
     mutationFn: async ({ id, input }: { id: string; input?: ConvertProformaInput }) => {
@@ -140,9 +141,18 @@ export function useInvoiceMutation() {
       )
       return data
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       void queryClient.invalidateQueries({ queryKey: financeQueryKeys.invoices() })
+      void queryClient.invalidateQueries({
+        queryKey: financeQueryKeys.adminBookingPayments(data.bookingId),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: financeQueryKeys.publicBookingPayments(data.bookingId),
+      })
+      void queryClient.invalidateQueries({ queryKey: financeQueryKeys.invoice(variables.id) })
+      void queryClient.invalidateQueries({ queryKey: financeQueryKeys.payments(variables.id) })
       queryClient.setQueryData(financeQueryKeys.invoice(data.id), { data })
+      void queryClient.invalidateQueries({ queryKey: financeQueryKeys.payments(data.id) })
     },
   })
 

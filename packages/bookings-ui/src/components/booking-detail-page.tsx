@@ -7,6 +7,7 @@ import {
   useBookingMutation,
 } from "@voyantjs/bookings-react"
 import { useOrganization, usePerson } from "@voyantjs/crm-react"
+import { useInvoiceMutation } from "@voyantjs/finance-react"
 import {
   Badge,
   Button,
@@ -122,6 +123,7 @@ export function BookingDetailPage({
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const { data: bookingData, isPending } = useBooking(id)
   const { remove } = useBookingMutation()
+  const { convertToInvoice } = useInvoiceMutation()
 
   if (isPending) {
     return (
@@ -341,7 +343,11 @@ export function BookingDetailPage({
           ) : null}
           {slots?.financeStart?.(booking)}
           <BookingPaymentReconciliationBanner bookingId={id} />
-          <BookingPaymentsSummary bookingId={id} variant="admin" />
+          <BookingPaymentsSummary
+            bookingId={id}
+            variant="admin"
+            onConvertProforma={(row) => convertToInvoice.mutateAsync({ id: row.invoiceId })}
+          />
           <BookingPaymentScheduleList bookingId={id} />
           <BookingGuaranteeList bookingId={id} />
           {slots?.financeEnd?.(booking)}

@@ -34,6 +34,7 @@ vi.mock("@voyantjs/finance-react", () => {
     }),
     useInvoiceNotes: emptyListQuery,
     useInvoiceMutation: () => ({
+      convertToInvoice: mutation(),
       create: mutation(),
       remove: mutation(),
       update: mutation(),

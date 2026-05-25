@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@voyantjs/ui/components"
 import {
+  ArrowRightLeft,
   Banknote,
   CreditCard,
   Eye,
@@ -67,6 +68,7 @@ export interface BookingPaymentsSummaryRow {
   id: string
   invoiceId: string
   invoiceNumber: string
+  invoiceType?: "invoice" | "proforma" | "credit_note"
   amountCents: number
   currency: string
   status: string
@@ -98,6 +100,8 @@ export interface BookingPaymentsSummaryProps {
    * on menu items, so this is a click handler rather than an href.
    */
   onViewPayment?: (row: BookingPaymentsSummaryRow) => void
+  /** Convert the row's proforma invoice into a final invoice. */
+  onConvertProforma?: (row: BookingPaymentsSummaryRow) => Promise<unknown> | unknown
   /** Edit handler — typically opens a dialog pre-filled with the row. */
   onEditPayment?: (row: BookingPaymentsSummaryRow) => void
   /**
@@ -132,6 +136,7 @@ export function BookingPaymentsSummary({
   variant = "public",
   getInvoiceHref,
   onViewPayment,
+  onConvertProforma,
   onEditPayment,
   onDeletePayment,
 }: BookingPaymentsSummaryProps) {
@@ -143,9 +148,16 @@ export function BookingPaymentsSummary({
   const card = messages.bookingPaymentsSummary
 
   const payments = data?.data?.payments ?? []
-  const showActionsColumn = Boolean(onViewPayment || onEditPayment || onDeletePayment)
+  const hasConvertibleProformas = payments.some((payment) => payment.invoiceType === "proforma")
+  const showActionsColumn = Boolean(
+    onViewPayment ||
+      (onConvertProforma && hasConvertibleProformas) ||
+      onEditPayment ||
+      onDeletePayment,
+  )
   const [deleteTarget, setDeleteTarget] = React.useState<BookingPaymentsSummaryRow | null>(null)
   const [deletePending, setDeletePending] = React.useState(false)
+  const [convertingInvoiceId, setConvertingInvoiceId] = React.useState<string | null>(null)
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget || !onDeletePayment) return
@@ -155,6 +167,16 @@ export function BookingPaymentsSummary({
       setDeleteTarget(null)
     } finally {
       setDeletePending(false)
+    }
+  }
+
+  const handleConvertProforma = async (row: BookingPaymentsSummaryRow) => {
+    if (!onConvertProforma || row.invoiceType !== "proforma") return
+    setConvertingInvoiceId(row.invoiceId)
+    try {
+      await onConvertProforma(row)
+    } finally {
+      setConvertingInvoiceId(null)
     }
   }
 
@@ -241,6 +263,7 @@ export function BookingPaymentsSummary({
                     id: payment.id,
                     invoiceId: payment.invoiceId,
                     invoiceNumber: payment.invoiceNumber,
+                    invoiceType: payment.invoiceType,
                     amountCents: payment.amountCents,
                     currency: payment.currency,
                     status: payment.status,
@@ -310,6 +333,15 @@ export function BookingPaymentsSummary({
                                 <DropdownMenuItem onClick={() => onViewPayment(row)}>
                                   <Eye className="mr-2 h-4 w-4" />
                                   {card.actions.view}
+                                </DropdownMenuItem>
+                              ) : null}
+                              {onConvertProforma && row.invoiceType === "proforma" ? (
+                                <DropdownMenuItem
+                                  disabled={convertingInvoiceId === row.invoiceId}
+                                  onClick={() => void handleConvertProforma(row)}
+                                >
+                                  <ArrowRightLeft className="mr-2 h-4 w-4" />
+                                  {card.actions.convertToInvoice}
                                 </DropdownMenuItem>
                               ) : null}
                               {onEditPayment ? (

@@ -1336,6 +1336,7 @@ export const bookingsUiRo = {
     actions: {
       open: "Deschide meniul platii",
       view: "Vezi plata",
+      convertToInvoice: "Converteste in factura",
       edit: "Editeaza plata",
       delete: "Sterge plata",
     },

@@ -1334,6 +1334,7 @@ export const bookingsUiEn = {
     actions: {
       open: "Open payment menu",
       view: "View payment",
+      convertToInvoice: "Convert to invoice",
       edit: "Edit payment",
       delete: "Delete payment",
     },
