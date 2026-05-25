@@ -77,6 +77,7 @@ export type AllocationUiMessages = Record<string, unknown> & {
   noRooms: string
   noResources: string
   noSeats: string
+  noAllocationsToManage: string
   windowSeat: string
   aisleSeat: string
   middleSeat: string
@@ -199,6 +200,7 @@ export const allocationUiEn = {
   noRooms: "No rooms have been added for this slot.",
   noResources: "No resources have been added for this slot.",
   noSeats: "No vehicle seats have been generated for this slot.",
+  noAllocationsToManage: "This slot has no allocations to manage.",
   windowSeat: "Window",
   aisleSeat: "Aisle",
   middleSeat: "Middle",
@@ -337,6 +339,7 @@ export const allocationUiRo = {
   noRooms: "Nu exista camere adaugate pentru acest slot.",
   noResources: "Nu exista resurse adaugate pentru acest slot.",
   noSeats: "Nu exista locuri generate pentru acest slot.",
+  noAllocationsToManage: "Acest slot nu are alocari de gestionat.",
   windowSeat: "Geam",
   aisleSeat: "Culoar",
   middleSeat: "Mijloc",

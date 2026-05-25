@@ -40,8 +40,8 @@ import { useAllocationUiMessagesOrDefault } from "../i18n/index.js"
 import {
   collectOccupants,
   defaultCapacityFor,
+  deriveAllocationKinds,
   kindLabel,
-  PARENT_ONLY_KINDS,
   parentKindFor,
   type ResourceCapacitySummary,
   ROOM_KIND,
@@ -138,19 +138,10 @@ export function SlotAllocationPage({
   }, [data?.bookings])
 
   const allocationKinds = useMemo(() => {
-    const kinds: string[] = []
-    const addKind = (kind: string | null | undefined) => {
-      if (!kind || PARENT_ONLY_KINDS.has(kind) || kinds.includes(kind)) return
-      kinds.push(kind)
-    }
-
-    addKind(ROOM_KIND)
-    for (const resource of data?.resources ?? []) addKind(resource.kind)
-    for (const option of templates.data?.data ?? []) {
-      for (const template of option.templates) addKind(template.kind)
-    }
-
-    return kinds
+    return deriveAllocationKinds({
+      resources: data?.resources ?? [],
+      templateOptions: templates.data?.data ?? [],
+    })
   }, [data?.resources, templates.data?.data])
 
   // option_id → option name, used by ResourceColumnsView to badge each
@@ -163,14 +154,19 @@ export function SlotAllocationPage({
     return map
   }, [templates.data?.data])
 
-  const activeKind = allocationKinds.includes(selectedKind)
-    ? selectedKind
-    : (allocationKinds[0] ?? ROOM_KIND)
   const visibleExtraTabs = extraTabs.filter((tab) => !allocationKinds.includes(tab.id))
-  const selectedExtraTab = allocationKinds.includes(selectedKind)
+  const selectedAllocationKind = allocationKinds.includes(selectedKind) ? selectedKind : undefined
+  const selectedExtraTab = selectedAllocationKind
     ? undefined
-    : visibleExtraTabs.find((tab) => tab.id === selectedKind)
+    : (visibleExtraTabs.find((tab) => tab.id === selectedKind) ??
+      (allocationKinds.length === 0 ? visibleExtraTabs[0] : undefined))
+  const activeAllocationKind = selectedExtraTab
+    ? undefined
+    : (selectedAllocationKind ?? allocationKinds[0])
+  const activeKind = activeAllocationKind ?? ROOM_KIND
   const activeTabId = selectedExtraTab?.id ?? activeKind
+  const hasAllocationView = Boolean(activeAllocationKind)
+  const hasTabs = allocationKinds.length > 0 || visibleExtraTabs.length > 0
   const resources = useMemo(
     () => (data?.resources ?? []).filter((resource) => resource.kind === activeKind),
     [data?.resources, activeKind],
@@ -325,7 +321,7 @@ export function SlotAllocationPage({
 
   const summaryLine = (
     <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-      {selectedExtraTab ? null : (
+      {selectedExtraTab || !hasAllocationView ? null : (
         <CapacitySummaryBadges summary={capacitySummary} messages={messages} kind={activeKind} />
       )}
     </div>
@@ -333,8 +329,10 @@ export function SlotAllocationPage({
 
   const actionsCluster = (
     <div className="flex flex-wrap items-center gap-2">
-      {selectedExtraTab ? null : renderExtraActions?.({ slotId, kind: activeKind })}
-      {selectedExtraTab ? null : resources.length === 0 ? (
+      {selectedExtraTab || !hasAllocationView
+        ? null
+        : renderExtraActions?.({ slotId, kind: activeKind })}
+      {selectedExtraTab || !hasAllocationView ? null : resources.length === 0 ? (
         <Button
           variant="outline"
           onClick={() => void generateResources()}
@@ -357,7 +355,7 @@ export function SlotAllocationPage({
             : messages.autoAllocate}
         </Button>
       )}
-      {!selectedExtraTab && canManuallyAddResource ? (
+      {!selectedExtraTab && hasAllocationView && canManuallyAddResource ? (
         <Button
           variant="outline"
           onClick={() => {
@@ -404,29 +402,36 @@ export function SlotAllocationPage({
 
       {renderBefore?.(context)}
 
-      <Tabs value={activeTabId} onValueChange={setSelectedKind}>
-        <TabsList className="flex h-auto w-fit flex-wrap justify-start">
-          {allocationKinds.map((kind) => (
-            <TabsTrigger key={kind} value={kind} className="gap-2">
-              {kind === VEHICLE_SEAT_KIND ? (
-                <Armchair className="size-4" aria-hidden="true" />
-              ) : (
-                <Bed className="size-4" aria-hidden="true" />
-              )}
-              {kindLabel(kind, messages)}
-            </TabsTrigger>
-          ))}
-          {visibleExtraTabs.map((tab) => (
-            <TabsTrigger key={tab.id} value={tab.id} className="gap-2">
-              {tab.icon}
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      {hasTabs ? (
+        <Tabs value={activeTabId} onValueChange={setSelectedKind}>
+          <TabsList className="flex h-auto w-fit flex-wrap justify-start">
+            {allocationKinds.map((kind) => (
+              <TabsTrigger key={kind} value={kind} className="gap-2">
+                {kind === VEHICLE_SEAT_KIND ? (
+                  <Armchair className="size-4" aria-hidden="true" />
+                ) : (
+                  <Bed className="size-4" aria-hidden="true" />
+                )}
+                {kindLabel(kind, messages)}
+              </TabsTrigger>
+            ))}
+            {visibleExtraTabs.map((tab) => (
+              <TabsTrigger key={tab.id} value={tab.id} className="gap-2">
+                {tab.icon}
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      ) : null}
 
       {selectedExtraTab ? (
         selectedExtraTab.render(context)
+      ) : !hasAllocationView ? (
+        <div className="flex flex-col items-center justify-center gap-3 rounded-md border border-dashed p-8 text-center">
+          <Users className="size-6 text-muted-foreground" aria-hidden="true" />
+          <p className="text-sm text-muted-foreground">{messages.noAllocationsToManage}</p>
+        </div>
       ) : (
         <>
           {error ? (

@@ -18,6 +18,29 @@ export type AllocationOccupants = {
   unallocated: AllocationManifestTraveler[]
 }
 
+export function deriveAllocationKinds({
+  resources,
+  templateOptions,
+}: {
+  resources: ReadonlyArray<Pick<AllocationResource, "kind">>
+  templateOptions: ReadonlyArray<{
+    templates: ReadonlyArray<{ kind: string | null | undefined }>
+  }>
+}) {
+  const kinds: string[] = []
+  const addKind = (kind: string | null | undefined) => {
+    if (!kind || PARENT_ONLY_KINDS.has(kind) || kinds.includes(kind)) return
+    kinds.push(kind)
+  }
+
+  for (const resource of resources) addKind(resource.kind)
+  for (const option of templateOptions) {
+    for (const template of option.templates) addKind(template.kind)
+  }
+
+  return kinds
+}
+
 export type ValidationIssue = {
   id: string
   label: string
