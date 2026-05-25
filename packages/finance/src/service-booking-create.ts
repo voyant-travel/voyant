@@ -36,6 +36,7 @@ import {
 // ---------- validation ----------
 
 const travelerInputSchema = z.object({
+  clientTravelerKey: z.string().min(1).max(255).optional().nullable(),
   firstName: z.string().min(1).max(255),
   lastName: z.string().min(1).max(255),
   email: z.string().email().optional().nullable(),
@@ -48,7 +49,7 @@ const travelerInputSchema = z.object({
   /**
    * Deprecated compatibility alias for the traveler's pricing-tier option
    * unit. Accepted by the input schema for wire compatibility but not
-   * persisted; item-line travelerIndexes are the supported traveler-to-item
+   * persisted; item-line travelerKeys are the supported traveler-to-item
    * linkage.
    */
   roomUnitId: z.string().optional().nullable(),
@@ -87,9 +88,13 @@ const itemLineInputSchema = z.object({
   unitSellAmountCents: z.number().int().min(0).optional().nullable(),
   totalSellAmountCents: z.number().int().min(0).optional().nullable(),
   /**
-   * Indexes (into the request's `travelers` array) of travelers this
-   * item applies to. Server inserts one `booking_item_travelers` row
-   * per traveler.
+   * Stable traveler keys this item applies to. Server inserts one
+   * `booking_item_travelers` row per traveler.
+   */
+  travelerKeys: z.array(z.string().min(1).max(255)).optional().nullable(),
+  /**
+   * Deprecated position-based traveler links. Removal target: next
+   * booking-create wire-format major.
    */
   travelerIndexes: z.array(z.number().int().min(0)).optional().nullable(),
 })
@@ -106,6 +111,7 @@ const extraLineInputSchema = z.object({
   sellCurrency: z.string().length(3),
   unitSellAmountCents: z.number().int().min(0).optional().nullable(),
   totalSellAmountCents: z.number().int().min(0).optional().nullable(),
+  travelerKeys: z.array(z.string().min(1).max(255)).optional().nullable(),
   travelerIndexes: z.array(z.number().int().min(0)).optional().nullable(),
 })
 
@@ -249,6 +255,67 @@ function requireCompleteBookingParty(
   })
 }
 
+function findDuplicateClientTravelerKeys(
+  travelers: readonly { clientTravelerKey?: string | null }[] | null | undefined,
+): string[] {
+  const seen = new Set<string>()
+  const duplicates = new Set<string>()
+  for (const traveler of travelers ?? []) {
+    const key = traveler.clientTravelerKey?.trim()
+    if (!key) continue
+    if (seen.has(key)) duplicates.add(key)
+    else seen.add(key)
+  }
+  return [...duplicates]
+}
+
+function requireUniqueClientTravelerKeys(
+  value: { travelers?: Array<{ clientTravelerKey?: string | null }> },
+  ctx: z.RefinementCtx,
+) {
+  for (const duplicateKey of findDuplicateClientTravelerKeys(value.travelers)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["travelers"],
+      message: `Duplicate clientTravelerKey: ${duplicateKey}`,
+    })
+  }
+}
+
+function requireKnownTravelerKeys(
+  value: {
+    travelers?: Array<{ clientTravelerKey?: string | null }>
+    itemLines?: Array<{ travelerKeys?: string[] | null }>
+    extraLines?: Array<{ travelerKeys?: string[] | null }>
+  },
+  ctx: z.RefinementCtx,
+) {
+  const knownKeys = new Set(
+    (value.travelers ?? [])
+      .map((traveler) => traveler.clientTravelerKey?.trim())
+      .filter((key): key is string => Boolean(key)),
+  )
+  const checkLines = (
+    field: "itemLines" | "extraLines",
+    lines: Array<{ travelerKeys?: string[] | null }> | undefined,
+  ) => {
+    lines?.forEach((line, lineIndex) => {
+      line.travelerKeys?.forEach((travelerKey, keyIndex) => {
+        const key = travelerKey.trim()
+        if (!key || knownKeys.has(key)) return
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [field, lineIndex, "travelerKeys", keyIndex],
+          message: `Unknown travelerKey: ${key}`,
+        })
+      })
+    })
+  }
+
+  checkLines("itemLines", value.itemLines)
+  checkLines("extraLines", value.extraLines)
+}
+
 function isRealEmail(value: string | null | undefined): value is string {
   const normalized = value?.trim().toLowerCase() ?? ""
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized) && !placeholderEmails.has(normalized)
@@ -321,11 +388,15 @@ const bookingCreateBaseSchema = z.object({
 export const bookingCreateSchema = bookingCreateBaseSchema
   .superRefine(requirePriceOverrideReason)
   .superRefine(requireCompleteBookingParty)
+  .superRefine(requireUniqueClientTravelerKeys)
+  .superRefine(requireKnownTravelerKeys)
 
 export const bookingCreateSubSchema = bookingCreateBaseSchema
   .omit({ groupMembership: true })
   .superRefine(requirePriceOverrideReason)
   .superRefine(requireCompleteBookingParty)
+  .superRefine(requireUniqueClientTravelerKeys)
+  .superRefine(requireKnownTravelerKeys)
 
 export type BookingCreateInput = z.infer<typeof bookingCreateSchema>
 type BookingCreatePaymentScheduleInput = NonNullable<BookingCreateInput["paymentSchedules"]>[number]
@@ -515,16 +586,17 @@ function hasResolverRejectionSignals(input: {
   travelers: NonNullable<BookingCreateInput["travelers"]>
   itemLines: NonNullable<BookingCreateInput["itemLines"]>
 }) {
+  const hasTravelerLinks = (line: NonNullable<BookingCreateInput["itemLines"]>[number]) =>
+    (Array.isArray(line.travelerKeys) && line.travelerKeys.length > 0) ||
+    (Array.isArray(line.travelerIndexes) && line.travelerIndexes.length > 0)
+
   return (
     input.travelers.every(
       (traveler) =>
         traveler.travelerCategory === "adult" ||
         traveler.travelerCategory === "child" ||
         traveler.travelerCategory === "infant",
-    ) &&
-    input.itemLines.every(
-      (line) => Array.isArray(line.travelerIndexes) && line.travelerIndexes.length > 0,
-    )
+    ) && input.itemLines.every(hasTravelerLinks)
   )
 }
 
@@ -559,7 +631,7 @@ async function verifyBookingCreatePayload(tx: PostgresJsDatabase, input: Booking
 }
 
 /**
- * Filter + dedupe `travelerIndexes` against the inserted traveler
+ * Filter + dedupe deprecated `travelerIndexes` against the inserted traveler
  * array, dropping any indexes outside `[0, travelersLength)`.
  */
 function uniqueValidTravelerIndexes(
@@ -574,6 +646,19 @@ function uniqueValidTravelerIndexes(
     if (seen.has(index)) continue
     seen.add(index)
     result.push(index)
+  }
+  return result
+}
+
+function uniqueTravelerKeys(keys: readonly string[] | null | undefined): string[] {
+  if (!keys?.length) return []
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const key of keys) {
+    const normalized = key.trim()
+    if (!normalized || seen.has(normalized)) continue
+    seen.add(normalized)
+    result.push(normalized)
   }
   return result
 }
@@ -593,18 +678,42 @@ async function linkBookingCreateItemsToTravelers(
   tx: PostgresJsDatabase,
   bookingId: string,
   travelers: readonly BookingTraveler[],
+  travelerInputs: readonly Pick<BookingCreateTravelerInput, "clientTravelerKey">[],
   lines: ReadonlyArray<{
     clientLineKey?: string | null
+    travelerKeys?: readonly string[] | null
     travelerIndexes?: readonly number[] | null
   }>,
 ) {
   if (travelers.length === 0 || lines.length === 0) return
-  const requestedLinks = lines.flatMap((line) =>
-    uniqueValidTravelerIndexes(line.travelerIndexes, travelers.length).map((travelerIndex) => ({
-      clientLineKey: line.clientLineKey ?? null,
-      travelerIndex,
-    })),
-  )
+  const duplicateTravelerKeys = findDuplicateClientTravelerKeys(travelerInputs)
+  if (duplicateTravelerKeys.length > 0) {
+    throw new Error(`Duplicate clientTravelerKey: ${duplicateTravelerKeys.join(", ")}`)
+  }
+
+  const travelerByClientKey = new Map<string, BookingTraveler>()
+  for (const [index, travelerInput] of travelerInputs.entries()) {
+    const key = travelerInput.clientTravelerKey?.trim()
+    const traveler = travelers[index]
+    if (key && traveler && !travelerByClientKey.has(key)) travelerByClientKey.set(key, traveler)
+  }
+
+  const requestedLinks = lines.flatMap((line) => {
+    const travelerKeys = uniqueTravelerKeys(line.travelerKeys)
+    if (travelerKeys.length > 0) {
+      return travelerKeys.map((travelerKey) => ({
+        clientLineKey: line.clientLineKey ?? null,
+        travelerKey,
+        traveler: travelerByClientKey.get(travelerKey) ?? null,
+      }))
+    }
+    return uniqueValidTravelerIndexes(line.travelerIndexes, travelers.length).map(
+      (travelerIndex) => ({
+        clientLineKey: line.clientLineKey ?? null,
+        traveler: travelers[travelerIndex] ?? null,
+      }),
+    )
+  })
   if (requestedLinks.length === 0) return
 
   const itemRows = await tx.select().from(bookingItems).where(eq(bookingItems.bookingId, bookingId))
@@ -616,10 +725,17 @@ async function linkBookingCreateItemsToTravelers(
   }
 
   const seen = new Set<string>()
-  const linkRows = requestedLinks.flatMap(({ clientLineKey, travelerIndex }) => {
+  const unknownTravelerKeys = requestedLinks
+    .filter((link) => "travelerKey" in link && !link.traveler)
+    .map((link) => ("travelerKey" in link ? link.travelerKey : null))
+    .filter((key): key is string => Boolean(key))
+  if (unknownTravelerKeys.length > 0) {
+    throw new Error(`Unknown travelerKey: ${unknownTravelerKeys.join(", ")}`)
+  }
+
+  const linkRows = requestedLinks.flatMap(({ clientLineKey, traveler }) => {
     if (!clientLineKey) return []
     const item = itemByClientLineKey.get(clientLineKey)
-    const traveler = travelers[travelerIndex]
     if (!item || !traveler) return []
     const dedupeKey = `${item.id}:${traveler.id}`
     if (seen.has(dedupeKey)) return []
@@ -861,12 +977,13 @@ export async function createBooking(
       }
 
       // 2b. Link booking_items + extras to specific travelers when
-      // the caller supplied `clientLineKey` + `travelerIndexes` on
-      // any line. Item rows were inserted earlier by
+      // the caller supplied `clientLineKey` + `travelerKeys` on any
+      // line. Deprecated `travelerIndexes` remain a fallback. Item
+      // rows were inserted earlier by
       // `convertProductToBooking` (this slice's product converter
       // doesn't run them in the orchestrator); we look them up by
       // the `metadata.bookingCreateLineKey` the converter stamped.
-      await linkBookingCreateItemsToTravelers(tx, booking.id, travelers, [
+      await linkBookingCreateItemsToTravelers(tx, booking.id, travelers, input.travelers ?? [], [
         ...(input.itemLines ?? []),
         ...(input.extraLines ?? []),
       ])

@@ -43,6 +43,8 @@ export type TravelerRole = "lead" | "adult" | "child" | "infant"
 export type TravelerUnitAssignmentSource = "auto" | "manual" | "none"
 
 export interface TravelerEntry {
+  /** Stable client-side identity used by item/extra travelerKeys links. */
+  clientTravelerKey?: string
   personId: string | null
   firstName: string
   lastName: string
@@ -70,9 +72,18 @@ export interface TravelerListValue {
 
 export const emptyTravelerListValue: TravelerListValue = { travelers: [] }
 
+function createClientTravelerKey(): string {
+  const random =
+    typeof globalThis.crypto?.randomUUID === "function"
+      ? globalThis.crypto.randomUUID().replace(/-/g, "")
+      : `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`
+  return `trav:${random}`
+}
+
 /** Factory for a blank row — `role` defaults to `adult` unless the list is empty. */
 export function createBlankTraveler(role: TravelerRole = "adult"): TravelerEntry {
   return {
+    clientTravelerKey: createClientTravelerKey(),
     personId: null,
     firstName: "",
     lastName: "",
@@ -794,6 +805,7 @@ function createTravelerFromPerson(person: PersonRecord, role: TravelerRole): Tra
   const effectiveRole: TravelerRole =
     role === "lead" ? "lead" : deriveTravelerRoleFromDob(dateOfBirth)
   return {
+    clientTravelerKey: createClientTravelerKey(),
     personId: person.id,
     firstName: person.firstName,
     lastName: person.lastName,

@@ -32,6 +32,7 @@ function unit(
 
 function traveler(partial: Partial<BookingDraftTraveler> = {}): BookingDraftTraveler {
   return {
+    clientTravelerKey: partial.clientTravelerKey ?? null,
     personId: partial.personId ?? null,
     firstName: partial.firstName ?? "Test",
     lastName: partial.lastName ?? "Traveler",
@@ -428,6 +429,28 @@ describe("resolveBookingExtraLines", () => {
       },
     ])
   })
+
+  it("uses stable traveler keys for per-person extra links when supplied", () => {
+    const result = resolveBookingExtraLines({
+      travelerCount: 2,
+      travelerKeys: ["trav:lead", "trav:child"],
+      extraLines: [
+        {
+          productExtraId: "lunch",
+          pricingMode: "per_person",
+          pricedPerPerson: true,
+          quantity: 1,
+          unitSellAmountCents: 1000,
+        },
+      ],
+    })
+
+    expect(result[0]).toMatchObject({
+      clientLineKey: "extra:lunch",
+      travelerKeys: ["trav:lead", "trav:child"],
+    })
+    expect(result[0]?.travelerIndexes).toBeUndefined()
+  })
 })
 
 describe("travelersToRows", () => {
@@ -447,6 +470,14 @@ describe("travelersToRows", () => {
     expect(rows[1]).toMatchObject({ isPrimary: false, travelerCategory: "child" })
     // DOB wins over role for the third traveler — they're 7y old, so "child"
     expect(rows[2]).toMatchObject({ isPrimary: false, travelerCategory: "child" })
+  })
+
+  it("carries stable traveler keys into the booking-create wire rows", () => {
+    const rows = travelersToRows({
+      travelers: [traveler({ clientTravelerKey: "trav:lead", role: "lead" })],
+    })
+
+    expect(rows[0]?.clientTravelerKey).toBe("trav:lead")
   })
 
   it("keeps legacy roomUnitId wire field as a pricing-tier alias", () => {
@@ -523,6 +554,50 @@ describe("verifyBookingDraft", () => {
         { optionUnitId: "u_adult", quantity: 1, travelerIndexes: [0] },
         { optionUnitId: "u_child_6_12", quantity: 1, travelerIndexes: [1] },
         { optionUnitId: "u_child_0_5", quantity: 1, travelerIndexes: [2] },
+      ],
+    })
+    expect(result.ok).toBe(true)
+    expect(result.mismatches).toEqual([])
+  })
+
+  it("returns ok when submitted lines reference reordered travelers by stable keys", () => {
+    const result = verifyBookingDraft({
+      units: krushunaUnits,
+      travelers: [
+        { clientTravelerKey: "trav:child", isPrimary: false, travelerCategory: "child" },
+        { clientTravelerKey: "trav:adult", isPrimary: true, travelerCategory: "adult" },
+        { clientTravelerKey: "trav:infant", isPrimary: false, travelerCategory: "infant" },
+      ],
+      itemLines: [
+        { optionUnitId: "u_adult", quantity: 1, travelerKeys: ["trav:adult"] },
+        { optionUnitId: "u_child_6_12", quantity: 1, travelerKeys: ["trav:child"] },
+        { optionUnitId: "u_child_0_5", quantity: 1, travelerKeys: ["trav:infant"] },
+      ],
+    })
+    expect(result.ok).toBe(true)
+    expect(result.mismatches).toEqual([])
+  })
+
+  it("prefers stable traveler keys over deprecated indexes", () => {
+    const result = verifyBookingDraft({
+      units: krushunaUnits,
+      travelers: [
+        { clientTravelerKey: "trav:child", isPrimary: false, travelerCategory: "child" },
+        { clientTravelerKey: "trav:adult", isPrimary: true, travelerCategory: "adult" },
+      ],
+      itemLines: [
+        {
+          optionUnitId: "u_adult",
+          quantity: 1,
+          travelerKeys: ["trav:adult"],
+          travelerIndexes: [0],
+        },
+        {
+          optionUnitId: "u_child_6_12",
+          quantity: 1,
+          travelerKeys: ["trav:child"],
+          travelerIndexes: [1],
+        },
       ],
     })
     expect(result.ok).toBe(true)

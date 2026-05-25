@@ -18,7 +18,7 @@ import {
   voucherRedemptions,
   vouchers,
 } from "../../src/schema.js"
-import { createBooking } from "../../src/service-booking-create.js"
+import { bookingCreateSchema, createBooking } from "../../src/service-booking-create.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 
@@ -598,6 +598,177 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
         WHERE ${bookingItems.bookingId} = ${outcome.result.booking.id}
       )`)
     expect(links).toHaveLength(4)
+  })
+
+  it("links item and extra lines to reordered travelers through stable keys", async () => {
+    const { productId, unitId } = await seedProduct()
+
+    const outcome = await createBooking(db, {
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      travelers: [
+        {
+          clientTravelerKey: "trav:child",
+          firstName: "Child",
+          lastName: "Traveler",
+          participantType: "traveler",
+          travelerCategory: "child",
+        },
+        {
+          clientTravelerKey: "trav:lead",
+          firstName: "Alice",
+          lastName: "Lead",
+          email: "alice@example.com",
+          participantType: "traveler",
+          travelerCategory: "adult",
+          isPrimary: true,
+        },
+      ],
+      itemLines: [
+        {
+          clientLineKey: `unit:${unitId}`,
+          optionUnitId: unitId,
+          quantity: 1,
+          title: "Adult",
+          travelerKeys: ["trav:lead"],
+        },
+      ],
+      extraLines: [
+        {
+          clientLineKey: "extra:lunch",
+          productExtraId: "lunch",
+          name: "Lunch",
+          pricingMode: "per_person",
+          pricedPerPerson: true,
+          quantity: 1,
+          sellCurrency: "EUR",
+          unitSellAmountCents: 1000,
+          totalSellAmountCents: 1000,
+          travelerKeys: ["trav:child"],
+        },
+      ],
+    })
+
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+
+    const linkedRows = await db.execute<{ item_title: string; traveler_last_name: string }>(sql`
+      SELECT bi.title AS item_title, bt.last_name AS traveler_last_name
+      FROM booking_item_travelers bit
+      JOIN booking_items bi ON bi.id = bit.booking_item_id
+      JOIN booking_travelers bt ON bt.id = bit.traveler_id
+      WHERE bi.booking_id = ${outcome.result.booking.id}
+      ORDER BY bi.title, bt.last_name
+    `)
+    expect(linkedRows).toEqual([
+      { item_title: "Adult", traveler_last_name: "Lead" },
+      { item_title: "Lunch", traveler_last_name: "Traveler" },
+    ])
+  })
+
+  it("rejects duplicate stable traveler keys", async () => {
+    const { productId, unitId } = await seedProduct()
+
+    const result = bookingCreateSchema.safeParse({
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      travelers: [
+        {
+          clientTravelerKey: "trav:duplicate",
+          firstName: "Alice",
+          lastName: "Lead",
+          participantType: "traveler",
+          travelerCategory: "adult",
+          isPrimary: true,
+        },
+        {
+          clientTravelerKey: "trav:duplicate",
+          firstName: "Bob",
+          lastName: "Traveler",
+          participantType: "traveler",
+          travelerCategory: "adult",
+        },
+      ],
+      itemLines: [
+        {
+          clientLineKey: `unit:${unitId}`,
+          optionUnitId: unitId,
+          quantity: 1,
+          title: "Adult",
+          travelerKeys: ["trav:duplicate"],
+        },
+      ],
+    })
+
+    expect(result.success).toBe(false)
+    if (result.success) return
+    expect(result.error?.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          message: "Duplicate clientTravelerKey: trav:duplicate",
+        }),
+      ]),
+    )
+  })
+
+  it("rejects item and extra lines that reference unknown stable traveler keys", async () => {
+    const { productId, unitId } = await seedProduct()
+
+    const result = bookingCreateSchema.safeParse({
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      travelers: [
+        {
+          clientTravelerKey: "trav:lead",
+          firstName: "Alice",
+          lastName: "Lead",
+          participantType: "traveler",
+          travelerCategory: "adult",
+          isPrimary: true,
+        },
+      ],
+      itemLines: [
+        {
+          clientLineKey: `unit:${unitId}`,
+          optionUnitId: unitId,
+          quantity: 1,
+          title: "Adult",
+          travelerKeys: ["trav:missing-item"],
+        },
+      ],
+      extraLines: [
+        {
+          clientLineKey: "extra:lunch",
+          productExtraId: "lunch",
+          name: "Lunch",
+          pricingMode: "per_person",
+          pricedPerPerson: true,
+          quantity: 1,
+          sellCurrency: "EUR",
+          unitSellAmountCents: 1000,
+          totalSellAmountCents: 1000,
+          travelerKeys: ["trav:missing-extra"],
+        },
+      ],
+    })
+
+    expect(result.success).toBe(false)
+    if (result.success) return
+    expect(result.error.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: ["itemLines", 0, "travelerKeys", 0],
+          message: "Unknown travelerKey: trav:missing-item",
+        }),
+        expect.objectContaining({
+          path: ["extraLines", 0, "travelerKeys", 0],
+          message: "Unknown travelerKey: trav:missing-extra",
+        }),
+      ]),
+    )
   })
 
   it("rejects booking-create payloads that drift from the server draft resolver", async () => {

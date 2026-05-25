@@ -33,6 +33,8 @@ export type AssignmentRoleHint = "adult" | "child" | "infant"
 export type BookingDraftUnitAssignmentSource = "auto" | "manual" | "none"
 
 export interface BookingDraftTraveler {
+  /** Stable client-side traveler key used by wire-format travelerKeys links. */
+  clientTravelerKey?: string | null
   personId: string | null
   firstName: string
   lastName: string
@@ -91,8 +93,8 @@ export interface ResolvedBookingDraft<TTraveler extends BookingDraftTraveler> {
   /**
    * For each unit that ended up assigned, the indexes (into the input
    * traveler array) of travelers mapped to it. Used at submit time to
-   * stamp `travelerIndexes` on `booking_item` lines so the server can
-   * link items to travelers through `booking_item_travelers`.
+   * stamp stable `travelerKeys` on `booking_item` lines so the server
+   * can link items to travelers through `booking_item_travelers`.
    */
   travelerIndexesByUnitId: Record<string, number[]>
 }
@@ -111,6 +113,7 @@ export interface ResolvableExtraLine {
   unitSellAmountCents?: number | null
   totalSellAmountCents?: number | null
   clientLineKey?: string | null
+  travelerKeys?: string[] | null
   travelerIndexes?: number[] | null
 }
 
@@ -523,20 +526,26 @@ export function resolveBookingDraft<TTraveler extends BookingDraftTraveler>(opti
 
 /**
  * Normalize per-person extras to charged traveler quantity and
- * stamp `travelerIndexes` + `clientLineKey` so the server can link
+ * stamp traveler links + `clientLineKey` so the server can link
  * each extra line to the travelers it applies to via
  * `booking_item_travelers`.
  *
  * Per-person mode (`pricingMode === "per_person"` or
  * `pricedPerPerson === true`): quantity multiplied by travelerCount,
- * `travelerIndexes` set to all travelers (uniform applicability).
+ * `travelerKeys` set to all travelers when stable keys are supplied;
+ * otherwise `travelerIndexes` is set as a deprecated fallback.
  * Non-per-person lines pass through with `clientLineKey` only.
  */
 export function resolveBookingExtraLines<TLine extends ResolvableExtraLine>(options: {
   extraLines: readonly TLine[]
   travelerCount: number
+  travelerKeys?: readonly (string | null | undefined)[]
 }): TLine[] {
   const travelerIndexes = Array.from({ length: options.travelerCount }, (_, index) => index)
+  const travelerKeys = (options.travelerKeys ?? []).filter(
+    (key): key is string => typeof key === "string" && key.trim().length > 0,
+  )
+  const useTravelerKeys = travelerKeys.length === options.travelerCount
   return options.extraLines.map((line) => {
     const perPerson = line.pricingMode === "per_person" || line.pricedPerPerson === true
     if (!perPerson) {
@@ -554,7 +563,7 @@ export function resolveBookingExtraLines<TLine extends ResolvableExtraLine>(opti
         line.unitSellAmountCents == null
           ? line.totalSellAmountCents
           : line.unitSellAmountCents * quantity,
-      travelerIndexes,
+      ...(useTravelerKeys ? { travelerKeys } : { travelerIndexes }),
     }
   })
 }
@@ -566,12 +575,13 @@ export function resolveBookingExtraLines<TLine extends ResolvableExtraLine>(opti
  *
  * `roomUnitId` is a deprecated compatibility alias for the pricing tier
  * option unit. Inventory placement is expressed only by item lines and their
- * `travelerIndexes`; the server accepts this field but does not persist it.
+ * `travelerKeys`; the server accepts this field but does not persist it.
  */
 export function travelersToRows(
   value: { travelers: readonly BookingDraftTraveler[] },
   now: Date = new Date(),
 ): Array<{
+  clientTravelerKey: string | null
   personId: string | null
   firstName: string
   lastName: string
@@ -584,6 +594,7 @@ export function travelersToRows(
   roomUnitId: string | null
 }> {
   return value.travelers.map((traveler) => ({
+    clientTravelerKey: traveler.clientTravelerKey?.trim() || null,
     personId: traveler.personId,
     firstName: traveler.firstName.trim(),
     lastName: traveler.lastName.trim(),
@@ -607,6 +618,7 @@ export function travelersToRows(
  * implicitly maps to.
  */
 export interface VerifiableTraveler {
+  clientTravelerKey?: string | null
   isPrimary?: boolean | null
   travelerCategory?: "adult" | "child" | "infant" | "senior" | "other" | null
 }
@@ -618,6 +630,7 @@ export interface VerifiableTraveler {
 export interface VerifiableItemLine {
   optionUnitId: string
   quantity: number
+  travelerKeys?: string[] | null
   travelerIndexes?: number[] | null
 }
 
@@ -651,9 +664,10 @@ export interface VerifyBookingDraftResult {
  * Notes on the reconstruction:
  *   - The wire format doesn't carry split per-traveler assignment
  *     fields (the join-table model encodes them through
- *     `itemLines[].travelerIndexes`), so we reconstruct the relevant
+ *     `itemLines[].travelerKeys`), so we reconstruct the relevant
  *     pricing or inventory unit by walking item lines and matching
- *     them to traveler indexes.
+ *     them to traveler keys. Deprecated `travelerIndexes` remain a
+ *     fallback for older clients.
  *   - DOB doesn't round-trip on the wire today either; we feed the
  *     resolver the `travelerCategory` as a role hint so age-banded
  *     options can still be re-derived.
@@ -668,13 +682,26 @@ export function verifyBookingDraft(input: {
   }
 
   // Walk the submitted itemLines to recover the per-traveler unit
-  // assignment the client intended. If the client didn't send
-  // `travelerIndexes` (legacy clients), we can't verify per-traveler
-  // assignment — just compare aggregate quantities.
+  // assignment the client intended. Prefer stable `travelerKeys`
+  // when present; fall back to deprecated `travelerIndexes` for
+  // legacy clients. If neither is present, we can't verify
+  // per-traveler assignment — just compare aggregate quantities.
+  // Booking-create schema validation rejects unknown traveler keys
+  // before this verifier runs.
   const unitById = new Map(input.units.map((unit) => [unit.optionUnitId, unit]))
+  const travelerIndexByKey = new Map<string, number>()
+  for (const [index, traveler] of input.travelers.entries()) {
+    const key = traveler.clientTravelerKey?.trim()
+    if (key && !travelerIndexByKey.has(key)) travelerIndexByKey.set(key, index)
+  }
   const unitByTravelerIndex = new Map<number, string>()
   for (const line of input.itemLines) {
-    for (const idx of line.travelerIndexes ?? []) {
+    const travelerKeys = (line.travelerKeys ?? []).filter((key) => key.trim().length > 0)
+    const keyedIndexes = travelerKeys
+      .map((key) => travelerIndexByKey.get(key.trim()))
+      .filter((index): index is number => typeof index === "number")
+    const indexes = travelerKeys.length > 0 ? keyedIndexes : (line.travelerIndexes ?? [])
+    for (const idx of indexes) {
       unitByTravelerIndex.set(idx, line.optionUnitId)
     }
   }
