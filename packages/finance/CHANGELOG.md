@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.81.1
+
+### Patch Changes
+
+- 2ce08ff: Emit a distinct proforma conversion event, convert SmartBill estimates into invoices instead of issuing duplicates, and reject new payments against void invoices.
+  - @voyantjs/action-ledger@0.81.1
+  - @voyantjs/bookings@0.81.1
+  - @voyantjs/core@0.81.1
+  - @voyantjs/db@0.81.1
+  - @voyantjs/hono@0.81.1
+  - @voyantjs/products@0.81.1
+  - @voyantjs/storage@0.81.1
+  - @voyantjs/utils@0.81.1
+
 ## 0.81.0
 
 ### Minor Changes
