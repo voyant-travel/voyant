@@ -16,6 +16,7 @@
     "./public-routes": "./src/routes-public.ts",
     "./public-validation": "./src/validation-public.ts",
     "./checkout-capability": "./src/checkout-capability.ts",
+    "./pricing-assignment": "./src/pricing-assignment.ts",
     "./extensions/suppliers": "./src/extensions/suppliers.ts",
     "./status-dispatch": "./src/status-dispatch.ts"
   },
@@ -107,6 +108,11 @@
         "types": "./dist/checkout-capability.d.ts",
         "import": "./dist/checkout-capability.js",
         "default": "./dist/checkout-capability.js"
+      },
+      "./pricing-assignment": {
+        "types": "./dist/pricing-assignment.d.ts",
+        "import": "./dist/pricing-assignment.js",
+        "default": "./dist/pricing-assignment.js"
       },
       "./extensions/suppliers": {
         "types": "./dist/extensions/suppliers.d.ts",

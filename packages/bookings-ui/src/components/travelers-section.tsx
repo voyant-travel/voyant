@@ -78,21 +78,17 @@ export function createBlankTraveler(role: TravelerRole = "adult"): TravelerEntry
   }
 }
 
-/**
- * Compute integer age in full years from an ISO date-of-birth string.
- * Returns null when the DOB is missing or unparseable.
- */
-export function computeAgeYears(dob: string | null, now: Date = new Date()): number | null {
-  if (!dob) return null
-  const birth = new Date(dob)
-  if (Number.isNaN(birth.getTime())) return null
-  let age = now.getFullYear() - birth.getFullYear()
-  const beforeBirthday =
-    now.getMonth() < birth.getMonth() ||
-    (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())
-  if (beforeBirthday) age -= 1
-  return age >= 0 ? age : null
-}
+// Re-export `computeAgeYears` from the canonical assignment module so
+// existing consumers of `travelers-section`'s public surface keep
+// working. The implementation lives in `@voyantjs/bookings/pricing-assignment`.
+export { computeAgeYears } from "@voyantjs/bookings/pricing-assignment"
+
+import {
+  computeAgeYears as _computeAgeYears,
+  matchUnitByDob as matchAssignmentUnitByDob,
+  matchUnitByRoleHint as matchAssignmentUnitByRoleHint,
+  type PricingAssignmentUnit,
+} from "@voyantjs/bookings/pricing-assignment"
 
 /**
  * Derive the age-banded traveler role from DOB. Falls back to `adult`
@@ -104,7 +100,7 @@ export function computeAgeYears(dob: string | null, now: Date = new Date()): num
  *   - adult:  18+
  */
 export function deriveTravelerRoleFromDob(dob: string | null): TravelerRole {
-  const age = computeAgeYears(dob)
+  const age = _computeAgeYears(dob)
   if (age == null) return "adult"
   if (age < 2) return "infant"
   if (age < 18) return "child"
@@ -112,53 +108,34 @@ export function deriveTravelerRoleFromDob(dob: string | null): TravelerRole {
 }
 
 /**
- * Find the unit whose `[minAge, maxAge]` window contains the given
- * DOB-derived age. Returns the unit id, or null if no match (or DOB
- * unset). Person-typed units are preferred; everything else is
- * ignored. Caller falls back to a default unit when null.
+ * Adapter from this file's `RoomGroupUnit` shape (UI-side, uses
+ * `unitId`) to the canonical `PricingAssignmentUnit` shape (uses
+ * `optionUnitId`). Phase 1 of voyantjs/voyant#1267 will collapse these
+ * by renaming the UI shape.
  */
-function matchUnitByDob(units: ReadonlyArray<RoomGroupUnit>, dob: string | null): string | null {
-  if (!dob) return null
-  const age = computeAgeYears(dob)
-  if (age == null) return null
-  const personUnits = units.filter((u) => u.unitType == null || u.unitType === "person")
-  const match = personUnits.find(
-    (u) => (u.minAge == null || age >= u.minAge) && (u.maxAge == null || age <= u.maxAge),
-  )
-  return match?.unitId ?? null
+function roomGroupUnitsAsAssignmentUnits(
+  units: ReadonlyArray<RoomGroupUnit>,
+): PricingAssignmentUnit[] {
+  return units.map((u) => ({
+    optionId: null,
+    optionUnitId: u.unitId,
+    unitName: u.unitName,
+    unitCode: u.unitCode,
+    minAge: u.minAge,
+    maxAge: u.maxAge,
+    unitType: u.unitType,
+  }))
 }
 
-/**
- * Find the unit matching a role hint when DOB is missing. Maps the
- * role to a representative age and matches against `[minAge, maxAge]`.
- * Returns null when the role doesn't carry an age signal (e.g. `lead`).
- *
- * Routes `infant` to whichever band covers ~1y (e.g. `child_0_5`) and
- * `child` to whichever covers ~8y (e.g. `child_6_12`), regardless of
- * how the product codes the unit names.
- */
+function matchUnitByDob(units: ReadonlyArray<RoomGroupUnit>, dob: string | null): string | null {
+  return matchAssignmentUnitByDob(roomGroupUnitsAsAssignmentUnits(units), dob)
+}
+
 function matchUnitByRoleHint(
   units: ReadonlyArray<RoomGroupUnit>,
   role: TravelerRole | null,
 ): string | null {
-  if (!role || role === "lead") return null
-  const HINT_AGE: Record<"adult" | "child" | "infant", number> = {
-    adult: 30,
-    child: 8,
-    infant: 1,
-  }
-  const hintAge = HINT_AGE[role]
-  if (hintAge == null) return null
-  // Only consider units with explicit age bands — units with null
-  // min/max would all spuriously match any hint age.
-  const banded = units.filter(
-    (u) =>
-      (u.unitType == null || u.unitType === "person") && (u.minAge != null || u.maxAge != null),
-  )
-  const match = banded.find(
-    (u) => (u.minAge == null || hintAge >= u.minAge) && (u.maxAge == null || hintAge <= u.maxAge),
-  )
-  return match?.unitId ?? null
+  return matchAssignmentUnitByRoleHint(roomGroupUnitsAsAssignmentUnits(units), role)
 }
 
 /**

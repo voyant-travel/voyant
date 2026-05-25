@@ -8,6 +8,11 @@ import {
   useVoyantAvailabilityContext,
 } from "@voyantjs/availability-react"
 import {
+  computeAgeYears,
+  derivePricingAssignment,
+  type PricingAssignmentUnit,
+} from "@voyantjs/bookings/pricing-assignment"
+import {
   type BookingCreateExtraLineInput,
   type BookingCreateGroupMembershipInput,
   type BookingCreatePaymentScheduleInput,
@@ -35,7 +40,6 @@ import {
 import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
 import { ImageIcon, Loader2 } from "lucide-react"
 import * as React from "react"
-
 import {
   formatMessage,
   useBookingsUiI18nOrDefault,
@@ -73,7 +77,6 @@ import {
   type SharedRoomValue,
 } from "./shared-room-section.js"
 import {
-  computeAgeYears,
   emptyTravelerListValue,
   type RoomGroup,
   type RoomUnitOption,
@@ -212,169 +215,34 @@ function stripOptionPrefix(name: string): string {
 }
 
 /**
- * Pick the unit for a traveler. Priorities:
- *   1. If we have an age (from DOB) and it falls into a unit's
- *      `[minAge, maxAge]` window, use that unit.
- *   2. Otherwise honor an explicit role hint (Child / Infant / Adult
- *      buttons) by mapping the hint to a representative age and
- *      matching the age band. This works for products whose units
- *      encode the band in the code (`child_0_5`, `child_6_12`) instead
- *      of bare `CHILD`/`INFANT`.
- *   3. Fall back to code/name matching for legacy products that don't
- *      configure min/max ages.
- *
- * `roleHint` covers the common case where the operator knows the
- * traveler is a child but doesn't have the exact DOB. Without it, a
- * roleless traveler would silently default to Adult pricing.
+ * Adapter: convert the dialog's traveler shape to the
+ * `@voyantjs/bookings/pricing-assignment` traveler shape. The legacy
+ * `roomUnitId` field on `TravelerEntry` carries what the assignment
+ * module calls `assignedUnitId` — the rename ships in a later phase
+ * (voyantjs/voyant#1267).
  */
-export function pickUnitForAge(
-  units: OptionUnitsStepperUnit[],
-  age: number | null,
-  roleHint: "adult" | "child" | "infant" | null = null,
-): OptionUnitsStepperUnit | undefined {
-  if (units.length === 0) return undefined
-  const personUnits = units.filter((u) => u.unitType == null || u.unitType === "person")
-  const pool = personUnits.length > 0 ? personUnits : units
-  const sorted = [...pool].sort((a, b) => (a.minAge ?? 0) - (b.minAge ?? 0))
-
-  const matchByAge = (target: number) =>
-    sorted.find(
-      (u) => (u.minAge == null || target >= u.minAge) && (u.maxAge == null || target <= u.maxAge),
-    )
-
-  if (age != null) {
-    const match = matchByAge(age)
-    if (match) return match
-  }
-
-  if (roleHint) {
-    const HINT_AGE = { adult: 30, child: 8, infant: 1 } as const
-    const hintAge = HINT_AGE[roleHint]
-    // Only consider units with at least one explicit age bound. Without
-    // this, legacy units with null min/max (just bare ADULT/CHILD codes)
-    // would all match every hint age and collapse onto the first sorted
-    // entry (almost always Adult). Code-matching below handles those.
-    const banded = sorted.filter((u) => u.minAge != null || u.maxAge != null)
-    const match = banded.find(
-      (u) => (u.minAge == null || hintAge >= u.minAge) && (u.maxAge == null || hintAge <= u.maxAge),
-    )
-    if (match) return match
-  }
-
-  const findByCode = (code: string) =>
-    sorted.find((u) => (u.unitCode ?? "").toUpperCase() === code) ??
-    sorted.find((u) => new RegExp(`\\b${code}\\b`, "i").test(u.unitName))
-  if (roleHint === "child") return findByCode("CHILD") ?? sorted[0]
-  if (roleHint === "infant") return findByCode("INFANT") ?? sorted[0]
-  return findByCode("ADULT") ?? sorted[sorted.length - 1] ?? sorted[0]
+function travelersForAssignment(
+  travelers: ReadonlyArray<TravelerEntry>,
+): { dateOfBirth: string | null; role: TravelerEntry["role"]; assignedUnitId: string | null }[] {
+  return travelers.map((t) => ({
+    dateOfBirth: t.dateOfBirth,
+    role: t.role,
+    assignedUnitId: t.roomUnitId,
+  }))
 }
 
 /**
- * Take the operator-picked per-option quantities (which are tracked
- * against each option's primary "Adult" unit by the stepper) plus the
- * travelers list, and redistribute both so that:
- *   - each traveler's `roomUnitId` points at the age-banded unit
- *     matching their DOB (Adult / Child / Infant / etc.)
- *   - `quantities` reflects the per-unit counts after redistribution —
- *     a 3-pax "Standard double" with 2 adults + 1 child becomes
- *     `{ adultUnit: 2, childUnit: 1 }` instead of `{ adultUnit: 3 }`.
- *
- * Slots without a configured `dateOfBirth` keep the option's adult
- * default so partially-filled bookings still typecheck.
+ * Reapply assignment-module-derived unit ids back onto the dialog's
+ * traveler list, preserving every other field.
  */
-/**
- * Rebuild stepper quantities from per-traveler unit assignments.
- *
- * Each traveler's `roomUnitId` is now the operator's explicit choice
- * (DOB-pre-picked at attach, overridable via the dynamic category
- * buttons), so we count assignments directly and add any per-option
- * residual on the adult/primary unit when the stepper qty exceeds the
- * number of travelers actually assigned. Unlike the older
- * DOB-driven rewrite, this never moves a traveler off their chosen
- * unit — operator selection always wins.
- */
-function redistributeByAge(
-  quantities: Record<string, number>,
-  travelers: TravelerEntry[],
-  units: OptionUnitsStepperUnit[],
-): { quantities: Record<string, number>; travelers: TravelerEntry[] } {
-  if (units.length === 0) return { quantities, travelers }
-
-  const unitsByOption = new Map<string, OptionUnitsStepperUnit[]>()
-  for (const unit of units) {
-    if (!unit.optionId) continue
-    const list = unitsByOption.get(unit.optionId)
-    if (list) list.push(unit)
-    else unitsByOption.set(unit.optionId, [unit])
-  }
-
-  const unitToOption = new Map(units.map((u) => [u.optionUnitId, u.optionId]))
-  const unitById = new Map(units.map((u) => [u.optionUnitId, u]))
-
-  // Per-option total from the stepper. This is the count the operator
-  // committed to when picking rooms.
-  const totalByOption = new Map<string, number>()
-  for (const [unitId, qty] of Object.entries(quantities)) {
-    if (qty <= 0) continue
-    const optionId = unitToOption.get(unitId)
-    if (!optionId) continue
-    totalByOption.set(optionId, (totalByOption.get(optionId) ?? 0) + qty)
-  }
-
-  const assignedForDefaulting = new Map<string, number>()
-  for (const traveler of travelers) {
-    if (!traveler.roomUnitId) continue
-    const optionId = unitToOption.get(traveler.roomUnitId)
-    if (!optionId) continue
-    assignedForDefaulting.set(optionId, (assignedForDefaulting.get(optionId) ?? 0) + 1)
-  }
-
-  const optionDemand = Array.from(totalByOption.entries())
-  const nextTravelers = travelers.map((traveler) => {
-    if (traveler.roomUnitId && unitById.has(traveler.roomUnitId)) return traveler
-
-    const optionId =
-      optionDemand.find(
-        ([candidate, total]) => (assignedForDefaulting.get(candidate) ?? 0) < total,
-      )?.[0] ?? optionDemand[0]?.[0]
-    if (!optionId) return traveler
-
-    const age = computeAgeYears(traveler.dateOfBirth)
-    const roleHint =
-      traveler.role === "adult" || traveler.role === "child" || traveler.role === "infant"
-        ? traveler.role
-        : null
-    const unit = pickUnitForAge(unitsByOption.get(optionId) ?? [], age, roleHint)
-    if (!unit) return traveler
-
-    assignedForDefaulting.set(optionId, (assignedForDefaulting.get(optionId) ?? 0) + 1)
-    return { ...traveler, roomUnitId: unit.optionUnitId }
+function applyAssignment(
+  travelers: ReadonlyArray<TravelerEntry>,
+  assignedUnitIds: ReadonlyArray<string | null>,
+): TravelerEntry[] {
+  return travelers.map((traveler, i) => {
+    const nextId = assignedUnitIds[i] ?? traveler.roomUnitId
+    return nextId === traveler.roomUnitId ? traveler : { ...traveler, roomUnitId: nextId }
   })
-
-  // Count actual traveler assignments per unit + per option.
-  const next: Record<string, number> = {}
-  const assignedByOption = new Map<string, number>()
-  for (const t of nextTravelers) {
-    if (!t.roomUnitId) continue
-    const optionId = unitToOption.get(t.roomUnitId)
-    if (!optionId) continue
-    next[t.roomUnitId] = (next[t.roomUnitId] ?? 0) + 1
-    assignedByOption.set(optionId, (assignedByOption.get(optionId) ?? 0) + 1)
-  }
-
-  // Residual = operator picked N rooms but only added M travelers; put
-  // the leftover on the option's adult/primary unit so the price total
-  // matches the stepper.
-  for (const [optionId, total] of totalByOption) {
-    const assigned = assignedByOption.get(optionId) ?? 0
-    const residual = Math.max(0, total - assigned)
-    if (residual === 0) continue
-    const adult = pickUnitForAge(unitsByOption.get(optionId) ?? [], null)
-    if (!adult) continue
-    next[adult.optionUnitId] = (next[adult.optionUnitId] ?? 0) + residual
-  }
-
-  return { quantities: next, travelers: nextTravelers }
 }
 
 function travelersToRows(value: TravelerListValue): BookingCreateTravelerInput[] {
@@ -782,11 +650,11 @@ export function BookingCreateForm({
   // between adult / child / infant tiers.
   const displayQuantities = React.useMemo(
     () =>
-      redistributeByAge(
-        rooms.quantities,
-        travelers.travelers,
-        getTravelerAssignableStepperUnits(roomUnits),
-      ).quantities,
+      derivePricingAssignment({
+        quantities: rooms.quantities,
+        travelers: travelersForAssignment(travelers.travelers),
+        units: getTravelerAssignableStepperUnits(roomUnits) as PricingAssignmentUnit[],
+      }).quantities,
     [rooms.quantities, travelers.travelers, roomUnits],
   )
 
@@ -935,11 +803,17 @@ export function BookingCreateForm({
                 optionId: product.optionId,
               })),
             )
-      const redistributed = redistributeByAge(rooms.quantities, travelers.travelers, submitUnits)
+      const redistributed = derivePricingAssignment({
+        quantities: rooms.quantities,
+        travelers: travelersForAssignment(travelers.travelers),
+        units: submitUnits as PricingAssignmentUnit[],
+      })
 
       const itemLines = itemLinesToRows(redistributed.quantities, submitUnits, pricing)
 
-      const travelerRows = travelersToRows({ travelers: redistributed.travelers })
+      const travelerRows = travelersToRows({
+        travelers: applyAssignment(travelers.travelers, redistributed.assignedUnitIds),
+      })
 
       const voucherRedemption: BookingCreateVoucherRedemptionInput | undefined =
         voucher.picked && voucher.picked.remainingAmountCents != null
