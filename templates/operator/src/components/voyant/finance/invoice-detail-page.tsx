@@ -189,7 +189,9 @@ export function InvoiceDetailPage({ id }: { id: string }) {
                 className="min-h-24"
               />
               <AlertDialogFooter>
-                <AlertDialogCancel disabled={voidInvoice.isPending}>Cancel</AlertDialogCancel>
+                <AlertDialogCancel disabled={voidInvoice.isPending}>
+                  {messages.finance.detailPage.cancel}
+                </AlertDialogCancel>
                 <AlertDialogAction
                   variant="destructive"
                   disabled={voidInvoice.isPending}

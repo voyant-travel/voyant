@@ -1149,6 +1149,12 @@ export const bookingsUiRo = {
       confirmFailedPrefix: "Rezervarea a fost creata, dar confirmarea a esuat: {message}",
       confirmFailed: "Rezervarea a fost creata, dar confirmarea a esuat",
       createFailed: "Crearea rezervarii a esuat",
+      payloadResolverMismatchDetails:
+        "Optiunile rezervarii nu sunt sincronizate. Verifica aceste linii: {details}.",
+      payloadResolverMismatchFallback:
+        "Optiunile rezervarii nu sunt sincronizate. Verifica randurile de calator si optiune selectate.",
+      payloadResolverMismatchLine:
+        "{label}: trimis {submittedQuantity}, asteptat {resolvedQuantity}",
     },
     actions: {
       createDraftBooking: "Creeaza rezervare draft",

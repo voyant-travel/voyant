@@ -1052,6 +1052,9 @@ export type BookingsUiMessages = {
       confirmFailedPrefix: string
       confirmFailed: string
       createFailed: string
+      payloadResolverMismatchDetails: string
+      payloadResolverMismatchFallback: string
+      payloadResolverMismatchLine: string
     }
     actions: {
       createDraftBooking: string
