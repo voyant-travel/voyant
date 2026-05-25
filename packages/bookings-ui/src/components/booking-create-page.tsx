@@ -9,6 +9,8 @@ export interface BookingCreatePageProps {
   onCancel?: () => void
   /** When provided, pre-selects this product and hides the product picker. */
   defaultProductId?: string
+  /** When provided, pre-selects and locks the departure slot. */
+  defaultSlotId?: string
 }
 
 /**
@@ -18,6 +20,7 @@ export function BookingCreatePage({
   onCreated,
   onCancel,
   defaultProductId,
+  defaultSlotId,
 }: BookingCreatePageProps) {
   const messages = useBookingsUiMessagesOrDefault()
 
@@ -34,6 +37,7 @@ export function BookingCreatePage({
           onCreated={onCreated}
           onCancel={onCancel}
           defaultProductId={defaultProductId}
+          defaultSlotId={defaultSlotId}
         />
       </section>
     </main>

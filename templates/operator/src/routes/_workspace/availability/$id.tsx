@@ -9,6 +9,7 @@ import {
   getAvailabilitySlotProductQueryOptions,
   loadAvailabilitySlotDetailPage,
 } from "@voyantjs/availability-ui"
+import { BookingCreateDialog } from "@voyantjs/bookings-ui"
 import {
   Sheet,
   SheetContent,
@@ -42,6 +43,10 @@ function RouteComponent() {
   })
   const productName = productQuery.data?.data?.name ?? null
   const [bookingPreviewId, setBookingPreviewId] = useState<string | null>(null)
+  const [bookingCreateDefaults, setBookingCreateDefaults] = useState<{
+    slotId: string
+    productId: string
+  } | null>(null)
 
   useAdminBreadcrumbs([
     { label: messages.availability.title, href: "/availability" },
@@ -74,8 +79,19 @@ function RouteComponent() {
             slotId={slotId}
             embed
             onBookingOpen={(bookingId) => setBookingPreviewId(bookingId)}
+            onCreateBooking={(input) => setBookingCreateDefaults(input)}
           />
         )}
+      />
+
+      <BookingCreateDialog
+        open={Boolean(bookingCreateDefaults)}
+        onOpenChange={(open) => {
+          if (!open) setBookingCreateDefaults(null)
+        }}
+        defaultProductId={bookingCreateDefaults?.productId}
+        defaultSlotId={bookingCreateDefaults?.slotId}
+        onCreated={(booking) => setBookingPreviewId(booking.id)}
       />
 
       <Sheet

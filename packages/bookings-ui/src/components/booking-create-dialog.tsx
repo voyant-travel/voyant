@@ -1,7 +1,12 @@
 "use client"
 
-import { useQueries } from "@tanstack/react-query"
-import { useSlots, useSlotUnitAvailability } from "@voyantjs/availability-react"
+import { useQueries, useQuery } from "@tanstack/react-query"
+import {
+  getSlotQueryOptions,
+  useSlots,
+  useSlotUnitAvailability,
+  useVoyantAvailabilityContext,
+} from "@voyantjs/availability-react"
 import {
   type BookingCreateExtraLineInput,
   type BookingCreateGroupMembershipInput,
@@ -400,12 +405,16 @@ export interface BookingCreateDialogProps {
   onCreated?: (booking: BookingRecord) => void
   /** When provided, pre-selects this product and hides the product picker. */
   defaultProductId?: string
+  /** When provided, pre-selects and locks the departure slot. */
+  defaultSlotId?: string
 }
 
 export interface BookingCreateFormProps {
   onCreated?: (booking: BookingRecord) => void
   /** When provided, pre-selects this product and hides the product picker. */
   defaultProductId?: string
+  /** When provided, pre-selects and locks the departure slot. */
+  defaultSlotId?: string
   /** Gates data fetching and resets transient form state when false. */
   enabled?: boolean
   onCancel?: () => void
@@ -427,6 +436,7 @@ export function BookingCreateDialog({
   onOpenChange,
   onCreated,
   defaultProductId,
+  defaultSlotId,
 }: BookingCreateDialogProps) {
   const messages = useBookingsUiMessagesOrDefault()
 
@@ -439,6 +449,7 @@ export function BookingCreateDialog({
         <BookingCreateForm
           enabled={open}
           defaultProductId={defaultProductId}
+          defaultSlotId={defaultSlotId}
           onCancel={() => onOpenChange(false)}
           onCreated={(booking) => {
             onOpenChange(false)
@@ -453,6 +464,7 @@ export function BookingCreateDialog({
 export function BookingCreateForm({
   onCreated,
   defaultProductId,
+  defaultSlotId,
   enabled = true,
   onCancel,
 }: BookingCreateFormProps) {
@@ -460,7 +472,7 @@ export function BookingCreateForm({
     productId: defaultProductId ?? "",
     optionId: null,
   })
-  const [slotId, setSlotId] = React.useState<string | null>(null)
+  const [slotId, setSlotId] = React.useState<string | null>(defaultSlotId ?? null)
   const [rooms, setRooms] = React.useState<OptionUnitsStepperValue>(emptyOptionUnitsStepperValue)
   const [roomUnits, setRoomUnits] = React.useState<OptionUnitsStepperUnit[]>([])
   const [extraLines, setExtraLines] = React.useState<BookingCreateExtraLineInput[]>([])
@@ -491,11 +503,21 @@ export function BookingCreateForm({
   const [error, setError] = React.useState<string | null>(null)
   const { formatDate } = useBookingsUiI18nOrDefault()
   const messages = useBookingsUiMessagesOrDefault()
+  const availabilityClient = useVoyantAvailabilityContext()
+  const defaultSlotQuery = useQuery({
+    ...getSlotQueryOptions(availabilityClient, defaultSlotId),
+    enabled: enabled && Boolean(defaultSlotId),
+  })
+  const defaultSlot = defaultSlotQuery.data?.data ?? null
+  const resolvedDefaultProductId = defaultProductId ?? defaultSlot?.productId ?? ""
 
   React.useEffect(() => {
     if (!enabled) {
-      setProduct({ productId: defaultProductId ?? "", optionId: null })
-      setSlotId(null)
+      setProduct({
+        productId: resolvedDefaultProductId,
+        optionId: defaultSlotId ? (defaultSlot?.optionId ?? null) : null,
+      })
+      setSlotId(defaultSlotId ?? null)
       setRooms(emptyOptionUnitsStepperValue)
       setRoomUnits([])
       setExtraLines([])
@@ -511,23 +533,29 @@ export function BookingCreateForm({
       setCreateAsDraft(false)
       setNotifyTraveler(true)
       setError(null)
-    } else if (defaultProductId) {
-      setProduct((prev) =>
-        prev.productId === defaultProductId
+    } else if (resolvedDefaultProductId) {
+      setProduct((prev) => {
+        const optionId = defaultSlotId
+          ? (defaultSlot?.optionId ?? null)
+          : prev.productId === resolvedDefaultProductId
+            ? prev.optionId
+            : null
+        return prev.productId === resolvedDefaultProductId && prev.optionId === optionId
           ? prev
-          : { productId: defaultProductId, optionId: null },
-      )
+          : { productId: resolvedDefaultProductId, optionId }
+      })
+      if (defaultSlotId) setSlotId(defaultSlotId)
     }
-  }, [enabled, defaultProductId])
+  }, [enabled, resolvedDefaultProductId, defaultSlotId, defaultSlot?.optionId])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: booking-create intentionally resets transient departure state only when product id changes; option changes are reconciled against the selected departure below.
   React.useEffect(() => {
-    setSlotId(null)
+    setSlotId(defaultSlotId ?? null)
     setRooms(emptyOptionUnitsStepperValue)
     setRoomUnits([])
     setSharedRoom(emptySharedRoomValue)
     setExtraLines([])
-  }, [product.productId])
+  }, [product.productId, defaultSlotId])
 
   const [slotsFromIso, setSlotsFromIso] = React.useState(() => new Date().toISOString())
   React.useEffect(() => {
@@ -555,8 +583,9 @@ export function BookingCreateForm({
     return optionSlots.length > 0 ? optionSlots : allOpenSlots
   }, [slotsData?.data, slotsFromIso, product.optionId, allOpenSlots])
   const selectedSlot = React.useMemo(
-    () => slots.find((slot) => slot.id === slotId) ?? null,
-    [slots, slotId],
+    () =>
+      slots.find((slot) => slot.id === slotId) ?? (defaultSlot?.id === slotId ? defaultSlot : null),
+    [slots, slotId, defaultSlot],
   )
   const setSelectedSlot = React.useCallback(
     (nextSlotId: string | null) => {
@@ -572,11 +601,17 @@ export function BookingCreateForm({
     setRooms(emptyOptionUnitsStepperValue)
     setRoomUnits([])
     if (!slotId || !product.optionId) return
-    const selectedSlot = allOpenSlots.find((slot) => slot.id === slotId)
-    if (selectedSlot?.optionId && selectedSlot.optionId !== product.optionId) {
+    const selectedDeparture =
+      allOpenSlots.find((slot) => slot.id === slotId) ??
+      (defaultSlot?.id === slotId ? defaultSlot : null)
+    if (selectedDeparture?.optionId && selectedDeparture.optionId !== product.optionId) {
+      if (defaultSlotId && selectedDeparture.id === defaultSlotId) {
+        setProduct((prev) => ({ ...prev, optionId: selectedDeparture.optionId }))
+        return
+      }
       setSlotId(null)
     }
-  }, [allOpenSlots, product.optionId, slotId])
+  }, [allOpenSlots, product.optionId, slotId, defaultSlotId, defaultSlot])
 
   const formatSlotLabel = React.useCallback(
     (slot: (typeof slots)[number]) => {
@@ -1014,7 +1049,7 @@ export function BookingCreateForm({
             value={product}
             onChange={setProduct}
             enabled={enabled}
-            lockProduct={Boolean(defaultProductId)}
+            lockProduct={Boolean(defaultProductId || defaultSlotId)}
             labels={{
               optionNone: messages.bookingCreateDialog.labels.noSpecificOption,
             }}
@@ -1028,13 +1063,14 @@ export function BookingCreateForm({
                 value={slotId}
                 onChange={(v) => setSelectedSlot(v)}
                 items={slots}
-                selectedItem={slots.find((s) => s.id === slotId) ?? null}
+                selectedItem={selectedSlot}
                 getKey={(slot) => slot.id}
                 getLabel={(slot) => formatSlotLabel(slot)}
                 placeholder={messages.bookingCreateDialog.placeholders.departure}
                 emptyText={messages.bookingCreateDialog.placeholders.departureEmpty}
                 triggerClassName="w-full"
-                clearable
+                disabled={Boolean(defaultSlotId)}
+                clearable={!defaultSlotId}
               />
             </div>
           ) : null}

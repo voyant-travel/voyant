@@ -33,7 +33,17 @@ import {
   TabsList,
   TabsTrigger,
 } from "@voyantjs/ui/components"
-import { AlertTriangle, Armchair, ArrowLeft, Bed, Plus, Sparkles, Users, Wand2 } from "lucide-react"
+import {
+  AlertTriangle,
+  Armchair,
+  ArrowLeft,
+  Bed,
+  BookOpen,
+  Plus,
+  Sparkles,
+  Users,
+  Wand2,
+} from "lucide-react"
 import { type FormEvent, type ReactNode, useMemo, useState } from "react"
 
 import { useAllocationUiMessagesOrDefault } from "../i18n/index.js"
@@ -80,6 +90,7 @@ export interface SlotAllocationPageProps {
    */
   onBookingOpen?: (bookingId: string) => void
   renderExtraActions?: (context: { slotId: string; kind: string }) => ReactNode
+  onCreateBooking?: (input: { slotId: string; productId: string }) => void
   renderTravelerActions?: (traveler: AllocationManifestTraveler) => ReactNode
   renderHeaderEnd?: (context: SlotAllocationPageRenderContext) => ReactNode
   renderBefore?: (context: SlotAllocationPageRenderContext) => ReactNode
@@ -100,6 +111,7 @@ export function SlotAllocationPage({
   onBack,
   onBookingOpen,
   renderExtraActions,
+  onCreateBooking,
   renderTravelerActions,
   renderHeaderEnd,
   renderBefore,
@@ -309,6 +321,7 @@ export function SlotAllocationPage({
 
   const isSeatMap = activeKind === VEHICLE_SEAT_KIND
   const canManuallyAddResource = !isSeatMap
+  const createBookingProductId = data.slot.productId
   const context: SlotAllocationPageRenderContext = {
     slotId,
     tabId: activeTabId,
@@ -332,6 +345,15 @@ export function SlotAllocationPage({
       {selectedExtraTab || !hasAllocationView
         ? null
         : renderExtraActions?.({ slotId, kind: activeKind })}
+      {onCreateBooking && createBookingProductId ? (
+        <Button
+          variant="outline"
+          onClick={() => onCreateBooking({ slotId, productId: createBookingProductId })}
+        >
+          <BookOpen data-icon="inline-start" aria-hidden="true" />
+          {messages.createBooking}
+        </Button>
+      ) : null}
       {selectedExtraTab || !hasAllocationView ? null : resources.length === 0 ? (
         <Button
           variant="outline"
