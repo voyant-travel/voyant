@@ -1,5 +1,18 @@
 # @voyantjs/plugin-smartbill
 
+## 0.80.13
+
+### Patch Changes
+
+- 8dc5bc5: Preserve canonical invoice numbers from externally seeded SmartBill refs.
+- Updated dependencies [55d99af]
+  - @voyantjs/core@0.80.13
+  - @voyantjs/finance@0.80.13
+  - @voyantjs/finance-react@0.80.13
+  - @voyantjs/hono@0.80.13
+  - @voyantjs/storage@0.80.13
+  - @voyantjs/ui@0.80.13
+
 ## 0.80.12
 
 ### Patch Changes
