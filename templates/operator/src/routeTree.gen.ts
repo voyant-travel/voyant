@@ -75,6 +75,7 @@ import { Route as WorkspaceLegalNumberSeriesIndexRouteImport } from './routes/_w
 import { Route as WorkspaceLegalContractsIndexRouteImport } from './routes/_workspace/legal/contracts/index'
 import { Route as WorkspaceFinancePaymentsIndexRouteImport } from './routes/_workspace/finance/payments/index'
 import { Route as WorkspaceFinanceInvoicesIndexRouteImport } from './routes/_workspace/finance/invoices/index'
+import { Route as WorkspaceFinanceInvoiceNumberSeriesIndexRouteImport } from './routes/_workspace/finance/invoice-number-series/index'
 import { Route as WorkspaceResourcesPoolsIdRouteImport } from './routes/_workspace/resources/pools/$id'
 import { Route as WorkspaceResourcesAssignmentsIdRouteImport } from './routes/_workspace/resources/assignments/$id'
 import { Route as WorkspaceResourcesAllocationsIdRouteImport } from './routes/_workspace/resources/allocations/$id'
@@ -448,6 +449,12 @@ const WorkspaceFinanceInvoicesIndexRoute =
     path: '/finance/invoices/',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const WorkspaceFinanceInvoiceNumberSeriesIndexRoute =
+  WorkspaceFinanceInvoiceNumberSeriesIndexRouteImport.update({
+    id: '/finance/invoice-number-series/',
+    path: '/finance/invoice-number-series/',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 const WorkspaceResourcesPoolsIdRoute =
   WorkspaceResourcesPoolsIdRouteImport.update({
     id: '/resources/pools/$id',
@@ -627,6 +634,7 @@ export interface FileRoutesByFullPath {
   '/resources/allocations/$id': typeof WorkspaceResourcesAllocationsIdRoute
   '/resources/assignments/$id': typeof WorkspaceResourcesAssignmentsIdRoute
   '/resources/pools/$id': typeof WorkspaceResourcesPoolsIdRoute
+  '/finance/invoice-number-series/': typeof WorkspaceFinanceInvoiceNumberSeriesIndexRoute
   '/finance/invoices/': typeof WorkspaceFinanceInvoicesIndexRoute
   '/finance/payments/': typeof WorkspaceFinancePaymentsIndexRoute
   '/legal/contracts/': typeof WorkspaceLegalContractsIndexRoute
@@ -709,6 +717,7 @@ export interface FileRoutesByTo {
   '/resources/allocations/$id': typeof WorkspaceResourcesAllocationsIdRoute
   '/resources/assignments/$id': typeof WorkspaceResourcesAssignmentsIdRoute
   '/resources/pools/$id': typeof WorkspaceResourcesPoolsIdRoute
+  '/finance/invoice-number-series': typeof WorkspaceFinanceInvoiceNumberSeriesIndexRoute
   '/finance/invoices': typeof WorkspaceFinanceInvoicesIndexRoute
   '/finance/payments': typeof WorkspaceFinancePaymentsIndexRoute
   '/legal/contracts': typeof WorkspaceLegalContractsIndexRoute
@@ -796,6 +805,7 @@ export interface FileRoutesById {
   '/_workspace/resources/allocations/$id': typeof WorkspaceResourcesAllocationsIdRoute
   '/_workspace/resources/assignments/$id': typeof WorkspaceResourcesAssignmentsIdRoute
   '/_workspace/resources/pools/$id': typeof WorkspaceResourcesPoolsIdRoute
+  '/_workspace/finance/invoice-number-series/': typeof WorkspaceFinanceInvoiceNumberSeriesIndexRoute
   '/_workspace/finance/invoices/': typeof WorkspaceFinanceInvoicesIndexRoute
   '/_workspace/finance/payments/': typeof WorkspaceFinancePaymentsIndexRoute
   '/_workspace/legal/contracts/': typeof WorkspaceLegalContractsIndexRoute
@@ -881,6 +891,7 @@ export interface FileRouteTypes {
     | '/resources/allocations/$id'
     | '/resources/assignments/$id'
     | '/resources/pools/$id'
+    | '/finance/invoice-number-series/'
     | '/finance/invoices/'
     | '/finance/payments/'
     | '/legal/contracts/'
@@ -963,6 +974,7 @@ export interface FileRouteTypes {
     | '/resources/allocations/$id'
     | '/resources/assignments/$id'
     | '/resources/pools/$id'
+    | '/finance/invoice-number-series'
     | '/finance/invoices'
     | '/finance/payments'
     | '/legal/contracts'
@@ -1049,6 +1061,7 @@ export interface FileRouteTypes {
     | '/_workspace/resources/allocations/$id'
     | '/_workspace/resources/assignments/$id'
     | '/_workspace/resources/pools/$id'
+    | '/_workspace/finance/invoice-number-series/'
     | '/_workspace/finance/invoices/'
     | '/_workspace/finance/payments/'
     | '/_workspace/legal/contracts/'
@@ -1535,6 +1548,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceFinanceInvoicesIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/finance/invoice-number-series/': {
+      id: '/_workspace/finance/invoice-number-series/'
+      path: '/finance/invoice-number-series'
+      fullPath: '/finance/invoice-number-series/'
+      preLoaderRoute: typeof WorkspaceFinanceInvoiceNumberSeriesIndexRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/_workspace/resources/pools/$id': {
       id: '/_workspace/resources/pools/$id'
       path: '/resources/pools/$id'
@@ -1793,6 +1813,7 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceResourcesAllocationsIdRoute: typeof WorkspaceResourcesAllocationsIdRoute
   WorkspaceResourcesAssignmentsIdRoute: typeof WorkspaceResourcesAssignmentsIdRoute
   WorkspaceResourcesPoolsIdRoute: typeof WorkspaceResourcesPoolsIdRoute
+  WorkspaceFinanceInvoiceNumberSeriesIndexRoute: typeof WorkspaceFinanceInvoiceNumberSeriesIndexRoute
   WorkspaceFinanceInvoicesIndexRoute: typeof WorkspaceFinanceInvoicesIndexRoute
   WorkspaceFinancePaymentsIndexRoute: typeof WorkspaceFinancePaymentsIndexRoute
   WorkspaceLegalContractsIndexRoute: typeof WorkspaceLegalContractsIndexRoute
@@ -1856,6 +1877,8 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceResourcesAllocationsIdRoute: WorkspaceResourcesAllocationsIdRoute,
   WorkspaceResourcesAssignmentsIdRoute: WorkspaceResourcesAssignmentsIdRoute,
   WorkspaceResourcesPoolsIdRoute: WorkspaceResourcesPoolsIdRoute,
+  WorkspaceFinanceInvoiceNumberSeriesIndexRoute:
+    WorkspaceFinanceInvoiceNumberSeriesIndexRoute,
   WorkspaceFinanceInvoicesIndexRoute: WorkspaceFinanceInvoicesIndexRoute,
   WorkspaceFinancePaymentsIndexRoute: WorkspaceFinancePaymentsIndexRoute,
   WorkspaceLegalContractsIndexRoute: WorkspaceLegalContractsIndexRoute,

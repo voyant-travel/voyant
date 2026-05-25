@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   insertInvoiceNumberSeriesSchema,
   invoiceFromBookingSchema,
+  invoiceNumberSeriesListQuerySchema,
   renderInvoiceInputSchema,
 } from "../../src/validation-billing.js"
 
@@ -140,5 +141,13 @@ describe("insertInvoiceNumberSeriesSchema", () => {
     expect(result.isDefault).toBe(true)
     expect(result.externalProvider).toBe("smartbill")
     expect(result.externalConfigKey).toBe("protravel")
+  })
+})
+
+describe("invoiceNumberSeriesListQuerySchema", () => {
+  it("parses false query-string active filters as false", () => {
+    const result = invoiceNumberSeriesListQuerySchema.parse({ active: "false" })
+
+    expect(result.active).toBe(false)
   })
 })

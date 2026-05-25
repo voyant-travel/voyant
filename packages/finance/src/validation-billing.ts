@@ -1,3 +1,4 @@
+import { booleanQueryParam } from "@voyantjs/db"
 import { z } from "zod"
 
 import {
@@ -250,7 +251,7 @@ export const insertInvoiceNumberSeriesSchema = invoiceNumberSeriesCoreSchema
 export const updateInvoiceNumberSeriesSchema = invoiceNumberSeriesCoreSchema.partial()
 export const invoiceNumberSeriesListQuerySchema = paginationSchema.extend({
   scope: invoiceNumberSeriesScopeSchema.optional(),
-  active: z.coerce.boolean().optional(),
+  active: booleanQueryParam.optional(),
 })
 export const allocateInvoiceNumberInputSchema = z.object({ seriesId: z.string().min(1) })
 

@@ -53,6 +53,14 @@ export {
   type InvoiceDetailPageWithActionLedgerProps,
 } from "./components/invoice-detail-page-with-action-ledger.js"
 export { InvoiceDialog, type InvoiceDialogProps } from "./components/invoice-dialog.js"
+export {
+  InvoiceNumberSeriesDialog,
+  type InvoiceNumberSeriesDialogProps,
+} from "./components/invoice-number-series-dialog.js"
+export {
+  InvoiceNumberSeriesPage,
+  type InvoiceNumberSeriesPageProps,
+} from "./components/invoice-number-series-page.js"
 export { InvoicesPage, type InvoicesPageProps } from "./components/invoices-page.js"
 export {
   InvoicesPageSkeleton,

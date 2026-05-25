@@ -26,6 +26,7 @@ export type OperatorAdminNavMessages = {
   resources: string
   finance: string
   invoices: string
+  invoiceNumberSeries: string
   payments: string
   legal: string
   contracts: string
@@ -66,6 +67,7 @@ export const operatorAdminNavMessages = {
       resources: "Resources",
       finance: "Finance",
       invoices: "Invoices",
+      invoiceNumberSeries: "Number Series",
       payments: "Payments",
       legal: "Legal",
       contracts: "Contracts",
@@ -105,6 +107,7 @@ export const operatorAdminNavMessages = {
       resources: "Resurse",
       finance: "Financiar",
       invoices: "Facturi",
+      invoiceNumberSeries: "Serii numere",
       payments: "Plati",
       legal: "Juridic",
       contracts: "Contracte",

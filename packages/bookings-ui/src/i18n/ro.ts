@@ -871,6 +871,16 @@ export const bookingsUiRo = {
       issueProforma: "Emite proforma",
       issueDocumentSuccess: "Document emis.",
       issueDocumentFailure: "Documentul nu a putut fi emis",
+      issueDocumentErrors: {
+        invoice_number_series_not_found:
+          "Seria de numere selectata nu a fost gasita. Verifica Financiar > Serii numere inainte de emitere.",
+        invoice_number_series_inactive:
+          "Seria de numere selectata este inactiva. Activeaz-o in Financiar > Serii numere inainte de emitere.",
+        invoice_number_series_scope_mismatch:
+          "Seria de numere selectata nu corespunde tipului de document. Alege o serie potrivita in Financiar > Serii numere.",
+        no_active_series_for_scope:
+          "Nu exista o serie de numere activa pentru acest tip de document. Creeaza sau activeaza una in Financiar > Serii numere.",
+      },
     },
   },
   bookingPaymentReconciliationBanner: {

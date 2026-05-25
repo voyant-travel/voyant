@@ -1,5 +1,7 @@
 import type {
   CreditNoteRecord,
+  InvoiceNumberResetStrategy,
+  InvoiceNumberSeriesScope,
   InvoiceRecord,
   SupplierPaymentRecord,
 } from "@voyantjs/finance-react"
@@ -35,6 +37,8 @@ export const paymentMethods = [
 ] as const
 
 export const supplierPaymentStatuses = ["pending", "completed", "failed", "refunded"] as const
+export const invoiceNumberSeriesScopes = ["invoice", "proforma", "credit_note"] as const
+export const invoiceNumberResetStrategies = ["never", "annual", "monthly"] as const
 
 export type InvoiceStatus = InvoiceRecord["status"]
 export type InvoiceType = NonNullable<InvoiceRecord["invoiceType"]>
@@ -240,6 +244,83 @@ export type FinanceUiMessages = {
       page: string
       previous: string
       next: string
+    }
+  }
+  invoiceNumberSeriesPage: {
+    title: string
+    description: string
+    actions: {
+      create: string
+    }
+    columns: {
+      code: string
+      name: string
+      prefix: string
+      current: string
+      reset: string
+      scope: string
+      default: string
+      status: string
+      external: string
+    }
+    filters: {
+      scopeLabel: string
+      scopeAll: string
+      activeLabel: string
+      activeAll: string
+      activeOnly: string
+      inactiveOnly: string
+    }
+    scopeLabels: Record<InvoiceNumberSeriesScope, string>
+    resetStrategyLabels: Record<InvoiceNumberResetStrategy, string>
+    active: string
+    inactive: string
+    default: string
+    notDefault: string
+    noExternalProvider: string
+    empty: string
+    loadFailed: string
+    deleteConfirm: string
+  }
+  invoiceNumberSeriesDialog: {
+    titleNew: string
+    titleEdit: string
+    fields: {
+      code: string
+      name: string
+      prefix: string
+      separator: string
+      padLength: string
+      currentSequence: string
+      resetStrategy: string
+      scope: string
+      isDefault: string
+      externalProvider: string
+      externalConfigKey: string
+      active: string
+    }
+    placeholders: {
+      code: string
+      name: string
+      prefix: string
+      separator: string
+      externalProvider: string
+      externalConfigKey: string
+    }
+    help: {
+      previewLabel: string
+      previewSample: string
+      default: string
+      external: string
+    }
+    actions: {
+      create: string
+    }
+    validation: {
+      codeRequired: string
+      nameRequired: string
+      padLengthInvalid: string
+      currentSequenceInvalid: string
     }
   }
   paymentsPage: {
