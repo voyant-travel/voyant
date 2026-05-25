@@ -28,6 +28,21 @@ export interface BookingCreatePricingRecord {
   lines: BookingCreatePricingLineRecord[]
 }
 
+type BookingCreateStepperUnitType =
+  | "person"
+  | "group"
+  | "room"
+  | "vehicle"
+  | "service"
+  | "other"
+  | null
+
+export interface BookingCreateTravelerAssignableUnitRecord {
+  optionId?: string | null
+  optionUnitId: string
+  unitType?: BookingCreateStepperUnitType
+}
+
 export function normalizeBookingSearchText(value: string): string {
   return value
     .normalize("NFKD")
@@ -69,6 +84,24 @@ export function validateBillingPersonContact(
   if (email && !isRealBookingEmail(email)) return "invalid-email"
   if (!email && !phone) return "missing-contact"
   return "valid"
+}
+
+export function getTravelerAssignableStepperUnits<
+  TUnit extends BookingCreateTravelerAssignableUnitRecord,
+>(units: readonly TUnit[]): TUnit[] {
+  const hasRoomUnitByOption = new Map<string, boolean>()
+
+  for (const unit of units) {
+    const optionKey = unit.optionId ?? unit.optionUnitId
+    if (unit.unitType === "room") hasRoomUnitByOption.set(optionKey, true)
+    else if (!hasRoomUnitByOption.has(optionKey)) hasRoomUnitByOption.set(optionKey, false)
+  }
+
+  return units.filter((unit) => {
+    if (unit.unitType === "room") return true
+    if (unit.unitType !== "person") return false
+    return !hasRoomUnitByOption.get(unit.optionId ?? unit.optionUnitId)
+  })
 }
 
 export function getBookableDepartureSlots<TSlot extends DepartureSlotSearchRecord>(

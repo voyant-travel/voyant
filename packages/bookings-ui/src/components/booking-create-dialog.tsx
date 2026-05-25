@@ -39,6 +39,7 @@ import {
 import {
   getBookableDepartureSlots,
   getSelectedSharedRoomUnitId,
+  getTravelerAssignableStepperUnits,
   isRealBookingEmail,
   itemLinesToRows,
   validateBillingPersonContact,
@@ -179,13 +180,6 @@ function stripUnitSuffix(name: string): string {
   return idx > 0 ? name.slice(0, idx) : name
 }
 
-function isRoomUnit(unit: {
-  optionUnitId: string
-  unitType?: OptionUnitsStepperUnit["unitType"]
-}): boolean {
-  return unit.unitType === "room"
-}
-
 /**
  * Any payment-schedule entry the operator has marked as already
  * paid. Drives the smart-default booking status on submit — if money
@@ -286,6 +280,7 @@ function redistributeByAge(
   }
 
   const unitToOption = new Map(units.map((u) => [u.optionUnitId, u.optionId]))
+  const unitById = new Map(units.map((u) => [u.optionUnitId, u]))
 
   // Per-option total from the stepper. This is the count the operator
   // committed to when picking rooms.
@@ -297,10 +292,40 @@ function redistributeByAge(
     totalByOption.set(optionId, (totalByOption.get(optionId) ?? 0) + qty)
   }
 
+  const assignedForDefaulting = new Map<string, number>()
+  for (const traveler of travelers) {
+    if (!traveler.roomUnitId) continue
+    const optionId = unitToOption.get(traveler.roomUnitId)
+    if (!optionId) continue
+    assignedForDefaulting.set(optionId, (assignedForDefaulting.get(optionId) ?? 0) + 1)
+  }
+
+  const optionDemand = Array.from(totalByOption.entries())
+  const nextTravelers = travelers.map((traveler) => {
+    if (traveler.roomUnitId && unitById.has(traveler.roomUnitId)) return traveler
+
+    const optionId =
+      optionDemand.find(
+        ([candidate, total]) => (assignedForDefaulting.get(candidate) ?? 0) < total,
+      )?.[0] ?? optionDemand[0]?.[0]
+    if (!optionId) return traveler
+
+    const age = computeAgeYears(traveler.dateOfBirth)
+    const roleHint =
+      traveler.role === "adult" || traveler.role === "child" || traveler.role === "infant"
+        ? traveler.role
+        : null
+    const unit = pickUnitForAge(unitsByOption.get(optionId) ?? [], age, roleHint)
+    if (!unit) return traveler
+
+    assignedForDefaulting.set(optionId, (assignedForDefaulting.get(optionId) ?? 0) + 1)
+    return { ...traveler, roomUnitId: unit.optionUnitId }
+  })
+
   // Count actual traveler assignments per unit + per option.
   const next: Record<string, number> = {}
   const assignedByOption = new Map<string, number>()
-  for (const t of travelers) {
+  for (const t of nextTravelers) {
     if (!t.roomUnitId) continue
     const optionId = unitToOption.get(t.roomUnitId)
     if (!optionId) continue
@@ -320,7 +345,7 @@ function redistributeByAge(
     next[adult.optionUnitId] = (next[adult.optionUnitId] ?? 0) + residual
   }
 
-  return { quantities: next, travelers }
+  return { quantities: next, travelers: nextTravelers }
 }
 
 function travelersToRows(value: TravelerListValue): BookingCreateTravelerInput[] {
@@ -593,9 +618,9 @@ export function BookingCreateForm({
       unitType?: OptionUnitsStepperUnit["unitType"]
       occupancyMax: number | null
     }
-    const units: UnitLike[] = (
-      roomUnits.length > 0 ? roomUnits : (slotUnitAvailability.data?.data ?? [])
-    ).filter(isRoomUnit)
+    const units: UnitLike[] = getTravelerAssignableStepperUnits(
+      roomUnits.length > 0 ? roomUnits : (slotUnitAvailability.data?.data ?? []),
+    )
     if (units.length === 0) return []
     const optionGroups = new Map<
       string,
@@ -657,9 +682,10 @@ export function BookingCreateForm({
   // `roomUnitOptions` but exposes every unit instead of collapsing
   // to one primary.
   const roomGroups: RoomGroup[] = React.useMemo(() => {
-    if (roomUnits.length === 0) return []
+    const travelerUnits = getTravelerAssignableStepperUnits(roomUnits)
+    if (travelerUnits.length === 0) return []
     const groups = new Map<string, RoomGroup>()
-    for (const u of roomUnits) {
+    for (const u of travelerUnits) {
       if (!u.optionId) continue
       const groupKey = u.optionId
       const isAdultCoded = (u.unitCode ?? "").toUpperCase() === "ADULT"
@@ -696,7 +722,12 @@ export function BookingCreateForm({
   // (Adult) unit qty from the stepper, missing the per-traveler split
   // between adult / child / infant tiers.
   const displayQuantities = React.useMemo(
-    () => redistributeByAge(rooms.quantities, travelers.travelers, roomUnits).quantities,
+    () =>
+      redistributeByAge(
+        rooms.quantities,
+        travelers.travelers,
+        getTravelerAssignableStepperUnits(roomUnits),
+      ).quantities,
     [rooms.quantities, travelers.travelers, roomUnits],
   )
 
@@ -838,11 +869,13 @@ export function BookingCreateForm({
       // traveler's matching unit assignment, driven by DOB.
       const submitUnits =
         roomUnits.length > 0
-          ? roomUnits
-          : (slotUnitAvailability.data?.data ?? []).map((unit) => ({
-              ...unit,
-              optionId: product.optionId,
-            }))
+          ? getTravelerAssignableStepperUnits(roomUnits)
+          : getTravelerAssignableStepperUnits(
+              (slotUnitAvailability.data?.data ?? []).map((unit) => ({
+                ...unit,
+                optionId: product.optionId,
+              })),
+            )
       const redistributed = redistributeByAge(rooms.quantities, travelers.travelers, submitUnits)
 
       const itemLines = itemLinesToRows(redistributed.quantities, submitUnits, pricing)

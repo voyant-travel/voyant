@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   getBookableDepartureSlots,
   getSelectedSharedRoomUnitId,
+  getTravelerAssignableStepperUnits,
   itemLinesToRows,
   productMatchesPickerSearch,
   validateBillingPersonContact,
@@ -181,5 +182,44 @@ describe("booking create helpers", () => {
     expect(validateBillingPersonContact({ email: "traveler@example.com", phone: "+40 700" })).toBe(
       "invalid-email",
     )
+  })
+
+  it("keeps person units assignable for pure-person day-tour options", () => {
+    const result = getTravelerAssignableStepperUnits([
+      {
+        optionId: "opto_day_tour",
+        optionUnitId: "optu_adult",
+        unitType: "person",
+      },
+      {
+        optionId: "opto_day_tour",
+        optionUnitId: "optu_child",
+        unitType: "person",
+      },
+    ])
+
+    expect(result.map((unit) => unit.optionUnitId)).toEqual(["optu_adult", "optu_child"])
+  })
+
+  it("keeps room units but hides person units when an option has room units", () => {
+    const result = getTravelerAssignableStepperUnits([
+      {
+        optionId: "opto_hotel",
+        optionUnitId: "optu_double",
+        unitType: "room",
+      },
+      {
+        optionId: "opto_hotel",
+        optionUnitId: "optu_child",
+        unitType: "person",
+      },
+      {
+        optionId: "opto_excursion",
+        optionUnitId: "optu_excursion_child",
+        unitType: "person",
+      },
+    ])
+
+    expect(result.map((unit) => unit.optionUnitId)).toEqual(["optu_double", "optu_excursion_child"])
   })
 })
