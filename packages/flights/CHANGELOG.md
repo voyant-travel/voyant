@@ -1,5 +1,12 @@
 # @voyantjs/flights
 
+## 0.80.12
+
+### Patch Changes
+
+- @voyantjs/catalog@0.80.12
+- @voyantjs/db@0.80.12
+
 ## 0.80.11
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @voyantjs/finance-react
 
+## 0.80.12
+
+### Patch Changes
+
+- 5070731: Add finance invoice number series admin UI and localize issue-document allocation errors.
+- Updated dependencies [55d99af]
+  - @voyantjs/finance@0.80.12
+  - @voyantjs/react@0.80.12
+
 ## 0.80.11
 
 ### Patch Changes
