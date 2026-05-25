@@ -1,4 +1,6 @@
 import type { Plugin, Subscriber } from "@voyantjs/core"
+import { financeService } from "@voyantjs/finance"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { SmartbillArtifactPersistenceOptions } from "./artifacts.js"
 import type { SmartbillClientOptions } from "./client.js"
@@ -70,6 +72,13 @@ export interface SmartbillPluginOptions extends SmartbillClientOptions, Smartbil
   documentStorageKeyPrefix?: SmartbillArtifactPersistenceOptions["documentStorageKeyPrefix"]
 }
 
+function resolveStaticArtifactDb(
+  db: SmartbillArtifactPersistenceOptions["db"],
+): PostgresJsDatabase | null {
+  if (!db || typeof db === "function") return null
+  return db
+}
+
 function coerceEvent(data: unknown): VoyantInvoiceEvent | null {
   if (data == null || typeof data !== "object") return null
   const maybe = data as Record<string, unknown>
@@ -84,6 +93,33 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
   const validatedOptions = parseSmartbillPluginOptions(options)
   const runtime = createSmartbillSyncRuntime(validatedOptions)
   const { client, logger, eventNames } = runtime
+
+  async function ensureNumberSeries() {
+    const db = resolveStaticArtifactDb(runtime.artifacts.db)
+    if (!db || typeof validatedOptions.seriesName !== "string") return
+    try {
+      await financeService.ensureExternalInvoiceNumberSeries(db, [
+        {
+          provider: "smartbill",
+          scope: "invoice",
+          code: "smartbill-invoice",
+          name: "SmartBill invoices",
+          externalConfigKey: validatedOptions.seriesName,
+          isDefault: true,
+        },
+        {
+          provider: "smartbill",
+          scope: "proforma",
+          code: "smartbill-proforma",
+          name: "SmartBill proformas",
+          externalConfigKey: validatedOptions.seriesName,
+          isDefault: true,
+        },
+      ])
+    } catch (error) {
+      logger.error("[smartbill] invoice number series bootstrap failed", error)
+    }
+  }
 
   async function resolveConfiguredSeriesName(event: VoyantInvoiceEvent) {
     const value = validatedOptions.seriesName
@@ -204,6 +240,7 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
   return {
     name: "smartbill",
     version: "0.1.0",
+    bootstrap: ensureNumberSeries,
     subscribers,
   }
 }

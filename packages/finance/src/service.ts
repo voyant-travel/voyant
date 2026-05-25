@@ -276,6 +276,19 @@ type CreateFinanceNoteInput = z.infer<typeof insertFinanceNoteSchema>
 type InvoiceNumberSeriesListQuery = z.infer<typeof invoiceNumberSeriesListQuerySchema>
 type CreateInvoiceNumberSeriesInput = z.infer<typeof insertInvoiceNumberSeriesSchema>
 type UpdateInvoiceNumberSeriesInput = z.infer<typeof updateInvoiceNumberSeriesSchema>
+type EnsureExternalInvoiceNumberSeriesInput = {
+  provider: string
+  scope: CreateInvoiceNumberSeriesInput["scope"]
+  code?: string
+  name: string
+  externalConfigKey?: string | null
+  isDefault?: boolean
+  active?: boolean
+  prefix?: string
+  separator?: string
+  padLength?: number
+  resetStrategy?: CreateInvoiceNumberSeriesInput["resetStrategy"]
+}
 type InvoiceTemplateListQuery = z.infer<typeof invoiceTemplateListQuerySchema>
 type CreateInvoiceTemplateInput = z.infer<typeof insertInvoiceTemplateSchema>
 type UpdateInvoiceTemplateInput = z.infer<typeof updateInvoiceTemplateSchema>
@@ -332,6 +345,33 @@ export class InvoiceNumberAllocationError extends Error {
     this.code = code
     this.scope = details.scope
     this.seriesId = details.seriesId
+  }
+}
+
+export class ExternalInvoiceNumberSeriesCollisionError extends Error {
+  readonly code = "external_invoice_number_series_code_conflict"
+  readonly seriesCode: string
+  readonly provider: string
+  readonly scope: string
+  readonly existingProvider: string | null
+  readonly existingScope: string
+
+  constructor(details: {
+    seriesCode: string
+    provider: string
+    scope: string
+    existingProvider: string | null
+    existingScope: string
+  }) {
+    super(
+      `Invoice number series code "${details.seriesCode}" already belongs to ${details.existingProvider ?? "a local series"} in scope "${details.existingScope}"`,
+    )
+    this.name = "ExternalInvoiceNumberSeriesCollisionError"
+    this.seriesCode = details.seriesCode
+    this.provider = details.provider
+    this.scope = details.scope
+    this.existingProvider = details.existingProvider
+    this.existingScope = details.existingScope
   }
 }
 
@@ -4653,6 +4693,119 @@ export const financeService = {
       )
       .limit(1)
     return row ?? null
+  },
+
+  async ensureExternalInvoiceNumberSeries(
+    db: PostgresJsDatabase,
+    inputs: EnsureExternalInvoiceNumberSeriesInput[],
+  ) {
+    return db.transaction(async (tx) => {
+      const rows: Array<typeof invoiceNumberSeries.$inferSelect> = []
+
+      for (const input of inputs) {
+        const now = new Date()
+        const code = input.code ?? `${input.provider}-${input.scope}`
+        const active = input.active ?? true
+        const isDefault = active === false ? false : (input.isDefault ?? true)
+
+        const [existingExternal] = await tx
+          .select()
+          .from(invoiceNumberSeries)
+          .where(
+            and(
+              eq(invoiceNumberSeries.scope, input.scope),
+              eq(invoiceNumberSeries.externalProvider, input.provider),
+            ),
+          )
+          .orderBy(
+            desc(invoiceNumberSeries.isDefault),
+            desc(invoiceNumberSeries.updatedAt),
+            desc(invoiceNumberSeries.createdAt),
+          )
+          .limit(1)
+
+        const [existingByCode] = existingExternal
+          ? [null]
+          : await tx
+              .select()
+              .from(invoiceNumberSeries)
+              .where(eq(invoiceNumberSeries.code, code))
+              .limit(1)
+        if (
+          existingByCode &&
+          (existingByCode.scope !== input.scope ||
+            existingByCode.externalProvider !== input.provider)
+        ) {
+          throw new ExternalInvoiceNumberSeriesCollisionError({
+            seriesCode: code,
+            provider: input.provider,
+            scope: input.scope,
+            existingProvider: existingByCode.externalProvider,
+            existingScope: existingByCode.scope,
+          })
+        }
+        const existing = existingExternal ?? existingByCode
+        const nextCode = existingExternal ? existingExternal.code : code
+
+        if (isDefault) {
+          const defaultScopeWhere = existing
+            ? and(
+                eq(invoiceNumberSeries.scope, input.scope),
+                ne(invoiceNumberSeries.id, existing.id),
+              )
+            : eq(invoiceNumberSeries.scope, input.scope)
+          await tx
+            .update(invoiceNumberSeries)
+            .set({ isDefault: false, updatedAt: now })
+            .where(defaultScopeWhere)
+        }
+
+        if (existing) {
+          const [row] = await tx
+            .update(invoiceNumberSeries)
+            .set({
+              code: nextCode,
+              name: input.name,
+              prefix: input.prefix ?? existing.prefix,
+              separator: input.separator ?? existing.separator,
+              padLength: input.padLength ?? existing.padLength,
+              resetStrategy: input.resetStrategy ?? existing.resetStrategy,
+              scope: input.scope,
+              isDefault,
+              externalProvider: input.provider,
+              externalConfigKey: input.externalConfigKey ?? null,
+              active,
+              updatedAt: now,
+            })
+            .where(eq(invoiceNumberSeries.id, existing.id))
+            .returning()
+          if (row) rows.push(row)
+          continue
+        }
+
+        const [row] = await tx
+          .insert(invoiceNumberSeries)
+          .values({
+            code,
+            name: input.name,
+            prefix: input.prefix ?? "",
+            separator: input.separator ?? "",
+            padLength: input.padLength ?? 0,
+            currentSequence: 0,
+            resetStrategy: input.resetStrategy ?? "never",
+            resetAt: null,
+            scope: input.scope,
+            isDefault,
+            externalProvider: input.provider,
+            externalConfigKey: input.externalConfigKey ?? null,
+            active,
+          })
+          .returning()
+        if (row) rows.push(row)
+      }
+
+      return rows
+    })
   },
 
   async createInvoiceNumberSeries(db: PostgresJsDatabase, data: CreateInvoiceNumberSeriesInput) {

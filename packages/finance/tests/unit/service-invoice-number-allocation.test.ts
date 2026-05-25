@@ -544,3 +544,145 @@ describe("financeService.createInvoiceFromBooking number allocation", () => {
     } satisfies Partial<InvoiceFromBookingValidationError>)
   })
 })
+
+describe("financeService.ensureExternalInvoiceNumberSeries", () => {
+  it("creates default external-provider placeholder series per scope", async () => {
+    const insertedRows: Array<Record<string, unknown>> = []
+    const updates: Array<Record<string, unknown>> = []
+    const tx = {
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            orderBy: vi.fn(() => ({
+              limit: vi.fn(async () => []),
+            })),
+            limit: vi.fn(async () => []),
+          })),
+        })),
+      })),
+      update: vi.fn(() => ({
+        set: vi.fn((values) => ({
+          where: vi.fn(async () => {
+            updates.push(values)
+            return []
+          }),
+        })),
+      })),
+      insert: vi.fn(() => ({
+        values: vi.fn((values) => ({
+          returning: vi.fn(async () => {
+            const row = {
+              id: `ins_${insertedRows.length + 1}`,
+              createdAt: new Date("2026-01-01T00:00:00.000Z"),
+              updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+              ...values,
+            }
+            insertedRows.push(row)
+            return [row]
+          }),
+        })),
+      })),
+    }
+    const db = {
+      transaction: vi.fn(async (callback) => callback(tx)),
+    } as never
+
+    const rows = await financeService.ensureExternalInvoiceNumberSeries(db, [
+      {
+        provider: "smartbill",
+        scope: "invoice",
+        code: "smartbill-invoice",
+        name: "SmartBill invoices",
+        externalConfigKey: "FCT",
+      },
+      {
+        provider: "smartbill",
+        scope: "proforma",
+        code: "smartbill-proforma",
+        name: "SmartBill proformas",
+        externalConfigKey: "PRO",
+      },
+    ])
+
+    expect(rows).toHaveLength(2)
+    expect(insertedRows).toEqual([
+      expect.objectContaining({
+        code: "smartbill-invoice",
+        scope: "invoice",
+        name: "SmartBill invoices",
+        externalProvider: "smartbill",
+        externalConfigKey: "FCT",
+        isDefault: true,
+        active: true,
+        padLength: 0,
+        currentSequence: 0,
+      }),
+      expect.objectContaining({
+        code: "smartbill-proforma",
+        scope: "proforma",
+        name: "SmartBill proformas",
+        externalProvider: "smartbill",
+        externalConfigKey: "PRO",
+        isDefault: true,
+        active: true,
+        padLength: 0,
+        currentSequence: 0,
+      }),
+    ])
+    expect(updates).toEqual([
+      expect.objectContaining({ isDefault: false }),
+      expect.objectContaining({ isDefault: false }),
+    ])
+  })
+
+  it("rejects code collisions from another provider or local series", async () => {
+    const existingManualSeries = series({
+      id: "ins_manual",
+      code: "smartbill-invoice",
+      scope: "invoice",
+      externalProvider: null,
+    })
+    let selectIndex = 0
+    const tx = {
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => {
+            selectIndex += 1
+            return {
+              orderBy: vi.fn(() => ({
+                limit: vi.fn(async () => []),
+              })),
+              limit: vi.fn(async () => (selectIndex === 2 ? [existingManualSeries] : [])),
+            }
+          }),
+        })),
+      })),
+      update: vi.fn(),
+      insert: vi.fn(),
+    }
+    const db = {
+      transaction: vi.fn(async (callback) => callback(tx)),
+    } as never
+
+    await expect(
+      financeService.ensureExternalInvoiceNumberSeries(db, [
+        {
+          provider: "smartbill",
+          scope: "invoice",
+          code: "smartbill-invoice",
+          name: "SmartBill invoices",
+        },
+      ]),
+    ).rejects.toMatchObject({
+      name: "ExternalInvoiceNumberSeriesCollisionError",
+      code: "external_invoice_number_series_code_conflict",
+      seriesCode: "smartbill-invoice",
+      provider: "smartbill",
+      scope: "invoice",
+      existingProvider: null,
+      existingScope: "invoice",
+    })
+    expect(tx.update).not.toHaveBeenCalled()
+    expect(tx.insert).not.toHaveBeenCalled()
+  })
+})

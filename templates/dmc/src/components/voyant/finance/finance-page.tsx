@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
 import { useInvoices, useSupplierPayments } from "@voyantjs/finance-react"
 import { InvoiceDialog } from "@voyantjs/finance-ui/components/invoice-dialog"
+import { InvoiceNumberSeriesPage } from "@voyantjs/finance-ui/components/invoice-number-series-page"
 import { SupplierPaymentDialog } from "@voyantjs/finance-ui/components/supplier-payment-dialog"
 import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column-header"
 import { Loader2, Plus, Search } from "lucide-react"
@@ -184,7 +185,7 @@ const PAGE_SIZE = 25
 export function FinancePage() {
   const messages = useAdminMessages()
   const navigate = useNavigate()
-  const [tab, setTab] = useState<"invoices" | "supplier-payments">("invoices")
+  const [tab, setTab] = useState<"invoices" | "supplier-payments" | "number-series">("invoices")
   const [search, setSearch] = useState("")
   const [invoicePageIndex, setInvoicePageIndex] = useState(0)
   const [supplierPaymentPageIndex, setSupplierPaymentPageIndex] = useState(0)
@@ -219,12 +220,12 @@ export function FinancePage() {
             <Plus className="mr-2 h-4 w-4" />
             {messages.finance.newInvoice}
           </Button>
-        ) : (
+        ) : tab === "supplier-payments" ? (
           <Button onClick={() => setSupplierPaymentDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             {messages.finance.recordSupplierPayment}
           </Button>
-        )}
+        ) : null}
       </div>
 
       <div className="flex gap-1 border-b">
@@ -256,9 +257,22 @@ export function FinancePage() {
         >
           {messages.finance.supplierPaymentsTab}
         </button>
+        <button
+          type="button"
+          onClick={() => setTab("number-series")}
+          className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+            tab === "number-series"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {messages.finance.numberSeriesTab}
+        </button>
       </div>
 
-      {tab === "invoices" ? (
+      {tab === "number-series" ? (
+        <InvoiceNumberSeriesPage className="p-0" />
+      ) : tab === "invoices" ? (
         <>
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
