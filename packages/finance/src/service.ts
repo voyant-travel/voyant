@@ -499,6 +499,23 @@ function normalizeCurrencyCode(value: string | null | undefined) {
   return value?.trim().toUpperCase() ?? null
 }
 
+function invoiceFromBookingExternalRefValues(
+  invoiceId: string,
+  refs: NonNullable<CreateInvoiceFromBookingInput["externalRefs"]>,
+) {
+  return refs.map((ref) => ({
+    invoiceId,
+    provider: ref.provider,
+    externalId: ref.externalId ?? null,
+    externalNumber: ref.externalNumber ?? null,
+    externalUrl: ref.externalUrl ?? null,
+    status: ref.status ?? null,
+    metadata: ref.metadata ?? null,
+    syncedAt: toTimestamp(ref.syncedAt),
+    syncError: ref.syncError ?? null,
+  }))
+}
+
 function resolveBookingInvoiceBaseAmount(
   booking: InvoiceFromBookingData["booking"],
   invoiceCurrency: string,
@@ -3653,6 +3670,12 @@ export const financeService = {
 
         if (!invoice) {
           return null
+        }
+
+        if (data.externalRefs?.length) {
+          await tx
+            .insert(invoiceExternalRefs)
+            .values(invoiceFromBookingExternalRefValues(invoice.id, data.externalRefs))
         }
 
         await tx.insert(invoiceLineItems).values(

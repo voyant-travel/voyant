@@ -515,5 +515,6 @@ function isMatchingSmartbillRef(
   documentType: SmartbillDocumentType,
 ) {
   if (!isUsableSmartbillRef(ref)) return false
-  return metadataString(coerceMetadata(ref.metadata), "documentType") === documentType
+  const metadataDocumentType = metadataString(coerceMetadata(ref.metadata), "documentType")
+  return !metadataDocumentType || metadataDocumentType === documentType
 }

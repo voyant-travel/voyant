@@ -172,4 +172,51 @@ describe("syncSmartbillInvoiceEvent", () => {
     expect(result.status).toBe("existing_ref")
     expect(client.createInvoice).not.toHaveBeenCalled()
   })
+
+  it("reuses an externally seeded SmartBill ref without document metadata", async () => {
+    const client = makeClient()
+    financeServiceMock.listInvoiceExternalRefs.mockResolvedValueOnce([
+      {
+        id: "iex_existing",
+        invoiceId: "inv_123",
+        provider: "smartbill",
+        externalId: "remote_42",
+        externalNumber: "42",
+        externalUrl: null,
+        status: "issued",
+        syncError: null,
+        metadata: null,
+      },
+    ])
+
+    const result = await syncSmartbillInvoiceEvent({
+      event: { id: "inv_123", lineItems: [] },
+      documentType: "invoice",
+      runtime: {
+        client,
+        logger: { error: vi.fn(), info: vi.fn() },
+        mapEvent: vi.fn().mockResolvedValue({
+          companyVatCode: "RO12345678",
+          client: { name: "Client" },
+          seriesName: "A",
+          currency: "RON",
+          products: [],
+        }),
+        eventNames: {
+          issued: "invoice.issued",
+          proformaIssued: "invoice.proforma.issued",
+          voided: "invoice.voided",
+          syncRequested: "invoice.external.sync.requested",
+        },
+        artifacts: { db: {} as never },
+        idempotency: { skipExistingExternalRef: true },
+        onError: undefined,
+        writeBackInvoiceNumber: undefined,
+      },
+      pluginOptions: basePluginOptions,
+    })
+
+    expect(result.status).toBe("existing_ref")
+    expect(client.createInvoice).not.toHaveBeenCalled()
+  })
 })
