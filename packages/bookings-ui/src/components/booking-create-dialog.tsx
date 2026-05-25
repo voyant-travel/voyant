@@ -39,7 +39,9 @@ import {
 import {
   getBookableDepartureSlots,
   getSelectedSharedRoomUnitId,
+  isRealBookingEmail,
   itemLinesToRows,
+  validateBillingPersonContact,
 } from "./booking-create-utils.js"
 import {
   emptyOptionUnitsStepperValue,
@@ -365,12 +367,6 @@ function sameRoomUnits(left: OptionUnitsStepperUnit[], right: OptionUnitsStepper
       unit.remaining === other.remaining
     )
   })
-}
-
-function isRealBookingEmail(value: string | null | undefined): boolean {
-  const normalized = value?.trim().toLowerCase() ?? ""
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) return false
-  return !["noreply@example.com", "tbd@example.com", "traveler@example.com"].includes(normalized)
 }
 
 export interface BookingCreateDialogProps {
@@ -784,8 +780,13 @@ export function BookingCreateForm({
         return
       }
       resolvedPersonId = person.personId
-      if (!isRealBookingEmail(billingPersonRecord?.email)) {
-        setError(messages.bookingCreateDialog.validation.billingEmailRequired)
+      const billingContactValidation = validateBillingPersonContact(billingPersonRecord)
+      if (billingContactValidation === "missing-contact") {
+        setError(messages.bookingCreateDialog.validation.billingContactRequired)
+        return
+      }
+      if (billingContactValidation === "invalid-email") {
+        setError(messages.bookingCreateDialog.validation.billingEmailInvalid)
         return
       }
     } else {

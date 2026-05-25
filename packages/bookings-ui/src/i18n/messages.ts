@@ -1037,7 +1037,8 @@ export type BookingsUiMessages = {
       selectUnits: string
       selectPerson: string
       selectOrganization: string
-      billingEmailRequired: string
+      billingContactRequired: string
+      billingEmailInvalid: string
       travelerRequired: string
       firstAndLastNameRequired: string
       selectSharedRoomGroup: string
