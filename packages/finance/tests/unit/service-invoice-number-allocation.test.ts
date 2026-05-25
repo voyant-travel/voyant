@@ -634,4 +634,55 @@ describe("financeService.ensureExternalInvoiceNumberSeries", () => {
       expect.objectContaining({ isDefault: false }),
     ])
   })
+
+  it("rejects code collisions from another provider or local series", async () => {
+    const existingManualSeries = series({
+      id: "ins_manual",
+      code: "smartbill-invoice",
+      scope: "invoice",
+      externalProvider: null,
+    })
+    let selectIndex = 0
+    const tx = {
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => {
+            selectIndex += 1
+            return {
+              orderBy: vi.fn(() => ({
+                limit: vi.fn(async () => []),
+              })),
+              limit: vi.fn(async () => (selectIndex === 2 ? [existingManualSeries] : [])),
+            }
+          }),
+        })),
+      })),
+      update: vi.fn(),
+      insert: vi.fn(),
+    }
+    const db = {
+      transaction: vi.fn(async (callback) => callback(tx)),
+    } as never
+
+    await expect(
+      financeService.ensureExternalInvoiceNumberSeries(db, [
+        {
+          provider: "smartbill",
+          scope: "invoice",
+          code: "smartbill-invoice",
+          name: "SmartBill invoices",
+        },
+      ]),
+    ).rejects.toMatchObject({
+      name: "ExternalInvoiceNumberSeriesCollisionError",
+      code: "external_invoice_number_series_code_conflict",
+      seriesCode: "smartbill-invoice",
+      provider: "smartbill",
+      scope: "invoice",
+      existingProvider: null,
+      existingScope: "invoice",
+    })
+    expect(tx.update).not.toHaveBeenCalled()
+    expect(tx.insert).not.toHaveBeenCalled()
+  })
 })

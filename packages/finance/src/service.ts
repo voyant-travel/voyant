@@ -348,6 +348,33 @@ export class InvoiceNumberAllocationError extends Error {
   }
 }
 
+export class ExternalInvoiceNumberSeriesCollisionError extends Error {
+  readonly code = "external_invoice_number_series_code_conflict"
+  readonly seriesCode: string
+  readonly provider: string
+  readonly scope: string
+  readonly existingProvider: string | null
+  readonly existingScope: string
+
+  constructor(details: {
+    seriesCode: string
+    provider: string
+    scope: string
+    existingProvider: string | null
+    existingScope: string
+  }) {
+    super(
+      `Invoice number series code "${details.seriesCode}" already belongs to ${details.existingProvider ?? "a local series"} in scope "${details.existingScope}"`,
+    )
+    this.name = "ExternalInvoiceNumberSeriesCollisionError"
+    this.seriesCode = details.seriesCode
+    this.provider = details.provider
+    this.scope = details.scope
+    this.existingProvider = details.existingProvider
+    this.existingScope = details.existingScope
+  }
+}
+
 export class InvoiceNumberConflictError extends Error {
   readonly code = "invoice_number_conflict"
   readonly invoiceNumber: string
@@ -4704,6 +4731,19 @@ export const financeService = {
               .from(invoiceNumberSeries)
               .where(eq(invoiceNumberSeries.code, code))
               .limit(1)
+        if (
+          existingByCode &&
+          (existingByCode.scope !== input.scope ||
+            existingByCode.externalProvider !== input.provider)
+        ) {
+          throw new ExternalInvoiceNumberSeriesCollisionError({
+            seriesCode: code,
+            provider: input.provider,
+            scope: input.scope,
+            existingProvider: existingByCode.externalProvider,
+            existingScope: existingByCode.scope,
+          })
+        }
         const existing = existingExternal ?? existingByCode
         const nextCode = existingExternal ? existingExternal.code : code
 
