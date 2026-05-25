@@ -797,7 +797,7 @@ export function BookingCreateForm({
       // format needs from the result. Person-priced options get
       // per-band quantities (1 adult + 1 child + 1 infant, not
       // "3 x Adult"); accommodation options keep operator-picked
-      // room quantities. Server gets `clientLineKey` + `travelerIndexes`
+      // room quantities. Server gets `clientLineKey` + `travelerKeys`
       // on each line so it can write `booking_item_travelers` rows.
       const submitUnits =
         roomUnits.length > 0
@@ -813,16 +813,32 @@ export function BookingCreateForm({
         travelers: travelers.travelers,
         units: submitUnits as PricingAssignmentUnit[],
       })
+      const travelerKeysByUnitId = Object.fromEntries(
+        Object.entries(redistributed.travelerIndexesByUnitId).map(([unitId, indexes]) => [
+          unitId,
+          indexes.every((index) => Boolean(redistributed.travelers[index]?.clientTravelerKey))
+            ? indexes
+                .map((index) => redistributed.travelers[index]?.clientTravelerKey)
+                .filter((key): key is string => Boolean(key))
+            : [],
+        ]),
+      )
+      const travelerKeys = redistributed.travelers
+        .map((traveler) => traveler.clientTravelerKey)
+        .filter((key): key is string => Boolean(key))
 
       const itemLines = itemLinesToRows(
         redistributed.quantities,
         submitUnits,
         pricing,
         redistributed.travelerIndexesByUnitId,
+        travelerKeysByUnitId,
       )
       const resolvedExtraLines = resolveBookingExtraLines({
         extraLines,
         travelerCount: travelers.travelers.length,
+        travelerKeys:
+          travelerKeys.length === redistributed.travelers.length ? travelerKeys : undefined,
       })
 
       const travelerRows = travelersToRows({ travelers: redistributed.travelers })

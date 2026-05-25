@@ -160,6 +160,22 @@ describe("booking create helpers", () => {
     ])
   })
 
+  it("uses stable traveler keys on selected unit lines when supplied", () => {
+    const result = itemLinesToRows(
+      { optu_double: 1 },
+      [{ optionId: "opto_dbl", optionUnitId: "optu_double", unitName: "DBL" }],
+      null,
+      { optu_double: [1, 0] },
+      { optu_double: ["trav:second", "trav:first"] },
+    )
+
+    expect(result[0]).toMatchObject({
+      clientLineKey: "unit:optu_double",
+      travelerKeys: ["trav:second", "trav:first"],
+    })
+    expect(result[0]?.travelerIndexes).toBeUndefined()
+  })
+
   it("uses the selected unit for new shared-room groups", () => {
     expect(
       getSelectedSharedRoomUnitId({

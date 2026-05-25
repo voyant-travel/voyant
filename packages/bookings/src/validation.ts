@@ -232,6 +232,8 @@ export const convertProductSchema = z
           description: z.string().max(5000).optional().nullable(),
           unitSellAmountCents: z.number().int().min(0).optional().nullable(),
           totalSellAmountCents: z.number().int().min(0).optional().nullable(),
+          travelerKeys: z.array(z.string().min(1).max(255)).optional().nullable(),
+          travelerIndexes: z.array(z.number().int().min(0)).optional().nullable(),
         }),
       )
       .optional(),

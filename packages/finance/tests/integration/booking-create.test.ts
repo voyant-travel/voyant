@@ -600,6 +600,73 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     expect(links).toHaveLength(4)
   })
 
+  it("links item and extra lines to reordered travelers through stable keys", async () => {
+    const { productId, unitId } = await seedProduct()
+
+    const outcome = await createBooking(db, {
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      travelers: [
+        {
+          clientTravelerKey: "trav:child",
+          firstName: "Child",
+          lastName: "Traveler",
+          participantType: "traveler",
+          travelerCategory: "child",
+        },
+        {
+          clientTravelerKey: "trav:lead",
+          firstName: "Alice",
+          lastName: "Lead",
+          email: "alice@example.com",
+          participantType: "traveler",
+          travelerCategory: "adult",
+          isPrimary: true,
+        },
+      ],
+      itemLines: [
+        {
+          clientLineKey: `unit:${unitId}`,
+          optionUnitId: unitId,
+          quantity: 1,
+          title: "Adult",
+          travelerKeys: ["trav:lead"],
+        },
+      ],
+      extraLines: [
+        {
+          clientLineKey: "extra:lunch",
+          productExtraId: "lunch",
+          name: "Lunch",
+          pricingMode: "per_person",
+          pricedPerPerson: true,
+          quantity: 1,
+          sellCurrency: "EUR",
+          unitSellAmountCents: 1000,
+          totalSellAmountCents: 1000,
+          travelerKeys: ["trav:child"],
+        },
+      ],
+    })
+
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+
+    const linkedRows = await db.execute<{ item_title: string; traveler_last_name: string }>(sql`
+      SELECT bi.title AS item_title, bt.last_name AS traveler_last_name
+      FROM booking_item_travelers bit
+      JOIN booking_items bi ON bi.id = bit.booking_item_id
+      JOIN booking_travelers bt ON bt.id = bit.traveler_id
+      WHERE bi.booking_id = ${outcome.result.booking.id}
+      ORDER BY bi.title, bt.last_name
+    `)
+    expect(linkedRows).toEqual([
+      { item_title: "Adult", traveler_last_name: "Lead" },
+      { item_title: "Lunch", traveler_last_name: "Traveler" },
+    ])
+  })
+
   it("rejects booking-create payloads that drift from the server draft resolver", async () => {
     const { productId, unitId, childUnitId, infantUnitId } = await seedProduct({
       ageBandedUnits: true,

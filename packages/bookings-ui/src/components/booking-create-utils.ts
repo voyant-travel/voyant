@@ -132,6 +132,7 @@ export function itemLinesToRows(
   units: BookingCreateUnitLineRecord[],
   pricing: BookingCreatePricingRecord | null,
   travelerIndexesByUnitId: Record<string, number[]> = {},
+  travelerKeysByUnitId: Record<string, string[]> = {},
 ): BookingCreateItemLineInput[] {
   const unitsById = new Map(units.map((unit) => [unit.optionUnitId, unit]))
   const unitNames = new Map(units.map((unit) => [unit.optionUnitId, unit.unitName]))
@@ -165,18 +166,24 @@ export function itemLinesToRows(
       pricedLine?.unitAmountCents ??
       (totalSellAmountCents != null ? Math.floor(totalSellAmountCents / quantity) : null)
     const travelerIndexes = travelerIndexesByUnitId[optionUnitId]
+    const travelerKeys = travelerKeysByUnitId[optionUnitId]
+    const hasTravelerLinks = Boolean(travelerKeys?.length || travelerIndexes?.length)
     return {
       // Server uses `clientLineKey` to look up this item after insert
       // and link it to travelers via `booking_item_travelers`. Only
       // stamp when there's an actual traveler mapping to write.
-      clientLineKey: travelerIndexes?.length ? `unit:${optionUnitId}` : undefined,
+      clientLineKey: hasTravelerLinks ? `unit:${optionUnitId}` : undefined,
       optionId: unitsById.get(optionUnitId)?.optionId ?? null,
       optionUnitId,
       quantity,
       title: pricedLine?.label ?? unitNames.get(optionUnitId) ?? null,
       unitSellAmountCents,
       totalSellAmountCents,
-      travelerIndexes: travelerIndexes?.length ? travelerIndexes : undefined,
+      ...(travelerKeys?.length
+        ? { travelerKeys }
+        : travelerIndexes?.length
+          ? { travelerIndexes }
+          : {}),
     }
   })
 }

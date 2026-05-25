@@ -9,6 +9,12 @@ import { bookingsQueryKeys } from "../query-keys.js"
 import { type BookingStatus, bookingRecordSchema } from "../schemas.js"
 
 export interface BookingCreateTravelerInput {
+  /**
+   * Stable client-side traveler identity used by itemLines/extraLines
+   * `travelerKeys` to link created booking items to travelers without
+   * relying on request-array position.
+   */
+  clientTravelerKey?: string | null
   firstName: string
   lastName: string
   email?: string | null
@@ -21,9 +27,9 @@ export interface BookingCreateTravelerInput {
   /**
    * Deprecated compatibility alias for the traveler's pricing-tier option
    * unit. The server accepts this field but does not persist it; item-line
-   * `travelerIndexes` carry the supported traveler-to-item linkage.
+   * `travelerKeys` carry the supported traveler-to-item linkage.
    *
-   * @deprecated Use itemLines[].travelerIndexes to express traveler-priced
+   * @deprecated Use itemLines[].travelerKeys to express traveler-priced
    * lines and inventory placement.
    */
   roomUnitId?: string | null
@@ -49,7 +55,7 @@ export interface BookingCreateItemLineInput {
   /**
    * Stable client-side key (e.g. `unit:optu_adult`) the server uses
    * to look up this item after insert and link it to the travelers
-   * referenced in `travelerIndexes`. Server writes
+   * referenced in `travelerKeys`. Server writes
    * `metadata.bookingCreateLineKey` so the lookup survives the
    * round-trip. See voyantjs/voyant#1267.
    */
@@ -62,11 +68,17 @@ export interface BookingCreateItemLineInput {
   unitSellAmountCents?: number | null
   totalSellAmountCents?: number | null
   /**
-   * Indexes (into the request's `travelers` array) of travelers
-   * mapped to this item. The server inserts one
+   * Stable `clientTravelerKey` values of travelers mapped to this item. The server inserts one
    * `booking_item_travelers` row per traveler, linking the created
    * `booking_item` to the corresponding `booking_traveler`. Null or
    * empty = unlinked (no per-traveler ledger entry).
+   */
+  travelerKeys?: string[] | null
+  /**
+   * Indexes (into the request's `travelers` array) of travelers
+   * mapped to this item.
+   *
+   * @deprecated Use travelerKeys. Removal target: next booking-create wire-format major.
    */
   travelerIndexes?: number[] | null
 }
@@ -84,7 +96,13 @@ export interface BookingCreateExtraLineInput {
   sellCurrency: string
   unitSellAmountCents?: number | null
   totalSellAmountCents?: number | null
-  /** See `BookingCreateItemLineInput.travelerIndexes`. */
+  /** See `BookingCreateItemLineInput.travelerKeys`. */
+  travelerKeys?: string[] | null
+  /**
+   * See `BookingCreateItemLineInput.travelerIndexes`.
+   *
+   * @deprecated Use travelerKeys. Removal target: next booking-create wire-format major.
+   */
   travelerIndexes?: number[] | null
 }
 
