@@ -725,7 +725,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
     it("searches booking contact snapshots and external references", async () => {
       const target = await seedBooking({
         bookingNumber: "BK-CONTACT-0001",
-        externalBookingRef: "WHATSAPP-REF-42",
+        externalBookingRef: "WHATSAPP-REF-40712345678",
         contactFirstName: "Ana",
         contactLastName: "Cimpoeru",
         contactEmail: "ana.cimpoeru@example.com",
@@ -750,6 +750,13 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         contactAddressLine1: "Rue de Rivoli 1",
         contactPostalCode: "75001",
       })
+      const phoneOnly = await seedBooking({
+        bookingNumber: "BK-CONTACT-0003",
+        contactFirstName: "Ioana",
+        contactLastName: "Phone",
+        contactEmail: "ioana.phone@example.com",
+        contactPhone: "+40 712 345 678",
+      })
 
       async function expectOnlyTargetForSearch(search: string) {
         const res = await app.request(`/?search=${encodeURIComponent(search)}`, { method: "GET" })
@@ -758,12 +765,20 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         const ids = body.data.map((row: { id: string }) => row.id)
         expect(ids).toContain(target.id)
         expect(ids).not.toContain(other.id)
+        expect(ids).not.toContain(phoneOnly.id)
       }
+
+      const phoneRes = await app.request(`/?search=${encodeURIComponent("40712345678")}`, {
+        method: "GET",
+      })
+      expect(phoneRes.status).toBe(200)
+      const phoneIds = (await phoneRes.json()).data.map((row: { id: string }) => row.id)
+      expect(phoneIds).toContain(target.id)
+      expect(phoneIds).toContain(phoneOnly.id)
 
       await expectOnlyTargetForSearch("Ana Cimpoeru")
       await expectOnlyTargetForSearch("ANA.CIMPOERU")
-      await expectOnlyTargetForSearch("40712345678")
-      await expectOnlyTargetForSearch("WHATSAPP-REF-42")
+      await expectOnlyTargetForSearch("WHATSAPP-REF-40712345678")
       await expectOnlyTargetForSearch("Memorandumului")
       await expectOnlyTargetForSearch("Cluj-Napoca")
       await expectOnlyTargetForSearch("400114")

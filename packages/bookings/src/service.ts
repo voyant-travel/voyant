@@ -125,6 +125,8 @@ function buildBookingSearchCondition(search: string): SQL | undefined {
 
   const term = `%${trimmed}%`
   const normalizedPhoneTerm = trimmed.replace(/\D/g, "")
+  const shouldSearchNormalizedPhone =
+    normalizedPhoneTerm.length >= 7 && /^[+\d\s().-]+$/.test(trimmed)
   const searchConditions: SQL[] = [
     ilike(bookings.bookingNumber, term),
     ilike(bookings.externalBookingRef, term),
@@ -141,7 +143,7 @@ function buildBookingSearchCondition(search: string): SQL | undefined {
     ilike(bookings.contactPostalCode, term),
   ]
 
-  if (normalizedPhoneTerm) {
+  if (shouldSearchNormalizedPhone) {
     searchConditions.push(
       sql`regexp_replace(coalesce(${bookings.contactPhone}, ''), '[^0-9]+', '', 'g') like ${`%${normalizedPhoneTerm}%`}`,
     )
