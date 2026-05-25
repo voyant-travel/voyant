@@ -8,7 +8,7 @@ import {
 describe("traveler category button state", () => {
   it("treats the lead traveler as adult-active in the static fallback buttons", () => {
     expect(
-      getStaticTravelerCategoryButtonState({ role: "lead", roomUnitId: null }, "adult"),
+      getStaticTravelerCategoryButtonState({ role: "lead", pricingUnitId: null }, "adult"),
     ).toEqual({
       active: true,
       nextRole: "lead",
@@ -18,7 +18,7 @@ describe("traveler category button state", () => {
 
   it("keeps non-adult static buttons inactive for the lead traveler", () => {
     expect(
-      getStaticTravelerCategoryButtonState({ role: "lead", roomUnitId: null }, "child"),
+      getStaticTravelerCategoryButtonState({ role: "lead", pricingUnitId: null }, "child"),
     ).toEqual({
       active: false,
       nextRole: "child",
@@ -29,7 +29,7 @@ describe("traveler category button state", () => {
   it("preserves the lead role when the assigned dynamic unit is adult-coded", () => {
     expect(
       getDynamicTravelerCategoryButtonState(
-        { role: "lead", roomUnitId: "optu_adult" },
+        { role: "lead", pricingUnitId: "optu_adult" },
         { unitId: "optu_adult", unitCode: "ADULT" },
       ),
     ).toEqual({
@@ -42,7 +42,7 @@ describe("traveler category button state", () => {
   it("allows a lead traveler on a child unit to switch role when child is clicked", () => {
     expect(
       getDynamicTravelerCategoryButtonState(
-        { role: "lead", roomUnitId: "optu_child" },
+        { role: "lead", pricingUnitId: "optu_child" },
         { unitId: "optu_child", unitCode: "CHILD" },
       ),
     ).toEqual({

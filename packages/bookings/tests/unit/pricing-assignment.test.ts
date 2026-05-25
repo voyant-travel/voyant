@@ -40,8 +40,10 @@ function traveler(partial: Partial<BookingDraftTraveler> = {}): BookingDraftTrav
     preferredLanguage: partial.preferredLanguage ?? "",
     role: partial.role ?? "adult",
     dateOfBirth: partial.dateOfBirth ?? null,
-    roomUnitId: partial.roomUnitId ?? null,
-    roomUnitAssignmentSource: partial.roomUnitAssignmentSource ?? "auto",
+    pricingUnitId: partial.pricingUnitId ?? null,
+    inventoryUnitId: partial.inventoryUnitId ?? null,
+    pricingUnitSource: partial.pricingUnitSource ?? "auto",
+    inventoryUnitSource: partial.inventoryUnitSource ?? "auto",
   }
 }
 
@@ -195,16 +197,16 @@ describe("resolveBookingDraft — person-priced excursion (Bulgaria shape)", () 
       now: NOW,
       quantities: { u_adult: 3 },
       travelers: [
-        traveler({ role: "lead", roomUnitId: "u_adult" }),
+        traveler({ role: "lead", pricingUnitId: "u_adult" }),
         // Auto-assigned to adult by an earlier pass, then DOB filled in:
-        traveler({ role: "adult", roomUnitId: "u_adult", dateOfBirth: "2018-01-01" }),
-        traveler({ role: "infant", roomUnitId: "u_adult" }),
+        traveler({ role: "adult", pricingUnitId: "u_adult", dateOfBirth: "2018-01-01" }),
+        traveler({ role: "infant", pricingUnitId: "u_adult" }),
       ],
       units: krushunaUnits,
     })
 
-    expect(result.travelers[1]?.roomUnitId).toBe("u_child_6_12")
-    expect(result.travelers[2]?.roomUnitId).toBe("u_child_0_5")
+    expect(result.travelers[1]?.pricingUnitId).toBe("u_child_6_12")
+    expect(result.travelers[2]?.pricingUnitId).toBe("u_child_0_5")
   })
 
   it("preserves explicit operator category selections", () => {
@@ -215,16 +217,16 @@ describe("resolveBookingDraft — person-priced excursion (Bulgaria shape)", () 
         traveler({ role: "lead" }),
         traveler({
           role: "child",
-          roomUnitId: "u_adult",
-          roomUnitAssignmentSource: "manual",
+          pricingUnitId: "u_adult",
+          pricingUnitSource: "manual",
         }),
         traveler({ role: "infant" }),
       ],
       units: krushunaUnits,
     })
 
-    expect(result.travelers[1]?.roomUnitId).toBe("u_adult")
-    expect(result.travelers[1]?.roomUnitAssignmentSource).toBe("manual")
+    expect(result.travelers[1]?.pricingUnitId).toBe("u_adult")
+    expect(result.travelers[1]?.pricingUnitSource).toBe("manual")
   })
 
   it("re-resolves stale manual person unit assignments when units change", () => {
@@ -237,33 +239,34 @@ describe("resolveBookingDraft — person-priced excursion (Bulgaria shape)", () 
       travelers: [
         traveler({
           role: "child",
-          roomUnitId: "u_stale_from_other_product",
-          roomUnitAssignmentSource: "manual",
+          pricingUnitId: "u_stale_from_other_product",
+          pricingUnitSource: "manual",
         }),
       ],
       units: krushunaUnits,
     })
 
-    expect(result.travelers[0]?.roomUnitId).toBe("u_child_6_12")
+    expect(result.travelers[0]?.pricingUnitId).toBe("u_child_6_12")
   })
 
-  it("preserves explicit No room assignments", () => {
+  it("keeps No room as inventory-only intent", () => {
     const result = resolveBookingDraft({
       now: NOW,
       quantities: { u_adult: 1 },
       travelers: [
         traveler({
           role: "adult",
-          roomUnitId: null,
-          roomUnitAssignmentSource: "none",
+          inventoryUnitId: null,
+          inventoryUnitSource: "none",
         }),
       ],
       units: krushunaUnits,
     })
 
-    expect(result.travelers[0]?.roomUnitId).toBeNull()
-    expect(result.travelers[0]?.roomUnitAssignmentSource).toBe("none")
-    expect(result.travelerIndexesByUnitId).toEqual({})
+    expect(result.travelers[0]?.pricingUnitId).toBe("u_adult")
+    expect(result.travelers[0]?.inventoryUnitId).toBeNull()
+    expect(result.travelers[0]?.inventoryUnitSource).toBe("none")
+    expect(result.travelerIndexesByUnitId).toEqual({ u_adult: [0] })
   })
 
   it("residual fills onto adult when stepper qty exceeds travelers", () => {
@@ -303,8 +306,25 @@ describe("resolveBookingDraft — accommodation (Moldova DBL shape)", () => {
       now: NOW,
       quantities: { u_dbl_room: 1 },
       travelers: [
-        traveler({ role: "lead", roomUnitId: "u_dbl_room", roomUnitAssignmentSource: "manual" }),
-        traveler({ role: "adult", roomUnitId: "u_dbl_room", roomUnitAssignmentSource: "manual" }),
+        traveler({ role: "lead", inventoryUnitId: "u_dbl_room", inventoryUnitSource: "manual" }),
+        traveler({ role: "adult", inventoryUnitId: "u_dbl_room", inventoryUnitSource: "manual" }),
+      ],
+      units: moldovaDblUnits,
+    })
+
+    expect(result.quantities).toEqual({ u_dbl_room: 1 })
+    expect(result.travelers[0]?.pricingUnitId).toBe("u_adult_mol")
+    expect(result.travelers[0]?.inventoryUnitId).toBe("u_dbl_room")
+    expect(result.travelerIndexesByUnitId).toEqual({ u_dbl_room: [0, 1] })
+  })
+
+  it("normalizes legacy adult-keyed accommodation quantities onto the inventory unit", () => {
+    const result = resolveBookingDraft({
+      now: NOW,
+      quantities: { u_adult_mol: 1 },
+      travelers: [
+        traveler({ role: "lead", inventoryUnitId: "u_dbl_room", inventoryUnitSource: "manual" }),
+        traveler({ role: "adult", inventoryUnitId: "u_dbl_room", inventoryUnitSource: "manual" }),
       ],
       units: moldovaDblUnits,
     })
@@ -313,12 +333,28 @@ describe("resolveBookingDraft — accommodation (Moldova DBL shape)", () => {
     expect(result.travelerIndexesByUnitId).toEqual({ u_dbl_room: [0, 1] })
   })
 
+  it("preserves valid manual inventory assignments on resolver re-run", () => {
+    const result = resolveBookingDraft({
+      now: NOW,
+      quantities: { u_dbl_room: 1 },
+      travelers: [
+        traveler({ role: "lead", inventoryUnitId: "u_dbl_room", inventoryUnitSource: "manual" }),
+        traveler({ role: "adult", inventoryUnitId: "u_dbl_room", inventoryUnitSource: "manual" }),
+      ],
+      units: moldovaDblUnits,
+    })
+
+    expect(result.travelers[0]?.inventoryUnitId).toBe("u_dbl_room")
+    expect(result.travelers[0]?.inventoryUnitSource).toBe("manual")
+    expect(result.travelers[1]?.inventoryUnitId).toBe("u_dbl_room")
+    expect(result.travelers[1]?.inventoryUnitSource).toBe("manual")
+    expect(result.travelerIndexesByUnitId).toEqual({ u_dbl_room: [0, 1] })
+  })
+
   it("reassigns stale manual assignments when the option changes", () => {
-    // Operator switched the room from DBL to TWN. The dialog stores
-    // the option's primary (adult-coded) unit id on the traveler, not
-    // the literal room unit id — so the stale value here is
-    // `u_adult_dbl` and the resolver should re-derive to the TWN
-    // option's adult unit on the next render.
+    // Operator switched the room from DBL to TWN. The stale inventory
+    // id is no longer in unitById, so the resolver re-derives both
+    // placement and pricing for the selected option.
     const twnUnits: PricingAssignmentUnit[] = [
       unit({
         optionId: "opto_mol_twn",
@@ -338,14 +374,16 @@ describe("resolveBookingDraft — accommodation (Moldova DBL shape)", () => {
       now: NOW,
       quantities: { u_twn_room: 1 },
       travelers: [
-        traveler({ role: "lead", roomUnitId: "u_adult_dbl", roomUnitAssignmentSource: "manual" }),
-        traveler({ role: "adult", roomUnitId: "u_adult_dbl", roomUnitAssignmentSource: "manual" }),
+        traveler({ role: "lead", inventoryUnitId: "u_dbl_room", inventoryUnitSource: "manual" }),
+        traveler({ role: "adult", inventoryUnitId: "u_dbl_room", inventoryUnitSource: "manual" }),
       ],
       units: twnUnits,
     })
 
-    expect(result.travelers[0]?.roomUnitId).toBe("u_adult_twn")
-    expect(result.travelers[1]?.roomUnitId).toBe("u_adult_twn")
+    expect(result.travelers[0]?.pricingUnitId).toBe("u_adult_twn")
+    expect(result.travelers[1]?.pricingUnitId).toBe("u_adult_twn")
+    expect(result.travelers[0]?.inventoryUnitId).toBe("u_twn_room")
+    expect(result.travelers[1]?.inventoryUnitId).toBe("u_twn_room")
   })
 })
 
@@ -411,13 +449,31 @@ describe("travelersToRows", () => {
     expect(rows[2]).toMatchObject({ isPrimary: false, travelerCategory: "child" })
   })
 
-  it("nulls out roomUnitId for source=none", () => {
+  it("keeps legacy roomUnitId wire field as a pricing-tier alias", () => {
     const rows = travelersToRows({
       travelers: [
         traveler({
           role: "adult",
-          roomUnitId: "u_adult",
-          roomUnitAssignmentSource: "none",
+          pricingUnitId: "u_adult",
+          pricingUnitSource: "manual",
+          inventoryUnitId: "u_dbl_room",
+          inventoryUnitSource: "manual",
+        }),
+      ],
+    })
+
+    expect(rows[0]?.roomUnitId).toBe("u_adult")
+  })
+
+  it("nulls out the legacy roomUnitId wire field for pricing source=none", () => {
+    const rows = travelersToRows({
+      travelers: [
+        traveler({
+          role: "adult",
+          pricingUnitId: "u_adult",
+          pricingUnitSource: "none",
+          inventoryUnitId: "u_dbl_room",
+          inventoryUnitSource: "manual",
         }),
       ],
     })

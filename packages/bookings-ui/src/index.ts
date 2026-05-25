@@ -143,6 +143,7 @@ export {
   type TravelerRole,
   TravelersSection,
   type TravelersSectionProps,
+  type TravelerUnitAssignmentSource,
 } from "./components/travelers-section.js"
 export {
   type PickedVoucher,

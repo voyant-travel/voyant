@@ -2,7 +2,7 @@ export type TravelerCategoryRole = "lead" | "adult" | "child" | "infant"
 
 export interface TravelerCategoryState {
   role: TravelerCategoryRole
-  roomUnitId: string | null
+  pricingUnitId: string | null
 }
 
 export interface TravelerCategoryUnitState {
@@ -39,13 +39,13 @@ export function getDynamicTravelerCategoryButtonState(
 ): { active: boolean; nextRole: TravelerCategoryRole; shouldUpdate: boolean } {
   const inferredRole = inferTravelerRoleFromUnit(unit)
   const active =
-    traveler.roomUnitId === unit.unitId ||
-    (traveler.role === "lead" && inferredRole === "adult" && traveler.roomUnitId == null)
+    traveler.pricingUnitId === unit.unitId ||
+    (traveler.role === "lead" && inferredRole === "adult" && traveler.pricingUnitId == null)
   const nextRole = traveler.role === "lead" && inferredRole === "adult" ? "lead" : inferredRole
 
   return {
     active,
     nextRole,
-    shouldUpdate: traveler.roomUnitId !== unit.unitId || traveler.role !== nextRole,
+    shouldUpdate: traveler.pricingUnitId !== unit.unitId || traveler.role !== nextRole,
   }
 }
