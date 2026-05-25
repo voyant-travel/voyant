@@ -343,11 +343,12 @@ export const personTravelSnapshotSchema = z.object({
   dateOfBirth: z.string().nullable(),
   dietaryRequirements: z.string().nullable(),
   accessibilityNeeds: z.string().nullable(),
-  passportNumber: z.string().nullable(),
-  passportExpiry: z.string().nullable(),
-  passportIssuingCountry: z.string().nullable(),
-  passportIssuingAuthority: z.string().nullable(),
-  passportPersonDocumentId: z.string().nullable(),
+  documentType: z.enum(["passport", "id_card", "driver_license", "visa", "other"]).nullable(),
+  documentNumber: z.string().nullable(),
+  documentExpiry: z.string().nullable(),
+  documentIssuingCountry: z.string().nullable(),
+  documentIssuingAuthority: z.string().nullable(),
+  documentPersonDocumentId: z.string().nullable(),
 })
 
 export type PersonTravelSnapshotRecord = z.infer<typeof personTravelSnapshotSchema>

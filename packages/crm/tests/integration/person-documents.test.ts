@@ -97,7 +97,7 @@ describe.skipIf(!DB_AVAILABLE)("personDocumentsService", () => {
       type: "id_card",
       isPrimary: true,
     })
-    // Existing primary passport that we'll re-type to id_card without
+    // Existing primary document that we'll re-type to id_card without
     // touching `isPrimary`. Without the fix this hits the partial
     // unique index and fails with a DB error.
     const passport = await personDocumentsService.createPersonDocument(db, person.id, {
@@ -194,7 +194,7 @@ describe.skipIf(!DB_AVAILABLE)("personDocumentsService", () => {
     expect(types).not.toContain("visa")
   })
 
-  it("loadPersonTravelSnapshot decrypts blobs + primary passport", async () => {
+  it("loadPersonTravelSnapshot decrypts blobs + primary document", async () => {
     const kms = new EnvKmsProvider({ key: generateEnvKmsKey() })
     const person = await seedPerson({ dateOfBirth: "1990-04-15" })
 
@@ -226,18 +226,19 @@ describe.skipIf(!DB_AVAILABLE)("personDocumentsService", () => {
       expiryDate: "2030-01-01",
       numberEncrypted,
     })
-    if (!created) throw new Error("expected primary passport")
+    if (!created) throw new Error("expected primary document")
 
     const snapshot = await personDocumentsService.loadPersonTravelSnapshot(db, person.id, { kms })
     expect(snapshot).toEqual({
       dateOfBirth: "1990-04-15",
       dietaryRequirements: "Vegan",
       accessibilityNeeds: "Step-free access",
-      passportNumber: "AA123456",
-      passportExpiry: "2030-01-01",
-      passportIssuingCountry: "RO",
-      passportIssuingAuthority: "IGI",
-      passportPersonDocumentId: created.id,
+      documentType: "passport",
+      documentNumber: "AA123456",
+      documentExpiry: "2030-01-01",
+      documentIssuingCountry: "RO",
+      documentIssuingAuthority: "IGI",
+      documentPersonDocumentId: created.id,
     })
 
     // Sanity: no plaintext leaks into storage.
@@ -249,6 +250,36 @@ describe.skipIf(!DB_AVAILABLE)("personDocumentsService", () => {
     expect(stored?.numberEncrypted?.enc).not.toContain("AA123456")
   })
 
+  it("loadPersonTravelSnapshot can snapshot a non-passport primary document", async () => {
+    const kms = new EnvKmsProvider({ key: generateEnvKmsKey() })
+    const person = await seedPerson()
+    const numberEncrypted = await encryptOptionalJsonEnvelope(
+      kms,
+      { keyType: "people" },
+      personDocumentNumberPlaintextSchema.parse({ number: "ID-123" }),
+    )
+    const created = await personDocumentsService.createPersonDocument(db, person.id, {
+      type: "id_card",
+      isPrimary: true,
+      issuingCountry: "RO",
+      issuingAuthority: "DEPABD",
+      expiryDate: "2031-05-01",
+      numberEncrypted,
+    })
+    if (!created) throw new Error("expected primary id card")
+
+    const snapshot = await personDocumentsService.loadPersonTravelSnapshot(db, person.id, { kms })
+
+    expect(snapshot).toMatchObject({
+      documentType: "id_card",
+      documentNumber: "ID-123",
+      documentExpiry: "2031-05-01",
+      documentIssuingCountry: "RO",
+      documentIssuingAuthority: "DEPABD",
+      documentPersonDocumentId: created.id,
+    })
+  })
+
   it("loadPersonTravelSnapshot returns null for unknown person", async () => {
     const kms = new EnvKmsProvider({ key: generateEnvKmsKey() })
     const result = await personDocumentsService.loadPersonTravelSnapshot(db, "pers_missing", {
@@ -257,7 +288,7 @@ describe.skipIf(!DB_AVAILABLE)("personDocumentsService", () => {
     expect(result).toBeNull()
   })
 
-  it("loadPersonTravelSnapshot returns nulls when no primary passport / blobs are set", async () => {
+  it("loadPersonTravelSnapshot returns nulls when no primary document / blobs are set", async () => {
     const kms = new EnvKmsProvider({ key: generateEnvKmsKey() })
     const person = await seedPerson({ dateOfBirth: "1985-12-01" })
     const snapshot = await personDocumentsService.loadPersonTravelSnapshot(db, person.id, { kms })
@@ -265,11 +296,12 @@ describe.skipIf(!DB_AVAILABLE)("personDocumentsService", () => {
       dateOfBirth: "1985-12-01",
       dietaryRequirements: null,
       accessibilityNeeds: null,
-      passportNumber: null,
-      passportExpiry: null,
-      passportIssuingCountry: null,
-      passportIssuingAuthority: null,
-      passportPersonDocumentId: null,
+      documentType: null,
+      documentNumber: null,
+      documentExpiry: null,
+      documentIssuingCountry: null,
+      documentIssuingAuthority: null,
+      documentPersonDocumentId: null,
     })
   })
 })

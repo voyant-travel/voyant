@@ -107,25 +107,27 @@ export type BookingsUiMessages = {
       phone: string
       specialRequests: string
       travelDetailsHeading: string
-      passportNumber: string
-      passportExpiry: string
-      passportIssuingCountry: string
-      passportIssuingAuthority: string
+      documentType: string
+      documentNumber: string
+      documentExpiry: string
+      documentIssuingCountry: string
+      documentIssuingAuthority: string
       dateOfBirth: string
       dietaryRequirements: string
       accessibilityNeeds: string
       linkedPerson: string
     }
+    documentTypeLabels: Record<"passport" | "id_card" | "driver_license" | "visa" | "other", string>
     placeholders: {
       firstName: string
       lastName: string
       email: string
       phone: string
       specialRequests: string
-      passportNumber: string
-      passportExpiry: string
-      passportIssuingCountry: string
-      passportIssuingAuthority: string
+      documentNumber: string
+      documentExpiry: string
+      documentIssuingCountry: string
+      documentIssuingAuthority: string
       dateOfBirth: string
       dietaryRequirements: string
       accessibilityNeeds: string
@@ -169,8 +171,8 @@ export type BookingsUiMessages = {
     }
     context: {
       nationality: string
-      passport: string
-      passportExpiry: string
+      document: string
+      documentExpiry: string
       language: string
       dietary: string
       accessibility: string

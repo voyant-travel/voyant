@@ -22,16 +22,23 @@ import {
   DialogTitle,
   Input,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Textarea,
 } from "@voyantjs/ui/components"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2, Sparkles, Upload } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+
+const identityDocumentTypes = ["passport", "id_card", "driver_license", "visa", "other"] as const
 
 function createTravelerFormSchema(messages: ReturnType<typeof useBookingsUiMessagesOrDefault>) {
   return z.object({
@@ -40,10 +47,11 @@ function createTravelerFormSchema(messages: ReturnType<typeof useBookingsUiMessa
     email: z.string().email().optional().or(z.literal("")).nullable(),
     phone: z.string().optional().nullable(),
     specialRequests: z.string().optional().nullable(),
-    passportNumber: z.string().optional().nullable(),
-    passportExpiry: z.string().optional().nullable(),
-    passportIssuingCountry: z.string().optional().nullable(),
-    passportIssuingAuthority: z.string().optional().nullable(),
+    documentType: z.enum(identityDocumentTypes).default("passport"),
+    documentNumber: z.string().optional().nullable(),
+    documentExpiry: z.string().optional().nullable(),
+    documentIssuingCountry: z.string().optional().nullable(),
+    documentIssuingAuthority: z.string().optional().nullable(),
     dateOfBirth: z.string().optional().nullable(),
     dietaryRequirements: z.string().optional().nullable(),
     accessibilityNeeds: z.string().optional().nullable(),
@@ -54,10 +62,11 @@ type TravelerFormValues = z.input<ReturnType<typeof createTravelerFormSchema>>
 type TravelerFormOutput = z.output<ReturnType<typeof createTravelerFormSchema>>
 
 const EMPTY_PII_FORM = {
-  passportNumber: "",
-  passportExpiry: "",
-  passportIssuingCountry: "",
-  passportIssuingAuthority: "",
+  documentType: "passport" as const,
+  documentNumber: "",
+  documentExpiry: "",
+  documentIssuingCountry: "",
+  documentIssuingAuthority: "",
   dateOfBirth: "",
   dietaryRequirements: "",
   accessibilityNeeds: "",
@@ -99,10 +108,6 @@ export function TravelerDialog({
 
   const snapshot = snapshotQuery.data?.data ?? null
   const revealedTravelDetails = reveal.data?.data.travelDetails ?? null
-  const primaryPassport = useMemo(
-    () => documentsQuery.data?.data.find((row) => row.type === "passport" && row.isPrimary) ?? null,
-    [documentsQuery.data],
-  )
 
   const form = useForm<TravelerFormValues, unknown, TravelerFormOutput>({
     resolver: zodResolver(travelerFormSchema),
@@ -130,10 +135,11 @@ export function TravelerDialog({
         email: traveler.email ?? "",
         phone: traveler.phone ?? "",
         specialRequests: traveler.specialRequests ?? "",
-        passportNumber: revealedTravelDetails?.passportNumber ?? "",
-        passportExpiry: revealedTravelDetails?.passportExpiry ?? "",
-        passportIssuingCountry: revealedTravelDetails?.passportIssuingCountry ?? "",
-        passportIssuingAuthority: revealedTravelDetails?.passportIssuingAuthority ?? "",
+        documentType: revealedTravelDetails?.documentType ?? "passport",
+        documentNumber: revealedTravelDetails?.documentNumber ?? "",
+        documentExpiry: revealedTravelDetails?.documentExpiry ?? "",
+        documentIssuingCountry: revealedTravelDetails?.documentIssuingCountry ?? "",
+        documentIssuingAuthority: revealedTravelDetails?.documentIssuingAuthority ?? "",
         dateOfBirth: revealedTravelDetails?.dateOfBirth ?? "",
         dietaryRequirements: revealedTravelDetails?.dietaryRequirements ?? "",
         accessibilityNeeds: revealedTravelDetails?.accessibilityNeeds ?? "",
@@ -152,10 +158,11 @@ export function TravelerDialog({
 
   const prefillFromProfile = () => {
     if (!snapshot) return
-    form.setValue("passportNumber", snapshot.passportNumber ?? "")
-    form.setValue("passportExpiry", snapshot.passportExpiry ?? "")
-    form.setValue("passportIssuingCountry", snapshot.passportIssuingCountry ?? "")
-    form.setValue("passportIssuingAuthority", snapshot.passportIssuingAuthority ?? "")
+    form.setValue("documentType", snapshot.documentType ?? "passport")
+    form.setValue("documentNumber", snapshot.documentNumber ?? "")
+    form.setValue("documentExpiry", snapshot.documentExpiry ?? "")
+    form.setValue("documentIssuingCountry", snapshot.documentIssuingCountry ?? "")
+    form.setValue("documentIssuingAuthority", snapshot.documentIssuingAuthority ?? "")
     form.setValue("dateOfBirth", snapshot.dateOfBirth ?? "")
     form.setValue("dietaryRequirements", snapshot.dietaryRequirements ?? "")
     form.setValue("accessibilityNeeds", snapshot.accessibilityNeeds ?? "")
@@ -178,10 +185,11 @@ export function TravelerDialog({
       specialRequests: values.specialRequests || null,
       isPrimary: traveler?.isPrimary ?? false,
       participantType: "traveler",
-      passportNumber: trimOrNull(values.passportNumber),
-      passportExpiry: trimOrNull(values.passportExpiry),
-      passportIssuingCountry: trimOrNull(values.passportIssuingCountry),
-      passportIssuingAuthority: trimOrNull(values.passportIssuingAuthority),
+      documentType: values.documentType,
+      documentNumber: trimOrNull(values.documentNumber),
+      documentExpiry: trimOrNull(values.documentExpiry),
+      documentIssuingCountry: trimOrNull(values.documentIssuingCountry),
+      documentIssuingAuthority: trimOrNull(values.documentIssuingAuthority),
       dateOfBirth: trimOrNull(values.dateOfBirth),
       dietaryRequirements: trimOrNull(values.dietaryRequirements),
       accessibilityNeeds: trimOrNull(values.accessibilityNeeds),
@@ -198,11 +206,11 @@ export function TravelerDialog({
   }
 
   /**
-   * Pushes diverging dietary / accessibility / passport values from
+   * Pushes diverging dietary / accessibility / document values from
    * the form back to the linked person record. Dietary + accessibility
-   * land on `crm.people` via the profile-pii endpoint. Passport
-   * diffs update the existing primary passport if there is one,
-   * otherwise create a new primary passport doc.
+   * land on `crm.people` via the profile-pii endpoint. Document
+   * diffs update the existing primary document of the selected type if
+   * there is one, otherwise create a new primary document.
    */
   const saveBackToProfile = async () => {
     if (!personId) return
@@ -214,10 +222,11 @@ export function TravelerDialog({
     }
     const formDietary = trim(values.dietaryRequirements)
     const formAccessibility = trim(values.accessibilityNeeds)
-    const formPassportNumber = trim(values.passportNumber)
-    const formPassportExpiry = trim(values.passportExpiry)
-    const formPassportCountry = trim(values.passportIssuingCountry)
-    const formPassportAuthority = trim(values.passportIssuingAuthority)
+    const formDocumentType = values.documentType ?? "passport"
+    const formDocumentNumber = trim(values.documentNumber)
+    const formDocumentExpiry = trim(values.documentExpiry)
+    const formDocumentCountry = trim(values.documentIssuingCountry)
+    const formDocumentAuthority = trim(values.documentIssuingAuthority)
 
     const piiUpdate: Record<string, string | null> = {}
     if (formDietary !== (snapshot?.dietaryRequirements ?? null)) {
@@ -230,27 +239,31 @@ export function TravelerDialog({
       await personMutation.updateProfilePii.mutateAsync({ personId, input: piiUpdate })
     }
 
-    const passportDiverged =
-      formPassportNumber !== (snapshot?.passportNumber ?? null) ||
-      formPassportExpiry !== (snapshot?.passportExpiry ?? null) ||
-      formPassportCountry !== (snapshot?.passportIssuingCountry ?? null) ||
-      formPassportAuthority !== (snapshot?.passportIssuingAuthority ?? null)
-    if (passportDiverged) {
-      const passportPayload: CreatePersonDocumentFromPlaintextInput = {
-        type: "passport",
-        number: formPassportNumber,
-        issuingCountry: formPassportCountry,
-        issuingAuthority: formPassportAuthority,
-        expiryDate: formPassportExpiry,
+    const documentDiverged =
+      formDocumentType !== (snapshot?.documentType ?? "passport") ||
+      formDocumentNumber !== (snapshot?.documentNumber ?? null) ||
+      formDocumentExpiry !== (snapshot?.documentExpiry ?? null) ||
+      formDocumentCountry !== (snapshot?.documentIssuingCountry ?? null) ||
+      formDocumentAuthority !== (snapshot?.documentIssuingAuthority ?? null)
+    if (documentDiverged) {
+      const documentPayload: CreatePersonDocumentFromPlaintextInput = {
+        type: formDocumentType,
+        number: formDocumentNumber,
+        issuingCountry: formDocumentCountry,
+        issuingAuthority: formDocumentAuthority,
+        expiryDate: formDocumentExpiry,
         isPrimary: true,
       }
-      if (primaryPassport) {
+      const primaryDocument =
+        documentsQuery.data?.data.find((row) => row.type === formDocumentType && row.isPrimary) ??
+        null
+      if (primaryDocument) {
         await documentMutation.updateFromPlaintext.mutateAsync({
-          id: primaryPassport.id,
-          input: passportPayload,
+          id: primaryDocument.id,
+          input: documentPayload,
         })
       } else {
-        await documentMutation.createFromPlaintext.mutateAsync(passportPayload)
+        await documentMutation.createFromPlaintext.mutateAsync(documentPayload)
       }
     }
 
@@ -271,10 +284,11 @@ export function TravelerDialog({
     [
       ["dietaryRequirements", "dietaryRequirements"],
       ["accessibilityNeeds", "accessibilityNeeds"],
-      ["passportNumber", "passportNumber"],
-      ["passportExpiry", "passportExpiry"],
-      ["passportIssuingCountry", "passportIssuingCountry"],
-      ["passportIssuingAuthority", "passportIssuingAuthority"],
+      ["documentType", "documentType"],
+      ["documentNumber", "documentNumber"],
+      ["documentExpiry", "documentExpiry"],
+      ["documentIssuingCountry", "documentIssuingCountry"],
+      ["documentIssuingAuthority", "documentIssuingAuthority"],
     ].some(([formKey, snapKey]) => {
       const formValue = (watched as Record<string, unknown>)[formKey as string] ?? ""
       const snapValue = (snapshot as Record<string, unknown>)[snapKey as string] ?? ""
@@ -375,40 +389,67 @@ export function TravelerDialog({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
-                  <Label>{messages.travelerDialog.fields.passportNumber}</Label>
+                  <Label>{messages.travelerDialog.fields.documentType}</Label>
+                  <Select
+                    value={form.watch("documentType") ?? "passport"}
+                    onValueChange={(nextValue) =>
+                      form.setValue(
+                        "documentType",
+                        nextValue as (typeof identityDocumentTypes)[number],
+                        {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        },
+                      )
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {identityDocumentTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {messages.travelerDialog.documentTypeLabels[type]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label>{messages.travelerDialog.fields.documentNumber}</Label>
                   <Input
-                    {...form.register("passportNumber")}
-                    placeholder={messages.travelerDialog.placeholders.passportNumber}
+                    {...form.register("documentNumber")}
+                    placeholder={messages.travelerDialog.placeholders.documentNumber}
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label>{messages.travelerDialog.fields.passportExpiry}</Label>
+                  <Label>{messages.travelerDialog.fields.documentExpiry}</Label>
                   <DatePicker
-                    value={form.watch("passportExpiry") || null}
+                    value={form.watch("documentExpiry") || null}
                     onChange={(nextValue) =>
-                      form.setValue("passportExpiry", nextValue ?? "", {
+                      form.setValue("documentExpiry", nextValue ?? "", {
                         shouldDirty: true,
                         shouldValidate: true,
                       })
                     }
-                    placeholder={messages.travelerDialog.placeholders.passportExpiry}
+                    placeholder={messages.travelerDialog.placeholders.documentExpiry}
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
-                  <Label>{messages.travelerDialog.fields.passportIssuingCountry}</Label>
+                  <Label>{messages.travelerDialog.fields.documentIssuingCountry}</Label>
                   <Input
-                    {...form.register("passportIssuingCountry")}
-                    placeholder={messages.travelerDialog.placeholders.passportIssuingCountry}
+                    {...form.register("documentIssuingCountry")}
+                    placeholder={messages.travelerDialog.placeholders.documentIssuingCountry}
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label>{messages.travelerDialog.fields.passportIssuingAuthority}</Label>
+                  <Label>{messages.travelerDialog.fields.documentIssuingAuthority}</Label>
                   <Input
-                    {...form.register("passportIssuingAuthority")}
-                    placeholder={messages.travelerDialog.placeholders.passportIssuingAuthority}
+                    {...form.register("documentIssuingAuthority")}
+                    placeholder={messages.travelerDialog.placeholders.documentIssuingAuthority}
                   />
                 </div>
               </div>

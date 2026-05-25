@@ -17,12 +17,20 @@ function makeFakePii(): { service: BookingPiiService; calls: FakePiiCall[] } {
       return {
         travelerId,
         nationality: input.nationality ?? null,
-        passportNumber: input.passportNumber ?? null,
-        passportExpiry: input.passportExpiry ?? null,
+        documentType: input.documentType ?? null,
+        documentNumber: input.documentNumber ?? null,
+        documentExpiry: input.documentExpiry ?? null,
+        documentIssuingCountry: input.documentIssuingCountry ?? null,
+        documentIssuingAuthority: input.documentIssuingAuthority ?? null,
+        documentPersonDocumentId: input.documentPersonDocumentId ?? null,
         dateOfBirth: input.dateOfBirth ?? null,
         dietaryRequirements: input.dietaryRequirements ?? null,
         accessibilityNeeds: input.accessibilityNeeds ?? null,
         isLeadTraveler: input.isLeadTraveler ?? false,
+        sharingGroupId: input.sharingGroupId ?? null,
+        roomTypeId: input.roomTypeId ?? null,
+        bedPreference: input.bedPreference ?? null,
+        allocations: input.allocations ?? {},
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -78,7 +86,7 @@ describe("bookingsService.createTravelerWithTravelDetails", () => {
         email: "ana@example.com",
         phone: "+40700000001",
         nationality: "RO",
-        passportNumber: "ABC123",
+        documentNumber: "ABC123",
         accessibilityNeeds: "wheelchair access",
         isLeadTraveler: true,
       },
@@ -105,18 +113,26 @@ describe("bookingsService.createTravelerWithTravelDetails", () => {
       travelerId: fakeRow.id,
       input: {
         nationality: "RO",
-        passportNumber: "ABC123",
-        passportExpiry: undefined,
+        documentType: undefined,
+        documentNumber: "ABC123",
+        documentExpiry: undefined,
+        documentIssuingCountry: undefined,
+        documentIssuingAuthority: undefined,
+        documentPersonDocumentId: undefined,
         dateOfBirth: undefined,
         dietaryRequirements: undefined,
         accessibilityNeeds: "wheelchair access",
         isLeadTraveler: true,
+        sharingGroupId: undefined,
+        roomTypeId: undefined,
+        bedPreference: undefined,
+        allocations: undefined,
       },
       actorId: "u_1",
     })
 
     expect(result?.traveler).toEqual(fakeRow)
-    expect(result?.travelDetails?.passportNumber).toBe("ABC123")
+    expect(result?.travelDetails?.documentNumber).toBe("ABC123")
     expect(result?.travelDetails?.accessibilityNeeds).toBe("wheelchair access")
   })
 
@@ -153,12 +169,20 @@ describe("bookingsService.createTravelerWithTravelDetails", () => {
     expect(calls).toHaveLength(1)
     expect(calls[0]?.input).toEqual({
       nationality: undefined,
-      passportNumber: undefined,
-      passportExpiry: undefined,
+      documentType: undefined,
+      documentNumber: undefined,
+      documentExpiry: undefined,
+      documentIssuingCountry: undefined,
+      documentIssuingAuthority: undefined,
+      documentPersonDocumentId: undefined,
       dateOfBirth: undefined,
       dietaryRequirements: undefined,
       accessibilityNeeds: undefined,
       isLeadTraveler: undefined,
+      sharingGroupId: undefined,
+      roomTypeId: undefined,
+      bedPreference: undefined,
+      allocations: undefined,
     })
   })
 })
@@ -182,7 +206,7 @@ describe("bookingsService.updateTravelerWithTravelDetails", () => {
     const result = await bookingsService.updateTravelerWithTravelDetails(
       {} as never,
       "bkps_01HZA0000000000000000002",
-      { firstName: "Renamed", passportNumber: "NEW-12345" },
+      { firstName: "Renamed", documentNumber: "NEW-12345" },
       { pii, actorId: "u_42" },
     )
 
@@ -192,7 +216,7 @@ describe("bookingsService.updateTravelerWithTravelDetails", () => {
     expect(updateArgs?.[2]).toMatchObject({
       firstName: "Renamed",
     })
-    expect(updateArgs?.[2]).not.toHaveProperty("passportNumber")
+    expect(updateArgs?.[2]).not.toHaveProperty("documentNumber")
     expect(updateArgs?.[2]).not.toHaveProperty("nationality")
 
     expect(calls).toHaveLength(1)
@@ -200,18 +224,26 @@ describe("bookingsService.updateTravelerWithTravelDetails", () => {
       travelerId: fakeRow.id,
       input: {
         nationality: undefined,
-        passportNumber: "NEW-12345",
-        passportExpiry: undefined,
+        documentType: undefined,
+        documentNumber: "NEW-12345",
+        documentExpiry: undefined,
+        documentIssuingCountry: undefined,
+        documentIssuingAuthority: undefined,
+        documentPersonDocumentId: undefined,
         dateOfBirth: undefined,
         dietaryRequirements: undefined,
         accessibilityNeeds: undefined,
         isLeadTraveler: undefined,
+        sharingGroupId: undefined,
+        roomTypeId: undefined,
+        bedPreference: undefined,
+        allocations: undefined,
       },
       actorId: "u_42",
     })
 
     expect(result?.traveler).toEqual(fakeRow)
-    expect(result?.travelDetails?.passportNumber).toBe("NEW-12345")
+    expect(result?.travelDetails?.documentNumber).toBe("NEW-12345")
   })
 
   it("preserves undefined-vs-null distinction for encrypted fields (undefined → preserve, null → clear)", async () => {
@@ -224,18 +256,26 @@ describe("bookingsService.updateTravelerWithTravelDetails", () => {
     await bookingsService.updateTravelerWithTravelDetails(
       {} as never,
       "bkps_x",
-      { passportNumber: null }, // explicit clear
+      { documentNumber: null }, // explicit clear
       { pii },
     )
 
     expect(calls[0]?.input).toEqual({
       nationality: undefined, // preserve existing
-      passportNumber: null, // clear
-      passportExpiry: undefined,
+      documentType: undefined,
+      documentNumber: null, // clear
+      documentExpiry: undefined,
+      documentIssuingCountry: undefined,
+      documentIssuingAuthority: undefined,
+      documentPersonDocumentId: undefined,
       dateOfBirth: undefined,
       dietaryRequirements: undefined,
       accessibilityNeeds: undefined,
       isLeadTraveler: undefined,
+      sharingGroupId: undefined,
+      roomTypeId: undefined,
+      bedPreference: undefined,
+      allocations: undefined,
     })
   })
 

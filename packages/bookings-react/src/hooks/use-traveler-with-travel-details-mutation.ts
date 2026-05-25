@@ -29,11 +29,12 @@ export interface CreateTravelerWithTravelDetailsInput {
   notes?: string | null
   // Encrypted travel-details (plaintext on the wire; the route encrypts).
   nationality?: string | null
-  passportNumber?: string | null
-  passportExpiry?: string | null
-  passportIssuingCountry?: string | null
-  passportIssuingAuthority?: string | null
-  passportPersonDocumentId?: string | null
+  documentType?: "passport" | "id_card" | "driver_license" | "visa" | "other" | null
+  documentNumber?: string | null
+  documentExpiry?: string | null
+  documentIssuingCountry?: string | null
+  documentIssuingAuthority?: string | null
+  documentPersonDocumentId?: string | null
   dateOfBirth?: string | null
   dietaryRequirements?: string | null
   accessibilityNeeds?: string | null

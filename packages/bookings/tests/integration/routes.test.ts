@@ -2797,7 +2797,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
           method: "PATCH",
           ...json({
             nationality: "RO",
-            passportNumber: "X1234567",
+            documentNumber: "X1234567",
             dietaryRequirements: "vegetarian",
             isLeadTraveler: true,
             sharingGroupId: "share_route_1",
@@ -2809,7 +2809,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       )
 
       expect(patchRes.status).toBe(200)
-      expect((await patchRes.json()).data.passportNumber).toBe("X1234567")
+      expect((await patchRes.json()).data.documentNumber).toBe("X1234567")
 
       const [stored] = await db
         .select()
@@ -2924,7 +2924,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       await app.request(`/${booking.id}/travelers/${participant.id}/travel-details`, {
         method: "PATCH",
         ...json({
-          passportNumber: "AB12345",
+          documentNumber: "AB12345",
           dietaryRequirements: "vegan",
         }),
       })
@@ -2941,7 +2941,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
 
       expect(patchRes.status).toBe(200)
       const body = await patchRes.json()
-      expect(body.data.passportNumber).toBe("AB12345")
+      expect(body.data.documentNumber).toBe("AB12345")
       expect(body.data.dietaryRequirements).toBe("gluten-free")
     })
 
@@ -2956,7 +2956,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       await app.request(`/${booking.id}/travelers/${participant.id}/travel-details`, {
         method: "PATCH",
         ...json({
-          passportNumber: "SECRET123",
+          documentNumber: "SECRET123",
           dateOfBirth: "1991-04-03",
         }),
       })
@@ -2965,7 +2965,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       expect(listRes.status).toBe(200)
       const body = await listRes.json()
 
-      expect(body.data[0]).not.toHaveProperty("passportNumber")
+      expect(body.data[0]).not.toHaveProperty("documentNumber")
       expect(body.data[0]).not.toHaveProperty("dateOfBirth")
       expect(body.data[0]).not.toHaveProperty("dietaryRequirements")
     })
@@ -2996,7 +2996,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
 
       await app.request(`/${booking.id}/travelers/${participant.id}/travel-details`, {
         method: "PATCH",
-        ...json({ passportNumber: "AUDIT-1" }),
+        ...json({ documentNumber: "AUDIT-1" }),
       })
 
       const readRes = await app.request(
@@ -3048,7 +3048,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
           (row) =>
             row.reasonCode === "travel_details_reveal" &&
             row.decisionPolicy === "bookings-pii-scope-or-staff-v1" &&
-            row.disclosedFieldSet?.includes("passportNumber"),
+            row.disclosedFieldSet?.includes("documentNumber"),
         ),
       ).toBe(true)
     })
@@ -3072,7 +3072,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         `/${booking.id}/travelers/${participant.id}/travel-details`,
         {
           method: "PATCH",
-          ...json({ passportNumber: "LEDGER-SECRET" }),
+          ...json({ documentNumber: "LEDGER-SECRET" }),
         },
       )
       expect(travelDetailRes.status).toBe(200)
@@ -3118,7 +3118,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
             row.actionName === "booking.traveler_travel_details.update" &&
             row.actionKind === "update" &&
             detailByActionId.get(row.id) ===
-              "Updated booking traveler travel details fields: passportNumber",
+              "Updated booking traveler travel details fields: documentNumber",
         ),
       ).toBe(true)
       expect(
@@ -3143,7 +3143,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
 
       await app.request(`/${booking.id}/travelers/${participant.id}/travel-details`, {
         method: "PATCH",
-        ...json({ passportNumber: "SCOPED-1" }),
+        ...json({ documentNumber: "SCOPED-1" }),
       })
 
       const scopedApp = new Hono()

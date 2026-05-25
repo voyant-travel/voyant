@@ -30,7 +30,7 @@ describe.skipIf(!DB_AVAILABLE)(
           identity_encrypted jsonb,
           dietary_encrypted jsonb,
           accessibility_encrypted jsonb,
-          passport_person_document_id text,
+          document_person_document_id text,
           is_lead_traveler boolean DEFAULT false NOT NULL,
           sharing_group_id text,
           room_type_id text,
