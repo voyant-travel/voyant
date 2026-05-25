@@ -198,6 +198,21 @@ export function resolveBookingDraft<TTraveler extends BookingDraftTraveler>(opti
       roleHintForTraveler(traveler),
     )
 
+  const assignNextDemandUnit = (traveler: TTraveler): TTraveler => {
+    const key = pickOptionWithDemand()
+    if (!key)
+      return { ...traveler, roomUnitId: null, roomUnitAssignmentSource: "auto" } as TTraveler
+    const unit = resolveUnitForTraveler(traveler, key)
+    if (!unit)
+      return { ...traveler, roomUnitId: null, roomUnitAssignmentSource: "auto" } as TTraveler
+    assignedForDefaulting.set(key, (assignedForDefaulting.get(key) ?? 0) + 1)
+    return {
+      ...traveler,
+      roomUnitId: unit.optionUnitId,
+      roomUnitAssignmentSource: "auto",
+    } as TTraveler
+  }
+
   const nextTravelers = travelers.map((traveler) => {
     const source = traveler.roomUnitAssignmentSource ?? "auto"
     if (source === "none") {
@@ -217,18 +232,7 @@ export function resolveBookingDraft<TTraveler extends BookingDraftTraveler>(opti
         : traveler
     }
 
-    if (source === "manual") return traveler
-
-    const key = pickOptionWithDemand()
-    if (!key) return traveler
-    const unit = resolveUnitForTraveler(traveler, key)
-    if (!unit) return traveler
-    assignedForDefaulting.set(key, (assignedForDefaulting.get(key) ?? 0) + 1)
-    return {
-      ...traveler,
-      roomUnitId: unit.optionUnitId,
-      roomUnitAssignmentSource: "auto",
-    } as TTraveler
+    return assignNextDemandUnit(traveler)
   })
 
   const next: BookingDraftQuantities = {}

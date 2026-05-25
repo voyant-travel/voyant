@@ -123,6 +123,43 @@ describe("resolveBookingDraft", () => {
     expect(result.travelers[0]?.roomUnitId).toBe("u_adult")
   })
 
+  it("re-resolves stale manual person unit assignments against the current unit set", () => {
+    const result = resolveBookingDraft({
+      quantities: { next_adult: 1 },
+      units: [
+        unit({
+          optionId: "opto_next_day_tour",
+          optionUnitId: "next_adult",
+          unitCode: "adult",
+          unitName: "Adult",
+          minAge: 13,
+        }),
+        unit({
+          optionId: "opto_next_day_tour",
+          optionUnitId: "next_child",
+          unitCode: "child",
+          unitName: "Child",
+          minAge: 6,
+          maxAge: 12,
+        }),
+      ],
+      travelers: [
+        traveler({
+          role: "child",
+          dateOfBirth: "2017-06-01",
+          roomUnitId: "previous_child",
+          roomUnitAssignmentSource: "manual",
+        }),
+      ],
+      now: NOW,
+    })
+
+    expect(result.quantities).toEqual({ next_child: 1 })
+    expect(result.travelers[0]?.roomUnitId).toBe("next_child")
+    expect(result.travelers[0]?.roomUnitAssignmentSource).toBe("auto")
+    expect(travelersToRows({ travelers: result.travelers }, NOW)[0]?.roomUnitId).toBe("next_child")
+  })
+
   it("keeps accommodation quantities as room quantities instead of traveler counts", () => {
     const result = resolveBookingDraft({
       quantities: { u_double_room: 1 },
@@ -145,6 +182,35 @@ describe("resolveBookingDraft", () => {
     expect(result.quantities).toEqual({ u_double_room: 1 })
     expect(result.travelers.map((t) => t.roomUnitId)).toEqual(["u_double_room", "u_double_room"])
     expect(result.travelerIndexesByUnitId).toEqual({ u_double_room: [0, 1] })
+  })
+
+  it("reassigns stale manual room assignments to the current selected room", () => {
+    const result = resolveBookingDraft({
+      quantities: { u_next_double_room: 1 },
+      units: [
+        unit({
+          optionId: "opto_next_double",
+          optionUnitId: "u_next_double_room",
+          unitName: "Next double room",
+          unitCode: "DBL",
+          unitType: "room",
+        }),
+      ],
+      travelers: [
+        traveler({
+          role: "lead",
+          dateOfBirth: "1988-01-01",
+          roomUnitId: "u_previous_double_room",
+          roomUnitAssignmentSource: "manual",
+        }),
+      ],
+      now: NOW,
+    })
+
+    expect(result.quantities).toEqual({ u_next_double_room: 1 })
+    expect(result.travelers[0]?.roomUnitId).toBe("u_next_double_room")
+    expect(result.travelers[0]?.roomUnitAssignmentSource).toBe("auto")
+    expect(result.travelerIndexesByUnitId).toEqual({ u_next_double_room: [0] })
   })
 
   it("preserves explicit No room assignments", () => {
