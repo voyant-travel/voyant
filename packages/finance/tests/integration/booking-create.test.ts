@@ -161,6 +161,61 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     return { productId, optionId, unitId, childUnitId, infantUnitId }
   }
 
+  async function seedAccommodationProduct() {
+    productSeq += 1
+    const productId = `prod_bc_accom_${productSeq}`
+    const optionId = `popt_bc_accom_${productSeq}`
+    const roomUnitId = `opun_bc_accom_${productSeq}_dbl`
+    const adultUnitId = `opun_bc_accom_${productSeq}_adult`
+    const itineraryId = `piti_bc_accom_${productSeq}`
+    await db.execute(sql`
+      INSERT INTO products (id, name, sell_currency, sell_amount_cents, cost_amount_cents, margin_percent, start_date, end_date, pax)
+      VALUES (
+        ${productId},
+        ${`Accommodation Product ${productSeq}`},
+        'EUR',
+        50000,
+        30000,
+        40,
+        '2026-07-01',
+        '2026-07-03',
+        2
+      )
+    `)
+    await db.execute(sql`
+      INSERT INTO product_options (id, product_id, name, status, is_default, sort_order)
+      VALUES (${optionId}, ${productId}, 'DBL', 'active', true, 0)
+    `)
+    await db.execute(sql`
+      INSERT INTO option_units (
+        id,
+        option_id,
+        name,
+        code,
+        unit_type,
+        min_age,
+        occupancy_min,
+        occupancy_max,
+        is_required,
+        min_quantity,
+        sort_order
+      )
+      VALUES
+        (${roomUnitId}, ${optionId}, 'DBL room', 'dbl_room', 'room', null, 1, 2, true, 1, 0),
+        (${adultUnitId}, ${optionId}, 'Adult', 'adult', 'person', 18, null, null, true, 1, 1)
+    `)
+    await db.execute(sql`
+      INSERT INTO product_itineraries (id, product_id, name, is_default, sort_order)
+      VALUES (${itineraryId}, ${productId}, 'Default', true, 0)
+    `)
+    await db.execute(sql`
+      INSERT INTO product_ticket_settings (id, product_id, fulfillment_mode, default_delivery_format, ticket_per_unit)
+      VALUES (${`ptix_bc_accom_${productSeq}`}, ${productId}, 'per_item', 'qr_code', false)
+    `)
+
+    return { productId, optionId, roomUnitId, adultUnitId }
+  }
+
   async function seedVoucher(
     overrides: {
       code?: string
@@ -665,6 +720,127 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       { item_title: "Adult", traveler_last_name: "Lead" },
       { item_title: "Lunch", traveler_last_name: "Traveler" },
     ])
+  })
+
+  it("creates a multi-day accommodation booking as one room item linked to both travelers", async () => {
+    const { productId, roomUnitId } = await seedAccommodationProduct()
+    const bundledTotalAmountCents = 60_000
+
+    const outcome = await createBooking(db, {
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      catalogSellAmountCents: bundledTotalAmountCents,
+      confirmedSellAmountCents: bundledTotalAmountCents,
+      travelers: [
+        {
+          firstName: "Alice",
+          lastName: "Lead",
+          email: "alice@example.com",
+          participantType: "traveler",
+          travelerCategory: "adult",
+          isPrimary: true,
+        },
+        {
+          firstName: "Bob",
+          lastName: "Companion",
+          participantType: "traveler",
+          travelerCategory: "adult",
+        },
+      ],
+      itemLines: [
+        {
+          clientLineKey: `unit:${roomUnitId}`,
+          optionUnitId: roomUnitId,
+          quantity: 1,
+          title: "DBL room",
+          unitSellAmountCents: bundledTotalAmountCents,
+          totalSellAmountCents: bundledTotalAmountCents,
+          travelerIndexes: [0, 1],
+        },
+      ],
+    })
+
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+    expect(outcome.result.booking.sellAmountCents).toBe(bundledTotalAmountCents)
+
+    const itemRows = await db
+      .select()
+      .from(bookingItems)
+      .where(eq(bookingItems.bookingId, outcome.result.booking.id))
+    expect(itemRows).toHaveLength(1)
+    expect(itemRows[0]).toMatchObject({
+      optionUnitId: roomUnitId,
+      quantity: 1,
+      totalSellAmountCents: bundledTotalAmountCents,
+    })
+
+    const links = await db
+      .select()
+      .from(bookingItemTravelers)
+      .where(eq(bookingItemTravelers.bookingItemId, itemRows[0]!.id))
+    expect(links).toHaveLength(2)
+  })
+
+  it("normalizes legacy adult-keyed accommodation item lines onto the room unit", async () => {
+    const { productId, roomUnitId, adultUnitId } = await seedAccommodationProduct()
+    const bundledTotalAmountCents = 60_000
+
+    const outcome = await createBooking(db, {
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      catalogSellAmountCents: bundledTotalAmountCents,
+      confirmedSellAmountCents: bundledTotalAmountCents,
+      travelers: [
+        {
+          firstName: "Alice",
+          lastName: "Lead",
+          email: "alice@example.com",
+          participantType: "traveler",
+          travelerCategory: "adult",
+          isPrimary: true,
+        },
+        {
+          firstName: "Bob",
+          lastName: "Companion",
+          participantType: "traveler",
+          travelerCategory: "adult",
+        },
+      ],
+      itemLines: [
+        {
+          clientLineKey: `unit:${adultUnitId}`,
+          optionUnitId: adultUnitId,
+          quantity: 1,
+          title: "Adult",
+          unitSellAmountCents: bundledTotalAmountCents,
+          totalSellAmountCents: bundledTotalAmountCents,
+          travelerIndexes: [0, 1],
+        },
+      ],
+    })
+
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+
+    const itemRows = await db
+      .select()
+      .from(bookingItems)
+      .where(eq(bookingItems.bookingId, outcome.result.booking.id))
+    expect(itemRows).toHaveLength(1)
+    expect(itemRows[0]).toMatchObject({
+      optionUnitId: roomUnitId,
+      quantity: 1,
+      totalSellAmountCents: bundledTotalAmountCents,
+    })
+
+    const links = await db
+      .select()
+      .from(bookingItemTravelers)
+      .where(eq(bookingItemTravelers.bookingItemId, itemRows[0]!.id))
+    expect(links).toHaveLength(2)
   })
 
   it("rejects duplicate stable traveler keys", async () => {

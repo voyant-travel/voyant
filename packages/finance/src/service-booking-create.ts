@@ -582,6 +582,51 @@ async function loadProductOptionUnits(
   }))
 }
 
+function isInventoryOptionUnit(unit: PricingAssignmentUnit): boolean {
+  return unit.unitType === "room" || unit.unitType === "vehicle"
+}
+
+function isPersonOptionUnit(unit: PricingAssignmentUnit): boolean {
+  return unit.unitType == null || unit.unitType === "person"
+}
+
+function normalizeAccommodationItemLinesToInventoryUnits(options: {
+  itemLines: NonNullable<BookingCreateInput["itemLines"]> | undefined
+  units: readonly PricingAssignmentUnit[]
+}): NonNullable<BookingCreateInput["itemLines"]> | undefined {
+  if (!options.itemLines?.length || options.units.length === 0) return options.itemLines
+
+  const unitsByOption = new Map<string, PricingAssignmentUnit[]>()
+  const unitById = new Map<string, PricingAssignmentUnit>()
+  const unitToPrimaryInventory = new Map<string, PricingAssignmentUnit>()
+  for (const unit of options.units) {
+    const optionKey = unit.optionId ?? unit.optionUnitId
+    unitById.set(unit.optionUnitId, unit)
+    const optionUnits = unitsByOption.get(optionKey)
+    if (optionUnits) optionUnits.push(unit)
+    else unitsByOption.set(optionKey, [unit])
+  }
+
+  for (const optionUnits of unitsByOption.values()) {
+    const primaryInventory = optionUnits.find(isInventoryOptionUnit)
+    if (!primaryInventory) continue
+    for (const unit of optionUnits) {
+      unitToPrimaryInventory.set(unit.optionUnitId, primaryInventory)
+    }
+  }
+
+  return options.itemLines.map((line) => {
+    const submittedUnit = unitById.get(line.optionUnitId)
+    const targetInventory = unitToPrimaryInventory.get(line.optionUnitId)
+    if (!submittedUnit || !targetInventory) return line
+    if (isInventoryOptionUnit(submittedUnit) || !isPersonOptionUnit(submittedUnit)) return line
+    return {
+      ...line,
+      optionUnitId: targetInventory.optionUnitId,
+    }
+  })
+}
+
 function hasResolverRejectionSignals(input: {
   travelers: NonNullable<BookingCreateInput["travelers"]>
   itemLines: NonNullable<BookingCreateInput["itemLines"]>
@@ -869,6 +914,13 @@ export async function createBooking(
   let result: BookingCreateResult
   try {
     result = await db.transaction(async (tx) => {
+      const productOptionUnits = input.itemLines?.length
+        ? await loadProductOptionUnits(tx, input.productId)
+        : []
+      const normalizedItemLines = normalizeAccommodationItemLinesToInventoryUnits({
+        itemLines: input.itemLines,
+        units: productOptionUnits,
+      })
       // 1. Booking from product
       const booking = await bookingsService.createBookingFromProduct(tx, {
         productId: input.productId,
@@ -894,7 +946,7 @@ export async function createBooking(
         contactCity: input.contactCity ?? null,
         contactAddressLine1: input.contactAddressLine1 ?? null,
         contactPostalCode: input.contactPostalCode ?? null,
-        itemLines: input.itemLines,
+        itemLines: normalizedItemLines,
       })
       if (!booking) {
         // Caller gave us a product that doesn't resolve. Throw so drizzle
@@ -984,14 +1036,14 @@ export async function createBooking(
       // doesn't run them in the orchestrator); we look them up by
       // the `metadata.bookingCreateLineKey` the converter stamped.
       await linkBookingCreateItemsToTravelers(tx, booking.id, travelers, input.travelers ?? [], [
-        ...(input.itemLines ?? []),
+        ...(normalizedItemLines ?? []),
         ...(input.extraLines ?? []),
       ])
 
       // 2c. Re-run the resolver server-side against the submitted
       // itemLines + travelers and reject any client/server drift on
       // per-band quantities. See voyantjs/voyant#1272.
-      await verifyBookingCreatePayload(tx, input)
+      await verifyBookingCreatePayload(tx, { ...input, itemLines: normalizedItemLines })
 
       // 3. Payment schedules
       const paymentSchedules: BookingPaymentSchedule[] = []
