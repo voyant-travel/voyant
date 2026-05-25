@@ -1,8 +1,39 @@
 "use client"
 
 import { useAdminBookingPayments, usePublicBookingPayments } from "@voyantjs/finance-react"
-import { Badge, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
-import { Banknote, CreditCard, Receipt, Ticket, Wallet } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@voyantjs/ui/components"
+import {
+  Banknote,
+  CreditCard,
+  Eye,
+  MoreHorizontal,
+  Pencil,
+  Receipt,
+  Ticket,
+  Trash2,
+  Wallet,
+} from "lucide-react"
+import * as React from "react"
 
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
@@ -32,6 +63,19 @@ const methodIcon: Record<string, typeof CreditCard> = {
   voucher: Ticket,
 }
 
+export interface BookingPaymentsSummaryRow {
+  id: string
+  invoiceId: string
+  invoiceNumber: string
+  amountCents: number
+  currency: string
+  status: string
+  paymentMethod: string
+  paymentDate: string
+  referenceNumber: string | null
+  notes: string | null
+}
+
 export interface BookingPaymentsSummaryProps {
   bookingId: string
   /**
@@ -42,6 +86,26 @@ export interface BookingPaymentsSummaryProps {
    * staff sessions get blocked from the public endpoint.
    */
   variant?: "admin" | "public"
+  /**
+   * Optional href builder for the invoice cell. When provided, the
+   * invoice number renders as an anchor that the consumer can route
+   * however it wants (TanStack Link, Next Link, raw <a>, etc.).
+   */
+  getInvoiceHref?: (row: BookingPaymentsSummaryRow) => string | null | undefined
+  /**
+   * Optional handler for the "View" action in the row menu. Consumers
+   * typically call their router's navigate(). Middle-click isn't useful
+   * on menu items, so this is a click handler rather than an href.
+   */
+  onViewPayment?: (row: BookingPaymentsSummaryRow) => void
+  /** Edit handler — typically opens a dialog pre-filled with the row. */
+  onEditPayment?: (row: BookingPaymentsSummaryRow) => void
+  /**
+   * Delete handler. Must resolve when the deletion is complete (the
+   * card closes the confirm dialog on resolve). Throw or reject to
+   * keep the dialog open with an error.
+   */
+  onDeletePayment?: (row: BookingPaymentsSummaryRow) => Promise<void> | void
 }
 
 /**
@@ -66,14 +130,33 @@ export interface BookingPaymentsSummaryProps {
 export function BookingPaymentsSummary({
   bookingId,
   variant = "public",
+  getInvoiceHref,
+  onViewPayment,
+  onEditPayment,
+  onDeletePayment,
 }: BookingPaymentsSummaryProps) {
   const publicQuery = usePublicBookingPayments(bookingId, { enabled: variant === "public" })
   const adminQuery = useAdminBookingPayments(bookingId, { enabled: variant === "admin" })
   const data = variant === "admin" ? adminQuery.data : publicQuery.data
   const { formatDate } = useBookingsUiI18nOrDefault()
   const messages = useBookingsUiMessagesOrDefault()
+  const card = messages.bookingPaymentsSummary
 
   const payments = data?.data?.payments ?? []
+  const showActionsColumn = Boolean(onViewPayment || onEditPayment || onDeletePayment)
+  const [deleteTarget, setDeleteTarget] = React.useState<BookingPaymentsSummaryRow | null>(null)
+  const [deletePending, setDeletePending] = React.useState(false)
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget || !onDeletePayment) return
+    setDeletePending(true)
+    try {
+      await onDeletePayment(deleteTarget)
+      setDeleteTarget(null)
+    } finally {
+      setDeletePending(false)
+    }
+  }
 
   // Empty-state polish: completed totals across all visible rows so
   // the card carries useful summary information even when there are
@@ -96,10 +179,18 @@ export function BookingPaymentsSummary({
           ) : null}
           {totalCompleted > 0 ? (
             <span className="ml-auto text-muted-foreground text-xs">
-              Total received{" "}
-              <span className="font-medium text-foreground">
-                {formatMoney(totalCompleted, currency)}
-              </span>
+              {(() => {
+                const parts = card.totalReceived.split("{amount}")
+                return (
+                  <>
+                    {parts[0]}
+                    <span className="font-medium text-foreground">
+                      {formatMoney(totalCompleted, currency)}
+                    </span>
+                    {parts[1]}
+                  </>
+                )
+              })()}
             </span>
           ) : null}
         </CardTitle>
@@ -132,6 +223,11 @@ export function BookingPaymentsSummary({
                   <th className="px-4 py-2 text-left font-medium">
                     {messages.bookingPaymentsSummary.columns.invoice}
                   </th>
+                  {showActionsColumn ? (
+                    <th className="w-10 px-2 py-2 text-right font-medium">
+                      <span className="sr-only">{card.columns.actions}</span>
+                    </th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody>
@@ -141,6 +237,19 @@ export function BookingPaymentsSummary({
                     messages.bookingPaymentsSummary.paymentMethodLabels[
                       payment.paymentMethod as keyof typeof messages.bookingPaymentsSummary.paymentMethodLabels
                     ] ?? payment.paymentMethod
+                  const row: BookingPaymentsSummaryRow = {
+                    id: payment.id,
+                    invoiceId: payment.invoiceId,
+                    invoiceNumber: payment.invoiceNumber,
+                    amountCents: payment.amountCents,
+                    currency: payment.currency,
+                    status: payment.status,
+                    paymentMethod: payment.paymentMethod,
+                    paymentDate: payment.paymentDate,
+                    referenceNumber: payment.referenceNumber,
+                    notes: payment.notes,
+                  }
+                  const invoiceHref = getInvoiceHref?.(row) ?? null
                   return (
                     <tr key={payment.id} className="border-b last:border-b-0">
                       <td className="px-4 py-2.5 text-right font-mono font-medium">
@@ -170,7 +279,63 @@ export function BookingPaymentsSummary({
                           {payment.referenceNumber ?? "—"}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5 font-mono text-xs">{payment.invoiceNumber}</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">
+                        {invoiceHref ? (
+                          <a
+                            href={invoiceHref}
+                            className="text-foreground underline-offset-2 hover:underline"
+                          >
+                            {payment.invoiceNumber}
+                          </a>
+                        ) : (
+                          payment.invoiceNumber
+                        )}
+                      </td>
+                      {showActionsColumn ? (
+                        <td className="px-2 py-2.5 text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger
+                              render={
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label={card.actions.open}
+                                />
+                              }
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {onViewPayment ? (
+                                <DropdownMenuItem onClick={() => onViewPayment(row)}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  {card.actions.view}
+                                </DropdownMenuItem>
+                              ) : null}
+                              {onEditPayment ? (
+                                <DropdownMenuItem onClick={() => onEditPayment(row)}>
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  {card.actions.edit}
+                                </DropdownMenuItem>
+                              ) : null}
+                              {onDeletePayment ? (
+                                <>
+                                  {onViewPayment || onEditPayment ? (
+                                    <DropdownMenuSeparator />
+                                  ) : null}
+                                  <DropdownMenuItem
+                                    variant="destructive"
+                                    onClick={() => setDeleteTarget(row)}
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    {card.actions.delete}
+                                  </DropdownMenuItem>
+                                </>
+                              ) : null}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
+                      ) : null}
                     </tr>
                   )
                 })}
@@ -179,6 +344,40 @@ export function BookingPaymentsSummary({
           </div>
         )}
       </CardContent>
+      {onDeletePayment ? (
+        <AlertDialog
+          open={Boolean(deleteTarget)}
+          onOpenChange={(next) => {
+            if (!next && !deletePending) setDeleteTarget(null)
+          }}
+        >
+          <AlertDialogContent size="sm">
+            <AlertDialogHeader>
+              <AlertDialogTitle>{card.deleteConfirm.title}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {deleteTarget
+                  ? card.deleteConfirm.description.replace(
+                      "{amount}",
+                      formatMoney(deleteTarget.amountCents, deleteTarget.currency),
+                    )
+                  : ""}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deletePending}>
+                {card.deleteConfirm.cancel}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                disabled={deletePending}
+                onClick={() => void handleDeleteConfirm()}
+              >
+                {card.deleteConfirm.confirm}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      ) : null}
     </Card>
   )
 }

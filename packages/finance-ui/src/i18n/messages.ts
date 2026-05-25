@@ -501,6 +501,8 @@ export type FinanceUiMessages = {
   }
   recordBookingPaymentDialog: {
     title: string
+    /** Title used when the dialog runs in edit mode. */
+    editTitle: string
     /** Body intro. Includes the `{generateLink}` placeholder bolded by the dialog. */
     description: string
     /** Inline emphasized label used inside `description`. */
@@ -509,7 +511,7 @@ export type FinanceUiMessages = {
       invoice: string
       amountCents: string
       currency: string
-      baseAmountCents: string
+      /** Override-rate input label. Placeholders: `{invoiceCurrency} {paymentCurrency}`. */
       fxRate: string
       paymentDate: string
       paymentMethod: string
@@ -526,13 +528,21 @@ export type FinanceUiMessages = {
     }
     fx: {
       title: string
-      /** Help text. Placeholders: `{invoiceCurrency} {paymentCurrency}`. */
+      /** Pre-conversion help text. Placeholders: `{invoiceCurrency} {paymentCurrency}`. */
       help: string
-      /** Inline hint. Placeholders: `{invoiceCurrency} {paymentCurrency}`. */
-      rateHint: string
       loadingRate: string
-      /** Auto-rate hint. Placeholders: `{invoiceCurrency} {paymentCurrency}`. */
-      autoRateHint: string
+      /** Conversion summary. Placeholders: `{amount} {paymentCurrency} {baseAmount} {invoiceCurrency} {rate}`. */
+      summary: string
+      /** Commission note. Placeholders: `{rawRate} {commission} {invoiceCurrency} {paymentCurrency}`. */
+      commissionNote: string
+      /** Source attribution when commission is zero. */
+      source: string
+      /** Shown when the auto rate can't be fetched. Placeholders: `{invoiceCurrency} {paymentCurrency}`. */
+      rateUnavailable: string
+      /** Action button to switch to manual rate. */
+      override: string
+      /** Action button to switch back to auto rate. */
+      useAuto: string
     }
     /** Per-row option label. Placeholders: `{number} {status} {balance} {currency}`. */
     invoiceOption: string
@@ -542,6 +552,7 @@ export type FinanceUiMessages = {
     noInvoices: string
     actions: {
       record: string
+      save: string
     }
     validation: {
       invoiceRequired: string

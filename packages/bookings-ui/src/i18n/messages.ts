@@ -1206,6 +1206,8 @@ export type BookingsUiMessages = {
   bookingPaymentsSummary: {
     title: string
     empty: string
+    /** Header summary line. Placeholders: `{amount}` (already currency-formatted). */
+    totalReceived: string
     columns: {
       /** Allocated invoice — shown as a secondary "For" link, not lead. */
       invoice: string
@@ -1214,9 +1216,25 @@ export type BookingsUiMessages = {
       amount: string
       date: string
       reference: string
+      /** Row actions column header (visually hidden, used by screen readers). */
+      actions: string
     }
     paymentMethodLabels: Record<"card" | "bank_transfer" | "cash" | "voucher" | "other", string>
     paymentStatusLabels: Record<"pending" | "completed" | "failed" | "refunded", string>
+    actions: {
+      /** Trigger button screen-reader label. */
+      open: string
+      view: string
+      edit: string
+      delete: string
+    }
+    deleteConfirm: {
+      title: string
+      /** Body. Placeholders: `{amount}` (already currency-formatted). */
+      description: string
+      cancel: string
+      confirm: string
+    }
   }
   bookingNotes: {
     title: string

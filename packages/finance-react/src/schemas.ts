@@ -240,6 +240,9 @@ export const invoiceFxRateRecordSchema = z.object({
   source: z.string().optional(),
   quotedAt: z.string().optional(),
   validUntil: z.string().optional(),
+  fxCommissionBps: z.number().int().nonnegative().default(0),
+  effectiveRate: z.number(),
+  fxCommissionInvoiceMention: z.string().optional(),
 })
 
 export type InvoiceFxRateRecord = z.infer<typeof invoiceFxRateRecordSchema>

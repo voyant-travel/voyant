@@ -57,6 +57,7 @@ import {
   buildPaymentCaptureCreateActionLedgerInput,
   buildPaymentCaptureDeleteActionLedgerInput,
   buildPaymentCaptureUpdateActionLedgerInput,
+  buildPaymentDeleteActionLedgerInput,
   buildPaymentInstrumentCreateActionLedgerInput,
   buildPaymentInstrumentDeleteActionLedgerInput,
   buildPaymentInstrumentUpdateActionLedgerInput,
@@ -67,6 +68,7 @@ import {
   buildPaymentSessionFailedActionLedgerInput,
   buildPaymentSessionRequiresRedirectActionLedgerInput,
   buildPaymentSessionUpdateActionLedgerInput,
+  buildPaymentUpdateActionLedgerInput,
   buildRecordPaymentActionLedgerInput,
   buildSupplierPaymentCreateActionLedgerInput,
   buildSupplierPaymentUpdateActionLedgerInput,
@@ -97,6 +99,7 @@ export {
   buildPaymentCaptureCreateActionLedgerInput,
   buildPaymentCaptureDeleteActionLedgerInput,
   buildPaymentCaptureUpdateActionLedgerInput,
+  buildPaymentDeleteActionLedgerInput,
   buildPaymentInstrumentCreateActionLedgerInput,
   buildPaymentInstrumentDeleteActionLedgerInput,
   buildPaymentInstrumentUpdateActionLedgerInput,
@@ -107,6 +110,7 @@ export {
   buildPaymentSessionFailedActionLedgerInput,
   buildPaymentSessionRequiresRedirectActionLedgerInput,
   buildPaymentSessionUpdateActionLedgerInput,
+  buildPaymentUpdateActionLedgerInput,
   buildRecordPaymentActionLedgerInput,
   buildSupplierPaymentCreateActionLedgerInput,
   buildSupplierPaymentUpdateActionLedgerInput,
@@ -178,6 +182,7 @@ import type {
   updatePaymentAuthorizationSchema,
   updatePaymentCaptureSchema,
   updatePaymentInstrumentSchema,
+  updatePaymentSchema,
   updatePaymentSessionSchema,
   updateSupplierPaymentSchema,
   updateTaxClassSchema,
@@ -263,6 +268,7 @@ type UpdateInvoiceInput = z.infer<typeof updateInvoiceSchema>
 type CreateInvoiceLineItemInput = z.infer<typeof insertInvoiceLineItemSchema>
 type UpdateInvoiceLineItemInput = z.infer<typeof updateInvoiceLineItemSchema>
 type CreatePaymentInput = z.infer<typeof insertPaymentSchema>
+type UpdatePaymentInput = z.infer<typeof updatePaymentSchema>
 type CreateCreditNoteInput = z.infer<typeof insertCreditNoteSchema>
 type UpdateCreditNoteInput = z.infer<typeof updateCreditNoteSchema>
 type CreateCreditNoteLineItemInput = z.infer<typeof insertCreditNoteLineItemSchema>
@@ -899,6 +905,35 @@ function paymentSettlementAmountSql(invoiceCurrency: string) {
       0
     )::int
   `
+}
+
+async function recomputeInvoiceTotalsAfterPaymentChange(
+  tx: PostgresJsDatabase,
+  invoice: typeof invoices.$inferSelect,
+) {
+  const [sumResult] = await tx
+    .select({ total: paymentSettlementAmountSql(invoice.currency) })
+    .from(payments)
+    .where(and(eq(payments.invoiceId, invoice.id), eq(payments.status, "completed")))
+
+  const paidCents = sumResult?.total ?? 0
+  const balanceDueCents = Math.max(0, invoice.totalCents - paidCents)
+
+  let nextStatus = invoice.status
+  if (invoice.status !== "void" && invoice.status !== "draft") {
+    if (paidCents >= invoice.totalCents && invoice.totalCents > 0) {
+      nextStatus = "paid"
+    } else if (paidCents > 0) {
+      nextStatus = "partially_paid"
+    } else if (invoice.status === "paid" || invoice.status === "partially_paid") {
+      nextStatus = "issued"
+    }
+  }
+
+  await tx
+    .update(invoices)
+    .set({ paidCents, balanceDueCents, status: nextStatus, updatedAt: new Date() })
+    .where(eq(invoices.id, invoice.id))
 }
 
 function assertPaymentCanSettleInvoice(invoiceCurrency: string, data: CreatePaymentInput) {
@@ -4187,6 +4222,133 @@ export const financeService = {
       }
 
       return payment
+    })
+  },
+
+  async updatePayment(
+    db: PostgresJsDatabase,
+    id: string,
+    data: UpdatePaymentInput,
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const [existing] = await db.select().from(payments).where(eq(payments.id, id)).limit(1)
+    if (!existing) {
+      return null
+    }
+
+    const [invoice] = await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.id, existing.invoiceId))
+      .limit(1)
+    if (!invoice) {
+      return null
+    }
+
+    // Merge the patch onto the existing row so FX validation sees the
+    // post-update settlement shape. Without this, a PATCH that flips a
+    // completed payment to a non-invoice currency without supplying a
+    // base amount would silently corrupt invoice totals (the row stays
+    // "completed" but contributes 0 to paid_cents).
+    const merged: UpdatePaymentInput & {
+      amountCents: number
+      currency: string
+      status: typeof existing.status
+      paymentDate: string
+    } = {
+      amountCents: data.amountCents ?? existing.amountCents,
+      currency: data.currency ?? existing.currency,
+      baseCurrency:
+        data.baseCurrency !== undefined ? data.baseCurrency : (existing.baseCurrency ?? null),
+      baseAmountCents:
+        data.baseAmountCents !== undefined
+          ? data.baseAmountCents
+          : (existing.baseAmountCents ?? null),
+      fxRateSetId:
+        data.fxRateSetId !== undefined ? data.fxRateSetId : (existing.fxRateSetId ?? null),
+      paymentMethod: data.paymentMethod ?? existing.paymentMethod,
+      status: data.status ?? existing.status,
+      paymentDate: data.paymentDate ?? existing.paymentDate,
+    }
+
+    const normalized = shouldNormalizeBaseAmount(data)
+      ? await resolveFxMoneyBaseAmount(db, merged, {
+          ...runtime,
+          targetBaseCurrency: invoice.currency,
+          fallbackFxRateSetId: invoice.fxRateSetId ?? null,
+          date: merged.paymentDate,
+        })
+      : merged
+
+    assertPaymentCanSettleInvoice(invoice.currency, normalized as unknown as CreatePaymentInput)
+
+    return db.transaction(async (tx) => {
+      const writePatch: Record<string, unknown> = { ...data, updatedAt: new Date() }
+      // resolveFxMoneyBaseAmount may have filled in baseCurrency / baseAmountCents /
+      // fxRateSetId — persist those even if the caller didn't include them.
+      writePatch.baseCurrency = normalized.baseCurrency ?? null
+      writePatch.baseAmountCents = normalized.baseAmountCents ?? null
+      writePatch.fxRateSetId = normalized.fxRateSetId ?? null
+
+      const [payment] = await tx
+        .update(payments)
+        .set(writePatch)
+        .where(eq(payments.id, id))
+        .returning()
+
+      if (!payment) {
+        return null
+      }
+
+      await recomputeInvoiceTotalsAfterPaymentChange(tx, invoice)
+
+      if (runtime.actionLedgerContext) {
+        await appendActionLedgerMutation(
+          tx,
+          buildPaymentUpdateActionLedgerInput(
+            runtime.actionLedgerContext,
+            { invoice, payment, changes: data },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+      }
+
+      return payment
+    })
+  },
+
+  async deletePayment(db: PostgresJsDatabase, id: string, runtime: FinanceServiceRuntime = {}) {
+    return db.transaction(async (tx) => {
+      const [existing] = await tx.select().from(payments).where(eq(payments.id, id)).limit(1)
+      if (!existing) {
+        return null
+      }
+
+      const [invoice] = await tx
+        .select()
+        .from(invoices)
+        .where(eq(invoices.id, existing.invoiceId))
+        .limit(1)
+      if (!invoice) {
+        return null
+      }
+
+      await tx.delete(payments).where(eq(payments.id, id))
+
+      await recomputeInvoiceTotalsAfterPaymentChange(tx, invoice)
+
+      if (runtime.actionLedgerContext) {
+        await appendActionLedgerMutation(
+          tx,
+          buildPaymentDeleteActionLedgerInput(
+            runtime.actionLedgerContext,
+            { invoice, payment: existing },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+      }
+
+      return existing
     })
   },
 

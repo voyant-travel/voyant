@@ -1299,6 +1299,7 @@ export const bookingsUiRo = {
   bookingPaymentsSummary: {
     title: "Plati",
     empty: "Nu exista plati inregistrate.",
+    totalReceived: "Total incasat {amount}",
     columns: {
       invoice: "Factura",
       method: "Metoda",
@@ -1306,6 +1307,7 @@ export const bookingsUiRo = {
       amount: "Suma",
       date: "Data",
       reference: "Referinta",
+      actions: "Actiuni",
     },
     paymentMethodLabels: {
       card: "Card",
@@ -1319,6 +1321,19 @@ export const bookingsUiRo = {
       completed: "Finalizata",
       failed: "Esuata",
       refunded: "Rambursata",
+    },
+    actions: {
+      open: "Deschide meniul platii",
+      view: "Vezi plata",
+      edit: "Editeaza plata",
+      delete: "Sterge plata",
+    },
+    deleteConfirm: {
+      title: "Stergi aceasta plata?",
+      description:
+        "Plata de {amount} va fi stearsa si soldul facturii recalculat. Actiunea nu poate fi anulata.",
+      cancel: "Anuleaza",
+      confirm: "Sterge",
     },
   },
   bookingNotes: {

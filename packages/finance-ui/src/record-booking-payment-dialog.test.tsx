@@ -18,6 +18,7 @@ const testState = vi.hoisted(() => ({
     },
   ],
   mutateAsync: vi.fn(async () => ({ data: { id: "pay_123" } })),
+  updateAsync: vi.fn(async () => ({ data: { id: "pay_123" } })),
   fxRate: null as number | null,
 }))
 
@@ -42,9 +43,23 @@ vi.mock("@voyantjs/finance-react", () => ({
     isPending: false,
     mutateAsync: testState.mutateAsync,
   }),
+  usePaymentMutation: () => ({
+    update: { isPending: false, mutateAsync: testState.updateAsync },
+    remove: { isPending: false, mutateAsync: vi.fn() },
+  }),
   useInvoiceFxRate: ({ enabled }: { enabled?: boolean }) => ({
-    data: enabled && testState.fxRate != null ? { data: { rate: testState.fxRate } } : undefined,
+    data:
+      enabled && testState.fxRate != null
+        ? {
+            data: {
+              rate: testState.fxRate,
+              effectiveRate: testState.fxRate,
+              fxCommissionBps: 0,
+            },
+          }
+        : undefined,
     isFetching: false,
+    isFetched: Boolean(enabled),
   }),
 }))
 
@@ -165,6 +180,7 @@ describe("RecordBookingPaymentDialog", () => {
 
   beforeEach(() => {
     testState.mutateAsync.mockClear()
+    testState.updateAsync.mockClear()
     testState.fxRate = null
     testState.invoices = [
       {
@@ -274,6 +290,51 @@ describe("RecordBookingPaymentDialog", () => {
         currency: "eur",
       }),
     )
+  })
+
+  it("PATCHes /payments/:id when editingPayment is provided", async () => {
+    await act(async () => {
+      root.render(
+        <RecordBookingPaymentDialog
+          open
+          onOpenChange={() => {}}
+          bookingId="book_123"
+          defaultCurrency="EUR"
+          editingPayment={{
+            id: "pay_existing",
+            invoiceId: "inv_123",
+            amountCents: 50000,
+            currency: "EUR",
+            baseCurrency: null,
+            baseAmountCents: null,
+            paymentMethod: "bank_transfer",
+            status: "completed",
+            paymentDate: "2026-05-20",
+            referenceNumber: "ref-1",
+            notes: null,
+          }}
+        />,
+      )
+    })
+
+    await act(async () => {
+      setNativeInputValue(container.querySelector<HTMLInputElement>("#record-amount")!, "600")
+    })
+
+    await act(async () => {
+      container
+        .querySelector<HTMLFormElement>("form")!
+        .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }))
+    })
+
+    expect(testState.updateAsync).toHaveBeenCalledWith({
+      id: "pay_existing",
+      input: expect.objectContaining({
+        amountCents: 60000,
+        currency: "EUR",
+      }),
+    })
+    expect(testState.mutateAsync).not.toHaveBeenCalled()
   })
 
   it("auto-fills invoice-currency base amount from the configured FX rate", async () => {

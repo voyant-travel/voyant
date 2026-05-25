@@ -87,6 +87,7 @@ import {
   updatePaymentAuthorizationSchema,
   updatePaymentCaptureSchema,
   updatePaymentInstrumentSchema,
+  updatePaymentSchema,
   updatePaymentSessionSchema,
   updateSupplierPaymentSchema,
   updateTaxClassSchema,
@@ -866,6 +867,52 @@ export const financeRoutes = new Hono<Env>()
   // Dispatches by typeid prefix: spay_* → supplier, pay_* → customer.
   .get("/payments/:id", async (c) => {
     const row = await financeService.getPaymentById(c.get("db"), c.req.param("id"))
+    if (!row) {
+      return c.json({ error: "Payment not found" }, 404)
+    }
+    return c.json({ data: row })
+  })
+
+  // PATCH /payments/:id — Update a customer payment.
+  // Recomputes invoice paidCents/balanceDueCents/status from the
+  // remaining completed payments after the change.
+  .patch("/payments/:id", async (c) => {
+    const id = c.req.param("id")
+    if (id.startsWith("spay_")) {
+      return c.json({ error: "Use /supplier-payments/:id to update supplier payments" }, 400)
+    }
+    const runtime = getFinanceRouteRuntime(c)
+    const row = await financeService.updatePayment(
+      c.get("db"),
+      id,
+      await parseJsonBody(c, updatePaymentSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.payment.route",
+      },
+    )
+    if (!row) {
+      return c.json({ error: "Payment not found" }, 404)
+    }
+    return c.json({ data: row })
+  })
+
+  // DELETE /payments/:id — Remove a customer payment.
+  // Recomputes invoice totals the same way PATCH does, so an
+  // accidentally-recorded payment can be reverted without going
+  // through a credit note.
+  .delete("/payments/:id", async (c) => {
+    const id = c.req.param("id")
+    if (id.startsWith("spay_")) {
+      return c.json({ error: "Use /supplier-payments/:id to delete supplier payments" }, 400)
+    }
+    const runtime = getFinanceRouteRuntime(c)
+    const row = await financeService.deletePayment(c.get("db"), id, {
+      eventBus: runtime?.eventBus,
+      actionLedgerContext: getActionLedgerRequestContext(c),
+      actionLedgerAuthorizationSource: "finance.payment.route",
+    })
     if (!row) {
       return c.json({ error: "Payment not found" }, 404)
     }
