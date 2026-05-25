@@ -363,15 +363,24 @@ export function TravelersSection({
   // end up with `roomUnitId: null`. Once units arrive, back-fill any
   // missing assignments so the static fallback's role hint (Child /
   // Infant) is honored and `redistributeByAge` doesn't silently price
-  // them as adults.
+  // them as adults. Runs exactly once per units-load transition — after
+  // that, `roomUnitId: null` is treated as the operator's explicit
+  // "No room" choice from the Room select and left alone. Reset on
+  // empty `roomUnits` so the next load (e.g. product change) rehydrates.
+  const hasHydratedNullsRef = React.useRef(false)
   React.useEffect(() => {
-    if (!roomUnits || roomUnits.length === 0) return
+    if (!roomUnits || roomUnits.length === 0) {
+      hasHydratedNullsRef.current = false
+      return
+    }
+    if (hasHydratedNullsRef.current) return
+    hasHydratedNullsRef.current = true
     if (!value.travelers.some((t) => !t.roomUnitId)) return
     const next = value.travelers.map((t) =>
       t.roomUnitId ? t : { ...t, roomUnitId: pickRoomUnitIdForNewTraveler(t.dateOfBirth, t.role) },
     )
-    // Guard against infinite re-runs if hydration can't find a unit
-    // (e.g. empty roomGroups): no point dispatching an onChange that
+    // Guard against a stray onChange if hydration can't find a unit
+    // (e.g. empty roomGroups): no point dispatching an update that
     // doesn't actually change anything.
     const changed = next.some((t, i) => t.roomUnitId !== value.travelers[i]?.roomUnitId)
     if (!changed) return
