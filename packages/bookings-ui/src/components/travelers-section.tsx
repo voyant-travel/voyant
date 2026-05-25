@@ -165,14 +165,6 @@ function mapUnitIdToGroupPrimary(
   return group?.primaryUnitId ?? unitId
 }
 
-/**
- * When a room is picked, write only the inventory unit. Pricing tier
- * intent remains owned by the category buttons and the resolver.
- */
-function pickInventoryUnitForRoomChange(nextRoomPrimaryId: string): string {
-  return nextRoomPrimaryId
-}
-
 export interface RoomUnitOption {
   unitId: string
   unitName: string
@@ -602,8 +594,7 @@ export function TravelersSection({
                       }
                       onValueChange={(v) =>
                         updateAt(index, {
-                          inventoryUnitId:
-                            v === NO_ROOM || !v ? null : pickInventoryUnitForRoomChange(v),
+                          inventoryUnitId: v === NO_ROOM || !v ? null : v,
                           inventoryUnitSource: v === NO_ROOM || !v ? "none" : "manual",
                         })
                       }
