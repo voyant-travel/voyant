@@ -201,18 +201,22 @@ export function InvoiceLineItemsCard({
 export function InvoicePaymentsCard({
   payments,
   onCreate,
+  canCreate = true,
 }: {
   payments: PaymentRow[]
   onCreate: () => void
+  canCreate?: boolean
 }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Payments</CardTitle>
-        <Button size="sm" onClick={onCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Record Payment
-        </Button>
+        {canCreate ? (
+          <Button size="sm" onClick={onCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Record Payment
+          </Button>
+        ) : null}
       </CardHeader>
       <CardContent>
         {payments.length === 0 ? (

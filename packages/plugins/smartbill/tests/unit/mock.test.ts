@@ -134,11 +134,9 @@ describe("createSmartbillMockServer", () => {
     expect(before.areInvoicesCreated).toBe(false)
     expect(before.invoices).toEqual([])
 
-    const invoice = mock.convertEstimateToInvoice({
-      companyVatCode: "RO123",
-      seriesName: "PF",
-      number: estimate.number ?? "",
-      invoiceSeriesName: "SB",
+    const invoice = await client.convertEstimateToInvoice("RO123", "PF", estimate.number ?? "", {
+      ...invoiceBody,
+      seriesName: "SB",
     })
 
     const after = await client.listEstimateInvoices("RO123", "PF", estimate.number ?? "")

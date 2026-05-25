@@ -747,7 +747,7 @@ export function InvoicePaymentsCard({
       title={detail.titles.payments}
       className={className}
       action={
-        onCreate ? (
+        onCreate && invoice.status !== "void" ? (
           <Button size="sm" onClick={() => onCreate(invoice)}>
             <Plus className="size-4" aria-hidden="true" />
             {detail.actions.recordPayment}

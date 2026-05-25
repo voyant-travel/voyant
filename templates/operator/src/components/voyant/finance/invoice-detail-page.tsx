@@ -265,7 +265,11 @@ export function InvoiceDetailPage({ id }: { id: string }) {
 
       <InvoiceAttachmentsCard invoiceId={id} />
 
-      <InvoicePaymentsCard payments={payments} onCreate={() => setPaymentDialogOpen(true)} />
+      <InvoicePaymentsCard
+        payments={payments}
+        onCreate={() => setPaymentDialogOpen(true)}
+        canCreate={invoice.status !== "void"}
+      />
 
       <InvoiceCreditNotesCard
         creditNotes={creditNotes}

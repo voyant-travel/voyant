@@ -208,7 +208,19 @@ export function createSmartbillMockServer(
       if (method === "GET" && path === "/series") return json(200, seriesEnvelope(listSeries()))
 
       if (method === "POST" && path === "/invoice") {
-        return json(200, toCreateResponse(createDocument("invoice", parseBody(request.body))))
+        const body = parseBody(request.body)
+        if (body.useEstimateDetails === true && body.estimate) {
+          return json(
+            200,
+            convertEstimateToInvoice({
+              companyVatCode: body.companyVatCode,
+              seriesName: body.estimate.seriesName,
+              number: body.estimate.number,
+              invoiceSeriesName: body.seriesName,
+            }),
+          )
+        }
+        return json(200, toCreateResponse(createDocument("invoice", body)))
       }
 
       if (method === "POST" && path === "/estimate") {

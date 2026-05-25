@@ -6,13 +6,14 @@ import type { SmartbillArtifactPersistenceOptions } from "./artifacts.js"
 import type { SmartbillClientOptions } from "./client.js"
 import type { SmartbillMappingOptions } from "./mapping.js"
 import { createSmartbillSyncRuntime } from "./runtime.js"
-import { syncSmartbillInvoiceEvent } from "./sync.js"
+import { syncSmartbillInvoiceEvent, syncSmartbillProformaConversion } from "./sync.js"
 import type { SmartbillInvoiceBody, SmartbillInvoiceResponse, VoyantInvoiceEvent } from "./types.js"
 import { parseSmartbillPluginOptions } from "./validation.js"
 
 export interface SmartbillSyncEventNames {
   issued?: string
   proformaIssued?: string
+  proformaConverted?: string
   voided?: string
   syncRequested?: string
 }
@@ -138,6 +139,12 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
       handler: async (envelope) => {
         const event = coerceEvent(envelope.data)
         if (!event) return
+        if (typeof event.convertedFromInvoiceId === "string" && event.convertedFromInvoiceId) {
+          logger.info?.(
+            `[smartbill] skipping invoice create for converted proforma ${event.id}; waiting for "${eventNames.proformaConverted}"`,
+          )
+          return
+        }
         try {
           await syncSmartbillInvoiceEvent({
             event,
@@ -166,6 +173,22 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
           })
         } catch {
           // `syncSmartbillInvoiceEvent` logs and records retryable state.
+        }
+      },
+    },
+    {
+      event: eventNames.proformaConverted,
+      handler: async (envelope) => {
+        const event = coerceEvent(envelope.data)
+        if (!event) return
+        try {
+          await syncSmartbillProformaConversion({
+            event,
+            runtime,
+            pluginOptions: validatedOptions,
+          })
+        } catch {
+          // `syncSmartbillProformaConversion` logs and records retryable state.
         }
       },
     },

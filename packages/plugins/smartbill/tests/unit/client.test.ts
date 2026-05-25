@@ -147,6 +147,35 @@ describe("createSmartbillClient.createProforma", () => {
   })
 })
 
+describe("createSmartbillClient.convertEstimateToInvoice", () => {
+  it("creates an invoice using SmartBill estimate details", async () => {
+    const fetchMock = vi.fn<SmartbillFetch>(async () =>
+      jsonResponse(200, { ...okEnvelope, number: "42", series: "SB" }),
+    )
+    const client = createSmartbillClient({ ...baseOptions, fetch: fetchMock })
+
+    await client.convertEstimateToInvoice("RO123", "PF", "7", {
+      companyVatCode: "RO123",
+      client: { name: "X" },
+      seriesName: "SB",
+      currency: "RON",
+      products: [],
+    })
+
+    const [url, init] = fetchMock.mock.calls[0]!
+    expect(url).toBe("https://ws.smartbill.ro/SBORO/api/invoice")
+    expect(init.method).toBe("POST")
+    const body = JSON.parse(init.body ?? "{}")
+    expect(body).toMatchObject({
+      companyVatCode: "RO123",
+      seriesName: "SB",
+      useEstimateDetails: true,
+      estimate: { seriesName: "PF", number: "7" },
+      useStock: false,
+    })
+  })
+})
+
 describe("createSmartbillClient.cancelInvoice", () => {
   it("sends PUT to /invoice/cancel", async () => {
     const fetchMock = vi.fn<SmartbillFetch>(async () => jsonResponse(200, okEnvelope))

@@ -150,8 +150,10 @@ export function RecordBookingPaymentDialog({
 
   const invoicesQuery = useInvoices({ bookingId, enabled: open })
   const invoices = invoicesQuery.data?.data ?? []
-  const outstandingInvoices = invoices.filter((inv) => inv.balanceDueCents > 0)
-  const selectableInvoices = outstandingInvoices.length > 0 ? outstandingInvoices : invoices
+  const paymentEligibleInvoices = invoices.filter((inv) => inv.status !== "void")
+  const outstandingInvoices = paymentEligibleInvoices.filter((inv) => inv.balanceDueCents > 0)
+  const selectableInvoices =
+    outstandingInvoices.length > 0 ? outstandingInvoices : paymentEligibleInvoices
 
   const [state, setState] = React.useState<FormState>(() => buildInitialFormState(defaultCurrency))
   const [submitError, setSubmitError] = React.useState<string | null>(null)

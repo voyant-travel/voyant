@@ -118,6 +118,8 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
   const paymentCompletedEvents: Array<Record<string, unknown>> = []
   const schedulePaidEvents: Array<Record<string, unknown>> = []
   const invoiceVoidedEvents: Array<Record<string, unknown>> = []
+  const invoiceIssuedEvents: Array<Record<string, unknown>> = []
+  const proformaConvertedEvents: Array<Record<string, unknown>> = []
   const autoRenditionBookings = new Map<string, { delayMs: number; storageKey: string }>()
 
   beforeAll(async () => {
@@ -274,7 +276,11 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     eventBus.subscribe("invoice.voided", (event) => {
       invoiceVoidedEvents.push(event as Record<string, unknown>)
     })
+    eventBus.subscribe("invoice.proforma.converted", (event) => {
+      proformaConvertedEvents.push(event as Record<string, unknown>)
+    })
     eventBus.subscribe("invoice.issued", (event) => {
+      invoiceIssuedEvents.push(event as Record<string, unknown>)
       const data = event.data as { invoiceId?: string; bookingId?: string | null }
       if (!data.invoiceId || !data.bookingId) return
       const request = autoRenditionBookings.get(data.bookingId)
@@ -322,6 +328,8 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     paymentCompletedEvents.length = 0
     schedulePaidEvents.length = 0
     invoiceVoidedEvents.length = 0
+    invoiceIssuedEvents.length = 0
+    proformaConvertedEvents.length = 0
     autoRenditionBookings.clear()
   })
 
@@ -1309,6 +1317,105 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
 
       expect(res.status).toBe(409)
       expect(invoiceVoidedEvents).toHaveLength(0)
+    })
+
+    it("converts proformas with void audit metadata and a conversion event", async () => {
+      const booking = await seedBooking()
+      const proforma = await seedInvoice(booking.id, {
+        invoiceNumber: "PRO-1269-A",
+        invoiceType: "proforma",
+        status: "issued",
+        totalCents: 50000,
+        paidCents: 10000,
+        balanceDueCents: 40000,
+      })
+      const payment = await app.request(`/invoices/${proforma.id}/payments`, {
+        method: "POST",
+        ...json({
+          amountCents: 10000,
+          currency: "USD",
+          paymentMethod: "bank_transfer",
+          status: "completed",
+          paymentDate: "2026-05-25",
+        }),
+      })
+      expect(payment.status).toBe(201)
+      invoiceIssuedEvents.length = 0
+
+      const res = await app.request(`/invoices/${proforma.id}/convert-to-invoice`, {
+        method: "POST",
+        ...json({ invoiceNumber: "INV-1269-A" }),
+      })
+
+      expect(res.status).toBe(201)
+      const { data } = await res.json()
+      expect(data).toMatchObject({
+        invoiceNumber: "INV-1269-A",
+        invoiceType: "invoice",
+        convertedFromInvoiceId: proforma.id,
+        paidCents: 10000,
+        balanceDueCents: 40000,
+      })
+      const refreshedProforma = await financeService.getInvoiceById(db, proforma.id)
+      expect(refreshedProforma).toMatchObject({
+        status: "void",
+        paidCents: 0,
+        balanceDueCents: 0,
+        voidReason: "Converted to invoice INV-1269-A",
+      })
+      expect(refreshedProforma?.voidedAt).toBeTruthy()
+      const reassignedPayments = await db
+        .select()
+        .from(payments)
+        .where(eq(payments.invoiceId, data.id))
+      expect(reassignedPayments).toHaveLength(1)
+      expect(invoiceIssuedEvents).toHaveLength(0)
+      expect(proformaConvertedEvents).toHaveLength(1)
+      expect(proformaConvertedEvents[0]?.data).toMatchObject({
+        id: data.id,
+        invoiceId: data.id,
+        proformaId: proforma.id,
+        proformaInvoiceNumber: "PRO-1269-A",
+        convertedFromInvoiceId: proforma.id,
+      })
+    })
+
+    it("rejects new payments on converted void proformas with redirect details", async () => {
+      const booking = await seedBooking()
+      const proforma = await seedInvoice(booking.id, {
+        invoiceNumber: "PRO-1269-B",
+        invoiceType: "proforma",
+        status: "issued",
+      })
+      const converted = await app.request(`/invoices/${proforma.id}/convert-to-invoice`, {
+        method: "POST",
+        ...json({ invoiceNumber: "INV-1269-B" }),
+      })
+      expect(converted.status).toBe(201)
+      const { data: invoice } = await converted.json()
+
+      const payment = await app.request(`/invoices/${proforma.id}/payments`, {
+        method: "POST",
+        ...json({
+          amountCents: 10000,
+          currency: "USD",
+          paymentMethod: "bank_transfer",
+          status: "completed",
+          paymentDate: "2026-05-25",
+        }),
+      })
+
+      expect(payment.status).toBe(409)
+      const body = await payment.json()
+      expect(body).toMatchObject({
+        code: "invoice_void",
+        details: {
+          invoiceId: proforma.id,
+          redirectInvoiceId: invoice.id,
+        },
+      })
+      const refreshedProforma = await financeService.getInvoiceById(db, proforma.id)
+      expect(refreshedProforma?.status).toBe("void")
     })
 
     it("returns 404 when deleting non-existent invoice", async () => {

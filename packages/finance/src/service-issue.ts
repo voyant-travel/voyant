@@ -126,6 +126,13 @@ const TAX_REGIME_CODES = new Set<TaxRegimeCode>([
 
 const ISSUED_EVENT = "invoice.issued"
 const PROFORMA_ISSUED_EVENT = "invoice.proforma.issued"
+const PROFORMA_CONVERTED_EVENT = "invoice.proforma.converted"
+
+export interface InvoiceProformaConvertedEvent extends InvoiceIssuedEvent {
+  id: string
+  proformaId: string
+  proformaInvoiceNumber: string
+}
 
 /**
  * Create + emit an invoice from a booking. Returns the persisted row
@@ -230,6 +237,23 @@ async function emitIssued(
 ): Promise<void> {
   if (!runtime.eventBus) return
   await runtime.eventBus.emit(eventName, await buildInvoiceIssuedEvent(db, invoice, runtime))
+}
+
+async function emitProformaConverted(
+  db: PostgresJsDatabase,
+  runtime: InvoiceIssueRuntime,
+  invoice: typeof invoices.$inferSelect,
+  proforma: typeof invoices.$inferSelect,
+): Promise<void> {
+  if (!runtime.eventBus) return
+  const issuedEvent = await buildInvoiceIssuedEvent(db, invoice, runtime)
+  const payload: InvoiceProformaConvertedEvent = {
+    ...issuedEvent,
+    id: issuedEvent.invoiceId,
+    proformaId: proforma.id,
+    proformaInvoiceNumber: proforma.invoiceNumber,
+  }
+  await runtime.eventBus.emit(PROFORMA_CONVERTED_EVENT, payload)
 }
 
 export async function buildInvoiceIssuedEvent(
@@ -448,6 +472,7 @@ export async function convertProformaToInvoice(
   const issueDate = options.issueDate ?? todayIso
   const dueDate = options.dueDate ?? toDateString(proforma.dueDate)
 
+  const now = new Date()
   const created = await db.transaction(async (tx) => {
     const [inserted] = await tx
       .insert(invoices)
@@ -514,12 +539,21 @@ export async function convertProformaToInvoice(
     // invoice's payment history.
     await tx
       .update(payments)
-      .set({ invoiceId: inserted.id, updatedAt: new Date() })
+      .set({ invoiceId: inserted.id, updatedAt: now })
       .where(eq(payments.invoiceId, proforma.id))
 
     await tx
       .update(invoices)
-      .set({ status: "void", updatedAt: new Date() })
+      .set({
+        status: "void",
+        paidCents: 0,
+        basePaidCents: proforma.basePaidCents == null ? null : 0,
+        balanceDueCents: 0,
+        baseBalanceDueCents: proforma.baseBalanceDueCents == null ? null : 0,
+        voidedAt: now,
+        voidReason: `Converted to invoice ${inserted.invoiceNumber}`,
+        updatedAt: now,
+      })
       .where(eq(invoices.id, proforma.id))
 
     return inserted
@@ -527,7 +561,7 @@ export async function convertProformaToInvoice(
 
   if (!created) return { status: "not_found" }
 
-  await emitIssued(db, runtime, ISSUED_EVENT, created)
+  await emitProformaConverted(db, runtime, created, proforma)
   return { status: "ok", invoice: created }
 }
 

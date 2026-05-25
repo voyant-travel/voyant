@@ -123,9 +123,13 @@ const optionalEvents = z.custom<SmartbillSyncEventNames | undefined>((value) => 
   if (value === undefined) return true
   if (typeof value !== "object" || value === null) return false
   const events = value as SmartbillSyncEventNames
-  return [events.issued, events.proformaIssued, events.voided, events.syncRequested].every(
-    (entry) => entry === undefined || (typeof entry === "string" && entry.trim().length > 0),
-  )
+  return [
+    events.issued,
+    events.proformaIssued,
+    events.proformaConverted,
+    events.voided,
+    events.syncRequested,
+  ].every((entry) => entry === undefined || (typeof entry === "string" && entry.trim().length > 0))
 }, "Expected event names to be non-empty strings")
 
 const optionalIdempotency = z.custom<SmartbillIdempotencyOptions | undefined>((value) => {

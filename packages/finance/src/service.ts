@@ -221,13 +221,19 @@ type UpdateSupplierPaymentInput = z.infer<typeof updateSupplierPaymentSchema>
 type PaymentListQuery = z.infer<typeof paymentListQuerySchema>
 
 export class PaymentValidationError extends Error {
-  readonly status = 400
-  readonly code = "invalid_request"
+  readonly status: 400 | 409
+  readonly code: string
   readonly details?: Record<string, unknown>
 
-  constructor(message: string, details?: Record<string, unknown>) {
+  constructor(
+    message: string,
+    details?: Record<string, unknown>,
+    options: { status?: 400 | 409; code?: string } = {},
+  ) {
     super(message)
     this.name = "PaymentValidationError"
+    this.status = options.status ?? 400
+    this.code = options.code ?? "invalid_request"
     this.details = details
   }
 }
@@ -1028,6 +1034,36 @@ async function recomputeInvoiceTotalsAfterPaymentChange(
     .update(invoices)
     .set({ paidCents, balanceDueCents, status: nextStatus, updatedAt: new Date() })
     .where(eq(invoices.id, invoice.id))
+}
+
+async function assertInvoiceAcceptsNewPayment(
+  db: PostgresJsDatabase,
+  invoice: typeof invoices.$inferSelect,
+) {
+  if (invoice.status !== "void") return
+
+  let redirectInvoiceId: string | null = null
+  let redirectInvoiceNumber: string | null = null
+  if (invoice.invoiceType === "proforma") {
+    const [successor] = await db
+      .select({ id: invoices.id, invoiceNumber: invoices.invoiceNumber })
+      .from(invoices)
+      .where(eq(invoices.convertedFromInvoiceId, invoice.id))
+      .limit(1)
+    redirectInvoiceId = successor?.id ?? null
+    redirectInvoiceNumber = successor?.invoiceNumber ?? null
+  }
+
+  throw new PaymentValidationError(
+    redirectInvoiceId
+      ? `This proforma was converted to invoice ${redirectInvoiceNumber ?? redirectInvoiceId}; record the payment there instead.`
+      : `Cannot record payment against voided invoice ${invoice.id}.`,
+    {
+      invoiceId: invoice.id,
+      ...(redirectInvoiceId ? { redirectInvoiceId, redirectInvoiceNumber } : {}),
+    },
+    { status: 409, code: "invoice_void" },
+  )
 }
 
 function assertPaymentCanSettleInvoice(invoiceCurrency: string, data: CreatePaymentInput) {
@@ -4412,6 +4448,8 @@ export const financeService = {
     if (!invoice) {
       return null
     }
+
+    await assertInvoiceAcceptsNewPayment(db, invoice)
 
     const paymentData = await resolveFxMoneyBaseAmount(db, data, {
       ...runtime,

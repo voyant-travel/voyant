@@ -229,6 +229,7 @@ export function InvoiceDetailPage({ id }: { id: string }) {
       <InvoicePaymentsCard
         payments={paymentsData?.data ?? []}
         onCreate={() => setPaymentDialogOpen(true)}
+        canCreate={invoice.status !== "void"}
       />
 
       <InvoiceCreditNotesCard
