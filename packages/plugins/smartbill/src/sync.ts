@@ -237,12 +237,30 @@ async function applyExternalAllocationIfRequired(
 ) {
   if (event.externalAllocationRequired !== true || !result.number) return
 
+  await applyExternalAllocationNumber(
+    event,
+    documentType,
+    body,
+    result,
+    runtime,
+    formatExternalInvoiceNumber(result.series ?? body.seriesName, result.number),
+  )
+}
+
+async function applyExternalAllocationNumber(
+  event: VoyantInvoiceEvent,
+  documentType: SmartbillDocumentType,
+  body: SmartbillInvoiceBody,
+  result: SmartbillInvoiceResponse | undefined,
+  runtime: SmartbillSyncRuntime,
+  invoiceNumber: string,
+) {
   const db = await resolveArtifactDb(event, documentType, body, result, runtime)
   if (!db) {
     throw new Error("SmartBill external allocation requires artifact database access")
   }
   const allocation = await financeService.applyExternalInvoiceAllocation(db, event.id, {
-    invoiceNumber: formatExternalInvoiceNumber(result.series ?? body.seriesName, result.number),
+    invoiceNumber,
   })
   if (allocation.status === "applied") {
     runtime.logger.info?.(`[smartbill] external number applied for ${event.id}`, allocation.invoice)
@@ -267,19 +285,19 @@ async function applyExternalAllocationFromRefIfRequired(
   if (!number) {
     throw new Error("SmartBill external allocation requires an existing external number")
   }
-  await applyExternalAllocationIfRequired(
+  const refSeries = metadataString(metadata, "series") ?? metadataString(metadata, "seriesName")
+  const refResult: SmartbillInvoiceResponse = {
+    number,
+    series: refSeries ?? undefined,
+    url: externalRef.externalUrl ?? undefined,
+  }
+  await applyExternalAllocationNumber(
     event,
     documentType,
     body,
-    {
-      number,
-      series:
-        metadataString(metadata, "series") ??
-        metadataString(metadata, "seriesName") ??
-        body.seriesName,
-      url: externalRef.externalUrl ?? undefined,
-    },
+    refResult,
     runtime,
+    formatExternalInvoiceNumber(refSeries ?? undefined, number),
   )
 }
 
@@ -288,6 +306,7 @@ async function resolveWriteBackInvoiceNumber(
   body: SmartbillInvoiceBody,
   result: SmartbillInvoiceResponse,
   writeBackInvoiceNumber: boolean | SmartbillInvoiceNumberWriteBackFormatter | undefined,
+  options: { useBodySeriesFallback?: boolean } = {},
 ) {
   if (!writeBackInvoiceNumber) return null
   if (typeof writeBackInvoiceNumber === "function") {
@@ -298,7 +317,9 @@ async function resolveWriteBackInvoiceNumber(
     return invoiceNumber
   }
   if (!result.number) return null
-  return formatExternalInvoiceNumber(result.series ?? body.seriesName, result.number)
+  const series =
+    result.series ?? (options.useBodySeriesFallback === false ? undefined : body.seriesName)
+  return formatExternalInvoiceNumber(series, result.number)
 }
 
 async function writeBackInvoiceNumberIfRequired(
@@ -316,6 +337,17 @@ async function writeBackInvoiceNumberIfRequired(
   )
   if (!invoiceNumber) return
 
+  await writeBackResolvedInvoiceNumber(event, documentType, body, result, runtime, invoiceNumber)
+}
+
+async function writeBackResolvedInvoiceNumber(
+  event: VoyantInvoiceEvent,
+  documentType: SmartbillDocumentType,
+  body: SmartbillInvoiceBody,
+  result: SmartbillInvoiceResponse | undefined,
+  runtime: SmartbillSyncRuntime,
+  invoiceNumber: string,
+) {
   const db = await resolveArtifactDb(event, documentType, body, result, runtime)
   if (!db) {
     throw new Error("SmartBill invoice number write-back requires artifact database access")
@@ -345,20 +377,22 @@ async function writeBackInvoiceNumberFromRefIfRequired(
     null
   if (!number) return
 
-  await writeBackInvoiceNumberIfRequired(
+  const refSeries = metadataString(metadata, "series") ?? metadataString(metadata, "seriesName")
+  const refResult: SmartbillInvoiceResponse = {
+    number,
+    series: refSeries ?? undefined,
+    url: externalRef.externalUrl ?? undefined,
+  }
+  const invoiceNumber = await resolveWriteBackInvoiceNumber(
     event,
-    documentType,
     body,
-    {
-      number,
-      series:
-        metadataString(metadata, "series") ??
-        metadataString(metadata, "seriesName") ??
-        body.seriesName,
-      url: externalRef.externalUrl ?? undefined,
-    },
-    runtime,
+    refResult,
+    runtime.writeBackInvoiceNumber,
+    { useBodySeriesFallback: false },
   )
+  if (!invoiceNumber) return
+
+  await writeBackResolvedInvoiceNumber(event, documentType, body, refResult, runtime, invoiceNumber)
 }
 
 async function recordSyncError(
