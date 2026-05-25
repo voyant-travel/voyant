@@ -12,6 +12,7 @@ const financeServiceMock = vi.hoisted(() => ({
   listInvoiceAttachments: vi.fn(),
   createInvoiceRendition: vi.fn(),
   createInvoiceAttachment: vi.fn(),
+  ensureExternalInvoiceNumberSeries: vi.fn(),
 }))
 
 vi.mock("@voyantjs/finance", () => ({
@@ -112,6 +113,7 @@ beforeEach(() => {
     id: "inva_1",
     storageKey: "invoices/inv_123/smartbill/invoice-A-1.pdf",
   })
+  financeServiceMock.ensureExternalInvoiceNumberSeries.mockResolvedValue([])
 })
 
 describe("smartbillPlugin structure", () => {
@@ -153,6 +155,50 @@ describe("smartbillPlugin structure", () => {
       "custom.voided",
       "custom.sync",
     ])
+  })
+
+  it("bootstraps SmartBill external number series when artifact db is static", async () => {
+    const fetchMock = vi.fn<SmartbillFetch>()
+    const db = {} as never
+    const plugin = smartbillPlugin({
+      ...baseOptions,
+      fetch: fetchMock,
+      artifacts: { db },
+    })
+
+    await plugin.bootstrap?.({ bindings: {}, container: {} as never, eventBus: {} as never })
+
+    expect(financeServiceMock.ensureExternalInvoiceNumberSeries).toHaveBeenCalledWith(db, [
+      {
+        provider: "smartbill",
+        scope: "invoice",
+        code: "smartbill-invoice",
+        name: "SmartBill invoices",
+        externalConfigKey: "A",
+        isDefault: true,
+      },
+      {
+        provider: "smartbill",
+        scope: "proforma",
+        code: "smartbill-proforma",
+        name: "SmartBill proformas",
+        externalConfigKey: "A",
+        isDefault: true,
+      },
+    ])
+  })
+
+  it("skips SmartBill external number series bootstrap for dynamic artifact db", async () => {
+    const fetchMock = vi.fn<SmartbillFetch>()
+    const plugin = smartbillPlugin({
+      ...baseOptions,
+      fetch: fetchMock,
+      artifacts: { db: () => null },
+    })
+
+    await plugin.bootstrap?.({ bindings: {}, container: {} as never, eventBus: {} as never })
+
+    expect(financeServiceMock.ensureExternalInvoiceNumberSeries).not.toHaveBeenCalled()
   })
 
   it("fails fast on invalid plugin options", () => {

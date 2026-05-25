@@ -60,7 +60,7 @@ type SmartbillTaxRegime = {
 
 export const smartbillOperatorBundle: HonoBundle = {
   name: "operator-smartbill",
-  bootstrap: ({ bindings, eventBus }) => {
+  bootstrap: async ({ bindings, eventBus }) => {
     const env = bindings as SmartbillEnv
     const runtime = resolveSmartbillRuntime(env)
     if (!runtime) {
@@ -69,6 +69,8 @@ export const smartbillOperatorBundle: HonoBundle = {
       )
       return
     }
+
+    await ensureSmartbillInvoiceNumberSeries(env, runtime)
 
     eventBus.subscribe<InvoiceIssuedPayload>("invoice.issued", async ({ data }) => {
       await syncIssuedInvoice(env, runtime, data, "invoice")
@@ -95,6 +97,34 @@ export function createSmartbillSettlementPollers(
       companyVatCode: runtimeOptions.companyVatCode,
       seriesName: runtimeOptions.invoiceSeriesName,
     }),
+  }
+}
+
+async function ensureSmartbillInvoiceNumberSeries(env: SmartbillEnv, runtime: SmartbillRuntime) {
+  try {
+    await withDbFromEnv(env, async (rawDb) => {
+      const db = rawDb as unknown as PostgresJsDatabase
+      await financeService.ensureExternalInvoiceNumberSeries(db, [
+        {
+          provider: "smartbill",
+          scope: "invoice",
+          code: "smartbill-invoice",
+          name: "SmartBill invoices",
+          externalConfigKey: runtime.invoiceSeriesName,
+          isDefault: true,
+        },
+        {
+          provider: "smartbill",
+          scope: "proforma",
+          code: "smartbill-proforma",
+          name: "SmartBill proformas",
+          externalConfigKey: runtime.proformaSeriesName,
+          isDefault: true,
+        },
+      ])
+    })
+  } catch (error) {
+    console.warn("[smartbill] invoice number series bootstrap failed", error)
   }
 }
 
