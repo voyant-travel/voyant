@@ -23,6 +23,7 @@ export type AllocationUiMessages = Record<string, unknown> & {
   generatingResources: string
   autoAllocate: string
   autoAllocating: string
+  createBooking: string
   exportPassengers: string
   exportRooming: string
   auditLog: string
@@ -134,6 +135,7 @@ export const allocationUiEn = {
   generatingResources: "Generating...",
   autoAllocate: "Auto-allocate",
   autoAllocating: "Allocating...",
+  createBooking: "Create booking",
   exportPassengers: "Passengers",
   exportRooming: "Rooming",
   auditLog: "Audit log",
@@ -273,6 +275,7 @@ export const allocationUiRo = {
   generatingResources: "Se genereaza...",
   autoAllocate: "Auto-aloca",
   autoAllocating: "Se aloca...",
+  createBooking: "Creeaza rezervare",
   exportPassengers: "Pasageri",
   exportRooming: "Rooming",
   auditLog: "Istoric",

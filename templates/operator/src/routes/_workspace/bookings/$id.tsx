@@ -15,6 +15,7 @@ import { operatorFetcher } from "@/lib/voyant-fetcher"
 
 const bookingRouteSearchSchema = z.object({
   productId: z.string().optional(),
+  slotId: z.string().optional(),
 })
 
 export const Route = createFileRoute("/_workspace/bookings/$id")({
@@ -47,6 +48,7 @@ function BookingDetailRoute() {
     return (
       <BookingCreatePage
         defaultProductId={search.productId}
+        defaultSlotId={search.slotId}
         onCancel={() => void navigate({ to: "/bookings" })}
         onCreated={(booking) => void navigate({ to: "/bookings/$id", params: { id: booking.id } })}
       />

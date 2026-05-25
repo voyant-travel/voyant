@@ -66,6 +66,11 @@ export interface BookingDialogProps {
    * a product detail page. Ignored when editing an existing booking.
    */
   defaultProductId?: string
+  /**
+   * Pre-seeds and locks the departure picker in create mode. Useful when opened from
+   * a slot allocation page. Ignored when editing an existing booking.
+   */
+  defaultSlotId?: string
 }
 
 const BOOKING_STATUS_VALUES = [
@@ -92,6 +97,7 @@ export function BookingDialog({
   booking,
   onSuccess,
   defaultProductId,
+  defaultSlotId,
 }: BookingDialogProps) {
   if (!booking) {
     return (
@@ -99,6 +105,7 @@ export function BookingDialog({
         open={open}
         onOpenChange={onOpenChange}
         defaultProductId={defaultProductId}
+        defaultSlotId={defaultSlotId}
         onCreated={onSuccess}
       />
     )
