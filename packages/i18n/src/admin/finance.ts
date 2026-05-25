@@ -91,6 +91,7 @@ export const adminFinanceMessages = {
         edit: "Edit",
         void: "Void",
         delete: "Delete",
+        cancel: "Cancel",
         voidConfirm: "Void this invoice?",
         voidDescription:
           "This marks the invoice as void, clears the outstanding balance, and keeps the audit trail.",
@@ -160,6 +161,7 @@ export const adminFinanceMessages = {
         cancel: "Cancel",
         saveChanges: "Save Changes",
         createLineItem: "Add Line Item",
+        saveFailed: "Unable to save line item",
       },
       creditNoteDialog: {
         title: "Add Credit Note",
@@ -339,6 +341,7 @@ export const adminFinanceMessages = {
         edit: "Editeaza",
         void: "Anuleaza",
         delete: "Sterge",
+        cancel: "Anuleaza",
         voidConfirm: "Anulezi aceasta factura?",
         voidDescription:
           "Factura este marcata ca anulata, soldul restant este sters, iar istoricul ramane pastrat.",
@@ -408,6 +411,7 @@ export const adminFinanceMessages = {
         cancel: "Anuleaza",
         saveChanges: "Salveaza modificarile",
         createLineItem: "Adauga pozitie",
+        saveFailed: "Pozitia nu a putut fi salvata",
       },
       creditNoteDialog: {
         title: "Adauga nota de credit",

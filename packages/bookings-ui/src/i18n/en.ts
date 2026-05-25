@@ -1147,6 +1147,11 @@ export const bookingsUiEn = {
       confirmFailedPrefix: "Booking created but confirm failed: {message}",
       confirmFailed: "Booking created but confirm failed",
       createFailed: "Failed to create booking",
+      payloadResolverMismatchDetails:
+        "Booking options are out of sync. Review these lines: {details}.",
+      payloadResolverMismatchFallback:
+        "Booking options are out of sync. Review the selected traveler and option lines.",
+      payloadResolverMismatchLine: "{label}: sent {submittedQuantity}, expected {resolvedQuantity}",
     },
     actions: {
       createDraftBooking: "Create draft booking",

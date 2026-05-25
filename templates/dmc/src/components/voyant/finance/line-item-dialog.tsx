@@ -106,7 +106,9 @@ export function LineItemDialog({
         ? await update.mutateAsync({ id: lineItem!.id, input: payload })
         : await create.mutateAsync(payload)
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Unable to save line item")
+      setSubmitError(
+        error instanceof Error ? error.message : messages.finance.lineItemDialog.saveFailed,
+      )
       return
     }
 

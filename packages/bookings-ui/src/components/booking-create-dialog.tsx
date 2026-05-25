@@ -41,6 +41,7 @@ import {
 import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
 import { ImageIcon, Loader2 } from "lucide-react"
 import * as React from "react"
+import type { BookingsUiMessages } from "../i18n/messages.js"
 import {
   formatMessage,
   useBookingsUiI18nOrDefault,
@@ -261,17 +262,22 @@ function isPayloadResolverMismatchBody(
 function formatPayloadResolverMismatchError(
   body: { mismatches: PayloadResolverMismatch[] },
   unitLabels: Record<string, string>,
+  validationMessages: BookingsUiMessages["bookingCreateDialog"]["validation"],
 ) {
   const details = body.mismatches
     .map((mismatch) => {
       const label = unitLabels[mismatch.optionUnitId] ?? mismatch.optionUnitId
-      return `${label}: sent ${mismatch.submittedQuantity}, expected ${mismatch.resolvedQuantity}`
+      return formatMessage(validationMessages.payloadResolverMismatchLine, {
+        label,
+        resolvedQuantity: mismatch.resolvedQuantity,
+        submittedQuantity: mismatch.submittedQuantity,
+      })
     })
     .join("; ")
 
   return details
-    ? `Booking options are out of sync. Review these lines: ${details}.`
-    : "Booking options are out of sync. Review the selected traveler and option lines."
+    ? formatMessage(validationMessages.payloadResolverMismatchDetails, { details })
+    : validationMessages.payloadResolverMismatchFallback
 }
 
 export interface BookingCreateDialogProps {
@@ -941,7 +947,13 @@ export function BookingCreateForm({
         setPayloadMismatchUnitIds(
           Array.from(new Set(err.body.mismatches.map((mismatch) => mismatch.optionUnitId))),
         )
-        setError(formatPayloadResolverMismatchError(err.body, roomUnitLabels))
+        setError(
+          formatPayloadResolverMismatchError(
+            err.body,
+            roomUnitLabels,
+            messages.bookingCreateDialog.validation,
+          ),
+        )
         return
       }
       setError(

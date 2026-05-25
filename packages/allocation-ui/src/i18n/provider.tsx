@@ -24,6 +24,7 @@ export type AllocationUiMessages = Record<string, unknown> & {
   autoAllocate: string
   autoAllocating: string
   createBooking: string
+  booking: string
   exportPassengers: string
   exportRooming: string
   auditLog: string
@@ -79,6 +80,7 @@ export type AllocationUiMessages = Record<string, unknown> & {
   noResources: string
   noSeats: string
   noAllocationsToManage: string
+  passengerListEmpty: string
   windowSeat: string
   aisleSeat: string
   middleSeat: string
@@ -136,6 +138,7 @@ export const allocationUiEn = {
   autoAllocate: "Auto-allocate",
   autoAllocating: "Allocating...",
   createBooking: "Create booking",
+  booking: "Booking",
   exportPassengers: "Passengers",
   exportRooming: "Rooming",
   auditLog: "Audit log",
@@ -203,6 +206,7 @@ export const allocationUiEn = {
   noResources: "No resources have been added for this slot.",
   noSeats: "No vehicle seats have been generated for this slot.",
   noAllocationsToManage: "This slot has no allocations to manage.",
+  passengerListEmpty: "No passengers are booked on this departure yet.",
   windowSeat: "Window",
   aisleSeat: "Aisle",
   middleSeat: "Middle",
@@ -276,6 +280,7 @@ export const allocationUiRo = {
   autoAllocate: "Auto-aloca",
   autoAllocating: "Se aloca...",
   createBooking: "Creeaza rezervare",
+  booking: "Rezervare",
   exportPassengers: "Pasageri",
   exportRooming: "Rooming",
   auditLog: "Istoric",
@@ -343,6 +348,7 @@ export const allocationUiRo = {
   noResources: "Nu exista resurse adaugate pentru acest slot.",
   noSeats: "Nu exista locuri generate pentru acest slot.",
   noAllocationsToManage: "Acest slot nu are alocari de gestionat.",
+  passengerListEmpty: "Nu exista pasageri rezervati pe aceasta plecare.",
   windowSeat: "Geam",
   aisleSeat: "Culoar",
   middleSeat: "Mijloc",
