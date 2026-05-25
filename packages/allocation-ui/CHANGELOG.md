@@ -1,5 +1,14 @@
 # @voyantjs/allocation-ui
 
+## 0.80.13
+
+### Patch Changes
+
+- 86f13fb: Add an opt-in slot allocation create-booking action and allow booking creation to lock a default slot.
+  - @voyantjs/availability-react@0.80.13
+  - @voyantjs/i18n@0.80.13
+  - @voyantjs/ui@0.80.13
+
 ## 0.80.12
 
 ### Patch Changes

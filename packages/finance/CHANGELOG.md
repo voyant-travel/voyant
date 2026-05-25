@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.80.13
+
+### Patch Changes
+
+- 55d99af: Assert invoice line item persistence when creating invoices from bookings.
+  - @voyantjs/action-ledger@0.80.13
+  - @voyantjs/bookings@0.80.13
+  - @voyantjs/core@0.80.13
+  - @voyantjs/db@0.80.13
+  - @voyantjs/hono@0.80.13
+  - @voyantjs/products@0.80.13
+  - @voyantjs/storage@0.80.13
+  - @voyantjs/utils@0.80.13
+
 ## 0.80.12
 
 ### Patch Changes
