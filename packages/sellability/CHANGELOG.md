@@ -1,5 +1,19 @@
 # @voyantjs/sellability
 
+## 0.80.18
+
+### Patch Changes
+
+- @voyantjs/availability@0.80.18
+- @voyantjs/core@0.80.18
+- @voyantjs/db@0.80.18
+- @voyantjs/distribution@0.80.18
+- @voyantjs/hono@0.80.18
+- @voyantjs/markets@0.80.18
+- @voyantjs/pricing@0.80.18
+- @voyantjs/products@0.80.18
+- @voyantjs/transactions@0.80.18
+
 ## 0.80.17
 
 ### Patch Changes
