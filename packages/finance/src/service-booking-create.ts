@@ -282,6 +282,40 @@ function requireUniqueClientTravelerKeys(
   }
 }
 
+function requireKnownTravelerKeys(
+  value: {
+    travelers?: Array<{ clientTravelerKey?: string | null }>
+    itemLines?: Array<{ travelerKeys?: string[] | null }>
+    extraLines?: Array<{ travelerKeys?: string[] | null }>
+  },
+  ctx: z.RefinementCtx,
+) {
+  const knownKeys = new Set(
+    (value.travelers ?? [])
+      .map((traveler) => traveler.clientTravelerKey?.trim())
+      .filter((key): key is string => Boolean(key)),
+  )
+  const checkLines = (
+    field: "itemLines" | "extraLines",
+    lines: Array<{ travelerKeys?: string[] | null }> | undefined,
+  ) => {
+    lines?.forEach((line, lineIndex) => {
+      line.travelerKeys?.forEach((travelerKey, keyIndex) => {
+        const key = travelerKey.trim()
+        if (!key || knownKeys.has(key)) return
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [field, lineIndex, "travelerKeys", keyIndex],
+          message: `Unknown travelerKey: ${key}`,
+        })
+      })
+    })
+  }
+
+  checkLines("itemLines", value.itemLines)
+  checkLines("extraLines", value.extraLines)
+}
+
 function isRealEmail(value: string | null | undefined): value is string {
   const normalized = value?.trim().toLowerCase() ?? ""
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized) && !placeholderEmails.has(normalized)
@@ -355,12 +389,14 @@ export const bookingCreateSchema = bookingCreateBaseSchema
   .superRefine(requirePriceOverrideReason)
   .superRefine(requireCompleteBookingParty)
   .superRefine(requireUniqueClientTravelerKeys)
+  .superRefine(requireKnownTravelerKeys)
 
 export const bookingCreateSubSchema = bookingCreateBaseSchema
   .omit({ groupMembership: true })
   .superRefine(requirePriceOverrideReason)
   .superRefine(requireCompleteBookingParty)
   .superRefine(requireUniqueClientTravelerKeys)
+  .superRefine(requireKnownTravelerKeys)
 
 export type BookingCreateInput = z.infer<typeof bookingCreateSchema>
 type BookingCreatePaymentScheduleInput = NonNullable<BookingCreateInput["paymentSchedules"]>[number]
@@ -667,6 +703,7 @@ async function linkBookingCreateItemsToTravelers(
     if (travelerKeys.length > 0) {
       return travelerKeys.map((travelerKey) => ({
         clientLineKey: line.clientLineKey ?? null,
+        travelerKey,
         traveler: travelerByClientKey.get(travelerKey) ?? null,
       }))
     }
@@ -688,6 +725,14 @@ async function linkBookingCreateItemsToTravelers(
   }
 
   const seen = new Set<string>()
+  const unknownTravelerKeys = requestedLinks
+    .filter((link) => "travelerKey" in link && !link.traveler)
+    .map((link) => ("travelerKey" in link ? link.travelerKey : null))
+    .filter((key): key is string => Boolean(key))
+  if (unknownTravelerKeys.length > 0) {
+    throw new Error(`Unknown travelerKey: ${unknownTravelerKeys.join(", ")}`)
+  }
+
   const linkRows = requestedLinks.flatMap(({ clientLineKey, traveler }) => {
     if (!clientLineKey) return []
     const item = itemByClientLineKey.get(clientLineKey)

@@ -713,6 +713,64 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     )
   })
 
+  it("rejects item and extra lines that reference unknown stable traveler keys", async () => {
+    const { productId, unitId } = await seedProduct()
+
+    const result = bookingCreateSchema.safeParse({
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      travelers: [
+        {
+          clientTravelerKey: "trav:lead",
+          firstName: "Alice",
+          lastName: "Lead",
+          participantType: "traveler",
+          travelerCategory: "adult",
+          isPrimary: true,
+        },
+      ],
+      itemLines: [
+        {
+          clientLineKey: `unit:${unitId}`,
+          optionUnitId: unitId,
+          quantity: 1,
+          title: "Adult",
+          travelerKeys: ["trav:missing-item"],
+        },
+      ],
+      extraLines: [
+        {
+          clientLineKey: "extra:lunch",
+          productExtraId: "lunch",
+          name: "Lunch",
+          pricingMode: "per_person",
+          pricedPerPerson: true,
+          quantity: 1,
+          sellCurrency: "EUR",
+          unitSellAmountCents: 1000,
+          totalSellAmountCents: 1000,
+          travelerKeys: ["trav:missing-extra"],
+        },
+      ],
+    })
+
+    expect(result.success).toBe(false)
+    if (result.success) return
+    expect(result.error.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: ["itemLines", 0, "travelerKeys", 0],
+          message: "Unknown travelerKey: trav:missing-item",
+        }),
+        expect.objectContaining({
+          path: ["extraLines", 0, "travelerKeys", 0],
+          message: "Unknown travelerKey: trav:missing-extra",
+        }),
+      ]),
+    )
+  })
+
   it("rejects booking-create payloads that drift from the server draft resolver", async () => {
     const { productId, unitId, childUnitId, infantUnitId } = await seedProduct({
       ageBandedUnits: true,

@@ -686,6 +686,8 @@ export function verifyBookingDraft(input: {
   // when present; fall back to deprecated `travelerIndexes` for
   // legacy clients. If neither is present, we can't verify
   // per-traveler assignment — just compare aggregate quantities.
+  // Booking-create schema validation rejects unknown traveler keys
+  // before this verifier runs.
   const unitById = new Map(input.units.map((unit) => [unit.optionUnitId, unit]))
   const travelerIndexByKey = new Map<string, number>()
   for (const [index, traveler] of input.travelers.entries()) {
