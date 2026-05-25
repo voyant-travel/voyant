@@ -4,6 +4,7 @@ import {
   bookingsService,
 } from "@voyantjs/bookings"
 import {
+  type BookingDraftMismatch,
   type PricingAssignmentUnit,
   verifyBookingDraft,
 } from "@voyantjs/bookings/pricing-assignment"
@@ -361,6 +362,18 @@ export interface BookingCreatedEvent {
   occurredAt: Date
 }
 
+export interface BookingCreateRejectedEvent {
+  reason: "payload_resolver_mismatch"
+  productId: string
+  optionId: string | null
+  slotId: string | null
+  bookingNumber: string
+  mismatchCount: number
+  mismatches: BookingDraftMismatch[]
+  createdByUserId: string | null
+  occurredAt: Date
+}
+
 // ---------- result shape ----------
 
 export interface BookingCreateResult {
@@ -391,6 +404,7 @@ export interface BookingCreateValidationIssue {
 export type BookingCreateOutcome =
   | { status: "ok"; result: BookingCreateResult }
   | { status: "invalid_payment_schedules"; issues: BookingCreateValidationIssue[] }
+  | { status: "payload_resolver_mismatch"; mismatches: BookingDraftMismatch[] }
   | { status: "product_not_found" }
   | { status: "voucher_not_found" }
   | { status: "voucher_inactive" }
@@ -428,6 +442,16 @@ class BookingCreateAbort extends Error {
   constructor(readonly outcome: Exclude<BookingCreateOutcome, { status: "ok" }>) {
     super(`create aborted: ${outcome.status}`)
     this.name = "BookingCreateAbort"
+  }
+}
+
+class BookingCreateValidationError extends Error {
+  constructor(
+    readonly code: "payload_resolver_mismatch",
+    readonly mismatches: BookingDraftMismatch[],
+  ) {
+    super(code)
+    this.name = "BookingCreateValidationError"
   }
 }
 
@@ -488,11 +512,28 @@ async function loadProductOptionUnits(
   }))
 }
 
+function hasResolverRejectionSignals(input: {
+  travelers: NonNullable<BookingCreateInput["travelers"]>
+  itemLines: NonNullable<BookingCreateInput["itemLines"]>
+}) {
+  return (
+    input.travelers.every(
+      (traveler) =>
+        traveler.travelerCategory === "adult" ||
+        traveler.travelerCategory === "child" ||
+        traveler.travelerCategory === "infant",
+    ) &&
+    input.itemLines.every(
+      (line) => Array.isArray(line.travelerIndexes) && line.travelerIndexes.length > 0,
+    )
+  )
+}
+
 /**
  * Re-runs `resolveBookingDraft` against the submitted payload and
- * logs any mismatches between submitted itemLines quantities and
- * what the resolver would derive. Log-only for now — see the
- * inline note at the call site.
+ * rejects mismatches between submitted itemLines quantities and
+ * what the resolver would derive when the request carries the
+ * traveler band + line assignment metadata the verifier needs.
  */
 async function verifyBookingCreatePayload(tx: PostgresJsDatabase, input: BookingCreateInput) {
   const itemLines = input.itemLines ?? []
@@ -507,10 +548,14 @@ async function verifyBookingCreatePayload(tx: PostgresJsDatabase, input: Booking
   })
 
   if (!verification.ok) {
-    console.warn(
-      `[bookings/create] payload drift for product=${input.productId}`,
-      JSON.stringify(verification.mismatches),
-    )
+    if (!hasResolverRejectionSignals({ travelers, itemLines })) {
+      console.warn(
+        `[bookings/create] payload drift skipped hard rejection for product=${input.productId}`,
+        JSON.stringify(verification.mismatches),
+      )
+      return
+    }
+    throw new BookingCreateValidationError("payload_resolver_mismatch", verification.mismatches)
   }
 }
 
@@ -827,21 +872,10 @@ export async function createBooking(
         ...(input.extraLines ?? []),
       ])
 
-      // 2c. Log-only verification: re-run the resolver server-side
-      // against the submitted itemLines + travelers to surface any
-      // client/server drift on the per-band quantities. Useful for
-      // catching #1262-class bugs in flight without rejecting
-      // payloads — a follow-up will flip this to a hard rejection
-      // once we've observed real traffic and confirmed no legitimate
-      // clients trip the warning. See voyantjs/voyant#1267.
-      try {
-        await verifyBookingCreatePayload(tx, input)
-      } catch (error) {
-        // Verification is best-effort; never block a booking commit
-        // because of a verifier exception (e.g. catalog query
-        // failure). Surface the unexpected case for observability.
-        console.warn("[bookings/create] verifier threw", error)
-      }
+      // 2c. Re-run the resolver server-side against the submitted
+      // itemLines + travelers and reject any client/server drift on
+      // per-band quantities. See voyantjs/voyant#1272.
+      await verifyBookingCreatePayload(tx, input)
 
       // 3. Payment schedules
       const paymentSchedules: BookingPaymentSchedule[] = []
@@ -948,6 +982,24 @@ export async function createBooking(
   } catch (error) {
     if (error instanceof BookingCreateAbort) {
       return error.outcome
+    }
+    if (error instanceof BookingCreateValidationError) {
+      await runtime?.eventBus?.emit(
+        "booking_create.rejected",
+        {
+          reason: error.code,
+          productId: input.productId,
+          optionId: input.optionId ?? null,
+          slotId: input.slotId ?? null,
+          bookingNumber: input.bookingNumber,
+          mismatchCount: error.mismatches.length,
+          mismatches: error.mismatches,
+          createdByUserId: userId ?? null,
+          occurredAt: new Date(),
+        } satisfies BookingCreateRejectedEvent,
+        { category: "internal", source: "service" },
+      )
+      return { status: error.code, mismatches: error.mismatches }
     }
     if (error instanceof VoucherServiceError) {
       if (error.code === "voucher_not_found") return { status: "voucher_not_found" }

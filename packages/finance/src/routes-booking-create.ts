@@ -53,6 +53,15 @@ const createBookingRoutes = new Hono<{
           },
           400,
         )
+      case "payload_resolver_mismatch":
+        return c.json(
+          {
+            error: "Booking payload does not match the resolved draft",
+            code: "payload_resolver_mismatch",
+            mismatches: outcome.mismatches,
+          },
+          400,
+        )
       case "product_not_found":
         return c.json({ error: "Product not found or unavailable" }, 404)
       case "voucher_not_found":
@@ -103,6 +112,16 @@ const createBookingRoutes = new Hono<{
             ...body,
             error: `${which}: invalid payment schedules`,
             issues: reason.issues,
+          },
+          400,
+        )
+      case "payload_resolver_mismatch":
+        return c.json(
+          {
+            ...body,
+            error: `${which}: booking payload does not match the resolved draft`,
+            code: "payload_resolver_mismatch",
+            mismatches: reason.mismatches,
           },
           400,
         )

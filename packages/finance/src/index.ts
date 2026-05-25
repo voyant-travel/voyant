@@ -282,6 +282,7 @@ export type {
   BookingCreatedEvent,
   BookingCreateInput,
   BookingCreateOutcome,
+  BookingCreateRejectedEvent,
   BookingCreateResult,
   BookingCreateRuntime,
   BookingCreateTravelerInput,

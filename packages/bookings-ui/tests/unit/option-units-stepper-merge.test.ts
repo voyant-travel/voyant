@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   mergeStepperUnits,
   type OptionUnitsStepperUnit,
+  optionRowHasInvalidUnit,
   resolveOptionRemainingLabel,
   resolveSlotOptionId,
 } from "../../src/components/option-units-stepper-section.js"
@@ -136,5 +137,24 @@ describe("resolveOptionRemainingLabel", () => {
         fillsSlotCapacity: "fills slot capacity",
       }),
     ).toBe("43 left")
+  })
+})
+
+describe("optionRowHasInvalidUnit", () => {
+  it("matches any unit in a grouped option row, not just the primary unit", () => {
+    expect(
+      optionRowHasInvalidUnit(
+        [
+          { optionUnitId: "adult" },
+          { optionUnitId: "child" },
+          { optionUnitId: "infant" },
+        ],
+        new Set(["child"]),
+      ),
+    ).toBe(true)
+  })
+
+  it("returns false when no grouped unit is affected", () => {
+    expect(optionRowHasInvalidUnit([{ optionUnitId: "adult" }], new Set(["single"]))).toBe(false)
   })
 })

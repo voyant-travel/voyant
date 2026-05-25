@@ -64,8 +64,10 @@ export interface OptionUnitsStepperSectionProps {
     remaining?: string
     unlimited?: string
     fillsSlotCapacity?: string
+    reviewLine?: string
   }
   slotHasFiniteCapacity?: boolean
+  invalidOptionUnitIds?: readonly string[]
 }
 
 /**
@@ -98,6 +100,7 @@ export function OptionUnitsStepperSection({
   onUnitsChange,
   labels,
   slotHasFiniteCapacity = false,
+  invalidOptionUnitIds = [],
 }: OptionUnitsStepperSectionProps) {
   const productsClient = useVoyantProductsContext()
   const messages = useBookingsUiMessagesOrDefault()
@@ -184,6 +187,10 @@ export function OptionUnitsStepperSection({
   const units = React.useMemo(
     () => mergeStepperUnits(availabilityUnitRows, optionUnitRows, slotOptionId, Boolean(slotId)),
     [availabilityUnitRows, optionUnitRows, slotOptionId, slotId],
+  )
+  const invalidOptionUnitIdSet = React.useMemo(
+    () => new Set(invalidOptionUnitIds),
+    [invalidOptionUnitIds],
   )
 
   React.useEffect(() => {
@@ -272,6 +279,7 @@ export function OptionUnitsStepperSection({
       <div className="flex flex-col gap-2">
         {optionRows.map(({ optionKey, optionName, primary, allUnits, totalRemaining }) => {
           const qty = value.quantities[primary.optionUnitId] ?? 0
+          const isInvalid = optionRowHasInvalidUnit(allUnits, invalidOptionUnitIdSet)
           const remainingLabel = resolveOptionRemainingLabel({
             totalRemaining,
             units: allUnits,
@@ -283,9 +291,22 @@ export function OptionUnitsStepperSection({
           const atMax = totalRemaining !== null && qty >= totalRemaining
 
           return (
-            <div key={optionKey} className="flex items-center gap-3 rounded-md border px-3 py-2">
+            <div
+              key={optionKey}
+              className={`flex items-center gap-3 rounded-md border px-3 py-2 ${
+                isInvalid ? "border-destructive/70 bg-destructive/5 ring-1 ring-destructive/20" : ""
+              }`}
+              aria-invalid={isInvalid ? true : undefined}
+            >
               <div className="flex-1">
-                <div className="text-sm font-medium">{optionName}</div>
+                <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                  <span>{optionName}</span>
+                  {isInvalid ? (
+                    <span className="rounded-sm bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
+                      {merged.reviewLine}
+                    </span>
+                  ) : null}
+                </div>
                 <div className="text-xs text-muted-foreground">{remainingLabel}</div>
               </div>
               <div className="flex items-center gap-2">
@@ -341,6 +362,13 @@ export function resolveOptionRemainingLabel({
     return fillsSlotCapacity ?? unlimited
   }
   return unlimited
+}
+
+export function optionRowHasInvalidUnit(
+  units: ReadonlyArray<Pick<OptionUnitsStepperUnit, "optionUnitId">>,
+  invalidOptionUnitIds: ReadonlySet<string>,
+) {
+  return units.some((unit) => invalidOptionUnitIds.has(unit.optionUnitId))
 }
 
 /**
