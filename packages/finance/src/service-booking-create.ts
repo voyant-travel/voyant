@@ -4,7 +4,7 @@ import {
   bookingsService,
 } from "@voyantjs/bookings"
 import type { Booking, BookingGroupMember, BookingTraveler } from "@voyantjs/bookings/schema"
-import { bookingItems, bookingTravelers } from "@voyantjs/bookings/schema"
+import { bookingItems, bookingItemTravelers, bookingTravelers } from "@voyantjs/bookings/schema"
 import { bookingStatusSchema } from "@voyantjs/bookings/validation"
 import type { EventBus } from "@voyantjs/core"
 import { eq } from "drizzle-orm"
@@ -41,11 +41,10 @@ const travelerInputSchema = z.object({
   preferredLanguage: z.string().max(35).optional().nullable(),
   specialRequests: z.string().optional().nullable(),
   /**
-   * option_unit_id the passenger is assigned to. Accepted by the input
-   * schema so the UI's PassengerListValue can round-trip, but not yet
-   * persisted — bookingTravelers has no room-assignment column and the
-   * allocation flow is owned by the items slice. Follow-up: add a traveler
-   * metadata JSONB or wire into booking_allocations.
+   * Legacy option_unit_id assignment from the create UI. The canonical
+   * persisted relationship is item-line applicability via
+   * booking_item_travelers, carried by itemLines[].travelerIndexes and
+   * extraLines[].travelerIndexes.
    */
   roomUnitId: z.string().optional().nullable(),
   isPrimary: z.boolean().optional().nullable(),
@@ -69,15 +68,18 @@ const documentGenerationInputSchema = z
   .default({ contractDocument: false, invoiceDocument: false })
 
 const itemLineInputSchema = z.object({
+  clientLineKey: z.string().min(1).max(255).optional().nullable(),
   optionUnitId: z.string().min(1),
   quantity: z.number().int().min(1),
   title: z.string().min(1).max(255).optional().nullable(),
   description: z.string().max(5000).optional().nullable(),
   unitSellAmountCents: z.number().int().min(0).optional().nullable(),
   totalSellAmountCents: z.number().int().min(0).optional().nullable(),
+  travelerIndexes: z.array(z.number().int().min(0)).optional().nullable(),
 })
 
 const extraLineInputSchema = z.object({
+  clientLineKey: z.string().min(1).max(255).optional().nullable(),
   productExtraId: z.string().min(1),
   optionExtraConfigId: z.string().min(1).optional().nullable(),
   name: z.string().min(1).max(255),
@@ -88,6 +90,7 @@ const extraLineInputSchema = z.object({
   sellCurrency: z.string().length(3),
   unitSellAmountCents: z.number().int().min(0).optional().nullable(),
   totalSellAmountCents: z.number().int().min(0).optional().nullable(),
+  travelerIndexes: z.array(z.number().int().min(0)).optional().nullable(),
 })
 
 const voucherRedemptionInputSchema = z.object({
@@ -434,6 +437,75 @@ function isAlreadyPaidSchedule(schedule: BookingCreatePaymentScheduleInput) {
   return schedule.status === "paid" || metadata?.alreadyPaid === true
 }
 
+function uniqueValidTravelerIndexes(
+  indexes: readonly number[] | null | undefined,
+  travelerCount: number,
+): number[] {
+  if (!indexes?.length) return []
+  const seen = new Set<number>()
+  const result: number[] = []
+  for (const index of indexes) {
+    if (index < 0 || index >= travelerCount || seen.has(index)) continue
+    seen.add(index)
+    result.push(index)
+  }
+  return result
+}
+
+function bookingCreateLineMetadata(clientLineKey: string | null | undefined) {
+  return clientLineKey ? { bookingCreateLineKey: clientLineKey } : {}
+}
+
+async function linkBookingCreateItemsToTravelers(
+  tx: PostgresJsDatabase,
+  bookingId: string,
+  travelers: readonly BookingTraveler[],
+  lines: ReadonlyArray<{
+    clientLineKey?: string | null
+    travelerIndexes?: readonly number[] | null
+  }>,
+) {
+  if (travelers.length === 0 || lines.length === 0) return
+  const requestedLinks = lines.flatMap((line) =>
+    uniqueValidTravelerIndexes(line.travelerIndexes, travelers.length).map((travelerIndex) => ({
+      clientLineKey: line.clientLineKey ?? null,
+      travelerIndex,
+    })),
+  )
+  if (requestedLinks.length === 0) return
+
+  const itemRows = await tx.select().from(bookingItems).where(eq(bookingItems.bookingId, bookingId))
+  const itemByClientLineKey = new Map<string, (typeof itemRows)[number]>()
+  for (const item of itemRows) {
+    const key = (item.metadata as { bookingCreateLineKey?: unknown } | null | undefined)
+      ?.bookingCreateLineKey
+    if (typeof key === "string") itemByClientLineKey.set(key, item)
+  }
+
+  const seen = new Set<string>()
+  const linkRows = requestedLinks.flatMap(({ clientLineKey, travelerIndex }) => {
+    if (!clientLineKey) return []
+    const item = itemByClientLineKey.get(clientLineKey)
+    const traveler = travelers[travelerIndex]
+    if (!item || !traveler) return []
+    const dedupeKey = `${item.id}:${traveler.id}`
+    if (seen.has(dedupeKey)) return []
+    seen.add(dedupeKey)
+    return [
+      {
+        bookingItemId: item.id,
+        travelerId: traveler.id,
+        role: "traveler" as const,
+        isPrimary: traveler.isPrimary,
+      },
+    ]
+  })
+
+  if (linkRows.length > 0) {
+    await tx.insert(bookingItemTravelers).values(linkRows)
+  }
+}
+
 function validatePaymentSchedules(
   input: BookingCreateInput,
   booking: Booking,
@@ -612,6 +684,7 @@ export async function createBooking(
               optionId: input.optionId ?? null,
               optionUnitId: null,
               metadata: {
+                ...bookingCreateLineMetadata(line.clientLineKey),
                 productExtraId: line.productExtraId,
                 optionExtraConfigId: line.optionExtraConfigId ?? null,
                 pricingMode: line.pricingMode ?? null,
@@ -622,8 +695,9 @@ export async function createBooking(
         )
       }
 
-      // 2. Travelers. roomUnitId is accepted on the input but not persisted
-      // yet — see travelerInputSchema for the follow-up note.
+      // 2. Travelers. Item/extra line applicability is persisted after
+      // traveler rows exist because the create payload addresses travelers
+      // by stable array index within this transaction.
       const travelers: BookingTraveler[] = []
       for (const traveler of input.travelers ?? []) {
         const [row] = await tx
@@ -645,6 +719,11 @@ export async function createBooking(
           .returning()
         if (row) travelers.push(row)
       }
+
+      await linkBookingCreateItemsToTravelers(tx, booking.id, travelers, [
+        ...(input.itemLines ?? []),
+        ...(input.extraLines ?? []),
+      ])
 
       // 3. Payment schedules
       const paymentSchedules: BookingPaymentSchedule[] = []

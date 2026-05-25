@@ -1,4 +1,7 @@
-import type { BookingCreateTravelerInput } from "@voyantjs/bookings-react"
+import type {
+  BookingCreateExtraLineInput,
+  BookingCreateTravelerInput,
+} from "@voyantjs/bookings-react"
 
 export type BookingDraftTravelerRole = "lead" | "adult" | "child" | "infant"
 
@@ -44,6 +47,7 @@ export type BookingDraftQuantities = Record<string, number>
 export interface ResolvedBookingDraft<TTraveler extends BookingDraftTraveler> {
   quantities: BookingDraftQuantities
   travelers: TTraveler[]
+  travelerIndexesByUnitId: Record<string, number[]>
 }
 
 export function computeDraftAgeYears(dob: string | null, now: Date = new Date()): number | null {
@@ -142,7 +146,9 @@ export function resolveBookingDraft<TTraveler extends BookingDraftTraveler>(opti
 }): ResolvedBookingDraft<TTraveler> {
   const { quantities, travelers, now = new Date() } = options
   const units = [...options.units]
-  if (units.length === 0) return { quantities, travelers: [...travelers] }
+  if (units.length === 0) {
+    return { quantities, travelers: [...travelers], travelerIndexesByUnitId: {} }
+  }
 
   const unitsByOption = new Map<string, BookingDraftUnit[]>()
   const unitById = new Map<string, BookingDraftUnit>()
@@ -226,6 +232,7 @@ export function resolveBookingDraft<TTraveler extends BookingDraftTraveler>(opti
   })
 
   const next: BookingDraftQuantities = {}
+  const travelerIndexesByUnitId: Record<string, number[]> = {}
 
   for (const [unitId, quantity] of Object.entries(quantities)) {
     if (quantity <= 0) continue
@@ -235,12 +242,17 @@ export function resolveBookingDraft<TTraveler extends BookingDraftTraveler>(opti
   }
 
   const assignedByOption = new Map<string, number>()
-  for (const traveler of nextTravelers) {
+  for (const [index, traveler] of nextTravelers.entries()) {
     if (!traveler.roomUnitId || traveler.roomUnitAssignmentSource === "none") continue
     const key = unitToOption.get(traveler.roomUnitId)
-    if (!key || !personPricedOptions.has(key)) continue
-    next[traveler.roomUnitId] = (next[traveler.roomUnitId] ?? 0) + 1
-    assignedByOption.set(key, (assignedByOption.get(key) ?? 0) + 1)
+    if (!key) continue
+    const unitIndexes = travelerIndexesByUnitId[traveler.roomUnitId] ?? []
+    unitIndexes.push(index)
+    travelerIndexesByUnitId[traveler.roomUnitId] = unitIndexes
+    if (personPricedOptions.has(key)) {
+      next[traveler.roomUnitId] = (next[traveler.roomUnitId] ?? 0) + 1
+      assignedByOption.set(key, (assignedByOption.get(key) ?? 0) + 1)
+    }
   }
 
   for (const [key, total] of totalByOption) {
@@ -253,7 +265,34 @@ export function resolveBookingDraft<TTraveler extends BookingDraftTraveler>(opti
     next[adult.optionUnitId] = (next[adult.optionUnitId] ?? 0) + residual
   }
 
-  return { quantities: next, travelers: nextTravelers }
+  return { quantities: next, travelers: nextTravelers, travelerIndexesByUnitId }
+}
+
+export function resolveBookingExtraLines(options: {
+  extraLines: readonly BookingCreateExtraLineInput[]
+  travelerCount: number
+}): BookingCreateExtraLineInput[] {
+  const travelerIndexes = Array.from({ length: options.travelerCount }, (_, index) => index)
+  return options.extraLines.map((line) => {
+    const perPerson = line.pricingMode === "per_person" || line.pricedPerPerson === true
+    if (!perPerson) {
+      return {
+        ...line,
+        clientLineKey: line.clientLineKey ?? `extra:${line.productExtraId}`,
+      }
+    }
+    const quantity = Math.max(1, options.travelerCount) * line.quantity
+    return {
+      ...line,
+      clientLineKey: line.clientLineKey ?? `extra:${line.productExtraId}`,
+      quantity,
+      totalSellAmountCents:
+        line.unitSellAmountCents == null
+          ? line.totalSellAmountCents
+          : line.unitSellAmountCents * quantity,
+      travelerIndexes,
+    }
+  })
 }
 
 export function travelersToRows(

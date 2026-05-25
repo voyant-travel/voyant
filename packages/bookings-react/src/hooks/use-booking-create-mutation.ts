@@ -44,6 +44,7 @@ export interface BookingCreateDocumentGenerationInput {
 }
 
 export interface BookingCreateItemLineInput {
+  clientLineKey?: string | null
   optionId?: string | null
   optionUnitId: string
   quantity: number
@@ -51,9 +52,11 @@ export interface BookingCreateItemLineInput {
   description?: string | null
   unitSellAmountCents?: number | null
   totalSellAmountCents?: number | null
+  travelerIndexes?: number[] | null
 }
 
 export interface BookingCreateExtraLineInput {
+  clientLineKey?: string | null
   productExtraId: string
   optionExtraConfigId?: string | null
   name: string
@@ -64,6 +67,7 @@ export interface BookingCreateExtraLineInput {
   sellCurrency: string
   unitSellAmountCents?: number | null
   totalSellAmountCents?: number | null
+  travelerIndexes?: number[] | null
 }
 
 export interface BookingCreateVoucherRedemptionInput {

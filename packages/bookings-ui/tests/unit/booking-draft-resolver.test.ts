@@ -4,6 +4,7 @@ import {
   type BookingDraftTraveler,
   type BookingDraftUnit,
   resolveBookingDraft,
+  resolveBookingExtraLines,
   travelersToRows,
 } from "../../src/components/booking-draft-resolver.js"
 
@@ -77,6 +78,11 @@ describe("resolveBookingDraft", () => {
       "u_child_6_12",
       "u_child_0_5",
     ])
+    expect(result.travelerIndexesByUnitId).toEqual({
+      u_adult: [0],
+      u_child_6_12: [1],
+      u_child_0_5: [2],
+    })
   })
 
   it("recomputes stale auto Adult assignments after an existing child person is selected", () => {
@@ -138,6 +144,7 @@ describe("resolveBookingDraft", () => {
 
     expect(result.quantities).toEqual({ u_double_room: 1 })
     expect(result.travelers.map((t) => t.roomUnitId)).toEqual(["u_double_room", "u_double_room"])
+    expect(result.travelerIndexesByUnitId).toEqual({ u_double_room: [0, 1] })
   })
 
   it("preserves explicit No room assignments", () => {
@@ -164,6 +171,33 @@ describe("resolveBookingDraft", () => {
 
     expect(result.quantities).toEqual({ u_double_room: 1 })
     expect(result.travelers[0]?.roomUnitId).toBeNull()
+  })
+})
+
+describe("resolveBookingExtraLines", () => {
+  it("normalizes per-person extras to charged traveler quantity and traveler links", () => {
+    const result = resolveBookingExtraLines({
+      travelerCount: 3,
+      extraLines: [
+        {
+          productExtraId: "extra_lunch",
+          name: "Lunch",
+          pricingMode: "per_person",
+          pricedPerPerson: true,
+          quantity: 1,
+          sellCurrency: "RON",
+          unitSellAmountCents: 5000,
+          totalSellAmountCents: 5000,
+        },
+      ],
+    })
+
+    expect(result[0]).toMatchObject({
+      clientLineKey: "extra:extra_lunch",
+      quantity: 3,
+      totalSellAmountCents: 15000,
+      travelerIndexes: [0, 1, 2],
+    })
   })
 })
 

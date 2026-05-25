@@ -2824,6 +2824,12 @@ export const bookingsService = {
       productNameSnapshot: product.name,
       optionNameSnapshot: option?.name ?? null,
     } as const
+    const itemLineMetadata = (clientLineKey: string | null | undefined) => {
+      const slotMetadata = (slotFields.metadata ?? {}) as Record<string, unknown>
+      return clientLineKey
+        ? { ...slotMetadata, bookingCreateLineKey: clientLineKey }
+        : slotFields.metadata
+    }
 
     // Seeded line-item totals must match the booking's `sellAmountCents`
     // so checkout / payment / invoicing don't see a list-price item beneath
@@ -2853,6 +2859,7 @@ export const bookingsService = {
               ...productOptionSnapshot,
               unitNameSnapshot: unit.name,
               ...slotFields,
+              metadata: itemLineMetadata(line.clientLineKey),
             }
           })
         : unitsToSeed.length > 0

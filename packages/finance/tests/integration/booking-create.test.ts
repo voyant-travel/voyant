@@ -1,4 +1,10 @@
-import { bookingGroups, bookingItems, bookings, bookingTravelers } from "@voyantjs/bookings/schema"
+import {
+  bookingGroups,
+  bookingItems,
+  bookingItemTravelers,
+  bookings,
+  bookingTravelers,
+} from "@voyantjs/bookings/schema"
 import { createEventBus } from "@voyantjs/core"
 import { eq, sql } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
@@ -30,6 +36,7 @@ async function resetTables(
     "payment_instruments",
     "booking_payment_schedules",
     "booking_allocations",
+    "booking_item_travelers",
     "booking_travelers",
     "booking_group_members",
     "booking_groups",
@@ -500,6 +507,67 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       [unitId, 2],
       [secondUnitId, 1],
     ])
+  })
+
+  it("links explicit item and per-person extra lines to travelers", async () => {
+    const { productId, unitId } = await seedProduct()
+
+    const outcome = await createBooking(db, {
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      travelers: [
+        {
+          firstName: "Alice",
+          lastName: "Lead",
+          email: "alice@example.com",
+          participantType: "traveler",
+          isPrimary: true,
+        },
+        {
+          firstName: "Child",
+          lastName: "Traveler",
+          participantType: "traveler",
+          travelerCategory: "child",
+        },
+      ],
+      itemLines: [
+        {
+          clientLineKey: `unit:${unitId}`,
+          optionUnitId: unitId,
+          quantity: 2,
+          title: "Adult",
+          travelerIndexes: [0, 1],
+        },
+      ],
+      extraLines: [
+        {
+          clientLineKey: "extra:lunch",
+          productExtraId: "lunch",
+          name: "Lunch",
+          pricingMode: "per_person",
+          pricedPerPerson: true,
+          quantity: 2,
+          sellCurrency: "EUR",
+          unitSellAmountCents: 1000,
+          totalSellAmountCents: 2000,
+          travelerIndexes: [0, 1],
+        },
+      ],
+    })
+
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+
+    const links = await db
+      .select()
+      .from(bookingItemTravelers)
+      .where(sql`${bookingItemTravelers.bookingItemId} IN (
+        SELECT ${bookingItems.id}
+        FROM ${bookingItems}
+        WHERE ${bookingItems.bookingId} = ${outcome.result.booking.id}
+      )`)
+    expect(links).toHaveLength(4)
   })
 
   it("redeems voucher and decrements remaining balance", async () => {

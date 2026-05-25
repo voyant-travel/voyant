@@ -160,6 +160,45 @@ describe("booking create helpers", () => {
     ])
   })
 
+  it("carries traveler applicability on selected item lines", () => {
+    const result = itemLinesToRows(
+      {
+        optu_adult: 1,
+        optu_child: 1,
+      },
+      [
+        { optionId: "opto_tour", optionUnitId: "optu_adult", unitName: "Adult" },
+        { optionId: "opto_tour", optionUnitId: "optu_child", unitName: "Child" },
+      ],
+      {
+        confirmedAmountCents: 29600,
+        lines: [
+          {
+            unitId: "optu_adult",
+            label: "Adult",
+            unitAmountCents: 16000,
+            totalAmountCents: 16000,
+          },
+          {
+            unitId: "optu_child",
+            label: "Child",
+            unitAmountCents: 13600,
+            totalAmountCents: 13600,
+          },
+        ],
+      },
+      {
+        optu_adult: [0],
+        optu_child: [1],
+      },
+    )
+
+    expect(result.map((line) => [line.clientLineKey, line.travelerIndexes])).toEqual([
+      ["unit:optu_adult", [0]],
+      ["unit:optu_child", [1]],
+    ])
+  })
+
   it("uses the selected unit for new shared-room groups", () => {
     expect(
       getSelectedSharedRoomUnitId({

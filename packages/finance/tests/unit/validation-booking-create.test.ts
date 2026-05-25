@@ -47,8 +47,28 @@ describe("bookingCreateSchema", () => {
         invoiceDocument: true,
       },
       itemLines: [
-        { optionUnitId: "opun_dbl", quantity: 2, title: "Double room" },
+        {
+          clientLineKey: "unit:opun_dbl",
+          optionUnitId: "opun_dbl",
+          quantity: 2,
+          title: "Double room",
+          travelerIndexes: [0],
+        },
         { optionUnitId: "opun_sgl", quantity: 1, title: "Single room" },
+      ],
+      extraLines: [
+        {
+          clientLineKey: "extra:lunch",
+          productExtraId: "lunch",
+          name: "Lunch",
+          pricingMode: "per_person",
+          pricedPerPerson: true,
+          quantity: 1,
+          sellCurrency: "EUR",
+          unitSellAmountCents: 1000,
+          totalSellAmountCents: 1000,
+          travelerIndexes: [0],
+        },
       ],
       paymentSchedules: [
         {
@@ -68,6 +88,8 @@ describe("bookingCreateSchema", () => {
     })
 
     expect(result.itemLines).toHaveLength(2)
+    expect(result.itemLines?.[0]?.travelerIndexes).toEqual([0])
+    expect(result.extraLines?.[0]?.clientLineKey).toBe("extra:lunch")
     expect(result.documentGeneration?.invoiceDocument).toBe(true)
     expect(result.paymentSchedules?.[0]?.status).toBe("paid")
   })

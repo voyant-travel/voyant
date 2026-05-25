@@ -40,7 +40,11 @@ import {
   useBookingsUiI18nOrDefault,
   useBookingsUiMessagesOrDefault,
 } from "../i18n/provider.js"
-import { resolveBookingDraft, travelersToRows } from "./booking-draft-resolver.js"
+import {
+  resolveBookingDraft,
+  resolveBookingExtraLines,
+  travelersToRows,
+} from "./booking-draft-resolver.js"
 
 export { pickUnitForAge } from "./booking-draft-resolver.js"
 
@@ -581,14 +585,23 @@ export function BookingCreateForm({
 
   // Apply the same draft resolver we use at submit so live pricing and
   // persisted item lines cannot drift.
-  const displayQuantities = React.useMemo(
+  const displayDraft = React.useMemo(
     () =>
       resolveBookingDraft({
         quantities: rooms.quantities,
         travelers: travelers.travelers,
         units: getTravelerAssignableStepperUnits(roomUnits),
-      }).quantities,
+      }),
     [rooms.quantities, travelers.travelers, roomUnits],
+  )
+  const displayQuantities = displayDraft.quantities
+  const displayExtraLines = React.useMemo(
+    () =>
+      resolveBookingExtraLines({
+        extraLines,
+        travelerCount: travelers.travelers.length,
+      }),
+    [extraLines, travelers.travelers.length],
   )
 
   // Currency placeholder — used for voucher + payment schedule display.
@@ -742,7 +755,16 @@ export function BookingCreateForm({
         units: submitUnits,
       })
 
-      const itemLines = itemLinesToRows(redistributed.quantities, submitUnits, pricing)
+      const itemLines = itemLinesToRows(
+        redistributed.quantities,
+        submitUnits,
+        pricing,
+        redistributed.travelerIndexesByUnitId,
+      )
+      const resolvedExtraLines = resolveBookingExtraLines({
+        extraLines,
+        travelerCount: travelers.travelers.length,
+      })
 
       const travelerRows = travelersToRows({ travelers: redistributed.travelers })
 
@@ -842,7 +864,7 @@ export function BookingCreateForm({
         confirmedSellAmountCents,
         priceOverrideReason: priceOverrideReason || null,
         itemLines: itemLines.length > 0 ? itemLines : undefined,
-        extraLines: extraLines.length > 0 ? extraLines : undefined,
+        extraLines: resolvedExtraLines.length > 0 ? resolvedExtraLines : undefined,
         travelers: travelerRows.length > 0 ? travelerRows : undefined,
         paymentSchedules: paymentSchedules.length > 0 ? paymentSchedules : undefined,
         voucherRedemption,
@@ -1161,7 +1183,7 @@ export function BookingCreateForm({
           })()}
           unitQuantities={displayQuantities}
           unitLabels={roomUnitLabels}
-          extraLines={extraLines}
+          extraLines={displayExtraLines}
           travelers={travelers.travelers}
           messages={messages}
           onPricingChange={setPricing}

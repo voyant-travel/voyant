@@ -217,6 +217,7 @@ export const convertProductSchema = z
     itemLines: z
       .array(
         z.object({
+          clientLineKey: z.string().min(1).max(255).optional().nullable(),
           optionId: z.string().min(1).optional().nullable(),
           optionUnitId: z.string().min(1),
           quantity: z.number().int().min(1),
@@ -224,6 +225,7 @@ export const convertProductSchema = z
           description: z.string().max(5000).optional().nullable(),
           unitSellAmountCents: z.number().int().min(0).optional().nullable(),
           totalSellAmountCents: z.number().int().min(0).optional().nullable(),
+          travelerIndexes: z.array(z.number().int().min(0)).optional().nullable(),
         }),
       )
       .optional(),
