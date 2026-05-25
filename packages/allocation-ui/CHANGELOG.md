@@ -1,5 +1,15 @@
 # @voyantjs/allocation-ui
 
+## 0.81.3
+
+### Patch Changes
+
+- 334b531: Show booked passengers on slot allocation pages that have no resource allocation kinds.
+- Updated dependencies [f157bcd]
+  - @voyantjs/availability-react@0.81.3
+  - @voyantjs/i18n@0.81.3
+  - @voyantjs/ui@0.81.3
+
 ## 0.81.2
 
 ### Patch Changes
