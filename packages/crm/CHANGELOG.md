@@ -1,5 +1,17 @@
 # @voyantjs/crm
 
+## 0.81.6
+
+### Patch Changes
+
+- f92c593: Include person email and phone contact points in CRM people search, with phone digit matching tolerant of formatting differences.
+  - @voyantjs/action-ledger@0.81.6
+  - @voyantjs/core@0.81.6
+  - @voyantjs/db@0.81.6
+  - @voyantjs/hono@0.81.6
+  - @voyantjs/identity@0.81.6
+  - @voyantjs/utils@0.81.6
+
 ## 0.81.5
 
 ### Patch Changes
