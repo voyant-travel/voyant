@@ -1,5 +1,19 @@
 # @voyantjs/legal
 
+## 0.80.10
+
+### Patch Changes
+
+- 97cae5e: Add default-aware contract number series selection for booking contract auto-generation.
+  - @voyantjs/bookings@0.80.10
+  - @voyantjs/core@0.80.10
+  - @voyantjs/crm@0.80.10
+  - @voyantjs/db@0.80.10
+  - @voyantjs/hono@0.80.10
+  - @voyantjs/storage@0.80.10
+  - @voyantjs/suppliers@0.80.10
+  - @voyantjs/utils@0.80.10
+
 ## 0.80.9
 
 ### Patch Changes
