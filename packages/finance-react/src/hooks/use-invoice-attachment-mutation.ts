@@ -31,7 +31,7 @@ export function useInvoiceAttachmentMutation(invoiceId: string) {
   const create = useMutation({
     mutationFn: async (input: CreateInvoiceAttachmentInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/finance/invoices/${invoiceId}/attachments`,
+        `/v1/admin/finance/invoices/${invoiceId}/attachments`,
         invoiceAttachmentSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -46,7 +46,7 @@ export function useInvoiceAttachmentMutation(invoiceId: string) {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateInvoiceAttachmentInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/finance/invoices/${invoiceId}/attachments/${id}`,
+        `/v1/admin/finance/invoices/${invoiceId}/attachments/${id}`,
         invoiceAttachmentSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -61,7 +61,7 @@ export function useInvoiceAttachmentMutation(invoiceId: string) {
   const remove = useMutation({
     mutationFn: async (attachmentId: string) =>
       fetchWithValidation(
-        `/v1/finance/invoices/${invoiceId}/attachments/${attachmentId}`,
+        `/v1/admin/finance/invoices/${invoiceId}/attachments/${attachmentId}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

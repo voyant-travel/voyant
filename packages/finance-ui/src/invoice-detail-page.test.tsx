@@ -37,6 +37,7 @@ vi.mock("@voyantjs/finance-react", () => {
       create: mutation(),
       remove: mutation(),
       update: mutation(),
+      voidInvoice: mutation(),
     }),
     useInvoiceLineItemMutation: () => ({ remove: mutation() }),
     useInvoiceAttachmentMutation: () => ({
@@ -88,6 +89,7 @@ describe("InvoiceDetailHeader", () => {
       <InvoiceDetailHeader
         invoice={invoice({ invoiceType: "proforma" })}
         onEdit={() => {}}
+        onVoid={async () => {}}
         onDelete={async () => {}}
       />,
     )
@@ -99,7 +101,12 @@ describe("InvoiceDetailHeader", () => {
 
   it("does not render a type badge for legacy invoices without invoiceType", () => {
     const html = renderToStaticMarkup(
-      <InvoiceDetailHeader invoice={invoice()} onEdit={() => {}} onDelete={async () => {}} />,
+      <InvoiceDetailHeader
+        invoice={invoice()}
+        onEdit={() => {}}
+        onVoid={async () => {}}
+        onDelete={async () => {}}
+      />,
     )
 
     expect(html).not.toContain('data-slot="invoice-type-badge"')

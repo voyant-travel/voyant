@@ -27,6 +27,10 @@ export interface CreateInvoiceInput {
 
 export type UpdateInvoiceInput = Partial<CreateInvoiceInput>
 
+export interface VoidInvoiceInput {
+  reason?: string | null
+}
+
 export function useInvoiceMutation() {
   const { baseUrl, fetcher } = useVoyantFinanceContext()
   const queryClient = useQueryClient()
@@ -34,7 +38,7 @@ export function useInvoiceMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateInvoiceInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/finance/invoices",
+        "/v1/admin/finance/invoices",
         invoiceSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -50,7 +54,7 @@ export function useInvoiceMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateInvoiceInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/finance/invoices/${id}`,
+        `/v1/admin/finance/invoices/${id}`,
         invoiceSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -66,7 +70,7 @@ export function useInvoiceMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) =>
       fetchWithValidation(
-        `/v1/finance/invoices/${id}`,
+        `/v1/admin/finance/invoices/${id}`,
         successEnvelope,
         { baseUrl, fetcher },
         {
@@ -83,6 +87,22 @@ export function useInvoiceMutation() {
     },
   })
 
+  const voidInvoice = useMutation({
+    mutationFn: async ({ id, input }: { id: string; input?: VoidInvoiceInput }) => {
+      const { data } = await fetchWithValidation(
+        `/v1/admin/finance/invoices/${id}/void`,
+        invoiceSingleResponse,
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify(input ?? {}) },
+      )
+      return data
+    },
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: financeQueryKeys.invoices() })
+      queryClient.setQueryData(financeQueryKeys.invoice(data.id), { data })
+    },
+  })
+
   /**
    * Create + issue an invoice (or proforma) from an existing booking. The
    * server builds line items from either the booking items or a targeted
@@ -91,7 +111,7 @@ export function useInvoiceMutation() {
   const createFromBooking = useMutation({
     mutationFn: async (input: CreateInvoiceFromBookingInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/finance/invoices/from-booking",
+        "/v1/admin/finance/invoices/from-booking",
         invoiceSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -113,7 +133,7 @@ export function useInvoiceMutation() {
   const convertToInvoice = useMutation({
     mutationFn: async ({ id, input }: { id: string; input?: ConvertProformaInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/finance/invoices/${id}/convert-to-invoice`,
+        `/v1/admin/finance/invoices/${id}/convert-to-invoice`,
         invoiceSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input ?? {}) },
@@ -135,7 +155,7 @@ export function useInvoiceMutation() {
   const render = useMutation({
     mutationFn: async ({ id, input }: { id: string; input?: RenderInvoiceInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/finance/invoices/${id}/render`,
+        `/v1/admin/finance/invoices/${id}/render`,
         invoiceRenditionResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input ?? { format: "pdf" }) },
@@ -150,7 +170,7 @@ export function useInvoiceMutation() {
     },
   })
 
-  return { create, createFromBooking, convertToInvoice, render, update, remove }
+  return { create, createFromBooking, convertToInvoice, render, update, remove, voidInvoice }
 }
 
 export interface ConvertProformaInput {

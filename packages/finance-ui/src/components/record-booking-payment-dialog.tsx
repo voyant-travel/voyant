@@ -62,7 +62,7 @@ export interface RecordBookingPaymentDialogProps {
   onRecorded?: () => void
   /**
    * When set, the dialog runs in edit mode: it prefills from the
-   * snapshot and PATCHes `/v1/finance/payments/:id` on submit instead
+   * snapshot and PATCHes `/v1/admin/finance/payments/:id` on submit instead
    * of POSTing a new payment. The invoice selector is locked because
    * reassigning a payment to a different invoice is out of scope for
    * this dialog.

@@ -42,7 +42,7 @@ export function listInvoiceActionLedger(
 ) {
   return fetchWithValidation(
     withQueryParams(
-      `/v1/finance/invoices/${invoiceId}/action-ledger`,
+      `/v1/admin/finance/invoices/${invoiceId}/action-ledger`,
       toFinanceActionLedgerQuery(input),
     ),
     financeActionLedgerListResponse,
@@ -57,7 +57,7 @@ export function listPaymentSessionActionLedger(
 ) {
   return fetchWithValidation(
     withQueryParams(
-      `/v1/finance/payment-sessions/${paymentSessionId}/action-ledger`,
+      `/v1/admin/finance/payment-sessions/${paymentSessionId}/action-ledger`,
       toFinanceActionLedgerQuery(input),
     ),
     financeActionLedgerListResponse,
@@ -108,7 +108,7 @@ export function getAdminBookingPayments(client: FetchWithValidationOptions, book
 
 export function getInvoiceFxRate(client: FetchWithValidationOptions, input: InvoiceFxRateInput) {
   return fetchWithValidation(
-    withQueryParams("/v1/finance/invoice-fx-rate", input),
+    withQueryParams("/v1/admin/finance/invoice-fx-rate", input),
     invoiceFxRateResponse,
     client,
   )

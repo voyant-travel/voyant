@@ -52,7 +52,7 @@ function invalidatePaymentScopes(
  * Mutations for an already-recorded customer payment.
  *
  * `useInvoicePaymentMutation(invoiceId)` covers create; update + delete
- * route through `/v1/finance/payments/:id` and recompute invoice totals
+ * route through `/v1/admin/finance/payments/:id` and recompute invoice totals
  * server-side, so callers don't need to refresh the invoice manually —
  * onSuccess invalidates the invoice and payment list queries.
  */
@@ -63,7 +63,7 @@ export function usePaymentMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdatePaymentInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/finance/payments/${id}`,
+        `/v1/admin/finance/payments/${id}`,
         paymentSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -78,7 +78,7 @@ export function usePaymentMutation() {
   const remove = useMutation({
     mutationFn: async (id: string) => {
       const { data } = await fetchWithValidation(
-        `/v1/finance/payments/${id}`,
+        `/v1/admin/finance/payments/${id}`,
         paymentSingleResponse,
         { baseUrl, fetcher },
         { method: "DELETE" },

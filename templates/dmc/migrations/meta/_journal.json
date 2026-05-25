@@ -113,6 +113,13 @@
       "when": 1779699538128,
       "tag": "0017_contract_number_series_defaults",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1779710400000,
+      "tag": "0018_invoice_void_metadata",
+      "breakpoints": true
     }
   ]
 }

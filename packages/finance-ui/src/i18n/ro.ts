@@ -304,11 +304,17 @@ export const financeUiRo = {
     actions: {
       back: "Inapoi la finante",
       edit: "Editeaza",
+      void: "Anuleaza",
+      voidTitle: "Anulezi aceasta factura?",
+      voidDescription: "Factura este marcata ca anulata, iar istoricul ramane pastrat.",
+      voidUnavailable: "Doar facturile emise fara plati sau note de credit pot fi anulate.",
+      voidReasonPlaceholder: "Motivul anularii...",
       delete: "Sterge",
       deleteTitle: "Stergi aceasta factura?",
       deleteDescription:
         "Aceasta actiune sterge definitiv factura ciorna si inregistrarile financiare.",
       deleteOnlyDraft: "Doar facturile ciorna pot fi sterse.",
+      mutationFailed: "Actiunea pe factura nu a putut fi finalizata.",
       viewBooking: "Vezi rezervarea",
       viewPerson: "Vezi persoana",
       viewOrganization: "Vezi organizatia",

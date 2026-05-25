@@ -511,7 +511,7 @@ export function ProductOrganizeSection({
     queryKey: ["tax-class", product.taxClassId],
     enabled: !!product.taxClassId,
     queryFn: () =>
-      api.get<{ data: TaxClassSummary }>(`/v1/finance/tax-classes/${product.taxClassId}`),
+      api.get<{ data: TaxClassSummary }>(`/v1/admin/finance/tax-classes/${product.taxClassId}`),
   })
   return (
     <Section

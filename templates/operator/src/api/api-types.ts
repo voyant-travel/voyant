@@ -40,7 +40,7 @@ type ApiRoutes = Hono & {
   "/v1/suppliers": SupplierRoutes
   "/v1/products": ProductRoutes
   "/v1/bookings": BookingRoutes
-  "/v1/finance": FinanceRoutes
+  "/v1/admin/finance": FinanceRoutes
 }
 
 export type AppType = ApiRoutes

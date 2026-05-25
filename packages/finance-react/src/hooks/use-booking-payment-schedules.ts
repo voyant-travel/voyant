@@ -55,7 +55,7 @@ export function useBookingPaymentScheduleMutation(bookingId: string) {
   const create = useMutation({
     mutationFn: async (input: CreateBookingPaymentScheduleInput) => {
       const res = await fetchWithValidation(
-        `/v1/finance/bookings/${bookingId}/payment-schedules`,
+        `/v1/admin/finance/bookings/${bookingId}/payment-schedules`,
         scheduleSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -68,7 +68,7 @@ export function useBookingPaymentScheduleMutation(bookingId: string) {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateBookingPaymentScheduleInput }) => {
       const res = await fetchWithValidation(
-        `/v1/finance/bookings/${bookingId}/payment-schedules/${id}`,
+        `/v1/admin/finance/bookings/${bookingId}/payment-schedules/${id}`,
         scheduleSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -81,7 +81,7 @@ export function useBookingPaymentScheduleMutation(bookingId: string) {
   const remove = useMutation({
     mutationFn: async (scheduleId: string) =>
       fetchWithValidation(
-        `/v1/finance/bookings/${bookingId}/payment-schedules/${scheduleId}`,
+        `/v1/admin/finance/bookings/${bookingId}/payment-schedules/${scheduleId}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },

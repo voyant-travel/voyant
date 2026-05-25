@@ -415,10 +415,16 @@ export type FinanceUiMessages = {
     actions: {
       back: string
       edit: string
+      void: string
+      voidTitle: string
+      voidDescription: string
+      voidUnavailable: string
+      voidReasonPlaceholder: string
       delete: string
       deleteTitle: string
       deleteDescription: string
       deleteOnlyDraft: string
+      mutationFailed: string
       viewBooking: string
       viewPerson: string
       viewOrganization: string

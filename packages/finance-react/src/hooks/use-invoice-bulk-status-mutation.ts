@@ -74,7 +74,7 @@ export function useInvoiceBulkStatusMutation() {
         const results = await Promise.allSettled(
           batch.map(async (invoice) => {
             const { data } = await fetchWithValidation(
-              `/v1/finance/invoices/${invoice.id}`,
+              `/v1/admin/finance/invoices/${invoice.id}`,
               invoiceSingleResponse,
               { baseUrl, fetcher },
               {

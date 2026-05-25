@@ -109,6 +109,8 @@ export const invoiceRecordSchema = z
     issueDate: z.string(),
     dueDate: z.string(),
     notes: z.string().nullable(),
+    voidedAt: z.string().nullable().optional(),
+    voidReason: z.string().nullable().optional(),
     createdAt: z.string(),
     updatedAt: z.string(),
   })
@@ -528,7 +530,7 @@ export const voucherDetailSchema = voucherRecordSchema.extend({
 })
 export type VoucherDetailRecord = z.infer<typeof voucherDetailSchema>
 
-/** Result envelope for `POST /v1/finance/vouchers/:id/redeem`. */
+/** Result envelope for `POST /v1/admin/finance/vouchers/:id/redeem`. */
 export const voucherRedemptionResultSchema = z.object({
   voucher: voucherRecordSchema,
   redemption: voucherRedemptionRecordSchema.nullable(),

@@ -36,7 +36,7 @@ export function useSupplierPaymentMutation() {
   const create = useMutation({
     mutationFn: async (input: CreateSupplierPaymentInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/finance/supplier-payments",
+        "/v1/admin/finance/supplier-payments",
         supplierPaymentSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -52,7 +52,7 @@ export function useSupplierPaymentMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateSupplierPaymentInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/finance/supplier-payments/${id}`,
+        `/v1/admin/finance/supplier-payments/${id}`,
         supplierPaymentSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },

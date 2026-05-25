@@ -55,7 +55,7 @@ export function useVoucherMutation() {
   const issue = useMutation({
     mutationFn: async (input: IssueVoucherInput) => {
       const { data } = await fetchWithValidation(
-        "/v1/finance/vouchers",
+        "/v1/admin/finance/vouchers",
         voucherSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -71,7 +71,7 @@ export function useVoucherMutation() {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateVoucherInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/finance/vouchers/${id}`,
+        `/v1/admin/finance/vouchers/${id}`,
         voucherSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -93,7 +93,7 @@ export function useVoucherMutation() {
       input: RedeemVoucherInput
     }): Promise<VoucherRedemptionResult> => {
       const { data } = await fetchWithValidation(
-        `/v1/finance/vouchers/${id}/redeem`,
+        `/v1/admin/finance/vouchers/${id}/redeem`,
         voucherRedemptionResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },

@@ -225,6 +225,13 @@
       "when": 1779626814451,
       "tag": "0035_booking_reference_foreign_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1779710400000,
+      "tag": "0036_invoice_void_metadata",
+      "breakpoints": true
     }
   ]
 }

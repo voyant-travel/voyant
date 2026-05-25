@@ -30,7 +30,7 @@ export function useInvoiceLineItemMutation(invoiceId: string) {
   const create = useMutation({
     mutationFn: async (input: CreateInvoiceLineItemInput) => {
       const { data } = await fetchWithValidation(
-        `/v1/finance/invoices/${invoiceId}/line-items`,
+        `/v1/admin/finance/invoices/${invoiceId}/line-items`,
         invoiceLineItemSingleResponse,
         { baseUrl, fetcher },
         { method: "POST", body: JSON.stringify(input) },
@@ -46,7 +46,7 @@ export function useInvoiceLineItemMutation(invoiceId: string) {
   const update = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateInvoiceLineItemInput }) => {
       const { data } = await fetchWithValidation(
-        `/v1/finance/invoices/${invoiceId}/line-items/${id}`,
+        `/v1/admin/finance/invoices/${invoiceId}/line-items/${id}`,
         invoiceLineItemSingleResponse,
         { baseUrl, fetcher },
         { method: "PATCH", body: JSON.stringify(input) },
@@ -62,7 +62,7 @@ export function useInvoiceLineItemMutation(invoiceId: string) {
   const remove = useMutation({
     mutationFn: async (lineItemId: string) =>
       fetchWithValidation(
-        `/v1/finance/invoices/${invoiceId}/line-items/${lineItemId}`,
+        `/v1/admin/finance/invoices/${invoiceId}/line-items/${lineItemId}`,
         successEnvelope,
         { baseUrl, fetcher },
         { method: "DELETE" },
