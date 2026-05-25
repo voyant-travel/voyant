@@ -1,6 +1,6 @@
 import { newId } from "@voyantjs/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
-import { products } from "@voyantjs/products/schema"
+import { optionUnits, productOptions, products } from "@voyantjs/products/schema"
 import { sql } from "drizzle-orm"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -179,6 +179,66 @@ describe.skipIf(!DB_AVAILABLE)("slot resource availability (integration)", () =>
     expect(manifest).not.toBeNull()
     expect(manifest?.bookings).toHaveLength(3)
     expect(manifest?.summary.travelerCount).toBe(3)
+  })
+
+  it("uses the newest active booking allocation row for unit preferences", async () => {
+    const optionId = newId("product_options")
+    const dblUnitId = newId("option_units")
+    const twnUnitId = newId("option_units")
+    await db.insert(productOptions).values({
+      id: optionId,
+      productId,
+      name: "Standard",
+    })
+    await db.insert(optionUnits).values([
+      {
+        id: dblUnitId,
+        optionId,
+        name: "DBL room",
+        code: "dbl_room",
+        unitType: "person",
+        sortOrder: 0,
+      },
+      {
+        id: twnUnitId,
+        optionId,
+        name: "TWN room",
+        code: "twn_room",
+        unitType: "person",
+        sortOrder: 1,
+      },
+    ])
+
+    const bookingId = newId("bookings")
+    const travelerId = newId("booking_travelers")
+    const oldItemId = newId("booking_items")
+    const newItemId = newId("booking_items")
+    await db.execute(sql`
+      INSERT INTO bookings (id, booking_number, status, sell_currency)
+      VALUES (${bookingId}, 'BK-UNIT-EDIT', 'confirmed', 'USD')
+    `)
+    await db.execute(sql`
+      INSERT INTO booking_items (id, booking_id, title, sell_currency, quantity, option_id, option_unit_id)
+      VALUES
+        (${oldItemId}, ${bookingId}, 'Old DBL', 'USD', 2, ${optionId}, ${dblUnitId}),
+        (${newItemId}, ${bookingId}, 'New TWN', 'USD', 2, ${optionId}, ${twnUnitId})
+    `)
+    await db.execute(sql`
+      INSERT INTO booking_allocations
+        (id, booking_id, booking_item_id, product_id, option_id, option_unit_id, availability_slot_id, quantity, allocation_type, status, created_at, updated_at)
+      VALUES
+        (${newId("booking_allocations")}, ${bookingId}, ${oldItemId}, ${productId}, ${optionId}, ${dblUnitId}, ${slotId}, 2, 'unit', 'confirmed', ${new Date("2026-01-01T00:00:00Z")}, ${new Date("2026-01-01T00:00:00Z")}),
+        (${newId("booking_allocations")}, ${bookingId}, ${newItemId}, ${productId}, ${optionId}, ${twnUnitId}, ${slotId}, 2, 'unit', 'confirmed', ${new Date("2026-01-02T00:00:00Z")}, ${new Date("2026-01-02T00:00:00Z")})
+    `)
+    await db.execute(sql`
+      INSERT INTO booking_travelers (id, booking_id, participant_type, first_name, last_name)
+      VALUES (${travelerId}, ${bookingId}, 'traveler', 'Edited', 'Traveler')
+    `)
+
+    const manifest = await getSlotAllocationManifest(db, slotId)
+    const traveler = manifest?.bookings[0]?.travelers[0]
+    expect(traveler?.optionUnitId).toBe(twnUnitId)
+    expect(traveler?.optionUnitCode).toBe("twn_room")
   })
 
   it("validates allocations across multiple resources without a record-cast crash", async () => {

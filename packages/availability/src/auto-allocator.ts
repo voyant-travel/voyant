@@ -6,6 +6,9 @@ export interface AllocatorTraveler {
   sharingGroupId: string | null
   hasAccessibilityNeeds: boolean
   existingAllocationId: string | null
+  optionId?: string | null
+  optionUnitId?: string | null
+  optionUnitCode?: string | null
 }
 
 export interface AllocatorResource {
@@ -14,6 +17,9 @@ export interface AllocatorResource {
   capacity: number
   flags: Record<string, unknown>
   parentId: string | null
+  refType?: string | null
+  refId?: string | null
+  label?: string | null
   row?: number
   column?: string
   position?: "window" | "aisle" | "middle"
@@ -31,6 +37,9 @@ interface InternalGroup {
   travelerIds: string[]
   needsAccessibility: boolean
   leadTravelerId: string | null
+  optionIds: Set<string>
+  optionUnitIds: Set<string>
+  optionUnitCodes: Set<string>
 }
 
 function activeTravelers(travelers: AllocatorTraveler[]): AllocatorTraveler[] {
@@ -51,14 +60,59 @@ function groupTravelers(travelers: AllocatorTraveler[]): Map<string, InternalGro
       travelerIds: [],
       needsAccessibility: false,
       leadTravelerId: null,
+      optionIds: new Set<string>(),
+      optionUnitIds: new Set<string>(),
+      optionUnitCodes: new Set<string>(),
     }
     group.travelerIds.push(traveler.id)
     if (traveler.hasAccessibilityNeeds) group.needsAccessibility = true
     if (traveler.isLeadTraveler && !group.leadTravelerId) group.leadTravelerId = traveler.id
+    if (traveler.optionId) group.optionIds.add(traveler.optionId)
+    if (traveler.optionUnitId) group.optionUnitIds.add(traveler.optionUnitId)
+    if (traveler.optionUnitCode) group.optionUnitCodes.add(traveler.optionUnitCode)
     groups.set(group.key, group)
   }
 
   return groups
+}
+
+function groupUnitMatchScore(resource: AllocatorResource, group: InternalGroup): number {
+  let score = 0
+  const optionId = singleSetValue(group.optionIds)
+  if (optionId && resource.flags.templateOptionId === optionId) score += 4
+
+  const optionUnitId = singleSetValue(group.optionUnitIds)
+  if (optionUnitId && resource.refType === "option_unit" && resource.refId === optionUnitId) {
+    score += 2
+  }
+
+  const optionUnitCode = singleSetValue(group.optionUnitCodes)
+  if (optionUnitCode && labelStartsWithUnitCode(resource.label, optionUnitCode)) score += 1
+
+  return score
+}
+
+function singleSetValue(values: Set<string>): string | null {
+  return values.size === 1 ? ([...values][0] ?? null) : null
+}
+
+function labelStartsWithUnitCode(label: string | null | undefined, code: string): boolean {
+  const prefix = normalizeUnitCodePrefix(code)
+  if (!prefix || !label) return false
+  return label
+    .trim()
+    .toLowerCase()
+    .replace(/^[^a-z0-9]+/, "")
+    .startsWith(prefix)
+}
+
+function normalizeUnitCodePrefix(code: string): string | null {
+  return (
+    code
+      .trim()
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)[0] ?? null
+  )
 }
 
 export function planRoomAllocation(
@@ -103,6 +157,10 @@ export function planRoomAllocation(
       } else if (leftAccessible !== rightAccessible) {
         return leftAccessible ? 1 : -1
       }
+
+      const leftUnitMatch = groupUnitMatchScore(left, group)
+      const rightUnitMatch = groupUnitMatchScore(right, group)
+      if (leftUnitMatch !== rightUnitMatch) return rightUnitMatch - leftUnitMatch
 
       const leftFree = left.capacity - (occupancy.get(left.id) ?? 0)
       const rightFree = right.capacity - (occupancy.get(right.id) ?? 0)

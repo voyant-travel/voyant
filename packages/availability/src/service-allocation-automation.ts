@@ -727,6 +727,9 @@ function toAllocatorTravelers(manifest: SlotAllocationManifest, kind: string): A
         sharingGroupId: traveler.sharingGroupId,
         hasAccessibilityNeeds: traveler.hasAccessibilityNeeds,
         existingAllocationId: traveler.allocations[kind] ?? null,
+        optionId: traveler.optionId,
+        optionUnitId: traveler.optionUnitId,
+        optionUnitCode: traveler.optionUnitCode,
       })
     }
   }
@@ -740,6 +743,9 @@ function toAllocatorResource(resource: AllocationResource): AllocatorResource {
     capacity: resource.capacity,
     flags: resource.flags ?? {},
     parentId: resource.parentId,
+    refType: resource.refType,
+    refId: resource.refId,
+    label: resource.label,
     row: typeof resource.flags?.row === "number" ? resource.flags.row : undefined,
     column: typeof resource.flags?.column === "string" ? resource.flags.column : undefined,
     position:
