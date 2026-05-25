@@ -73,7 +73,10 @@ const nonUserFacingLiterals = new Set([
 ])
 
 const suspiciousPatterns = [
-  />\s*[^<{]*[A-Za-z][^<{]*</,
+  // Negative lookbehind on `=` skips arrow-function bodies like
+  // `([a, b]) => (map.get(a) ?? 0) < b` where the `>` belongs to `=>`
+  // and the `<` is a comparison, not JSX.
+  /(?<!=)>\s*[^<{]*[A-Za-z][^<{]*</,
   /\b(?:title|placeholder|label|description|emptyMessage|buttonLabel|confirmLabel|aria-label)\s*=\s*(?:"[^"]*[A-Za-z][^"]*"|'[^']*[A-Za-z][^']*'|`[^`]*[A-Za-z][^`]*`)/,
   /(?:\?\s*|:\s*|return\s+)(?:"(?:[^"\n]* [^"\n]*|[A-Z][A-Za-z][^"\n]*)"|'(?:[^'\n]* [^'\n]*|[A-Z][A-Za-z][^'\n]*)')/,
 ]

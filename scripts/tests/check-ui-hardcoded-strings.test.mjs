@@ -49,6 +49,20 @@ describe("check-ui-hardcoded-strings", () => {
     })
   })
 
+  it("does not flag arrow-function bodies with comparisons", async () => {
+    const root = await createFixture({
+      "packages/example-ui/src/helpers.tsx": `export function pickFirst(entries: Array<[string, number]>) {
+  const counts = new Map<string, number>()
+  return entries.find(([candidate, total]) => (counts.get(candidate) ?? 0) < total)?.[0]
+}
+`,
+    })
+
+    const result = await runChecker(root)
+
+    assert.match(result.stdout, /ui hardcoded string scan passed/)
+  })
+
   it("allows JSX text supplied by message expressions", async () => {
     const root = await createFixture({
       "packages/example-ui/src/button.tsx": `export function ExampleButton({ messages }) {
