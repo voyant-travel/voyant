@@ -1,5 +1,12 @@
 # @voyantjs/flights-react
 
+## 0.80.8
+
+### Patch Changes
+
+- @voyantjs/flights@0.80.8
+- @voyantjs/react@0.80.8
+
 ## 0.80.7
 
 ### Patch Changes

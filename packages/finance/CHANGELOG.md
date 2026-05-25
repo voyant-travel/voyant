@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.80.8
+
+### Patch Changes
+
+- 6ba4515: Allow invoice-from-booking requests to pre-seed invoice external refs before issued events run.
+  - @voyantjs/action-ledger@0.80.8
+  - @voyantjs/bookings@0.80.8
+  - @voyantjs/core@0.80.8
+  - @voyantjs/db@0.80.8
+  - @voyantjs/hono@0.80.8
+  - @voyantjs/products@0.80.8
+  - @voyantjs/storage@0.80.8
+  - @voyantjs/utils@0.80.8
+
 ## 0.80.7
 
 ### Patch Changes
