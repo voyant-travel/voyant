@@ -1,5 +1,16 @@
 # @voyantjs/auth-ui
 
+## 0.80.16
+
+### Patch Changes
+
+- Updated dependencies [dbcc0da]
+  - @voyantjs/admin@0.80.16
+  - @voyantjs/auth-react@0.80.16
+  - @voyantjs/i18n@0.80.16
+  - @voyantjs/types@0.80.16
+  - @voyantjs/ui@0.80.16
+
 ## 0.80.15
 
 ### Patch Changes
