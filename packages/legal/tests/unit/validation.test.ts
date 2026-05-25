@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   contractNumberSeriesListQuerySchema,
   contractTemplateListQuerySchema,
+  insertContractNumberSeriesSchema,
   insertContractSchema,
   updateContractSchema,
 } from "../../src/contracts/validation.js"
@@ -29,6 +30,24 @@ describe("legal contract validation", () => {
       }),
     ).toMatchObject({
       contractNumber: "A-169",
+    })
+  })
+
+  it("accepts default and external allocation metadata on contract number series", () => {
+    expect(
+      insertContractNumberSeriesSchema.parse({
+        name: "Customer contracts",
+        prefix: "A",
+        isDefault: true,
+        externalProvider: "provider",
+        externalConfigKey: "customer-contracts",
+      }),
+    ).toMatchObject({
+      scope: "customer",
+      isDefault: true,
+      externalProvider: "provider",
+      externalConfigKey: "customer-contracts",
+      active: true,
     })
   })
 

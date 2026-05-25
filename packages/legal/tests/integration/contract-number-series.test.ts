@@ -149,6 +149,101 @@ describe.skipIf(!DB_AVAILABLE)("contract_number_series uniqueness + lookups", ()
     })
   })
 
+  describe("findDefaultActiveByScope", () => {
+    it("returns the explicit default when multiple active series share a scope", async () => {
+      await contractSeriesService.createSeries(db, {
+        name: "Manual Customer",
+        prefix: "M",
+        separator: "",
+        padLength: 4,
+        resetStrategy: "never",
+        scope: "customer",
+        active: true,
+      })
+      const auto = await contractSeriesService.createSeries(db, {
+        name: "Auto Customer",
+        prefix: "A",
+        separator: "",
+        padLength: 4,
+        resetStrategy: "never",
+        scope: "customer",
+        isDefault: true,
+        active: true,
+      })
+
+      const found = await contractSeriesService.findDefaultActiveByScope(db, "customer")
+      expect(found?.id).toBe(auto!.id)
+      expect(found?.prefix).toBe("A")
+    })
+
+    it("falls back to the sole active series when no default is marked", async () => {
+      const created = await contractSeriesService.createSeries(db, {
+        name: "Implicit Customer",
+        prefix: "I",
+        separator: "",
+        padLength: 4,
+        resetStrategy: "never",
+        scope: "customer",
+        active: true,
+      })
+
+      const found = await contractSeriesService.findDefaultActiveByScope(db, "customer")
+      expect(found?.id).toBe(created!.id)
+    })
+
+    it("throws when multiple active series share a scope and no default is marked", async () => {
+      await contractSeriesService.createSeries(db, {
+        name: "Auto Candidate",
+        prefix: "A",
+        separator: "",
+        padLength: 4,
+        resetStrategy: "never",
+        scope: "customer",
+        active: true,
+      })
+      await contractSeriesService.createSeries(db, {
+        name: "Manual Candidate",
+        prefix: "M",
+        separator: "",
+        padLength: 4,
+        resetStrategy: "never",
+        scope: "customer",
+        active: true,
+      })
+
+      await expect(
+        contractSeriesService.findDefaultActiveByScope(db, "customer"),
+      ).rejects.toBeInstanceOf(ContractSeriesAmbiguousError)
+    })
+
+    it("keeps only one active default per scope when promoting a series", async () => {
+      const first = await contractSeriesService.createSeries(db, {
+        name: "First Default",
+        prefix: "F",
+        separator: "",
+        padLength: 4,
+        resetStrategy: "never",
+        scope: "customer",
+        isDefault: true,
+        active: true,
+      })
+      const second = await contractSeriesService.createSeries(db, {
+        name: "Second Default",
+        prefix: "S",
+        separator: "",
+        padLength: 4,
+        resetStrategy: "never",
+        scope: "customer",
+        isDefault: true,
+        active: true,
+      })
+
+      const rows = await contractSeriesService.listSeries(db, { scope: "customer", active: true })
+      expect(rows.find((row) => row.id === first!.id)?.isDefault).toBe(false)
+      expect(rows.find((row) => row.id === second!.id)?.isDefault).toBe(true)
+    })
+  })
+
   describe("findSeriesByName", () => {
     it("returns the row when exactly one active match exists", async () => {
       const created = await contractSeriesService.createSeries(db, {

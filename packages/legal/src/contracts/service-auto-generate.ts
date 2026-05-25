@@ -408,9 +408,9 @@ export type GenerateContractForBookingResult =
 /**
  * One-click admin path for a specific booking. It resolves the deployment's
  * default active template for the requested scope/channel/language and, by
- * default, requires exactly one active number series for that scope before
- * issuing the document. This keeps operator UIs out of picker/chain logic
- * while avoiding silent issuance with the wrong numbering sequence.
+ * default, requires a default active number series for that scope before
+ * issuing the document. Deployments with only one active series keep the
+ * legacy implicit-default behavior.
  */
 export async function generateContractForBookingFromDefaults(
   db: PostgresJsDatabase,
@@ -441,7 +441,7 @@ export async function generateContractForBookingFromDefaults(
 
   if (input.requireNumberSeries) {
     try {
-      const series = await contractSeriesService.findSingleActiveByScope(db, input.scope)
+      const series = await contractSeriesService.findDefaultActiveByScope(db, input.scope)
       if (!series) {
         return { status: "series_not_found" }
       }

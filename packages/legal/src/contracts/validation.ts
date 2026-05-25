@@ -117,6 +117,9 @@ const contractNumberSeriesCoreSchema = z.object({
   padLength: z.number().int().min(0).max(12).default(4),
   resetStrategy: contractNumberResetStrategySchema.default("never"),
   scope: contractScopeSchema.default("customer"),
+  isDefault: z.boolean().default(false),
+  externalProvider: z.string().min(1).max(100).optional().nullable(),
+  externalConfigKey: z.string().min(1).max(100).optional().nullable(),
   active: z.boolean().default(true),
 })
 

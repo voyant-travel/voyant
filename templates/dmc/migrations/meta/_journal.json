@@ -106,6 +106,13 @@
       "when": 1779626814451,
       "tag": "0016_booking_reference_foreign_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1779699538128,
+      "tag": "0017_contract_number_series_defaults",
+      "breakpoints": true
     }
   ]
 }

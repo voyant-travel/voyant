@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm"
+import { and, desc, eq, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { contractNumberSeries } from "./schema.js"
@@ -64,23 +64,50 @@ export const contractSeriesService = {
     return rows[0] ?? null
   },
   /**
-   * Resolve the sole active series for a scope. Used by one-click booking
-   * contract generation, where guessing between multiple active numbering
-   * series would issue the wrong legal number.
+   * Resolve the default active series for a scope. If no explicit default
+   * exists, fall back to the legacy sole-active behavior for backwards
+   * compatibility.
    */
-  async findSingleActiveByScope(db: PostgresJsDatabase, scope: ContractScope) {
-    const rows = await db
+  async findDefaultActiveByScope(db: PostgresJsDatabase, scope: ContractScope) {
+    const defaultRows = await db
+      .select()
+      .from(contractNumberSeries)
+      .where(
+        and(
+          eq(contractNumberSeries.scope, scope),
+          eq(contractNumberSeries.active, true),
+          eq(contractNumberSeries.isDefault, true),
+        ),
+      )
+      .orderBy(desc(contractNumberSeries.updatedAt))
+      .limit(2)
+    if (defaultRows.length > 1) {
+      throw new ContractSeriesAmbiguousError(
+        `Multiple default active contract_number_series rows match scope=${scope}. The partial unique index is missing or has been bypassed.`,
+      )
+    }
+    if (defaultRows[0]) {
+      return defaultRows[0]
+    }
+
+    const activeRows = await db
       .select()
       .from(contractNumberSeries)
       .where(and(eq(contractNumberSeries.scope, scope), eq(contractNumberSeries.active, true)))
       .orderBy(desc(contractNumberSeries.updatedAt))
       .limit(2)
-    if (rows.length > 1) {
+    if (activeRows.length > 1) {
       throw new ContractSeriesAmbiguousError(
-        `Multiple active contract_number_series rows match scope=${scope}. Archive duplicates or pass an explicit series.`,
+        `Multiple active contract_number_series rows match scope=${scope}. Mark one as is_default=true, archive duplicates, or pass an explicit series.`,
       )
     }
-    return rows[0] ?? null
+    return activeRows[0] ?? null
+  },
+  /**
+   * @deprecated Prefer `findDefaultActiveByScope`.
+   */
+  async findSingleActiveByScope(db: PostgresJsDatabase, scope: ContractScope) {
+    return contractSeriesService.findDefaultActiveByScope(db, scope)
   },
   /**
    * @deprecated Prefer `findActiveByPrefixScope`. `name` has no unique
@@ -101,8 +128,24 @@ export const contractSeriesService = {
     return rows[0] ?? null
   },
   async createSeries(db: PostgresJsDatabase, data: CreateContractNumberSeriesInput) {
-    const [row] = await db.insert(contractNumberSeries).values(data).returning()
-    return row ?? null
+    return db.transaction(async (tx) => {
+      const scope = data.scope ?? "customer"
+      const active = data.active ?? true
+      const isDefault = active === false ? false : (data.isDefault ?? false)
+
+      if (isDefault) {
+        await tx
+          .update(contractNumberSeries)
+          .set({ isDefault: false, updatedAt: new Date() })
+          .where(eq(contractNumberSeries.scope, scope))
+      }
+
+      const [row] = await tx
+        .insert(contractNumberSeries)
+        .values({ ...data, scope, active, isDefault })
+        .returning()
+      return row ?? null
+    })
   },
   /**
    * Idempotent create-or-update against the `(prefix, scope) WHERE active`
@@ -110,30 +153,66 @@ export const contractSeriesService = {
    * without tracking ids.
    */
   async upsertByPrefixScope(db: PostgresJsDatabase, data: CreateContractNumberSeriesInput) {
-    const [row] = await db
-      .insert(contractNumberSeries)
-      .values(data)
-      .onConflictDoUpdate({
-        target: [contractNumberSeries.prefix, contractNumberSeries.scope],
-        targetWhere: sql`${contractNumberSeries.active} = true`,
-        set: {
-          name: data.name,
-          separator: data.separator,
-          padLength: data.padLength,
-          resetStrategy: data.resetStrategy,
-          updatedAt: new Date(),
-        },
-      })
-      .returning()
-    return row ?? null
+    return db.transaction(async (tx) => {
+      const scope = data.scope ?? "customer"
+      const active = data.active ?? true
+      const isDefault = active === false ? false : (data.isDefault ?? false)
+
+      if (isDefault) {
+        await tx
+          .update(contractNumberSeries)
+          .set({ isDefault: false, updatedAt: new Date() })
+          .where(eq(contractNumberSeries.scope, scope))
+      }
+
+      const [row] = await tx
+        .insert(contractNumberSeries)
+        .values({ ...data, scope, active, isDefault })
+        .onConflictDoUpdate({
+          target: [contractNumberSeries.prefix, contractNumberSeries.scope],
+          targetWhere: sql`${contractNumberSeries.active} = true`,
+          set: {
+            name: data.name,
+            separator: data.separator,
+            padLength: data.padLength,
+            resetStrategy: data.resetStrategy,
+            isDefault,
+            externalProvider: data.externalProvider ?? null,
+            externalConfigKey: data.externalConfigKey ?? null,
+            updatedAt: new Date(),
+          },
+        })
+        .returning()
+      return row ?? null
+    })
   },
   async updateSeries(db: PostgresJsDatabase, id: string, data: UpdateContractNumberSeriesInput) {
-    const [row] = await db
-      .update(contractNumberSeries)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(contractNumberSeries.id, id))
-      .returning()
-    return row ?? null
+    return db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(contractNumberSeries)
+        .where(eq(contractNumberSeries.id, id))
+        .limit(1)
+      if (!existing) return null
+
+      const nextScope = data.scope ?? existing.scope
+      const nextActive = data.active ?? existing.active
+      const nextIsDefault = nextActive === false ? false : (data.isDefault ?? existing.isDefault)
+
+      if (nextIsDefault) {
+        await tx
+          .update(contractNumberSeries)
+          .set({ isDefault: false, updatedAt: new Date() })
+          .where(and(eq(contractNumberSeries.scope, nextScope), ne(contractNumberSeries.id, id)))
+      }
+
+      const [row] = await tx
+        .update(contractNumberSeries)
+        .set({ ...data, isDefault: nextIsDefault, updatedAt: new Date() })
+        .where(eq(contractNumberSeries.id, id))
+        .returning()
+      return row ?? null
+    })
   },
   async deleteSeries(db: PostgresJsDatabase, id: string) {
     const [row] = await db

@@ -160,6 +160,9 @@ export const contractNumberSeries = pgTable(
     resetStrategy: contractNumberResetStrategyEnum("reset_strategy").notNull().default("never"),
     resetAt: timestamp("reset_at", { withTimezone: true }),
     scope: contractScopeEnum("scope").notNull().default("customer"),
+    isDefault: boolean("is_default").notNull().default(false),
+    externalProvider: text("external_provider"),
+    externalConfigKey: text("external_config_key"),
     active: boolean("active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -167,12 +170,17 @@ export const contractNumberSeries = pgTable(
   (table) => [
     index("idx_contract_number_series_scope").on(table.scope),
     index("idx_contract_number_series_active").on(table.active),
+    index("idx_contract_number_series_scope_default").on(table.scope, table.isDefault),
+    index("idx_contract_number_series_external_provider").on(table.externalProvider),
     index("idx_contract_number_series_scope_updated").on(table.scope, table.updatedAt),
     index("idx_contract_number_series_active_updated").on(table.active, table.updatedAt),
     index("idx_contract_number_series_updated").on(table.updatedAt),
     uniqueIndex("uidx_contract_number_series_prefix_scope_active")
       .on(table.prefix, table.scope)
       .where(sql`${table.active} = true`),
+    uniqueIndex("uidx_contract_number_series_default_scope_active")
+      .on(table.scope)
+      .where(sql`${table.active} = true AND ${table.isDefault} = true`),
   ],
 )
 
