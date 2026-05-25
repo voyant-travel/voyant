@@ -267,6 +267,13 @@
       "when": 1779710400000,
       "tag": "0037_invoice_void_metadata",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1779710500000,
+      "tag": "0038_traveler_identity_document_snapshot",
+      "breakpoints": true
     }
   ]
 }

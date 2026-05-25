@@ -120,6 +120,13 @@
       "when": 1779710400000,
       "tag": "0018_invoice_void_metadata",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1779710500000,
+      "tag": "0019_traveler_identity_document_snapshot",
+      "breakpoints": true
     }
   ]
 }

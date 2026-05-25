@@ -1,6 +1,6 @@
 import type { KeyRef, KmsProvider } from "@voyantjs/utils"
 import { decryptOptionalJsonEnvelope } from "@voyantjs/utils"
-import { and, asc, eq, gte, isNotNull, lte, sql } from "drizzle-orm"
+import { and, asc, desc, eq, gte, isNotNull, lte, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { z } from "zod"
 
@@ -35,11 +35,12 @@ export interface PersonTravelSnapshot {
   dateOfBirth: string | null
   dietaryRequirements: string | null
   accessibilityNeeds: string | null
-  passportNumber: string | null
-  passportExpiry: string | null
-  passportIssuingCountry: string | null
-  passportIssuingAuthority: string | null
-  passportPersonDocumentId: string | null
+  documentType: PersonDocumentType | null
+  documentNumber: string | null
+  documentExpiry: string | null
+  documentIssuingCountry: string | null
+  documentIssuingAuthority: string | null
+  documentPersonDocumentId: string | null
 }
 
 export type CreatePersonDocumentInput = z.infer<typeof insertPersonDocumentSchema>
@@ -130,8 +131,7 @@ export const personDocumentsService = {
 
   /**
    * Returns the primary document of a given type for a person, or
-   * `null` if no primary is set. Used by booking-traveler create to
-   * snapshot the person's passport.
+   * `null` if no primary is set.
    */
   async getPrimaryPersonDocument(
     db: PostgresJsDatabase,
@@ -249,8 +249,8 @@ export const personDocumentsService = {
 
   /**
    * Plaintext snapshot of the fields a booking-traveler creation
-   * pulls from a person record: dietary, accessibility, primary
-   * passport (number + expiry + country + authority + provenance id),
+   * pulls from a person record: dietary, accessibility, primary identity
+   * document (type + number + expiry + country + authority + provenance id),
    * and date-of-birth from `people.dateOfBirth`.
    *
    * Caller passes a KMS provider so decryption happens in-process.
@@ -275,7 +275,14 @@ export const personDocumentsService = {
 
     const keyRef = options.keyRef ?? { keyType: "people" as const }
 
-    const [accessibilityBlob, dietaryBlob, primaryPassport] = await Promise.all([
+    const primaryDocumentPromise = db
+      .select()
+      .from(personDocuments)
+      .where(and(eq(personDocuments.personId, personId), eq(personDocuments.isPrimary, true)))
+      .orderBy(desc(personDocuments.updatedAt))
+      .limit(1)
+
+    const [accessibilityBlob, dietaryBlob, primaryDocuments] = await Promise.all([
       decryptOptionalJsonEnvelope(
         options.kms,
         keyRef,
@@ -288,29 +295,31 @@ export const personDocumentsService = {
         personRow.dietaryEncrypted,
         personPiiBlobPlaintextSchema,
       ),
-      personDocumentsService.getPrimaryPersonDocument(db, personId, "passport"),
+      primaryDocumentPromise,
     ])
+    const primaryDocument = primaryDocuments[0] ?? null
 
-    let passportNumber: string | null = null
-    if (primaryPassport?.numberEncrypted) {
+    let documentNumber: string | null = null
+    if (primaryDocument?.numberEncrypted) {
       const decrypted = await decryptOptionalJsonEnvelope(
         options.kms,
         keyRef,
-        primaryPassport.numberEncrypted,
+        primaryDocument.numberEncrypted,
         personDocumentNumberPlaintextSchema,
       )
-      passportNumber = decrypted?.number ?? null
+      documentNumber = decrypted?.number ?? null
     }
 
     return {
       dateOfBirth: personRow.dateOfBirth ?? null,
       dietaryRequirements: dietaryBlob?.text ?? null,
       accessibilityNeeds: accessibilityBlob?.text ?? null,
-      passportNumber,
-      passportExpiry: primaryPassport?.expiryDate ?? null,
-      passportIssuingCountry: primaryPassport?.issuingCountry ?? null,
-      passportIssuingAuthority: primaryPassport?.issuingAuthority ?? null,
-      passportPersonDocumentId: primaryPassport?.id ?? null,
+      documentType: primaryDocument?.type ?? null,
+      documentNumber,
+      documentExpiry: primaryDocument?.expiryDate ?? null,
+      documentIssuingCountry: primaryDocument?.issuingCountry ?? null,
+      documentIssuingAuthority: primaryDocument?.issuingAuthority ?? null,
+      documentPersonDocumentId: primaryDocument?.id ?? null,
     }
   },
 

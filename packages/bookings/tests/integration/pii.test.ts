@@ -28,7 +28,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking PII service", () => {
         identity_encrypted jsonb,
         dietary_encrypted jsonb,
         accessibility_encrypted jsonb,
-        passport_person_document_id text,
+        document_person_document_id text,
         is_lead_traveler boolean DEFAULT false NOT NULL,
         sharing_group_id text,
         room_type_id text,
@@ -89,14 +89,14 @@ describe.skipIf(!DB_AVAILABLE)("Booking PII service", () => {
 
     const result = await pii.upsertTravelerTravelDetails(db, participant.id, {
       nationality: "RO",
-      passportNumber: "123456789",
-      passportExpiry: "2030-01-01",
+      documentNumber: "123456789",
+      documentExpiry: "2030-01-01",
       dateOfBirth: "1990-02-03",
       dietaryRequirements: "vegetarian",
       isLeadTraveler: true,
     })
 
-    expect(result?.passportNumber).toBe("123456789")
+    expect(result?.documentNumber).toBe("123456789")
     expect(result?.dateOfBirth).toBe("1990-02-03")
     expect(result?.dietaryRequirements).toBe("vegetarian")
     expect(result?.isLeadTraveler).toBe(true)
@@ -147,7 +147,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking PII service", () => {
     })
 
     await pii.upsertTravelerTravelDetails(db, participant.id, {
-      passportNumber: "ABC123",
+      documentNumber: "ABC123",
     })
 
     const deleted = await pii.deleteTravelerTravelDetails(db, participant.id)

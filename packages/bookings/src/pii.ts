@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
   type BookingTravelerBedPreference,
+  type BookingTravelerIdentity,
   bookingTravelerAccessibilitySchema,
   bookingTravelerDietarySchema,
   bookingTravelerIdentitySchema,
@@ -15,12 +16,13 @@ import { bookingTravelers } from "./schema.js"
 
 export interface UpsertBookingTravelerTravelDetailInput {
   nationality?: string | null
-  passportNumber?: string | null
-  passportExpiry?: string | null
-  passportIssuingCountry?: string | null
-  passportIssuingAuthority?: string | null
+  documentType?: BookingTravelerIdentity["documentType"]
+  documentNumber?: string | null
+  documentExpiry?: string | null
+  documentIssuingCountry?: string | null
+  documentIssuingAuthority?: string | null
   /** Provenance of the snapshot (id of the `crm.person_documents` row that seeded it). */
-  passportPersonDocumentId?: string | null
+  documentPersonDocumentId?: string | null
   dateOfBirth?: string | null
   dietaryRequirements?: string | null
   accessibilityNeeds?: string | null
@@ -40,11 +42,12 @@ export interface BookingTravelerSnapshot {
   dateOfBirth?: string | null
   dietaryRequirements?: string | null
   accessibilityNeeds?: string | null
-  passportNumber?: string | null
-  passportExpiry?: string | null
-  passportIssuingCountry?: string | null
-  passportIssuingAuthority?: string | null
-  passportPersonDocumentId?: string | null
+  documentType?: BookingTravelerIdentity["documentType"]
+  documentNumber?: string | null
+  documentExpiry?: string | null
+  documentIssuingCountry?: string | null
+  documentIssuingAuthority?: string | null
+  documentPersonDocumentId?: string | null
 }
 
 /**
@@ -59,19 +62,27 @@ export function applyTravelDetailSnapshot(
 ): UpsertBookingTravelerTravelDetailInput {
   if (!snapshot) return input
   const merged: UpsertBookingTravelerTravelDetailInput = { ...input }
+  const applySnapshotField = <
+    K extends keyof BookingTravelerSnapshot & keyof UpsertBookingTravelerTravelDetailInput,
+  >(
+    key: K,
+  ) => {
+    if (merged[key] === undefined && snapshot[key] != null) {
+      merged[key] = snapshot[key] as UpsertBookingTravelerTravelDetailInput[K]
+    }
+  }
   for (const key of [
     "dateOfBirth",
     "dietaryRequirements",
     "accessibilityNeeds",
-    "passportNumber",
-    "passportExpiry",
-    "passportIssuingCountry",
-    "passportIssuingAuthority",
-    "passportPersonDocumentId",
+    "documentType",
+    "documentNumber",
+    "documentExpiry",
+    "documentIssuingCountry",
+    "documentIssuingAuthority",
+    "documentPersonDocumentId",
   ] as const) {
-    if (merged[key] === undefined && snapshot[key] != null) {
-      merged[key] = snapshot[key]
-    }
+    applySnapshotField(key)
   }
   return merged
 }
@@ -108,21 +119,29 @@ export interface BookingPiiService {
 }
 
 function buildIdentityPayload(input: UpsertBookingTravelerTravelDetailInput) {
+  const hasDocumentFields =
+    input.documentNumber != null ||
+    input.documentExpiry != null ||
+    input.documentIssuingCountry != null ||
+    input.documentIssuingAuthority != null ||
+    input.documentPersonDocumentId != null
   const payload = bookingTravelerIdentitySchema.parse({
     nationality: input.nationality ?? null,
-    passportNumber: input.passportNumber ?? null,
-    passportExpiry: input.passportExpiry ?? null,
-    passportIssuingCountry: input.passportIssuingCountry ?? null,
-    passportIssuingAuthority: input.passportIssuingAuthority ?? null,
+    documentType: input.documentType ?? (hasDocumentFields ? "passport" : null),
+    documentNumber: input.documentNumber ?? null,
+    documentExpiry: input.documentExpiry ?? null,
+    documentIssuingCountry: input.documentIssuingCountry ?? null,
+    documentIssuingAuthority: input.documentIssuingAuthority ?? null,
     dateOfBirth: input.dateOfBirth ?? null,
   })
 
   if (
     !payload.nationality &&
-    !payload.passportNumber &&
-    !payload.passportExpiry &&
-    !payload.passportIssuingCountry &&
-    !payload.passportIssuingAuthority &&
+    !payload.documentType &&
+    !payload.documentNumber &&
+    !payload.documentExpiry &&
+    !payload.documentIssuingCountry &&
+    !payload.documentIssuingAuthority &&
     !payload.dateOfBirth
   ) {
     return null
@@ -192,11 +211,12 @@ async function loadExistingTravelDetails(
 
   return {
     nationality: identity?.nationality ?? null,
-    passportNumber: identity?.passportNumber ?? null,
-    passportExpiry: identity?.passportExpiry ?? null,
-    passportIssuingCountry: identity?.passportIssuingCountry ?? null,
-    passportIssuingAuthority: identity?.passportIssuingAuthority ?? null,
-    passportPersonDocumentId: row.passportPersonDocumentId ?? null,
+    documentType: identity?.documentType ?? null,
+    documentNumber: identity?.documentNumber ?? null,
+    documentExpiry: identity?.documentExpiry ?? null,
+    documentIssuingCountry: identity?.documentIssuingCountry ?? null,
+    documentIssuingAuthority: identity?.documentIssuingAuthority ?? null,
+    documentPersonDocumentId: row.documentPersonDocumentId ?? null,
     dateOfBirth: identity?.dateOfBirth ?? null,
     dietaryRequirements: dietary?.dietaryRequirements ?? null,
     accessibilityNeeds: accessibility?.accessibilityNeeds ?? null,
@@ -215,26 +235,28 @@ function mergeTravelDetailInput(
   return {
     nationality:
       input.nationality === undefined ? (existing?.nationality ?? null) : input.nationality,
-    passportNumber:
-      input.passportNumber === undefined
-        ? (existing?.passportNumber ?? null)
-        : input.passportNumber,
-    passportExpiry:
-      input.passportExpiry === undefined
-        ? (existing?.passportExpiry ?? null)
-        : input.passportExpiry,
-    passportIssuingCountry:
-      input.passportIssuingCountry === undefined
-        ? (existing?.passportIssuingCountry ?? null)
-        : input.passportIssuingCountry,
-    passportIssuingAuthority:
-      input.passportIssuingAuthority === undefined
-        ? (existing?.passportIssuingAuthority ?? null)
-        : input.passportIssuingAuthority,
-    passportPersonDocumentId:
-      input.passportPersonDocumentId === undefined
-        ? (existing?.passportPersonDocumentId ?? null)
-        : input.passportPersonDocumentId,
+    documentNumber:
+      input.documentNumber === undefined
+        ? (existing?.documentNumber ?? null)
+        : input.documentNumber,
+    documentType:
+      input.documentType === undefined ? (existing?.documentType ?? null) : input.documentType,
+    documentExpiry:
+      input.documentExpiry === undefined
+        ? (existing?.documentExpiry ?? null)
+        : input.documentExpiry,
+    documentIssuingCountry:
+      input.documentIssuingCountry === undefined
+        ? (existing?.documentIssuingCountry ?? null)
+        : input.documentIssuingCountry,
+    documentIssuingAuthority:
+      input.documentIssuingAuthority === undefined
+        ? (existing?.documentIssuingAuthority ?? null)
+        : input.documentIssuingAuthority,
+    documentPersonDocumentId:
+      input.documentPersonDocumentId === undefined
+        ? (existing?.documentPersonDocumentId ?? null)
+        : input.documentPersonDocumentId,
     dateOfBirth:
       input.dateOfBirth === undefined ? (existing?.dateOfBirth ?? null) : input.dateOfBirth,
     dietaryRequirements:
@@ -304,11 +326,12 @@ export function createBookingPiiService(options: BookingPiiServiceOptions): Book
       return {
         travelerId: row.travelerId,
         nationality: identity?.nationality ?? null,
-        passportNumber: identity?.passportNumber ?? null,
-        passportExpiry: identity?.passportExpiry ?? null,
-        passportIssuingCountry: identity?.passportIssuingCountry ?? null,
-        passportIssuingAuthority: identity?.passportIssuingAuthority ?? null,
-        passportPersonDocumentId: row.passportPersonDocumentId ?? null,
+        documentType: identity?.documentType ?? null,
+        documentNumber: identity?.documentNumber ?? null,
+        documentExpiry: identity?.documentExpiry ?? null,
+        documentIssuingCountry: identity?.documentIssuingCountry ?? null,
+        documentIssuingAuthority: identity?.documentIssuingAuthority ?? null,
+        documentPersonDocumentId: row.documentPersonDocumentId ?? null,
         dateOfBirth: identity?.dateOfBirth ?? null,
         dietaryRequirements: dietary?.dietaryRequirements ?? null,
         accessibilityNeeds: accessibility?.accessibilityNeeds ?? null,
@@ -365,7 +388,7 @@ export function createBookingPiiService(options: BookingPiiServiceOptions): Book
           identityEncrypted,
           dietaryEncrypted,
           accessibilityEncrypted,
-          passportPersonDocumentId: mergedInput.passportPersonDocumentId ?? null,
+          documentPersonDocumentId: mergedInput.documentPersonDocumentId ?? null,
           isLeadTraveler: mergedInput.isLeadTraveler ?? false,
           sharingGroupId: mergedInput.sharingGroupId ?? null,
           roomTypeId: mergedInput.roomTypeId ?? null,
@@ -379,7 +402,7 @@ export function createBookingPiiService(options: BookingPiiServiceOptions): Book
             identityEncrypted,
             dietaryEncrypted,
             accessibilityEncrypted,
-            passportPersonDocumentId: mergedInput.passportPersonDocumentId ?? null,
+            documentPersonDocumentId: mergedInput.documentPersonDocumentId ?? null,
             isLeadTraveler: mergedInput.isLeadTraveler ?? false,
             sharingGroupId: mergedInput.sharingGroupId ?? null,
             roomTypeId: mergedInput.roomTypeId ?? null,

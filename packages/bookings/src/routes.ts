@@ -171,11 +171,12 @@ const TRAVELER_IDENTITY_DISCLOSED_FIELDS = [
 ]
 const TRAVELER_TRAVEL_DETAIL_DISCLOSED_FIELDS = [
   "nationality",
-  "passportNumber",
-  "passportExpiry",
-  "passportIssuingCountry",
-  "passportIssuingAuthority",
-  "passportPersonDocumentId",
+  "documentType",
+  "documentNumber",
+  "documentExpiry",
+  "documentIssuingCountry",
+  "documentIssuingAuthority",
+  "documentPersonDocumentId",
   "dateOfBirth",
   "dietaryRequirements",
   "accessibilityNeeds",

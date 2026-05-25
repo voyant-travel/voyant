@@ -21,31 +21,31 @@ describe("applyTravelDetailSnapshot (pure)", () => {
       {
         dietaryRequirements: "Vegan",
         accessibilityNeeds: "Step-free",
-        passportNumber: "AA1",
-        passportExpiry: "2030-01-01",
-        passportIssuingCountry: "RO",
-        passportIssuingAuthority: "IGI",
-        passportPersonDocumentId: "pdoc_1",
+        documentNumber: "AA1",
+        documentExpiry: "2030-01-01",
+        documentIssuingCountry: "RO",
+        documentIssuingAuthority: "IGI",
+        documentPersonDocumentId: "pdoc_1",
         dateOfBirth: "1990-01-01",
       },
     )
     expect(merged.dietaryRequirements).toBe("Vegan")
-    expect(merged.passportNumber).toBe("AA1")
-    expect(merged.passportPersonDocumentId).toBe("pdoc_1")
+    expect(merged.documentNumber).toBe("AA1")
+    expect(merged.documentPersonDocumentId).toBe("pdoc_1")
     expect(merged.dateOfBirth).toBe("1990-01-01")
   })
 
   it("explicit input always wins (even null)", () => {
     const merged = applyTravelDetailSnapshot(
-      { dietaryRequirements: null, passportNumber: "BB2" },
-      { dietaryRequirements: "Vegan", passportNumber: "AA1" },
+      { dietaryRequirements: null, documentNumber: "BB2" },
+      { dietaryRequirements: "Vegan", documentNumber: "AA1" },
     )
     expect(merged.dietaryRequirements).toBeNull()
-    expect(merged.passportNumber).toBe("BB2")
+    expect(merged.documentNumber).toBe("BB2")
   })
 
   it("returns input untouched when snapshot is null", () => {
-    const input = { passportNumber: "AA1" }
+    const input = { documentNumber: "AA1" }
     expect(applyTravelDetailSnapshot(input, null)).toEqual(input)
     expect(applyTravelDetailSnapshot(input, undefined)).toEqual(input)
   })
@@ -66,7 +66,7 @@ describe.skipIf(!DB_AVAILABLE)("createTravelerWithTravelDetails snapshot wiring"
         identity_encrypted jsonb,
         dietary_encrypted jsonb,
         accessibility_encrypted jsonb,
-        passport_person_document_id text,
+        document_person_document_id text,
         is_lead_traveler boolean DEFAULT false NOT NULL,
         sharing_group_id text,
         room_type_id text,
@@ -131,11 +131,11 @@ describe.skipIf(!DB_AVAILABLE)("createTravelerWithTravelDetails snapshot wiring"
           return {
             dietaryRequirements: "Vegan",
             accessibilityNeeds: "Step-free",
-            passportNumber: "AA111",
-            passportExpiry: "2030-12-31",
-            passportIssuingCountry: "RO",
-            passportIssuingAuthority: "IGI",
-            passportPersonDocumentId: "pdoc_test",
+            documentNumber: "AA111",
+            documentExpiry: "2030-12-31",
+            documentIssuingCountry: "RO",
+            documentIssuingAuthority: "IGI",
+            documentPersonDocumentId: "pdoc_test",
             dateOfBirth: "1990-04-15",
           }
         },
@@ -144,11 +144,11 @@ describe.skipIf(!DB_AVAILABLE)("createTravelerWithTravelDetails snapshot wiring"
 
     expect(result?.travelDetails?.dietaryRequirements).toBe("Vegan")
     expect(result?.travelDetails?.accessibilityNeeds).toBe("Step-free")
-    expect(result?.travelDetails?.passportNumber).toBe("AA111")
-    expect(result?.travelDetails?.passportExpiry).toBe("2030-12-31")
-    expect(result?.travelDetails?.passportIssuingCountry).toBe("RO")
-    expect(result?.travelDetails?.passportIssuingAuthority).toBe("IGI")
-    expect(result?.travelDetails?.passportPersonDocumentId).toBe("pdoc_test")
+    expect(result?.travelDetails?.documentNumber).toBe("AA111")
+    expect(result?.travelDetails?.documentExpiry).toBe("2030-12-31")
+    expect(result?.travelDetails?.documentIssuingCountry).toBe("RO")
+    expect(result?.travelDetails?.documentIssuingAuthority).toBe("IGI")
+    expect(result?.travelDetails?.documentPersonDocumentId).toBe("pdoc_test")
     expect(result?.travelDetails?.dateOfBirth).toBe("1990-04-15")
 
     // Provenance column is plaintext in storage.
@@ -156,7 +156,7 @@ describe.skipIf(!DB_AVAILABLE)("createTravelerWithTravelDetails snapshot wiring"
       .select()
       .from(bookingTravelerTravelDetails)
       .where(eq(bookingTravelerTravelDetails.travelerId, result!.traveler.id))
-    expect(stored?.passportPersonDocumentId).toBe("pdoc_test")
+    expect(stored?.documentPersonDocumentId).toBe("pdoc_test")
   }, 20000)
 
   it("explicit input wins over snapshot values", async () => {
@@ -171,21 +171,21 @@ describe.skipIf(!DB_AVAILABLE)("createTravelerWithTravelDetails snapshot wiring"
         lastName: "Wins",
         participantType: "traveler",
         personId: "pers_test",
-        passportNumber: "OVERRIDE",
+        documentNumber: "OVERRIDE",
         dietaryRequirements: "Halal",
       },
       {
         pii,
         actorId: "test",
         resolveTravelSnapshot: async () => ({
-          passportNumber: "AA111",
+          documentNumber: "AA111",
           dietaryRequirements: "Vegan",
           accessibilityNeeds: "Step-free",
         }),
       },
     )
 
-    expect(result?.travelDetails?.passportNumber).toBe("OVERRIDE")
+    expect(result?.travelDetails?.documentNumber).toBe("OVERRIDE")
     expect(result?.travelDetails?.dietaryRequirements).toBe("Halal")
     // Snapshot still fills the unspecified field.
     expect(result?.travelDetails?.accessibilityNeeds).toBe("Step-free")
@@ -203,7 +203,7 @@ describe.skipIf(!DB_AVAILABLE)("createTravelerWithTravelDetails snapshot wiring"
         firstName: "Anon",
         lastName: "Walk-in",
         participantType: "traveler",
-        passportNumber: "manual-only",
+        documentNumber: "manual-only",
       },
       {
         pii,
@@ -211,7 +211,7 @@ describe.skipIf(!DB_AVAILABLE)("createTravelerWithTravelDetails snapshot wiring"
         resolveTravelSnapshot: async () => {
           resolverCalls += 1
           return {
-            passportNumber: "AA111",
+            documentNumber: "AA111",
             dietaryRequirements: "Vegan",
           }
         },
@@ -219,7 +219,7 @@ describe.skipIf(!DB_AVAILABLE)("createTravelerWithTravelDetails snapshot wiring"
     )
 
     expect(resolverCalls).toBe(0)
-    expect(result?.travelDetails?.passportNumber).toBe("manual-only")
+    expect(result?.travelDetails?.documentNumber).toBe("manual-only")
     expect(result?.travelDetails?.dietaryRequirements).toBeNull()
   }, 20000)
 
@@ -247,8 +247,8 @@ describe.skipIf(!DB_AVAILABLE)("createTravelerWithTravelDetails snapshot wiring"
     )
 
     expect(result?.travelDetails?.dietaryRequirements).toBe("Vegan")
-    expect(result?.travelDetails?.passportNumber).toBeNull()
-    expect(result?.travelDetails?.passportPersonDocumentId).toBeNull()
+    expect(result?.travelDetails?.documentNumber).toBeNull()
+    expect(result?.travelDetails?.documentPersonDocumentId).toBeNull()
 
     // Plaintext booking-traveler row still exists.
     const [traveler] = await db

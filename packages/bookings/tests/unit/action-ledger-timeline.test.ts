@@ -160,7 +160,7 @@ describe("booking action ledger timeline", () => {
         {
           firstName: "Ada",
           lastName: "Lovelace",
-          passportNumber: "hidden",
+          documentNumber: "hidden",
           updatedAt: "ignored",
         },
         null,
@@ -178,11 +178,11 @@ describe("booking action ledger timeline", () => {
 
     expect(
       __test__.changedBookingTravelDetailFields({
-        passportNumber: "hidden",
+        documentNumber: "hidden",
         dietaryRequirements: "hidden",
         firstName: "not-a-travel-detail",
       }),
-    ).toEqual(["dietaryRequirements", "passportNumber"])
+    ).toEqual(["dietaryRequirements", "documentNumber"])
 
     expect(__test__.bookingMutationSummary("update", ["email"], "booking traveler")).toBe(
       "Updated booking traveler fields: email",

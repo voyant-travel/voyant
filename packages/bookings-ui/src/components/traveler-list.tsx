@@ -342,8 +342,13 @@ function TravelerContextGrid({
 
   const fields = [
     [messages.travelerList.context.nationality, travelDetails?.nationality],
-    [messages.travelerList.context.passport, travelDetails?.passportNumber],
-    [messages.travelerList.context.passportExpiry, formatDateValue(travelDetails?.passportExpiry)],
+    [
+      messages.travelerList.context.document,
+      travelDetails?.documentNumber
+        ? `${documentTypeLabel(messages, travelDetails.documentType)} ${travelDetails.documentNumber}`
+        : null,
+    ],
+    [messages.travelerList.context.documentExpiry, formatDateValue(travelDetails?.documentExpiry)],
     [messages.travelerList.context.language, traveler.preferredLanguage],
     [messages.travelerList.context.dietary, travelDetails?.dietaryRequirements],
     [messages.travelerList.context.accessibility, travelDetails?.accessibilityNeeds],
@@ -417,6 +422,19 @@ function formatDateValue(value: string | null | undefined): string | null {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+}
+
+function documentTypeLabel(
+  messages: ReturnType<typeof useBookingsUiMessagesOrDefault>,
+  type:
+    | keyof ReturnType<
+        typeof useBookingsUiMessagesOrDefault
+      >["travelerDialog"]["documentTypeLabels"]
+    | null,
+): string {
+  return type
+    ? messages.travelerDialog.documentTypeLabels[type]
+    : messages.travelerList.context.document
 }
 
 /**

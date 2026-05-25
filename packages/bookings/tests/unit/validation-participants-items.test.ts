@@ -161,8 +161,8 @@ describe("Traveler travel detail schema alias", () => {
 
     expect(result).toEqual({
       nationality: "RO",
-      passportNumber: undefined,
-      passportExpiry: undefined,
+      documentNumber: undefined,
+      documentExpiry: undefined,
       dateOfBirth: "1990-02-03",
       dietaryRequirements: undefined,
       isLeadTraveler: true,

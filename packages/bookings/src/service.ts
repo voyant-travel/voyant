@@ -181,11 +181,12 @@ function pickTravelDetailFields(
 ): UpsertBookingTravelerTravelDetailInput {
   return {
     nationality: data.nationality,
-    passportNumber: data.passportNumber,
-    passportExpiry: data.passportExpiry,
-    passportIssuingCountry: data.passportIssuingCountry,
-    passportIssuingAuthority: data.passportIssuingAuthority,
-    passportPersonDocumentId: data.passportPersonDocumentId,
+    documentType: data.documentType,
+    documentNumber: data.documentNumber,
+    documentExpiry: data.documentExpiry,
+    documentIssuingCountry: data.documentIssuingCountry,
+    documentIssuingAuthority: data.documentIssuingAuthority,
+    documentPersonDocumentId: data.documentPersonDocumentId,
     dateOfBirth: data.dateOfBirth,
     dietaryRequirements: data.dietaryRequirements,
     accessibilityNeeds: data.accessibilityNeeds,

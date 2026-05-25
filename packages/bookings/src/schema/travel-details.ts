@@ -8,17 +8,51 @@ import { bookingTravelers } from "../schema.js"
 /**
  * Plaintext shape stored inside `identityEncrypted`. Snapshotted at
  * booking-traveler creation from the canonical `crm.people` +
- * `crm.person_documents` records — see `passportPersonDocumentId`
+ * `crm.person_documents` records — see `documentPersonDocumentId`
  * for provenance back to the source document row.
  */
-export const bookingTravelerIdentitySchema = z.object({
+export const bookingTravelerIdentityDocumentTypeSchema = z.enum([
+  "passport",
+  "id_card",
+  "driver_license",
+  "visa",
+  "other",
+])
+
+const legacyBookingTravelerIdentitySchema = z.object({
   nationality: z.string().optional().nullable(),
+  documentType: bookingTravelerIdentityDocumentTypeSchema.optional().nullable(),
+  documentNumber: z.string().optional().nullable(),
+  documentExpiry: z.string().optional().nullable(),
+  documentIssuingCountry: z.string().optional().nullable(),
+  documentIssuingAuthority: z.string().optional().nullable(),
   passportNumber: z.string().optional().nullable(),
   passportExpiry: z.string().optional().nullable(),
   passportIssuingCountry: z.string().optional().nullable(),
   passportIssuingAuthority: z.string().optional().nullable(),
   dateOfBirth: z.string().optional().nullable(),
 })
+
+export const bookingTravelerIdentitySchema = legacyBookingTravelerIdentitySchema.transform(
+  (value) => {
+    const legacyHasPassport =
+      value.passportNumber != null ||
+      value.passportExpiry != null ||
+      value.passportIssuingCountry != null ||
+      value.passportIssuingAuthority != null
+
+    return {
+      nationality: value.nationality ?? null,
+      documentType: value.documentType ?? (legacyHasPassport ? "passport" : null),
+      documentNumber: value.documentNumber ?? value.passportNumber ?? null,
+      documentExpiry: value.documentExpiry ?? value.passportExpiry ?? null,
+      documentIssuingCountry: value.documentIssuingCountry ?? value.passportIssuingCountry ?? null,
+      documentIssuingAuthority:
+        value.documentIssuingAuthority ?? value.passportIssuingAuthority ?? null,
+      dateOfBirth: value.dateOfBirth ?? null,
+    }
+  },
+)
 
 export const bookingTravelerDietarySchema = z.object({
   dietaryRequirements: z.string().optional().nullable(),
@@ -40,11 +74,12 @@ export const travelerAllocationMapSchema = z.record(z.string(), z.string())
 const decryptedBookingTravelerTravelDetailRecordSchema = z.object({
   travelerId: z.string(),
   nationality: z.string().nullable(),
-  passportNumber: z.string().nullable(),
-  passportExpiry: z.string().nullable(),
-  passportIssuingCountry: z.string().nullable(),
-  passportIssuingAuthority: z.string().nullable(),
-  passportPersonDocumentId: z.string().nullable(),
+  documentType: bookingTravelerIdentityDocumentTypeSchema.nullable(),
+  documentNumber: z.string().nullable(),
+  documentExpiry: z.string().nullable(),
+  documentIssuingCountry: z.string().nullable(),
+  documentIssuingAuthority: z.string().nullable(),
+  documentPersonDocumentId: z.string().nullable(),
   dateOfBirth: z.string().nullable(),
   dietaryRequirements: z.string().nullable(),
   accessibilityNeeds: z.string().nullable(),
@@ -75,7 +110,7 @@ export const bookingTravelerTravelDetails = pgTable(
      * intentionally has no FK — the snapshot is owned by the booking
      * even if the source document is later edited or deleted.
      */
-    passportPersonDocumentId: text("passport_person_document_id"),
+    documentPersonDocumentId: text("document_person_document_id"),
     isLeadTraveler: boolean("is_lead_traveler").notNull().default(false),
     /**
      * Groups travelers across different bookings who share one resource
@@ -128,7 +163,7 @@ const bookingTravelerTravelDetailRecordCoreSchema = z.object({
     .lazy(() => kmsEnvelopeSchema)
     .optional()
     .nullable(),
-  passportPersonDocumentId: z.string().nullable().optional(),
+  documentPersonDocumentId: z.string().nullable().optional(),
   isLeadTraveler: z.boolean().default(false),
   sharingGroupId: z.string().nullable().optional(),
   roomTypeId: z.string().nullable().optional(),

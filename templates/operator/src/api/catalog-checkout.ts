@@ -571,8 +571,12 @@ interface DraftPayload {
     band?: string
     dateOfBirth?: string
     nationality?: string
+    documentType?: "passport" | "id_card" | "driver_license" | "visa" | "other"
+    documentNumber?: string
+    documentExpiry?: string
     passportNumber?: string
     passportExpiry?: string
+    passportExpiresAt?: string
     dietaryRequirements?: string
     accessibilityNeeds?: string
     preferredLanguage?: string
@@ -1067,21 +1071,30 @@ function extractDraftTravelerTravelDetails(
   index: number,
 ) {
   const documents = traveler.documents ?? {}
+  const documentType = pickIdentityDocumentType(
+    traveler.documentType,
+    documents.documentType,
+    documents.document_type,
+  )
   return {
     nationality: pickString(traveler.nationality, documents.nationality, documents.country),
-    passportNumber: pickString(
+    documentType,
+    documentNumber: pickString(
+      traveler.documentNumber,
       traveler.passportNumber,
+      documents.documentNumber,
       documents.passportNumber,
       documents.passport_number,
-      documents.documentNumber,
       documents.document_number,
       documents.passport,
     ),
-    passportExpiry: pickString(
+    documentExpiry: pickString(
+      traveler.documentExpiry,
       traveler.passportExpiry,
+      traveler.passportExpiresAt,
+      documents.documentExpiry,
       documents.passportExpiry,
       documents.passport_expiry,
-      documents.documentExpiry,
       documents.document_expiry,
       documents.passportExpiresAt,
     ),
@@ -1108,8 +1121,9 @@ function extractDraftTravelerTravelDetails(
 function hasTravelDetails(input: ReturnType<typeof extractDraftTravelerTravelDetails>): boolean {
   return (
     Boolean(input.nationality) ||
-    Boolean(input.passportNumber) ||
-    Boolean(input.passportExpiry) ||
+    Boolean(input.documentType) ||
+    Boolean(input.documentNumber) ||
+    Boolean(input.documentExpiry) ||
     Boolean(input.dateOfBirth) ||
     Boolean(input.dietaryRequirements) ||
     Boolean(input.accessibilityNeeds) ||
@@ -1203,6 +1217,22 @@ async function resolveSupplierFromSnapshot(
 
 function pickString(...candidates: unknown[]): string | null {
   for (const c of candidates) if (typeof c === "string" && c.length > 0) return c
+  return null
+}
+
+function pickIdentityDocumentType(
+  ...candidates: unknown[]
+): "passport" | "id_card" | "driver_license" | "visa" | "other" | null {
+  const value = pickString(...candidates)
+  if (
+    value === "passport" ||
+    value === "id_card" ||
+    value === "driver_license" ||
+    value === "visa" ||
+    value === "other"
+  ) {
+    return value
+  }
   return null
 }
 
