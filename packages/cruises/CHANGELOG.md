@@ -1,5 +1,15 @@
 # @voyantjs/cruises
 
+## 0.80.18
+
+### Patch Changes
+
+- @voyantjs/bookings@0.80.18
+- @voyantjs/catalog@0.80.18
+- @voyantjs/core@0.80.18
+- @voyantjs/db@0.80.18
+- @voyantjs/hono@0.80.18
+
 ## 0.80.17
 
 ### Patch Changes

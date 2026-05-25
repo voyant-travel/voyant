@@ -1,5 +1,26 @@
 # @voyantjs/bookings-ui
 
+## 0.80.18
+
+### Patch Changes
+
+- 5e2bcb8: Preserve the operator's explicit "No room" choice in `TravelersSection`. The hydration effect added in the previous patch couldn't distinguish "race-null" (units hadn't loaded yet) from "operator picked No room from the Room select" — both produced `roomUnitId: null`, and the next render silently re-assigned a unit, overriding the operator's choice. Now runs exactly one hydration pass per units-load transition and treats subsequent nulls as intentional.
+  - @voyantjs/availability-react@0.80.18
+  - @voyantjs/bookings-react@0.80.18
+  - @voyantjs/catalog@0.80.18
+  - @voyantjs/catalog-react@0.80.18
+  - @voyantjs/crm-react@0.80.18
+  - @voyantjs/crm-ui@0.80.18
+  - @voyantjs/extras-react@0.80.18
+  - @voyantjs/finance-react@0.80.18
+  - @voyantjs/i18n@0.80.18
+  - @voyantjs/identity-react@0.80.18
+  - @voyantjs/legal-react@0.80.18
+  - @voyantjs/pricing-react@0.80.18
+  - @voyantjs/products-react@0.80.18
+  - @voyantjs/suppliers-react@0.80.18
+  - @voyantjs/ui@0.80.18
+
 ## 0.80.17
 
 ### Patch Changes
