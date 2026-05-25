@@ -300,6 +300,55 @@ describe("smartbillPlugin — invoice.issued subscriber", () => {
     )
   })
 
+  it("applies an externally seeded SmartBill number without prepending the configured series", async () => {
+    financeServiceMock.listInvoiceExternalRefs.mockResolvedValueOnce([
+      {
+        id: "iex_existing",
+        invoiceId: "inv_external_seeded",
+        provider: "smartbill",
+        externalId: "remote_A0250",
+        externalNumber: "A0250",
+        externalUrl: null,
+        status: "issued",
+        syncError: null,
+        metadata: null,
+      },
+    ])
+    const fetchMock = vi.fn<SmartbillFetch>(async () =>
+      jsonResponse(200, { ...okEnvelope, number: "ignored", series: "ignored" }),
+    )
+    const dbResolver = vi.fn(() => ({}))
+    const plugin = smartbillPlugin({
+      ...baseOptions,
+      seriesName: "B",
+      fetch: fetchMock,
+      artifacts: { db: dbResolver as never },
+      logger: makeLogger(),
+    })
+    const handler = subscriberFor(plugin, "invoice.issued").handler
+
+    await handler(
+      eventEnvelope({
+        id: "inv_external_seeded",
+        externalAllocationRequired: true,
+        invoiceNumber: "PENDING-INVOICE-abc",
+        lineItems: [],
+      }),
+    )
+
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(financeServiceMock.applyExternalInvoiceAllocation).toHaveBeenCalledWith(
+      expect.anything(),
+      "inv_external_seeded",
+      { invoiceNumber: "A0250" },
+    )
+    expect(dbResolver).toHaveBeenCalledWith(
+      expect.objectContaining({
+        result: expect.objectContaining({ number: "A0250", series: undefined }),
+      }),
+    )
+  })
+
   it("writes the SmartBill series-number back to the invoice when configured", async () => {
     const fetchMock = vi.fn<SmartbillFetch>(async () =>
       jsonResponse(200, { ...okEnvelope, number: "0127", series: "B" }),
@@ -415,6 +464,103 @@ describe("smartbillPlugin — invoice.issued subscriber", () => {
       expect.anything(),
       "inv_existing_write_back",
       { invoiceNumber: "B-0127" },
+    )
+  })
+
+  it("writes an externally seeded SmartBill number back without prepending the configured series", async () => {
+    financeServiceMock.listInvoiceExternalRefs.mockResolvedValueOnce([
+      {
+        id: "iex_existing",
+        invoiceId: "inv_seeded_write_back",
+        provider: "smartbill",
+        externalId: "remote_A0250",
+        externalNumber: "A0250",
+        externalUrl: null,
+        status: "issued",
+        syncError: null,
+        metadata: null,
+      },
+    ])
+    const fetchMock = vi.fn<SmartbillFetch>(async () =>
+      jsonResponse(200, { ...okEnvelope, number: "ignored", series: "ignored" }),
+    )
+    const plugin = smartbillPlugin({
+      ...baseOptions,
+      seriesName: "B",
+      fetch: fetchMock,
+      artifacts: { db: {} as never },
+      logger: makeLogger(),
+      writeBackInvoiceNumber: true,
+    })
+    const handler = subscriberFor(plugin, "invoice.issued").handler
+
+    await handler(
+      eventEnvelope({
+        id: "inv_seeded_write_back",
+        invoiceNumber: "A0250",
+        lineItems: [],
+      }),
+    )
+
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(financeServiceMock.updateInvoice).toHaveBeenCalledWith(
+      expect.anything(),
+      "inv_seeded_write_back",
+      { invoiceNumber: "A0250" },
+    )
+  })
+
+  it("uses a custom write-back formatter for an externally seeded SmartBill ref", async () => {
+    financeServiceMock.listInvoiceExternalRefs.mockResolvedValueOnce([
+      {
+        id: "iex_existing",
+        invoiceId: "inv_seeded_custom_write_back",
+        provider: "smartbill",
+        externalId: "remote_A0250",
+        externalNumber: "A0250",
+        externalUrl: "https://smartbill.test/invoice/A0250",
+        status: "issued",
+        syncError: null,
+        metadata: null,
+      },
+    ])
+    const fetchMock = vi.fn<SmartbillFetch>(async () =>
+      jsonResponse(200, { ...okEnvelope, number: "ignored", series: "ignored" }),
+    )
+    const writeBackInvoiceNumber = vi.fn(async (_event, result) => {
+      return `external/${result.number}`
+    })
+    const plugin = smartbillPlugin({
+      ...baseOptions,
+      seriesName: "B",
+      fetch: fetchMock,
+      artifacts: { db: {} as never },
+      logger: makeLogger(),
+      writeBackInvoiceNumber,
+    })
+    const handler = subscriberFor(plugin, "invoice.issued").handler
+
+    await handler(
+      eventEnvelope({
+        id: "inv_seeded_custom_write_back",
+        invoiceNumber: "A0250",
+        lineItems: [],
+      }),
+    )
+
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(writeBackInvoiceNumber).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "inv_seeded_custom_write_back" }),
+      expect.objectContaining({
+        number: "A0250",
+        series: undefined,
+        url: "https://smartbill.test/invoice/A0250",
+      }),
+    )
+    expect(financeServiceMock.updateInvoice).toHaveBeenCalledWith(
+      expect.anything(),
+      "inv_seeded_custom_write_back",
+      { invoiceNumber: "external/A0250" },
     )
   })
 
