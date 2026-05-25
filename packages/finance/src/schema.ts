@@ -757,6 +757,8 @@ export const invoices = pgTable(
     issueDate: date("issue_date").notNull(),
     dueDate: date("due_date").notNull(),
     notes: text("notes"),
+    voidedAt: timestamp("voided_at", { withTimezone: true }),
+    voidReason: text("void_reason"),
 
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

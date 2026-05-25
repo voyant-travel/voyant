@@ -1,4 +1,13 @@
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
   Badge,
   Button,
   Card,
@@ -124,11 +133,13 @@ export function InvoiceLineItemsCard({
   onCreate,
   onEdit,
   onDelete,
+  deletePending = false,
 }: {
   lineItems: LineItem[]
   onCreate: () => void
   onEdit: (lineItem: LineItem) => void
-  onDelete: (lineId: string) => void
+  onDelete: (lineId: string) => Promise<void> | void
+  deletePending?: boolean
 }) {
   return (
     <Card>
@@ -171,20 +182,50 @@ export function InvoiceLineItemsCard({
                     </td>
                     <td className="p-2">
                       <div className="flex items-center justify-end gap-1">
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon"
                           onClick={() => onEdit(lineItem)}
-                          className="text-muted-foreground hover:text-foreground"
+                          className="size-8"
+                          aria-label="Edit line item"
                         >
                           <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDelete(lineItem.id)}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger
+                            disabled={deletePending}
+                            render={
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 text-muted-foreground hover:text-destructive"
+                                aria-label="Delete line item"
+                              />
+                            }
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </AlertDialogTrigger>
+                          <AlertDialogContent size="sm">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete this line item?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This removes the line from the invoice.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel disabled={deletePending}>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                variant="destructive"
+                                disabled={deletePending}
+                                onClick={() => void onDelete(lineItem.id)}
+                              >
+                                Delete line item
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </td>
                   </tr>

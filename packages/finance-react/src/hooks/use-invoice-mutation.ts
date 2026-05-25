@@ -27,6 +27,10 @@ export interface CreateInvoiceInput {
 
 export type UpdateInvoiceInput = Partial<CreateInvoiceInput>
 
+export interface VoidInvoiceInput {
+  reason?: string | null
+}
+
 export function useInvoiceMutation() {
   const { baseUrl, fetcher } = useVoyantFinanceContext()
   const queryClient = useQueryClient()
@@ -80,6 +84,22 @@ export function useInvoiceMutation() {
       queryClient.removeQueries({ queryKey: financeQueryKeys.payments(id) })
       queryClient.removeQueries({ queryKey: financeQueryKeys.creditNotes(id) })
       queryClient.removeQueries({ queryKey: financeQueryKeys.notes(id) })
+    },
+  })
+
+  const voidInvoice = useMutation({
+    mutationFn: async ({ id, input }: { id: string; input?: VoidInvoiceInput }) => {
+      const { data } = await fetchWithValidation(
+        `/v1/finance/invoices/${id}/void`,
+        invoiceSingleResponse,
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify(input ?? {}) },
+      )
+      return data
+    },
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: financeQueryKeys.invoices() })
+      queryClient.setQueryData(financeQueryKeys.invoice(data.id), { data })
     },
   })
 
@@ -150,7 +170,7 @@ export function useInvoiceMutation() {
     },
   })
 
-  return { create, createFromBooking, convertToInvoice, render, update, remove }
+  return { create, createFromBooking, convertToInvoice, render, update, remove, voidInvoice }
 }
 
 export interface ConvertProformaInput {

@@ -13,6 +13,7 @@ import {
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
+import { toast } from "sonner"
 import { z } from "zod/v4"
 import { zodResolver } from "@/lib/zod-resolver"
 
@@ -93,12 +94,17 @@ export function LineItemDialog({
       sortOrder: values.sortOrder,
     }
 
-    const saved = isEditing
-      ? await update.mutateAsync({ id: lineItem!.id, input: payload })
-      : await create.mutateAsync(payload)
+    try {
+      const saved = isEditing
+        ? await update.mutateAsync({ id: lineItem!.id, input: payload })
+        : await create.mutateAsync(payload)
 
-    onOpenChange(false)
-    onSuccess?.(saved)
+      toast.success(isEditing ? "Line item updated." : "Line item added.")
+      onOpenChange(false)
+      onSuccess?.(saved)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to save line item")
+    }
   }
 
   const isSubmitting = create.isPending || update.isPending

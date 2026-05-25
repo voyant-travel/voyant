@@ -189,6 +189,7 @@ import type {
   updateTaxPolicyProfileSchema,
   updateTaxPolicyRuleSchema,
   updateTaxRegimeSchema,
+  voidInvoiceSchema,
 } from "./validation.js"
 
 type RevenueReportQuery = z.infer<typeof revenueReportQuerySchema>
@@ -265,6 +266,7 @@ type InvoiceListQuery = z.infer<typeof invoiceListQuerySchema>
 type CreateInvoiceInput = z.infer<typeof insertInvoiceSchema>
 export type CreateInvoiceFromBookingInput = z.infer<typeof invoiceFromBookingSchema>
 type UpdateInvoiceInput = z.infer<typeof updateInvoiceSchema>
+type VoidInvoiceInput = z.infer<typeof voidInvoiceSchema>
 type CreateInvoiceLineItemInput = z.infer<typeof insertInvoiceLineItemSchema>
 type UpdateInvoiceLineItemInput = z.infer<typeof updateInvoiceLineItemSchema>
 type CreatePaymentInput = z.infer<typeof insertPaymentSchema>
@@ -371,6 +373,23 @@ export class InvoiceLineItemsPersistenceError extends Error {
     this.expectedCount = expectedCount
     this.actualCount = actualCount
   }
+}
+
+export interface InvoiceVoidedEvent {
+  id: string
+  invoiceId: string
+  invoiceNumber: string
+  invoiceType: "invoice" | "proforma" | "credit_note"
+  bookingId: string | null
+  totalCents: number
+  currency: string
+  voidedAt: string
+  reason?: string | null
+  externalProvider?: string | null
+  externalId?: string | null
+  externalNumber?: string | null
+  externalSeriesName?: string | null
+  externalUrl?: string | null
 }
 
 /** Booking data needed for createInvoiceFromBooking — supplied by the caller (template). */
@@ -563,6 +582,50 @@ function toTimestamp(value?: string | null) {
 
 function toDateString(value: Date) {
   return value.toISOString().slice(0, 10)
+}
+
+function coerceMetadataRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null
+}
+
+function metadataString(metadata: Record<string, unknown> | null, key: string) {
+  const value = metadata?.[key]
+  return typeof value === "string" && value.length > 0 ? value : null
+}
+
+function buildInvoiceVoidedEvent(
+  invoice: typeof invoices.$inferSelect,
+  externalRef: typeof invoiceExternalRefs.$inferSelect | null,
+  reason: string | null,
+  voidedAt: Date,
+): InvoiceVoidedEvent {
+  const metadata = coerceMetadataRecord(externalRef?.metadata)
+  const externalSeriesName =
+    metadataString(metadata, "seriesName") ?? metadataString(metadata, "series")
+  const externalNumber =
+    externalRef?.externalNumber ??
+    metadataString(metadata, "number") ??
+    externalRef?.externalId ??
+    null
+
+  return {
+    id: invoice.id,
+    invoiceId: invoice.id,
+    invoiceNumber: invoice.invoiceNumber,
+    invoiceType: invoice.invoiceType,
+    bookingId: invoice.bookingId,
+    totalCents: invoice.totalCents,
+    currency: invoice.currency,
+    voidedAt: voidedAt.toISOString(),
+    reason,
+    externalProvider: externalRef?.provider ?? null,
+    externalId: externalRef?.externalId ?? null,
+    externalNumber,
+    externalSeriesName,
+    externalUrl: externalRef?.externalUrl ?? null,
+  }
 }
 
 function startOfUtcDay(value: Date) {
@@ -3810,6 +3873,120 @@ export const financeService = {
 
     await db.delete(invoices).where(eq(invoices.id, id))
     return { status: "deleted" as const }
+  },
+
+  async voidInvoice(
+    db: PostgresJsDatabase,
+    id: string,
+    input: VoidInvoiceInput = {},
+    runtime: FinanceServiceRuntime = {},
+  ) {
+    const reason = input.reason?.trim() || null
+    const voidedAt = new Date()
+    let voidedEvent: InvoiceVoidedEvent | null = null
+
+    const result = await db.transaction(async (tx) => {
+      const [existing] = await tx.select().from(invoices).where(eq(invoices.id, id)).limit(1)
+
+      if (!existing) {
+        return { status: "not_found" as const }
+      }
+
+      if (existing.status === "void") {
+        return { status: "already_void" as const, invoice: existing }
+      }
+
+      if (
+        !["issued", "partially_paid", "overdue", "pending_external_allocation"].includes(
+          existing.status,
+        )
+      ) {
+        return { status: "not_voidable_status" as const, invoice: existing }
+      }
+
+      const [payment] = await tx
+        .select({ id: payments.id })
+        .from(payments)
+        .where(eq(payments.invoiceId, id))
+        .limit(1)
+
+      if (payment) {
+        return { status: "has_payments" as const, invoice: existing }
+      }
+
+      const [creditNote] = await tx
+        .select({ id: creditNotes.id })
+        .from(creditNotes)
+        .where(eq(creditNotes.invoiceId, id))
+        .limit(1)
+
+      if (creditNote) {
+        return { status: "has_credit_notes" as const, invoice: existing }
+      }
+
+      const [row] = await tx
+        .update(invoices)
+        .set({
+          status: "void",
+          balanceDueCents: 0,
+          baseBalanceDueCents: existing.baseBalanceDueCents == null ? null : 0,
+          voidedAt,
+          voidReason: reason,
+          updatedAt: voidedAt,
+        })
+        .where(eq(invoices.id, id))
+        .returning()
+
+      if (!row) {
+        return { status: "not_found" as const }
+      }
+
+      if (runtime.actionLedgerContext) {
+        await appendActionLedgerMutation(
+          tx,
+          buildInvoiceUpdateActionLedgerInput(
+            runtime.actionLedgerContext,
+            {
+              invoice: row,
+              changes: {
+                status: "void",
+                balanceDueCents: 0,
+                baseBalanceDueCents: row.baseBalanceDueCents,
+              },
+            },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+      }
+
+      const [smartbillRef] = await tx
+        .select()
+        .from(invoiceExternalRefs)
+        .where(
+          and(eq(invoiceExternalRefs.invoiceId, id), eq(invoiceExternalRefs.provider, "smartbill")),
+        )
+        .orderBy(desc(invoiceExternalRefs.createdAt))
+        .limit(1)
+
+      const [latestRef] = smartbillRef
+        ? [smartbillRef]
+        : await tx
+            .select()
+            .from(invoiceExternalRefs)
+            .where(eq(invoiceExternalRefs.invoiceId, id))
+            .orderBy(desc(invoiceExternalRefs.createdAt))
+            .limit(1)
+
+      voidedEvent = buildInvoiceVoidedEvent(row, latestRef ?? null, reason, voidedAt)
+
+      return { status: "voided" as const, invoice: row }
+    })
+
+    if (result.status === "voided" && voidedEvent) {
+      await runtime.eventBus?.emit("invoice.voided", voidedEvent)
+    }
+
+    return result
   },
 
   listInvoiceLineItems(db: PostgresJsDatabase, invoiceId: string) {

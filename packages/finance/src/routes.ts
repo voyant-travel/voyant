@@ -95,6 +95,7 @@ import {
   updateTaxPolicyRuleSchema,
   updateTaxRegimeSchema,
   updateVoucherSchema,
+  voidInvoiceSchema,
   voucherListQuerySchema,
 } from "./validation.js"
 
@@ -1232,6 +1233,46 @@ export const financeRoutes = new Hono<Env>()
     }
 
     return c.json({ success: true }, 200)
+  })
+
+  // POST /invoices/:id/void — Void an issued invoice without deleting the audit trail
+  .post("/invoices/:id/void", async (c) => {
+    const runtime = getFinanceRouteRuntime(c)
+    const result = await financeService.voidInvoice(
+      c.get("db"),
+      c.req.param("id"),
+      await parseJsonBody(c, voidInvoiceSchema),
+      {
+        eventBus: runtime?.eventBus,
+        actionLedgerContext: getActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "finance.invoice.route",
+      },
+    )
+
+    if (result.status === "not_found") {
+      return c.json({ error: "Invoice not found" }, 404)
+    }
+
+    if (result.status === "already_void") {
+      return c.json({ data: result.invoice }, 200)
+    }
+
+    if (result.status === "not_voidable_status") {
+      return c.json(
+        { error: `Invoices in status "${result.invoice.status}" cannot be voided` },
+        409,
+      )
+    }
+
+    if (result.status === "has_payments") {
+      return c.json({ error: "Invoices with payments must be reversed with a credit note" }, 409)
+    }
+
+    if (result.status === "has_credit_notes") {
+      return c.json({ error: "Invoices with credit notes cannot be voided directly" }, 409)
+    }
+
+    return c.json({ data: result.invoice })
   })
 
   .post("/invoices/:id/payment-session", async (c) => {

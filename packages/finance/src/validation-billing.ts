@@ -73,6 +73,10 @@ const invoiceCoreSchema = z.object({
 export const insertInvoiceSchema = invoiceCoreSchema
 export const updateInvoiceSchema = invoiceCoreSchema.partial()
 
+export const voidInvoiceSchema = z.object({
+  reason: z.string().trim().min(1).max(1000).optional().nullable(),
+})
+
 export const invoiceListSortFieldSchema = z.enum([
   "invoiceNumber",
   "status",
