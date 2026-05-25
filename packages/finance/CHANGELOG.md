@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.81.5
+
+### Patch Changes
+
+- 7d8a977: Normalize legacy person-keyed accommodation booking-create item lines onto their inventory unit before item insertion, linking, and server-side draft verification.
+  - @voyantjs/action-ledger@0.81.5
+  - @voyantjs/bookings@0.81.5
+  - @voyantjs/core@0.81.5
+  - @voyantjs/db@0.81.5
+  - @voyantjs/hono@0.81.5
+  - @voyantjs/products@0.81.5
+  - @voyantjs/storage@0.81.5
+  - @voyantjs/utils@0.81.5
+
 ## 0.81.4
 
 ### Patch Changes
