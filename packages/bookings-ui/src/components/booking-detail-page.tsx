@@ -438,6 +438,7 @@ export function BookingBillingContextCard({ booking }: { booking: BookingRecord 
   const phone = booking.contactPhone ?? person?.phone ?? null
   const address = [
     booking.contactAddressLine1,
+    booking.contactAddressLine2,
     booking.contactCity,
     booking.contactRegion,
     booking.contactPostalCode,

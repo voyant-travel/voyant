@@ -64,6 +64,7 @@ const bookingCoreSchema = z.object({
   contactRegion: z.string().max(255).optional().nullable(),
   contactCity: z.string().max(255).optional().nullable(),
   contactAddressLine1: z.string().max(255).optional().nullable(),
+  contactAddressLine2: z.string().max(255).optional().nullable(),
   contactPostalCode: z.string().max(50).optional().nullable(),
   sellCurrency: z.string().min(3).max(3),
   baseCurrency: z.string().min(3).max(3).optional().nullable(),
@@ -213,6 +214,7 @@ export const convertProductSchema = z
     contactRegion: z.string().max(100).optional().nullable(),
     contactCity: z.string().max(100).optional().nullable(),
     contactAddressLine1: z.string().max(500).optional().nullable(),
+    contactAddressLine2: z.string().max(500).optional().nullable(),
     contactPostalCode: z.string().max(20).optional().nullable(),
     itemLines: z
       .array(
@@ -394,6 +396,7 @@ export const reserveBookingFromTransactionSchema = bookingCoreSchema
     contactRegion: true,
     contactCity: true,
     contactAddressLine1: true,
+    contactAddressLine2: true,
     contactPostalCode: true,
     internalNotes: true,
   })

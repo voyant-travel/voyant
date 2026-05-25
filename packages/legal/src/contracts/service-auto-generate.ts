@@ -703,7 +703,7 @@ export async function autoGenerateContractForBooking(
       registrationNumber: "",
       address: {
         line1: booking.contactAddressLine1 ?? "",
-        line2: "",
+        line2: booking.contactAddressLine2 ?? "",
         city: booking.contactCity ?? "",
         region: booking.contactRegion ?? "",
         postal: booking.contactPostalCode ?? "",

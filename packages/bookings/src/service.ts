@@ -140,6 +140,7 @@ function buildBookingSearchCondition(search: string): SQL | undefined {
     ilike(bookings.contactRegion, term),
     ilike(bookings.contactCity, term),
     ilike(bookings.contactAddressLine1, term),
+    ilike(bookings.contactAddressLine2, term),
     ilike(bookings.contactPostalCode, term),
   ]
 
@@ -701,6 +702,7 @@ type ReservationSourceBundle = {
   contactRegion: string | null
   contactCity: string | null
   contactAddressLine1: string | null
+  contactAddressLine2: string | null
   contactPostalCode: string | null
   currency: string
   baseCurrency: string | null
@@ -1717,6 +1719,7 @@ async function reserveBookingFromTransactionSource(
           contactRegion: data.contactRegion ?? source.contactRegion,
           contactCity: data.contactCity ?? source.contactCity,
           contactAddressLine1: data.contactAddressLine1 ?? source.contactAddressLine1,
+          contactAddressLine2: data.contactAddressLine2 ?? source.contactAddressLine2,
           contactPostalCode: data.contactPostalCode ?? source.contactPostalCode,
           sellCurrency: source.currency,
           baseCurrency: source.baseCurrency,
@@ -2796,6 +2799,7 @@ export const bookingsService = {
         contactRegion: data.contactRegion ?? null,
         contactCity: data.contactCity ?? null,
         contactAddressLine1: data.contactAddressLine1 ?? null,
+        contactAddressLine2: data.contactAddressLine2 ?? null,
         contactPostalCode: data.contactPostalCode ?? null,
         sellCurrency: product.sellCurrency,
         sellAmountCents: effectiveSellAmountCents,
@@ -3176,6 +3180,7 @@ export const bookingsService = {
         contactRegion: offer.contactRegion ?? null,
         contactCity: offer.contactCity ?? null,
         contactAddressLine1: offer.contactAddressLine1 ?? null,
+        contactAddressLine2: offer.contactAddressLine2 ?? null,
         contactPostalCode: offer.contactPostalCode ?? null,
         currency: offer.currency,
         baseCurrency: offer.baseCurrency ?? null,
@@ -3275,6 +3280,7 @@ export const bookingsService = {
         contactRegion: order.contactRegion ?? null,
         contactCity: order.contactCity ?? null,
         contactAddressLine1: order.contactAddressLine1 ?? null,
+        contactAddressLine2: order.contactAddressLine2 ?? null,
         contactPostalCode: order.contactPostalCode ?? null,
         currency: order.currency,
         baseCurrency: order.baseCurrency ?? null,
@@ -3320,6 +3326,7 @@ export const bookingsService = {
             contactRegion: data.contactRegion ?? null,
             contactCity: data.contactCity ?? null,
             contactAddressLine1: data.contactAddressLine1 ?? null,
+            contactAddressLine2: data.contactAddressLine2 ?? null,
             contactPostalCode: data.contactPostalCode ?? null,
             sellCurrency: data.sellCurrency,
             baseCurrency: data.baseCurrency ?? null,
@@ -3478,6 +3485,7 @@ export const bookingsService = {
           contactRegion: data.contactRegion ?? null,
           contactCity: data.contactCity ?? null,
           contactAddressLine1: data.contactAddressLine1 ?? null,
+          contactAddressLine2: data.contactAddressLine2 ?? null,
           contactPostalCode: data.contactPostalCode ?? null,
           holdExpiresAt: toTimestamp(data.holdExpiresAt),
           confirmedAt: confirmedAtForStatus(status, toTimestamp(data.confirmedAt)),
@@ -3536,6 +3544,8 @@ export const bookingsService = {
           contactCity: data.contactCity === undefined ? undefined : (data.contactCity ?? null),
           contactAddressLine1:
             data.contactAddressLine1 === undefined ? undefined : (data.contactAddressLine1 ?? null),
+          contactAddressLine2:
+            data.contactAddressLine2 === undefined ? undefined : (data.contactAddressLine2 ?? null),
           contactPostalCode:
             data.contactPostalCode === undefined ? undefined : (data.contactPostalCode ?? null),
           holdExpiresAt:
