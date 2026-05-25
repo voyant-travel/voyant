@@ -1,7 +1,11 @@
 import type { AllocationResource } from "@voyantjs/availability-react"
 import { describe, expect, it } from "vitest"
 
-import { groupResourcesBySubType, summarizeResourceCapacity } from "./slot-allocation-model.js"
+import {
+  deriveAllocationKinds,
+  groupResourcesBySubType,
+  summarizeResourceCapacity,
+} from "./slot-allocation-model.js"
 
 function resource(overrides: Partial<AllocationResource> & { id: string }): AllocationResource {
   return {
@@ -19,6 +23,48 @@ function resource(overrides: Partial<AllocationResource> & { id: string }): Allo
     updatedAt: overrides.updatedAt ?? "2026-01-01T00:00:00Z",
   }
 }
+
+describe("deriveAllocationKinds", () => {
+  it("does not seed rooms when the slot has no resources or templates", () => {
+    expect(deriveAllocationKinds({ resources: [], templateOptions: [] })).toEqual([])
+  })
+
+  it("includes room only when a room resource or template exists", () => {
+    expect(
+      deriveAllocationKinds({
+        resources: [resource({ id: "room_1", kind: "room" })],
+        templateOptions: [],
+      }),
+    ).toEqual(["room"])
+
+    expect(
+      deriveAllocationKinds({
+        resources: [],
+        templateOptions: [
+          {
+            templates: [{ kind: "room" }],
+          },
+        ],
+      }),
+    ).toEqual(["room"])
+  })
+
+  it("deduplicates resource and template kinds while skipping parent-only kinds", () => {
+    expect(
+      deriveAllocationKinds({
+        resources: [
+          resource({ id: "vehicle_1", kind: "vehicle" }),
+          resource({ id: "seat_1", kind: "vehicle_seat" }),
+        ],
+        templateOptions: [
+          {
+            templates: [{ kind: "vehicle" }, { kind: "vehicle_seat" }, { kind: "cabin" }],
+          },
+        ],
+      }),
+    ).toEqual(["vehicle_seat", "cabin"])
+  })
+})
 
 describe("groupResourcesBySubType", () => {
   it("groups by alphabetic label prefix so DBLs and SGLs stay together", () => {
