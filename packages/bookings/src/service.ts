@@ -172,6 +172,20 @@ type CreateBookingFulfillmentInput = z.infer<typeof insertBookingFulfillmentSche
 type UpdateBookingFulfillmentInput = z.infer<typeof updateBookingFulfillmentSchema>
 type RecordBookingRedemptionInput = z.infer<typeof recordBookingRedemptionSchema>
 type ReserveBookingFromTransactionInput = z.infer<typeof reserveBookingFromTransactionSchema>
+type BookingItemStatus = NonNullable<CreateBookingItemInput["status"]>
+type BookingAllocationStatus = NonNullable<(typeof bookingAllocations.$inferInsert)["status"]>
+
+function allocationStatusForBookingItemStatus(status: BookingItemStatus): BookingAllocationStatus {
+  if (status === "confirmed") return "confirmed"
+  if (status === "fulfilled") return "fulfilled"
+  if (status === "cancelled") return "cancelled"
+  if (status === "expired") return "expired"
+  return "held"
+}
+
+function allocationStatusConsumesSlotCapacity(status: BookingAllocationStatus) {
+  return status === "held" || status === "confirmed" || status === "fulfilled"
+}
 
 /** Product data needed for convertProductToBooking — supplied by the caller (template). */
 export interface ConvertProductData {
@@ -2889,6 +2903,52 @@ export const bookingsService = {
             ]
 
     const insertedItems = await db.insert(bookingItems).values(itemRows).returning()
+    const allocationRows = insertedItems
+      .filter((item) => item.availabilitySlotId)
+      .map((item) => ({
+        bookingId: booking.id,
+        bookingItemId: item.id,
+        productId: item.productId ?? null,
+        optionId: item.optionId ?? null,
+        optionUnitId: item.optionUnitId ?? null,
+        pricingCategoryId: item.pricingCategoryId ?? null,
+        availabilitySlotId: item.availabilitySlotId,
+        quantity: item.quantity,
+        allocationType: "unit" as const,
+        status: allocationStatusForBookingItemStatus(item.status),
+        holdExpiresAt: null,
+        metadata: item.metadata ?? null,
+      }))
+
+    if (allocationRows.length > 0) {
+      for (const allocation of allocationRows) {
+        if (
+          !allocation.availabilitySlotId ||
+          !allocationStatusConsumesSlotCapacity(allocation.status)
+        ) {
+          continue
+        }
+
+        const capacity = await adjustSlotCapacity(
+          db,
+          allocation.availabilitySlotId,
+          -allocation.quantity,
+          "booking",
+        )
+
+        if (capacity.status === "slot_not_found") {
+          throw new BookingServiceError("slot_not_found")
+        }
+        if (capacity.status === "slot_unavailable") {
+          throw new BookingServiceError("slot_unavailable")
+        }
+        if (capacity.status === "insufficient_capacity") {
+          throw new BookingServiceError("insufficient_capacity")
+        }
+      }
+
+      await db.insert(bookingAllocations).values(allocationRows)
+    }
 
     await db
       .insert(bookingProductDetailsRef)
