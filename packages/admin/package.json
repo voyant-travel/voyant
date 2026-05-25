@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/admin",
-  "version": "0.80.10",
+  "version": "0.80.11",
   "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
