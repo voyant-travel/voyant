@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { invoiceLineItems, invoiceNumberSeries, invoices } from "../../src/schema.js"
+import {
+  invoiceExternalRefs,
+  invoiceLineItems,
+  invoiceNumberSeries,
+  invoices,
+} from "../../src/schema.js"
 import {
   financeService,
   type InvoiceFromBookingData,
@@ -52,6 +57,7 @@ function makeDb(options: {
   invoiceInsertError?: unknown
 }) {
   const insertedInvoices: Array<Record<string, unknown>> = []
+  const insertedInvoiceExternalRefs: Array<Record<string, unknown>> = []
   const insertedInvoiceLineItems: Array<Record<string, unknown>> = []
   const execute = vi.fn(async () => {
     const row = options.explicitSeries ?? options.defaultSeries
@@ -100,6 +106,10 @@ function makeDb(options: {
           insertedInvoiceLineItems.push(...values)
           return Promise.resolve(values)
         }
+        if (table === invoiceExternalRefs) {
+          insertedInvoiceExternalRefs.push(...values)
+          return Promise.resolve(values)
+        }
         return { returning: vi.fn(async () => []) }
       }),
     })),
@@ -146,7 +156,13 @@ function makeDb(options: {
     })),
   }
 
-  return { db: db as never, tx, insertedInvoices, insertedInvoiceLineItems }
+  return {
+    db: db as never,
+    tx,
+    insertedInvoices,
+    insertedInvoiceExternalRefs,
+    insertedInvoiceLineItems,
+  }
 }
 
 describe("financeService.createInvoiceFromBooking number allocation", () => {
@@ -346,6 +362,46 @@ describe("financeService.createInvoiceFromBooking number allocation", () => {
         totalCents: 50_000,
         taxRate: 19,
         sortOrder: 0,
+      }),
+    ])
+  })
+
+  it("persists external refs in the invoice transaction", async () => {
+    const { db, insertedInvoiceExternalRefs } = makeDb({})
+
+    await financeService.createInvoiceFromBooking(
+      db,
+      {
+        bookingId: "book_123",
+        invoiceNumber: "SB-42",
+        issueDate: "2026-05-23",
+        dueDate: "2026-06-23",
+        externalRefs: [
+          {
+            provider: "smartbill",
+            externalId: "remote_42",
+            externalNumber: "42",
+            externalUrl: "https://smartbill.test/invoices/42",
+            status: "issued",
+            metadata: { companyVatCode: "RO12345678" },
+            syncedAt: "2026-05-23T10:30:00.000Z",
+          },
+        ],
+      },
+      bookingData,
+    )
+
+    expect(insertedInvoiceExternalRefs).toEqual([
+      expect.objectContaining({
+        invoiceId: "inv_123",
+        provider: "smartbill",
+        externalId: "remote_42",
+        externalNumber: "42",
+        externalUrl: "https://smartbill.test/invoices/42",
+        status: "issued",
+        metadata: { companyVatCode: "RO12345678" },
+        syncedAt: new Date("2026-05-23T10:30:00.000Z"),
+        syncError: null,
       }),
     ])
   })

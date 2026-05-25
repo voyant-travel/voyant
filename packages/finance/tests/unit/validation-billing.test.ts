@@ -71,6 +71,50 @@ describe("invoiceFromBookingSchema", () => {
     expect(result.baseCurrency).toBe("EUR")
     expect(result.lineItems?.[0]?.unitAmountCents).toBe(50_000)
   })
+
+  it("accepts external refs for externally issued invoices", () => {
+    const result = invoiceFromBookingSchema.parse({
+      bookingId: "book_123",
+      invoiceNumber: "SB-42",
+      issueDate: "2026-05-23",
+      dueDate: "2026-06-23",
+      externalRefs: [
+        {
+          provider: "smartbill",
+          externalId: "remote_42",
+          externalNumber: "42",
+          externalUrl: "https://smartbill.test/invoices/42",
+          status: "issued",
+          metadata: { companyVatCode: "RO12345678" },
+          syncedAt: "2026-05-23T10:30:00.000Z",
+        },
+      ],
+    })
+
+    expect(result.externalRefs).toEqual([
+      expect.objectContaining({
+        provider: "smartbill",
+        externalId: "remote_42",
+        externalNumber: "42",
+        status: "issued",
+      }),
+    ])
+  })
+
+  it("rejects duplicate external ref providers", () => {
+    expect(() =>
+      invoiceFromBookingSchema.parse({
+        bookingId: "book_123",
+        invoiceNumber: "SB-42",
+        issueDate: "2026-05-23",
+        dueDate: "2026-06-23",
+        externalRefs: [
+          { provider: "smartbill", externalNumber: "42" },
+          { provider: "smartbill", externalNumber: "43" },
+        ],
+      }),
+    ).toThrow("Duplicate invoice external ref provider")
+  })
 })
 
 describe("renderInvoiceInputSchema", () => {

@@ -128,30 +128,56 @@ const invoiceFromBookingLineItemSchema = z.object({
   taxAmountCents: z.number().int().min(0).optional().nullable(),
 })
 
-export const invoiceFromBookingSchema = z.object({
-  bookingId: z.string().min(1),
-  bookingPaymentScheduleId: z.string().min(1).optional(),
-  invoiceNumber: z.string().min(1).max(50).optional(),
-  seriesId: z.string().min(1).optional(),
-  issueDate: z.string().min(1),
-  dueDate: z.string().min(1),
-  notes: z.string().optional().nullable(),
-  currency: currencyCodeSchema.optional(),
-  baseCurrency: currencyCodeSchema.optional(),
-  fxRateSetId: z.string().min(1).optional(),
-  subtotalCents: z.number().int().min(0).optional(),
-  taxCents: z.number().int().min(0).optional(),
-  totalCents: z.number().int().min(0).optional(),
-  lineItems: z.array(invoiceFromBookingLineItemSchema).min(1).optional(),
-  /**
-   * Document kind. Defaults to a regular invoice; bank-transfer
-   * checkout flows pass `proforma` to issue a placeholder doc until
-   * payment lands and a real invoice replaces it.
-   */
-  invoiceType: z.enum(["invoice", "proforma"]).default("invoice"),
-  wait: invoiceDocumentWaitModeSchema.optional(),
-  waitTimeoutMs: z.coerce.number().int().min(0).max(60_000).optional(),
+const invoiceExternalRefCoreSchema = z.object({
+  provider: z.string().min(1).max(100),
+  externalId: z.string().max(255).optional().nullable(),
+  externalNumber: z.string().max(255).optional().nullable(),
+  externalUrl: z.string().max(1000).optional().nullable(),
+  status: z.string().max(100).optional().nullable(),
+  metadata: z.record(z.string(), z.unknown()).optional().nullable(),
+  syncedAt: z.string().optional().nullable(),
+  syncError: z.string().optional().nullable(),
 })
+
+export const invoiceFromBookingSchema = z
+  .object({
+    bookingId: z.string().min(1),
+    bookingPaymentScheduleId: z.string().min(1).optional(),
+    invoiceNumber: z.string().min(1).max(50).optional(),
+    seriesId: z.string().min(1).optional(),
+    issueDate: z.string().min(1),
+    dueDate: z.string().min(1),
+    notes: z.string().optional().nullable(),
+    currency: currencyCodeSchema.optional(),
+    baseCurrency: currencyCodeSchema.optional(),
+    fxRateSetId: z.string().min(1).optional(),
+    subtotalCents: z.number().int().min(0).optional(),
+    taxCents: z.number().int().min(0).optional(),
+    totalCents: z.number().int().min(0).optional(),
+    lineItems: z.array(invoiceFromBookingLineItemSchema).min(1).optional(),
+    externalRefs: z.array(invoiceExternalRefCoreSchema).optional(),
+    /**
+     * Document kind. Defaults to a regular invoice; bank-transfer
+     * checkout flows pass `proforma` to issue a placeholder doc until
+     * payment lands and a real invoice replaces it.
+     */
+    invoiceType: z.enum(["invoice", "proforma"]).default("invoice"),
+    wait: invoiceDocumentWaitModeSchema.optional(),
+    waitTimeoutMs: z.coerce.number().int().min(0).max(60_000).optional(),
+  })
+  .superRefine((value, ctx) => {
+    const providers = new Set<string>()
+    for (const [index, ref] of (value.externalRefs ?? []).entries()) {
+      if (providers.has(ref.provider)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Duplicate invoice external ref provider",
+          path: ["externalRefs", index, "provider"],
+        })
+      }
+      providers.add(ref.provider)
+    }
+  })
 
 const lineItemCoreSchema = z.object({
   bookingItemId: z.string().optional().nullable(),
@@ -368,16 +394,6 @@ export const taxPolicyRuleListQuerySchema = paginationSchema.extend({
   active: z.coerce.boolean().optional(),
 })
 
-const invoiceExternalRefCoreSchema = z.object({
-  provider: z.string().min(1).max(100),
-  externalId: z.string().max(255).optional().nullable(),
-  externalNumber: z.string().max(255).optional().nullable(),
-  externalUrl: z.string().max(1000).optional().nullable(),
-  status: z.string().max(100).optional().nullable(),
-  metadata: z.record(z.string(), z.unknown()).optional().nullable(),
-  syncedAt: z.string().optional().nullable(),
-  syncError: z.string().optional().nullable(),
-})
 export const insertInvoiceExternalRefSchema = invoiceExternalRefCoreSchema
 export const updateInvoiceExternalRefSchema = invoiceExternalRefCoreSchema.partial()
 

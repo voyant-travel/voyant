@@ -174,8 +174,20 @@ export interface CreateInvoiceFromBookingInput {
   taxCents?: number
   totalCents?: number
   lineItems?: CreateInvoiceFromBookingLineItemInput[]
+  externalRefs?: CreateInvoiceFromBookingExternalRefInput[]
   /** Defaults to `invoice` on the server. Pass `proforma` for placeholders. */
   invoiceType?: "invoice" | "proforma"
+}
+
+export interface CreateInvoiceFromBookingExternalRefInput {
+  provider: string
+  externalId?: string | null
+  externalNumber?: string | null
+  externalUrl?: string | null
+  status?: string | null
+  metadata?: Record<string, unknown> | null
+  syncedAt?: string | null
+  syncError?: string | null
 }
 
 export interface CreateInvoiceFromBookingLineItemInput {
