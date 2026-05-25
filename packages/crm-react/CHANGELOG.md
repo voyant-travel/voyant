@@ -1,5 +1,13 @@
 # @voyantjs/crm-react
 
+## 0.81.6
+
+### Patch Changes
+
+- Updated dependencies [f92c593]
+  - @voyantjs/crm@0.81.6
+  - @voyantjs/react@0.81.6
+
 ## 0.81.5
 
 ### Patch Changes
