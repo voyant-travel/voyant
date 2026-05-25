@@ -2,6 +2,7 @@ import { newId } from "@voyantjs/db/lib/typeid"
 import { and, asc, desc, eq, type SQL, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
+import { activeBookingStatusesForSlotSql } from "./booking-statuses.js"
 import {
   allocationAuditLog,
   allocationResources,
@@ -333,7 +334,7 @@ export async function getSlotsResourceAvailability(
         JOIN bookings b ON b.id = bt.booking_id
         WHERE btd.allocations ->> ar.kind = ar.id
           AND ba.availability_slot_id = ar.slot_id
-          AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+          AND b.status IN (${activeBookingStatusesForSlotSql()})
           AND ba.status IN ('held', 'confirmed', 'fulfilled')
       ) usage ON true
       WHERE ar.slot_id = ANY(${sqlTextArray(uniqueIds)})
@@ -474,7 +475,7 @@ export async function validateSlotAllocationCapacity(
         JOIN bookings b ON b.id = bt.booking_id
         WHERE btd.allocations ->> ${plan.kind} = ${resourceId}
           AND ba.availability_slot_id = ${slotId}
-          AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+          AND b.status IN (${activeBookingStatusesForSlotSql()})
           AND ba.status IN ('held', 'confirmed', 'fulfilled')
           AND btd.traveler_id <> ALL(${sqlTextArray(travelerIdsArr)})
       `,
@@ -923,7 +924,7 @@ async function assertTravelerBelongsToSlot(db: SqlExecutor, slotId: string, trav
     JOIN bookings b ON b.id = bt.booking_id
     WHERE bt.id = ${travelerId}
       AND ba.availability_slot_id = ${slotId}
-      AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+      AND b.status IN (${activeBookingStatusesForSlotSql()})
       AND ba.status IN ('held', 'confirmed', 'fulfilled')
     LIMIT 1
   `,
@@ -945,7 +946,7 @@ async function assertSharingGroupBelongsToSlot(db: SqlExecutor, slotId: string, 
     JOIN bookings b ON b.id = bt.booking_id
     WHERE btd.sharing_group_id = ${groupId}
       AND ba.availability_slot_id = ${slotId}
-      AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+      AND b.status IN (${activeBookingStatusesForSlotSql()})
       AND ba.status IN ('held', 'confirmed', 'fulfilled')
     LIMIT 1
   `,
@@ -973,7 +974,7 @@ async function countResourceOccupants(
     JOIN bookings b ON b.id = bt.booking_id
     WHERE btd.allocations ->> ${kind} = ${resourceId}
       AND ba.availability_slot_id = ${slotId}
-      AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+      AND b.status IN (${activeBookingStatusesForSlotSql()})
       AND ba.status IN ('held', 'confirmed', 'fulfilled')
       AND (${excludeTravelerId ?? null}::text IS NULL OR btd.traveler_id <> ${excludeTravelerId ?? null})
   `,
@@ -1220,7 +1221,7 @@ async function loadSlotBookingRowsBothJoins(
       GROUP BY booking_id
     ) sch ON sch.booking_id = b.id
     WHERE ba.availability_slot_id = ${slotId}
-      AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+      AND b.status IN (${activeBookingStatusesForSlotSql()})
       AND ba.status IN ('held', 'confirmed', 'fulfilled')
     ORDER BY b.created_at, b.booking_number
   `,
@@ -1262,7 +1263,7 @@ async function loadSlotBookingRowsInvoicesOnly(
       GROUP BY booking_id
     ) inv ON inv.booking_id = b.id
     WHERE ba.availability_slot_id = ${slotId}
-      AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+      AND b.status IN (${activeBookingStatusesForSlotSql()})
       AND ba.status IN ('held', 'confirmed', 'fulfilled')
     ORDER BY b.created_at, b.booking_number
   `,
@@ -1303,7 +1304,7 @@ async function loadSlotBookingRowsSchedulesOnly(
       GROUP BY booking_id
     ) sch ON sch.booking_id = b.id
     WHERE ba.availability_slot_id = ${slotId}
-      AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+      AND b.status IN (${activeBookingStatusesForSlotSql()})
       AND ba.status IN ('held', 'confirmed', 'fulfilled')
     ORDER BY b.created_at, b.booking_number
   `,
@@ -1335,7 +1336,7 @@ async function loadSlotBookingRowsBare(
     FROM bookings b
     JOIN booking_allocations ba ON ba.booking_id = b.id
     WHERE ba.availability_slot_id = ${slotId}
-      AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+      AND b.status IN (${activeBookingStatusesForSlotSql()})
       AND ba.status IN ('held', 'confirmed', 'fulfilled')
     ORDER BY b.created_at, b.booking_number
   `,

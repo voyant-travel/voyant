@@ -1,3 +1,4 @@
+import { isActiveBookingStatusForSlot } from "./booking-statuses.js"
 import type { AllocationManifestTraveler, SlotAllocationManifest } from "./service-allocation.js"
 
 const PASSENGER_HEADERS = [
@@ -47,7 +48,7 @@ export function buildAllocationPassengersCsv(manifest: SlotAllocationManifest): 
 export function buildAllocationRoomingCsv(manifest: SlotAllocationManifest, kind = "room"): string {
   const rows: Array<Array<string | number | null>> = [[...ROOMING_HEADERS]]
   const travelers = manifest.bookings.flatMap((booking) =>
-    isTerminalBookingStatus(booking.status) ? [] : booking.travelers,
+    isActiveBookingStatusForSlot(booking.status) ? booking.travelers : [],
   )
   const travelersByResource = new Map<string, AllocationManifestTraveler[]>()
   const unallocated: AllocationManifestTraveler[] = []
@@ -99,10 +100,6 @@ export function allocationExportFilename(
 ): string {
   const slug = manifest.slot.productId?.slice(0, 8) ?? "departure"
   return `${prefix}-${slug}-${manifest.slot.id}.csv`
-}
-
-function isTerminalBookingStatus(status: string) {
-  return status === "cancelled" || status === "no_show"
 }
 
 function csvDocument(rows: Array<Array<string | number | boolean | null | undefined>>) {

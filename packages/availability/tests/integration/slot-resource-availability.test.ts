@@ -67,12 +67,13 @@ describe.skipIf(!DB_AVAILABLE)("slot resource availability (integration)", () =>
 
   async function seedBookingWithTraveler(input: {
     travelerId: string
+    status?: "draft" | "on_hold" | "awaiting_payment" | "confirmed" | "in_progress" | "completed"
     allocations?: Record<string, string>
   }) {
     const bookingId = newId("bookings")
     await db.execute(sql`
       INSERT INTO bookings (id, booking_number, status, sell_currency)
-      VALUES (${bookingId}, ${`B${bookingId.slice(-6)}`}, 'confirmed', 'USD')
+      VALUES (${bookingId}, ${`B${bookingId.slice(-6)}`}, ${input.status ?? "confirmed"}, 'USD')
     `)
     await db.execute(sql`
       INSERT INTO booking_allocations (id, booking_id, availability_slot_id, quantity, allocation_type, status)
@@ -108,6 +109,51 @@ describe.skipIf(!DB_AVAILABLE)("slot resource availability (integration)", () =>
     expect(dbl?.available).toBe(1)
     expect(sgl?.assigned).toBe(0)
     expect(sgl?.available).toBe(1)
+  })
+
+  it("treats awaiting_payment bookings as active slot demand", async () => {
+    const dblId = await seedResource({ kind: "room", capacity: 1, label: "DBL 1", sortOrder: 1 })
+    const travelerId = newId("booking_travelers")
+    await seedBookingWithTraveler({
+      travelerId,
+      status: "awaiting_payment",
+      allocations: { room: dblId },
+    })
+
+    const resources = await getSlotResourceAvailability(db, slotId)
+    expect(resources.find((row) => row.id === dblId)?.assigned).toBe(1)
+
+    const manifest = await getSlotAllocationManifest(db, slotId)
+    expect(manifest?.summary.bookingsByStatus.awaiting_payment).toBe(1)
+    expect(manifest?.summary.travelerCount).toBe(1)
+    expect(manifest?.bookings[0]?.travelers[0]?.id).toBe(travelerId)
+
+    const violations = await validateSlotAllocationCapacity(db, slotId, [
+      { travelerId: newId("booking_travelers"), kind: "room", resourceId: dblId },
+    ])
+    expect(violations[0]?.existingAssigned).toBe(1)
+  })
+
+  it("excludes draft bookings from slot allocation demand", async () => {
+    const dblId = await seedResource({ kind: "room", capacity: 1, label: "DBL 1", sortOrder: 1 })
+    await seedBookingWithTraveler({
+      travelerId: newId("booking_travelers"),
+      status: "draft",
+      allocations: { room: dblId },
+    })
+
+    const resources = await getSlotResourceAvailability(db, slotId)
+    expect(resources.find((row) => row.id === dblId)?.assigned).toBe(0)
+
+    const manifest = await getSlotAllocationManifest(db, slotId)
+    expect(manifest?.summary.bookingsByStatus.draft).toBeUndefined()
+    expect(manifest?.summary.travelerCount).toBe(0)
+    expect(manifest?.bookings).toHaveLength(0)
+
+    const violations = await validateSlotAllocationCapacity(db, slotId, [
+      { travelerId: newId("booking_travelers"), kind: "room", resourceId: dblId },
+    ])
+    expect(violations).toEqual([])
   })
 
   it("returns a violation when planned travelers exceed resource capacity", async () => {

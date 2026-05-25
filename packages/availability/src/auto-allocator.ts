@@ -1,3 +1,5 @@
+import { isActiveBookingStatusForSlot } from "./booking-statuses.js"
+
 export interface AllocatorTraveler {
   id: string
   bookingId: string
@@ -30,8 +32,6 @@ export interface AllocationPlan {
   skipped: number
 }
 
-const TERMINAL_BOOKING_STATUSES = new Set(["cancelled", "no_show"])
-
 interface InternalGroup {
   key: string
   travelerIds: string[]
@@ -43,7 +43,7 @@ interface InternalGroup {
 }
 
 function activeTravelers(travelers: AllocatorTraveler[]): AllocatorTraveler[] {
-  return travelers.filter((traveler) => !TERMINAL_BOOKING_STATUSES.has(traveler.bookingStatus))
+  return travelers.filter((traveler) => isActiveBookingStatusForSlot(traveler.bookingStatus))
 }
 
 function groupTravelers(travelers: AllocatorTraveler[]): Map<string, InternalGroup> {

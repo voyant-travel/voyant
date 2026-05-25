@@ -1,6 +1,7 @@
 import { and, asc, eq, inArray, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { ACTIVE_BOOKING_STATUSES_FOR_SLOT } from "./booking-statuses.js"
 import { bookingItemsRef, bookingsRef } from "./bookings-ref.js"
 import { optionUnitsRef } from "./option-units-ref.js"
 import { availabilitySlots } from "./schema.js"
@@ -16,19 +17,6 @@ export interface SlotUnitAvailability {
   /** `initial - reserved`, or `null` when the pool is unlimited. */
   remaining: number | null
 }
-
-/**
- * Active booking statuses that count against slot capacity. `cancelled` and
- * `expired` are excluded so operator-visible allocation numbers drop the
- * moment a booking is cancelled — no separate release step needed.
- */
-const ACTIVE_BOOKING_STATUSES = [
-  "draft",
-  "on_hold",
-  "confirmed",
-  "in_progress",
-  "completed",
-] as const
 
 /**
  * Returns per-option-unit availability for a slot. `reserved` is derived from
@@ -66,7 +54,7 @@ export async function getSlotUnitAvailability(
     .innerJoin(bookingsRef, eq(bookingsRef.id, bookingItemsRef.bookingId))
     .where(
       and(
-        inArray(bookingsRef.status, [...ACTIVE_BOOKING_STATUSES]),
+        inArray(bookingsRef.status, [...ACTIVE_BOOKING_STATUSES_FOR_SLOT]),
         sql`${bookingItemsRef.optionUnitId} IS NOT NULL`,
         sql`${bookingItemsRef.metadata}->>'availabilitySlotId' = ${slotId}`,
       ),
