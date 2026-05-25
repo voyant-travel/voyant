@@ -1,5 +1,14 @@
 # @voyantjs/availability
 
+## 0.81.2
+
+### Patch Changes
+
+- 6ca8aa8: Include awaiting payment bookings in slot allocation manifests and allocation demand counts.
+  - @voyantjs/core@0.81.2
+  - @voyantjs/db@0.81.2
+  - @voyantjs/hono@0.81.2
+
 ## 0.81.1
 
 ### Patch Changes

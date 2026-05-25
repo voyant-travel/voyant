@@ -1,5 +1,16 @@
 # @voyantjs/bookings
 
+## 0.81.2
+
+### Patch Changes
+
+- f157bcd: Split booking traveler draft unit assignment into separate pricing and inventory unit fields.
+  - @voyantjs/action-ledger@0.81.2
+  - @voyantjs/core@0.81.2
+  - @voyantjs/db@0.81.2
+  - @voyantjs/hono@0.81.2
+  - @voyantjs/utils@0.81.2
+
 ## 0.81.1
 
 ### Patch Changes
