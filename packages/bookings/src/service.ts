@@ -119,6 +119,39 @@ function sqlTextArray(values: readonly string[]): SQL {
   )}]::text[]`
 }
 
+function buildBookingSearchCondition(search: string): SQL | undefined {
+  const trimmed = search.trim()
+  if (!trimmed) return undefined
+
+  const term = `%${trimmed}%`
+  const normalizedPhoneTerm = trimmed.replace(/\D/g, "")
+  const shouldSearchNormalizedPhone =
+    normalizedPhoneTerm.length >= 7 && /^[+\d\s().-]+$/.test(trimmed)
+  const searchConditions: SQL[] = [
+    ilike(bookings.bookingNumber, term),
+    ilike(bookings.externalBookingRef, term),
+    ilike(bookings.internalNotes, term),
+    ilike(bookings.contactFirstName, term),
+    ilike(bookings.contactLastName, term),
+    sql`concat_ws(' ', ${bookings.contactFirstName}, ${bookings.contactLastName}) ilike ${term}`,
+    ilike(bookings.contactEmail, term),
+    ilike(bookings.contactPhone, term),
+    ilike(bookings.contactCountry, term),
+    ilike(bookings.contactRegion, term),
+    ilike(bookings.contactCity, term),
+    ilike(bookings.contactAddressLine1, term),
+    ilike(bookings.contactPostalCode, term),
+  ]
+
+  if (shouldSearchNormalizedPhone) {
+    searchConditions.push(
+      sql`regexp_replace(coalesce(${bookings.contactPhone}, ''), '[^0-9]+', '', 'g') like ${`%${normalizedPhoneTerm}%`}`,
+    )
+  }
+
+  return or(...searchConditions)
+}
+
 type BookingListQuery = z.infer<typeof bookingListQuerySchema>
 type ConvertProductInput = z.infer<typeof convertProductSchema>
 type CreateBookingInput = z.infer<typeof insertBookingSchema>
@@ -2476,8 +2509,10 @@ export const bookingsService = {
     }
 
     if (query.search) {
-      const term = `%${query.search}%`
-      conditions.push(or(ilike(bookings.bookingNumber, term), ilike(bookings.internalNotes, term)))
+      const searchCondition = buildBookingSearchCondition(query.search)
+      if (searchCondition) {
+        conditions.push(searchCondition)
+      }
     }
 
     if (query.personId) {
