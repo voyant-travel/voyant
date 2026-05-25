@@ -66,6 +66,9 @@ export interface AllocationManifestTraveler {
   isLeadTraveler: boolean
   isPrimary: boolean
   sharingGroupId: string | null
+  optionId: string | null
+  optionUnitId: string | null
+  optionUnitCode: string | null
   roomTypeId: string | null
   bedPreference: string | null
   allocations: Record<string, string>
@@ -146,6 +149,8 @@ export async function getSlotAllocationManifest(
 
   const bookingIds = bookingRows.map((row) => row.id)
   const travelerRows = await loadSlotTravelerRows(db, bookingIds)
+  const bookingUnitRows = await loadSlotBookingUnitRows(db, slotId, bookingIds)
+  const selectedUnitByBookingId = new Map(bookingUnitRows.map((row) => [row.booking_id, row]))
   const bookingById = new Map(bookingRows.map((row) => [row.id, row]))
   // Assign 1-based slot-local sequence by booking createdAt. The SQL above
   // already orders by `created_at` then `booking_number`, so iterating in
@@ -173,6 +178,9 @@ export async function getSlotAllocationManifest(
       isLeadTraveler: row.is_lead_traveler ?? false,
       isPrimary: row.is_primary,
       sharingGroupId: row.sharing_group_id,
+      optionId: selectedUnitByBookingId.get(row.booking_id)?.option_id ?? null,
+      optionUnitId: selectedUnitByBookingId.get(row.booking_id)?.option_unit_id ?? null,
+      optionUnitCode: selectedUnitByBookingId.get(row.booking_id)?.option_unit_code ?? null,
       roomTypeId: row.room_type_id,
       bedPreference: row.bed_preference,
       allocations: normalizeAllocationMap(row.allocations),
@@ -1130,6 +1138,13 @@ interface TravelerRow {
   has_dietary_requirements: boolean
 }
 
+interface BookingUnitRow {
+  booking_id: string
+  option_id: string | null
+  option_unit_id: string | null
+  option_unit_code: string | null
+}
+
 async function loadSlotBookingRows(db: PostgresJsDatabase, slotId: string): Promise<BookingRow[]> {
   // `invoices` and `booking_payment_schedules` are LEFT JOIN aggregations that
   // may reference tables missing in catalog-less / finance-less deploys.
@@ -1370,6 +1385,69 @@ async function loadSlotTravelerRows(
     LEFT JOIN booking_traveler_travel_details btd ON btd.traveler_id = bt.id
     WHERE bt.booking_id = ANY(${sqlTextArray(bookingIds)})
     ORDER BY bt.booking_id, bt.is_primary DESC, bt.created_at
+  `,
+  )
+}
+
+async function loadSlotBookingUnitRows(
+  db: PostgresJsDatabase,
+  slotId: string,
+  bookingIds: string[],
+): Promise<BookingUnitRow[]> {
+  try {
+    return await executeRows<BookingUnitRow>(
+      db,
+      sql`
+      SELECT DISTINCT ON (ba.booking_id)
+        ba.booking_id,
+        ba.option_id,
+        ba.option_unit_id,
+        ou.code AS option_unit_code
+      FROM booking_allocations ba
+      LEFT JOIN option_units ou ON ou.id = ba.option_unit_id
+      WHERE ba.booking_id = ANY(${sqlTextArray(bookingIds)})
+        AND ba.availability_slot_id = ${slotId}
+        AND ba.status IN ('held', 'confirmed', 'fulfilled')
+      ORDER BY
+        ba.booking_id,
+        (ba.option_unit_id IS NULL),
+        CASE ba.status
+          WHEN 'fulfilled' THEN 0
+          WHEN 'confirmed' THEN 1
+          WHEN 'held' THEN 2
+          ELSE 3
+        END,
+        ba.updated_at DESC,
+        ba.created_at DESC
+    `,
+    )
+  } catch (error) {
+    if (!isUndefinedTableError(error)) throw error
+  }
+
+  return executeRows<BookingUnitRow>(
+    db,
+    sql`
+    SELECT DISTINCT ON (ba.booking_id)
+      ba.booking_id,
+      ba.option_id,
+      ba.option_unit_id,
+      NULL::text AS option_unit_code
+    FROM booking_allocations ba
+    WHERE ba.booking_id = ANY(${sqlTextArray(bookingIds)})
+      AND ba.availability_slot_id = ${slotId}
+      AND ba.status IN ('held', 'confirmed', 'fulfilled')
+    ORDER BY
+      ba.booking_id,
+      (ba.option_unit_id IS NULL),
+      CASE ba.status
+        WHEN 'fulfilled' THEN 0
+        WHEN 'confirmed' THEN 1
+        WHEN 'held' THEN 2
+        ELSE 3
+      END,
+      ba.updated_at DESC,
+      ba.created_at DESC
   `,
   )
 }

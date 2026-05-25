@@ -81,6 +81,75 @@ describe("planRoomAllocation", () => {
     expect(plan.assignments).toEqual([{ travelerId: "t1", resourceId: "r-single" }])
   })
 
+  it("prefers rooms with a matching template option before capacity tie-breakers", () => {
+    const plan = planRoomAllocation(
+      [
+        traveler({ id: "t1", bookingId: "b1", optionId: "option-dbl" }),
+        traveler({ id: "t2", bookingId: "b1", optionId: "option-dbl" }),
+      ],
+      [
+        room({ id: "r-twn", capacity: 2, flags: { templateOptionId: "option-twn" } }),
+        room({ id: "r-dbl", capacity: 2, flags: { templateOptionId: "option-dbl" } }),
+      ],
+    )
+
+    expect(plan.assignments.find((row) => row.travelerId === "t1")?.resourceId).toBe("r-dbl")
+    expect(plan.assignments.find((row) => row.travelerId === "t2")?.resourceId).toBe("r-dbl")
+  })
+
+  it("prefers rooms linked to the selected option unit", () => {
+    const plan = planRoomAllocation(
+      [
+        traveler({ id: "t1", bookingId: "b1", optionUnitId: "unit-dbl" }),
+        traveler({ id: "t2", bookingId: "b1", optionUnitId: "unit-dbl" }),
+      ],
+      [
+        room({ id: "r-twn", capacity: 2, refType: "option_unit", refId: "unit-twn" }),
+        room({ id: "r-dbl", capacity: 2, refType: "option_unit", refId: "unit-dbl" }),
+      ],
+    )
+
+    expect(plan.assignments.find((row) => row.travelerId === "t1")?.resourceId).toBe("r-dbl")
+    expect(plan.assignments.find((row) => row.travelerId === "t2")?.resourceId).toBe("r-dbl")
+  })
+
+  it("falls back to the resource label prefix for hand-materialized room types", () => {
+    const plan = planRoomAllocation(
+      [
+        traveler({ id: "t1", bookingId: "b1", optionUnitCode: "dbl_room" }),
+        traveler({ id: "t2", bookingId: "b1", optionUnitCode: "dbl_room" }),
+      ],
+      [
+        room({ id: "r-twn", capacity: 2, label: "TWN #1" }),
+        room({ id: "r-dbl", capacity: 2, label: "DBL #1" }),
+      ],
+    )
+
+    expect(plan.assignments.find((row) => row.travelerId === "t1")?.resourceId).toBe("r-dbl")
+    expect(plan.assignments.find((row) => row.travelerId === "t2")?.resourceId).toBe("r-dbl")
+  })
+
+  it("uses another room type when the preferred option-unit room is full", () => {
+    const plan = planRoomAllocation(
+      [
+        traveler({
+          id: "existing",
+          bookingId: "b0",
+          existingAllocationId: "r-dbl",
+          optionUnitCode: "dbl_room",
+        }),
+        traveler({ id: "t1", bookingId: "b1", optionUnitCode: "dbl_room" }),
+        traveler({ id: "t2", bookingId: "b1", optionUnitCode: "dbl_room" }),
+      ],
+      [room({ id: "r-dbl", capacity: 1, label: "DBL #1" }), room({ id: "r-twn", capacity: 2 })],
+    )
+
+    expect(plan.assignments.find((row) => row.travelerId === "existing")).toBeUndefined()
+    expect(plan.assignments.find((row) => row.travelerId === "t1")?.resourceId).toBe("r-twn")
+    expect(plan.assignments.find((row) => row.travelerId === "t2")?.resourceId).toBe("r-twn")
+    expect(plan.skipped).toBe(0)
+  })
+
   it("preserves existing assignments as no-op plan rows", () => {
     const plan = planRoomAllocation(
       [
