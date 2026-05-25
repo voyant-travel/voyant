@@ -1,5 +1,21 @@
 # @voyantjs/finance
 
+## 0.81.3
+
+### Patch Changes
+
+- 6daefc4: Add stable booking-create traveler keys for item and extra line traveler linkage, while keeping deprecated position-based traveler indexes as a transition fallback.
+- Updated dependencies [f157bcd]
+- Updated dependencies [6daefc4]
+  - @voyantjs/action-ledger@0.81.3
+  - @voyantjs/bookings@0.81.3
+  - @voyantjs/core@0.81.3
+  - @voyantjs/db@0.81.3
+  - @voyantjs/hono@0.81.3
+  - @voyantjs/products@0.81.3
+  - @voyantjs/storage@0.81.3
+  - @voyantjs/utils@0.81.3
+
 ## 0.81.2
 
 ### Patch Changes

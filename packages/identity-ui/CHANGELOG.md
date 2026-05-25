@@ -1,5 +1,19 @@
 # @voyantjs/identity-ui
 
+## 0.81.3
+
+### Patch Changes
+
+- Updated dependencies [f157bcd]
+- Updated dependencies [6daefc4]
+  - @voyantjs/bookings-ui@0.81.3
+  - @voyantjs/crm-ui@0.81.3
+  - @voyantjs/i18n@0.81.3
+  - @voyantjs/identity-react@0.81.3
+  - @voyantjs/products-ui@0.81.3
+  - @voyantjs/suppliers-ui@0.81.3
+  - @voyantjs/ui@0.81.3
+
 ## 0.81.2
 
 ### Patch Changes
