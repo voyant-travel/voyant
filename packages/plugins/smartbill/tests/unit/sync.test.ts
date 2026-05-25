@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { syncSmartbillInvoice, syncSmartbillInvoiceEvent } from "../../src/sync.js"
+import {
+  syncSmartbillInvoice,
+  syncSmartbillInvoiceEvent,
+  syncSmartbillProformaConversion,
+} from "../../src/sync.js"
 
 const financeServiceMock = vi.hoisted(() => ({
   getInvoiceById: vi.fn(),
@@ -28,6 +32,7 @@ function makeClient() {
   return {
     createInvoice: vi.fn().mockResolvedValue({ number: "42", series: "A" }),
     createProforma: vi.fn().mockResolvedValue({ number: "9", series: "P" }),
+    convertEstimateToInvoice: vi.fn().mockResolvedValue({ number: "42", series: "A" }),
     cancelInvoice: vi.fn(),
     reverseInvoice: vi.fn(),
     restoreInvoice: vi.fn(),
@@ -60,6 +65,89 @@ beforeEach(() => {
     totalCents: 10000,
     currency: "RON",
     lineItems: [{ description: "Tour", quantity: 1, unitPrice: 100, currency: "RON" }],
+  })
+})
+
+describe("syncSmartbillProformaConversion", () => {
+  it("falls back to createInvoice when artifact DB access is unavailable", async () => {
+    const client = makeClient()
+    const mapEvent = vi.fn().mockResolvedValue({
+      companyVatCode: "RO12345678",
+      client: { name: "Client" },
+      seriesName: "A",
+      currency: "RON",
+      products: [],
+    })
+
+    const result = await syncSmartbillProformaConversion({
+      event: { id: "inv_123", proformaId: "proforma_123", lineItems: [] },
+      runtime: {
+        client,
+        logger: { error: vi.fn(), info: vi.fn() },
+        mapEvent,
+        eventNames: {
+          issued: "invoice.issued",
+          proformaIssued: "invoice.proforma.issued",
+          proformaConverted: "invoice.proforma.converted",
+          voided: "invoice.voided",
+          syncRequested: "invoice.external.sync.requested",
+        },
+        artifacts: {},
+        idempotency: { skipExistingExternalRef: true },
+        onError: undefined,
+        writeBackInvoiceNumber: undefined,
+      },
+      pluginOptions: basePluginOptions,
+    })
+
+    expect(result.status).toBe("created")
+    expect(client.convertEstimateToInvoice).not.toHaveBeenCalled()
+    expect(client.createInvoice).toHaveBeenCalledWith(
+      expect.objectContaining({
+        companyVatCode: "RO12345678",
+        seriesName: "A",
+      }),
+    )
+  })
+
+  it("falls back to createInvoice when the proforma SmartBill ref is missing", async () => {
+    const client = makeClient()
+    const logger = { error: vi.fn(), info: vi.fn() }
+    financeServiceMock.listInvoiceExternalRefs.mockResolvedValue([])
+
+    const result = await syncSmartbillProformaConversion({
+      event: { id: "inv_123", proformaId: "proforma_missing", lineItems: [] },
+      runtime: {
+        client,
+        logger,
+        mapEvent: vi.fn().mockResolvedValue({
+          companyVatCode: "RO12345678",
+          client: { name: "Client" },
+          seriesName: "A",
+          currency: "RON",
+          products: [],
+        }),
+        eventNames: {
+          issued: "invoice.issued",
+          proformaIssued: "invoice.proforma.issued",
+          proformaConverted: "invoice.proforma.converted",
+          voided: "invoice.voided",
+          syncRequested: "invoice.external.sync.requested",
+        },
+        artifacts: { db: {} as never },
+        idempotency: { skipExistingExternalRef: true },
+        onError: undefined,
+        writeBackInvoiceNumber: undefined,
+      },
+      pluginOptions: basePluginOptions,
+    })
+
+    expect(result.status).toBe("created")
+    expect(client.convertEstimateToInvoice).not.toHaveBeenCalled()
+    expect(client.createInvoice).toHaveBeenCalledOnce()
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.stringContaining("falling back to createInvoice"),
+    )
   })
 })
 

@@ -253,6 +253,7 @@ async function emitProformaConverted(
     proformaId: proforma.id,
     proformaInvoiceNumber: proforma.invoiceNumber,
   }
+  await runtime.eventBus.emit(ISSUED_EVENT, issuedEvent)
   await runtime.eventBus.emit(PROFORMA_CONVERTED_EVENT, payload)
 }
 
@@ -426,8 +427,8 @@ function parseTaxRegimeCode(code: string | null | undefined): TaxRegimeCode | nu
  * line items verbatim (totals + taxes already match the booking the
  * customer accepted) and voids the proforma so it stops counting against
  * outstanding balances. The new invoice carries `convertedFromInvoiceId`
- * so the audit chain is preserved; downstream subscribers (SmartBill
- * etc.) see the linkage on the emitted `invoice.issued` event.
+ * so the audit chain is preserved; downstream subscribers see the linkage
+ * on both the generic issued event and the conversion-specific event.
  *
  * Number derivation: `PRO-` prefix → `INV-`; otherwise the original
  * number is suffixed with `-INV`. Callers can override via the optional

@@ -78,18 +78,7 @@ export type SyncSmartbillInvoiceEventResult =
       artifact: Awaited<ReturnType<typeof persistSmartbillInvoiceArtifact>> | null
     }
 
-export type SyncSmartbillProformaConversionResult =
-  | {
-      status: "missing_artifact_db"
-      invoiceId: string
-      proformaId: string
-    }
-  | {
-      status: "missing_proforma_ref"
-      invoiceId: string
-      proformaId: string
-    }
-  | SyncSmartbillInvoiceEventResult
+export type SyncSmartbillProformaConversionResult = SyncSmartbillInvoiceEventResult
 
 export async function syncSmartbillInvoice({
   db,
@@ -159,21 +148,35 @@ export async function syncSmartbillProformaConversion({
   pluginOptions,
 }: SyncSmartbillProformaConversionInput): Promise<SyncSmartbillProformaConversionResult> {
   const proformaId = typeof event.proformaId === "string" ? event.proformaId : null
-  if (!proformaId) {
-    throw new Error(`SmartBill proforma conversion missing proformaId for ${event.id}`)
-  }
-
   const body = await runtime.mapEvent(event)
-  const db = await resolveArtifactDb(event, "invoice", body, undefined, runtime, pluginOptions)
-  if (!db) return { status: "missing_artifact_db", invoiceId: event.id, proformaId }
-
   const existingRef = await findExistingSmartbillRef(event, "invoice", body, runtime)
   if (existingRef) {
     return handleExistingSmartbillRef(event, "invoice", body, existingRef, runtime)
   }
 
+  if (!proformaId) {
+    return fallbackToSmartbillInvoiceCreate(event, runtime, pluginOptions, "missing proforma id")
+  }
+
+  const db = await resolveArtifactDb(event, "invoice", body, undefined, runtime, pluginOptions)
+  if (!db) {
+    return fallbackToSmartbillInvoiceCreate(
+      event,
+      runtime,
+      pluginOptions,
+      "missing artifact database",
+    )
+  }
+
   const proformaRef = await findProformaSmartbillRef(db, proformaId)
-  if (!proformaRef) return { status: "missing_proforma_ref", invoiceId: event.id, proformaId }
+  if (!proformaRef) {
+    return fallbackToSmartbillInvoiceCreate(
+      event,
+      runtime,
+      pluginOptions,
+      `missing SmartBill proforma reference for ${proformaId}`,
+    )
+  }
 
   try {
     const result = await runtime.client.convertEstimateToInvoice(
@@ -195,6 +198,24 @@ export async function syncSmartbillProformaConversion({
     await recordSyncError(event, "invoice", err, runtime, pluginOptions)
     throw err
   }
+}
+
+function fallbackToSmartbillInvoiceCreate(
+  event: VoyantInvoiceEvent,
+  runtime: SmartbillSyncRuntime,
+  pluginOptions: Pick<SmartbillPluginOptions, "companyVatCode" | "seriesName">,
+  reason: string,
+): Promise<SyncSmartbillInvoiceEventResult> {
+  runtime.logger.info?.(
+    `[smartbill] cannot convert proforma for ${event.id}: ${reason}; falling back to createInvoice`,
+  )
+  return syncSmartbillInvoiceEvent({
+    event,
+    documentType: "invoice",
+    runtime,
+    pluginOptions,
+    operationLabel: `createInvoice fallback after proforma conversion (${reason})`,
+  })
 }
 
 async function findProformaSmartbillRef(db: PostgresJsDatabase, proformaId: string) {

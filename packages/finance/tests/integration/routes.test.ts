@@ -1369,7 +1369,12 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         .from(payments)
         .where(eq(payments.invoiceId, data.id))
       expect(reassignedPayments).toHaveLength(1)
-      expect(invoiceIssuedEvents).toHaveLength(0)
+      expect(invoiceIssuedEvents).toHaveLength(1)
+      expect(invoiceIssuedEvents[0]?.data).toMatchObject({
+        invoiceId: data.id,
+        invoiceType: "invoice",
+        convertedFromInvoiceId: proforma.id,
+      })
       expect(proformaConvertedEvents).toHaveLength(1)
       expect(proformaConvertedEvents[0]?.data).toMatchObject({
         id: data.id,

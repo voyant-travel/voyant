@@ -916,8 +916,10 @@ describe("smartbillPlugin — invoice.proforma.converted subscriber", () => {
     )
   })
 
-  it("logs and skips conversion when the proforma has no SmartBill ref", async () => {
-    const fetchMock = vi.fn<SmartbillFetch>()
+  it("falls back to creating an invoice when the proforma has no SmartBill ref", async () => {
+    const fetchMock = vi.fn<SmartbillFetch>(async () =>
+      jsonResponse(200, { ...okEnvelope, number: "43", series: "SB" }),
+    )
     const logger = makeLogger()
     const plugin = smartbillPlugin({
       ...baseOptions,
@@ -934,7 +936,24 @@ describe("smartbillPlugin — invoice.proforma.converted subscriber", () => {
       }),
     )
 
-    expect(fetchMock).not.toHaveBeenCalled()
+    expect(fetchMock).toHaveBeenCalledOnce()
+    const [url, init] = fetchMock.mock.calls[0]!
+    expect(url).toContain("/invoice")
+    const body = JSON.parse(init.body ?? "{}")
+    expect(body.useEstimateDetails).toBeUndefined()
+    expect(body.estimate).toBeUndefined()
+    expect(financeServiceMock.registerInvoiceExternalRef).toHaveBeenCalledWith(
+      expect.anything(),
+      "inv_new",
+      expect.objectContaining({
+        provider: "smartbill",
+        externalNumber: "43",
+        metadata: expect.objectContaining({ documentType: "invoice", seriesName: "A" }),
+      }),
+    )
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.stringContaining("falling back to createInvoice"),
+    )
     expect(logger.error).not.toHaveBeenCalled()
   })
 })
