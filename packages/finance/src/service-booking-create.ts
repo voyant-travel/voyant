@@ -736,6 +736,12 @@ async function linkBookingCreateItemsToTravelers(
     throw new Error(`Duplicate clientTravelerKey: ${duplicateTravelerKeys.join(", ")}`)
   }
 
+  type RequestedTravelerLink = {
+    clientLineKey: string | null
+    travelerKey: string | null
+    traveler: BookingTraveler | null
+  }
+
   const travelerByClientKey = new Map<string, BookingTraveler>()
   for (const [index, travelerInput] of travelerInputs.entries()) {
     const key = travelerInput.clientTravelerKey?.trim()
@@ -743,22 +749,30 @@ async function linkBookingCreateItemsToTravelers(
     if (key && traveler && !travelerByClientKey.has(key)) travelerByClientKey.set(key, traveler)
   }
 
-  const requestedLinks = lines.flatMap((line) => {
+  const requestedLinks: RequestedTravelerLink[] = []
+  for (const line of lines) {
     const travelerKeys = uniqueTravelerKeys(line.travelerKeys)
     if (travelerKeys.length > 0) {
-      return travelerKeys.map((travelerKey) => ({
-        clientLineKey: line.clientLineKey ?? null,
-        travelerKey,
-        traveler: travelerByClientKey.get(travelerKey) ?? null,
-      }))
+      for (const travelerKey of travelerKeys) {
+        requestedLinks.push({
+          clientLineKey: line.clientLineKey ?? null,
+          travelerKey,
+          traveler: travelerByClientKey.get(travelerKey) ?? null,
+        })
+      }
+      continue
     }
-    return uniqueValidTravelerIndexes(line.travelerIndexes, travelers.length).map(
-      (travelerIndex) => ({
+    for (const travelerIndex of uniqueValidTravelerIndexes(
+      line.travelerIndexes,
+      travelers.length,
+    )) {
+      requestedLinks.push({
         clientLineKey: line.clientLineKey ?? null,
+        travelerKey: null,
         traveler: travelers[travelerIndex] ?? null,
-      }),
-    )
-  })
+      })
+    }
+  }
   if (requestedLinks.length === 0) return
 
   const itemRows = await tx.select().from(bookingItems).where(eq(bookingItems.bookingId, bookingId))
@@ -771,8 +785,8 @@ async function linkBookingCreateItemsToTravelers(
 
   const seen = new Set<string>()
   const unknownTravelerKeys = requestedLinks
-    .filter((link) => "travelerKey" in link && !link.traveler)
-    .map((link) => ("travelerKey" in link ? link.travelerKey : null))
+    .filter((link) => link.travelerKey && !link.traveler)
+    .map((link) => link.travelerKey)
     .filter((key): key is string => Boolean(key))
   if (unknownTravelerKeys.length > 0) {
     throw new Error(`Unknown travelerKey: ${unknownTravelerKeys.join(", ")}`)
