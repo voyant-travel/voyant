@@ -19,10 +19,12 @@ export interface BookingCreateTravelerInput {
   preferredLanguage?: string | null
   specialRequests?: string | null
   /**
-   * option_unit_id of the room the traveler is assigned to. Round-trips
-   * from the UI TravelersSection even though the server currently doesn't
-   * persist it — the follow-up that adds a traveler→room link will pick it
-   * up without the client changing.
+   * Deprecated compatibility alias for the traveler's pricing-tier option
+   * unit. The server accepts this field but does not persist it; item-line
+   * `travelerIndexes` carry the supported traveler-to-item linkage.
+   *
+   * @deprecated Use itemLines[].travelerIndexes to express traveler-priced
+   * lines and inventory placement.
    */
   roomUnitId?: string | null
   isPrimary?: boolean | null

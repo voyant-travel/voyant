@@ -46,11 +46,10 @@ const travelerInputSchema = z.object({
   preferredLanguage: z.string().max(35).optional().nullable(),
   specialRequests: z.string().optional().nullable(),
   /**
-   * option_unit_id the passenger is assigned to. Accepted by the input
-   * schema so the UI's PassengerListValue can round-trip, but not yet
-   * persisted — bookingTravelers has no room-assignment column and the
-   * allocation flow is owned by the items slice. Follow-up: add a traveler
-   * metadata JSONB or wire into booking_allocations.
+   * Deprecated compatibility alias for the traveler's pricing-tier option
+   * unit. Accepted by the input schema for wire compatibility but not
+   * persisted; item-line travelerIndexes are the supported traveler-to-item
+   * linkage.
    */
   roomUnitId: z.string().optional().nullable(),
   isPrimary: z.boolean().optional().nullable(),
@@ -834,10 +833,10 @@ export async function createBooking(
         )
       }
 
-      // 2. Travelers. The wire-format `roomUnitId` on a traveler is
-      // accepted for round-trip compatibility but not stored on the
-      // traveler row itself — per-traveler unit assignment is
-      // expressed through `booking_item_travelers` rows linked from
+      // 2. Travelers. The wire-format `roomUnitId` on a traveler is a
+      // deprecated pricing-tier alias accepted for compatibility but
+      // not stored on the traveler row itself. Per-traveler item linkage
+      // is expressed through `booking_item_travelers` rows linked from
       // each `booking_item`. See voyantjs/voyant#1267.
       const travelers: BookingTraveler[] = []
       for (const traveler of input.travelers ?? []) {

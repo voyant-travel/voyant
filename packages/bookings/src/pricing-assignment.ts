@@ -562,8 +562,11 @@ export function resolveBookingExtraLines<TLine extends ResolvableExtraLine>(opti
 /**
  * Project a resolved draft's traveler list into the wire-format
  * `BookingCreateTravelerInput[]` shape the dialog submits. Derives
- * the `travelerCategory` from DOB / role and projects only the
- * inventory placement into the legacy wire `roomUnitId` field.
+ * the `travelerCategory` from DOB / role.
+ *
+ * `roomUnitId` is a deprecated compatibility alias for the pricing tier
+ * option unit. Inventory placement is expressed only by item lines and their
+ * `travelerIndexes`; the server accepts this field but does not persist it.
  */
 export function travelersToRows(
   value: { travelers: readonly BookingDraftTraveler[] },
@@ -590,7 +593,7 @@ export function travelersToRows(
     participantType: "traveler",
     travelerCategory: deriveDraftPaxBand(traveler, now),
     isPrimary: traveler.role === "lead",
-    roomUnitId: traveler.inventoryUnitSource === "none" ? null : traveler.inventoryUnitId,
+    roomUnitId: traveler.pricingUnitSource === "none" ? null : traveler.pricingUnitId,
   }))
 }
 

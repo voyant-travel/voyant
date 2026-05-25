@@ -431,29 +431,31 @@ describe("travelersToRows", () => {
     expect(rows[2]).toMatchObject({ isPrimary: false, travelerCategory: "child" })
   })
 
-  it("projects inventory placement to the legacy roomUnitId wire field", () => {
+  it("keeps legacy roomUnitId wire field as a pricing-tier alias", () => {
     const rows = travelersToRows({
       travelers: [
         traveler({
           role: "adult",
           pricingUnitId: "u_adult",
+          pricingUnitSource: "manual",
           inventoryUnitId: "u_dbl_room",
           inventoryUnitSource: "manual",
         }),
       ],
     })
 
-    expect(rows[0]?.roomUnitId).toBe("u_dbl_room")
+    expect(rows[0]?.roomUnitId).toBe("u_adult")
   })
 
-  it("nulls out the legacy roomUnitId wire field for inventory source=none", () => {
+  it("nulls out the legacy roomUnitId wire field for pricing source=none", () => {
     const rows = travelersToRows({
       travelers: [
         traveler({
           role: "adult",
           pricingUnitId: "u_adult",
+          pricingUnitSource: "none",
           inventoryUnitId: "u_dbl_room",
-          inventoryUnitSource: "none",
+          inventoryUnitSource: "manual",
         }),
       ],
     })
