@@ -216,33 +216,57 @@ function stripOptionPrefix(name: string): string {
  *   1. If we have an age (from DOB) and it falls into a unit's
  *      `[minAge, maxAge]` window, use that unit.
  *   2. Otherwise honor an explicit role hint (Child / Infant / Adult
- *      buttons) by matching unit code or name.
- *   3. Fall back to the ADULT-coded unit, or the first unit when
- *      nothing else matches.
+ *      buttons) by mapping the hint to a representative age and
+ *      matching the age band. This works for products whose units
+ *      encode the band in the code (`child_0_5`, `child_6_12`) instead
+ *      of bare `CHILD`/`INFANT`.
+ *   3. Fall back to code/name matching for legacy products that don't
+ *      configure min/max ages.
  *
  * `roleHint` covers the common case where the operator knows the
  * traveler is a child but doesn't have the exact DOB. Without it, a
  * roleless traveler would silently default to Adult pricing.
  */
-function pickUnitForAge(
+export function pickUnitForAge(
   units: OptionUnitsStepperUnit[],
   age: number | null,
   roleHint: "adult" | "child" | "infant" | null = null,
 ): OptionUnitsStepperUnit | undefined {
   if (units.length === 0) return undefined
-  const findByCode = (code: string) =>
-    units.find((u) => (u.unitCode ?? "").toUpperCase() === code) ??
-    units.find((u) => new RegExp(`\\b${code}\\b`, "i").test(u.unitName))
-  const adult = findByCode("ADULT")
+  const personUnits = units.filter((u) => u.unitType == null || u.unitType === "person")
+  const pool = personUnits.length > 0 ? personUnits : units
+  const sorted = [...pool].sort((a, b) => (a.minAge ?? 0) - (b.minAge ?? 0))
+
+  const matchByAge = (target: number) =>
+    sorted.find(
+      (u) => (u.minAge == null || target >= u.minAge) && (u.maxAge == null || target <= u.maxAge),
+    )
+
   if (age != null) {
-    const match = units.find(
-      (u) => (u.minAge == null || age >= u.minAge) && (u.maxAge == null || age <= u.maxAge),
+    const match = matchByAge(age)
+    if (match) return match
+  }
+
+  if (roleHint) {
+    const HINT_AGE = { adult: 30, child: 8, infant: 1 } as const
+    const hintAge = HINT_AGE[roleHint]
+    // Only consider units with at least one explicit age bound. Without
+    // this, legacy units with null min/max (just bare ADULT/CHILD codes)
+    // would all match every hint age and collapse onto the first sorted
+    // entry (almost always Adult). Code-matching below handles those.
+    const banded = sorted.filter((u) => u.minAge != null || u.maxAge != null)
+    const match = banded.find(
+      (u) => (u.minAge == null || hintAge >= u.minAge) && (u.maxAge == null || hintAge <= u.maxAge),
     )
     if (match) return match
   }
-  if (roleHint === "child") return findByCode("CHILD") ?? adult ?? units[0]
-  if (roleHint === "infant") return findByCode("INFANT") ?? adult ?? units[0]
-  return adult ?? units[0]
+
+  const findByCode = (code: string) =>
+    sorted.find((u) => (u.unitCode ?? "").toUpperCase() === code) ??
+    sorted.find((u) => new RegExp(`\\b${code}\\b`, "i").test(u.unitName))
+  if (roleHint === "child") return findByCode("CHILD") ?? sorted[0]
+  if (roleHint === "infant") return findByCode("INFANT") ?? sorted[0]
+  return findByCode("ADULT") ?? sorted[sorted.length - 1] ?? sorted[0]
 }
 
 /**

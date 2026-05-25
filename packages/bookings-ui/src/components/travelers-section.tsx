@@ -129,6 +129,39 @@ function matchUnitByDob(units: ReadonlyArray<RoomGroupUnit>, dob: string | null)
 }
 
 /**
+ * Find the unit matching a role hint when DOB is missing. Maps the
+ * role to a representative age and matches against `[minAge, maxAge]`.
+ * Returns null when the role doesn't carry an age signal (e.g. `lead`).
+ *
+ * Routes `infant` to whichever band covers ~1y (e.g. `child_0_5`) and
+ * `child` to whichever covers ~8y (e.g. `child_6_12`), regardless of
+ * how the product codes the unit names.
+ */
+function matchUnitByRoleHint(
+  units: ReadonlyArray<RoomGroupUnit>,
+  role: TravelerRole | null,
+): string | null {
+  if (!role || role === "lead") return null
+  const HINT_AGE: Record<"adult" | "child" | "infant", number> = {
+    adult: 30,
+    child: 8,
+    infant: 1,
+  }
+  const hintAge = HINT_AGE[role]
+  if (hintAge == null) return null
+  // Only consider units with explicit age bands — units with null
+  // min/max would all spuriously match any hint age.
+  const banded = units.filter(
+    (u) =>
+      (u.unitType == null || u.unitType === "person") && (u.minAge != null || u.maxAge != null),
+  )
+  const match = banded.find(
+    (u) => (u.minAge == null || hintAge >= u.minAge) && (u.maxAge == null || hintAge <= u.maxAge),
+  )
+  return match?.unitId ?? null
+}
+
+/**
  * The Room dropdown lists one item per option (keyed by the option's
  * primary/ADULT unit id), but a traveler's `roomUnitId` can point at any
  * age-banded unit within that option. Map the traveler's specific unit
@@ -303,20 +336,47 @@ export function TravelersSection({
   // hunt for the dropdown on every traveler — they can still override
   // manually via the Room select. Picks the first option (ordering
   // mirrors the upstream `roomUnits` array, which comes from the
-  // stepper in catalog order). When `roomGroups` is wired and the
-  // traveler has DOB, also pre-pick the matching age-banded unit
-  // within that option so the Category buttons land on the right row.
-  const pickRoomUnitIdForNewTraveler = (dateOfBirth: string | null = null): string | null => {
-    if (!roomUnits || roomUnits.length === 0) return null
-    const pickedRoom =
-      roomUnits.find((unit) => unit.remainingCapacity > 0)?.unitId ?? roomUnits[0]?.unitId ?? null
-    if (!pickedRoom || !roomGroups || roomGroups.length === 0) return pickedRoom
-    const group = roomGroups.find(
-      (g) => g.primaryUnitId === pickedRoom || g.units.some((u) => u.unitId === pickedRoom),
+  // stepper in catalog order). When `roomGroups` is wired, also
+  // pre-pick the matching age-banded unit within that option (DOB
+  // first, role hint second) so the Category buttons land on the
+  // right row and pricing reflects the operator's intent.
+  const pickRoomUnitIdForNewTraveler = React.useCallback(
+    (dateOfBirth: string | null = null, role: TravelerRole | null = null): string | null => {
+      if (!roomUnits || roomUnits.length === 0) return null
+      const pickedRoom =
+        roomUnits.find((unit) => unit.remainingCapacity > 0)?.unitId ?? roomUnits[0]?.unitId ?? null
+      if (!pickedRoom || !roomGroups || roomGroups.length === 0) return pickedRoom
+      const group = roomGroups.find(
+        (g) => g.primaryUnitId === pickedRoom || g.units.some((u) => u.unitId === pickedRoom),
+      )
+      if (!group) return pickedRoom
+      return (
+        matchUnitByDob(group.units, dateOfBirth) ??
+        matchUnitByRoleHint(group.units, role) ??
+        group.primaryUnitId
+      )
+    },
+    [roomUnits, roomGroups],
+  )
+
+  // Race fix: travelers added before the option-units queries resolve
+  // end up with `roomUnitId: null`. Once units arrive, back-fill any
+  // missing assignments so the static fallback's role hint (Child /
+  // Infant) is honored and `redistributeByAge` doesn't silently price
+  // them as adults.
+  React.useEffect(() => {
+    if (!roomUnits || roomUnits.length === 0) return
+    if (!value.travelers.some((t) => !t.roomUnitId)) return
+    const next = value.travelers.map((t) =>
+      t.roomUnitId ? t : { ...t, roomUnitId: pickRoomUnitIdForNewTraveler(t.dateOfBirth, t.role) },
     )
-    if (!group) return pickedRoom
-    return matchUnitByDob(group.units, dateOfBirth) ?? group.primaryUnitId
-  }
+    // Guard against infinite re-runs if hydration can't find a unit
+    // (e.g. empty roomGroups): no point dispatching an onChange that
+    // doesn't actually change anything.
+    const changed = next.some((t, i) => t.roomUnitId !== value.travelers[i]?.roomUnitId)
+    if (!changed) return
+    onChange({ travelers: next })
+  }, [roomUnits, value.travelers, onChange, pickRoomUnitIdForNewTraveler])
 
   const addRow = () => {
     // First traveler defaults to `lead` so the operator doesn't have to
@@ -324,7 +384,10 @@ export function TravelersSection({
     const role: TravelerRole = value.travelers.length === 0 ? "lead" : "adult"
     const blank = createBlankTraveler(role)
     onChange({
-      travelers: [...value.travelers, { ...blank, roomUnitId: pickRoomUnitIdForNewTraveler(null) }],
+      travelers: [
+        ...value.travelers,
+        { ...blank, roomUnitId: pickRoomUnitIdForNewTraveler(null, role) },
+      ],
     })
   }
 
@@ -335,7 +398,7 @@ export function TravelersSection({
     onChange({
       travelers: [
         ...value.travelers,
-        { ...traveler, roomUnitId: pickRoomUnitIdForNewTraveler(traveler.dateOfBirth) },
+        { ...traveler, roomUnitId: pickRoomUnitIdForNewTraveler(traveler.dateOfBirth, role) },
       ],
     })
   }
@@ -346,7 +409,7 @@ export function TravelersSection({
     onChange({
       travelers: [
         ...value.travelers,
-        { ...traveler, roomUnitId: pickRoomUnitIdForNewTraveler(traveler.dateOfBirth) },
+        { ...traveler, roomUnitId: pickRoomUnitIdForNewTraveler(traveler.dateOfBirth, role) },
       ],
     })
   }
