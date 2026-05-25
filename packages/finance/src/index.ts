@@ -262,9 +262,12 @@ export type {
   BookingPaymentSchedulePaidEvent,
   CreateInvoiceFromBookingInput,
   InvoiceFromBookingData,
+  InvoiceLineDescriptionResolver,
+  InvoiceLineDescriptionResolverInput,
   InvoiceRenderedEvent,
   InvoiceVoidedEvent,
   PaymentCompletedEvent,
+  ResolvedInvoiceLine,
   UnifiedPaymentRow,
 } from "./service.js"
 export {

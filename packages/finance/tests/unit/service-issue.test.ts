@@ -377,6 +377,118 @@ describe("issueInvoiceFromBooking", () => {
     ])
   })
 
+  it("carries payment schedule metadata on issued line items", async () => {
+    const draftInvoice = {
+      id: "inv_schedule",
+      invoiceNumber: "INV-SCHEDULE",
+      invoiceType: "invoice",
+      bookingId: "book_schedule",
+      totalCents: 32000,
+      currency: "RON",
+      convertedFromInvoiceId: null,
+      issueDate: "2026-05-23",
+      dueDate: "2026-05-30",
+    }
+    const issuedInvoice = { ...draftInvoice, status: "issued" }
+    const booking = {
+      bookingNumber: "BK-SCHEDULE",
+      sellAmountCents: 64000,
+      contactFirstName: "Ana",
+      contactLastName: "Popescu",
+    }
+    const lineRows = [
+      {
+        bookingItemId: null,
+        bookingPaymentScheduleId: "bps_123",
+        description: "Deposit 50% Excursie Bulgaria | 2026-06-13",
+        quantity: 1,
+        unitPriceCents: 32000,
+        taxRate: null,
+      },
+    ]
+    const scheduleRows = [
+      {
+        id: "bps_123",
+        scheduleType: "deposit",
+        amountCents: 32000,
+      },
+    ]
+    vi.mocked(financeService.createInvoiceFromBooking).mockResolvedValue(
+      draftInvoice as Awaited<ReturnType<typeof financeService.createInvoiceFromBooking>>,
+    )
+
+    let selectCall = 0
+    const db = Object.assign({} as PostgresJsDatabase, {
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn(async () => [issuedInvoice]),
+          })),
+        })),
+      })),
+      select: vi.fn(() => {
+        selectCall += 1
+        const currentSelect = selectCall
+        return {
+          from: vi.fn(() => ({
+            where: vi.fn(() => {
+              if (currentSelect === 3) return Promise.resolve(scheduleRows)
+
+              return {
+                limit: vi.fn(async () => (currentSelect === 1 ? [booking] : [])),
+                orderBy: vi.fn(async () => (currentSelect === 2 ? lineRows : [])),
+              }
+            }),
+          })),
+        }
+      }),
+    })
+
+    const eventBus = createEventBus()
+    const emitted: Array<EventEnvelope<InvoiceIssuedEvent>> = []
+    eventBus.subscribe<InvoiceIssuedEvent>("invoice.issued", (event) => {
+      emitted.push(event)
+    })
+
+    await issueInvoiceFromBooking(
+      db,
+      {
+        invoiceNumber: "INV-SCHEDULE",
+        bookingId: "book_schedule",
+        issueDate: "2026-05-23",
+        dueDate: "2026-05-30",
+      },
+      {
+        booking: {
+          id: "book_schedule",
+          bookingNumber: "BK-SCHEDULE",
+          personId: null,
+          organizationId: null,
+          sellCurrency: "RON",
+          baseCurrency: null,
+          fxRateSetId: null,
+          sellAmountCents: 64000,
+          baseSellAmountCents: null,
+        },
+        items: [],
+      },
+      { eventBus },
+    )
+
+    expect(emitted[0]?.data.lineItems).toEqual([
+      {
+        description: "Deposit 50% Excursie Bulgaria | 2026-06-13",
+        quantity: 1,
+        unitPrice: 320,
+        currency: "RON",
+        bookingPaymentScheduleId: "bps_123",
+        scheduleType: "deposit",
+        schedulePercent: 50,
+        isService: true,
+      },
+    ])
+  })
+
   it("enriches issued invoice events with operator FX settings", async () => {
     const draftInvoice = {
       id: "inv_fx",

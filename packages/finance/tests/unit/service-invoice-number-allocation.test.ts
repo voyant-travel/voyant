@@ -370,6 +370,96 @@ describe("financeService.createInvoiceFromBooking number allocation", () => {
     ])
   })
 
+  it("persists payment schedule context on schedule-derived line items", async () => {
+    const { db, insertedInvoiceLineItems } = makeDb({})
+
+    await financeService.createInvoiceFromBooking(
+      db,
+      {
+        bookingId: "book_123",
+        invoiceNumber: "MANUAL-1",
+        issueDate: "2026-05-23",
+        dueDate: "2026-06-23",
+      },
+      {
+        booking: {
+          ...bookingData.booking,
+          bookingNumber: "BK-2605-5046",
+          sellAmountCents: 64_000,
+          startDate: "2026-06-13",
+          endDate: "2026-06-13",
+        },
+        paymentSchedule: {
+          id: "bps_123",
+          bookingId: "book_123",
+          bookingItemId: "bkit_123",
+          scheduleType: "deposit",
+          dueDate: "2026-06-01",
+          currency: "RON",
+          amountCents: 32_000,
+        },
+        items: [
+          {
+            id: "bkit_123",
+            title: "Excursie Bulgaria",
+            quantity: 2,
+            unitSellAmountCents: 32_000,
+            totalSellAmountCents: 64_000,
+          },
+        ],
+      },
+    )
+
+    expect(insertedInvoiceLineItems).toEqual([
+      expect.objectContaining({
+        bookingItemId: "bkit_123",
+        bookingPaymentScheduleId: "bps_123",
+        description: "Deposit 50% Excursie Bulgaria | 2026-06-13",
+        quantity: 1,
+        unitPriceCents: 32_000,
+        totalCents: 32_000,
+        taxRate: null,
+        sortOrder: 0,
+      }),
+    ])
+  })
+
+  it("lets callers override schedule line descriptions", async () => {
+    const { db, insertedInvoiceLineItems } = makeDb({})
+
+    await financeService.createInvoiceFromBooking(
+      db,
+      {
+        bookingId: "book_123",
+        invoiceNumber: "MANUAL-1",
+        issueDate: "2026-05-23",
+        dueDate: "2026-06-23",
+      },
+      {
+        ...bookingData,
+        paymentSchedule: {
+          id: "bps_123",
+          bookingId: "book_123",
+          bookingItemId: null,
+          scheduleType: "balance",
+          dueDate: "2026-06-01",
+          currency: "RON",
+          amountCents: 12_000,
+        },
+      },
+      {
+        descriptionResolver: async ({ booking, schedule, line }) =>
+          `${schedule?.scheduleType}:${booking.bookingNumber}:${line.totalCents}`,
+      },
+    )
+
+    expect(insertedInvoiceLineItems[0]).toMatchObject({
+      bookingItemId: null,
+      bookingPaymentScheduleId: "bps_123",
+      description: "balance:BK-123:12000",
+    })
+  })
+
   it("persists external refs in the invoice transaction", async () => {
     const { db, insertedInvoiceExternalRefs } = makeDb({})
 

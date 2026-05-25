@@ -274,6 +274,13 @@
       "when": 1779710500000,
       "tag": "0038_traveler_identity_document_snapshot",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1779748565000,
+      "tag": "0039_invoice_line_item_payment_schedule",
+      "breakpoints": true
     }
   ]
 }
