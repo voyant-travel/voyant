@@ -59,6 +59,33 @@ export const creditNoteStatusSchema = z.enum(["draft", "issued", "applied"])
 
 export const invoiceTypeSchema = z.enum(["invoice", "proforma", "credit_note"])
 
+export const invoiceNumberResetStrategySchema = z.enum(["never", "annual", "monthly"])
+export type InvoiceNumberResetStrategy = z.infer<typeof invoiceNumberResetStrategySchema>
+
+export const invoiceNumberSeriesScopeSchema = invoiceTypeSchema
+export type InvoiceNumberSeriesScope = z.infer<typeof invoiceNumberSeriesScopeSchema>
+
+export const invoiceNumberSeriesRecordSchema = z.object({
+  id: z.string(),
+  code: z.string(),
+  name: z.string(),
+  prefix: z.string(),
+  separator: z.string(),
+  padLength: z.number().int(),
+  currentSequence: z.number().int(),
+  resetStrategy: invoiceNumberResetStrategySchema,
+  resetAt: z.string().nullable(),
+  scope: invoiceNumberSeriesScopeSchema,
+  isDefault: z.boolean(),
+  externalProvider: z.string().nullable(),
+  externalConfigKey: z.string().nullable(),
+  active: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type InvoiceNumberSeriesRecord = z.infer<typeof invoiceNumberSeriesRecordSchema>
+
 export const invoiceRecordSchema = z
   .object({
     id: z.string(),
@@ -308,6 +335,8 @@ export const invoiceAttachmentRecordSchema = z.object({
 export type InvoiceAttachmentRecord = z.infer<typeof invoiceAttachmentRecordSchema>
 
 export const invoiceListResponse = paginatedEnvelope(invoiceRecordSchema)
+export const invoiceNumberSeriesListResponse = paginatedEnvelope(invoiceNumberSeriesRecordSchema)
+export const invoiceNumberSeriesSingleResponse = singleEnvelope(invoiceNumberSeriesRecordSchema)
 export const supplierPaymentListResponse = paginatedEnvelope(supplierPaymentRecordSchema)
 export const allPaymentsListResponse = paginatedEnvelope(unifiedPaymentRecordSchema)
 export const paymentSingleResponse = singleEnvelope(unifiedPaymentRecordSchema)

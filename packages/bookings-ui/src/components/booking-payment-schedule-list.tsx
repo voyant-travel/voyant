@@ -19,7 +19,7 @@ import {
 import { CalendarClock, FileText, Loader2, Pencil, Plus, Receipt, Trash2 } from "lucide-react"
 import * as React from "react"
 import { toast } from "sonner"
-
+import type { BookingsUiMessages } from "../i18n/messages.js"
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 import { BookingPaymentScheduleDialog } from "./booking-payment-schedule-dialog.js"
 
@@ -30,6 +30,51 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
   waived: "secondary",
   cancelled: "destructive",
   expired: "secondary",
+}
+
+type IssueDocumentAllocationErrorCode =
+  keyof BookingsUiMessages["bookingPaymentScheduleList"]["actions"]["issueDocumentErrors"]
+
+const issueDocumentAllocationErrorCodes: IssueDocumentAllocationErrorCode[] = [
+  "invoice_number_series_not_found",
+  "invoice_number_series_inactive",
+  "invoice_number_series_scope_mismatch",
+  "no_active_series_for_scope",
+]
+
+function isIssueDocumentAllocationErrorCode(
+  value: unknown,
+): value is IssueDocumentAllocationErrorCode {
+  return (
+    typeof value === "string" &&
+    issueDocumentAllocationErrorCodes.includes(value as IssueDocumentAllocationErrorCode)
+  )
+}
+
+function extractIssueDocumentAllocationErrorCode(
+  error: unknown,
+): IssueDocumentAllocationErrorCode | null {
+  if (typeof error === "object" && error !== null && "body" in error) {
+    const body = (error as { body?: unknown }).body
+    if (typeof body === "object" && body !== null && "error" in body) {
+      const apiError = (body as { error?: unknown }).error
+      if (isIssueDocumentAllocationErrorCode(apiError)) return apiError
+    }
+  }
+
+  if (error instanceof Error && isIssueDocumentAllocationErrorCode(error.message)) {
+    return error.message
+  }
+
+  return null
+}
+
+function getIssueDocumentErrorMessage(error: unknown, messages: BookingsUiMessages): string | null {
+  const code = extractIssueDocumentAllocationErrorCode(error)
+  if (code) {
+    return messages.bookingPaymentScheduleList.actions.issueDocumentErrors[code]
+  }
+  return error instanceof Error ? error.message : null
 }
 
 export interface BookingPaymentScheduleListProps {
@@ -73,7 +118,7 @@ export function BookingPaymentScheduleList({ bookingId }: BookingPaymentSchedule
       await queryClient.invalidateQueries({ queryKey: financeQueryKeys.invoices() })
       toast.success(messages.bookingPaymentScheduleList.actions.issueDocumentSuccess)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : null
+      const errorMessage = getIssueDocumentErrorMessage(err, messages)
       toast.error(
         errorMessage
           ? `${messages.bookingPaymentScheduleList.actions.issueDocumentFailure}: ${errorMessage}`

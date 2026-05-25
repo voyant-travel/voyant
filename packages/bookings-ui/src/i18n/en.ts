@@ -869,6 +869,16 @@ export const bookingsUiEn = {
       issueProforma: "Issue proforma",
       issueDocumentSuccess: "Document issued.",
       issueDocumentFailure: "Could not issue document",
+      issueDocumentErrors: {
+        invoice_number_series_not_found:
+          "The selected number series was not found. Review Finance > Number Series before issuing this document.",
+        invoice_number_series_inactive:
+          "The selected number series is inactive. Activate it in Finance > Number Series before issuing this document.",
+        invoice_number_series_scope_mismatch:
+          "The selected number series does not match this document type. Choose a matching series in Finance > Number Series.",
+        no_active_series_for_scope:
+          "No active number series exists for this document type. Create or activate one in Finance > Number Series.",
+      },
     },
   },
   bookingPaymentReconciliationBanner: {

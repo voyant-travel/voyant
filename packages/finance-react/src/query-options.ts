@@ -12,6 +12,7 @@ import type { UseInvoiceCreditNotesOptions } from "./hooks/use-invoice-credit-no
 import type { UseInvoiceFxRateOptions } from "./hooks/use-invoice-fx-rate.js"
 import type { UseInvoiceLineItemsOptions } from "./hooks/use-invoice-line-items.js"
 import type { UseInvoiceNotesOptions } from "./hooks/use-invoice-notes.js"
+import type { UseInvoiceNumberSeriesOptions } from "./hooks/use-invoice-number-series.js"
 import type { UseInvoicePaymentsOptions } from "./hooks/use-invoice-payments.js"
 import type { UseInvoicesOptions } from "./hooks/use-invoices.js"
 import type { UsePaymentOptions } from "./hooks/use-payment.js"
@@ -42,6 +43,7 @@ import {
   invoiceLineItemsResponse,
   invoiceListResponse,
   invoiceNotesResponse,
+  invoiceNumberSeriesListResponse,
   invoicePaymentsResponse,
   invoiceSingleResponse,
   paymentSingleResponse,
@@ -134,6 +136,31 @@ export function getInvoicesQueryOptions(
       return fetchWithValidation(
         `/v1/finance/invoices${qs ? `?${qs}` : ""}`,
         invoiceListResponse,
+        client,
+      )
+    },
+  })
+}
+
+export function getInvoiceNumberSeriesQueryOptions(
+  client: FetchWithValidationOptions,
+  options: UseInvoiceNumberSeriesOptions = {},
+) {
+  const { enabled: _enabled = true, ...filters } = options
+
+  return queryOptions({
+    queryKey: financeQueryKeys.invoiceNumberSeriesList(filters),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (filters.scope) params.set("scope", filters.scope)
+      if (filters.active !== undefined) params.set("active", String(filters.active))
+      if (filters.limit !== undefined) params.set("limit", String(filters.limit))
+      if (filters.offset !== undefined) params.set("offset", String(filters.offset))
+      const qs = params.toString()
+
+      return fetchWithValidation(
+        `/v1/admin/finance/invoice-number-series${qs ? `?${qs}` : ""}`,
+        invoiceNumberSeriesListResponse,
         client,
       )
     },

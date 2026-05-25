@@ -31,6 +31,15 @@ export interface FinanceInvoiceListFilters {
   offset?: number | undefined
 }
 
+export type FinanceInvoiceNumberSeriesScope = "invoice" | "proforma" | "credit_note"
+
+export interface FinanceInvoiceNumberSeriesListFilters {
+  scope?: FinanceInvoiceNumberSeriesScope | undefined
+  active?: boolean | undefined
+  limit?: number | undefined
+  offset?: number | undefined
+}
+
 export type FinanceSupplierPaymentListSortField =
   | "amountCents"
   | "status"
@@ -138,6 +147,12 @@ export const financeQueryKeys = {
     [...financeQueryKeys.all, "booking-guarantees", bookingId] as const,
   invoiceFxRate: (filters: FinanceInvoiceFxRateFilters) =>
     [...financeQueryKeys.all, "invoice-fx-rate", filters] as const,
+
+  invoiceNumberSeries: () => [...financeQueryKeys.all, "invoice-number-series"] as const,
+  invoiceNumberSeriesList: (filters: FinanceInvoiceNumberSeriesListFilters) =>
+    [...financeQueryKeys.invoiceNumberSeries(), "list", filters] as const,
+  invoiceNumberSeriesDetail: (id: string) =>
+    [...financeQueryKeys.invoiceNumberSeries(), "detail", id] as const,
 
   supplierPayments: () => [...financeQueryKeys.all, "supplier-payments"] as const,
   supplierPaymentsList: (filters: FinanceSupplierPaymentListFilters) =>

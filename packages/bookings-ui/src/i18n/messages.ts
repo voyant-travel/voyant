@@ -791,6 +791,12 @@ export type BookingsUiMessages = {
       issueProforma: string
       issueDocumentSuccess: string
       issueDocumentFailure: string
+      issueDocumentErrors: {
+        invoice_number_series_not_found: string
+        invoice_number_series_inactive: string
+        invoice_number_series_scope_mismatch: string
+        no_active_series_for_scope: string
+      }
     }
   }
   bookingPaymentReconciliationBanner: {

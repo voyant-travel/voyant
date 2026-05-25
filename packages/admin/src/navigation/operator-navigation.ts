@@ -144,6 +144,11 @@ export function createOperatorAdminNavigation({
       icon: icons.finance,
       items: [
         { id: "invoices", title: messages.invoices, url: "/finance/invoices" },
+        {
+          id: "invoice-number-series",
+          title: messages.invoiceNumberSeries,
+          url: "/finance/invoice-number-series",
+        },
         { id: "payments", title: messages.payments, url: "/finance/payments" },
       ],
     },

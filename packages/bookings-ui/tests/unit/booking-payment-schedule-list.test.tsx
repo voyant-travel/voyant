@@ -190,4 +190,20 @@ describe("BookingPaymentScheduleList", () => {
       "Could not issue document: Internal Server Error",
     )
   })
+
+  it("localizes invoice number allocation failures", async () => {
+    testState.createFromBooking.mockRejectedValue(new Error("no_active_series_for_scope"))
+
+    await act(async () => {
+      root.render(<BookingPaymentScheduleList bookingId="book_123" />)
+    })
+
+    await act(async () => {
+      clickButton(container, "Issue invoice")
+    })
+
+    expect(testState.toastError).toHaveBeenCalledWith(
+      "Could not issue document: No active number series exists for this document type. Create or activate one in Finance > Number Series.",
+    )
+  })
 })
