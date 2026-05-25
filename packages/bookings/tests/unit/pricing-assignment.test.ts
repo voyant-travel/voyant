@@ -333,6 +333,24 @@ describe("resolveBookingDraft — accommodation (Moldova DBL shape)", () => {
     expect(result.travelerIndexesByUnitId).toEqual({ u_dbl_room: [0, 1] })
   })
 
+  it("preserves valid manual inventory assignments on resolver re-run", () => {
+    const result = resolveBookingDraft({
+      now: NOW,
+      quantities: { u_dbl_room: 1 },
+      travelers: [
+        traveler({ role: "lead", inventoryUnitId: "u_dbl_room", inventoryUnitSource: "manual" }),
+        traveler({ role: "adult", inventoryUnitId: "u_dbl_room", inventoryUnitSource: "manual" }),
+      ],
+      units: moldovaDblUnits,
+    })
+
+    expect(result.travelers[0]?.inventoryUnitId).toBe("u_dbl_room")
+    expect(result.travelers[0]?.inventoryUnitSource).toBe("manual")
+    expect(result.travelers[1]?.inventoryUnitId).toBe("u_dbl_room")
+    expect(result.travelers[1]?.inventoryUnitSource).toBe("manual")
+    expect(result.travelerIndexesByUnitId).toEqual({ u_dbl_room: [0, 1] })
+  })
+
   it("reassigns stale manual assignments when the option changes", () => {
     // Operator switched the room from DBL to TWN. The stale inventory
     // id is no longer in unitById, so the resolver re-derives both
