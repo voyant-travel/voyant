@@ -1,5 +1,28 @@
 # @voyantjs/bookings-ui
 
+## 0.81.4
+
+### Patch Changes
+
+- 6daefc4: Add stable booking-create traveler keys for item and extra line traveler linkage, while keeping deprecated position-based traveler indexes as a transition fallback.
+- Updated dependencies [6daefc4]
+  - @voyantjs/availability-react@0.81.4
+  - @voyantjs/bookings@0.81.4
+  - @voyantjs/bookings-react@0.81.4
+  - @voyantjs/catalog@0.81.4
+  - @voyantjs/catalog-react@0.81.4
+  - @voyantjs/crm-react@0.81.4
+  - @voyantjs/crm-ui@0.81.4
+  - @voyantjs/extras-react@0.81.4
+  - @voyantjs/finance-react@0.81.4
+  - @voyantjs/i18n@0.81.4
+  - @voyantjs/identity-react@0.81.4
+  - @voyantjs/legal-react@0.81.4
+  - @voyantjs/pricing-react@0.81.4
+  - @voyantjs/products-react@0.81.4
+  - @voyantjs/suppliers-react@0.81.4
+  - @voyantjs/ui@0.81.4
+
 ## 0.81.3
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # @voyantjs/plugin-netopia
 
+## 0.81.4
+
+### Patch Changes
+
+- Updated dependencies [7d8a977]
+- Updated dependencies [6daefc4]
+  - @voyantjs/checkout@0.81.4
+  - @voyantjs/core@0.81.4
+  - @voyantjs/finance@0.81.4
+  - @voyantjs/hono@0.81.4
+  - @voyantjs/notifications@0.81.4
+
 ## 0.81.3
 
 ### Patch Changes
