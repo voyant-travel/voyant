@@ -116,4 +116,24 @@ describe("allocation CSV exports", () => {
     expect(csv).toContain("Unallocated,,Bo Pop,1")
     expect(csv).toContain("Total,,,2")
   })
+
+  it("omits expired bookings from the rooming list", () => {
+    const data = manifest()
+    data.bookings[0]!.status = "expired"
+    const csv = buildAllocationRoomingCsv(data)
+
+    expect(csv).not.toContain("Ana Pop")
+    expect(csv).not.toContain("Bo Pop")
+    expect(csv).toContain("Total,,,0")
+  })
+
+  it("omits draft bookings from the rooming list", () => {
+    const data = manifest()
+    data.bookings[0]!.status = "draft"
+    const csv = buildAllocationRoomingCsv(data)
+
+    expect(csv).not.toContain("Ana Pop")
+    expect(csv).not.toContain("Bo Pop")
+    expect(csv).toContain("Total,,,0")
+  })
 })

@@ -8,6 +8,7 @@ import {
   planRoomAllocation,
   planVehicleSeatAllocation,
 } from "./auto-allocator.js"
+import { activeBookingStatusesForSlotSql } from "./booking-statuses.js"
 import {
   type AllocationResource,
   allocationResources,
@@ -259,7 +260,7 @@ export async function autoMaterializeAllocationResources(
         FROM bookings b
         JOIN booking_allocations ba ON ba.booking_id = b.id
         WHERE ba.availability_slot_id = ${slotId}
-          AND b.status IN ('draft', 'on_hold', 'confirmed', 'in_progress', 'completed')
+          AND b.status IN (${activeBookingStatusesForSlotSql()})
           AND ba.status IN ('held', 'confirmed', 'fulfilled')
       ),
       -- Pax per option = sum of booking_item quantities for items belonging

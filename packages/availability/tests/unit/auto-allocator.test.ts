@@ -45,11 +45,12 @@ function seat(
 }
 
 describe("planRoomAllocation", () => {
-  it("skips terminal booking statuses", () => {
+  it("skips bookings outside the slot-active status set", () => {
     const plan = planRoomAllocation(
       [
-        traveler({ id: "t1", bookingId: "b1", bookingStatus: "cancelled" }),
-        traveler({ id: "t2", bookingId: "b2", bookingStatus: "no_show" }),
+        traveler({ id: "t1", bookingId: "b1", bookingStatus: "draft" }),
+        traveler({ id: "t2", bookingId: "b2", bookingStatus: "expired" }),
+        traveler({ id: "t3", bookingId: "b3", bookingStatus: "cancelled" }),
       ],
       [room({ id: "r1", capacity: 2 })],
     )
