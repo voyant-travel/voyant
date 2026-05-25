@@ -1,5 +1,18 @@
 # @voyantjs/finance-ui
 
+## 0.80.16
+
+### Patch Changes
+
+- dbcc0da: Add admin invoice voiding and route finance admin clients through `/v1/admin/finance`.
+- Updated dependencies [dbcc0da]
+  - @voyantjs/bookings-ui@0.80.16
+  - @voyantjs/finance@0.80.16
+  - @voyantjs/finance-react@0.80.16
+  - @voyantjs/i18n@0.80.16
+  - @voyantjs/suppliers-ui@0.80.16
+  - @voyantjs/ui@0.80.16
+
 ## 0.80.15
 
 ### Patch Changes

@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.80.16
+
+### Patch Changes
+
+- dbcc0da: Add admin invoice voiding and route finance admin clients through `/v1/admin/finance`.
+  - @voyantjs/action-ledger@0.80.16
+  - @voyantjs/bookings@0.80.16
+  - @voyantjs/core@0.80.16
+  - @voyantjs/db@0.80.16
+  - @voyantjs/hono@0.80.16
+  - @voyantjs/products@0.80.16
+  - @voyantjs/storage@0.80.16
+  - @voyantjs/utils@0.80.16
+
 ## 0.80.15
 
 ### Patch Changes
