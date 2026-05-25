@@ -183,6 +183,22 @@ function allocationStatusForBookingItemStatus(status: BookingItemStatus): Bookin
   return "held"
 }
 
+function terminalBookingItemStatusForOverride(status: BookingStatus): BookingItemStatus | null {
+  if (status === "cancelled") return "cancelled"
+  if (status === "expired") return "expired"
+  if (status === "completed") return "fulfilled"
+  return null
+}
+
+function terminalBookingAllocationStatusForOverride(
+  status: BookingStatus,
+): BookingAllocationStatus | null {
+  if (status === "cancelled") return "cancelled"
+  if (status === "expired") return "expired"
+  if (status === "completed") return "fulfilled"
+  return null
+}
+
 function allocationStatusConsumesSlotCapacity(status: BookingAllocationStatus) {
   return status === "held" || status === "confirmed" || status === "fulfilled"
 }
@@ -1622,7 +1638,7 @@ async function releaseAllocationCapacity(
     return undefined
   }
 
-  if (allocation.status !== "held" && allocation.status !== "confirmed") {
+  if (!allocationStatusConsumesSlotCapacity(allocation.status)) {
     return undefined
   }
 
@@ -4328,11 +4344,9 @@ export const bookingsService = {
   },
 
   /**
-   * Admin-only force: bypasses the transition graph. Updates the booking row
-   * only — does NOT cascade to items, allocations, or fulfillments. If the
-   * operator needs cascaded behavior (e.g. release allocations), they should
-   * call the verb-specific method instead. The override is for data
-   * correction; misuse leaves child state inconsistent with the parent.
+   * Admin-only force: bypasses the transition graph. Terminal overrides
+   * cascade to items and allocations so reporting and capacity stay
+   * consistent; non-terminal overrides remain booking-row data correction.
    */
   async overrideBookingStatus(
     db: PostgresJsDatabase,
@@ -4341,6 +4355,7 @@ export const bookingsService = {
     userId?: string,
     runtime: BookingServiceRuntime = {},
   ) {
+    const slotChanges: AvailabilitySlotChangedEventPayload[] = []
     try {
       const result = await db.transaction(async (tx) => {
         const rows = await tx.execute(
@@ -4360,6 +4375,8 @@ export const bookingsService = {
         }
 
         const now = new Date()
+        const terminalItemStatus = terminalBookingItemStatusForOverride(data.status)
+        const terminalAllocationStatus = terminalBookingAllocationStatusForOverride(data.status)
         const updates: Record<string, unknown> = {
           status: data.status,
           confirmedAt: confirmedAtForStatus(data.status, null, now),
@@ -4368,6 +4385,70 @@ export const bookingsService = {
         if (data.status === "expired") updates.expiredAt = now
         if (data.status === "cancelled") updates.cancelledAt = now
         if (data.status === "completed") updates.completedAt = now
+
+        if (terminalItemStatus && terminalAllocationStatus) {
+          if (data.status === "cancelled" || data.status === "expired") {
+            const allocations = await tx
+              .select()
+              .from(bookingAllocations)
+              .where(
+                and(
+                  eq(bookingAllocations.bookingId, id),
+                  or(
+                    eq(bookingAllocations.status, "held"),
+                    eq(bookingAllocations.status, "confirmed"),
+                    eq(bookingAllocations.status, "fulfilled"),
+                  ),
+                ),
+              )
+
+            for (const allocation of allocations) {
+              const change = await releaseAllocationCapacity(
+                tx as PostgresJsDatabase,
+                allocation,
+                data.status === "expired" ? "expire" : "cancel",
+              )
+              if (change) slotChanges.push(change)
+            }
+          }
+
+          const allocationUpdates: Record<string, unknown> = {
+            status: terminalAllocationStatus,
+            updatedAt: now,
+          }
+          if (data.status === "cancelled" || data.status === "expired") {
+            allocationUpdates.releasedAt = now
+          }
+
+          await tx
+            .update(bookingAllocations)
+            .set(allocationUpdates)
+            .where(
+              and(
+                eq(bookingAllocations.bookingId, id),
+                or(
+                  eq(bookingAllocations.status, "held"),
+                  eq(bookingAllocations.status, "confirmed"),
+                  eq(bookingAllocations.status, "fulfilled"),
+                ),
+              ),
+            )
+
+          await tx
+            .update(bookingItems)
+            .set({ status: terminalItemStatus, updatedAt: now })
+            .where(
+              and(
+                eq(bookingItems.bookingId, id),
+                or(
+                  eq(bookingItems.status, "draft"),
+                  eq(bookingItems.status, "on_hold"),
+                  eq(bookingItems.status, "confirmed"),
+                  eq(bookingItems.status, "fulfilled"),
+                ),
+              ),
+            )
+        }
 
         const [row] = await tx.update(bookings).set(updates).where(eq(bookings.id, id)).returning()
 
@@ -4437,6 +4518,7 @@ export const bookingsService = {
             { category: "domain", source: "service" },
           )
         }
+        await emitSlotChanges(runtime, slotChanges)
       }
 
       return { status: result.status, booking: result.booking }

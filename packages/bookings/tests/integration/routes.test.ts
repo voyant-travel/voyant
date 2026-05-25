@@ -1948,6 +1948,220 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       expect(confirmedEvents).toHaveLength(0)
     })
 
+    it("cascades cancelled override to child rows and releases capacity", async () => {
+      const slot = await seedSlot({ initialPax: 3, remainingPax: 3 })
+      const reserveRes = await app.request("/reserve", {
+        method: "POST",
+        ...json({
+          bookingNumber: nextBookingNumber(),
+          sellCurrency: "USD",
+          items: [{ title: "Adult ticket", availabilitySlotId: slot.id, quantity: 2 }],
+        }),
+      })
+      const { data: booking } = await reserveRes.json()
+      await app.request(`/${booking.id}/confirm`, { method: "POST", ...json({}) })
+
+      const slotEvents: unknown[] = []
+      const sub = eventBus.subscribe("availability.slot.changed", (event) => {
+        slotEvents.push(event.data)
+      })
+
+      try {
+        const res = await app.request(`/${booking.id}/override-status`, {
+          method: "POST",
+          ...json({ status: "cancelled", reason: "Force cancel after failed transition" }),
+        })
+        expect(res.status).toBe(200)
+        expect((await res.json()).data.status).toBe("cancelled")
+      } finally {
+        sub.unsubscribe()
+      }
+
+      const [item] = await db
+        .select()
+        .from(bookingItems)
+        .where(eq(bookingItems.bookingId, booking.id))
+      const [allocation] = await db
+        .select()
+        .from(bookingAllocations)
+        .where(eq(bookingAllocations.bookingId, booking.id))
+      const [updatedSlot] = await db
+        .select()
+        .from(availabilitySlotsRef)
+        .where(eq(availabilitySlotsRef.id, slot.id))
+
+      expect(item?.status).toBe("cancelled")
+      expect(allocation?.status).toBe("cancelled")
+      expect(allocation?.releasedAt).toBeTruthy()
+      expect(updatedSlot?.remainingPax).toBe(3)
+      expect(slotEvents).toHaveLength(1)
+      expect(slotEvents[0]).toMatchObject({
+        slotId: slot.id,
+        source: "cancel",
+        remainingPax: 3,
+      })
+    })
+
+    it("cascades expired override to child rows and releases capacity", async () => {
+      const slot = await seedSlot({ initialPax: 3, remainingPax: 3 })
+      const reserveRes = await app.request("/reserve", {
+        method: "POST",
+        ...json({
+          bookingNumber: nextBookingNumber(),
+          sellCurrency: "USD",
+          items: [{ title: "Adult ticket", availabilitySlotId: slot.id, quantity: 2 }],
+        }),
+      })
+      const { data: booking } = await reserveRes.json()
+
+      const slotEvents: unknown[] = []
+      const sub = eventBus.subscribe("availability.slot.changed", (event) => {
+        slotEvents.push(event.data)
+      })
+
+      try {
+        const res = await app.request(`/${booking.id}/override-status`, {
+          method: "POST",
+          ...json({ status: "expired", reason: "Force expire stale hold" }),
+        })
+        expect(res.status).toBe(200)
+        expect((await res.json()).data.status).toBe("expired")
+      } finally {
+        sub.unsubscribe()
+      }
+
+      const [item] = await db
+        .select()
+        .from(bookingItems)
+        .where(eq(bookingItems.bookingId, booking.id))
+      const [allocation] = await db
+        .select()
+        .from(bookingAllocations)
+        .where(eq(bookingAllocations.bookingId, booking.id))
+      const [updatedSlot] = await db
+        .select()
+        .from(availabilitySlotsRef)
+        .where(eq(availabilitySlotsRef.id, slot.id))
+
+      expect(item?.status).toBe("expired")
+      expect(allocation?.status).toBe("expired")
+      expect(allocation?.releasedAt).toBeTruthy()
+      expect(updatedSlot?.remainingPax).toBe(3)
+      expect(slotEvents).toHaveLength(1)
+      expect(slotEvents[0]).toMatchObject({
+        slotId: slot.id,
+        source: "expire",
+        remainingPax: 3,
+      })
+    })
+
+    it("cascades completed override to fulfilled child rows without releasing capacity", async () => {
+      const slot = await seedSlot({ initialPax: 3, remainingPax: 3 })
+      const reserveRes = await app.request("/reserve", {
+        method: "POST",
+        ...json({
+          bookingNumber: nextBookingNumber(),
+          sellCurrency: "USD",
+          items: [{ title: "Adult ticket", availabilitySlotId: slot.id, quantity: 2 }],
+        }),
+      })
+      const { data: booking } = await reserveRes.json()
+      await app.request(`/${booking.id}/confirm`, { method: "POST", ...json({}) })
+
+      const slotEvents: unknown[] = []
+      const sub = eventBus.subscribe("availability.slot.changed", (event) => {
+        slotEvents.push(event.data)
+      })
+
+      try {
+        const res = await app.request(`/${booking.id}/override-status`, {
+          method: "POST",
+          ...json({ status: "completed", reason: "Force complete reconciled booking" }),
+        })
+        expect(res.status).toBe(200)
+        expect((await res.json()).data.status).toBe("completed")
+      } finally {
+        sub.unsubscribe()
+      }
+
+      const [item] = await db
+        .select()
+        .from(bookingItems)
+        .where(eq(bookingItems.bookingId, booking.id))
+      const [allocation] = await db
+        .select()
+        .from(bookingAllocations)
+        .where(eq(bookingAllocations.bookingId, booking.id))
+      const [updatedSlot] = await db
+        .select()
+        .from(availabilitySlotsRef)
+        .where(eq(availabilitySlotsRef.id, slot.id))
+
+      expect(item?.status).toBe("fulfilled")
+      expect(allocation?.status).toBe("fulfilled")
+      expect(allocation?.releasedAt).toBeNull()
+      expect(updatedSlot?.remainingPax).toBe(1)
+      expect(slotEvents).toHaveLength(0)
+    })
+
+    it("cascades cancelled override from completed children and releases capacity", async () => {
+      const slot = await seedSlot({ initialPax: 3, remainingPax: 3 })
+      const reserveRes = await app.request("/reserve", {
+        method: "POST",
+        ...json({
+          bookingNumber: nextBookingNumber(),
+          sellCurrency: "USD",
+          items: [{ title: "Adult ticket", availabilitySlotId: slot.id, quantity: 2 }],
+        }),
+      })
+      const { data: booking } = await reserveRes.json()
+      await app.request(`/${booking.id}/confirm`, { method: "POST", ...json({}) })
+      await app.request(`/${booking.id}/override-status`, {
+        method: "POST",
+        ...json({ status: "completed", reason: "Force complete reconciled booking" }),
+      })
+
+      const slotEvents: unknown[] = []
+      const sub = eventBus.subscribe("availability.slot.changed", (event) => {
+        slotEvents.push(event.data)
+      })
+
+      try {
+        const res = await app.request(`/${booking.id}/override-status`, {
+          method: "POST",
+          ...json({ status: "cancelled", reason: "Correct completed booking" }),
+        })
+        expect(res.status).toBe(200)
+        expect((await res.json()).data.status).toBe("cancelled")
+      } finally {
+        sub.unsubscribe()
+      }
+
+      const [item] = await db
+        .select()
+        .from(bookingItems)
+        .where(eq(bookingItems.bookingId, booking.id))
+      const [allocation] = await db
+        .select()
+        .from(bookingAllocations)
+        .where(eq(bookingAllocations.bookingId, booking.id))
+      const [updatedSlot] = await db
+        .select()
+        .from(availabilitySlotsRef)
+        .where(eq(availabilitySlotsRef.id, slot.id))
+
+      expect(item?.status).toBe("cancelled")
+      expect(allocation?.status).toBe("cancelled")
+      expect(allocation?.releasedAt).toBeTruthy()
+      expect(updatedSlot?.remainingPax).toBe(3)
+      expect(slotEvents).toHaveLength(1)
+      expect(slotEvents[0]).toMatchObject({
+        slotId: slot.id,
+        source: "cancel",
+        remainingPax: 3,
+      })
+    })
+
     it("extends an on-hold booking", async () => {
       const slot = await seedSlot()
       const reserveRes = await app.request("/reserve", {
