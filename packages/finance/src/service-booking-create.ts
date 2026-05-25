@@ -3,11 +3,15 @@ import {
   bookingGroupsService,
   bookingsService,
 } from "@voyantjs/bookings"
+import {
+  type PricingAssignmentUnit,
+  verifyBookingDraft,
+} from "@voyantjs/bookings/pricing-assignment"
 import type { Booking, BookingGroupMember, BookingTraveler } from "@voyantjs/bookings/schema"
 import { bookingItems, bookingItemTravelers, bookingTravelers } from "@voyantjs/bookings/schema"
 import { bookingStatusSchema } from "@voyantjs/bookings/validation"
 import type { EventBus } from "@voyantjs/core"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { z } from "zod"
 
@@ -450,6 +454,67 @@ function isAlreadyPaidSchedule(schedule: BookingCreatePaymentScheduleInput) {
 }
 
 /**
+ * Load the option_unit catalog for a product so the resolver can
+ * verify the submitted itemLines server-side. Raw SQL because
+ * `option_units` lives in `@voyantjs/products` and finance doesn't
+ * depend on it directly — adding a runtime dependency for a log-only
+ * sanity check would be overkill.
+ */
+async function loadProductOptionUnits(
+  tx: PostgresJsDatabase,
+  productId: string,
+): Promise<PricingAssignmentUnit[]> {
+  const rows = await tx.execute(sql`
+    SELECT
+      ou.id          AS "optionUnitId",
+      ou.option_id   AS "optionId",
+      ou.name        AS "unitName",
+      ou.code        AS "unitCode",
+      ou.min_age     AS "minAge",
+      ou.max_age     AS "maxAge",
+      ou.unit_type   AS "unitType"
+    FROM option_units ou
+    JOIN product_options po ON po.id = ou.option_id
+    WHERE po.product_id = ${productId}
+  `)
+  return (rows as unknown as PricingAssignmentUnit[]).map((row) => ({
+    optionId: row.optionId ?? null,
+    optionUnitId: row.optionUnitId,
+    unitName: row.unitName,
+    unitCode: row.unitCode ?? null,
+    minAge: row.minAge ?? null,
+    maxAge: row.maxAge ?? null,
+    unitType: row.unitType ?? null,
+  }))
+}
+
+/**
+ * Re-runs `resolveBookingDraft` against the submitted payload and
+ * logs any mismatches between submitted itemLines quantities and
+ * what the resolver would derive. Log-only for now — see the
+ * inline note at the call site.
+ */
+async function verifyBookingCreatePayload(tx: PostgresJsDatabase, input: BookingCreateInput) {
+  const itemLines = input.itemLines ?? []
+  const travelers = input.travelers ?? []
+  if (itemLines.length === 0 || travelers.length === 0) return
+
+  const units = await loadProductOptionUnits(tx, input.productId)
+  const verification = verifyBookingDraft({
+    travelers,
+    itemLines,
+    units,
+  })
+
+  if (!verification.ok) {
+    console.warn(
+      `[bookings/create] payload drift for product=${input.productId}`,
+      JSON.stringify(verification.mismatches),
+    )
+  }
+}
+
+/**
  * Filter + dedupe `travelerIndexes` against the inserted traveler
  * array, dropping any indexes outside `[0, travelersLength)`.
  */
@@ -761,6 +826,22 @@ export async function createBooking(
         ...(input.itemLines ?? []),
         ...(input.extraLines ?? []),
       ])
+
+      // 2c. Log-only verification: re-run the resolver server-side
+      // against the submitted itemLines + travelers to surface any
+      // client/server drift on the per-band quantities. Useful for
+      // catching #1262-class bugs in flight without rejecting
+      // payloads — a follow-up will flip this to a hard rejection
+      // once we've observed real traffic and confirmed no legitimate
+      // clients trip the warning. See voyantjs/voyant#1267.
+      try {
+        await verifyBookingCreatePayload(tx, input)
+      } catch (error) {
+        // Verification is best-effort; never block a booking commit
+        // because of a verifier exception (e.g. catalog query
+        // failure). Surface the unexpected case for observability.
+        console.warn("[bookings/create] verifier threw", error)
+      }
 
       // 3. Payment schedules
       const paymentSchedules: BookingPaymentSchedule[] = []
