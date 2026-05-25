@@ -1841,10 +1841,11 @@ export const bookingRoutes = new Hono<Env>()
   })
 
   // 11c. POST /:id/override-status — Admin override that bypasses the
-  // transition graph. Updates the booking row only — no cascade to items,
-  // allocations, or fulfillments. Always emits booking.status_overridden for
-  // audit. Confirmed overrides also emit booking.confirmed unless
-  // suppressLifecycleEvents is true. Requires a non-empty `reason`.
+  // transition graph. Terminal overrides cascade to items and allocations;
+  // non-terminal overrides remain booking-row data correction. Always emits
+  // booking.status_overridden for audit. Confirmed overrides also emit
+  // booking.confirmed unless suppressLifecycleEvents is true. Requires a
+  // non-empty `reason`.
   .post("/:id/override-status", async (c) => {
     const bookingId = c.req.param("id")
     const data = await parseJsonBody(c, overrideBookingStatusSchema)
