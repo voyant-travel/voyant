@@ -1,5 +1,28 @@
 # @voyantjs/bookings-ui
 
+## 0.81.3
+
+### Patch Changes
+
+- f157bcd: Split booking traveler draft unit assignment into separate pricing and inventory unit fields.
+- Updated dependencies [f157bcd]
+  - @voyantjs/availability-react@0.81.3
+  - @voyantjs/bookings@0.81.3
+  - @voyantjs/bookings-react@0.81.3
+  - @voyantjs/catalog@0.81.3
+  - @voyantjs/catalog-react@0.81.3
+  - @voyantjs/crm-react@0.81.3
+  - @voyantjs/crm-ui@0.81.3
+  - @voyantjs/extras-react@0.81.3
+  - @voyantjs/finance-react@0.81.3
+  - @voyantjs/i18n@0.81.3
+  - @voyantjs/identity-react@0.81.3
+  - @voyantjs/legal-react@0.81.3
+  - @voyantjs/pricing-react@0.81.3
+  - @voyantjs/products-react@0.81.3
+  - @voyantjs/suppliers-react@0.81.3
+  - @voyantjs/ui@0.81.3
+
 ## 0.81.2
 
 ### Patch Changes
