@@ -4,7 +4,7 @@ import {
   bookingsService,
 } from "@voyantjs/bookings"
 import type { Booking, BookingGroupMember, BookingTraveler } from "@voyantjs/bookings/schema"
-import { bookingItems, bookingTravelers } from "@voyantjs/bookings/schema"
+import { bookingItems, bookingItemTravelers, bookingTravelers } from "@voyantjs/bookings/schema"
 import { bookingStatusSchema } from "@voyantjs/bookings/validation"
 import type { EventBus } from "@voyantjs/core"
 import { eq } from "drizzle-orm"
@@ -69,15 +69,29 @@ const documentGenerationInputSchema = z
   .default({ contractDocument: false, invoiceDocument: false })
 
 const itemLineInputSchema = z.object({
+  /**
+   * Stable client-side key (e.g. `unit:optu_adult`). Server stamps
+   * this into `booking_items.metadata.bookingCreateLineKey` so the
+   * post-insert pass can look up the row and link it to travelers
+   * via `booking_item_travelers`. See voyantjs/voyant#1267.
+   */
+  clientLineKey: z.string().min(1).max(255).optional().nullable(),
   optionUnitId: z.string().min(1),
   quantity: z.number().int().min(1),
   title: z.string().min(1).max(255).optional().nullable(),
   description: z.string().max(5000).optional().nullable(),
   unitSellAmountCents: z.number().int().min(0).optional().nullable(),
   totalSellAmountCents: z.number().int().min(0).optional().nullable(),
+  /**
+   * Indexes (into the request's `travelers` array) of travelers this
+   * item applies to. Server inserts one `booking_item_travelers` row
+   * per traveler.
+   */
+  travelerIndexes: z.array(z.number().int().min(0)).optional().nullable(),
 })
 
 const extraLineInputSchema = z.object({
+  clientLineKey: z.string().min(1).max(255).optional().nullable(),
   productExtraId: z.string().min(1),
   optionExtraConfigId: z.string().min(1).optional().nullable(),
   name: z.string().min(1).max(255),
@@ -88,6 +102,7 @@ const extraLineInputSchema = z.object({
   sellCurrency: z.string().length(3),
   unitSellAmountCents: z.number().int().min(0).optional().nullable(),
   totalSellAmountCents: z.number().int().min(0).optional().nullable(),
+  travelerIndexes: z.array(z.number().int().min(0)).optional().nullable(),
 })
 
 const voucherRedemptionInputSchema = z.object({
@@ -434,6 +449,87 @@ function isAlreadyPaidSchedule(schedule: BookingCreatePaymentScheduleInput) {
   return schedule.status === "paid" || metadata?.alreadyPaid === true
 }
 
+/**
+ * Filter + dedupe `travelerIndexes` against the inserted traveler
+ * array, dropping any indexes outside `[0, travelersLength)`.
+ */
+function uniqueValidTravelerIndexes(
+  indexes: readonly number[] | null | undefined,
+  travelersLength: number,
+): number[] {
+  if (!indexes?.length) return []
+  const seen = new Set<number>()
+  const result: number[] = []
+  for (const index of indexes) {
+    if (index < 0 || index >= travelersLength) continue
+    if (seen.has(index)) continue
+    seen.add(index)
+    result.push(index)
+  }
+  return result
+}
+
+/**
+ * Look up each `booking_item` the converter inserted by its stamped
+ * `metadata.bookingCreateLineKey`, then write one
+ * `booking_item_travelers` row per requested traveler. Idempotent —
+ * dedupes by `(item_id, traveler_id)` and skips when the lookup
+ * fails (e.g. the converter didn't create an item for that key).
+ *
+ * The metadata-key bridge lets the wire-format `clientLineKey` thread
+ * through the create flow without forcing the converter to return a
+ * map back to the orchestrator. See voyantjs/voyant#1267.
+ */
+async function linkBookingCreateItemsToTravelers(
+  tx: PostgresJsDatabase,
+  bookingId: string,
+  travelers: readonly BookingTraveler[],
+  lines: ReadonlyArray<{
+    clientLineKey?: string | null
+    travelerIndexes?: readonly number[] | null
+  }>,
+) {
+  if (travelers.length === 0 || lines.length === 0) return
+  const requestedLinks = lines.flatMap((line) =>
+    uniqueValidTravelerIndexes(line.travelerIndexes, travelers.length).map((travelerIndex) => ({
+      clientLineKey: line.clientLineKey ?? null,
+      travelerIndex,
+    })),
+  )
+  if (requestedLinks.length === 0) return
+
+  const itemRows = await tx.select().from(bookingItems).where(eq(bookingItems.bookingId, bookingId))
+  const itemByClientLineKey = new Map<string, (typeof itemRows)[number]>()
+  for (const item of itemRows) {
+    const key = (item.metadata as { bookingCreateLineKey?: unknown } | null | undefined)
+      ?.bookingCreateLineKey
+    if (typeof key === "string") itemByClientLineKey.set(key, item)
+  }
+
+  const seen = new Set<string>()
+  const linkRows = requestedLinks.flatMap(({ clientLineKey, travelerIndex }) => {
+    if (!clientLineKey) return []
+    const item = itemByClientLineKey.get(clientLineKey)
+    const traveler = travelers[travelerIndex]
+    if (!item || !traveler) return []
+    const dedupeKey = `${item.id}:${traveler.id}`
+    if (seen.has(dedupeKey)) return []
+    seen.add(dedupeKey)
+    return [
+      {
+        bookingItemId: item.id,
+        travelerId: traveler.id,
+        role: "traveler" as const,
+        isPrimary: traveler.isPrimary,
+      },
+    ]
+  })
+
+  if (linkRows.length > 0) {
+    await tx.insert(bookingItemTravelers).values(linkRows)
+  }
+}
+
 function validatePaymentSchedules(
   input: BookingCreateInput,
   booking: Booking,
@@ -622,8 +718,11 @@ export async function createBooking(
         )
       }
 
-      // 2. Travelers. roomUnitId is accepted on the input but not persisted
-      // yet — see travelerInputSchema for the follow-up note.
+      // 2. Travelers. The wire-format `roomUnitId` on a traveler is
+      // accepted for round-trip compatibility but not stored on the
+      // traveler row itself — per-traveler unit assignment is
+      // expressed through `booking_item_travelers` rows linked from
+      // each `booking_item`. See voyantjs/voyant#1267.
       const travelers: BookingTraveler[] = []
       for (const traveler of input.travelers ?? []) {
         const [row] = await tx
@@ -645,6 +744,17 @@ export async function createBooking(
           .returning()
         if (row) travelers.push(row)
       }
+
+      // 2b. Link booking_items + extras to specific travelers when
+      // the caller supplied `clientLineKey` + `travelerIndexes` on
+      // any line. Item rows were inserted earlier by
+      // `convertProductToBooking` (this slice's product converter
+      // doesn't run them in the orchestrator); we look them up by
+      // the `metadata.bookingCreateLineKey` the converter stamped.
+      await linkBookingCreateItemsToTravelers(tx, booking.id, travelers, [
+        ...(input.itemLines ?? []),
+        ...(input.extraLines ?? []),
+      ])
 
       // 3. Payment schedules
       const paymentSchedules: BookingPaymentSchedule[] = []

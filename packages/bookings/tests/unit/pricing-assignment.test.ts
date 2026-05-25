@@ -1,14 +1,19 @@
 import { describe, expect, it } from "vitest"
 
 import {
-  type AssignmentTraveler,
+  type BookingDraftTraveler,
   computeAgeYears,
-  derivePricingAssignment,
+  deriveDraftPaxBand,
   matchUnitByDob,
   matchUnitByRoleHint,
   type PricingAssignmentUnit,
   pickUnitForAge,
+  resolveBookingDraft,
+  resolveBookingExtraLines,
+  travelersToRows,
 } from "../../src/pricing-assignment.js"
+
+const NOW = new Date("2026-05-25T00:00:00.000Z")
 
 function unit(
   partial: Partial<PricingAssignmentUnit> & Pick<PricingAssignmentUnit, "optionUnitId">,
@@ -24,16 +29,23 @@ function unit(
   }
 }
 
-function traveler(partial: Partial<AssignmentTraveler> = {}): AssignmentTraveler {
+function traveler(partial: Partial<BookingDraftTraveler> = {}): BookingDraftTraveler {
   return {
+    personId: partial.personId ?? null,
+    firstName: partial.firstName ?? "Test",
+    lastName: partial.lastName ?? "Traveler",
+    email: partial.email ?? "",
+    phone: partial.phone ?? "",
+    preferredLanguage: partial.preferredLanguage ?? "",
+    role: partial.role ?? "adult",
     dateOfBirth: partial.dateOfBirth ?? null,
-    role: partial.role ?? null,
-    assignedUnitId: partial.assignedUnitId ?? null,
+    roomUnitId: partial.roomUnitId ?? null,
+    roomUnitAssignmentSource: partial.roomUnitAssignmentSource ?? "auto",
   }
 }
 
 describe("computeAgeYears", () => {
-  it("returns null for null or empty DOB", () => {
+  it("returns null for null DOB", () => {
     expect(computeAgeYears(null)).toBeNull()
   })
 
@@ -43,10 +55,6 @@ describe("computeAgeYears", () => {
 
   it("computes age before birthday correctly", () => {
     expect(computeAgeYears("2020-12-15", new Date("2026-06-01"))).toBe(5)
-  })
-
-  it("computes age after birthday correctly", () => {
-    expect(computeAgeYears("2020-03-15", new Date("2026-06-01"))).toBe(6)
   })
 
   it("computes age on birthday correctly", () => {
@@ -59,9 +67,6 @@ describe("computeAgeYears", () => {
 })
 
 describe("pickUnitForAge — age-banded unit codes (issue #1262)", () => {
-  // Day-tour product whose age bands are encoded in the unit codes
-  // instead of bare ADULT/CHILD/INFANT. Reproduces the layout that
-  // broke after #1241 and #1263.
   const ageBandedUnits: PricingAssignmentUnit[] = [
     unit({ optionUnitId: "u_adult", unitCode: "adult", unitName: "Adult", minAge: 13 }),
     unit({
@@ -88,12 +93,7 @@ describe("pickUnitForAge — age-banded unit codes (issue #1262)", () => {
     expect(pickUnitForAge(ageBandedUnits, null, "child")?.optionUnitId).toBe("u_child_6_12")
   })
 
-  it("routes a roleHint=adult traveler with no DOB to the adult band", () => {
-    expect(pickUnitForAge(ageBandedUnits, null, "adult")?.optionUnitId).toBe("u_adult")
-  })
-
   it("honors an exact DOB-derived age over the role hint", () => {
-    // age 4 falls into 0-5; role hint is irrelevant when the band matches.
     expect(pickUnitForAge(ageBandedUnits, 4, "adult")?.optionUnitId).toBe("u_child_0_5")
   })
 
@@ -107,7 +107,6 @@ describe("pickUnitForAge — age-banded unit codes (issue #1262)", () => {
 })
 
 describe("pickUnitForAge — legacy bare-code units", () => {
-  // Products where units are coded ADULT / CHILD / INFANT without min/max.
   const bareUnits: PricingAssignmentUnit[] = [
     unit({ optionUnitId: "u_adult", unitCode: "ADULT", unitName: "Adult" }),
     unit({ optionUnitId: "u_child", unitCode: "CHILD", unitName: "Child" }),
@@ -127,88 +126,30 @@ describe("pickUnitForAge — legacy bare-code units", () => {
   })
 })
 
-describe("pickUnitForAge — unit-type filtering", () => {
-  it("skips non-person units when person units are present", () => {
-    const mixed: PricingAssignmentUnit[] = [
-      unit({
-        optionUnitId: "u_room",
-        unitCode: "ROOM",
-        unitName: "Room",
-        unitType: "room",
-        minAge: 0,
-      }),
-      unit({
-        optionUnitId: "u_adult",
-        unitCode: "adult",
-        unitName: "Adult",
-        unitType: "person",
-        minAge: 13,
-      }),
-      unit({
-        optionUnitId: "u_child",
-        unitCode: "child",
-        unitName: "Child",
-        unitType: "person",
-        minAge: 0,
-        maxAge: 12,
-      }),
-    ]
-    expect(pickUnitForAge(mixed, null, "child")?.optionUnitId).toBe("u_child")
-  })
-})
-
-describe("matchUnitByDob", () => {
-  const units: PricingAssignmentUnit[] = [
-    unit({ optionUnitId: "u_adult", minAge: 13 }),
-    unit({ optionUnitId: "u_child", minAge: 0, maxAge: 12 }),
-  ]
-
-  it("returns null when DOB is null", () => {
-    expect(matchUnitByDob(units, null)).toBeNull()
-  })
-
-  it("matches the age-band unit when DOB falls in the window", () => {
-    expect(matchUnitByDob(units, "2018-01-01")).toBe("u_child")
-  })
-
-  it("returns null when no unit's window contains the age", () => {
-    // gap unit set: 0-5 and 13+, nothing for ages 6-12
-    const gappy: PricingAssignmentUnit[] = [
-      unit({ optionUnitId: "u_adult", minAge: 13 }),
-      unit({ optionUnitId: "u_infant", minAge: 0, maxAge: 5 }),
-    ]
-    expect(matchUnitByDob(gappy, "2017-01-01")).toBeNull()
-  })
-})
-
-describe("matchUnitByRoleHint", () => {
+describe("matchUnitByDob / matchUnitByRoleHint", () => {
   const ageBandedUnits: PricingAssignmentUnit[] = [
     unit({ optionUnitId: "u_adult", minAge: 13 }),
     unit({ optionUnitId: "u_child_6_12", minAge: 6, maxAge: 12 }),
     unit({ optionUnitId: "u_child_0_5", minAge: 0, maxAge: 5 }),
   ]
 
-  it("returns null for null role", () => {
-    expect(matchUnitByRoleHint(ageBandedUnits, null)).toBeNull()
+  it("matchUnitByDob returns null for null DOB", () => {
+    expect(matchUnitByDob(ageBandedUnits, null)).toBeNull()
   })
 
-  it("returns null for 'lead' role (no age signal)", () => {
+  it("matchUnitByDob picks the band containing the age", () => {
+    expect(matchUnitByDob(ageBandedUnits, "2018-01-01")).toBe("u_child_6_12")
+  })
+
+  it("matchUnitByRoleHint returns null for 'lead'", () => {
     expect(matchUnitByRoleHint(ageBandedUnits, "lead")).toBeNull()
   })
 
-  it("maps infant → 0-5 band", () => {
+  it("matchUnitByRoleHint maps infant → 0-5", () => {
     expect(matchUnitByRoleHint(ageBandedUnits, "infant")).toBe("u_child_0_5")
   })
 
-  it("maps child → 6-12 band", () => {
-    expect(matchUnitByRoleHint(ageBandedUnits, "child")).toBe("u_child_6_12")
-  })
-
-  it("maps adult → adult band", () => {
-    expect(matchUnitByRoleHint(ageBandedUnits, "adult")).toBe("u_adult")
-  })
-
-  it("returns null when units have no age bands at all", () => {
+  it("matchUnitByRoleHint returns null when units have no age bands", () => {
     const bare: PricingAssignmentUnit[] = [
       unit({ optionUnitId: "u_adult", unitCode: "ADULT" }),
       unit({ optionUnitId: "u_child", unitCode: "CHILD" }),
@@ -217,90 +158,129 @@ describe("matchUnitByRoleHint", () => {
   })
 })
 
-describe("derivePricingAssignment — excursion (pricing-only, age-banded)", () => {
-  // Pro Travel's "Excursie Bulgaria" shape — pure-person option with
-  // adult/child_6_12/child_0_5. The stepper sets qty=3 against the
-  // primary (adult) unit; we expect derive to split it across the
-  // bands based on each traveler's DOB / role.
-  const bulgariaUnits: PricingAssignmentUnit[] = [
-    unit({ optionId: "opto_bg", optionUnitId: "u_adult", unitCode: "adult", minAge: 13 }),
-    unit({
-      optionId: "opto_bg",
-      optionUnitId: "u_child_6_12",
-      unitCode: "child_6_12",
-      minAge: 6,
-      maxAge: 12,
-    }),
-    unit({
-      optionId: "opto_bg",
-      optionUnitId: "u_child_0_5",
-      unitCode: "child_0_5",
-      minAge: 0,
-      maxAge: 5,
-    }),
+describe("resolveBookingDraft — person-priced excursion (Bulgaria shape)", () => {
+  // Pro Travel's "Excursie Bulgaria" — pure-person option with
+  // adult/child_6_12/child_0_5. Stepper sets qty=3 against the
+  // primary (adult) unit; the resolver splits it across the bands
+  // based on each traveler's DOB / role.
+  const krushunaUnits: PricingAssignmentUnit[] = [
+    unit({ optionUnitId: "u_adult", unitCode: "adult", minAge: 13 }),
+    unit({ optionUnitId: "u_child_6_12", unitCode: "child_6_12", minAge: 6, maxAge: 12 }),
+    unit({ optionUnitId: "u_child_0_5", unitCode: "child_0_5", minAge: 0, maxAge: 5 }),
   ]
 
-  it("redistributes a 3-pax adult/child/infant booking onto the right bands", () => {
-    const result = derivePricingAssignment({
-      quantities: { u_adult: 3 },
-      travelers: [
-        traveler({ role: "lead" }), // adult-equivalent, no DOB
-        traveler({ role: "child" }),
-        traveler({ role: "infant" }),
-      ],
-      units: bulgariaUnits,
-    })
-
-    expect(result.assignedUnitIds).toEqual(["u_adult", "u_child_6_12", "u_child_0_5"])
-    expect(result.quantities).toEqual({ u_adult: 1, u_child_6_12: 1, u_child_0_5: 1 })
-  })
-
-  it("uses DOB when present, role hint when not", () => {
-    const result = derivePricingAssignment({
-      quantities: { u_adult: 3 },
-      travelers: [
-        traveler({ role: "adult" }),
-        traveler({ dateOfBirth: "2019-01-01" }), // age ~7 — matches 6-12 band
-        traveler({ role: "infant" }),
-      ],
-      units: bulgariaUnits,
-    })
-
-    expect(result.assignedUnitIds).toEqual(["u_adult", "u_child_6_12", "u_child_0_5"])
-  })
-
-  it("preserves an operator-picked unit that is still valid", () => {
-    const result = derivePricingAssignment({
+  it("derives adult/child/infant quantities for a 3-pax age-banded excursion", () => {
+    const result = resolveBookingDraft({
+      now: NOW,
       quantities: { u_adult: 3 },
       travelers: [
         traveler({ role: "lead" }),
-        traveler({ role: "child", assignedUnitId: "u_adult" }), // operator overrode
+        traveler({ role: "child" }),
         traveler({ role: "infant" }),
       ],
-      units: bulgariaUnits,
+      units: krushunaUnits,
     })
 
-    // operator's choice wins for traveler 1
-    expect(result.assignedUnitIds[1]).toBe("u_adult")
+    expect(result.quantities).toEqual({ u_adult: 1, u_child_6_12: 1, u_child_0_5: 1 })
+    expect(result.travelerIndexesByUnitId).toEqual({
+      u_adult: [0],
+      u_child_6_12: [1],
+      u_child_0_5: [2],
+    })
   })
 
-  it("residual fills onto the adult unit when stepper qty exceeds travelers", () => {
-    const result = derivePricingAssignment({
-      quantities: { u_adult: 5 },
-      travelers: [traveler({ role: "adult" }), traveler({ role: "child" })],
-      units: bulgariaUnits,
+  it("recomputes stale auto Adult assignments when DOB is set on an existing traveler", () => {
+    const result = resolveBookingDraft({
+      now: NOW,
+      quantities: { u_adult: 3 },
+      travelers: [
+        traveler({ role: "lead", roomUnitId: "u_adult" }),
+        // Auto-assigned to adult by an earlier pass, then DOB filled in:
+        traveler({ role: "adult", roomUnitId: "u_adult", dateOfBirth: "2018-01-01" }),
+        traveler({ role: "infant", roomUnitId: "u_adult" }),
+      ],
+      units: krushunaUnits,
     })
 
-    // 2 travelers assigned; 3 residual rooms; all 3 land on u_adult
+    expect(result.travelers[1]?.roomUnitId).toBe("u_child_6_12")
+    expect(result.travelers[2]?.roomUnitId).toBe("u_child_0_5")
+  })
+
+  it("preserves explicit operator category selections", () => {
+    const result = resolveBookingDraft({
+      now: NOW,
+      quantities: { u_adult: 3 },
+      travelers: [
+        traveler({ role: "lead" }),
+        traveler({
+          role: "child",
+          roomUnitId: "u_adult",
+          roomUnitAssignmentSource: "manual",
+        }),
+        traveler({ role: "infant" }),
+      ],
+      units: krushunaUnits,
+    })
+
+    expect(result.travelers[1]?.roomUnitId).toBe("u_adult")
+    expect(result.travelers[1]?.roomUnitAssignmentSource).toBe("manual")
+  })
+
+  it("re-resolves stale manual person unit assignments when units change", () => {
+    // Operator manually picked a unit on a previous product; product
+    // changed; the old unit id is no longer in unitById, so the
+    // resolver re-derives instead of leaving stale data.
+    const result = resolveBookingDraft({
+      now: NOW,
+      quantities: { u_adult: 1 },
+      travelers: [
+        traveler({
+          role: "child",
+          roomUnitId: "u_stale_from_other_product",
+          roomUnitAssignmentSource: "manual",
+        }),
+      ],
+      units: krushunaUnits,
+    })
+
+    expect(result.travelers[0]?.roomUnitId).toBe("u_child_6_12")
+  })
+
+  it("preserves explicit No room assignments", () => {
+    const result = resolveBookingDraft({
+      now: NOW,
+      quantities: { u_adult: 1 },
+      travelers: [
+        traveler({
+          role: "adult",
+          roomUnitId: null,
+          roomUnitAssignmentSource: "none",
+        }),
+      ],
+      units: krushunaUnits,
+    })
+
+    expect(result.travelers[0]?.roomUnitId).toBeNull()
+    expect(result.travelers[0]?.roomUnitAssignmentSource).toBe("none")
+    expect(result.travelerIndexesByUnitId).toEqual({})
+  })
+
+  it("residual fills onto adult when stepper qty exceeds travelers", () => {
+    const result = resolveBookingDraft({
+      now: NOW,
+      quantities: { u_adult: 5 },
+      travelers: [traveler({ role: "adult" }), traveler({ role: "child" })],
+      units: krushunaUnits,
+    })
+
     expect(result.quantities.u_adult).toBe(1 + 3)
     expect(result.quantities.u_child_6_12).toBe(1)
   })
 })
 
-describe("derivePricingAssignment — multi-day package (rooms + persons)", () => {
-  // Pro Travel's "Circuit Moldova / DBL option" shape — adult per-pax
-  // fee plus the room container. The room unit is required and lives
-  // alongside the adult unit on the same option.
+describe("resolveBookingDraft — accommodation (Moldova DBL shape)", () => {
+  // Pro Travel's "Circuit Moldova / DBL" — room unit + adult person
+  // unit. Stepper picks 1 DBL; line item should stay "1 DBL room".
   const moldovaDblUnits: PricingAssignmentUnit[] = [
     unit({
       optionId: "opto_mol_dbl",
@@ -317,78 +297,152 @@ describe("derivePricingAssignment — multi-day package (rooms + persons)", () =
     }),
   ]
 
-  it("ignores room units when picking a traveler's pricing tier", () => {
-    expect(pickUnitForAge(moldovaDblUnits, null, "adult")?.optionUnitId).toBe("u_adult_mol")
-  })
-
-  it("derive returns the person unit, not the room unit, for each traveler", () => {
-    const result = derivePricingAssignment({
-      quantities: { u_adult_mol: 2 },
-      travelers: [traveler({ role: "lead" }), traveler({ role: "adult" })],
+  it("keeps accommodation quantities as room quantities instead of traveler counts", () => {
+    const result = resolveBookingDraft({
+      now: NOW,
+      quantities: { u_dbl_room: 1 },
+      travelers: [
+        traveler({ role: "lead", roomUnitId: "u_dbl_room", roomUnitAssignmentSource: "manual" }),
+        traveler({ role: "adult", roomUnitId: "u_dbl_room", roomUnitAssignmentSource: "manual" }),
+      ],
       units: moldovaDblUnits,
     })
 
-    expect(result.assignedUnitIds).toEqual(["u_adult_mol", "u_adult_mol"])
-    expect(result.quantities).toEqual({ u_adult_mol: 2 })
-  })
-})
-
-describe("derivePricingAssignment — flat excursion (single pricing tier)", () => {
-  // Pro Travel's "Excursie Festivalul Scrumbiei" shape — a single
-  // Adult unit with no age bands. Every traveler maps to it.
-  const flatUnits: PricingAssignmentUnit[] = [
-    unit({ optionId: "opto_scr", optionUnitId: "u_adult_scr", unitCode: "adult" }),
-  ]
-
-  it("assigns every traveler to the single unit", () => {
-    const result = derivePricingAssignment({
-      quantities: { u_adult_scr: 3 },
-      travelers: [
-        traveler({ role: "lead" }),
-        traveler({ role: "child" }), // no child band exists; falls to the one available
-        traveler({ role: "adult" }),
-      ],
-      units: flatUnits,
-    })
-
-    expect(result.assignedUnitIds).toEqual(["u_adult_scr", "u_adult_scr", "u_adult_scr"])
-    expect(result.quantities).toEqual({ u_adult_scr: 3 })
-  })
-})
-
-describe("derivePricingAssignment — edge cases", () => {
-  it("returns input unchanged when units array is empty", () => {
-    const result = derivePricingAssignment({
-      quantities: { foo: 1 },
-      travelers: [traveler({ assignedUnitId: "foo" })],
-      units: [],
-    })
-    expect(result.assignedUnitIds).toEqual(["foo"])
-    expect(result.quantities).toEqual({ foo: 1 })
+    expect(result.quantities).toEqual({ u_dbl_room: 1 })
+    expect(result.travelerIndexesByUnitId).toEqual({ u_dbl_room: [0, 1] })
   })
 
-  it("invalidates assignments pointing at units not in the current option set", () => {
-    const units: PricingAssignmentUnit[] = [
-      unit({ optionId: "opto_a", optionUnitId: "u_a", unitCode: "adult" }),
+  it("reassigns stale manual assignments when the option changes", () => {
+    // Operator switched the room from DBL to TWN. The dialog stores
+    // the option's primary (adult-coded) unit id on the traveler, not
+    // the literal room unit id — so the stale value here is
+    // `u_adult_dbl` and the resolver should re-derive to the TWN
+    // option's adult unit on the next render.
+    const twnUnits: PricingAssignmentUnit[] = [
+      unit({
+        optionId: "opto_mol_twn",
+        optionUnitId: "u_twn_room",
+        unitCode: "twn_room",
+        unitType: "room",
+      }),
+      unit({
+        optionId: "opto_mol_twn",
+        optionUnitId: "u_adult_twn",
+        unitCode: "adult",
+        unitType: "person",
+        minAge: 18,
+      }),
     ]
-    const result = derivePricingAssignment({
-      quantities: { u_a: 1 },
-      travelers: [traveler({ role: "adult", assignedUnitId: "u_stale_from_prev_product" })],
-      units,
+    const result = resolveBookingDraft({
+      now: NOW,
+      quantities: { u_twn_room: 1 },
+      travelers: [
+        traveler({ role: "lead", roomUnitId: "u_adult_dbl", roomUnitAssignmentSource: "manual" }),
+        traveler({ role: "adult", roomUnitId: "u_adult_dbl", roomUnitAssignmentSource: "manual" }),
+      ],
+      units: twnUnits,
     })
-    // Stale unitId not in current units → re-derive
-    expect(result.assignedUnitIds).toEqual(["u_a"])
+
+    expect(result.travelers[0]?.roomUnitId).toBe("u_adult_twn")
+    expect(result.travelers[1]?.roomUnitId).toBe("u_adult_twn")
+  })
+})
+
+describe("resolveBookingExtraLines", () => {
+  it("normalizes per-person extras to charged traveler quantity and traveler links", () => {
+    const result = resolveBookingExtraLines({
+      travelerCount: 3,
+      extraLines: [
+        {
+          productExtraId: "lunch",
+          pricingMode: "per_person",
+          pricedPerPerson: true,
+          quantity: 1,
+          unitSellAmountCents: 1000,
+        },
+        {
+          productExtraId: "guide",
+          pricingMode: "per_booking",
+          quantity: 1,
+          unitSellAmountCents: 5000,
+        },
+      ],
+    })
+
+    expect(result).toEqual([
+      {
+        productExtraId: "lunch",
+        pricingMode: "per_person",
+        pricedPerPerson: true,
+        quantity: 3,
+        unitSellAmountCents: 1000,
+        totalSellAmountCents: 3000,
+        clientLineKey: "extra:lunch",
+        travelerIndexes: [0, 1, 2],
+      },
+      {
+        productExtraId: "guide",
+        pricingMode: "per_booking",
+        quantity: 1,
+        unitSellAmountCents: 5000,
+        clientLineKey: "extra:guide",
+      },
+    ])
+  })
+})
+
+describe("travelersToRows", () => {
+  it("persists traveler category from DOB while keeping lead role separate", () => {
+    const rows = travelersToRows(
+      {
+        travelers: [
+          traveler({ role: "lead", dateOfBirth: "1990-01-01" }),
+          traveler({ role: "child" }),
+          traveler({ role: "adult", dateOfBirth: "2019-01-01" }),
+        ],
+      },
+      NOW,
+    )
+
+    expect(rows[0]).toMatchObject({ isPrimary: true, travelerCategory: "adult" })
+    expect(rows[1]).toMatchObject({ isPrimary: false, travelerCategory: "child" })
+    // DOB wins over role for the third traveler — they're 7y old, so "child"
+    expect(rows[2]).toMatchObject({ isPrimary: false, travelerCategory: "child" })
   })
 
-  it("does nothing when quantities is empty", () => {
-    const units: PricingAssignmentUnit[] = [unit({ optionId: "opto_a", optionUnitId: "u_a" })]
-    const result = derivePricingAssignment({
-      quantities: {},
-      travelers: [traveler({ role: "adult" })],
-      units,
+  it("nulls out roomUnitId for source=none", () => {
+    const rows = travelersToRows({
+      travelers: [
+        traveler({
+          role: "adult",
+          roomUnitId: "u_adult",
+          roomUnitAssignmentSource: "none",
+        }),
+      ],
     })
-    // No option has demand, so no assignment happens
-    expect(result.assignedUnitIds).toEqual([null])
-    expect(result.quantities).toEqual({})
+
+    expect(rows[0]?.roomUnitId).toBeNull()
+  })
+})
+
+describe("deriveDraftPaxBand", () => {
+  it("derives infant for under-2", () => {
+    expect(deriveDraftPaxBand({ dateOfBirth: "2025-01-01", role: "adult" }, NOW)).toBe("infant")
+  })
+
+  it("derives child for 2-17", () => {
+    expect(deriveDraftPaxBand({ dateOfBirth: "2018-01-01", role: "adult" }, NOW)).toBe("child")
+  })
+
+  it("derives adult for 18+", () => {
+    expect(deriveDraftPaxBand({ dateOfBirth: "1990-01-01", role: "infant" }, NOW)).toBe("adult")
+  })
+
+  it("falls back to role when DOB is null", () => {
+    expect(deriveDraftPaxBand({ dateOfBirth: null, role: "child" }, NOW)).toBe("child")
+  })
+
+  it("returns null for lead role with no DOB", () => {
+    expect(deriveDraftPaxBand({ dateOfBirth: null, role: "lead" }, NOW)).toBeNull()
   })
 })

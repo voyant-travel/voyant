@@ -8,15 +8,15 @@ import {
   useVoyantAvailabilityContext,
 } from "@voyantjs/availability-react"
 import {
-  computeAgeYears,
-  derivePricingAssignment,
   type PricingAssignmentUnit,
+  resolveBookingDraft,
+  resolveBookingExtraLines,
+  travelersToRows,
 } from "@voyantjs/bookings/pricing-assignment"
 import {
   type BookingCreateExtraLineInput,
   type BookingCreateGroupMembershipInput,
   type BookingCreatePaymentScheduleInput,
-  type BookingCreateTravelerInput,
   type BookingCreateVoucherRedemptionInput,
   type BookingRecord,
   useBookingCreateMutation,
@@ -212,68 +212,6 @@ function hasAnyPaidPayment(schedule: PaymentScheduleValue): boolean {
 function stripOptionPrefix(name: string): string {
   const idx = name.indexOf(" - ")
   return idx > 0 ? name.slice(idx + 3) : name
-}
-
-/**
- * Adapter: convert the dialog's traveler shape to the
- * `@voyantjs/bookings/pricing-assignment` traveler shape. The legacy
- * `roomUnitId` field on `TravelerEntry` carries what the assignment
- * module calls `assignedUnitId` — the rename ships in a later phase
- * (voyantjs/voyant#1267).
- */
-function travelersForAssignment(
-  travelers: ReadonlyArray<TravelerEntry>,
-): { dateOfBirth: string | null; role: TravelerEntry["role"]; assignedUnitId: string | null }[] {
-  return travelers.map((t) => ({
-    dateOfBirth: t.dateOfBirth,
-    role: t.role,
-    assignedUnitId: t.roomUnitId,
-  }))
-}
-
-/**
- * Reapply assignment-module-derived unit ids back onto the dialog's
- * traveler list, preserving every other field.
- */
-function applyAssignment(
-  travelers: ReadonlyArray<TravelerEntry>,
-  assignedUnitIds: ReadonlyArray<string | null>,
-): TravelerEntry[] {
-  return travelers.map((traveler, i) => {
-    const nextId = assignedUnitIds[i] ?? traveler.roomUnitId
-    return nextId === traveler.roomUnitId ? traveler : { ...traveler, roomUnitId: nextId }
-  })
-}
-
-function travelersToRows(value: TravelerListValue): BookingCreateTravelerInput[] {
-  return value.travelers.map((traveler) => {
-    // Age-derived category (DOB-driven). The `role` field still
-    // carries the `lead` flag separately for the booking primary; the
-    // demographic category comes from age, not from a manual select.
-    const age = computeAgeYears(traveler.dateOfBirth)
-    const ageCategory: "adult" | "child" | "infant" | null =
-      age == null
-        ? traveler.role === "child" || traveler.role === "infant" || traveler.role === "adult"
-          ? traveler.role
-          : null
-        : age < 2
-          ? "infant"
-          : age < 18
-            ? "child"
-            : "adult"
-    return {
-      personId: traveler.personId,
-      firstName: traveler.firstName.trim(),
-      lastName: traveler.lastName.trim(),
-      email: traveler.email.trim() || null,
-      phone: traveler.phone.trim() || null,
-      preferredLanguage: traveler.preferredLanguage.trim() || null,
-      participantType: "traveler",
-      travelerCategory: ageCategory,
-      isPrimary: traveler.role === "lead",
-      roomUnitId: traveler.roomUnitId,
-    }
-  })
 }
 
 function sameRoomUnits(left: OptionUnitsStepperUnit[], right: OptionUnitsStepperUnit[]): boolean {
@@ -643,19 +581,27 @@ export function BookingCreateForm({
     return Array.from(groups.values())
   }, [roomUnits])
 
-  // Apply the same age-banded redistribution we use at submit so the
-  // live price preview matches what the operator will actually be
-  // billed. Without this, the breakdown sees only the option's primary
-  // (Adult) unit qty from the stepper, missing the per-traveler split
-  // between adult / child / infant tiers.
-  const displayQuantities = React.useMemo(
+  // Apply the same draft resolver we use at submit so live pricing
+  // and persisted item lines cannot drift. Person-priced options
+  // (excursions) derive line quantities from the traveler list;
+  // accommodation options preserve operator-picked stepper quantities.
+  const displayDraft = React.useMemo(
     () =>
-      derivePricingAssignment({
+      resolveBookingDraft({
         quantities: rooms.quantities,
-        travelers: travelersForAssignment(travelers.travelers),
+        travelers: travelers.travelers,
         units: getTravelerAssignableStepperUnits(roomUnits) as PricingAssignmentUnit[],
-      }).quantities,
+      }),
     [rooms.quantities, travelers.travelers, roomUnits],
+  )
+  const displayQuantities = displayDraft.quantities
+  const displayExtraLines = React.useMemo(
+    () =>
+      resolveBookingExtraLines({
+        extraLines,
+        travelerCount: travelers.travelers.length,
+      }),
+    [extraLines, travelers.travelers.length],
   )
 
   // Currency placeholder — used for voucher + payment schedule display.
@@ -791,9 +737,12 @@ export function BookingCreateForm({
         pricingCurrency,
         confirmedSellAmountCents,
       )
-      // Age-banded redistribution: turn the operator's per-option
-      // quantities + raw traveler list into per-unit quantities + each
-      // traveler's matching unit assignment, driven by DOB.
+      // Resolve the draft once, then derive every shape the wire
+      // format needs from the result. Person-priced options get
+      // per-band quantities (1 adult + 1 child + 1 infant, not
+      // "3 x Adult"); accommodation options keep operator-picked
+      // room quantities. Server gets `clientLineKey` + `travelerIndexes`
+      // on each line so it can write `booking_item_travelers` rows.
       const submitUnits =
         roomUnits.length > 0
           ? getTravelerAssignableStepperUnits(roomUnits)
@@ -803,17 +752,24 @@ export function BookingCreateForm({
                 optionId: product.optionId,
               })),
             )
-      const redistributed = derivePricingAssignment({
+      const redistributed = resolveBookingDraft({
         quantities: rooms.quantities,
-        travelers: travelersForAssignment(travelers.travelers),
+        travelers: travelers.travelers,
         units: submitUnits as PricingAssignmentUnit[],
       })
 
-      const itemLines = itemLinesToRows(redistributed.quantities, submitUnits, pricing)
-
-      const travelerRows = travelersToRows({
-        travelers: applyAssignment(travelers.travelers, redistributed.assignedUnitIds),
+      const itemLines = itemLinesToRows(
+        redistributed.quantities,
+        submitUnits,
+        pricing,
+        redistributed.travelerIndexesByUnitId,
+      )
+      const resolvedExtraLines = resolveBookingExtraLines({
+        extraLines,
+        travelerCount: travelers.travelers.length,
       })
+
+      const travelerRows = travelersToRows({ travelers: redistributed.travelers })
 
       const voucherRedemption: BookingCreateVoucherRedemptionInput | undefined =
         voucher.picked && voucher.picked.remainingAmountCents != null
@@ -911,7 +867,7 @@ export function BookingCreateForm({
         confirmedSellAmountCents,
         priceOverrideReason: priceOverrideReason || null,
         itemLines: itemLines.length > 0 ? itemLines : undefined,
-        extraLines: extraLines.length > 0 ? extraLines : undefined,
+        extraLines: resolvedExtraLines.length > 0 ? resolvedExtraLines : undefined,
         travelers: travelerRows.length > 0 ? travelerRows : undefined,
         paymentSchedules: paymentSchedules.length > 0 ? paymentSchedules : undefined,
         voucherRedemption,
@@ -1230,7 +1186,7 @@ export function BookingCreateForm({
           })()}
           unitQuantities={displayQuantities}
           unitLabels={roomUnitLabels}
-          extraLines={extraLines}
+          extraLines={displayExtraLines}
           travelers={travelers.travelers}
           messages={messages}
           onPricingChange={setPricing}

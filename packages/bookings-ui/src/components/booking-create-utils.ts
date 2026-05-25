@@ -125,6 +125,7 @@ export function itemLinesToRows(
   quantities: Record<string, number>,
   units: BookingCreateUnitLineRecord[],
   pricing: BookingCreatePricingRecord | null,
+  travelerIndexesByUnitId: Record<string, number[]> = {},
 ): BookingCreateItemLineInput[] {
   const unitsById = new Map(units.map((unit) => [unit.optionUnitId, unit]))
   const unitNames = new Map(units.map((unit) => [unit.optionUnitId, unit.unitName]))
@@ -157,13 +158,19 @@ export function itemLinesToRows(
     const unitSellAmountCents =
       pricedLine?.unitAmountCents ??
       (totalSellAmountCents != null ? Math.floor(totalSellAmountCents / quantity) : null)
+    const travelerIndexes = travelerIndexesByUnitId[optionUnitId]
     return {
+      // Server uses `clientLineKey` to look up this item after insert
+      // and link it to travelers via `booking_item_travelers`. Only
+      // stamp when there's an actual traveler mapping to write.
+      clientLineKey: travelerIndexes?.length ? `unit:${optionUnitId}` : undefined,
       optionId: unitsById.get(optionUnitId)?.optionId ?? null,
       optionUnitId,
       quantity,
       title: pricedLine?.label ?? unitNames.get(optionUnitId) ?? null,
       unitSellAmountCents,
       totalSellAmountCents,
+      travelerIndexes: travelerIndexes?.length ? travelerIndexes : undefined,
     }
   })
 }
