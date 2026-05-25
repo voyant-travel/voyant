@@ -90,7 +90,13 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     await closeTestDb()
   })
 
-  async function seedProduct({ pax = 2 }: { pax?: number | null } = {}) {
+  async function seedProduct({
+    pax = 2,
+    ageBandedUnits = false,
+  }: {
+    pax?: number | null
+    ageBandedUnits?: boolean
+  } = {}) {
     productSeq += 1
     // Raw SQL keeps this free of a cross-package schema import. The booking-
     // create path only needs products + a default option + one option_unit;
@@ -99,6 +105,8 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     const productId = `prod_bc_${productSeq}`
     const optionId = `popt_bc_${productSeq}`
     const unitId = `opun_bc_${productSeq}`
+    const childUnitId = `opun_bc_${productSeq}_child`
+    const infantUnitId = `opun_bc_${productSeq}_infant`
     const itineraryId = `piti_bc_${productSeq}`
     await db.execute(sql`
       INSERT INTO products (id, name, sell_currency, sell_amount_cents, cost_amount_cents, margin_percent, start_date, end_date, pax)
@@ -119,9 +127,28 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       VALUES (${optionId}, ${productId}, 'Standard', 'active', true, 0)
     `)
     await db.execute(sql`
-      INSERT INTO option_units (id, option_id, name, unit_type, is_required, min_quantity, sort_order)
-      VALUES (${unitId}, ${optionId}, 'Adult', 'person', true, 1, 0)
+      INSERT INTO option_units (id, option_id, name, code, unit_type, min_age, max_age, is_required, min_quantity, sort_order)
+      VALUES (
+        ${unitId},
+        ${optionId},
+        'Adult',
+        ${ageBandedUnits ? "ADULT" : null},
+        'person',
+        ${ageBandedUnits ? 13 : null},
+        null,
+        true,
+        1,
+        0
+      )
     `)
+    if (ageBandedUnits) {
+      await db.execute(sql`
+        INSERT INTO option_units (id, option_id, name, code, unit_type, min_age, max_age, is_required, min_quantity, sort_order)
+        VALUES
+          (${childUnitId}, ${optionId}, 'Child 6-12', 'CHILD', 'person', 6, 12, false, 0, 1),
+          (${infantUnitId}, ${optionId}, 'Infant 0-5', 'INFANT', 'person', 0, 5, false, 0, 2)
+      `)
+    }
     await db.execute(sql`
       INSERT INTO product_itineraries (id, product_id, name, is_default, sort_order)
       VALUES (${itineraryId}, ${productId}, 'Default', true, 0)
@@ -131,7 +158,7 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       VALUES (${`ptix_bc_${productSeq}`}, ${productId}, 'per_item', 'qr_code', false)
     `)
 
-    return { productId, optionId, unitId }
+    return { productId, optionId, unitId, childUnitId, infantUnitId }
   }
 
   async function seedVoucher(
@@ -571,6 +598,162 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
         WHERE ${bookingItems.bookingId} = ${outcome.result.booking.id}
       )`)
     expect(links).toHaveLength(4)
+  })
+
+  it("rejects booking-create payloads that drift from the server draft resolver", async () => {
+    const { productId, unitId, childUnitId, infantUnitId } = await seedProduct({
+      ageBandedUnits: true,
+    })
+    const eventBus = createEventBus()
+    const rejectedEvents: unknown[] = []
+    eventBus.subscribe("booking_create.rejected", (event) => {
+      rejectedEvents.push(event)
+    })
+
+    const outcome = await createBooking(
+      db,
+      {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...bookingParty(),
+        travelers: [
+          {
+            firstName: "Alice",
+            lastName: "Lead",
+            email: "alice@example.com",
+            participantType: "traveler",
+            travelerCategory: "adult",
+            isPrimary: true,
+          },
+          {
+            firstName: "Child",
+            lastName: "Traveler",
+            participantType: "traveler",
+            travelerCategory: "child",
+          },
+          {
+            firstName: "Infant",
+            lastName: "Traveler",
+            participantType: "traveler",
+            travelerCategory: "infant",
+          },
+        ],
+        itemLines: [
+          {
+            clientLineKey: `unit:${unitId}`,
+            optionUnitId: unitId,
+            quantity: 3,
+            title: "Adult",
+            travelerIndexes: [0, 1, 2],
+          },
+        ],
+      },
+      { runtime: { eventBus }, userId: "usrp_tester" },
+    )
+
+    expect(outcome.status).toBe("payload_resolver_mismatch")
+    if (outcome.status !== "payload_resolver_mismatch") return
+    expect(outcome.mismatches).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          optionUnitId: unitId,
+          submittedQuantity: 3,
+          resolvedQuantity: 1,
+        }),
+        expect.objectContaining({
+          optionUnitId: childUnitId,
+          submittedQuantity: 0,
+          resolvedQuantity: 1,
+        }),
+        expect.objectContaining({
+          optionUnitId: infantUnitId,
+          submittedQuantity: 0,
+          resolvedQuantity: 1,
+        }),
+      ]),
+    )
+    expect(await db.select().from(bookings)).toHaveLength(0)
+    expect(await db.select().from(bookingTravelers)).toHaveLength(0)
+    expect(await db.select().from(bookingItems)).toHaveLength(0)
+
+    expect(rejectedEvents).toHaveLength(1)
+    const event = rejectedEvents[0] as {
+      name: string
+      data: {
+        reason: string
+        productId: string
+        mismatchCount: number
+        createdByUserId: string | null
+      }
+      metadata?: { category?: string; source?: string }
+    }
+    expect(event.name).toBe("booking_create.rejected")
+    expect(event.data.reason).toBe("payload_resolver_mismatch")
+    expect(event.data.productId).toBe(productId)
+    expect(event.data.mismatchCount).toBeGreaterThan(0)
+    expect(event.data.createdByUserId).toBe("usrp_tester")
+    expect(event.metadata).toMatchObject({ category: "internal", source: "service" })
+  })
+
+  it("keeps accepting legacy age-banded item lines without traveler assignment metadata", async () => {
+    const { productId, unitId, childUnitId, infantUnitId } = await seedProduct({
+      ageBandedUnits: true,
+    })
+
+    const outcome = await createBooking(db, {
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      travelers: [
+        {
+          firstName: "Alice",
+          lastName: "Lead",
+          email: "alice@example.com",
+          participantType: "traveler",
+          isPrimary: true,
+        },
+        {
+          firstName: "Child",
+          lastName: "Traveler",
+          participantType: "traveler",
+        },
+        {
+          firstName: "Infant",
+          lastName: "Traveler",
+          participantType: "traveler",
+        },
+      ],
+      itemLines: [
+        {
+          optionUnitId: unitId,
+          quantity: 1,
+          title: "Adult",
+        },
+        {
+          optionUnitId: childUnitId,
+          quantity: 1,
+          title: "Child",
+        },
+        {
+          optionUnitId: infantUnitId,
+          quantity: 1,
+          title: "Infant",
+        },
+      ],
+    })
+
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+
+    const itemRows = await db
+      .select()
+      .from(bookingItems)
+      .where(eq(bookingItems.bookingId, outcome.result.booking.id))
+    expect(itemRows.map((item) => [item.optionUnitId, item.quantity])).toEqual([
+      [unitId, 1],
+      [childUnitId, 1],
+      [infantUnitId, 1],
+    ])
   })
 
   it("redeems voucher and decrements remaining balance", async () => {

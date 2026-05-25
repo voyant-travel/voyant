@@ -490,6 +490,7 @@ export const bookingsUiEn = {
       fillsSlotCapacity: "fills slot capacity",
       decreaseUnitPrefix: "Decrease",
       increaseUnitPrefix: "Increase",
+      reviewLine: "Review this line",
     },
   },
   sharedRoomSection: {

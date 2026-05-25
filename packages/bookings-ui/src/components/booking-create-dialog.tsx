@@ -21,6 +21,7 @@ import {
   type BookingRecord,
   useBookingCreateMutation,
   useBookingTaxPreview,
+  VoyantApiError,
 } from "@voyantjs/bookings-react"
 import { useOrganization, usePerson } from "@voyantjs/crm-react"
 import { type ProductExtraRecord, useProductExtras } from "@voyantjs/extras-react"
@@ -229,6 +230,50 @@ function sameRoomUnits(left: OptionUnitsStepperUnit[], right: OptionUnitsStepper
   })
 }
 
+interface PayloadResolverMismatch {
+  kind: "qty" | "missing" | "extra"
+  optionUnitId: string
+  submittedQuantity: number
+  resolvedQuantity: number
+}
+
+function isPayloadResolverMismatchBody(
+  body: unknown,
+): body is { code: "payload_resolver_mismatch"; mismatches: PayloadResolverMismatch[] } {
+  if (typeof body !== "object" || body === null) return false
+  const candidate = body as { code?: unknown; mismatches?: unknown }
+  return (
+    candidate.code === "payload_resolver_mismatch" &&
+    Array.isArray(candidate.mismatches) &&
+    candidate.mismatches.every((mismatch) => {
+      if (typeof mismatch !== "object" || mismatch === null) return false
+      const item = mismatch as Record<string, unknown>
+      return (
+        (item.kind === "qty" || item.kind === "missing" || item.kind === "extra") &&
+        typeof item.optionUnitId === "string" &&
+        typeof item.submittedQuantity === "number" &&
+        typeof item.resolvedQuantity === "number"
+      )
+    })
+  )
+}
+
+function formatPayloadResolverMismatchError(
+  body: { mismatches: PayloadResolverMismatch[] },
+  unitLabels: Record<string, string>,
+) {
+  const details = body.mismatches
+    .map((mismatch) => {
+      const label = unitLabels[mismatch.optionUnitId] ?? mismatch.optionUnitId
+      return `${label}: sent ${mismatch.submittedQuantity}, expected ${mismatch.resolvedQuantity}`
+    })
+    .join("; ")
+
+  return details
+    ? `Booking options are out of sync. Review these lines: ${details}.`
+    : "Booking options are out of sync. Review the selected traveler and option lines."
+}
+
 export interface BookingCreateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -331,6 +376,7 @@ export function BookingCreateForm({
   // bundle. Defaults on so the operator opts out, not in.
   const [notifyTraveler, setNotifyTraveler] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+  const [payloadMismatchUnitIds, setPayloadMismatchUnitIds] = React.useState<string[]>([])
   const { formatDate } = useBookingsUiI18nOrDefault()
   const messages = useBookingsUiMessagesOrDefault()
   const availabilityClient = useVoyantAvailabilityContext()
@@ -363,6 +409,7 @@ export function BookingCreateForm({
       setCreateAsDraft(false)
       setNotifyTraveler(true)
       setError(null)
+      setPayloadMismatchUnitIds([])
     } else if (resolvedDefaultProductId) {
       setProduct((prev) => {
         const optionId = defaultSlotId
@@ -385,6 +432,7 @@ export function BookingCreateForm({
     setRoomUnits([])
     setSharedRoom(emptySharedRoomValue)
     setExtraLines([])
+    setPayloadMismatchUnitIds([])
   }, [product.productId, defaultSlotId])
 
   const [slotsFromIso, setSlotsFromIso] = React.useState(() => new Date().toISOString())
@@ -419,6 +467,7 @@ export function BookingCreateForm({
   )
   const setSelectedSlot = React.useCallback(
     (nextSlotId: string | null) => {
+      setPayloadMismatchUnitIds([])
       const selectedSlot = nextSlotId ? allOpenSlots.find((slot) => slot.id === nextSlotId) : null
       if (selectedSlot?.optionId && selectedSlot.optionId !== product.optionId) {
         setProduct((prev) => ({ ...prev, optionId: selectedSlot.optionId }))
@@ -430,6 +479,7 @@ export function BookingCreateForm({
   React.useEffect(() => {
     setRooms(emptyOptionUnitsStepperValue)
     setRoomUnits([])
+    setPayloadMismatchUnitIds([])
     if (!slotId || !product.optionId) return
     const selectedDeparture =
       allOpenSlots.find((slot) => slot.id === slotId) ??
@@ -660,6 +710,7 @@ export function BookingCreateForm({
 
   const handleSubmit = async () => {
     setError(null)
+    setPayloadMismatchUnitIds([])
 
     if (!product.productId) {
       setError(messages.bookingCreateDialog.validation.selectProduct)
@@ -886,6 +937,13 @@ export function BookingCreateForm({
 
       onCreated?.(booking)
     } catch (err) {
+      if (err instanceof VoyantApiError && isPayloadResolverMismatchBody(err.body)) {
+        setPayloadMismatchUnitIds(
+          Array.from(new Set(err.body.mismatches.map((mismatch) => mismatch.optionUnitId))),
+        )
+        setError(formatPayloadResolverMismatchError(err.body, roomUnitLabels))
+        return
+      }
       setError(
         err instanceof Error ? err.message : messages.bookingCreateDialog.validation.createFailed,
       )
@@ -901,7 +959,10 @@ export function BookingCreateForm({
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-1 pb-2">
           <ProductPickerSection
             value={product}
-            onChange={setProduct}
+            onChange={(next) => {
+              setPayloadMismatchUnitIds([])
+              setProduct(next)
+            }}
             enabled={enabled}
             lockProduct={Boolean(defaultProductId || defaultSlotId)}
             labels={{
@@ -932,7 +993,10 @@ export function BookingCreateForm({
           {product.productId && slotId ? (
             <OptionUnitsStepperSection
               value={rooms}
-              onChange={setRooms}
+              onChange={(next) => {
+                setPayloadMismatchUnitIds([])
+                setRooms(next)
+              }}
               productId={product.productId}
               slotId={slotId}
               optionId={product.optionId}
@@ -943,6 +1007,7 @@ export function BookingCreateForm({
                 !selectedSlot?.unlimited &&
                 typeof selectedSlot?.remainingPax === "number"
               }
+              invalidOptionUnitIds={payloadMismatchUnitIds}
               labels={{
                 heading: messages.bookingCreateDialog.labels.roomsHeading,
                 noOption: messages.bookingCreateDialog.labels.roomsNoOption,
@@ -1010,7 +1075,10 @@ export function BookingCreateForm({
           {product.productId && slotId ? (
             <TravelersSection
               value={travelers}
-              onChange={setTravelers}
+              onChange={(next) => {
+                setPayloadMismatchUnitIds([])
+                setTravelers(next)
+              }}
               roomUnits={roomUnitOptions.length > 0 ? roomUnitOptions : undefined}
               roomGroups={roomGroups.length > 0 ? roomGroups : undefined}
               billingPersonId={(person.billTo ?? "person") === "person" ? person.personId : null}

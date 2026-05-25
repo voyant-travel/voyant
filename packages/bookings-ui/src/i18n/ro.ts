@@ -489,6 +489,7 @@ export const bookingsUiRo = {
       fillsSlotCapacity: "umple capacitatea plecarii",
       decreaseUnitPrefix: "Scade",
       increaseUnitPrefix: "Creste",
+      reviewLine: "Verifica aceasta linie",
     },
   },
   sharedRoomSection: {

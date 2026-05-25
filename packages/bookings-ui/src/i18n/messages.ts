@@ -447,6 +447,7 @@ export type BookingsUiMessages = {
       fillsSlotCapacity: string
       decreaseUnitPrefix: string
       increaseUnitPrefix: string
+      reviewLine: string
     }
   }
   sharedRoomSection: {
