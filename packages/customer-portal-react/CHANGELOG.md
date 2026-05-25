@@ -1,5 +1,13 @@
 # @voyantjs/customer-portal-react
 
+## 0.81.9
+
+### Patch Changes
+
+- Updated dependencies [1a58939]
+  - @voyantjs/customer-portal@0.81.9
+  - @voyantjs/react@0.81.9
+
 ## 0.81.8
 
 ### Patch Changes
