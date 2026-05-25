@@ -40,6 +40,7 @@ import {
 } from "./traveler-category-buttons.js"
 
 export type TravelerRole = "lead" | "adult" | "child" | "infant"
+export type TravelerUnitAssignmentSource = "auto" | "manual" | "none"
 
 export interface TravelerEntry {
   personId: string | null
@@ -53,21 +54,14 @@ export interface TravelerEntry {
   role: TravelerRole
   /** ISO `YYYY-MM-DD` date of birth. Drives age-derived unit assignment. */
   dateOfBirth: string | null
-  /** option_unit_id the traveler is assigned to (matches OptionUnitsStepper units). */
-  roomUnitId: string | null
-  /**
-   * Operator-intent enum for `roomUnitId`:
-   *
-   * - `auto`: assignment was system-derived, eligible to be re-derived
-   *   when units / DOB / role change.
-   * - `manual`: operator clicked a category/room control. Resolver
-   *   respects the value when still valid.
-   * - `none`: operator explicitly picked "No room". Stays null
-   *   through resolver re-runs.
-   *
-   * Defaults to `auto` when omitted. See voyantjs/voyant#1267.
-   */
-  roomUnitAssignmentSource?: "auto" | "manual" | "none"
+  /** option_unit_id of the person pricing tier this traveler is billed as. */
+  pricingUnitId: string | null
+  /** option_unit_id of the room/vehicle this traveler occupies, when applicable. */
+  inventoryUnitId: string | null
+  /** Operator intent for `pricingUnitId`; defaults to `auto` when omitted. */
+  pricingUnitSource?: TravelerUnitAssignmentSource
+  /** Operator intent for `inventoryUnitId`; defaults to `auto` when omitted. */
+  inventoryUnitSource?: TravelerUnitAssignmentSource
 }
 
 export interface TravelerListValue {
@@ -87,8 +81,10 @@ export function createBlankTraveler(role: TravelerRole = "adult"): TravelerEntry
     preferredLanguage: "",
     role,
     dateOfBirth: null,
-    roomUnitId: null,
-    roomUnitAssignmentSource: "auto",
+    pricingUnitId: null,
+    inventoryUnitId: null,
+    pricingUnitSource: "auto",
+    inventoryUnitSource: "auto",
   }
 }
 
@@ -153,11 +149,9 @@ function matchUnitByRoleHint(
 }
 
 /**
- * The Room dropdown lists one item per option (keyed by the option's
- * primary/ADULT unit id), but a traveler's `roomUnitId` can point at any
- * age-banded unit within that option. Map the traveler's specific unit
- * back to the dropdown's primary key so the Select value matches an
- * existing item — otherwise base-ui falls back to rendering the raw id.
+ * The Room dropdown lists one item per inventory option. Map any unit
+ * from the same option back to that option's inventory key so the
+ * Select value matches an existing item.
  */
 function mapUnitIdToGroupPrimary(
   unitId: string | null,
@@ -172,28 +166,11 @@ function mapUnitIdToGroupPrimary(
 }
 
 /**
- * When the operator changes the Room dropdown, preserve the traveler's
- * current category code (Adult/Child/Senior/…) in the destination option
- * if it offers a matching unit. Falls back to the destination's primary
- * unit when no match exists or the previous unit has no code.
+ * When a room is picked, write only the inventory unit. Pricing tier
+ * intent remains owned by the category buttons and the resolver.
  */
-function pickUnitForRoomChange(
-  currentUnitId: string | null,
-  nextRoomPrimaryId: string,
-  roomGroups: ReadonlyArray<RoomGroup> | undefined,
-): string {
-  if (!roomGroups) return nextRoomPrimaryId
-  const nextGroup = roomGroups.find((g) => g.primaryUnitId === nextRoomPrimaryId)
-  if (!nextGroup) return nextRoomPrimaryId
-  if (!currentUnitId) return nextGroup.primaryUnitId
-  const prevGroup = roomGroups.find(
-    (g) => g.primaryUnitId === currentUnitId || g.units.some((u) => u.unitId === currentUnitId),
-  )
-  const prevUnit = prevGroup?.units.find((u) => u.unitId === currentUnitId)
-  const prevCode = (prevUnit?.unitCode ?? "").toLowerCase()
-  if (!prevCode) return nextGroup.primaryUnitId
-  const sameCategory = nextGroup.units.find((u) => (u.unitCode ?? "").toLowerCase() === prevCode)
-  return sameCategory?.unitId ?? nextGroup.primaryUnitId
+function pickInventoryUnitForRoomChange(nextRoomPrimaryId: string): string {
+  return nextRoomPrimaryId
 }
 
 export interface RoomUnitOption {
@@ -323,36 +300,58 @@ export function TravelersSection({
     onChange({ travelers: value.travelers.filter((_, i) => i !== index) })
   }
 
-  // Auto-pick a room with seats available so operators don't have to
-  // hunt for the dropdown on every traveler — they can still override
-  // manually via the Room select. Picks the first option (ordering
-  // mirrors the upstream `roomUnits` array, which comes from the
-  // stepper in catalog order). When `roomGroups` is wired, also
-  // pre-pick the matching age-banded unit within that option (DOB
-  // first, role hint second) so the Category buttons land on the
-  // right row and pricing reflects the operator's intent.
-  const pickRoomUnitIdForNewTraveler = React.useCallback(
-    (dateOfBirth: string | null = null, role: TravelerRole | null = null): string | null => {
-      if (!roomUnits || roomUnits.length === 0) return null
-      const pickedRoom =
-        roomUnits.find((unit) => unit.remainingCapacity > 0)?.unitId ?? roomUnits[0]?.unitId ?? null
-      if (!pickedRoom || !roomGroups || roomGroups.length === 0) return pickedRoom
-      const group = roomGroups.find(
-        (g) => g.primaryUnitId === pickedRoom || g.units.some((u) => u.unitId === pickedRoom),
-      )
-      if (!group) return pickedRoom
+  const pickPricingUnitIdForTraveler = React.useCallback(
+    (
+      dateOfBirth: string | null = null,
+      role: TravelerRole | null = null,
+      preferredUnitId: string | null = null,
+    ): string | null => {
+      if (!roomGroups || roomGroups.length === 0) return null
+      const group =
+        (preferredUnitId
+          ? roomGroups.find(
+              (g) =>
+                g.primaryUnitId === preferredUnitId ||
+                g.units.some((u) => u.unitId === preferredUnitId),
+            )
+          : undefined) ?? roomGroups[0]
+      if (!group) return null
       return (
         matchUnitByDob(group.units, dateOfBirth) ??
         matchUnitByRoleHint(group.units, role) ??
-        group.primaryUnitId
+        group.units.find((unit) => unit.unitType == null || unit.unitType === "person")?.unitId ??
+        null
       )
     },
-    [roomUnits, roomGroups],
+    [roomGroups],
+  )
+
+  // Auto-pick a room with seats available so operators don't have to
+  // hunt for the dropdown on every traveler — they can still override
+  // manually via the Room select. Pricing is picked from the same
+  // option when the product exposes person tiers.
+  const pickAssignmentsForNewTraveler = React.useCallback(
+    (
+      dateOfBirth: string | null = null,
+      role: TravelerRole | null = null,
+    ): Pick<TravelerEntry, "pricingUnitId" | "inventoryUnitId"> => {
+      if (!roomUnits || roomUnits.length === 0) {
+        return { pricingUnitId: null, inventoryUnitId: null }
+      }
+      const pickedRoom =
+        roomUnits.find((unit) => unit.remainingCapacity > 0)?.unitId ?? roomUnits[0]?.unitId ?? null
+      if (!pickedRoom || !roomGroups || roomGroups.length === 0) {
+        return { pricingUnitId: null, inventoryUnitId: pickedRoom }
+      }
+      const pricingUnitId = pickPricingUnitIdForTraveler(dateOfBirth, role, pickedRoom)
+      return { pricingUnitId, inventoryUnitId: pickedRoom }
+    },
+    [roomUnits, roomGroups, pickPricingUnitIdForTraveler],
   )
 
   // Note: there is no hydration effect any more. Travelers attached
-  // before the option-units queries resolve get a `null` roomUnitId
-  // and `roomUnitAssignmentSource: "auto"`; the resolver in
+  // before the option-units queries resolve get null assignment ids
+  // and `*UnitSource: "auto"`; the resolver in
   // `@voyantjs/bookings/pricing-assignment` re-derives them at every
   // preview/submit pass, and respects `"none"` (explicit No room) /
   // `"manual"` (operator click) when set. Operator intent is now
@@ -368,8 +367,9 @@ export function TravelersSection({
         ...value.travelers,
         {
           ...blank,
-          roomUnitId: pickRoomUnitIdForNewTraveler(null, role),
-          roomUnitAssignmentSource: "auto",
+          ...pickAssignmentsForNewTraveler(null, role),
+          pricingUnitSource: "auto",
+          inventoryUnitSource: "auto",
         },
       ],
     })
@@ -384,8 +384,9 @@ export function TravelersSection({
         ...value.travelers,
         {
           ...traveler,
-          roomUnitId: pickRoomUnitIdForNewTraveler(traveler.dateOfBirth, role),
-          roomUnitAssignmentSource: "auto",
+          ...pickAssignmentsForNewTraveler(traveler.dateOfBirth, role),
+          pricingUnitSource: "auto",
+          inventoryUnitSource: "auto",
         },
       ],
     })
@@ -399,8 +400,9 @@ export function TravelersSection({
         ...value.travelers,
         {
           ...traveler,
-          roomUnitId: pickRoomUnitIdForNewTraveler(traveler.dateOfBirth, role),
-          roomUnitAssignmentSource: "auto",
+          ...pickAssignmentsForNewTraveler(traveler.dateOfBirth, role),
+          pricingUnitSource: "auto",
+          inventoryUnitSource: "auto",
         },
       ],
     })
@@ -507,20 +509,31 @@ export function TravelersSection({
                     phone: person.phone ?? "",
                     preferredLanguage: person.preferredLanguage ?? "",
                     dateOfBirth: person.dateOfBirth ?? null,
-                    // Re-derive the unit assignment when the operator
-                    // swaps the linked CRM person — DOB changes, so
-                    // the resolver may move the row to a different
-                    // age band. Skip when the operator has already
-                    // explicitly picked a room/category/"No room".
-                    ...(traveler.roomUnitAssignmentSource === "manual" ||
-                    traveler.roomUnitAssignmentSource === "none"
+                    // Re-derive auto-owned unit assignments when the
+                    // linked CRM person changes. Pricing and inventory
+                    // stay independent: a manual room does not freeze
+                    // DOB-driven pricing, and a manual category does
+                    // not move the room.
+                    ...(traveler.pricingUnitSource === "manual" ||
+                    traveler.pricingUnitSource === "none"
                       ? {}
                       : {
-                          roomUnitId: pickRoomUnitIdForNewTraveler(
+                          pricingUnitId: pickPricingUnitIdForTraveler(
                             person.dateOfBirth ?? null,
                             traveler.role,
+                            traveler.inventoryUnitId,
                           ),
-                          roomUnitAssignmentSource: "auto" as const,
+                          pricingUnitSource: "auto" as const,
+                        }),
+                    ...(traveler.inventoryUnitSource === "manual" ||
+                    traveler.inventoryUnitSource === "none"
+                      ? {}
+                      : {
+                          inventoryUnitId: pickAssignmentsForNewTraveler(
+                            person.dateOfBirth ?? null,
+                            traveler.role,
+                          ).inventoryUnitId,
+                          inventoryUnitSource: "auto" as const,
                         }),
                   })
                 }
@@ -533,12 +546,24 @@ export function TravelersSection({
                     phone: "",
                     preferredLanguage: "",
                     dateOfBirth: null,
-                    ...(traveler.roomUnitAssignmentSource === "manual" ||
-                    traveler.roomUnitAssignmentSource === "none"
+                    ...(traveler.pricingUnitSource === "manual" ||
+                    traveler.pricingUnitSource === "none"
                       ? {}
                       : {
-                          roomUnitId: pickRoomUnitIdForNewTraveler(null, traveler.role),
-                          roomUnitAssignmentSource: "auto" as const,
+                          pricingUnitId: pickPricingUnitIdForTraveler(
+                            null,
+                            traveler.role,
+                            traveler.inventoryUnitId,
+                          ),
+                          pricingUnitSource: "auto" as const,
+                        }),
+                    ...(traveler.inventoryUnitSource === "manual" ||
+                    traveler.inventoryUnitSource === "none"
+                      ? {}
+                      : {
+                          inventoryUnitId: pickAssignmentsForNewTraveler(null, traveler.role)
+                            .inventoryUnitId,
+                          inventoryUnitSource: "auto" as const,
                         }),
                   })
                 }
@@ -556,13 +581,13 @@ export function TravelersSection({
                   }}
                   onPickUnit={(unitId, nextRole, source) =>
                     updateAt(index, {
-                      roomUnitId: unitId,
+                      pricingUnitId: unitId,
                       role: nextRole,
                       // Only freeze as manual when the dynamic button
                       // actually picked a unit. Role-only clicks via
                       // the static fallback stay `auto` so the
                       // resolver can re-derive once real units load.
-                      roomUnitAssignmentSource: source,
+                      pricingUnitSource: source,
                     })
                   }
                 />
@@ -572,14 +597,14 @@ export function TravelersSection({
                     <Label className="text-xs">{merged.room}</Label>
                     <Select
                       items={roomSelectItems}
-                      value={mapUnitIdToGroupPrimary(traveler.roomUnitId, roomGroups) ?? NO_ROOM}
+                      value={
+                        mapUnitIdToGroupPrimary(traveler.inventoryUnitId, roomGroups) ?? NO_ROOM
+                      }
                       onValueChange={(v) =>
                         updateAt(index, {
-                          roomUnitId:
-                            v === NO_ROOM || !v
-                              ? null
-                              : pickUnitForRoomChange(traveler.roomUnitId, v, roomGroups),
-                          roomUnitAssignmentSource: v === NO_ROOM || !v ? "none" : "manual",
+                          inventoryUnitId:
+                            v === NO_ROOM || !v ? null : pickInventoryUnitForRoomChange(v),
+                          inventoryUnitSource: v === NO_ROOM || !v ? "none" : "manual",
                         })
                       }
                     >
@@ -786,8 +811,10 @@ function createTravelerFromPerson(person: PersonRecord, role: TravelerRole): Tra
     preferredLanguage: person.preferredLanguage ?? "",
     role: effectiveRole,
     dateOfBirth,
-    roomUnitId: null,
-    roomUnitAssignmentSource: "auto",
+    pricingUnitId: null,
+    inventoryUnitId: null,
+    pricingUnitSource: "auto",
+    inventoryUnitSource: "auto",
   }
 }
 
@@ -827,18 +854,18 @@ function TravelerCategoryButtons({
    * dynamic per-product button) or merely chose a role with no
    * actual unit pick (`"auto"` — static fallback before units load).
    * The wrapping handler uses `source` to decide whether to freeze
-   * the current `roomUnitId` as a manual choice.
+   * the current `pricingUnitId` as a manual choice.
    */
   onPickUnit: (unitId: string | null, nextRole: TravelerRole, source: "manual" | "auto") => void
 }) {
   const group = React.useMemo<RoomGroup | undefined>(() => {
-    if (!roomGroups || !traveler.roomUnitId) return undefined
+    if (!roomGroups) return undefined
+    const assignedUnitId = traveler.inventoryUnitId ?? traveler.pricingUnitId
+    if (!assignedUnitId) return undefined
     return roomGroups.find(
-      (g) =>
-        g.primaryUnitId === traveler.roomUnitId ||
-        g.units.some((u) => u.unitId === traveler.roomUnitId),
+      (g) => g.primaryUnitId === assignedUnitId || g.units.some((u) => u.unitId === assignedUnitId),
     )
-  }, [roomGroups, traveler.roomUnitId])
+  }, [roomGroups, traveler.inventoryUnitId, traveler.pricingUnitId])
 
   // Surface only person-typed units (Adult, Child, Senior, Infant,
   // …). Vehicles / rooms / services aren't categories the operator
@@ -887,7 +914,7 @@ function TravelerCategoryButtons({
                   // concrete unit. Pass `source: "auto"` so the
                   // resolver re-derives the unit instead of freezing
                   // a stale auto-assignment as manual.
-                  if (shouldUpdate) onPickUnit(traveler.roomUnitId, nextRole, "auto")
+                  if (shouldUpdate) onPickUnit(traveler.pricingUnitId, nextRole, "auto")
                 }}
               >
                 {label}

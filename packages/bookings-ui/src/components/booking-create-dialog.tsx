@@ -516,14 +516,9 @@ export function BookingCreateForm({
   const handleRoomUnitsChange = React.useCallback((units: OptionUnitsStepperUnit[]) => {
     setRoomUnits((prev) => (sameRoomUnits(prev, units) ? prev : units))
   }, [])
-  // Room choices presented to the traveler row are *options* (e.g.
-  // "Standard double", "Junior suite upgrade") — NOT option-units
-  // (Adult / Child / Senior). The age-band lives separately on the
-  // traveler and only affects pricing; both an adult and a child sit
-  // in the same Standard double room. Each entry's `unitId` is set to
-  // the option's primary unit so the existing `roomUnitId`-keyed
-  // plumbing keeps working — `resolveBookingDraft` moves the traveler
-  // to the matching age-banded unit at preview + submit.
+  // Room choices presented to the traveler row are inventory options
+  // (e.g. "Standard double", "Junior suite upgrade"). The age-band
+  // lives separately on the traveler as a pricing unit.
   const roomUnitOptions: RoomUnitOption[] = React.useMemo(() => {
     type UnitLike = {
       optionId?: string | null
@@ -533,8 +528,18 @@ export function BookingCreateForm({
       unitType?: OptionUnitsStepperUnit["unitType"]
       occupancyMax: number | null
     }
-    const units: UnitLike[] = getTravelerAssignableStepperUnits(
-      roomUnits.length > 0 ? roomUnits : (slotUnitAvailability.data?.data ?? []),
+    const sourceUnits: UnitLike[] =
+      roomUnits.length > 0 ? roomUnits : (slotUnitAvailability.data?.data ?? [])
+    const quantityByOption = new Map<string, number>()
+    for (const unit of sourceUnits) {
+      const key = unit.optionId ?? unit.optionUnitId
+      quantityByOption.set(
+        key,
+        (quantityByOption.get(key) ?? 0) + (rooms.quantities[unit.optionUnitId] ?? 0),
+      )
+    }
+    const units = sourceUnits.filter(
+      (unit) => unit.unitType === "room" || unit.unitType === "vehicle",
     )
     if (units.length === 0) return []
     const optionGroups = new Map<
@@ -547,13 +552,9 @@ export function BookingCreateForm({
     >()
     for (const unit of units) {
       const key = unit.optionId ?? unit.optionUnitId
-      // Prefer an ADULT-coded primary; the stepper routes per-option
-      // qty through the same unit so seat math stays consistent.
-      const isAdult = (unit.unitCode ?? "").toUpperCase() === "ADULT"
       const existing = optionGroups.get(key)
       if (existing) {
         existing.units.push(unit)
-        if (isAdult) existing.primaryUnitId = unit.optionUnitId
       } else {
         optionGroups.set(key, {
           primaryUnitId: unit.optionUnitId,
@@ -566,22 +567,18 @@ export function BookingCreateForm({
     }
     return Array.from(optionGroups.values())
       .filter((group) => {
-        const totalQty = group.units.reduce(
-          (sum, u) => sum + (rooms.quantities[u.optionUnitId] ?? 0),
-          0,
-        )
+        const optionKey = group.units[0]?.optionId ?? group.primaryUnitId
+        const totalQty = quantityByOption.get(optionKey) ?? 0
         return totalQty > 0
       })
       .map((group) => {
-        const totalQty = group.units.reduce(
-          (sum, u) => sum + (rooms.quantities[u.optionUnitId] ?? 0),
-          0,
-        )
+        const optionKey = group.units[0]?.optionId ?? group.primaryUnitId
+        const totalQty = quantityByOption.get(optionKey) ?? 0
         const occupancyMax = Math.max(1, ...group.units.map((u) => u.occupancyMax ?? 1))
         const seats = totalQty * occupancyMax
         const optionUnitIds = new Set(group.units.map((u) => u.optionUnitId))
         const assigned = travelers.travelers.filter(
-          (traveler) => traveler.roomUnitId && optionUnitIds.has(traveler.roomUnitId),
+          (traveler) => traveler.inventoryUnitId && optionUnitIds.has(traveler.inventoryUnitId),
         ).length
         return {
           unitId: group.primaryUnitId,
@@ -597,12 +594,12 @@ export function BookingCreateForm({
   // `roomUnitOptions` but exposes every unit instead of collapsing
   // to one primary.
   const roomGroups: RoomGroup[] = React.useMemo(() => {
-    const travelerUnits = getTravelerAssignableStepperUnits(roomUnits)
-    if (travelerUnits.length === 0) return []
+    if (roomUnits.length === 0) return []
     const groups = new Map<string, RoomGroup>()
-    for (const u of travelerUnits) {
+    for (const u of roomUnits) {
       if (!u.optionId) continue
       const groupKey = u.optionId
+      const isInventory = u.unitType === "room" || u.unitType === "vehicle"
       const isAdultCoded = (u.unitCode ?? "").toUpperCase() === "ADULT"
       const unit = {
         unitId: u.optionUnitId,
@@ -618,7 +615,15 @@ export function BookingCreateForm({
       const existing = groups.get(groupKey)
       if (existing) {
         existing.units.push(unit)
-        if (isAdultCoded) existing.primaryUnitId = u.optionUnitId
+        if (isInventory) existing.primaryUnitId = u.optionUnitId
+        else if (
+          isAdultCoded &&
+          !existing.units.some(
+            (candidate) => candidate.unitType === "room" || candidate.unitType === "vehicle",
+          )
+        ) {
+          existing.primaryUnitId = u.optionUnitId
+        }
       } else {
         groups.set(groupKey, {
           optionId: groupKey,
@@ -640,7 +645,7 @@ export function BookingCreateForm({
       resolveBookingDraft({
         quantities: rooms.quantities,
         travelers: travelers.travelers,
-        units: getTravelerAssignableStepperUnits(roomUnits) as PricingAssignmentUnit[],
+        units: roomUnits as PricingAssignmentUnit[],
       }),
     [rooms.quantities, travelers.travelers, roomUnits],
   )
@@ -796,7 +801,7 @@ export function BookingCreateForm({
       // on each line so it can write `booking_item_travelers` rows.
       const submitUnits =
         roomUnits.length > 0
-          ? getTravelerAssignableStepperUnits(roomUnits)
+          ? roomUnits
           : getTravelerAssignableStepperUnits(
               (slotUnitAvailability.data?.data ?? []).map((unit) => ({
                 ...unit,

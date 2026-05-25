@@ -8,7 +8,7 @@
   "files": [
     {
       "path": "registry/bookings/travelers-section.tsx",
-      "content": "export {\n  createBlankTraveler,\n  emptyTravelerListValue,\n  type RoomUnitOption,\n  type TravelerEntry,\n  type TravelerListValue,\n  type TravelerRole,\n  TravelersSection,\n  type TravelersSectionProps,\n} from \"@voyantjs/bookings-ui\"\n",
+      "content": "export {\n  createBlankTraveler,\n  emptyTravelerListValue,\n  type RoomUnitOption,\n  type TravelerEntry,\n  type TravelerListValue,\n  type TravelerRole,\n  TravelersSection,\n  type TravelersSectionProps,\n  type TravelerUnitAssignmentSource,\n} from \"@voyantjs/bookings-ui\"\n",
       "type": "registry:component",
       "target": "components/voyant/bookings/travelers-section.tsx"
     }

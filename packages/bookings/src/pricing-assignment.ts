@@ -18,9 +18,10 @@
  *     quantities **stay as the operator picked them** (1 DBL room is
  *     still 1 line, not 2).
  *
- * The `roomUnitAssignmentSource` enum on the traveler tracks operator
- * intent so the resolver knows when to re-derive ("auto") versus
- * respect an explicit choice ("manual" / "none" for No room).
+ * The `pricingUnitSource` and `inventoryUnitSource` enums on the
+ * traveler track operator intent so the resolver knows when to
+ * re-derive ("auto") versus respect an explicit choice ("manual" /
+ * "none" for No room).
  *
  * No React, no DB, no HTTP — just the assignment math.
  *
@@ -40,26 +41,29 @@ export interface BookingDraftTraveler {
   preferredLanguage: string
   role: TravelerRole
   dateOfBirth: string | null
+  /** option_unit_id of the person pricing tier this traveler is billed as. */
+  pricingUnitId: string | null
+  /** option_unit_id of the room/vehicle this traveler occupies, when applicable. */
+  inventoryUnitId: string | null
   /**
-   * Legacy field name kept for compatibility with the current dialog.
-   * For person-priced products it carries the traveler's pricing
-   * tier; for accommodation products it carries the selected
-   * room/inventory unit. Source of intent disambiguated by
-   * `roomUnitAssignmentSource` below.
-   */
-  roomUnitId: string | null
-  /**
-   * Tracks operator intent around the legacy `roomUnitId` field.
+   * Tracks operator intent around `pricingUnitId`.
    *
    * - `auto`: derived from product shape, DOB, role hints, and
    *   selected quantity. Eligible for re-derivation on every render.
-   * - `manual`: operator explicitly clicked a category/room button.
-   *   The resolver respects the value when it's in the current unit
-   *   set; otherwise it re-derives.
-   * - `none`: operator explicitly picked "No room". Stays null
-   *   regardless of unit demand.
+   * - `manual`: operator explicitly clicked a category button. The
+   *   resolver respects the value when it's in the current unit set;
+   *   otherwise it re-derives.
+   * - `none`: no pricing unit should be assigned.
    */
-  roomUnitAssignmentSource?: BookingDraftUnitAssignmentSource
+  pricingUnitSource?: BookingDraftUnitAssignmentSource
+  /**
+   * Tracks operator intent around `inventoryUnitId`.
+   *
+   * - `auto`: derived from selected quantity and product shape.
+   * - `manual`: operator explicitly clicked a room/vehicle control.
+   * - `none`: operator explicitly picked "No room". Stays null.
+   */
+  inventoryUnitSource?: BookingDraftUnitAssignmentSource
 }
 
 export interface PricingAssignmentUnit {
@@ -279,9 +283,9 @@ function roleHintForTraveler(traveler: BookingDraftTraveler): AssignmentRoleHint
  *     traveler room assignments still update `travelerIndexesByUnitId`
  *     so `booking_item_travelers` rows can be created.
  *
- * Respects `roomUnitAssignmentSource`:
- *   - `none` → traveler stays null (explicit No room)
- *   - `manual` → traveler's existing roomUnitId is kept when valid
+ * Respects assignment sources:
+ *   - `none` → the corresponding field stays null
+ *   - `manual` → the existing unit is kept when valid for the chosen option
  *   - `auto` → re-derived against current options
  */
 export function resolveBookingDraft<TTraveler extends BookingDraftTraveler>(options: {
@@ -308,6 +312,12 @@ export function resolveBookingDraft<TTraveler extends BookingDraftTraveler>(opti
     else unitsByOption.set(key, [unit])
   }
 
+  const primaryInventoryByOption = new Map<string, PricingAssignmentUnit>()
+  for (const [key, optionUnits] of unitsByOption) {
+    const inventoryUnit = optionUnits.find(isInventoryUnit)
+    if (inventoryUnit) primaryInventoryByOption.set(key, inventoryUnit)
+  }
+
   // An option is "person-priced" when it has at least one person unit
   // and no inventory unit (room/vehicle). That's the excursion shape:
   // line quantities derive from travelers, not from the stepper's
@@ -331,8 +341,16 @@ export function resolveBookingDraft<TTraveler extends BookingDraftTraveler>(opti
 
   const assignedForDefaulting = new Map<string, number>()
   for (const traveler of travelers) {
-    if (!traveler.roomUnitId || traveler.roomUnitAssignmentSource === "none") continue
-    const key = unitToOption.get(traveler.roomUnitId)
+    const inventorySource = traveler.inventoryUnitSource ?? "auto"
+    const pricingSource = traveler.pricingUnitSource ?? "auto"
+    const assignedUnitId =
+      inventorySource !== "none" && traveler.inventoryUnitId
+        ? traveler.inventoryUnitId
+        : pricingSource !== "none"
+          ? traveler.pricingUnitId
+          : null
+    if (!assignedUnitId) continue
+    const key = unitToOption.get(assignedUnitId)
     if (!key) continue
     assignedForDefaulting.set(key, (assignedForDefaulting.get(key) ?? 0) + 1)
   }
@@ -343,54 +361,102 @@ export function resolveBookingDraft<TTraveler extends BookingDraftTraveler>(opti
       ([candidate, total]) => (assignedForDefaulting.get(candidate) ?? 0) < total,
     )?.[0] ?? optionDemand[0]?.[0]
 
-  const resolveUnitForTraveler = (
+  const resolvePricingUnitForTraveler = (
     traveler: TTraveler,
     key: string,
   ): PricingAssignmentUnit | undefined =>
     pickUnitForAge(
-      unitsByOption.get(key) ?? [],
+      (unitsByOption.get(key) ?? []).filter(isPersonUnit),
       computeAgeYears(traveler.dateOfBirth, now),
       roleHintForTraveler(traveler),
     )
 
-  const assignNextDemandUnit = (traveler: TTraveler): TTraveler => {
+  const resolveTargetOption = (
+    traveler: TTraveler,
+  ): { key: string; fromDemand: boolean } | null => {
+    const inventorySource = traveler.inventoryUnitSource ?? "auto"
+    if (inventorySource !== "none" && traveler.inventoryUnitId) {
+      const inventoryUnit = unitById.get(traveler.inventoryUnitId)
+      const key = unitToOption.get(traveler.inventoryUnitId)
+      if (key && inventoryUnit && isInventoryUnit(inventoryUnit)) return { key, fromDemand: false }
+    }
+
+    const pricingSource = traveler.pricingUnitSource ?? "auto"
+    if (pricingSource !== "none" && traveler.pricingUnitId) {
+      const pricingUnit = unitById.get(traveler.pricingUnitId)
+      const key = unitToOption.get(traveler.pricingUnitId)
+      if (key && pricingUnit && isPersonUnit(pricingUnit)) return { key, fromDemand: false }
+    }
+
     const key = pickOptionWithDemand()
-    if (!key)
-      return { ...traveler, roomUnitId: null, roomUnitAssignmentSource: "auto" } as TTraveler
-    const unit = resolveUnitForTraveler(traveler, key)
-    if (!unit)
-      return { ...traveler, roomUnitId: null, roomUnitAssignmentSource: "auto" } as TTraveler
-    assignedForDefaulting.set(key, (assignedForDefaulting.get(key) ?? 0) + 1)
-    return {
-      ...traveler,
-      roomUnitId: unit.optionUnitId,
-      roomUnitAssignmentSource: "auto",
-    } as TTraveler
+    return key ? { key, fromDemand: true } : null
   }
 
   const nextTravelers = travelers.map((traveler) => {
-    const source = traveler.roomUnitAssignmentSource ?? "auto"
-    if (source === "none") {
-      return { ...traveler, roomUnitId: null, roomUnitAssignmentSource: "none" } as TTraveler
+    const target = resolveTargetOption(traveler)
+    const pricingSource = traveler.pricingUnitSource ?? "auto"
+    const inventorySource = traveler.inventoryUnitSource ?? "auto"
+
+    if (!target) {
+      return {
+        ...traveler,
+        pricingUnitId: null,
+        inventoryUnitId: null,
+        pricingUnitSource: pricingSource === "none" ? "none" : "auto",
+        inventoryUnitSource: inventorySource === "none" ? "none" : "auto",
+      } as TTraveler
+    }
+    const targetKey = target.key
+
+    const currentPricingUnit = traveler.pricingUnitId
+      ? unitById.get(traveler.pricingUnitId)
+      : undefined
+    const currentPricingKey = traveler.pricingUnitId
+      ? unitToOption.get(traveler.pricingUnitId)
+      : undefined
+    const keepManualPricing =
+      pricingSource === "manual" &&
+      currentPricingUnit &&
+      isPersonUnit(currentPricingUnit) &&
+      currentPricingKey === targetKey
+    const nextPricingUnit =
+      pricingSource === "none"
+        ? null
+        : keepManualPricing
+          ? currentPricingUnit
+          : (resolvePricingUnitForTraveler(traveler, targetKey) ?? null)
+
+    const currentInventoryUnit = traveler.inventoryUnitId
+      ? unitById.get(traveler.inventoryUnitId)
+      : undefined
+    const currentInventoryKey = traveler.inventoryUnitId
+      ? unitToOption.get(traveler.inventoryUnitId)
+      : undefined
+    const keepManualInventory =
+      inventorySource === "manual" &&
+      currentInventoryUnit &&
+      isInventoryUnit(currentInventoryUnit) &&
+      currentInventoryKey === targetKey
+    const targetInventoryUnit = primaryInventoryByOption.get(targetKey) ?? null
+    const nextInventoryUnit =
+      inventorySource === "none"
+        ? null
+        : keepManualInventory
+          ? currentInventoryUnit
+          : targetInventoryUnit
+
+    if (target.fromDemand && (nextPricingUnit || nextInventoryUnit)) {
+      assignedForDefaulting.set(targetKey, (assignedForDefaulting.get(targetKey) ?? 0) + 1)
     }
 
-    if (traveler.roomUnitId && unitById.has(traveler.roomUnitId)) {
-      const key = unitToOption.get(traveler.roomUnitId)
-      if (!key || source === "manual" || !personPricedOptions.has(key)) return traveler
-      // Stale auto-assigned person-priced unit: re-derive against the
-      // current bands so a child traveler who was placed on Adult by
-      // an earlier pass moves to the right band on the next render.
-      const unit = resolveUnitForTraveler(traveler, key)
-      return unit && unit.optionUnitId !== traveler.roomUnitId
-        ? ({
-            ...traveler,
-            roomUnitId: unit.optionUnitId,
-            roomUnitAssignmentSource: "auto",
-          } as TTraveler)
-        : traveler
-    }
-
-    return assignNextDemandUnit(traveler)
+    return {
+      ...traveler,
+      pricingUnitId: nextPricingUnit?.optionUnitId ?? null,
+      inventoryUnitId: nextInventoryUnit?.optionUnitId ?? null,
+      pricingUnitSource: pricingSource === "none" ? "none" : keepManualPricing ? "manual" : "auto",
+      inventoryUnitSource:
+        inventorySource === "none" ? "none" : keepManualInventory ? "manual" : "auto",
+    } as TTraveler
   })
 
   const next: BookingDraftQuantities = {}
@@ -403,20 +469,39 @@ export function resolveBookingDraft<TTraveler extends BookingDraftTraveler>(opti
     if (quantity <= 0) continue
     const key = unitToOption.get(unitId)
     if (!key || personPricedOptions.has(key)) continue
-    next[unitId] = quantity
+    const submittedUnit = unitById.get(unitId)
+    const targetUnitId =
+      submittedUnit && isInventoryUnit(submittedUnit)
+        ? unitId
+        : (primaryInventoryByOption.get(key)?.optionUnitId ?? unitId)
+    next[targetUnitId] = (next[targetUnitId] ?? 0) + quantity
   }
 
   const assignedByOption = new Map<string, number>()
   for (const [index, traveler] of nextTravelers.entries()) {
-    if (!traveler.roomUnitId || traveler.roomUnitAssignmentSource === "none") continue
-    const key = unitToOption.get(traveler.roomUnitId)
+    const pricingSource = traveler.pricingUnitSource ?? "auto"
+    const inventorySource = traveler.inventoryUnitSource ?? "auto"
+    const pricingKey =
+      pricingSource !== "none" && traveler.pricingUnitId
+        ? unitToOption.get(traveler.pricingUnitId)
+        : undefined
+    const inventoryKey =
+      inventorySource !== "none" && traveler.inventoryUnitId
+        ? unitToOption.get(traveler.inventoryUnitId)
+        : undefined
+    const key = inventoryKey ?? pricingKey
     if (!key) continue
-    const unitIndexes = travelerIndexesByUnitId[traveler.roomUnitId] ?? []
-    unitIndexes.push(index)
-    travelerIndexesByUnitId[traveler.roomUnitId] = unitIndexes
     if (personPricedOptions.has(key)) {
-      next[traveler.roomUnitId] = (next[traveler.roomUnitId] ?? 0) + 1
+      if (!traveler.pricingUnitId || pricingSource === "none") continue
+      const unitIndexes = travelerIndexesByUnitId[traveler.pricingUnitId] ?? []
+      unitIndexes.push(index)
+      travelerIndexesByUnitId[traveler.pricingUnitId] = unitIndexes
+      next[traveler.pricingUnitId] = (next[traveler.pricingUnitId] ?? 0) + 1
       assignedByOption.set(key, (assignedByOption.get(key) ?? 0) + 1)
+    } else if (traveler.inventoryUnitId && inventorySource !== "none") {
+      const unitIndexes = travelerIndexesByUnitId[traveler.inventoryUnitId] ?? []
+      unitIndexes.push(index)
+      travelerIndexesByUnitId[traveler.inventoryUnitId] = unitIndexes
     }
   }
 
@@ -477,8 +562,8 @@ export function resolveBookingExtraLines<TLine extends ResolvableExtraLine>(opti
 /**
  * Project a resolved draft's traveler list into the wire-format
  * `BookingCreateTravelerInput[]` shape the dialog submits. Derives
- * the `travelerCategory` from DOB / role and respects the
- * `roomUnitAssignmentSource === "none"` carve-out.
+ * the `travelerCategory` from DOB / role and projects only the
+ * inventory placement into the legacy wire `roomUnitId` field.
  */
 export function travelersToRows(
   value: { travelers: readonly BookingDraftTraveler[] },
@@ -505,7 +590,7 @@ export function travelersToRows(
     participantType: "traveler",
     travelerCategory: deriveDraftPaxBand(traveler, now),
     isPrimary: traveler.role === "lead",
-    roomUnitId: traveler.roomUnitAssignmentSource === "none" ? null : traveler.roomUnitId,
+    roomUnitId: traveler.inventoryUnitSource === "none" ? null : traveler.inventoryUnitId,
   }))
 }
 
@@ -561,10 +646,11 @@ export interface VerifyBookingDraftResult {
  * no legitimate clients trip the warning.
  *
  * Notes on the reconstruction:
- *   - The wire format doesn't carry per-traveler `roomUnitId` (the
- *     join-table model encodes it through `itemLines[].travelerIndexes`),
- *     so we reconstruct it by walking item lines and matching them
- *     to traveler indexes.
+ *   - The wire format doesn't carry split per-traveler assignment
+ *     fields (the join-table model encodes them through
+ *     `itemLines[].travelerIndexes`), so we reconstruct the relevant
+ *     pricing or inventory unit by walking item lines and matching
+ *     them to traveler indexes.
  *   - DOB doesn't round-trip on the wire today either; we feed the
  *     resolver the `travelerCategory` as a role hint so age-banded
  *     options can still be re-derived.
@@ -582,6 +668,7 @@ export function verifyBookingDraft(input: {
   // assignment the client intended. If the client didn't send
   // `travelerIndexes` (legacy clients), we can't verify per-traveler
   // assignment — just compare aggregate quantities.
+  const unitById = new Map(input.units.map((unit) => [unit.optionUnitId, unit]))
   const unitByTravelerIndex = new Map<number, string>()
   for (const line of input.itemLines) {
     for (const idx of line.travelerIndexes ?? []) {
@@ -598,6 +685,7 @@ export function verifyBookingDraft(input: {
           ? cat
           : "adult"
     const assigned = unitByTravelerIndex.get(i)
+    const assignedUnit = assigned ? unitById.get(assigned) : undefined
     return {
       personId: null,
       firstName: "",
@@ -616,8 +704,10 @@ export function verifyBookingDraft(input: {
       // value as ground truth. Otherwise the day-tour bug shape
       // (3 travelers all manually frozen to Adult) would round-trip
       // through the verifier unchanged.
-      roomUnitId: assigned ?? null,
-      roomUnitAssignmentSource: "auto",
+      pricingUnitId: assigned && assignedUnit && isPersonUnit(assignedUnit) ? assigned : null,
+      inventoryUnitId: assigned && assignedUnit && isInventoryUnit(assignedUnit) ? assigned : null,
+      pricingUnitSource: "auto",
+      inventoryUnitSource: "auto",
     }
   })
 

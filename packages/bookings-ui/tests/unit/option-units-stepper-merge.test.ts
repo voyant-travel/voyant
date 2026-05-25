@@ -144,11 +144,7 @@ describe("optionRowHasInvalidUnit", () => {
   it("matches any unit in a grouped option row, not just the primary unit", () => {
     expect(
       optionRowHasInvalidUnit(
-        [
-          { optionUnitId: "adult" },
-          { optionUnitId: "child" },
-          { optionUnitId: "infant" },
-        ],
+        [{ optionUnitId: "adult" }, { optionUnitId: "child" }, { optionUnitId: "infant" }],
         new Set(["child"]),
       ),
     ).toBe(true)
