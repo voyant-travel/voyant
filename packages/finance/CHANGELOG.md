@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.81.11
+
+### Patch Changes
+
+- ef079f4: Allow voided invoices to release external invoice numbers for reissue and surface external allocation writeback conflicts on SmartBill refs.
+  - @voyantjs/action-ledger@0.81.11
+  - @voyantjs/bookings@0.81.11
+  - @voyantjs/core@0.81.11
+  - @voyantjs/db@0.81.11
+  - @voyantjs/hono@0.81.11
+  - @voyantjs/products@0.81.11
+  - @voyantjs/storage@0.81.11
+  - @voyantjs/utils@0.81.11
+
 ## 0.81.10
 
 ### Patch Changes
