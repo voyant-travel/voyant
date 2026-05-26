@@ -145,6 +145,7 @@ async function previewBootstrapPricing(
 
     const snapshot = await resolveSessionPricingSnapshot(db, productId, {
       catalogId: input.catalogId,
+      departureId: input.slotId,
       optionId,
     })
 
