@@ -313,7 +313,11 @@ export function BookingInvoiceSheet({ invoiceId, onOpenInvoice }: BookingInvoice
           ) : (
             <ul className="flex flex-col divide-y rounded-md border">
               {(attachmentsData?.data ?? []).map((attachment) => (
-                <AttachmentRow key={attachment.id} attachment={attachment} />
+                <AttachmentRow
+                  key={attachment.id}
+                  attachment={attachment}
+                  downloadLabel={messages.attachmentDownload}
+                />
               ))}
             </ul>
           )}
@@ -353,7 +357,13 @@ export function BookingInvoiceSheet({ invoiceId, onOpenInvoice }: BookingInvoice
   )
 }
 
-function AttachmentRow({ attachment }: { attachment: InvoiceAttachmentRecord }) {
+function AttachmentRow({
+  attachment,
+  downloadLabel,
+}: {
+  attachment: InvoiceAttachmentRecord
+  downloadLabel: string
+}) {
   const href = `${getApiUrl()}/v1/admin/finance/invoice-attachments/${attachment.id}/download`
   const sizeKb =
     typeof attachment.fileSize === "number" ? `${Math.round(attachment.fileSize / 1024)} KB` : null
@@ -376,7 +386,7 @@ function AttachmentRow({ attachment }: { attachment: InvoiceAttachmentRecord }) 
         className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
       >
         <Download className="h-3.5 w-3.5" />
-        Download
+        {downloadLabel}
       </a>
     </li>
   )

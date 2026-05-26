@@ -406,7 +406,7 @@ export function PaymentScheduleSection({
                     type="button"
                     variant="ghost"
                     size="icon-sm"
-                    aria-label={merged.removeInstallment ?? "Remove"}
+                    aria-label={merged.removeInstallment}
                     onClick={() => removeInstallment(idx)}
                   >
                     <X className="h-3.5 w-3.5" />
@@ -436,7 +436,7 @@ export function PaymentScheduleSection({
             className="self-start"
           >
             <Plus className="mr-1 h-3.5 w-3.5" />
-            {merged.addInstallment ?? "Add installment"}
+            {merged.addInstallment}
           </Button>
         </div>
       )}
