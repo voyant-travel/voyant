@@ -78,6 +78,7 @@ describe("bookingCreateSchema", () => {
     expect(result.documentGeneration).toEqual({
       contractDocument: false,
       invoiceDocument: false,
+      invoiceType: "invoice",
     })
   })
 

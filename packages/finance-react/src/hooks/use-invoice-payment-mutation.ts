@@ -43,6 +43,16 @@ export function useInvoicePaymentMutation(invoiceId: string) {
       void queryClient.invalidateQueries({ queryKey: financeQueryKeys.payments(invoiceId) })
       void queryClient.invalidateQueries({ queryKey: financeQueryKeys.invoice(invoiceId) })
       void queryClient.invalidateQueries({ queryKey: financeQueryKeys.allPayments() })
+      // Booking-scoped payment lists (BookingPaymentsSummary in the
+      // operator/customer dashboards) are keyed by bookingId, which the
+      // POST response doesn't carry. Prefix-invalidate so every active
+      // per-booking query refetches — same approach as `usePaymentMutation`.
+      void queryClient.invalidateQueries({
+        queryKey: [...financeQueryKeys.all, "admin-booking-payments"],
+      })
+      void queryClient.invalidateQueries({
+        queryKey: [...financeQueryKeys.publicCheckout(), "booking-payments"],
+      })
     },
   })
 }

@@ -117,6 +117,22 @@ export const bookingListSortDirSchema = z.enum(["asc", "desc"])
 
 export const bookingListQuerySchema = z.object({
   status: bookingStatusSchema.optional(),
+  /**
+   * Statuses to omit from the result. Lets the operator list page hide
+   * noise (draft + expired by default) without forcing a separate
+   * endpoint. The wire format is a comma-separated string (e.g.
+   * `?excludeStatuses=draft,expired`) — query parsing collapses
+   * repeated keys, so a list has to ride on a single param. The
+   * preprocess hook splits + trims; the union then validates each
+   * entry against the enum.
+   */
+  excludeStatuses: z.preprocess((value) => {
+    if (typeof value !== "string" || !value.includes(",")) return value
+    return value
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean)
+  }, z.union([bookingStatusSchema, z.array(bookingStatusSchema)]).optional()),
   search: z.string().optional(),
   productId: z.string().optional(),
   optionId: z.string().optional(),

@@ -96,11 +96,11 @@ export const checkoutUiRo: CheckoutUiMessages = {
   },
   collectPaymentDialog: {
     title: "Genereaza link de plata",
-    description:
-      "Genereaza un link de plata pe care clientul il poate deschide pentru plata cu cardul sau transfer bancar. Distribuie-l cum preferi (email, chat etc.).",
+    description: "Trimite clientului pentru a incasa plata.",
     scheduleLabel: "Incaseaza",
-    scheduleHelp:
-      "Alege o transa din planul de plata sau suma totala. Editeaza suma de mai jos pentru o incasare personalizata.",
+    scheduleHelp: "",
+    scheduleCustomPlaceholder: "Suma personalizata",
+    scheduleClear: "Anuleaza selectia",
     scheduleFullAmount: "Suma totala ({amount})",
     scheduleTypeLabels: {
       deposit: "Avans",
@@ -110,8 +110,9 @@ export const checkoutUiRo: CheckoutUiMessages = {
       other: "Alta",
     },
     amountLabel: "Suma ({currency})",
-    amountHelp:
-      "Implicit este suma de vanzare a rezervarii. Modifica pentru avans sau plata partiala.",
+    amountLabelShort: "Suma",
+    currencyLabel: "Moneda",
+    amountHelp: "",
     cancel: "Anuleaza",
     done: "Gata",
     generateLink: "Genereaza link",

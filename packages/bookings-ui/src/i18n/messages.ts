@@ -67,11 +67,18 @@ export type BookingsUiMessages = {
     cancelBookingAction: string
     deleteAction: string
     deleteConfirm: string
+    /** Body copy under the delete confirmation title. `{number}` interpolates the booking number. */
+    deleteConfirmDescription: string
+    /** Fallback description used when the booking has no number (rare). */
+    deleteConfirmDescriptionFallback: string
+    deleteConfirmAction: string
+    deleteCancel: string
     collectPaymentAction: string
     recordPaymentAction: string
     noValue: string
     tbd: string
-    summarySell: string
+    summaryTotal: string
+    summaryPaid: string
     summaryPriceOverride: string
     summaryCostMargin: string
     summaryDates: string
@@ -81,6 +88,7 @@ export type BookingsUiMessages = {
     summaryCreated: string
     summaryUpdated: string
     tabOverview: string
+    tabMeta: string
     tabTravelers: string
     tabFinance: string
     tabInvoices: string
@@ -184,13 +192,44 @@ export type BookingsUiMessages = {
       decrypting: string
     }
     actions: {
-      deleteConfirm: string
+      deleteConfirm: {
+        title: string
+        description: string
+        cancel: string
+        confirm: string
+      }
       revealContactDetails: string
       hideContactDetails: string
       revealTravelerContactDetails: string
       hideTravelerContactDetails: string
+      viewTraveler: string
       editTraveler: string
       deleteTraveler: string
+    }
+    snapshot: {
+      title: string
+      subtitle: string
+      sectionContact: string
+      sectionTravel: string
+      sectionDocuments: string
+      sectionMeta: string
+      nameLabel: string
+      emailLabel: string
+      phoneLabel: string
+      languageLabel: string
+      roleLabel: string
+      dobLabel: string
+      nationalityLabel: string
+      documentLabel: string
+      documentExpiryLabel: string
+      dietaryLabel: string
+      accessibilityLabel: string
+      specialRequestsLabel: string
+      notesLabel: string
+      noDocuments: string
+      createdAtLabel: string
+      updatedAtLabel: string
+      empty: string
     }
     validation: {
       revealFailed: string
@@ -436,6 +475,10 @@ export type BookingsUiMessages = {
       paymentDate: string
       paymentMethod: string
       paymentReference: string
+      /** Label for the "+" button below the split installments. */
+      addInstallment: string
+      /** Aria label for the per-row remove button (only shown when ≥3 installments). */
+      removeInstallment: string
     }
   }
   roomsStepperSection: {
@@ -749,6 +792,8 @@ export type BookingsUiMessages = {
     }
     columns: {
       title: string
+      option: string
+      unit: string
       type: string
       status: string
       quantity: string
@@ -766,11 +811,40 @@ export type BookingsUiMessages = {
       noDescription: string
     }
     actions: {
-      deleteConfirm: string
+      deleteConfirm: {
+        title: string
+        description: string
+        cancel: string
+        confirm: string
+      }
       expandItem: string
       collapseItem: string
+      viewItem: string
       editItem: string
       deleteItem: string
+    }
+    snapshot: {
+      title: string
+      subtitle: string
+      sectionSummary: string
+      sectionPricing: string
+      sectionMeta: string
+      productLabel: string
+      optionLabel: string
+      unitLabel: string
+      descriptionLabel: string
+      typeLabel: string
+      statusLabel: string
+      datesLabel: string
+      quantityLabel: string
+      unitSellLabel: string
+      totalSellLabel: string
+      unitCostLabel: string
+      totalCostLabel: string
+      notesLabel: string
+      createdAtLabel: string
+      updatedAtLabel: string
+      empty: string
     }
   }
   bookingPaymentScheduleList: {
@@ -779,6 +853,8 @@ export type BookingsUiMessages = {
     empty: string
     values: {
       notesUnavailable: string
+      /** Suffix shown after the invoice number when the matched doc is a proforma. */
+      proformaSuffix: string
     }
     columns: {
       type: string
@@ -786,9 +862,18 @@ export type BookingsUiMessages = {
       dueDate: string
       amount: string
       notes: string
+      /** Invoice / proforma number covering this schedule row. */
+      invoice: string
     }
     actions: {
-      deleteConfirm: string
+      deleteConfirm: {
+        title: string
+        description: string
+        cancel: string
+        confirm: string
+      }
+      editSchedule: string
+      deleteSchedule: string
       issueDocument: string
       issueInvoice: string
       issueProforma: string
@@ -832,6 +917,11 @@ export type BookingsUiMessages = {
       cost: string
       reference: string
       confirmed: string
+      /** Row actions column header (visually hidden, used by screen readers). */
+      actions: string
+    }
+    actions: {
+      edit: string
     }
   }
   bookingCancellationDialog: {
@@ -952,7 +1042,14 @@ export type BookingsUiMessages = {
       expires: string
     }
     actions: {
-      deleteConfirm: string
+      deleteConfirm: {
+        title: string
+        description: string
+        cancel: string
+        confirm: string
+      }
+      editGuarantee: string
+      deleteGuarantee: string
     }
   }
   bookingGroupLinkDialog: {
@@ -1143,6 +1240,10 @@ export type BookingsUiMessages = {
       documentGenerationHeading: string
       generateContractDocument: string
       generateInvoiceDocument: string
+      /** Mutually exclusive with `generateInvoiceAndContract`. */
+      generateProforma: string
+      /** Mutually exclusive with `generateProforma`. */
+      generateInvoiceAndContract: string
       breakdownHeading: string
       breakdownTotal: string
       breakdownOnRequest: string
@@ -1228,6 +1329,8 @@ export type BookingsUiMessages = {
       method: string
       status: string
       amount: string
+      /** Equivalent in the booking's currency when the payment was made in a different currency. */
+      fx: string
       date: string
       reference: string
       /** Row actions column header (visually hidden, used by screen readers). */

@@ -11,6 +11,11 @@ export type BookingsListSortDir = "asc" | "desc"
 
 export interface BookingsListFilters {
   status?: string | undefined
+  /**
+   * Statuses to omit from the result. The bookings index uses this to
+   * hide noise (e.g. drafts + expired) from the default "All" view.
+   */
+  excludeStatuses?: string[] | undefined
   search?: string | undefined
   productId?: string | undefined
   optionId?: string | undefined

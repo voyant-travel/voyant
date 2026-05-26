@@ -89,6 +89,10 @@ export {
   type UploadedFile,
 } from "./components/file-dropzone.js"
 export {
+  IconActionButton,
+  type IconActionButtonProps,
+} from "./components/icon-action-button.js"
+export {
   OptionUnitsStepperSection,
   type OptionUnitsStepperSectionProps,
   type OptionUnitsStepperValue,
@@ -122,6 +126,7 @@ export {
   type SharedRoomSectionProps,
   type SharedRoomValue,
 } from "./components/shared-room-section.js"
+export { getStatusTone, StatusBadge, type StatusTone } from "./components/status-badge.js"
 export {
   StatusChangeDialog,
   type StatusChangeDialogProps,

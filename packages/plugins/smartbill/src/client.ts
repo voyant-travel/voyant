@@ -183,26 +183,37 @@ function parseSmartbillDate(value: string) {
   const match = RATE_LIMIT_DATE_PATTERN.exec(value)
   if (!match) return undefined
 
+  // Treat SmartBill's date string as UTC. The original code used `new
+  // Date(y, m, d, ...)` which interprets components as the JS host's
+  // local time, so the same response decoded to different instants on a
+  // CI runner (UTC) vs. a developer machine (Europe/Bucharest, EEST).
+  // The retry-window math downstream is duration-based (`retryAfterAt -
+  // now`), so anchoring to UTC keeps the math deterministic and matches
+  // the existing test fixtures that assert UTC timestamps.
   if (match[1]) {
     const [, day, month, year, hour, minute, second] = match
     return new Date(
+      Date.UTC(
+        Number(year),
+        Number(month) - 1,
+        Number(day),
+        Number(hour),
+        Number(minute),
+        Number(second),
+      ),
+    )
+  }
+
+  const [, , , , , , , year, month, day, hour, minute, second] = match
+  return new Date(
+    Date.UTC(
       Number(year),
       Number(month) - 1,
       Number(day),
       Number(hour),
       Number(minute),
       Number(second),
-    )
-  }
-
-  const [, , , , , , , year, month, day, hour, minute, second] = match
-  return new Date(
-    Number(year),
-    Number(month) - 1,
-    Number(day),
-    Number(hour),
-    Number(minute),
-    Number(second),
+    ),
   )
 }
 

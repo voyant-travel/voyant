@@ -91,7 +91,8 @@ export function CurrencyCombobox({
       <ComboboxInput
         className={className ?? "w-full"}
         placeholder={placeholder}
-        showClear={Boolean(value)}
+        disabled={disabled}
+        showClear={Boolean(value) && !disabled}
       />
       <ComboboxContent>
         <ComboboxEmpty>No currencies found.</ComboboxEmpty>

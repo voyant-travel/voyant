@@ -192,6 +192,14 @@ export const publicFinanceBookingPaymentSchema = z.object({
   paymentMethod: paymentMethodSchema,
   amountCents: z.number().int(),
   currency: z.string(),
+  /**
+   * When the customer paid in a currency different from the invoice
+   * (`currency`), `baseCurrency` is the invoice's currency and
+   * `baseAmountCents` is the converted amount at the payment date.
+   * Both are null for same-currency payments.
+   */
+  baseCurrency: z.string().nullable(),
+  baseAmountCents: z.number().int().nullable(),
   paymentDate: z.string(),
   referenceNumber: z.string().nullable(),
   notes: z.string().nullable(),

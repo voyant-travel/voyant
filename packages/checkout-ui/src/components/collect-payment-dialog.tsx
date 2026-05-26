@@ -9,15 +9,15 @@ import {
 } from "@voyantjs/finance-react"
 import { formatMessage } from "@voyantjs/i18n"
 import { Button } from "@voyantjs/ui/components/button"
+import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
+import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@voyantjs/ui/components/dialog"
-import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
 import {
   Select,
@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@voyantjs/ui/components/select"
-import { CheckCircle2, Copy, ExternalLink, Loader2 } from "lucide-react"
+import { CheckCircle2, Copy, ExternalLink, Loader2, X } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 
@@ -94,6 +94,7 @@ export function CollectPaymentDialog({
   const messages = useCheckoutUiMessagesOrDefault().collectPaymentDialog
   const [amountCents, setAmountCents] = useState<number>(defaultAmountCents ?? 0)
   const [scheduleId, setScheduleId] = useState<string>(FULL_AMOUNT_VALUE)
+  const [currency, setCurrency] = useState<string>(defaultCurrency)
   const [result, setResult] = useState<InitiatedCheckoutCollectionRecord | null>(null)
 
   const schedulesQuery = useBookingPaymentSchedules(bookingId, { enabled: open })
@@ -115,11 +116,6 @@ export function CollectPaymentDialog({
     cancelUrl,
   })
 
-  const amountInputValue = useMemo(
-    () => (amountCents > 0 ? (amountCents / 100).toFixed(2) : ""),
-    [amountCents],
-  )
-
   // Re-seed the amount from the latest props only on the closed→open
   // transition. Watching state mid-flight would clobber manual edits.
   const wasOpenRef = useRef(false)
@@ -127,13 +123,15 @@ export function CollectPaymentDialog({
     if (open && !wasOpenRef.current) {
       setAmountCents(defaultAmountCents ?? 0)
       setScheduleId(FULL_AMOUNT_VALUE)
+      setCurrency(defaultCurrency)
     }
     wasOpenRef.current = open
-  }, [open, defaultAmountCents])
+  }, [open, defaultAmountCents, defaultCurrency])
 
   function reset() {
     setAmountCents(defaultAmountCents ?? 0)
     setScheduleId(FULL_AMOUNT_VALUE)
+    setCurrency(defaultCurrency)
     setResult(null)
     collect.reset()
   }
@@ -160,76 +158,89 @@ export function CollectPaymentDialog({
         if (!next) reset()
       }}
     >
-      <DialogContent className="max-w-xl">
-        <DialogHeader>
+      <DialogContent className="max-w-lg gap-0 p-0">
+        <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>{messages.title}</DialogTitle>
           <DialogDescription>{messages.description}</DialogDescription>
         </DialogHeader>
 
         {result ? (
-          <ResultPanel result={result} />
+          <div className="px-6 py-5">
+            <ResultPanel result={result} />
+          </div>
         ) : (
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-4 px-6 py-5">
             {schedules.length > 0 ? (
               <div className="flex flex-col gap-2">
                 <Label htmlFor="collect-schedule">{messages.scheduleLabel}</Label>
-                <Select
-                  value={scheduleId}
-                  onValueChange={(v) => {
-                    const next = v ?? FULL_AMOUNT_VALUE
-                    setScheduleId(next)
-                    if (next === FULL_AMOUNT_VALUE) {
-                      setAmountCents(defaultAmountCents ?? 0)
-                    } else {
-                      const schedule = schedules.find((s) => s.id === next)
-                      if (schedule) setAmountCents(schedule.amountCents)
-                    }
-                  }}
-                >
-                  <SelectTrigger id="collect-schedule">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={FULL_AMOUNT_VALUE}>
-                      {formatMessage(messages.scheduleFullAmount, {
-                        amount: formatAmount(defaultAmountCents ?? 0, defaultCurrency),
-                      })}
-                    </SelectItem>
-                    {schedules.map((schedule) => (
-                      <SelectItem key={schedule.id} value={schedule.id}>
-                        {formatScheduleOption(schedule, messages.scheduleTypeLabels)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-muted-foreground text-xs">{messages.scheduleHelp}</p>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={scheduleId}
+                    onValueChange={(v) => {
+                      const next = v ?? FULL_AMOUNT_VALUE
+                      setScheduleId(next)
+                      if (next !== FULL_AMOUNT_VALUE) {
+                        const schedule = schedules.find((s) => s.id === next)
+                        if (schedule) {
+                          setAmountCents(schedule.amountCents)
+                          setCurrency(schedule.currency)
+                        }
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="collect-schedule" className="w-full">
+                      <SelectValue placeholder={messages.scheduleCustomPlaceholder} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {schedules.map((schedule) => (
+                        <SelectItem key={schedule.id} value={schedule.id}>
+                          {formatScheduleOption(schedule, messages.scheduleTypeLabels)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {scheduleId !== FULL_AMOUNT_VALUE ? (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={messages.scheduleClear}
+                      onClick={() => {
+                        setScheduleId(FULL_AMOUNT_VALUE)
+                        setAmountCents(defaultAmountCents ?? 0)
+                        setCurrency(defaultCurrency)
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  ) : null}
+                </div>
               </div>
             ) : null}
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="collect-amount">
-                {formatMessage(messages.amountLabel, { currency: defaultCurrency })}
-              </Label>
-              <Input
-                id="collect-amount"
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                min="0"
-                value={amountInputValue}
-                onChange={(e) => {
-                  // Manual edit detaches the amount from the picked
-                  // schedule so the user can charge a custom amount.
-                  setScheduleId(FULL_AMOUNT_VALUE)
-                  const raw = Number.parseFloat(e.target.value)
-                  setAmountCents(Number.isFinite(raw) ? Math.round(raw * 100) : 0)
-                }}
-              />
-              <p className="text-muted-foreground text-xs">{messages.amountHelp}</p>
-            </div>
+
+            {scheduleId === FULL_AMOUNT_VALUE ? (
+              <div className="grid grid-cols-[1fr_minmax(8rem,12rem)] gap-3">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="collect-amount">{messages.amountLabelShort}</Label>
+                  <CurrencyInput
+                    id="collect-amount"
+                    value={amountCents}
+                    onChange={(next) => setAmountCents(next ?? 0)}
+                    currency={currency}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="collect-currency">{messages.currencyLabel}</Label>
+                  <CurrencyCombobox
+                    value={currency}
+                    onChange={(next) => setCurrency(next ?? defaultCurrency)}
+                  />
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
 
-        <DialogFooter>
+        <div className="flex items-center justify-end gap-2 px-6 pb-6">
           {result ? (
             <Button onClick={() => onOpenChange(false)}>{messages.done}</Button>
           ) : (
@@ -247,7 +258,7 @@ export function CollectPaymentDialog({
               </Button>
             </>
           )}
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   )

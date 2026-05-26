@@ -72,6 +72,7 @@ vi.mock("@voyantjs/finance-react", () => ({
     createFromBooking: { mutateAsync: testState.createFromBooking },
     render: { mutateAsync: testState.renderInvoice },
   }),
+  useInvoices: () => ({ data: { data: [] } }),
 }))
 
 vi.mock("@voyantjs/ui/components", () => ({
@@ -85,6 +86,28 @@ vi.mock("@voyantjs/ui/components", () => ({
   CardContent: ({ children }: { children?: ReactTypes.ReactNode }) => <div>{children}</div>,
   CardHeader: ({ children }: { children?: ReactTypes.ReactNode }) => <header>{children}</header>,
   CardTitle: ({ children }: { children?: ReactTypes.ReactNode }) => <h2>{children}</h2>,
+  AlertDialog: ({ children }: { children?: ReactTypes.ReactNode }) => <div>{children}</div>,
+  AlertDialogAction: ({
+    children,
+    ...props
+  }: ReactTypes.ButtonHTMLAttributes<HTMLButtonElement>) => (
+    <button type="button" {...props}>
+      {children}
+    </button>
+  ),
+  AlertDialogCancel: ({
+    children,
+    ...props
+  }: ReactTypes.ButtonHTMLAttributes<HTMLButtonElement>) => (
+    <button type="button" {...props}>
+      {children}
+    </button>
+  ),
+  AlertDialogContent: ({ children }: { children?: ReactTypes.ReactNode }) => <div>{children}</div>,
+  AlertDialogDescription: ({ children }: { children?: ReactTypes.ReactNode }) => <p>{children}</p>,
+  AlertDialogFooter: ({ children }: { children?: ReactTypes.ReactNode }) => <div>{children}</div>,
+  AlertDialogHeader: ({ children }: { children?: ReactTypes.ReactNode }) => <div>{children}</div>,
+  AlertDialogTitle: ({ children }: { children?: ReactTypes.ReactNode }) => <h2>{children}</h2>,
 }))
 
 vi.mock("@voyantjs/ui/components/dropdown-menu", () => ({

@@ -29,7 +29,9 @@ import {
   SelectValue,
   Textarea,
 } from "@voyantjs/ui/components"
+import { CountryCombobox } from "@voyantjs/ui/components/country-combobox"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
+import { PhoneInput } from "@voyantjs/ui/components/phone-input"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2, Sparkles, Upload } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -348,9 +350,9 @@ export function TravelerDialog({
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.travelerDialog.fields.phone}</Label>
-                <Input
-                  {...form.register("phone")}
-                  placeholder={messages.travelerDialog.placeholders.phone}
+                <PhoneInput
+                  value={form.watch("phone") ?? ""}
+                  onChange={(next) => form.setValue("phone", next, { shouldDirty: true })}
                 />
               </div>
             </div>
@@ -422,36 +424,41 @@ export function TravelerDialog({
                     placeholder={messages.travelerDialog.placeholders.documentNumber}
                   />
                 </div>
-                <div className="flex flex-col gap-2">
-                  <Label>{messages.travelerDialog.fields.documentExpiry}</Label>
-                  <DatePicker
-                    value={form.watch("documentExpiry") || null}
-                    onChange={(nextValue) =>
-                      form.setValue("documentExpiry", nextValue ?? "", {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      })
-                    }
-                    placeholder={messages.travelerDialog.placeholders.documentExpiry}
-                  />
-                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <Label>{messages.travelerDialog.fields.documentIssuingCountry}</Label>
-                  <Input
-                    {...form.register("documentIssuingCountry")}
-                    placeholder={messages.travelerDialog.placeholders.documentIssuingCountry}
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label>{messages.travelerDialog.fields.documentIssuingAuthority}</Label>
-                  <Input
-                    {...form.register("documentIssuingAuthority")}
-                    placeholder={messages.travelerDialog.placeholders.documentIssuingAuthority}
-                  />
-                </div>
+              <div className="flex flex-col gap-2">
+                <Label>{messages.travelerDialog.fields.documentExpiry}</Label>
+                <DatePicker
+                  value={form.watch("documentExpiry") || null}
+                  onChange={(nextValue) =>
+                    form.setValue("documentExpiry", nextValue ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  placeholder={messages.travelerDialog.placeholders.documentExpiry}
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label>{messages.travelerDialog.fields.documentIssuingCountry}</Label>
+                <CountryCombobox
+                  value={form.watch("documentIssuingCountry") || null}
+                  onChange={(next) =>
+                    form.setValue("documentIssuingCountry", next ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label>{messages.travelerDialog.fields.documentIssuingAuthority}</Label>
+                <Input
+                  {...form.register("documentIssuingAuthority")}
+                  placeholder={messages.travelerDialog.placeholders.documentIssuingAuthority}
+                />
               </div>
 
               <div className="flex flex-col gap-2">

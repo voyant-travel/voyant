@@ -25,7 +25,7 @@ import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
@@ -114,6 +114,8 @@ export function BookingPaymentScheduleDialog({
     }
   }, [form, open, schedule])
 
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
   const onSubmit = async (values: ScheduleFormOutput) => {
     const payload = {
       scheduleType: values.scheduleType,
@@ -124,15 +126,27 @@ export function BookingPaymentScheduleDialog({
       notes: values.notes || null,
     }
 
-    if (isEditing) {
-      await update.mutateAsync({ id: schedule!.id, input: payload })
-    } else {
-      await create.mutateAsync(payload)
+    setSubmitError(null)
+    try {
+      if (isEditing) {
+        await update.mutateAsync({ id: schedule!.id, input: payload })
+      } else {
+        await create.mutateAsync(payload)
+      }
+      onOpenChange(false)
+      onSuccess?.()
+    } catch (err) {
+      // Server-side validation (e.g. "Cannot mark booking payment
+      // schedule as paid without linked completed payment coverage")
+      // would otherwise bubble into an unhandled promise rejection and
+      // leave the operator staring at a closed dialog with no signal.
+      setSubmitError(err instanceof Error ? err.message : String(err))
     }
-
-    onOpenChange(false)
-    onSuccess?.()
   }
+
+  useEffect(() => {
+    if (!open) setSubmitError(null)
+  }, [open])
 
   const isSubmitting = create.isPending || update.isPending
 
@@ -257,6 +271,15 @@ export function BookingPaymentScheduleDialog({
                 placeholder={messages.paymentScheduleDialog.placeholders.notes}
               />
             </div>
+
+            {submitError ? (
+              <p
+                role="alert"
+                className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+              >
+                {submitError}
+              </p>
+            ) : null}
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>

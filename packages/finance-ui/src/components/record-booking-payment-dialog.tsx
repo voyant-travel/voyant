@@ -6,6 +6,7 @@ import {
   paymentMethodSchema,
   paymentStatusSchema,
   useInvoiceFxRate,
+  useInvoiceMutation,
   useInvoicePaymentMutation,
   useInvoices,
   usePaymentMutation,
@@ -14,9 +15,7 @@ import { formatMessage } from "@voyantjs/i18n"
 import {
   Button,
   Dialog,
-  DialogBody,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   Input,
@@ -26,6 +25,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Switch,
   Textarea,
 } from "@voyantjs/ui/components"
 import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
@@ -150,22 +150,29 @@ export function RecordBookingPaymentDialog({
 
   const invoicesQuery = useInvoices({ bookingId, enabled: open })
   const invoices = invoicesQuery.data?.data ?? []
-  const paymentEligibleInvoices = invoices.filter((inv) => inv.status !== "void")
-  const outstandingInvoices = paymentEligibleInvoices.filter((inv) => inv.balanceDueCents > 0)
-  const selectableInvoices =
-    outstandingInvoices.length > 0 ? outstandingInvoices : paymentEligibleInvoices
+  // Operator records a payment AGAINST money still owed. Paid / voided
+  // invoices have no remaining balance to settle, so they don't belong
+  // in the picker — keep the surface focused on what's actionable.
+  const selectableInvoices = invoices.filter(
+    (inv) => inv.status !== "void" && inv.balanceDueCents > 0,
+  )
 
   const [state, setState] = React.useState<FormState>(() => buildInitialFormState(defaultCurrency))
   const [submitError, setSubmitError] = React.useState<string | null>(null)
+  const [convertProformaAfter, setConvertProformaAfter] = React.useState(false)
+  const convertProformaTouchedRef = React.useRef(false)
   const initializedRef = React.useRef(false)
 
-  // When the dialog opens, reset to defaults. Once invoices load, auto-pick
-  // the only outstanding invoice (or the first invoice) and pre-fill the
-  // amount with its balance due — what the operator almost always wants.
+  // Reset on close; in edit mode, prefill from the snapshot once the
+  // invoices list loads. In create mode the operator picks an invoice
+  // explicitly — selecting one fills amount/currency from the row.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot init guarded by `initializedRef`; we intentionally don't re-fire when the derived `selectableInvoices[0]` reference changes
   React.useEffect(() => {
     if (!open) {
       initializedRef.current = false
       setSubmitError(null)
+      setConvertProformaAfter(false)
+      convertProformaTouchedRef.current = false
       return
     }
     if (!initializedRef.current && !invoicesQuery.isLoading) {
@@ -182,6 +189,10 @@ export function RecordBookingPaymentDialog({
           notes: editingPayment.notes ?? "",
         })
       } else {
+        // Auto-select the first outstanding invoice so the operator
+        // doesn't have to click the picker when there's only one
+        // option (the common case). The user can still re-pick from
+        // the dropdown.
         const target = selectableInvoices[0]
         setState({
           ...buildInitialFormState(defaultCurrency),
@@ -192,7 +203,7 @@ export function RecordBookingPaymentDialog({
       }
       initializedRef.current = true
     }
-  }, [open, invoicesQuery.isLoading, selectableInvoices, defaultCurrency, editingPayment])
+  }, [open, invoicesQuery.isLoading, defaultCurrency, editingPayment])
 
   const selectedInvoice = invoices.find((inv) => inv.id === state.invoiceId) ?? null
   const invoiceCurrency = selectedInvoice?.currency ?? ""
@@ -204,6 +215,13 @@ export function RecordBookingPaymentDialog({
   const requiresBaseAmount = isCrossCurrency && state.status === "completed"
   const createMutation = useInvoicePaymentMutation(state.invoiceId)
   const { update: updateMutation } = usePaymentMutation()
+  const { convertToInvoice: convertProformaMutation } = useInvoiceMutation()
+  // Only offer the proforma→invoice conversion when (a) recording a
+  // brand-new payment (not editing), (b) the selected invoice is a
+  // proforma, (c) the payment is being marked completed (a pending or
+  // failed payment shouldn't trigger conversion).
+  const isProformaSelected = selectedInvoice?.invoiceType === "proforma"
+  const canConvertProformaAfter = !isEditing && isProformaSelected && state.status === "completed"
   const isPending = isEditing ? updateMutation.isPending : createMutation.isPending
   const fxRateQuery = useInvoiceFxRate({
     baseCurrency: normalizedInvoiceCurrency || undefined,
@@ -231,6 +249,23 @@ export function RecordBookingPaymentDialog({
     !fxRateQuery.isFetching &&
     !autoEffectiveRate &&
     fxRateQuery.isFetched
+
+  // Heuristic: prefill the "Convert proforma to invoice" switch ON
+  // only when this payment will close the proforma — i.e. the entered
+  // amount (in invoice currency, directly or via FX) covers the
+  // invoice's remaining balance. Partial payments stay off since the
+  // proforma still has balance due after recording. The operator can
+  // override either way; once they toggle, we freeze the choice.
+  const fullyCoversInvoiceBalance =
+    selectedInvoice != null &&
+    selectedInvoice.balanceDueCents > 0 &&
+    (isCrossCurrency
+      ? baseAmountCents > 0 && baseAmountCents >= selectedInvoice.balanceDueCents
+      : state.amountCents > 0 && state.amountCents >= selectedInvoice.balanceDueCents)
+  React.useEffect(() => {
+    if (convertProformaTouchedRef.current) return
+    setConvertProformaAfter(canConvertProformaAfter && fullyCoversInvoiceBalance)
+  }, [canConvertProformaAfter, fullyCoversInvoiceBalance])
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setState((prev) => ({ ...prev, [key]: value }))
@@ -302,6 +337,14 @@ export function RecordBookingPaymentDialog({
         await updateMutation.mutateAsync({ id: editingPayment.id, input: payload })
       } else {
         await createMutation.mutateAsync(payload)
+        // The proforma → final invoice conversion is the last step so a
+        // failure here doesn't roll back the payment (it's already in).
+        // Server-side `convert-to-invoice` voids the proforma, creates
+        // the final invoice, and moves payments onto it — exactly what
+        // the operator would otherwise do by hand from the Invoices tab.
+        if (canConvertProformaAfter && convertProformaAfter && selectedInvoice) {
+          await convertProformaMutation.mutateAsync({ id: selectedInvoice.id })
+        }
       }
       onOpenChange(false)
       onRecorded?.()
@@ -310,230 +353,227 @@ export function RecordBookingPaymentDialog({
     }
   }
 
-  const descriptionParts = dialog.description.split("{generateLink}")
+  const showEmptyState = !isEditing && !invoicesQuery.isLoading && selectableInvoices.length === 0
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg">
-        <DialogHeader>
+      <DialogContent size="lg" className="gap-0 p-0">
+        <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>{isEditing ? dialog.editTitle : dialog.title}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <DialogBody className="grid gap-4">
-            {isEditing ? null : (
-              <p className="text-sm text-muted-foreground">
-                {descriptionParts[0]}
-                <span className="font-medium">{dialog.generateLinkLabel}</span>
-                {descriptionParts[1]}
-              </p>
-            )}
 
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="record-invoice">{dialog.fields.invoice}</Label>
-              {invoicesQuery.isLoading ? (
-                <p className="text-sm text-muted-foreground">{dialog.loadingInvoices}</p>
-              ) : selectableInvoices.length === 0 ? (
-                <p className="text-sm text-destructive">{dialog.noInvoices}</p>
-              ) : (
-                <Select
-                  value={state.invoiceId}
-                  disabled={isEditing}
-                  onValueChange={(value) => {
-                    const id = value ?? ""
-                    const next = invoices.find((inv) => inv.id === id)
-                    setState((prev) => ({
-                      ...prev,
-                      invoiceId: id,
-                      amountCents: next?.balanceDueCents ?? prev.amountCents,
-                      currency: next?.currency ?? prev.currency,
-                      fxOverride: false,
-                      fxRate: "",
-                    }))
-                  }}
-                >
-                  <SelectTrigger id="record-invoice" className="w-full">
-                    <SelectValue placeholder={dialog.placeholders.invoice} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {selectableInvoices.map((inv) => (
-                      <SelectItem key={inv.id} value={inv.id}>
-                        {formatMessage(dialog.invoiceOption, {
-                          number: inv.invoiceNumber,
-                          status: inv.status,
-                          balance: formatAmount(inv.balanceDueCents),
-                          currency: inv.currency,
-                        })}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              {selectedInvoice ? (
-                <p className="text-xs text-muted-foreground">
-                  {formatMessage(dialog.invoiceMeta, {
-                    total: formatAmount(selectedInvoice.totalCents),
-                    paid: formatAmount(selectedInvoice.paidCents),
-                    due: formatAmount(selectedInvoice.balanceDueCents),
-                    currency: selectedInvoice.currency,
-                  })}
-                </p>
-              ) : null}
+        {showEmptyState ? (
+          <>
+            <div className="px-6 py-6">
+              <p className="text-sm text-muted-foreground">{dialog.noInvoices}</p>
             </div>
-
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="record-amount">{dialog.fields.amountCents}</Label>
-                <CurrencyInput
-                  id="record-amount"
-                  value={state.amountCents}
-                  onChange={(next) => set("amountCents", next ?? 0)}
-                  currency={state.currency}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label>{dialog.fields.currency}</Label>
-                <CurrencyCombobox
-                  value={state.currency || null}
-                  onChange={(next) =>
-                    setPaymentCurrency(next ?? selectedInvoice?.currency ?? defaultCurrency)
-                  }
-                  placeholder={dialog.placeholders.currency}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="record-date">{dialog.fields.paymentDate}</Label>
-                <DatePicker
-                  value={state.paymentDate || null}
-                  onChange={(next) => set("paymentDate", next ?? "")}
-                  className="w-full"
-                />
-              </div>
+            <div className="flex items-center justify-end gap-2 px-6 pb-6">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                {messages.common.cancel}
+              </Button>
             </div>
+          </>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <div className="flex flex-col gap-5 px-6 py-5">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="record-invoice">{dialog.fields.invoice}</Label>
+                {invoicesQuery.isLoading ? (
+                  <p className="text-sm text-muted-foreground">{dialog.loadingInvoices}</p>
+                ) : (
+                  <Select
+                    value={state.invoiceId}
+                    disabled={isEditing}
+                    onValueChange={(value) => {
+                      const id = value ?? ""
+                      const next = invoices.find((inv) => inv.id === id)
+                      setState((prev) => ({
+                        ...prev,
+                        invoiceId: id,
+                        amountCents: next?.balanceDueCents ?? prev.amountCents,
+                        currency: next?.currency ?? prev.currency,
+                        fxOverride: false,
+                        fxRate: "",
+                      }))
+                    }}
+                  >
+                    <SelectTrigger id="record-invoice" className="w-full">
+                      <SelectValue placeholder={dialog.placeholders.invoice} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectableInvoices.map((inv) => (
+                        <SelectItem key={inv.id} value={inv.id}>
+                          {formatMessage(dialog.invoiceOption, {
+                            number: inv.invoiceNumber,
+                            status: inv.status,
+                            balance: formatAmount(inv.balanceDueCents),
+                            currency: inv.currency,
+                          })}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
 
-            {isCrossCurrency ? (
-              <div className="rounded-md border bg-muted/20 p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-medium">{dialog.fx.title}</h3>
-                    {fxRateQuery.isFetching ? (
-                      <p className="text-xs text-muted-foreground">{dialog.fx.loadingRate}</p>
-                    ) : autoRateUnavailable ? (
-                      <p className="text-xs text-destructive">
-                        {formatMessage(dialog.fx.rateUnavailable, {
-                          invoiceCurrency,
-                          paymentCurrency,
-                        })}
-                      </p>
-                    ) : effectiveFxRate && baseAmountCents > 0 ? (
-                      <>
-                        <p className="text-sm">
-                          {formatMessage(dialog.fx.summary, {
-                            amount: formatAmount(state.amountCents),
-                            paymentCurrency,
-                            baseAmount: formatAmount(baseAmountCents),
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="record-amount">{dialog.fields.amountCents}</Label>
+                  <CurrencyInput
+                    id="record-amount"
+                    value={state.amountCents}
+                    onChange={(next) => set("amountCents", next ?? 0)}
+                    currency={state.currency}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label>{dialog.fields.currency}</Label>
+                  <CurrencyCombobox
+                    value={state.currency || null}
+                    onChange={(next) =>
+                      setPaymentCurrency(next ?? selectedInvoice?.currency ?? defaultCurrency)
+                    }
+                    placeholder={dialog.placeholders.currency}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="record-date">{dialog.fields.paymentDate}</Label>
+                  <DatePicker
+                    value={state.paymentDate || null}
+                    onChange={(next) => set("paymentDate", next ?? "")}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {isCrossCurrency ? (
+                <div className="rounded-md border bg-muted/20 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <h3 className="text-sm font-medium">{dialog.fx.title}</h3>
+                      {fxRateQuery.isFetching ? (
+                        <p className="text-xs text-muted-foreground">{dialog.fx.loadingRate}</p>
+                      ) : autoRateUnavailable ? (
+                        <p className="text-xs text-destructive">
+                          {formatMessage(dialog.fx.rateUnavailable, {
                             invoiceCurrency,
-                            rate: formatRateDisplay(effectiveFxRate),
+                            paymentCurrency,
                           })}
                         </p>
-                        {!state.fxOverride && autoCommissionBps > 0 ? (
-                          <p className="text-xs text-muted-foreground">
-                            {formatMessage(dialog.fx.commissionNote, {
-                              rawRate: autoRawRate ? formatRateDisplay(autoRawRate) : "",
-                              commission: formatCommissionPercent(autoCommissionBps),
-                              invoiceCurrency,
+                      ) : effectiveFxRate && baseAmountCents > 0 ? (
+                        <>
+                          <p className="text-sm">
+                            {formatMessage(dialog.fx.summary, {
+                              amount: formatAmount(state.amountCents),
                               paymentCurrency,
+                              baseAmount: formatAmount(baseAmountCents),
+                              invoiceCurrency,
+                              rate: formatRateDisplay(effectiveFxRate),
                             })}
                           </p>
-                        ) : !state.fxOverride && autoRawRate ? (
-                          <p className="text-xs text-muted-foreground">{dialog.fx.source}</p>
-                        ) : null}
-                      </>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">
-                        {formatMessage(dialog.fx.help, {
+                          {!state.fxOverride && autoCommissionBps > 0 ? (
+                            <p className="text-xs text-muted-foreground">
+                              {formatMessage(dialog.fx.commissionNote, {
+                                rawRate: autoRawRate ? formatRateDisplay(autoRawRate) : "",
+                                commission: formatCommissionPercent(autoCommissionBps),
+                                invoiceCurrency,
+                                paymentCurrency,
+                              })}
+                            </p>
+                          ) : !state.fxOverride && autoRawRate ? (
+                            <p className="text-xs text-muted-foreground">{dialog.fx.source}</p>
+                          ) : null}
+                        </>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          {formatMessage(dialog.fx.help, {
+                            invoiceCurrency,
+                            paymentCurrency,
+                          })}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleOverride(!state.fxOverride)}
+                    >
+                      {state.fxOverride ? dialog.fx.useAuto : dialog.fx.override}
+                    </Button>
+                  </div>
+                  {state.fxOverride || autoRateUnavailable ? (
+                    <div className="mt-3 flex flex-col gap-2 sm:max-w-xs">
+                      <Label htmlFor="record-fx-rate">
+                        {formatMessage(dialog.fields.fxRate, {
                           invoiceCurrency,
                           paymentCurrency,
                         })}
-                      </p>
-                    )}
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleOverride(!state.fxOverride)}
-                  >
-                    {state.fxOverride ? dialog.fx.useAuto : dialog.fx.override}
-                  </Button>
+                      </Label>
+                      <Input
+                        id="record-fx-rate"
+                        value={state.fxRate}
+                        onChange={(event) =>
+                          setState((prev) => ({
+                            ...prev,
+                            fxOverride: true,
+                            fxRate: event.target.value,
+                          }))
+                        }
+                        inputMode="decimal"
+                        placeholder={formatMessage(dialog.placeholders.fxRate, {
+                          invoiceCurrency,
+                          paymentCurrency,
+                        })}
+                      />
+                    </div>
+                  ) : null}
                 </div>
-                {state.fxOverride || autoRateUnavailable ? (
-                  <div className="mt-3 flex flex-col gap-2 sm:max-w-xs">
-                    <Label htmlFor="record-fx-rate">
-                      {formatMessage(dialog.fields.fxRate, {
-                        invoiceCurrency,
-                        paymentCurrency,
-                      })}
-                    </Label>
-                    <Input
-                      id="record-fx-rate"
-                      value={state.fxRate}
-                      onChange={(event) =>
-                        setState((prev) => ({
-                          ...prev,
-                          fxOverride: true,
-                          fxRate: event.target.value,
-                        }))
-                      }
-                      inputMode="decimal"
-                      placeholder={formatMessage(dialog.placeholders.fxRate, {
-                        invoiceCurrency,
-                        paymentCurrency,
-                      })}
-                    />
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
+              ) : null}
 
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="flex flex-col gap-2">
-                <Label>{dialog.fields.status}</Label>
-                <Select
-                  value={state.status}
-                  onValueChange={(value) => set("status", (value ?? "completed") as PaymentStatus)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PAYMENT_STATUSES.map((value) => (
-                      <SelectItem key={value} value={value}>
-                        {statusLabels[value]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label>{dialog.fields.status}</Label>
+                  <Select
+                    value={state.status}
+                    onValueChange={(value) =>
+                      set("status", (value ?? "completed") as PaymentStatus)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_STATUSES.map((value) => (
+                        <SelectItem key={value} value={value}>
+                          {statusLabels[value]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label>{dialog.fields.paymentMethod}</Label>
+                  <Select
+                    value={state.paymentMethod}
+                    onValueChange={(value) =>
+                      set("paymentMethod", (value ?? "bank_transfer") as PaymentMethod)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_METHODS.map((value) => (
+                        <SelectItem key={value} value={value}>
+                          {methodLabels[value]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="flex flex-col gap-2">
-                <Label>{dialog.fields.paymentMethod}</Label>
-                <Select
-                  value={state.paymentMethod}
-                  onValueChange={(value) =>
-                    set("paymentMethod", (value ?? "bank_transfer") as PaymentMethod)
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PAYMENT_METHODS.map((value) => (
-                      <SelectItem key={value} value={value}>
-                        {methodLabels[value]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+
               <div className="flex flex-col gap-2">
                 <Label htmlFor="record-ref">{dialog.fields.referenceNumber}</Label>
                 <Input
@@ -543,38 +583,63 @@ export function RecordBookingPaymentDialog({
                   placeholder={dialog.placeholders.referenceNumber}
                 />
               </div>
-            </div>
 
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="record-notes">{dialog.fields.notes}</Label>
-              <Textarea
-                id="record-notes"
-                value={state.notes}
-                onChange={(event) => set("notes", event.target.value)}
-                rows={3}
-              />
-            </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="record-notes">{dialog.fields.notes}</Label>
+                <Textarea
+                  id="record-notes"
+                  value={state.notes}
+                  onChange={(event) => set("notes", event.target.value)}
+                  rows={3}
+                />
+              </div>
 
-            {submitError ? <p className="text-sm text-destructive">{submitError}</p> : null}
-          </DialogBody>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              {messages.common.cancel}
-            </Button>
-            <Button
-              type="submit"
-              disabled={
-                isPending ||
-                !state.invoiceId ||
-                state.amountCents <= 0 ||
-                (requiresBaseAmount && baseAmountCents <= 0)
-              }
-            >
-              {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? dialog.actions.save : dialog.actions.record}
-            </Button>
-          </DialogFooter>
-        </form>
+              {canConvertProformaAfter ? (
+                <div className="flex items-start justify-between gap-3 rounded-md border bg-muted/20 px-4 py-3">
+                  <div className="flex flex-col gap-1">
+                    <Label
+                      htmlFor="record-convert-proforma"
+                      className="cursor-pointer"
+                      onClick={() => setConvertProformaAfter((v) => !v)}
+                    >
+                      {dialog.fields.convertProformaAfter}
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {dialog.fields.convertProformaAfterHint}
+                    </p>
+                  </div>
+                  <Switch
+                    id="record-convert-proforma"
+                    checked={convertProformaAfter}
+                    onCheckedChange={(next) => {
+                      convertProformaTouchedRef.current = true
+                      setConvertProformaAfter(next)
+                    }}
+                  />
+                </div>
+              ) : null}
+
+              {submitError ? <p className="text-sm text-destructive">{submitError}</p> : null}
+            </div>
+            <div className="flex items-center justify-end gap-2 px-6 pb-6">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                {messages.common.cancel}
+              </Button>
+              <Button
+                type="submit"
+                disabled={
+                  isPending ||
+                  !state.invoiceId ||
+                  state.amountCents <= 0 ||
+                  (requiresBaseAmount && baseAmountCents <= 0)
+                }
+              >
+                {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {isEditing ? dialog.actions.save : dialog.actions.record}
+              </Button>
+            </div>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   )

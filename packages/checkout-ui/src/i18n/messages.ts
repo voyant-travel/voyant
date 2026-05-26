@@ -91,11 +91,17 @@ export type CheckoutUiMessages = {
     scheduleLabel: string
     /** Caption under the picker. */
     scheduleHelp: string
+    /** Placeholder when no schedule is selected — operator types a custom amount. */
+    scheduleCustomPlaceholder: string
+    /** Aria-label / tooltip for the X button that clears the picked schedule. */
+    scheduleClear: string
     /** "Full amount ({amount})" option label. */
     scheduleFullAmount: string
     /** Localized labels for each `payment_schedule_type` enum value. */
     scheduleTypeLabels: Record<"deposit" | "installment" | "balance" | "hold" | "other", string>
     amountLabel: string
+    amountLabelShort: string
+    currencyLabel: string
     amountHelp: string
     cancel: string
     done: string

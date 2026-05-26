@@ -113,6 +113,21 @@ export const invoiceRecordSchema = z
     voidReason: z.string().nullable().optional(),
     createdAt: z.string(),
     updatedAt: z.string(),
+    /**
+     * Distinct payment-schedule ids referenced by this invoice's line
+     * items. Populated by the list endpoint so the booking-detail
+     * payment-schedule table can hide "Generate invoice/proforma" when
+     * a document already covers a row.
+     */
+    bookingPaymentScheduleIds: z.array(z.string()).optional(),
+    /**
+     * For proforma rows, points at the final invoice that replaced
+     * this proforma (and is the inverse of `convertedFromInvoiceId`).
+     * Populated by `getInvoiceById` — letting the booking detail page
+     * surface "Invoiced" status + a deep link on a void proforma.
+     */
+    convertedToInvoiceId: z.string().nullable().optional(),
+    convertedToInvoiceNumber: z.string().nullable().optional(),
   })
   // Permissive on extra columns the server may return (e.g.
   // `convertedFromInvoiceId`, `baseCurrency`). Adding them all to the

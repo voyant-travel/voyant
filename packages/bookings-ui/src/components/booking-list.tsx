@@ -4,10 +4,8 @@ import {
   type BookingRecord,
   type BookingsListSortDir,
   type BookingsListSortField,
-  bookingStatusBadgeVariant,
   useBookings,
 } from "@voyantjs/bookings-react"
-import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
@@ -20,9 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from "@voyantjs/ui/components/table"
-import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Search, X } from "lucide-react"
+import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Search } from "lucide-react"
 import * as React from "react"
-
 import {
   formatMessage,
   useBookingsUiI18nOrDefault,
@@ -30,6 +27,7 @@ import {
 } from "../i18n/provider.js"
 import { BookingDialog } from "./booking-dialog.js"
 import { BOOKING_STATUS_ALL, BookingListFiltersPopover } from "./booking-list-filters.js"
+import { StatusBadge } from "./status-badge.js"
 
 export interface BookingListProps {
   pageSize?: number
@@ -56,7 +54,7 @@ const SORTABLE_COLUMNS = {
 } as const satisfies Record<SortableField, SortableField>
 
 const SKELETON_ROW_COUNT = 6
-const TABLE_COLUMN_COUNT = 9
+const TABLE_COLUMN_COUNT = 8
 
 export function BookingList({
   pageSize = 25,
@@ -91,9 +89,15 @@ export function BookingList({
   const paxMinNumber = paxMin === "" ? undefined : Number.parseInt(paxMin, 10)
   const paxMaxNumber = paxMax === "" ? undefined : Number.parseInt(paxMax, 10)
 
+  // "All" hides drafts + expired by default — they're rarely actionable
+  // and crowd the operator's queue. Explicit selection of either status
+  // (or any other) opts back in.
+  const excludeStatuses = status === BOOKING_STATUS_ALL ? ["draft", "expired"] : undefined
+
   const { data, isPending, isFetching, isError } = useBookings({
     search: search || undefined,
     status: status === BOOKING_STATUS_ALL ? undefined : status,
+    excludeStatuses,
     productId: productId ?? undefined,
     optionId: optionId ?? undefined,
     availabilitySlotId: availabilitySlotId ?? undefined,
@@ -172,7 +176,6 @@ export function BookingList({
     resetOffset()
   }
 
-  const filterMessages = messages.bookingList.filters
   const columnMessages = messages.bookingList.columns
   const statusLabels = messages.common.bookingStatusLabels
 
@@ -227,14 +230,9 @@ export function BookingList({
           paxMax={paxMax}
           onPaxMaxChange={setPaxMax}
           onFiltersChanged={resetOffset}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearFilters}
         />
-
-        {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters}>
-            <X className="mr-1 size-4" />
-            {filterMessages.clear}
-          </Button>
-        )}
 
         <div className="ml-auto flex items-center gap-2">
           {headerActions}
@@ -262,6 +260,16 @@ export function BookingList({
                 <SortHeader
                   label={columnMessages.bookingNumber}
                   field={SORTABLE_COLUMNS.bookingNumber}
+                  sortBy={sortBy}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                />
+              </TableHead>
+              <TableHead>{columnMessages.lead}</TableHead>
+              <TableHead>
+                <SortHeader
+                  label={columnMessages.createdAt}
+                  field={SORTABLE_COLUMNS.createdAt}
                   sortBy={sortBy}
                   sortDir={sortDir}
                   onSort={handleSort}
@@ -304,25 +312,6 @@ export function BookingList({
                   onSort={handleSort}
                 />
               </TableHead>
-              <TableHead>
-                <SortHeader
-                  label={columnMessages.endDate}
-                  field={SORTABLE_COLUMNS.endDate}
-                  sortBy={sortBy}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                />
-              </TableHead>
-              <TableHead>{columnMessages.lead}</TableHead>
-              <TableHead>
-                <SortHeader
-                  label={columnMessages.createdAt}
-                  field={SORTABLE_COLUMNS.createdAt}
-                  sortBy={sortBy}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                />
-              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -354,13 +343,15 @@ export function BookingList({
                   className="cursor-pointer"
                 >
                   <TableCell className="font-medium">{booking.bookingNumber}</TableCell>
+                  <TableCell>{formatLead(booking)}</TableCell>
+                  <TableCell>{formatBookingDateTime(booking.createdAt, formatDateTime)}</TableCell>
                   <TableCell>
                     {formatBookingItems(booking, messages.bookingList.itemsMore)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={bookingStatusBadgeVariant[booking.status]}>
+                    <StatusBadge status={booking.status}>
                       {statusLabels[booking.status]}
-                    </Badge>
+                    </StatusBadge>
                   </TableCell>
                   <TableCell>
                     {booking.sellAmountCents == null
@@ -373,12 +364,9 @@ export function BookingList({
                   <TableCell>{booking.pax ?? "—"}</TableCell>
                   <TableCell>
                     {formatBookingDateTime(booking.startsAt ?? booking.startDate, formatDateTime)}
-                  </TableCell>
-                  <TableCell>
+                    {" – "}
                     {formatBookingDateTime(booking.endsAt ?? booking.endDate, formatDateTime)}
                   </TableCell>
-                  <TableCell>{formatLead(booking)}</TableCell>
-                  <TableCell>{formatBookingDateTime(booking.createdAt, formatDateTime)}</TableCell>
                 </TableRow>
               ))
             )}

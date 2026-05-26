@@ -96,11 +96,11 @@ export const checkoutUiEn: CheckoutUiMessages = {
   },
   collectPaymentDialog: {
     title: "Generate payment link",
-    description:
-      "Produce a payment link the customer can open to pay by card or bank transfer. Share it however you prefer (email, chat, etc.).",
+    description: "Share with the customer to collect payment.",
     scheduleLabel: "Charge",
-    scheduleHelp:
-      "Pick a scheduled installment or the full amount. Edit the amount below for a custom charge.",
+    scheduleHelp: "",
+    scheduleCustomPlaceholder: "Custom amount",
+    scheduleClear: "Clear schedule",
     scheduleFullAmount: "Full amount ({amount})",
     scheduleTypeLabels: {
       deposit: "Deposit",
@@ -110,8 +110,9 @@ export const checkoutUiEn: CheckoutUiMessages = {
       other: "Other",
     },
     amountLabel: "Amount ({currency})",
-    amountHelp:
-      "Defaults to the booking's sell amount. Override for a deposit or partial collection.",
+    amountLabelShort: "Amount",
+    currencyLabel: "Currency",
+    amountHelp: "",
     cancel: "Cancel",
     done: "Done",
     generateLink: "Generate link",

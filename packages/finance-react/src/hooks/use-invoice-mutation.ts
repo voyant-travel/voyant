@@ -207,6 +207,12 @@ export interface CreateInvoiceFromBookingInput {
   externalRefs?: CreateInvoiceFromBookingExternalRefInput[]
   /** Defaults to `invoice` on the server. Pass `proforma` for placeholders. */
   invoiceType?: "invoice" | "proforma"
+  /**
+   * When `true`, downstream e-invoicing plugins (e.g. SmartBill) skip
+   * the auto-sync triggered by `invoice.issued`. The event still fires
+   * so other subscribers (ledgers, audit, etc.) see it.
+   */
+  skipExternalSync?: boolean
 }
 
 export interface CreateInvoiceFromBookingExternalRefInput {

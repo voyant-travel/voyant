@@ -47,6 +47,9 @@ vi.mock("@voyantjs/finance-react", () => ({
     update: { isPending: false, mutateAsync: testState.updateAsync },
     remove: { isPending: false, mutateAsync: vi.fn() },
   }),
+  useInvoiceMutation: () => ({
+    convertToInvoice: { isPending: false, mutateAsync: vi.fn() },
+  }),
   useInvoiceFxRate: ({ enabled }: { enabled?: boolean }) => ({
     data:
       enabled && testState.fxRate != null
@@ -108,6 +111,22 @@ vi.mock("@voyantjs/ui/components", async () => {
     SelectValue: () => null,
     Textarea: (props: ReactTypes.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
       <textarea {...props} />
+    ),
+    Switch: ({
+      checked,
+      onCheckedChange,
+      id,
+    }: {
+      checked?: boolean
+      onCheckedChange?: (next: boolean) => void
+      id?: string
+    }) => (
+      <input
+        type="checkbox"
+        id={id}
+        checked={checked ?? false}
+        onChange={(event) => onCheckedChange?.(event.target.checked)}
+      />
     ),
   }
 })

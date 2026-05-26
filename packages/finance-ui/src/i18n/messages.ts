@@ -179,7 +179,38 @@ export type FinanceUiMessages = {
       issueDate: string
       dueDate: string
       notes: string
+      /** Document kind: `Invoice` or `Proforma`. */
+      type: string
+      /** Source-of-truth selector: custom, from schedule. */
+      source: string
+      /** Picker shown when source is "from schedule". */
+      schedule: string
+      /** Toggle: also create a fully-paid payment for the new invoice. */
+      markAsPaid: string
+      /** Payment method picker shown when markAsPaid is on. */
+      markAsPaidMethod: string
+      /** Payment date picker shown when markAsPaid is on. */
+      markAsPaidDate: string
+      /** Toggle: push the document to SmartBill (or any active e-invoicing plugin). */
+      syncToSmartbill: string
+      /** Attachment dropzone label shown when syncToSmartbill is off. */
+      attachments: string
     }
+    typeLabels: {
+      invoice: string
+      proforma: string
+    }
+    sourceLabels: {
+      custom: string
+      schedule: string
+    }
+    schedulePlaceholder: string
+    scheduleEmpty: string
+    /** Description shown when source is "from schedule" — amounts are locked. */
+    scheduleLockedHint: string
+    attachmentsHint: string
+    /** Hint shown under the invoice number field when SmartBill assigns it. */
+    invoiceNumberAutoHint: string
     placeholders: {
       invoiceNumber: string
       bookingId: string
@@ -196,6 +227,18 @@ export type FinanceUiMessages = {
       currencyIsoCode: string
       issueDateRequired: string
       dueDateRequired: string
+      lineItemInvalid: string
+    }
+    lineItems: {
+      sectionTitle: string
+      addRow: string
+      empty: string
+      description: string
+      quantity: string
+      unitPrice: string
+      taxPercent: string
+      lineTotal: string
+      remove: string
     }
   }
   invoicesPage: {
@@ -612,6 +655,10 @@ export type FinanceUiMessages = {
       status: string
       referenceNumber: string
       notes: string
+      /** Switch shown when the selected invoice is a proforma. */
+      convertProformaAfter: string
+      /** Helper copy under the convert-proforma switch. */
+      convertProformaAfterHint: string
     }
     placeholders: {
       invoice: string

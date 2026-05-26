@@ -78,6 +78,12 @@ export interface InvoiceIssuedEvent {
   externalConfigKey?: string | null
   externalSeriesId?: string | null
   externalPlaceholderNumber?: string | null
+  /**
+   * Per-issuance opt-out flag. When `true`, e-invoicing plugins
+   * (SmartBill etc.) ignore this event instead of pushing the document
+   * upstream. Origin: `invoiceFromBookingSchema.skipExternalSync`.
+   */
+  skipExternalSync?: boolean
 }
 
 export interface InvoiceIssuedLineItem {
@@ -174,7 +180,7 @@ export async function issueInvoiceFromBooking(
     : (await updateIssuedInvoice(db))[0]
 
   const row = issued ?? draft
-  await emitIssued(db, runtime, ISSUED_EVENT, row)
+  await emitIssued(db, runtime, ISSUED_EVENT, row, { skipExternalSync: input.skipExternalSync })
   return row
 }
 
@@ -222,7 +228,9 @@ export async function issueProformaFromBooking(
     : (await updateIssuedInvoice(db))[0]
 
   const row = issued ?? draft
-  await emitIssued(db, runtime, PROFORMA_ISSUED_EVENT, row)
+  await emitIssued(db, runtime, PROFORMA_ISSUED_EVENT, row, {
+    skipExternalSync: input.skipExternalSync,
+  })
   return row
 }
 
@@ -231,9 +239,12 @@ async function emitIssued(
   runtime: InvoiceIssueRuntime,
   eventName: typeof ISSUED_EVENT | typeof PROFORMA_ISSUED_EVENT,
   invoice: typeof invoices.$inferSelect,
+  options: { skipExternalSync?: boolean } = {},
 ): Promise<void> {
   if (!runtime.eventBus) return
-  await runtime.eventBus.emit(eventName, await buildInvoiceIssuedEvent(db, invoice, runtime))
+  const payload = await buildInvoiceIssuedEvent(db, invoice, runtime)
+  if (options.skipExternalSync) payload.skipExternalSync = true
+  await runtime.eventBus.emit(eventName, payload)
 }
 
 async function emitProformaConverted(

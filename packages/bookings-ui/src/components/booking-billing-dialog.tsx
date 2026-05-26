@@ -11,7 +11,6 @@ import {
   DialogTitle,
   Input,
   Label,
-  Textarea,
 } from "@voyantjs/ui/components"
 import { CountryCombobox } from "@voyantjs/ui/components/country-combobox"
 import { PhoneInput } from "@voyantjs/ui/components/phone-input"
@@ -164,11 +163,11 @@ export function BookingBillingDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>{messages.fields.addressLine1}</Label>
-                <Textarea rows={2} {...form.register("contactAddressLine1")} />
+                <Input {...form.register("contactAddressLine1")} />
               </div>
               <div className="flex flex-col gap-2">
                 <Label>{messages.fields.addressLine2}</Label>
-                <Textarea rows={2} {...form.register("contactAddressLine2")} />
+                <Input {...form.register("contactAddressLine2")} />
               </div>
             </div>
 

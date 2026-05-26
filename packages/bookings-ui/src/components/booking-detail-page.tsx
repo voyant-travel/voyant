@@ -2,58 +2,67 @@
 
 import {
   type BookingRecord,
-  bookingStatusBadgeVariant,
   useBooking,
+  useBookingItems,
   useBookingMutation,
 } from "@voyantjs/bookings-react"
 import { useOrganization, usePerson } from "@voyantjs/crm-react"
-import { useInvoiceMutation } from "@voyantjs/finance-react"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Badge,
   Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   cn,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
 } from "@voyantjs/ui/components"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@voyantjs/ui/components/collapsible"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@voyantjs/ui/components/tooltip"
 import {
   Ban,
-  Calendar,
+  ChevronDown,
   ChevronRight,
   CreditCard,
   Mail,
   MapPin,
-  MoreHorizontal,
   Pencil,
   Phone,
+  Plus,
   RefreshCw,
   Trash2,
-  Users,
 } from "lucide-react"
-import { type ReactNode, useState } from "react"
+import { Fragment, type ReactNode, useState } from "react"
 
-import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/index.js"
+import {
+  formatMessage,
+  useBookingsUiI18nOrDefault,
+  useBookingsUiMessagesOrDefault,
+} from "../i18n/index.js"
 import { BookingActivityTimeline } from "./booking-activity-timeline.js"
 import { BookingBillingDialog } from "./booking-billing-dialog.js"
 import { BookingCancellationDialog } from "./booking-cancellation-dialog.js"
 import { BookingDialog } from "./booking-dialog.js"
 import { BookingGroupSection } from "./booking-group-section.js"
 import { BookingGuaranteeList } from "./booking-guarantee-list.js"
-import { BookingItemList } from "./booking-item-list.js"
+import { BookingItemList, type BookingItemResourceKind } from "./booking-item-list.js"
 import { BookingNotes } from "./booking-notes.js"
-import { BookingPaymentReconciliationBanner } from "./booking-payment-reconciliation-banner.js"
 import { BookingPaymentScheduleList } from "./booking-payment-schedule-list.js"
 import {
   BookingPaymentsSummary,
   type BookingPaymentsSummaryRow,
 } from "./booking-payments-summary.js"
+import { StatusBadge } from "./status-badge.js"
 import { StatusChangeDialog } from "./status-change-dialog.js"
 import { SupplierStatusList } from "./supplier-status-list.js"
 import { TravelerList } from "./traveler-list.js"
@@ -100,12 +109,45 @@ export interface BookingDetailPageProps {
    * (use when the host shell already renders breadcrumbs). */
   hideBreadcrumb?: boolean
   onBack?: () => void
-  onPersonOpen?: (personId: string) => void
-  onOrganizationOpen?: (organizationId: string) => void
-  /** Wired to a primary `Generate payment link` button on the Payments tab. */
-  onCollectPayment?: (booking: BookingRecord) => void
-  /** Wired to a secondary `Record payment` button on the Payments tab. */
+  /**
+   * Forwarded to the finance-tab `BookingPaymentsSummary` header as a
+   * `Record payment` action button.
+   */
   onRecordPayment?: (booking: BookingRecord) => void
+  /**
+   * When set, the Record payment header button renders disabled and its
+   * tooltip shows this reason. Use for "nothing left to pay" states.
+   */
+  recordPaymentDisabledReason?: string | null
+  /**
+   * When set, the Add schedule button in the payment-schedule section
+   * renders disabled and its tooltip shows this reason.
+   */
+  addScheduleDisabledReason?: string | null
+  /**
+   * Amount the customer has paid so far against this booking, in cents
+   * of `booking.sellCurrency`. When provided, a `Paid` stat is shown
+   * next to `Total`. Resolution (invoices vs. raw payments) is left to
+   * the host template — `bookings-ui` doesn't fetch finance data.
+   */
+  paidAmountCents?: number | null
+  /**
+   * Open a linked resource referenced by a booking item (product or
+   * availability slot) in the host app. When omitted, the item-snapshot
+   * sheet renders the names as plain text.
+   */
+  onItemResourceOpen?: (kind: BookingItemResourceKind, id: string) => void
+  /** Open the linked CRM person's detail page (used by the Payer card). */
+  onPersonOpen?: (personId: string) => void
+  /** Open the linked CRM organization's detail page (used by the Payer card). */
+  onOrganizationOpen?: (organizationId: string) => void
+  /**
+   * Open an invoice in-place when the operator clicks the invoice
+   * number in the Payments row. Typically wired to a `Sheet` that
+   * renders the invoice-detail view so the admin doesn't leave the
+   * booking screen.
+   */
+  onInvoiceOpen?: (invoiceId: string, row: BookingPaymentsSummaryRow) => void
   /** Forwarded to the finance-tab `BookingPaymentsSummary` row menu. */
   onViewPayment?: (row: BookingPaymentsSummaryRow) => void
   /** Forwarded to the finance-tab `BookingPaymentsSummary` row menu. */
@@ -121,10 +163,14 @@ export function BookingDetailPage({
   locale,
   hideBreadcrumb,
   onBack,
+  onRecordPayment,
+  recordPaymentDisabledReason,
+  addScheduleDisabledReason,
+  paidAmountCents,
+  onItemResourceOpen,
   onPersonOpen,
   onOrganizationOpen,
-  onCollectPayment,
-  onRecordPayment,
+  onInvoiceOpen,
   onViewPayment,
   onEditPayment,
   onDeletePayment,
@@ -137,9 +183,25 @@ export function BookingDetailPage({
   const [editOpen, setEditOpen] = useState(false)
   const [statusDialogOpen, setStatusDialogOpen] = useState(false)
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const { data: bookingData, isPending } = useBooking(id)
   const { remove } = useBookingMutation()
-  const { convertToInvoice } = useInvoiceMutation()
+  const headerPersonId = bookingData?.data?.personId ?? null
+  const headerOrganizationId = bookingData?.data?.organizationId ?? null
+  const headerPerson = usePerson(headerPersonId ?? undefined, {
+    enabled: Boolean(headerPersonId),
+  }).data
+  const headerOrganization = useOrganization(headerOrganizationId ?? undefined, {
+    enabled: Boolean(headerOrganizationId) && !headerPersonId,
+  }).data
+  // Pull booking items so the subtitle can link to the primary product
+  // + availability slot. We pick the first item (or the one flagged
+  // `isPrimary` when present) — most bookings only have one product.
+  const headerItems = useBookingItems(id).data?.data ?? []
+  const primaryItem =
+    headerItems.find((item) => (item as { isPrimary?: boolean }).isPrimary) ??
+    headerItems[0] ??
+    null
 
   if (isPending) {
     return (
@@ -166,7 +228,85 @@ export function BookingDetailPage({
   const canCancel = ["draft", "on_hold", "confirmed", "in_progress"].includes(booking.status)
   const sellHint = booking.priceOverride?.isManual
     ? `${detailMessages.summaryPriceOverride}: ${booking.priceOverride.reason}`
-    : booking.sellCurrency
+    : undefined
+
+  const billingPersonName =
+    [booking.contactFirstName, booking.contactLastName].filter(Boolean).join(" ") ||
+    (headerPerson
+      ? [headerPerson.firstName, headerPerson.lastName].filter(Boolean).join(" ")
+      : "") ||
+    headerOrganization?.name ||
+    ""
+  const billingHref = headerPersonId
+    ? () => onPersonOpen?.(headerPersonId)
+    : headerOrganizationId
+      ? () => onOrganizationOpen?.(headerOrganizationId)
+      : null
+  const billingClickable =
+    billingHref && (headerPersonId ? Boolean(onPersonOpen) : Boolean(onOrganizationOpen))
+  const headerDateRange = booking.startDate
+    ? `${formatDate(booking.startDate, resolvedLocale, detailMessages.noValue)} - ${formatDate(
+        booking.endDate,
+        resolvedLocale,
+        detailMessages.noValue,
+      )}`
+    : null
+  const headerPax = booking.pax != null ? `${booking.pax} PAX` : null
+  const headerProductTitle = primaryItem?.productNameSnapshot ?? primaryItem?.title ?? null
+  const headerProductId = primaryItem?.productId ?? null
+  const headerSlotId = primaryItem?.availabilitySlotId ?? null
+  const headerSubtitleParts = [
+    billingPersonName ? (
+      billingClickable ? (
+        <button
+          key="billing"
+          type="button"
+          onClick={billingHref}
+          className="hover:text-foreground hover:underline"
+        >
+          {billingPersonName}
+        </button>
+      ) : (
+        <span key="billing">{billingPersonName}</span>
+      )
+    ) : null,
+    headerProductTitle ? (
+      headerProductId && onItemResourceOpen ? (
+        <button
+          key="product"
+          type="button"
+          onClick={() => onItemResourceOpen("product", headerProductId)}
+          className="inline-block max-w-[18rem] truncate align-bottom hover:text-foreground hover:underline"
+          title={headerProductTitle}
+        >
+          {headerProductTitle}
+        </button>
+      ) : (
+        <span
+          key="product"
+          className="inline-block max-w-[18rem] truncate align-bottom"
+          title={headerProductTitle}
+        >
+          {headerProductTitle}
+        </span>
+      )
+    ) : null,
+    headerDateRange ? (
+      headerSlotId && onItemResourceOpen ? (
+        <button
+          key="dates"
+          type="button"
+          onClick={() => onItemResourceOpen("availabilitySlot", headerSlotId)}
+          className="hover:text-foreground hover:underline"
+        >
+          {headerDateRange}
+        </button>
+      ) : (
+        <span key="dates">{headerDateRange}</span>
+      )
+    ) : null,
+    headerPax ? <span key="pax">{headerPax}</span> : null,
+  ].filter(Boolean) as ReactNode[]
 
   return (
     <div data-slot="booking-detail-page" className={cn("flex flex-col gap-6 p-6", className)}>
@@ -188,112 +328,104 @@ export function BookingDetailPage({
         </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold tracking-tight">{booking.bookingNumber}</h1>
-          <Badge variant={bookingStatusBadgeVariant[booking.status]}>
-            {getBookingStatusLabel(booking.status, messages.common.bookingStatusLabels)}
-          </Badge>
-        </div>
-        <ActionMenu>
-          <DropdownMenuItem onClick={() => setEditOpen(true)}>
-            <Pencil className="h-4 w-4" aria-hidden="true" />
-            {detailMessages.editAction}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setStatusDialogOpen(true)}>
-            <RefreshCw className="h-4 w-4" aria-hidden="true" />
-            {detailMessages.changeStatusAction}
-          </DropdownMenuItem>
-          {canCancel ? (
-            <DropdownMenuItem onClick={() => setCancelDialogOpen(true)}>
-              <Ban className="h-4 w-4" aria-hidden="true" />
-              {detailMessages.cancelBookingAction}
-            </DropdownMenuItem>
+      <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight">{booking.bookingNumber}</h1>
+            <StatusBadge status={booking.status}>
+              {getBookingStatusLabel(booking.status, messages.common.bookingStatusLabels)}
+            </StatusBadge>
+          </div>
+          {headerSubtitleParts.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+              {headerSubtitleParts.map((part, idx) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: order-stable, no reordering or removal
+                <Fragment key={idx}>
+                  {idx > 0 ? <span className="text-muted-foreground/60">/</span> : null}
+                  {part}
+                </Fragment>
+              ))}
+            </div>
           ) : null}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            variant="destructive"
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+            {detailMessages.editAction}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setStatusDialogOpen(true)}>
+            <RefreshCw className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+            {detailMessages.changeStatusAction}
+          </Button>
+          {canCancel ? (
+            <Button variant="outline" size="sm" onClick={() => setCancelDialogOpen(true)}>
+              <Ban className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+              {detailMessages.cancelBookingAction}
+            </Button>
+          ) : null}
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             disabled={remove.isPending}
-            onClick={async () => {
-              if (confirm(detailMessages.deleteConfirm)) {
-                await remove.mutateAsync(id)
-                onBack?.()
-              }
-            }}
+            onClick={() => setDeleteDialogOpen(true)}
           >
-            <Trash2 className="h-4 w-4" aria-hidden="true" />
+            <Trash2 className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
             {detailMessages.deleteAction}
-          </DropdownMenuItem>
-        </ActionMenu>
+          </Button>
+        </div>
       </div>
 
       {slots?.header?.(booking)}
 
-      <Card>
-        <CardContent className="grid grid-cols-2 gap-6 py-6 sm:grid-cols-4">
-          <SummaryStat
-            label={detailMessages.summarySell}
-            value={formatAmount(
-              booking.sellAmountCents,
-              booking.sellCurrency,
-              resolvedLocale,
-              detailMessages.noValue,
-            )}
-            hint={sellHint}
-          />
-          <SummaryStat
-            label={detailMessages.summaryCostMargin}
-            value={formatAmount(
-              booking.costAmountCents,
-              booking.sellCurrency,
-              resolvedLocale,
-              detailMessages.noValue,
-            )}
-            hint={formatMargin(booking.marginPercent, detailMessages.noValue)}
-          />
-          <SummaryStat
-            label={detailMessages.summaryDates}
-            value={
-              booking.startDate
-                ? `${formatDate(booking.startDate, resolvedLocale, detailMessages.noValue)} - ${formatDate(
-                    booking.endDate,
-                    resolvedLocale,
-                    detailMessages.noValue,
-                  )}`
-                : detailMessages.tbd
-            }
-            icon={<Calendar className="h-3.5 w-3.5" aria-hidden="true" />}
-          />
-          <SummaryStat
-            label={detailMessages.summaryTravelers}
-            value={booking.pax != null ? String(booking.pax) : detailMessages.noValue}
-            icon={<Users className="h-3.5 w-3.5" aria-hidden="true" />}
-          />
-
-          {booking.personId ? (
-            <SummaryPersonLink
-              label={detailMessages.summaryPerson}
-              personId={booking.personId}
-              onOpen={onPersonOpen}
-            />
-          ) : null}
-          {booking.organizationId ? (
-            <SummaryOrganizationLink
-              label={detailMessages.summaryOrganization}
-              organizationId={booking.organizationId}
-              onOpen={onOrganizationOpen}
-            />
-          ) : null}
-          <SummaryStat
-            label={detailMessages.summaryCreated}
-            value={formatDate(booking.createdAt, resolvedLocale, detailMessages.noValue)}
-          />
-          <SummaryStat
-            label={detailMessages.summaryUpdated}
-            value={formatDate(booking.updatedAt, resolvedLocale, detailMessages.noValue)}
-          />
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <StatCard label={detailMessages.summaryTotal} hint={sellHint}>
+          {formatAmount(
+            booking.sellAmountCents,
+            booking.sellCurrency,
+            resolvedLocale,
+            detailMessages.noValue,
+          )}
+        </StatCard>
+        <StatCard
+          label={detailMessages.summaryPaid}
+          badge={
+            paidAmountCents != null && booking.sellAmountCents
+              ? renderPercentBadge(
+                  Math.round((paidAmountCents / booking.sellAmountCents) * 100),
+                  paidBadgeClass,
+                )
+              : null
+          }
+        >
+          {paidAmountCents != null
+            ? formatAmount(
+                paidAmountCents,
+                booking.sellCurrency,
+                resolvedLocale,
+                detailMessages.noValue,
+              )
+            : detailMessages.noValue}
+        </StatCard>
+        <StatCard
+          label={detailMessages.summaryCostMargin}
+          badge={
+            booking.marginPercent != null
+              ? renderPercentBadge(booking.marginPercent, marginBadgeClass)
+              : null
+          }
+        >
+          {formatAmount(
+            booking.costAmountCents,
+            booking.sellCurrency,
+            resolvedLocale,
+            detailMessages.noValue,
+          )}
+        </StatCard>
+        <StatCard label={detailMessages.summaryCreated}>
+          {formatDate(booking.createdAt, resolvedLocale, detailMessages.noValue)}
+        </StatCard>
+      </div>
 
       {slots?.afterSummary?.(booking)}
 
@@ -307,19 +439,20 @@ export function BookingDetailPage({
               {slots.invoicesTab.label ?? detailMessages.tabInvoices}
             </TabsTrigger>
           ) : null}
-          <TabsTrigger value="suppliers">{detailMessages.tabSuppliers}</TabsTrigger>
           <TabsTrigger value="documents">{detailMessages.tabDocuments}</TabsTrigger>
+          <TabsTrigger value="suppliers">{detailMessages.tabSuppliers}</TabsTrigger>
           <TabsTrigger value="activity">{detailMessages.tabActivity}</TabsTrigger>
           {slots?.ledgerTab ? (
             <TabsTrigger value="ledger">
               {slots.ledgerTab.label ?? detailMessages.tabLedger}
             </TabsTrigger>
           ) : null}
+          <TabsTrigger value="meta">{detailMessages.tabMeta}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4 flex flex-col gap-6">
           {slots?.overviewStart?.(booking)}
-          <BookingItemList bookingId={id} />
+          <BookingItemList bookingId={id} onResourceOpen={onItemResourceOpen} />
           <BookingGroupSection bookingId={id} />
           {visibleInternalNotes(booking.internalNotes) ? (
             <Card>
@@ -338,27 +471,19 @@ export function BookingDetailPage({
 
         <TabsContent value="travelers" className="mt-4 flex flex-col gap-6">
           {slots?.travelersStart?.(booking)}
-          <BookingBillingContextCard booking={booking} />
+          <BookingBillingContextCard
+            booking={booking}
+            onPersonOpen={onPersonOpen}
+            onOrganizationOpen={onOrganizationOpen}
+          />
           <TravelerList bookingId={id} autoReveal />
         </TabsContent>
 
         <TabsContent value="finance" className="mt-4 flex flex-col gap-6">
-          {onCollectPayment || onRecordPayment ? (
-            <div className="flex items-center justify-end gap-2">
-              {onRecordPayment ? (
-                <Button variant="outline" onClick={() => onRecordPayment(booking)}>
-                  {detailMessages.recordPaymentAction}
-                </Button>
-              ) : null}
-              {onCollectPayment ? (
-                <Button onClick={() => onCollectPayment(booking)}>
-                  {detailMessages.collectPaymentAction}
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
-          {slots?.financeStart?.(booking)}
-          <BookingPaymentReconciliationBanner bookingId={id} />
+          <BookingPaymentScheduleList
+            bookingId={id}
+            addScheduleDisabledReason={addScheduleDisabledReason ?? null}
+          />
           {slots?.paymentsContent ? (
             renderDetailSlot(slots.paymentsContent, booking)
           ) : (
@@ -366,13 +491,30 @@ export function BookingDetailPage({
               bookingId={id}
               variant="admin"
               onViewPayment={onViewPayment}
-              onConvertProforma={(row) => convertToInvoice.mutateAsync({ id: row.invoiceId })}
+              onInvoiceOpen={onInvoiceOpen}
               onEditPayment={onEditPayment}
               onDeletePayment={onDeletePayment}
+              headerAction={
+                onRecordPayment ? (
+                  <RecordPaymentHeaderButton
+                    label={detailMessages.recordPaymentAction}
+                    disabledReason={recordPaymentDisabledReason ?? null}
+                    onClick={() => onRecordPayment(booking)}
+                  />
+                ) : null
+              }
             />
           )}
-          <BookingPaymentScheduleList bookingId={id} />
-          <BookingGuaranteeList bookingId={id} />
+          {slots?.financeStart?.(booking)}
+          <Collapsible>
+            <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-md border bg-background px-4 py-3 text-sm font-semibold hover:bg-muted/30">
+              {messages.bookingGuaranteeList.title}
+              <ChevronDown className="h-4 w-4 transition-transform group-data-panel-open:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-3">
+              <BookingGuaranteeList bookingId={id} />
+            </CollapsibleContent>
+          </Collapsible>
           {slots?.financeEnd?.(booking)}
         </TabsContent>
 
@@ -382,10 +524,6 @@ export function BookingDetailPage({
           </TabsContent>
         ) : null}
 
-        <TabsContent value="suppliers" className="mt-4">
-          <SupplierStatusList bookingId={id} />
-        </TabsContent>
-
         <TabsContent value="documents" className="mt-4 flex flex-col gap-4">
           {slots?.documents ? (
             slots.documents(booking)
@@ -394,6 +532,10 @@ export function BookingDetailPage({
               {detailMessages.documentsSlotEmpty}
             </p>
           )}
+        </TabsContent>
+
+        <TabsContent value="suppliers" className="mt-4">
+          <SupplierStatusList bookingId={id} />
         </TabsContent>
 
         <TabsContent value="activity" className="mt-4 flex flex-col gap-6">
@@ -407,6 +549,17 @@ export function BookingDetailPage({
             {renderDetailSlot(slots.ledgerTab.content, booking)}
           </TabsContent>
         ) : null}
+
+        <TabsContent value="meta" className="mt-4">
+          <Card>
+            <CardContent className="grid grid-cols-2 gap-6 py-6 sm:grid-cols-4">
+              <SummaryStat
+                label={detailMessages.summaryUpdated}
+                value={formatDate(booking.updatedAt, resolvedLocale, detailMessages.noValue)}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       <BookingDialog open={editOpen} onOpenChange={setEditOpen} booking={booking} />
@@ -423,7 +576,74 @@ export function BookingDetailPage({
         onOpenChange={setCancelDialogOpen}
         booking={booking}
       />
+
+      <AlertDialog
+        open={deleteDialogOpen}
+        onOpenChange={(next) => {
+          if (!next && !remove.isPending) setDeleteDialogOpen(false)
+        }}
+      >
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{detailMessages.deleteConfirm}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {booking.bookingNumber
+                ? formatMessage(detailMessages.deleteConfirmDescription, {
+                    number: booking.bookingNumber,
+                  })
+                : detailMessages.deleteConfirmDescriptionFallback}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={remove.isPending}>
+              {detailMessages.deleteCancel}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={remove.isPending}
+              onClick={async () => {
+                await remove.mutateAsync(id)
+                setDeleteDialogOpen(false)
+                onBack?.()
+              }}
+            >
+              {detailMessages.deleteConfirmAction}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  )
+}
+
+function RecordPaymentHeaderButton({
+  label,
+  disabledReason,
+  onClick,
+}: {
+  label: string
+  disabledReason: string | null
+  onClick: () => void
+}) {
+  if (disabledReason) {
+    return (
+      <Tooltip>
+        {/* biome-ignore lint/a11y/noNoninteractiveTabindex: required so disabled-button tooltips remain keyboard-discoverable */}
+        <TooltipTrigger render={<span tabIndex={0} className="inline-block" />}>
+          <Button variant="outline" size="sm" disabled className="pointer-events-none">
+            <Plus className="mr-2 h-4 w-4" />
+            {label}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{disabledReason}</TooltipContent>
+      </Tooltip>
+    )
+  }
+  return (
+    <Button variant="outline" size="sm" onClick={onClick}>
+      <Plus className="mr-2 h-4 w-4" />
+      {label}
+    </Button>
   )
 }
 
@@ -439,7 +659,17 @@ function renderDetailSlot(content: BookingDetailSlotContent, booking: BookingRec
  * person / organization so the operator still sees who they're
  * billing.
  */
-export function BookingBillingContextCard({ booking }: { booking: BookingRecord }) {
+export function BookingBillingContextCard({
+  booking,
+  onPersonOpen,
+  onOrganizationOpen,
+}: {
+  booking: BookingRecord
+  /** Open the linked CRM person's detail page. */
+  onPersonOpen?: (personId: string) => void
+  /** Open the linked CRM organization's detail page. */
+  onOrganizationOpen?: (organizationId: string) => void
+}) {
   const messages = useBookingsUiMessagesOrDefault().bookingDetailPage
   const [editOpen, setEditOpen] = useState(false)
   const person = usePerson(booking.personId ?? undefined, {
@@ -468,20 +698,47 @@ export function BookingBillingContextCard({ booking }: { booking: BookingRecord 
     .join(", ")
 
   return (
-    <>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <CreditCard className="h-4 w-4" aria-hidden="true" />
-            {messages.billingPayer}
-          </CardTitle>
-          <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
-            <Pencil className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
-            {messages.editAction}
-          </Button>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-4">
-          <BillingField label={messages.billingPayer} value={payerName || messages.noValue} />
+    <div data-slot="booking-billing-context" className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <h2 className="flex items-center gap-2 text-base font-semibold">
+          <CreditCard className="h-4 w-4" aria-hidden="true" />
+          {messages.billingPayer}
+        </h2>
+        <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+          <Pencil className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+          {messages.editAction}
+        </Button>
+      </div>
+      <div className="flex flex-col gap-4 rounded-md border p-4">
+        <div className="grid gap-4 md:grid-cols-3">
+          <BillingField
+            label={messages.billingPayer}
+            value={
+              payerName ? (
+                booking.personId && onPersonOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => onPersonOpen(booking.personId as string)}
+                    className="text-left text-primary hover:underline"
+                  >
+                    {payerName}
+                  </button>
+                ) : booking.organizationId && !booking.personId && onOrganizationOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => onOrganizationOpen(booking.organizationId as string)}
+                    className="text-left text-primary hover:underline"
+                  >
+                    {payerName}
+                  </button>
+                ) : (
+                  payerName
+                )
+              ) : (
+                messages.noValue
+              )
+            }
+          />
           <BillingField
             label={messages.billingEmail}
             value={email ?? messages.noValue}
@@ -492,15 +749,15 @@ export function BookingBillingContextCard({ booking }: { booking: BookingRecord 
             value={phone ?? messages.noValue}
             icon={<Phone className="h-3.5 w-3.5" aria-hidden="true" />}
           />
-          <BillingField
-            label={messages.billingAddress}
-            value={address || messages.noValue}
-            icon={<MapPin className="h-3.5 w-3.5" aria-hidden="true" />}
-          />
-        </CardContent>
-      </Card>
+        </div>
+        <BillingField
+          label={messages.billingAddress}
+          value={address || messages.noValue}
+          icon={<MapPin className="h-3.5 w-3.5" aria-hidden="true" />}
+        />
+      </div>
       <BookingBillingDialog open={editOpen} onOpenChange={setEditOpen} booking={booking} />
-    </>
+    </div>
   )
 }
 
@@ -527,7 +784,65 @@ function SummaryStat({
   )
 }
 
-function BillingField({ label, value, icon }: { label: string; value: string; icon?: ReactNode }) {
+function StatCard({
+  label,
+  children,
+  hint,
+  badge,
+}: {
+  label: string
+  children: ReactNode
+  hint?: string
+  badge?: ReactNode
+}) {
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-1">
+        <div className="text-xs font-medium text-muted-foreground">{label}</div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="text-xl font-semibold tabular-nums leading-none">{children}</div>
+          {badge}
+        </div>
+        {hint ? <div className="text-xs text-muted-foreground">{hint}</div> : null}
+      </CardContent>
+    </Card>
+  )
+}
+
+/**
+ * Traffic-light badge for a percentage value. Color thresholds are
+ * passed in by the caller (Paid uses 0 → red, 0..100 → yellow, 100 →
+ * green; Margin uses <0 → red, 0..10 → yellow, >10 → green).
+ */
+function renderPercentBadge(percent: number, classFor: (percent: number) => string): ReactNode {
+  return (
+    <Badge variant="outline" className={cn("border-transparent", classFor(percent))}>
+      {percent}%
+    </Badge>
+  )
+}
+
+function paidBadgeClass(percent: number): string {
+  if (percent <= 0) return "bg-red-500/10 text-red-600 dark:text-red-400"
+  if (percent >= 100) return "bg-green-500/10 text-green-600 dark:text-green-400"
+  return "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
+}
+
+function marginBadgeClass(percent: number): string {
+  if (percent < 0) return "bg-red-500/10 text-red-600 dark:text-red-400"
+  if (percent > 10) return "bg-green-500/10 text-green-600 dark:text-green-400"
+  return "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
+}
+
+function BillingField({
+  label,
+  value,
+  icon,
+}: {
+  label: string
+  value: ReactNode
+  icon?: ReactNode
+}) {
   return (
     <div className="min-w-0">
       <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -535,83 +850,6 @@ function BillingField({ label, value, icon }: { label: string; value: string; ic
         {label}
       </div>
       <div className="truncate text-sm font-medium">{value}</div>
-    </div>
-  )
-}
-
-function ActionMenu({ children }: { children: ReactNode }) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-            <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-          </Button>
-        }
-      />
-      <DropdownMenuContent align="end">{children}</DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
-function SummaryPersonLink({
-  label,
-  personId,
-  onOpen,
-}: {
-  label: string
-  personId: string
-  onOpen?: (personId: string) => void
-}) {
-  // Hydrate the CRM person so the header shows a human name with a
-  // link to the detail page, falling back to the raw id while the
-  // record is in flight (or when the person was hard-deleted).
-  const person = usePerson(personId).data
-  const name = person ? [person.firstName, person.lastName].filter(Boolean).join(" ").trim() : ""
-  const display = name || personId
-  return (
-    <div className="flex min-w-0 flex-col gap-1">
-      <div className="text-xs font-medium text-muted-foreground">{label}</div>
-      {onOpen ? (
-        <button
-          type="button"
-          onClick={() => onOpen(personId)}
-          className="truncate text-left text-sm font-medium text-primary hover:underline"
-        >
-          {display}
-        </button>
-      ) : (
-        <span className="truncate text-sm font-medium">{display}</span>
-      )}
-    </div>
-  )
-}
-
-function SummaryOrganizationLink({
-  label,
-  organizationId,
-  onOpen,
-}: {
-  label: string
-  organizationId: string
-  onOpen?: (organizationId: string) => void
-}) {
-  const organization = useOrganization(organizationId).data
-  const display = organization?.name || organizationId
-  return (
-    <div className="flex min-w-0 flex-col gap-1">
-      <div className="text-xs font-medium text-muted-foreground">{label}</div>
-      {onOpen ? (
-        <button
-          type="button"
-          onClick={() => onOpen(organizationId)}
-          className="truncate text-left text-sm font-medium text-primary hover:underline"
-        >
-          {display}
-        </button>
-      ) : (
-        <span className="truncate text-sm font-medium">{display}</span>
-      )}
     </div>
   )
 }
@@ -627,16 +865,26 @@ function formatAmount(
   empty: string,
 ): string {
   if (cents == null) return empty
-  return new Intl.NumberFormat(locale, {
+  const amount = cents / 100
+  const amountText = new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 0,
+  }).format(amount)
+  // RON's "symbol" is just the ISO code itself, so a `<symbol> <amount> <code>`
+  // layout would print "RON 1.185 RON" — collapse it back to "1.185 RON".
+  if (currency.toUpperCase() === "RON") {
+    return `${amountText} ${currency}`
+  }
+  // Extract the locale's native symbol so we can always render
+  // `<symbol> <amount> <code>` regardless of where Intl would otherwise
+  // place the symbol for this locale (e.g. Romanian puts it after).
+  const parts = new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
+    currencyDisplay: "narrowSymbol",
     maximumFractionDigits: 0,
-  }).format(cents / 100)
-}
-
-function formatMargin(percent: number | null, empty: string): string {
-  if (percent == null) return empty
-  return `${percent.toFixed(0)}%`
+  }).formatToParts(amount)
+  const symbol = parts.find((p) => p.type === "currency")?.value ?? currency
+  return `${symbol} ${amountText} ${currency}`
 }
 
 function formatDate(iso: string | null, locale: string, empty: string): string {

@@ -106,53 +106,43 @@ function paymentScheduleToRows(
   totalAmountCents: number | null,
 ): BookingCreatePaymentScheduleInput[] {
   if (value.mode === "full") {
-    if (!value.fullDueDate || totalAmountCents === null) return []
+    const installment = value.installments[0]
+    if (!installment?.dueDate || totalAmountCents === null) return []
     return [
       {
         scheduleType: "balance",
-        status: value.fullAlreadyPaid ? "paid" : "due",
-        dueDate: value.fullDueDate,
+        status: installment.alreadyPaid ? "paid" : "due",
+        dueDate: installment.dueDate,
         currency,
         amountCents: totalAmountCents,
         notes: paidScheduleNotes(
-          value.fullAlreadyPaid,
-          value.fullPaymentDate,
-          value.fullPaymentMethod,
-          value.fullPaymentReference,
+          installment.alreadyPaid,
+          installment.paymentDate,
+          installment.paymentMethod,
+          installment.paymentReference,
         ),
       },
     ]
   }
 
-  // split
+  // split — N installments
   const rows: BookingCreatePaymentScheduleInput[] = []
-  if (value.splitFirstDueDate && value.splitFirstAmountCents != null) {
+  for (const [idx, installment] of value.installments.entries()) {
+    if (!installment.dueDate || installment.amountCents == null) continue
     rows.push({
       scheduleType: "installment",
-      status: value.splitFirstAlreadyPaid ? "paid" : "due",
-      dueDate: value.splitFirstDueDate,
+      // First installment defaults to `due` (immediately collectable),
+      // subsequent ones to `pending` so the dashboard's "next due" picker
+      // doesn't flag them all at once.
+      status: installment.alreadyPaid ? "paid" : idx === 0 ? "due" : "pending",
+      dueDate: installment.dueDate,
       currency,
-      amountCents: value.splitFirstAmountCents,
+      amountCents: installment.amountCents,
       notes: paidScheduleNotes(
-        value.splitFirstAlreadyPaid,
-        value.splitFirstPaymentDate,
-        value.splitFirstPaymentMethod,
-        value.splitFirstPaymentReference,
-      ),
-    })
-  }
-  if (value.splitSecondDueDate && value.splitSecondAmountCents != null) {
-    rows.push({
-      scheduleType: "installment",
-      status: value.splitSecondAlreadyPaid ? "paid" : "pending",
-      dueDate: value.splitSecondDueDate,
-      currency,
-      amountCents: value.splitSecondAmountCents,
-      notes: paidScheduleNotes(
-        value.splitSecondAlreadyPaid,
-        value.splitSecondPaymentDate,
-        value.splitSecondPaymentMethod,
-        value.splitSecondPaymentReference,
+        installment.alreadyPaid,
+        installment.paymentDate,
+        installment.paymentMethod,
+        installment.paymentReference,
       ),
     })
   }
@@ -197,14 +187,7 @@ function stripUnitSuffix(name: string): string {
  * `confirmed`; otherwise it lands in `awaiting_payment`.
  */
 function hasAnyPaidPayment(schedule: PaymentScheduleValue): boolean {
-  switch (schedule.mode) {
-    case "full":
-      return schedule.fullAlreadyPaid
-    case "split":
-      return schedule.splitFirstAlreadyPaid || schedule.splitSecondAlreadyPaid
-    default:
-      return false
-  }
+  return schedule.installments.some((installment) => installment.alreadyPaid)
 }
 
 /**
@@ -364,18 +347,22 @@ export function BookingCreateForm({
   const [pricing, setPricing] = React.useState<PriceBreakdownValue | null>(null)
   const [paymentSchedule, setPaymentSchedule] =
     React.useState<PaymentScheduleValue>(emptyPaymentScheduleValue)
-  const [generateContractDocument, setGenerateContractDocument] = React.useState(false)
-  const [generateInvoiceDocument, setGenerateInvoiceDocument] = React.useState(false)
-  const [notes, setNotes] = React.useState("")
   /**
-   * Operator override that forces the booking to land in `draft`
-   * regardless of payment state. Off by default — the dialog
-   * smart-defaults to `confirmed` (when any payment is marked paid)
-   * or `awaiting_payment` (when nothing is paid yet). The override
-   * exists so an operator can still capture a half-configured
-   * booking without committing it to the lifecycle.
+   * Mutually-exclusive document toggles. "Proforma" issues a single
+   * placeholder invoice; "Invoice + contract" issues a final invoice
+   * alongside the customer contract. Either off → no documents.
    */
-  const [createAsDraft, setCreateAsDraft] = React.useState(false)
+  const [generateProforma, setGenerateProformaState] = React.useState(false)
+  const [generateInvoiceAndContract, setGenerateInvoiceAndContractState] = React.useState(false)
+  const setGenerateProforma = (next: boolean) => {
+    setGenerateProformaState(next)
+    if (next) setGenerateInvoiceAndContractState(false)
+  }
+  const setGenerateInvoiceAndContract = (next: boolean) => {
+    setGenerateInvoiceAndContractState(next)
+    if (next) setGenerateProformaState(false)
+  }
+  const [notes, setNotes] = React.useState("")
   // Only relevant when the derived status is `confirmed`: when off,
   // the status transition carries `suppressNotifications: true` so
   // the auto-dispatch subscriber skips the customer email + document
@@ -409,10 +396,9 @@ export function BookingCreateForm({
       setVoucher(emptyVoucherPickerValue)
       setPricing(null)
       setPaymentSchedule(emptyPaymentScheduleValue)
-      setGenerateContractDocument(false)
-      setGenerateInvoiceDocument(false)
+      setGenerateProformaState(false)
+      setGenerateInvoiceAndContractState(false)
       setNotes("")
-      setCreateAsDraft(false)
       setNotifyTraveler(true)
       setError(null)
       setPayloadMismatchUnitIds([])
@@ -877,15 +863,12 @@ export function BookingCreateForm({
       // Smart-default status from payment state — any payment marked
       // "Already paid" implies the booking is effectively confirmed,
       // otherwise it lands in `awaiting_payment` so the operator can
-      // dispatch a payment link. Override available via the explicit
-      // "Create as draft" checkbox. The server commits this status in
+      // dispatch a payment link. The server commits this status in
       // the create transaction and emits `booking.confirmed`
       // post-commit when applicable — no second roundtrip.
-      const initialStatus = createAsDraft
-        ? undefined
-        : hasAnyPaidPayment(paymentSchedule)
-          ? ("confirmed" as const)
-          : ("awaiting_payment" as const)
+      const initialStatus = hasAnyPaidPayment(paymentSchedule)
+        ? ("confirmed" as const)
+        : ("awaiting_payment" as const)
 
       // Build the billing-contact snapshot from whichever CRM record
       // the operator picked, plus the primary identity address when
@@ -952,10 +935,15 @@ export function BookingCreateForm({
         paymentSchedules: paymentSchedules.length > 0 ? paymentSchedules : undefined,
         voucherRedemption,
         groupMembership,
-        documentGeneration: {
-          contractDocument: generateContractDocument,
-          invoiceDocument: generateInvoiceDocument,
-        },
+        documentGeneration: generateProforma
+          ? { contractDocument: false, invoiceDocument: true, invoiceType: "proforma" as const }
+          : generateInvoiceAndContract
+            ? {
+                contractDocument: true,
+                invoiceDocument: true,
+                invoiceType: "invoice" as const,
+              }
+            : { contractDocument: false, invoiceDocument: false },
         initialStatus,
         // Suppression only matters when transitioning to `confirmed` —
         // `awaiting_payment` doesn't trigger the auto-dispatch
@@ -1160,84 +1148,48 @@ export function BookingCreateForm({
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2 text-sm">
                   <Checkbox
-                    id="new-booking-generate-contract-document"
-                    checked={generateContractDocument}
-                    onCheckedChange={(value) => setGenerateContractDocument(value === true)}
+                    id="new-booking-generate-proforma"
+                    checked={generateProforma}
+                    onCheckedChange={(value) => setGenerateProforma(value === true)}
                   />
-                  <Label
-                    htmlFor="new-booking-generate-contract-document"
-                    className="cursor-pointer"
-                  >
-                    {messages.bookingCreateDialog.labels.generateContractDocument}
+                  <Label htmlFor="new-booking-generate-proforma" className="cursor-pointer">
+                    {messages.bookingCreateDialog.labels.generateProforma}
                   </Label>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Checkbox
-                    id="new-booking-generate-invoice-document"
-                    checked={generateInvoiceDocument}
-                    onCheckedChange={(value) => setGenerateInvoiceDocument(value === true)}
+                    id="new-booking-generate-invoice-and-contract"
+                    checked={generateInvoiceAndContract}
+                    onCheckedChange={(value) => setGenerateInvoiceAndContract(value === true)}
                   />
-                  <Label htmlFor="new-booking-generate-invoice-document" className="cursor-pointer">
-                    {messages.bookingCreateDialog.labels.generateInvoiceDocument}
+                  <Label
+                    htmlFor="new-booking-generate-invoice-and-contract"
+                    className="cursor-pointer"
+                  >
+                    {messages.bookingCreateDialog.labels.generateInvoiceAndContract}
                   </Label>
                 </div>
-                <div className="flex flex-col gap-2 border-t pt-2 text-sm">
-                  {(() => {
-                    const wouldBeConfirmed = hasAnyPaidPayment(paymentSchedule)
-                    const derivedStatusLabel = createAsDraft
-                      ? messages.common.bookingStatusLabels.draft
-                      : wouldBeConfirmed
-                        ? messages.common.bookingStatusLabels.confirmed
-                        : messages.common.bookingStatusLabels.awaiting_payment
-                    return (
-                      <>
-                        <div className="flex items-start gap-2">
-                          <Checkbox
-                            id="new-booking-create-as-draft"
-                            checked={createAsDraft}
-                            onCheckedChange={(v) => setCreateAsDraft(v === true)}
-                            className="mt-0.5"
-                          />
-                          <div className="flex flex-col gap-1">
-                            <Label
-                              htmlFor="new-booking-create-as-draft"
-                              className="cursor-pointer text-sm"
-                            >
-                              {messages.bookingCreateDialog.fields.createAsDraft}
-                            </Label>
-                            <p className="text-xs text-muted-foreground">
-                              {formatMessage(
-                                messages.bookingCreateDialog.fields.createAsDraftHint,
-                                { status: derivedStatusLabel },
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                        {!createAsDraft && wouldBeConfirmed ? (
-                          <div className="flex items-start gap-2 pl-6">
-                            <Checkbox
-                              id="new-booking-notify-traveler"
-                              checked={notifyTraveler}
-                              onCheckedChange={(v) => setNotifyTraveler(v === true)}
-                              className="mt-0.5"
-                            />
-                            <div className="flex flex-col gap-1">
-                              <Label
-                                htmlFor="new-booking-notify-traveler"
-                                className="cursor-pointer text-sm"
-                              >
-                                {messages.bookingCreateDialog.fields.notifyTraveler}
-                              </Label>
-                              <p className="text-xs text-muted-foreground">
-                                {messages.bookingCreateDialog.fields.notifyTravelerHint}
-                              </p>
-                            </div>
-                          </div>
-                        ) : null}
-                      </>
-                    )
-                  })()}
-                </div>
+                {hasAnyPaidPayment(paymentSchedule) ? (
+                  <div className="flex items-start gap-2 border-t pt-2 text-sm">
+                    <Checkbox
+                      id="new-booking-notify-traveler"
+                      checked={notifyTraveler}
+                      onCheckedChange={(v) => setNotifyTraveler(v === true)}
+                      className="mt-0.5"
+                    />
+                    <div className="flex flex-col gap-1">
+                      <Label
+                        htmlFor="new-booking-notify-traveler"
+                        className="cursor-pointer text-sm"
+                      >
+                        {messages.bookingCreateDialog.fields.notifyTraveler}
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        {messages.bookingCreateDialog.fields.notifyTravelerHint}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : null}
@@ -1268,11 +1220,9 @@ export function BookingCreateForm({
             disabled={isSubmitting || !product.productId || !slotId || !hasSelectedUnits}
           >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {createAsDraft
-              ? messages.bookingCreateDialog.actions.createDraftBooking
-              : hasAnyPaidPayment(paymentSchedule)
-                ? messages.bookingCreateDialog.actions.createConfirmedBooking
-                : messages.bookingCreateDialog.actions.createAwaitingPaymentBooking}
+            {hasAnyPaidPayment(paymentSchedule)
+              ? messages.bookingCreateDialog.actions.createConfirmedBooking
+              : messages.bookingCreateDialog.actions.createAwaitingPaymentBooking}
           </Button>
         </div>
       </div>
@@ -1315,6 +1265,7 @@ export function BookingCreateForm({
             onChange={setPaymentSchedule}
             currency={pricingCurrency}
             totalAmountCents={pricingTotalAmountCents}
+            departureDate={selectedSlot?.startsAt?.slice(0, 10) ?? null}
             labels={{
               heading: messages.bookingCreateDialog.labels.paymentHeading,
               modeUnpaid: messages.bookingCreateDialog.labels.paymentModeUnpaid,

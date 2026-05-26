@@ -6,6 +6,12 @@ export interface VoyantInvoiceEvent {
   id: string
   invoiceNumber?: string
   externalAllocationRequired?: boolean
+  /**
+   * When `true`, the SmartBill plugin ignores this event instead of
+   * pushing the document upstream. Set by the issuer when the operator
+   * opted out of external sync for this specific invoice.
+   */
+  skipExternalSync?: boolean
   [key: string]: unknown
 }
 
