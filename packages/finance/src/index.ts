@@ -267,6 +267,7 @@ export type {
   InvoiceRenderedEvent,
   InvoiceVoidedEvent,
   PaymentCompletedEvent,
+  PaymentScheduleLineDescriptionFormat,
   ResolvedInvoiceLine,
   UnifiedPaymentRow,
 } from "./service.js"
