@@ -1,5 +1,12 @@
 # @voyantjs/suppliers-react
 
+## 0.81.16
+
+### Patch Changes
+
+- @voyantjs/react@0.81.16
+- @voyantjs/suppliers@0.81.16
+
 ## 0.81.15
 
 ### Patch Changes
