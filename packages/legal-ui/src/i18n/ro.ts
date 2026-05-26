@@ -233,6 +233,12 @@ export const legalUiRo = {
       addAttachment: "Adauga atasament",
       addDocument: "Adauga document",
     },
+    generationFailure: {
+      defaultLabel: "Generarea a esuat",
+      templateError: "Eroare in sablon",
+      generatorFailed: "Generatorul PDF a esuat",
+      fallbackReason: "Ultima incercare de generare a esuat. Remediaza problema si reincearca.",
+    },
     sections: {
       details: "Detalii contract",
       parties: "Parti",
