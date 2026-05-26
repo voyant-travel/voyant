@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.81.15
+
+### Patch Changes
+
+- b6bc138: Add invoice-from-booking schedule line description format options for product-first and product-only legal line names.
+  - @voyantjs/action-ledger@0.81.15
+  - @voyantjs/bookings@0.81.15
+  - @voyantjs/core@0.81.15
+  - @voyantjs/db@0.81.15
+  - @voyantjs/hono@0.81.15
+  - @voyantjs/products@0.81.15
+  - @voyantjs/storage@0.81.15
+  - @voyantjs/utils@0.81.15
+
 ## 0.81.14
 
 ### Patch Changes

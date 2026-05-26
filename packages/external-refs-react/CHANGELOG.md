@@ -1,5 +1,12 @@
 # @voyantjs/external-refs-react
 
+## 0.81.15
+
+### Patch Changes
+
+- @voyantjs/external-refs@0.81.15
+- @voyantjs/react@0.81.15
+
 ## 0.81.14
 
 ### Patch Changes
