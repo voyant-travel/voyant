@@ -1,5 +1,11 @@
 # @voyantjs/i18n
 
+## 0.81.13
+
+### Patch Changes
+
+- 36421aa: Persist contract document generation failure details on contract metadata and surface operator-facing failure labels.
+
 ## 0.81.12
 
 ## 0.81.11

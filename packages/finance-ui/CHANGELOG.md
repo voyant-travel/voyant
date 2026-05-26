@@ -1,5 +1,19 @@
 # @voyantjs/finance-ui
 
+## 0.81.13
+
+### Patch Changes
+
+- ad95d4c: Expose payment view/edit/delete wiring from booking detail finance cards and add optional edit/delete actions to payment detail headers.
+- Updated dependencies [ad95d4c]
+- Updated dependencies [36421aa]
+  - @voyantjs/bookings-ui@0.81.13
+  - @voyantjs/finance@0.81.13
+  - @voyantjs/finance-react@0.81.13
+  - @voyantjs/i18n@0.81.13
+  - @voyantjs/suppliers-ui@0.81.13
+  - @voyantjs/ui@0.81.13
+
 ## 0.81.12
 
 ### Patch Changes

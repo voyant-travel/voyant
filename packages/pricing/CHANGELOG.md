@@ -1,5 +1,16 @@
 # @voyantjs/pricing
 
+## 0.81.13
+
+### Patch Changes
+
+- ad95d4c: Load rrule through its default CommonJS export so built ESM entrypoints import cleanly in Node.
+  - @voyantjs/availability@0.81.13
+  - @voyantjs/core@0.81.13
+  - @voyantjs/db@0.81.13
+  - @voyantjs/hono@0.81.13
+  - @voyantjs/products@0.81.13
+
 ## 0.81.12
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @voyantjs/pricing-react
 
+## 0.81.13
+
+### Patch Changes
+
+- Updated dependencies [ad95d4c]
+  - @voyantjs/pricing@0.81.13
+  - @voyantjs/react@0.81.13
+
 ## 0.81.12
 
 ### Patch Changes
