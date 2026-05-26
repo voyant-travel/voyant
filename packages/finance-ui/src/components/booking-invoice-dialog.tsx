@@ -328,16 +328,19 @@ export function BookingInvoiceDialog({
           : undefined,
       })
 
-      // Fully-paid sibling payment row. The server recomputes invoice
-      // totals on POST so we don't need to PATCH the invoice ourselves.
-      if (markAsPaid && totalCents > 0) {
+      // Fully-paid sibling payment row. Use the totals returned by the
+      // server (which may differ from the locally-derived ones by a cent
+      // due to schedule tax back-out / rounding) — paying the local
+      // figure can leave the invoice short and break the one-click
+      // "Mark as paid" expectation (incl. proforma conversion triggers).
+      if (markAsPaid && created.totalCents > 0) {
         const paymentDate = markAsPaidDate || new Date().toISOString().split("T")[0] || issueDate
         await fetcher(`${baseUrl}/v1/admin/finance/invoices/${created.id}/payments`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            amountCents: totalCents,
-            currency,
+            amountCents: created.totalCents,
+            currency: created.currency,
             paymentMethod: markAsPaidMethod,
             status: "completed",
             paymentDate,
@@ -382,7 +385,6 @@ export function BookingInvoiceDialog({
     bookingId,
     invoiceNumber,
     currency,
-    totalCents,
     notes,
     invoiceType,
     syncToSmartbill,

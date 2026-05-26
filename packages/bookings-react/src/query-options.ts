@@ -54,11 +54,13 @@ export function getBookingsQueryOptions(
       const params = new URLSearchParams()
       if (filters.status) params.set("status", filters.status)
       if (filters.excludeStatuses && filters.excludeStatuses.length > 0) {
-        // Repeat the param so Zod's union(string | array) parses on the
-        // server. `URLSearchParams` preserves the order of `append`.
-        for (const value of filters.excludeStatuses) {
-          params.append("excludeStatuses", value)
-        }
+        // Send as a single comma-separated value rather than repeated
+        // params. The server's `parseQuery` uses
+        // `Object.fromEntries(searchParams)` which collapses duplicate
+        // keys to the last one — appending each status would silently
+        // drop all but the final entry. The schema's preprocess hook
+        // splits this back into an array.
+        params.set("excludeStatuses", filters.excludeStatuses.join(","))
       }
       if (filters.search) params.set("search", filters.search)
       if (filters.productId) params.set("productId", filters.productId)
