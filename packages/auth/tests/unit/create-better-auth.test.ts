@@ -213,6 +213,23 @@ describe("createBetterAuth", () => {
     expect(select).not.toHaveBeenCalled()
   })
 
+  it("treats blank surface array entries as missing surfaces for the signup block", async () => {
+    const { createBetterAuth } = await import("../../src/server.js")
+    const { db } = createDbWithUserCount(1)
+
+    createBetterAuth({
+      db: db as never,
+      secret: "x".repeat(32),
+      baseURL: "https://auth.example.com",
+    })
+
+    await expect(
+      latestBetterAuthConfig().databaseHooks.user.create.before({
+        surfaces: ["", "  "],
+      }),
+    ).rejects.toThrow("Sign-up is disabled. Ask an admin to invite you.")
+  })
+
   it("lets consumers customize the surfaces guarded by the signup block", async () => {
     const { createBetterAuth } = await import("../../src/server.js")
     const { db, select } = createDbWithUserCount(1)

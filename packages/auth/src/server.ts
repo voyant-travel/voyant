@@ -502,15 +502,15 @@ function signupBlockAppliesToUser(
   const surfaces = user?.surfaces
   if (Array.isArray(surfaces)) {
     const explicitSurfaces = surfaces.filter(
-      (surface): surface is string => typeof surface === "string",
+      (surface): surface is string => typeof surface === "string" && surface.trim().length > 0,
     )
     if (explicitSurfaces.length > 0) {
-      return explicitSurfaces.some((surface) => blockedSurfaces.includes(surface))
+      return explicitSurfaces.some((surface) => blockedSurfaces.includes(surface.trim()))
     }
   }
 
-  if (typeof surfaces === "string" && surfaces.length > 0) {
-    return blockedSurfaces.includes(surfaces)
+  if (typeof surfaces === "string" && surfaces.trim().length > 0) {
+    return blockedSurfaces.includes(surfaces.trim())
   }
 
   return blockedSurfaces.includes("admin")
