@@ -288,6 +288,13 @@
       "when": 1779748565000,
       "tag": "0040_invoice_line_item_payment_schedule",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1779830000000,
+      "tag": "0041_invoice_number_active_unique",
+      "breakpoints": true
     }
   ]
 }

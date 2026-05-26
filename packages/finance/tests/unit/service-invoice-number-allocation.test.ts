@@ -635,6 +635,144 @@ describe("financeService.createInvoiceFromBooking number allocation", () => {
   })
 })
 
+describe("financeService.applyExternalInvoiceAllocation", () => {
+  const pendingInvoice = {
+    id: "inv_new",
+    invoiceNumber: "PENDING-PROFORMA-abc",
+    invoiceType: "proforma",
+    bookingId: "book_123",
+    personId: null,
+    organizationId: null,
+    status: "pending_external_allocation",
+    currency: "RON",
+    baseCurrency: null,
+    fxRateSetId: null,
+    subtotalCents: 12_000,
+    baseSubtotalCents: null,
+    taxCents: 0,
+    baseTaxCents: null,
+    totalCents: 12_000,
+    baseTotalCents: null,
+    paidCents: 0,
+    basePaidCents: null,
+    balanceDueCents: 12_000,
+    baseBalanceDueCents: null,
+    commissionPercent: null,
+    commissionAmountCents: null,
+    issueDate: "2026-05-23",
+    dueDate: "2026-06-23",
+    notes: null,
+    voidedAt: null,
+    voidReason: null,
+    convertedFromInvoiceId: null,
+    seriesId: null,
+    sequence: null,
+    templateId: null,
+    taxRegimeId: null,
+    language: null,
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+  }
+
+  function makeExternalAllocationDb(options: {
+    existing?: Record<string, unknown>
+    updateError?: unknown
+  }) {
+    const updates: Array<Record<string, unknown>> = []
+    const db = {
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn(async () => (options.existing ? [options.existing] : [])),
+          })),
+        })),
+      })),
+      update: vi.fn(() => ({
+        set: vi.fn((values) => {
+          updates.push(values)
+          return {
+            where: vi.fn(() => ({
+              returning: vi.fn(async () => {
+                if (options.updateError) throw options.updateError
+                return options.existing ? [{ ...options.existing, ...values }] : []
+              }),
+            })),
+          }
+        }),
+      })),
+    }
+
+    return { db: db as never, updates }
+  }
+
+  it("applies an external provider invoice number to pending invoices", async () => {
+    const { db, updates } = makeExternalAllocationDb({ existing: pendingInvoice })
+
+    const result = await financeService.applyExternalInvoiceAllocation(db, "inv_new", {
+      invoiceNumber: "B-0133",
+    })
+
+    expect(result.status).toBe("applied")
+    expect(updates[0]).toMatchObject({
+      invoiceNumber: "B-0133",
+      status: "issued",
+    })
+  })
+
+  it("normalizes duplicate external allocation numbers into a typed conflict", async () => {
+    const { db } = makeExternalAllocationDb({
+      existing: pendingInvoice,
+      updateError: {
+        code: "23505",
+        constraint: "invoices_invoice_number_type_active_idx",
+      },
+    })
+
+    await expect(
+      financeService.applyExternalInvoiceAllocation(db, "inv_new", {
+        invoiceNumber: "B-0133",
+      }),
+    ).rejects.toMatchObject({
+      name: "InvoiceNumberConflictError",
+      code: "invoice_number_conflict",
+      invoiceNumber: "B-0133",
+    } satisfies Partial<InvoiceNumberConflictError>)
+  })
+})
+
+describe("financeService.updateInvoice number writeback", () => {
+  function makeUpdateInvoiceDb(updateError: unknown) {
+    return {
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn(async () => {
+              throw updateError
+            }),
+          })),
+        })),
+      })),
+    } as never
+  }
+
+  it("normalizes duplicate writeback numbers into a typed conflict", async () => {
+    const db = makeUpdateInvoiceDb({
+      code: "23505",
+      constraint: "invoices_invoice_number_type_active_idx",
+    })
+
+    await expect(
+      financeService.updateInvoice(db, "inv_new", {
+        invoiceNumber: "B-0133",
+      }),
+    ).rejects.toMatchObject({
+      name: "InvoiceNumberConflictError",
+      code: "invoice_number_conflict",
+      invoiceNumber: "B-0133",
+    } satisfies Partial<InvoiceNumberConflictError>)
+  })
+})
+
 describe("financeService.ensureExternalInvoiceNumberSeries", () => {
   it("creates default external-provider placeholder series per scope", async () => {
     const insertedRows: Array<Record<string, unknown>> = []
