@@ -56,6 +56,7 @@ Operator-dashboard booking-detail UX polish + finance refactors.
 
 **Misc**
 - SmartBill plugin honors a new `skipExternalSync` flag on `invoice.issued` / `invoice.proforma.issued` so per-invoice opt-out from external sync is possible.
+- SmartBill rate-limit date parser now anchors `24/05/2026 09:32:48`-style timestamps to UTC instead of the JS host's local time. The instant decoded from the same response is now identical on CI (UTC) and on developer machines in non-UTC zones (e.g. Europe/Bucharest, EEST). Fixes a pre-existing test failure when running locally outside UTC.
 - Bookings list excludeStatuses filter (string-or-array) parsed by `bookingListQuerySchema`.
 - `BookingPaymentsSummary` adds an FX equivalent column with `baseCurrency` + `baseAmountCents` plumbed through `publicFinanceBookingPaymentSchema` and the operator `useAdminBookingPayments` projection.
 - Currency combobox now correctly disables (forwards `disabled` to the inner input and hides the clear button when disabled).
