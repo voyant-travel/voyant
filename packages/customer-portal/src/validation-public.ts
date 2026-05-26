@@ -330,6 +330,8 @@ export const customerPortalPhoneContactExistsQuerySchema = z.object({
 
 export const customerPortalPhoneContactExistsResultSchema = z.object({
   phone: z.string(),
+  authAccountExists: z.boolean(),
+  authAccountVerified: z.boolean(),
   customerRecordExists: z.boolean(),
   linkedCustomerRecordExists: z.boolean(),
 })
@@ -541,6 +543,7 @@ export const customerPortalBookingBillingContactSchema = z.object({
   state: z.string().nullable(),
   city: z.string().nullable(),
   address1: z.string().nullable(),
+  address2: z.string().nullable(),
   postal: z.string().nullable(),
 })
 

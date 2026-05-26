@@ -1,5 +1,86 @@
 # @voyantjs/storefront
 
+## 0.81.13
+
+### Patch Changes
+
+- 28dca55: Apply active departure price overrides to storefront departure pricing, price previews, and booking session repricing.
+- Updated dependencies [28dca55]
+- Updated dependencies [ad95d4c]
+  - @voyantjs/availability@0.81.13
+  - @voyantjs/bookings@0.81.13
+  - @voyantjs/core@0.81.13
+  - @voyantjs/crm@0.81.13
+  - @voyantjs/extras@0.81.13
+  - @voyantjs/finance@0.81.13
+  - @voyantjs/hono@0.81.13
+  - @voyantjs/pricing@0.81.13
+  - @voyantjs/products@0.81.13
+  - @voyantjs/sellability@0.81.13
+
+## 0.81.12
+
+### Patch Changes
+
+- @voyantjs/availability@0.81.12
+- @voyantjs/bookings@0.81.12
+- @voyantjs/core@0.81.12
+- @voyantjs/crm@0.81.12
+- @voyantjs/extras@0.81.12
+- @voyantjs/finance@0.81.12
+- @voyantjs/hono@0.81.12
+- @voyantjs/pricing@0.81.12
+- @voyantjs/products@0.81.12
+- @voyantjs/sellability@0.81.12
+
+## 0.81.11
+
+### Patch Changes
+
+- Updated dependencies [ef079f4]
+  - @voyantjs/availability@0.81.11
+  - @voyantjs/bookings@0.81.11
+  - @voyantjs/core@0.81.11
+  - @voyantjs/crm@0.81.11
+  - @voyantjs/extras@0.81.11
+  - @voyantjs/finance@0.81.11
+  - @voyantjs/hono@0.81.11
+  - @voyantjs/pricing@0.81.11
+  - @voyantjs/products@0.81.11
+  - @voyantjs/sellability@0.81.11
+
+## 0.81.10
+
+### Patch Changes
+
+- Updated dependencies [6c6a008]
+  - @voyantjs/availability@0.81.10
+  - @voyantjs/bookings@0.81.10
+  - @voyantjs/core@0.81.10
+  - @voyantjs/crm@0.81.10
+  - @voyantjs/extras@0.81.10
+  - @voyantjs/finance@0.81.10
+  - @voyantjs/hono@0.81.10
+  - @voyantjs/pricing@0.81.10
+  - @voyantjs/products@0.81.10
+  - @voyantjs/sellability@0.81.10
+
+## 0.81.9
+
+### Patch Changes
+
+- Updated dependencies [1a58939]
+  - @voyantjs/availability@0.81.9
+  - @voyantjs/bookings@0.81.9
+  - @voyantjs/core@0.81.9
+  - @voyantjs/crm@0.81.9
+  - @voyantjs/extras@0.81.9
+  - @voyantjs/finance@0.81.9
+  - @voyantjs/hono@0.81.9
+  - @voyantjs/pricing@0.81.9
+  - @voyantjs/products@0.81.9
+  - @voyantjs/sellability@0.81.9
+
 ## 0.81.8
 
 ### Patch Changes

@@ -2,6 +2,7 @@ import { and, asc, desc, eq, inArray, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
+  departurePriceOverridesRef,
   optionPriceRulesRef,
   optionUnitPriceRulesRef,
   optionUnitTiersRef,
@@ -221,6 +222,7 @@ function extractBookingContactFromStatePayload(
     contactRegion: getRecordString(billing, ["state", "region"]),
     contactCity: getRecordString(billing, ["city"]),
     contactAddressLine1: getRecordString(billing, ["addressLine1", "address1", "line1"]),
+    contactAddressLine2: getRecordString(billing, ["addressLine2", "address2", "line2"]),
     contactPostalCode: getRecordString(billing, ["postalCode", "postal", "zip"]),
   }
 }
@@ -746,6 +748,7 @@ export async function resolveSessionPricingSnapshot(
   productId: string,
   input: {
     catalogId?: string | undefined
+    departureId?: string | undefined
     optionId?: string | undefined
     /** Public/session flows require storefront-visible products. Admin previews can price active internal products. */
     requirePublicProduct?: boolean | undefined
@@ -867,9 +870,9 @@ export async function resolveSessionPricingSnapshot(
       .orderBy(asc(optionUnitPriceRulesRef.sortOrder), asc(optionUnitPriceRulesRef.createdAt)),
   ])
 
-  const tiers =
+  const [tiers, departureOverrides] = await Promise.all([
     unitPrices.length > 0
-      ? await db
+      ? db
           .select({
             id: optionUnitTiersRef.id,
             optionUnitPriceRuleId: optionUnitTiersRef.optionUnitPriceRuleId,
@@ -889,7 +892,23 @@ export async function resolveSessionPricingSnapshot(
             ),
           )
           .orderBy(asc(optionUnitTiersRef.sortOrder), asc(optionUnitTiersRef.minQuantity))
-      : []
+      : Promise.resolve([]),
+    input.departureId
+      ? db
+          .select({
+            optionUnitId: departurePriceOverridesRef.optionUnitId,
+            sellAmountCents: departurePriceOverridesRef.sellAmountCents,
+          })
+          .from(departurePriceOverridesRef)
+          .where(
+            and(
+              eq(departurePriceOverridesRef.departureId, input.departureId),
+              eq(departurePriceOverridesRef.priceCatalogId, catalog.id),
+              eq(departurePriceOverridesRef.active, true),
+            ),
+          )
+      : Promise.resolve([]),
+  ])
 
   const tiersByUnitPriceId = new Map<string, typeof tiers>()
   for (const tier of tiers) {
@@ -897,15 +916,22 @@ export async function resolveSessionPricingSnapshot(
     existing.push(tier)
     tiersByUnitPriceId.set(tier.optionUnitPriceRuleId, existing)
   }
+  const departureOverrideByUnitId = new Map(
+    departureOverrides.map((row) => [row.optionUnitId, row] as const),
+  )
 
   return {
     catalog: catalog satisfies SessionPricingCatalog,
     options: options satisfies SessionPricingOption[],
     rules: rules satisfies SessionPricingRule[],
-    unitPrices: unitPrices.map((row) => ({
-      ...row,
-      tiers: tiersByUnitPriceId.get(row.id) ?? [],
-    })) satisfies Array<
+    unitPrices: unitPrices.map((row) => {
+      const override = departureOverrideByUnitId.get(row.unitId)
+      return {
+        ...row,
+        sellAmountCents: override?.sellAmountCents ?? row.sellAmountCents,
+        tiers: override ? [] : (tiersByUnitPriceId.get(row.id) ?? []),
+      }
+    }) satisfies Array<
       SessionPricingUnitPrice & {
         tiers: Array<{
           minQuantity: number
@@ -1424,6 +1450,7 @@ export const publicBookingsService = {
 
       const snapshot = await resolveSessionPricingSnapshot(db, item.productId, {
         catalogId: input.catalogId,
+        departureId: item.availabilitySlotId ?? undefined,
         optionId,
       })
       if (!snapshot) {

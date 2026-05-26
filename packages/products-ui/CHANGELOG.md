@@ -1,5 +1,80 @@
 # @voyantjs/products-ui
 
+## 0.81.13
+
+### Patch Changes
+
+- Updated dependencies [ad95d4c]
+- Updated dependencies [36421aa]
+  - @voyantjs/availability-react@0.81.13
+  - @voyantjs/catalog-react@0.81.13
+  - @voyantjs/finance@0.81.13
+  - @voyantjs/finance-ui@0.81.13
+  - @voyantjs/i18n@0.81.13
+  - @voyantjs/pricing-react@0.81.13
+  - @voyantjs/products-react@0.81.13
+  - @voyantjs/suppliers-react@0.81.13
+  - @voyantjs/ui@0.81.13
+
+## 0.81.12
+
+### Patch Changes
+
+- @voyantjs/availability-react@0.81.12
+- @voyantjs/catalog-react@0.81.12
+- @voyantjs/finance@0.81.12
+- @voyantjs/finance-ui@0.81.12
+- @voyantjs/i18n@0.81.12
+- @voyantjs/pricing-react@0.81.12
+- @voyantjs/products-react@0.81.12
+- @voyantjs/suppliers-react@0.81.12
+- @voyantjs/ui@0.81.12
+
+## 0.81.11
+
+### Patch Changes
+
+- Updated dependencies [ef079f4]
+  - @voyantjs/availability-react@0.81.11
+  - @voyantjs/catalog-react@0.81.11
+  - @voyantjs/finance@0.81.11
+  - @voyantjs/finance-ui@0.81.11
+  - @voyantjs/i18n@0.81.11
+  - @voyantjs/pricing-react@0.81.11
+  - @voyantjs/products-react@0.81.11
+  - @voyantjs/suppliers-react@0.81.11
+  - @voyantjs/ui@0.81.11
+
+## 0.81.10
+
+### Patch Changes
+
+- Updated dependencies [6c6a008]
+  - @voyantjs/availability-react@0.81.10
+  - @voyantjs/catalog-react@0.81.10
+  - @voyantjs/finance@0.81.10
+  - @voyantjs/finance-ui@0.81.10
+  - @voyantjs/i18n@0.81.10
+  - @voyantjs/pricing-react@0.81.10
+  - @voyantjs/products-react@0.81.10
+  - @voyantjs/suppliers-react@0.81.10
+  - @voyantjs/ui@0.81.10
+
+## 0.81.9
+
+### Patch Changes
+
+- Updated dependencies [1a58939]
+  - @voyantjs/availability-react@0.81.9
+  - @voyantjs/catalog-react@0.81.9
+  - @voyantjs/finance@0.81.9
+  - @voyantjs/finance-ui@0.81.9
+  - @voyantjs/i18n@0.81.9
+  - @voyantjs/pricing-react@0.81.9
+  - @voyantjs/products-react@0.81.9
+  - @voyantjs/suppliers-react@0.81.9
+  - @voyantjs/ui@0.81.9
+
 ## 0.81.8
 
 ### Patch Changes

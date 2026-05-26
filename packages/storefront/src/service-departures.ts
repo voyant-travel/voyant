@@ -5,6 +5,7 @@ import {
 } from "@voyantjs/availability"
 import { availabilitySlots, availabilityStartTimes } from "@voyantjs/availability/schema"
 import { productExtras } from "@voyantjs/extras/schema"
+import { loadDeparturePriceOverrides } from "@voyantjs/pricing"
 import {
   extraPriceRules,
   optionPriceRules,
@@ -116,6 +117,13 @@ type PricingContext = {
     sellAmountCents: number | null
     sortOrder: number
   }>
+  unitPriceOverrides: Map<
+    string,
+    {
+      sellAmountCents: number
+      costAmountCents: number | null
+    }
+  >
 }
 
 type ResolvedPricingComponent = {
@@ -251,6 +259,21 @@ function selectTierAmount(
   const tier = selectUnitTier(unitRule, tiers, quantity)
 
   return tier?.sellAmountCents ?? unitRule.sellAmountCents ?? null
+}
+
+function selectUnitAmount(
+  context: PricingContext,
+  unitRule: PricingContext["unitRules"][number] | undefined,
+  quantity: number,
+) {
+  if (!unitRule) {
+    return null
+  }
+
+  return (
+    context.unitPriceOverrides.get(unitRule.unitId)?.sellAmountCents ??
+    selectTierAmount(unitRule, context.tiers, quantity)
+  )
 }
 
 function findNamedUnit(
@@ -509,6 +532,7 @@ async function resolvePricingContext(
   db: PostgresJsDatabase,
   productId: string,
   optionId?: string | null,
+  departureId?: string | null,
 ): Promise<PricingContext> {
   const [product] = await db
     .select({
@@ -562,6 +586,7 @@ async function resolvePricingContext(
       unitRules: [],
       tiers: [],
       extraRules: [],
+      unitPriceOverrides: new Map(),
     }
   }
 
@@ -610,6 +635,7 @@ async function resolvePricingContext(
       unitRules: [],
       tiers: [],
       extraRules: [],
+      unitPriceOverrides: new Map(),
     }
   }
 
@@ -668,6 +694,13 @@ async function resolvePricingContext(
     .where(and(eq(extraPriceRules.optionPriceRuleId, rule.id), eq(extraPriceRules.active, true)))
     .orderBy(asc(extraPriceRules.sortOrder), asc(extraPriceRules.createdAt))
 
+  const unitPriceOverrides = departureId
+    ? await loadDeparturePriceOverrides(db, {
+        departureId,
+        catalogId: catalog.id,
+      })
+    : new Map()
+
   return {
     product: product ?? null,
     catalog,
@@ -677,6 +710,7 @@ async function resolvePricingContext(
     unitRules,
     tiers,
     extraRules,
+    unitPriceOverrides,
   }
 }
 
@@ -691,7 +725,7 @@ function buildRatePlans(context: PricingContext) {
     .map((unit) => {
       const unitRule = context.unitRules.find((row) => row.unitId === unit.id)
       const quantityHint = Math.max(1, unit.occupancyMax ?? unit.occupancyMin ?? 1)
-      const amount = centsToAmount(selectTierAmount(unitRule, context.tiers, quantityHint))
+      const amount = centsToAmount(selectUnitAmount(context, unitRule, quantityHint))
       if (amount == null) {
         return null
       }
@@ -763,9 +797,9 @@ function computeFallbackLineItems(args: {
         continue
       }
 
-      const amountCents = selectTierAmount(
+      const amountCents = selectUnitAmount(
+        args.context,
         unitRule,
-        args.context.tiers,
         Math.max(1, room.occupancy * room.quantity),
       )
       const unitAmount = centsToAmount(amountCents) ?? 0
@@ -800,7 +834,7 @@ function computeFallbackLineItems(args: {
       }
 
       const unitAmount =
-        centsToAmount(selectTierAmount(unitRule, args.context.tiers, request.quantity)) ?? 0
+        centsToAmount(selectUnitAmount(args.context, unitRule, request.quantity)) ?? 0
       const totalAmount = Number((unitAmount * request.quantity).toFixed(2))
       total += totalAmount
       const unit = request.unitId
@@ -1294,7 +1328,7 @@ async function buildDeparture(
   meetingPointByProduct?: Map<string, string>,
   resourceAvailability?: SlotResourceAvailability[],
 ) {
-  const context = await resolvePricingContext(db, slot.productId, slot.optionId)
+  const context = await resolvePricingContext(db, slot.productId, slot.optionId, slot.id)
   const itineraryId = slot.itineraryId ?? defaultItineraryByProduct.get(slot.productId) ?? null
   const resources = resourceAvailability ?? []
 
@@ -1599,7 +1633,7 @@ export async function previewStorefrontDeparturePrice(
     return null
   }
 
-  const context = await resolvePricingContext(db, slot.productId, slot.optionId)
+  const context = await resolvePricingContext(db, slot.productId, slot.optionId, slot.id)
   const adults = Math.max(0, input.pax?.adults ?? 1)
   const children = Math.max(0, input.pax?.children ?? 0)
   const infants = Math.max(0, input.pax?.infants ?? 0)

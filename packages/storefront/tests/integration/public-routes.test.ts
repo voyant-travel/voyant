@@ -4,6 +4,7 @@ import { customerSignals } from "@voyantjs/crm/schema"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
 import { productExtras } from "@voyantjs/extras/schema"
 import {
+  departurePriceOverrides,
   extraPriceRules,
   optionPriceRules,
   optionUnitPriceRules,
@@ -335,6 +336,15 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
       })
       .returning()
 
+    await db.insert(departurePriceOverrides).values({
+      departureId: slot.id,
+      optionId: option.id,
+      optionUnitId: unit.id,
+      priceCatalogId: catalog.id,
+      sellAmountCents: 150000,
+      active: true,
+    })
+
     const listRes = await app.request(`/products/${product.id}/departures`)
     expect(listRes.status).toBe(200)
     expect(await listRes.json()).toEqual({
@@ -369,7 +379,7 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
               basePrices: [],
               roomPrices: [
                 {
-                  amount: 1200,
+                  amount: 1500,
                   currencyCode: "EUR",
                   roomType: {
                     id: unit.id,
@@ -561,6 +571,15 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
       })
       .returning()
 
+    await db.insert(departurePriceOverrides).values({
+      departureId: slot.id,
+      optionId: option.id,
+      optionUnitId: adultUnit.id,
+      priceCatalogId: catalog.id,
+      sellAmountCents: 40000,
+      active: true,
+    })
+
     const previewApp = new Hono()
       .use("*", async (c, next) => {
         c.set("db" as never, db)
@@ -618,16 +637,16 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
         productId: product.id,
         optionId: option.id,
         currencyCode: "USD",
-        basePrice: 1200,
+        basePrice: 1600,
         taxAmount: 0,
-        total: 1107,
+        total: 1467,
         notes: null,
         lineItems: [
           {
             name: "Standard · Adult",
-            total: 1200,
+            total: 1600,
             quantity: 2,
-            unitPrice: 600,
+            unitPrice: 800,
           },
           {
             name: "Airport transfer",
@@ -666,8 +685,8 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
               unitType: "person",
               quantity: 2,
               pricingMode: "per_unit",
-              unitPrice: 600,
-              total: 1200,
+              unitPrice: 800,
+              total: 1600,
               currencyCode: "USD",
               tierId: null,
             },
@@ -682,8 +701,8 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
             unitType: "person",
             quantity: 2,
             pricingMode: "per_unit",
-            unitPrice: 600,
-            total: 1200,
+            unitPrice: 800,
+            total: 1600,
             currencyCode: "USD",
             tierId: null,
           },
@@ -714,8 +733,8 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
               status: "applied",
               reason: null,
               selected: true,
-              discountAppliedCents: 12300,
-              discountedPriceCents: 110700,
+              discountAppliedCents: 16300,
+              discountedPriceCents: 146700,
             },
           ],
           requested: [],
@@ -723,8 +742,8 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
             {
               offerId: "offer_early_10",
               offerName: "Early booking",
-              discountAppliedCents: 12300,
-              discountedPriceCents: 110700,
+              discountAppliedCents: 16300,
+              discountedPriceCents: 146700,
               currency: "USD",
               discountKind: "percentage",
               discountPercent: 10,
@@ -734,21 +753,21 @@ describe.skipIf(!DB_AVAILABLE)("Storefront public routes", () => {
             },
           ],
           conflict: null,
-          discountTotal: 123,
-          discountTotalCents: 12300,
-          totalAfterDiscount: 1107,
+          discountTotal: 163,
+          discountTotalCents: 16300,
+          totalAfterDiscount: 1467,
           currencyCode: "USD",
         },
         totals: {
           currencyCode: "USD",
-          base: 1200,
+          base: 1600,
           extras: 30,
-          subtotal: 1230,
-          discount: 123,
+          subtotal: 1630,
+          discount: 163,
           tax: 0,
-          total: 1107,
-          perPerson: 553.5,
-          perBooking: 1107,
+          total: 1467,
+          perPerson: 733.5,
+          perBooking: 1467,
         },
       },
     })

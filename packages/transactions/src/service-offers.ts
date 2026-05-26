@@ -61,6 +61,7 @@ function pickPrimaryContactSnapshot(
   | "contactRegion"
   | "contactCity"
   | "contactAddressLine1"
+  | "contactAddressLine2"
   | "contactPostalCode"
 > {
   if (
@@ -73,6 +74,7 @@ function pickPrimaryContactSnapshot(
     offer.contactRegion ??
     offer.contactCity ??
     offer.contactAddressLine1 ??
+    offer.contactAddressLine2 ??
     offer.contactPostalCode
   ) {
     return {
@@ -85,6 +87,7 @@ function pickPrimaryContactSnapshot(
       contactRegion: offer.contactRegion ?? null,
       contactCity: offer.contactCity ?? null,
       contactAddressLine1: offer.contactAddressLine1 ?? null,
+      contactAddressLine2: offer.contactAddressLine2 ?? null,
       contactPostalCode: offer.contactPostalCode ?? null,
     }
   }
@@ -108,6 +111,7 @@ function pickPrimaryContactSnapshot(
     contactRegion: null,
     contactCity: null,
     contactAddressLine1: null,
+    contactAddressLine2: null,
     contactPostalCode: null,
   }
 }

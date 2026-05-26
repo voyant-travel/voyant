@@ -51,6 +51,34 @@ const statusVariant: Record<
   void: "destructive",
 }
 
+const generationFailureLabelKey: Record<
+  string,
+  keyof ReturnType<typeof useLegalUiMessagesOrDefault>["contractDetailPage"]["generationFailure"]
+> = {
+  render_unavailable: "templateError",
+  generator_failed: "generatorFailed",
+}
+
+function resolveContractGenerationFailure(contract: LegalContractRecord) {
+  const metadata = contract.metadata
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return null
+  }
+
+  const status = metadata.lastGenerationStatus
+  if (typeof status !== "string" || status === "generated") {
+    return null
+  }
+
+  return {
+    status,
+    error:
+      typeof metadata.lastGenerationError === "string" && metadata.lastGenerationError.trim()
+        ? metadata.lastGenerationError
+        : null,
+  }
+}
+
 function withApiBaseUrl(baseUrl: string, path: string) {
   const trimmedBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl
   const normalizedPath = path.startsWith("/") ? path : `/${path}`
@@ -166,6 +194,14 @@ export function ContractDetailPage({
   }
 
   const status = contract.status
+  const generationFailure = resolveContractGenerationFailure(contract)
+  const generationFailureMessages = messages.contractDetailPage.generationFailure
+  const failureLabelKey = generationFailure
+    ? generationFailureLabelKey[generationFailure.status]
+    : null
+  const failureLabel = failureLabelKey
+    ? generationFailureMessages[failureLabelKey]
+    : generationFailureMessages.defaultLabel
   const canAddSignature = status === "sent" || status === "signed"
   const renderReferenceValue = (kind: ContractReferenceKind, referenceId: string) =>
     renderReference?.({ kind, id: referenceId, contract }) ?? (
@@ -197,6 +233,14 @@ export function ContractDetailPage({
           </p>
           {contract.contractNumber ? (
             <p className="mt-1 truncate text-muted-foreground text-xs">{contract.title}</p>
+          ) : null}
+          {generationFailure ? (
+            <div className="mt-3 max-w-2xl space-y-1">
+              <Badge variant="destructive">{failureLabel}</Badge>
+              <p className="text-muted-foreground text-sm">
+                {generationFailure.error ?? generationFailureMessages.fallbackReason}
+              </p>
+            </div>
           ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">

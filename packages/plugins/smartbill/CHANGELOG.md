@@ -1,5 +1,64 @@
 # @voyantjs/plugin-smartbill
 
+## 0.81.13
+
+### Patch Changes
+
+- @voyantjs/core@0.81.13
+- @voyantjs/finance@0.81.13
+- @voyantjs/finance-react@0.81.13
+- @voyantjs/hono@0.81.13
+- @voyantjs/storage@0.81.13
+- @voyantjs/ui@0.81.13
+
+## 0.81.12
+
+### Patch Changes
+
+- @voyantjs/core@0.81.12
+- @voyantjs/finance@0.81.12
+- @voyantjs/finance-react@0.81.12
+- @voyantjs/hono@0.81.12
+- @voyantjs/storage@0.81.12
+- @voyantjs/ui@0.81.12
+
+## 0.81.11
+
+### Patch Changes
+
+- ef079f4: Allow voided invoices to release external invoice numbers for reissue and surface external allocation writeback conflicts on SmartBill refs.
+- Updated dependencies [ef079f4]
+  - @voyantjs/core@0.81.11
+  - @voyantjs/finance@0.81.11
+  - @voyantjs/finance-react@0.81.11
+  - @voyantjs/hono@0.81.11
+  - @voyantjs/storage@0.81.11
+  - @voyantjs/ui@0.81.11
+
+## 0.81.10
+
+### Patch Changes
+
+- Updated dependencies [6c6a008]
+  - @voyantjs/core@0.81.10
+  - @voyantjs/finance@0.81.10
+  - @voyantjs/finance-react@0.81.10
+  - @voyantjs/hono@0.81.10
+  - @voyantjs/storage@0.81.10
+  - @voyantjs/ui@0.81.10
+
+## 0.81.9
+
+### Patch Changes
+
+- Updated dependencies [1a58939]
+  - @voyantjs/core@0.81.9
+  - @voyantjs/finance@0.81.9
+  - @voyantjs/finance-react@0.81.9
+  - @voyantjs/hono@0.81.9
+  - @voyantjs/storage@0.81.9
+  - @voyantjs/ui@0.81.9
+
 ## 0.81.8
 
 ### Patch Changes

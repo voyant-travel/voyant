@@ -2,6 +2,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import type { CreateBetterAuthOptions } from "../../src/server.js"
 
+type BetterAuthConfig = {
+  databaseHooks: {
+    user: {
+      create: {
+        before: (user?: Record<string, unknown>) => Promise<void>
+      }
+    }
+  }
+}
+
 const { betterAuthMock, drizzleAdapterMock } = vi.hoisted(() => ({
   betterAuthMock: vi.fn((config: Record<string, unknown>) => ({ config })),
   drizzleAdapterMock: vi.fn(() => ({ adapter: "drizzle" })),
@@ -40,6 +50,20 @@ describe("createBetterAuth", () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
+
+  function latestBetterAuthConfig(): BetterAuthConfig {
+    return betterAuthMock.mock.calls.at(-1)?.[0] as BetterAuthConfig
+  }
+
+  function createDbWithUserCount(count: number) {
+    const from = vi.fn(async () => [{ count }])
+    const select = vi.fn(() => ({ from }))
+    return {
+      db: { select },
+      from,
+      select,
+    }
+  }
 
   it("forwards Better Auth user options and keeps Voyant's default change-email setting", async () => {
     const { createBetterAuth } = await import("../../src/server.js")
@@ -154,5 +178,101 @@ describe("createBetterAuth", () => {
         ],
       }),
     )
+  })
+
+  it("keeps the default signup block for admin users once any user exists", async () => {
+    const { createBetterAuth } = await import("../../src/server.js")
+    const { db } = createDbWithUserCount(1)
+
+    createBetterAuth({
+      db: db as never,
+      secret: "x".repeat(32),
+      baseURL: "https://auth.example.com",
+    })
+
+    await expect(latestBetterAuthConfig().databaseHooks.user.create.before()).rejects.toThrow(
+      "Sign-up is disabled. Ask an admin to invite you.",
+    )
+  })
+
+  it("does not apply the default signup block to explicit non-admin surfaces", async () => {
+    const { createBetterAuth } = await import("../../src/server.js")
+    const { db, select } = createDbWithUserCount(1)
+
+    createBetterAuth({
+      db: db as never,
+      secret: "x".repeat(32),
+      baseURL: "https://auth.example.com",
+    })
+
+    await expect(
+      latestBetterAuthConfig().databaseHooks.user.create.before({
+        surfaces: ["storefront"],
+      }),
+    ).resolves.toBeUndefined()
+    expect(select).not.toHaveBeenCalled()
+  })
+
+  it("treats blank surface array entries as missing surfaces for the signup block", async () => {
+    const { createBetterAuth } = await import("../../src/server.js")
+    const { db } = createDbWithUserCount(1)
+
+    createBetterAuth({
+      db: db as never,
+      secret: "x".repeat(32),
+      baseURL: "https://auth.example.com",
+    })
+
+    await expect(
+      latestBetterAuthConfig().databaseHooks.user.create.before({
+        surfaces: ["", "  "],
+      }),
+    ).rejects.toThrow("Sign-up is disabled. Ask an admin to invite you.")
+  })
+
+  it("lets consumers customize the surfaces guarded by the signup block", async () => {
+    const { createBetterAuth } = await import("../../src/server.js")
+    const { db, select } = createDbWithUserCount(1)
+
+    createBetterAuth({
+      db: db as never,
+      secret: "x".repeat(32),
+      baseURL: "https://auth.example.com",
+      disableSignupWhenUsersExist: {
+        surfaces: ["staff"],
+      },
+    })
+
+    await expect(
+      latestBetterAuthConfig().databaseHooks.user.create.before({
+        surfaces: ["admin"],
+      }),
+    ).resolves.toBeUndefined()
+    expect(select).not.toHaveBeenCalled()
+
+    await expect(
+      latestBetterAuthConfig().databaseHooks.user.create.before({
+        surfaces: ["staff"],
+      }),
+    ).rejects.toThrow("Sign-up is disabled. Ask an admin to invite you.")
+  })
+
+  it("lets consumers disable the bundled signup block", async () => {
+    const { createBetterAuth } = await import("../../src/server.js")
+    const { db, select } = createDbWithUserCount(1)
+
+    createBetterAuth({
+      db: db as never,
+      secret: "x".repeat(32),
+      baseURL: "https://auth.example.com",
+      disableSignupWhenUsersExist: {
+        enabled: false,
+      },
+    })
+
+    await expect(
+      latestBetterAuthConfig().databaseHooks.user.create.before(),
+    ).resolves.toBeUndefined()
+    expect(select).not.toHaveBeenCalled()
   })
 })

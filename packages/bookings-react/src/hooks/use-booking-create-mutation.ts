@@ -174,6 +174,7 @@ export interface BookingCreateInput {
   contactRegion?: string | null
   contactCity?: string | null
   contactAddressLine1?: string | null
+  contactAddressLine2?: string | null
   contactPostalCode?: string | null
 }
 

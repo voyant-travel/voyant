@@ -185,6 +185,7 @@ export const invoiceFromBookingSchema = z
 
 const lineItemCoreSchema = z.object({
   bookingItemId: z.string().optional().nullable(),
+  bookingPaymentScheduleId: z.string().optional().nullable(),
   description: z.string().min(1).max(1000),
   quantity: z.number().int().min(1).default(1),
   unitPriceCents: z.number().int().min(0),

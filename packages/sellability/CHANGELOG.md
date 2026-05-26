@@ -1,5 +1,79 @@
 # @voyantjs/sellability
 
+## 0.81.13
+
+### Patch Changes
+
+- 28dca55: Apply active departure price overrides to storefront departure pricing, price previews, and booking session repricing.
+- Updated dependencies [ad95d4c]
+  - @voyantjs/availability@0.81.13
+  - @voyantjs/core@0.81.13
+  - @voyantjs/db@0.81.13
+  - @voyantjs/distribution@0.81.13
+  - @voyantjs/hono@0.81.13
+  - @voyantjs/markets@0.81.13
+  - @voyantjs/pricing@0.81.13
+  - @voyantjs/products@0.81.13
+  - @voyantjs/transactions@0.81.13
+
+## 0.81.12
+
+### Patch Changes
+
+- @voyantjs/availability@0.81.12
+- @voyantjs/core@0.81.12
+- @voyantjs/db@0.81.12
+- @voyantjs/distribution@0.81.12
+- @voyantjs/hono@0.81.12
+- @voyantjs/markets@0.81.12
+- @voyantjs/pricing@0.81.12
+- @voyantjs/products@0.81.12
+- @voyantjs/transactions@0.81.12
+
+## 0.81.11
+
+### Patch Changes
+
+- @voyantjs/availability@0.81.11
+- @voyantjs/core@0.81.11
+- @voyantjs/db@0.81.11
+- @voyantjs/distribution@0.81.11
+- @voyantjs/hono@0.81.11
+- @voyantjs/markets@0.81.11
+- @voyantjs/pricing@0.81.11
+- @voyantjs/products@0.81.11
+- @voyantjs/transactions@0.81.11
+
+## 0.81.10
+
+### Patch Changes
+
+- @voyantjs/availability@0.81.10
+- @voyantjs/core@0.81.10
+- @voyantjs/db@0.81.10
+- @voyantjs/distribution@0.81.10
+- @voyantjs/hono@0.81.10
+- @voyantjs/markets@0.81.10
+- @voyantjs/pricing@0.81.10
+- @voyantjs/products@0.81.10
+- @voyantjs/transactions@0.81.10
+
+## 0.81.9
+
+### Patch Changes
+
+- 1a58939: Preserve billing contact address line 2 on booking snapshots and downstream documents.
+- Updated dependencies [1a58939]
+  - @voyantjs/availability@0.81.9
+  - @voyantjs/core@0.81.9
+  - @voyantjs/db@0.81.9
+  - @voyantjs/distribution@0.81.9
+  - @voyantjs/hono@0.81.9
+  - @voyantjs/markets@0.81.9
+  - @voyantjs/pricing@0.81.9
+  - @voyantjs/products@0.81.9
+  - @voyantjs/transactions@0.81.9
+
 ## 0.81.8
 
 ### Patch Changes

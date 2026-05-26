@@ -373,6 +373,7 @@ const bookingCreateBaseSchema = z.object({
   contactRegion: z.string().max(100).optional().nullable(),
   contactCity: z.string().max(100).optional().nullable(),
   contactAddressLine1: z.string().max(500).optional().nullable(),
+  contactAddressLine2: z.string().max(500).optional().nullable(),
   contactPostalCode: z.string().max(20).optional().nullable(),
 
   // Orchestration fields
@@ -959,6 +960,7 @@ export async function createBooking(
         contactRegion: input.contactRegion ?? null,
         contactCity: input.contactCity ?? null,
         contactAddressLine1: input.contactAddressLine1 ?? null,
+        contactAddressLine2: input.contactAddressLine2 ?? null,
         contactPostalCode: input.contactPostalCode ?? null,
         itemLines: normalizedItemLines,
       })

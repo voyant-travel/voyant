@@ -428,6 +428,8 @@ export interface InvoiceFromBookingData {
     bookingNumber: string
     personId: string | null
     organizationId: string | null
+    startDate?: string | Date | null
+    endDate?: string | Date | null
     sellCurrency: string
     baseCurrency: string | null
     fxRateSetId: string | null
@@ -446,11 +448,38 @@ export interface InvoiceFromBookingData {
   items: Array<{
     id: string
     title: string
+    productId?: string | null
+    productName?: string | null
+    startDate?: string | Date | null
+    endDate?: string | Date | null
     quantity: number
     unitSellAmountCents: number | null
     totalSellAmountCents: number | null
   }>
 }
+
+export interface ResolvedInvoiceLine {
+  bookingItemId: string | null
+  bookingPaymentScheduleId: string | null
+  description: string
+  quantity: number
+  unitPriceCents: number
+  totalCents: number
+  taxAmountCents: number
+  taxRate: number | null
+  sortOrder: number
+}
+
+export interface InvoiceLineDescriptionResolverInput {
+  booking: InvoiceFromBookingData["booking"]
+  schedule?: NonNullable<InvoiceFromBookingData["paymentSchedule"]>
+  item?: InvoiceFromBookingData["items"][number]
+  line: ResolvedInvoiceLine
+}
+
+export type InvoiceLineDescriptionResolver = (
+  input: InvoiceLineDescriptionResolverInput,
+) => string | Promise<string>
 
 const PAYMENT_SCHEDULE_LINE_LABELS: Record<
   NonNullable<InvoiceFromBookingData["paymentSchedule"]>["scheduleType"],
@@ -467,7 +496,7 @@ function bookingItemToInvoiceLine(
   item: InvoiceFromBookingData["items"][number],
   taxes: Array<typeof bookingItemTaxLines.$inferSelect>,
   sortOrder: number,
-) {
+): ResolvedInvoiceLine {
   const quantity = Math.max(item.quantity, 1)
   const totalCents =
     item.totalSellAmountCents ?? (item.unitSellAmountCents ?? 0) * Math.max(item.quantity, 1)
@@ -477,6 +506,7 @@ function bookingItemToInvoiceLine(
 
   return {
     bookingItemId: item.id,
+    bookingPaymentScheduleId: null,
     description: item.title,
     quantity: item.quantity,
     unitPriceCents:
@@ -485,6 +515,7 @@ function bookingItemToInvoiceLine(
         ? Math.floor(item.totalSellAmountCents / quantity)
         : 0),
     totalCents,
+    taxAmountCents: 0,
     taxRate:
       firstTaxWithRate?.rateBasisPoints != null
         ? Math.round(firstTaxWithRate.rateBasisPoints / 100)
@@ -496,23 +527,59 @@ function bookingItemToInvoiceLine(
 function bookingPaymentScheduleToInvoiceLine(
   booking: InvoiceFromBookingData["booking"],
   schedule: NonNullable<InvoiceFromBookingData["paymentSchedule"]>,
-) {
+  item: InvoiceFromBookingData["items"][number] | undefined,
+): ResolvedInvoiceLine {
   const label = PAYMENT_SCHEDULE_LINE_LABELS[schedule.scheduleType]
+  const percent = getPaymentSchedulePercent(booking, schedule)
+  const head = percent != null && percent < 100 ? `${label} ${percent}%` : label
+  const base =
+    item?.productName?.trim() || item?.title?.trim() || `booking ${booking.bookingNumber}`
+  const dates = formatInvoiceLineDateRange(
+    item?.startDate ?? booking.startDate,
+    item?.endDate ?? booking.endDate,
+  )
 
   return {
-    bookingItemId: null as string | null,
-    description: `${label} for booking ${booking.bookingNumber}`,
+    bookingItemId: schedule.bookingItemId ?? null,
+    bookingPaymentScheduleId: schedule.id,
+    description: dates ? `${head} ${base} | ${dates}` : `${head} ${base}`,
     quantity: 1,
     unitPriceCents: schedule.amountCents,
     totalCents: schedule.amountCents,
+    taxAmountCents: 0,
     taxRate: null,
     sortOrder: 0,
   }
 }
 
+function getPaymentSchedulePercent(
+  booking: InvoiceFromBookingData["booking"],
+  schedule: NonNullable<InvoiceFromBookingData["paymentSchedule"]>,
+) {
+  if (!booking.sellAmountCents || booking.sellAmountCents <= 0) return null
+  return Math.round((schedule.amountCents / booking.sellAmountCents) * 100)
+}
+
+function formatInvoiceLineDateRange(
+  startDate: string | Date | null | undefined,
+  endDate: string | Date | null | undefined,
+) {
+  const start = toDateOnly(startDate)
+  const end = toDateOnly(endDate)
+  if (!start) return null
+  if (!end || end === start) return start
+  return `${start} - ${end}`
+}
+
+function toDateOnly(value: string | Date | null | undefined) {
+  if (!value) return null
+  if (value instanceof Date) return value.toISOString().slice(0, 10)
+  return value.slice(0, 10)
+}
+
 function invoiceFromBookingOverrideLineItems(
   lineItems: NonNullable<CreateInvoiceFromBookingInput["lineItems"]>,
-) {
+): ResolvedInvoiceLine[] {
   return lineItems.map((line, sortOrder) => {
     const lineSubtotalCents = line.quantity * line.unitAmountCents
     const taxAmountCents =
@@ -521,15 +588,46 @@ function invoiceFromBookingOverrideLineItems(
 
     return {
       bookingItemId: null as string | null,
+      bookingPaymentScheduleId: null as string | null,
       description: line.description,
       quantity: line.quantity,
       unitPriceCents: line.unitAmountCents,
       totalCents: lineSubtotalCents,
-      taxRate: line.taxRateBps != null ? Math.round(line.taxRateBps / 100) : null,
       taxAmountCents,
+      taxRate: line.taxRateBps != null ? Math.round(line.taxRateBps / 100) : null,
       sortOrder,
     }
   })
+}
+
+async function resolveInvoiceLineDescriptions(
+  lineItems: ResolvedInvoiceLine[],
+  context: {
+    booking: InvoiceFromBookingData["booking"]
+    paymentSchedule?: NonNullable<InvoiceFromBookingData["paymentSchedule"]> | null
+    items: InvoiceFromBookingData["items"]
+    descriptionResolver?: InvoiceLineDescriptionResolver
+  },
+) {
+  if (!context.descriptionResolver) return lineItems
+  const scheduleItem = context.paymentSchedule?.bookingItemId
+    ? context.items.find((item) => item.id === context.paymentSchedule?.bookingItemId)
+    : undefined
+
+  return Promise.all(
+    lineItems.map(async (line) => ({
+      ...line,
+      description:
+        (await context.descriptionResolver?.({
+          booking: context.booking,
+          schedule: context.paymentSchedule ?? undefined,
+          item: context.paymentSchedule
+            ? scheduleItem
+            : context.items.find((item) => item.id === line.bookingItemId),
+          line,
+        })) ?? line.description,
+    })),
+  )
 }
 
 function assertInvoiceFromBookingOverrideTotals(
@@ -598,6 +696,7 @@ function isInvoiceNumberUniqueConstraintError(error: unknown) {
   const constraint = typeof candidate.constraint === "string" ? candidate.constraint : ""
   const detail = typeof candidate.detail === "string" ? candidate.detail : ""
   return (
+    constraint === "invoices_invoice_number_type_active_idx" ||
     constraint === "invoices_invoice_number_type_unique" ||
     constraint === "invoices_invoice_number_unique" ||
     constraint === "invoices_invoice_number_key" ||
@@ -809,6 +908,7 @@ export interface FinanceServiceRuntime extends InvoiceFxOptions {
   eventBus?: EventBus
   actionLedgerContext?: ActionLedgerRequestContextValues
   actionLedgerAuthorizationSource?: string | null
+  descriptionResolver?: InvoiceLineDescriptionResolver
 }
 
 export interface InvoiceVoidedEvent {
@@ -3662,10 +3762,13 @@ export const financeService = {
       taxesByBookingItemId.set(tax.bookingItemId, existing)
     }
 
-    const lineItems =
+    const scheduleItem = paymentSchedule?.bookingItemId
+      ? items.find((item) => item.id === paymentSchedule.bookingItemId)
+      : undefined
+    const resolvedLineItems =
       overrideLineItems ??
       (paymentSchedule
-        ? [bookingPaymentScheduleToInvoiceLine(booking, paymentSchedule)]
+        ? [bookingPaymentScheduleToInvoiceLine(booking, paymentSchedule, scheduleItem)]
         : invoiceItems.length > 0
           ? invoiceItems.map((item, sortOrder) => ({
               ...bookingItemToInvoiceLine(item, taxesByBookingItemId.get(item.id) ?? [], sortOrder),
@@ -3673,14 +3776,22 @@ export const financeService = {
           : [
               {
                 bookingItemId: null as string | null,
+                bookingPaymentScheduleId: null as string | null,
                 description: `Booking ${booking.bookingNumber}`,
                 quantity: 1,
                 unitPriceCents: booking.sellAmountCents ?? 0,
                 totalCents: booking.sellAmountCents ?? 0,
+                taxAmountCents: 0,
                 taxRate: null,
                 sortOrder: 0,
               },
             ])
+    const lineItems = await resolveInvoiceLineDescriptions(resolvedLineItems, {
+      booking,
+      paymentSchedule,
+      items,
+      descriptionResolver: runtime.descriptionResolver,
+    })
 
     const grossLineTotalCents = lineItems.reduce((sum, line) => sum + line.totalCents, 0)
     const includedTaxCents = overrideLineItems
@@ -3794,6 +3905,7 @@ export const financeService = {
         const lineItemValues = lineItems.map((line) => ({
           invoiceId: invoice.id,
           bookingItemId: line.bookingItemId,
+          bookingPaymentScheduleId: line.bookingPaymentScheduleId,
           description: line.description,
           quantity: line.quantity,
           unitPriceCents: line.unitPriceCents,
@@ -3841,28 +3953,35 @@ export const financeService = {
         .where(eq(invoices.id, id))
         .returning()
 
-    const actionLedgerContext = runtime.actionLedgerContext
-    if (actionLedgerContext) {
-      return db.transaction(async (tx) => {
-        const [row] = await updateInvoiceRow(tx)
+    try {
+      const actionLedgerContext = runtime.actionLedgerContext
+      if (actionLedgerContext) {
+        return await db.transaction(async (tx) => {
+          const [row] = await updateInvoiceRow(tx)
 
-        if (row) {
-          await appendActionLedgerMutation(
-            tx,
-            buildInvoiceUpdateActionLedgerInput(
-              actionLedgerContext,
-              { invoice: row, changes: data },
-              { authorizationSource: runtime.actionLedgerAuthorizationSource },
-            ),
-          )
-        }
+          if (row) {
+            await appendActionLedgerMutation(
+              tx,
+              buildInvoiceUpdateActionLedgerInput(
+                actionLedgerContext,
+                { invoice: row, changes: data },
+                { authorizationSource: runtime.actionLedgerAuthorizationSource },
+              ),
+            )
+          }
 
-        return row ?? null
-      })
+          return row ?? null
+        })
+      }
+
+      const [row] = await updateInvoiceRow(db)
+      return row ?? null
+    } catch (error) {
+      if (data.invoiceNumber && isInvoiceNumberUniqueConstraintError(error)) {
+        throw new InvoiceNumberConflictError(data.invoiceNumber)
+      }
+      throw error
     }
-
-    const [row] = await updateInvoiceRow(db)
-    return row ?? null
   },
 
   async deleteInvoice(db: PostgresJsDatabase, id: string, runtime: FinanceServiceRuntime = {}) {
@@ -5152,15 +5271,24 @@ export const financeService = {
       return { status: "not_pending_external_allocation" as const, invoice: existing }
     }
 
-    const [invoice] = await db
-      .update(invoices)
-      .set({
-        invoiceNumber: data.invoiceNumber,
-        status: data.status ?? "issued",
-        updatedAt: new Date(),
-      })
-      .where(eq(invoices.id, invoiceId))
-      .returning()
+    let invoice: typeof invoices.$inferSelect | undefined
+    try {
+      const [updatedInvoice] = await db
+        .update(invoices)
+        .set({
+          invoiceNumber: data.invoiceNumber,
+          status: data.status ?? "issued",
+          updatedAt: new Date(),
+        })
+        .where(eq(invoices.id, invoiceId))
+        .returning()
+      invoice = updatedInvoice
+    } catch (error) {
+      if (isInvoiceNumberUniqueConstraintError(error)) {
+        throw new InvoiceNumberConflictError(data.invoiceNumber)
+      }
+      throw error
+    }
 
     return invoice ? { status: "applied" as const, invoice } : { status: "not_found" as const }
   },

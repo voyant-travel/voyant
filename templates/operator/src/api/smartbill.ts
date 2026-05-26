@@ -498,15 +498,14 @@ async function resolveSmartbillClient(
   const addressLine = nonEmpty(
     [primaryAddress?.line1, primaryAddress?.line2].filter(Boolean).join(", "),
   )
+  const bookingAddressLine = nonEmpty(
+    [booking.contactAddressLine1, booking.contactAddressLine2].filter(Boolean).join(", "),
+  )
 
   return {
     name: clientName,
     vatCode: organizationRow?.vatNumber ?? undefined,
-    address:
-      nonEmpty(primaryAddress?.fullText) ??
-      addressLine ??
-      nonEmpty(booking.contactAddressLine1) ??
-      "-",
+    address: nonEmpty(primaryAddress?.fullText) ?? addressLine ?? bookingAddressLine ?? "-",
     city: nonEmpty(primaryAddress?.city) ?? nonEmpty(booking.contactCity) ?? "-",
     county: nonEmpty(primaryAddress?.region) ?? nonEmpty(booking.contactRegion),
     country: nonEmpty(primaryAddress?.country) ?? nonEmpty(booking.contactCountry) ?? "Romania",

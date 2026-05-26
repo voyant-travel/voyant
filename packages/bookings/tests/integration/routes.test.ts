@@ -734,6 +734,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         contactRegion: "Cluj",
         contactCity: "Cluj-Napoca",
         contactAddressLine1: "Strada Memorandumului 10",
+        contactAddressLine2: "Etaj 2",
         contactPostalCode: "400114",
         internalNotes: "Prefers an aisle seat",
       })
@@ -780,6 +781,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
       await expectOnlyTargetForSearch("ANA.CIMPOERU")
       await expectOnlyTargetForSearch("WHATSAPP-REF-40712345678")
       await expectOnlyTargetForSearch("Memorandumului")
+      await expectOnlyTargetForSearch("Etaj 2")
       await expectOnlyTargetForSearch("Cluj-Napoca")
       await expectOnlyTargetForSearch("400114")
     })

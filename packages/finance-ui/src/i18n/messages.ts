@@ -378,6 +378,10 @@ export type FinanceUiMessages = {
       viewPerson: string
       viewOrganization: string
       viewSupplier: string
+      edit: string
+      delete: string
+      deleteTitle: string
+      deleteDescription: string
     }
     titles: {
       summary: string

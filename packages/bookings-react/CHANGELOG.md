@@ -1,5 +1,43 @@
 # @voyantjs/bookings-react
 
+## 0.81.13
+
+### Patch Changes
+
+- Updated dependencies [28dca55]
+  - @voyantjs/bookings@0.81.13
+  - @voyantjs/react@0.81.13
+
+## 0.81.12
+
+### Patch Changes
+
+- @voyantjs/bookings@0.81.12
+- @voyantjs/react@0.81.12
+
+## 0.81.11
+
+### Patch Changes
+
+- @voyantjs/bookings@0.81.11
+- @voyantjs/react@0.81.11
+
+## 0.81.10
+
+### Patch Changes
+
+- @voyantjs/bookings@0.81.10
+- @voyantjs/react@0.81.10
+
+## 0.81.9
+
+### Patch Changes
+
+- 1a58939: Preserve billing contact address line 2 on booking snapshots and downstream documents.
+- Updated dependencies [1a58939]
+  - @voyantjs/bookings@0.81.9
+  - @voyantjs/react@0.81.9
+
 ## 0.81.8
 
 ### Patch Changes

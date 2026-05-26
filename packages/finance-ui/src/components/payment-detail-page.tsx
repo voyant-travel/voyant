@@ -1,9 +1,17 @@
 "use client"
 
 import { type UnifiedPaymentRecord, usePayment } from "@voyantjs/finance-react"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  ConfirmActionButton,
+} from "@voyantjs/ui/components"
 import { cn } from "@voyantjs/ui/lib/utils"
-import { ArrowLeft, ExternalLink, Loader2 } from "lucide-react"
+import { ArrowLeft, ExternalLink, Loader2, Pencil } from "lucide-react"
 import type * as React from "react"
 
 import { useFinanceUiI18nOrDefault, useFinanceUiMessagesOrDefault } from "../i18n/index.js"
@@ -24,6 +32,9 @@ export interface PaymentDetailPageProps {
   onPersonOpen?: (personId: string, payment: UnifiedPaymentRecord) => void
   onOrganizationOpen?: (organizationId: string, payment: UnifiedPaymentRecord) => void
   onSupplierOpen?: (supplierId: string, payment: UnifiedPaymentRecord) => void
+  onEdit?: (payment: UnifiedPaymentRecord) => void
+  onDelete?: (paymentId: string) => Promise<void> | void
+  deletePending?: boolean
   slots?: PaymentDetailPageSlots
 }
 
@@ -36,6 +47,9 @@ export function PaymentDetailPage({
   onPersonOpen,
   onOrganizationOpen,
   onSupplierOpen,
+  onEdit,
+  onDelete,
+  deletePending,
   slots,
 }: PaymentDetailPageProps) {
   const messages = useFinanceUiMessagesOrDefault()
@@ -65,7 +79,13 @@ export function PaymentDetailPage({
 
   return (
     <div data-slot="payment-detail-page" className={cn("flex flex-col gap-6 p-6", className)}>
-      <PaymentDetailHeader payment={payment} onBack={onBack} />
+      <PaymentDetailHeader
+        payment={payment}
+        onBack={onBack}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        deletePending={deletePending}
+      />
       {slots?.afterHeader}
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -91,10 +111,20 @@ export function PaymentDetailPage({
 export interface PaymentDetailHeaderProps {
   payment: UnifiedPaymentRecord
   onBack?: () => void
+  onEdit?: (payment: UnifiedPaymentRecord) => void
+  onDelete?: (paymentId: string) => Promise<void> | void
+  deletePending?: boolean
   className?: string
 }
 
-export function PaymentDetailHeader({ payment, onBack, className }: PaymentDetailHeaderProps) {
+export function PaymentDetailHeader({
+  payment,
+  onBack,
+  onEdit,
+  onDelete,
+  deletePending,
+  className,
+}: PaymentDetailHeaderProps) {
   const messages = useFinanceUiMessagesOrDefault()
   const relatedNumber = payment.kind === "customer" ? payment.invoiceNumber : payment.bookingNumber
 
@@ -115,9 +145,30 @@ export function PaymentDetailHeader({ payment, onBack, className }: PaymentDetai
           <p className="mt-1 text-sm text-muted-foreground">{relatedNumber}</p>
         ) : null}
       </div>
-      <Badge variant={paymentStatusVariant[payment.status] ?? "secondary"}>
-        {messages.common.supplierPaymentStatusLabels[payment.status]}
-      </Badge>
+      <div className="flex flex-wrap items-center gap-2 md:justify-end">
+        <Badge variant={paymentStatusVariant[payment.status] ?? "secondary"}>
+          {messages.common.supplierPaymentStatusLabels[payment.status]}
+        </Badge>
+        {onEdit ? (
+          <Button type="button" variant="outline" size="sm" onClick={() => onEdit(payment)}>
+            <Pencil className="size-4" aria-hidden="true" />
+            {messages.paymentDetailPage.actions.edit}
+          </Button>
+        ) : null}
+        {onDelete ? (
+          <ConfirmActionButton
+            buttonLabel={messages.paymentDetailPage.actions.delete}
+            confirmLabel={messages.paymentDetailPage.actions.delete}
+            cancelLabel={messages.common.cancel}
+            title={messages.paymentDetailPage.actions.deleteTitle}
+            description={messages.paymentDetailPage.actions.deleteDescription}
+            variant="destructive"
+            confirmVariant="destructive"
+            disabled={deletePending}
+            onConfirm={() => onDelete(payment.id)}
+          />
+        ) : null}
+      </div>
     </div>
   )
 }

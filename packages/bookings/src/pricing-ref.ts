@@ -51,3 +51,14 @@ export const optionUnitTiersRef = pgTable("option_unit_tiers", {
   active: boolean("active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
 })
+
+export const departurePriceOverridesRef = pgTable("departure_price_overrides", {
+  id: typeId("departure_price_overrides").primaryKey(),
+  departureId: text("departure_id").notNull(),
+  optionId: text("option_id").notNull(),
+  optionUnitId: text("option_unit_id").notNull(),
+  priceCatalogId: typeIdRef("price_catalog_id").notNull(),
+  sellAmountCents: integer("sell_amount_cents").notNull(),
+  costAmountCents: integer("cost_amount_cents"),
+  active: boolean("active").notNull().default(true),
+})

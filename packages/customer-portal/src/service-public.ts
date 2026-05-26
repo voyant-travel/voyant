@@ -469,6 +469,7 @@ function resolveBillingContactFromSessionPayload(
     state: getRecordString(billing, ["state", "region"]),
     city: getRecordString(billing, ["city"]),
     address1: getRecordString(billing, ["addressLine1", "address1", "line1"]),
+    address2: getRecordString(billing, ["addressLine2", "address2", "line2"]),
     postal: getRecordString(billing, ["postalCode", "postal", "zip"]),
   }
 }
@@ -1229,6 +1230,7 @@ async function getBookingBillingContact(
         contactRegion: bookings.contactRegion,
         contactCity: bookings.contactCity,
         contactAddressLine1: bookings.contactAddressLine1,
+        contactAddressLine2: bookings.contactAddressLine2,
         contactPostalCode: bookings.contactPostalCode,
       })
       .from(bookings)
@@ -1297,6 +1299,11 @@ async function getBookingBillingContact(
       booking?.contactAddressLine1 ??
       sessionBillingContact?.address1 ??
       billingAddress?.line1 ??
+      null,
+    address2:
+      booking?.contactAddressLine2 ??
+      sessionBillingContact?.address2 ??
+      billingAddress?.line2 ??
       null,
     postal:
       booking?.contactPostalCode ??
@@ -1495,10 +1502,22 @@ export const publicCustomerPortalService = {
     phone: string,
   ): Promise<CustomerPortalPhoneContactExistsResult> {
     const normalizedPhone = normalizePhone(phone)
-    const customerCandidates = await listCustomerRecordCandidatesByPhone(db, normalizedPhone)
+    const [authAccount, customerCandidates] = await Promise.all([
+      db
+        .select({
+          id: authUser.id,
+          phoneNumberVerified: authUser.phoneNumberVerified,
+        })
+        .from(authUser)
+        .where(eq(authUser.phoneNumber, normalizedPhone))
+        .limit(1),
+      listCustomerRecordCandidatesByPhone(db, normalizedPhone),
+    ])
 
     return {
       phone: normalizedPhone,
+      authAccountExists: Boolean(authAccount[0]),
+      authAccountVerified: Boolean(authAccount[0]?.phoneNumberVerified),
       customerRecordExists: customerCandidates.length > 0,
       linkedCustomerRecordExists: customerCandidates.some(
         (candidate) => candidate.claimedByAnotherUser,

@@ -1,5 +1,59 @@
 # @voyantjs/checkout
 
+## 0.81.13
+
+### Patch Changes
+
+- Updated dependencies [28dca55]
+  - @voyantjs/bookings@0.81.13
+  - @voyantjs/core@0.81.13
+  - @voyantjs/finance@0.81.13
+  - @voyantjs/hono@0.81.13
+  - @voyantjs/notifications@0.81.13
+
+## 0.81.12
+
+### Patch Changes
+
+- @voyantjs/bookings@0.81.12
+- @voyantjs/core@0.81.12
+- @voyantjs/finance@0.81.12
+- @voyantjs/hono@0.81.12
+- @voyantjs/notifications@0.81.12
+
+## 0.81.11
+
+### Patch Changes
+
+- Updated dependencies [ef079f4]
+  - @voyantjs/bookings@0.81.11
+  - @voyantjs/core@0.81.11
+  - @voyantjs/finance@0.81.11
+  - @voyantjs/hono@0.81.11
+  - @voyantjs/notifications@0.81.11
+
+## 0.81.10
+
+### Patch Changes
+
+- Updated dependencies [6c6a008]
+  - @voyantjs/bookings@0.81.10
+  - @voyantjs/core@0.81.10
+  - @voyantjs/finance@0.81.10
+  - @voyantjs/hono@0.81.10
+  - @voyantjs/notifications@0.81.10
+
+## 0.81.9
+
+### Patch Changes
+
+- Updated dependencies [1a58939]
+  - @voyantjs/bookings@0.81.9
+  - @voyantjs/core@0.81.9
+  - @voyantjs/finance@0.81.9
+  - @voyantjs/hono@0.81.9
+  - @voyantjs/notifications@0.81.9
+
 ## 0.81.8
 
 ### Patch Changes

@@ -945,7 +945,8 @@ export type BookingsUiMessages = {
       lastName: string
       email: string
       phone: string
-      address: string
+      addressLine1: string
+      addressLine2: string
       city: string
       region: string
       postalCode: string

@@ -1,5 +1,57 @@
 # @voyantjs/legal-ui
 
+## 0.81.13
+
+### Patch Changes
+
+- 36421aa: Persist contract document generation failure details on contract metadata and surface operator-facing failure labels.
+- Updated dependencies [36421aa]
+  - @voyantjs/crm-react@0.81.13
+  - @voyantjs/i18n@0.81.13
+  - @voyantjs/legal-react@0.81.13
+  - @voyantjs/ui@0.81.13
+  - @voyantjs/utils@0.81.13
+
+## 0.81.12
+
+### Patch Changes
+
+- @voyantjs/crm-react@0.81.12
+- @voyantjs/i18n@0.81.12
+- @voyantjs/legal-react@0.81.12
+- @voyantjs/ui@0.81.12
+- @voyantjs/utils@0.81.12
+
+## 0.81.11
+
+### Patch Changes
+
+- @voyantjs/crm-react@0.81.11
+- @voyantjs/i18n@0.81.11
+- @voyantjs/legal-react@0.81.11
+- @voyantjs/ui@0.81.11
+- @voyantjs/utils@0.81.11
+
+## 0.81.10
+
+### Patch Changes
+
+- @voyantjs/crm-react@0.81.10
+- @voyantjs/i18n@0.81.10
+- @voyantjs/legal-react@0.81.10
+- @voyantjs/ui@0.81.10
+- @voyantjs/utils@0.81.10
+
+## 0.81.9
+
+### Patch Changes
+
+- @voyantjs/crm-react@0.81.9
+- @voyantjs/i18n@0.81.9
+- @voyantjs/legal-react@0.81.9
+- @voyantjs/ui@0.81.9
+- @voyantjs/utils@0.81.9
+
 ## 0.81.8
 
 ### Patch Changes

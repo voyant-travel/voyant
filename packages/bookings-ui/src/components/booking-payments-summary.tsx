@@ -1,6 +1,11 @@
 "use client"
 
-import { useAdminBookingPayments, usePublicBookingPayments } from "@voyantjs/finance-react"
+import {
+  type PaymentMethod,
+  type PaymentStatus,
+  useAdminBookingPayments,
+  usePublicBookingPayments,
+} from "@voyantjs/finance-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,8 +76,8 @@ export interface BookingPaymentsSummaryRow {
   invoiceType?: "invoice" | "proforma" | "credit_note"
   amountCents: number
   currency: string
-  status: string
-  paymentMethod: string
+  status: PaymentStatus
+  paymentMethod: PaymentMethod
   paymentDate: string
   referenceNumber: string | null
   notes: string | null

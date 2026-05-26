@@ -10,6 +10,14 @@ import type { CreateContractAttachmentInput } from "./service-shared.js"
 import { isContractTemplateSyntaxError, renderTemplate } from "./service-shared.js"
 import type { GenerateContractDocumentInput } from "./validation.js"
 
+type ContractGenerationFailureStatus = "render_unavailable" | "generator_failed"
+
+const GENERATION_METADATA_KEYS = [
+  "lastGenerationStatus",
+  "lastGenerationError",
+  "lastGenerationAttemptedAt",
+] as const
+
 export interface GeneratedContractDocumentArtifact {
   kind?: string | null
   name: string
@@ -80,11 +88,12 @@ export interface ContractDocumentGeneratedEvent {
 
 type EnsureRenderedContractResult =
   | { status: "not_found" }
-  | { status: "not_draft"; contract: null }
+  | { status: "not_draft" }
   | {
       status: "render_unavailable"
       contract: typeof contracts.$inferSelect
       templateVersion: typeof contractTemplateVersions.$inferSelect | null
+      error: string
     }
   | {
       status: "ready"
@@ -107,6 +116,58 @@ function normalizeAttachmentInput(
     checksum: input.checksum ?? null,
     metadata: input.metadata ?? null,
   }
+}
+
+function normalizeMetadata(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? { ...(value as Record<string, unknown>) }
+    : {}
+}
+
+function formatTemplateSyntaxError(error: unknown) {
+  if (isContractTemplateSyntaxError(error) && error.issues.length > 0) {
+    return error.issues.map((issue) => issue.message).join("; ")
+  }
+
+  return error instanceof Error ? error.message : "Contract template could not be rendered"
+}
+
+async function recordGenerationFailure(
+  db: PostgresJsDatabase,
+  contract: typeof contracts.$inferSelect,
+  status: ContractGenerationFailureStatus,
+  error: string | null,
+) {
+  await db
+    .update(contracts)
+    .set({
+      metadata: {
+        ...normalizeMetadata(contract.metadata),
+        lastGenerationStatus: status,
+        lastGenerationError: error,
+        lastGenerationAttemptedAt: new Date().toISOString(),
+      },
+      updatedAt: new Date(),
+    })
+    .where(eq(contracts.id, contract.id))
+}
+
+async function clearGenerationFailure(
+  db: PostgresJsDatabase,
+  contract: typeof contracts.$inferSelect,
+) {
+  const metadata = normalizeMetadata(contract.metadata)
+  for (const key of GENERATION_METADATA_KEYS) {
+    delete metadata[key]
+  }
+
+  await db
+    .update(contracts)
+    .set({
+      metadata: Object.keys(metadata).length > 0 ? metadata : null,
+      updatedAt: new Date(),
+    })
+    .where(eq(contracts.id, contract.id))
 }
 
 function defaultContractDocumentExtension(
@@ -274,7 +335,12 @@ async function ensureRenderedContract(
       issued = await contractRecordsService.issueContract(db, contractId, runtime)
     } catch (error) {
       if (isContractTemplateSyntaxError(error)) {
-        return { status: "render_unavailable" as const, contract, templateVersion: null }
+        return {
+          status: "render_unavailable" as const,
+          contract,
+          templateVersion: null,
+          error: formatTemplateSyntaxError(error),
+        }
       }
       throw error
     }
@@ -282,7 +348,7 @@ async function ensureRenderedContract(
       if (issued.status === "not_found") {
         return { status: "not_found" }
       }
-      return { status: "not_draft", contract: null }
+      return { status: "not_draft" }
     }
     contract = issued.contract
   }
@@ -297,7 +363,12 @@ async function ensureRenderedContract(
       renderedBody = renderTemplate(templateVersion.body, "html", variables)
     } catch (error) {
       if (isContractTemplateSyntaxError(error)) {
-        return { status: "render_unavailable" as const, contract, templateVersion }
+        return {
+          status: "render_unavailable" as const,
+          contract,
+          templateVersion,
+          error: formatTemplateSyntaxError(error),
+        }
       }
       throw error
     }
@@ -317,7 +388,12 @@ async function ensureRenderedContract(
   }
 
   if (!renderedBody || !renderedBodyFormat) {
-    return { status: "render_unavailable" as const, contract, templateVersion }
+    return {
+      status: "render_unavailable" as const,
+      contract,
+      templateVersion,
+      error: "Contract has no rendered body available for document generation",
+    }
   }
 
   return {
@@ -349,6 +425,10 @@ export const contractDocumentsService = {
       return { status: "not_draft" }
     }
     if (prepared.status === "render_unavailable") {
+      console.error(
+        `[legal] contract document render unavailable for contract ${contractId}: ${prepared.error}`,
+      )
+      await recordGenerationFailure(db, prepared.contract, "render_unavailable", prepared.error)
       return { status: "render_unavailable" }
     }
 
@@ -372,6 +452,12 @@ export const contractDocumentsService = {
       console.error(
         `[legal] contract document generator failed for contract ${contractId}:`,
         err instanceof Error ? `${err.message}\n${err.stack ?? ""}` : err,
+      )
+      await recordGenerationFailure(
+        db,
+        prepared.contract,
+        "generator_failed",
+        err instanceof Error ? err.message : String(err),
       )
       return { status: "generator_failed" }
     }
@@ -404,8 +490,16 @@ export const contractDocumentsService = {
     )
 
     if (!attachment) {
+      await recordGenerationFailure(
+        db,
+        prepared.contract,
+        "generator_failed",
+        "Contract document attachment could not be created",
+      )
       return { status: "not_found" }
     }
+
+    await clearGenerationFailure(db, prepared.contract)
 
     await runtime.eventBus?.emit(
       "contract.document.generated",

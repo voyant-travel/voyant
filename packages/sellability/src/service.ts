@@ -14,6 +14,7 @@ import {
   markets,
 } from "@voyantjs/markets/schema"
 import {
+  departurePriceOverrides,
   optionPriceRules,
   optionStartTimeRules,
   optionUnitPriceRules,
@@ -201,10 +202,16 @@ function computeUnitAmounts(
     sellAmountCents: number | null
     costAmountCents: number | null
   } | null,
+  override: {
+    sellAmountCents: number
+    costAmountCents: number | null
+  } | null,
 ): ResolvedPriceBreakdown {
   const pricingMode = unitRule?.pricingMode ?? "per_unit"
-  const baseSell = tier?.sellAmountCents ?? unitRule?.sellAmountCents ?? 0
-  const baseCost = tier?.costAmountCents ?? unitRule?.costAmountCents ?? 0
+  const baseSell =
+    override?.sellAmountCents ?? tier?.sellAmountCents ?? unitRule?.sellAmountCents ?? 0
+  const baseCost =
+    override?.costAmountCents ?? tier?.costAmountCents ?? unitRule?.costAmountCents ?? 0
 
   if (pricingMode === "included" || pricingMode === "free") {
     return {
@@ -644,6 +651,7 @@ export const sellabilityService = {
         contactRegion: input.offer.contactRegion ?? null,
         contactCity: input.offer.contactCity ?? null,
         contactAddressLine1: input.offer.contactAddressLine1 ?? null,
+        contactAddressLine2: input.offer.contactAddressLine2 ?? null,
         contactPostalCode: input.offer.contactPostalCode ?? null,
         marketId: candidate.market?.id ?? input.query.marketId ?? null,
         sourceChannelId: candidate.channel?.id ?? input.query.channelId ?? null,
@@ -1136,6 +1144,7 @@ export const sellabilityService = {
       allotmentTargetRows,
       releaseRuleRows,
       exchangeRateRow,
+      departureOverrideRows,
     ] = await Promise.all([
       query.marketId
         ? db
@@ -1284,6 +1293,23 @@ export const sellabilityService = {
             .where(eq(exchangeRates.quoteCurrency, query.currencyCode))
             .orderBy(desc(fxRateSets.effectiveAt))
         : Promise.resolve([]),
+      slotIds.length
+        ? db
+            .select({
+              departureId: departurePriceOverrides.departureId,
+              priceCatalogId: departurePriceOverrides.priceCatalogId,
+              optionUnitId: departurePriceOverrides.optionUnitId,
+              sellAmountCents: departurePriceOverrides.sellAmountCents,
+              costAmountCents: departurePriceOverrides.costAmountCents,
+            })
+            .from(departurePriceOverrides)
+            .where(
+              and(
+                inArray(departurePriceOverrides.departureId, slotIds),
+                eq(departurePriceOverrides.active, true),
+              ),
+            )
+        : Promise.resolve([]),
     ])
 
     const optionMap = new Map(optionRows.map((row) => [row.optionId, row]))
@@ -1292,6 +1318,12 @@ export const sellabilityService = {
     const catalogMap = new Map(catalogRows.map((row) => [row.id, row]))
     const unitMap = new Map(unitRows.map((row) => [row.id, row]))
     const pricingCategoryMap = new Map(pricingCategoryRows.map((row) => [row.id, row]))
+    const departureOverrideMap = new Map(
+      departureOverrideRows.map((row) => [
+        `${row.departureId}:${row.priceCatalogId}:${row.optionUnitId}`,
+        row,
+      ]),
+    )
 
     const candidates = []
 
@@ -1449,6 +1481,13 @@ export const sellabilityService = {
           : null
 
         if (unitRule?.pricingMode === "on_request") onRequest = true
+        const overrideUnitId = request.unitId ?? unitRule?.unitId ?? null
+        const override =
+          overrideUnitId == null
+            ? null
+            : (departureOverrideMap.get(
+                `${slot.id}:${chosenRule.priceCatalogId}:${overrideUnitId}`,
+              ) ?? null)
         const item = computeUnitAmounts(
           request,
           {
@@ -1460,6 +1499,7 @@ export const sellabilityService = {
           },
           unitRule,
           tier,
+          override,
         )
         breakdown.push(item)
         components.push({

@@ -231,6 +231,12 @@ export const legalUiEn = {
       addAttachment: "Add Attachment",
       addDocument: "Add Document",
     },
+    generationFailure: {
+      defaultLabel: "Generation failed",
+      templateError: "Template error",
+      generatorFailed: "PDF generator failed",
+      fallbackReason: "The last generation attempt failed. Fix the underlying issue and retry.",
+    },
     sections: {
       details: "Contract Details",
       parties: "Parties",

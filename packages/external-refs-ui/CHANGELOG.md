@@ -1,5 +1,68 @@
 # @voyantjs/external-refs-ui
 
+## 0.81.13
+
+### Patch Changes
+
+- Updated dependencies [ad95d4c]
+- Updated dependencies [36421aa]
+  - @voyantjs/bookings-ui@0.81.13
+  - @voyantjs/crm-ui@0.81.13
+  - @voyantjs/external-refs-react@0.81.13
+  - @voyantjs/i18n@0.81.13
+  - @voyantjs/products-ui@0.81.13
+  - @voyantjs/suppliers-ui@0.81.13
+  - @voyantjs/ui@0.81.13
+
+## 0.81.12
+
+### Patch Changes
+
+- @voyantjs/bookings-ui@0.81.12
+- @voyantjs/crm-ui@0.81.12
+- @voyantjs/external-refs-react@0.81.12
+- @voyantjs/i18n@0.81.12
+- @voyantjs/products-ui@0.81.12
+- @voyantjs/suppliers-ui@0.81.12
+- @voyantjs/ui@0.81.12
+
+## 0.81.11
+
+### Patch Changes
+
+- @voyantjs/bookings-ui@0.81.11
+- @voyantjs/crm-ui@0.81.11
+- @voyantjs/external-refs-react@0.81.11
+- @voyantjs/i18n@0.81.11
+- @voyantjs/products-ui@0.81.11
+- @voyantjs/suppliers-ui@0.81.11
+- @voyantjs/ui@0.81.11
+
+## 0.81.10
+
+### Patch Changes
+
+- @voyantjs/bookings-ui@0.81.10
+- @voyantjs/crm-ui@0.81.10
+- @voyantjs/external-refs-react@0.81.10
+- @voyantjs/i18n@0.81.10
+- @voyantjs/products-ui@0.81.10
+- @voyantjs/suppliers-ui@0.81.10
+- @voyantjs/ui@0.81.10
+
+## 0.81.9
+
+### Patch Changes
+
+- Updated dependencies [1a58939]
+  - @voyantjs/bookings-ui@0.81.9
+  - @voyantjs/crm-ui@0.81.9
+  - @voyantjs/external-refs-react@0.81.9
+  - @voyantjs/i18n@0.81.9
+  - @voyantjs/products-ui@0.81.9
+  - @voyantjs/suppliers-ui@0.81.9
+  - @voyantjs/ui@0.81.9
+
 ## 0.81.8
 
 ### Patch Changes

@@ -1,5 +1,67 @@
 # @voyantjs/octo
 
+## 0.81.13
+
+### Patch Changes
+
+- Updated dependencies [28dca55]
+  - @voyantjs/availability@0.81.13
+  - @voyantjs/bookings@0.81.13
+  - @voyantjs/core@0.81.13
+  - @voyantjs/db@0.81.13
+  - @voyantjs/hono@0.81.13
+  - @voyantjs/products@0.81.13
+  - @voyantjs/transactions@0.81.13
+
+## 0.81.12
+
+### Patch Changes
+
+- @voyantjs/availability@0.81.12
+- @voyantjs/bookings@0.81.12
+- @voyantjs/core@0.81.12
+- @voyantjs/db@0.81.12
+- @voyantjs/hono@0.81.12
+- @voyantjs/products@0.81.12
+- @voyantjs/transactions@0.81.12
+
+## 0.81.11
+
+### Patch Changes
+
+- @voyantjs/availability@0.81.11
+- @voyantjs/bookings@0.81.11
+- @voyantjs/core@0.81.11
+- @voyantjs/db@0.81.11
+- @voyantjs/hono@0.81.11
+- @voyantjs/products@0.81.11
+- @voyantjs/transactions@0.81.11
+
+## 0.81.10
+
+### Patch Changes
+
+- @voyantjs/availability@0.81.10
+- @voyantjs/bookings@0.81.10
+- @voyantjs/core@0.81.10
+- @voyantjs/db@0.81.10
+- @voyantjs/hono@0.81.10
+- @voyantjs/products@0.81.10
+- @voyantjs/transactions@0.81.10
+
+## 0.81.9
+
+### Patch Changes
+
+- Updated dependencies [1a58939]
+  - @voyantjs/availability@0.81.9
+  - @voyantjs/bookings@0.81.9
+  - @voyantjs/core@0.81.9
+  - @voyantjs/db@0.81.9
+  - @voyantjs/hono@0.81.9
+  - @voyantjs/products@0.81.9
+  - @voyantjs/transactions@0.81.9
+
 ## 0.81.8
 
 ### Patch Changes

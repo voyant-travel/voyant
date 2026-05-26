@@ -1,16 +1,13 @@
-import {
-  type ActionLedgerRequestContextValues,
-  appendActionLedgerMutation,
-} from "@voyantjs/action-ledger"
+import { appendActionLedgerMutation } from "@voyantjs/action-ledger"
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
-import type { EventBus } from "@voyantjs/core"
 import { asc, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { resolveBookingSellTaxRate } from "./booking-tax.js"
-import { type InvoiceFxOptions, resolveInvoiceFxContext } from "./invoice-fx.js"
+import { resolveInvoiceFxContext } from "./invoice-fx.js"
 import {
   bookingItemTaxLines,
+  bookingPaymentSchedules,
   invoiceLineItems,
   invoiceNumberSeries,
   invoices,
@@ -19,6 +16,7 @@ import {
 import {
   buildInvoiceIssuedActionLedgerInput,
   type CreateInvoiceFromBookingInput,
+  type FinanceServiceRuntime,
   financeService,
   type InvoiceFromBookingData,
 } from "./service.js"
@@ -33,11 +31,7 @@ import {
  * (a status change that's also a system signal).
  */
 
-export interface InvoiceIssueRuntime extends InvoiceFxOptions {
-  eventBus?: EventBus
-  actionLedgerContext?: ActionLedgerRequestContextValues
-  actionLedgerAuthorizationSource?: string | null
-}
+export interface InvoiceIssueRuntime extends FinanceServiceRuntime {}
 
 export interface InvoiceIssuedEvent {
   invoiceId: string
@@ -91,6 +85,9 @@ export interface InvoiceIssuedLineItem {
   quantity: number
   unitPrice: number
   currency: string
+  bookingPaymentScheduleId?: string
+  scheduleType?: (typeof bookingPaymentSchedules.$inferSelect)["scheduleType"]
+  schedulePercent?: number
   taxPercentage?: number
   taxName?: string | null
   taxRegimeCode?: TaxRegimeCode | null
@@ -279,6 +276,7 @@ export async function buildInvoiceIssuedEvent(
     .where(eq(invoiceLineItems.invoiceId, invoice.id))
     .orderBy(asc(invoiceLineItems.sortOrder))
   const taxMetadataByBookingItemId = await loadLineTaxMetadata(db, lines)
+  const scheduleMetadataById = await loadLineScheduleMetadata(db, lines)
   const payload: InvoiceIssuedEvent = {
     invoiceId: invoice.id,
     invoiceNumber: invoice.invoiceNumber,
@@ -290,7 +288,9 @@ export async function buildInvoiceIssuedEvent(
     clientName: buildClientName(booking),
     clientEmail: booking?.contactEmail ?? null,
     clientPhone: booking?.contactPhone ?? null,
-    clientAddress: booking?.contactAddressLine1 ?? null,
+    clientAddress:
+      [booking?.contactAddressLine1, booking?.contactAddressLine2].filter(Boolean).join("\n") ||
+      null,
     clientCity: booking?.contactCity ?? null,
     clientCounty: booking?.contactRegion ?? null,
     clientCountry: booking?.contactCountry ?? null,
@@ -300,12 +300,25 @@ export async function buildInvoiceIssuedEvent(
       const taxMetadata =
         line.bookingItemId == null ? undefined : taxMetadataByBookingItemId.get(line.bookingItemId)
       const taxPercentage = line.taxRate ?? taxMetadata?.taxPercentage
+      const schedule =
+        line.bookingPaymentScheduleId == null
+          ? undefined
+          : scheduleMetadataById.get(line.bookingPaymentScheduleId)
+      const schedulePercent =
+        schedule && booking?.sellAmountCents && booking.sellAmountCents > 0
+          ? Math.round((schedule.amountCents / booking.sellAmountCents) * 100)
+          : undefined
 
       return {
         description: line.description,
         quantity: line.quantity,
         unitPrice: centsToMajor(line.unitPriceCents),
         currency: invoice.currency,
+        ...(line.bookingPaymentScheduleId == null
+          ? {}
+          : { bookingPaymentScheduleId: line.bookingPaymentScheduleId }),
+        ...(schedule?.scheduleType == null ? {} : { scheduleType: schedule.scheduleType }),
+        ...(schedulePercent == null ? {} : { schedulePercent }),
         ...(taxPercentage == null ? {} : { taxPercentage }),
         ...(taxMetadata?.taxName == null ? {} : { taxName: taxMetadata.taxName }),
         ...(taxMetadata?.taxRegimeCode == null ? {} : { taxRegimeCode: taxMetadata.taxRegimeCode }),
@@ -376,6 +389,26 @@ async function loadLineTaxMetadata(
 
   await backfillMissingLineTaxMetadata(db, bookingItemIds, metadataByBookingItemId)
   return metadataByBookingItemId
+}
+
+async function loadLineScheduleMetadata(
+  db: PostgresJsDatabase,
+  lines: Array<typeof invoiceLineItems.$inferSelect>,
+) {
+  const scheduleIds = [
+    ...new Set(
+      lines.map((line) => line.bookingPaymentScheduleId).filter((id): id is string => Boolean(id)),
+    ),
+  ]
+  if (scheduleIds.length === 0)
+    return new Map<string, typeof bookingPaymentSchedules.$inferSelect>()
+
+  const scheduleRows = await db
+    .select()
+    .from(bookingPaymentSchedules)
+    .where(inArray(bookingPaymentSchedules.id, scheduleIds))
+
+  return new Map(scheduleRows.map((schedule) => [schedule.id, schedule]))
 }
 
 function selectEventTaxLine<T extends { scope: string; rateBasisPoints: number | null }>(

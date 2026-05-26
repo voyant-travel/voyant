@@ -2,7 +2,12 @@ import { availabilitySlots } from "@voyantjs/availability/schema"
 import { cleanupTestDb, closeTestDb, createTestDb } from "@voyantjs/db/test-utils"
 import { bookingPaymentSchedules } from "@voyantjs/finance/schema"
 import { handleApiError } from "@voyantjs/hono"
-import { optionPriceRules, optionUnitPriceRules, priceCatalogs } from "@voyantjs/pricing/schema"
+import {
+  departurePriceOverrides,
+  optionPriceRules,
+  optionUnitPriceRules,
+  priceCatalogs,
+} from "@voyantjs/pricing/schema"
 import { optionUnits, productOptions, products } from "@voyantjs/products/schema"
 import { eq } from "drizzle-orm"
 import { Hono } from "hono"
@@ -194,7 +199,7 @@ describe.skipIf(!DB_AVAILABLE)("Storefront booking-session bootstrap route", () 
       })
       .returning()
 
-    return { product, option, unit, slot }
+    return { product, option, unit, catalog, slot }
   }
 
   function bootstrapPayload(seed: Awaited<ReturnType<typeof seedDeparture>>) {
@@ -357,6 +362,50 @@ describe.skipIf(!DB_AVAILABLE)("Storefront booking-session bootstrap route", () 
       .where(eq(availabilitySlots.id, seed.slot.id))
       .limit(1)
     expect(slot?.remainingPax).toBe(9)
+  })
+
+  it("prices bootstrap sessions with departure price overrides", async () => {
+    const seed = await seedDeparture()
+    await db.insert(departurePriceOverrides).values({
+      departureId: seed.slot.id,
+      optionId: seed.option.id,
+      optionUnitId: seed.unit.id,
+      priceCatalogId: seed.catalog.id,
+      sellAmountCents: 70000,
+      active: true,
+    })
+
+    const payload = bootstrapPayload(seed)
+    payload.quote.totalSellAmountCents = 70000
+
+    const res = await app.request("/bookings/sessions/bootstrap", {
+      method: "POST",
+      ...json(payload),
+    })
+
+    expect(res.status).toBe(201)
+    const body = await res.json()
+    expect(body.data.session.sellAmountCents).toBe(70000)
+    expect(body.data.session.items[0]).toEqual(
+      expect.objectContaining({
+        optionUnitId: seed.unit.id,
+        unitSellAmountCents: 70000,
+        totalSellAmountCents: 70000,
+      }),
+    )
+    expect(body.data.repricing.current).toEqual(
+      expect.objectContaining({
+        totalSellAmountCents: 70000,
+        appliedToSession: true,
+      }),
+    )
+    expect(body.data.repricing.current.items[0]).toEqual(
+      expect.objectContaining({
+        optionUnitId: seed.unit.id,
+        unitSellAmountCents: 70000,
+        totalSellAmountCents: 70000,
+      }),
+    )
   })
 
   it("prices omitted item option ids against the selected slot option", async () => {

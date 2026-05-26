@@ -754,6 +754,7 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
                 state: "Ile-de-France",
                 city: "Paris",
                 addressLine1: "Rue de Rivoli 22",
+                addressLine2: "Etage 3",
                 postalCode: "75001",
               },
             },
@@ -776,6 +777,7 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
         contactRegion: "Ile-de-France",
         contactCity: "Paris",
         contactAddressLine1: "Rue de Rivoli 22",
+        contactAddressLine2: "Etage 3",
         contactPostalCode: "75001",
       }),
     )
