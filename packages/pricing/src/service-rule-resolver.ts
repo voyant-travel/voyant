@@ -1,12 +1,22 @@
 import { and, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import rrulePackage from "rrule"
+import * as rrulePackage from "rrule"
 
 import { priceSchedules } from "./schema-catalogs.js"
 import { departurePriceOverrides } from "./schema-departure-overrides.js"
 import { optionPriceRules } from "./schema-option-rules.js"
 
-const { rrulestr } = rrulePackage
+type RRulePackage = typeof import("rrule")
+type RRulePackageCompat = RRulePackage & {
+  default?: RRulePackage
+  rrule?: RRulePackage
+}
+
+const rrulePackageCompat = rrulePackage as RRulePackageCompat
+const { rrulestr } =
+  rrulePackageCompat.rrulestr != null
+    ? rrulePackageCompat
+    : (rrulePackageCompat.default ?? rrulePackageCompat.rrule ?? rrulePackageCompat)
 
 export interface ResolverRuleInput {
   id: string
