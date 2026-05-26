@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/external-refs",
-  "version": "0.81.11",
+  "version": "0.81.12",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {

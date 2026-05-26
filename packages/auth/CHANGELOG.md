@@ -1,5 +1,13 @@
 # @voyantjs/auth
 
+## 0.81.12
+
+### Patch Changes
+
+- 308bad0: Scope the default Better Auth signup guard to admin-surface users so customer-facing auth plugins can create storefront users.
+  - @voyantjs/db@0.81.12
+  - @voyantjs/utils@0.81.12
+
 ## 0.81.11
 
 ### Patch Changes
