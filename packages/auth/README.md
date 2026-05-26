@@ -50,6 +50,29 @@ the normalized `{ userId, actor }` contract, not on Better Auth specifically.
 When using additional user fields with the Drizzle adapter, the consuming app is
 responsible for adding matching columns and migrations to the auth user table.
 
+By default, `createBetterAuth` keeps Voyant's single-tenant guard for admin
+signups: once any user exists, another user without explicit surfaces, or with
+the `admin` surface, cannot self-register. Customer-facing auth plugins can
+still create users by setting a non-admin surface such as `storefront`.
+
+```typescript
+const auth = createBetterAuth({
+  db,
+  user: {
+    additionalFields: {
+      surfaces: {
+        type: "string",
+        required: false,
+        input: true,
+      },
+    },
+  },
+  disableSignupWhenUsersExist: {
+    surfaces: ["admin"],
+  },
+})
+```
+
 Better Auth server plugins that define their own tables must pass those Drizzle
 tables through `extraSchema` so the shared Drizzle adapter can resolve them:
 

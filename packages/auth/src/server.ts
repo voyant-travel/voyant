@@ -459,6 +459,63 @@ type ResolvedBetterAuthPlugins<Plugins extends BetterAuthPlugin[] | undefined> =
     ? [...VoyantBetterAuthPlugins, ...Plugins]
     : VoyantBetterAuthPlugins
 
+const DEFAULT_SIGNUP_BLOCK_SURFACES = ["admin"] as const
+
+export interface DisableSignupWhenUsersExistOptions {
+  /**
+   * Set to false when the consuming app owns all signup admission checks.
+   *
+   * Defaults to true.
+   */
+  enabled?: boolean
+  /**
+   * User surfaces that should keep the single-tenant signup guard. New users
+   * with only other explicit surfaces can still be created by customer-facing
+   * auth plugins such as phone OTP.
+   *
+   * Defaults to ["admin"]. Users without an explicit surfaces array are
+   * treated as admin users for backward compatibility.
+   */
+  surfaces?: readonly string[]
+}
+
+type SignupBlockUserPayload = {
+  surfaces?: unknown
+}
+
+function normalizeSignupBlockSurfaces(
+  options: DisableSignupWhenUsersExistOptions | undefined,
+): readonly string[] {
+  return options?.surfaces ?? DEFAULT_SIGNUP_BLOCK_SURFACES
+}
+
+function isSignupBlockEnabled(options: DisableSignupWhenUsersExistOptions | undefined): boolean {
+  return options?.enabled !== false
+}
+
+function signupBlockAppliesToUser(
+  user: SignupBlockUserPayload | undefined,
+  blockedSurfaces: readonly string[],
+): boolean {
+  if (blockedSurfaces.length === 0) return false
+
+  const surfaces = user?.surfaces
+  if (Array.isArray(surfaces)) {
+    const explicitSurfaces = surfaces.filter(
+      (surface): surface is string => typeof surface === "string",
+    )
+    if (explicitSurfaces.length > 0) {
+      return explicitSurfaces.some((surface) => blockedSurfaces.includes(surface))
+    }
+  }
+
+  if (typeof surfaces === "string" && surfaces.length > 0) {
+    return blockedSurfaces.includes(surfaces)
+  }
+
+  return blockedSurfaces.includes("admin")
+}
+
 type ResolvedCreateBetterAuthOptions<
   UserOptions extends BetterAuthOptions["user"],
   Plugins extends BetterAuthPlugin[] | undefined,
@@ -485,6 +542,7 @@ export interface CreateBetterAuthOptions<
   extraSchema?: BetterAuthDrizzleSchema
   plugins?: Plugins
   user?: UserOptions
+  disableSignupWhenUsersExist?: DisableSignupWhenUsersExistOptions
   /** Called when a user requests a password reset. If not provided, logs to console. */
   sendResetPassword?: (data: {
     user: { email: string; name: string }
@@ -518,6 +576,8 @@ export function createBetterAuth<
     baseURL,
   )
   const extraPlugins = options.plugins ?? []
+  const signupBlockSurfaces = normalizeSignupBlockSurfaces(options.disableSignupWhenUsersExist)
+  const signupBlockEnabled = isSignupBlockEnabled(options.disableSignupWhenUsersExist)
   const schema = {
     user: authUser,
     session: authSession,
@@ -604,7 +664,14 @@ export function createBetterAuth<
           // social sign-ins still work because this hook only fires on CREATE.
           // Seed scripts do raw drizzle inserts, so they bypass this hook —
           // which is intentional.
-          before: async () => {
+          before: async (user) => {
+            if (
+              !signupBlockEnabled ||
+              !signupBlockAppliesToUser(user as SignupBlockUserPayload, signupBlockSurfaces)
+            ) {
+              return
+            }
+
             const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
             if ((row?.count ?? 0) > 0) {
               throw new Error("Sign-up is disabled. Ask an admin to invite you.")
