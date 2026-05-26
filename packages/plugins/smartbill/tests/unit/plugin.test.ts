@@ -680,7 +680,12 @@ describe("smartbillPlugin — invoice.issued subscriber", () => {
   })
 
   it("keeps the SmartBill ref retryable when external allocation fails", async () => {
-    financeServiceMock.applyExternalInvoiceAllocation.mockRejectedValueOnce(new Error("db down"))
+    financeServiceMock.applyExternalInvoiceAllocation.mockRejectedValueOnce(
+      Object.assign(new Error("Invoice number already exists"), {
+        code: "invoice_number_conflict",
+        invoiceNumber: "SB-42",
+      }),
+    )
     financeServiceMock.listInvoiceExternalRefs.mockResolvedValueOnce([]).mockResolvedValueOnce([
       {
         id: "iex_existing",
@@ -721,8 +726,9 @@ describe("smartbillPlugin — invoice.issued subscriber", () => {
       }),
     )
 
-    expect(financeServiceMock.registerInvoiceExternalRef).toHaveBeenCalledOnce()
-    expect(financeServiceMock.registerInvoiceExternalRef).toHaveBeenCalledWith(
+    expect(financeServiceMock.registerInvoiceExternalRef).toHaveBeenCalledTimes(2)
+    expect(financeServiceMock.registerInvoiceExternalRef).toHaveBeenNthCalledWith(
+      1,
       expect.anything(),
       "inv_external_retry",
       expect.objectContaining({
@@ -731,13 +737,24 @@ describe("smartbillPlugin — invoice.issued subscriber", () => {
         status: "issued",
       }),
     )
+    expect(financeServiceMock.registerInvoiceExternalRef).toHaveBeenNthCalledWith(
+      2,
+      expect.anything(),
+      "inv_external_retry",
+      expect.objectContaining({
+        provider: "smartbill",
+        externalNumber: "42",
+        status: "issued",
+        syncError: expect.stringContaining("invoice_number_conflict"),
+      }),
+    )
     expect(logger.error).toHaveBeenCalledWith(
       expect.stringContaining("createInvoice"),
       expect.any(Error),
     )
   })
 
-  it("skips duplicate create calls when a non-error SmartBill ref already exists", async () => {
+  it("skips duplicate create calls when a non-error SmartBill ref already exists with a local sync error", async () => {
     financeServiceMock.listInvoiceExternalRefs.mockResolvedValueOnce([
       {
         id: "iex_existing",
@@ -747,7 +764,7 @@ describe("smartbillPlugin — invoice.issued subscriber", () => {
         externalNumber: "1",
         externalUrl: null,
         status: "issued",
-        syncError: null,
+        syncError: "invoice_number_conflict: Invoice number already exists",
         metadata: {
           companyVatCode: "RO12345678",
           seriesName: "A",

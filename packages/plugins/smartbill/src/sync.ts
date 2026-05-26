@@ -521,7 +521,23 @@ async function recordSyncError(
     )
     if (!db) return
     const refs = await financeService.listInvoiceExternalRefs(db, event.id)
-    if (refs.some((ref) => isMatchingSmartbillRef(ref, documentType))) return
+    const matchingRef = refs.find((ref) => isMatchingSmartbillRef(ref, documentType))
+    if (matchingRef) {
+      await financeService.registerInvoiceExternalRef(db, event.id, {
+        provider: "smartbill",
+        externalId: matchingRef.externalId ?? null,
+        externalNumber: matchingRef.externalNumber ?? null,
+        externalUrl: matchingRef.externalUrl ?? null,
+        status: matchingRef.status ?? "error",
+        syncedAt: new Date().toISOString(),
+        syncError: errorMessage(err),
+        metadata: {
+          ...(coerceMetadata(matchingRef.metadata) ?? {}),
+          documentType,
+        },
+      })
+      return
+    }
 
     await financeService.registerInvoiceExternalRef(db, event.id, {
       provider: "smartbill",
@@ -603,7 +619,12 @@ async function resolveMaybe<TContext, TValue>(
 }
 
 function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error)
+  if (error instanceof Error) {
+    const maybeCode = (error as Error & { code?: unknown }).code
+    const code = typeof maybeCode === "string" ? maybeCode : null
+    return code ? `${code}: ${error.message}` : error.message
+  }
+  return String(error)
 }
 
 function coerceMetadata(value: unknown): Record<string, unknown> | null {
@@ -634,7 +655,6 @@ function isUsableSmartbillRef(ref: {
   return (
     ref.provider === "smartbill" &&
     ref.status !== "error" &&
-    !ref.syncError &&
     Boolean(ref.externalNumber || ref.externalId)
   )
 }

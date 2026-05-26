@@ -696,6 +696,7 @@ function isInvoiceNumberUniqueConstraintError(error: unknown) {
   const constraint = typeof candidate.constraint === "string" ? candidate.constraint : ""
   const detail = typeof candidate.detail === "string" ? candidate.detail : ""
   return (
+    constraint === "invoices_invoice_number_type_active_idx" ||
     constraint === "invoices_invoice_number_type_unique" ||
     constraint === "invoices_invoice_number_unique" ||
     constraint === "invoices_invoice_number_key" ||
@@ -3952,28 +3953,35 @@ export const financeService = {
         .where(eq(invoices.id, id))
         .returning()
 
-    const actionLedgerContext = runtime.actionLedgerContext
-    if (actionLedgerContext) {
-      return db.transaction(async (tx) => {
-        const [row] = await updateInvoiceRow(tx)
+    try {
+      const actionLedgerContext = runtime.actionLedgerContext
+      if (actionLedgerContext) {
+        return await db.transaction(async (tx) => {
+          const [row] = await updateInvoiceRow(tx)
 
-        if (row) {
-          await appendActionLedgerMutation(
-            tx,
-            buildInvoiceUpdateActionLedgerInput(
-              actionLedgerContext,
-              { invoice: row, changes: data },
-              { authorizationSource: runtime.actionLedgerAuthorizationSource },
-            ),
-          )
-        }
+          if (row) {
+            await appendActionLedgerMutation(
+              tx,
+              buildInvoiceUpdateActionLedgerInput(
+                actionLedgerContext,
+                { invoice: row, changes: data },
+                { authorizationSource: runtime.actionLedgerAuthorizationSource },
+              ),
+            )
+          }
 
-        return row ?? null
-      })
+          return row ?? null
+        })
+      }
+
+      const [row] = await updateInvoiceRow(db)
+      return row ?? null
+    } catch (error) {
+      if (data.invoiceNumber && isInvoiceNumberUniqueConstraintError(error)) {
+        throw new InvoiceNumberConflictError(data.invoiceNumber)
+      }
+      throw error
     }
-
-    const [row] = await updateInvoiceRow(db)
-    return row ?? null
   },
 
   async deleteInvoice(db: PostgresJsDatabase, id: string, runtime: FinanceServiceRuntime = {}) {
@@ -5263,15 +5271,24 @@ export const financeService = {
       return { status: "not_pending_external_allocation" as const, invoice: existing }
     }
 
-    const [invoice] = await db
-      .update(invoices)
-      .set({
-        invoiceNumber: data.invoiceNumber,
-        status: data.status ?? "issued",
-        updatedAt: new Date(),
-      })
-      .where(eq(invoices.id, invoiceId))
-      .returning()
+    let invoice: typeof invoices.$inferSelect | undefined
+    try {
+      const [updatedInvoice] = await db
+        .update(invoices)
+        .set({
+          invoiceNumber: data.invoiceNumber,
+          status: data.status ?? "issued",
+          updatedAt: new Date(),
+        })
+        .where(eq(invoices.id, invoiceId))
+        .returning()
+      invoice = updatedInvoice
+    } catch (error) {
+      if (isInvoiceNumberUniqueConstraintError(error)) {
+        throw new InvoiceNumberConflictError(data.invoiceNumber)
+      }
+      throw error
+    }
 
     return invoice ? { status: "applied" as const, invoice } : { status: "not_found" as const }
   },
