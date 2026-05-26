@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@voyantjs/ui/components/select"
-import { ListFilter } from "lucide-react"
+import { ListFilter, X } from "lucide-react"
 import * as React from "react"
 
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
@@ -65,6 +65,8 @@ export interface BookingListFiltersPopoverProps {
   paxMax: string
   onPaxMaxChange: (paxMax: string) => void
   onFiltersChanged: () => void
+  hasActiveFilters: boolean
+  onClearFilters: () => void
 }
 
 export function BookingListFiltersPopover({
@@ -94,6 +96,8 @@ export function BookingListFiltersPopover({
   paxMax,
   onPaxMaxChange,
   onFiltersChanged,
+  hasActiveFilters,
+  onClearFilters,
 }: BookingListFiltersPopoverProps) {
   const messages = useBookingsUiMessagesOrDefault()
   const filterMessages = messages.bookingList.filters
@@ -177,6 +181,21 @@ export function BookingListFiltersPopover({
       />
       <PopoverContent align="start" className="w-[22rem] p-4">
         <div className="flex flex-col gap-4">
+          {hasActiveFilters && (
+            <div className="flex justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onClearFilters()
+                }}
+              >
+                <X className="mr-1 size-4" />
+                {filterMessages.clear}
+              </Button>
+            </div>
+          )}
+
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="bookings-filter-status">{filterMessages.statusLabel}</Label>
             <Select

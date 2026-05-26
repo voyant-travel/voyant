@@ -71,7 +71,8 @@ export type BookingsUiMessages = {
     recordPaymentAction: string
     noValue: string
     tbd: string
-    summarySell: string
+    summaryTotal: string
+    summaryPaid: string
     summaryPriceOverride: string
     summaryCostMargin: string
     summaryDates: string
@@ -81,6 +82,7 @@ export type BookingsUiMessages = {
     summaryCreated: string
     summaryUpdated: string
     tabOverview: string
+    tabMeta: string
     tabTravelers: string
     tabFinance: string
     tabInvoices: string
@@ -184,13 +186,44 @@ export type BookingsUiMessages = {
       decrypting: string
     }
     actions: {
-      deleteConfirm: string
+      deleteConfirm: {
+        title: string
+        description: string
+        cancel: string
+        confirm: string
+      }
       revealContactDetails: string
       hideContactDetails: string
       revealTravelerContactDetails: string
       hideTravelerContactDetails: string
+      viewTraveler: string
       editTraveler: string
       deleteTraveler: string
+    }
+    snapshot: {
+      title: string
+      subtitle: string
+      sectionContact: string
+      sectionTravel: string
+      sectionDocuments: string
+      sectionMeta: string
+      nameLabel: string
+      emailLabel: string
+      phoneLabel: string
+      languageLabel: string
+      roleLabel: string
+      dobLabel: string
+      nationalityLabel: string
+      documentLabel: string
+      documentExpiryLabel: string
+      dietaryLabel: string
+      accessibilityLabel: string
+      specialRequestsLabel: string
+      notesLabel: string
+      noDocuments: string
+      createdAtLabel: string
+      updatedAtLabel: string
+      empty: string
     }
     validation: {
       revealFailed: string
@@ -749,6 +782,8 @@ export type BookingsUiMessages = {
     }
     columns: {
       title: string
+      option: string
+      unit: string
       type: string
       status: string
       quantity: string
@@ -766,11 +801,40 @@ export type BookingsUiMessages = {
       noDescription: string
     }
     actions: {
-      deleteConfirm: string
+      deleteConfirm: {
+        title: string
+        description: string
+        cancel: string
+        confirm: string
+      }
       expandItem: string
       collapseItem: string
+      viewItem: string
       editItem: string
       deleteItem: string
+    }
+    snapshot: {
+      title: string
+      subtitle: string
+      sectionSummary: string
+      sectionPricing: string
+      sectionMeta: string
+      productLabel: string
+      optionLabel: string
+      unitLabel: string
+      descriptionLabel: string
+      typeLabel: string
+      statusLabel: string
+      datesLabel: string
+      quantityLabel: string
+      unitSellLabel: string
+      totalSellLabel: string
+      unitCostLabel: string
+      totalCostLabel: string
+      notesLabel: string
+      createdAtLabel: string
+      updatedAtLabel: string
+      empty: string
     }
   }
   bookingPaymentScheduleList: {

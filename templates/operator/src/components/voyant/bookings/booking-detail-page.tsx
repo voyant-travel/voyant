@@ -5,6 +5,7 @@ import { useAdminBreadcrumbs, useLocale } from "@voyantjs/admin"
 import { useBooking } from "@voyantjs/bookings-react"
 import { BookingDetailPage as CanonicalBookingDetailPage } from "@voyantjs/bookings-ui/components/booking-detail-page"
 import { CollectPaymentDialog } from "@voyantjs/checkout-ui"
+import { useInvoices } from "@voyantjs/finance-react"
 import { RecordBookingPaymentDialog } from "@voyantjs/finance-ui"
 import { useState } from "react"
 import { AdminWidgetSlotRenderer } from "@/components/admin/admin-widget-slot"
@@ -17,7 +18,6 @@ import { BookingInvoicesCard } from "./booking-invoices-card"
 import { BookingPaidPaymentSessions } from "./booking-paid-payment-sessions"
 import { BookingPaymentPolicyCard } from "./booking-payment-policy-card"
 import { BookingPendingPaymentSessions } from "./booking-pending-payment-sessions"
-import { BookingPricingSummaryCard } from "./booking-pricing-summary-card"
 
 /**
  * Operator wrapper around the canonical `BookingDetailPage`. The
@@ -46,6 +46,17 @@ export function BookingDetailPage({ id }: { id: string }) {
   // network request.
   const { data: bookingData } = useBooking(id)
   const booking = bookingData?.data
+  // Sum customer payments across this booking's non-credit-note,
+  // non-draft invoices.
+  const { data: invoicesData } = useInvoices({ bookingId: id, limit: 20 })
+  const paidAmountCents = invoicesData?.data
+    ? invoicesData.data
+        .filter((inv) => {
+          const type = (inv as { invoiceType?: string }).invoiceType ?? "invoice"
+          return type !== "credit_note" && inv.status !== "draft"
+        })
+        .reduce((sum, inv) => sum + (inv.paidCents ?? 0), 0)
+    : null
   useAdminBreadcrumbs(
     booking
       ? [
@@ -68,6 +79,16 @@ export function BookingDetailPage({ id }: { id: string }) {
         }
         onCollectPayment={() => setCollectPaymentOpen(true)}
         onRecordPayment={() => setRecordPaymentOpen(true)}
+        paidAmountCents={paidAmountCents}
+        onItemResourceOpen={(kind, resourceId) => {
+          if (kind === "product") {
+            void navigate({ to: "/products/$id", params: { id: resourceId } })
+            return
+          }
+          if (kind === "availabilitySlot") {
+            void navigate({ to: "/availability/$id", params: { id: resourceId } })
+          }
+        }}
         slots={{
           header: (b) => (
             <AdminWidgetSlotRenderer slot="booking.details.header" props={{ booking: b }} />
@@ -76,9 +97,6 @@ export function BookingDetailPage({ id }: { id: string }) {
             <AdminWidgetSlotRenderer slot="booking.details.after-summary" props={{ booking: b }} />
           ),
           overviewStart: () => <BookingCatalogSourceCard bookingId={id} />,
-          overviewEnd: (b) => (
-            <BookingPricingSummaryCard bookingId={id} defaultCurrency={b.sellCurrency} />
-          ),
           financeStart: () => (
             <>
               <BookingPendingPaymentSessions bookingId={id} />

@@ -1,5 +1,6 @@
 "use client"
 
+import type { ColumnDef } from "@tanstack/react-table"
 import {
   type BookingTravelerDocumentRecord,
   type BookingTravelerRecord,
@@ -10,7 +11,25 @@ import {
   useTravelers,
 } from "@voyantjs/bookings-react"
 import { usePerson } from "@voyantjs/crm-react"
-import { Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+} from "@voyantjs/ui/components"
+import { DataTable } from "@voyantjs/ui/components/data-table"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@voyantjs/ui/components/sheet"
 import { Eye, EyeOff, Loader2, Pencil, Plus, Trash2, Users } from "lucide-react"
 import * as React from "react"
 
@@ -25,6 +44,8 @@ export interface TravelerListProps {
 export function TravelerList({ bookingId, autoReveal = false }: TravelerListProps) {
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<BookingTravelerRecord | undefined>(undefined)
+  const [viewingId, setViewingId] = React.useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = React.useState<BookingTravelerRecord | null>(null)
   const [revealedIds, setRevealedIds] = React.useState<Set<string>>(new Set())
   const { data } = useTravelers(bookingId)
   const documentsQuery = useBookingTravelerDocuments(bookingId)
@@ -60,13 +81,185 @@ export function TravelerList({ bookingId, autoReveal = false }: TravelerListProp
     })
   }, [])
 
+  const isRevealed = React.useCallback(
+    (travelerId: string) => autoReveal || revealedIds.has(travelerId),
+    [autoReveal, revealedIds],
+  )
+
+  const deleteMessages = messages.travelerList.actions.deleteConfirm
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return
+    await remove.mutateAsync(deleteTarget.id)
+    setDeleteTarget(null)
+  }
+
+  const columns = React.useMemo<ColumnDef<BookingTravelerRecord>[]>(
+    () => [
+      {
+        accessorKey: "firstName",
+        header: messages.travelerList.columns.name,
+        cell: ({ row }) => (
+          <TravelerNameCell
+            bookingId={bookingId}
+            traveler={row.original}
+            revealed={isRevealed(row.original.id)}
+          />
+        ),
+      },
+      {
+        accessorKey: "email",
+        header: messages.travelerList.columns.email,
+        cell: ({ row }) => (
+          <TravelerContactCell
+            bookingId={bookingId}
+            traveler={row.original}
+            revealed={isRevealed(row.original.id)}
+            field="email"
+          />
+        ),
+      },
+      {
+        accessorKey: "phone",
+        header: messages.travelerList.columns.phone,
+        cell: ({ row }) => (
+          <TravelerContactCell
+            bookingId={bookingId}
+            traveler={row.original}
+            revealed={isRevealed(row.original.id)}
+            field="phone"
+          />
+        ),
+      },
+      {
+        id: "role",
+        header: messages.travelerList.columns.role,
+        cell: ({ row }) => <RolePills traveler={row.original} />,
+      },
+      {
+        id: "dobAge",
+        header: messages.travelerList.columns.dobAge,
+        cell: ({ row }) => (
+          <TravelerDobCell
+            bookingId={bookingId}
+            traveler={row.original}
+            revealed={isRevealed(row.original.id)}
+          />
+        ),
+      },
+      {
+        id: "documents",
+        header: messages.travelerList.columns.documents,
+        cell: ({ row }) => {
+          const documents = documentsByTraveler.get(row.original.id) ?? []
+          if (documents.length === 0) {
+            return (
+              <span className="text-muted-foreground text-xs">
+                {messages.travelerList.values.documentsUnavailable}
+              </span>
+            )
+          }
+          return (
+            <div className="flex flex-wrap gap-1.5">
+              {documents.slice(0, 2).map((document) => (
+                <MiniPill key={document.id}>{document.type.replaceAll("_", " ")}</MiniPill>
+              ))}
+              {documents.length > 2 ? <MiniPill>+{documents.length - 2}</MiniPill> : null}
+            </div>
+          )
+        },
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => {
+          const traveler = row.original
+          const revealed = isRevealed(traveler.id)
+          const showRevealToggle = !autoReveal && !allAlreadyRevealed
+          return (
+            <div className="flex items-center justify-end gap-1">
+              {showRevealToggle ? (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    toggleReveal(traveler.id)
+                  }}
+                  aria-label={
+                    revealed
+                      ? messages.travelerList.actions.hideTravelerContactDetails
+                      : messages.travelerList.actions.revealTravelerContactDetails
+                  }
+                  title={
+                    revealed
+                      ? messages.travelerList.actions.hideContactDetails
+                      : messages.travelerList.actions.revealContactDetails
+                  }
+                >
+                  {revealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                </Button>
+              ) : null}
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={messages.travelerList.actions.viewTraveler}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setViewingId(traveler.id)
+                }}
+              >
+                <Eye className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={messages.travelerList.actions.editTraveler}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setEditing(traveler)
+                  setDialogOpen(true)
+                }}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                aria-label={messages.travelerList.actions.deleteTraveler}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setDeleteTarget(traveler)
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          )
+        },
+      },
+    ],
+    [
+      allAlreadyRevealed,
+      autoReveal,
+      bookingId,
+      documentsByTraveler,
+      isRevealed,
+      messages,
+      toggleReveal,
+    ],
+  )
+
+  const viewingTraveler = viewingId ? (travelers.find((t) => t.id === viewingId) ?? null) : null
+
   return (
-    <Card data-slot="traveler-list">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2">
+    <div data-slot="traveler-list" className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <h2 className="flex items-center gap-2 text-base font-semibold">
           <Users className="h-4 w-4" />
           {messages.travelerList.title}
-        </CardTitle>
+        </h2>
         <Button
           size="sm"
           onClick={() => {
@@ -77,242 +270,309 @@ export function TravelerList({ bookingId, autoReveal = false }: TravelerListProp
           <Plus className="mr-2 h-4 w-4" />
           {messages.travelerList.addTraveler}
         </Button>
-      </CardHeader>
-      <CardContent>
-        {travelers.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">
-            {messages.travelerList.empty}
-          </p>
-        ) : (
-          <div className="overflow-x-auto rounded border bg-background">
-            <table className="w-full min-w-[980px] text-sm">
-              <thead>
-                <tr className="border-b text-muted-foreground">
-                  <th className="p-2 text-left font-medium">
-                    {messages.travelerList.columns.name}
-                  </th>
-                  <th className="p-2 text-left font-medium">
-                    {messages.travelerList.columns.email}
-                  </th>
-                  <th className="p-2 text-left font-medium">
-                    {messages.travelerList.columns.phone}
-                  </th>
-                  <th className="p-2 text-left font-medium">
-                    {messages.travelerList.columns.role}
-                  </th>
-                  <th className="p-2 text-left font-medium">
-                    {messages.travelerList.columns.dobAge}
-                  </th>
-                  <th className="p-2 text-left font-medium">
-                    {messages.travelerList.columns.documents}
-                  </th>
-                  <th className="w-20 p-2" />
-                </tr>
-              </thead>
-              <tbody>
-                {travelers.map((traveler) => (
-                  <TravelerRow
-                    key={traveler.id}
-                    bookingId={bookingId}
-                    traveler={traveler}
-                    documents={documentsByTraveler.get(traveler.id) ?? []}
-                    revealed={autoReveal || revealedIds.has(traveler.id)}
-                    onToggleReveal={
-                      autoReveal || allAlreadyRevealed ? undefined : () => toggleReveal(traveler.id)
-                    }
-                    emailUnavailable={messages.travelerList.values.emailUnavailable}
-                    phoneUnavailable={messages.travelerList.values.phoneUnavailable}
-                    onEdit={() => {
-                      setEditing(traveler)
-                      setDialogOpen(true)
-                    }}
-                    onDelete={() => {
-                      if (confirm(messages.travelerList.actions.deleteConfirm)) {
-                        remove.mutate(traveler.id)
-                      }
-                    }}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </CardContent>
+      </div>
+
+      <DataTable
+        columns={columns}
+        data={travelers}
+        emptyMessage={messages.travelerList.empty}
+        showPagination={false}
+      />
 
       <TravelerDialog
         open={dialogOpen}
         onOpenChange={(nextOpen) => {
           setDialogOpen(nextOpen)
-          if (!nextOpen) {
-            setEditing(undefined)
-          }
+          if (!nextOpen) setEditing(undefined)
         }}
         bookingId={bookingId}
         traveler={editing}
-        onSuccess={() => {
-          setEditing(undefined)
-        }}
+        onSuccess={() => setEditing(undefined)}
       />
-    </Card>
+
+      <Sheet
+        open={Boolean(viewingTraveler)}
+        onOpenChange={(next) => {
+          if (!next) setViewingId(null)
+        }}
+      >
+        <SheetContent side="right" className="sm:max-w-2xl">
+          <SheetHeader>
+            <SheetTitle>{messages.travelerList.snapshot.title}</SheetTitle>
+            <SheetDescription>{messages.travelerList.snapshot.subtitle}</SheetDescription>
+          </SheetHeader>
+          {viewingTraveler ? (
+            <TravelerSnapshotBody
+              bookingId={bookingId}
+              traveler={viewingTraveler}
+              documents={documentsByTraveler.get(viewingTraveler.id) ?? []}
+            />
+          ) : null}
+        </SheetContent>
+      </Sheet>
+
+      <AlertDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(next) => {
+          if (!next && !remove.isPending) setDeleteTarget(null)
+        }}
+      >
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{deleteMessages.title}</AlertDialogTitle>
+            <AlertDialogDescription>{deleteMessages.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={remove.isPending}>
+              {deleteMessages.cancel}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={remove.isPending}
+              onClick={() => void handleConfirmDelete()}
+            >
+              {deleteMessages.confirm}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   )
 }
 
-/**
- * Single traveler row. Calls `useRevealTraveler` lazily — only fires
- * when `revealed=true`. The reveal endpoint audit-logs the access on
- * the server, so toggling the eye button creates a permanent record.
- */
-function TravelerRow({
-  bookingId,
-  traveler,
-  documents,
-  revealed,
-  onToggleReveal,
-  emailUnavailable,
-  phoneUnavailable,
-  onEdit,
-  onDelete,
-}: {
-  bookingId: string
-  traveler: BookingTravelerRecord
-  documents: BookingTravelerDocumentRecord[]
-  revealed: boolean
-  /** When undefined, the reveal toggle is hidden (data is already unmasked). */
-  onToggleReveal?: () => void
-  emailUnavailable: string
-  phoneUnavailable: string
-  onEdit: () => void
-  onDelete: () => void
-}) {
-  const messages = useBookingsUiMessagesOrDefault()
+function useRevealed(bookingId: string, traveler: BookingTravelerRecord, revealed: boolean) {
   const reveal = useRevealTraveler(bookingId, traveler.id, { enabled: revealed })
-  // Use the revealed copy when available; otherwise fall back to
-  // the masked row from the list endpoint. This keeps the UI snappy
-  // — the masked row renders instantly, then swaps to unmasked the
-  // moment the network returns.
   const revealedTraveler = reveal.data?.data as BookingTravelerRevealRecord | undefined
   const display: BookingTravelerRecord | BookingTravelerRevealRecord =
     revealed && revealedTraveler ? revealedTraveler : traveler
   const travelDetails: BookingTravelerRevealRecord["travelDetails"] =
     revealed && revealedTraveler ? revealedTraveler.travelDetails : null
-  const showLoading = revealed && reveal.isLoading
-  const revealError = revealed && reveal.error
+  return {
+    display,
+    travelDetails,
+    loading: revealed && reveal.isLoading,
+    error: revealed ? reveal.error : null,
+  }
+}
 
-  // When the booking_traveler row didn't snapshot contact info (or DOB),
-  // hydrate from the linked CRM person so the list still shows useful
-  // data instead of dashes. The snapshot still wins when present —
-  // historical bookings keep the values they were created with.
+function TravelerNameCell({
+  bookingId,
+  traveler,
+  revealed,
+}: {
+  bookingId: string
+  traveler: BookingTravelerRecord
+  revealed: boolean
+}) {
+  const { display, loading } = useRevealed(bookingId, traveler, revealed)
+  if (loading) return <RowLoading />
+  return <span>{`${display.firstName ?? ""} ${display.lastName ?? ""}`.trim() || "—"}</span>
+}
+
+function TravelerContactCell({
+  bookingId,
+  traveler,
+  revealed,
+  field,
+}: {
+  bookingId: string
+  traveler: BookingTravelerRecord
+  revealed: boolean
+  field: "email" | "phone"
+}) {
+  const { display, loading } = useRevealed(bookingId, traveler, revealed)
   const person = usePerson(traveler.personId ?? undefined, {
     enabled: Boolean(traveler.personId),
   }).data
-  const resolvedEmail = display.email ?? person?.email ?? null
-  const resolvedPhone = display.phone ?? person?.phone ?? null
-  const resolvedDateOfBirth = travelDetails?.dateOfBirth ?? person?.dateOfBirth ?? null
+  const messages = useBookingsUiMessagesOrDefault()
+  if (loading) return <RowLoading />
+  const value = display[field] ?? person?.[field] ?? null
+  if (!value) {
+    return (
+      <span className="text-muted-foreground">
+        {field === "email"
+          ? messages.travelerList.values.emailUnavailable
+          : messages.travelerList.values.phoneUnavailable}
+      </span>
+    )
+  }
+  return <>{value}</>
+}
+
+function TravelerDobCell({
+  bookingId,
+  traveler,
+  revealed,
+}: {
+  bookingId: string
+  traveler: BookingTravelerRecord
+  revealed: boolean
+}) {
+  const { travelDetails, loading } = useRevealed(bookingId, traveler, revealed)
+  const person = usePerson(traveler.personId ?? undefined, {
+    enabled: Boolean(traveler.personId),
+  }).data
+  const messages = useBookingsUiMessagesOrDefault()
+  if (loading) return <RowLoading />
+  const dob = travelDetails?.dateOfBirth ?? person?.dateOfBirth ?? null
+  return <>{formatDobAge(dob, messages.travelerList.values.fieldUnavailable)}</>
+}
+
+function RolePills({ traveler }: { traveler: BookingTravelerRecord }) {
+  const messages = useBookingsUiMessagesOrDefault()
+  const pills: string[] = []
+  if (traveler.isPrimary) pills.push(messages.travelerList.roles.primary)
+  if (traveler.travelerCategory) pills.push(traveler.travelerCategory)
+  if (pills.length === 0) return <span className="text-muted-foreground text-xs">—</span>
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {pills.map((label) => (
+        <MiniPill key={label}>{label}</MiniPill>
+      ))}
+    </div>
+  )
+}
+
+function TravelerSnapshotBody({
+  bookingId,
+  traveler,
+  documents,
+}: {
+  bookingId: string
+  traveler: BookingTravelerRecord
+  documents: BookingTravelerDocumentRecord[]
+}) {
+  const messages = useBookingsUiMessagesOrDefault()
+  const labels = messages.travelerList.snapshot
+  const empty = labels.empty
+  const { display, travelDetails, loading } = useRevealed(bookingId, traveler, true)
+  const person = usePerson(traveler.personId ?? undefined, {
+    enabled: Boolean(traveler.personId),
+  }).data
+  const fullName = `${display.firstName ?? ""} ${display.lastName ?? ""}`.trim() || empty
+  const email = display.email ?? person?.email ?? empty
+  const phone = display.phone ?? person?.phone ?? empty
+  const dob = travelDetails?.dateOfBirth ?? person?.dateOfBirth ?? null
+  const documentTypeLabels = messages.travelerDialog.documentTypeLabels
+  const documentValue =
+    travelDetails?.documentNumber && travelDetails?.documentType
+      ? `${documentTypeLabels[travelDetails.documentType]} · ${travelDetails.documentNumber}`
+      : empty
+  const roles: string[] = []
+  if (display.isPrimary) roles.push(messages.travelerList.roles.primary)
+  if (travelDetails?.isLeadTraveler) roles.push(messages.travelerList.roles.lead)
+  if (display.travelerCategory) roles.push(display.travelerCategory)
 
   return (
-    <>
-      <tr className="border-b">
-        <td className="p-2">
-          {showLoading ? (
-            <RowLoading />
-          ) : (
-            `${display.firstName ?? ""} ${display.lastName ?? ""}`.trim()
-          )}
-        </td>
-        <td className="p-2">
-          {showLoading ? <RowLoading /> : (resolvedEmail ?? emailUnavailable)}
-        </td>
-        <td className="p-2">
-          {showLoading ? <RowLoading /> : (resolvedPhone ?? phoneUnavailable)}
-        </td>
-        <td className="p-2">
-          <div className="flex flex-wrap gap-1.5">
-            {display.isPrimary ? <MiniPill>{messages.travelerList.roles.primary}</MiniPill> : null}
-            {travelDetails?.isLeadTraveler ? (
-              <MiniPill>{messages.travelerList.roles.lead}</MiniPill>
-            ) : null}
-            {display.travelerCategory ? <MiniPill>{display.travelerCategory}</MiniPill> : null}
-          </div>
-        </td>
-        <td className="p-2">
-          {showLoading ? (
-            <RowLoading />
-          ) : (
-            formatDobAge(resolvedDateOfBirth, messages.travelerList.values.fieldUnavailable)
-          )}
-        </td>
-        <td className="p-2">
-          {documents.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {documents.slice(0, 2).map((document) => (
-                <MiniPill key={document.id}>{document.type.replaceAll("_", " ")}</MiniPill>
-              ))}
-              {documents.length > 2 ? <MiniPill>+{documents.length - 2}</MiniPill> : null}
-            </div>
-          ) : (
-            <span className="text-muted-foreground">
-              {messages.travelerList.values.documentsUnavailable}
-            </span>
-          )}
-        </td>
-        <td className="p-2">
-          <div className="flex items-center gap-1">
-            {onToggleReveal ? (
-              <button
-                type="button"
-                onClick={onToggleReveal}
-                className="text-muted-foreground hover:text-foreground"
-                title={
-                  revealed
-                    ? messages.travelerList.actions.hideContactDetails
-                    : messages.travelerList.actions.revealContactDetails
-                }
-                aria-label={
-                  revealed
-                    ? messages.travelerList.actions.hideTravelerContactDetails
-                    : messages.travelerList.actions.revealTravelerContactDetails
-                }
-              >
-                {revealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={onEdit}
-              className="text-muted-foreground hover:text-foreground"
-              aria-label={messages.travelerList.actions.editTraveler}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={onDelete}
-              className="text-muted-foreground hover:text-destructive"
-              aria-label={messages.travelerList.actions.deleteTraveler}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          </div>
-          {revealError ? (
-            <div className="mt-1 text-[10px] text-destructive">
-              {revealError instanceof Error
-                ? revealError.message
-                : messages.travelerList.validation.revealFailed}
-            </div>
-          ) : null}
-        </td>
-      </tr>
-      <tr className="border-b last:border-b-0">
-        <td colSpan={7} className="bg-muted/20 px-2 py-3">
-          <TravelerContextGrid
-            traveler={display}
-            travelDetails={travelDetails}
-            documents={documents}
-            loading={showLoading}
-          />
-        </td>
-      </tr>
-    </>
+    <div className="flex-1 overflow-y-auto px-4 pb-4">
+      {loading ? (
+        <div className="py-4">
+          <RowLoading />
+        </div>
+      ) : null}
+
+      <SnapshotSection title={labels.sectionContact}>
+        <SnapshotRow label={labels.nameLabel} value={fullName} />
+        <SnapshotRow label={labels.emailLabel} value={email} />
+        <SnapshotRow label={labels.phoneLabel} value={phone} />
+        <SnapshotRow label={labels.languageLabel} value={display.preferredLanguage || empty} />
+        <SnapshotRow
+          label={labels.roleLabel}
+          value={
+            roles.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {roles.map((label) => (
+                  <MiniPill key={label}>{label}</MiniPill>
+                ))}
+              </div>
+            ) : (
+              empty
+            )
+          }
+        />
+      </SnapshotSection>
+
+      <SnapshotSection title={labels.sectionTravel}>
+        <SnapshotRow label={labels.dobLabel} value={formatDobAge(dob, empty)} />
+        <SnapshotRow label={labels.nationalityLabel} value={travelDetails?.nationality || empty} />
+        <SnapshotRow label={labels.documentLabel} value={documentValue} />
+        <SnapshotRow
+          label={labels.documentExpiryLabel}
+          value={formatDateValue(travelDetails?.documentExpiry) ?? empty}
+        />
+        <SnapshotRow
+          label={labels.dietaryLabel}
+          value={travelDetails?.dietaryRequirements || empty}
+          multiline
+        />
+        <SnapshotRow
+          label={labels.accessibilityLabel}
+          value={travelDetails?.accessibilityNeeds || empty}
+          multiline
+        />
+        <SnapshotRow
+          label={labels.specialRequestsLabel}
+          value={display.specialRequests || empty}
+          multiline
+        />
+        <SnapshotRow label={labels.notesLabel} value={display.notes || empty} multiline />
+      </SnapshotSection>
+
+      <SnapshotSection title={labels.sectionDocuments}>
+        {documents.length === 0 ? (
+          <div className="px-3 py-3 text-sm text-muted-foreground">{labels.noDocuments}</div>
+        ) : (
+          documents.map((document) => (
+            <SnapshotRow
+              key={document.id}
+              label={formatMessage(messages.travelerList.context.documentLabel, {
+                type: document.type.replaceAll("_", " "),
+              })}
+              value={document.fileName}
+            />
+          ))
+        )}
+      </SnapshotSection>
+
+      <SnapshotSection title={labels.sectionMeta}>
+        <SnapshotRow
+          label={labels.createdAtLabel}
+          value={formatTimestamp(traveler.createdAt) ?? empty}
+        />
+        <SnapshotRow
+          label={labels.updatedAtLabel}
+          value={formatTimestamp(traveler.updatedAt) ?? empty}
+        />
+      </SnapshotSection>
+    </div>
+  )
+}
+
+function SnapshotSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="mb-6">
+      <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {title}
+      </h3>
+      <dl className="divide-y divide-border rounded-md border">{children}</dl>
+    </section>
+  )
+}
+
+function SnapshotRow({
+  label,
+  value,
+  multiline,
+}: {
+  label: string
+  value: React.ReactNode
+  multiline?: boolean
+}) {
+  return (
+    <div className="grid grid-cols-[10rem_1fr] items-baseline gap-3 px-3 py-2 text-sm">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className={multiline ? "whitespace-pre-wrap text-sm" : "truncate text-sm"}>{value}</dd>
+    </div>
   )
 }
 
@@ -326,82 +586,29 @@ function RowLoading() {
   )
 }
 
-function TravelerContextGrid({
-  traveler,
-  travelDetails,
-  documents,
-  loading,
-}: {
-  traveler: BookingTravelerRecord | BookingTravelerRevealRecord
-  travelDetails: BookingTravelerRevealRecord["travelDetails"]
-  documents: BookingTravelerDocumentRecord[]
-  loading: boolean
-}) {
-  const messages = useBookingsUiMessagesOrDefault()
-  if (loading) return <RowLoading />
-
-  const fields = [
-    [messages.travelerList.context.nationality, travelDetails?.nationality],
-    [
-      messages.travelerList.context.document,
-      travelDetails?.documentNumber
-        ? `${documentTypeLabel(messages, travelDetails.documentType)} ${travelDetails.documentNumber}`
-        : null,
-    ],
-    [messages.travelerList.context.documentExpiry, formatDateValue(travelDetails?.documentExpiry)],
-    [messages.travelerList.context.language, traveler.preferredLanguage],
-    [messages.travelerList.context.dietary, travelDetails?.dietaryRequirements],
-    [messages.travelerList.context.accessibility, travelDetails?.accessibilityNeeds],
-    [messages.travelerList.context.specialRequests, traveler.specialRequests],
-    [messages.travelerList.context.notes, traveler.notes],
-  ] as const
-  const visibleFields = fields.filter(([, value]) => Boolean(value))
-
-  if (visibleFields.length === 0 && documents.length === 0) {
-    return (
-      <span className="text-xs text-muted-foreground">
-        {messages.travelerList.values.noAdditionalContext}
-      </span>
-    )
-  }
-
-  return (
-    <div className="grid gap-3 md:grid-cols-4">
-      {visibleFields.map(([label, value]) => (
-        <DetailField
-          key={label}
-          label={label}
-          value={value ?? messages.travelerList.values.fieldUnavailable}
-        />
-      ))}
-      {documents.map((document) => (
-        <DetailField
-          key={document.id}
-          label={formatMessage(messages.travelerList.context.documentLabel, {
-            type: document.type.replaceAll("_", " "),
-          })}
-          value={document.fileName}
-        />
-      ))}
-    </div>
-  )
-}
-
-function DetailField({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0">
-      <div className="text-[10px] font-medium uppercase text-muted-foreground">{label}</div>
-      <div className="truncate text-xs text-foreground">{value}</div>
-    </div>
-  )
-}
-
 function MiniPill({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-flex h-5 items-center rounded-full border px-2 text-[11px] capitalize text-muted-foreground">
       {children}
     </span>
   )
+}
+
+function formatTimestamp(iso: string | null | undefined): string | null {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (!Number.isFinite(d.getTime())) return null
+  try {
+    return d.toLocaleString(undefined, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  } catch {
+    return d.toISOString()
+  }
 }
 
 function formatDobAge(value: string | null | undefined, unavailable: string): string {
@@ -424,29 +631,11 @@ function formatDateValue(value: string | null | undefined): string | null {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
 }
 
-function documentTypeLabel(
-  messages: ReturnType<typeof useBookingsUiMessagesOrDefault>,
-  type:
-    | keyof ReturnType<
-        typeof useBookingsUiMessagesOrDefault
-      >["travelerDialog"]["documentTypeLabels"]
-    | null,
-): string {
-  return type
-    ? messages.travelerDialog.documentTypeLabels[type]
-    : messages.travelerList.context.document
-}
-
 /**
  * Heuristic check for redaction markers used by `redactTravelerIdentity`
  * on the API. We can't import the redactor from `@voyantjs/bookings`
  * at the UI layer (would pull in a server dep), so probe for the
  * canonical patterns the redactor produces (`***`, `*@`, `***1234`).
- *
- * If any field on this traveler shows a redaction marker, treat the
- * row as redacted and surface the reveal button. Conservative: false
- * positives (genuine `***` data) just keep the button visible, which
- * is harmless.
  */
 function looksRedacted(traveler: BookingTravelerRecord): boolean {
   const fields = [traveler.firstName, traveler.lastName, traveler.email, traveler.phone]

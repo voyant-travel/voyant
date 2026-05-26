@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@voyantjs/ui/components/table"
-import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Search, X } from "lucide-react"
+import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Search } from "lucide-react"
 import * as React from "react"
 
 import {
@@ -56,7 +56,7 @@ const SORTABLE_COLUMNS = {
 } as const satisfies Record<SortableField, SortableField>
 
 const SKELETON_ROW_COUNT = 6
-const TABLE_COLUMN_COUNT = 9
+const TABLE_COLUMN_COUNT = 8
 
 export function BookingList({
   pageSize = 25,
@@ -172,7 +172,6 @@ export function BookingList({
     resetOffset()
   }
 
-  const filterMessages = messages.bookingList.filters
   const columnMessages = messages.bookingList.columns
   const statusLabels = messages.common.bookingStatusLabels
 
@@ -227,14 +226,9 @@ export function BookingList({
           paxMax={paxMax}
           onPaxMaxChange={setPaxMax}
           onFiltersChanged={resetOffset}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearFilters}
         />
-
-        {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters}>
-            <X className="mr-1 size-4" />
-            {filterMessages.clear}
-          </Button>
-        )}
 
         <div className="ml-auto flex items-center gap-2">
           {headerActions}
@@ -262,6 +256,16 @@ export function BookingList({
                 <SortHeader
                   label={columnMessages.bookingNumber}
                   field={SORTABLE_COLUMNS.bookingNumber}
+                  sortBy={sortBy}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                />
+              </TableHead>
+              <TableHead>{columnMessages.lead}</TableHead>
+              <TableHead>
+                <SortHeader
+                  label={columnMessages.createdAt}
+                  field={SORTABLE_COLUMNS.createdAt}
                   sortBy={sortBy}
                   sortDir={sortDir}
                   onSort={handleSort}
@@ -304,25 +308,6 @@ export function BookingList({
                   onSort={handleSort}
                 />
               </TableHead>
-              <TableHead>
-                <SortHeader
-                  label={columnMessages.endDate}
-                  field={SORTABLE_COLUMNS.endDate}
-                  sortBy={sortBy}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                />
-              </TableHead>
-              <TableHead>{columnMessages.lead}</TableHead>
-              <TableHead>
-                <SortHeader
-                  label={columnMessages.createdAt}
-                  field={SORTABLE_COLUMNS.createdAt}
-                  sortBy={sortBy}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                />
-              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -354,6 +339,8 @@ export function BookingList({
                   className="cursor-pointer"
                 >
                   <TableCell className="font-medium">{booking.bookingNumber}</TableCell>
+                  <TableCell>{formatLead(booking)}</TableCell>
+                  <TableCell>{formatBookingDateTime(booking.createdAt, formatDateTime)}</TableCell>
                   <TableCell>
                     {formatBookingItems(booking, messages.bookingList.itemsMore)}
                   </TableCell>
@@ -373,12 +360,9 @@ export function BookingList({
                   <TableCell>{booking.pax ?? "—"}</TableCell>
                   <TableCell>
                     {formatBookingDateTime(booking.startsAt ?? booking.startDate, formatDateTime)}
-                  </TableCell>
-                  <TableCell>
+                    {" – "}
                     {formatBookingDateTime(booking.endsAt ?? booking.endDate, formatDateTime)}
                   </TableCell>
-                  <TableCell>{formatLead(booking)}</TableCell>
-                  <TableCell>{formatBookingDateTime(booking.createdAt, formatDateTime)}</TableCell>
                 </TableRow>
               ))
             )}
