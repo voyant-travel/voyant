@@ -1481,11 +1481,12 @@ export const sellabilityService = {
           : null
 
         if (unitRule?.pricingMode === "on_request") onRequest = true
+        const overrideUnitId = request.unitId ?? unitRule?.unitId ?? null
         const override =
-          request.unitId == null
+          overrideUnitId == null
             ? null
             : (departureOverrideMap.get(
-                `${slot.id}:${chosenRule.priceCatalogId}:${request.unitId}`,
+                `${slot.id}:${chosenRule.priceCatalogId}:${overrideUnitId}`,
               ) ?? null)
         const item = computeUnitAmounts(
           request,
