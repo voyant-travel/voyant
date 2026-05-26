@@ -99,15 +99,25 @@ function formatMoney(cents: number, currency: string): string {
   }
 }
 
+// Persisted as the invoice's line-item description, which ships with the
+// PDF document itself. Voyant defaults to English at the data layer here;
+// templates that need a Romanian/etc. PDF supply their own description
+// resolver via the upcoming hook surface.
 const SCHEDULE_DESCRIPTION_FALLBACK: Record<string, string> = {
+  // i18n-literal-ok domain default for invoice line items
   deposit: "Deposit",
+  // i18n-literal-ok domain default for invoice line items
   installment: "Installment",
+  // i18n-literal-ok domain default for invoice line items
   balance: "Balance",
+  // i18n-literal-ok domain default for invoice line items
   hold: "Hold",
+  // i18n-literal-ok domain default for invoice line items
   other: "Payment",
 }
 
 function scheduleDescription(scheduleType: string | null | undefined): string {
+  // i18n-literal-ok matches SCHEDULE_DESCRIPTION_FALLBACK above
   if (!scheduleType) return SCHEDULE_DESCRIPTION_FALLBACK.other ?? "Payment"
   return SCHEDULE_DESCRIPTION_FALLBACK[scheduleType] ?? scheduleType
 }
