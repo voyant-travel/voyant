@@ -78,6 +78,8 @@ describe.skipIf(!DB_AVAILABLE)("Public customer portal routes", () => {
       name: "Ana Maria Popescu",
       email: "ana@example.com",
       emailVerified: true,
+      phoneNumber: "+40123456789",
+      phoneNumberVerified: true,
       image: null,
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
       updatedAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -206,8 +208,31 @@ describe.skipIf(!DB_AVAILABLE)("Public customer portal routes", () => {
     expect(res.status).toBe(200)
     expect((await res.json()).data).toEqual({
       phone: "+40123456789",
+      authAccountExists: true,
+      authAccountVerified: true,
       customerRecordExists: true,
       linkedCustomerRecordExists: true,
+    })
+  })
+
+  it("distinguishes CRM-only phone contact matches from auth accounts", async () => {
+    await crmService.createPerson(db, {
+      firstName: "Mihai",
+      lastName: "Ionescu",
+      relation: "client",
+      status: "active",
+      phone: "+40999999999",
+    })
+
+    const res = await preflightApp.request("/contact-exists/phone?phone=%2B40999999999")
+
+    expect(res.status).toBe(200)
+    expect((await res.json()).data).toEqual({
+      phone: "+40999999999",
+      authAccountExists: false,
+      authAccountVerified: false,
+      customerRecordExists: true,
+      linkedCustomerRecordExists: false,
     })
   })
 

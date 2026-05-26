@@ -1502,10 +1502,22 @@ export const publicCustomerPortalService = {
     phone: string,
   ): Promise<CustomerPortalPhoneContactExistsResult> {
     const normalizedPhone = normalizePhone(phone)
-    const customerCandidates = await listCustomerRecordCandidatesByPhone(db, normalizedPhone)
+    const [authAccount, customerCandidates] = await Promise.all([
+      db
+        .select({
+          id: authUser.id,
+          phoneNumberVerified: authUser.phoneNumberVerified,
+        })
+        .from(authUser)
+        .where(eq(authUser.phoneNumber, normalizedPhone))
+        .limit(1),
+      listCustomerRecordCandidatesByPhone(db, normalizedPhone),
+    ])
 
     return {
       phone: normalizedPhone,
+      authAccountExists: Boolean(authAccount[0]),
+      authAccountVerified: Boolean(authAccount[0]?.phoneNumberVerified),
       customerRecordExists: customerCandidates.length > 0,
       linkedCustomerRecordExists: customerCandidates.some(
         (candidate) => candidate.claimedByAnotherUser,
