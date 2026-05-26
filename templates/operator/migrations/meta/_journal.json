@@ -281,6 +281,13 @@
       "when": 1779710600000,
       "tag": "0039_billing_contact_address_line2",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1779748565000,
+      "tag": "0040_invoice_line_item_payment_schedule",
+      "breakpoints": true
     }
   ]
 }

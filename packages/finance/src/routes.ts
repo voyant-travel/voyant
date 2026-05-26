@@ -1074,6 +1074,8 @@ export const financeRoutes = new Hono<Env>()
               bookingNumber: booking.bookingNumber,
               personId: booking.personId,
               organizationId: booking.organizationId,
+              startDate: booking.startDate,
+              endDate: booking.endDate,
               sellCurrency: booking.sellCurrency,
               baseCurrency: booking.baseCurrency,
               fxRateSetId: booking.fxRateSetId,

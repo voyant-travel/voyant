@@ -803,6 +803,10 @@ export const invoiceLineItems = pgTable(
       .notNull()
       .references(() => invoices.id, { onDelete: "cascade" }),
     bookingItemId: text("booking_item_id"),
+    bookingPaymentScheduleId: text("booking_payment_schedule_id").references(
+      () => bookingPaymentSchedules.id,
+      { onDelete: "set null" },
+    ),
 
     description: text("description").notNull(),
     quantity: integer("quantity").notNull().default(1),
@@ -817,6 +821,7 @@ export const invoiceLineItems = pgTable(
     index("idx_invoice_line_items_invoice").on(table.invoiceId),
     index("idx_invoice_line_items_invoice_sort").on(table.invoiceId, table.sortOrder),
     index("idx_invoice_line_items_booking_item").on(table.bookingItemId),
+    index("idx_invoice_line_items_payment_schedule").on(table.bookingPaymentScheduleId),
   ],
 )
 
