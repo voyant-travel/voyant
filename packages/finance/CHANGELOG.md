@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.81.10
+
+### Patch Changes
+
+- 6c6a008: Preserve booking payment schedule context on invoice line items and issued invoice events.
+  - @voyantjs/action-ledger@0.81.10
+  - @voyantjs/bookings@0.81.10
+  - @voyantjs/core@0.81.10
+  - @voyantjs/db@0.81.10
+  - @voyantjs/hono@0.81.10
+  - @voyantjs/products@0.81.10
+  - @voyantjs/storage@0.81.10
+  - @voyantjs/utils@0.81.10
+
 ## 0.81.9
 
 ### Patch Changes
