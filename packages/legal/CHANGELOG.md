@@ -1,5 +1,18 @@
 # @voyantjs/legal
 
+## 0.81.15
+
+### Patch Changes
+
+- @voyantjs/bookings@0.81.15
+- @voyantjs/core@0.81.15
+- @voyantjs/crm@0.81.15
+- @voyantjs/db@0.81.15
+- @voyantjs/hono@0.81.15
+- @voyantjs/storage@0.81.15
+- @voyantjs/suppliers@0.81.15
+- @voyantjs/utils@0.81.15
+
 ## 0.81.14
 
 ### Patch Changes
