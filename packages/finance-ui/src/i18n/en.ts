@@ -262,6 +262,10 @@ export const financeUiEn = {
       viewPerson: "View person",
       viewOrganization: "View organization",
       viewSupplier: "View supplier",
+      edit: "Edit",
+      delete: "Delete",
+      deleteTitle: "Delete this payment?",
+      deleteDescription: "This permanently removes the payment and recomputes the related balance.",
     },
     titles: {
       summary: "Summary",

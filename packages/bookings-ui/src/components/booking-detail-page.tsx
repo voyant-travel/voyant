@@ -50,7 +50,10 @@ import { BookingItemList } from "./booking-item-list.js"
 import { BookingNotes } from "./booking-notes.js"
 import { BookingPaymentReconciliationBanner } from "./booking-payment-reconciliation-banner.js"
 import { BookingPaymentScheduleList } from "./booking-payment-schedule-list.js"
-import { BookingPaymentsSummary } from "./booking-payments-summary.js"
+import {
+  BookingPaymentsSummary,
+  type BookingPaymentsSummaryRow,
+} from "./booking-payments-summary.js"
 import { StatusChangeDialog } from "./status-change-dialog.js"
 import { SupplierStatusList } from "./supplier-status-list.js"
 import { TravelerList } from "./traveler-list.js"
@@ -64,8 +67,10 @@ import { TravelerList } from "./traveler-list.js"
 export interface BookingDetailTabSlot {
   label?: string
   /** Receives the loaded booking so the slot can use sell amount, ids, etc. */
-  content: ReactNode | ((booking: BookingRecord) => ReactNode)
+  content: BookingDetailSlotContent
 }
+
+export type BookingDetailSlotContent = ReactNode | ((booking: BookingRecord) => ReactNode)
 
 export interface BookingDetailPageSlots {
   /** Rendered between the title row and the summary card. */
@@ -76,6 +81,8 @@ export interface BookingDetailPageSlots {
   overviewEnd?: (booking: BookingRecord) => ReactNode
   travelersStart?: (booking: BookingRecord) => ReactNode
   financeStart?: (booking: BookingRecord) => ReactNode
+  /** Replaces the default finance-tab `BookingPaymentsSummary` card. */
+  paymentsContent?: BookingDetailSlotContent
   financeEnd?: (booking: BookingRecord) => ReactNode
   documents?: (booking: BookingRecord) => ReactNode
   activityEnd?: (booking: BookingRecord) => ReactNode
@@ -99,6 +106,12 @@ export interface BookingDetailPageProps {
   onCollectPayment?: (booking: BookingRecord) => void
   /** Wired to a secondary `Record payment` button on the Payments tab. */
   onRecordPayment?: (booking: BookingRecord) => void
+  /** Forwarded to the finance-tab `BookingPaymentsSummary` row menu. */
+  onViewPayment?: (row: BookingPaymentsSummaryRow) => void
+  /** Forwarded to the finance-tab `BookingPaymentsSummary` row menu. */
+  onEditPayment?: (row: BookingPaymentsSummaryRow) => void
+  /** Forwarded to the finance-tab `BookingPaymentsSummary` row menu. */
+  onDeletePayment?: (row: BookingPaymentsSummaryRow) => Promise<void> | void
   slots?: BookingDetailPageSlots
 }
 
@@ -112,6 +125,9 @@ export function BookingDetailPage({
   onOrganizationOpen,
   onCollectPayment,
   onRecordPayment,
+  onViewPayment,
+  onEditPayment,
+  onDeletePayment,
   slots,
 }: BookingDetailPageProps) {
   const i18n = useBookingsUiI18nOrDefault()
@@ -343,11 +359,18 @@ export function BookingDetailPage({
           ) : null}
           {slots?.financeStart?.(booking)}
           <BookingPaymentReconciliationBanner bookingId={id} />
-          <BookingPaymentsSummary
-            bookingId={id}
-            variant="admin"
-            onConvertProforma={(row) => convertToInvoice.mutateAsync({ id: row.invoiceId })}
-          />
+          {slots?.paymentsContent ? (
+            renderDetailSlot(slots.paymentsContent, booking)
+          ) : (
+            <BookingPaymentsSummary
+              bookingId={id}
+              variant="admin"
+              onViewPayment={onViewPayment}
+              onConvertProforma={(row) => convertToInvoice.mutateAsync({ id: row.invoiceId })}
+              onEditPayment={onEditPayment}
+              onDeletePayment={onDeletePayment}
+            />
+          )}
           <BookingPaymentScheduleList bookingId={id} />
           <BookingGuaranteeList bookingId={id} />
           {slots?.financeEnd?.(booking)}
@@ -355,7 +378,7 @@ export function BookingDetailPage({
 
         {slots?.invoicesTab ? (
           <TabsContent value="invoices" className="mt-4 flex flex-col gap-6">
-            {renderTabSlot(slots.invoicesTab.content, booking)}
+            {renderDetailSlot(slots.invoicesTab.content, booking)}
           </TabsContent>
         ) : null}
 
@@ -381,7 +404,7 @@ export function BookingDetailPage({
 
         {slots?.ledgerTab ? (
           <TabsContent value="ledger" className="mt-4 flex flex-col gap-6">
-            {renderTabSlot(slots.ledgerTab.content, booking)}
+            {renderDetailSlot(slots.ledgerTab.content, booking)}
           </TabsContent>
         ) : null}
       </Tabs>
@@ -404,10 +427,7 @@ export function BookingDetailPage({
   )
 }
 
-function renderTabSlot(
-  content: BookingDetailTabSlot["content"],
-  booking: BookingRecord,
-): ReactNode {
+function renderDetailSlot(content: BookingDetailSlotContent, booking: BookingRecord): ReactNode {
   return typeof content === "function" ? content(booking) : content
 }
 
