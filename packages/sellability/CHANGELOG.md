@@ -1,5 +1,21 @@
 # @voyantjs/sellability
 
+## 0.81.13
+
+### Patch Changes
+
+- 28dca55: Apply active departure price overrides to storefront departure pricing, price previews, and booking session repricing.
+- Updated dependencies [ad95d4c]
+  - @voyantjs/availability@0.81.13
+  - @voyantjs/core@0.81.13
+  - @voyantjs/db@0.81.13
+  - @voyantjs/distribution@0.81.13
+  - @voyantjs/hono@0.81.13
+  - @voyantjs/markets@0.81.13
+  - @voyantjs/pricing@0.81.13
+  - @voyantjs/products@0.81.13
+  - @voyantjs/transactions@0.81.13
+
 ## 0.81.12
 
 ### Patch Changes

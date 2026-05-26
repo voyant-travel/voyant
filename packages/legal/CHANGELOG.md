@@ -1,5 +1,20 @@
 # @voyantjs/legal
 
+## 0.81.13
+
+### Patch Changes
+
+- 36421aa: Persist contract document generation failure details on contract metadata and surface operator-facing failure labels.
+- Updated dependencies [28dca55]
+  - @voyantjs/bookings@0.81.13
+  - @voyantjs/core@0.81.13
+  - @voyantjs/crm@0.81.13
+  - @voyantjs/db@0.81.13
+  - @voyantjs/hono@0.81.13
+  - @voyantjs/storage@0.81.13
+  - @voyantjs/suppliers@0.81.13
+  - @voyantjs/utils@0.81.13
+
 ## 0.81.12
 
 ### Patch Changes
