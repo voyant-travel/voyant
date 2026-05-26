@@ -424,6 +424,69 @@ describe("financeService.createInvoiceFromBooking number allocation", () => {
     ])
   })
 
+  it("uses booking item snapshots for schedule descriptions without an item link", async () => {
+    const { db, insertedInvoiceLineItems } = makeDb({})
+
+    await financeService.createInvoiceFromBooking(
+      db,
+      {
+        bookingId: "book_123",
+        invoiceNumber: "MANUAL-1",
+        issueDate: "2026-05-23",
+        dueDate: "2026-06-23",
+      },
+      {
+        booking: {
+          ...bookingData.booking,
+          bookingNumber: "BK-2605-5046",
+          sellAmountCents: 64_000,
+          startDate: "2026-06-13",
+          endDate: "2026-06-13",
+        },
+        paymentSchedule: {
+          id: "bps_123",
+          bookingId: "book_123",
+          bookingItemId: null,
+          scheduleType: "balance",
+          dueDate: "2026-06-01",
+          currency: "RON",
+          amountCents: 32_000,
+        },
+        items: [
+          {
+            id: "bkit_999",
+            title: "Later booking item title",
+            productNameSnapshot: "Zanzibar Cruise",
+            quantity: 1,
+            startDate: "2026-06-20",
+            unitSellAmountCents: 32_000,
+            totalSellAmountCents: 32_000,
+          },
+          {
+            id: "bkit_123",
+            title: "Fallback booking item title",
+            productNameSnapshot: "Excursie Bulgaria",
+            quantity: 2,
+            startDate: "2026-06-18",
+            unitSellAmountCents: 32_000,
+            totalSellAmountCents: 64_000,
+          },
+        ],
+      },
+    )
+
+    expect(insertedInvoiceLineItems).toEqual([
+      expect.objectContaining({
+        bookingItemId: null,
+        bookingPaymentScheduleId: "bps_123",
+        description: "Balance 50% Excursie Bulgaria | 2026-06-18",
+        quantity: 1,
+        unitPriceCents: 32_000,
+        totalCents: 32_000,
+      }),
+    ])
+  })
+
   it("lets callers override schedule line descriptions", async () => {
     const { db, insertedInvoiceLineItems } = makeDb({})
 

@@ -357,7 +357,10 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     return row!
   }
 
-  async function seedBookingItem(bookingId: string) {
+  async function seedBookingItem(
+    bookingId: string,
+    overrides: Partial<typeof bookingItems.$inferInsert> = {},
+  ) {
     const [row] = await db
       .insert(bookingItems)
       .values({
@@ -367,6 +370,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         sellCurrency: "USD",
         unitSellAmountCents: 5000,
         totalSellAmountCents: 10000,
+        ...overrides,
       })
       .returning()
     return row!
@@ -1683,7 +1687,51 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(lines).toHaveLength(1)
       expect(lines[0]).toMatchObject({
         bookingItemId: null,
-        description: `Balance for booking ${booking.bookingNumber}`,
+        description: "Balance 50% Test Service | 2025-06-01",
+        quantity: 1,
+        unitPriceCents: 16500,
+        totalCents: 16500,
+      })
+    })
+
+    it("uses booking item snapshots for schedule invoices without an item link", async () => {
+      const booking = await seedBooking({
+        sellAmountCents: 33000,
+        startDate: "2026-06-13",
+      })
+      await seedBookingItem(booking.id, {
+        title: "Fallback booking item title",
+        productNameSnapshot: "Excursie Bulgaria",
+        serviceDate: "2026-06-18",
+      })
+      const schedule = await seedBookingPaymentSchedule(booking.id, {
+        amountCents: 16500,
+        scheduleType: "balance",
+      })
+
+      const res = await app.request("/invoices/from-booking", {
+        method: "POST",
+        ...json({
+          bookingId: booking.id,
+          bookingPaymentScheduleId: schedule.id,
+          invoiceNumber: nextInvoiceNumber(),
+          issueDate: "2025-06-01",
+          dueDate: "2025-07-01",
+        }),
+      })
+
+      expect(res.status).toBe(201)
+      const { data } = await res.json()
+      const lines = await db
+        .select()
+        .from(invoiceLineItems)
+        .where(eq(invoiceLineItems.invoiceId, data.id))
+
+      expect(lines).toHaveLength(1)
+      expect(lines[0]).toMatchObject({
+        bookingItemId: null,
+        bookingPaymentScheduleId: schedule.id,
+        description: "Balance 50% Excursie Bulgaria | 2026-06-18",
         quantity: 1,
         unitPriceCents: 16500,
         totalCents: 16500,

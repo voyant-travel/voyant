@@ -450,6 +450,10 @@ export interface InvoiceFromBookingData {
     title: string
     productId?: string | null
     productName?: string | null
+    productNameSnapshot?: string | null
+    optionNameSnapshot?: string | null
+    unitNameSnapshot?: string | null
+    departureLabelSnapshot?: string | null
     startDate?: string | Date | null
     endDate?: string | Date | null
     quantity: number
@@ -532,11 +536,10 @@ function bookingPaymentScheduleToInvoiceLine(
   const label = PAYMENT_SCHEDULE_LINE_LABELS[schedule.scheduleType]
   const percent = getPaymentSchedulePercent(booking, schedule)
   const head = percent != null && percent < 100 ? `${label} ${percent}%` : label
-  const base =
-    item?.productName?.trim() || item?.title?.trim() || `booking ${booking.bookingNumber}`
+  const base = resolveBookingItemDisplayName(item) ?? `booking ${booking.bookingNumber}`
   const dates = formatInvoiceLineDateRange(
     item?.startDate ?? booking.startDate,
-    item?.endDate ?? booking.endDate,
+    item?.endDate ?? item?.startDate ?? booking.endDate,
   )
 
   return {
@@ -550,6 +553,54 @@ function bookingPaymentScheduleToInvoiceLine(
     taxRate: null,
     sortOrder: 0,
   }
+}
+
+function resolvePaymentScheduleDisplayItem(
+  schedule: NonNullable<InvoiceFromBookingData["paymentSchedule"]>,
+  items: InvoiceFromBookingData["items"],
+) {
+  if (schedule.bookingItemId) {
+    return items.find((item) => item.id === schedule.bookingItemId)
+  }
+
+  const namedItems = items.filter((item) => resolveBookingItemDisplayName(item))
+  return [...(namedItems.length > 0 ? namedItems : items)].sort(
+    compareBookingItemsForScheduleDisplay,
+  )[0]
+}
+
+function resolveBookingItemDisplayName(item: InvoiceFromBookingData["items"][number] | undefined) {
+  return (
+    item?.productNameSnapshot?.trim() || item?.productName?.trim() || item?.title?.trim() || null
+  )
+}
+
+function compareBookingItemsForScheduleDisplay(
+  left: InvoiceFromBookingData["items"][number],
+  right: InvoiceFromBookingData["items"][number],
+) {
+  return (
+    compareNullableStrings(
+      resolveBookingItemDateSortKey(left),
+      resolveBookingItemDateSortKey(right),
+    ) ||
+    compareNullableStrings(
+      resolveBookingItemDisplayName(left),
+      resolveBookingItemDisplayName(right),
+    ) ||
+    left.id.localeCompare(right.id)
+  )
+}
+
+function resolveBookingItemDateSortKey(item: InvoiceFromBookingData["items"][number]) {
+  return toDateOnly(item.startDate) ?? toDateOnly(item.endDate)
+}
+
+function compareNullableStrings(left: string | null, right: string | null) {
+  if (left && right) return left.localeCompare(right)
+  if (left) return -1
+  if (right) return 1
+  return 0
 }
 
 function getPaymentSchedulePercent(
@@ -610,8 +661,8 @@ async function resolveInvoiceLineDescriptions(
   },
 ) {
   if (!context.descriptionResolver) return lineItems
-  const scheduleItem = context.paymentSchedule?.bookingItemId
-    ? context.items.find((item) => item.id === context.paymentSchedule?.bookingItemId)
+  const scheduleItem = context.paymentSchedule
+    ? resolvePaymentScheduleDisplayItem(context.paymentSchedule, context.items)
     : undefined
 
   return Promise.all(
@@ -3762,8 +3813,8 @@ export const financeService = {
       taxesByBookingItemId.set(tax.bookingItemId, existing)
     }
 
-    const scheduleItem = paymentSchedule?.bookingItemId
-      ? items.find((item) => item.id === paymentSchedule.bookingItemId)
+    const scheduleItem = paymentSchedule
+      ? resolvePaymentScheduleDisplayItem(paymentSchedule, items)
       : undefined
     const resolvedLineItems =
       overrideLineItems ??

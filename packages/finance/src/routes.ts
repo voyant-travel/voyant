@@ -1012,7 +1012,7 @@ export const financeRoutes = new Hono<Env>()
       const [
         { bookingItems, bookings },
         { bookingPaymentSchedules },
-        { and, eq },
+        { and, asc, eq },
         { issueInvoiceFromBooking, issueProformaFromBooking },
       ] = await Promise.all([
         import("@voyantjs/bookings/schema"),
@@ -1035,6 +1035,7 @@ export const financeRoutes = new Hono<Env>()
         .select()
         .from(bookingItems)
         .where(eq(bookingItems.bookingId, booking.id))
+        .orderBy(asc(bookingItems.createdAt), asc(bookingItems.id))
       const [paymentSchedule] = input.bookingPaymentScheduleId
         ? await db
             .select()
@@ -1096,6 +1097,14 @@ export const financeRoutes = new Hono<Env>()
             items: items.map((item) => ({
               id: item.id,
               title: item.title,
+              productId: item.productId,
+              productName: item.productNameSnapshot,
+              productNameSnapshot: item.productNameSnapshot,
+              optionNameSnapshot: item.optionNameSnapshot,
+              unitNameSnapshot: item.unitNameSnapshot,
+              departureLabelSnapshot: item.departureLabelSnapshot,
+              startDate: item.serviceDate ?? item.startsAt,
+              endDate: item.endsAt ?? item.serviceDate,
               quantity: item.quantity,
               unitSellAmountCents: item.unitSellAmountCents,
               totalSellAmountCents: item.totalSellAmountCents,
