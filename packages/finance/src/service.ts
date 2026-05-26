@@ -271,6 +271,9 @@ export interface UnifiedPaymentRow {
 type InvoiceListQuery = z.infer<typeof invoiceListQuerySchema>
 type CreateInvoiceInput = z.infer<typeof insertInvoiceSchema>
 export type CreateInvoiceFromBookingInput = z.infer<typeof invoiceFromBookingSchema>
+export type PaymentScheduleLineDescriptionFormat = NonNullable<
+  CreateInvoiceFromBookingInput["paymentScheduleLineDescriptionFormat"]
+>
 type UpdateInvoiceInput = z.infer<typeof updateInvoiceSchema>
 type VoidInvoiceInput = z.infer<typeof voidInvoiceSchema>
 type CreateInvoiceLineItemInput = z.infer<typeof insertInvoiceLineItemSchema>
@@ -532,6 +535,7 @@ function bookingPaymentScheduleToInvoiceLine(
   booking: InvoiceFromBookingData["booking"],
   schedule: NonNullable<InvoiceFromBookingData["paymentSchedule"]>,
   item: InvoiceFromBookingData["items"][number] | undefined,
+  descriptionFormat: PaymentScheduleLineDescriptionFormat = "schedule_first",
 ): ResolvedInvoiceLine {
   const label = PAYMENT_SCHEDULE_LINE_LABELS[schedule.scheduleType]
   const percent = getPaymentSchedulePercent(booking, schedule)
@@ -545,13 +549,33 @@ function bookingPaymentScheduleToInvoiceLine(
   return {
     bookingItemId: schedule.bookingItemId ?? null,
     bookingPaymentScheduleId: schedule.id,
-    description: dates ? `${head} ${base} | ${dates}` : `${head} ${base}`,
+    description: renderPaymentScheduleLineDescription({ base, dates, head, descriptionFormat }),
     quantity: 1,
     unitPriceCents: schedule.amountCents,
     totalCents: schedule.amountCents,
     taxAmountCents: 0,
     taxRate: null,
     sortOrder: 0,
+  }
+}
+
+function renderPaymentScheduleLineDescription(input: {
+  head: string
+  base: string
+  dates: string | null
+  descriptionFormat: PaymentScheduleLineDescriptionFormat
+}) {
+  switch (input.descriptionFormat) {
+    case "product_only":
+      return input.dates ? `${input.base} | ${input.dates}` : input.base
+    case "product_first":
+      return input.dates
+        ? `${input.base} - ${input.head} | ${input.dates}`
+        : `${input.base} - ${input.head}`
+    case "schedule_first":
+      return input.dates
+        ? `${input.head} ${input.base} | ${input.dates}`
+        : `${input.head} ${input.base}`
   }
 }
 
@@ -960,6 +984,7 @@ export interface FinanceServiceRuntime extends InvoiceFxOptions {
   actionLedgerContext?: ActionLedgerRequestContextValues
   actionLedgerAuthorizationSource?: string | null
   descriptionResolver?: InvoiceLineDescriptionResolver
+  paymentScheduleLineDescriptionFormat?: PaymentScheduleLineDescriptionFormat
 }
 
 export interface InvoiceVoidedEvent {
@@ -3816,10 +3841,21 @@ export const financeService = {
     const scheduleItem = paymentSchedule
       ? resolvePaymentScheduleDisplayItem(paymentSchedule, items)
       : undefined
+    const paymentScheduleLineDescriptionFormat =
+      data.paymentScheduleLineDescriptionFormat ??
+      runtime.paymentScheduleLineDescriptionFormat ??
+      "schedule_first"
     const resolvedLineItems =
       overrideLineItems ??
       (paymentSchedule
-        ? [bookingPaymentScheduleToInvoiceLine(booking, paymentSchedule, scheduleItem)]
+        ? [
+            bookingPaymentScheduleToInvoiceLine(
+              booking,
+              paymentSchedule,
+              scheduleItem,
+              paymentScheduleLineDescriptionFormat,
+            ),
+          ]
         : invoiceItems.length > 0
           ? invoiceItems.map((item, sortOrder) => ({
               ...bookingItemToInvoiceLine(item, taxesByBookingItemId.get(item.id) ?? [], sortOrder),

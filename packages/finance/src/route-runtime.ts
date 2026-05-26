@@ -3,7 +3,10 @@ import type { EventBus } from "@voyantjs/core"
 import type { InvoiceFxOptions } from "./invoice-fx.js"
 import type { FinanceDocumentRouteOptions, InvoiceDocumentGenerator } from "./routes-documents.js"
 import type { FinanceSettlementRouteOptions, InvoiceSettlementPoller } from "./routes-settlement.js"
-import type { InvoiceLineDescriptionResolver } from "./service.js"
+import type {
+  InvoiceLineDescriptionResolver,
+  PaymentScheduleLineDescriptionFormat,
+} from "./service.js"
 
 export type FinanceRouteRuntime = {
   invoiceDocumentGenerator?: InvoiceDocumentGenerator
@@ -11,6 +14,7 @@ export type FinanceRouteRuntime = {
   invoiceSettlementPollers: Record<string, InvoiceSettlementPoller>
   eventBus?: EventBus
   descriptionResolver?: InvoiceLineDescriptionResolver
+  paymentScheduleLineDescriptionFormat?: PaymentScheduleLineDescriptionFormat
 } & InvoiceFxOptions
 
 export const FINANCE_ROUTE_RUNTIME_CONTAINER_KEY = "providers.finance.runtime"
@@ -20,6 +24,7 @@ export interface FinanceRuntimeOptions
     FinanceSettlementRouteOptions,
     InvoiceFxOptions {
   descriptionResolver?: InvoiceLineDescriptionResolver
+  paymentScheduleLineDescriptionFormat?: PaymentScheduleLineDescriptionFormat
 }
 
 export function buildFinanceRouteRuntime(
@@ -34,6 +39,7 @@ export function buildFinanceRouteRuntime(
       options.resolveInvoiceSettlementPollers?.(bindings) ?? options.invoiceSettlementPollers ?? {},
     eventBus: options.resolveEventBus?.(bindings) ?? options.eventBus,
     descriptionResolver: options.descriptionResolver,
+    paymentScheduleLineDescriptionFormat: options.paymentScheduleLineDescriptionFormat,
     invoiceFxSettings: options.invoiceFxSettings,
     resolveInvoiceFxSettings: options.resolveInvoiceFxSettings,
     updateInvoiceFxSettings: options.updateInvoiceFxSettings,

@@ -487,6 +487,107 @@ describe("financeService.createInvoiceFromBooking number allocation", () => {
     ])
   })
 
+  it("supports product-only schedule line descriptions from runtime options", async () => {
+    const { db, insertedInvoiceLineItems } = makeDb({})
+
+    await financeService.createInvoiceFromBooking(
+      db,
+      {
+        bookingId: "book_123",
+        invoiceNumber: "MANUAL-1",
+        issueDate: "2026-05-23",
+        dueDate: "2026-06-23",
+      },
+      {
+        booking: {
+          ...bookingData.booking,
+          bookingNumber: "BK-2605-5046",
+          sellAmountCents: 64_000,
+          startDate: "2026-06-13",
+          endDate: "2026-06-13",
+        },
+        paymentSchedule: {
+          id: "bps_123",
+          bookingId: "book_123",
+          bookingItemId: null,
+          scheduleType: "balance",
+          dueDate: "2026-06-01",
+          currency: "RON",
+          amountCents: 32_000,
+        },
+        items: [
+          {
+            id: "bkit_123",
+            title: "Fallback booking item title",
+            productNameSnapshot: "Excursie Bulgaria",
+            quantity: 2,
+            startDate: "2026-06-18",
+            unitSellAmountCents: 32_000,
+            totalSellAmountCents: 64_000,
+          },
+        ],
+      },
+      { paymentScheduleLineDescriptionFormat: "product_only" },
+    )
+
+    expect(insertedInvoiceLineItems[0]).toMatchObject({
+      bookingItemId: null,
+      bookingPaymentScheduleId: "bps_123",
+      description: "Excursie Bulgaria | 2026-06-18",
+    })
+  })
+
+  it("lets invoice-from-booking callers choose product-first schedule line descriptions", async () => {
+    const { db, insertedInvoiceLineItems } = makeDb({})
+
+    await financeService.createInvoiceFromBooking(
+      db,
+      {
+        bookingId: "book_123",
+        invoiceNumber: "MANUAL-1",
+        issueDate: "2026-05-23",
+        dueDate: "2026-06-23",
+        paymentScheduleLineDescriptionFormat: "product_first",
+      },
+      {
+        booking: {
+          ...bookingData.booking,
+          bookingNumber: "BK-2605-5046",
+          sellAmountCents: 64_000,
+          startDate: "2026-06-13",
+          endDate: "2026-06-13",
+        },
+        paymentSchedule: {
+          id: "bps_123",
+          bookingId: "book_123",
+          bookingItemId: null,
+          scheduleType: "balance",
+          dueDate: "2026-06-01",
+          currency: "RON",
+          amountCents: 32_000,
+        },
+        items: [
+          {
+            id: "bkit_123",
+            title: "Fallback booking item title",
+            productNameSnapshot: "Excursie Bulgaria",
+            quantity: 2,
+            startDate: "2026-06-18",
+            unitSellAmountCents: 32_000,
+            totalSellAmountCents: 64_000,
+          },
+        ],
+      },
+      { paymentScheduleLineDescriptionFormat: "product_only" },
+    )
+
+    expect(insertedInvoiceLineItems[0]).toMatchObject({
+      bookingItemId: null,
+      bookingPaymentScheduleId: "bps_123",
+      description: "Excursie Bulgaria - Balance 50% | 2026-06-18",
+    })
+  })
+
   it("lets callers override schedule line descriptions", async () => {
     const { db, insertedInvoiceLineItems } = makeDb({})
 

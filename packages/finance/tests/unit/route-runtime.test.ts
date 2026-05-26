@@ -5,8 +5,12 @@ import { buildFinanceRouteRuntime } from "../../src/route-runtime.js"
 describe("buildFinanceRouteRuntime", () => {
   it("exposes invoice line description resolver options", async () => {
     const descriptionResolver = () => "Custom legal line"
-    const runtime = buildFinanceRouteRuntime({}, { descriptionResolver })
+    const runtime = buildFinanceRouteRuntime(
+      {},
+      { descriptionResolver, paymentScheduleLineDescriptionFormat: "product_only" },
+    )
 
+    expect(runtime.paymentScheduleLineDescriptionFormat).toBe("product_only")
     expect(
       runtime.descriptionResolver?.({
         booking: {

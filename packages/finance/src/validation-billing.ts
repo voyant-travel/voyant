@@ -159,6 +159,9 @@ export const invoiceFromBookingSchema = z
     taxCents: z.number().int().min(0).optional(),
     totalCents: z.number().int().min(0).optional(),
     lineItems: z.array(invoiceFromBookingLineItemSchema).min(1).optional(),
+    paymentScheduleLineDescriptionFormat: z
+      .enum(["schedule_first", "product_first", "product_only"])
+      .optional(),
     externalRefs: z.array(invoiceExternalRefCoreSchema).optional(),
     /**
      * Document kind. Defaults to a regular invoice; bank-transfer
