@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.81.14
+
+### Patch Changes
+
+- 0a77ff9: Preserve booking item display context for invoice-from-booking payment schedule lines and expose invoice line description resolution through finance route runtime options.
+  - @voyantjs/action-ledger@0.81.14
+  - @voyantjs/bookings@0.81.14
+  - @voyantjs/core@0.81.14
+  - @voyantjs/db@0.81.14
+  - @voyantjs/hono@0.81.14
+  - @voyantjs/products@0.81.14
+  - @voyantjs/storage@0.81.14
+  - @voyantjs/utils@0.81.14
+
 ## 0.81.13
 
 ### Patch Changes
