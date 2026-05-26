@@ -101,6 +101,7 @@ export const bookingRecordSchema = z.object({
   contactRegion: z.string().nullable().optional(),
   contactCity: z.string().nullable().optional(),
   contactAddressLine1: z.string().nullable().optional(),
+  contactAddressLine2: z.string().nullable().optional(),
   contactPostalCode: z.string().nullable().optional(),
   customerPaymentPolicy: bookingPaymentPolicySchema.nullable().optional(),
   priceOverride: bookingPriceOverrideSchema.nullable().optional(),

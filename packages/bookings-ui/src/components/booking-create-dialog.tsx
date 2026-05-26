@@ -895,6 +895,7 @@ export function BookingCreateForm({
       const addressSnapshot = billingPrimaryAddress
         ? {
             contactAddressLine1: billingPrimaryAddress.line1,
+            contactAddressLine2: billingPrimaryAddress.line2,
             contactCity: billingPrimaryAddress.city,
             contactRegion: billingPrimaryAddress.region,
             contactPostalCode: billingPrimaryAddress.postalCode,
@@ -909,6 +910,7 @@ export function BookingCreateForm({
         | "contactPhone"
         | "contactPreferredLanguage"
         | "contactAddressLine1"
+        | "contactAddressLine2"
         | "contactCity"
         | "contactRegion"
         | "contactPostalCode"

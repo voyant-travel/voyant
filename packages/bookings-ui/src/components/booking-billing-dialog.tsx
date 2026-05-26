@@ -29,6 +29,7 @@ const billingFormSchema = z.object({
   contactEmail: z.string().email().optional().nullable().or(z.literal("")),
   contactPhone: z.string().max(50).optional().nullable(),
   contactAddressLine1: z.string().max(500).optional().nullable(),
+  contactAddressLine2: z.string().max(500).optional().nullable(),
   contactCity: z.string().max(100).optional().nullable(),
   contactRegion: z.string().max(100).optional().nullable(),
   contactPostalCode: z.string().max(20).optional().nullable(),
@@ -69,6 +70,7 @@ export function BookingBillingDialog({
       contactEmail: booking.contactEmail ?? "",
       contactPhone: booking.contactPhone ?? "",
       contactAddressLine1: booking.contactAddressLine1 ?? "",
+      contactAddressLine2: booking.contactAddressLine2 ?? "",
       contactCity: booking.contactCity ?? "",
       contactRegion: booking.contactRegion ?? "",
       contactPostalCode: booking.contactPostalCode ?? "",
@@ -89,6 +91,7 @@ export function BookingBillingDialog({
         contactEmail: booking.contactEmail ?? "",
         contactPhone: booking.contactPhone ?? "",
         contactAddressLine1: booking.contactAddressLine1 ?? "",
+        contactAddressLine2: booking.contactAddressLine2 ?? "",
         contactCity: booking.contactCity ?? "",
         contactRegion: booking.contactRegion ?? "",
         contactPostalCode: booking.contactPostalCode ?? "",
@@ -106,6 +109,7 @@ export function BookingBillingDialog({
         contactEmail: values.contactEmail?.trim() || null,
         contactPhone: values.contactPhone?.trim() || null,
         contactAddressLine1: values.contactAddressLine1?.trim() || null,
+        contactAddressLine2: values.contactAddressLine2?.trim() || null,
         contactCity: values.contactCity?.trim() || null,
         contactRegion: values.contactRegion?.trim() || null,
         contactPostalCode: values.contactPostalCode?.trim() || null,
@@ -127,7 +131,7 @@ export function BookingBillingDialog({
           className="flex flex-1 flex-col overflow-hidden"
         >
           <DialogBody className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-2">
                 <Label>{messages.fields.firstName}</Label>
                 <Input {...form.register("contactFirstName")} />
@@ -157,9 +161,15 @@ export function BookingBillingDialog({
               </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <Label>{messages.fields.address}</Label>
-              <Textarea rows={2} {...form.register("contactAddressLine1")} />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <Label>{messages.fields.addressLine1}</Label>
+                <Textarea rows={2} {...form.register("contactAddressLine1")} />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label>{messages.fields.addressLine2}</Label>
+                <Textarea rows={2} {...form.register("contactAddressLine2")} />
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4">

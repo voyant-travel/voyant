@@ -493,6 +493,7 @@ async function materializeBookingFromSnapshot(
       contactCountry: billingAddress?.country ?? null,
       contactCity: billingAddress?.city ?? null,
       contactAddressLine1: billingAddress?.line1 ?? null,
+      contactAddressLine2: billingAddress?.line2 ?? null,
       contactPostalCode: billingAddress?.postal ?? null,
       startDate,
       endDate,

@@ -100,6 +100,7 @@ export function redactBookingContact<
     contactEmail?: string | null
     contactPhone?: string | null
     contactAddressLine1?: string | null
+    contactAddressLine2?: string | null
     contactPostalCode?: string | null
   },
 >(row: T): T {
@@ -110,6 +111,7 @@ export function redactBookingContact<
     contactEmail: redactEmail(row.contactEmail),
     contactPhone: redactPhone(row.contactPhone),
     contactAddressLine1: redactString(row.contactAddressLine1),
+    contactAddressLine2: redactString(row.contactAddressLine2),
     contactPostalCode: redactString(row.contactPostalCode),
   }
 }
