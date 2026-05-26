@@ -798,6 +798,59 @@ async function generateContractPdfForBooking(
   )
 }
 
+/**
+ * Server-side preview of the contract that `generateContractPdfForBooking`
+ * would produce. Runs the same template lookup + variable build pipeline
+ * (so the operator sees exactly what the customer would receive) but
+ * stops after the HTML render — no contract row, no PDF, no storage.
+ */
+async function previewContractForBooking(
+  env: CloudflareBindings,
+  db: PostgresJsDatabase,
+  bookingId: string,
+): Promise<{ html: string; templateName: string; templateLanguage: string } | null> {
+  const generator = resolveContractDocumentGenerator(env)
+  // `generator` is required by the AutoGenerateContractRuntime type but
+  // never invoked on the preview branch — we satisfy the contract with
+  // the real generator when available, otherwise a no-op stub.
+  const previewGenerator =
+    generator ??
+    (((): never => {
+      throw new Error("Contract document generator not configured")
+    }) as unknown as ContractDocumentGenerator)
+
+  const [bookingRow] = await db
+    .select({ bookingNumber: bookings.bookingNumber })
+    .from(bookings)
+    .where(eq(bookings.id, bookingId))
+    .limit(1)
+  if (!bookingRow) {
+    throw new Error(`previewContractForBooking: booking ${bookingId} not found`)
+  }
+
+  const result = await autoGenerateContractForBooking(
+    db,
+    { bookingId, bookingNumber: bookingRow.bookingNumber, actorId: null },
+    { ...AUTO_GENERATE_CONTRACT_OPTIONS, previewMode: true },
+    { generator: previewGenerator, bindings: env as unknown as Record<string, unknown> },
+  )
+
+  if (result.status === "preview") {
+    return {
+      html: result.html,
+      templateName: result.templateName,
+      templateLanguage: result.templateLanguage,
+    }
+  }
+
+  if (result.status === "template_not_found" || result.status === "template_version_missing") {
+    return null
+  }
+
+  const reason = "reason" in result && typeof result.reason === "string" ? result.reason : "unknown"
+  throw new Error(`Contract preview failed: ${result.status} (${reason})`)
+}
+
 const legalModule = createLegalHonoModule({
   // KNOWN LEAK: same shape as the bookings `resolveDb` above — leaks a
   // Pool per legal-event subscriber call until the module factory's
@@ -1138,10 +1191,25 @@ export const app = createApp<CloudflareBindings>({
     // POST /v1/admin/bookings/:bookingId/generate-contract
     hono.post("/v1/admin/bookings/:bookingId/generate-contract", async (c) => {
       const bookingId = c.req.param("bookingId")
-      // Body is optional: callers may post `{}` (initial generate) or
-      // `{ force: true }` (regenerate — rebuild variables + re-render).
-      const body = await c.req.json<{ force?: boolean }>().catch(() => ({}) as { force?: boolean })
+      // Body is optional: callers may post `{}` (initial generate),
+      // `{ force: true }` (regenerate — rebuild variables + re-render),
+      // or `{ preview: true }` (render HTML preview without persisting
+      // — used by the operator's "Add contract" dialog).
+      const body = await c.req
+        .json<{ force?: boolean; preview?: boolean }>()
+        .catch(() => ({}) as { force?: boolean; preview?: boolean })
       try {
+        if (body.preview === true) {
+          const preview = await previewContractForBooking(
+            c.env,
+            c.get("db") as unknown as PostgresJsDatabase,
+            bookingId,
+          )
+          if (!preview) {
+            return c.json({ error: "Contract template not found" }, 404)
+          }
+          return c.json({ data: preview })
+        }
         const result = await generateContractPdfForBooking(
           c.env,
           c.get("db") as unknown as PostgresJsDatabase,

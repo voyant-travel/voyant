@@ -53,6 +53,13 @@ export function getBookingsQueryOptions(
     queryFn: () => {
       const params = new URLSearchParams()
       if (filters.status) params.set("status", filters.status)
+      if (filters.excludeStatuses && filters.excludeStatuses.length > 0) {
+        // Repeat the param so Zod's union(string | array) parses on the
+        // server. `URLSearchParams` preserves the order of `append`.
+        for (const value of filters.excludeStatuses) {
+          params.append("excludeStatuses", value)
+        }
+      }
       if (filters.search) params.set("search", filters.search)
       if (filters.productId) params.set("productId", filters.productId)
       if (filters.optionId) params.set("optionId", filters.optionId)

@@ -4,10 +4,8 @@ import {
   type BookingRecord,
   type BookingsListSortDir,
   type BookingsListSortField,
-  bookingStatusBadgeVariant,
   useBookings,
 } from "@voyantjs/bookings-react"
-import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
@@ -22,7 +20,6 @@ import {
 } from "@voyantjs/ui/components/table"
 import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Search } from "lucide-react"
 import * as React from "react"
-
 import {
   formatMessage,
   useBookingsUiI18nOrDefault,
@@ -30,6 +27,7 @@ import {
 } from "../i18n/provider.js"
 import { BookingDialog } from "./booking-dialog.js"
 import { BOOKING_STATUS_ALL, BookingListFiltersPopover } from "./booking-list-filters.js"
+import { StatusBadge } from "./status-badge.js"
 
 export interface BookingListProps {
   pageSize?: number
@@ -91,9 +89,15 @@ export function BookingList({
   const paxMinNumber = paxMin === "" ? undefined : Number.parseInt(paxMin, 10)
   const paxMaxNumber = paxMax === "" ? undefined : Number.parseInt(paxMax, 10)
 
+  // "All" hides drafts + expired by default — they're rarely actionable
+  // and crowd the operator's queue. Explicit selection of either status
+  // (or any other) opts back in.
+  const excludeStatuses = status === BOOKING_STATUS_ALL ? ["draft", "expired"] : undefined
+
   const { data, isPending, isFetching, isError } = useBookings({
     search: search || undefined,
     status: status === BOOKING_STATUS_ALL ? undefined : status,
+    excludeStatuses,
     productId: productId ?? undefined,
     optionId: optionId ?? undefined,
     availabilitySlotId: availabilitySlotId ?? undefined,
@@ -345,9 +349,9 @@ export function BookingList({
                     {formatBookingItems(booking, messages.bookingList.itemsMore)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={bookingStatusBadgeVariant[booking.status]}>
+                    <StatusBadge status={booking.status}>
                       {statusLabels[booking.status]}
-                    </Badge>
+                    </StatusBadge>
                   </TableCell>
                   <TableCell>
                     {booking.sellAmountCents == null

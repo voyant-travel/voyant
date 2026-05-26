@@ -328,6 +328,12 @@ async function generateContractDocumentForBooking(c: Context<Env>, options: Cont
   if (result.status === "document_failed") {
     return c.json({ error: "Contract document generation failed", reason: result.reason }, 502)
   }
+  if (result.status === "preview") {
+    // Defensive: this route never opts into preview mode, but the
+    // discriminated union now carries that variant. Surface it as a
+    // server-side bug rather than a silent miscast.
+    return c.json({ error: "Preview result returned from non-preview route" }, 500)
+  }
 
   const [contract, attachment] = await Promise.all([
     contractsService.getContractById(c.get("db"), result.contractId),

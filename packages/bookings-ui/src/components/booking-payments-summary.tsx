@@ -1,5 +1,6 @@
 "use client"
 
+import type { ColumnDef } from "@tanstack/react-table"
 import {
   type PaymentMethod,
   type PaymentStatus,
@@ -15,59 +16,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
 } from "@voyantjs/ui/components"
-import {
-  ArrowRightLeft,
-  Banknote,
-  CreditCard,
-  Eye,
-  MoreHorizontal,
-  Pencil,
-  Receipt,
-  Ticket,
-  Trash2,
-  Wallet,
-} from "lucide-react"
+import { DataTable } from "@voyantjs/ui/components/data-table"
+import { ArrowUpRight, CreditCard, Eye, Pencil, Trash2 } from "lucide-react"
 import * as React from "react"
-
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
-
-/**
- * Map payment status to a badge variant — completed/pending visible
- * positively, failed/refunded surface destructive coloring so an
- * operator scanning the row can spot a chargeback or failure
- * without reading the label.
- */
-const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  pending: "outline",
-  completed: "default",
-  failed: "destructive",
-  refunded: "destructive",
-}
-
-/**
- * Inline icon for the payment method column. Pure cosmetic — the
- * label still reads alongside, but operators trained on the icons
- * scan rows much faster than a method-string column.
- */
-const methodIcon: Record<string, typeof CreditCard> = {
-  card: CreditCard,
-  credit_card: CreditCard,
-  bank_transfer: Banknote,
-  cash: Wallet,
-  voucher: Ticket,
-}
+import { IconActionButton } from "./icon-action-button.js"
+import { StatusBadge } from "./status-badge.js"
 
 export interface BookingPaymentsSummaryRow {
   id: string
@@ -76,6 +31,9 @@ export interface BookingPaymentsSummaryRow {
   invoiceType?: "invoice" | "proforma" | "credit_note"
   amountCents: number
   currency: string
+  /** When the customer paid in a different currency than the invoice. */
+  baseCurrency?: string | null
+  baseAmountCents?: number | null
   status: PaymentStatus
   paymentMethod: PaymentMethod
   paymentDate: string
@@ -94,19 +52,17 @@ export interface BookingPaymentsSummaryProps {
    */
   variant?: "admin" | "public"
   /**
-   * Optional href builder for the invoice cell. When provided, the
-   * invoice number renders as an anchor that the consumer can route
-   * however it wants (TanStack Link, Next Link, raw <a>, etc.).
+   * Open the linked invoice in-place (typically a Sheet that renders
+   * the invoice detail page). When omitted, the invoice number cell
+   * renders as plain text.
    */
-  getInvoiceHref?: (row: BookingPaymentsSummaryRow) => string | null | undefined
+  onInvoiceOpen?: (invoiceId: string, row: BookingPaymentsSummaryRow) => void
   /**
    * Optional handler for the "View" action in the row menu. Consumers
    * typically call their router's navigate(). Middle-click isn't useful
    * on menu items, so this is a click handler rather than an href.
    */
   onViewPayment?: (row: BookingPaymentsSummaryRow) => void
-  /** Convert the row's proforma invoice into a final invoice. */
-  onConvertProforma?: (row: BookingPaymentsSummaryRow) => Promise<unknown> | unknown
   /** Edit handler — typically opens a dialog pre-filled with the row. */
   onEditPayment?: (row: BookingPaymentsSummaryRow) => void
   /**
@@ -115,6 +71,12 @@ export interface BookingPaymentsSummaryProps {
    * keep the dialog open with an error.
    */
   onDeletePayment?: (row: BookingPaymentsSummaryRow) => Promise<void> | void
+  /**
+   * Extra content rendered on the right of the card header (e.g. a
+   * `Record payment` button). Keeps section-level actions co-located
+   * with the section instead of floating at the top of the tab.
+   */
+  headerAction?: React.ReactNode
 }
 
 /**
@@ -139,30 +101,23 @@ export interface BookingPaymentsSummaryProps {
 export function BookingPaymentsSummary({
   bookingId,
   variant = "public",
-  getInvoiceHref,
+  onInvoiceOpen,
   onViewPayment,
-  onConvertProforma,
   onEditPayment,
   onDeletePayment,
+  headerAction,
 }: BookingPaymentsSummaryProps) {
   const publicQuery = usePublicBookingPayments(bookingId, { enabled: variant === "public" })
   const adminQuery = useAdminBookingPayments(bookingId, { enabled: variant === "admin" })
   const data = variant === "admin" ? adminQuery.data : publicQuery.data
-  const { formatDate } = useBookingsUiI18nOrDefault()
+  const { formatDateTime } = useBookingsUiI18nOrDefault()
   const messages = useBookingsUiMessagesOrDefault()
   const card = messages.bookingPaymentsSummary
 
   const payments = data?.data?.payments ?? []
-  const hasConvertibleProformas = payments.some((payment) => payment.invoiceType === "proforma")
-  const showActionsColumn = Boolean(
-    onViewPayment ||
-      (onConvertProforma && hasConvertibleProformas) ||
-      onEditPayment ||
-      onDeletePayment,
-  )
+  const showActionsColumn = Boolean(onViewPayment || onEditPayment || onDeletePayment)
   const [deleteTarget, setDeleteTarget] = React.useState<BookingPaymentsSummaryRow | null>(null)
   const [deletePending, setDeletePending] = React.useState(false)
-  const [convertingInvoiceId, setConvertingInvoiceId] = React.useState<string | null>(null)
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget || !onDeletePayment) return
@@ -175,212 +130,182 @@ export function BookingPaymentsSummary({
     }
   }
 
-  const handleConvertProforma = async (row: BookingPaymentsSummaryRow) => {
-    if (!onConvertProforma || row.invoiceType !== "proforma") return
-    setConvertingInvoiceId(row.invoiceId)
-    try {
-      await onConvertProforma(row)
-    } finally {
-      setConvertingInvoiceId(null)
-    }
-  }
+  const paymentRows = React.useMemo<BookingPaymentsSummaryRow[]>(
+    () =>
+      payments.map((payment) => ({
+        id: payment.id,
+        invoiceId: payment.invoiceId,
+        invoiceNumber: payment.invoiceNumber,
+        invoiceType: payment.invoiceType,
+        amountCents: payment.amountCents,
+        currency: payment.currency,
+        baseCurrency: payment.baseCurrency ?? null,
+        baseAmountCents: payment.baseAmountCents ?? null,
+        status: payment.status,
+        paymentMethod: payment.paymentMethod,
+        paymentDate: payment.paymentDate,
+        referenceNumber: payment.referenceNumber,
+        notes: payment.notes,
+      })),
+    [payments],
+  )
 
-  // Empty-state polish: completed totals across all visible rows so
-  // the card carries useful summary information even when there are
-  // many small partial payments to scan.
-  const totalCompleted = payments
-    .filter((p) => p.status === "completed")
-    .reduce((sum, p) => sum + p.amountCents, 0)
-  const currency = payments[0]?.currency ?? null
+  const columns = React.useMemo<ColumnDef<BookingPaymentsSummaryRow>[]>(() => {
+    const cols: ColumnDef<BookingPaymentsSummaryRow>[] = [
+      {
+        accessorKey: "paymentDate",
+        header: card.columns.date,
+        cell: ({ row }) => formatDateTime(row.original.paymentDate),
+      },
+      {
+        accessorKey: "amountCents",
+        header: card.columns.amount,
+        cell: ({ row }) => (
+          <span className="font-mono font-medium">
+            {formatMoney(row.original.amountCents, row.original.currency)}
+          </span>
+        ),
+      },
+      {
+        id: "fx",
+        header: card.columns.fx,
+        cell: ({ row }) => {
+          const { baseCurrency, baseAmountCents, currency } = row.original
+          if (
+            !baseCurrency ||
+            baseAmountCents == null ||
+            baseCurrency.toUpperCase() === currency.toUpperCase()
+          ) {
+            return <span className="text-muted-foreground">—</span>
+          }
+          return (
+            <span className="font-mono text-xs">
+              ≈ {formatMoney(baseAmountCents, baseCurrency)}
+            </span>
+          )
+        },
+      },
+      {
+        accessorKey: "paymentMethod",
+        header: card.columns.method,
+        cell: ({ row }) =>
+          card.paymentMethodLabels[
+            row.original.paymentMethod as keyof typeof card.paymentMethodLabels
+          ] ?? row.original.paymentMethod,
+      },
+      {
+        accessorKey: "status",
+        header: card.columns.status,
+        cell: ({ row }) => (
+          <StatusBadge status={row.original.status}>
+            {card.paymentStatusLabels[
+              row.original.status as keyof typeof card.paymentStatusLabels
+            ] ?? row.original.status}
+          </StatusBadge>
+        ),
+      },
+      {
+        accessorKey: "referenceNumber",
+        header: card.columns.reference,
+        cell: ({ row }) => (
+          <span
+            title={row.original.referenceNumber ?? undefined}
+            className="inline-block max-w-[180px] truncate font-mono text-muted-foreground text-xs"
+          >
+            {row.original.referenceNumber ?? "—"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "invoiceNumber",
+        header: card.columns.invoice,
+        cell: ({ row }) =>
+          onInvoiceOpen ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onInvoiceOpen(row.original.invoiceId, row.original)
+              }}
+              className="inline-flex items-center gap-1 font-mono text-xs text-primary hover:underline"
+            >
+              {row.original.invoiceNumber}
+              <ArrowUpRight className="h-3 w-3" />
+            </button>
+          ) : (
+            <span className="font-mono text-xs">{row.original.invoiceNumber}</span>
+          ),
+      },
+    ]
+
+    if (showActionsColumn) {
+      cols.push({
+        id: "actions",
+        header: () => <span className="sr-only">{card.columns.actions}</span>,
+        cell: ({ row }) => (
+          <div className="flex items-center justify-end gap-1">
+            {onViewPayment ? (
+              <IconActionButton
+                label={card.actions.view}
+                icon={<Eye className="h-3.5 w-3.5" />}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onViewPayment(row.original)
+                }}
+              />
+            ) : null}
+            {onEditPayment ? (
+              <IconActionButton
+                label={card.actions.edit}
+                icon={<Pencil className="h-3.5 w-3.5" />}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onEditPayment(row.original)
+                }}
+              />
+            ) : null}
+            {onDeletePayment ? (
+              <IconActionButton
+                label={card.actions.delete}
+                icon={<Trash2 className="h-3.5 w-3.5" />}
+                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setDeleteTarget(row.original)
+                }}
+              />
+            ) : null}
+          </div>
+        ),
+      })
+    }
+
+    return cols
+  }, [
+    card,
+    formatDateTime,
+    onInvoiceOpen,
+    onDeletePayment,
+    onEditPayment,
+    onViewPayment,
+    showActionsColumn,
+  ])
 
   return (
-    <Card data-slot="booking-payments-summary">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex flex-wrap items-center gap-2 text-base">
+    <div data-slot="booking-payments-summary" className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 text-base font-semibold">
           <CreditCard className="h-4 w-4 text-muted-foreground" />
           {messages.bookingPaymentsSummary.title}
-          {payments.length > 0 ? (
-            <Badge variant="outline" className="text-[10px]">
-              {payments.length}
-            </Badge>
-          ) : null}
-          {totalCompleted > 0 ? (
-            <span className="ml-auto text-muted-foreground text-xs">
-              {(() => {
-                const parts = card.totalReceived.split("{amount}")
-                return (
-                  <>
-                    {parts[0]}
-                    <span className="font-medium text-foreground">
-                      {formatMoney(totalCompleted, currency)}
-                    </span>
-                    {parts[1]}
-                  </>
-                )
-              })()}
-            </span>
-          ) : null}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="overflow-hidden p-0">
-        {payments.length === 0 ? (
-          <p className="py-6 text-center text-muted-foreground text-sm">
-            {messages.bookingPaymentsSummary.empty}
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-muted-foreground">
-                  <th className="px-4 py-2 text-right font-medium">
-                    {messages.bookingPaymentsSummary.columns.amount}
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium">
-                    {messages.bookingPaymentsSummary.columns.method}
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium">
-                    {messages.bookingPaymentsSummary.columns.status}
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium">
-                    {messages.bookingPaymentsSummary.columns.date}
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium">
-                    {messages.bookingPaymentsSummary.columns.reference}
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium">
-                    {messages.bookingPaymentsSummary.columns.invoice}
-                  </th>
-                  {showActionsColumn ? (
-                    <th className="w-10 px-2 py-2 text-right font-medium">
-                      <span className="sr-only">{card.columns.actions}</span>
-                    </th>
-                  ) : null}
-                </tr>
-              </thead>
-              <tbody>
-                {payments.map((payment) => {
-                  const MethodIcon = methodIcon[payment.paymentMethod] ?? Receipt
-                  const methodLabel =
-                    messages.bookingPaymentsSummary.paymentMethodLabels[
-                      payment.paymentMethod as keyof typeof messages.bookingPaymentsSummary.paymentMethodLabels
-                    ] ?? payment.paymentMethod
-                  const row: BookingPaymentsSummaryRow = {
-                    id: payment.id,
-                    invoiceId: payment.invoiceId,
-                    invoiceNumber: payment.invoiceNumber,
-                    invoiceType: payment.invoiceType,
-                    amountCents: payment.amountCents,
-                    currency: payment.currency,
-                    status: payment.status,
-                    paymentMethod: payment.paymentMethod,
-                    paymentDate: payment.paymentDate,
-                    referenceNumber: payment.referenceNumber,
-                    notes: payment.notes,
-                  }
-                  const invoiceHref = getInvoiceHref?.(row) ?? null
-                  return (
-                    <tr key={payment.id} className="border-b last:border-b-0">
-                      <td className="px-4 py-2.5 text-right font-mono font-medium">
-                        {formatMoney(payment.amountCents, payment.currency)}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <span className="inline-flex items-center gap-1.5">
-                          <MethodIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                          {methodLabel}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <Badge variant={statusVariant[payment.status] ?? "secondary"}>
-                          {messages.bookingPaymentsSummary.paymentStatusLabels[
-                            payment.status as keyof typeof messages.bookingPaymentsSummary.paymentStatusLabels
-                          ] ?? payment.status}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-2.5 text-muted-foreground text-xs">
-                        {formatDate(payment.paymentDate)}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <span
-                          title={payment.referenceNumber ?? undefined}
-                          className="inline-block max-w-[180px] truncate font-mono text-muted-foreground text-xs"
-                        >
-                          {payment.referenceNumber ?? "—"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5 font-mono text-xs">
-                        {invoiceHref ? (
-                          <a
-                            href={invoiceHref}
-                            className="text-foreground underline-offset-2 hover:underline"
-                          >
-                            {payment.invoiceNumber}
-                          </a>
-                        ) : (
-                          payment.invoiceNumber
-                        )}
-                      </td>
-                      {showActionsColumn ? (
-                        <td className="px-2 py-2.5 text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger
-                              render={
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-label={card.actions.open}
-                                />
-                              }
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              {onViewPayment ? (
-                                <DropdownMenuItem onClick={() => onViewPayment(row)}>
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  {card.actions.view}
-                                </DropdownMenuItem>
-                              ) : null}
-                              {onConvertProforma && row.invoiceType === "proforma" ? (
-                                <DropdownMenuItem
-                                  disabled={convertingInvoiceId === row.invoiceId}
-                                  onClick={() => void handleConvertProforma(row)}
-                                >
-                                  <ArrowRightLeft className="mr-2 h-4 w-4" />
-                                  {card.actions.convertToInvoice}
-                                </DropdownMenuItem>
-                              ) : null}
-                              {onEditPayment ? (
-                                <DropdownMenuItem onClick={() => onEditPayment(row)}>
-                                  <Pencil className="mr-2 h-4 w-4" />
-                                  {card.actions.edit}
-                                </DropdownMenuItem>
-                              ) : null}
-                              {onDeletePayment ? (
-                                <>
-                                  {onViewPayment || onEditPayment ? (
-                                    <DropdownMenuSeparator />
-                                  ) : null}
-                                  <DropdownMenuItem
-                                    variant="destructive"
-                                    onClick={() => setDeleteTarget(row)}
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    {card.actions.delete}
-                                  </DropdownMenuItem>
-                                </>
-                              ) : null}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      ) : null}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </CardContent>
+        </h2>
+        {headerAction}
+      </div>
+      <DataTable
+        columns={columns}
+        data={paymentRows}
+        emptyMessage={messages.bookingPaymentsSummary.empty}
+        showPagination={false}
+      />
       {onDeletePayment ? (
         <AlertDialog
           open={Boolean(deleteTarget)}
@@ -415,7 +340,7 @@ export function BookingPaymentsSummary({
           </AlertDialogContent>
         </AlertDialog>
       ) : null}
-    </Card>
+    </div>
   )
 }
 

@@ -424,19 +424,20 @@ export function TravelerDialog({
                     placeholder={messages.travelerDialog.placeholders.documentNumber}
                   />
                 </div>
-                <div className="flex flex-col gap-2">
-                  <Label>{messages.travelerDialog.fields.documentExpiry}</Label>
-                  <DatePicker
-                    value={form.watch("documentExpiry") || null}
-                    onChange={(nextValue) =>
-                      form.setValue("documentExpiry", nextValue ?? "", {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      })
-                    }
-                    placeholder={messages.travelerDialog.placeholders.documentExpiry}
-                  />
-                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label>{messages.travelerDialog.fields.documentExpiry}</Label>
+                <DatePicker
+                  value={form.watch("documentExpiry") || null}
+                  onChange={(nextValue) =>
+                    form.setValue("documentExpiry", nextValue ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  placeholder={messages.travelerDialog.placeholders.documentExpiry}
+                />
               </div>
 
               <div className="flex flex-col gap-2">

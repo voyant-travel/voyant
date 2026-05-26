@@ -1,7 +1,8 @@
 export {
-  BookingInvoiceSheet,
-  type BookingInvoiceSheetProps,
-} from "./components/booking-invoice-sheet.js"
+  BookingInvoiceDialog,
+  type BookingInvoiceDialogProps,
+  type BookingInvoiceDialogUpload,
+} from "./components/booking-invoice-dialog.js"
 export {
   actionLedgerRiskVariant,
   actionLedgerStatusVariant,

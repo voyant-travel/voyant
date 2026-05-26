@@ -139,6 +139,10 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
       handler: async (envelope) => {
         const event = coerceEvent(envelope.data)
         if (!event) return
+        if (event.skipExternalSync === true) {
+          logger.info?.(`[smartbill] skipping invoice ${event.id} (skipExternalSync=true)`)
+          return
+        }
         if (typeof event.convertedFromInvoiceId === "string" && event.convertedFromInvoiceId) {
           logger.info?.(
             `[smartbill] skipping invoice create for converted proforma ${event.id}; waiting for "${eventNames.proformaConverted}"`,
@@ -163,6 +167,10 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
       handler: async (envelope) => {
         const event = coerceEvent(envelope.data)
         if (!event) return
+        if (event.skipExternalSync === true) {
+          logger.info?.(`[smartbill] skipping proforma ${event.id} (skipExternalSync=true)`)
+          return
+        }
         try {
           await syncSmartbillInvoiceEvent({
             event,
@@ -181,6 +189,12 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
       handler: async (envelope) => {
         const event = coerceEvent(envelope.data)
         if (!event) return
+        if (event.skipExternalSync === true) {
+          logger.info?.(
+            `[smartbill] skipping proforma conversion ${event.id} (skipExternalSync=true)`,
+          )
+          return
+        }
         try {
           await syncSmartbillProformaConversion({
             event,

@@ -94,6 +94,12 @@ export const bookingsUiEn = {
     cancelBookingAction: "Cancel booking",
     deleteAction: "Delete",
     deleteConfirm: "Delete this booking?",
+    deleteConfirmDescription:
+      "Booking {number} will be permanently removed along with its items, travelers, and finance records. This cannot be undone.",
+    deleteConfirmDescriptionFallback:
+      "This booking will be permanently removed along with its items, travelers, and finance records. This cannot be undone.",
+    deleteConfirmAction: "Delete booking",
+    deleteCancel: "Cancel",
     collectPaymentAction: "Generate payment link",
     recordPaymentAction: "Record payment",
     noValue: "-",
@@ -519,6 +525,8 @@ export const bookingsUiEn = {
       paymentDate: "Payment date",
       paymentMethod: "Method",
       paymentReference: "Reference",
+      addInstallment: "Add installment",
+      removeInstallment: "Remove installment",
     },
   },
   roomsStepperSection: {
@@ -928,6 +936,7 @@ export const bookingsUiEn = {
     empty: "No payment schedules yet.",
     values: {
       notesUnavailable: "-",
+      proformaSuffix: "proforma",
     },
     columns: {
       type: "Type",
@@ -935,9 +944,18 @@ export const bookingsUiEn = {
       dueDate: "Due date",
       amount: "Amount",
       notes: "Notes",
+      invoice: "Invoice",
     },
     actions: {
-      deleteConfirm: "Delete this payment schedule?",
+      deleteConfirm: {
+        title: "Delete this payment schedule?",
+        description:
+          "This removes the schedule entry from the booking. This action cannot be undone.",
+        cancel: "Cancel",
+        confirm: "Delete",
+      },
+      editSchedule: "Edit schedule",
+      deleteSchedule: "Delete schedule",
       issueDocument: "Issue document",
       issueInvoice: "Issue invoice",
       issueProforma: "Issue proforma",
@@ -987,6 +1005,10 @@ export const bookingsUiEn = {
       cost: "Cost",
       reference: "Reference",
       confirmed: "Confirmed",
+      actions: "Actions",
+    },
+    actions: {
+      edit: "Edit supplier status",
     },
   },
   bookingCancellationDialog: {
@@ -1115,7 +1137,15 @@ export const bookingsUiEn = {
       expires: "Expires",
     },
     actions: {
-      deleteConfirm: "Delete this guarantee?",
+      deleteConfirm: {
+        title: "Delete this guarantee?",
+        description:
+          "This removes the guarantee record from the booking. This action cannot be undone.",
+        cancel: "Cancel",
+        confirm: "Delete",
+      },
+      editGuarantee: "Edit guarantee",
+      deleteGuarantee: "Delete guarantee",
     },
   },
   bookingGroupLinkDialog: {
@@ -1312,6 +1342,8 @@ export const bookingsUiEn = {
       documentGenerationHeading: "Document generation",
       generateContractDocument: "Generate contract document",
       generateInvoiceDocument: "Generate invoice document",
+      generateProforma: "Generate proforma",
+      generateInvoiceAndContract: "Generate invoice and contract",
       breakdownHeading: "Price breakdown",
       breakdownTotal: "Total",
       breakdownOnRequest: "On request",
@@ -1394,7 +1426,8 @@ export const bookingsUiEn = {
       method: "Method",
       status: "Status",
       amount: "Amount",
-      date: "Date",
+      fx: "Booking equivalent",
+      date: "Created at",
       reference: "Reference",
       actions: "Actions",
     },

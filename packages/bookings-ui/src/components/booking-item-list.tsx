@@ -15,7 +15,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  Badge,
   Button,
 } from "@voyantjs/ui/components"
 import { DataTable } from "@voyantjs/ui/components/data-table"
@@ -31,15 +30,8 @@ import * as React from "react"
 
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 import { BookingItemDialog } from "./booking-item-dialog.js"
-
-const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  draft: "outline",
-  on_hold: "secondary",
-  confirmed: "default",
-  cancelled: "destructive",
-  expired: "secondary",
-  fulfilled: "default",
-}
+import { IconActionButton } from "./icon-action-button.js"
+import { StatusBadge } from "./status-badge.js"
 
 export type BookingItemResourceKind = "product" | "availabilitySlot"
 
@@ -60,7 +52,7 @@ export function BookingItemList({ bookingId, onResourceOpen }: BookingItemListPr
   const [viewing, setViewing] = React.useState<BookingItemRecord | null>(null)
   const { data } = useBookingItems(bookingId)
   const { remove } = useBookingItemMutation(bookingId)
-  const { formatCurrency } = useBookingsUiI18nOrDefault()
+  const { formatCurrency, formatDateTime } = useBookingsUiI18nOrDefault()
   const messages = useBookingsUiMessagesOrDefault()
 
   const items = data?.data ?? []
@@ -106,9 +98,9 @@ export function BookingItemList({ bookingId, onResourceOpen }: BookingItemListPr
         accessorKey: "status",
         header: messages.bookingItemList.columns.status,
         cell: ({ row }) => (
-          <Badge variant={statusVariant[row.original.status] ?? "secondary"}>
+          <StatusBadge status={row.original.status}>
             {messages.bookingItemDialog.itemStatusLabels[row.original.status]}
-          </Badge>
+          </StatusBadge>
         ),
       },
       {
@@ -143,7 +135,7 @@ export function BookingItemList({ bookingId, onResourceOpen }: BookingItemListPr
         header: messages.bookingItemList.columns.serviceDate,
         cell: ({ row }) => (
           <span className="text-xs">
-            {formatItemDateRange(row.original) ??
+            {formatItemDateRange(row.original, formatDateTime) ??
               messages.bookingItemList.values.serviceDateUnavailable}
           </span>
         ),
@@ -153,46 +145,37 @@ export function BookingItemList({ bookingId, onResourceOpen }: BookingItemListPr
         header: "",
         cell: ({ row }) => (
           <div className="flex items-center justify-end gap-1">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label={messages.bookingItemList.actions.viewItem}
+            <IconActionButton
+              label={messages.bookingItemList.actions.viewItem}
+              icon={<Eye className="h-3.5 w-3.5" />}
               onClick={(e) => {
                 e.stopPropagation()
                 setViewing(row.original)
               }}
-            >
-              <Eye className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label={messages.bookingItemList.actions.editItem}
+            />
+            <IconActionButton
+              label={messages.bookingItemList.actions.editItem}
+              icon={<Pencil className="h-3.5 w-3.5" />}
               onClick={(e) => {
                 e.stopPropagation()
                 setEditing(row.original)
                 setDialogOpen(true)
               }}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
+            />
+            <IconActionButton
+              label={messages.bookingItemList.actions.deleteItem}
+              icon={<Trash2 className="h-3.5 w-3.5" />}
               className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-              aria-label={messages.bookingItemList.actions.deleteItem}
               onClick={(e) => {
                 e.stopPropagation()
                 setDeleteTarget(row.original)
               }}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+            />
           </div>
         ),
       },
     ],
-    [formatCurrency, messages],
+    [formatCurrency, formatDateTime, messages],
   )
 
   return (
@@ -203,6 +186,7 @@ export function BookingItemList({ bookingId, onResourceOpen }: BookingItemListPr
           {messages.bookingItemList.title}
         </h2>
         <Button
+          variant="outline"
           size="sm"
           onClick={() => {
             setEditing(undefined)
@@ -296,10 +280,11 @@ function ItemSnapshotBody({
   onResourceOpen?: (kind: BookingItemResourceKind, id: string) => void
 }) {
   const messages = useBookingsUiMessagesOrDefault()
+  const { formatDateTime } = useBookingsUiI18nOrDefault()
   const labels = messages.bookingItemList.snapshot
   const empty = labels.empty
   const productName = item.productNameSnapshot ?? item.title
-  const dateRange = formatItemDateRange(item)
+  const dateRange = formatItemDateRange(item, formatDateTime)
   const unitSell =
     item.unitSellAmountCents != null
       ? formatCurrency(item.unitSellAmountCents / 100, item.sellCurrency)
@@ -342,9 +327,9 @@ function ItemSnapshotBody({
         <SnapshotRow
           label={labels.statusLabel}
           value={
-            <Badge variant={statusVariant[item.status] ?? "secondary"}>
+            <StatusBadge status={item.status}>
               {messages.bookingItemDialog.itemStatusLabels[item.status]}
-            </Badge>
+            </StatusBadge>
           }
         />
         <SnapshotRow
@@ -366,11 +351,11 @@ function ItemSnapshotBody({
       <SnapshotSection title={labels.sectionMeta}>
         <SnapshotRow
           label={labels.createdAtLabel}
-          value={formatTimestamp(item.createdAt) ?? empty}
+          value={formatTimestampIso(item.createdAt, formatDateTime) ?? empty}
         />
         <SnapshotRow
           label={labels.updatedAtLabel}
-          value={formatTimestamp(item.updatedAt) ?? empty}
+          value={formatTimestampIso(item.updatedAt, formatDateTime) ?? empty}
         />
       </SnapshotSection>
     </div>
@@ -426,49 +411,39 @@ function SnapshotRow({
   )
 }
 
-function formatTimestamp(iso: string | null | undefined): string | null {
+function formatTimestampIso(
+  iso: string | null | undefined,
+  formatDateTime: (value: Date | string | number, options?: Intl.DateTimeFormatOptions) => string,
+): string | null {
   if (!iso) return null
   const d = new Date(iso)
   if (!Number.isFinite(d.getTime())) return null
-  try {
-    return d.toLocaleString(undefined, {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  } catch {
-    return d.toISOString()
-  }
+  return formatDateTime(d)
 }
 
-function formatItemDateRange(item: BookingItemRecord): string | null {
-  if (item.departureLabelSnapshot) return item.departureLabelSnapshot
+function formatItemDateRange(
+  item: BookingItemRecord,
+  formatDateTime: (value: Date | string | number, options?: Intl.DateTimeFormatOptions) => string,
+): string | null {
+  // Prefer the explicit start/end timestamps over the snapshot label —
+  // the snapshot was rendered in whatever locale was active when the
+  // booking was created, so it can be stale (English text on a Romanian
+  // dashboard, missing arrival, etc.). We only fall back to the snapshot
+  // when we have nothing better.
   const start = item.startsAt ? new Date(item.startsAt) : null
   const end = item.endsAt ? new Date(item.endsAt) : null
   if (start && Number.isFinite(start.getTime())) {
     if (end && Number.isFinite(end.getTime()) && end.getTime() !== start.getTime()) {
-      return `${formatDate(start)} → ${formatDate(end)}`
+      return `${formatDateTime(start)} → ${formatDateTime(end)}`
     }
-    return formatDate(start)
+    return formatDateTime(start)
   }
   if (item.serviceDate) {
     const d = new Date(item.serviceDate)
-    if (Number.isFinite(d.getTime())) return formatDate(d)
+    if (Number.isFinite(d.getTime())) {
+      return formatDateTime(d, { dateStyle: "medium" })
+    }
     return item.serviceDate
   }
-  return null
-}
-
-function formatDate(d: Date): string {
-  try {
-    return d.toLocaleDateString(undefined, {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    })
-  } catch {
-    return d.toISOString().slice(0, 10)
-  }
+  return item.departureLabelSnapshot ?? null
 }

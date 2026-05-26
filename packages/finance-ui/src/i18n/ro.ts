@@ -54,7 +54,29 @@ export const financeUiRo = {
       issueDate: "Data Emiterii",
       dueDate: "Data Scadentei",
       notes: "Note",
+      type: "Tip",
+      source: "Sursa",
+      schedule: "Scadentar",
+      markAsPaid: "Marcheaza ca platita",
+      markAsPaidMethod: "Metoda de plata",
+      markAsPaidDate: "Data platii",
+      syncToSmartbill: "Sincronizeaza cu SmartBill",
+      attachments: "Atasamente",
     },
+    typeLabels: {
+      invoice: "Factura",
+      proforma: "Proforma",
+    },
+    sourceLabels: {
+      custom: "Personalizat",
+      schedule: "Din scadentar",
+    },
+    schedulePlaceholder: "Alege o linie din scadentar",
+    scheduleEmpty: "Nu exista linii neplatite in scadentar.",
+    scheduleLockedHint: "Sumele, moneda si data scadenta sunt preluate din scadentar.",
+    attachmentsHint:
+      "Ataseaza documente suport. Ignorate cand sincronizarea cu SmartBill este activa.",
+    invoiceNumberAutoHint: "SmartBill aloca numarul din urmatoarea secventa la emitere.",
     placeholders: {
       invoiceNumber: "INV-2025-1234",
       bookingId: "Cauta dupa numar, client sau produs",
@@ -71,6 +93,18 @@ export const financeUiRo = {
       currencyIsoCode: "Foloseste cod ISO din 3 litere",
       issueDateRequired: "Data emiterii este obligatorie",
       dueDateRequired: "Data scadentei este obligatorie",
+      lineItemInvalid: "Fiecare linie are nevoie de descriere si cantitate ≥ 1.",
+    },
+    lineItems: {
+      sectionTitle: "Linii factura",
+      addRow: "Adauga linie",
+      empty: "Nicio linie. Adauga linii pentru a suprascrie totalurile.",
+      description: "Descriere",
+      quantity: "Cant",
+      unitPrice: "Pret unitate",
+      taxPercent: "Taxa %",
+      lineTotal: "Total",
+      remove: "Sterge linia",
     },
   },
   invoicesPage: {
@@ -635,6 +669,9 @@ export const financeUiRo = {
       status: "Status",
       referenceNumber: "Referinta",
       notes: "Note",
+      convertProformaAfter: "Converteste proforma in factura",
+      convertProformaAfterHint:
+        "Emite factura finala cu aceleasi totaluri si linii, legata de aceasta proforma.",
     },
     placeholders: {
       invoice: "Selecteaza factura",
@@ -659,8 +696,7 @@ export const financeUiRo = {
     invoiceMeta:
       "Total {total} {currency} • platit {paid} {currency} • de incasat {due} {currency}",
     loadingInvoices: "Se incarca facturile…",
-    noInvoices:
-      "Nu exista facturi pe aceasta rezervare. Emite o factura inainte de a inregistra o plata.",
+    noInvoices: "Nu exista facturi neachitate pe aceasta rezervare.",
     actions: {
       record: "Inregistreaza plata",
       save: "Salveaza modificarile",

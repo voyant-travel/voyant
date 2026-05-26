@@ -117,6 +117,13 @@ export const bookingListSortDirSchema = z.enum(["asc", "desc"])
 
 export const bookingListQuerySchema = z.object({
   status: bookingStatusSchema.optional(),
+  /**
+   * Statuses to omit from the result. Lets the operator list page hide
+   * noise (draft + expired by default) without forcing a separate
+   * endpoint. Pre-coerced from `excludeStatus` repeats / comma-separated
+   * values so the URL stays human-friendly.
+   */
+  excludeStatuses: z.union([bookingStatusSchema, z.array(bookingStatusSchema)]).optional(),
   search: z.string().optional(),
   productId: z.string().optional(),
   optionId: z.string().optional(),

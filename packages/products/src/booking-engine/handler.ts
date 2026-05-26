@@ -116,6 +116,7 @@ export interface BookingCreateBridgeInput {
   documentGeneration?: {
     contractDocument: boolean
     invoiceDocument: boolean
+    invoiceType: "invoice" | "proforma"
   }
   taxLines?: Array<{
     code?: string | null
@@ -703,6 +704,8 @@ export function createProductsBookingHandler(
           ? {
               contractDocument: draft.documentGeneration.contractDocument === true,
               invoiceDocument: draft.documentGeneration.invoiceDocument === true,
+              invoiceType:
+                draft.documentGeneration.invoiceType === "proforma" ? "proforma" : "invoice",
             }
           : undefined,
         sellAmountCentsOverride,

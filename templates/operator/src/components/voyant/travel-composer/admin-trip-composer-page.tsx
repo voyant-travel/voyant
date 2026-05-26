@@ -710,52 +710,39 @@ function paymentScheduleToRows(
   totalAmountCents: number | null,
 ): ComponentPaymentScheduleRow[] {
   if (value.mode === "full") {
-    if (!value.fullDueDate || totalAmountCents === null) return []
+    const installment = value.installments[0]
+    if (!installment?.dueDate || totalAmountCents === null) return []
     return [
       {
         scheduleType: "balance",
-        status: value.fullAlreadyPaid ? "paid" : "due",
-        dueDate: value.fullDueDate,
+        status: installment.alreadyPaid ? "paid" : "due",
+        dueDate: installment.dueDate,
         currency: scheduleCurrency,
         amountCents: totalAmountCents,
         notes: paidScheduleNotes(
-          value.fullAlreadyPaid,
-          value.fullPaymentDate,
-          value.fullPaymentMethod,
-          value.fullPaymentReference,
+          installment.alreadyPaid,
+          installment.paymentDate,
+          installment.paymentMethod,
+          installment.paymentReference,
         ),
       },
     ]
   }
 
   const rows: ComponentPaymentScheduleRow[] = []
-  if (value.splitFirstDueDate && value.splitFirstAmountCents != null) {
+  for (const installment of value.installments) {
+    if (!installment.dueDate || installment.amountCents == null) continue
     rows.push({
       scheduleType: "installment",
-      status: value.splitFirstAlreadyPaid ? "paid" : "due",
-      dueDate: value.splitFirstDueDate,
+      status: installment.alreadyPaid ? "paid" : "due",
+      dueDate: installment.dueDate,
       currency: scheduleCurrency,
-      amountCents: value.splitFirstAmountCents,
+      amountCents: installment.amountCents,
       notes: paidScheduleNotes(
-        value.splitFirstAlreadyPaid,
-        value.splitFirstPaymentDate,
-        value.splitFirstPaymentMethod,
-        value.splitFirstPaymentReference,
-      ),
-    })
-  }
-  if (value.splitSecondDueDate && value.splitSecondAmountCents != null) {
-    rows.push({
-      scheduleType: "installment",
-      status: value.splitSecondAlreadyPaid ? "paid" : "due",
-      dueDate: value.splitSecondDueDate,
-      currency: scheduleCurrency,
-      amountCents: value.splitSecondAmountCents,
-      notes: paidScheduleNotes(
-        value.splitSecondAlreadyPaid,
-        value.splitSecondPaymentDate,
-        value.splitSecondPaymentMethod,
-        value.splitSecondPaymentReference,
+        installment.alreadyPaid,
+        installment.paymentDate,
+        installment.paymentMethod,
+        installment.paymentReference,
       ),
     })
   }

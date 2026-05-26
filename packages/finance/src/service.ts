@@ -5,7 +5,21 @@ import {
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
 import type { EventBus } from "@voyantjs/core"
 import { renderStructuredTemplate } from "@voyantjs/utils/template-renderer"
-import { and, asc, desc, eq, gt, gte, ilike, lte, ne, or, sql } from "drizzle-orm"
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  gte,
+  ilike,
+  inArray,
+  isNotNull,
+  lte,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 import { resolveFxMoneyBaseAmount } from "./fx-money.js"
@@ -1333,34 +1347,59 @@ async function assertBookingPaymentScheduleHasPaymentCoverage(
     "id" | "bookingId" | "amountCents" | "currency"
   >,
 ) {
+  // Sum every completed payment recorded against this booking's invoices
+  // and convert to the schedule's currency:
+  //   - same-currency payments contribute their `amountCents`
+  //   - cross-currency payments contribute their `baseAmountCents` when
+  //     `baseCurrency` matches the schedule (the BookingPaymentsSummary
+  //     "FX equivalent" column already exposes this conversion to the
+  //     operator, so reusing it here keeps the math consistent)
+  // We then subtract any *other* schedules already flagged paid in the
+  // same currency, so the operator can't double-count payments by
+  // marking multiple schedules paid when only one schedule's worth of
+  // money actually came in.
   const paymentRows = await db
     .select({
-      id: payments.id,
       amountCents: payments.amountCents,
+      currency: payments.currency,
+      baseCurrency: payments.baseCurrency,
+      baseAmountCents: payments.baseAmountCents,
     })
-    .from(paymentSessions)
-    .innerJoin(payments, eq(paymentSessions.paymentId, payments.id))
+    .from(payments)
     .innerJoin(invoices, eq(payments.invoiceId, invoices.id))
+    .where(and(eq(invoices.bookingId, schedule.bookingId), eq(payments.status, "completed")))
+
+  const totalPaidInScheduleCurrency = paymentRows.reduce((sum, payment) => {
+    if (payment.currency === schedule.currency) return sum + payment.amountCents
+    if (payment.baseCurrency === schedule.currency && typeof payment.baseAmountCents === "number") {
+      return sum + payment.baseAmountCents
+    }
+    return sum
+  }, 0)
+
+  const otherPaidSchedules = await db
+    .select({ amountCents: bookingPaymentSchedules.amountCents })
+    .from(bookingPaymentSchedules)
     .where(
       and(
-        eq(paymentSessions.bookingPaymentScheduleId, schedule.id),
-        eq(paymentSessions.status, "paid"),
-        eq(payments.status, "completed"),
-        eq(payments.currency, schedule.currency),
-        eq(invoices.bookingId, schedule.bookingId),
+        eq(bookingPaymentSchedules.bookingId, schedule.bookingId),
+        eq(bookingPaymentSchedules.status, "paid"),
+        eq(bookingPaymentSchedules.currency, schedule.currency),
+        ne(bookingPaymentSchedules.id, schedule.id),
       ),
     )
-    .groupBy(payments.id, payments.amountCents)
 
-  const paidCents = paymentRows.reduce((total, payment) => total + payment.amountCents, 0)
-  if (paidCents < schedule.amountCents) {
+  const alreadyClaimed = otherPaidSchedules.reduce((sum, row) => sum + row.amountCents, 0)
+  const availableCoverage = totalPaidInScheduleCurrency - alreadyClaimed
+
+  if (availableCoverage < schedule.amountCents) {
     throw new PaymentValidationError(
       "Cannot mark booking payment schedule as paid without linked completed payment coverage",
       {
         scheduleId: schedule.id,
         bookingId: schedule.bookingId,
         requiredCents: schedule.amountCents,
-        coveredCents: paidCents,
+        coveredCents: availableCoverage,
         currency: schedule.currency,
       },
     )
@@ -3677,8 +3716,44 @@ export const financeService = {
       db.select({ count: sql<number>`count(*)::int` }).from(invoices).where(where),
     ])
 
+    // For each returned invoice, surface the distinct
+    // `bookingPaymentScheduleId`s referenced by its line items so the
+    // booking-detail payment-schedule table can link rows to invoices
+    // without a second roundtrip. Returns `[]` when an invoice covers
+    // booking items directly (no schedule link).
+    const invoiceIds = rows.map((row) => row.id)
+    const scheduleLinks = invoiceIds.length
+      ? await db
+          .select({
+            invoiceId: invoiceLineItems.invoiceId,
+            bookingPaymentScheduleId: invoiceLineItems.bookingPaymentScheduleId,
+          })
+          .from(invoiceLineItems)
+          .where(
+            and(
+              inArray(invoiceLineItems.invoiceId, invoiceIds),
+              isNotNull(invoiceLineItems.bookingPaymentScheduleId),
+            ),
+          )
+      : []
+    const scheduleIdsByInvoice = new Map<string, string[]>()
+    for (const link of scheduleLinks) {
+      const scheduleId = link.bookingPaymentScheduleId
+      if (!scheduleId) continue
+      const existing = scheduleIdsByInvoice.get(link.invoiceId)
+      if (!existing) {
+        scheduleIdsByInvoice.set(link.invoiceId, [scheduleId])
+      } else if (!existing.includes(scheduleId)) {
+        existing.push(scheduleId)
+      }
+    }
+    const data = rows.map((row) => ({
+      ...row,
+      bookingPaymentScheduleIds: scheduleIdsByInvoice.get(row.id) ?? [],
+    }))
+
     return {
-      data: rows,
+      data,
       total: countResult[0]?.count ?? 0,
       limit: query.limit,
       offset: query.offset,
@@ -3937,7 +4012,22 @@ export const financeService = {
 
   async getInvoiceById(db: PostgresJsDatabase, id: string) {
     const [row] = await db.select().from(invoices).where(eq(invoices.id, id)).limit(1)
-    return row ?? null
+    if (!row) return null
+    // Surface the proforma → final-invoice link so the UI can show
+    // "Invoiced" instead of "Void" for proformas that were converted.
+    // The reverse direction (`convertedFromInvoiceId`) already lives on
+    // the row; this looks up the inverse via the unique
+    // `idx_invoices_converted_from` index.
+    const [convertedTo] = await db
+      .select({ id: invoices.id, invoiceNumber: invoices.invoiceNumber })
+      .from(invoices)
+      .where(and(eq(invoices.convertedFromInvoiceId, id), ne(invoices.status, "void")))
+      .limit(1)
+    return {
+      ...row,
+      convertedToInvoiceId: convertedTo?.id ?? null,
+      convertedToInvoiceNumber: convertedTo?.invoiceNumber ?? null,
+    }
   },
 
   async updateInvoice(

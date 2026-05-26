@@ -1,210 +1,360 @@
 "use client"
 
-import { Link } from "@tanstack/react-router"
+import type { ColumnDef } from "@tanstack/react-table"
 import { useLocale } from "@voyantjs/admin"
+import { useBookingPrimaryProduct, useBookingTaxPreview } from "@voyantjs/bookings-react"
+import { IconActionButton, StatusBadge } from "@voyantjs/bookings-ui"
 import { useInvoiceMutation, useInvoices } from "@voyantjs/finance-react"
-import { BookingInvoiceSheet } from "@voyantjs/finance-ui"
-import { Badge } from "@voyantjs/ui/components/badge"
-import { Button } from "@voyantjs/ui/components/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
-import { ArrowRightLeft, ExternalLink, FileText, Loader2, Plus } from "lucide-react"
-import { useState } from "react"
+import { BookingInvoiceDialog, type BookingInvoiceDialogUpload } from "@voyantjs/finance-ui"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Badge,
+  Button,
+} from "@voyantjs/ui/components"
+import { DataTable } from "@voyantjs/ui/components/data-table"
+import { ArrowRightLeft, ArrowUpRight, FileText, Loader2, Plus } from "lucide-react"
+import { useMemo, useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
+import { getApiUrl } from "@/lib/env"
 
-const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  draft: "outline",
-  issued: "secondary",
-  paid: "default",
-  partially_paid: "secondary",
-  overdue: "destructive",
-  refunded: "destructive",
-  void: "destructive",
+async function uploadInvoiceAttachment(file: File): Promise<BookingInvoiceDialogUpload> {
+  const body = new FormData()
+  body.append("file", file)
+  const response = await fetch(`${getApiUrl()}/v1/uploads`, {
+    method: "POST",
+    credentials: "include",
+    body,
+  })
+  if (!response.ok) {
+    throw new Error(`Upload failed: ${response.status} ${response.statusText}`)
+  }
+  const data = (await response.json()) as { key: string; mimeType?: string; size?: number }
+  return {
+    storageKey: data.key,
+    mimeType: data.mimeType ?? file.type,
+    fileSize: data.size ?? file.size,
+  }
+}
+
+interface InvoiceRow {
+  id: string
+  invoiceNumber: string
+  invoiceType: "invoice" | "proforma" | "credit_note"
+  status: string
+  issueDate: string
+  dueDate: string
+  currency: string
+  totalCents: number
+  paidCents: number
+  balanceDueCents: number
+  /** True when this proforma has already been converted to a final invoice. */
+  isConvertedProforma: boolean
 }
 
 export interface BookingInvoicesCardProps {
   bookingId: string
-  /** Pre-fill the invoice's linked person when opening the add sheet. */
-  personId?: string | null
-  /** Pre-fill the invoice's linked organization when opening the add sheet. */
-  organizationId?: string | null
   /** Pre-fill the invoice's currency from the booking's sell currency. */
   defaultCurrency?: string
   /** Pre-fill the invoice's subtotal/total from the booking's sell amount. */
   defaultAmountCents?: number | null
+  /**
+   * Open the invoice in the booking-detail invoice sheet. When omitted,
+   * the invoice-number cell renders as plain text — but operators
+   * typically want sheet preview to avoid leaving the booking page, so
+   * the parent should always pass this.
+   */
+  onInvoiceOpen?: (invoiceId: string) => void
 }
 
 export function BookingInvoicesCard({
   bookingId,
-  personId,
-  organizationId,
   defaultCurrency,
   defaultAmountCents,
+  onInvoiceOpen,
 }: BookingInvoicesCardProps): React.ReactElement {
   const messages = useAdminMessages().finance
   const { resolvedLocale } = useLocale()
   const { data, isLoading } = useInvoices({ bookingId, limit: 50 })
   const { convertToInvoice } = useInvoiceMutation()
   const [addOpen, setAddOpen] = useState(false)
+  const [convertTarget, setConvertTarget] = useState<InvoiceRow | null>(null)
+
+  // Resolve the booking's primary product so the dialog can seed
+  // schedule-derived line items with the product's configured tax rate.
+  // The dialog only needs the *rate* (a percentage), but `useBookingTaxPreview`
+  // requires a non-zero subtotal — passing 10000 (1 unit of currency) yields
+  // the same rate as any other positive amount.
+  const { productId: primaryProductId } = useBookingPrimaryProduct(bookingId, {
+    enabled: addOpen,
+  })
+  const { data: taxPreview } = useBookingTaxPreview({
+    productId: primaryProductId ?? "",
+    subtotalCents: 10000,
+    currency: defaultCurrency ?? "EUR",
+    enabled: addOpen && Boolean(primaryProductId),
+  })
+  const scheduleTaxRatePercent =
+    taxPreview?.data.taxRate?.rateBasisPoints != null
+      ? taxPreview.data.taxRate.rateBasisPoints / 100
+      : 0
+
   const invoices = data?.data ?? []
-  // A proforma is "convertible" if it's still active (not void) AND no
-  // sibling invoice already references it via convertedFromInvoiceId.
-  const convertedProformaIds = new Set(
-    invoices
-      .map((inv) => (inv as { convertedFromInvoiceId?: string | null }).convertedFromInvoiceId)
-      .filter((id): id is string => Boolean(id)),
+  const convertedProformaIds = useMemo(
+    () =>
+      new Set(
+        invoices
+          .map((inv) => (inv as { convertedFromInvoiceId?: string | null }).convertedFromInvoiceId)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    [invoices],
   )
 
-  const typeLabels: Record<string, string> = {
-    invoice: messages.invoiceTypeInvoice,
-    proforma: messages.invoiceTypeProforma,
-    credit_note: messages.invoiceTypeCreditNote,
-  }
-  const statusLabels: Record<string, string> = {
-    draft: messages.invoiceStatusDraft,
-    issued: messages.invoiceStatusIssued,
-    partially_paid: messages.invoiceStatusPartiallyPaid,
-    paid: messages.invoiceStatusPaid,
-    overdue: messages.invoiceStatusOverdue,
-    void: messages.invoiceStatusVoid,
-  }
+  const typeLabels = useMemo<Record<string, string>>(
+    () => ({
+      invoice: messages.invoiceTypeInvoice,
+      proforma: messages.invoiceTypeProforma,
+      credit_note: messages.invoiceTypeCreditNote,
+    }),
+    [messages],
+  )
+  const statusLabels = useMemo<Record<string, string>>(
+    () => ({
+      draft: messages.invoiceStatusDraft,
+      issued: messages.invoiceStatusIssued,
+      partially_paid: messages.invoiceStatusPartiallyPaid,
+      paid: messages.invoiceStatusPaid,
+      overdue: messages.invoiceStatusOverdue,
+      void: messages.invoiceStatusVoid,
+    }),
+    [messages],
+  )
+
+  const rows = useMemo<InvoiceRow[]>(
+    () =>
+      invoices
+        // A proforma that's already been converted to a final invoice
+        // is just history — the final invoice replaces it in the
+        // operator's mental model, so hide the proforma row to keep
+        // the table focused on what's still actionable. The link from
+        // proforma → final invoice is preserved via the invoice sheet.
+        .filter((invoice) => !convertedProformaIds.has(invoice.id))
+        .map((invoice) => {
+          const invoiceType =
+            ((invoice as { invoiceType?: string }).invoiceType as InvoiceRow["invoiceType"]) ??
+            "invoice"
+          return {
+            id: invoice.id,
+            invoiceNumber: invoice.invoiceNumber,
+            invoiceType,
+            status: invoice.status,
+            issueDate: invoice.issueDate,
+            dueDate: invoice.dueDate,
+            currency: invoice.currency,
+            totalCents: invoice.totalCents,
+            paidCents: invoice.paidCents,
+            balanceDueCents: invoice.balanceDueCents,
+            isConvertedProforma: convertedProformaIds.has(invoice.id),
+          }
+        }),
+    [invoices, convertedProformaIds],
+  )
+
+  const columns = useMemo<ColumnDef<InvoiceRow>[]>(
+    () => [
+      {
+        accessorKey: "issueDate",
+        header: messages.issueDateColumn,
+        cell: ({ row }) => formatDate(row.original.issueDate, resolvedLocale),
+      },
+      {
+        accessorKey: "invoiceNumber",
+        header: messages.invoiceNumberColumn,
+        cell: ({ row }) =>
+          onInvoiceOpen ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onInvoiceOpen(row.original.id)
+              }}
+              className="inline-flex items-center gap-1 font-mono text-xs text-primary hover:underline"
+            >
+              {row.original.invoiceNumber}
+              <ArrowUpRight className="h-3 w-3" />
+            </button>
+          ) : (
+            <span className="font-mono text-xs">{row.original.invoiceNumber}</span>
+          ),
+      },
+      {
+        accessorKey: "invoiceType",
+        header: messages.invoiceTypeColumn,
+        cell: ({ row }) => (
+          <Badge variant="outline" className="text-[10px]">
+            {typeLabels[row.original.invoiceType] ?? row.original.invoiceType}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: messages.statusColumn,
+        cell: ({ row }) => (
+          <StatusBadge status={row.original.status}>
+            {statusLabels[row.original.status] ?? row.original.status.replace(/_/g, " ")}
+          </StatusBadge>
+        ),
+      },
+      {
+        accessorKey: "dueDate",
+        header: messages.dueDateColumn,
+        cell: ({ row }) => formatDate(row.original.dueDate, resolvedLocale),
+      },
+      {
+        accessorKey: "totalCents",
+        header: messages.totalColumn,
+        cell: ({ row }) => (
+          <span className="font-mono font-medium">
+            {formatMoney(row.original.totalCents, row.original.currency, resolvedLocale)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "paidCents",
+        header: messages.paidColumn,
+        cell: ({ row }) =>
+          row.original.paidCents > 0 ? (
+            <span className="font-mono text-emerald-600 dark:text-emerald-300">
+              {formatMoney(row.original.paidCents, row.original.currency, resolvedLocale)}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        accessorKey: "balanceDueCents",
+        header: messages.balanceDueColumn,
+        cell: ({ row }) =>
+          row.original.balanceDueCents > 0 ? (
+            <span className="font-mono text-amber-600 dark:text-amber-400">
+              {formatMoney(row.original.balanceDueCents, row.original.currency, resolvedLocale)}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        id: "actions",
+        header: () => <span className="sr-only">{messages.statusColumn}</span>,
+        cell: ({ row }) => {
+          const canConvert =
+            row.original.invoiceType === "proforma" &&
+            row.original.status !== "void" &&
+            !row.original.isConvertedProforma
+          return (
+            <div className="flex items-center justify-end gap-1">
+              {onInvoiceOpen ? (
+                <IconActionButton
+                  label={messages.openInvoice}
+                  icon={<ArrowUpRight className="h-3.5 w-3.5" />}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onInvoiceOpen(row.original.id)
+                  }}
+                />
+              ) : null}
+              {canConvert ? (
+                <IconActionButton
+                  label={messages.convertToInvoice}
+                  icon={<ArrowRightLeft className="h-3.5 w-3.5" />}
+                  disabled={convertToInvoice.isPending}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setConvertTarget(row.original)
+                  }}
+                />
+              ) : null}
+            </div>
+          )
+        },
+      },
+    ],
+    [messages, resolvedLocale, onInvoiceOpen, convertToInvoice.isPending, statusLabels, typeLabels],
+  )
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
+    <div data-slot="booking-invoices-list" className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 text-base font-semibold">
           <FileText className="h-4 w-4 text-muted-foreground" />
           {messages.invoicesPageTitle}
-          {invoices.length > 0 ? (
-            <Badge variant="outline" className="text-[10px]">
-              {invoices.length}
-            </Badge>
-          ) : null}
-        </CardTitle>
-        <Button size="sm" onClick={() => setAddOpen(true)}>
+        </h2>
+        <Button variant="outline" size="sm" onClick={() => setAddOpen(true)}>
           <Plus className="mr-1 h-3.5 w-3.5" />
           {messages.newInvoice}
         </Button>
-      </CardHeader>
-      <CardContent className="overflow-hidden p-0">
-        {isLoading ? (
-          <p className="flex items-center justify-center gap-2 py-6 text-muted-foreground text-sm">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          </p>
-        ) : invoices.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 px-6 py-10">
-            <p className="text-center text-muted-foreground text-sm">
-              {messages.bookingInvoicesEmpty}
-            </p>
-            <Button size="sm" variant="outline" onClick={() => setAddOpen(true)}>
-              <Plus className="mr-1 h-3.5 w-3.5" />
-              {messages.newInvoice}
-            </Button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-muted-foreground">
-                  <th className="px-4 py-2 text-left font-medium">
-                    {messages.invoiceNumberColumn}
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium">{messages.invoiceTypeColumn}</th>
-                  <th className="px-4 py-2 text-left font-medium">{messages.issueDateColumn}</th>
-                  <th className="px-4 py-2 text-left font-medium">{messages.dueDateColumn}</th>
-                  <th className="px-4 py-2 text-right font-medium">{messages.totalColumn}</th>
-                  <th className="px-4 py-2 text-right font-medium">{messages.paidColumn}</th>
-                  <th className="px-4 py-2 text-right font-medium">{messages.balanceDueColumn}</th>
-                  <th className="px-4 py-2 text-left font-medium">{messages.statusColumn}</th>
-                  <th className="w-8 px-4 py-2" />
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.map((invoice) => {
-                  const invoiceType = (invoice as { invoiceType?: string }).invoiceType ?? "invoice"
-                  return (
-                    <tr key={invoice.id} className="border-b last:border-b-0">
-                      <td className="px-4 py-2 font-mono text-xs">{invoice.invoiceNumber}</td>
-                      <td className="px-4 py-2">
-                        <Badge variant="outline" className="text-[10px]">
-                          {typeLabels[invoiceType] ?? invoiceType}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-2 text-muted-foreground text-xs">
-                        {formatDate(invoice.issueDate, resolvedLocale)}
-                      </td>
-                      <td className="px-4 py-2 text-muted-foreground text-xs">
-                        {formatDate(invoice.dueDate, resolvedLocale)}
-                      </td>
-                      <td className="px-4 py-2 text-right font-mono">
-                        {formatMoney(invoice.totalCents, invoice.currency, resolvedLocale)}
-                      </td>
-                      <td className="px-4 py-2 text-right font-mono text-emerald-600 dark:text-emerald-300">
-                        {invoice.paidCents > 0
-                          ? formatMoney(invoice.paidCents, invoice.currency, resolvedLocale)
-                          : "—"}
-                      </td>
-                      <td className="px-4 py-2 text-right font-mono">
-                        {invoice.balanceDueCents > 0 ? (
-                          <span className="text-amber-600">
-                            {formatMoney(invoice.balanceDueCents, invoice.currency, resolvedLocale)}
-                          </span>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td className="px-4 py-2">
-                        <Badge variant={statusVariant[invoice.status] ?? "outline"}>
-                          {statusLabels[invoice.status] ?? invoice.status.replace(/_/g, " ")}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {invoiceType === "proforma" &&
-                          invoice.status !== "void" &&
-                          !convertedProformaIds.has(invoice.id) ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 px-2 text-xs"
-                              disabled={convertToInvoice.isPending}
-                              onClick={() => {
-                                if (!confirm(messages.convertConfirm)) return
-                                convertToInvoice.mutate({ id: invoice.id })
-                              }}
-                              title={messages.convertToInvoice}
-                            >
-                              <ArrowRightLeft className="h-3.5 w-3.5" />
-                              <span className="ml-1">{messages.convertToInvoice}</span>
-                            </Button>
-                          ) : null}
-                          <Link
-                            to="/finance/invoices/$id"
-                            params={{ id: invoice.id }}
-                            className="text-muted-foreground hover:text-foreground"
-                            aria-label={messages.openInvoice}
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </CardContent>
-      <BookingInvoiceSheet
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground text-sm">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={rows}
+          emptyMessage={messages.bookingInvoicesEmpty}
+          showPagination={false}
+        />
+      )}
+
+      <BookingInvoiceDialog
         open={addOpen}
         onOpenChange={setAddOpen}
         bookingId={bookingId}
-        defaultPersonId={personId ?? null}
-        defaultOrganizationId={organizationId ?? null}
         defaultCurrency={defaultCurrency}
         defaultAmountCents={defaultAmountCents ?? null}
+        defaultScheduleTaxRatePercent={scheduleTaxRatePercent}
+        uploadFile={uploadInvoiceAttachment}
       />
-    </Card>
+
+      <AlertDialog
+        open={Boolean(convertTarget)}
+        onOpenChange={(next) => {
+          if (!next && !convertToInvoice.isPending) setConvertTarget(null)
+        }}
+      >
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{messages.convertToInvoice}</AlertDialogTitle>
+            <AlertDialogDescription>{messages.convertConfirm}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={convertToInvoice.isPending}>
+              {messages.detailPage.cancel}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={convertToInvoice.isPending}
+              onClick={() => {
+                if (!convertTarget) return
+                convertToInvoice.mutate(
+                  { id: convertTarget.id },
+                  { onSuccess: () => setConvertTarget(null) },
+                )
+              }}
+            >
+              {messages.convertToInvoice}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   )
 }
 

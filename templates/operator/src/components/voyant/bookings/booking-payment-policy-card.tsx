@@ -14,11 +14,6 @@ import { formatMessage } from "@voyantjs/i18n"
 import {
   Badge,
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   Dialog,
   DialogBody,
   DialogContent,
@@ -118,19 +113,17 @@ export function BookingPaymentPolicyCard({ booking }: { booking: BookingRecord }
   const persistedHasOverride = persisted !== null
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-3">
-        <div className="space-y-1">
-          <CardTitle>{t.title}</CardTitle>
-          <CardDescription>{t.description}</CardDescription>
-        </div>
+    <div data-slot="booking-payment-policy" className="flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm text-muted-foreground">{t.description}</p>
         <Badge variant={persistedHasOverride ? "default" : "outline"}>
           {persistedHasOverride
             ? t.sourceLabels.booking
             : formatMessage(t.cascadePrefix, { source: policySourceLabel(resolvedSource) })}
         </Badge>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      </div>
+
+      <div className="rounded-md border p-4">
         {persistedHasOverride ? (
           <PaymentPolicyPreview
             policy={persisted}
@@ -144,26 +137,26 @@ export function BookingPaymentPolicyCard({ booking }: { booking: BookingRecord }
             })}
           </p>
         )}
+      </div>
 
-        <div className="flex justify-end gap-2">
-          {persistedHasOverride ? (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={regenerate.isPending}
-              onClick={() => regenerate.mutate(null)}
-            >
-              {regenerate.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {t.clearOverride}
-            </Button>
-          ) : null}
-          <Button size="sm" onClick={() => setDialogOpen(true)}>
-            {persistedHasOverride ? t.editOverride : t.addOverride}
+      <div className="flex justify-end gap-2">
+        {persistedHasOverride ? (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={regenerate.isPending}
+            onClick={() => regenerate.mutate(null)}
+          >
+            {regenerate.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {t.clearOverride}
           </Button>
-        </div>
+        ) : null}
+        <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
+          {persistedHasOverride ? t.editOverride : t.addOverride}
+        </Button>
+      </div>
 
-        <PaymentPolicyHistory bookingId={booking.id} messages={t} />
-      </CardContent>
+      <PaymentPolicyHistory bookingId={booking.id} messages={t} />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent size="lg">
@@ -206,7 +199,7 @@ export function BookingPaymentPolicyCard({ booking }: { booking: BookingRecord }
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </div>
   )
 }
 

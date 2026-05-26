@@ -49,6 +49,8 @@ export interface BookingCreatePaymentScheduleInput {
 export interface BookingCreateDocumentGenerationInput {
   contractDocument?: boolean
   invoiceDocument?: boolean
+  /** `"proforma"` issues a placeholder doc; defaults to `"invoice"`. */
+  invoiceType?: "invoice" | "proforma"
 }
 
 export interface BookingCreateItemLineInput {

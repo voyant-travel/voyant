@@ -499,6 +499,8 @@ export const publicFinanceService = {
             paymentMethod: payment.paymentMethod,
             amountCents: payment.amountCents,
             currency: payment.currency,
+            baseCurrency: payment.baseCurrency ?? null,
+            baseAmountCents: payment.baseAmountCents ?? null,
             paymentDate: payment.paymentDate,
             referenceNumber: payment.referenceNumber ?? null,
             notes: payment.notes ?? null,

@@ -15,6 +15,7 @@ import {
   isNotNull,
   lte,
   ne,
+  notInArray,
   or,
   type SQL,
   sql,
@@ -2510,6 +2511,15 @@ export const bookingsService = {
 
     if (query.status) {
       conditions.push(eq(bookings.status, query.status))
+    }
+
+    const excludeStatuses = query.excludeStatuses
+      ? Array.isArray(query.excludeStatuses)
+        ? query.excludeStatuses
+        : [query.excludeStatuses]
+      : []
+    if (excludeStatuses.length > 0) {
+      conditions.push(notInArray(bookings.status, excludeStatuses))
     }
 
     if (query.search) {

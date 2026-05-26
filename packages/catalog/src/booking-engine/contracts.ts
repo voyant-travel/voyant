@@ -405,6 +405,8 @@ export const bookingDraftV1 = z.object({
     .object({
       contractDocument: z.boolean().optional(),
       invoiceDocument: z.boolean().optional(),
+      /** `"proforma"` issues a placeholder document; defaults to a final `"invoice"`. */
+      invoiceType: z.enum(["invoice", "proforma"]).optional(),
     })
     .optional(),
 

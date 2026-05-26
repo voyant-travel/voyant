@@ -2,40 +2,53 @@
 
 import {
   type BookingRecord,
-  bookingStatusBadgeVariant,
   useBooking,
+  useBookingItems,
   useBookingMutation,
 } from "@voyantjs/bookings-react"
 import { useOrganization, usePerson } from "@voyantjs/crm-react"
-import { useInvoiceMutation } from "@voyantjs/finance-react"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Badge,
   Button,
   Card,
   CardContent,
   cn,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
 } from "@voyantjs/ui/components"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@voyantjs/ui/components/collapsible"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@voyantjs/ui/components/tooltip"
 import {
   Ban,
+  ChevronDown,
   ChevronRight,
   CreditCard,
   Mail,
   MapPin,
-  MoreHorizontal,
   Pencil,
   Phone,
+  Plus,
   RefreshCw,
   Trash2,
 } from "lucide-react"
-import { type ReactNode, useState } from "react"
+import { Fragment, type ReactNode, useState } from "react"
 
-import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/index.js"
+import {
+  formatMessage,
+  useBookingsUiI18nOrDefault,
+  useBookingsUiMessagesOrDefault,
+} from "../i18n/index.js"
 import { BookingActivityTimeline } from "./booking-activity-timeline.js"
 import { BookingBillingDialog } from "./booking-billing-dialog.js"
 import { BookingCancellationDialog } from "./booking-cancellation-dialog.js"
@@ -44,12 +57,12 @@ import { BookingGroupSection } from "./booking-group-section.js"
 import { BookingGuaranteeList } from "./booking-guarantee-list.js"
 import { BookingItemList, type BookingItemResourceKind } from "./booking-item-list.js"
 import { BookingNotes } from "./booking-notes.js"
-import { BookingPaymentReconciliationBanner } from "./booking-payment-reconciliation-banner.js"
 import { BookingPaymentScheduleList } from "./booking-payment-schedule-list.js"
 import {
   BookingPaymentsSummary,
   type BookingPaymentsSummaryRow,
 } from "./booking-payments-summary.js"
+import { StatusBadge } from "./status-badge.js"
 import { StatusChangeDialog } from "./status-change-dialog.js"
 import { SupplierStatusList } from "./supplier-status-list.js"
 import { TravelerList } from "./traveler-list.js"
@@ -96,10 +109,21 @@ export interface BookingDetailPageProps {
    * (use when the host shell already renders breadcrumbs). */
   hideBreadcrumb?: boolean
   onBack?: () => void
-  /** Wired to a primary `Generate payment link` button on the Payments tab. */
-  onCollectPayment?: (booking: BookingRecord) => void
-  /** Wired to a secondary `Record payment` button on the Payments tab. */
+  /**
+   * Forwarded to the finance-tab `BookingPaymentsSummary` header as a
+   * `Record payment` action button.
+   */
   onRecordPayment?: (booking: BookingRecord) => void
+  /**
+   * When set, the Record payment header button renders disabled and its
+   * tooltip shows this reason. Use for "nothing left to pay" states.
+   */
+  recordPaymentDisabledReason?: string | null
+  /**
+   * When set, the Add schedule button in the payment-schedule section
+   * renders disabled and its tooltip shows this reason.
+   */
+  addScheduleDisabledReason?: string | null
   /**
    * Amount the customer has paid so far against this booking, in cents
    * of `booking.sellCurrency`. When provided, a `Paid` stat is shown
@@ -117,6 +141,13 @@ export interface BookingDetailPageProps {
   onPersonOpen?: (personId: string) => void
   /** Open the linked CRM organization's detail page (used by the Payer card). */
   onOrganizationOpen?: (organizationId: string) => void
+  /**
+   * Open an invoice in-place when the operator clicks the invoice
+   * number in the Payments row. Typically wired to a `Sheet` that
+   * renders the invoice-detail view so the admin doesn't leave the
+   * booking screen.
+   */
+  onInvoiceOpen?: (invoiceId: string, row: BookingPaymentsSummaryRow) => void
   /** Forwarded to the finance-tab `BookingPaymentsSummary` row menu. */
   onViewPayment?: (row: BookingPaymentsSummaryRow) => void
   /** Forwarded to the finance-tab `BookingPaymentsSummary` row menu. */
@@ -132,12 +163,14 @@ export function BookingDetailPage({
   locale,
   hideBreadcrumb,
   onBack,
-  onCollectPayment,
   onRecordPayment,
+  recordPaymentDisabledReason,
+  addScheduleDisabledReason,
   paidAmountCents,
   onItemResourceOpen,
   onPersonOpen,
   onOrganizationOpen,
+  onInvoiceOpen,
   onViewPayment,
   onEditPayment,
   onDeletePayment,
@@ -150,9 +183,9 @@ export function BookingDetailPage({
   const [editOpen, setEditOpen] = useState(false)
   const [statusDialogOpen, setStatusDialogOpen] = useState(false)
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const { data: bookingData, isPending } = useBooking(id)
   const { remove } = useBookingMutation()
-  const { convertToInvoice } = useInvoiceMutation()
   const headerPersonId = bookingData?.data?.personId ?? null
   const headerOrganizationId = bookingData?.data?.organizationId ?? null
   const headerPerson = usePerson(headerPersonId ?? undefined, {
@@ -161,6 +194,14 @@ export function BookingDetailPage({
   const headerOrganization = useOrganization(headerOrganizationId ?? undefined, {
     enabled: Boolean(headerOrganizationId) && !headerPersonId,
   }).data
+  // Pull booking items so the subtitle can link to the primary product
+  // + availability slot. We pick the first item (or the one flagged
+  // `isPrimary` when present) — most bookings only have one product.
+  const headerItems = useBookingItems(id).data?.data ?? []
+  const primaryItem =
+    headerItems.find((item) => (item as { isPrimary?: boolean }).isPrimary) ??
+    headerItems[0] ??
+    null
 
   if (isPending) {
     return (
@@ -196,6 +237,13 @@ export function BookingDetailPage({
       : "") ||
     headerOrganization?.name ||
     ""
+  const billingHref = headerPersonId
+    ? () => onPersonOpen?.(headerPersonId)
+    : headerOrganizationId
+      ? () => onOrganizationOpen?.(headerOrganizationId)
+      : null
+  const billingClickable =
+    billingHref && (headerPersonId ? Boolean(onPersonOpen) : Boolean(onOrganizationOpen))
   const headerDateRange = booking.startDate
     ? `${formatDate(booking.startDate, resolvedLocale, detailMessages.noValue)} - ${formatDate(
         booking.endDate,
@@ -204,9 +252,61 @@ export function BookingDetailPage({
       )}`
     : null
   const headerPax = booking.pax != null ? `${booking.pax} PAX` : null
-  const headerSubtitle = [billingPersonName || null, headerDateRange, headerPax]
-    .filter(Boolean)
-    .join(" / ")
+  const headerProductTitle = primaryItem?.productNameSnapshot ?? primaryItem?.title ?? null
+  const headerProductId = primaryItem?.productId ?? null
+  const headerSlotId = primaryItem?.availabilitySlotId ?? null
+  const headerSubtitleParts = [
+    billingPersonName ? (
+      billingClickable ? (
+        <button
+          key="billing"
+          type="button"
+          onClick={billingHref}
+          className="hover:text-foreground hover:underline"
+        >
+          {billingPersonName}
+        </button>
+      ) : (
+        <span key="billing">{billingPersonName}</span>
+      )
+    ) : null,
+    headerProductTitle ? (
+      headerProductId && onItemResourceOpen ? (
+        <button
+          key="product"
+          type="button"
+          onClick={() => onItemResourceOpen("product", headerProductId)}
+          className="inline-block max-w-[18rem] truncate align-bottom hover:text-foreground hover:underline"
+          title={headerProductTitle}
+        >
+          {headerProductTitle}
+        </button>
+      ) : (
+        <span
+          key="product"
+          className="inline-block max-w-[18rem] truncate align-bottom"
+          title={headerProductTitle}
+        >
+          {headerProductTitle}
+        </span>
+      )
+    ) : null,
+    headerDateRange ? (
+      headerSlotId && onItemResourceOpen ? (
+        <button
+          key="dates"
+          type="button"
+          onClick={() => onItemResourceOpen("availabilitySlot", headerSlotId)}
+          className="hover:text-foreground hover:underline"
+        >
+          {headerDateRange}
+        </button>
+      ) : (
+        <span key="dates">{headerDateRange}</span>
+      )
+    ) : null,
+    headerPax ? <span key="pax">{headerPax}</span> : null,
+  ].filter(Boolean) as ReactNode[]
 
   return (
     <div data-slot="booking-detail-page" className={cn("flex flex-col gap-6 p-6", className)}>
@@ -232,44 +332,48 @@ export function BookingDetailPage({
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold tracking-tight">{booking.bookingNumber}</h1>
-            <Badge variant={bookingStatusBadgeVariant[booking.status]}>
+            <StatusBadge status={booking.status}>
               {getBookingStatusLabel(booking.status, messages.common.bookingStatusLabels)}
-            </Badge>
+            </StatusBadge>
           </div>
-          {headerSubtitle ? (
-            <div className="text-sm text-muted-foreground">{headerSubtitle}</div>
+          {headerSubtitleParts.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+              {headerSubtitleParts.map((part, idx) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: order-stable, no reordering or removal
+                <Fragment key={idx}>
+                  {idx > 0 ? <span className="text-muted-foreground/60">/</span> : null}
+                  {part}
+                </Fragment>
+              ))}
+            </div>
           ) : null}
         </div>
-        <ActionMenu>
-          <DropdownMenuItem onClick={() => setEditOpen(true)}>
-            <Pencil className="h-4 w-4" aria-hidden="true" />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
             {detailMessages.editAction}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setStatusDialogOpen(true)}>
-            <RefreshCw className="h-4 w-4" aria-hidden="true" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setStatusDialogOpen(true)}>
+            <RefreshCw className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
             {detailMessages.changeStatusAction}
-          </DropdownMenuItem>
+          </Button>
           {canCancel ? (
-            <DropdownMenuItem onClick={() => setCancelDialogOpen(true)}>
-              <Ban className="h-4 w-4" aria-hidden="true" />
+            <Button variant="outline" size="sm" onClick={() => setCancelDialogOpen(true)}>
+              <Ban className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
               {detailMessages.cancelBookingAction}
-            </DropdownMenuItem>
+            </Button>
           ) : null}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            variant="destructive"
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             disabled={remove.isPending}
-            onClick={async () => {
-              if (confirm(detailMessages.deleteConfirm)) {
-                await remove.mutateAsync(id)
-                onBack?.()
-              }
-            }}
+            onClick={() => setDeleteDialogOpen(true)}
           >
-            <Trash2 className="h-4 w-4" aria-hidden="true" />
+            <Trash2 className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
             {detailMessages.deleteAction}
-          </DropdownMenuItem>
-        </ActionMenu>
+          </Button>
+        </div>
       </div>
 
       {slots?.header?.(booking)}
@@ -335,8 +439,8 @@ export function BookingDetailPage({
               {slots.invoicesTab.label ?? detailMessages.tabInvoices}
             </TabsTrigger>
           ) : null}
-          <TabsTrigger value="suppliers">{detailMessages.tabSuppliers}</TabsTrigger>
           <TabsTrigger value="documents">{detailMessages.tabDocuments}</TabsTrigger>
+          <TabsTrigger value="suppliers">{detailMessages.tabSuppliers}</TabsTrigger>
           <TabsTrigger value="activity">{detailMessages.tabActivity}</TabsTrigger>
           {slots?.ledgerTab ? (
             <TabsTrigger value="ledger">
@@ -376,22 +480,10 @@ export function BookingDetailPage({
         </TabsContent>
 
         <TabsContent value="finance" className="mt-4 flex flex-col gap-6">
-          {onCollectPayment || onRecordPayment ? (
-            <div className="flex items-center justify-end gap-2">
-              {onRecordPayment ? (
-                <Button variant="outline" onClick={() => onRecordPayment(booking)}>
-                  {detailMessages.recordPaymentAction}
-                </Button>
-              ) : null}
-              {onCollectPayment ? (
-                <Button onClick={() => onCollectPayment(booking)}>
-                  {detailMessages.collectPaymentAction}
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
-          {slots?.financeStart?.(booking)}
-          <BookingPaymentReconciliationBanner bookingId={id} />
+          <BookingPaymentScheduleList
+            bookingId={id}
+            addScheduleDisabledReason={addScheduleDisabledReason ?? null}
+          />
           {slots?.paymentsContent ? (
             renderDetailSlot(slots.paymentsContent, booking)
           ) : (
@@ -399,13 +491,30 @@ export function BookingDetailPage({
               bookingId={id}
               variant="admin"
               onViewPayment={onViewPayment}
-              onConvertProforma={(row) => convertToInvoice.mutateAsync({ id: row.invoiceId })}
+              onInvoiceOpen={onInvoiceOpen}
               onEditPayment={onEditPayment}
               onDeletePayment={onDeletePayment}
+              headerAction={
+                onRecordPayment ? (
+                  <RecordPaymentHeaderButton
+                    label={detailMessages.recordPaymentAction}
+                    disabledReason={recordPaymentDisabledReason ?? null}
+                    onClick={() => onRecordPayment(booking)}
+                  />
+                ) : null
+              }
             />
           )}
-          <BookingPaymentScheduleList bookingId={id} />
-          <BookingGuaranteeList bookingId={id} />
+          {slots?.financeStart?.(booking)}
+          <Collapsible>
+            <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-md border bg-background px-4 py-3 text-sm font-semibold hover:bg-muted/30">
+              {messages.bookingGuaranteeList.title}
+              <ChevronDown className="h-4 w-4 transition-transform group-data-panel-open:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-3">
+              <BookingGuaranteeList bookingId={id} />
+            </CollapsibleContent>
+          </Collapsible>
           {slots?.financeEnd?.(booking)}
         </TabsContent>
 
@@ -415,10 +524,6 @@ export function BookingDetailPage({
           </TabsContent>
         ) : null}
 
-        <TabsContent value="suppliers" className="mt-4">
-          <SupplierStatusList bookingId={id} />
-        </TabsContent>
-
         <TabsContent value="documents" className="mt-4 flex flex-col gap-4">
           {slots?.documents ? (
             slots.documents(booking)
@@ -427,6 +532,10 @@ export function BookingDetailPage({
               {detailMessages.documentsSlotEmpty}
             </p>
           )}
+        </TabsContent>
+
+        <TabsContent value="suppliers" className="mt-4">
+          <SupplierStatusList bookingId={id} />
         </TabsContent>
 
         <TabsContent value="activity" className="mt-4 flex flex-col gap-6">
@@ -467,7 +576,74 @@ export function BookingDetailPage({
         onOpenChange={setCancelDialogOpen}
         booking={booking}
       />
+
+      <AlertDialog
+        open={deleteDialogOpen}
+        onOpenChange={(next) => {
+          if (!next && !remove.isPending) setDeleteDialogOpen(false)
+        }}
+      >
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{detailMessages.deleteConfirm}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {booking.bookingNumber
+                ? formatMessage(detailMessages.deleteConfirmDescription, {
+                    number: booking.bookingNumber,
+                  })
+                : detailMessages.deleteConfirmDescriptionFallback}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={remove.isPending}>
+              {detailMessages.deleteCancel}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={remove.isPending}
+              onClick={async () => {
+                await remove.mutateAsync(id)
+                setDeleteDialogOpen(false)
+                onBack?.()
+              }}
+            >
+              {detailMessages.deleteConfirmAction}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  )
+}
+
+function RecordPaymentHeaderButton({
+  label,
+  disabledReason,
+  onClick,
+}: {
+  label: string
+  disabledReason: string | null
+  onClick: () => void
+}) {
+  if (disabledReason) {
+    return (
+      <Tooltip>
+        {/* biome-ignore lint/a11y/noNoninteractiveTabindex: required so disabled-button tooltips remain keyboard-discoverable */}
+        <TooltipTrigger render={<span tabIndex={0} className="inline-block" />}>
+          <Button variant="outline" size="sm" disabled className="pointer-events-none">
+            <Plus className="mr-2 h-4 w-4" />
+            {label}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{disabledReason}</TooltipContent>
+      </Tooltip>
+    )
+  }
+  return (
+    <Button variant="outline" size="sm" onClick={onClick}>
+      <Plus className="mr-2 h-4 w-4" />
+      {label}
+    </Button>
   )
 }
 
@@ -528,7 +704,7 @@ export function BookingBillingContextCard({
           <CreditCard className="h-4 w-4" aria-hidden="true" />
           {messages.billingPayer}
         </h2>
-        <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
+        <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
           <Pencil className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
           {messages.editAction}
         </Button>
@@ -678,21 +854,6 @@ function BillingField({
   )
 }
 
-function ActionMenu({ children }: { children: ReactNode }) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-            <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-          </Button>
-        }
-      />
-      <DropdownMenuContent align="end">{children}</DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
 function getBookingStatusLabel(status: string, labels: Record<string, string>) {
   return labels[status] ?? status
 }
@@ -704,13 +865,26 @@ function formatAmount(
   empty: string,
 ): string {
   if (cents == null) return empty
-  const formatted = new Intl.NumberFormat(locale, {
+  const amount = cents / 100
+  const amountText = new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 0,
+  }).format(amount)
+  // RON's "symbol" is just the ISO code itself, so a `<symbol> <amount> <code>`
+  // layout would print "RON 1.185 RON" — collapse it back to "1.185 RON".
+  if (currency.toUpperCase() === "RON") {
+    return `${amountText} ${currency}`
+  }
+  // Extract the locale's native symbol so we can always render
+  // `<symbol> <amount> <code>` regardless of where Intl would otherwise
+  // place the symbol for this locale (e.g. Romanian puts it after).
+  const parts = new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     currencyDisplay: "narrowSymbol",
     maximumFractionDigits: 0,
-  }).format(cents / 100)
-  return `${formatted} ${currency}`
+  }).formatToParts(amount)
+  const symbol = parts.find((p) => p.type === "currency")?.value ?? currency
+  return `${symbol} ${amountText} ${currency}`
 }
 
 function formatDate(iso: string | null, locale: string, empty: string): string {

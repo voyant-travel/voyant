@@ -92,6 +92,21 @@ async function generatePaymentScheduleForBooking(
   if (!booking) return
   if (!booking.sellAmountCents || booking.sellAmountCents <= 0) return
 
+  // Idempotency: this subscriber fires on every `booking.confirmed`
+  // emission, which includes re-confirmations during the
+  // checkout-finalize workflow when an existing booking transitions
+  // to confirmed after a late payment. If a schedule already exists
+  // (in any status — pending/due/paid/etc.), regenerating would wipe
+  // the outstanding rows and insert a fresh full-amount plan as if
+  // the booking had never been touched, double-billing the customer
+  // on paper.
+  const [existingSchedule] = await db
+    .select({ id: bookingPaymentSchedules.id })
+    .from(bookingPaymentSchedules)
+    .where(eq(bookingPaymentSchedules.bookingId, bookingId))
+    .limit(1)
+  if (existingSchedule) return
+
   const operatorDefault = (await resolveOperatorDefaultPaymentPolicy(db)) ?? noDepositPolicy
 
   // Phase 2: supplier-layer override. Falls back to operator

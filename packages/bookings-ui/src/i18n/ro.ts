@@ -93,6 +93,12 @@ export const bookingsUiRo = {
     cancelBookingAction: "Anuleaza rezervarea",
     deleteAction: "Sterge",
     deleteConfirm: "Stergi aceasta rezervare?",
+    deleteConfirmDescription:
+      "Rezervarea {number} va fi stearsa permanent impreuna cu elementele, calatorii si datele financiare. Aceasta actiune nu poate fi anulata.",
+    deleteConfirmDescriptionFallback:
+      "Aceasta rezervare va fi stearsa permanent impreuna cu elementele, calatorii si datele financiare. Aceasta actiune nu poate fi anulata.",
+    deleteConfirmAction: "Sterge rezervarea",
+    deleteCancel: "Anuleaza",
     collectPaymentAction: "Genereaza link de plata",
     recordPaymentAction: "Inregistreaza plata",
     noValue: "-",
@@ -518,6 +524,8 @@ export const bookingsUiRo = {
       paymentDate: "Data platii",
       paymentMethod: "Metoda",
       paymentReference: "Referinta",
+      addInstallment: "Adauga rata",
+      removeInstallment: "Elimina rata",
     },
   },
   roomsStepperSection: {
@@ -930,6 +938,7 @@ export const bookingsUiRo = {
     empty: "Nu exista scadente inca.",
     values: {
       notesUnavailable: "-",
+      proformaSuffix: "proforma",
     },
     columns: {
       type: "Tip",
@@ -937,9 +946,17 @@ export const bookingsUiRo = {
       dueDate: "Data scadenta",
       amount: "Suma",
       notes: "Note",
+      invoice: "Factura",
     },
     actions: {
-      deleteConfirm: "Stergi aceasta scadenta?",
+      deleteConfirm: {
+        title: "Stergi aceasta scadenta?",
+        description: "Scadenta va fi stearsa din rezervare. Aceasta actiune nu poate fi anulata.",
+        cancel: "Anuleaza",
+        confirm: "Sterge",
+      },
+      editSchedule: "Editeaza scadenta",
+      deleteSchedule: "Sterge scadenta",
       issueDocument: "Emite document",
       issueInvoice: "Emite factura",
       issueProforma: "Emite proforma",
@@ -989,6 +1006,10 @@ export const bookingsUiRo = {
       cost: "Cost",
       reference: "Referinta",
       confirmed: "Confirmat",
+      actions: "Actiuni",
+    },
+    actions: {
+      edit: "Editeaza statusul furnizorului",
     },
   },
   bookingCancellationDialog: {
@@ -1117,7 +1138,14 @@ export const bookingsUiRo = {
       expires: "Expira",
     },
     actions: {
-      deleteConfirm: "Stergi aceasta garantie?",
+      deleteConfirm: {
+        title: "Stergi aceasta garantie?",
+        description: "Garantia va fi stearsa din rezervare. Aceasta actiune nu poate fi anulata.",
+        cancel: "Anuleaza",
+        confirm: "Sterge",
+      },
+      editGuarantee: "Editeaza garantia",
+      deleteGuarantee: "Sterge garantia",
     },
   },
   bookingGroupLinkDialog: {
@@ -1315,6 +1343,8 @@ export const bookingsUiRo = {
       documentGenerationHeading: "Generare documente",
       generateContractDocument: "Genereaza contractul",
       generateInvoiceDocument: "Genereaza factura",
+      generateProforma: "Genereaza proforma",
+      generateInvoiceAndContract: "Genereaza factura si contract",
       breakdownHeading: "Descompunere pret",
       breakdownTotal: "Total",
       breakdownOnRequest: "La cerere",
@@ -1397,7 +1427,8 @@ export const bookingsUiRo = {
       method: "Metoda",
       status: "Status",
       amount: "Suma",
-      date: "Data",
+      fx: "Echivalent rezervare",
+      date: "Creat la",
       reference: "Referinta",
       actions: "Actiuni",
     },

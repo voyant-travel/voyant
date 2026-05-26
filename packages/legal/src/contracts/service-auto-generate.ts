@@ -6,6 +6,7 @@ import { contractRecordsService } from "./service-contracts.js"
 import type { ContractDocumentGenerator } from "./service-documents.js"
 import { contractDocumentsService } from "./service-documents.js"
 import { ContractSeriesAmbiguousError, contractSeriesService } from "./service-series.js"
+import { renderTemplate } from "./service-shared.js"
 import { contractTemplatesService } from "./service-templates.js"
 import type { GenerateContractForBookingInput } from "./validation.js"
 
@@ -377,6 +378,15 @@ export interface AutoGenerateContractOptions {
    * Optional variable extender — see `ResolveContractVariablesFn`.
    */
   resolveVariables?: ResolveContractVariablesFn
+  /**
+   * Dry-run mode used by the operator dashboard's "Add contract"
+   * preview. Runs the same template lookup + variable build + render
+   * pipeline as a full generate, but returns the rendered HTML without
+   * persisting a contract row, allocating a series number, or asking
+   * the PDF generator for bytes. Idempotency check is skipped so the
+   * preview always reflects the current template + booking state.
+   */
+  previewMode?: boolean
 }
 
 export interface AutoGenerateContractRuntime {
@@ -399,6 +409,12 @@ export type AutoGenerateContractResult =
   | { status: "booking_not_found" }
   | { status: "contract_create_failed" }
   | { status: "document_failed"; reason: string }
+  | {
+      status: "preview"
+      html: string
+      templateName: string
+      templateLanguage: string
+    }
 
 export type GenerateContractForBookingResult =
   | AutoGenerateContractResult
@@ -510,12 +526,19 @@ export async function autoGenerateContractForBooking(
   // A booking should have at most one active contract per scope;
   // operators wanting a fresh one use the regenerate admin route.
   const scope = options.scope ?? "customer"
-  const existingContracts = await contractRecordsService.listContracts(db, {
-    bookingId: event.bookingId,
-    scope,
-    limit: 1,
-    offset: 0,
-  })
+  const isPreview = options.previewMode === true
+  // Preview always reflects the current template + booking state, so
+  // skip the "existing contract → return its attachment" idempotency
+  // branch. We still walk the rest of the pipeline (template lookup,
+  // variable build, render).
+  const existingContracts = isPreview
+    ? { data: [] as Awaited<ReturnType<typeof contractRecordsService.listContracts>>["data"] }
+    : await contractRecordsService.listContracts(db, {
+        bookingId: event.bookingId,
+        scope,
+        limit: 1,
+        offset: 0,
+      })
   const existing = existingContracts.data[0]
   if (existing) {
     const attachments = await contractRecordsService.listAttachments(db, existing.id)
@@ -821,6 +844,27 @@ export async function autoGenerateContractForBooking(
         bindings: runtime.bindings ?? null,
       })
     : defaultVariablesToRecord(defaults)
+
+  // Preview branch: render the template body with the freshly-resolved
+  // variables and return the HTML. We assume `html` format (matches the
+  // contract templates the operator ships). No row gets created, no
+  // series number is allocated, no PDF bytes are produced.
+  if (isPreview) {
+    const previewVersion = await contractTemplatesService.getTemplateVersionById(
+      db,
+      template.currentVersionId,
+    )
+    if (!previewVersion) {
+      return { status: "template_version_missing" }
+    }
+    const html = renderTemplate(previewVersion.body, "html", variables)
+    return {
+      status: "preview",
+      html,
+      templateName: template.name,
+      templateLanguage: options.language ?? template.language ?? "en",
+    }
+  }
 
   // Resolve a series if the consumer gave a (prefix, scope) or a name —
   // failure to find is non-fatal since a contract can issue without a

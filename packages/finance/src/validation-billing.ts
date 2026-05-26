@@ -166,6 +166,13 @@ export const invoiceFromBookingSchema = z
      * payment lands and a real invoice replaces it.
      */
     invoiceType: z.enum(["invoice", "proforma"]).default("invoice"),
+    /**
+     * When `true`, downstream e-invoicing plugins (e.g. SmartBill) skip
+     * the auto-sync triggered by `invoice.issued` / `invoice.proforma.issued`.
+     * The event still fires so other subscribers (ledgers, audit, etc.)
+     * see it; only the external-provider subscribers honour this flag.
+     */
+    skipExternalSync: z.boolean().optional(),
     wait: invoiceDocumentWaitModeSchema.optional(),
     waitTimeoutMs: z.coerce.number().int().min(0).max(60_000).optional(),
   })

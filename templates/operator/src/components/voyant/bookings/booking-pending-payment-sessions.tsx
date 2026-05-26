@@ -1,12 +1,26 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import type { ColumnDef } from "@tanstack/react-table"
+import { bookingsQueryKeys } from "@voyantjs/bookings-react"
+import { IconActionButton, StatusBadge, useBookingsUiI18nOrDefault } from "@voyantjs/bookings-ui"
 import { buildPaymentLinkUrl } from "@voyantjs/finance/payment-link"
-import { PaymentSessionActionLedgerCard } from "@voyantjs/finance-ui/components/invoice-action-ledger-card"
-import { formatMessage } from "@voyantjs/i18n"
+import { financeQueryKeys } from "@voyantjs/finance-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@voyantjs/ui/components"
 import { Button } from "@voyantjs/ui/components/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
-import { Copy, Loader2, Wallet } from "lucide-react"
+import { DataTable } from "@voyantjs/ui/components/data-table"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@voyantjs/ui/components/tooltip"
+import { Check, Copy, Loader2, Plus, Trash2, Wallet } from "lucide-react"
+import * as React from "react"
 import { toast } from "sonner"
 
 import { useAdminMessages } from "@/lib/admin-i18n"
@@ -41,30 +55,32 @@ interface PaymentLinkConfigResponse {
   }
 }
 
-/**
- * Operator-side panel that lists payment_sessions still in `pending`
- * for a given booking and offers a one-click "Mark received" action.
- *
- * Calling /v1/admin/finance/payment-sessions/:id/complete with
- * `status: "paid"` writes a payment authorization + capture row
- * and emits `payment.completed`, which fires the storefront's
- * checkout-finalize workflow (final invoice, contract auto-gen).
- *
- * Bank-transfer is the canonical use case — the storefront creates
- * a pending session at checkout-start time so this UI has something
- * to act on.
- */
 export interface BookingPendingPaymentSessionsProps {
   bookingId: string
+  /**
+   * Opens the operator's `Generate payment link` flow. When provided,
+   * the section header renders a primary button that triggers it.
+   */
+  onGenerateLink?: () => void
+  /**
+   * When set, the Generate payment link button is rendered disabled and
+   * its tooltip shows this reason — e.g. "Booking is fully paid."
+   */
+  generateLinkDisabledReason?: string | null
 }
 
 export function BookingPendingPaymentSessions({
   bookingId,
-}: BookingPendingPaymentSessionsProps): React.ReactElement | null {
+  onGenerateLink,
+  generateLinkDisabledReason,
+}: BookingPendingPaymentSessionsProps): React.ReactElement {
   const t = useAdminMessages().bookings.detail.paymentSessions
+  const { formatDateTime } = useBookingsUiI18nOrDefault()
   const queryClient = useQueryClient()
   const queryKey = ["booking-pending-payment-sessions", bookingId]
-  const { data, isLoading } = useQuery({
+  const [cancelTarget, setCancelTarget] = React.useState<PendingPaymentSession | null>(null)
+
+  const { data } = useQuery({
     queryKey,
     queryFn: () =>
       api.get<ListResponse>(
@@ -78,6 +94,19 @@ export function BookingPendingPaymentSessions({
     queryFn: () => api.get<PaymentLinkConfigResponse>("/v1/public/payment-link-config"),
     staleTime: 5 * 60 * 1000,
   })
+
+  const invalidateSurroundings = () => {
+    void queryClient.invalidateQueries({ queryKey })
+    void queryClient.invalidateQueries({ queryKey: ["public-booking-detail", bookingId] })
+    void queryClient.invalidateQueries({ queryKey: ["public-booking-payments", bookingId] })
+    void queryClient.invalidateQueries({
+      queryKey: financeQueryKeys.adminBookingPayments(bookingId),
+    })
+    void queryClient.invalidateQueries({ queryKey: financeQueryKeys.invoices() })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.bookings.actionLedger(bookingId) })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.actionLedger.all })
+    void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.booking(bookingId) })
+  }
 
   const markReceived = useMutation({
     mutationFn: async (sessionId: string) => {
@@ -93,101 +122,160 @@ export function BookingPendingPaymentSessions({
         },
       )
     },
+    onSuccess: invalidateSurroundings,
+  })
+
+  const cancelSession = useMutation({
+    mutationFn: async (sessionId: string) => {
+      await api.post(
+        `/v1/admin/finance/payment-sessions/${encodeURIComponent(sessionId)}/cancel`,
+        {},
+      )
+    },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey })
-      // The completion fires payment.completed, which kicks off the
-      // checkout-finalize workflow → booking.confirmed → contract +
-      // invoice auto-gen. Refresh the surrounding booking data so
-      // the operator sees the new status without a hard reload.
-      void queryClient.invalidateQueries({ queryKey: ["public-booking-detail", bookingId] })
-      void queryClient.invalidateQueries({ queryKey: ["public-booking-payments", bookingId] })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.bookings.actionLedger(bookingId) })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.actionLedger.all })
+      invalidateSurroundings()
+      setCancelTarget(null)
     },
   })
 
   const sessions = data?.data ?? []
-  if (!isLoading && sessions.length === 0) return null
+
+  const columns = React.useMemo<ColumnDef<PendingPaymentSession>[]>(
+    () => [
+      {
+        accessorKey: "createdAt",
+        header: t.columnDate,
+        cell: ({ row }) => formatDateTime(row.original.createdAt),
+      },
+      {
+        accessorKey: "amountCents",
+        header: t.columnAmount,
+        cell: ({ row }) => (
+          <span className="font-mono font-medium">
+            {formatMoney(row.original.amountCents, row.original.currency)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: t.columnStatus,
+        cell: ({ row }) => (
+          <StatusBadge status={row.original.status}>
+            {t.statusLabels[row.original.status as keyof typeof t.statusLabels] ??
+              row.original.status}
+          </StatusBadge>
+        ),
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => {
+          const session = row.original
+          const isMarkingThis = markReceived.isPending && markReceived.variables === session.id
+          return (
+            <div className="flex items-center justify-end gap-1">
+              <IconActionButton
+                label={t.copyPaymentLink}
+                icon={<Copy className="h-3.5 w-3.5" />}
+                onClick={() =>
+                  void copyPaymentLink(session.id, paymentLinkConfig?.data.publicCheckoutBaseUrl, t)
+                }
+              />
+              <IconActionButton
+                label={t.markReceived}
+                icon={
+                  isMarkingThis ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Check className="h-3.5 w-3.5" />
+                  )
+                }
+                disabled={markReceived.isPending}
+                onClick={() => markReceived.mutate(session.id)}
+              />
+              <IconActionButton
+                label={t.cancelPaymentLink}
+                icon={<Trash2 className="h-3.5 w-3.5" />}
+                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setCancelTarget(session)}
+              />
+            </div>
+          )
+        },
+      },
+    ],
+    [
+      formatDateTime,
+      markReceived.isPending,
+      markReceived.mutate,
+      markReceived.variables,
+      paymentLinkConfig,
+      t,
+    ],
+  )
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
+    <div data-slot="booking-payment-links" className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <h2 className="flex items-center gap-2 text-base font-semibold">
           <Wallet className="h-4 w-4" />
           {t.pendingTitle}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 text-sm">
-        {isLoading ? (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            {t.loadingSessions}
-          </div>
-        ) : null}
-        {sessions.map((session) => (
-          <div key={session.id} className="flex flex-col gap-3 rounded-md border p-3">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-0.5">
-                <div className="font-medium">
-                  {formatMoney(session.amountCents, session.currency)}
-                  {session.provider ? (
-                    <span className="ml-2 text-muted-foreground text-xs uppercase">
-                      {session.provider}
-                    </span>
-                  ) : null}
-                </div>
-                {session.notes ? (
-                  <div className="text-muted-foreground text-xs">{session.notes}</div>
-                ) : null}
-                <div className="text-muted-foreground text-xs">
-                  {formatMessage(t.createdAtPlain, {
-                    date: new Date(session.createdAt).toLocaleString(),
-                  })}
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    void copyPaymentLink(
-                      session.id,
-                      paymentLinkConfig?.data.publicCheckoutBaseUrl,
-                      t,
-                    )
-                  }
-                >
-                  <Copy className="mr-1.5 h-3.5 w-3.5" />
-                  {t.copyPaymentLink}
+        </h2>
+        {onGenerateLink ? (
+          generateLinkDisabledReason ? (
+            <Tooltip>
+              {/* biome-ignore lint/a11y/noNoninteractiveTabindex: required so disabled-button tooltips remain keyboard-discoverable */}
+              <TooltipTrigger render={<span tabIndex={0} className="inline-block" />}>
+                <Button variant="outline" size="sm" disabled className="pointer-events-none">
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t.generatePaymentLink}
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={() => markReceived.mutate(session.id)}
-                  disabled={markReceived.isPending}
-                >
-                  {markReceived.isPending && markReceived.variables === session.id ? (
-                    <>
-                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                      {t.marking}
-                    </>
-                  ) : (
-                    t.markReceived
-                  )}
-                </Button>
-              </div>
-            </div>
-            <PaymentSessionActionLedgerCard paymentSessionId={session.id} limit={5} />
-          </div>
-        ))}
-        {markReceived.error ? (
-          <p className="text-destructive text-xs">
-            {markReceived.error instanceof Error
-              ? markReceived.error.message
-              : t.markReceivedFailed}
-          </p>
+              </TooltipTrigger>
+              <TooltipContent>{generateLinkDisabledReason}</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Button variant="outline" size="sm" onClick={onGenerateLink}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t.generatePaymentLink}
+            </Button>
+          )
         ) : null}
-      </CardContent>
-    </Card>
+      </div>
+
+      <DataTable columns={columns} data={sessions} emptyMessage={t.empty} showPagination={false} />
+
+      {markReceived.error ? (
+        <p className="text-destructive text-xs">
+          {markReceived.error instanceof Error ? markReceived.error.message : t.markReceivedFailed}
+        </p>
+      ) : null}
+
+      <AlertDialog
+        open={Boolean(cancelTarget)}
+        onOpenChange={(next) => {
+          if (!next && !cancelSession.isPending) setCancelTarget(null)
+        }}
+      >
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.cancelConfirmTitle}</AlertDialogTitle>
+            <AlertDialogDescription>{t.cancelConfirmDescription}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelSession.isPending}>
+              {t.cancelConfirmCancel}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={cancelSession.isPending}
+              onClick={() => cancelTarget && cancelSession.mutate(cancelTarget.id)}
+            >
+              {t.cancelConfirmConfirm}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   )
 }
 

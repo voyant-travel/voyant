@@ -34,6 +34,7 @@ import { Eye, EyeOff, Loader2, Pencil, Plus, Trash2, Users } from "lucide-react"
 import * as React from "react"
 
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
+import { IconActionButton } from "./icon-action-button.js"
 import { TravelerDialog } from "./traveler-dialog.js"
 
 export interface TravelerListProps {
@@ -179,62 +180,47 @@ export function TravelerList({ bookingId, autoReveal = false }: TravelerListProp
           return (
             <div className="flex items-center justify-end gap-1">
               {showRevealToggle ? (
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    toggleReveal(traveler.id)
-                  }}
-                  aria-label={
-                    revealed
-                      ? messages.travelerList.actions.hideTravelerContactDetails
-                      : messages.travelerList.actions.revealTravelerContactDetails
-                  }
-                  title={
+                <IconActionButton
+                  label={
                     revealed
                       ? messages.travelerList.actions.hideContactDetails
                       : messages.travelerList.actions.revealContactDetails
                   }
-                >
-                  {revealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                </Button>
+                  icon={
+                    revealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    toggleReveal(traveler.id)
+                  }}
+                />
               ) : null}
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={messages.travelerList.actions.viewTraveler}
+              <IconActionButton
+                label={messages.travelerList.actions.viewTraveler}
+                icon={<Eye className="h-3.5 w-3.5" />}
                 onClick={(e) => {
                   e.stopPropagation()
                   setViewingId(traveler.id)
                 }}
-              >
-                <Eye className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={messages.travelerList.actions.editTraveler}
+              />
+              <IconActionButton
+                label={messages.travelerList.actions.editTraveler}
+                icon={<Pencil className="h-3.5 w-3.5" />}
                 onClick={(e) => {
                   e.stopPropagation()
                   setEditing(traveler)
                   setDialogOpen(true)
                 }}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
+              />
+              <IconActionButton
+                label={messages.travelerList.actions.deleteTraveler}
+                icon={<Trash2 className="h-3.5 w-3.5" />}
                 className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                aria-label={messages.travelerList.actions.deleteTraveler}
                 onClick={(e) => {
                   e.stopPropagation()
                   setDeleteTarget(traveler)
                 }}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+              />
             </div>
           )
         },
@@ -261,6 +247,7 @@ export function TravelerList({ bookingId, autoReveal = false }: TravelerListProp
           {messages.travelerList.title}
         </h2>
         <Button
+          variant="outline"
           size="sm"
           onClick={() => {
             setEditing(undefined)

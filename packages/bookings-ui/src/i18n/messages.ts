@@ -67,6 +67,12 @@ export type BookingsUiMessages = {
     cancelBookingAction: string
     deleteAction: string
     deleteConfirm: string
+    /** Body copy under the delete confirmation title. `{number}` interpolates the booking number. */
+    deleteConfirmDescription: string
+    /** Fallback description used when the booking has no number (rare). */
+    deleteConfirmDescriptionFallback: string
+    deleteConfirmAction: string
+    deleteCancel: string
     collectPaymentAction: string
     recordPaymentAction: string
     noValue: string
@@ -469,6 +475,10 @@ export type BookingsUiMessages = {
       paymentDate: string
       paymentMethod: string
       paymentReference: string
+      /** Label for the "+" button below the split installments. */
+      addInstallment: string
+      /** Aria label for the per-row remove button (only shown when ≥3 installments). */
+      removeInstallment: string
     }
   }
   roomsStepperSection: {
@@ -843,6 +853,8 @@ export type BookingsUiMessages = {
     empty: string
     values: {
       notesUnavailable: string
+      /** Suffix shown after the invoice number when the matched doc is a proforma. */
+      proformaSuffix: string
     }
     columns: {
       type: string
@@ -850,9 +862,18 @@ export type BookingsUiMessages = {
       dueDate: string
       amount: string
       notes: string
+      /** Invoice / proforma number covering this schedule row. */
+      invoice: string
     }
     actions: {
-      deleteConfirm: string
+      deleteConfirm: {
+        title: string
+        description: string
+        cancel: string
+        confirm: string
+      }
+      editSchedule: string
+      deleteSchedule: string
       issueDocument: string
       issueInvoice: string
       issueProforma: string
@@ -896,6 +917,11 @@ export type BookingsUiMessages = {
       cost: string
       reference: string
       confirmed: string
+      /** Row actions column header (visually hidden, used by screen readers). */
+      actions: string
+    }
+    actions: {
+      edit: string
     }
   }
   bookingCancellationDialog: {
@@ -1016,7 +1042,14 @@ export type BookingsUiMessages = {
       expires: string
     }
     actions: {
-      deleteConfirm: string
+      deleteConfirm: {
+        title: string
+        description: string
+        cancel: string
+        confirm: string
+      }
+      editGuarantee: string
+      deleteGuarantee: string
     }
   }
   bookingGroupLinkDialog: {
@@ -1207,6 +1240,10 @@ export type BookingsUiMessages = {
       documentGenerationHeading: string
       generateContractDocument: string
       generateInvoiceDocument: string
+      /** Mutually exclusive with `generateInvoiceAndContract`. */
+      generateProforma: string
+      /** Mutually exclusive with `generateProforma`. */
+      generateInvoiceAndContract: string
       breakdownHeading: string
       breakdownTotal: string
       breakdownOnRequest: string
@@ -1292,6 +1329,8 @@ export type BookingsUiMessages = {
       method: string
       status: string
       amount: string
+      /** Equivalent in the booking's currency when the payment was made in a different currency. */
+      fx: string
       date: string
       reference: string
       /** Row actions column header (visually hidden, used by screen readers). */

@@ -70,8 +70,15 @@ const documentGenerationInputSchema = z
   .object({
     contractDocument: z.boolean().default(false),
     invoiceDocument: z.boolean().default(false),
+    /**
+     * Kind of invoice to issue when `invoiceDocument` is true. Defaults
+     * to a final `invoice`; pass `proforma` for the placeholder used in
+     * pre-payment flows (operator dashboard's "Generate proforma"
+     * shortcut on the new-booking dialog).
+     */
+    invoiceType: z.enum(["invoice", "proforma"]).default("invoice"),
   })
-  .default({ contractDocument: false, invoiceDocument: false })
+  .default({ contractDocument: false, invoiceDocument: false, invoiceType: "invoice" })
 
 const itemLineInputSchema = z.object({
   /**
@@ -428,6 +435,7 @@ export interface BookingCreatedEvent {
   documentGeneration: {
     contractDocument: boolean
     invoiceDocument: boolean
+    invoiceType: "invoice" | "proforma"
   }
   createdByUserId: string | null
   occurredAt: Date
@@ -900,6 +908,7 @@ export async function createBooking(
   const documentGeneration = input.documentGeneration ?? {
     contractDocument: false,
     invoiceDocument: false,
+    invoiceType: "invoice" as const,
   }
   const pax = deriveBookingCreatePax(input)
 
@@ -1217,7 +1226,7 @@ export async function createBooking(
         invoiceNumber: generateInvoiceNumber(result.booking.bookingNumber),
         issueDate,
         dueDate,
-        invoiceType: "invoice",
+        invoiceType: documentGeneration.invoiceType,
         notes: "Generated from booking create.",
       },
       { booking: result.booking, items },
