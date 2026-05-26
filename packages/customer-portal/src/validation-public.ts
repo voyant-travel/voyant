@@ -330,6 +330,8 @@ export const customerPortalPhoneContactExistsQuerySchema = z.object({
 
 export const customerPortalPhoneContactExistsResultSchema = z.object({
   phone: z.string(),
+  authAccountExists: z.boolean(),
+  authAccountVerified: z.boolean(),
   customerRecordExists: z.boolean(),
   linkedCustomerRecordExists: z.boolean(),
 })
