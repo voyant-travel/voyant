@@ -237,6 +237,12 @@ export type LegalUiMessages = {
       addAttachment: string
       addDocument: string
     }
+    generationFailure: {
+      defaultLabel: string
+      templateError: string
+      generatorFailed: string
+      fallbackReason: string
+    }
     sections: {
       details: string
       parties: string

@@ -69,6 +69,35 @@ const CONTRACT_STATUS_VARIANT: Record<string, "default" | "secondary" | "outline
     void: "destructive",
   }
 
+const CONTRACT_GENERATION_FAILURE_LABELS: Record<string, keyof DocumentsTableMessages> = {
+  render_unavailable: "contractGenerationTemplateError",
+  generator_failed: "contractGenerationGeneratorFailed",
+}
+
+function resolveContractGenerationFailure(contract: LegalContractRecord) {
+  const metadata = contract.metadata
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return null
+  }
+
+  const status = metadata.lastGenerationStatus
+  if (typeof status !== "string" || status === "generated") {
+    return null
+  }
+
+  return {
+    status,
+    error:
+      typeof metadata.lastGenerationError === "string" && metadata.lastGenerationError.trim()
+        ? metadata.lastGenerationError
+        : null,
+    attemptedAt:
+      typeof metadata.lastGenerationAttemptedAt === "string"
+        ? metadata.lastGenerationAttemptedAt
+        : null,
+  }
+}
+
 export function BookingDocumentsTable({
   bookingId,
   apiBaseUrl,
@@ -276,9 +305,20 @@ function ContractRow({
     ? `${apiBaseUrl ?? "/api"}/v1/admin/legal/contracts/attachments/${latest.id}/download`
     : null
   const titleText = latest?.name ?? contract.contractNumber ?? `Contract ${contract.id.slice(-8)}`
+  const generationFailure = resolveContractGenerationFailure(contract)
   const statusVariant = CONTRACT_STATUS_VARIANT[contract.status] ?? "outline"
-  const dateIso = contract.issuedAt ?? contract.createdAt ?? null
-  const dateLabel = hasDocument ? messages.contractIssuedLabel : messages.contractPendingSinceLabel
+  const failureLabelKey = generationFailure
+    ? CONTRACT_GENERATION_FAILURE_LABELS[generationFailure.status]
+    : null
+  const failureLabel = failureLabelKey
+    ? messages[failureLabelKey]
+    : messages.contractGenerationFailed
+  const dateIso = generationFailure?.attemptedAt ?? contract.issuedAt ?? contract.createdAt ?? null
+  const dateLabel = generationFailure
+    ? messages.contractGenerationAttemptedLabel
+    : hasDocument
+      ? messages.contractIssuedLabel
+      : messages.contractPendingSinceLabel
 
   return (
     <tr className="border-b last:border-b-0">
@@ -311,7 +351,16 @@ function ContractRow({
       </td>
       <td className="px-4 py-2.5 text-muted-foreground">{messages.forBooking}</td>
       <td className="px-4 py-2.5">
-        <Badge variant={statusVariant}>{contract.status.replace(/_/g, " ")}</Badge>
+        {generationFailure ? (
+          <div className="max-w-80 space-y-1">
+            <Badge variant="destructive">{failureLabel}</Badge>
+            <p className="text-muted-foreground text-xs">
+              {generationFailure.error ?? messages.contractGenerationErrorFallback}
+            </p>
+          </div>
+        ) : (
+          <Badge variant={statusVariant}>{contract.status.replace(/_/g, " ")}</Badge>
+        )}
       </td>
       <td className="px-4 py-2.5 text-muted-foreground text-xs">
         {dateIso ? (
