@@ -4,7 +4,9 @@ import { useNavigate } from "@tanstack/react-router"
 import { useAdminBreadcrumbs, useLocale } from "@voyantjs/admin"
 import { useBooking } from "@voyantjs/bookings-react"
 import { BookingDetailPage as CanonicalBookingDetailPage } from "@voyantjs/bookings-ui/components/booking-detail-page"
+import type { BookingPaymentsSummaryRow } from "@voyantjs/bookings-ui/components/booking-payments-summary"
 import { CollectPaymentDialog } from "@voyantjs/checkout-ui"
+import { usePaymentMutation } from "@voyantjs/finance-react"
 import { RecordBookingPaymentDialog } from "@voyantjs/finance-ui"
 import { useState } from "react"
 import { AdminWidgetSlotRenderer } from "@/components/admin/admin-widget-slot"
@@ -39,6 +41,8 @@ export function BookingDetailPage({ id }: { id: string }) {
   const navigate = useNavigate()
   const [collectPaymentOpen, setCollectPaymentOpen] = useState(false)
   const [recordPaymentOpen, setRecordPaymentOpen] = useState(false)
+  const [editingPayment, setEditingPayment] = useState<BookingPaymentsSummaryRow | null>(null)
+  const { remove: removePayment } = usePaymentMutation()
   // Mirror the booking fetch so the admin chrome can render
   // breadcrumbs and the payment dialogs can read sell currency /
   // contact snapshots without prop-drilling through the canonical.
@@ -68,6 +72,16 @@ export function BookingDetailPage({ id }: { id: string }) {
         }
         onCollectPayment={() => setCollectPaymentOpen(true)}
         onRecordPayment={() => setRecordPaymentOpen(true)}
+        onViewPayment={(row) =>
+          void navigate({ to: "/finance/payments/$id", params: { id: row.id } })
+        }
+        onEditPayment={(row) => {
+          setEditingPayment(row)
+          setRecordPaymentOpen(true)
+        }}
+        onDeletePayment={async (row) => {
+          await removePayment.mutateAsync(row.id)
+        }}
         slots={{
           header: (b) => (
             <AdminWidgetSlotRenderer slot="booking.details.header" props={{ booking: b }} />
@@ -120,9 +134,29 @@ export function BookingDetailPage({ id }: { id: string }) {
           />
           <RecordBookingPaymentDialog
             open={recordPaymentOpen}
-            onOpenChange={setRecordPaymentOpen}
+            onOpenChange={(open) => {
+              setRecordPaymentOpen(open)
+              if (!open) setEditingPayment(null)
+            }}
             bookingId={id}
             defaultCurrency={booking.sellCurrency}
+            editingPayment={
+              editingPayment
+                ? {
+                    id: editingPayment.id,
+                    invoiceId: editingPayment.invoiceId,
+                    amountCents: editingPayment.amountCents,
+                    currency: editingPayment.currency,
+                    baseCurrency: null,
+                    baseAmountCents: null,
+                    paymentMethod: editingPayment.paymentMethod,
+                    status: editingPayment.status,
+                    paymentDate: editingPayment.paymentDate,
+                    referenceNumber: editingPayment.referenceNumber,
+                    notes: editingPayment.notes,
+                  }
+                : null
+            }
           />
         </>
       ) : null}

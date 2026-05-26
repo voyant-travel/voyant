@@ -25,6 +25,7 @@ export {
   BookingDetailPage,
   type BookingDetailPageProps,
   type BookingDetailPageSlots,
+  type BookingDetailSlotContent,
   type BookingDetailTabSlot,
 } from "./components/booking-detail-page.js"
 export { BookingDialog, type BookingDialogProps } from "./components/booking-dialog.js"
@@ -75,6 +76,7 @@ export {
 export {
   BookingPaymentsSummary,
   type BookingPaymentsSummaryProps,
+  type BookingPaymentsSummaryRow,
 } from "./components/booking-payments-summary.js"
 export {
   BookingQuickViewSheet,

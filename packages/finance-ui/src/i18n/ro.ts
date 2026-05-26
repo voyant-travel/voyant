@@ -263,6 +263,10 @@ export const financeUiRo = {
       viewPerson: "Vezi persoana",
       viewOrganization: "Vezi organizatia",
       viewSupplier: "Vezi furnizorul",
+      edit: "Editeaza",
+      delete: "Sterge",
+      deleteTitle: "Stergi aceasta plata?",
+      deleteDescription: "Plata va fi stearsa definitiv si soldul asociat va fi recalculat.",
     },
     titles: {
       summary: "Rezumat",
