@@ -629,9 +629,14 @@ export const bookingsUiEn = {
     fields: {
       status: "New status",
       note: "Note (optional)",
+      suppressNotifications: "Don't notify the customer",
     },
     placeholders: {
       note: "Reason for status change...",
+    },
+    helpers: {
+      suppressNotifications:
+        "Confirm silently — skip the confirmation email and any document bundle that would normally go out.",
     },
     actions: {
       updateStatus: "Update status",

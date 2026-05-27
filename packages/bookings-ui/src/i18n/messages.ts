@@ -747,9 +747,13 @@ export type BookingsUiMessages = {
     fields: {
       status: string
       note: string
+      suppressNotifications: string
     }
     placeholders: {
       note: string
+    }
+    helpers: {
+      suppressNotifications: string
     }
     actions: {
       updateStatus: string

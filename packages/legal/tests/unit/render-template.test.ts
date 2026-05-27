@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   ContractTemplateSyntaxError,
+  mergeContractNumberIntoVariables,
   renderTemplate,
   validateContractTemplateBody,
   validateTemplateVariables,
@@ -289,5 +290,46 @@ describe("validateContractTemplateBody", () => {
         contract: { signed_at: "2026-05-12" },
       }),
     ).toThrow(ContractTemplateSyntaxError)
+  })
+})
+
+describe("mergeContractNumberIntoVariables — issue #1335", () => {
+  it("injects the allocated number into both contract.number aliases", () => {
+    const merged = mergeContractNumberIntoVariables({}, "INV-2026-0042")
+    expect(merged.contract).toEqual({
+      contractNumber: "INV-2026-0042",
+      number: "INV-2026-0042",
+    })
+  })
+
+  it("preserves existing contract.* fields", () => {
+    const merged = mergeContractNumberIntoVariables(
+      {
+        today: "2026-05-27",
+        contract: { date: "2026-05-27", series: "Default" },
+      },
+      "INV-2026-0042",
+    )
+    expect(merged).toEqual({
+      today: "2026-05-27",
+      contract: {
+        date: "2026-05-27",
+        series: "Default",
+        contractNumber: "INV-2026-0042",
+        number: "INV-2026-0042",
+      },
+    })
+  })
+
+  it("renders {{ contract.number }} and {{ contract.contractNumber }} from the merged vars", () => {
+    const merged = mergeContractNumberIntoVariables({}, "NR-001")
+    expect(
+      renderTemplate("Nr: {{contract.number}} / {{contract.contractNumber}}", "html", merged),
+    ).toBe("Nr: NR-001 / NR-001")
+  })
+
+  it("replaces an invalid contract value (array/null) with the merged object", () => {
+    const merged = mergeContractNumberIntoVariables({ contract: ["should-not-happen"] }, "NR-002")
+    expect(merged.contract).toEqual({ contractNumber: "NR-002", number: "NR-002" })
   })
 })

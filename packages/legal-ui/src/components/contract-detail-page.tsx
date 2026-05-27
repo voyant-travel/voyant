@@ -281,7 +281,7 @@ export function ContractDetailPage({
               {messages.common.edit}
             </Button>
           ) : null}
-          {status === "draft" ? (
+          {status === "draft" || status === "void" ? (
             <Button
               variant="destructive"
               size="sm"

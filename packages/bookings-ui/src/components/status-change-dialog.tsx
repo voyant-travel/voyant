@@ -20,6 +20,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Switch,
   Textarea,
 } from "@voyantjs/ui/components"
 import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
@@ -32,6 +33,7 @@ import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 const statusChangeFormSchema = z.object({
   status: bookingStatusSchema,
   note: z.string().optional().nullable(),
+  suppressNotifications: z.boolean(),
 })
 
 type StatusChangeFormValues = z.input<typeof statusChangeFormSchema>
@@ -71,6 +73,7 @@ export function StatusChangeDialog({
     defaultValues: {
       status: "draft",
       note: "",
+      suppressNotifications: false,
     },
   })
 
@@ -79,15 +82,24 @@ export function StatusChangeDialog({
       form.reset({
         status: currentStatus,
         note: "",
+        suppressNotifications: false,
       })
     }
   }, [currentStatus, form, open])
+
+  // Suppression only takes effect on the `confirm` verb today (see
+  // status-dispatch.ts), so only show the toggle when the target is
+  // `confirmed`. Hide it otherwise to keep the dialog focused.
+  const targetStatus = form.watch("status")
+  const suppressNotifications = form.watch("suppressNotifications")
+  const showSuppressToggle = targetStatus === "confirmed"
 
   const onSubmit = async (values: StatusChangeFormOutput) => {
     await mutation.mutateAsync({
       currentStatus,
       status: values.status,
       note: values.note || null,
+      suppressNotifications: values.suppressNotifications || undefined,
     })
     onOpenChange(false)
     onSuccess?.()
@@ -137,6 +149,26 @@ export function StatusChangeDialog({
                 placeholder={messages.statusChangeDialog.placeholders.note}
               />
             </div>
+
+            {showSuppressToggle ? (
+              <div className="flex flex-col gap-2 rounded-md border bg-muted/30 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="suppress-notifications">
+                    {messages.statusChangeDialog.fields.suppressNotifications}
+                  </Label>
+                  <Switch
+                    id="suppress-notifications"
+                    checked={suppressNotifications}
+                    onCheckedChange={(checked) =>
+                      form.setValue("suppressNotifications", checked === true)
+                    }
+                  />
+                </div>
+                <p className="text-muted-foreground text-xs">
+                  {messages.statusChangeDialog.helpers.suppressNotifications}
+                </p>
+              </div>
+            ) : null}
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>

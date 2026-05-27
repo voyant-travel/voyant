@@ -1,6 +1,7 @@
 "use client"
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useNavigate } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
 import {
   type BookingTravelerRecord,
@@ -474,6 +475,7 @@ function ContractActionsCell({
   messages: DocumentsTableMessages
 }) {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const attachmentsQuery = useLegalContractAttachments({ contractId: contract.id })
   const attachments = (attachmentsQuery.data ?? []).filter(
     (a: LegalContractAttachmentRecord) => a.kind === "document",
@@ -504,6 +506,14 @@ function ContractActionsCell({
 
   return (
     <div className="flex items-center justify-end gap-1">
+      <IconActionButton
+        label={messages.contractOpenTooltip}
+        icon={<ArrowUpRight className="h-3.5 w-3.5" />}
+        onClick={(e) => {
+          e.stopPropagation()
+          void navigate({ to: "/legal/contracts/$id", params: { id: contract.id } })
+        }}
+      />
       {downloadHref ? (
         <IconActionButton
           label={messages.downloadDocumentAria}

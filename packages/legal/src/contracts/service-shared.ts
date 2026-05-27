@@ -123,6 +123,31 @@ export function renderTemplate(
   })
 }
 
+// When a contract is being issued or rendered, the allocated series
+// number must be visible to the template via `{{ contract.number }}` /
+// `{{ contract.contractNumber }}` (issue #1335). This helper merges the
+// allocated value into both aliases without dropping caller-provided
+// fields nested under `contract.*`.
+export function mergeContractNumberIntoVariables(
+  variables: Record<string, unknown>,
+  contractNumber: string,
+): Record<string, unknown> {
+  const existingContract =
+    variables.contract &&
+    typeof variables.contract === "object" &&
+    !Array.isArray(variables.contract)
+      ? (variables.contract as Record<string, unknown>)
+      : {}
+  return {
+    ...variables,
+    contract: {
+      ...existingContract,
+      contractNumber,
+      number: contractNumber,
+    },
+  }
+}
+
 export function validateTemplateVariables(
   variableSchema: unknown,
   values: Record<string, unknown>,

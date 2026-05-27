@@ -7,7 +7,11 @@ import type { ContractLifecycleHook } from "./lifecycle.js"
 import { contractAttachments, contracts, contractTemplateVersions } from "./schema.js"
 import { contractRecordsService } from "./service-contracts.js"
 import type { CreateContractAttachmentInput } from "./service-shared.js"
-import { isContractTemplateSyntaxError, renderTemplate } from "./service-shared.js"
+import {
+  isContractTemplateSyntaxError,
+  mergeContractNumberIntoVariables,
+  renderTemplate,
+} from "./service-shared.js"
 import type { GenerateContractDocumentInput } from "./validation.js"
 
 type ContractGenerationFailureStatus = "render_unavailable" | "generator_failed"
@@ -358,7 +362,14 @@ async function ensureRenderedContract(
   let renderedBodyFormat = contract.renderedBodyFormat
 
   if ((!renderedBody || !renderedBodyFormat) && templateVersion) {
-    const variables = (contract.variables as Record<string, unknown> | null) ?? {}
+    const baseVariables = (contract.variables as Record<string, unknown> | null) ?? {}
+    // Issue #1335: when re-rendering an already-issued contract (e.g. a
+    // regenerate request), make sure the allocated contract number is
+    // visible to the template as `{{ contract.number }}` /
+    // `{{ contract.contractNumber }}`.
+    const variables = contract.contractNumber
+      ? mergeContractNumberIntoVariables(baseVariables, contract.contractNumber)
+      : baseVariables
     try {
       renderedBody = renderTemplate(templateVersion.body, "html", variables)
     } catch (error) {
