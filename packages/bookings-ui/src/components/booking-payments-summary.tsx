@@ -58,11 +58,18 @@ export interface BookingPaymentsSummaryProps {
    */
   onInvoiceOpen?: (invoiceId: string, row: BookingPaymentsSummaryRow) => void
   /**
+   * Optional invoice href for hosts that navigate with route links
+   * instead of an in-place invoice panel.
+   */
+  getInvoiceHref?: (row: BookingPaymentsSummaryRow) => string
+  /**
    * Optional handler for the "View" action in the row menu. Consumers
    * typically call their router's navigate(). Middle-click isn't useful
    * on menu items, so this is a click handler rather than an href.
    */
   onViewPayment?: (row: BookingPaymentsSummaryRow) => void
+  /** Convert a proforma invoice attached to the payment into a final invoice. */
+  onConvertProforma?: (row: BookingPaymentsSummaryRow) => Promise<unknown> | unknown
   /** Edit handler — typically opens a dialog pre-filled with the row. */
   onEditPayment?: (row: BookingPaymentsSummaryRow) => void
   /**
@@ -102,7 +109,9 @@ export function BookingPaymentsSummary({
   bookingId,
   variant = "public",
   onInvoiceOpen,
+  getInvoiceHref,
   onViewPayment,
+  onConvertProforma,
   onEditPayment,
   onDeletePayment,
   headerAction,
@@ -115,7 +124,9 @@ export function BookingPaymentsSummary({
   const card = messages.bookingPaymentsSummary
 
   const payments = data?.data?.payments ?? []
-  const showActionsColumn = Boolean(onViewPayment || onEditPayment || onDeletePayment)
+  const showActionsColumn = Boolean(
+    onViewPayment || onConvertProforma || onEditPayment || onDeletePayment,
+  )
   const [deleteTarget, setDeleteTarget] = React.useState<BookingPaymentsSummaryRow | null>(null)
   const [deletePending, setDeletePending] = React.useState(false)
 
@@ -219,22 +230,36 @@ export function BookingPaymentsSummary({
       {
         accessorKey: "invoiceNumber",
         header: card.columns.invoice,
-        cell: ({ row }) =>
-          onInvoiceOpen ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                onInvoiceOpen(row.original.invoiceId, row.original)
-              }}
-              className="inline-flex items-center gap-1 font-mono text-xs text-primary hover:underline"
-            >
-              {row.original.invoiceNumber}
-              <ArrowUpRight className="h-3 w-3" />
-            </button>
-          ) : (
-            <span className="font-mono text-xs">{row.original.invoiceNumber}</span>
-          ),
+        cell: ({ row }) => {
+          if (onInvoiceOpen) {
+            return (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onInvoiceOpen(row.original.invoiceId, row.original)
+                }}
+                className="inline-flex items-center gap-1 font-mono text-primary text-xs hover:underline"
+              >
+                {row.original.invoiceNumber}
+                <ArrowUpRight className="h-3 w-3" />
+              </button>
+            )
+          }
+          if (getInvoiceHref) {
+            return (
+              <a
+                href={getInvoiceHref(row.original)}
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1 font-mono text-primary text-xs hover:underline"
+              >
+                {row.original.invoiceNumber}
+                <ArrowUpRight className="h-3 w-3" />
+              </a>
+            )
+          }
+          return <span className="font-mono text-xs">{row.original.invoiceNumber}</span>
+        },
       },
     ]
 
@@ -251,6 +276,16 @@ export function BookingPaymentsSummary({
                 onClick={(e) => {
                   e.stopPropagation()
                   onViewPayment(row.original)
+                }}
+              />
+            ) : null}
+            {onConvertProforma && row.original.invoiceType === "proforma" ? (
+              <IconActionButton
+                label={card.actions.convertToInvoice}
+                icon={<ArrowUpRight className="h-3.5 w-3.5" />}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  void onConvertProforma(row.original)
                 }}
               />
             ) : null}
@@ -284,7 +319,9 @@ export function BookingPaymentsSummary({
   }, [
     card,
     formatDateTime,
+    getInvoiceHref,
     onInvoiceOpen,
+    onConvertProforma,
     onDeletePayment,
     onEditPayment,
     onViewPayment,
