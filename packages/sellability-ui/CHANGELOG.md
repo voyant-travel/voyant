@@ -1,5 +1,17 @@
 # @voyantjs/sellability-ui
 
+## 0.84.0
+
+### Patch Changes
+
+- Updated dependencies [5462f07]
+  - @voyantjs/distribution-react@0.84.0
+  - @voyantjs/i18n@0.84.0
+  - @voyantjs/markets-react@0.84.0
+  - @voyantjs/products-react@0.84.0
+  - @voyantjs/sellability-react@0.84.0
+  - @voyantjs/ui@0.84.0
+
 ## 0.83.1
 
 ### Patch Changes
