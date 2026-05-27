@@ -1,5 +1,13 @@
 # @voyantjs/resources-ui
 
+## 0.84.2
+
+### Patch Changes
+
+- @voyantjs/i18n@0.84.2
+- @voyantjs/resources-react@0.84.2
+- @voyantjs/ui@0.84.2
+
 ## 0.84.1
 
 ### Patch Changes
