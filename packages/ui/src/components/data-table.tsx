@@ -72,22 +72,28 @@ export function DataTable<TData, TValue>({
     () => ({
       id: "__select__",
       header: ({ table }) => (
-        <Checkbox
-          aria-label="Select all rows on page"
-          checked={table.getIsAllPageRowsSelected()}
-          indeterminate={table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected()}
-          onClickCapture={(event) => event.stopPropagation()}
-          onCheckedChange={(checked) => table.toggleAllPageRowsSelected(checked)}
-        />
+        // biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation wrapper — the Checkbox handles its own keyboard activation.
+        // biome-ignore lint/a11y/noStaticElementInteractions: stopPropagation wrapper only — no semantic role added.
+        <span onClick={(event) => event.stopPropagation()}>
+          <Checkbox
+            aria-label="Select all rows on page"
+            checked={table.getIsAllPageRowsSelected()}
+            indeterminate={table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected()}
+            onCheckedChange={(checked) => table.toggleAllPageRowsSelected(checked)}
+          />
+        </span>
       ),
       cell: ({ row }) => (
-        <Checkbox
-          aria-label="Select row"
-          checked={row.getIsSelected()}
-          indeterminate={row.getIsSomeSelected() && !row.getIsSelected()}
-          onClickCapture={(event) => event.stopPropagation()}
-          onCheckedChange={(checked) => row.toggleSelected(checked)}
-        />
+        // biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation wrapper — the Checkbox handles its own keyboard activation.
+        // biome-ignore lint/a11y/noStaticElementInteractions: stopPropagation wrapper only — no semantic role added.
+        <span onClick={(event) => event.stopPropagation()}>
+          <Checkbox
+            aria-label="Select row"
+            checked={row.getIsSelected()}
+            indeterminate={row.getIsSomeSelected() && !row.getIsSelected()}
+            onCheckedChange={(checked) => row.toggleSelected(checked)}
+          />
+        </span>
       ),
       enableSorting: false,
       enableHiding: false,

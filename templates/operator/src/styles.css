@@ -10,6 +10,7 @@
    relative to src/ trees that don't ship in published tarballs (upstream
    issue #416), so the dist scans below are still required. */
 @source "../node_modules/@voyantjs/admin/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/allocation-ui/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/auth-ui/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/ui/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/availability-ui/dist/**/*.{js,mjs}";
@@ -28,6 +29,7 @@
    only help published consumers and can lag behind src during local dev,
    so also scan workspace src trees directly. */
 @source "../../../packages/admin/src/**/*.{ts,tsx}";
+@source "../../../packages/allocation-ui/src/**/*.{ts,tsx}";
 @source "../../../packages/auth-ui/src/**/*.{ts,tsx}";
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
 @source "../../../packages/availability-ui/src/**/*.{ts,tsx}";

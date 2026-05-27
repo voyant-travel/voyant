@@ -2,7 +2,7 @@
 
 import type { BookingRecord } from "@voyantjs/bookings-react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
-import { BookingCreateForm } from "./booking-create-dialog.js"
+import { BookingCreateForm } from "./booking-create-sheet.js"
 
 export interface BookingCreatePageProps {
   onCreated?: (booking: BookingRecord) => void

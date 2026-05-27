@@ -93,6 +93,14 @@ export interface AllocationManifestBooking {
   contactPhone: string | null
   sellCurrency: string | null
   pax: number | null
+  /** Total contracted sell amount on the booking (in `sellCurrency`). */
+  sellAmountCents: number | null
+  /**
+   * Best-effort settled amount: max of `schedules_paid_cents`,
+   * `invoice_paid_cents`, and `sellAmountCents` (when `paid_at` is set),
+   * capped at `sellAmountCents`. Returned in `sellCurrency`.
+   */
+  paidAmountCents: number | null
   travelers: AllocationManifestTraveler[]
 }
 
@@ -208,6 +216,8 @@ export async function getSlotAllocationManifest(
       contactPhone: row.contact_phone,
       sellCurrency: row.sell_currency,
       pax: row.pax,
+      sellAmountCents: row.sell_amount_cents,
+      paidAmountCents: derivePaidAmountCents(row),
       travelers: travelersByBooking.get(row.id) ?? [],
     }),
   )
@@ -1118,6 +1128,24 @@ export function derivePaymentStatus(row: BookingRow): AllocationPaymentStatus {
 
   if (schedulesPaid > 0 || invoicePaid > 0) return "partial"
   return "unpaid"
+}
+
+/**
+ * Settled-amount counterpart to `derivePaymentStatus`. Returns the best
+ * available signal of how much has actually been collected for the
+ * booking — the larger of schedule and invoice settlement, plus the full
+ * sell amount when the operator has flagged `paid_at` (since that's an
+ * explicit override). Capped at `sell_amount_cents` so partial-overpay
+ * scenarios don't distort slot totals.
+ */
+export function derivePaidAmountCents(row: BookingRow): number {
+  const sellAmount = row.sell_amount_cents ?? 0
+  if (sellAmount <= 0) return 0
+  const explicit = row.paid_at != null ? sellAmount : 0
+  const schedulesPaid = row.schedules_paid_cents ?? 0
+  const invoicePaid = row.invoice_paid_cents ?? 0
+  const observed = Math.max(explicit, schedulesPaid, invoicePaid)
+  return Math.min(observed, sellAmount)
 }
 
 interface TravelerRow {

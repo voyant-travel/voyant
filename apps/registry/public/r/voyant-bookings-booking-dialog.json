@@ -2,7 +2,7 @@
   "$schema": "https://ui.shadcn.com/schema/registry-item.json",
   "name": "voyant-bookings-booking-dialog",
   "title": "Booking Dialog",
-  "description": "Single booking dialog for both create and edit: delegates to BookingCreateDialog (composed picker sections) when no booking prop is supplied, renders a flat edit form when one is. Use this from booking list/detail pages rather than BookingCreateDialog directly — the wrapper keeps state handling identical for both modes.",
+  "description": "Single booking dialog for both create and edit: delegates to BookingCreateSheet (composed picker sections) when no booking prop is supplied, renders a flat edit form when one is. Use this from booking list/detail pages rather than BookingCreateSheet directly — the wrapper keeps state handling identical for both modes.",
   "dependencies": ["@voyantjs/bookings-react", "lucide-react"],
   "registryDependencies": [
     "dialog",
@@ -10,7 +10,7 @@
     "label",
     "select",
     "textarea",
-    "voyant-bookings-booking-create-dialog"
+    "voyant-bookings-booking-create-sheet"
   ],
   "files": [
     {

@@ -23,3 +23,12 @@ export const slotStatusVariant: Record<
   sold_out: "destructive",
   cancelled: "outline",
 }
+
+export type SlotStatusTone = "success" | "warning" | "danger" | "neutral"
+
+export const slotStatusTone: Record<AvailabilitySlotRow["status"], SlotStatusTone> = {
+  open: "success",
+  closed: "danger",
+  sold_out: "danger",
+  cancelled: "neutral",
+}

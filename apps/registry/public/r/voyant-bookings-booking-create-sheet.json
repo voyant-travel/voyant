@@ -1,0 +1,36 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "voyant-bookings-booking-create-sheet",
+  "title": "Booking Create Sheet",
+  "description": "Operator booking-create workflow composing every picker section (product, departure, rooms, person, shared-room, travelers, price breakdown, voucher, payment schedule) and submitting atomically via POST /v1/bookings/create. Consumed by BookingDialog for the create branch; apps that need a bespoke flow can install the sections individually and assemble their own sheet.",
+  "dependencies": [
+    "@voyantjs/availability-react",
+    "@voyantjs/bookings-react",
+    "@voyantjs/crm-react",
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "button",
+    "checkbox",
+    "label",
+    "sheet",
+    "textarea",
+    "voyant-bookings-product-picker-section",
+    "voyant-bookings-person-picker-section",
+    "voyant-bookings-shared-room-section",
+    "voyant-bookings-option-units-stepper-section",
+    "voyant-bookings-travelers-section",
+    "voyant-bookings-price-breakdown-section",
+    "voyant-bookings-voucher-picker-section",
+    "voyant-bookings-payment-schedule-section"
+  ],
+  "files": [
+    {
+      "path": "registry/bookings/booking-create-sheet.tsx",
+      "content": "export { BookingCreateSheet, type BookingCreateSheetProps } from \"@voyantjs/bookings-ui\"\n",
+      "type": "registry:component",
+      "target": "components/voyant/bookings/booking-create-sheet.tsx"
+    }
+  ],
+  "type": "registry:component"
+}

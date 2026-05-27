@@ -8,7 +8,7 @@
   "files": [
     {
       "path": "registry/charters/external-badge.tsx",
-      "content": "\"use client\"\n\nimport type * as React from \"react\"\n\nimport { Badge } from \"@/components/ui/badge\"\nimport { cn } from \"@/lib/utils\"\n\nexport interface ExternalCharterBadgeProps extends React.ComponentPropsWithoutRef<typeof Badge> {\n  /** The adapter that sourced the charter (e.g. \"voyant-connect\", \"custom\"). */\n  sourceProvider: string\n}\n\n/**\n * Small inline badge that surfaces charter provenance to admin/storefront UIs.\n * Renders as a subtle \"External · <provider>\" pill so operators (and shoppers,\n * if surfaced) can tell at a glance which inventory comes from upstream.\n */\nexport function ExternalCharterBadge({\n  sourceProvider,\n  className,\n  ...props\n}: ExternalCharterBadgeProps) {\n  return (\n    <Badge\n      data-slot=\"external-charter-badge\"\n      variant=\"outline\"\n      className={cn(\"font-normal\", className)}\n      title={`Sourced via ${sourceProvider}`}\n      {...props}\n    >\n      <span aria-hidden=\"true\" className=\"mr-1\">\n        ↗\n      </span>\n      External · {sourceProvider}\n    </Badge>\n  )\n}\n",
+      "content": "export {\n  ExternalCharterBadge,\n  type ExternalCharterBadgeProps,\n} from \"@voyantjs/charters-ui/components/external-badge\"\n",
       "type": "registry:component",
       "target": "components/voyant/charters/external-badge.tsx"
     }

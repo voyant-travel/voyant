@@ -1,7 +1,8 @@
 "use client"
 
-import { useQueries, useQuery } from "@tanstack/react-query"
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
+  availabilityQueryKeys,
   getSlotQueryOptions,
   useSlots,
   useSlotUnitAvailability,
@@ -31,11 +32,12 @@ import { useProduct, useProductMedia } from "@voyantjs/products-react"
 import {
   Button,
   Checkbox,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
   Label,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
   Textarea,
 } from "@voyantjs/ui/components"
 import { AsyncCombobox } from "@voyantjs/ui/components/async-combobox"
@@ -263,7 +265,7 @@ function formatPayloadResolverMismatchError(
     : validationMessages.payloadResolverMismatchFallback
 }
 
-export interface BookingCreateDialogProps {
+export interface BookingCreateSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onCreated?: (booking: BookingRecord) => void
@@ -285,7 +287,7 @@ export interface BookingCreateFormProps {
 }
 
 /**
- * Operator booking-create dialog. Composes the booking-create picker
+ * Operator booking-create sheet. Composes the booking-create picker
  * sections — product, departure, rooms, person, shared-room, travelers,
  * price breakdown, voucher, payment schedule — and submits via the atomic
  * `POST /v1/bookings/create` endpoint so partial failures can't
@@ -293,35 +295,43 @@ export interface BookingCreateFormProps {
  *
  * Normally consumed via `BookingDialog` which delegates here when no
  * `booking` prop is passed. Apps that need a bespoke flow can install the
- * sections individually and assemble their own dialog instead of forking.
+ * sections individually and assemble their own sheet instead of forking.
  */
-export function BookingCreateDialog({
+export function BookingCreateSheet({
   open,
   onOpenChange,
   onCreated,
   defaultProductId,
   defaultSlotId,
-}: BookingCreateDialogProps) {
+}: BookingCreateSheetProps) {
   const messages = useBookingsUiMessagesOrDefault()
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg">
-        <DialogHeader>
-          <DialogTitle>{messages.bookingCreateDialog.title}</DialogTitle>
-        </DialogHeader>
-        <BookingCreateForm
-          enabled={open}
-          defaultProductId={defaultProductId}
-          defaultSlotId={defaultSlotId}
-          onCancel={() => onOpenChange(false)}
-          onCreated={(booking) => {
-            onOpenChange(false)
-            onCreated?.(booking)
-          }}
-        />
-      </DialogContent>
-    </Dialog>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-[64rem]!"
+      >
+        <SheetHeader className="border-b px-6 py-4">
+          <SheetTitle>{messages.bookingCreateDialog.title}</SheetTitle>
+          <SheetDescription className="sr-only">
+            {messages.bookingCreateDialog.title}
+          </SheetDescription>
+        </SheetHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+          <BookingCreateForm
+            enabled={open}
+            defaultProductId={defaultProductId}
+            defaultSlotId={defaultSlotId}
+            onCancel={() => onOpenChange(false)}
+            onCreated={(booking) => {
+              onOpenChange(false)
+              onCreated?.(booking)
+            }}
+          />
+        </div>
+      </SheetContent>
+    </Sheet>
   )
 }
 
@@ -345,8 +355,18 @@ export function BookingCreateForm({
   const [travelers, setTravelers] = React.useState<TravelerListValue>(emptyTravelerListValue)
   const [voucher, setVoucher] = React.useState<VoucherPickerValue>(emptyVoucherPickerValue)
   const [pricing, setPricing] = React.useState<PriceBreakdownValue | null>(null)
-  const [paymentSchedule, setPaymentSchedule] =
+  const [paymentSchedule, setPaymentScheduleState] =
     React.useState<PaymentScheduleValue>(emptyPaymentScheduleValue)
+  // Tracks whether the operator has manually touched the schedule. The
+  // "default the due date to departure" effect below uses this to bow
+  // out once the operator has typed their own dates / amounts / paid
+  // markers — otherwise we'd thrash their input every time the slot's
+  // startsAt re-resolves (combobox re-renders, slot query refetch, …).
+  const paymentScheduleTouchedRef = React.useRef(false)
+  const setPaymentSchedule = React.useCallback((next: PaymentScheduleValue) => {
+    paymentScheduleTouchedRef.current = true
+    setPaymentScheduleState(next)
+  }, [])
   /**
    * Mutually-exclusive document toggles. "Proforma" issues a single
    * placeholder invoice; "Invoice + contract" issues a final invoice
@@ -395,7 +415,8 @@ export function BookingCreateForm({
       setTravelers(emptyTravelerListValue)
       setVoucher(emptyVoucherPickerValue)
       setPricing(null)
-      setPaymentSchedule(emptyPaymentScheduleValue)
+      setPaymentScheduleState(emptyPaymentScheduleValue)
+      paymentScheduleTouchedRef.current = false
       setGenerateProformaState(false)
       setGenerateInvoiceAndContractState(false)
       setNotes("")
@@ -457,6 +478,24 @@ export function BookingCreateForm({
       slots.find((slot) => slot.id === slotId) ?? (defaultSlot?.id === slotId ? defaultSlot : null),
     [slots, slotId, defaultSlot],
   )
+  // Default the single Full-mode installment's due date to the departure
+  // day so a trip starting weeks/months later doesn't surface today's
+  // date as the payment due date. Skip once the operator has touched
+  // the schedule (mode change, custom amount, alternate date, …) so we
+  // never overwrite their edits.
+  const departureDateIso = selectedSlot?.startsAt?.slice(0, 10) ?? null
+  React.useEffect(() => {
+    if (!departureDateIso || paymentScheduleTouchedRef.current) return
+    setPaymentScheduleState((prev) => {
+      if (prev.mode !== "full" || prev.installments.length !== 1) return prev
+      const installment = prev.installments[0]
+      if (!installment || installment.dueDate === departureDateIso) return prev
+      return {
+        ...prev,
+        installments: [{ ...installment, dueDate: departureDateIso }],
+      }
+    })
+  }, [departureDateIso])
   const setSelectedSlot = React.useCallback(
     (nextSlotId: string | null) => {
       setPayloadMismatchUnitIds([])
@@ -655,7 +694,18 @@ export function BookingCreateForm({
   // Consumers hooking in real product data should override this by wrapping
   // the component or swapping in their own currency-aware hook.
   const currency = messages.bookingCreateDialog.labels.currency
-  const pricingCurrency = pricing?.currency ?? currency
+  // Source-of-truth currency for the payment-schedule wire payload: prefer
+  // the product's own `sellCurrency` (what the server stamps on the new
+  // booking via `convertProductToBooking`), fall back to the pricing
+  // preview's currency, and only then fall back to the placeholder. The
+  // server rejects the create with `invalid_payment_schedules` when any
+  // schedule row's currency drifts from the booking's, so this trio has to
+  // resolve to the same value the server will pick.
+  const bookingProductQuery = useProduct(product.productId || undefined, {
+    enabled: enabled && Boolean(product.productId),
+  })
+  const productSellCurrency = bookingProductQuery.data?.sellCurrency ?? null
+  const pricingCurrency = productSellCurrency ?? pricing?.currency ?? currency
   const pricingTotalAmountCents = pricing?.confirmedAmountCents ?? undefined
   const roomUnitLabels = React.useMemo(
     () => Object.fromEntries(roomUnits.map((unit) => [unit.optionUnitId, unit.unitName])),
@@ -663,6 +713,7 @@ export function BookingCreateForm({
   )
 
   const createBookingMutation = useBookingCreateMutation()
+  const queryClient = useQueryClient()
 
   // Resolve the billing person/org once at the dialog level so we can
   // snapshot their contact details into the booking row at create time.
@@ -951,6 +1002,17 @@ export function BookingCreateForm({
         suppressNotifications: initialStatus === "confirmed" && !notifyTraveler ? true : undefined,
         ...contactSnapshot,
       })
+
+      // The booking mutation invalidates booking caches, but the
+      // availability surface (slot allocation manifest, slot detail,
+      // unit availability, slot list) hosts its own cache under
+      // `availabilityQueryKeys.slots()`. Without this, the slot-detail
+      // page that opened the sheet keeps showing stale traveler counts /
+      // empty rooms / unconsumed capacity until the user refreshes.
+      // Nuking the whole slots subtree is cheap and avoids tracking
+      // exactly which keys to bust (slotAllocation, slotDetail,
+      // slotUnitAvailability, slotsList, …).
+      await queryClient.invalidateQueries({ queryKey: availabilityQueryKeys.slots() })
 
       onCreated?.(booking)
     } catch (err) {

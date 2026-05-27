@@ -99,7 +99,7 @@ export function ResourceColumnsView({
 }) {
   const messages = useAllocationUiMessagesOrDefault()
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(18rem,22rem)_1fr]">
+    <div className="grid gap-4 lg:grid-cols-[minmax(16rem,20rem)_1fr]">
       <AllocationColumn
         id="unallocated"
         icon={<Users className="size-4" aria-hidden="true" />}

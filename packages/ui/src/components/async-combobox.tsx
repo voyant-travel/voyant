@@ -133,6 +133,7 @@ export function AsyncCombobox<T>({
         placeholder={placeholder}
         showClear={clearable && !!value}
         className={triggerClassName}
+        disabled={disabled}
       />
       <ComboboxContent className={className}>
         <ComboboxEmpty>{emptyText}</ComboboxEmpty>

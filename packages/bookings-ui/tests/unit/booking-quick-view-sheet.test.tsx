@@ -28,6 +28,8 @@ vi.mock("@voyantjs/bookings-react", () => ({
     fetchStatus: "idle",
   }),
   useTravelers: () => ({ data: { data: [] } }),
+  useBookingTravelerDocuments: () => ({ data: { data: [] } }),
+  useRevealTraveler: () => ({ data: null, isFetching: false, isError: false }),
 }))
 
 vi.mock("@voyantjs/crm-react", () => ({
@@ -68,6 +70,12 @@ vi.mock("@voyantjs/ui/components", () => ({
       {children}
     </button>
   ),
+  cn: (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(" "),
+  Collapsible: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  CollapsibleContent: ({ children, className }: { children?: ReactNode; className?: string }) => (
+    <div className={className}>{children}</div>
+  ),
+  CollapsibleTrigger: ({ render }: { render?: ReactNode }) => render ?? null,
   Sheet: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   SheetBody: ({ children, className }: { children?: ReactNode; className?: string }) => (
     <div className={className}>{children}</div>

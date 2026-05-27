@@ -78,6 +78,25 @@ export const emptyPaymentScheduleValue: PaymentScheduleValue = {
   installments: [createInstallment({ dueDate: todayIso() })],
 }
 
+/**
+ * Factory for the initial `PaymentScheduleValue` when the booking has a
+ * known departure (slot or product start date). The single Full-mode
+ * installment defaults to the departure day so operators don't have to
+ * re-pick it on every fresh form, and so the dueDate field doesn't
+ * surface today's date for a trip starting weeks/months later.
+ *
+ * When `departureDate` is null/undefined we fall back to `emptyPaymentScheduleValue`
+ * which uses today.
+ */
+export function createPaymentScheduleValue(
+  departureDate: string | null | undefined,
+): PaymentScheduleValue {
+  return {
+    mode: "full",
+    installments: [createInstallment({ dueDate: departureDate ?? todayIso() })],
+  }
+}
+
 export interface PaymentScheduleSectionProps {
   value: PaymentScheduleValue
   onChange: (value: PaymentScheduleValue) => void

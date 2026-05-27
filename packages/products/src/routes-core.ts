@@ -38,7 +38,7 @@ export const productCoreRoutes = new Hono<Env>()
 
   // GET /:id — Get single product
   .get("/:id", async (c) => {
-    const row = await productsService.getProductById(c.get("db"), c.req.param("id"))
+    const row = await productsService.getProductByIdWithType(c.get("db"), c.req.param("id"))
 
     if (!row) {
       return c.json({ error: "Product not found" }, 404)

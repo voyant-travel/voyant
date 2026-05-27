@@ -454,6 +454,33 @@ export const productsService = {
     return row ?? null
   },
 
+  /**
+   * Same as `getProductById` but eagerly hydrates the `productType`
+   * relation so consumers (slot detail page, etc.) can render a
+   * category-style badge without a second round-trip. `productType` is
+   * `null` when the product has no type assigned.
+   */
+  async getProductByIdWithType(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .select({
+        product: products,
+        productType: {
+          id: productTypes.id,
+          name: productTypes.name,
+          code: productTypes.code,
+        },
+      })
+      .from(products)
+      .leftJoin(productTypes, eq(productTypes.id, products.productTypeId))
+      .where(eq(products.id, id))
+      .limit(1)
+    if (!row) return null
+    return {
+      ...row.product,
+      productType: row.productType?.id ? row.productType : null,
+    }
+  },
+
   async createProduct(db: PostgresJsDatabase, data: CreateProductInput) {
     const [row] = await db.insert(products).values(data).returning()
     if (!row) {

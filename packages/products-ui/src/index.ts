@@ -96,6 +96,10 @@ export {
   ProductOptionsSection,
   type ProductOptionsSectionProps,
 } from "./components/product-options-section.js"
+export {
+  ProductQuickViewSheet,
+  type ProductQuickViewSheetProps,
+} from "./components/product-quick-view-sheet.js"
 export { ProductTagDialog, type ProductTagDialogProps } from "./components/product-tag-dialog.js"
 export { ProductTagForm, type ProductTagFormProps } from "./components/product-tag-form.js"
 export { ProductTagList, type ProductTagListProps } from "./components/product-tag-list.js"

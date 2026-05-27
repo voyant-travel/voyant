@@ -8,7 +8,7 @@
   "files": [
     {
       "path": "registry/cruises/external-badge.tsx",
-      "content": "\"use client\"\n\nimport type * as React from \"react\"\n\nimport { Badge } from \"@/components/ui/badge\"\nimport { cn } from \"@/lib/utils\"\n\nexport interface ExternalCruiseBadgeProps extends React.ComponentPropsWithoutRef<typeof Badge> {\n  /** The adapter that sourced the cruise (e.g. \"voyant-connect\", \"custom\"). */\n  sourceProvider: string\n}\n\n/**\n * Small inline badge that surfaces cruise provenance to admin/storefront UIs.\n * Renders as a subtle \"External · <provider>\" pill so operators (and shoppers,\n * if the storefront opts in) can see at a glance which inventory comes from\n * upstream and which is the operator's own.\n */\nexport function ExternalCruiseBadge({\n  sourceProvider,\n  className,\n  ...props\n}: ExternalCruiseBadgeProps) {\n  return (\n    <Badge\n      data-slot=\"external-cruise-badge\"\n      variant=\"outline\"\n      className={cn(\"font-normal\", className)}\n      title={`Sourced via ${sourceProvider}`}\n      {...props}\n    >\n      <span aria-hidden=\"true\" className=\"mr-1\">\n        ↗\n      </span>\n      External · {sourceProvider}\n    </Badge>\n  )\n}\n",
+      "content": "export {\n  ExternalCruiseBadge,\n  type ExternalCruiseBadgeProps,\n} from \"@voyantjs/cruises-ui/components/external-badge\"\n",
       "type": "registry:component",
       "target": "components/voyant/cruises/external-badge.tsx"
     }

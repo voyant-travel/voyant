@@ -8,7 +8,7 @@
   "files": [
     {
       "path": "registry/crm/person-card-connected.tsx",
-      "content": "\"use client\"\n\nimport { usePerson } from \"@voyantjs/crm-react\"\nimport { Loader2 } from \"lucide-react\"\n\nimport { Card, CardContent } from \"@/components/ui/card\"\n\nimport { PersonCard, type PersonCardProps } from \"./person-card\"\n\nexport interface PersonCardConnectedProps extends Omit<PersonCardProps, \"person\"> {\n  personId: string\n}\n\n/**\n * Fetches a person by id and renders `<PersonCard />`. Use this when you\n * already have the id but not the full record.\n */\nexport function PersonCardConnected({ personId, ...props }: PersonCardConnectedProps) {\n  const { data, isPending, isError, error } = usePerson(personId)\n\n  if (isPending) {\n    return (\n      <Card data-slot=\"person-card-connected-loading\">\n        <CardContent className=\"flex items-center justify-center p-6\">\n          <Loader2 className=\"size-4 animate-spin text-muted-foreground\" aria-hidden=\"true\" />\n        </CardContent>\n      </Card>\n    )\n  }\n\n  if (isError || !data) {\n    return (\n      <Card data-slot=\"person-card-connected-error\">\n        <CardContent className=\"p-6 text-sm text-destructive\">\n          Failed to load person: {error instanceof Error ? error.message : \"Unknown error\"}\n        </CardContent>\n      </Card>\n    )\n  }\n\n  return <PersonCard person={data} {...props} />\n}\n",
+      "content": "export {\n  PersonCardConnected,\n  type PersonCardConnectedProps,\n} from \"../../../crm-ui/src/components/person-card-connected\"\n",
       "type": "registry:component",
       "target": "components/voyant/crm/person-card-connected.tsx"
     }
