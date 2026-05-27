@@ -1,6 +1,5 @@
 ---
 "@voyantjs/availability-ui": minor
-"operator": patch
 ---
 
 Promote the slimmed-down operator availability page into `@voyantjs/availability-ui`.
