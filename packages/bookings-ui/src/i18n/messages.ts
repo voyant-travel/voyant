@@ -1014,8 +1014,17 @@ export type BookingsUiMessages = {
       country: string
     }
     partyTypeLabels: Record<"individual" | "company", string>
+    crmPicker: {
+      label: string
+      personSearchPlaceholder: string
+      personEmpty: string
+      organizationSearchPlaceholder: string
+      organizationEmpty: string
+    }
     actions: {
       cancel: string
+      selectFromCrm: string
+      hideCrmPicker: string
       save: string
     }
   }

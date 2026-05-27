@@ -1111,8 +1111,17 @@ export const bookingsUiRo = {
       individual: "Persoana fizica",
       company: "Companie",
     },
+    crmPicker: {
+      label: "Sursa CRM",
+      personSearchPlaceholder: "Cauta persoane...",
+      personEmpty: "Nicio persoana gasita.",
+      organizationSearchPlaceholder: "Cauta organizatii...",
+      organizationEmpty: "Nicio organizatie gasita.",
+    },
     actions: {
       cancel: "Anuleaza",
+      selectFromCrm: "Selecteaza din CRM",
+      hideCrmPicker: "Ascunde selectorul CRM",
       save: "Salveaza modificarile",
     },
   },

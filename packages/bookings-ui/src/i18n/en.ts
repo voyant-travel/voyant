@@ -1110,8 +1110,17 @@ export const bookingsUiEn = {
       individual: "Individual",
       company: "Company",
     },
+    crmPicker: {
+      label: "CRM source",
+      personSearchPlaceholder: "Search people...",
+      personEmpty: "No people found.",
+      organizationSearchPlaceholder: "Search organizations...",
+      organizationEmpty: "No organizations found.",
+    },
     actions: {
       cancel: "Cancel",
+      selectFromCrm: "Select from CRM",
+      hideCrmPicker: "Hide CRM picker",
       save: "Save changes",
     },
   },
