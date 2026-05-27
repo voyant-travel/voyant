@@ -25,6 +25,15 @@ export const successEnvelope = z.object({ success: z.boolean() })
 export const productOptionSchema = z.object({
   id: z.string(),
   name: z.string(),
+  sellCurrency: z.string().nullable().default(null),
+  productType: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      code: z.string().nullable().default(null),
+    })
+    .nullable()
+    .default(null),
 })
 
 export type ProductOption = z.infer<typeof productOptionSchema>
@@ -266,6 +275,8 @@ export const allocationManifestBookingSchema = z.object({
   contactPhone: z.string().nullable(),
   sellCurrency: z.string().nullable(),
   pax: z.number().int().nullable(),
+  sellAmountCents: z.number().int().nullable().default(null),
+  paidAmountCents: z.number().int().nullable().default(null),
   travelers: z.array(allocationManifestTravelerSchema),
 })
 

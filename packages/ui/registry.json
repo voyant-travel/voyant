@@ -685,7 +685,7 @@
       "name": "voyant-bookings-booking-dialog",
       "type": "registry:component",
       "title": "Booking Dialog",
-      "description": "Single booking dialog for both create and edit: delegates to BookingCreateDialog (composed picker sections) when no booking prop is supplied, renders a flat edit form when one is. Use this from booking list/detail pages rather than BookingCreateDialog directly — the wrapper keeps state handling identical for both modes.",
+      "description": "Single booking dialog for both create and edit: delegates to BookingCreateSheet (composed picker sections) when no booking prop is supplied, renders a flat edit form when one is. Use this from booking list/detail pages rather than BookingCreateSheet directly — the wrapper keeps state handling identical for both modes.",
       "dependencies": ["@voyantjs/bookings-react", "lucide-react"],
       "registryDependencies": [
         "dialog",
@@ -693,7 +693,7 @@
         "label",
         "select",
         "textarea",
-        "voyant-bookings-booking-create-dialog"
+        "voyant-bookings-booking-create-sheet"
       ],
       "files": [
         {
@@ -865,10 +865,10 @@
       ]
     },
     {
-      "name": "voyant-bookings-booking-create-dialog",
+      "name": "voyant-bookings-booking-create-sheet",
       "type": "registry:component",
-      "title": "Booking Create Dialog",
-      "description": "Operator booking-create workflow composing every picker section (product, departure, rooms, person, shared-room, travelers, price breakdown, voucher, payment schedule) and submitting atomically via POST /v1/bookings/create. Consumed by BookingDialog for the create branch; apps that need a bespoke flow can install the sections individually and assemble their own dialog.",
+      "title": "Booking Create Sheet",
+      "description": "Operator booking-create workflow composing every picker section (product, departure, rooms, person, shared-room, travelers, price breakdown, voucher, payment schedule) and submitting atomically via POST /v1/bookings/create. Consumed by BookingDialog for the create branch; apps that need a bespoke flow can install the sections individually and assemble their own sheet.",
       "dependencies": [
         "@voyantjs/availability-react",
         "@voyantjs/bookings-react",
@@ -878,9 +878,8 @@
       "registryDependencies": [
         "button",
         "checkbox",
-        "dialog",
         "label",
-        "select",
+        "sheet",
         "textarea",
         "voyant-bookings-product-picker-section",
         "voyant-bookings-person-picker-section",
@@ -893,9 +892,9 @@
       ],
       "files": [
         {
-          "path": "registry/bookings/booking-create-dialog.tsx",
+          "path": "registry/bookings/booking-create-sheet.tsx",
           "type": "registry:component",
-          "target": "components/voyant/bookings/booking-create-dialog.tsx"
+          "target": "components/voyant/bookings/booking-create-sheet.tsx"
         }
       ]
     },

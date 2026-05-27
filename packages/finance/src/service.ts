@@ -1138,7 +1138,7 @@ interface RawUnifiedPaymentRow {
  * calling `.map` blows up under the wrapper shape — surface the rows
  * regardless of which driver is bound.
  */
-function toRows<T>(result: unknown): T[] {
+export function toRows<T>(result: unknown): T[] {
   if (Array.isArray(result)) return result as T[]
   if (result && typeof result === "object" && "rows" in result) {
     const rows = (result as { rows: unknown }).rows

@@ -35,7 +35,26 @@ export type BookingsUiMessages = {
     viewFullAction: string
     paxSuffix: string
     travelerUnnamed: string
+    sectionPayer: string
     sectionTravelers: string
+    sectionTravelerDocuments: string
+    travelerReveal: {
+      showAction: string
+      hideAction: string
+      empty: string
+      error: string
+      dateOfBirth: string
+      nationality: string
+      documentType: string
+      documentNumber: string
+      documentExpiry: string
+      documentIssuingCountry: string
+      documentIssuingAuthority: string
+      dietaryRequirements: string
+      accessibilityNeeds: string
+      bedPreference: string
+      address: string
+    }
     travelersEmpty: string
     travelerCategoryLabels: Record<"adult" | "child" | "infant" | "lead", string>
     sectionPayments: string

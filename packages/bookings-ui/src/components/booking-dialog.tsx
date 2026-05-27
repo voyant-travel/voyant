@@ -28,7 +28,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 
-import { BookingCreateDialog } from "./booking-create-dialog.js"
+import { BookingCreateSheet } from "./booking-create-sheet.js"
 
 function createBookingFormSchema(messages: ReturnType<typeof useBookingsUiMessagesOrDefault>) {
   return z.object({
@@ -85,7 +85,7 @@ const DEFAULT_CURRENCY = "EUR" // i18n-literal-ok ISO default currency
 /**
  * Single booking dialog that handles both create and edit:
  * - Create (no `booking` prop): renders the rich product → option → person
- *   picker flow via `BookingCreateDialog`, so the draft booking inherits
+ *   picker flow via `BookingCreateSheet`, so the draft booking inherits
  *   pricing, dates, and currency from the catalogue instead of being
  *   hand-entered.
  * - Edit (with `booking` prop): renders the flat form below that patches
@@ -101,7 +101,7 @@ export function BookingDialog({
 }: BookingDialogProps) {
   if (!booking) {
     return (
-      <BookingCreateDialog
+      <BookingCreateSheet
         open={open}
         onOpenChange={onOpenChange}
         defaultProductId={defaultProductId}

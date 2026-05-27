@@ -60,8 +60,9 @@ export {
 export {
   AvailabilitySlotDetailPage,
   type AvailabilitySlotDetailPageProps,
+  aggregateSlotFinancials,
+  getAvailabilitySlotAllocationQueryOptions,
   getAvailabilitySlotAssignmentsQueryOptions,
-  getAvailabilitySlotBookingsQueryOptions,
   getAvailabilitySlotCloseoutsQueryOptions,
   getAvailabilitySlotDetailQueryOptions,
   getAvailabilitySlotPickupPointsQueryOptions,

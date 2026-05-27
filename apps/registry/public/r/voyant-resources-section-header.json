@@ -8,7 +8,7 @@
   "files": [
     {
       "path": "registry/resources/resources-section-header.tsx",
-      "content": "import { Plus } from \"lucide-react\"\nimport { Button } from \"@/components/ui\"\n\nexport function ResourcesSectionHeader({\n  title,\n  description,\n  actionLabel,\n  onAction,\n}: {\n  title: string\n  description: string\n  actionLabel: string\n  onAction: () => void\n}) {\n  return (\n    <div className=\"flex items-center justify-between gap-4\">\n      <div>\n        <h2 className=\"text-lg font-semibold\">{title}</h2>\n        <p className=\"text-sm text-muted-foreground\">{description}</p>\n      </div>\n      <Button onClick={onAction}>\n        <Plus className=\"mr-2 h-4 w-4\" />\n        {actionLabel}\n      </Button>\n    </div>\n  )\n}\n",
+      "content": "export { ResourcesSectionHeader } from \"../../../resources-ui/src/components/resources-section-header\"\n",
       "type": "registry:component",
       "target": "components/voyant/resources/resources-section-header.tsx"
     }

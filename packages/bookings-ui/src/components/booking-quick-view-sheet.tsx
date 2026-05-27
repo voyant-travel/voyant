@@ -2,8 +2,12 @@
 
 import {
   type BookingRecord,
+  type BookingTravelerDocumentRecord,
+  type BookingTravelerRecord,
   bookingStatusBadgeVariant,
   useBooking,
+  useBookingTravelerDocuments,
+  useRevealTraveler,
   useTravelers,
 } from "@voyantjs/bookings-react"
 import { useOrganization, usePerson } from "@voyantjs/crm-react"
@@ -26,6 +30,10 @@ import {
 import {
   Badge,
   Button,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  cn,
   Sheet,
   SheetBody,
   SheetContent,
@@ -35,15 +43,24 @@ import {
 } from "@voyantjs/ui/components"
 import {
   ArrowRight,
+  Building2,
   Calendar,
+  ChevronDown,
   CreditCard,
   ExternalLink,
   FileText,
+  Globe,
+  Languages,
+  Mail,
+  MessageSquare,
+  Paperclip,
   Phone,
   ScrollText,
+  StickyNote,
+  User,
   Users,
 } from "lucide-react"
-import type { ReactNode } from "react"
+import { Fragment, type ReactNode, useState } from "react"
 
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/index.js"
 
@@ -161,7 +178,7 @@ function QuickViewBody({ booking, locale }: { booking: BookingRecord; locale: st
 
       <ContactSection booking={booking} />
 
-      <TravelersSection bookingId={booking.id} expectedPax={booking.pax} />
+      <TravelersSection bookingId={booking.id} expectedPax={booking.pax} locale={locale} />
 
       <PaymentsSection booking={booking} locale={locale} />
 
@@ -175,12 +192,16 @@ function QuickViewBody({ booking, locale }: { booking: BookingRecord; locale: st
 }
 
 function ContactSection({ booking }: { booking: BookingRecord }) {
+  const messages = useBookingsUiMessagesOrDefault()
+  const quick = messages.bookingQuickViewSheet
+  // Source of truth for billing snapshot is the booking row itself —
+  // those `contact_*` columns are stamped at create time and persist
+  // even if the linked CRM record changes. Fall back to the live person
+  // / organization for fields we don't snapshot (preferred language,
+  // website).
   const person = usePerson(booking.personId ?? undefined, {
     enabled: Boolean(booking.personId),
   }).data
-  // Always look up the organization when one is set — a booking can carry
-  // both `personId` and `organizationId`, and the org name may be the
-  // only payer label available when person/snapshot fields are empty.
   const organization = useOrganization(booking.organizationId ?? undefined, {
     enabled: Boolean(booking.organizationId),
   }).data
@@ -190,34 +211,97 @@ function ContactSection({ booking }: { booking: BookingRecord }) {
     (person ? [person.firstName, person.lastName].filter(Boolean).join(" ") : "") ||
     organization?.name ||
     ""
+  const email = booking.contactEmail ?? person?.email ?? null
   const phone = booking.contactPhone ?? person?.phone ?? null
+  const language = booking.contactPreferredLanguage ?? person?.preferredLanguage ?? null
+  const addressParts = [
+    booking.contactAddressLine1,
+    booking.contactAddressLine2,
+    [booking.contactPostalCode, booking.contactCity].filter(Boolean).join(" ") || null,
+    booking.contactRegion,
+    booking.contactCountry,
+  ].filter((part): part is string => Boolean(part))
 
-  if (!name && !phone) return null
+  if (!name && !email && !phone && addressParts.length === 0 && !organization) return null
 
   return (
-    <div className="flex flex-col gap-1.5">
-      {name ? <div className="text-sm font-medium">{name}</div> : null}
-      {phone ? (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Phone className="h-3.5 w-3.5" aria-hidden="true" />
-          <span className="truncate">{phone}</span>
-        </div>
-      ) : null}
-    </div>
+    <Section icon={<User className="h-3.5 w-3.5" />} label={quick.sectionPayer}>
+      <div className="flex flex-col gap-1.5">
+        {name ? <div className="text-sm font-medium">{name}</div> : null}
+        {organization?.name && organization.name !== name ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Building2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span className="truncate">{organization.name}</span>
+          </div>
+        ) : null}
+        {email ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <a href={`mailto:${email}`} className="truncate hover:underline">
+              {email}
+            </a>
+          </div>
+        ) : null}
+        {phone ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <a href={`tel:${phone}`} className="truncate hover:underline">
+              {phone}
+            </a>
+          </div>
+        ) : null}
+        {language ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Languages className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span className="truncate uppercase">{language}</span>
+          </div>
+        ) : null}
+        {person?.website ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <a
+              href={person.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="truncate hover:underline"
+            >
+              {person.website}
+            </a>
+          </div>
+        ) : null}
+        {addressParts.length > 0 ? (
+          <div className="text-xs text-muted-foreground">{addressParts.join(", ")}</div>
+        ) : null}
+      </div>
+    </Section>
   )
 }
 
 function TravelersSection({
   bookingId,
   expectedPax,
+  locale,
 }: {
   bookingId: string
   expectedPax: number | null
+  locale: string
 }) {
   const messages = useBookingsUiMessagesOrDefault()
   const quick = messages.bookingQuickViewSheet
   const { data } = useTravelers(bookingId)
+  const documentsQuery = useBookingTravelerDocuments(bookingId)
   const travelers = data?.data ?? []
+  const documentsByTravelerId = new Map<string, BookingTravelerDocumentRecord[]>()
+  // Booking-level documents (no `travelerId`) stay attached to the
+  // booking rather than the travelers list — surfacing them per-traveler
+  // would imply the wrong owner. We only group attachments that name a
+  // specific traveler.
+  for (const doc of documentsQuery.data?.data ?? []) {
+    if (!doc.travelerId) continue
+    const bucket = documentsByTravelerId.get(doc.travelerId) ?? []
+    bucket.push(doc)
+    documentsByTravelerId.set(doc.travelerId, bucket)
+  }
 
   const counter =
     expectedPax != null ? `${travelers.length}/${expectedPax}` : String(travelers.length)
@@ -231,32 +315,242 @@ function TravelersSection({
       {travelers.length === 0 ? (
         <p className="text-sm text-muted-foreground">{quick.travelersEmpty}</p>
       ) : (
-        <ul className="flex flex-col">
-          {travelers.map((traveler) => {
-            const name = [traveler.firstName, traveler.lastName].filter(Boolean).join(" ").trim()
-            const category = traveler.travelerCategory ?? null
-            const categoryLabel = category
-              ? (quick.travelerCategoryLabels[
-                  category as keyof typeof quick.travelerCategoryLabels
-                ] ?? category)
-              : null
-            return (
-              <li
-                key={traveler.id}
-                className="flex items-center justify-between gap-3 py-1 text-sm"
-              >
-                <span className="truncate">{name || quick.travelerUnnamed}</span>
-                {categoryLabel ? (
-                  <Badge variant="outline" className="text-[10px] uppercase">
-                    {categoryLabel}
-                  </Badge>
-                ) : null}
-              </li>
-            )
-          })}
+        <ul className="flex flex-col gap-2">
+          {travelers.map((traveler) => (
+            <TravelerCard
+              key={traveler.id}
+              bookingId={bookingId}
+              traveler={traveler}
+              documents={documentsByTravelerId.get(traveler.id) ?? []}
+              locale={locale}
+            />
+          ))}
         </ul>
       )}
     </Section>
+  )
+}
+
+function TravelerCard({
+  bookingId,
+  traveler,
+  documents,
+  locale,
+}: {
+  bookingId: string
+  traveler: BookingTravelerRecord
+  documents: BookingTravelerDocumentRecord[]
+  locale: string
+}) {
+  const messages = useBookingsUiMessagesOrDefault()
+  const quick = messages.bookingQuickViewSheet
+  const reveal = quick.travelerReveal
+  const [expanded, setExpanded] = useState(false)
+  // The reveal endpoint audit-logs every call, so it must only fire
+  // when the operator actively clicks "More info" — never on mount.
+  const revealQuery = useRevealTraveler(bookingId, traveler.id, { enabled: expanded })
+  const revealed = revealQuery.data?.data ?? null
+  const travelDetails = revealed?.travelDetails ?? null
+
+  const name = [traveler.firstName, traveler.lastName].filter(Boolean).join(" ").trim()
+  const category = traveler.travelerCategory ?? null
+  const categoryLabel = category
+    ? (quick.travelerCategoryLabels[category as keyof typeof quick.travelerCategoryLabels] ??
+      category)
+    : null
+
+  const revealRows: Array<{ label: string; value: ReactNode }> = []
+  if (travelDetails) {
+    if (travelDetails.dateOfBirth) {
+      revealRows.push({
+        label: reveal.dateOfBirth,
+        value: formatDate(travelDetails.dateOfBirth, locale, ""),
+      })
+    }
+    if (travelDetails.nationality) {
+      revealRows.push({
+        label: reveal.nationality,
+        value: <span className="uppercase">{travelDetails.nationality}</span>,
+      })
+    }
+    if (travelDetails.documentType) {
+      revealRows.push({
+        label: reveal.documentType,
+        value: (
+          <Badge variant="outline" className="text-[10px] uppercase">
+            {travelDetails.documentType.replace(/_/g, " ")}
+          </Badge>
+        ),
+      })
+    }
+    if (travelDetails.documentNumber) {
+      revealRows.push({
+        label: reveal.documentNumber,
+        value: <span className="font-mono text-xs">{travelDetails.documentNumber}</span>,
+      })
+    }
+    if (travelDetails.documentExpiry) {
+      revealRows.push({
+        label: reveal.documentExpiry,
+        value: formatDate(travelDetails.documentExpiry, locale, ""),
+      })
+    }
+    if (travelDetails.documentIssuingCountry) {
+      revealRows.push({
+        label: reveal.documentIssuingCountry,
+        value: <span className="uppercase">{travelDetails.documentIssuingCountry}</span>,
+      })
+    }
+    if (travelDetails.documentIssuingAuthority) {
+      revealRows.push({
+        label: reveal.documentIssuingAuthority,
+        value: travelDetails.documentIssuingAuthority,
+      })
+    }
+    if (travelDetails.dietaryRequirements) {
+      revealRows.push({
+        label: reveal.dietaryRequirements,
+        value: <span className="whitespace-pre-wrap">{travelDetails.dietaryRequirements}</span>,
+      })
+    }
+    if (travelDetails.accessibilityNeeds) {
+      revealRows.push({
+        label: reveal.accessibilityNeeds,
+        value: <span className="whitespace-pre-wrap">{travelDetails.accessibilityNeeds}</span>,
+      })
+    }
+    if (travelDetails.bedPreference) {
+      revealRows.push({
+        label: reveal.bedPreference,
+        value: (
+          <Badge variant="outline" className="text-[10px] uppercase">
+            {travelDetails.bedPreference.replace(/-/g, " ")}
+          </Badge>
+        ),
+      })
+    }
+  }
+
+  return (
+    <li className="flex flex-col gap-2 rounded-md border p-3 text-sm">
+      <div className="flex items-start justify-between gap-2">
+        <span className="truncate font-medium">{name || quick.travelerUnnamed}</span>
+        <div className="flex shrink-0 items-center gap-1">
+          {traveler.isPrimary ? (
+            <Badge variant="outline" className="text-[10px] uppercase">
+              {quick.travelerCategoryLabels.lead}
+            </Badge>
+          ) : null}
+          {categoryLabel ? (
+            <Badge variant="outline" className="text-[10px] uppercase">
+              {categoryLabel}
+            </Badge>
+          ) : null}
+        </div>
+      </div>
+      <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+        {traveler.email ? (
+          <div className="flex items-center gap-1.5">
+            <Mail className="h-3 w-3 shrink-0" aria-hidden="true" />
+            <a href={`mailto:${traveler.email}`} className="truncate hover:underline">
+              {traveler.email}
+            </a>
+          </div>
+        ) : null}
+        {traveler.phone ? (
+          <div className="flex items-center gap-1.5">
+            <Phone className="h-3 w-3 shrink-0" aria-hidden="true" />
+            <a href={`tel:${traveler.phone}`} className="truncate hover:underline">
+              {traveler.phone}
+            </a>
+          </div>
+        ) : null}
+        {traveler.preferredLanguage ? (
+          <div className="flex items-center gap-1.5">
+            <Languages className="h-3 w-3 shrink-0" aria-hidden="true" />
+            <span className="truncate uppercase">{traveler.preferredLanguage}</span>
+          </div>
+        ) : null}
+        {traveler.specialRequests ? (
+          <div className="flex items-start gap-1.5">
+            <MessageSquare className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+            <span className="whitespace-pre-wrap">{traveler.specialRequests}</span>
+          </div>
+        ) : null}
+        {traveler.notes ? (
+          <div className="flex items-start gap-1.5">
+            <StickyNote className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+            <span className="whitespace-pre-wrap">{traveler.notes}</span>
+          </div>
+        ) : null}
+      </div>
+      {documents.length > 0 ? (
+        <div className="flex flex-col gap-1 border-t pt-2">
+          <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            <Paperclip className="h-3 w-3" aria-hidden="true" />
+            {quick.sectionTravelerDocuments}
+            <span className="font-mono normal-case">{documents.length}</span>
+          </div>
+          <ul className="flex flex-col">
+            {documents.map((doc) => (
+              <li key={doc.id} className="flex items-center justify-between gap-2 py-0.5 text-xs">
+                <a
+                  href={doc.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-w-0 items-center gap-1 hover:underline"
+                >
+                  <span className="truncate">{doc.fileName}</span>
+                  <ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" />
+                </a>
+                <Badge variant="outline" className="shrink-0 text-[10px] uppercase">
+                  {doc.type.replace(/_/g, " ")}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      <Collapsible open={expanded} onOpenChange={setExpanded}>
+        <CollapsibleTrigger
+          render={
+            <button
+              type="button"
+              className="flex w-full items-center justify-between gap-2 border-t pt-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <span>{expanded ? reveal.hideAction : reveal.showAction}</span>
+              <ChevronDown
+                className={cn(
+                  "h-3 w-3 shrink-0 transition-transform",
+                  expanded ? "rotate-180" : null,
+                )}
+                aria-hidden="true"
+              />
+            </button>
+          }
+        />
+        <CollapsibleContent className="data-closed:hidden">
+          <div className="mt-2 flex flex-col gap-1.5 text-xs">
+            {revealQuery.isFetching && revealRows.length === 0 ? (
+              <p className="text-muted-foreground">{messages.common.loading}</p>
+            ) : revealQuery.isError ? (
+              <p className="text-destructive">{reveal.error}</p>
+            ) : revealRows.length === 0 ? (
+              <p className="text-muted-foreground">{reveal.empty}</p>
+            ) : (
+              <dl className="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1">
+                {revealRows.map((row) => (
+                  <Fragment key={row.label}>
+                    <dt className="text-muted-foreground">{row.label}</dt>
+                    <dd className="break-words text-right">{row.value}</dd>
+                  </Fragment>
+                ))}
+              </dl>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    </li>
   )
 }
 
@@ -495,7 +789,7 @@ function Section({
 }: {
   icon: ReactNode
   label: string
-  count: string
+  count?: string
   children: ReactNode
 }) {
   return (
@@ -505,7 +799,7 @@ function Section({
           {icon}
           {label}
         </span>
-        <span className="font-mono normal-case">{count}</span>
+        {count ? <span className="font-mono normal-case">{count}</span> : null}
       </header>
       {children}
     </section>

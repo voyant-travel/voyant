@@ -19,7 +19,7 @@ that spacing when a shell owns the page chrome.
 ## Components
 
 - `BookingsPage`, `BookingDetailPage`
-- `BookingList`, `BookingDialog`, `BookingCreateDialog`, `BookingCancellationDialog`, `StatusChangeDialog`
+- `BookingList`, `BookingDialog`, `BookingCreateSheet`, `BookingCancellationDialog`, `StatusChangeDialog`
 - `TravelerList`, `TravelerDialog`, `BookingItemList`, `BookingGroupSection`
 - `BookingPaymentsSummary`, `BookingPaymentScheduleList`, `BookingGuaranteeList`
 - `SupplierStatusList`, `BookingActivityTimeline`, `BookingNotes`

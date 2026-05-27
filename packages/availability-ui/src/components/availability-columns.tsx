@@ -10,12 +10,14 @@ import {
   formatDateTime,
   type ProductOption,
   productNameById,
-  slotStatusVariant,
+  slotStatusTone,
 } from "@voyantjs/availability-react"
 import { Badge, Button } from "@voyantjs/ui/components"
 import { DataTableColumnHeader } from "@voyantjs/ui/components/data-table-column-header"
-import { ExternalLink } from "lucide-react"
+import { cn } from "@voyantjs/ui/lib/utils"
+import { ExternalLink, Pencil } from "lucide-react"
 import { useAvailabilityUiMessagesOrDefault } from "../i18n/index.js"
+import { slotStatusToneClass } from "./slot-status-tone.js"
 
 export interface AvailabilityColumnsMessages {
   activeLabel: string
@@ -29,11 +31,14 @@ export interface AvailabilityColumnsMessages {
   maxPaxLabel: string
   nameLabel: string
   openLabel: string
+  editLabel: string
   productLabel: string
   productLevelLabel: string
   reasonLabel: string
   recurrenceLabel: string
   remainingPaxLabel: string
+  totalPaxLabel: string
+  endsAtLabel: string
   slotLabel: string
   startLabel: string
   startsAtLabel: string
@@ -76,6 +81,23 @@ function ViewButton({ label, onClick }: { label: string; onClick: () => void }) 
       }}
     >
       <ExternalLink className="mr-2 h-4 w-4" />
+      {label}
+    </Button>
+  )
+}
+
+function EditButton({ label, onClick }: { label: string; onClick: () => void }) {
+  useAvailabilityUiMessagesOrDefault()
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={(event) => {
+        event.stopPropagation()
+        onClick()
+      }}
+    >
+      <Pencil className="mr-2 h-4 w-4" />
       {label}
     </Button>
   )
@@ -181,6 +203,7 @@ export const availabilitySlotColumns = (
   products: ProductOption[],
   onView: (slotId: string) => void,
   messages: AvailabilityColumnsMessages,
+  onEdit?: (slot: AvailabilitySlotRow) => void,
 ): ColumnDef<AvailabilitySlotRow>[] => [
   {
     accessorKey: "productId",
@@ -188,15 +211,24 @@ export const availabilitySlotColumns = (
     cell: ({ row }) => productNameById(products, row.original.productId, row.original.productName),
   },
   {
-    accessorKey: "dateLocal",
-    header: ({ column }) => <DataTableColumnHeader column={column} title={messages.dateLabel} />,
-  },
-  {
     accessorKey: "startsAt",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={messages.startsAtLabel} />
     ),
     cell: ({ row }) => formatDateTime(row.original.startsAt),
+  },
+  {
+    accessorKey: "endsAt",
+    header: ({ column }) => <DataTableColumnHeader column={column} title={messages.endsAtLabel} />,
+    cell: ({ row }) =>
+      row.original.endsAt ? formatDateTime(row.original.endsAt) : messages.details.noValue,
+  },
+  {
+    accessorKey: "initialPax",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={messages.totalPaxLabel} />
+    ),
+    cell: ({ row }) => row.original.initialPax ?? messages.details.noValue,
   },
   {
     accessorKey: "remainingPax",
@@ -209,16 +241,24 @@ export const availabilitySlotColumns = (
     accessorKey: "status",
     header: ({ column }) => <DataTableColumnHeader column={column} title={messages.statusLabel} />,
     cell: ({ row }) => (
-      <Badge variant={slotStatusVariant[row.original.status]} className="capitalize">
+      <Badge
+        variant="outline"
+        className={cn("capitalize", slotStatusToneClass[slotStatusTone[row.original.status]])}
+      >
         {getSlotStatusLabel(row.original.status, messages)}
       </Badge>
     ),
   },
   {
-    id: "view",
-    header: messages.viewLabel,
+    id: "actions",
+    header: () => <span className="sr-only">{messages.viewLabel}</span>,
     cell: ({ row }) => (
-      <ViewButton label={messages.openLabel} onClick={() => onView(row.original.id)} />
+      <div className="flex items-center justify-end gap-1">
+        {onEdit ? (
+          <EditButton label={messages.editLabel} onClick={() => onEdit(row.original)} />
+        ) : null}
+        <ViewButton label={messages.openLabel} onClick={() => onView(row.original.id)} />
+      </div>
     ),
   },
 ]

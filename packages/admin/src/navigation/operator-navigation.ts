@@ -64,6 +64,12 @@ export function createOperatorAdminNavigation({
       ],
     },
     {
+      id: "availability",
+      title: messages.availability,
+      url: "/availability",
+      icon: icons.availability,
+    },
+    {
       id: "bookings",
       title: messages.bookings,
       url: "/bookings",
@@ -124,12 +130,6 @@ export function createOperatorAdminNavigation({
       title: messages.organizations,
       url: "/organizations",
       icon: icons.organizations,
-    },
-    {
-      id: "availability",
-      title: messages.availability,
-      url: "/availability",
-      icon: icons.availability,
     },
     {
       id: "resources",

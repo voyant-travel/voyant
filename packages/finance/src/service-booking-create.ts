@@ -24,7 +24,7 @@ import type {
   VoucherRedemption,
 } from "./schema.js"
 import { bookingPaymentSchedules, vouchers } from "./schema.js"
-import { financeService } from "./service.js"
+import { financeService, toRows } from "./service.js"
 import { financeDocumentsService, type InvoiceDocumentGenerator } from "./service-documents.js"
 import { VoucherServiceError, vouchersService } from "./service-vouchers.js"
 import {
@@ -567,7 +567,7 @@ async function loadProductOptionUnits(
   tx: PostgresJsDatabase,
   productId: string,
 ): Promise<PricingAssignmentUnit[]> {
-  const rows = await tx.execute(sql`
+  const result = await tx.execute(sql`
     SELECT
       ou.id          AS "optionUnitId",
       ou.option_id   AS "optionId",
@@ -580,7 +580,7 @@ async function loadProductOptionUnits(
     JOIN product_options po ON po.id = ou.option_id
     WHERE po.product_id = ${productId}
   `)
-  return (rows as unknown as PricingAssignmentUnit[]).map((row) => ({
+  return toRows<PricingAssignmentUnit>(result).map((row) => ({
     optionId: row.optionId ?? null,
     optionUnitId: row.optionUnitId,
     unitName: row.unitName,

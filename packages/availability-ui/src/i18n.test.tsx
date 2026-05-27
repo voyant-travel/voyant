@@ -27,7 +27,7 @@ describe("availability-ui i18n", () => {
 
     expect(result.page.filters.productSearchEmpty).toBe("Niciun rezultat.")
     expect(result.title).toBe("Disponibilitate")
-    expect(result.tabSlots).toBe("Sloturi")
+    expect(result.tabSlots).toBe("Listă")
   })
 
   it("returns locale-aware formatters from the package helper", () => {
