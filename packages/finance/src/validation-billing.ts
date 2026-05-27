@@ -455,6 +455,13 @@ export const renderInvoiceInputSchema = z.object({
 
 export const generateInvoiceDocumentInputSchema = renderInvoiceInputSchema.extend({
   replaceExisting: z.boolean().default(true),
+  publicDelivery: z.boolean().default(false),
+  publicDeliveryTtlSeconds: z
+    .number()
+    .int()
+    .min(1)
+    .max(30 * 24 * 60 * 60)
+    .optional(),
 })
 
 export const invoiceDocumentWaitQuerySchema = invoiceDocumentWaitFieldsSchema

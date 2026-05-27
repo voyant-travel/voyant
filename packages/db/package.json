@@ -41,6 +41,7 @@
     "./schema/infra/domains": "./src/schema/infra/domains.ts",
     "./schema/infra/email_domain_records": "./src/schema/infra/email_domain_records.ts",
     "./schema/infra/idempotency_keys": "./src/schema/infra/idempotency_keys.ts",
+    "./schema/infra/public_document_delivery_grants": "./src/schema/infra/public_document_delivery_grants.ts",
     "./schema/infra/rate_limit_buckets": "./src/schema/infra/rate_limit_buckets.ts",
     "./schema/infra/webhook_deliveries": "./src/schema/infra/webhook_deliveries.ts",
     "./schema/infra/webhook_subscriptions": "./src/schema/infra/webhook_subscriptions.ts",
@@ -221,6 +222,11 @@
         "types": "./dist/schema/infra/idempotency_keys.d.ts",
         "import": "./dist/schema/infra/idempotency_keys.js",
         "default": "./dist/schema/infra/idempotency_keys.js"
+      },
+      "./schema/infra/public_document_delivery_grants": {
+        "types": "./dist/schema/infra/public_document_delivery_grants.d.ts",
+        "import": "./dist/schema/infra/public_document_delivery_grants.js",
+        "default": "./dist/schema/infra/public_document_delivery_grants.js"
       },
       "./schema/infra/rate_limit_buckets": {
         "types": "./dist/schema/infra/rate_limit_buckets.d.ts",

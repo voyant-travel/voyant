@@ -183,6 +183,13 @@ export const generateContractDocumentInputSchema = z.object({
   kind: z.string().min(1).max(50).default("document"),
   replaceExisting: z.boolean().default(true),
   issueIfDraft: z.boolean().default(true),
+  publicDelivery: z.boolean().default(false),
+  publicDeliveryTtlSeconds: z
+    .number()
+    .int()
+    .min(1)
+    .max(30 * 24 * 60 * 60)
+    .optional(),
 })
 
 export const generateContractForBookingInputSchema = z.object({
@@ -191,6 +198,13 @@ export const generateContractForBookingInputSchema = z.object({
   channelId: z.string().optional().nullable(),
   fallbackLanguages: z.array(z.string().min(2).max(10)).optional().default([]),
   requireNumberSeries: z.boolean().default(true),
+  publicDelivery: z.boolean().default(false),
+  publicDeliveryTtlSeconds: z
+    .number()
+    .int()
+    .min(1)
+    .max(30 * 24 * 60 * 60)
+    .optional(),
 })
 
 export type GenerateContractForBookingInput = z.infer<typeof generateContractForBookingInputSchema>

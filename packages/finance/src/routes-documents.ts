@@ -1,7 +1,11 @@
 import type { EventBus, ModuleContainer } from "@voyantjs/core"
-import { parseOptionalJsonBody } from "@voyantjs/hono"
+import {
+  createDrizzlePublicDocumentDeliveryGrantStore,
+  createPublicDocumentDeliveryGrant,
+  parseOptionalJsonBody,
+} from "@voyantjs/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { Hono } from "hono"
+import { type Context, Hono } from "hono"
 
 import { resolveStoredDocumentDownload } from "./document-download.js"
 import {
@@ -59,10 +63,11 @@ export function createFinanceAdminDocumentRoutes(options: FinanceDocumentRouteOp
         return c.json({ error: "Invoice document generator is not configured" }, 501)
       }
 
+      const input = await parseOptionalJsonBody(c, generateInvoiceDocumentInputSchema)
       const result = await financeDocumentsService.generateInvoiceDocument(
         c.get("db"),
         c.req.param("id"),
-        await parseOptionalJsonBody(c, generateInvoiceDocumentInputSchema),
+        input,
         { generator, bindings: c.env, eventBus: runtime.eventBus },
       )
 
@@ -74,7 +79,7 @@ export function createFinanceAdminDocumentRoutes(options: FinanceDocumentRouteOp
         return c.json({ error: "Invoice document generation failed" }, 502)
       }
 
-      return c.json({ data: await attachDownloadEnvelope(c.env, runtime, result) }, 201)
+      return c.json({ data: await attachDownloadEnvelope(c, runtime, result, input) }, 201)
     })
     .post("/invoices/:id/regenerate-document", async (c) => {
       const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
@@ -83,10 +88,11 @@ export function createFinanceAdminDocumentRoutes(options: FinanceDocumentRouteOp
         return c.json({ error: "Invoice document generator is not configured" }, 501)
       }
 
+      const input = await parseOptionalJsonBody(c, generateInvoiceDocumentInputSchema)
       const result = await financeDocumentsService.regenerateInvoiceDocument(
         c.get("db"),
         c.req.param("id"),
-        await parseOptionalJsonBody(c, generateInvoiceDocumentInputSchema),
+        input,
         { generator, bindings: c.env, eventBus: runtime.eventBus },
       )
 
@@ -98,7 +104,7 @@ export function createFinanceAdminDocumentRoutes(options: FinanceDocumentRouteOp
         return c.json({ error: "Invoice document generation failed" }, 502)
       }
 
-      return c.json({ data: await attachDownloadEnvelope(c.env, runtime, result) })
+      return c.json({ data: await attachDownloadEnvelope(c, runtime, result, input) })
     })
     .get("/invoice-renditions/:id/download", async (c) => {
       const runtime = getRuntime(options, c.env, (key) => c.var.container?.resolve(key))
@@ -123,11 +129,48 @@ export function createFinanceAdminDocumentRoutes(options: FinanceDocumentRouteOp
 }
 
 async function attachDownloadEnvelope<
-  T extends { rendition: { storageKey?: string | null; metadata?: unknown } },
->(bindings: Record<string, unknown>, runtime: FinanceRouteRuntime, result: T) {
+  T extends {
+    rendition: {
+      id?: string | null
+      format?: string | null
+      storageKey?: string | null
+      metadata?: unknown
+    }
+  },
+>(
+  c: Context<Env>,
+  runtime: FinanceRouteRuntime,
+  result: T,
+  input: { publicDelivery?: boolean; publicDeliveryTtlSeconds?: number | undefined },
+) {
   const download = await resolveStoredDocumentDownload(result.rendition, {
-    bindings,
+    bindings: c.env,
     resolveDocumentDownloadUrl: runtime.resolveDocumentDownloadUrl,
   })
-  return download.status === "ready" ? { ...result, download: download.download } : result
+  const withAdminDownload =
+    download.status === "ready" ? { ...result, download: download.download } : result
+
+  if (!input.publicDelivery || !result.rendition.storageKey) {
+    return withAdminDownload
+  }
+
+  const publicDownload = await createPublicDocumentDeliveryGrant(
+    createDrizzlePublicDocumentDeliveryGrantStore(c.get("db")),
+    {
+      storageKey: result.rendition.storageKey,
+      publicBaseUrl: new URL(c.req.url).origin,
+      ttlSeconds: input.publicDeliveryTtlSeconds,
+      filename: download.status === "ready" ? download.download.filename : null,
+      contentType: result.rendition.format === "pdf" ? "application/pdf" : null,
+      source: {
+        module: "finance",
+        entity: "invoice_rendition",
+        id: result.rendition.id ?? null,
+      },
+      createdBy: c.get("userId") ?? null,
+      createdByType: c.get("userId") ? "staff" : null,
+    },
+  )
+
+  return { ...withAdminDownload, publicDownload }
 }

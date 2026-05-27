@@ -11,7 +11,7 @@ import { extrasHonoModule } from "@voyantjs/extras"
 import { facilitiesHonoModule } from "@voyantjs/facilities"
 import { createFinanceHonoModule, createVoyantDataFxExchangeRateResolver } from "@voyantjs/finance"
 import { groundHonoModule } from "@voyantjs/ground"
-import { createApp } from "@voyantjs/hono"
+import { createApp, createPublicDocumentDeliveryHonoModule } from "@voyantjs/hono"
 import { identityHonoModule } from "@voyantjs/identity"
 import { marketsHonoModule } from "@voyantjs/markets"
 import {
@@ -79,6 +79,10 @@ const financeModule = createFinanceHonoModule({
   },
 })
 
+const publicDocumentDeliveryModule = createPublicDocumentDeliveryHonoModule<CloudflareBindings>({
+  resolveStorage: createDocumentStorage,
+})
+
 const crmHonoModule = createCrmHonoModule()
 const bookingsHonoModule = createBookingsHonoModule({
   resolveTravelSnapshot: (db, personId, { kms }) =>
@@ -108,6 +112,7 @@ export const app = createApp<CloudflareBindings>({
   publicPaths: [
     "/v1/public/customer-portal/contact-exists",
     "/v1/public/checkout",
+    "/v1/public/documents",
     "/v1/public/invitations",
   ],
   modules: [
@@ -132,6 +137,7 @@ export const app = createApp<CloudflareBindings>({
     productsHonoModule,
     bookingsHonoModule,
     financeModule,
+    publicDocumentDeliveryModule,
     storefrontHonoModule,
     customerPortalHonoModule,
     checkoutHonoModule,

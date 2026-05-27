@@ -62,6 +62,23 @@ export {
   serializePublicCapabilityCookie,
   verifyPublicCapabilityToken,
 } from "./public-capability.js"
+export {
+  type CreatePublicDocumentDeliveryInput,
+  createDrizzlePublicDocumentDeliveryGrantStore,
+  createPublicDocumentDeliveryGrant,
+  createPublicDocumentDeliveryHonoModule,
+  createPublicDocumentDeliveryRoutes,
+  type PublicDocumentDeliveryAccessContext,
+  type PublicDocumentDeliveryEnvelope,
+  type PublicDocumentDeliveryGrant,
+  type PublicDocumentDeliveryGrantStore,
+  type PublicDocumentDeliveryResolution,
+  type PublicDocumentDeliveryRouteOptions,
+  type PublicDocumentDeliverySource,
+  type RevokePublicDocumentDeliveryGrantInput,
+  resolvePublicDocumentDeliveryGrant,
+  revokePublicDocumentDeliveryGrant,
+} from "./public-document-delivery.js"
 export type {
   DbFactory,
   LogEntry,
