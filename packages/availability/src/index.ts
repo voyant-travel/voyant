@@ -75,10 +75,14 @@ export {
   sharingGroupLabels,
 } from "./schema.js"
 export {
+  type AllocationManifestBooking,
+  type AllocationManifestTraveler,
+  getSlotAllocationManifest,
   getSlotResourceAvailability,
   getSlotsResourceAvailability,
   type PlannedAllocation,
   type ResourceCapacityViolation,
+  type SlotAllocationManifest,
   type SlotResourceAvailability,
   validateSlotAllocationCapacity,
 } from "./service-allocation.js"
