@@ -1,5 +1,14 @@
 # @voyantjs/availability
 
+## 0.84.2
+
+### Patch Changes
+
+- 29c6e83: Export `getSlotAllocationManifest` and its manifest result types from the root package entrypoint.
+  - @voyantjs/core@0.84.2
+  - @voyantjs/db@0.84.2
+  - @voyantjs/hono@0.84.2
+
 ## 0.84.1
 
 ### Patch Changes
