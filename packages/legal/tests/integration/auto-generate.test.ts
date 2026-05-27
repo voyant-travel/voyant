@@ -1,5 +1,6 @@
 import { bookings, bookingTravelers } from "@voyantjs/bookings/schema"
 import { createEventBus } from "@voyantjs/core"
+import { invoices, payments } from "@voyantjs/finance/schema"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
@@ -263,6 +264,77 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
     )
     expect(outcome.status).toBe("ok")
     expect(bodies[0]).toContain("Overridden Lead")
+  })
+
+  it("exposes settlement variables from invoices and completed payments", async () => {
+    const { template, version } = await seedTemplate("cust-settlement-1")
+    await db
+      .update(contractTemplateVersions)
+      .set({
+        body: [
+          "Paid {{ booking.paidAmountCents }}",
+          "Balance {{ booking.balanceDueCents }}",
+          "Latest {{ payment.latestCompleted.methodLabel }}",
+          "Date {{ payment.latestCompleted.date }}",
+        ].join(" | "),
+      })
+      .where(eq(contractTemplateVersions.id, version.id))
+
+    const booking = await seedBooking({
+      sellCurrency: "RON",
+      sellAmountCents: 32000,
+    })
+    const [invoice] = await db
+      .insert(invoices)
+      .values({
+        invoiceNumber: `INV-${booking.bookingNumber}`,
+        bookingId: booking.id,
+        status: "paid",
+        currency: "RON",
+        subtotalCents: 32000,
+        taxCents: 0,
+        totalCents: 32000,
+        paidCents: 32000,
+        balanceDueCents: 0,
+        issueDate: "2026-05-01",
+        dueDate: "2026-05-10",
+      })
+      .returning()
+    await db.insert(payments).values({
+      invoiceId: invoice!.id,
+      amountCents: 32000,
+      currency: "RON",
+      paymentMethod: "bank_transfer",
+      status: "completed",
+      paymentDate: "2026-05-04",
+    })
+
+    const bodies: string[] = []
+    const outcome = await autoGenerateContractForBooking(
+      db,
+      { bookingId: booking.id, bookingNumber: booking.bookingNumber, actorId: null },
+      { enabled: true, templateSlug: template.slug },
+      { generator: makeGenerator(bodies) },
+    )
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+
+    const contract = await contractRecordsService.getContractById(db, outcome.contractId)
+    const variables = contract?.variables as Record<string, unknown>
+    const bookingVariables = variables.booking as Record<string, unknown>
+    const paymentVariables = variables.payment as Record<string, unknown>
+    const latestCompleted = paymentVariables.latestCompleted as Record<string, unknown>
+
+    expect(bookingVariables.paidAmountCents).toBe(32000)
+    expect(bookingVariables.balanceDueCents).toBe(0)
+    expect(latestCompleted).toMatchObject({
+      method: "bank_transfer",
+      methodLabel: "Bank Transfer",
+      date: "2026-05-04",
+    })
+    expect(paymentVariables.method).toBe("Bank Transfer")
+    expect(paymentVariables.capturedAt).toBe("2026-05-04")
+    expect(bodies[0]).toContain("Paid 32000 | Balance 0 | Latest Bank Transfer")
   })
 
   it("resolves a series by name and writes seriesId onto the contract", async () => {

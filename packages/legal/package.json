@@ -28,6 +28,7 @@
     "@voyantjs/core": "workspace:*",
     "@voyantjs/crm": "workspace:*",
     "@voyantjs/db": "workspace:*",
+    "@voyantjs/finance": "workspace:*",
     "@voyantjs/hono": "workspace:*",
     "@voyantjs/suppliers": "workspace:*",
     "@voyantjs/utils": "workspace:*",

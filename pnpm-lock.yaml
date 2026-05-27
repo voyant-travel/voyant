@@ -3378,6 +3378,9 @@ importers:
       '@voyantjs/db':
         specifier: workspace:*
         version: link:../db
+      '@voyantjs/finance':
+        specifier: workspace:*
+        version: link:../finance
       '@voyantjs/hono':
         specifier: workspace:*
         version: link:../hono
