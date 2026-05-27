@@ -21,27 +21,7 @@
 import { trigger, workflow } from "@voyantjs/workflows"
 
 import { PROMOTION_CHANGED_EVENT, type PromotionChangedSource } from "./events.js"
-
-/**
- * Service-container key the operator template registers a concrete
- * implementation against. Kept stable + exported so consumers don't have
- * to repeat the magic string.
- */
-export const BULK_REINDEX_SERVICE_KEY = "promotions:bulk-reindex-products" as const
-
-/**
- * Contract the operator template implements. The workflow body resolves
- * this from `ctx.services` and calls into it from steps.
- *
- * Two methods so the workflow can split enumeration from per-product
- * reindex — that's what makes the parallel-step pattern viable on edge
- * runtime. A single `reindexAllProducts()` would have to do everything in
- * one step, which is what we're trying to avoid.
- */
-export interface BulkReindexProductsService {
-  listAllProductIds(): Promise<string[]>
-  reindexProduct(productId: string): Promise<void>
-}
+import { BULK_REINDEX_SERVICE_KEY, type BulkReindexProductsService } from "./workflow-runtime.js"
 
 export interface BulkReindexProductsInput {
   /** The offer that triggered the reindex (for logging / correlation). */

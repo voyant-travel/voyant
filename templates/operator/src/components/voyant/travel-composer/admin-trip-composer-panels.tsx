@@ -86,7 +86,7 @@ import * as React from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
 
-type CatalogVertical = "products" | "hospitality" | "cruises" | "extras" | "flights"
+type CatalogVertical = "products" | "accommodations" | "cruises" | "extras" | "flights"
 export type PendingVerticalKind = "product" | "stay" | "flight" | "cruise" | "manual"
 
 type PanelsMessages = ReturnType<typeof useAdminMessages>["trips"]["adminComposer"]["panels"]
@@ -107,7 +107,7 @@ interface AvailabilitySlot {
 
 // Shared shape for the catalog-backed kinds. The vertical isn't stored on
 // the pending component itself — it's implied by `kind` (`product` →
-// products, `stay` → hospitality). That keeps the menu single-step (no
+// products, `stay` → accommodations). That keeps the menu single-step (no
 // secondary picker) and the per-kind catalog query well-scoped.
 type CatalogPendingFields = {
   localId: string
@@ -183,7 +183,7 @@ function verticalsFor(messages: PanelsMessages): Array<{
 }
 
 function verticalForKind(kind: "product" | "stay"): CatalogVertical {
-  return kind === "stay" ? "hospitality" : "products"
+  return kind === "stay" ? "accommodations" : "products"
 }
 
 function genLocalId() {
@@ -2931,7 +2931,7 @@ function Reference({
 
 function componentIcon(component: TripComponent) {
   if (component.kind === "flight_placeholder" || component.kind === "flight_order") return Plane
-  if (component.entityModule === "hospitality") return BedDouble
+  if (component.entityModule === "accommodations") return BedDouble
   if (component.kind === "manual_placeholder" || component.kind === "external_order")
     return Landmark
   return RouteIcon
@@ -3089,7 +3089,7 @@ export function componentTitleFor(
           name?: string | null
           thumbnailUrl?: string | null
         }
-        hospitality?: {
+        accommodation?: {
           name?: string | null
           propertyName?: string | null
           roomTypeName?: string | null
@@ -3113,12 +3113,12 @@ export function componentTitleFor(
     if (cabin) return `Cabin ${cabin}`
   }
 
-  if (component.entityModule === "hospitality") {
-    const hospitalityName =
-      cleanDisplayLabel(metadata?.hospitality?.propertyName) ??
-      cleanDisplayLabel(metadata?.hospitality?.name) ??
-      cleanDisplayLabel(metadata?.hospitality?.roomTypeName)
-    if (hospitalityName) return hospitalityName
+  if (component.entityModule === "accommodations") {
+    const accommodationName =
+      cleanDisplayLabel(metadata?.accommodation?.propertyName) ??
+      cleanDisplayLabel(metadata?.accommodation?.name) ??
+      cleanDisplayLabel(metadata?.accommodation?.roomTypeName)
+    if (accommodationName) return accommodationName
   }
 
   if (metadata?.cruiseDraft) {

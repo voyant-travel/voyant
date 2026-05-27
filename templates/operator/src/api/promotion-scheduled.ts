@@ -42,7 +42,7 @@ import {
 import { withDbFromEnv } from "./lib/db"
 
 /** Cron expression — declared in `wrangler.jsonc` and matched against `event.cron` in `entry.ts`. */
-export const PROMOTION_BOUNDARY_SCHEDULER_CRON = "*/5 * * * *"
+export { PROMOTION_BOUNDARY_SCHEDULER_CRON } from "../scheduled-crons"
 
 export async function runScheduledPromotionBoundary(
   _event: ScheduledController,

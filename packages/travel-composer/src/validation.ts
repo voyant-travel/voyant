@@ -131,7 +131,7 @@ export const listTripsQuerySchema = z.object({
   // Component-driven filters. Match trips that contain *at least one*
   // non-removed component referencing the given entity / vertical.
   productId: z.string().trim().min(1).max(255).optional(),
-  hospitalityId: z.string().trim().min(1).max(255).optional(),
+  accommodationId: z.string().trim().min(1).max(255).optional(),
   cruiseId: z.string().trim().min(1).max(255).optional(),
   hasFlight: z.coerce.boolean().optional(),
   // Envelope-level numeric / temporal filters.

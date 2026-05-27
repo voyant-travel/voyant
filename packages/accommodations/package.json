@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/accommodations",
-  "version": "0.82.1",
+  "version": "0.83.0",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
