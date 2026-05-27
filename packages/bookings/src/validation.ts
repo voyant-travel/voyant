@@ -640,6 +640,10 @@ export const insertBookingNoteSchema = z.object({
   content: z.string().min(1).max(10000),
 })
 
+export const updateBookingNoteSchema = z.object({
+  content: z.string().min(1).max(10000),
+})
+
 // ---------- documents ----------
 
 export const insertBookingDocumentSchema = z

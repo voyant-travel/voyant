@@ -59,7 +59,11 @@ export {
   BookingItemTravelers,
   type BookingItemTravelersProps,
 } from "./components/booking-item-travelers.js"
-export { BookingList, type BookingListProps } from "./components/booking-list.js"
+export {
+  BookingList,
+  type BookingListFiltersState,
+  type BookingListProps,
+} from "./components/booking-list.js"
 export { BookingNotes, type BookingNotesProps } from "./components/booking-notes.js"
 export {
   BookingPaymentReconciliationBanner,

@@ -3,7 +3,10 @@
 import { useNavigate } from "@tanstack/react-router"
 import { useAdminBreadcrumbs, useLocale } from "@voyantjs/admin"
 import { useBooking } from "@voyantjs/bookings-react"
-import { BookingDetailPage as CanonicalBookingDetailPage } from "@voyantjs/bookings-ui/components/booking-detail-page"
+import {
+  type BookingDetailTabValue,
+  BookingDetailPage as CanonicalBookingDetailPage,
+} from "@voyantjs/bookings-ui/components/booking-detail-page"
 import type { BookingPaymentsSummaryRow } from "@voyantjs/bookings-ui/components/booking-payments-summary"
 import { CollectPaymentDialog } from "@voyantjs/checkout-ui"
 import { useInvoices, usePaymentMutation } from "@voyantjs/finance-react"
@@ -19,12 +22,12 @@ import { useState } from "react"
 import { AdminWidgetSlotRenderer } from "@/components/admin/admin-widget-slot"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
-import { BookingActionLedgerPanel } from "./booking-action-ledger-panel"
 import { BookingDocumentsTable } from "./booking-documents-table"
 import { BookingInvoiceSheet } from "./booking-invoice-sheet"
 import { BookingInvoicesCard } from "./booking-invoices-card"
 import { BookingPaymentPolicyCard } from "./booking-payment-policy-card"
 import { BookingPendingPaymentSessions } from "./booking-pending-payment-sessions"
+import { useBookingActionLedgerEvents } from "./use-booking-action-ledger-events"
 
 /**
  * Operator wrapper around the canonical `BookingDetailPage`. The
@@ -40,7 +43,15 @@ import { BookingPendingPaymentSessions } from "./booking-pending-payment-session
  *     documents, action ledger).
  *   - Admin widget extension points (`AdminWidgetSlotRenderer`).
  */
-export function BookingDetailPage({ id }: { id: string }) {
+export function BookingDetailPage({
+  id,
+  activeTab,
+  onTabChange,
+}: {
+  id: string
+  activeTab?: BookingDetailTabValue
+  onTabChange?: (tab: BookingDetailTabValue) => void
+}) {
   const detailMessages = useAdminMessages().bookings.detail
   const { resolvedLocale } = useLocale()
   const navigate = useNavigate()
@@ -49,6 +60,8 @@ export function BookingDetailPage({ id }: { id: string }) {
   const [editingPayment, setEditingPayment] = useState<BookingPaymentsSummaryRow | null>(null)
   const [viewingInvoiceId, setViewingInvoiceId] = useState<string | null>(null)
   const { remove: removePayment } = usePaymentMutation()
+  const { events: actionLedgerEvents, footer: actionLedgerFooter } =
+    useBookingActionLedgerEvents(id)
   // Mirror the booking fetch so the admin chrome can render
   // breadcrumbs and the payment dialogs can read sell currency /
   // contact snapshots without prop-drilling through the canonical.
@@ -82,6 +95,8 @@ export function BookingDetailPage({ id }: { id: string }) {
         id={id}
         locale={resolvedLocale}
         hideBreadcrumb
+        activeTab={activeTab}
+        onTabChange={onTabChange}
         onBack={() => void navigate({ to: "/bookings" })}
         onPersonOpen={(personId) => void navigate({ to: "/people/$id", params: { id: personId } })}
         onOrganizationOpen={(organizationId) =>
@@ -167,9 +182,8 @@ export function BookingDetailPage({ id }: { id: string }) {
               />
             ),
           },
-          ledgerTab: {
-            content: <BookingActionLedgerPanel bookingId={id} />,
-          },
+          activityExtraEvents: actionLedgerEvents,
+          activityTimelineFooter: actionLedgerFooter,
           documents: () => <BookingDocumentsTable bookingId={id} apiBaseUrl={getApiUrl()} />,
         }}
       />

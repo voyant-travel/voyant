@@ -88,14 +88,22 @@ export type BookingsUiMessages = {
     summaryCreated: string
     summaryUpdated: string
     tabOverview: string
-    tabMeta: string
+    tabMetadata: string
     tabTravelers: string
     tabFinance: string
     tabInvoices: string
     tabSuppliers: string
     tabDocuments: string
     tabActivity: string
-    tabLedger: string
+    metadataSection: {
+      title: string
+      bookingId: string
+      bookingNumber: string
+      status: string
+      communicationLanguage: string
+      created: string
+      updated: string
+    }
     internalNotesLabel: string
     billingPayer: string
     billingEmail: string
@@ -1315,10 +1323,11 @@ export type BookingsUiMessages = {
     }
     /** "+{count} more" suffix when a booking has multiple items in the list cell. */
     itemsMore: string
+    /** Compact day-count tag next to the primary item: e.g. "(2 days)". */
+    itemDays: string
     loadingError: string
     empty: string
     showingSummary: string
-    pageSummary: string
     previousPage: string
     nextPage: string
   }
@@ -1360,9 +1369,28 @@ export type BookingsUiMessages = {
   }
   bookingNotes: {
     title: string
-    placeholder: string
-    add: string
+    addAction: string
     empty: string
+    authorLabel: string
+    actions: {
+      edit: string
+      delete: string
+    }
+    dialog: {
+      createTitle: string
+      editTitle: string
+      contentLabel: string
+      contentPlaceholder: string
+      cancel: string
+      create: string
+      save: string
+    }
+    deleteConfirm: {
+      title: string
+      description: string
+      cancel: string
+      confirm: string
+    }
   }
   bookingActivityTimeline: {
     title: string
@@ -1371,11 +1399,13 @@ export type BookingsUiMessages = {
       activity: string
       document: string
       payment: string
+      action: string
     }
     sourceLabels: {
       activity: string
       document: string
       payment: string
+      action: string
     }
     empty: string
     activityTitles: Record<string, string>

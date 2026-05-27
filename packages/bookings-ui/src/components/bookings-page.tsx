@@ -4,7 +4,7 @@ import type { BookingRecord } from "@voyantjs/bookings-react"
 import { cn } from "@voyantjs/ui/lib/utils"
 import type * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/index.js"
-import { BookingList } from "./booking-list.js"
+import { BookingList, type BookingListFiltersState } from "./booking-list.js"
 
 export interface BookingsPageProps {
   pageSize?: number
@@ -16,6 +16,9 @@ export interface BookingsPageProps {
    */
   headerActions?: React.ReactNode
   className?: string
+  /** Forwarded to `BookingList` — see prop docs there. */
+  initialFilters?: Partial<BookingListFiltersState>
+  onFiltersChange?: (filters: BookingListFiltersState) => void
 }
 
 export function BookingsPage({
@@ -24,6 +27,8 @@ export function BookingsPage({
   onCreateBooking,
   headerActions,
   className,
+  initialFilters,
+  onFiltersChange,
 }: BookingsPageProps = {}) {
   const messages = useBookingsUiMessagesOrDefault().bookingsPage
 
@@ -39,6 +44,8 @@ export function BookingsPage({
         onSelectBooking={onBookingOpen}
         onCreateBooking={onCreateBooking}
         headerActions={headerActions}
+        initialFilters={initialFilters}
+        onFiltersChange={onFiltersChange}
       />
     </div>
   )

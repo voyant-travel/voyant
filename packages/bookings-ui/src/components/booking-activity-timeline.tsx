@@ -2,7 +2,15 @@
 
 import { useBookingActivity, useBookingTravelerDocuments } from "@voyantjs/bookings-react"
 import { usePublicBookingPayments } from "@voyantjs/finance-react"
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
+import { Badge, Button } from "@voyantjs/ui/components"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@voyantjs/ui/components/pagination"
 import {
   Activity,
   Clock,
@@ -25,11 +33,22 @@ import {
 
 export interface BookingActivityTimelineProps {
   bookingId: string
+  /**
+   * Extra events to merge into the timeline alongside the built-in
+   * activity / document / payment sources. Operator templates pass
+   * action-ledger entries through here so the timeline stays a single
+   * chronological feed instead of getting split across tabs.
+   */
+  additionalEvents?: readonly TimelineEvent[]
+  /** Rendered below the pagination — e.g. a "load more" pager for action-ledger entries. */
+  footer?: React.ReactNode
+  /** Page size for the client-side pager. Defaults to 10. */
+  pageSize?: number
 }
 
-type TimelineSource = "activity" | "document" | "payment"
+export type TimelineSource = "activity" | "document" | "payment" | "action"
 
-type TimelineEvent = {
+export type TimelineEvent = {
   id: string
   source: TimelineSource
   title: string
@@ -62,12 +81,19 @@ const sourceVariant: Record<TimelineSource, "default" | "secondary" | "outline">
   activity: "outline",
   document: "secondary",
   payment: "default",
+  action: "secondary",
 }
 
 type Filter = TimelineSource | "all"
 
-export function BookingActivityTimeline({ bookingId }: BookingActivityTimelineProps) {
+export function BookingActivityTimeline({
+  bookingId,
+  additionalEvents,
+  footer,
+  pageSize = 10,
+}: BookingActivityTimelineProps) {
   const [filter, setFilter] = React.useState<Filter>("all")
+  const [pageIndex, setPageIndex] = React.useState(0)
   const { data: activityData } = useBookingActivity(bookingId)
   const { data: documentsData } = useBookingTravelerDocuments(bookingId)
   const { data: paymentsData } = usePublicBookingPayments(bookingId)
@@ -78,6 +104,7 @@ export function BookingActivityTimeline({ bookingId }: BookingActivityTimelinePr
     activity: messages.bookingActivityTimeline.sourceLabels.activity,
     document: messages.bookingActivityTimeline.sourceLabels.document,
     payment: messages.bookingActivityTimeline.sourceLabels.payment,
+    action: messages.bookingActivityTimeline.sourceLabels.action,
   }
 
   const events = React.useMemo<TimelineEvent[]>(() => {
@@ -90,7 +117,9 @@ export function BookingActivityTimeline({ bookingId }: BookingActivityTimelinePr
         title:
           messages.bookingActivityTimeline.activityTitles[entry.activityType] ?? entry.description,
         description: entry.description,
-        actorId: entry.actorId,
+        // Prefer the hydrated display name; fall back to email then raw
+        // id (system actors stay null and skip the "By …" render).
+        actorId: entry.actorName || entry.actorEmail || entry.actorId,
         timestamp: entry.createdAt,
         icon: activityIcons[entry.activityType] ?? Activity,
       })
@@ -134,22 +163,42 @@ export function BookingActivityTimeline({ bookingId }: BookingActivityTimelinePr
       })
     }
 
+    for (const extra of additionalEvents ?? []) {
+      merged.push(extra)
+    }
+
     merged.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     return merged
-  }, [activityData, documentsData, formatNumber, messages, paymentsData])
+  }, [activityData, additionalEvents, documentsData, formatNumber, messages, paymentsData])
 
   const visible = filter === "all" ? events : events.filter((e) => e.source === filter)
 
-  const filterChips: Filter[] = ["all", "activity", "document", "payment"]
+  const pageCount = Math.max(1, Math.ceil(visible.length / pageSize))
+  const safePageIndex = Math.min(pageIndex, pageCount - 1)
+  const pagedVisible = visible.slice(safePageIndex * pageSize, safePageIndex * pageSize + pageSize)
+
+  // Reset to page 1 whenever the filter changes. React's recommended
+  // pattern for derived state reset — cheaper and lint-clean compared
+  // to a useEffect.
+  const [lastFilter, setLastFilter] = React.useState(filter)
+  if (filter !== lastFilter) {
+    setLastFilter(filter)
+    setPageIndex(0)
+  }
+
+  const hasActionEvents = (additionalEvents?.length ?? 0) > 0
+  const filterChips: Filter[] = hasActionEvents
+    ? ["all", "activity", "document", "payment", "action"]
+    : ["all", "activity", "document", "payment"]
 
   return (
-    <Card data-slot="booking-activity-timeline">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2">
-          <Activity className="h-4 w-4" />
+    <div data-slot="booking-activity-timeline" className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 text-base font-semibold">
+          <Activity className="h-4 w-4 text-muted-foreground" />
           {messages.bookingActivityTimeline.title}
-        </CardTitle>
-        <div className="flex items-center gap-1">
+        </h2>
+        <div className="flex flex-wrap items-center gap-1">
           {filterChips.map((chip) => (
             <Button
               key={chip}
@@ -162,21 +211,91 @@ export function BookingActivityTimeline({ bookingId }: BookingActivityTimelinePr
             </Button>
           ))}
         </div>
-      </CardHeader>
-      <CardContent>
-        {visible.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">
-            {messages.bookingActivityTimeline.empty}
-          </p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {visible.map((event) => (
-              <TimelineEventItem key={event.id} event={event} sourceLabel={sourceLabel} />
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+
+      {visible.length === 0 ? (
+        <div className="rounded-md border bg-background p-6 text-center">
+          <p className="text-sm text-muted-foreground">{messages.bookingActivityTimeline.empty}</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {pagedVisible.map((event) => (
+            <TimelineEventItem key={event.id} event={event} sourceLabel={sourceLabel} />
+          ))}
+        </div>
+      )}
+
+      {pageCount > 1 ? (
+        <TimelinePagination
+          pageIndex={safePageIndex}
+          pageCount={pageCount}
+          onPageChange={setPageIndex}
+        />
+      ) : null}
+      {footer ? <div className="mt-1 flex justify-center">{footer}</div> : null}
+    </div>
+  )
+}
+
+function TimelinePagination({
+  pageIndex,
+  pageCount,
+  onPageChange,
+}: {
+  pageIndex: number
+  pageCount: number
+  onPageChange: (next: number) => void
+}) {
+  const canPrev = pageIndex > 0
+  const canNext = pageIndex + 1 < pageCount
+  // Compact, ellipsis-less list — the timeline rarely paginates past a
+  // handful of pages, and the cards are dense, so a chunky pager would
+  // overwhelm. If we hit > 7 pages in practice we can revisit and add
+  // PaginationEllipsis.
+  const pages = Array.from({ length: pageCount }, (_, idx) => idx)
+  return (
+    <Pagination className="mt-1">
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationPrevious
+            aria-disabled={!canPrev}
+            tabIndex={canPrev ? 0 : -1}
+            className={canPrev ? undefined : "pointer-events-none opacity-50"}
+            onClick={(event) => {
+              event.preventDefault()
+              if (canPrev) onPageChange(pageIndex - 1)
+            }}
+            href="#"
+          />
+        </PaginationItem>
+        {pages.map((idx) => (
+          <PaginationItem key={idx}>
+            <PaginationLink
+              isActive={idx === pageIndex}
+              onClick={(event) => {
+                event.preventDefault()
+                onPageChange(idx)
+              }}
+              href="#"
+            >
+              {idx + 1}
+            </PaginationLink>
+          </PaginationItem>
+        ))}
+        <PaginationItem>
+          <PaginationNext
+            aria-disabled={!canNext}
+            tabIndex={canNext ? 0 : -1}
+            className={canNext ? undefined : "pointer-events-none opacity-50"}
+            onClick={(event) => {
+              event.preventDefault()
+              if (canNext) onPageChange(pageIndex + 1)
+            }}
+            href="#"
+          />
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
   )
 }
 

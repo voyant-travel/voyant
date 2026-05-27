@@ -86,6 +86,7 @@ import {
   startBookingSchema,
   updateBookingFulfillmentSchema,
   updateBookingItemSchema,
+  updateBookingNoteSchema,
   updateBookingSchema,
   updateSupplierStatusSchema,
   updateTravelerSchema,
@@ -2809,7 +2810,37 @@ export const bookingRoutes = new Hono<Env>()
     return c.json({ data: row }, 201)
   })
 
-  // 28b. DELETE /:id/notes/:noteId — Delete note
+  // 28b. PATCH /:id/notes/:noteId — Edit note
+  .patch("/:id/notes/:noteId", async (c) => {
+    const bookingId = c.req.param("id")
+    const noteId = c.req.param("noteId")
+    const row = await bookingsService.updateNote(
+      c.get("db"),
+      noteId,
+      await parseJsonBody(c, updateBookingNoteSchema),
+    )
+
+    if (!row) {
+      return c.json({ error: "Note not found" }, 404)
+    }
+
+    await appendBookingMutationLedgerEntry(c, {
+      action: "update",
+      actionName: "booking.note.update",
+      actionVersion: BOOKING_NOTE_LEDGER_ACTION_VERSION,
+      targetType: "booking",
+      targetId: bookingId,
+      changedFields: ["content"],
+      subject: "booking note",
+      routeOrToolName: "bookings.notes.update",
+      evaluatedRisk: "medium",
+      summary: "Updated booking note",
+    })
+
+    return c.json({ data: row })
+  })
+
+  // 28c. DELETE /:id/notes/:noteId — Delete note
   .delete("/:id/notes/:noteId", async (c) => {
     const row = await bookingsService.deleteNote(c.get("db"), c.req.param("noteId"))
 

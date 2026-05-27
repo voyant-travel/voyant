@@ -12,6 +12,11 @@ export interface CreateBookingNoteInput {
   content: string
 }
 
+export interface UpdateBookingNoteInput {
+  id: string
+  content: string
+}
+
 const bookingNoteSingleResponse = z.object({
   data: bookingNoteRecordSchema,
 })
@@ -40,6 +45,19 @@ export function useBookingNoteMutation(bookingId: string) {
     onSuccess: invalidate,
   })
 
+  const update = useMutation({
+    mutationFn: async (input: UpdateBookingNoteInput) => {
+      const { data } = await fetchWithValidation(
+        `/v1/bookings/${bookingId}/notes/${input.id}`,
+        bookingNoteSingleResponse,
+        { baseUrl, fetcher },
+        { method: "PATCH", body: JSON.stringify({ content: input.content }) },
+      )
+      return data
+    },
+    onSuccess: invalidate,
+  })
+
   const remove = useMutation({
     mutationFn: async (noteId: string) => {
       return fetchWithValidation(
@@ -54,7 +72,7 @@ export function useBookingNoteMutation(bookingId: string) {
 
   // Back-compat: older callers invoke `mutation.mutateAsync({ content })` directly
   // on the returned object (treating the hook as a single create mutation).
-  // Expose the create mutation's surface at the top level, plus named `create`
-  // and `remove` for new callers.
-  return Object.assign(create, { create, remove })
+  // Expose the create mutation's surface at the top level, plus named `create`,
+  // `update`, and `remove` for new callers.
+  return Object.assign(create, { create, update, remove })
 }
