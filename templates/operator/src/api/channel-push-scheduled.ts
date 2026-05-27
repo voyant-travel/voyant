@@ -20,12 +20,13 @@ import {
   reconcileContent,
 } from "@voyantjs/distribution/channel-push"
 
+import {
+  CHANNEL_PUSH_AVAILABILITY_CRON,
+  CHANNEL_PUSH_BOOKING_LINK_CRON,
+  CHANNEL_PUSH_CONTENT_CRON,
+} from "../scheduled-crons"
 import { type BookingEngineEnv, getBookingEngineRegistry } from "./lib/booking-engine-runtime"
 import { withDbFromEnv } from "./lib/db"
-
-const BOOKING_LINK_CRON = "*/15 * * * *"
-const AVAILABILITY_CRON = "0 * * * *"
-const CONTENT_CRON = "0 3 * * *"
 
 export async function runScheduledChannelPushReconciler(
   event: ScheduledController,
@@ -39,17 +40,17 @@ export async function runScheduledChannelPushReconciler(
 
     try {
       switch (event.cron) {
-        case BOOKING_LINK_CRON: {
+        case CHANNEL_PUSH_BOOKING_LINK_CRON: {
           const result = await reconcileBookingLinks({}, deps)
           console.info("[channel-push] reconcileBookingLinks", result)
           return
         }
-        case AVAILABILITY_CRON: {
+        case CHANNEL_PUSH_AVAILABILITY_CRON: {
           const result = await reconcileAvailability({}, deps)
           console.info("[channel-push] reconcileAvailability", result)
           return
         }
-        case CONTENT_CRON: {
+        case CHANNEL_PUSH_CONTENT_CRON: {
           const result = await reconcileContent({}, deps)
           console.info("[channel-push] reconcileContent", result)
           return

@@ -1,7 +1,12 @@
 import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
-import { app as apiApp } from "./api/app"
 
 const startHandler = createStartHandler(defaultStreamHandler)
+
+let apiAppPromise: Promise<typeof import("./api/app")["app"]> | undefined
+function loadApiApp(): Promise<typeof import("./api/app")["app"]> {
+  apiAppPromise ??= import("./api/app").then((mod) => mod.app)
+  return apiAppPromise
+}
 
 export default {
   async fetch(request: Request, env: CloudflareBindings, ctx: ExecutionContext): Promise<Response> {
@@ -13,6 +18,7 @@ export default {
       const apiUrl = new URL(stripped, url.origin)
       apiUrl.search = url.search
       const apiRequest = new Request(apiUrl.toString(), request)
+      const apiApp = await loadApiApp()
       return apiApp.fetch(apiRequest, env, ctx)
     }
 

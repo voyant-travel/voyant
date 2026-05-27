@@ -10,6 +10,7 @@
     "./routes": "./src/routes.ts",
     "./events": "./src/events.ts",
     "./service": "./src/service.ts",
+    "./workflow-runtime": "./src/workflow-runtime.ts",
     "./service-catalog-plane-promotions": "./src/service-catalog-plane-promotions.ts",
     "./service-boundary-scheduler": "./src/service-boundary-scheduler.ts",
     "./service-catalog-evaluator": "./src/service-catalog-evaluator.ts",
@@ -76,6 +77,11 @@
         "types": "./dist/service.d.ts",
         "import": "./dist/service.js",
         "default": "./dist/service.js"
+      },
+      "./workflow-runtime": {
+        "types": "./dist/workflow-runtime.d.ts",
+        "import": "./dist/workflow-runtime.js",
+        "default": "./dist/workflow-runtime.js"
       },
       "./service-catalog-plane-promotions": {
         "types": "./dist/service-catalog-plane-promotions.d.ts",
