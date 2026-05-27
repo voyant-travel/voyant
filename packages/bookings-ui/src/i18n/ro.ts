@@ -628,9 +628,14 @@ export const bookingsUiRo = {
     fields: {
       status: "Status nou",
       note: "Nota (optional)",
+      suppressNotifications: "Nu notifica clientul",
     },
     placeholders: {
       note: "Motivul schimbarii statusului...",
+    },
+    helpers: {
+      suppressNotifications:
+        "Confirma silentios — sari peste emailul de confirmare si pachetul de documente care ar fi trimise in mod normal.",
     },
     actions: {
       updateStatus: "Actualizeaza statusul",

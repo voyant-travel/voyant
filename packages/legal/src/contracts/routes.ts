@@ -472,8 +472,8 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
     .delete("/:id", async (c) => {
       const result = await contractsService.deleteContract(c.get("db"), c.req.param("id"))
       if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
-      if (result.status === "not_draft") {
-        return c.json({ error: "Only draft contracts can be deleted" }, 409)
+      if (result.status === "not_deletable") {
+        return c.json({ error: "Only draft or void contracts can be deleted" }, 409)
       }
       return c.json({ success: true })
     })

@@ -7,7 +7,11 @@ import type { ContractLifecycleHook } from "./lifecycle.js"
 import { contractAttachments, contracts, contractTemplateVersions } from "./schema.js"
 import { contractRecordsService } from "./service-contracts.js"
 import type { CreateContractAttachmentInput } from "./service-shared.js"
-import { isContractTemplateSyntaxError, renderTemplate } from "./service-shared.js"
+import {
+  isContractTemplateSyntaxError,
+  mergeContractNumberIntoVariables,
+  renderTemplate,
+} from "./service-shared.js"
 import type { GenerateContractDocumentInput } from "./validation.js"
 
 type ContractGenerationFailureStatus = "render_unavailable" | "generator_failed"
@@ -323,6 +327,7 @@ async function ensureRenderedContract(
   contractId: string,
   issueIfDraft: boolean,
   runtime?: Pick<ContractDocumentRuntimeOptions, "eventBus" | "lifecycleHooks">,
+  options: { forceRerender?: boolean } = {},
 ): Promise<EnsureRenderedContractResult> {
   let contract = await contractRecordsService.getContractById(db, contractId)
   if (!contract) {
@@ -357,8 +362,23 @@ async function ensureRenderedContract(
   let renderedBody = contract.renderedBody
   let renderedBodyFormat = contract.renderedBodyFormat
 
-  if ((!renderedBody || !renderedBodyFormat) && templateVersion) {
-    const variables = (contract.variables as Record<string, unknown> | null) ?? {}
+  // Regenerate flows pass `forceRerender: true` so we don't reuse a
+  // cached body that was rendered before the series number was
+  // allocated (issue #1335). Without this, contracts issued before the
+  // allocate-before-render fix would keep regenerating PDFs from the
+  // stale body that still has the missing-value placeholder for
+  // `{{ contract.number }}`.
+  const needsRender = options.forceRerender || !renderedBody || !renderedBodyFormat
+
+  if (needsRender && templateVersion) {
+    const baseVariables = (contract.variables as Record<string, unknown> | null) ?? {}
+    // Issue #1335: when re-rendering an already-issued contract (e.g. a
+    // regenerate request), make sure the allocated contract number is
+    // visible to the template as `{{ contract.number }}` /
+    // `{{ contract.contractNumber }}`.
+    const variables = contract.contractNumber
+      ? mergeContractNumberIntoVariables(baseVariables, contract.contractNumber)
+      : baseVariables
     try {
       renderedBody = renderTemplate(templateVersion.body, "html", variables)
     } catch (error) {
@@ -411,12 +431,14 @@ export const contractDocumentsService = {
     contractId: string,
     input: GenerateContractDocumentInput,
     runtime: ContractDocumentRuntimeOptions,
-    options: { regenerated?: boolean } = {},
+    options: { regenerated?: boolean; forceRerender?: boolean } = {},
   ): Promise<
     | { status: "not_found" | "not_draft" | "render_unavailable" | "generator_failed" }
     | ({ status: "generated" } & GeneratedContractDocumentRecord)
   > {
-    const prepared = await ensureRenderedContract(db, contractId, input.issueIfDraft, runtime)
+    const prepared = await ensureRenderedContract(db, contractId, input.issueIfDraft, runtime, {
+      forceRerender: options.forceRerender,
+    })
 
     if (prepared.status === "not_found") {
       return { status: "not_found" }
@@ -542,7 +564,11 @@ export const contractDocumentsService = {
         issueIfDraft: input.issueIfDraft,
       },
       runtime,
-      { regenerated: true },
+      // Force a fresh render so older contracts whose cached body was
+      // produced before the series-number allocation (issue #1335)
+      // get re-rendered against the current `contract.variables` /
+      // `contract.contractNumber` instead of reusing the stale body.
+      { regenerated: true, forceRerender: true },
     )
   },
 }

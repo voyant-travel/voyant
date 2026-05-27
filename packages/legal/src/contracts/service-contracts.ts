@@ -21,6 +21,7 @@ import {
   type CreateContractAttachmentInput,
   type CreateContractInput,
   type CreateContractSignatureInput,
+  mergeContractNumberIntoVariables,
   paginate,
   renderTemplate,
   toTimestamp,
@@ -119,7 +120,9 @@ export const contractRecordsService = {
       .where(eq(contracts.id, id))
       .limit(1)
     if (!existing) return { status: "not_found" as const }
-    if (existing.status !== "draft") return { status: "not_draft" as const }
+    if (existing.status !== "draft" && existing.status !== "void") {
+      return { status: "not_deletable" as const }
+    }
     await db.delete(contracts).where(eq(contracts.id, id))
     return { status: "deleted" as const }
   },
@@ -138,6 +141,18 @@ export const contractRecordsService = {
       if (!contract) return { status: "not_found" as const }
       const transition = checkContractLifecycleTransition(contract.status, "issued")
       if (!transition.ok) return { status: transition.reason }
+
+      let contractNumber = contract.contractNumber
+      if (!contractNumber && contract.seriesId) {
+        const allocated = await allocateContractNumber(tx as PostgresJsDatabase, contract.seriesId)
+        if (allocated) contractNumber = allocated.number
+      }
+
+      const baseVariables = (contract.variables as Record<string, unknown> | null) ?? {}
+      const variables = contractNumber
+        ? mergeContractNumberIntoVariables(baseVariables, contractNumber)
+        : baseVariables
+
       let renderedBody = contract.renderedBody
       let renderedBodyFormat = contract.renderedBodyFormat
       if (contract.templateVersionId) {
@@ -147,15 +162,9 @@ export const contractRecordsService = {
           .where(eq(contractTemplateVersions.id, contract.templateVersionId))
           .limit(1)
         if (version) {
-          const vars = (contract.variables as Record<string, unknown>) ?? {}
-          renderedBody = renderTemplate(version.body, "html", vars)
+          renderedBody = renderTemplate(version.body, "html", variables)
           renderedBodyFormat = "html"
         }
-      }
-      let contractNumber = contract.contractNumber
-      if (!contractNumber && contract.seriesId) {
-        const allocated = await allocateContractNumber(tx as PostgresJsDatabase, contract.seriesId)
-        if (allocated) contractNumber = allocated.number
       }
       const now = new Date()
       const stageHistory = appendContractStageHistory(
@@ -175,6 +184,7 @@ export const contractRecordsService = {
           renderedBody,
           renderedBodyFormat,
           contractNumber,
+          variables: variables !== baseVariables ? variables : contract.variables,
           updatedAt: now,
         })
         .where(eq(contracts.id, contractId))
