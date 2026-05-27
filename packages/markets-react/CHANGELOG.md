@@ -1,5 +1,12 @@
 # @voyantjs/markets-react
 
+## 0.81.19
+
+### Patch Changes
+
+- @voyantjs/markets@0.81.19
+- @voyantjs/react@0.81.19
+
 ## 0.81.18
 
 ### Patch Changes

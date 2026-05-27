@@ -1,5 +1,16 @@
 # @voyantjs/sellability-ui
 
+## 0.81.19
+
+### Patch Changes
+
+- @voyantjs/distribution-react@0.81.19
+- @voyantjs/i18n@0.81.19
+- @voyantjs/markets-react@0.81.19
+- @voyantjs/products-react@0.81.19
+- @voyantjs/sellability-react@0.81.19
+- @voyantjs/ui@0.81.19
+
 ## 0.81.18
 
 ### Patch Changes
