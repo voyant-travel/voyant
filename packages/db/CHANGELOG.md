@@ -1,5 +1,12 @@
 # @voyantjs/db
 
+## 0.84.1
+
+### Patch Changes
+
+- b9ef614: Add slot-level extras manifests with per-traveler selection and cash collection tracking.
+  - @voyantjs/core@0.84.1
+
 ## 0.84.0
 
 ### Minor Changes

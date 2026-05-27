@@ -1,5 +1,16 @@
 # @voyantjs/suppliers
 
+## 0.84.1
+
+### Patch Changes
+
+- Updated dependencies [b9ef614]
+  - @voyantjs/core@0.84.1
+  - @voyantjs/db@0.84.1
+  - @voyantjs/facilities@0.84.1
+  - @voyantjs/hono@0.84.1
+  - @voyantjs/identity@0.84.1
+
 ## 0.84.0
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @voyantjs/storefront-sdk
 
+## 0.84.1
+
+### Patch Changes
+
+- @voyantjs/bookings@0.84.1
+- @voyantjs/checkout@0.84.1
+- @voyantjs/storefront@0.84.1
+
 ## 0.84.0
 
 ### Patch Changes
