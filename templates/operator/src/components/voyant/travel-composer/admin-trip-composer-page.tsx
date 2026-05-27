@@ -788,7 +788,7 @@ function pendingToAddInput(
 
   if (pending.kind === "product" || pending.kind === "stay") {
     if (!pending.catalogEntityId || !pending.catalogSourceKind) return null
-    const vertical = pending.kind === "stay" ? "hospitality" : "products"
+    const vertical = pending.kind === "stay" ? "accommodations" : "products"
     const draft = pending.bookingDraft
     const configure = {
       ...(draft?.configure ?? {}),

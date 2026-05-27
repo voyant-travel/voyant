@@ -211,6 +211,46 @@ const FILE_CHECKS = [
     patterns: [/\bhospitality\b/i],
   },
   {
+    file: "packages/travel-composer/src/validation.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/travel-composer/src/service-trips.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/travel-composer-react/src/operations.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "templates/operator/src/components/voyant/trips/trip-list-filters.tsx",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "templates/operator/src/components/voyant/travel-composer/admin-trip-composer-page.tsx",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "templates/operator/src/components/voyant/travel-composer/admin-trip-composer-panels.tsx",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "templates/operator/src/components/voyant/travel-composer/storefront-composer-block.tsx",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "templates/operator/src/routes/_workspace/trips/index.tsx",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "templates/operator/src/routes/_workspace/trips/$id.tsx",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
+    file: "packages/i18n/src/admin/trips.ts",
+    patterns: [/\bhospitality\b/i],
+  },
+  {
     file: "packages/types/src/api-keys.ts",
     patterns: [/\bhospitality\b/i],
   },
