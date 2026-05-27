@@ -74,10 +74,23 @@ describe("dispatchBookingStatusChange — override fallback", () => {
     })
   })
 
-  it("override sets reason to empty string when no note (server will reject — surfacing 400)", () => {
+  it("override uses a default audit reason when no note is provided", () => {
     const target = dispatchBookingStatusChange(BOOKING_ID, "completed", "draft")
     expect(target.path).toBe(`/v1/bookings/${BOOKING_ID}/override-status`)
-    expect(target.body).toEqual({ status: "draft", reason: "" })
+    expect(target.body).toEqual({
+      status: "draft",
+      reason: "Status override from completed to draft",
+    })
+  })
+
+  it("override uses a default audit reason when note is blank", () => {
+    const target = dispatchBookingStatusChange(BOOKING_ID, "cancelled", "confirmed", "   ")
+    expect(target.path).toBe(`/v1/bookings/${BOOKING_ID}/override-status`)
+    expect(target.body).toEqual({
+      status: "confirmed",
+      reason: "Status override from cancelled to confirmed",
+      note: "   ",
+    })
   })
 
   it("expired → confirmed falls through to /override-status (no named verb)", () => {

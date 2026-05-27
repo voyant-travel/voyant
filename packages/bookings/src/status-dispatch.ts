@@ -11,9 +11,8 @@ export interface BookingStatusDispatchTarget {
    *
    * - For named verbs (`/confirm`, `/expire`, `/start`, `/complete`, `/cancel`)
    *   this is `{ note }` when a note is provided, otherwise an empty object.
-   * - For `/override-status` it is `{ status, reason, note? }` — the server
-   *   rejects empty reasons with a 400, so callers should pass a meaningful
-   *   note when the dispatch falls through to override.
+   * - For `/override-status` it is `{ status, reason, note? }`. When callers
+   *   do not provide a note, the dispatcher supplies a non-empty audit reason.
    */
   body: Record<string, unknown>
 }
@@ -23,7 +22,7 @@ export interface BookingStatusDispatchTarget {
  * arrows that have a named verb on the server go to that verb; everything else
  * (non-adjacent jumps, e.g. cancelled → confirmed for data correction) falls
  * through to /override-status, which requires a reason. The note text is used
- * as the reason — the server rejects empty reasons with a 400.
+ * as the reason when provided; otherwise a non-empty audit reason is generated.
  *
  * Framework-agnostic: returns the URL + body to send. Callers own the
  * transport (fetch, axios, the React hook, server-to-server scripts, etc).
@@ -70,15 +69,10 @@ export function dispatchBookingStatusChange(
     return { path: `/v1/bookings/${bookingId}/cancel`, body: noteBody }
   }
 
-  // The override-status route rejects empty reasons. For the common
-  // post-create transitions out of `draft` (the operator commits the
-  // booking to either confirmed-with-money-in or awaiting-payment) we
-  // don't want to force a reason prompt, so supply a benign default.
-  // Callers can still pass an explicit note to override.
-  const defaultReason =
-    current === "draft" && (target === "confirmed" || target === "awaiting_payment")
-      ? `Set to ${target} after create`
-      : ""
+  // The override-status route rejects empty reasons. Callers can pass an
+  // explicit note for the audit reason; otherwise generate a concise default
+  // so UI flows with optional notes never submit an invalid override payload.
+  const defaultReason = `Status override from ${current} to ${target}`
   const reason = note?.trim() || defaultReason
   return {
     path: `/v1/bookings/${bookingId}/override-status`,
