@@ -2816,6 +2816,7 @@ export const bookingRoutes = new Hono<Env>()
     const noteId = c.req.param("noteId")
     const row = await bookingsService.updateNote(
       c.get("db"),
+      bookingId,
       noteId,
       await parseJsonBody(c, updateBookingNoteSchema),
     )
@@ -2842,7 +2843,8 @@ export const bookingRoutes = new Hono<Env>()
 
   // 28c. DELETE /:id/notes/:noteId — Delete note
   .delete("/:id/notes/:noteId", async (c) => {
-    const row = await bookingsService.deleteNote(c.get("db"), c.req.param("noteId"))
+    const bookingId = c.req.param("id")
+    const row = await bookingsService.deleteNote(c.get("db"), bookingId, c.req.param("noteId"))
 
     if (!row) {
       return c.json({ error: "Note not found" }, 404)
@@ -2853,7 +2855,7 @@ export const bookingRoutes = new Hono<Env>()
       actionName: "booking.note.delete",
       actionVersion: BOOKING_NOTE_LEDGER_ACTION_VERSION,
       targetType: "booking",
-      targetId: c.req.param("id"),
+      targetId: bookingId,
       changedFields: [],
       subject: "booking note",
       routeOrToolName: "bookings.notes.delete",

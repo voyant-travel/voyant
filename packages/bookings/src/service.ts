@@ -5831,20 +5831,32 @@ export const bookingsService = {
     return row
   },
 
-  async updateNote(db: PostgresJsDatabase, noteId: string, data: UpdateBookingNoteInput) {
+  async updateNote(
+    db: PostgresJsDatabase,
+    bookingId: string,
+    noteId: string,
+    data: UpdateBookingNoteInput,
+  ) {
+    // Scope the update to (booking, note) so a stale / cross-booking
+    // note id can't mutate another booking's note while the route
+    // records an audit entry under the wrong `bookingId`. Returns null
+    // → route responds 404.
     const [row] = await db
       .update(bookingNotes)
       .set({ content: data.content })
-      .where(eq(bookingNotes.id, noteId))
+      .where(and(eq(bookingNotes.id, noteId), eq(bookingNotes.bookingId, bookingId)))
       .returning()
 
     return row ?? null
   },
 
-  async deleteNote(db: PostgresJsDatabase, noteId: string) {
+  async deleteNote(db: PostgresJsDatabase, bookingId: string, noteId: string) {
+    // Same scoping as `updateNote` — guards against deleting a note
+    // that belongs to a different booking when the audit entry would
+    // get filed under the route's `:id`.
     const [row] = await db
       .delete(bookingNotes)
-      .where(eq(bookingNotes.id, noteId))
+      .where(and(eq(bookingNotes.id, noteId), eq(bookingNotes.bookingId, bookingId)))
       .returning({ id: bookingNotes.id })
 
     return row ?? null
