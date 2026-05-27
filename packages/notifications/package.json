@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/notifications",
-  "version": "0.81.19",
+  "version": "0.81.20",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
