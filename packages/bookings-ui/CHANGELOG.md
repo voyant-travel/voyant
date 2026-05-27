@@ -1,5 +1,27 @@
 # @voyantjs/bookings-ui
 
+## 0.82.1
+
+### Patch Changes
+
+- 728bc12: Restore payment summary invoice link and proforma conversion props used by host booking detail pages.
+  - @voyantjs/availability-react@0.82.1
+  - @voyantjs/bookings@0.82.1
+  - @voyantjs/bookings-react@0.82.1
+  - @voyantjs/catalog@0.82.1
+  - @voyantjs/catalog-react@0.82.1
+  - @voyantjs/crm-react@0.82.1
+  - @voyantjs/crm-ui@0.82.1
+  - @voyantjs/extras-react@0.82.1
+  - @voyantjs/finance-react@0.82.1
+  - @voyantjs/i18n@0.82.1
+  - @voyantjs/identity-react@0.82.1
+  - @voyantjs/legal-react@0.82.1
+  - @voyantjs/pricing-react@0.82.1
+  - @voyantjs/products-react@0.82.1
+  - @voyantjs/suppliers-react@0.82.1
+  - @voyantjs/ui@0.82.1
+
 ## 0.82.0
 
 ### Minor Changes
