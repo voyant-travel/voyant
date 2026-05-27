@@ -11,6 +11,8 @@ describe.skipIf(!DB_AVAILABLE)("Product Extras routes", () => {
       expect(extra.id).toMatch(/^pxtr_/)
       expect(extra.selectionType).toBe("optional")
       expect(extra.pricingMode).toBe("per_booking")
+      expect(extra.collectionMode).toBe("booking_total")
+      expect(extra.showOnSlotManifest).toBe(true)
       expect(extra.active).toBe(true)
       expect(extra.sortOrder).toBe(0)
     })
@@ -22,6 +24,8 @@ describe.skipIf(!DB_AVAILABLE)("Product Extras routes", () => {
         selectionType: "required",
         pricingMode: "per_person",
         pricedPerPerson: true,
+        collectionMode: "cash_on_trip",
+        showOnSlotManifest: false,
         minQuantity: 1,
         maxQuantity: 10,
         defaultQuantity: 2,
@@ -33,6 +37,8 @@ describe.skipIf(!DB_AVAILABLE)("Product Extras routes", () => {
       expect(extra.selectionType).toBe("required")
       expect(extra.pricingMode).toBe("per_person")
       expect(extra.pricedPerPerson).toBe(true)
+      expect(extra.collectionMode).toBe("cash_on_trip")
+      expect(extra.showOnSlotManifest).toBe(false)
       expect(extra.minQuantity).toBe(1)
       expect(extra.maxQuantity).toBe(10)
       expect(extra.defaultQuantity).toBe(2)

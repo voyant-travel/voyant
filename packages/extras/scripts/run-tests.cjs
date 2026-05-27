@@ -4,6 +4,7 @@ const testFiles = [
   "tests/integration/product-extras.test.ts",
   "tests/integration/option-extra-configs.test.ts",
   "tests/integration/booking-extras.test.ts",
+  "tests/integration/slot-manifest.test.ts",
   "tests/unit/content-shape.test.ts",
   "tests/unit/service-content-synthesizer.test.ts",
   "tests/unit/draft-shape.test.ts",

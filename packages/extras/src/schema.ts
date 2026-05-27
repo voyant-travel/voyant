@@ -36,6 +36,29 @@ export const bookingExtraStatusEnum = pgEnum("booking_extra_status", [
   "fulfilled",
 ])
 
+export const extraCollectionModeEnum = pgEnum("extra_collection_mode", [
+  "booking_total",
+  "cash_on_trip",
+  "external",
+  "included",
+  "none",
+])
+
+export const extraParticipantSelectionStatusEnum = pgEnum("extra_participant_selection_status", [
+  "selected",
+  "cancelled",
+  "fulfilled",
+  "no_show",
+])
+
+export const extraCollectionStatusEnum = pgEnum("extra_collection_status", [
+  "not_required",
+  "pending",
+  "collected",
+  "waived",
+  "refunded",
+])
+
 export const productExtras = pgTable(
   "product_extras",
   {
@@ -48,6 +71,8 @@ export const productExtras = pgTable(
     selectionType: extraSelectionTypeEnum("selection_type").notNull().default("optional"),
     pricingMode: extraPricingModeEnum("pricing_mode").notNull().default("per_booking"),
     pricedPerPerson: boolean("priced_per_person").notNull().default(false),
+    collectionMode: extraCollectionModeEnum("collection_mode").notNull().default("booking_total"),
+    showOnSlotManifest: boolean("show_on_slot_manifest").notNull().default(true),
     minQuantity: integer("min_quantity"),
     maxQuantity: integer("max_quantity"),
     defaultQuantity: integer("default_quantity"),
@@ -156,16 +181,70 @@ export const bookingExtras = pgTable(
   ],
 )
 
+export const extraParticipantSelections = pgTable(
+  "extra_participant_selections",
+  {
+    id: typeId("extra_participant_selections"),
+    bookingId: text("booking_id").notNull(),
+    bookingItemId: text("booking_item_id"),
+    travelerId: text("traveler_id").notNull(),
+    productExtraId: typeIdRef("product_extra_id")
+      .notNull()
+      .references(() => productExtras.id, { onDelete: "cascade" }),
+    optionExtraConfigId: typeIdRef("option_extra_config_id").references(
+      () => optionExtraConfigs.id,
+      { onDelete: "set null" },
+    ),
+    status: extraParticipantSelectionStatusEnum("status").notNull().default("selected"),
+    collectionMode: extraCollectionModeEnum("collection_mode").notNull().default("booking_total"),
+    collectionStatus: extraCollectionStatusEnum("collection_status")
+      .notNull()
+      .default("not_required"),
+    collectionCurrency: text("collection_currency"),
+    collectionAmountCents: integer("collection_amount_cents"),
+    collectedAt: timestamp("collected_at", { withTimezone: true }),
+    collectedBy: text("collected_by"),
+    notes: text("notes"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_extra_participant_selections_booking_updated").on(table.bookingId, table.updatedAt),
+    index("idx_extra_participant_selections_traveler_updated").on(
+      table.travelerId,
+      table.updatedAt,
+    ),
+    index("idx_extra_participant_selections_extra_updated").on(
+      table.productExtraId,
+      table.updatedAt,
+    ),
+    index("idx_extra_participant_selections_status_updated").on(table.status, table.updatedAt),
+    index("idx_extra_participant_selections_collection_updated").on(
+      table.collectionStatus,
+      table.updatedAt,
+    ),
+    uniqueIndex("uidx_extra_participant_selection").on(
+      table.bookingId,
+      table.travelerId,
+      table.productExtraId,
+    ),
+  ],
+)
+
 export type ProductExtra = typeof productExtras.$inferSelect
 export type NewProductExtra = typeof productExtras.$inferInsert
 export type OptionExtraConfig = typeof optionExtraConfigs.$inferSelect
 export type NewOptionExtraConfig = typeof optionExtraConfigs.$inferInsert
 export type BookingExtra = typeof bookingExtras.$inferSelect
 export type NewBookingExtra = typeof bookingExtras.$inferInsert
+export type ExtraParticipantSelection = typeof extraParticipantSelections.$inferSelect
+export type NewExtraParticipantSelection = typeof extraParticipantSelections.$inferInsert
 
 export const productExtrasRelations = relations(productExtras, ({ many }) => ({
   optionConfigs: many(optionExtraConfigs),
   bookingExtras: many(bookingExtras),
+  participantSelections: many(extraParticipantSelections),
 }))
 
 export const optionExtraConfigsRelations = relations(optionExtraConfigs, ({ one, many }) => ({
@@ -174,6 +253,7 @@ export const optionExtraConfigsRelations = relations(optionExtraConfigs, ({ one,
     references: [productExtras.id],
   }),
   bookingExtras: many(bookingExtras),
+  participantSelections: many(extraParticipantSelections),
 }))
 
 export const bookingExtrasRelations = relations(bookingExtras, ({ one }) => ({
@@ -186,6 +266,20 @@ export const bookingExtrasRelations = relations(bookingExtras, ({ one }) => ({
     references: [optionExtraConfigs.id],
   }),
 }))
+
+export const extraParticipantSelectionsRelations = relations(
+  extraParticipantSelections,
+  ({ one }) => ({
+    productExtra: one(productExtras, {
+      fields: [extraParticipantSelections.productExtraId],
+      references: [productExtras.id],
+    }),
+    optionExtraConfig: one(optionExtraConfigs, {
+      fields: [extraParticipantSelections.optionExtraConfigId],
+      references: [optionExtraConfigs.id],
+    }),
+  }),
+)
 
 // ─── Sourced-content cache ──────────────────────────────────────────
 // Re-exported here so templates pick it up via the package's `./schema`

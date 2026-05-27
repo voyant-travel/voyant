@@ -48,6 +48,7 @@ export const typeIdSchemas = {
   productExtra: typeIdSchema("product_extras"),
   optionExtraConfig: typeIdSchema("option_extra_configs"),
   bookingExtra: typeIdSchema("booking_extras"),
+  extraParticipantSelection: typeIdSchema("extra_participant_selections"),
   productContactRequirement: typeIdSchema("product_contact_requirements"),
   productBookingQuestion: typeIdSchema("product_booking_questions"),
   optionBookingQuestion: typeIdSchema("option_booking_questions"),

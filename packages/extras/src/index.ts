@@ -17,7 +17,9 @@ export const extrasHonoModule: HonoModule = {
 
 export type {
   BookingExtra,
+  ExtraParticipantSelection,
   NewBookingExtra,
+  NewExtraParticipantSelection,
   NewOptionExtraConfig,
   NewProductExtra,
   OptionExtraConfig,
@@ -26,6 +28,10 @@ export type {
 export {
   bookingExtraStatusEnum,
   bookingExtras,
+  extraCollectionModeEnum,
+  extraCollectionStatusEnum,
+  extraParticipantSelectionStatusEnum,
+  extraParticipantSelections,
   extraPricingModeEnum,
   extraSelectionTypeEnum,
   optionExtraConfigs,
@@ -34,6 +40,9 @@ export {
 export {
   bookingExtraListQuerySchema,
   bookingExtraStatusSchema,
+  extraCollectionModeSchema,
+  extraCollectionStatusSchema,
+  extraParticipantSelectionStatusSchema,
   extraPricingModeSchema,
   extraSelectionTypeSchema,
   insertBookingExtraSchema,
@@ -41,6 +50,10 @@ export {
   insertProductExtraSchema,
   optionExtraConfigListQuerySchema,
   productExtraListQuerySchema,
+  slotExtraCollectionBulkSchema,
+  slotExtraManifestQuerySchema,
+  slotExtraSelectionBulkSchema,
+  slotExtraSelectionPatchSchema,
   updateBookingExtraSchema,
   updateOptionExtraConfigSchema,
   updateProductExtraSchema,

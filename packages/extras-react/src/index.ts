@@ -12,5 +12,9 @@ export {
   type VoyantExtrasProviderProps,
 } from "./provider.js"
 export { extrasQueryKeys, type ProductExtrasListFilters } from "./query-keys.js"
-export { getProductExtraQueryOptions, getProductExtrasQueryOptions } from "./query-options.js"
+export {
+  getProductExtraQueryOptions,
+  getProductExtrasQueryOptions,
+  getSlotExtraManifestQueryOptions,
+} from "./query-options.js"
 export * from "./schemas.js"

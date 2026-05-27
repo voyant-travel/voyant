@@ -302,6 +302,13 @@
       "when": 1779905100000,
       "tag": "0042_public_document_delivery_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1779905200000,
+      "tag": "0043_extra_participant_selections",
+      "breakpoints": true
     }
   ]
 }

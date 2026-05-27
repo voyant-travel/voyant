@@ -1,4 +1,5 @@
 export { ProductCombobox } from "./components/product-combobox.js"
+export { SlotExtrasManifestPanel } from "./components/slot-extras-manifest-panel.js"
 export {
   type ExtrasUiMessageOverrides,
   type ExtrasUiMessages,

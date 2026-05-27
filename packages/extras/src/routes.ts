@@ -1,6 +1,6 @@
 import { parseJsonBody, parseQuery } from "@voyantjs/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { Hono } from "hono"
+import { type Context, Hono } from "hono"
 
 import { extrasService } from "./service.js"
 import {
@@ -10,6 +10,10 @@ import {
   insertProductExtraSchema,
   optionExtraConfigListQuerySchema,
   productExtraListQuerySchema,
+  slotExtraCollectionBulkSchema,
+  slotExtraManifestQuerySchema,
+  slotExtraSelectionBulkSchema,
+  slotExtraSelectionPatchSchema,
   updateBookingExtraSchema,
   updateOptionExtraConfigSchema,
   updateProductExtraSchema,
@@ -125,5 +129,55 @@ export const extrasRoutes = new Hono<Env>()
     if (!row) return c.json({ error: "Booking extra not found" }, 404)
     return c.json({ success: true })
   })
+  .get("/slot-manifests/:slotId", async (c) => {
+    const query = await parseQuery(c, slotExtraManifestQuerySchema)
+    const result = await extrasService.getSlotExtraManifest(
+      c.get("db"),
+      c.req.param("slotId"),
+      query,
+    )
+    if (result.status === "slot_not_found") return c.json({ error: "Slot not found" }, 404)
+    return c.json({ data: result.data })
+  })
+  .patch("/slot-manifests/:slotId/selections", async (c) => {
+    const result = await extrasService.setSlotExtraSelection(
+      c.get("db"),
+      c.req.param("slotId"),
+      await parseJsonBody(c, slotExtraSelectionPatchSchema),
+      c.get("userId"),
+    )
+    return respondToManifestMutation(c, result)
+  })
+  .post("/slot-manifests/:slotId/selections/bulk", async (c) => {
+    const result = await extrasService.bulkSetSlotExtraSelections(
+      c.get("db"),
+      c.req.param("slotId"),
+      await parseJsonBody(c, slotExtraSelectionBulkSchema),
+      c.get("userId"),
+    )
+    return respondToManifestMutation(c, result)
+  })
+  .post("/slot-manifests/:slotId/collections/bulk", async (c) => {
+    const result = await extrasService.bulkUpdateSlotExtraCollections(
+      c.get("db"),
+      c.req.param("slotId"),
+      await parseJsonBody(c, slotExtraCollectionBulkSchema),
+      c.get("userId"),
+    )
+    return respondToManifestMutation(c, result)
+  })
+
+function respondToManifestMutation(
+  c: Context<Env>,
+  result:
+    | Awaited<ReturnType<typeof extrasService.setSlotExtraSelection>>
+    | Awaited<ReturnType<typeof extrasService.bulkSetSlotExtraSelections>>
+    | Awaited<ReturnType<typeof extrasService.bulkUpdateSlotExtraCollections>>,
+) {
+  if (result.status === "slot_not_found") return c.json({ error: "Slot not found" }, 404)
+  if (result.status === "extra_not_found") return c.json({ error: "Extra not found" }, 404)
+  if (result.status === "traveler_not_found") return c.json({ error: "Traveler not found" }, 404)
+  return c.json({ data: result.data })
+}
 
 export type ExtrasRoutes = typeof extrasRoutes
