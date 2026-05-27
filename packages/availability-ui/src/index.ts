@@ -26,18 +26,13 @@ export {
 } from "./components/availability-overview.js"
 export {
   AvailabilityPage,
-  type AvailabilityPageActiveFilter,
   type AvailabilityPageBulkDeleteHandler,
   type AvailabilityPageBulkUpdateHandler,
-  type AvailabilityPageCloseoutSubmitHandler,
-  type AvailabilityPagePickupPointSubmitHandler,
   type AvailabilityPageProps,
-  type AvailabilityPageRuleSubmitHandler,
   type AvailabilityPageSlotStatusFilter,
   type AvailabilityPageSlotSubmitHandler,
   type AvailabilityPageSlots,
-  type AvailabilityPageStartTimeSubmitHandler,
-  type AvailabilityPageTab,
+  type AvailabilityPageView,
 } from "./components/availability-page.js"
 export {
   AvailabilityRuleDetailPage,
