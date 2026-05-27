@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/workflows-cloud-adapter",
-  "version": "0.81.17",
+  "version": "0.81.18",
   "description": "Tenant Worker adapter for Voyant Cloud Workflows deployments. Wires WorkflowRunDO, inline local dispatch, and platform step-runner bindings from env.",
   "license": "Apache-2.0",
   "repository": {
