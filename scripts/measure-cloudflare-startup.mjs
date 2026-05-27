@@ -14,6 +14,9 @@ let topCount = 20
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i]
+  if (arg === "--") {
+    continue
+  }
   if (arg === "--outfile") {
     outfileArg = args[++i]
     continue
