@@ -1,5 +1,13 @@
 # @voyantjs/suppliers-ui
 
+## 0.81.21
+
+### Patch Changes
+
+- @voyantjs/i18n@0.81.21
+- @voyantjs/suppliers-react@0.81.21
+- @voyantjs/ui@0.81.21
+
 ## 0.81.20
 
 ### Patch Changes
