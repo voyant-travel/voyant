@@ -1,4 +1,6 @@
 import { bookingsService } from "@voyantjs/bookings"
+import { invoices, payments } from "@voyantjs/finance/schema"
+import { and, desc, eq, ne } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { ContractLifecycleHook } from "./lifecycle.js"
@@ -311,6 +313,11 @@ export interface DefaultContractVariables {
     /** Alias for `capturedAt`, exposed for templates that prefer the
      *  `created_at` naming. */
     createdAt: string
+    latestCompleted?: {
+      method: string
+      methodLabel: string
+      date: string
+    }
   }
 
   operator: OperatorContextVariables
@@ -590,6 +597,7 @@ export async function autoGenerateContractForBooking(
   const startDate = booking.startDate ?? ""
   const endDate = booking.endDate ?? ""
   const durationNights = computeNights(startDate, endDate)
+  const settlement = await resolveBookingSettlementVariables(db, booking.id, sellCurrency)
 
   const mappedTravelers: ContractTravelerVariable[] = travelers.map((t, i) => {
     const fullName = [t.firstName, t.lastName].filter(Boolean).join(" ").trim()
@@ -687,8 +695,8 @@ export async function autoGenerateContractForBooking(
       taxAmountCents: 0,
       discountAmountCents: 0,
 
-      paidAmountCents: 0,
-      balanceDueCents: totalCents,
+      paidAmountCents: settlement.paidAmountCents,
+      balanceDueCents: settlement.balanceDueCents ?? totalCents,
 
       depositAmountCents: 0,
       depositDueDate: "",
@@ -800,12 +808,13 @@ export async function autoGenerateContractForBooking(
 
     payment: {
       intent: "",
-      method: "",
+      method: settlement.latestCompleted?.methodLabel ?? "",
       amountCents: totalCents,
       currency: sellCurrency,
       schedule: [],
-      capturedAt: "",
-      createdAt: "",
+      capturedAt: settlement.latestCompleted?.date ?? "",
+      createdAt: settlement.latestCompleted?.date ?? "",
+      latestCompleted: settlement.latestCompleted,
     },
 
     operator: {
@@ -960,6 +969,100 @@ export async function autoGenerateContractForBooking(
 
 function defaultVariablesToRecord(defaults: DefaultContractVariables): Record<string, unknown> {
   return { ...defaults }
+}
+
+type SettlementInvoiceRow = Pick<
+  typeof invoices.$inferSelect,
+  "currency" | "baseCurrency" | "balanceDueCents" | "baseBalanceDueCents"
+>
+
+type SettlementPaymentRow = Pick<
+  typeof payments.$inferSelect,
+  "amountCents" | "currency" | "baseCurrency" | "baseAmountCents" | "paymentMethod" | "paymentDate"
+>
+
+async function resolveBookingSettlementVariables(
+  db: PostgresJsDatabase,
+  bookingId: string,
+  bookingCurrency: string,
+): Promise<{
+  paidAmountCents: number
+  balanceDueCents: number | null
+  latestCompleted?: DefaultContractVariables["payment"]["latestCompleted"]
+}> {
+  const invoiceRows = await db
+    .select({
+      currency: invoices.currency,
+      baseCurrency: invoices.baseCurrency,
+      balanceDueCents: invoices.balanceDueCents,
+      baseBalanceDueCents: invoices.baseBalanceDueCents,
+    })
+    .from(invoices)
+    .where(and(eq(invoices.bookingId, bookingId), ne(invoices.status, "void")))
+
+  const currency = bookingCurrency || invoiceRows[0]?.currency || ""
+
+  const completedPaymentRows = await db
+    .select({
+      amountCents: payments.amountCents,
+      currency: payments.currency,
+      baseCurrency: payments.baseCurrency,
+      baseAmountCents: payments.baseAmountCents,
+      paymentMethod: payments.paymentMethod,
+      paymentDate: payments.paymentDate,
+    })
+    .from(payments)
+    .innerJoin(invoices, eq(payments.invoiceId, invoices.id))
+    .where(
+      and(
+        eq(invoices.bookingId, bookingId),
+        ne(invoices.status, "void"),
+        eq(payments.status, "completed"),
+      ),
+    )
+    .orderBy(desc(payments.paymentDate), desc(payments.createdAt))
+
+  const paidAmountCents = completedPaymentRows.reduce(
+    (sum, payment) => sum + amountInCurrency(payment, currency),
+    0,
+  )
+  const balanceDueCents =
+    invoiceRows.length > 0
+      ? invoiceRows.reduce((sum, invoice) => sum + invoiceBalanceInCurrency(invoice, currency), 0)
+      : null
+  const latestPayment = completedPaymentRows[0]
+
+  return {
+    paidAmountCents,
+    balanceDueCents,
+    latestCompleted: latestPayment
+      ? {
+          method: latestPayment.paymentMethod,
+          methodLabel: formatPaymentMethodLabel(latestPayment.paymentMethod),
+          date: latestPayment.paymentDate,
+        }
+      : undefined,
+  }
+}
+
+function amountInCurrency(payment: SettlementPaymentRow, currency: string): number {
+  if (!currency || payment.currency === currency) return payment.amountCents
+  if (payment.baseCurrency === currency) return payment.baseAmountCents ?? 0
+  return 0
+}
+
+function invoiceBalanceInCurrency(invoice: SettlementInvoiceRow, currency: string): number {
+  if (!currency || invoice.currency === currency) return invoice.balanceDueCents
+  if (invoice.baseCurrency === currency) return invoice.baseBalanceDueCents ?? 0
+  return 0
+}
+
+function formatPaymentMethodLabel(method: string): string {
+  return method
+    .split("_")
+    .filter(Boolean)
+    .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`)
+    .join(" ")
 }
 
 function computeNights(startDate: string, endDate: string): number {

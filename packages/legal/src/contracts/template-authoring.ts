@@ -211,14 +211,16 @@ export const contractTemplateVariableCatalog: ContractTemplateVariableCategory[]
       {
         key: "booking.paidAmountCents",
         label: "Paid so far",
-        example: "0",
+        example: "50000",
         type: "cents",
+        description: "Customer settlement total from completed payments.",
       },
       {
         key: "booking.balanceDueCents",
         label: "Balance due",
-        example: "249900",
+        example: "199900",
         type: "cents",
+        description: "Current customer balance from non-void invoice balances.",
       },
       // Payment-schedule-derived (deposit / balance from
       // booking_payment_schedules)
@@ -565,7 +567,13 @@ export const contractTemplateVariableCatalog: ContractTemplateVariableCategory[]
         type: "string",
         description: "card | bank_transfer | hold | inquiry | ticket_on_credit",
       },
-      { key: "payment.method", label: "Method label", example: "Card payment", type: "string" },
+      {
+        key: "payment.method",
+        label: "Method label",
+        example: "Bank Transfer",
+        type: "string",
+        description: "Alias for `payment.latestCompleted.methodLabel` when a payment exists.",
+      },
       {
         key: "payment.amountCents",
         label: "Amount",
@@ -578,6 +586,7 @@ export const contractTemplateVariableCatalog: ContractTemplateVariableCategory[]
         label: "Captured at",
         example: "2026-05-04T10:05:12Z",
         type: "datetime",
+        description: "Alias for `payment.latestCompleted.date` when a payment exists.",
       },
       {
         key: "payment.createdAt",
@@ -585,6 +594,24 @@ export const contractTemplateVariableCatalog: ContractTemplateVariableCategory[]
         example: "2026-05-04T10:05:12Z",
         type: "datetime",
         description: "Alias for `payment.capturedAt`.",
+      },
+      {
+        key: "payment.latestCompleted.method",
+        label: "Latest payment method",
+        example: "bank_transfer",
+        type: "string",
+      },
+      {
+        key: "payment.latestCompleted.methodLabel",
+        label: "Latest payment method label",
+        example: "Bank Transfer",
+        type: "string",
+      },
+      {
+        key: "payment.latestCompleted.date",
+        label: "Latest payment date",
+        example: "2026-05-04",
+        type: "date",
       },
     ],
   },
@@ -796,10 +823,21 @@ No lead traveler on file.
 </table>`,
   },
   {
+    id: "settlement-summary",
+    label: "Settlement summary",
+    description: "Render customer-paid and remaining amounts from actual settlement state.",
+    code: `{% if booking.paidAmountCents > 0 %}
+Achitat: {{ booking.paidAmountCents | cents: booking.currency, "ro-RO" }}{% if payment.latestCompleted %} prin {{ payment.latestCompleted.methodLabel }} în data de {{ payment.latestCompleted.date | format_date: "long", "ro-RO" }}{% endif %}.
+{% endif %}
+{% if booking.balanceDueCents > 0 %}
+Diferență de plată: {{ booking.balanceDueCents | cents: booking.currency, "ro-RO" }}.
+{% endif %}`,
+  },
+  {
     id: "deposit-balance",
     label: "Deposit + balance line",
     description:
-      "Render the typical advance + remainder copy. Falls through gracefully when no schedule is on file.",
+      "Render the scheduled advance + remainder policy. Use the settlement snippet for current paid/remaining state.",
     code: `{% if booking.depositAmountCents > 0 %}
 Avansul este: {{ booking.depositAmountCents | cents: booking.currency, "ro-RO" }}, achitat cu {{ payment.method }} în data de {{ payment.capturedAt | format_date: "long", "ro-RO" }}.
 Diferență plată {{ booking.balanceAmountCents | cents: booking.currency, "ro-RO" }} până la data de {{ booking.balanceDueDate | format_date: "long", "ro-RO" }}.
