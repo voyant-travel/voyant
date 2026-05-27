@@ -44,6 +44,8 @@ pnpm -C templates/operator check:startup
 pnpm -C templates/operator measure:startup
 ```
 
+Both scripts rebuild the operator template first. That keeps startup evidence
+tied to the current source instead of a stale `dist/server` artifact.
 `check:startup` is the direct Wrangler lane. `measure:startup` stores the Chrome
 CPU profile under `.wrangler/startup-profiles/worker-startup.cpuprofile` and
 prints a compact self-time summary so reviewers can see which files and
