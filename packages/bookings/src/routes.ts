@@ -1466,11 +1466,10 @@ export const bookingRoutes = new Hono<Env>()
 
   // 3. POST /reserve — Reserve inventory and create on-hold booking
   .post("/reserve", idempotencyKey({ scope: "POST /v1/admin/bookings/reserve" }), async (c) => {
-    const result = await bookingsService.reserveBooking(
-      c.get("db"),
-      await parseJsonBody(c, reserveBookingSchema),
-      c.get("userId"),
-    )
+    const data = await parseJsonBody(c, reserveBookingSchema)
+    await validateBookingBillingPartyReferences(c, data)
+
+    const result = await bookingsService.reserveBooking(c.get("db"), data, c.get("userId"))
 
     if ("booking" in result) {
       return c.json({ data: result.booking }, 201)
@@ -1500,11 +1499,10 @@ export const bookingRoutes = new Hono<Env>()
     "/from-product",
     idempotencyKey({ scope: "POST /v1/admin/bookings/from-product" }),
     async (c) => {
-      const row = await bookingsService.createBookingFromProduct(
-        c.get("db"),
-        await parseJsonBody(c, convertProductSchema),
-        c.get("userId"),
-      )
+      const data = await parseJsonBody(c, convertProductSchema)
+      await validateBookingBillingPartyReferences(c, data)
+
+      const row = await bookingsService.createBookingFromProduct(c.get("db"), data, c.get("userId"))
 
       if (!row) {
         return c.json({ error: "Product or option not found" }, 404)
