@@ -359,6 +359,10 @@ const bookingsHonoModule = createBookingsHonoModule({
     })
     return person?.id ?? null
   },
+  resolveBillingPersonById: async (db, personId) =>
+    (await crmService.getPersonById(db, personId)) != null,
+  resolveBillingOrganizationById: async (db, organizationId) =>
+    (await crmService.getOrganizationById(db, organizationId)) != null,
 })
 
 const financeModule = createFinanceHonoModule({

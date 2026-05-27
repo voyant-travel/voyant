@@ -1,3 +1,4 @@
+import { typeIdSchemas } from "@voyantjs/db/lib/typeid"
 import { z } from "zod"
 
 import {
@@ -47,11 +48,27 @@ export const bookingPriceOverrideSchema = z.object({
   overriddenAt: z.string().datetime(),
 })
 
+const bookingBillingPersonIdSchema = typeIdSchemas.person.optional().nullable()
+const bookingBillingOrganizationIdSchema = typeIdSchemas.organization.optional().nullable()
+
+function validateExclusiveBillingParty(
+  value: { personId?: string | null; organizationId?: string | null },
+  ctx: z.RefinementCtx,
+) {
+  if (!value.personId || !value.organizationId) return
+
+  ctx.addIssue({
+    code: z.ZodIssueCode.custom,
+    path: ["organizationId"],
+    message: "Billing party must be either personId or organizationId, not both",
+  })
+}
+
 const bookingCoreSchema = z.object({
   bookingNumber: z.string().min(1).max(50),
   status: bookingStatusSchema.default("draft"),
-  personId: z.string().optional().nullable(),
-  organizationId: z.string().optional().nullable(),
+  personId: bookingBillingPersonIdSchema,
+  organizationId: bookingBillingOrganizationIdSchema,
   sourceType: bookingSourceTypeSchema.default("manual"),
   externalBookingRef: z.string().optional().nullable(),
   communicationLanguage: z.string().max(35).optional().nullable(),
@@ -87,8 +104,10 @@ const bookingCoreSchema = z.object({
   redeemedAt: z.string().datetime().optional().nullable(),
 })
 
-export const insertBookingSchema = bookingCoreSchema
-export const updateBookingSchema = bookingCoreSchema.partial()
+export const insertBookingSchema = bookingCoreSchema.superRefine(validateExclusiveBillingParty)
+export const updateBookingSchema = bookingCoreSchema
+  .partial()
+  .superRefine(validateExclusiveBillingParty)
 
 export const createBookingSchema = bookingCoreSchema
   .extend({
@@ -102,6 +121,7 @@ export const createBookingSchema = bookingCoreSchema
     message: "Use the reservation flow to manage booking hold expiry",
     path: ["holdExpiresAt"],
   })
+  .superRefine(validateExclusiveBillingParty)
 
 export const bookingListSortFieldSchema = z.enum([
   "bookingNumber",
@@ -178,8 +198,8 @@ export const convertProductSchema = z
     optionId: z.string().optional().nullable(),
     slotId: z.string().optional().nullable(),
     bookingNumber: z.string().min(1).max(50),
-    personId: z.string().optional().nullable(),
-    organizationId: z.string().optional().nullable(),
+    personId: bookingBillingPersonIdSchema,
+    organizationId: bookingBillingOrganizationIdSchema,
     pax: z.number().int().positive().optional().nullable(),
     internalNotes: z.string().optional().nullable(),
     /**
@@ -257,6 +277,8 @@ export const convertProductSchema = z
       .optional(),
   })
   .superRefine((value, ctx) => {
+    validateExclusiveBillingParty(value, ctx)
+
     if (value.confirmedSellAmountCents == null) return
     if (value.catalogSellAmountCents === value.confirmedSellAmountCents) return
     if (value.priceOverrideReason) return
@@ -327,6 +349,7 @@ export const reserveBookingSchema = bookingCoreSchema
     holdExpiresAt: z.string().datetime().optional().nullable(),
     items: z.array(reserveBookingItemSchema).min(1),
   })
+  .superRefine(validateExclusiveBillingParty)
 
 export const extendBookingHoldSchema = z
   .object({

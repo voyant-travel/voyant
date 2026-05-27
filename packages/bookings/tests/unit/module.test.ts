@@ -55,4 +55,28 @@ describe("createBookingsHonoModule.bootstrap", () => {
     expect(resolveKmsProvider).toHaveBeenCalledTimes(1)
     expect(resolved).toBe(fakeKms)
   })
+
+  it("registers injected billing-party reference resolvers", async () => {
+    const resolveBillingPersonById = vi.fn(async () => true)
+    const resolveBillingOrganizationById = vi.fn(async () => true)
+    const module = createBookingsHonoModule({
+      resolveBillingPersonById,
+      resolveBillingOrganizationById,
+    })
+    const container = createContainer()
+
+    await module.module.bootstrap?.({
+      bindings: {
+        KMS_PROVIDER: "env",
+        KMS_LOCAL_KEY: "test-key",
+      },
+      container,
+      eventBus: createEventBus(),
+    })
+
+    const runtime = container.resolve<BookingRouteRuntime>(BOOKING_ROUTE_RUNTIME_CONTAINER_KEY)
+
+    expect(runtime.resolveBillingPersonById).toBe(resolveBillingPersonById)
+    expect(runtime.resolveBillingOrganizationById).toBe(resolveBillingOrganizationById)
+  })
 })
