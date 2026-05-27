@@ -1,5 +1,16 @@
 # @voyantjs/bookings
 
+## 0.81.21
+
+### Patch Changes
+
+- b9fb5b0: Reject malformed or conflicting booking billing-party identifiers before create and update persistence.
+  - @voyantjs/action-ledger@0.81.21
+  - @voyantjs/core@0.81.21
+  - @voyantjs/db@0.81.21
+  - @voyantjs/hono@0.81.21
+  - @voyantjs/utils@0.81.21
+
 ## 0.81.20
 
 ### Patch Changes
