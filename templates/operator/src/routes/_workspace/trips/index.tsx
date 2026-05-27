@@ -74,7 +74,7 @@ function TripsIndexRoute() {
   const [search, setSearch] = React.useState("")
   const [status, setStatus] = React.useState<TripStatusFilter>(TRIP_STATUS_ALL)
   const [productId, setProductId] = React.useState<string | null>(null)
-  const [hospitalityId, setHospitalityId] = React.useState<string | null>(null)
+  const [accommodationId, setAccommodationId] = React.useState<string | null>(null)
   const [cruiseId, setCruiseId] = React.useState<string | null>(null)
   const [hasFlight, setHasFlight] = React.useState(false)
   const [totalMin, setTotalMin] = React.useState("")
@@ -100,7 +100,7 @@ function TripsIndexRoute() {
       ...(search.trim() ? { search: search.trim() } : {}),
       ...(status !== TRIP_STATUS_ALL ? { status } : {}),
       ...(productId ? { productId } : {}),
-      ...(hospitalityId ? { hospitalityId } : {}),
+      ...(accommodationId ? { accommodationId } : {}),
       ...(cruiseId ? { cruiseId } : {}),
       ...(hasFlight ? { hasFlight: true } : {}),
       ...(totalMinCents !== null ? { totalMinCents } : {}),
@@ -115,7 +115,7 @@ function TripsIndexRoute() {
       search,
       status,
       productId,
-      hospitalityId,
+      accommodationId,
       cruiseId,
       hasFlight,
       totalMinCents,
@@ -127,7 +127,7 @@ function TripsIndexRoute() {
   const activeFilterCount =
     (status !== TRIP_STATUS_ALL ? 1 : 0) +
     (productId ? 1 : 0) +
-    (hospitalityId ? 1 : 0) +
+    (accommodationId ? 1 : 0) +
     (cruiseId ? 1 : 0) +
     (hasFlight ? 1 : 0) +
     (totalMin !== "" || totalMax !== "" ? 1 : 0) +
@@ -157,7 +157,7 @@ function TripsIndexRoute() {
     setSearch("")
     setStatus(TRIP_STATUS_ALL)
     setProductId(null)
-    setHospitalityId(null)
+    setAccommodationId(null)
     setCruiseId(null)
     setHasFlight(false)
     setTotalMin("")
@@ -202,8 +202,8 @@ function TripsIndexRoute() {
             onStatusChange={setStatus}
             productId={productId}
             onProductIdChange={setProductId}
-            hospitalityId={hospitalityId}
-            onHospitalityIdChange={setHospitalityId}
+            accommodationId={accommodationId}
+            onAccommodationIdChange={setAccommodationId}
             cruiseId={cruiseId}
             onCruiseIdChange={setCruiseId}
             hasFlight={hasFlight}

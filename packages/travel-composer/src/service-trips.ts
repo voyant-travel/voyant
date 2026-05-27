@@ -68,7 +68,7 @@ export async function listTrips(
 
   const needsComponents =
     input.productId !== undefined ||
-    input.hospitalityId !== undefined ||
+    input.accommodationId !== undefined ||
     input.cruiseId !== undefined ||
     input.hasFlight === true
   // When a component-based filter is active we have to know each envelope's
@@ -129,10 +129,11 @@ export async function listTrips(
         return false
       }
       if (
-        input.hospitalityId &&
+        input.accommodationId &&
         !envelopeComponents.some(
           (component) =>
-            component.entityModule === "hospitality" && component.entityId === input.hospitalityId,
+            component.entityModule === "accommodations" &&
+            component.entityId === input.accommodationId,
         )
       ) {
         return false

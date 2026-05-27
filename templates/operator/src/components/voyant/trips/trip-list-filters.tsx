@@ -94,8 +94,8 @@ export interface TripListFiltersPopoverProps {
   onStatusChange(value: TripStatusFilter): void
   productId: string | null
   onProductIdChange(value: string | null): void
-  hospitalityId: string | null
-  onHospitalityIdChange(value: string | null): void
+  accommodationId: string | null
+  onAccommodationIdChange(value: string | null): void
   cruiseId: string | null
   onCruiseIdChange(value: string | null): void
   hasFlight: boolean
@@ -117,8 +117,8 @@ export function TripListFiltersPopover({
   onStatusChange,
   productId,
   onProductIdChange,
-  hospitalityId,
-  onHospitalityIdChange,
+  accommodationId,
+  onAccommodationIdChange,
   cruiseId,
   onCruiseIdChange,
   hasFlight,
@@ -160,7 +160,7 @@ export function TripListFiltersPopover({
   const productHits = productsQuery.data?.hits ?? []
 
   const staysQuery = useCatalogSearch({
-    vertical: "hospitality",
+    vertical: "accommodations",
     query: staySearch,
     mode: "keyword",
     pagination: { limit: 20 },
@@ -231,8 +231,8 @@ export function TripListFiltersPopover({
 
           <CatalogFilterCombobox
             label={filterMessages.stays}
-            value={hospitalityId}
-            onValueChange={onHospitalityIdChange}
+            value={accommodationId}
+            onValueChange={onAccommodationIdChange}
             items={stayHits}
             selectedItem={selectedStay}
             onSelectedItemChange={setSelectedStay}

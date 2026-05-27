@@ -33,3 +33,24 @@ and local API routes that eagerly importing the API graph pushes Cloudflare
 startup validation over the CPU limit. Lazy-loading keeps the first SSR
 entrypoint small while preserving warm-isolate caching for API and workflow
 requests.
+
+## Measurement Lane
+
+For the operator template, use Wrangler's startup profiler before and after
+entrypoint changes:
+
+```sh
+pnpm -C templates/operator check:startup
+pnpm -C templates/operator measure:startup
+```
+
+`check:startup` is the direct Wrangler lane. `measure:startup` stores the Chrome
+CPU profile under `.wrangler/startup-profiles/worker-startup.cpuprofile` and
+prints a compact self-time summary so reviewers can see which files and
+functions dominate startup. Wrangler measures on the local machine, so treat the
+numbers as relative evidence, not exact Cloudflare production CPU.
+
+This lane measures Worker startup only. First-hit costs for `/api/*`, scheduled
+jobs, and workflow steps should be measured separately by hitting those runtime
+branches in `wrangler dev`; those branches are intentionally lazy and should not
+move back into module startup just to make first-hit traces quieter.

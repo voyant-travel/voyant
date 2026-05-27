@@ -11,6 +11,7 @@
     "test": "vitest run --passWithNoTests",
     "deploy": "pnpm run build && wrangler deploy",
     "check:startup": "wrangler check startup",
+    "measure:startup": "node ../../scripts/measure-cloudflare-startup.mjs .",
     "dev:worker": "voyant dev --file src/workflows.ts --port 3310",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",

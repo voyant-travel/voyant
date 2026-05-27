@@ -29,7 +29,7 @@ export type ListTripsParams = {
   status?: TripEnvelopeStatus
   search?: string
   productId?: string
-  hospitalityId?: string
+  accommodationId?: string
   cruiseId?: string
   hasFlight?: boolean
   totalMinCents?: number
@@ -73,7 +73,7 @@ function withQuery(path: string, params: ListTripsParams = {}): string {
   if (params.status) search.set("status", params.status)
   if (params.search) search.set("search", params.search)
   if (params.productId) search.set("productId", params.productId)
-  if (params.hospitalityId) search.set("hospitalityId", params.hospitalityId)
+  if (params.accommodationId) search.set("accommodationId", params.accommodationId)
   if (params.cruiseId) search.set("cruiseId", params.cruiseId)
   if (params.hasFlight !== undefined) search.set("hasFlight", String(params.hasFlight))
   if (params.totalMinCents !== undefined) {

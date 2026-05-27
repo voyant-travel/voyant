@@ -45,11 +45,17 @@ describe("travel composer react operations", () => {
           return jsonResponse({ data: [], total: 0, limit: 25, offset: 0 })
         },
       },
-      { status: "reserved", search: "istanbul", limit: 25, offset: 50 },
+      {
+        status: "reserved",
+        search: "istanbul",
+        accommodationId: "acc_123",
+        limit: 25,
+        offset: 50,
+      },
     )
 
     expect(calls[0]?.url).toBe(
-      "https://app.example/v1/admin/travel-composer/trips?status=reserved&search=istanbul&limit=25&offset=50",
+      "https://app.example/v1/admin/travel-composer/trips?status=reserved&search=istanbul&accommodationId=acc_123&limit=25&offset=50",
     )
   })
 
