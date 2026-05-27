@@ -1,31 +1,43 @@
-// Importing the workflows module here side-loads every `workflow({...})`
-// and `trigger.on(...)` declaration into the process-local registries
-// before `createApp()` collects them. Without this import the modules /
-// plugins arrays in app.ts would carry empty workflow + filter lists.
-import "./workflows.js"
-
 import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
-import { BULK_REINDEX_SERVICE_KEY } from "@voyantjs/promotions"
-import { handleStepRequest } from "@voyantjs/workflows/handler"
-import { createInMemoryRateLimiter } from "@voyantjs/workflows/rate-limit"
+import { BULK_REINDEX_SERVICE_KEY } from "@voyantjs/promotions/workflow-runtime"
 import type { StepHandler } from "@voyantjs/workflows-orchestrator"
-import {
+import type {
   createInlineDispatcher,
-  handleDurableObjectAlarm,
-  handleDurableObjectRequest,
-  type StepDispatcher,
+  StepDispatcher,
 } from "@voyantjs/workflows-orchestrator-cloudflare"
-
-import { app as apiApp } from "./api/app"
-import { runScheduledChannelPushReconciler } from "./api/channel-push-scheduled"
-import { DRAFT_REAPER_CRON, runScheduledDraftReaper } from "./api/draft-reaper-scheduled"
-import { createBulkReindexProductsService } from "./api/lib/bulk-reindex-service"
 import {
+  CHANNEL_PUSH_AVAILABILITY_CRON,
+  CHANNEL_PUSH_BOOKING_LINK_CRON,
+  CHANNEL_PUSH_CONTENT_CRON,
+  DRAFT_REAPER_CRON,
   PROMOTION_BOUNDARY_SCHEDULER_CRON,
-  runScheduledPromotionBoundary,
-} from "./api/promotion-scheduled"
+} from "./scheduled-crons"
 
 const startHandler = createStartHandler(defaultStreamHandler)
+
+let apiAppPromise: Promise<typeof import("./api/app")["app"]> | undefined
+function loadApiApp(): Promise<typeof import("./api/app")["app"]> {
+  apiAppPromise ??= import("./api/app").then((mod) => mod.app)
+  return apiAppPromise
+}
+
+let workflowDefinitionsPromise: Promise<unknown> | undefined
+function loadWorkflowDefinitions(): Promise<unknown> {
+  workflowDefinitionsPromise ??= import("./workflows.js")
+  return workflowDefinitionsPromise
+}
+
+let workflowRuntimePromise:
+  | Promise<typeof import("@voyantjs/workflows-orchestrator-cloudflare")>
+  | undefined
+function loadWorkflowRuntime(): Promise<
+  typeof import("@voyantjs/workflows-orchestrator-cloudflare")
+> {
+  workflowRuntimePromise ??= import("@voyantjs/workflows-orchestrator-cloudflare")
+  return workflowRuntimePromise
+}
+
+type InlineDispatcherFactory = typeof createInlineDispatcher
 
 export default {
   async fetch(request: Request, env: CloudflareBindings, ctx: ExecutionContext): Promise<Response> {
@@ -37,6 +49,7 @@ export default {
       const apiUrl = new URL(stripped, url.origin)
       apiUrl.search = url.search
       const apiRequest = new Request(apiUrl.toString(), request)
+      const apiApp = await loadApiApp()
       return apiApp.fetch(apiRequest, env, ctx)
     }
 
@@ -54,21 +67,37 @@ export default {
   ): Promise<void> {
     if (event.cron === DRAFT_REAPER_CRON) {
       ctx.waitUntil(
-        runScheduledDraftReaper(event, env).then((result) => {
-          console.info("[draft-reaper] result", result)
-        }),
+        import("./api/draft-reaper-scheduled")
+          .then((mod) => mod.runScheduledDraftReaper(event, env))
+          .then((result) => {
+            console.info("[draft-reaper] result", result)
+          }),
       )
       return
     }
     if (event.cron === PROMOTION_BOUNDARY_SCHEDULER_CRON) {
       ctx.waitUntil(
-        runScheduledPromotionBoundary(event, env).then((result) => {
-          console.info("[promotion-scheduler] result", result)
-        }),
+        import("./api/promotion-scheduled")
+          .then((mod) => mod.runScheduledPromotionBoundary(event, env))
+          .then((result) => {
+            console.info("[promotion-scheduler] result", result)
+          }),
       )
       return
     }
-    ctx.waitUntil(runScheduledChannelPushReconciler(event, env))
+    if (
+      event.cron === CHANNEL_PUSH_BOOKING_LINK_CRON ||
+      event.cron === CHANNEL_PUSH_AVAILABILITY_CRON ||
+      event.cron === CHANNEL_PUSH_CONTENT_CRON
+    ) {
+      ctx.waitUntil(
+        import("./api/channel-push-scheduled").then((mod) =>
+          mod.runScheduledChannelPushReconciler(event, env),
+        ),
+      )
+      return
+    }
+    console.warn("[scheduled] unknown cron expression", { cron: event.cron })
   },
 }
 
@@ -79,9 +108,9 @@ export default {
  * addresses one DO per `runId`, each holding the run journal in DO
  * storage and dispatching steps through the `StepDispatcher` resolved
  * here. We use the inline dispatcher because workflow code lives in
- * THIS Worker (loaded by the side-effect import of `./workflows.js`
- * above), so step bodies can be invoked by direct call — no HTTP, no
- * service binding.
+ * THIS Worker. The workflow definitions are loaded lazily by the step
+ * handler before execution, so step bodies can be invoked by direct call
+ * without forcing the full workflow graph into Worker startup.
  *
  * Services available to step bodies via `ctx.services.resolve(...)` are
  * registered by `buildWorkflowStepServices(env)` below. Keep the surface
@@ -98,31 +127,33 @@ export class WorkflowRunDO implements DurableObject {
   }
 
   async fetch(request: Request): Promise<Response> {
-    return handleDurableObjectRequest(request, this.deps())
+    const { createInlineDispatcher, handleDurableObjectRequest } = await loadWorkflowRuntime()
+    return handleDurableObjectRequest(request, this.deps(createInlineDispatcher))
   }
 
   async alarm(): Promise<void> {
-    await handleDurableObjectAlarm(this.deps())
+    const { createInlineDispatcher, handleDurableObjectAlarm } = await loadWorkflowRuntime()
+    await handleDurableObjectAlarm(this.deps(createInlineDispatcher))
   }
 
-  private deps() {
+  private deps(inlineDispatcherFactory: InlineDispatcherFactory) {
     return {
       storage: this.state.storage,
-      dispatcher: this.resolveDispatcher(),
+      dispatcher: this.resolveDispatcher(inlineDispatcherFactory),
     }
   }
 
-  private resolveDispatcher(): StepDispatcher {
+  private resolveDispatcher(inlineDispatcherFactory: InlineDispatcherFactory): StepDispatcher {
     if (this.dispatcher) return this.dispatcher
-    this.dispatcher = createInlineDispatcher(buildStepHandler(this.env))
+    this.dispatcher = inlineDispatcherFactory(buildStepHandler(this.env))
     return this.dispatcher
   }
 }
 
 /**
  * Build the in-process StepHandler. One per DO instance. Threads:
- *   - the workflow registry (populated by the `import "./workflows.js"`
- *     side effect at the top of this file)
+ *   - the workflow registry (populated by lazy-importing `./workflows.js`
+ *     before the first step request)
  *   - the workflow-step service resolver (built from env so each step
  *     body can reach DB / indexer through a clean container)
  *   - an in-memory rate limiter so `step.rateLimit` declarations work
@@ -133,10 +164,30 @@ export class WorkflowRunDO implements DurableObject {
  * if you need node steps.
  */
 function buildStepHandler(env: CloudflareBindings): StepHandler {
-  const rateLimiter = createInMemoryRateLimiter()
-  const services = buildWorkflowStepServices(env)
-  return (req, opts) =>
-    handleStepRequest(
+  let depsPromise:
+    | Promise<{
+        handleStepRequest: typeof import("@voyantjs/workflows/handler").handleStepRequest
+        rateLimiter: ReturnType<
+          typeof import("@voyantjs/workflows/rate-limit").createInMemoryRateLimiter
+        >
+        services: ReturnType<typeof buildWorkflowStepServices>
+      }>
+    | undefined
+
+  return async (req, opts) => {
+    depsPromise ??= Promise.all([
+      import("@voyantjs/workflows/handler"),
+      import("@voyantjs/workflows/rate-limit"),
+      import("./api/lib/bulk-reindex-service"),
+      loadWorkflowDefinitions(),
+    ]).then(([handler, rateLimit, bulkReindex]) => ({
+      handleStepRequest: handler.handleStepRequest,
+      rateLimiter: rateLimit.createInMemoryRateLimiter(),
+      services: buildWorkflowStepServices(env, bulkReindex.createBulkReindexProductsService),
+    }))
+
+    const { handleStepRequest, rateLimiter, services } = await depsPromise
+    return handleStepRequest(
       req,
       {
         rateLimiter,
@@ -144,6 +195,7 @@ function buildStepHandler(env: CloudflareBindings): StepHandler {
       },
       opts,
     )
+  }
 }
 
 /**
@@ -152,7 +204,10 @@ function buildStepHandler(env: CloudflareBindings): StepHandler {
  * runtime separately from the request pipeline that builds it. Add
  * services here as new workflows need them.
  */
-function buildWorkflowStepServices(env: CloudflareBindings): {
+function buildWorkflowStepServices(
+  env: CloudflareBindings,
+  createBulkReindexProductsService: typeof import("./api/lib/bulk-reindex-service").createBulkReindexProductsService,
+): {
   resolve<T>(name: string): T
   has(name: string): boolean
 } {

@@ -60,10 +60,12 @@ export {
   updatePromotionalOfferSchema,
 } from "./validation.js"
 export {
-  BULK_REINDEX_SERVICE_KEY,
   type BulkReindexProductsInput,
   type BulkReindexProductsOutput,
-  type BulkReindexProductsService,
   bulkReindexProductsWorkflow,
   promotionAffectedAllFilter,
 } from "./workflow-bulk-reindex.js"
+export {
+  BULK_REINDEX_SERVICE_KEY,
+  type BulkReindexProductsService,
+} from "./workflow-runtime.js"
