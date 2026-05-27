@@ -1,5 +1,15 @@
 # @voyantjs/db
 
+## 0.84.0
+
+### Minor Changes
+
+- 4ea42b3: Add tokenized public document delivery grants, a public document download route, and opt-in public download envelopes for generated finance and legal documents.
+
+### Patch Changes
+
+- @voyantjs/core@0.84.0
+
 ## 0.83.1
 
 ### Patch Changes

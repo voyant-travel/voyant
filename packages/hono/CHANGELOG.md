@@ -1,5 +1,21 @@
 # @voyantjs/hono
 
+## 0.84.0
+
+### Minor Changes
+
+- 4ea42b3: Add tokenized public document delivery grants, a public document download route, and opt-in public download envelopes for generated finance and legal documents.
+
+### Patch Changes
+
+- Updated dependencies [4ea42b3]
+  - @voyantjs/core@0.84.0
+  - @voyantjs/db@0.84.0
+  - @voyantjs/storage@0.84.0
+  - @voyantjs/types@0.84.0
+  - @voyantjs/utils@0.84.0
+  - @voyantjs/workflows@0.84.0
+
 ## 0.83.1
 
 ### Patch Changes

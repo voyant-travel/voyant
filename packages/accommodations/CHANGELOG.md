@@ -1,5 +1,15 @@
 # @voyantjs/accommodations
 
+## 0.84.0
+
+### Patch Changes
+
+- Updated dependencies [4ea42b3]
+  - @voyantjs/bookings@0.84.0
+  - @voyantjs/catalog@0.84.0
+  - @voyantjs/db@0.84.0
+  - @voyantjs/facilities@0.84.0
+
 ## 0.83.1
 
 ### Patch Changes

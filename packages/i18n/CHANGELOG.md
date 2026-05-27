@@ -1,5 +1,11 @@
 # @voyantjs/i18n
 
+## 0.84.0
+
+### Patch Changes
+
+- 5462f07: Rename the remaining active trip composer stay filters from hospitality to accommodations and add a Cloudflare startup profile summary lane.
+
 ## 0.83.1
 
 ## 0.83.0
