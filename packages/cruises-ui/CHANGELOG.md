@@ -1,5 +1,15 @@
 # @voyantjs/cruises-ui
 
+## 0.81.17
+
+### Patch Changes
+
+- Updated dependencies [e31a008]
+  - @voyantjs/catalog-react@0.81.17
+  - @voyantjs/cruises-react@0.81.17
+  - @voyantjs/i18n@0.81.17
+  - @voyantjs/ui@0.81.17
+
 ## 0.81.16
 
 ### Patch Changes
