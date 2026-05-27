@@ -1,5 +1,18 @@
 # @voyantjs/promotions
 
+## 0.83.1
+
+### Patch Changes
+
+- 9d2300d: Add a lightweight `@voyantjs/promotions/workflow-runtime` export for workflow host constants and service contracts, allowing Cloudflare Worker entrypoints to avoid importing the full promotions module graph at startup.
+  - @voyantjs/catalog@0.83.1
+  - @voyantjs/core@0.83.1
+  - @voyantjs/db@0.83.1
+  - @voyantjs/hono@0.83.1
+  - @voyantjs/products@0.83.1
+  - @voyantjs/storefront@0.83.1
+  - @voyantjs/workflows@0.83.1
+
 ## 0.83.0
 
 ### Patch Changes
