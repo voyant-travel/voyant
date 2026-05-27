@@ -474,6 +474,42 @@ describe.skipIf(!DB_AVAILABLE)("Transactions routes (integration)", () => {
     expect(contactRows[0]?.offerItemId).toBeNull()
   })
 
+  it("stores explicit offer billing party snapshots", async () => {
+    const { transactionsService } = await import("../../src/service.js")
+
+    const created = await transactionsService.createOfferBundle(db, {
+      offer: {
+        offerNumber: nextRef("OFF", nextSeq()),
+        title: "Company offer",
+        currency: "EUR",
+        organizationId: "org_123",
+        contactPartyType: "company",
+        contactFirstName: "Acme SRL",
+        contactLastName: null,
+        contactTaxId: "RO123456",
+      },
+      travelers: [
+        {
+          firstName: "Ana",
+          lastName: "Traveler",
+          participantType: "traveler",
+          isPrimary: true,
+        },
+      ],
+      items: [
+        {
+          title: "Tour entry",
+          sellCurrency: "EUR",
+        },
+      ],
+    })
+
+    expect(created?.offer.contactPartyType).toBe("company")
+    expect(created?.offer.contactFirstName).toBe("Acme SRL")
+    expect(created?.offer.contactLastName).toBeNull()
+    expect(created?.offer.contactTaxId).toBe("RO123456")
+  })
+
   async function seedOfferItem(offerId: string, overrides: Record<string, unknown> = {}) {
     const s = nextSeq()
     const res = await app.request("/offer-items", {

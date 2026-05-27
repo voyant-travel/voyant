@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   insertOfferSchema,
   insertOfferTravelerSchema,
+  insertOrderSchema,
   insertOrderTravelerSchema,
   offerMetadataSchema,
   storefrontOfferMetadataSchema,
@@ -39,6 +40,34 @@ describe("transactions offer metadata validation", () => {
         stackable: false,
       },
     })
+  })
+
+  it("accepts billing party and tax snapshots on offers and orders", () => {
+    const offer = insertOfferSchema.parse({
+      offerNumber: "OFF-BILLING-0001",
+      title: "Company offer",
+      currency: "EUR",
+      organizationId: "org_123",
+      contactPartyType: "company",
+      contactFirstName: "Acme SRL",
+      contactLastName: null,
+      contactTaxId: "RO123456",
+    })
+    const order = insertOrderSchema.parse({
+      orderNumber: "ORD-BILLING-0001",
+      title: "Company order",
+      currency: "EUR",
+      organizationId: "org_123",
+      contactPartyType: "company",
+      contactFirstName: "Acme SRL",
+      contactLastName: null,
+      contactTaxId: "RO123456",
+    })
+
+    expect(offer.contactPartyType).toBe("company")
+    expect(offer.contactTaxId).toBe("RO123456")
+    expect(order.contactPartyType).toBe("company")
+    expect(order.contactTaxId).toBe("RO123456")
   })
 
   it("rejects invalid storefront promotional offer metadata", () => {
