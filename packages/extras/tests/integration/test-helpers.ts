@@ -67,6 +67,77 @@ export function createExtrasTestContext() {
     return row!
   }
 
+  async function seedAvailabilitySlot(productId: string, overrides: Record<string, unknown> = {}) {
+    const { availabilitySlots } = await import("@voyantjs/availability/schema")
+    const [row] = await (db as never as import("drizzle-orm/postgres-js").PostgresJsDatabase)
+      .insert(availabilitySlots)
+      .values({
+        productId,
+        dateLocal: "2026-06-01",
+        startsAt: new Date("2026-06-01T08:00:00.000Z"),
+        timezone: "Europe/Bucharest",
+        status: "open",
+        unlimited: false,
+        initialPax: 40,
+        remainingPax: 38,
+        ...overrides,
+      })
+      .returning()
+    return row!
+  }
+
+  async function seedBookingTravelerOnSlot(
+    slotId: string,
+    overrides: Record<string, unknown> = {},
+  ) {
+    const { bookingAllocations, bookingItems, bookingTravelers, bookings } = await import(
+      "@voyantjs/bookings/schema"
+    )
+    const bookingNumber = (overrides.bookingNumber as string | undefined) ?? `BK-${nextSeq()}`
+    const [booking] = await (db as never as import("drizzle-orm/postgres-js").PostgresJsDatabase)
+      .insert(bookings)
+      .values({
+        bookingNumber,
+        status: "confirmed",
+        sellCurrency: "EUR",
+        ...((overrides.booking ?? {}) as Record<string, unknown>),
+      })
+      .returning()
+    const [traveler] = await (db as never as import("drizzle-orm/postgres-js").PostgresJsDatabase)
+      .insert(bookingTravelers)
+      .values({
+        bookingId: booking!.id,
+        firstName: "Ana",
+        lastName: `Traveler ${nextSeq()}`,
+        isPrimary: true,
+        ...((overrides.traveler ?? {}) as Record<string, unknown>),
+      })
+      .returning()
+    const [item] = await (db as never as import("drizzle-orm/postgres-js").PostgresJsDatabase)
+      .insert(bookingItems)
+      .values({
+        bookingId: booking!.id,
+        title: "Trip",
+        itemType: "unit",
+        status: "confirmed",
+        quantity: 1,
+        sellCurrency: "EUR",
+        availabilitySlotId: slotId,
+        ...((overrides.item ?? {}) as Record<string, unknown>),
+      })
+      .returning()
+    await (db as never as import("drizzle-orm/postgres-js").PostgresJsDatabase)
+      .insert(bookingAllocations)
+      .values({
+        bookingId: booking!.id,
+        bookingItemId: item!.id,
+        availabilitySlotId: slotId,
+        status: "confirmed",
+        quantity: 1,
+      })
+    return { booking: booking!, traveler: traveler!, item: item! }
+  }
+
   async function seedProductExtra(overrides: Record<string, unknown> = {}) {
     let productId = overrides.productId as string | undefined
     if (!productId) {
@@ -125,6 +196,8 @@ export function createExtrasTestContext() {
   return {
     request: (path: string, init?: RequestInit) => app.request(path, init),
     seedBooking,
+    seedAvailabilitySlot,
+    seedBookingTravelerOnSlot,
     seedBookingExtra,
     seedOptionExtraConfig,
     seedProduct,

@@ -11,6 +11,7 @@ import {
   loadAvailabilitySlotDetailPage,
 } from "@voyantjs/availability-ui"
 import { BookingCreateSheet, BookingQuickViewSheet } from "@voyantjs/bookings-ui"
+import { SlotExtrasManifestPanel, useExtrasUiMessagesOrDefault } from "@voyantjs/extras-ui"
 import { ProductQuickViewSheet } from "@voyantjs/products-ui"
 import { useState } from "react"
 import { AvailabilitySlotDialog } from "@/components/voyant/availability/availability-dialogs"
@@ -28,6 +29,7 @@ function RouteComponent() {
   const { id } = Route.useParams()
   const navigate = useNavigate()
   const messages = useAdminMessages()
+  const extrasMessages = useExtrasUiMessagesOrDefault()
   const client = getAvailabilityContextValue()
   const slotQuery = useQuery(getAvailabilitySlotDetailQueryOptions(client, id))
   const slot = slotQuery.data?.data
@@ -86,6 +88,8 @@ function RouteComponent() {
             onBookingOpen={(bookingId) => setBookingPreviewId(bookingId)}
           />
         )}
+        renderExtras={({ slotId }) => <SlotExtrasManifestPanel slotId={slotId} />}
+        extrasTabLabel={extrasMessages.slotManifest.title}
       />
 
       <BookingCreateSheet

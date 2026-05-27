@@ -3,6 +3,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
 import { bookingExtras, optionExtraConfigs, productExtras } from "./schema.js"
+import { extrasManifestService } from "./service-manifest.js"
 import type {
   bookingExtraListQuerySchema,
   insertBookingExtraSchema,
@@ -192,4 +193,5 @@ export const extrasService = {
       .returning({ id: bookingExtras.id })
     return row ?? null
   },
+  ...extrasManifestService,
 }

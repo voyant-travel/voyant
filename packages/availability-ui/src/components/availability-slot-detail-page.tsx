@@ -101,6 +101,13 @@ export interface AvailabilitySlotDetailPageProps {
    * shows a stub message instead.
    */
   renderAllocation?: (context: { slotId: string; productId: string | null }) => ReactNode
+  /**
+   * Content for the Extras tab. Hosts that mount `@voyantjs/extras` can
+   * render a slot-level operations manifest here without making
+   * availability-ui depend on extras-ui.
+   */
+  renderExtras?: (context: { slotId: string; productId: string | null }) => ReactNode
+  extrasTabLabel?: ReactNode
 }
 
 export function getAvailabilitySlotDetailQueryOptions(
@@ -197,6 +204,8 @@ export function AvailabilitySlotDetailPage({
   breadcrumb,
   headerActions,
   renderAllocation,
+  renderExtras,
+  extrasTabLabel,
 }: AvailabilitySlotDetailPageProps) {
   const client = useVoyantAvailabilityContext()
   const i18n = useAvailabilityUiI18nOrDefault()
@@ -379,6 +388,9 @@ export function AvailabilitySlotDetailPage({
       <Tabs defaultValue="allocation">
         <TabsList className="flex h-auto w-fit flex-wrap justify-start">
           <TabsTrigger value="allocation">{detailMessages.tabs.allocation}</TabsTrigger>
+          {renderExtras ? (
+            <TabsTrigger value="extras">{extrasTabLabel ?? "Extras"}</TabsTrigger>
+          ) : null}
           {pickupRows.length > 0 ? (
             <TabsTrigger value="pickup">
               {detailMessages.tabs.pickup}
@@ -415,6 +427,12 @@ export function AvailabilitySlotDetailPage({
             </p>
           )}
         </TabsContent>
+
+        {renderExtras ? (
+          <TabsContent value="extras" className="mt-4">
+            {renderExtras({ slotId: id, productId: slot.productId })}
+          </TabsContent>
+        ) : null}
 
         {pickupRows.length > 0 ? (
           <TabsContent value="pickup" className="mt-4">

@@ -15,4 +15,23 @@ export type ExtrasUiMessages = {
     statusLabels: Record<ProductStatus, string>
     bookingModeLabels: Record<ProductBookingMode, string>
   }
+  slotManifest: {
+    title: string
+    emptyExtras: string
+    emptyTravelers: string
+    travelerColumn: string
+    bookingColumn: string
+    selectedLabel: string
+    selectLabel: string
+    cancelLabel: string
+    collectedLabel: string
+    pendingLabel: string
+    waivedLabel: string
+    notRequiredLabel: string
+    markCollected: string
+    markWaived: string
+    selectAll: string
+    clearAll: string
+    loading: string
+  }
 }

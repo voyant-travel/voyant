@@ -32,6 +32,29 @@ export const bookingExtraStatusSchema = z.enum([
   "fulfilled",
 ])
 
+export const extraCollectionModeSchema = z.enum([
+  "booking_total",
+  "cash_on_trip",
+  "external",
+  "included",
+  "none",
+])
+
+export const extraParticipantSelectionStatusSchema = z.enum([
+  "selected",
+  "cancelled",
+  "fulfilled",
+  "no_show",
+])
+
+export const extraCollectionStatusSchema = z.enum([
+  "not_required",
+  "pending",
+  "collected",
+  "waived",
+  "refunded",
+])
+
 export const productExtraCoreSchema = z.object({
   productId: z.string(),
   supplierId: z.string().nullable().optional(),
@@ -41,6 +64,8 @@ export const productExtraCoreSchema = z.object({
   selectionType: extraSelectionTypeSchema.default("optional"),
   pricingMode: extraPricingModeSchema.default("per_booking"),
   pricedPerPerson: z.boolean().default(false),
+  collectionMode: extraCollectionModeSchema.default("booking_total"),
+  showOnSlotManifest: z.boolean().default(true),
   minQuantity: z.number().int().min(0).nullable().optional(),
   maxQuantity: z.number().int().min(0).nullable().optional(),
   defaultQuantity: z.number().int().min(0).nullable().optional(),
@@ -109,4 +134,34 @@ export const bookingExtraListQuerySchema = paginationSchema.extend({
   productExtraId: z.string().optional(),
   optionExtraConfigId: z.string().optional(),
   status: bookingExtraStatusSchema.optional(),
+})
+
+export const slotExtraManifestQuerySchema = z.object({
+  includeInactiveExtras: booleanQueryParam.default(false),
+})
+
+export const slotExtraSelectionPatchSchema = z.object({
+  bookingId: z.string().min(1),
+  travelerId: z.string().min(1),
+  productExtraId: z.string().min(1),
+  optionExtraConfigId: z.string().nullable().optional(),
+  status: extraParticipantSelectionStatusSchema.default("selected"),
+  collectionStatus: extraCollectionStatusSchema.optional(),
+  collectionCurrency: z.string().length(3).nullable().optional(),
+  collectionAmountCents: moneySchema,
+  notes: z.string().nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
+})
+
+export const slotExtraSelectionBulkSchema = z.object({
+  selections: z.array(slotExtraSelectionPatchSchema).min(1).max(500),
+})
+
+export const slotExtraCollectionBulkSchema = z.object({
+  productExtraId: z.string().min(1),
+  travelerIds: z.array(z.string().min(1)).min(1).max(500),
+  collectionStatus: extraCollectionStatusSchema,
+  collectionCurrency: z.string().length(3).nullable().optional(),
+  collectionAmountCents: moneySchema,
+  notes: z.string().nullable().optional(),
 })

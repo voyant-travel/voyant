@@ -81,6 +81,8 @@ export function productExtraRowToProjection(
     ["selectionType", row.selectionType],
     ["pricingMode", row.pricingMode],
     ["pricedPerPerson", row.pricedPerPerson],
+    ["collectionMode", row.collectionMode],
+    ["showOnSlotManifest", row.showOnSlotManifest],
     ["minQuantity", row.minQuantity],
     ["maxQuantity", row.maxQuantity],
     ["defaultQuantity", row.defaultQuantity],

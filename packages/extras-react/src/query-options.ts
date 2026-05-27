@@ -5,7 +5,11 @@ import { queryOptions } from "@tanstack/react-query"
 import { type FetchWithValidationOptions, fetchWithValidation } from "./client.js"
 import type { UseProductExtrasOptions } from "./hooks/use-product-extras.js"
 import { extrasQueryKeys } from "./query-keys.js"
-import { productExtraListResponse, productExtraSingleResponse } from "./schemas.js"
+import {
+  productExtraListResponse,
+  productExtraSingleResponse,
+  slotExtraManifestResponse,
+} from "./schemas.js"
 
 export function getProductExtrasQueryOptions(
   client: FetchWithValidationOptions,
@@ -40,6 +44,23 @@ export function getProductExtraQueryOptions(client: FetchWithValidationOptions, 
       const { data } = await fetchWithValidation(
         `/v1/extras/product-extras/${id}`,
         productExtraSingleResponse,
+        client,
+      )
+      return data
+    },
+  })
+}
+
+export function getSlotExtraManifestQueryOptions(
+  client: FetchWithValidationOptions,
+  slotId: string,
+) {
+  return queryOptions({
+    queryKey: extrasQueryKeys.slotManifest(slotId),
+    queryFn: async () => {
+      const { data } = await fetchWithValidation(
+        `/v1/extras/slot-manifests/${slotId}`,
+        slotExtraManifestResponse,
         client,
       )
       return data

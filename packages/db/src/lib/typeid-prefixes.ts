@@ -225,6 +225,7 @@ export const PREFIXES = {
   product_extras: "pxtr",
   option_extra_configs: "oexc",
   booking_extras: "bkex",
+  extra_participant_selections: "exps",
   product_contact_requirements: "pcre",
   product_booking_questions: "pbqq",
   option_booking_questions: "obqq",
