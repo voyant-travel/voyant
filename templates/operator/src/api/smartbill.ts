@@ -504,7 +504,7 @@ async function resolveSmartbillClient(
 
   return {
     name: clientName,
-    vatCode: organizationRow?.vatNumber ?? undefined,
+    vatCode: organizationRow?.vatNumber ?? nonEmpty(booking.contactTaxId) ?? undefined,
     address: nonEmpty(primaryAddress?.fullText) ?? addressLine ?? bookingAddressLine ?? "-",
     city: nonEmpty(primaryAddress?.city) ?? nonEmpty(booking.contactCity) ?? "-",
     county: nonEmpty(primaryAddress?.region) ?? nonEmpty(booking.contactRegion),

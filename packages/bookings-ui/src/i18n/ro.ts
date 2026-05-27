@@ -151,6 +151,7 @@ export const bookingsUiRo = {
     tabActivity: "Activitate",
     internalNotesLabel: "Note interne",
     billingPayer: "Platitor",
+    billingTaxId: "Cod fiscal",
     billingEmail: "Email",
     billingPhone: "Telefon",
     billingAddress: "Adresa",
@@ -1092,8 +1093,11 @@ export const bookingsUiRo = {
   bookingBillingDialog: {
     title: "Editeaza contactul de facturare",
     fields: {
+      partyType: "Tip facturare",
       firstName: "Prenume",
       lastName: "Nume",
+      companyName: "Denumire",
+      taxId: "Cod fiscal",
       email: "Email",
       phone: "Telefon",
       addressLine1: "Adresa linia 1",
@@ -1102,6 +1106,10 @@ export const bookingsUiRo = {
       region: "Judet / regiune",
       postalCode: "Cod postal",
       country: "Tara",
+    },
+    partyTypeLabels: {
+      individual: "Persoana fizica",
+      company: "Companie",
     },
     actions: {
       cancel: "Anuleaza",

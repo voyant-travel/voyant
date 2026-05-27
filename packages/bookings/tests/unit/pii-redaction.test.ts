@@ -97,6 +97,7 @@ describe("redactBookingContact()", () => {
       status: "confirmed" as const,
       contactFirstName: "Alice",
       contactLastName: "Smith",
+      contactTaxId: "RO12345678",
       contactEmail: "alice@example.com",
       contactPhone: "+40712345678",
       contactAddressLine1: "Str. Lipscani 1",
@@ -110,6 +111,7 @@ describe("redactBookingContact()", () => {
     expect(output.status).toBe("confirmed")
     expect(output.contactFirstName).toBe("***")
     expect(output.contactLastName).toBe("***")
+    expect(output.contactTaxId).toBe("***")
     expect(output.contactEmail).toBe("a***e@example.com")
     expect(output.contactPhone).toBe("***5678")
     expect(output.contactAddressLine1).toBe("***")
@@ -124,6 +126,7 @@ describe("redactBookingContact()", () => {
       id: "book_1",
       contactFirstName: null,
       contactLastName: null,
+      contactTaxId: null,
       contactEmail: null,
       contactPhone: null,
       contactAddressLine1: null,
@@ -131,6 +134,7 @@ describe("redactBookingContact()", () => {
       contactPostalCode: null,
     }
     const output = redactBookingContact(input)
+    expect(output.contactTaxId).toBeNull()
     expect(output.contactEmail).toBeNull()
     expect(output.contactPhone).toBeNull()
   })

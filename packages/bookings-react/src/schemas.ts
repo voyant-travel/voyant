@@ -96,6 +96,8 @@ export const bookingRecordSchema = z.object({
   communicationLanguage: z.string().nullable().optional(),
   contactFirstName: z.string().nullable().optional(),
   contactLastName: z.string().nullable().optional(),
+  contactPartyType: z.enum(["individual", "company"]).nullable().optional(),
+  contactTaxId: z.string().nullable().optional(),
   contactEmail: z.string().nullable().optional(),
   contactPhone: z.string().nullable().optional(),
   contactPreferredLanguage: z.string().nullable().optional(),

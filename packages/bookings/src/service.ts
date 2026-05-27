@@ -137,6 +137,7 @@ function buildBookingSearchCondition(search: string): SQL | undefined {
     ilike(bookings.internalNotes, term),
     ilike(bookings.contactFirstName, term),
     ilike(bookings.contactLastName, term),
+    ilike(bookings.contactTaxId, term),
     sql`concat_ws(' ', ${bookings.contactFirstName}, ${bookings.contactLastName}) ilike ${term}`,
     ilike(bookings.contactEmail, term),
     ilike(bookings.contactPhone, term),
@@ -723,6 +724,8 @@ type ReservationSourceBundle = {
   organizationId: string | null
   contactFirstName: string | null
   contactLastName: string | null
+  contactPartyType: string | null
+  contactTaxId: string | null
   contactEmail: string | null
   contactPhone: string | null
   contactPreferredLanguage: string | null
@@ -1739,6 +1742,8 @@ async function reserveBookingFromTransactionSource(
           sourceType: data.sourceType,
           contactFirstName: data.contactFirstName ?? source.contactFirstName,
           contactLastName: data.contactLastName ?? source.contactLastName,
+          contactPartyType: data.contactPartyType ?? source.contactPartyType,
+          contactTaxId: data.contactTaxId ?? source.contactTaxId,
           contactEmail: data.contactEmail ?? source.contactEmail,
           contactPhone: data.contactPhone ?? source.contactPhone,
           contactPreferredLanguage:
@@ -2833,6 +2838,8 @@ export const bookingsService = {
         // CRM person/org record changes (or is deleted) later.
         contactFirstName: data.contactFirstName ?? null,
         contactLastName: data.contactLastName ?? null,
+        contactPartyType: data.contactPartyType ?? null,
+        contactTaxId: data.contactTaxId ?? null,
         contactEmail: data.contactEmail ?? null,
         contactPhone: data.contactPhone ?? null,
         contactPreferredLanguage: data.contactPreferredLanguage ?? null,
@@ -3214,6 +3221,8 @@ export const bookingsService = {
         organizationId: offer.organizationId ?? null,
         contactFirstName: offer.contactFirstName ?? null,
         contactLastName: offer.contactLastName ?? null,
+        contactPartyType: offer.contactPartyType ?? null,
+        contactTaxId: offer.contactTaxId ?? null,
         contactEmail: offer.contactEmail ?? null,
         contactPhone: offer.contactPhone ?? null,
         contactPreferredLanguage: offer.contactPreferredLanguage ?? null,
@@ -3314,6 +3323,8 @@ export const bookingsService = {
         organizationId: order.organizationId ?? null,
         contactFirstName: order.contactFirstName ?? null,
         contactLastName: order.contactLastName ?? null,
+        contactPartyType: order.contactPartyType ?? null,
+        contactTaxId: order.contactTaxId ?? null,
         contactEmail: order.contactEmail ?? null,
         contactPhone: order.contactPhone ?? null,
         contactPreferredLanguage: order.contactPreferredLanguage ?? null,
@@ -3360,6 +3371,8 @@ export const bookingsService = {
             communicationLanguage: data.communicationLanguage ?? null,
             contactFirstName: data.contactFirstName ?? null,
             contactLastName: data.contactLastName ?? null,
+            contactPartyType: data.contactPartyType ?? null,
+            contactTaxId: data.contactTaxId ?? null,
             contactEmail: data.contactEmail ?? null,
             contactPhone: data.contactPhone ?? null,
             contactPreferredLanguage: data.contactPreferredLanguage ?? null,
@@ -3519,6 +3532,8 @@ export const bookingsService = {
           status,
           contactFirstName: data.contactFirstName ?? null,
           contactLastName: data.contactLastName ?? null,
+          contactPartyType: data.contactPartyType ?? null,
+          contactTaxId: data.contactTaxId ?? null,
           contactEmail: data.contactEmail ?? null,
           contactPhone: data.contactPhone ?? null,
           contactPreferredLanguage: data.contactPreferredLanguage ?? null,
@@ -3574,6 +3589,9 @@ export const bookingsService = {
             data.contactFirstName === undefined ? undefined : (data.contactFirstName ?? null),
           contactLastName:
             data.contactLastName === undefined ? undefined : (data.contactLastName ?? null),
+          contactPartyType:
+            data.contactPartyType === undefined ? undefined : (data.contactPartyType ?? null),
+          contactTaxId: data.contactTaxId === undefined ? undefined : (data.contactTaxId ?? null),
           contactEmail: data.contactEmail === undefined ? undefined : (data.contactEmail ?? null),
           contactPhone: data.contactPhone === undefined ? undefined : (data.contactPhone ?? null),
           contactPreferredLanguage:
