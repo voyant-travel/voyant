@@ -1,5 +1,27 @@
 # @voyantjs/bookings-ui
 
+## 0.81.20
+
+### Patch Changes
+
+- Updated dependencies [e60a50d]
+  - @voyantjs/availability-react@0.81.20
+  - @voyantjs/bookings@0.81.20
+  - @voyantjs/bookings-react@0.81.20
+  - @voyantjs/catalog@0.81.20
+  - @voyantjs/catalog-react@0.81.20
+  - @voyantjs/crm-react@0.81.20
+  - @voyantjs/crm-ui@0.81.20
+  - @voyantjs/extras-react@0.81.20
+  - @voyantjs/finance-react@0.81.20
+  - @voyantjs/i18n@0.81.20
+  - @voyantjs/identity-react@0.81.20
+  - @voyantjs/legal-react@0.81.20
+  - @voyantjs/pricing-react@0.81.20
+  - @voyantjs/products-react@0.81.20
+  - @voyantjs/suppliers-react@0.81.20
+  - @voyantjs/ui@0.81.20
+
 ## 0.81.19
 
 ### Patch Changes
