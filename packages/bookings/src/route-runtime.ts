@@ -62,11 +62,23 @@ export type ResolveBookingTravelerPerson = (
   ctx: { bookingId: string; source: string; sourceRef: string },
 ) => Promise<string | null>
 
+export type ResolveBookingBillingPersonById = (
+  db: PostgresJsDatabase,
+  personId: string,
+) => Promise<boolean>
+
+export type ResolveBookingBillingOrganizationById = (
+  db: PostgresJsDatabase,
+  organizationId: string,
+) => Promise<boolean>
+
 export interface BookingRouteRuntime {
   getKmsProvider(): Promise<KmsProvider>
   resolveTravelSnapshot?: ResolveBookingTravelSnapshot
   resolveBillingPerson?: ResolveBookingBillingPerson
   resolveTravelerPerson?: ResolveBookingTravelerPerson
+  resolveBillingPersonById?: ResolveBookingBillingPersonById
+  resolveBillingOrganizationById?: ResolveBookingBillingOrganizationById
 }
 
 /**
@@ -85,6 +97,8 @@ export interface BookingRouteRuntimeOptions {
   resolveTravelSnapshot?: ResolveBookingTravelSnapshot
   resolveBillingPerson?: ResolveBookingBillingPerson
   resolveTravelerPerson?: ResolveBookingTravelerPerson
+  resolveBillingPersonById?: ResolveBookingBillingPersonById
+  resolveBillingOrganizationById?: ResolveBookingBillingOrganizationById
 }
 
 function buildRuntimeEnv(bindings: KmsBindings): Record<string, string | undefined> {
@@ -117,5 +131,7 @@ export function buildBookingRouteRuntime(
     resolveTravelSnapshot: options.resolveTravelSnapshot,
     resolveBillingPerson: options.resolveBillingPerson,
     resolveTravelerPerson: options.resolveTravelerPerson,
+    resolveBillingPersonById: options.resolveBillingPersonById,
+    resolveBillingOrganizationById: options.resolveBillingOrganizationById,
   }
 }

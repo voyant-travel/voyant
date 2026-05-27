@@ -28,6 +28,7 @@ import {
   normalizeValidationError,
   parseJsonBody,
   parseQuery,
+  RequestValidationError,
   requireUserId,
   UnauthorizedApiError,
 } from "@voyantjs/hono"
@@ -299,6 +300,41 @@ function getActionLedgerRequestContext(c: Context<Env>): ActionLedgerRequestCont
     workflowRunId: c.get("workflowRunId") ?? null,
     workflowStepId: c.get("workflowStepId") ?? null,
     correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
+  }
+}
+
+async function validateBookingBillingPartyReferences<T extends Env>(
+  c: Context<T>,
+  data: { personId?: string | null; organizationId?: string | null },
+) {
+  const runtime = getRouteRuntime(c)
+  const db = c.get("db")
+
+  if (data.personId && runtime.resolveBillingPersonById) {
+    const exists = await runtime.resolveBillingPersonById(db, data.personId)
+    if (!exists) {
+      throw new RequestValidationError("Booking personId does not reference an existing person", {
+        fields: {
+          fieldErrors: { personId: ["Person not found"] },
+          formErrors: [],
+        },
+      })
+    }
+  }
+
+  if (data.organizationId && runtime.resolveBillingOrganizationById) {
+    const exists = await runtime.resolveBillingOrganizationById(db, data.organizationId)
+    if (!exists) {
+      throw new RequestValidationError(
+        "Booking organizationId does not reference an existing organization",
+        {
+          fields: {
+            fieldErrors: { organizationId: ["Organization not found"] },
+            formErrors: [],
+          },
+        },
+      )
+    }
   }
 }
 
@@ -1038,12 +1074,13 @@ function handleKmsConfigError(c: Context<Env>, error: unknown) {
   return c.json({ error: "Booking PII encryption is not configured" }, 500)
 }
 
-function getRouteRuntime(c: Context<Env>): BookingRouteRuntime {
+function getRouteRuntime<T extends Env>(c: Context<T>): BookingRouteRuntime {
   try {
-    return (
-      c.var.container?.resolve<BookingRouteRuntime>(BOOKING_ROUTE_RUNTIME_CONTAINER_KEY) ??
-      buildBookingRouteRuntime(c.env)
-    )
+    const runtime = c.var.container?.resolve(BOOKING_ROUTE_RUNTIME_CONTAINER_KEY) as
+      | BookingRouteRuntime
+      | undefined
+
+    return runtime ?? buildBookingRouteRuntime(c.env)
   } catch {
     return buildBookingRouteRuntime(c.env)
   }
@@ -1429,11 +1466,10 @@ export const bookingRoutes = new Hono<Env>()
 
   // 3. POST /reserve — Reserve inventory and create on-hold booking
   .post("/reserve", idempotencyKey({ scope: "POST /v1/admin/bookings/reserve" }), async (c) => {
-    const result = await bookingsService.reserveBooking(
-      c.get("db"),
-      await parseJsonBody(c, reserveBookingSchema),
-      c.get("userId"),
-    )
+    const data = await parseJsonBody(c, reserveBookingSchema)
+    await validateBookingBillingPartyReferences(c, data)
+
+    const result = await bookingsService.reserveBooking(c.get("db"), data, c.get("userId"))
 
     if ("booking" in result) {
       return c.json({ data: result.booking }, 201)
@@ -1463,11 +1499,10 @@ export const bookingRoutes = new Hono<Env>()
     "/from-product",
     idempotencyKey({ scope: "POST /v1/admin/bookings/from-product" }),
     async (c) => {
-      const row = await bookingsService.createBookingFromProduct(
-        c.get("db"),
-        await parseJsonBody(c, convertProductSchema),
-        c.get("userId"),
-      )
+      const data = await parseJsonBody(c, convertProductSchema)
+      await validateBookingBillingPartyReferences(c, data)
+
+      const row = await bookingsService.createBookingFromProduct(c.get("db"), data, c.get("userId"))
 
       if (!row) {
         return c.json({ error: "Product or option not found" }, 404)
@@ -1560,15 +1595,14 @@ export const bookingRoutes = new Hono<Env>()
   // 4. POST / — Create booking (manual/backoffice only)
   .post("/", idempotencyKey({ scope: "POST /v1/admin/bookings" }), async (c) => {
     try {
+      const data = await parseJsonBody(c, createBookingSchema, {
+        invalidBodyMessage: "Invalid booking create payload",
+      })
+      await validateBookingBillingPartyReferences(c, data)
+
       return c.json(
         {
-          data: await bookingsService.createBooking(
-            c.get("db"),
-            await parseJsonBody(c, createBookingSchema, {
-              invalidBodyMessage: "Invalid booking create payload",
-            }),
-            c.get("userId"),
-          ),
+          data: await bookingsService.createBooking(c.get("db"), data, c.get("userId")),
         },
         201,
       )
@@ -1591,11 +1625,10 @@ export const bookingRoutes = new Hono<Env>()
 
   // 5. PATCH /:id — Update booking
   .patch("/:id", async (c) => {
-    const row = await bookingsService.updateBooking(
-      c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, updateBookingSchema),
-    )
+    const data = await parseJsonBody(c, updateBookingSchema)
+    await validateBookingBillingPartyReferences(c, data)
+
+    const row = await bookingsService.updateBooking(c.get("db"), c.req.param("id"), data)
 
     if (!row) {
       return c.json({ error: "Booking not found" }, 404)

@@ -1,3 +1,4 @@
+import { newId } from "@voyantjs/db/lib/typeid"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -13,6 +14,8 @@ import {
 
 describe("Booking schema", () => {
   const valid = { bookingNumber: "BK-000001", sellCurrency: "USD" }
+  const validPersonId = newId("people")
+  const validOrganizationId = newId("organizations")
 
   it("accepts valid input with defaults", () => {
     const result = insertBookingSchema.parse(valid)
@@ -85,6 +88,38 @@ describe("Booking schema", () => {
     expect(result.organizationId).toBeNull()
   })
 
+  it("accepts valid billing-party TypeIDs", () => {
+    expect(insertBookingSchema.parse({ ...valid, personId: validPersonId }).personId).toBe(
+      validPersonId,
+    )
+    expect(
+      insertBookingSchema.parse({ ...valid, organizationId: validOrganizationId }).organizationId,
+    ).toBe(validOrganizationId)
+  })
+
+  it("rejects placeholder billing-party IDs", () => {
+    expect(() => insertBookingSchema.parse({ ...valid, organizationId: "org_dummy" })).toThrow()
+    expect(() => insertBookingSchema.parse({ ...valid, organizationId: "org_test" })).toThrow()
+    expect(() =>
+      insertBookingSchema.parse({ ...valid, organizationId: "organizationId" }),
+    ).toThrow()
+  })
+
+  it("rejects the wrong billing-party TypeID prefix", () => {
+    expect(() => insertBookingSchema.parse({ ...valid, organizationId: validPersonId })).toThrow()
+    expect(() => insertBookingSchema.parse({ ...valid, personId: validOrganizationId })).toThrow()
+  })
+
+  it("rejects person and organization billing parties together", () => {
+    expect(() =>
+      insertBookingSchema.parse({
+        ...valid,
+        personId: validPersonId,
+        organizationId: validOrganizationId,
+      }),
+    ).toThrow()
+  })
+
   it("rejects negative sellAmountCents", () => {
     expect(() => insertBookingSchema.parse({ ...valid, sellAmountCents: -1 })).toThrow()
   })
@@ -115,6 +150,9 @@ describe("Booking schema", () => {
 })
 
 describe("Update booking schema", () => {
+  const validPersonId = newId("people")
+  const validOrganizationId = newId("organizations")
+
   it("accepts partial update", () => {
     const result = updateBookingSchema.parse({ status: "confirmed" })
     expect(result.status).toBe("confirmed")
@@ -123,6 +161,16 @@ describe("Update booking schema", () => {
 
   it("accepts empty object", () => {
     expect(updateBookingSchema.parse({})).toBeDefined()
+  })
+
+  it("rejects malformed billing-party updates", () => {
+    expect(() => updateBookingSchema.parse({ organizationId: "org_dummy" })).toThrow()
+  })
+
+  it("rejects person and organization billing-party updates together", () => {
+    expect(() =>
+      updateBookingSchema.parse({ personId: validPersonId, organizationId: validOrganizationId }),
+    ).toThrow()
   })
 })
 
@@ -218,6 +266,9 @@ describe("Override booking status schema", () => {
 })
 
 describe("Convert product schema", () => {
+  const validPersonId = newId("people")
+  const validOrganizationId = newId("organizations")
+
   it("requires productId and bookingNumber", () => {
     const result = convertProductSchema.parse({
       productId: "prod_abc",
@@ -250,6 +301,27 @@ describe("Convert product schema", () => {
       bookingNumber: "BK-001",
     })
     expect(result.slotId).toBeUndefined()
+  })
+
+  it("rejects placeholder organization IDs", () => {
+    expect(() =>
+      convertProductSchema.parse({
+        productId: "prod_abc",
+        bookingNumber: "BK-001",
+        organizationId: "org_dummy",
+      }),
+    ).toThrow()
+  })
+
+  it("rejects person and organization billing parties together", () => {
+    expect(() =>
+      convertProductSchema.parse({
+        productId: "prod_abc",
+        bookingNumber: "BK-001",
+        personId: validPersonId,
+        organizationId: validOrganizationId,
+      }),
+    ).toThrow()
   })
 
   it("allows confirmed catalog totals without an override reason", () => {

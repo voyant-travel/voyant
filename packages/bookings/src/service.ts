@@ -192,6 +192,18 @@ export type UpdateTravelerWithTravelDetailsInput = z.infer<
   typeof updateTravelerWithTravelDetailsSchema
 >
 
+export function normalizeBookingBillingPartyUpdate(data: UpdateBookingInput): UpdateBookingInput {
+  if (data.personId) {
+    return { ...data, organizationId: null }
+  }
+
+  if (data.organizationId) {
+    return { ...data, personId: null }
+  }
+
+  return data
+}
+
 function pickTravelDetailFields(
   data: CreateTravelerWithTravelDetailsInput | UpdateTravelerWithTravelDetailsInput,
 ): UpsertBookingTravelerTravelDetailInput {
@@ -3541,6 +3553,8 @@ export const bookingsService = {
   },
 
   async updateBooking(db: PostgresJsDatabase, id: string, data: UpdateBookingInput) {
+    const normalizedData = normalizeBookingBillingPartyUpdate(data)
+
     return db.transaction(async (tx) => {
       const rows = await tx.execute(
         sql`SELECT status
@@ -3555,7 +3569,7 @@ export const bookingsService = {
       const [row] = await tx
         .update(bookings)
         .set({
-          ...data,
+          ...normalizedData,
           contactFirstName:
             data.contactFirstName === undefined ? undefined : (data.contactFirstName ?? null),
           contactLastName:
