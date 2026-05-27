@@ -1,5 +1,13 @@
 # @voyantjs/auth
 
+## 0.82.1
+
+### Patch Changes
+
+- 728bc12: Pin Better Auth core and API key plugin dependencies to the same compatible 1.6.11 release to avoid mixed plugin/core installs.
+  - @voyantjs/db@0.82.1
+  - @voyantjs/utils@0.82.1
+
 ## 0.82.0
 
 ### Patch Changes
