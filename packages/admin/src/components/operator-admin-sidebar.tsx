@@ -63,7 +63,12 @@ export function DefaultOperatorAdminBrand({
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <SidebarMenuButton asChild tooltip="Voyant" size="lg">
+        <SidebarMenuButton
+          asChild
+          tooltip="Voyant"
+          size="lg"
+          className="group-data-[collapsible=icon]:justify-center"
+        >
           <LinkComponent href={href} target="_self" aria-label="Voyant">
             <VoyantMark
               aria-hidden="true"

@@ -3,12 +3,14 @@ import {
   appendActionLedgerMutation,
 } from "@voyantjs/action-ledger"
 import type { EventBus } from "@voyantjs/core"
+import { authUser } from "@voyantjs/db/schema/iam"
 import {
   and,
   asc,
   desc,
   eq,
   exists,
+  getTableColumns,
   gte,
   ilike,
   inArray,
@@ -100,6 +102,7 @@ import type {
   startBookingSchema,
   updateBookingFulfillmentSchema,
   updateBookingItemSchema,
+  updateBookingNoteSchema,
   updateBookingSchema,
   updateTravelerRecordSchema,
   updateTravelerSchema,
@@ -143,6 +146,17 @@ function buildBookingSearchCondition(search: string): SQL | undefined {
     ilike(bookings.contactAddressLine1, term),
     ilike(bookings.contactAddressLine2, term),
     ilike(bookings.contactPostalCode, term),
+    // Match line-item title + product-name snapshot so operators can
+    // find "all bookings on Paris Sunset & Seine" from the search box
+    // instead of having to open the product filter popover.
+    sql`exists (
+      select 1 from ${bookingItems}
+      where ${bookingItems.bookingId} = ${bookings.id}
+        and (
+          ${bookingItems.title} ilike ${term}
+          or ${bookingItems.productNameSnapshot} ilike ${term}
+        )
+    )`,
   ]
 
   if (shouldSearchNormalizedPhone) {
@@ -203,6 +217,7 @@ type CreateBookingItemInput = z.infer<typeof insertBookingItemSchema>
 type UpdateBookingItemInput = z.infer<typeof updateBookingItemSchema>
 type CreateBookingItemParticipantInput = z.infer<typeof insertBookingItemParticipantSchema>
 type CreateBookingNoteInput = z.infer<typeof insertBookingNoteSchema>
+type UpdateBookingNoteInput = z.infer<typeof updateBookingNoteSchema>
 type CreateBookingDocumentInput = z.infer<typeof insertBookingDocumentSchema>
 type CreateBookingFulfillmentInput = z.infer<typeof insertBookingFulfillmentSchema>
 type UpdateBookingFulfillmentInput = z.infer<typeof updateBookingFulfillmentSchema>
@@ -2654,6 +2669,8 @@ export const bookingsService = {
         itemType: string
         productId: string | null
         productName: string | null
+        startsAt: string | null
+        endsAt: string | null
       }>
     >()
     for (const item of items) {
@@ -2673,6 +2690,8 @@ export const bookingsService = {
         itemType: item.itemType,
         productId: item.productId,
         productName: item.productName,
+        startsAt: item.startsAt?.toISOString() ?? null,
+        endsAt: item.endsAt?.toISOString() ?? null,
       })
       itemSummariesByBooking.set(item.bookingId, list)
     }
@@ -5748,17 +5767,31 @@ export const bookingsService = {
   },
 
   listActivity(db: PostgresJsDatabase, bookingId: string) {
+    // Surface a hydrated actor display name + email so the activity
+    // timeline can render "By {name}" / "By {email}" instead of the raw
+    // user id. `actorId` may be null (system events) or reference a
+    // deleted user, both of which leave the join columns null.
     return db
-      .select()
+      .select({
+        ...getTableColumns(bookingActivityLog),
+        actorName: authUser.name,
+        actorEmail: authUser.email,
+      })
       .from(bookingActivityLog)
+      .leftJoin(authUser, eq(bookingActivityLog.actorId, authUser.id))
       .where(eq(bookingActivityLog.bookingId, bookingId))
       .orderBy(desc(bookingActivityLog.createdAt))
   },
 
   listNotes(db: PostgresJsDatabase, bookingId: string) {
     return db
-      .select()
+      .select({
+        ...getTableColumns(bookingNotes),
+        authorName: authUser.name,
+        authorEmail: authUser.email,
+      })
       .from(bookingNotes)
+      .leftJoin(authUser, eq(bookingNotes.authorId, authUser.id))
       .where(eq(bookingNotes.bookingId, bookingId))
       .orderBy(bookingNotes.createdAt)
   },
@@ -5798,10 +5831,32 @@ export const bookingsService = {
     return row
   },
 
-  async deleteNote(db: PostgresJsDatabase, noteId: string) {
+  async updateNote(
+    db: PostgresJsDatabase,
+    bookingId: string,
+    noteId: string,
+    data: UpdateBookingNoteInput,
+  ) {
+    // Scope the update to (booking, note) so a stale / cross-booking
+    // note id can't mutate another booking's note while the route
+    // records an audit entry under the wrong `bookingId`. Returns null
+    // → route responds 404.
+    const [row] = await db
+      .update(bookingNotes)
+      .set({ content: data.content })
+      .where(and(eq(bookingNotes.id, noteId), eq(bookingNotes.bookingId, bookingId)))
+      .returning()
+
+    return row ?? null
+  },
+
+  async deleteNote(db: PostgresJsDatabase, bookingId: string, noteId: string) {
+    // Same scoping as `updateNote` — guards against deleting a note
+    // that belongs to a different booking when the audit entry would
+    // get filed under the route's `:id`.
     const [row] = await db
       .delete(bookingNotes)
-      .where(eq(bookingNotes.id, noteId))
+      .where(and(eq(bookingNotes.id, noteId), eq(bookingNotes.bookingId, bookingId)))
       .returning({ id: bookingNotes.id })
 
     return row ?? null

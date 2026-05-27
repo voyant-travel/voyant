@@ -13,9 +13,21 @@ import { BookingDetailSkeleton } from "@/components/voyant/bookings/booking-deta
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
 
+const bookingTabSchema = z.enum([
+  "items",
+  "travelers",
+  "finance",
+  "invoices",
+  "documents",
+  "suppliers",
+  "activity",
+  "metadata",
+])
+
 const bookingRouteSearchSchema = z.object({
   productId: z.string().optional(),
   slotId: z.string().optional(),
+  tab: bookingTabSchema.optional(),
 })
 
 export const Route = createFileRoute("/_workspace/bookings/$id")({
@@ -55,5 +67,18 @@ function BookingDetailRoute() {
     )
   }
 
-  return <BookingDetailPage id={id} />
+  return (
+    <BookingDetailPage
+      id={id}
+      activeTab={search.tab}
+      onTabChange={(tab) =>
+        void navigate({
+          to: "/bookings/$id",
+          params: { id },
+          search: (prev) => ({ ...prev, tab }),
+          replace: true,
+        })
+      }
+    />
+  )
 }

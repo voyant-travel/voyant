@@ -34,6 +34,7 @@ import {
   ChevronDown,
   ChevronRight,
   CreditCard,
+  Info,
   Mail,
   MapPin,
   Pencil,
@@ -49,7 +50,7 @@ import {
   useBookingsUiI18nOrDefault,
   useBookingsUiMessagesOrDefault,
 } from "../i18n/index.js"
-import { BookingActivityTimeline } from "./booking-activity-timeline.js"
+import { BookingActivityTimeline, type TimelineEvent } from "./booking-activity-timeline.js"
 import { BookingBillingDialog } from "./booking-billing-dialog.js"
 import { BookingCancellationDialog } from "./booking-cancellation-dialog.js"
 import { BookingDialog } from "./booking-dialog.js"
@@ -97,9 +98,26 @@ export interface BookingDetailPageSlots {
   activityEnd?: (booking: BookingRecord) => ReactNode
   /** Mounts a dedicated `Invoices` tab between Payments and Suppliers. */
   invoicesTab?: BookingDetailTabSlot
-  /** Mounts a dedicated `Ledger` tab at the far right. */
-  ledgerTab?: BookingDetailTabSlot
+  /**
+   * Extra events merged into the Activity-tab timeline. Operator
+   * templates pass action-ledger entries here so the timeline stays a
+   * single chronological feed.
+   */
+  activityExtraEvents?: readonly TimelineEvent[]
+  /** Rendered below the activity timeline events — typically a "load more" pager. */
+  activityTimelineFooter?: ReactNode
 }
+
+/** Tab values used by the canonical `BookingDetailPage`. */
+export type BookingDetailTabValue =
+  | "items"
+  | "travelers"
+  | "finance"
+  | "invoices"
+  | "documents"
+  | "suppliers"
+  | "activity"
+  | "metadata"
 
 export interface BookingDetailPageProps {
   id: string
@@ -154,6 +172,16 @@ export interface BookingDetailPageProps {
   onEditPayment?: (row: BookingPaymentsSummaryRow) => void
   /** Forwarded to the finance-tab `BookingPaymentsSummary` row menu. */
   onDeletePayment?: (row: BookingPaymentsSummaryRow) => Promise<void> | void
+  /**
+   * Controlled active-tab value. Hosts wire this to their router so
+   * the active tab can be reflected in the URL (`?tab=activity` etc.)
+   * and the page reloads to the right tab when a link is shared.
+   * Leave both `activeTab` + `onTabChange` undefined for uncontrolled
+   * mode (defaults to `overview`).
+   */
+  activeTab?: BookingDetailTabValue
+  /** Fires when the user switches tabs. Hosts push the new value into the URL. */
+  onTabChange?: (tab: BookingDetailTabValue) => void
   slots?: BookingDetailPageSlots
 }
 
@@ -174,6 +202,8 @@ export function BookingDetailPage({
   onViewPayment,
   onEditPayment,
   onDeletePayment,
+  activeTab,
+  onTabChange,
   slots,
 }: BookingDetailPageProps) {
   const i18n = useBookingsUiI18nOrDefault()
@@ -429,9 +459,13 @@ export function BookingDetailPage({
 
       {slots?.afterSummary?.(booking)}
 
-      <Tabs defaultValue="overview">
+      <Tabs
+        defaultValue="items"
+        value={activeTab}
+        onValueChange={(value) => onTabChange?.(String(value) as BookingDetailTabValue)}
+      >
         <TabsList className="w-full justify-start">
-          <TabsTrigger value="overview">{detailMessages.tabOverview}</TabsTrigger>
+          <TabsTrigger value="items">{detailMessages.tabOverview}</TabsTrigger>
           <TabsTrigger value="travelers">{detailMessages.tabTravelers}</TabsTrigger>
           <TabsTrigger value="finance">{detailMessages.tabFinance}</TabsTrigger>
           {slots?.invoicesTab ? (
@@ -442,15 +476,10 @@ export function BookingDetailPage({
           <TabsTrigger value="documents">{detailMessages.tabDocuments}</TabsTrigger>
           <TabsTrigger value="suppliers">{detailMessages.tabSuppliers}</TabsTrigger>
           <TabsTrigger value="activity">{detailMessages.tabActivity}</TabsTrigger>
-          {slots?.ledgerTab ? (
-            <TabsTrigger value="ledger">
-              {slots.ledgerTab.label ?? detailMessages.tabLedger}
-            </TabsTrigger>
-          ) : null}
-          <TabsTrigger value="meta">{detailMessages.tabMeta}</TabsTrigger>
+          <TabsTrigger value="metadata">{detailMessages.tabMetadata}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="mt-4 flex flex-col gap-6">
+        <TabsContent value="items" className="mt-4 flex flex-col gap-6">
           {slots?.overviewStart?.(booking)}
           <BookingItemList bookingId={id} onResourceOpen={onItemResourceOpen} />
           <BookingGroupSection bookingId={id} />
@@ -539,26 +568,23 @@ export function BookingDetailPage({
         </TabsContent>
 
         <TabsContent value="activity" className="mt-4 flex flex-col gap-6">
-          <BookingActivityTimeline bookingId={id} />
           <BookingNotes bookingId={id} />
+          <BookingActivityTimeline
+            bookingId={id}
+            additionalEvents={slots?.activityExtraEvents}
+            footer={slots?.activityTimelineFooter}
+          />
           {slots?.activityEnd?.(booking)}
         </TabsContent>
 
-        {slots?.ledgerTab ? (
-          <TabsContent value="ledger" className="mt-4 flex flex-col gap-6">
-            {renderDetailSlot(slots.ledgerTab.content, booking)}
-          </TabsContent>
-        ) : null}
-
-        <TabsContent value="meta" className="mt-4">
-          <Card>
-            <CardContent className="grid grid-cols-2 gap-6 py-6 sm:grid-cols-4">
-              <SummaryStat
-                label={detailMessages.summaryUpdated}
-                value={formatDate(booking.updatedAt, resolvedLocale, detailMessages.noValue)}
-              />
-            </CardContent>
-          </Card>
+        <TabsContent value="metadata" className="mt-4">
+          <BookingMetadataList
+            booking={booking}
+            messages={detailMessages.metadataSection}
+            statusLabel={getBookingStatusLabel(booking.status, messages.common.bookingStatusLabels)}
+            formatDateTime={i18n.formatDateTime}
+            noValue={detailMessages.noValue}
+          />
         </TabsContent>
       </Tabs>
 
@@ -761,29 +787,6 @@ export function BookingBillingContextCard({
   )
 }
 
-function SummaryStat({
-  label,
-  value,
-  hint,
-  icon,
-}: {
-  label: string
-  value: string
-  hint?: string
-  icon?: ReactNode
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-        {icon}
-        {label}
-      </div>
-      <div className="text-base font-semibold tabular-nums">{value}</div>
-      {hint ? <div className="text-xs text-muted-foreground">{hint}</div> : null}
-    </div>
-  )
-}
-
 function StatCard({
   label,
   children,
@@ -806,6 +809,82 @@ function StatCard({
         {hint ? <div className="text-xs text-muted-foreground">{hint}</div> : null}
       </CardContent>
     </Card>
+  )
+}
+
+/**
+ * Definition-list metadata panel for the Metadata tab. Surfaces booking
+ * fields that don't fit any other tab but are still useful for support
+ * / debugging: raw id, booking number, status, communication language,
+ * created/updated timestamps. Label-left, value-right rows matching the
+ * supplier-status / documents / notes tab style.
+ */
+function BookingMetadataList({
+  booking,
+  messages,
+  statusLabel,
+  formatDateTime,
+  noValue,
+}: {
+  booking: BookingRecord
+  messages: {
+    title: string
+    bookingId: string
+    bookingNumber: string
+    status: string
+    communicationLanguage: string
+    created: string
+    updated: string
+  }
+  statusLabel: string
+  formatDateTime: (iso: string) => string
+  noValue: string
+}) {
+  const rows: Array<{ label: string; value: ReactNode }> = [
+    {
+      label: messages.bookingId,
+      value: <span className="font-mono text-xs">{booking.id}</span>,
+    },
+    {
+      label: messages.bookingNumber,
+      value: <span className="font-mono text-xs">{booking.bookingNumber}</span>,
+    },
+    {
+      label: messages.status,
+      value: <StatusBadge status={booking.status}>{statusLabel}</StatusBadge>,
+    },
+    {
+      label: messages.communicationLanguage,
+      value: booking.communicationLanguage ? (
+        <span className="uppercase">{booking.communicationLanguage}</span>
+      ) : (
+        <span className="text-muted-foreground">{noValue}</span>
+      ),
+    },
+    { label: messages.created, value: formatDateTime(booking.createdAt) },
+    { label: messages.updated, value: formatDateTime(booking.updatedAt) },
+  ]
+
+  return (
+    <div data-slot="booking-metadata" className="flex flex-col gap-3">
+      <h2 className="flex items-center gap-2 text-base font-semibold">
+        <Info className="h-4 w-4 text-muted-foreground" />
+        {messages.title}
+      </h2>
+      <div className="overflow-hidden rounded-md border bg-background">
+        <dl className="divide-y">
+          {rows.map((row) => (
+            <div
+              key={row.label}
+              className="flex items-center justify-between gap-4 px-4 py-3 text-sm"
+            >
+              <dt className="text-muted-foreground">{row.label}</dt>
+              <dd className="text-right">{row.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </div>
   )
 }
 

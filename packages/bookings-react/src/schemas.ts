@@ -70,6 +70,8 @@ export const bookingRecordItemSummarySchema = z.object({
   itemType: z.string(),
   productId: z.string().nullable(),
   productName: z.string().nullable().optional(),
+  startsAt: z.string().nullable().optional(),
+  endsAt: z.string().nullable().optional(),
 })
 
 export type BookingRecordItemSummary = z.infer<typeof bookingRecordItemSummarySchema>
@@ -204,6 +206,10 @@ export const bookingActivityRecordSchema = z.object({
   id: z.string(),
   bookingId: z.string(),
   actorId: z.string().nullable(),
+  /** Hydrated from `auth.user.name` server-side. Null for system events / deleted users. */
+  actorName: z.string().nullable().optional(),
+  /** Hydrated from `auth.user.email` server-side. Falls back when no name. */
+  actorEmail: z.string().nullable().optional(),
   activityType: z.string(),
   description: z.string(),
   metadata: z.record(z.string(), z.unknown()).nullable(),
@@ -216,6 +222,10 @@ export const bookingNoteRecordSchema = z.object({
   id: z.string(),
   bookingId: z.string(),
   authorId: z.string(),
+  /** Hydrated from `auth.user.name` server-side. Null when the author has been deleted. */
+  authorName: z.string().nullable().optional(),
+  /** Hydrated from `auth.user.email` server-side. Falls back when no name. */
+  authorEmail: z.string().nullable().optional(),
   content: z.string(),
   createdAt: z.string(),
 })

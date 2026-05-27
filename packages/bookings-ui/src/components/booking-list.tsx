@@ -9,6 +9,14 @@ import {
 import { Button } from "@voyantjs/ui/components/button"
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@voyantjs/ui/components/pagination"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
 import {
   Table,
@@ -29,6 +37,59 @@ import { BookingDialog } from "./booking-dialog.js"
 import { BOOKING_STATUS_ALL, BookingListFiltersPopover } from "./booking-list-filters.js"
 import { StatusBadge } from "./status-badge.js"
 
+/**
+ * Serializable snapshot of the booking-list filter / sort / paging
+ * state. Hosts that want shareable URLs (operator template) read this
+ * from the URL on mount via `initialFilters` and push changes via
+ * `onFiltersChange`.
+ */
+export interface BookingListFiltersState {
+  search: string
+  /** `BOOKING_STATUS_ALL` ("all") or any booking status value. */
+  status: string
+  productId: string | null
+  optionId: string | null
+  supplierId: string | null
+  productCategoryId: string | null
+  personId: string | null
+  organizationId: string | null
+  availabilitySlotId: string | null
+  dateFrom: string | null
+  dateTo: string | null
+  paxMin: string
+  paxMax: string
+  sortBy: BookingsListSortField
+  sortDir: BookingsListSortDir
+  offset: number
+}
+
+function stripUndefined<T extends object>(input: T): Partial<T> {
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(input)) {
+    if (value !== undefined) result[key] = value
+  }
+  return result as Partial<T>
+}
+
+const DEFAULT_FILTERS: BookingListFiltersState = {
+  search: "",
+  status: BOOKING_STATUS_ALL,
+  productId: null,
+  optionId: null,
+  supplierId: null,
+  productCategoryId: null,
+  personId: null,
+  organizationId: null,
+  availabilitySlotId: null,
+  dateFrom: null,
+  dateTo: null,
+  paxMin: "",
+  paxMax: "",
+  sortBy: "createdAt",
+  sortDir: "desc",
+  offset: 0,
+}
+
 export interface BookingListProps {
   pageSize?: number
   onSelectBooking?: (booking: BookingRecord) => void
@@ -39,6 +100,16 @@ export interface BookingListProps {
    * the trip composer without forking the component.
    */
   headerActions?: React.ReactNode
+  /**
+   * Initial filter / sort / paging state, typically parsed from the URL.
+   * Only specified keys override the defaults — partial input is fine.
+   */
+  initialFilters?: Partial<BookingListFiltersState>
+  /**
+   * Fires when any filter, sort, or paging value changes. Hosts push
+   * the snapshot into the URL so refresh / share preserves the view.
+   */
+  onFiltersChange?: (filters: BookingListFiltersState) => void
 }
 
 type SortableField = BookingsListSortField
@@ -61,29 +132,68 @@ export function BookingList({
   onSelectBooking,
   onCreateBooking,
   headerActions,
+  initialFilters,
+  onFiltersChange,
 }: BookingListProps = {}) {
-  const [search, setSearch] = React.useState("")
-  const [status, setStatus] = React.useState<string>(BOOKING_STATUS_ALL)
-  const [productId, setProductId] = React.useState<string | null>(null)
-  const [optionId, setOptionId] = React.useState<string | null>(null)
-  const [supplierId, setSupplierId] = React.useState<string | null>(null)
-  const [productCategoryId, setProductCategoryId] = React.useState<string | null>(null)
-  const [personId, setPersonId] = React.useState<string | null>(null)
-  const [organizationId, setOrganizationId] = React.useState<string | null>(null)
-  const [availabilitySlotId, setAvailabilitySlotId] = React.useState<string | null>(null)
-  const [dateRange, setDateRange] = React.useState<{
-    from: string | null
-    to: string | null
-  } | null>(null)
-  const [paxMin, setPaxMin] = React.useState<string>("")
-  const [paxMax, setPaxMax] = React.useState<string>("")
-  const [sortBy, setSortBy] = React.useState<BookingsListSortField>("createdAt")
-  const [sortDir, setSortDir] = React.useState<BookingsListSortDir>("desc")
-  const [offset, setOffset] = React.useState(0)
+  // Single bag of filter / sort / paging state so we can hand the host
+  // a snapshot whenever anything changes. We seed once from
+  // `initialFilters` and don't re-seed if the prop later mutates —
+  // hosts that want to drive controlled changes can just remount.
+  //
+  // Strip `undefined` keys before merging: a host passing
+  // `{ status: undefined }` would otherwise clobber the
+  // `BOOKING_STATUS_ALL` default and show "2" active filters on an
+  // empty URL.
+  const [filters, setFilters] = React.useState<BookingListFiltersState>(() => ({
+    ...DEFAULT_FILTERS,
+    ...stripUndefined(initialFilters ?? {}),
+  }))
+
+  const onFiltersChangeRef = React.useRef(onFiltersChange)
+  React.useEffect(() => {
+    onFiltersChangeRef.current = onFiltersChange
+  })
+  // Notify the host on every state change. Skip the initial render
+  // because the URL already reflects whatever was passed in via
+  // `initialFilters`.
+  const isFirstRender = React.useRef(true)
+  React.useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    onFiltersChangeRef.current?.(filters)
+  }, [filters])
+
+  const updateFilters = React.useCallback(
+    (patch: Partial<BookingListFiltersState>) => setFilters((prev) => ({ ...prev, ...patch })),
+    [],
+  )
+
+  const {
+    search,
+    status,
+    productId,
+    optionId,
+    supplierId,
+    productCategoryId,
+    personId,
+    organizationId,
+    availabilitySlotId,
+    dateFrom,
+    dateTo,
+    paxMin,
+    paxMax,
+    sortBy,
+    sortDir,
+    offset,
+  } = filters
+  const dateRange = dateFrom != null || dateTo != null ? { from: dateFrom, to: dateTo } : null
+
   const [filterPopoverOpen, setFilterPopoverOpen] = React.useState(false)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<BookingRecord | undefined>(undefined)
-  const { formatDateTime, formatNumber } = useBookingsUiI18nOrDefault()
+  const { formatDate, formatDateTime, formatNumber, locale } = useBookingsUiI18nOrDefault()
   const messages = useBookingsUiMessagesOrDefault()
 
   const paxMinNumber = paxMin === "" ? undefined : Number.parseInt(paxMin, 10)
@@ -130,21 +240,18 @@ export function BookingList({
     setDialogOpen(true)
   }
 
-  const resetOffset = () => setOffset(0)
+  const resetOffset = () => updateFilters({ offset: 0 })
 
   const handleSort = (field: SortableField) => {
-    setOffset(0)
     if (sortBy !== field) {
-      setSortBy(field)
-      setSortDir("asc")
+      updateFilters({ offset: 0, sortBy: field, sortDir: "asc" })
       return
     }
     if (sortDir === "asc") {
-      setSortDir("desc")
+      updateFilters({ offset: 0, sortDir: "desc" })
       return
     }
-    setSortBy("createdAt")
-    setSortDir("desc")
+    updateFilters({ offset: 0, sortBy: "createdAt", sortDir: "desc" })
   }
 
   const activeFilterCount =
@@ -161,19 +268,22 @@ export function BookingList({
   const hasActiveFilters = activeFilterCount > 0 || search !== ""
 
   const clearFilters = () => {
-    setSearch("")
-    setStatus(BOOKING_STATUS_ALL)
-    setProductId(null)
-    setOptionId(null)
-    setAvailabilitySlotId(null)
-    setSupplierId(null)
-    setProductCategoryId(null)
-    setPersonId(null)
-    setOrganizationId(null)
-    setDateRange(null)
-    setPaxMin("")
-    setPaxMax("")
-    resetOffset()
+    updateFilters({
+      search: "",
+      status: BOOKING_STATUS_ALL,
+      productId: null,
+      optionId: null,
+      availabilitySlotId: null,
+      supplierId: null,
+      productCategoryId: null,
+      personId: null,
+      organizationId: null,
+      dateFrom: null,
+      dateTo: null,
+      paxMin: "",
+      paxMax: "",
+      offset: 0,
+    })
   }
 
   const columnMessages = messages.bookingList.columns
@@ -191,10 +301,7 @@ export function BookingList({
             id="bookings-search"
             placeholder={messages.bookingList.searchPlaceholder}
             value={search}
-            onChange={(event) => {
-              setSearch(event.target.value)
-              resetOffset()
-            }}
+            onChange={(event) => updateFilters({ search: event.target.value, offset: 0 })}
             className="pl-9"
           />
         </div>
@@ -204,31 +311,32 @@ export function BookingList({
           onOpenChange={setFilterPopoverOpen}
           activeFilterCount={activeFilterCount}
           status={status}
-          onStatusChange={setStatus}
+          onStatusChange={(next) => updateFilters({ status: next })}
           productId={productId}
-          onProductIdChange={(next) => {
-            setProductId(next)
+          onProductIdChange={(next) =>
             // Slot picker is product-scoped; clear when the product changes.
-            setAvailabilitySlotId(null)
-          }}
+            updateFilters({ productId: next, availabilitySlotId: null })
+          }
           optionId={optionId}
-          onOptionIdChange={setOptionId}
+          onOptionIdChange={(next) => updateFilters({ optionId: next })}
           availabilitySlotId={availabilitySlotId}
-          onAvailabilitySlotIdChange={setAvailabilitySlotId}
+          onAvailabilitySlotIdChange={(next) => updateFilters({ availabilitySlotId: next })}
           supplierId={supplierId}
-          onSupplierIdChange={setSupplierId}
+          onSupplierIdChange={(next) => updateFilters({ supplierId: next })}
           productCategoryId={productCategoryId}
-          onProductCategoryIdChange={setProductCategoryId}
+          onProductCategoryIdChange={(next) => updateFilters({ productCategoryId: next })}
           personId={personId}
-          onPersonIdChange={setPersonId}
+          onPersonIdChange={(next) => updateFilters({ personId: next })}
           organizationId={organizationId}
-          onOrganizationIdChange={setOrganizationId}
+          onOrganizationIdChange={(next) => updateFilters({ organizationId: next })}
           dateRange={dateRange}
-          onDateRangeChange={setDateRange}
+          onDateRangeChange={(next) =>
+            updateFilters({ dateFrom: next?.from ?? null, dateTo: next?.to ?? null })
+          }
           paxMin={paxMin}
-          onPaxMinChange={setPaxMin}
+          onPaxMinChange={(next) => updateFilters({ paxMin: next })}
           paxMax={paxMax}
-          onPaxMaxChange={setPaxMax}
+          onPaxMaxChange={(next) => updateFilters({ paxMax: next })}
           onFiltersChanged={resetOffset}
           hasActiveFilters={hasActiveFilters}
           onClearFilters={clearFilters}
@@ -265,7 +373,6 @@ export function BookingList({
                   onSort={handleSort}
                 />
               </TableHead>
-              <TableHead>{columnMessages.lead}</TableHead>
               <TableHead>
                 <SortHeader
                   label={columnMessages.createdAt}
@@ -275,6 +382,7 @@ export function BookingList({
                   onSort={handleSort}
                 />
               </TableHead>
+              <TableHead>{columnMessages.lead}</TableHead>
               <TableHead>{columnMessages.whatBooked}</TableHead>
               <TableHead>
                 <SortHeader
@@ -343,10 +451,14 @@ export function BookingList({
                   className="cursor-pointer"
                 >
                   <TableCell className="font-medium">{booking.bookingNumber}</TableCell>
-                  <TableCell>{formatLead(booking)}</TableCell>
                   <TableCell>{formatBookingDateTime(booking.createdAt, formatDateTime)}</TableCell>
+                  <TableCell>{formatLead(booking)}</TableCell>
                   <TableCell>
-                    {formatBookingItems(booking, messages.bookingList.itemsMore)}
+                    {formatBookingItems(
+                      booking,
+                      messages.bookingList.itemsMore,
+                      messages.bookingList.itemDays,
+                    )}
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={booking.status}>
@@ -362,10 +474,13 @@ export function BookingList({
                         })} ${booking.sellCurrency}`}
                   </TableCell>
                   <TableCell>{booking.pax ?? "—"}</TableCell>
-                  <TableCell>
-                    {formatBookingDateTime(booking.startsAt ?? booking.startDate, formatDateTime)}
-                    {" – "}
-                    {formatBookingDateTime(booking.endsAt ?? booking.endDate, formatDateTime)}
+                  <TableCell className="whitespace-nowrap">
+                    {formatBookingDateRange(
+                      booking.startsAt ?? booking.startDate,
+                      booking.endsAt ?? booking.endDate,
+                      formatDate,
+                      locale,
+                    )}
                   </TableCell>
                 </TableRow>
               ))
@@ -374,37 +489,22 @@ export function BookingList({
         </Table>
       </div>
 
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
         <span>
           {formatMessage(messages.bookingList.showingSummary, {
             count: bookings.length,
             total,
           })}
         </span>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={offset === 0}
-            onClick={() => setOffset((prev) => Math.max(0, prev - pageSize))}
-          >
-            {messages.bookingList.previousPage}
-          </Button>
-          <span>
-            {formatMessage(messages.bookingList.pageSummary, {
-              page,
-              pageCount,
-            })}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={offset + pageSize >= total}
-            onClick={() => setOffset((prev) => prev + pageSize)}
-          >
-            {messages.bookingList.nextPage}
-          </Button>
-        </div>
+        {pageCount > 1 ? (
+          <BookingListPagination
+            page={page}
+            pageCount={pageCount}
+            previousLabel={messages.bookingList.previousPage}
+            nextLabel={messages.bookingList.nextPage}
+            onPageChange={(nextPage) => updateFilters({ offset: (nextPage - 1) * pageSize })}
+          />
+        ) : null}
       </div>
 
       <BookingDialog
@@ -425,6 +525,96 @@ interface SortHeaderProps {
   sortBy: BookingsListSortField
   sortDir: BookingsListSortDir
   onSort: (field: SortableField) => void
+}
+
+function BookingListPagination({
+  page,
+  pageCount,
+  previousLabel,
+  nextLabel,
+  onPageChange,
+}: {
+  page: number
+  pageCount: number
+  previousLabel: string
+  nextLabel: string
+  onPageChange: (page: number) => void
+}) {
+  const canPrev = page > 1
+  const canNext = page < pageCount
+  const pages = computePageWindow(page, pageCount)
+  return (
+    <Pagination className="mx-0 w-auto justify-end">
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationPrevious
+            href="#"
+            text={previousLabel}
+            aria-disabled={!canPrev}
+            tabIndex={canPrev ? 0 : -1}
+            className={canPrev ? undefined : "pointer-events-none opacity-50"}
+            onClick={(event) => {
+              event.preventDefault()
+              if (canPrev) onPageChange(page - 1)
+            }}
+          />
+        </PaginationItem>
+        {pages.map((entry, idx) => (
+          <PaginationItem
+            // biome-ignore lint/suspicious/noArrayIndexKey: ellipsis sentinels collide on value alone
+            key={`${entry}-${idx}`}
+          >
+            {entry === "…" ? (
+              <span className="px-2 text-muted-foreground" aria-hidden>
+                …
+              </span>
+            ) : (
+              <PaginationLink
+                href="#"
+                isActive={entry === page}
+                onClick={(event) => {
+                  event.preventDefault()
+                  if (entry !== page) onPageChange(entry)
+                }}
+              >
+                {entry}
+              </PaginationLink>
+            )}
+          </PaginationItem>
+        ))}
+        <PaginationItem>
+          <PaginationNext
+            href="#"
+            text={nextLabel}
+            aria-disabled={!canNext}
+            tabIndex={canNext ? 0 : -1}
+            className={canNext ? undefined : "pointer-events-none opacity-50"}
+            onClick={(event) => {
+              event.preventDefault()
+              if (canNext) onPageChange(page + 1)
+            }}
+          />
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
+  )
+}
+
+/** Build a 1-indexed page list with ellipses for tables with many
+ * pages. Always shows first, last, current, and one neighbour on
+ * either side. */
+function computePageWindow(page: number, pageCount: number): Array<number | "…"> {
+  if (pageCount <= 7) {
+    return Array.from({ length: pageCount }, (_, i) => i + 1)
+  }
+  const out: Array<number | "…"> = [1]
+  const start = Math.max(2, page - 1)
+  const end = Math.min(pageCount - 1, page + 1)
+  if (start > 2) out.push("…")
+  for (let i = start; i <= end; i += 1) out.push(i)
+  if (end < pageCount - 1) out.push("…")
+  out.push(pageCount)
+  return out
 }
 
 function SortHeader({ label, field, sortBy, sortDir, onSort }: SortHeaderProps) {
@@ -478,17 +668,28 @@ function BookingTableSkeleton({ rows }: { rows: number }) {
   )
 }
 
-function formatBookingItems(booking: BookingRecord, moreTemplate: string): React.ReactNode {
+function formatBookingItems(
+  booking: BookingRecord,
+  moreTemplate: string,
+  daysTemplate: string,
+): React.ReactNode {
   const items = booking.items ?? []
   if (items.length === 0) return <span className="text-muted-foreground">—</span>
   const [first, ...rest] = items
   if (!first) return <span className="text-muted-foreground">—</span>
   const label = first.productName ?? first.title
+  const days = computeItemDays(first.startsAt, first.endsAt)
+  const daysSuffix = days > 0 ? ` ${formatMessage(daysTemplate, { count: days })}` : ""
   const moreSuffix =
     rest.length === 0 ? "" : ` ${formatMessage(moreTemplate, { count: rest.length })}`
   return (
-    <div className="max-w-[320px] truncate" title={`${label}${moreSuffix}`}>
+    <div className="max-w-[320px] truncate" title={`${label}${daysSuffix}${moreSuffix}`}>
       {label}
+      {days > 0 ? (
+        <span className="ml-1 text-xs text-muted-foreground">
+          {formatMessage(daysTemplate, { count: days })}
+        </span>
+      ) : null}
       {rest.length > 0 ? (
         <span className="ml-1 text-xs text-muted-foreground">
           {formatMessage(moreTemplate, { count: rest.length })}
@@ -496,6 +697,22 @@ function formatBookingItems(booking: BookingRecord, moreTemplate: string): React
       ) : null}
     </div>
   )
+}
+
+/** Inclusive day-count between two ISO timestamps, rounded up so a
+ * trip spanning two calendar days reads "2 days". Returns 0 when
+ * either bound is missing so the caller can drop the tag entirely. */
+function computeItemDays(
+  startValue: string | null | undefined,
+  endValue: string | null | undefined,
+): number {
+  const start = toDate(startValue)
+  const end = toDate(endValue)
+  if (!start || !end) return 0
+  const ms = end.getTime() - start.getTime()
+  if (!Number.isFinite(ms) || ms < 0) return 0
+  const days = Math.ceil(ms / (1000 * 60 * 60 * 24))
+  return Math.max(1, days)
 }
 
 function formatBookingDateTime(
@@ -507,6 +724,83 @@ function formatBookingDateTime(
     return formatDateTime(`${value}T00:00:00`)
   }
   return formatDateTime(value)
+}
+
+function toDate(value: string | null | undefined): Date | null {
+  if (!value) return null
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00` : value
+  const date = new Date(iso)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+/**
+ * Compact date-range formatter for the bookings table — collapses
+ * shared month/year so a 3-day trip reads "Jun 15 – 20, 2026" in
+ * English and "15 – 20 iun., 2026" in Romanian. Output respects the
+ * locale's day/month order.
+ *
+ * NOTE: `Intl.DateTimeFormat` produces nonsense (e.g.
+ * `"2026 (day: 20)"`) for incomplete combinations like `{ day, year }`
+ * without a month. We build the compact range from named parts
+ * instead of asking Intl to skip the month.
+ */
+function formatBookingDateRange(
+  startValue: string | null | undefined,
+  endValue: string | null | undefined,
+  formatDate: (value: Date | string | number, options?: Intl.DateTimeFormatOptions) => string,
+  locale: string,
+): string {
+  const start = toDate(startValue)
+  const end = toDate(endValue)
+  if (!start && !end) return "—"
+  if (start && !end) return formatDate(start, { month: "short", day: "numeric", year: "numeric" })
+  if (!start || !end)
+    return formatDate(end as Date, { month: "short", day: "numeric", year: "numeric" })
+  const s = start
+  const e = end
+  const sameDay =
+    s.getFullYear() === e.getFullYear() &&
+    s.getMonth() === e.getMonth() &&
+    s.getDate() === e.getDate()
+  if (sameDay) return formatDate(s, { month: "short", day: "numeric", year: "numeric" })
+  const sameYear = s.getFullYear() === e.getFullYear()
+  const sameMonth = sameYear && s.getMonth() === e.getMonth()
+
+  // For collapsed ranges we need to know whether the locale puts the
+  // month before or after the day (en-US: "Jun 15", ro-RO: "15 iun.")
+  // so the result reads naturally.
+  const dayFirst = isLocaleDayFirst(locale)
+  const monthShortStart = formatDate(s, { month: "short" })
+  const monthShortEnd = formatDate(e, { month: "short" })
+  const startDay = formatDate(s, { day: "numeric" })
+  const endDay = formatDate(e, { day: "numeric" })
+
+  if (sameMonth) {
+    const body = dayFirst
+      ? `${startDay} – ${endDay} ${monthShortStart}`
+      : `${monthShortStart} ${startDay} – ${endDay}`
+    return `${body}, ${e.getFullYear()}`
+  }
+  if (sameYear) {
+    const body = dayFirst
+      ? `${startDay} ${monthShortStart} – ${endDay} ${monthShortEnd}`
+      : `${monthShortStart} ${startDay} – ${monthShortEnd} ${endDay}`
+    return `${body}, ${e.getFullYear()}`
+  }
+  return `${formatDate(s, { month: "short", day: "numeric", year: "numeric" })} – ${formatDate(e, { month: "short", day: "numeric", year: "numeric" })}`
+}
+
+/** Detect whether the locale renders the day before the month in a
+ * short date format (e.g. ro-RO: "15 iun." vs en-US: "Jun 15"). */
+function isLocaleDayFirst(locale: string): boolean {
+  const parts = new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+  }).formatToParts(new Date(2026, 0, 15))
+  const dayIndex = parts.findIndex((p) => p.type === "day")
+  const monthIndex = parts.findIndex((p) => p.type === "month")
+  if (dayIndex === -1 || monthIndex === -1) return false
+  return dayIndex < monthIndex
 }
 
 function formatLead(booking: BookingRecord): string {
