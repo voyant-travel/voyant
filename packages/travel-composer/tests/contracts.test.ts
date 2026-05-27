@@ -120,7 +120,7 @@ describe("travel composer contracts", () => {
     expect(() =>
       assertTripComponentCanBeUpdated(committed, {
         catalogRef: {
-          entityModule: "hospitality",
+          entityModule: "accommodations",
           entityId: "prop_123",
           sourceKind: "owned",
         },

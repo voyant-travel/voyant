@@ -548,7 +548,7 @@ function SummaryLine({
 
 function componentIcon(component: TripComponent) {
   if (component.kind === "flight_placeholder" || component.kind === "flight_order") return Plane
-  if (component.entityModule === "hospitality") return BedDouble
+  if (component.entityModule === "accommodations") return BedDouble
   if (component.entityModule === "cruises") return Ship
   return RouteIcon
 }

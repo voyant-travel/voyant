@@ -234,14 +234,14 @@ export function StorefrontComposerBlock(): React.ReactElement {
       // i18n-literal-ok
       description: template === "stay" ? "Catalog-backed stay component" : "Catalog-backed tour",
       catalogRef: {
-        entityModule: template === "stay" ? "hospitality" : "products",
+        entityModule: template === "stay" ? "accommodations" : "products",
         entityId,
         sourceKind: sourceKind || "owned",
       },
       metadata: {
         bookingDraftV1: {
           entity: {
-            module: template === "stay" ? "hospitality" : "products",
+            module: template === "stay" ? "accommodations" : "products",
             id: entityId,
             sourceKind: sourceKind || "owned",
           },
@@ -550,7 +550,7 @@ function ComponentCard({
   const Icon =
     component.kind === "manual_placeholder"
       ? Landmark
-      : component.entityModule === "hospitality"
+      : component.entityModule === "accommodations"
         ? BedDouble
         : Route
   return (
