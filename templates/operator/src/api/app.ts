@@ -22,7 +22,7 @@ import {
   financeService,
 } from "@voyantjs/finance"
 import { bookingPaymentSchedules, invoices, paymentSessions } from "@voyantjs/finance/schema"
-import { createApp } from "@voyantjs/hono"
+import { createApp, createPublicDocumentDeliveryHonoModule } from "@voyantjs/hono"
 import { identityHonoModule } from "@voyantjs/identity"
 import {
   type AutoGenerateContractOptions,
@@ -869,6 +869,10 @@ const legalModule = createLegalHonoModule({
   autoGenerateContractOnConfirmed: AUTO_GENERATE_CONTRACT_OPTIONS,
 })
 
+const publicDocumentDeliveryModule = createPublicDocumentDeliveryHonoModule<CloudflareBindings>({
+  resolveStorage: createDocumentStorage,
+})
+
 interface StoredContractAcceptance {
   templateId?: string
   templateSlug?: string
@@ -1065,6 +1069,7 @@ export const app = createApp<CloudflareBindings>({
     // before the customer accepts. Both the slug-resolution lookup
     // and the by-slug preview render live under this prefix.
     "/v1/public/legal",
+    "/v1/public/documents",
     // Operator profile + customer payment policy (sanitized subset).
     // The storefront contract preview reads operator name / address /
     // license + the deposit terms from here so it can render the
@@ -1104,6 +1109,7 @@ export const app = createApp<CloudflareBindings>({
     bookingsHonoModule,
     financeModule,
     legalModule,
+    publicDocumentDeliveryModule,
     notificationsHonoModule,
     storefrontHonoModule,
     customerPortalHonoModule,

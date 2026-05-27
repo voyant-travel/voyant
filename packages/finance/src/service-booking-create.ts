@@ -1262,7 +1262,7 @@ export async function createBooking(
           const generated = await financeDocumentsService.generateInvoiceDocument(
             db,
             invoice.id,
-            { format: "pdf", replaceExisting: true },
+            { format: "pdf", replaceExisting: true, publicDelivery: false },
             {
               generator: runtime.invoiceDocumentGenerator,
               eventBus: runtime.eventBus,
