@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/hono",
-  "version": "0.83.0",
+  "version": "0.83.1",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -9,6 +9,7 @@
     "./module": "./src/module.ts",
     "./plugin": "./src/plugin.ts",
     "./document-download": "./src/document-download.ts",
+    "./public-document-delivery": "./src/public-document-delivery.ts",
     "./types": "./src/types.ts",
     "./middleware": "./src/middleware/index.ts",
     "./middleware/auth": "./src/middleware/auth.ts",
@@ -34,6 +35,7 @@
   "dependencies": {
     "@voyantjs/core": "workspace:*",
     "@voyantjs/db": "workspace:*",
+    "@voyantjs/storage": "workspace:*",
     "@voyantjs/types": "workspace:*",
     "@voyantjs/utils": "workspace:*",
     "@voyantjs/workflows": "workspace:*",
@@ -78,6 +80,11 @@
         "types": "./dist/document-download.d.ts",
         "import": "./dist/document-download.js",
         "default": "./dist/document-download.js"
+      },
+      "./public-document-delivery": {
+        "types": "./dist/public-document-delivery.d.ts",
+        "import": "./dist/public-document-delivery.js",
+        "default": "./dist/public-document-delivery.js"
       },
       "./types": {
         "types": "./dist/types.d.ts",

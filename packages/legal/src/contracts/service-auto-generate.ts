@@ -952,6 +952,7 @@ export async function autoGenerateContractForBooking(
       issueIfDraft: true,
       replaceExisting: true,
       kind: "document",
+      publicDelivery: false,
     },
     {
       generator: runtime.generator,

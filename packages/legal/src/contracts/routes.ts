@@ -1,5 +1,7 @@
 import type { EventBus, ModuleContainer } from "@voyantjs/core"
 import {
+  createDrizzlePublicDocumentDeliveryGrantStore,
+  createPublicDocumentDeliveryGrant,
   idempotencyKey,
   parseJsonBody,
   parseOptionalJsonBody,
@@ -252,17 +254,13 @@ async function regenerateContractDocument(
     return c.json({ error: "Contract document generator is not configured" }, 501)
   }
 
-  const result = await contractsService.regenerateContractDocument(
-    c.get("db"),
-    contractId,
-    await parseOptionalJsonBody(c, generateContractDocumentInputSchema),
-    {
-      generator,
-      bindings: c.env,
-      eventBus: runtime.eventBus,
-      lifecycleHooks: runtime.lifecycleHooks,
-    },
-  )
+  const input = await parseOptionalJsonBody(c, generateContractDocumentInputSchema)
+  const result = await contractsService.regenerateContractDocument(c.get("db"), contractId, input, {
+    generator,
+    bindings: c.env,
+    eventBus: runtime.eventBus,
+    lifecycleHooks: runtime.lifecycleHooks,
+  })
 
   if (result.status === "not_found") return c.json({ error: "Contract not found" }, 404)
   if (result.status === "not_draft") {
@@ -278,7 +276,7 @@ async function regenerateContractDocument(
     return c.json({ error: "Contract document generation failed" }, 502)
   }
 
-  return c.json({ data: await attachDownloadEnvelope(c.env, runtime, result) })
+  return c.json({ data: await attachDownloadEnvelope(c, runtime, result, input) })
 }
 
 async function generateContractDocumentForBooking(c: Context<Env>, options: ContractsRouteOptions) {
@@ -346,7 +344,7 @@ async function generateContractDocumentForBooking(c: Context<Env>, options: Cont
 
   return c.json(
     {
-      data: await attachDownloadEnvelope(c.env, runtime, { contract, attachment }),
+      data: await attachDownloadEnvelope(c, runtime, { contract, attachment }, input),
     },
     201,
   )
@@ -551,10 +549,11 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
         return c.json({ error: "Contract document generator is not configured" }, 501)
       }
 
+      const input = await parseOptionalJsonBody(c, generateContractDocumentInputSchema)
       const result = await contractsService.generateContractDocument(
         c.get("db"),
         c.req.param("id"),
-        await parseOptionalJsonBody(c, generateContractDocumentInputSchema),
+        input,
         {
           generator,
           bindings: c.env,
@@ -580,7 +579,7 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
         return c.json({ error: "Contract document generation failed" }, 502)
       }
 
-      return c.json({ data: await attachDownloadEnvelope(c.env, runtime, result) }, 201)
+      return c.json({ data: await attachDownloadEnvelope(c, runtime, result, input) }, 201)
     })
     .post("/:id/regenerate-document", async (c) => {
       return regenerateContractDocument(c, options, c.req.param("id"))
@@ -695,17 +694,54 @@ export const contractsAdminRoutes = createContractsAdminRoutes()
 
 async function attachDownloadEnvelope<
   T extends {
-    attachment: { storageKey?: string | null; metadata?: unknown; name?: string | null }
+    attachment: {
+      id?: string | null
+      storageKey?: string | null
+      metadata?: unknown
+      name?: string | null
+      mimeType?: string | null
+    }
   },
->(bindings: Record<string, unknown>, runtime: ContractsRouteRuntime, result: T) {
+>(
+  c: Context<Env>,
+  runtime: ContractsRouteRuntime,
+  result: T,
+  input: { publicDelivery?: boolean; publicDeliveryTtlSeconds?: number | undefined },
+) {
   const download = await resolveStoredDocumentDownload(
     { ...result.attachment, filename: result.attachment.name },
     {
-      bindings,
+      bindings: c.env,
       resolveDocumentDownloadUrl: runtime.resolveDocumentDownloadUrl,
     },
   )
-  return download.status === "ready" ? { ...result, download: download.download } : result
+  const withAdminDownload =
+    download.status === "ready" ? { ...result, download: download.download } : result
+
+  if (!input.publicDelivery || !result.attachment.storageKey) {
+    return withAdminDownload
+  }
+
+  const publicDownload = await createPublicDocumentDeliveryGrant(
+    createDrizzlePublicDocumentDeliveryGrantStore(c.get("db")),
+    {
+      storageKey: result.attachment.storageKey,
+      publicBaseUrl: new URL(c.req.url).origin,
+      ttlSeconds: input.publicDeliveryTtlSeconds,
+      filename:
+        result.attachment.name ?? (download.status === "ready" ? download.download.filename : null),
+      contentType: result.attachment.mimeType,
+      source: {
+        module: "legal",
+        entity: "contract_attachment",
+        id: result.attachment.id ?? null,
+      },
+      createdBy: c.get("userId") ?? null,
+      createdByType: c.get("userId") ? "staff" : null,
+    },
+  )
+
+  return { ...withAdminDownload, publicDownload }
 }
 
 export function createContractsPublicRoutes(options: ContractsRouteOptions = {}) {

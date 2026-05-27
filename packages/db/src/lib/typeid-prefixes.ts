@@ -19,6 +19,7 @@ export const PREFIXES = {
   webhook_subscriptions: "hksub",
   webhook_deliveries: "whde",
   rate_limit_buckets: "rlbk",
+  public_document_delivery_grants: "pddg",
   domains: "dom",
   email_domain_records: "emdr",
   idempotency_keys: "ikey",

@@ -3185,6 +3185,9 @@ importers:
       '@voyantjs/db':
         specifier: workspace:*
         version: link:../db
+      '@voyantjs/storage':
+        specifier: workspace:*
+        version: link:../storage
       '@voyantjs/types':
         specifier: workspace:*
         version: link:../types
