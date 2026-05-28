@@ -1,5 +1,15 @@
 # @voyantjs/ground
 
+## 0.84.4
+
+### Patch Changes
+
+- @voyantjs/core@0.84.4
+- @voyantjs/db@0.84.4
+- @voyantjs/facilities@0.84.4
+- @voyantjs/hono@0.84.4
+- @voyantjs/identity@0.84.4
+
 ## 0.84.2
 
 ### Patch Changes
