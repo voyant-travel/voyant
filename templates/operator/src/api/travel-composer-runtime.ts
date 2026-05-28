@@ -55,7 +55,7 @@ import {
 } from "@voyantjs/travel-composer"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-import { applyOperatorTaxToQuoteResult } from "./catalog-booking"
+import { applyOperatorTaxToQuoteResult } from "./catalog-booking-runtime"
 import {
   CatalogCheckoutStartError,
   type CatalogCheckoutStartResult,
@@ -86,7 +86,7 @@ export const travelComposerPaymentBundle: HonoBundle = {
 
       try {
         await withDbFromEnv(env, async (rawDb) => {
-          const db = rawDb as unknown as PostgresJsDatabase
+          const db = rawDb as PostgresJsDatabase
           await travelComposerService.completeTripCheckout(db, {
             envelopeId: data.targetId ?? undefined,
             paymentSessionId: data.paymentSessionId,
@@ -477,7 +477,7 @@ async function startTripCheckout(
   c: Context,
   input: TripCheckoutInput,
 ): Promise<TripCheckoutResult> {
-  const db = getDb(c) as unknown as Parameters<typeof financeService.createPaymentSession>[0]
+  const db = getDb(c) as Parameters<typeof financeService.createPaymentSession>[0]
   const pricing = await checkoutPricingForTrip(c, input.trip, input.request)
   if (pricing.totalAmountCents <= 0) {
     throw new Error("trip_checkout_total_required")
