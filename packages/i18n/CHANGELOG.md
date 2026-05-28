@@ -1,5 +1,11 @@
 # @voyantjs/i18n
 
+## 0.84.3
+
+### Patch Changes
+
+- 9eadf50: Release booking billing party snapshots so existing bookings can store individual or company billing details, including VAT/tax ID, and the billing dialog can prefill from CRM people or organizations.
+
 ## 0.84.2
 
 ## 0.84.1

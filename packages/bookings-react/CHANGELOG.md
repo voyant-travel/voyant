@@ -1,5 +1,14 @@
 # @voyantjs/bookings-react
 
+## 0.84.3
+
+### Patch Changes
+
+- 9eadf50: Release booking billing party snapshots so existing bookings can store individual or company billing details, including VAT/tax ID, and the billing dialog can prefill from CRM people or organizations.
+- Updated dependencies [9eadf50]
+  - @voyantjs/bookings@0.84.3
+  - @voyantjs/react@0.84.3
+
 ## 0.84.2
 
 ### Patch Changes
