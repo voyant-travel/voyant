@@ -17,7 +17,10 @@ So: a new opt-in `@voyantjs/cruises` package, modeled native to Voyant's existin
 The module supports two provenance modes for cruise inventory, side by side:
 
 - **Self-managed cruises** — operators that publish their own cruise products (a boutique line, a private charter operation) own those rows in their local DB. Full canonical schema, full admin CRUD.
-- **External cruises** — sourced from an upstream **adapter**. Voyant Connect is the default adapter (and the one Voyant's own templates assume); agencies that prefer their own connectivity engine implement the same adapter contract. Admin reads external cruises live through the adapter; bookings for them snapshot the upstream state into the local booking row.
+- **External cruises** — sourced from an upstream **adapter**. Deployments choose
+  the adapter package at startup. Admin reads external cruises live through the
+  adapter; bookings for them snapshot the upstream state into the local booking
+  row.
 
 Both modes coexist in the same admin experience — a unified list with an `External` badge on adapter-sourced rows — and the bookings/payments/CRM/finance plumbing is identical across them. The architectural details are in §3.5.
 
@@ -29,15 +32,22 @@ Both modes coexist in the same admin experience — a unified list with an `Exte
 - Strict opt-in. Tenants that don't sell cruises must not have cruise tables in their database, cruise routes mounted, or cruise types bleeding into their TypeScript surface.
 - Full integration with the rest of Voyant — bookings, finance, CRM, suppliers, storage — through the same extension and link patterns the platform already uses.
 - Lead-gen and payment-capable booking, switchable per template (some agencies want one, some the other, some both depending on the line).
-- A small, well-defined **adapter contract** so Voyant Connect (default) or a custom agency-built adapter can serve external cruise inventory through the same admin and storefront paths self-managed cruises use.
+- A small, well-defined **adapter contract** so external adapter packages can
+  serve cruise inventory through the same admin and storefront paths
+  self-managed cruises use.
 - A pricing model that survives the real shape of cruise pricing: occupancy variants, fare codes, dated promotions, onboard credits, gratuities, port charges, taxes, currency, and per-sailing schedule overrides.
 - **v1 is migration-complete.** A real luxury-cruise reseller (multi-line, mixed inquiry/payment, party bookings, specific-cabin selection, dated promo overlays) can run end-to-end on v1 without waiting for a follow-up release. Anything left for "later" is called out explicitly in the non-goals; everything else ships.
 
 ### Non-goals (for v1)
 
 - **Yacht charters** (Aman, Four Seasons, Ritz-Carlton, SeaDream, A&K, Orient Express). The booking unit is a named suite at a flat price, sometimes whole-yacht. They look like cruises on the website and nothing like cruises in the schema. A separate `charters` module is the right home; until it lands, agencies that need to model these can use `products`. Forcing them into the cruise grid would re-pollute the namespace we're trying to keep clean.
-- **Cruise-line connectors bundled in OSS.** Voyant Connect owns the connectivity layer (provider applications, connections, gateway data plane, normalized replica reads) and ships per-line connectors there. This module defines the adapter contract Connect targets; it does not ship the connectors themselves.
-- **Sync orchestration / scheduling / polling.** Same reasoning — Connect handles that for its own connectors; an agency's custom adapter handles its own. The cruises module is the canonical storage + service + routes layer plus the adapter contract that runs in front of it.
+- **Cruise-line connectors bundled in OSS.** Connectivity packages own provider
+  applications, connections, gateway data planes, normalized replica reads, and
+  per-line connectors. This module defines the adapter contract; it does not
+  ship the connectors themselves.
+- **Sync orchestration / scheduling / polling.** Adapter packages own their
+  polling and retry loops. The cruises module is the canonical storage +
+  service + routes layer plus the adapter contract that runs in front of it.
 - **Real-time hold / live-book against cruise reservation systems.** Connect's domain when it lands; the cruise schema reserves `connectorBookingRef` so live bookings have somewhere to land.
 - **Wholesaler net-rate / commission split modeling.** Will piggyback on the existing channels module when it lands.
 
@@ -60,7 +70,11 @@ The same cruise the operator's customer sees can come from one of two places:
 
 **Self-managed (`source: 'local'`)** — operator publishes their own cruises. The full canonical schema in §6 is populated locally. Admin offers full CRUD. Bookings against these cruises don't talk to any upstream. Use case: a boutique line, a private charter, an in-house product an operator owns end-to-end.
 
-**External (`source: 'external'`)** — cruise lives in an upstream system reached via an **adapter**. The adapter's identity is captured by `sourceProvider` (e.g. `'voyant-connect'`, `'custom'`) and `sourceRef` (the upstream pointer). The local DB stores nothing about the cruise itself; all reads go through the adapter. Bookings snapshot the upstream state into the local booking row at confirmation time.
+**External (`source: 'external'`)** — cruise lives in an upstream system reached
+via an **adapter**. The adapter's identity is captured by `sourceProvider`
+(adapter name) and `sourceRef` (the upstream pointer). The local DB stores
+nothing about the cruise itself; all reads go through the adapter. Bookings
+snapshot the upstream state into the local booking row at confirmation time.
 
 ### What lives where
 
@@ -212,7 +226,7 @@ This section is detailed because the schema is most of the design. All tables us
 | `lowestPriceCached` | numeric(12,2) | denormalized MIN across sailings; recomputed by background task |
 | `earliestDepartureCached` | date | |
 | `latestDepartureCached` | date | |
-| `externalRefs` | jsonb | `{ "voyant-connect": "...", "<adapter-source>": "...", ... }` source-keyed external IDs |
+| `externalRefs` | jsonb | `{ "<adapter-source>": "...", ... }` source-keyed external IDs |
 | `createdAt` / `updatedAt` | timestamptz | |
 
 Indexes: `(cruiseType, status)`, `(lineSupplierId, status)`, `(slug)` unique, `(earliestDepartureCached, status)`.
@@ -429,7 +443,7 @@ This is the deliberate departure from the JSONB-per-sailing shortcut described i
 |---|---|---|
 | `id` | typeId | prefix `crsi` |
 | `source` | `cruise_source_enum` not null | `'local' \| 'external'` |
-| `sourceProvider` | text | `'voyant-connect'` \| `'custom'` (or any custom adapter name) for `external`; null for `local` |
+| `sourceProvider` | text | adapter name for `external`; null for `local` |
 | `sourceRef` | jsonb | for `external`: `{ connectionId, externalId, ... }` — opaque pointer back to the adapter |
 | `localCruiseId` | text | for `source='local'`: FK to `cruises.id`. Null for `external` |
 | `slug` | text not null | URL slug for the storefront — unique across the index |
@@ -526,7 +540,11 @@ Two Hono apps, mounted by template via `createApp({ modules: [cruisesHonoModule]
 
 ### Admin routes — `/v1/admin/cruises/*`
 
-Identifiers in admin use a unified key format: local cruises are addressed by their `cru_*` TypeID; external cruises by `<sourceProvider>:<urlSafeRef>` (e.g. `voyant-connect:cnx_abc/abc-123`). The route layer parses the key and routes to the appropriate backing store.
+Identifiers in admin use a unified key format: local cruises are addressed by
+their `cru_*` TypeID; external cruises by
+`<sourceProvider>:<encodedSourceRef>` (for example,
+`external-cruises:sr_<base64url-json>`). The route layer parses the key and
+routes to the appropriate backing store.
 
 ```
 # unified — works for any source
@@ -586,45 +604,44 @@ The `POST /sailings/:key/quote` endpoint is what an inquiry-style booking flow c
 
 ## 10. Adapter contract
 
-External cruises reach the module through a registered **adapter**. Voyant Connect is the default adapter Voyant's own templates wire up; an agency that prefers their own connectivity engine implements the same contract and registers it instead. The adapter is **swappable**, not baked in: a template can switch from Connect to a custom adapter without changing any cruises-module code.
+External cruises reach the module through a registered **adapter**. The adapter is
+**swappable**, not baked in: a template chooses the adapter package at startup
+without changing any cruises-module code. The detailed implementation contract,
+compatibility fixture, SourceRef rules, and provider-neutrality checklist live in
+[`cruise-adapter-contract.md`](./cruise-adapter-contract.md).
 
-The contract has three methods, deliberately small:
+The contract has browse/projection methods, live detail reads, and a booking
+commit method:
 
 ```ts
 // packages/cruises/src/adapters/index.ts
 export interface CruiseAdapter {
-  readonly name: string                         // 'voyant-connect', 'custom', etc.
+  readonly name: string
   readonly version: string
 
-  // Storefront projection — push slim entries into cruise_search_index.
-  // Connect calls this via a delta-stream subscription; a custom adapter can call it
-  // on whatever schedule it likes. No-op for operators that don't run a Voyant storefront.
-  searchProjection(opts: { since?: Date; cursor?: string }): AsyncIterable<CruiseSearchProjectionEntry>
+  listEntries(options?: ListEntriesOptions): Promise<ListEntriesResult>
+  searchProjection(options?: ListEntriesOptions): AsyncIterable<CruiseSearchProjectionEntry>
 
-  // Detail read for a specific external cruise / sailing / ship.
-  // Called from admin routes and from public detail routes.
-  // Shapes match the canonical types in §6 (no need to flatten — return what the upstream gives, normalized).
-  fetchCruise(sourceRef: SourceRef): Promise<ExternalCruise>
-  fetchSailing(sourceRef: SourceRef): Promise<ExternalSailing>
+  fetchCruise(sourceRef: SourceRef): Promise<ExternalCruise | null>
+  fetchSailing(sourceRef: SourceRef): Promise<ExternalSailing | null>
   fetchSailingPricing(sourceRef: SourceRef): Promise<ExternalPriceRow[]>
   fetchSailingItinerary(sourceRef: SourceRef): Promise<ExternalItineraryDay[]>
-  fetchShip(sourceRef: SourceRef): Promise<ExternalShip>
+  fetchShip(sourceRef: SourceRef): Promise<ExternalShip | null>
+  listSailingsForCruise(cruiseRef: SourceRef): Promise<ExternalSailing[]>
 
-  // Booking commit — used when creating a booking against an external cruise.
-  // Returns the upstream confirmation reference plus a fully-resolved snapshot to store
-  // in booking_cruise_details quote, terms, passenger-composition, and connector fields.
   createBooking(input: CreateExternalBookingInput): Promise<ExternalBookingResult>
 }
 
 export type SourceRef = { connectionId?: string; externalId: string; [k: string]: unknown }
 ```
 
-`SourceRef` is round-trippable adapter state, not a display id. Connect-backed
-refs should preserve connection id, provider/source key, upstream cruise,
-sailing, ship, cabin ids, synced-row ids, and opaque metadata needed by the
-adapter. Admin route keys and catalog shim entity ids use the URL-safe
+`SourceRef` is round-trippable adapter state, not a display id. Adapter-backed
+refs must preserve connection id, source namespace, upstream cruise, sailing,
+ship, cabin ids, synced-row ids, and opaque metadata needed by the adapter.
+Admin route keys and catalog shim entity ids use the URL-safe
 `encodeSourceRef(...)` form (`<provider>:sr_<base64url-json>`) so punctuation
-and adapter metadata are not reconstructed from a lossy slug.
+and adapter metadata are not reconstructed from a lossy slug. Two refs with the
+same `externalId` but different connection/source context are different rows.
 
 Connect compatibility decisions live next to the adapter contract in
 `packages/cruises/src/adapters/connect-compat.ts`:
@@ -640,19 +657,19 @@ Connect compatibility decisions live next to the adapter contract in
 Two registration points in a template:
 
 ```ts
-// templates/dmc/src/index.ts
 import { createApp } from "@voyantjs/hono"
 import { cruisesHonoModule, registerCruiseAdapter } from "@voyantjs/cruises"
-import { createConnectCruiseAdapter } from "@voyantjs/cruises-adapter-connect"
+import { createCruiseAdapter } from "external-cruise-adapter"
 
-registerCruiseAdapter(createConnectCruiseAdapter({ apiKey: env.VOYANT_CONNECT_API_KEY }))
+registerCruiseAdapter(createCruiseAdapter({ token: env.CRUISE_ADAPTER_TOKEN }))
 
 export const app = createApp({
   modules: [cruisesHonoModule, ...],
 })
 ```
 
-Templates default to the Connect adapter. Swapping it for a custom one is a single-line change.
+The framework never imports the concrete adapter package; the deployment wiring
+does.
 
 ### Where the adapter sits at request time
 
