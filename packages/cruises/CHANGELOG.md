@@ -1,5 +1,16 @@
 # @voyantjs/cruises
 
+## 0.85.1
+
+### Patch Changes
+
+- 8605177: Document the external cruise adapter contract and export a provider-neutral compatibility fixture for adapter packages.
+  - @voyantjs/bookings@0.85.1
+  - @voyantjs/catalog@0.85.1
+  - @voyantjs/core@0.85.1
+  - @voyantjs/db@0.85.1
+  - @voyantjs/hono@0.85.1
+
 ## 0.85.0
 
 ### Minor Changes
