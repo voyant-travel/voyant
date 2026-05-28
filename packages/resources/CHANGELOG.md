@@ -1,5 +1,13 @@
 # @voyantjs/resources
 
+## 0.84.3
+
+### Patch Changes
+
+- @voyantjs/core@0.84.3
+- @voyantjs/db@0.84.3
+- @voyantjs/hono@0.84.3
+
 ## 0.84.1
 
 ### Patch Changes
