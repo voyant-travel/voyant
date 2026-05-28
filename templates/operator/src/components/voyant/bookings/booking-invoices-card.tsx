@@ -43,6 +43,10 @@ async function uploadInvoiceAttachment(file: File): Promise<BookingInvoiceDialog
   }
 }
 
+function clampScheduleInvoiceDueDate(input: { issueDate: string; dueDate: string }) {
+  return input.dueDate < input.issueDate ? input.issueDate : input.dueDate
+}
+
 interface InvoiceRow {
   id: string
   invoiceNumber: string
@@ -321,6 +325,7 @@ export function BookingInvoicesCard({
         defaultCurrency={defaultCurrency}
         defaultAmountCents={defaultAmountCents ?? null}
         defaultScheduleTaxRatePercent={scheduleTaxRatePercent}
+        resolveScheduleDueDate={clampScheduleInvoiceDueDate}
         uploadFile={uploadInvoiceAttachment}
       />
 

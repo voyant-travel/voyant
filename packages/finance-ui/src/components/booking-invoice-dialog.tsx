@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  type BookingPaymentScheduleRecord,
   type InvoiceRecord,
   type PaymentMethod,
   useBookingPaymentSchedules,
@@ -32,7 +33,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
 
-type InvoiceTypeChoice = "invoice" | "proforma"
+export type InvoiceTypeChoice = "invoice" | "proforma"
 type SourceChoice = "custom" | "schedule"
 
 interface LineItemDraft {
@@ -48,6 +49,20 @@ export interface BookingInvoiceDialogUpload {
   mimeType: string
   fileSize: number
 }
+
+export interface BookingInvoiceDueDateResolverInput {
+  issueDate: string
+  dueDate: string
+  invoiceType: InvoiceTypeChoice
+  booking: {
+    id: string
+    currency: string
+    amountCents: number | null
+  }
+  bookingPaymentSchedule: BookingPaymentScheduleRecord
+}
+
+export type BookingInvoiceDueDateResolver = (input: BookingInvoiceDueDateResolverInput) => string
 
 export interface BookingInvoiceDialogProps {
   open: boolean
@@ -73,6 +88,12 @@ export interface BookingInvoiceDialogProps {
    * would apply server-side at issuance. Defaults to 0 when omitted.
    */
   defaultScheduleTaxRatePercent?: number
+  /**
+   * Resolve the legal document due date when an invoice/proforma is
+   * derived from a payment schedule. Defaults to the schedule due date
+   * for backwards compatibility.
+   */
+  resolveScheduleDueDate?: BookingInvoiceDueDateResolver
   onSuccess?: (invoice: InvoiceRecord) => void
 }
 
@@ -155,6 +176,7 @@ export function BookingInvoiceDialog({
   defaultAmountCents = null,
   uploadFile,
   defaultScheduleTaxRatePercent = 0,
+  resolveScheduleDueDate,
   onSuccess,
 }: BookingInvoiceDialogProps) {
   const { createFromBooking } = useInvoiceMutation()
@@ -237,7 +259,6 @@ export function BookingInvoiceDialog({
       return
     }
     setCurrency(selectedSchedule.currency)
-    setDueDate(selectedSchedule.dueDate)
     // The schedule amount is the gross (customer-facing) sum, so the
     // line item's net unit price is `amount / (1 + tax%)`. Without this
     // back-out the line would compute as `amount + amount * tax%`,
@@ -257,6 +278,32 @@ export function BookingInvoiceDialog({
       },
     ])
   }, [source, selectedSchedule, defaultScheduleTaxRatePercent])
+
+  useEffect(() => {
+    if (source !== "schedule" || !selectedSchedule) return
+    setDueDate(
+      resolveScheduleDueDate?.({
+        issueDate,
+        dueDate: selectedSchedule.dueDate,
+        invoiceType,
+        booking: {
+          id: bookingId,
+          currency: defaultCurrency,
+          amountCents: defaultAmountCents,
+        },
+        bookingPaymentSchedule: selectedSchedule,
+      }) ?? selectedSchedule.dueDate,
+    )
+  }, [
+    source,
+    selectedSchedule,
+    resolveScheduleDueDate,
+    issueDate,
+    invoiceType,
+    bookingId,
+    defaultCurrency,
+    defaultAmountCents,
+  ])
 
   // ---- line item totals ----------------------------------------------------
   // When the operator entered explicit line items, the global Subtotal/Tax/

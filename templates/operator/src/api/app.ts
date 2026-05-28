@@ -236,6 +236,8 @@ const financeModule = createFinanceHonoModule({
     resolveOperatorDocumentDownloadUrl(bindings, storageKey),
   resolveInvoiceExchangeRateResolver: createOperatorInvoiceExchangeRateResolver,
   resolveInvoiceSettlementPollers: createOperatorInvoiceSettlementPollers,
+  invoiceDueDateResolver: ({ issueDate, dueDate, bookingPaymentSchedule }) =>
+    bookingPaymentSchedule && dueDate < issueDate ? issueDate : dueDate,
 })
 const legalModule = createLegalHonoModule({
   // KNOWN LEAK: same shape as the bookings `resolveDb` above — leaks a
