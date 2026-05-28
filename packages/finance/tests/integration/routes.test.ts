@@ -1389,6 +1389,44 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       })
     })
 
+    it("returns a conflict when conversion would reuse an active invoice number", async () => {
+      const booking = await seedBooking()
+      await seedInvoice(booking.id, {
+        invoiceNumber: "INV-CONVERT-DUP",
+        invoiceType: "invoice",
+        status: "issued",
+      })
+      const proforma = await seedInvoice(booking.id, {
+        invoiceNumber: "PRO-CONVERT-DUP",
+        invoiceType: "proforma",
+        status: "issued",
+      })
+      invoiceIssuedEvents.length = 0
+
+      const res = await app.request(`/invoices/${proforma.id}/convert-to-invoice`, {
+        method: "POST",
+        ...json({ invoiceNumber: "INV-CONVERT-DUP" }),
+      })
+
+      expect(res.status).toBe(409)
+      await expect(res.json()).resolves.toMatchObject({
+        code: "invoice_number_conflict",
+        invoiceNumber: "INV-CONVERT-DUP",
+      })
+      const refreshedProforma = await financeService.getInvoiceById(db, proforma.id)
+      expect(refreshedProforma).toMatchObject({
+        status: "issued",
+        voidedAt: null,
+        voidReason: null,
+      })
+      expect(invoiceIssuedEvents).toHaveLength(0)
+      const converted = await db
+        .select({ id: invoices.id })
+        .from(invoices)
+        .where(eq(invoices.convertedFromInvoiceId, proforma.id))
+      expect(converted).toHaveLength(0)
+    })
+
     it("rejects new payments on converted void proformas with redirect details", async () => {
       const booking = await seedBooking()
       const proforma = await seedInvoice(booking.id, {

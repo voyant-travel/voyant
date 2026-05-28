@@ -1183,9 +1183,24 @@ export const financeRoutes = new Hono<Env>()
       }
     })()
 
-    const result = await convertProformaToInvoice(c.get("db"), c.req.param("id"), input, {
-      eventBus: runtime?.eventBus,
-    })
+    let result: Awaited<ReturnType<typeof convertProformaToInvoice>>
+    try {
+      result = await convertProformaToInvoice(c.get("db"), c.req.param("id"), input, {
+        eventBus: runtime?.eventBus,
+      })
+    } catch (error) {
+      if (error instanceof InvoiceNumberConflictError) {
+        return c.json(
+          {
+            error: "Invoice number already exists",
+            code: error.code,
+            invoiceNumber: error.invoiceNumber,
+          },
+          409,
+        )
+      }
+      throw error
+    }
 
     if (result.status === "not_found") {
       return c.json({ error: "Invoice not found" }, 404)

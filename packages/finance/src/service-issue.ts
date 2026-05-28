@@ -19,6 +19,7 @@ import {
   type FinanceServiceRuntime,
   financeService,
   type InvoiceFromBookingData,
+  InvoiceNumberConflictError,
 } from "./service.js"
 
 /**
@@ -518,91 +519,98 @@ export async function convertProformaToInvoice(
   const dueDate = options.dueDate ?? toDateString(proforma.dueDate)
 
   const now = new Date()
-  const created = await db.transaction(async (tx) => {
-    const [inserted] = await tx
-      .insert(invoices)
-      .values({
-        invoiceNumber: newInvoiceNumber,
-        invoiceType: "invoice",
-        convertedFromInvoiceId: proforma.id,
-        seriesId: proforma.seriesId,
-        templateId: proforma.templateId,
-        taxRegimeId: proforma.taxRegimeId,
-        language: proforma.language,
-        bookingId: proforma.bookingId,
-        personId: proforma.personId,
-        organizationId: proforma.organizationId,
-        status: "issued",
-        currency: proforma.currency,
-        baseCurrency: proforma.baseCurrency,
-        fxRateSetId: proforma.fxRateSetId,
-        subtotalCents: proforma.subtotalCents,
-        baseSubtotalCents: proforma.baseSubtotalCents,
-        taxCents: proforma.taxCents,
-        baseTaxCents: proforma.baseTaxCents,
-        totalCents: proforma.totalCents,
-        baseTotalCents: proforma.baseTotalCents,
-        // Carry the proforma's settled amounts forward — a partially
-        // (or fully) paid proforma must convert to an invoice that
-        // reflects those payments, otherwise the new invoice shows the
-        // full total as outstanding and the payment rows reassigned
-        // below would orphan the balance.
-        paidCents: proforma.paidCents,
-        basePaidCents: proforma.basePaidCents,
-        balanceDueCents: proforma.totalCents - proforma.paidCents,
-        baseBalanceDueCents:
-          proforma.baseTotalCents !== null && proforma.basePaidCents !== null
-            ? proforma.baseTotalCents - proforma.basePaidCents
-            : proforma.baseTotalCents,
-        commissionPercent: proforma.commissionPercent,
-        commissionAmountCents: proforma.commissionAmountCents,
-        issueDate,
-        dueDate,
-        notes: proforma.notes,
-      })
-      .returning()
+  const created = await db
+    .transaction(async (tx) => {
+      const [inserted] = await tx
+        .insert(invoices)
+        .values({
+          invoiceNumber: newInvoiceNumber,
+          invoiceType: "invoice",
+          convertedFromInvoiceId: proforma.id,
+          seriesId: proforma.seriesId,
+          templateId: proforma.templateId,
+          taxRegimeId: proforma.taxRegimeId,
+          language: proforma.language,
+          bookingId: proforma.bookingId,
+          personId: proforma.personId,
+          organizationId: proforma.organizationId,
+          status: "issued",
+          currency: proforma.currency,
+          baseCurrency: proforma.baseCurrency,
+          fxRateSetId: proforma.fxRateSetId,
+          subtotalCents: proforma.subtotalCents,
+          baseSubtotalCents: proforma.baseSubtotalCents,
+          taxCents: proforma.taxCents,
+          baseTaxCents: proforma.baseTaxCents,
+          totalCents: proforma.totalCents,
+          baseTotalCents: proforma.baseTotalCents,
+          // Carry the proforma's settled amounts forward — a partially
+          // (or fully) paid proforma must convert to an invoice that
+          // reflects those payments, otherwise the new invoice shows the
+          // full total as outstanding and the payment rows reassigned
+          // below would orphan the balance.
+          paidCents: proforma.paidCents,
+          basePaidCents: proforma.basePaidCents,
+          balanceDueCents: proforma.totalCents - proforma.paidCents,
+          baseBalanceDueCents:
+            proforma.baseTotalCents !== null && proforma.basePaidCents !== null
+              ? proforma.baseTotalCents - proforma.basePaidCents
+              : proforma.baseTotalCents,
+          commissionPercent: proforma.commissionPercent,
+          commissionAmountCents: proforma.commissionAmountCents,
+          issueDate,
+          dueDate,
+          notes: proforma.notes,
+        })
+        .returning()
 
-    if (!inserted) return null
+      if (!inserted) return null
 
-    if (lineItems.length > 0) {
-      await tx.insert(invoiceLineItems).values(
-        lineItems.map((line) => ({
-          invoiceId: inserted.id,
-          bookingItemId: line.bookingItemId,
-          description: line.description,
-          quantity: line.quantity,
-          unitPriceCents: line.unitPriceCents,
-          totalCents: line.totalCents,
-          taxRate: line.taxRate,
-          sortOrder: line.sortOrder,
-        })),
-      )
-    }
+      if (lineItems.length > 0) {
+        await tx.insert(invoiceLineItems).values(
+          lineItems.map((line) => ({
+            invoiceId: inserted.id,
+            bookingItemId: line.bookingItemId,
+            description: line.description,
+            quantity: line.quantity,
+            unitPriceCents: line.unitPriceCents,
+            totalCents: line.totalCents,
+            taxRate: line.taxRate,
+            sortOrder: line.sortOrder,
+          })),
+        )
+      }
 
-    // Reassign payments off the proforma so they don't sit attached to
-    // a void document. The proforma's payment rows become the final
-    // invoice's payment history.
-    await tx
-      .update(payments)
-      .set({ invoiceId: inserted.id, updatedAt: now })
-      .where(eq(payments.invoiceId, proforma.id))
+      // Reassign payments off the proforma so they don't sit attached to
+      // a void document. The proforma's payment rows become the final
+      // invoice's payment history.
+      await tx
+        .update(payments)
+        .set({ invoiceId: inserted.id, updatedAt: now })
+        .where(eq(payments.invoiceId, proforma.id))
 
-    await tx
-      .update(invoices)
-      .set({
-        status: "void",
-        paidCents: 0,
-        basePaidCents: proforma.basePaidCents == null ? null : 0,
-        balanceDueCents: 0,
-        baseBalanceDueCents: proforma.baseBalanceDueCents == null ? null : 0,
-        voidedAt: now,
-        voidReason: `Converted to invoice ${inserted.invoiceNumber}`,
-        updatedAt: now,
-      })
-      .where(eq(invoices.id, proforma.id))
+      await tx
+        .update(invoices)
+        .set({
+          status: "void",
+          paidCents: 0,
+          basePaidCents: proforma.basePaidCents == null ? null : 0,
+          balanceDueCents: 0,
+          baseBalanceDueCents: proforma.baseBalanceDueCents == null ? null : 0,
+          voidedAt: now,
+          voidReason: `Converted to invoice ${inserted.invoiceNumber}`,
+          updatedAt: now,
+        })
+        .where(eq(invoices.id, proforma.id))
 
-    return inserted
-  })
+      return inserted
+    })
+    .catch((error: unknown) => {
+      if (isInvoiceNumberUniqueConstraintError(error)) {
+        throw new InvoiceNumberConflictError(newInvoiceNumber)
+      }
+      throw error
+    })
 
   if (!created) return { status: "not_found" }
 
@@ -615,6 +623,21 @@ function deriveInvoiceNumberFromProforma(proformaNumber: string): string {
     return proformaNumber.replace(/^PRO-/i, "INV-")
   }
   return `${proformaNumber}-INV`
+}
+
+function isInvoiceNumberUniqueConstraintError(error: unknown) {
+  if (!error || typeof error !== "object") return false
+  const candidate = error as { code?: unknown; constraint?: unknown; detail?: unknown }
+  if (candidate.code !== "23505") return false
+  const constraint = typeof candidate.constraint === "string" ? candidate.constraint : ""
+  const detail = typeof candidate.detail === "string" ? candidate.detail : ""
+  return (
+    constraint === "invoices_invoice_number_type_active_idx" ||
+    constraint === "invoices_invoice_number_type_unique" ||
+    constraint === "invoices_invoice_number_unique" ||
+    constraint === "invoices_invoice_number_key" ||
+    detail.includes("invoice_number")
+  )
 }
 
 function buildClientName(booking: typeof bookings.$inferSelect | undefined): string {
