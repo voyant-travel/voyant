@@ -4,6 +4,19 @@ import type { HonoModule } from "@voyantjs/hono/module"
 import { cruiseAdminRoutes } from "./routes.js"
 import { cruisePublicRoutes } from "./routes-public.js"
 
+export {
+  type CompatibilityMappingResult,
+  type ConnectCabinRoomType,
+  type ConnectCruiseType,
+  type ConnectEnrichmentKind,
+  type ConnectInclusionKind,
+  type ConnectPriceComponentKind,
+  mapConnectCabinRoomType,
+  mapConnectCruiseType,
+  mapConnectEnrichmentKind,
+  mapConnectInclusionKind,
+  mapConnectPriceComponentKind,
+} from "./adapters/connect-compat.js"
 // Adapter contract + registry — re-exported so templates can import everything
 // from `@voyantjs/cruises` without reaching into sub-paths. Sub-path
 // `@voyantjs/cruises/adapters` remains the lighter import for adapter-only
@@ -14,12 +27,14 @@ export type {
   CruiseAdapter,
   CruiseSearchProjectionEntry,
   ExternalBookingResult,
+  ExternalBookingTerms,
   ExternalCabinCategory,
   ExternalContactInput,
   ExternalCruise,
   ExternalCruiseSummary,
   ExternalDeck,
   ExternalItineraryDay,
+  ExternalPassengerComposition,
   ExternalPassengerInput,
   ExternalPriceComponent,
   ExternalPriceRow,

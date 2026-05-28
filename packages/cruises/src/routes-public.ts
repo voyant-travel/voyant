@@ -3,7 +3,9 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 import { z } from "zod"
 
+import type { ExternalPassengerComposition, SourceRef } from "./adapters/index.js"
 import { resolveCruiseAdapter } from "./adapters/registry.js"
+import { encodeSourceRef, parseUnifiedKey, sourceRefFromExternalKeyRef } from "./lib/key.js"
 import { cruisesService } from "./service.js"
 import { composeQuote, pricingService } from "./service-pricing.js"
 import { cruisesSearchService } from "./service-search.js"
@@ -23,10 +25,76 @@ function isTypeId(s: string): boolean {
 
 const quotePayloadSchema = z.object({
   cabinCategoryId: z.string(),
+  cabinCategoryRef: z.record(z.string(), z.unknown()).optional().nullable(),
   occupancy: z.number().int().min(1).max(8),
-  guestCount: z.number().int().min(1).max(8),
+  guestCount: z.number().int().min(1).max(8).optional(),
+  passengerComposition: passengerCompositionSchema().optional().nullable(),
   fareCode: z.string().optional().nullable(),
+  bookingTerms: z.record(z.string(), z.unknown()).optional().nullable(),
 })
+
+function passengerCompositionSchema() {
+  return z
+    .object({
+      adults: z.number().int().min(0),
+      children: z.number().int().min(0).optional(),
+      childAges: z.array(z.number().int().min(0).max(17)).optional(),
+      infants: z.number().int().min(0).optional(),
+      seniors: z.number().int().min(0).optional(),
+    })
+    .catchall(z.unknown())
+    .refine(
+      (value) =>
+        value.adults + (value.children ?? 0) + (value.infants ?? 0) + (value.seniors ?? 0) > 0,
+      "passengerComposition must include at least one passenger",
+    )
+}
+
+function passengerCountFromComposition(
+  composition: ExternalPassengerComposition | null | undefined,
+): number | null {
+  if (!composition) return null
+  return (
+    composition.adults +
+    (composition.children ?? 0) +
+    (composition.infants ?? 0) +
+    (composition.seniors ?? 0)
+  )
+}
+
+function resolveExternalKey(key: string): { provider: string; sourceRef: SourceRef } | null {
+  const parsed = parseUnifiedKey(key)
+  if (parsed.kind !== "external") return null
+  return { provider: parsed.provider, sourceRef: sourceRefFromExternalKeyRef(parsed.ref) }
+}
+
+function sourceRefFromPayload(
+  maybeRef: Record<string, unknown> | null | undefined,
+  externalId: string,
+): SourceRef {
+  if (maybeRef && typeof maybeRef.externalId === "string") return maybeRef as SourceRef
+  return { externalId }
+}
+
+function sourceRefMatches(candidate: SourceRef, requested: SourceRef): boolean {
+  if (encodeSourceRef(candidate) === encodeSourceRef(requested)) return true
+  const candidateIsLegacy = Object.keys(candidate).length === 1
+  const requestedIsLegacy = Object.keys(requested).length === 1
+  return (candidateIsLegacy || requestedIsLegacy) && candidate.externalId === requested.externalId
+}
+
+function passengerCompositionMatches(
+  candidate: ExternalPassengerComposition | null | undefined,
+  requested: ExternalPassengerComposition | null | undefined,
+): boolean {
+  if (!requested || !candidate) return true
+  return (
+    encodeSourceRef({
+      externalId: "composition",
+      ...candidate,
+    }) === encodeSourceRef({ externalId: "composition", ...requested })
+  )
+}
 
 /**
  * Public/storefront routes. Reads exclusively from `cruise_search_index` for
@@ -109,19 +177,15 @@ export const cruisePublicRoutes = new Hono<Env>()
       if (!sailing) return c.json({ error: "not_found" }, 404)
       return c.json({ data: { source: "local", sailing } })
     }
-    // External keys: <provider>:<ref>
-    const colon = key.indexOf(":")
-    if (colon <= 0) return c.json({ error: "invalid_key" }, 400)
-    const provider = key.slice(0, colon)
-    const externalId = key.slice(colon + 1)
-    const adapter = resolveCruiseAdapter(provider)
+    const parsed = resolveExternalKey(key)
+    if (!parsed) return c.json({ error: "invalid_key" }, 400)
+    const adapter = resolveCruiseAdapter(parsed.provider)
     if (!adapter) return c.json({ error: "adapter_not_registered" }, 501)
-    const ref = { externalId }
-    const sailing = await adapter.fetchSailing(ref)
+    const sailing = await adapter.fetchSailing(parsed.sourceRef)
     if (!sailing) return c.json({ error: "not_found" }, 404)
     const [pricing, itinerary] = await Promise.all([
-      adapter.fetchSailingPricing(ref),
-      adapter.fetchSailingItinerary(ref),
+      adapter.fetchSailingPricing(parsed.sourceRef),
+      adapter.fetchSailingItinerary(parsed.sourceRef),
     ])
     return c.json({
       data: { source: "external", sourceProvider: adapter.name, sailing, pricing, itinerary },
@@ -130,29 +194,40 @@ export const cruisePublicRoutes = new Hono<Env>()
   .post("/sailings/:key/quote", async (c) => {
     const key = c.req.param("key")
     const payload = await parseJsonBody(c, quotePayloadSchema)
+    const guestCount =
+      payload.guestCount ?? passengerCountFromComposition(payload.passengerComposition)
+    if (!guestCount) {
+      return c.json(
+        {
+          error: "guest_count_required",
+          detail: "Provide guestCount or passengerComposition for cruise quote requests.",
+        },
+        400,
+      )
+    }
 
     if (isTypeId(key)) {
       const quote = await pricingService.assembleQuote(c.get("db"), {
         sailingId: key,
         cabinCategoryId: payload.cabinCategoryId,
         occupancy: payload.occupancy,
-        guestCount: payload.guestCount,
+        guestCount,
         fareCode: payload.fareCode ?? null,
       })
       return c.json({ data: quote })
     }
 
-    const colon = key.indexOf(":")
-    if (colon <= 0) return c.json({ error: "invalid_key" }, 400)
-    const provider = key.slice(0, colon)
-    const externalId = key.slice(colon + 1)
-    const adapter = resolveCruiseAdapter(provider)
+    const parsed = resolveExternalKey(key)
+    if (!parsed) return c.json({ error: "invalid_key" }, 400)
+    const adapter = resolveCruiseAdapter(parsed.provider)
     if (!adapter) return c.json({ error: "adapter_not_registered" }, 501)
-    const prices = await adapter.fetchSailingPricing({ externalId })
+    const prices = await adapter.fetchSailingPricing(parsed.sourceRef)
+    const cabinCategoryRef = sourceRefFromPayload(payload.cabinCategoryRef, payload.cabinCategoryId)
     const matching = prices.find(
       (p) =>
-        p.cabinCategoryRef.externalId === payload.cabinCategoryId &&
+        sourceRefMatches(p.cabinCategoryRef, cabinCategoryRef) &&
         p.occupancy === payload.occupancy &&
+        passengerCompositionMatches(p.passengerComposition, payload.passengerComposition) &&
         (!payload.fareCode || p.fareCode === payload.fareCode),
     )
     if (!matching) return c.json({ error: "no_matching_price" }, 404)
@@ -174,7 +249,8 @@ export const cruisePublicRoutes = new Hono<Env>()
         perPerson: c.perPerson,
       })),
       occupancy: payload.occupancy,
-      guestCount: payload.guestCount,
+      guestCount,
+      bookingTerms: payload.bookingTerms ?? matching.bookingTerms ?? null,
     })
     return c.json({ data: quote })
   })
@@ -189,13 +265,11 @@ export const cruisePublicRoutes = new Hono<Env>()
       ])
       return c.json({ data: { ...ship, decks, categories } })
     }
-    const colon = key.indexOf(":")
-    if (colon <= 0) return c.json({ error: "invalid_key" }, 400)
-    const provider = key.slice(0, colon)
-    const externalId = key.slice(colon + 1)
-    const adapter = resolveCruiseAdapter(provider)
+    const parsed = resolveExternalKey(key)
+    if (!parsed) return c.json({ error: "invalid_key" }, 400)
+    const adapter = resolveCruiseAdapter(parsed.provider)
     if (!adapter) return c.json({ error: "adapter_not_registered" }, 501)
-    const ship = await adapter.fetchShip({ externalId })
+    const ship = await adapter.fetchShip(parsed.sourceRef)
     if (!ship) return c.json({ error: "not_found" }, 404)
     return c.json({ data: ship })
   })

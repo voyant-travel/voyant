@@ -8,6 +8,7 @@ import type {
 } from "../../src/adapters/index.js"
 import { cruiseAdapterToSourceAdapter } from "../../src/adapters/source-adapter-shim.js"
 import { CRUISES_CONTENT_SCHEMA_VERSION } from "../../src/content-shape.js"
+import { encodeSourceRef } from "../../src/lib/key.js"
 
 function makeProjectionEntries(count: number): CruiseSearchProjectionEntry[] {
   const out: CruiseSearchProjectionEntry[] = []
@@ -163,9 +164,9 @@ describe("cruiseAdapterToSourceAdapter.discover", () => {
     const page = await shim.discover({ connection_id: "conn-x" })
     expect(page.projections).toHaveLength(3)
     expect(page.projections[0]?.entity_module).toBe("cruises")
-    expect(page.projections[0]?.entity_id).toBe("crus_cruise_0")
+    expect(page.projections[0]?.entity_id).toBe(`crus_${encodeSourceRef(entries[0]!.sourceRef)}`)
     expect(page.projections[0]?.provenance.source_kind).toBe("cruise:stub")
-    expect(page.projections[0]?.provenance.source_ref).toBe("cruise-0")
+    expect(page.projections[0]?.provenance.source_ref).toBe(encodeSourceRef(entries[0]!.sourceRef))
     expect(page.projections[0]?.provenance.source_freshness).toBe("sync")
     expect(page.projections[0]?.fields.cruise_line).toBe("Sample Line")
     expect(page.projections[0]?.fields.duration_nights).toBe(7)
@@ -227,14 +228,17 @@ describe("cruiseAdapterToSourceAdapter.getContent", () => {
   it("composes fetchCruise + fetchShip + listSailingsForCruise into a CruiseContent payload", async () => {
     const adapter = makeStubAdapter()
     const shim = cruiseAdapterToSourceAdapter(adapter)
+    const entityId = `crus_${encodeSourceRef({ externalId: "cruise-1", connectionId: "conn-x" })}`
     const result = await shim.getContent!(
       { connection_id: "conn-x" },
-      { entity_module: "cruises", entity_id: "crus_cruise-1", locale: "en-GB" },
+      { entity_module: "cruises", entity_id: entityId, locale: "en-GB" },
     )
 
     expect(result.entity_module).toBe("cruises")
-    expect(result.entity_id).toBe("crus_cruise-1")
-    expect(result.source_ref).toBe("cruise-1")
+    expect(result.entity_id).toBe(entityId)
+    expect(result.source_ref).toBe(
+      encodeSourceRef({ externalId: "cruise-1", connectionId: "conn-x" }),
+    )
     expect(result.returned_locale).toBe("en-GB")
     expect(result.content_schema_version).toBe(CRUISES_CONTENT_SCHEMA_VERSION)
 

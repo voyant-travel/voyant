@@ -347,7 +347,6 @@ async function findExisting(
     if (row) return row
   }
   if (entry.source === "external" && entry.sourceProvider && entry.sourceRef) {
-    const externalId = String(entry.sourceRef.externalId ?? "")
     const [row] = await db
       .select()
       .from(cruiseSearchIndex)
@@ -355,7 +354,7 @@ async function findExisting(
         and(
           eq(cruiseSearchIndex.source, "external"),
           eq(cruiseSearchIndex.sourceProvider, entry.sourceProvider),
-          sql`${cruiseSearchIndex.sourceRef}->>'externalId' = ${externalId}`,
+          sql`${cruiseSearchIndex.sourceRef} = ${sourceRefIdentityJson(entry.sourceRef)}::jsonb`,
         ),
       )
       .limit(1)
@@ -368,6 +367,20 @@ async function findExisting(
     .where(eq(cruiseSearchIndex.slug, entry.slug))
     .limit(1)
   return bySlug ?? null
+}
+
+export function sourceRefIdentityJson(sourceRef: SourceRef): string {
+  return JSON.stringify(sortValue(sourceRef))
+}
+
+function sortValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortValue)
+  if (!value || typeof value !== "object") return value
+  const out: Record<string, unknown> = {}
+  for (const key of Object.keys(value).sort()) {
+    out[key] = sortValue((value as Record<string, unknown>)[key])
+  }
+  return out
 }
 
 async function buildLocalEntry(

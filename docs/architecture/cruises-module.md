@@ -612,12 +612,30 @@ export interface CruiseAdapter {
 
   // Booking commit — used when creating a booking against an external cruise.
   // Returns the upstream confirmation reference plus a fully-resolved snapshot to store
-  // in booking_cruise_details.quotedComponentsJson + connectorBookingRef.
+  // in booking_cruise_details quote, terms, passenger-composition, and connector fields.
   createBooking(input: CreateExternalBookingInput): Promise<ExternalBookingResult>
 }
 
 export type SourceRef = { connectionId?: string; externalId: string; [k: string]: unknown }
 ```
+
+`SourceRef` is round-trippable adapter state, not a display id. Connect-backed
+refs should preserve connection id, provider/source key, upstream cruise,
+sailing, ship, cabin ids, synced-row ids, and opaque metadata needed by the
+adapter. Admin route keys and catalog shim entity ids use the URL-safe
+`encodeSourceRef(...)` form (`<provider>:sr_<base64url-json>`) so punctuation
+and adapter metadata are not reconstructed from a lossy slug.
+
+Connect compatibility decisions live next to the adapter contract in
+`packages/cruises/src/adapters/connect-compat.ts`:
+
+| Connect concern | Framework mapping |
+|---|---|
+| cruise type | `ocean`, `river`, `expedition`, `coastal` map directly; `yacht`, `rail`, and `tour` are rejected for products/other vertical routing |
+| cabin room type | direct matches stay direct; `studio` maps to `single`; `villa`/unknown suite-like categories map to `suite` |
+| inclusion kind | cruise inclusions that affect quote display map to price components; flight inclusions map to `airfare` and still require flight-line orchestration when sold as a separate booking |
+| enrichment kind | Connect `domain_expert` maps to framework `expert` |
+| price components | taxes, port charges, gratuities, NCF, airfare, transfers, insurance, onboard credit, single supplements, and residual `other` components are preserved with `addition` / `inclusion` / `credit` direction |
 
 Two registration points in a template:
 
@@ -674,6 +692,8 @@ A cruise booking is a booking. The bookings module already has the right shape (
 | `quotedPricePerPerson` | numeric(12,2) not null | snapshot at booking time |
 | `quotedCurrency` | char(3) not null | |
 | `quotedComponentsJson` | jsonb | full components array snapshotted at booking time — survives later promo edits |
+| `bookingTermsSnapshotJson` | jsonb | structured cancellation/payment terms shown at quote or commit time |
+| `passengerCompositionSnapshotJson` | jsonb | adapter-bound passenger composition (`adults`, `children`, ages, infants, etc.) |
 | `connectorBookingRef` | text | line's confirmation number, if booking goes through |
 | `connectorStatus` | text | line-side status |
 | `notes` | text | |

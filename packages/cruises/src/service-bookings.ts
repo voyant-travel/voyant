@@ -1,7 +1,12 @@
 import { bookingGroupsService, bookingsService } from "@voyantjs/bookings"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import type { CruiseAdapter, SourceRef } from "./adapters/index.js"
+import type {
+  CruiseAdapter,
+  ExternalBookingTerms,
+  ExternalPassengerComposition,
+  SourceRef,
+} from "./adapters/index.js"
 import {
   type BookingCruiseDetail,
   type BookingGroupCruiseDetail,
@@ -90,6 +95,102 @@ function priceCentsFromString(s: string): number {
   const fracPadded = `${frac}00`.slice(0, 2)
   const cents = Number(whole) * 100 + Number(fracPadded)
   return negative ? -cents : cents
+}
+
+function passengerCompositionFromPassengers(
+  passengers: CruiseBookingPassenger[],
+): ExternalPassengerComposition {
+  let adults = 0
+  let children = 0
+  let infants = 0
+  let seniors = 0
+  for (const passenger of passengers) {
+    if (passenger.travelerCategory === "child") children += 1
+    else if (passenger.travelerCategory === "infant") infants += 1
+    else if (passenger.travelerCategory === "senior") seniors += 1
+    else adults += 1
+  }
+  return { adults, children, infants, seniors }
+}
+
+function passengerCompositionCount(composition: ExternalPassengerComposition): number {
+  return (
+    composition.adults +
+    (composition.children ?? 0) +
+    (composition.infants ?? 0) +
+    (composition.seniors ?? 0)
+  )
+}
+
+function assertPassengerCompositionMatchesPassengers(
+  supplied: ExternalPassengerComposition | null | undefined,
+  passengers: CruiseBookingPassenger[],
+): ExternalPassengerComposition {
+  const inferred = passengerCompositionFromPassengers(passengers)
+  if (!supplied) return inferred
+
+  const expected = {
+    adults: supplied.adults,
+    children: supplied.children ?? 0,
+    infants: supplied.infants ?? 0,
+    seniors: supplied.seniors ?? 0,
+  }
+  const actual = {
+    adults: inferred.adults,
+    children: inferred.children ?? 0,
+    infants: inferred.infants ?? 0,
+    seniors: inferred.seniors ?? 0,
+  }
+  if (
+    expected.adults !== actual.adults ||
+    expected.children !== actual.children ||
+    expected.infants !== actual.infants ||
+    expected.seniors !== actual.seniors
+  ) {
+    throw new Error(
+      `passengerComposition does not match passengers: composition=${JSON.stringify(
+        expected,
+      )} passengers=${JSON.stringify(actual)}`,
+    )
+  }
+  if (supplied.childAges && supplied.childAges.length !== expected.children) {
+    throw new Error(
+      `passengerComposition.childAges length (${supplied.childAges.length}) must match children (${expected.children})`,
+    )
+  }
+  return supplied
+}
+
+function sourceRefKey(ref: SourceRef): string {
+  return JSON.stringify(sortValue(ref))
+}
+
+function sortValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortValue)
+  if (!value || typeof value !== "object") return value
+  const out: Record<string, unknown> = {}
+  for (const key of Object.keys(value).sort()) {
+    out[key] = sortValue((value as Record<string, unknown>)[key])
+  }
+  return out
+}
+
+function sourceRefMatches(candidate: SourceRef, requested: SourceRef): boolean {
+  if (sourceRefKey(candidate) === sourceRefKey(requested)) return true
+  const candidateIsLegacy = Object.keys(candidate).length === 1
+  const requestedIsLegacy = Object.keys(requested).length === 1
+  return (candidateIsLegacy || requestedIsLegacy) && candidate.externalId === requested.externalId
+}
+
+function passengerCompositionMatches(
+  candidate: ExternalPassengerComposition | null | undefined,
+  requested: ExternalPassengerComposition | null | undefined,
+): boolean {
+  if (!candidate || !requested) return true
+  return (
+    sourceRefKey({ externalId: "composition", ...candidate }) ===
+    sourceRefKey({ externalId: "composition", ...requested })
+  )
 }
 
 export const cruisesBookingService = {
@@ -414,7 +515,11 @@ export const cruisesBookingService = {
     input: CreateExternalCruiseBookingInput,
     userId?: string,
   ): Promise<CreateCruiseBookingResult & { sourceProvider: string; sourceRef: SourceRef }> {
-    const guestCount = input.passengers.length
+    const passengerComposition = assertPassengerCompositionMatchesPassengers(
+      input.passengerComposition,
+      input.passengers,
+    )
+    const guestCount = passengerCompositionCount(passengerComposition)
     if (guestCount < 1) throw new Error("At least one passenger is required")
     if (guestCount > input.occupancy) {
       throw new Error(
@@ -426,8 +531,9 @@ export const cruisesBookingService = {
     const prices = await input.adapter.fetchSailingPricing(input.sailingRef)
     const matching = prices.find(
       (p) =>
-        p.cabinCategoryRef.externalId === input.cabinCategoryRef.externalId &&
+        sourceRefMatches(p.cabinCategoryRef, input.cabinCategoryRef) &&
         p.occupancy === input.occupancy &&
+        passengerCompositionMatches(p.passengerComposition, passengerComposition) &&
         (!input.fareCode || p.fareCode === input.fareCode),
     )
     if (!matching) {
@@ -456,6 +562,7 @@ export const cruisesBookingService = {
       })),
       occupancy: input.occupancy,
       guestCount,
+      bookingTerms: input.bookingTerms ?? matching.bookingTerms ?? null,
     })
 
     // 3. Commit upstream BEFORE writing local rows so we can fail loudly if the
@@ -464,9 +571,11 @@ export const cruisesBookingService = {
       sailingRef: input.sailingRef,
       cabinCategoryRef: input.cabinCategoryRef,
       occupancy: input.occupancy,
+      passengerComposition,
       fareCode: input.fareCode ?? null,
       passengers: input.passengers,
       contact: input.contact,
+      bookingTerms: input.bookingTerms ?? matching.bookingTerms ?? null,
       notes: input.notes ?? null,
     })
 
@@ -474,6 +583,12 @@ export const cruisesBookingService = {
     // Prefer the upstream-resolved quote when present.
     const finalQuote = upstream.finalQuote ?? quote
     const finalComponents = upstream.finalComponents ?? quote.components
+    const finalBookingTerms =
+      upstream.finalBookingTerms ??
+      finalQuote.bookingTerms ??
+      input.bookingTerms ??
+      matching.bookingTerms ??
+      null
 
     // 4. Local persistence (now that upstream confirmation is in hand).
     return db.transaction(async (tx) => {
@@ -545,6 +660,8 @@ export const cruisesBookingService = {
         quotedTotalForCabin: finalQuote.totalForCabin,
         quotedCurrency: finalQuote.currency,
         quotedComponentsJson: finalComponents,
+        bookingTermsSnapshotJson: finalBookingTerms,
+        passengerCompositionSnapshotJson: passengerComposition,
         connectorBookingRef: upstream.connectorBookingRef,
         connectorStatus: upstream.connectorStatus ?? null,
         notes: input.notes ?? null,
@@ -595,11 +712,13 @@ export type CreateExternalCruiseBookingInput = {
   cabinCategoryRef: SourceRef
   cabinId?: string | null
   occupancy: number
+  passengerComposition?: ExternalPassengerComposition | null
   fareCode?: string | null
   mode?: CruiseBookingMode
   personId?: string | null
   organizationId?: string | null
   contact: CruiseBookingContact
   passengers: CruiseBookingPassenger[]
+  bookingTerms?: ExternalBookingTerms | null
   notes?: string | null
 }

@@ -28,7 +28,7 @@ import type { AnyDrizzleDb } from "@voyantjs/db"
 import type { Context } from "hono"
 import { Hono } from "hono"
 
-import { parseUnifiedKey } from "./lib/key.js"
+import { encodeSourceRef, parseUnifiedKey, sourceRefFromExternalKeyRef } from "./lib/key.js"
 import { type CruiseContentScope, getCruiseContent } from "./service-content.js"
 
 export interface CruiseContentRoutesEnv {
@@ -144,22 +144,14 @@ export function createCruiseContentRoutes(
 }
 
 /**
- * Translate a parsed external key (`<provider>:<ref>`) into the
- * catalog-side entity_id. Mirrors the default `buildEntityId` from
- * `cruiseAdapterToSourceAdapter` — `crus_<slug-of-ref>`. Templates
- * that override `buildEntityId` on the shim must wrap this route
- * factory with their own translator.
+ * Translate a parsed external key (`<provider>:<ref>`) into the catalog-side
+ * entity_id. Mirrors the default `buildEntityId` from
+ * `cruiseAdapterToSourceAdapter`: `crus_<encoded SourceRef>`.
  */
 function entityIdFromExternal(
   parsed: Extract<ReturnType<typeof parseUnifiedKey>, { kind: "external" }>,
 ): string {
-  const slug =
-    String(parsed.ref)
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "")
-      .slice(0, 26) || "unknown"
-  return `crus_${slug}`
+  return `crus_${encodeSourceRef(sourceRefFromExternalKeyRef(parsed.ref))}`
 }
 
 export function parseAcceptLanguage(header: string): string[] {

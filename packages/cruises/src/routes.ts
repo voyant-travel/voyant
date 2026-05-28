@@ -74,9 +74,15 @@ type Env = {
 
 import type { Context } from "hono"
 
-import type { CruiseAdapter, SourceRef } from "./adapters/index.js"
+import type { CruiseAdapter, ExternalPassengerComposition, SourceRef } from "./adapters/index.js"
 import { listCruiseAdapters, resolveCruiseAdapter } from "./adapters/registry.js"
-import { type ParsedKey, parseUnifiedKey } from "./lib/key.js"
+import {
+  encodeSourceRef,
+  makeExternalSourceKey,
+  type ParsedKey,
+  parseUnifiedKey,
+  sourceRefFromExternalKeyRef,
+} from "./lib/key.js"
 import { type CruiseContentScope, getCruiseContent } from "./service-content.js"
 import { detachExternalCruise } from "./service-detach.js"
 
@@ -101,11 +107,11 @@ function resolveExternal(parsed: Extract<ParsedKey, { kind: "external" }>): {
 } | null {
   const adapter = resolveCruiseAdapter(parsed.provider)
   if (!adapter) return null
-  return { adapter, sourceRef: { externalId: parsed.ref } }
+  return { adapter, sourceRef: sourceRefFromExternalKeyRef(parsed.ref) }
 }
 
 function makeExternalKey(adapter: CruiseAdapter, ref: SourceRef): string {
-  return `${adapter.name}:${ref.externalId}`
+  return makeExternalSourceKey(adapter.name, ref)
 }
 
 const registryNotConfigured = () => ({
@@ -116,18 +122,11 @@ const registryNotConfigured = () => ({
 
 /**
  * Translate a parsed external key into the catalog-side `entity_id`.
- * Mirrors `cruiseAdapterToSourceAdapter`'s default `buildEntityId` —
- * `crus_<slug-of-ref>`. Templates that override the shim's
- * `buildEntityId` should also patch this helper (TODO: factory).
+ * Mirrors `cruiseAdapterToSourceAdapter`'s default `buildEntityId`:
+ * `crus_<encoded SourceRef>`.
  */
 function entityIdFromExternal(parsed: Extract<ParsedKey, { kind: "external" }>): string {
-  const slug =
-    String(parsed.ref)
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "")
-      .slice(0, 26) || "unknown"
-  return `crus_${slug}`
+  return `crus_${encodeSourceRef(sourceRefFromExternalKeyRef(parsed.ref))}`
 }
 
 /**
@@ -182,8 +181,10 @@ function parseAcceptLanguageHeader(header: string): string[] {
 const createBookingPayloadSchema = z.object({
   sailingId: z.string(),
   cabinCategoryId: z.string(),
+  cabinCategoryRef: z.record(z.string(), z.unknown()).optional().nullable(),
   cabinId: z.string().optional().nullable(),
   occupancy: z.number().int().min(1).max(8),
+  passengerComposition: passengerCompositionSchema().optional().nullable(),
   fareCode: z.string().optional().nullable(),
   mode: z.enum(["inquiry", "reserve"]).optional(),
   personId: z.string().optional().nullable(),
@@ -276,10 +277,69 @@ const createPartyBookingPayloadSchema = z.object({
 
 const quotePayloadSchema = z.object({
   cabinCategoryId: z.string(),
+  cabinCategoryRef: z.record(z.string(), z.unknown()).optional().nullable(),
   occupancy: z.number().int().min(1).max(8),
-  guestCount: z.number().int().min(1).max(8),
+  guestCount: z.number().int().min(1).max(8).optional(),
+  passengerComposition: passengerCompositionSchema().optional().nullable(),
   fareCode: z.string().optional().nullable(),
 })
+
+function passengerCompositionSchema() {
+  return z
+    .object({
+      adults: z.number().int().min(0),
+      children: z.number().int().min(0).optional(),
+      childAges: z.array(z.number().int().min(0).max(17)).optional(),
+      infants: z.number().int().min(0).optional(),
+      seniors: z.number().int().min(0).optional(),
+    })
+    .catchall(z.unknown())
+    .refine(
+      (value) =>
+        value.adults + (value.children ?? 0) + (value.infants ?? 0) + (value.seniors ?? 0) > 0,
+      "passengerComposition must include at least one passenger",
+    )
+}
+
+function passengerCountFromComposition(
+  composition: ExternalPassengerComposition | null | undefined,
+): number | null {
+  if (!composition) return null
+  return (
+    composition.adults +
+    (composition.children ?? 0) +
+    (composition.infants ?? 0) +
+    (composition.seniors ?? 0)
+  )
+}
+
+function sourceRefFromPayload(
+  maybeRef: Record<string, unknown> | null | undefined,
+  externalId: string,
+): SourceRef {
+  if (maybeRef && typeof maybeRef.externalId === "string") return maybeRef as SourceRef
+  return { externalId }
+}
+
+function sourceRefMatches(candidate: SourceRef, requested: SourceRef): boolean {
+  if (encodeSourceRef(candidate) === encodeSourceRef(requested)) return true
+  const candidateIsLegacy = Object.keys(candidate).length === 1
+  const requestedIsLegacy = Object.keys(requested).length === 1
+  return (candidateIsLegacy || requestedIsLegacy) && candidate.externalId === requested.externalId
+}
+
+function passengerCompositionMatches(
+  candidate: ExternalPassengerComposition | null | undefined,
+  requested: ExternalPassengerComposition | null | undefined,
+): boolean {
+  if (!requested || !candidate) return true
+  return (
+    encodeSourceRef({
+      externalId: "composition",
+      ...candidate,
+    }) === encodeSourceRef({ externalId: "composition", ...requested })
+  )
+}
 
 // ---------- routes ----------
 
@@ -475,16 +535,32 @@ export const cruiseAdminRoutes = new Hono<Env>()
     const parsed = parseUnifiedKey(c.req.param("key"))
     if (parsed.kind === "invalid") return c.json(invalidKey(parsed.raw), 400)
     const payload = await parseJsonBody(c, quotePayloadSchema)
+    const guestCount =
+      payload.guestCount ?? passengerCountFromComposition(payload.passengerComposition)
+    if (!guestCount) {
+      return c.json(
+        {
+          error: "guest_count_required",
+          detail: "Provide guestCount or passengerComposition for cruise quote requests.",
+        },
+        400,
+      )
+    }
     if (parsed.kind === "external") {
       const ext = resolveExternal(parsed)
       if (!ext) return c.json(adapterNotRegistered(parsed.provider), 501)
       // Fetch upstream pricing then compose locally — the cabinCategoryId in
       // the payload is interpreted as the upstream cabin category externalId.
       const prices = await ext.adapter.fetchSailingPricing(ext.sourceRef)
+      const cabinCategoryRef = sourceRefFromPayload(
+        payload.cabinCategoryRef,
+        payload.cabinCategoryId,
+      )
       const matching = prices.find(
         (p) =>
-          p.cabinCategoryRef.externalId === payload.cabinCategoryId &&
+          sourceRefMatches(p.cabinCategoryRef, cabinCategoryRef) &&
           p.occupancy === payload.occupancy &&
+          passengerCompositionMatches(p.passengerComposition, payload.passengerComposition) &&
           (!payload.fareCode || p.fareCode === payload.fareCode),
       )
       if (!matching) return c.json({ error: "no_matching_price" }, 404)
@@ -507,7 +583,8 @@ export const cruiseAdminRoutes = new Hono<Env>()
           perPerson: c.perPerson,
         })),
         occupancy: payload.occupancy,
-        guestCount: payload.guestCount,
+        guestCount,
+        bookingTerms: matching.bookingTerms ?? null,
       })
       return c.json({ data: quote })
     }
@@ -515,7 +592,7 @@ export const cruiseAdminRoutes = new Hono<Env>()
       sailingId: parsed.id,
       cabinCategoryId: payload.cabinCategoryId,
       occupancy: payload.occupancy,
-      guestCount: payload.guestCount,
+      guestCount,
       fareCode: payload.fareCode ?? null,
     })
     return c.json({ data: quote })
@@ -533,9 +610,10 @@ export const cruiseAdminRoutes = new Hono<Env>()
         {
           adapter: ext.adapter,
           sailingRef: ext.sourceRef,
-          cabinCategoryRef: { externalId: payload.cabinCategoryId },
+          cabinCategoryRef: sourceRefFromPayload(payload.cabinCategoryRef, payload.cabinCategoryId),
           cabinId: payload.cabinId ?? null,
           occupancy: payload.occupancy,
+          passengerComposition: payload.passengerComposition ?? null,
           fareCode: payload.fareCode ?? null,
           mode: payload.mode,
           personId: payload.personId ?? null,
