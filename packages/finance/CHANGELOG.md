@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.84.4
+
+### Patch Changes
+
+- f3f8de1: Return a structured conflict response when proforma conversion attempts to reuse an active final invoice number, preserving the original proforma instead of surfacing a generic server error.
+  - @voyantjs/action-ledger@0.84.4
+  - @voyantjs/bookings@0.84.4
+  - @voyantjs/core@0.84.4
+  - @voyantjs/db@0.84.4
+  - @voyantjs/hono@0.84.4
+  - @voyantjs/products@0.84.4
+  - @voyantjs/storage@0.84.4
+  - @voyantjs/utils@0.84.4
+
 ## 0.84.3
 
 ### Patch Changes
