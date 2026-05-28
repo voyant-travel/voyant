@@ -47,11 +47,8 @@ import {
 import { mountBookingTaxPreviewRoutes } from "./booking-tax-preview"
 import { mountCatalogBookingRoutes } from "./catalog-booking"
 import { catalogBridgeBundle } from "./catalog-bridge"
-import {
-  createCatalogCheckoutBundle,
-  mountCatalogCheckoutRoutes,
-  rebuildBookingItemTaxLines,
-} from "./catalog-checkout"
+import { mountCatalogCheckoutRoutes, rebuildBookingItemTaxLines } from "./catalog-checkout"
+import { createCatalogCheckoutBundle } from "./catalog-checkout-finalize-runtime"
 import { mountCatalogContentRoutes } from "./catalog-content"
 import { channelPushBundle, mountChannelPushAdminRoutes } from "./channel-push"
 import { mountOperatorContractDocumentRoutes } from "./contract-document-routes"
