@@ -18,9 +18,9 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 import { z } from "zod"
 
-import type { SourceRef } from "./adapters/index.js"
+import type { ExternalPassengerComposition, SourceRef } from "./adapters/index.js"
 import { cruiseSourceEnum } from "./schema-shared.js"
-import type { QuoteComponent } from "./service-pricing.js"
+import type { QuoteBookingTerms, QuoteComponent } from "./service-pricing.js"
 
 // ---------- enums ----------
 
@@ -64,6 +64,10 @@ export const bookingCruiseDetails = pgTable(
     quotedTotalForCabin: numeric("quoted_total_for_cabin", { precision: 12, scale: 2 }).notNull(),
     quotedCurrency: char("quoted_currency", { length: 3 }).notNull(),
     quotedComponentsJson: jsonb("quoted_components_json").$type<QuoteComponent[]>().default([]),
+    bookingTermsSnapshotJson: jsonb("booking_terms_snapshot_json").$type<QuoteBookingTerms>(),
+    passengerCompositionSnapshotJson: jsonb(
+      "passenger_composition_snapshot_json",
+    ).$type<ExternalPassengerComposition>(),
     connectorBookingRef: text("connector_booking_ref"),
     connectorStatus: text("connector_status"),
     /**
@@ -116,6 +120,7 @@ export const bookingGroupCruiseDetails = pgTable(
     totalQuotedAmount: numeric("total_quoted_amount", { precision: 12, scale: 2 }).notNull(),
     quotedCurrency: char("quoted_currency", { length: 3 }).notNull(),
     connectorBookingRef: text("connector_booking_ref"),
+    bookingTermsSnapshotJson: jsonb("booking_terms_snapshot_json").$type<QuoteBookingTerms>(),
     notes: text("notes"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -140,6 +145,16 @@ const sourceRefValueSchema = z
   })
   .catchall(z.unknown())
 
+const passengerCompositionValueSchema = z
+  .object({
+    adults: z.number().int().min(0),
+    children: z.number().int().min(0).optional(),
+    infants: z.number().int().min(0).optional(),
+    seniors: z.number().int().min(0).optional(),
+    childAges: z.array(z.number().int().min(0).max(17)).optional(),
+  })
+  .catchall(z.unknown())
+
 const cruiseDetailUpsertSchema = z
   .object({
     source: z.enum(["local", "external"]).default("local"),
@@ -157,6 +172,8 @@ const cruiseDetailUpsertSchema = z
     quotedTotalForCabin: z.string().regex(/^-?\d+(\.\d{1,2})?$/),
     quotedCurrency: z.string().length(3),
     quotedComponentsJson: z.array(z.unknown()).optional().nullable(),
+    bookingTermsSnapshotJson: z.record(z.string(), z.unknown()).optional().nullable(),
+    passengerCompositionSnapshotJson: passengerCompositionValueSchema.optional().nullable(),
     connectorBookingRef: z.string().optional().nullable(),
     connectorStatus: z.string().optional().nullable(),
     airArrangement: z.enum(["cruise_line", "independent", "none"]).optional().nullable(),
@@ -204,6 +221,7 @@ const groupCruiseDetailUpsertSchema = z
     totalQuotedAmount: z.string().regex(/^-?\d+(\.\d{1,2})?$/),
     quotedCurrency: z.string().length(3),
     connectorBookingRef: z.string().optional().nullable(),
+    bookingTermsSnapshotJson: z.record(z.string(), z.unknown()).optional().nullable(),
     notes: z.string().optional().nullable(),
   })
   .superRefine((value, ctx) => {

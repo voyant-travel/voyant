@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest"
 
-import { parseUnifiedKey } from "../../src/lib/key.js"
+import {
+  decodeSourceRef,
+  encodeSourceRef,
+  makeExternalSourceKey,
+  parseUnifiedKey,
+  sourceRefFromExternalKeyRef,
+} from "../../src/lib/key.js"
 
 describe("parseUnifiedKey — local TypeIDs", () => {
   it("parses a standard cruise TypeID", () => {
@@ -38,6 +44,39 @@ describe("parseUnifiedKey — external adapter keys", () => {
   it("decodes URI-encoded refs", () => {
     const result = parseUnifiedKey("voyant-connect%3Acnx_abc")
     expect(result).toEqual({ kind: "external", provider: "voyant-connect", ref: "cnx_abc" })
+  })
+
+  it("round-trips full SourceRef values through URL-safe refs", () => {
+    const sourceRef = {
+      connectionId: "conn_123",
+      provider: "scenic",
+      externalId: "sailing/2027:AU/NZ#42",
+      syncedRowId: "cnx_row_abc",
+      metadata: { shipId: "ship:99", cabinId: "A/101" },
+    }
+    const key = makeExternalSourceKey("voyant-connect", sourceRef)
+    const parsed = parseUnifiedKey(key)
+    expect(parsed.kind).toBe("external")
+    if (parsed.kind !== "external") return
+    expect(parsed.provider).toBe("voyant-connect")
+    expect(sourceRefFromExternalKeyRef(parsed.ref)).toEqual(sourceRef)
+  })
+
+  it("treats unencoded external refs as legacy externalId refs", () => {
+    expect(sourceRefFromExternalKeyRef("legacy:upstream/id")).toEqual({
+      externalId: "legacy:upstream/id",
+    })
+  })
+
+  it("uses deterministic encoding independent of key order", () => {
+    const a = encodeSourceRef({ externalId: "x", connectionId: "c", metadata: { b: 1, a: 2 } })
+    const b = encodeSourceRef({ metadata: { a: 2, b: 1 }, connectionId: "c", externalId: "x" })
+    expect(a).toBe(b)
+    expect(decodeSourceRef(a)).toEqual({
+      connectionId: "c",
+      externalId: "x",
+      metadata: { a: 2, b: 1 },
+    })
   })
 })
 

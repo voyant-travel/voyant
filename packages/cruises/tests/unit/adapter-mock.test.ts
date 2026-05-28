@@ -42,6 +42,24 @@ describe("MockCruiseAdapter — fetch round-trips", () => {
     expect(await adapter.fetchCruise({ externalId: "missing" })).toBeNull()
   })
 
+  it("keeps adapter-specific SourceRef fields distinct", async () => {
+    const adapter = new MockCruiseAdapter()
+    const first = {
+      ...seedCruise,
+      sourceRef: { externalId: "same-id", connectionId: "conn-1", provider: "line-a" },
+      slug: "same-a",
+    }
+    const second = {
+      ...seedCruise,
+      sourceRef: { externalId: "same-id", connectionId: "conn-2", provider: "line-b" },
+      slug: "same-b",
+    }
+    adapter.addCruise(first)
+    adapter.addCruise(second)
+    expect(await adapter.fetchCruise(first.sourceRef)).toEqual(first)
+    expect(await adapter.fetchCruise(second.sourceRef)).toEqual(second)
+  })
+
   it("returns seeded sailing via fetchSailing", async () => {
     const adapter = new MockCruiseAdapter()
     adapter.addCruise(seedCruise, [seedSailing])

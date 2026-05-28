@@ -11,7 +11,7 @@
  * implementation instead. See docs/architecture/cruises-module.md §10.
  */
 
-import type { Quote, QuoteComponent } from "../service-pricing.js"
+import type { Quote, QuoteBookingTerms, QuoteComponent } from "../service-pricing.js"
 
 // ---------- pointers + provenance ----------
 
@@ -25,6 +25,17 @@ export type SourceRef = {
   externalId: string
   [key: string]: unknown
 }
+
+export type ExternalPassengerComposition = {
+  adults: number
+  children?: number
+  childAges?: number[]
+  infants?: number
+  seniors?: number
+  [key: string]: unknown
+}
+
+export type ExternalBookingTerms = QuoteBookingTerms
 
 // ---------- canonical external shapes ----------
 // These mirror the local cruises schema fields the UI renders. Adapters return
@@ -115,6 +126,7 @@ export type ExternalPriceRow = {
   sourceRef?: SourceRef
   cabinCategoryRef: SourceRef
   occupancy: number
+  passengerComposition?: ExternalPassengerComposition | null
   fareCode?: string | null
   fareCodeName?: string | null
   currency: string
@@ -127,6 +139,7 @@ export type ExternalPriceRow = {
   requiresRequest?: boolean
   notes?: string | null
   components?: ExternalPriceComponent[]
+  bookingTerms?: ExternalBookingTerms | null
 }
 
 export type ExternalPriceComponent = {
@@ -139,6 +152,8 @@ export type ExternalPriceComponent = {
     | "airfare"
     | "transfer"
     | "insurance"
+    | "single_supplement"
+    | "other"
   label?: string | null
   amount: string
   currency: string
@@ -238,9 +253,11 @@ export type CreateExternalBookingInput = {
   sailingRef: SourceRef
   cabinCategoryRef: SourceRef
   occupancy: number
+  passengerComposition?: ExternalPassengerComposition | null
   fareCode?: string | null
   passengers: ExternalPassengerInput[]
   contact: ExternalContactInput
+  bookingTerms?: ExternalBookingTerms | null
   notes?: string | null
 }
 
@@ -254,6 +271,8 @@ export type ExternalBookingResult = {
   finalQuote?: Quote
   /** Optional snapshot components to override the locally-composed list. */
   finalComponents?: QuoteComponent[]
+  /** Commercial terms confirmed by the upstream at commit time. */
+  finalBookingTerms?: ExternalBookingTerms | null
 }
 
 // ---------- the contract itself ----------
@@ -300,6 +319,20 @@ export interface CruiseAdapter {
 export type AdapterCallContext = { adapterName: string; method: string }
 
 // ---------- catalog SourceAdapter shim ----------
+
+export {
+  type CompatibilityMappingResult,
+  type ConnectCabinRoomType,
+  type ConnectCruiseType,
+  type ConnectEnrichmentKind,
+  type ConnectInclusionKind,
+  type ConnectPriceComponentKind,
+  mapConnectCabinRoomType,
+  mapConnectCruiseType,
+  mapConnectEnrichmentKind,
+  mapConnectInclusionKind,
+  mapConnectPriceComponentKind,
+} from "./connect-compat.js"
 
 export {
   type CruiseSourceAdapterShim,

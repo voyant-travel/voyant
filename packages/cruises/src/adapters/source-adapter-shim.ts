@@ -43,6 +43,7 @@ import type {
 import type { Provenance } from "@voyantjs/catalog/provenance"
 
 import { CRUISES_CONTENT_SCHEMA_VERSION, type CruiseContent } from "../content-shape.js"
+import { decodeSourceRef, encodeSourceRef } from "../lib/key.js"
 
 import type {
   CruiseAdapter,
@@ -242,7 +243,7 @@ export function cruiseAdapterToSourceAdapter(
       return {
         entity_module: "cruises",
         entity_id: request.entity_id,
-        source_ref: cruise.sourceRef.externalId,
+        source_ref: encodeSourceRef(cruise.sourceRef),
         returned_locale: request.locale,
         content,
         content_schema_version: CRUISES_CONTENT_SCHEMA_VERSION,
@@ -384,9 +385,12 @@ function toCatalogProjection(
 ): CatalogProjection {
   const provenance: Provenance = {
     source_kind: sourceKind,
-    source_provider: entry.sourceRef.connectionId,
+    source_provider:
+      typeof entry.sourceRef.provider === "string"
+        ? entry.sourceRef.provider
+        : entry.sourceRef.connectionId,
     source_connection_id: entry.sourceRef.connectionId,
-    source_ref: entry.sourceRef.externalId,
+    source_ref: encodeSourceRef(entry.sourceRef),
     source_freshness: "sync",
     last_sourced_at: new Date(),
   }
@@ -440,32 +444,22 @@ function encodeCursor(offset: number): DiscoveryCursor {
 }
 
 /**
- * Default `entity_id` builder. Produces stable Voyant-side ids of the
- * form `crus_<slug>` from the upstream `externalId`. Stability is
- * load-bearing: `catalog_sourced_entries` is keyed on `entity_id`, so
- * if this changes between syncs we'd lose the link to overlays /
- * snapshots.
+ * Default `entity_id` builder. Produces a stable URL-safe id that embeds the
+ * full SourceRef. Stability is load-bearing: `catalog_sourced_entries` is keyed
+ * on `entity_id`, so drift on the id maps to a new sourced row.
  */
 function defaultBuildEntityId(sourceRef: SourceRef): string {
-  const slug =
-    String(sourceRef.externalId)
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "")
-      .slice(0, 26) || "unknown"
-  return `crus_${slug}`
+  return `crus_${encodeSourceRef(sourceRef)}`
 }
 
 /**
- * Inverse of `defaultBuildEntityId` — recovers a `SourceRef` from a
- * catalog-side entity_id. Used by `getContent` when the catalog
- * dispatches by entity_id rather than by SourceRef. Returns a minimal
- * `SourceRef` (just the externalId) — the upstream connectionId / vendor
- * fields are NOT recoverable from the entity_id alone, so callers that
- * need the connection should pass `SourceAdapterContext.connection_id`
- * via the adapter context.
+ * Inverse of `defaultBuildEntityId`. The legacy `crus_<slug>` fallback keeps
+ * pre-encoded sourced rows readable, but new rows preserve the exact SourceRef.
  */
 function entityIdToSourceRef(entityId: string): SourceRef {
-  const externalId = entityId.startsWith("crus_") ? entityId.slice("crus_".length) : entityId
+  const raw = entityId.startsWith("crus_") ? entityId.slice("crus_".length) : entityId
+  const decoded = decodeSourceRef(raw)
+  if (decoded) return decoded
+  const externalId = raw
   return { externalId }
 }

@@ -1,6 +1,6 @@
 import type { SourceAdapterRegistry } from "@voyantjs/catalog/booking-engine"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-
+import { encodeSourceRef, makeExternalSourceKey } from "../../src/lib/key.js"
 import { createCruiseContentRoutes, parseAcceptLanguage } from "../../src/routes-content.js"
 
 describe("parseAcceptLanguage (cruises copy)", () => {
@@ -84,12 +84,27 @@ describe("createCruiseContentRoutes — GET /:key/content", () => {
     expect(res.status).toBe(404)
   })
 
-  it("translates external key to entity_id with crus_<slug> convention", async () => {
+  it("translates legacy external keys to encoded SourceRef entity ids", async () => {
     mockedGetCruiseContent.mockResolvedValueOnce(null)
     const { app } = buildApp()
     await app.request("/voyant-connect:cruise-1/content")
     const callArgs = mockedGetCruiseContent.mock.calls[0]
-    expect(callArgs?.[1]).toBe("crus_cruise_1")
+    expect(callArgs?.[1]).toBe(`crus_${encodeSourceRef({ externalId: "cruise-1" })}`)
+  })
+
+  it("preserves full SourceRef values from encoded external keys", async () => {
+    mockedGetCruiseContent.mockResolvedValueOnce(null)
+    const sourceRef = {
+      connectionId: "conn-123",
+      provider: "scenic",
+      externalId: "cruise/1:departure",
+      syncedRowId: "sync-row-7",
+    }
+    const key = makeExternalSourceKey("voyant-connect", sourceRef)
+    const { app } = buildApp()
+    await app.request(`/${key}/content`)
+    const callArgs = mockedGetCruiseContent.mock.calls[0]
+    expect(callArgs?.[1]).toBe(`crus_${encodeSourceRef(sourceRef)}`)
   })
 
   it("returns CruiseContent payload + resolution metadata when found", async () => {

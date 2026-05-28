@@ -55,8 +55,37 @@ function percentOf(cents: bigint, percentString: string): bigint {
 
 // ---------- composition (pure function) ----------
 
+export type QuotePriceComponentKind = CruisePriceComponent["kind"] | "single_supplement" | "other"
+
+export type QuoteBookingTerms = {
+  cancellationPolicy?: {
+    summary?: string | null
+    rules?: Array<{
+      from?: string | null
+      until?: string | null
+      penaltyAmount?: string | null
+      penaltyCurrency?: string | null
+      penaltyPercent?: string | null
+      description?: string | null
+    }>
+    [key: string]: unknown
+  } | null
+  paymentTerms?: {
+    summary?: string | null
+    depositAmount?: string | null
+    depositCurrency?: string | null
+    depositPercent?: string | null
+    dueDate?: string | null
+    schedule?: Array<Record<string, unknown>>
+    [key: string]: unknown
+  } | null
+  supplierTermsUrl?: string | null
+  notes?: string | null
+  [key: string]: unknown
+}
+
 export type QuoteComponent = {
-  kind: CruisePriceComponent["kind"]
+  kind: QuotePriceComponentKind
   label: string | null
   amount: string
   currency: string
@@ -74,6 +103,7 @@ export type Quote = {
   components: QuoteComponent[]
   totalPerPerson: string
   totalForCabin: string
+  bookingTerms?: QuoteBookingTerms | null
 }
 
 export type ComposeQuoteInput = {
@@ -87,10 +117,13 @@ export type ComposeQuoteInput = {
     | "fareCodeName"
   >
   components: Array<
-    Pick<CruisePriceComponent, "kind" | "label" | "amount" | "currency" | "direction" | "perPerson">
+    Pick<CruisePriceComponent, "label" | "amount" | "currency" | "direction" | "perPerson"> & {
+      kind: QuotePriceComponentKind
+    }
   >
   occupancy: number
   guestCount: number
+  bookingTerms?: QuoteBookingTerms | null
 }
 
 export function composeQuote(input: ComposeQuoteInput): Quote {
@@ -158,6 +191,7 @@ export function composeQuote(input: ComposeQuoteInput): Quote {
     components: renderedComponents,
     totalPerPerson: centsToDecimalString(totalPerPersonCents),
     totalForCabin: centsToDecimalString(totalForCabinCents),
+    bookingTerms: input.bookingTerms ?? null,
   }
 }
 

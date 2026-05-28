@@ -224,6 +224,45 @@ describe("composeQuote — price components", () => {
     expect(quote.totalPerPerson).toBe("995.00")
     expect(quote.components).toHaveLength(4)
   })
+
+  it("preserves residual components and booking terms in external quote snapshots", () => {
+    const quote = composeQuote({
+      price: makePrice({ pricePerPerson: "1000.00" }),
+      components: [
+        {
+          kind: "other",
+          label: "Supplier adjustment",
+          amount: "25.00",
+          currency: "USD",
+          direction: "addition",
+          perPerson: false,
+        },
+        {
+          kind: "single_supplement",
+          label: "Single supplement",
+          amount: "100.00",
+          currency: "USD",
+          direction: "addition",
+          perPerson: false,
+        },
+      ],
+      occupancy: 1,
+      guestCount: 1,
+      bookingTerms: {
+        cancellationPolicy: {
+          summary: "Refundable until final payment.",
+          rules: [{ until: "2027-01-01", penaltyPercent: "0.00" }],
+        },
+        paymentTerms: { depositPercent: "25.00", dueDate: "2026-12-01" },
+      },
+    })
+    expect(quote.totalForCabin).toBe("1125.00")
+    expect(quote.components.map((component) => component.kind)).toEqual([
+      "other",
+      "single_supplement",
+    ])
+    expect(quote.bookingTerms?.cancellationPolicy?.summary).toBe("Refundable until final payment.")
+  })
 })
 
 describe("composeQuote — currency", () => {

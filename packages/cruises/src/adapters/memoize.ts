@@ -75,9 +75,17 @@ class TTLCache<K, V> {
 }
 
 function refKey(ref: SourceRef): string {
-  // Stable serialization for cache lookup. Preserves connectionId + externalId
-  // and any extra adapter-specific fields.
-  return JSON.stringify(ref, Object.keys(ref).sort())
+  return JSON.stringify(sortValue(ref))
+}
+
+function sortValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortValue)
+  if (!value || typeof value !== "object") return value
+  const out: Record<string, unknown> = {}
+  for (const key of Object.keys(value).sort()) {
+    out[key] = sortValue((value as Record<string, unknown>)[key])
+  }
+  return out
 }
 
 export function memoizeCruiseAdapter(

@@ -12,11 +12,9 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core"
-
+import type { SourceRef } from "./adapters/index.js"
 import { cruises } from "./schema-core.js"
 import { cruiseSourceEnum, cruiseTypeEnum } from "./schema-shared.js"
-
-type SourceRef = { connectionId?: string; externalId?: string; [k: string]: unknown }
 
 export const cruiseSearchIndex = pgTable(
   "cruise_search_index",
@@ -57,7 +55,7 @@ export const cruiseSearchIndex = pgTable(
     index("idx_cruise_search_index_regions_gin").using("gin", table.regions),
     index("idx_cruise_search_index_themes_gin").using("gin", table.themes),
     uniqueIndex("uidx_cruise_search_index_external")
-      .on(table.sourceProvider, sql`(${table.sourceRef}->>'externalId')`)
+      .on(table.sourceProvider, table.sourceRef)
       .where(sql`${table.source} = 'external'`),
   ],
 )
