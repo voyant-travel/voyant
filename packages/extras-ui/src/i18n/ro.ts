@@ -37,6 +37,13 @@ export const extrasUiRo = {
     pendingLabel: "In asteptare",
     waivedLabel: "Renuntat",
     notRequiredLabel: "Fara incasare",
+    collectionModeLabels: {
+      cash_on_trip: "Cash in excursie",
+      external: "Extern",
+      included: "Inclus",
+      none: "Fara incasare",
+      booking_total: "Total rezervare",
+    },
     markCollected: "Marcheaza incasat",
     markWaived: "Renunta",
     selectAll: "Selecteaza tot",
