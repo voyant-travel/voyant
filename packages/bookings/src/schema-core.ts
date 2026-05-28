@@ -44,6 +44,8 @@ export const bookings = pgTable(
     communicationLanguage: text("communication_language"),
     contactFirstName: text("contact_first_name"),
     contactLastName: text("contact_last_name"),
+    contactPartyType: text("contact_party_type"),
+    contactTaxId: text("contact_tax_id"),
     contactEmail: text("contact_email"),
     contactPhone: text("contact_phone"),
     contactPreferredLanguage: text("contact_preferred_language"),

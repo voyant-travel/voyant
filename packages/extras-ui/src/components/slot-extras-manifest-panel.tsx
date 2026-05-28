@@ -150,7 +150,7 @@ export function SlotExtrasManifestPanel({ slotId, className }: SlotExtrasManifes
                     <div>
                       <div className="font-medium">{extra.name}</div>
                       <div className="text-xs font-normal text-muted-foreground">
-                        {collectionModeLabel(extra.collectionMode)}
+                        {collectionModeLabel(extra.collectionMode, messages.collectionModeLabels)}
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-1">
@@ -247,18 +247,21 @@ function CollectionBadge({ selection }: { selection: SlotExtraManifestSelection 
   return <Badge variant="outline">{messages.notRequiredLabel}</Badge>
 }
 
-function collectionModeLabel(mode: ProductExtraRecord["collectionMode"]) {
+function collectionModeLabel(
+  mode: ProductExtraRecord["collectionMode"],
+  labels: Record<"cash_on_trip" | "external" | "included" | "none" | "booking_total", string>,
+) {
   switch (mode) {
     case "cash_on_trip":
-      return "Cash on trip"
+      return labels.cash_on_trip
     case "external":
-      return "External"
+      return labels.external
     case "included":
-      return "Included"
+      return labels.included
     case "none":
-      return "No collection"
+      return labels.none
     default:
-      return "Booking total"
+      return labels.booking_total
   }
 }
 

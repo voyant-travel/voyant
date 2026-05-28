@@ -195,6 +195,13 @@ function getRecordString(record: Record<string, unknown> | null, keys: string[])
   return null
 }
 
+function getBillingPartyType(
+  record: Record<string, unknown> | null,
+): "individual" | "company" | null {
+  const value = getRecordString(record, ["partyType", "type"])
+  return value === "individual" || value === "company" ? value : null
+}
+
 function getArray(value: unknown) {
   return Array.isArray(value) ? value : null
 }
@@ -216,6 +223,8 @@ function extractBookingContactFromStatePayload(
   return {
     contactFirstName: getRecordString(billing, ["firstName"]),
     contactLastName: getRecordString(billing, ["lastName"]),
+    contactPartyType: getBillingPartyType(billing),
+    contactTaxId: getRecordString(billing, ["taxId", "vatNumber", "vatId"]),
     contactEmail: getRecordString(billing, ["email"]),
     contactPhone: getRecordString(billing, ["phone"]),
     contactCountry: getRecordString(billing, ["country"]),

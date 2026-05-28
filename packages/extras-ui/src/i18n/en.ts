@@ -37,6 +37,13 @@ export const extrasUiEn = {
     pendingLabel: "Pending",
     waivedLabel: "Waived",
     notRequiredLabel: "No collection",
+    collectionModeLabels: {
+      cash_on_trip: "Cash on trip",
+      external: "External",
+      included: "Included",
+      none: "No collection",
+      booking_total: "Booking total",
+    },
     markCollected: "Mark collected",
     markWaived: "Waive",
     selectAll: "Select all",

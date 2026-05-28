@@ -313,6 +313,7 @@ export const adminAvailabilityMessages = {
         },
         tabs: {
           allocation: "Allocation",
+          extras: "Extras",
           pickup: "Pickup",
           closeouts: "Closeouts",
           activity: "Activity",
@@ -788,6 +789,7 @@ export const adminAvailabilityMessages = {
         },
         tabs: {
           allocation: "Alocare",
+          extras: "Extra",
           pickup: "Pickup",
           closeouts: "Closeout-uri",
           activity: "Activitate",

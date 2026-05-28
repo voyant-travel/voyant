@@ -940,6 +940,8 @@ export function BookingCreateForm({
         Parameters<typeof createBookingMutation.mutateAsync>[0],
         | "contactFirstName"
         | "contactLastName"
+        | "contactPartyType"
+        | "contactTaxId"
         | "contactEmail"
         | "contactPhone"
         | "contactPreferredLanguage"
@@ -951,6 +953,8 @@ export function BookingCreateForm({
         | "contactCountry"
       > = billingPersonRecord
         ? {
+            contactPartyType: "individual",
+            contactTaxId: null,
             contactFirstName: billingPersonRecord.firstName,
             contactLastName: billingPersonRecord.lastName,
             contactEmail: billingPersonRecord.email,
@@ -960,6 +964,8 @@ export function BookingCreateForm({
           }
         : billingOrganizationRecord
           ? {
+              contactPartyType: "company",
+              contactTaxId: billingOrganizationRecord.vatNumber,
               contactFirstName: billingOrganizationRecord.name,
               contactLastName: null,
               contactEmail: null,

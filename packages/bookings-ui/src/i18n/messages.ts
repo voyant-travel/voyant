@@ -125,6 +125,7 @@ export type BookingsUiMessages = {
     }
     internalNotesLabel: string
     billingPayer: string
+    billingTaxId: string
     billingEmail: string
     billingPhone: string
     billingAddress: string
@@ -998,8 +999,11 @@ export type BookingsUiMessages = {
   bookingBillingDialog: {
     title: string
     fields: {
+      partyType: string
       firstName: string
       lastName: string
+      companyName: string
+      taxId: string
       email: string
       phone: string
       addressLine1: string
@@ -1009,8 +1013,18 @@ export type BookingsUiMessages = {
       postalCode: string
       country: string
     }
+    partyTypeLabels: Record<"individual" | "company", string>
+    crmPicker: {
+      label: string
+      personSearchPlaceholder: string
+      personEmpty: string
+      organizationSearchPlaceholder: string
+      organizationEmpty: string
+    }
     actions: {
       cancel: string
+      selectFromCrm: string
+      hideCrmPicker: string
       save: string
     }
   }

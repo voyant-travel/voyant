@@ -28,6 +28,10 @@ export type ExtrasUiMessages = {
     pendingLabel: string
     waivedLabel: string
     notRequiredLabel: string
+    collectionModeLabels: Record<
+      "cash_on_trip" | "external" | "included" | "none" | "booking_total",
+      string
+    >
     markCollected: string
     markWaived: string
     selectAll: string

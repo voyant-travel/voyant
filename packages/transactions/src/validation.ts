@@ -103,6 +103,8 @@ export const transactionContactAssignmentRoleSchema = z.enum(["primary_contact",
 
 export const transactionStaffAssignmentRoleSchema = z.enum(["service_assignee", "other"])
 
+export const transactionContactPartyTypeSchema = z.enum(["individual", "company"])
+
 export const orderTermTypeSchema = z.enum([
   "terms_and_conditions",
   "cancellation",
@@ -130,8 +132,10 @@ const offerCoreSchema = z.object({
   quoteId: z.string().nullable().optional(),
   marketId: z.string().nullable().optional(),
   sourceChannelId: z.string().nullable().optional(),
+  contactPartyType: transactionContactPartyTypeSchema.nullable().optional(),
   contactFirstName: z.string().max(255).nullable().optional(),
   contactLastName: z.string().max(255).nullable().optional(),
+  contactTaxId: z.string().max(100).nullable().optional(),
   contactEmail: z.string().email().nullable().optional(),
   contactPhone: z.string().max(50).nullable().optional(),
   contactPreferredLanguage: z.string().max(35).nullable().optional(),
@@ -241,8 +245,10 @@ const orderCoreSchema = z.object({
   quoteId: z.string().nullable().optional(),
   marketId: z.string().nullable().optional(),
   sourceChannelId: z.string().nullable().optional(),
+  contactPartyType: transactionContactPartyTypeSchema.nullable().optional(),
   contactFirstName: z.string().max(255).nullable().optional(),
   contactLastName: z.string().max(255).nullable().optional(),
+  contactTaxId: z.string().max(100).nullable().optional(),
   contactEmail: z.string().email().nullable().optional(),
   contactPhone: z.string().max(50).nullable().optional(),
   contactPreferredLanguage: z.string().max(35).nullable().optional(),

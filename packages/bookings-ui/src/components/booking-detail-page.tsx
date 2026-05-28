@@ -712,6 +712,7 @@ export function BookingBillingContextCard({
     ""
   const email = booking.contactEmail ?? person?.email ?? null
   const phone = booking.contactPhone ?? person?.phone ?? null
+  const taxId = booking.contactTaxId ?? organization?.vatNumber ?? null
   const address = [
     booking.contactAddressLine1,
     booking.contactAddressLine2,
@@ -736,7 +737,7 @@ export function BookingBillingContextCard({
         </Button>
       </div>
       <div className="flex flex-col gap-4 rounded-md border p-4">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <BillingField
             label={messages.billingPayer}
             value={
@@ -765,6 +766,7 @@ export function BookingBillingContextCard({
               )
             }
           />
+          <BillingField label={messages.billingTaxId} value={taxId ?? messages.noValue} />
           <BillingField
             label={messages.billingEmail}
             value={email ?? messages.noValue}

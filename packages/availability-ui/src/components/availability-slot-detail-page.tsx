@@ -389,7 +389,7 @@ export function AvailabilitySlotDetailPage({
         <TabsList className="flex h-auto w-fit flex-wrap justify-start">
           <TabsTrigger value="allocation">{detailMessages.tabs.allocation}</TabsTrigger>
           {renderExtras ? (
-            <TabsTrigger value="extras">{extrasTabLabel ?? "Extras"}</TabsTrigger>
+            <TabsTrigger value="extras">{extrasTabLabel ?? detailMessages.tabs.extras}</TabsTrigger>
           ) : null}
           {pickupRows.length > 0 ? (
             <TabsTrigger value="pickup">

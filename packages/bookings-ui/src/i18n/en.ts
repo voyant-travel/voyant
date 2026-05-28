@@ -152,6 +152,7 @@ export const bookingsUiEn = {
     tabActivity: "Activity",
     internalNotesLabel: "Internal notes",
     billingPayer: "Payer",
+    billingTaxId: "Tax ID",
     billingEmail: "Email",
     billingPhone: "Phone",
     billingAddress: "Address",
@@ -1091,8 +1092,11 @@ export const bookingsUiEn = {
   bookingBillingDialog: {
     title: "Edit billing contact",
     fields: {
+      partyType: "Billing type",
       firstName: "First name",
       lastName: "Last name",
+      companyName: "Name",
+      taxId: "Tax ID",
       email: "Email",
       phone: "Phone",
       addressLine1: "Address line 1",
@@ -1102,8 +1106,21 @@ export const bookingsUiEn = {
       postalCode: "Postal code",
       country: "Country",
     },
+    partyTypeLabels: {
+      individual: "Individual",
+      company: "Company",
+    },
+    crmPicker: {
+      label: "CRM source",
+      personSearchPlaceholder: "Search people...",
+      personEmpty: "No people found.",
+      organizationSearchPlaceholder: "Search organizations...",
+      organizationEmpty: "No organizations found.",
+    },
     actions: {
       cancel: "Cancel",
+      selectFromCrm: "Select from CRM",
+      hideCrmPicker: "Hide CRM picker",
       save: "Save changes",
     },
   },

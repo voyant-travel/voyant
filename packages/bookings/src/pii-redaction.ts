@@ -97,6 +97,7 @@ export function redactBookingContact<
   T extends {
     contactFirstName?: string | null
     contactLastName?: string | null
+    contactTaxId?: string | null
     contactEmail?: string | null
     contactPhone?: string | null
     contactAddressLine1?: string | null
@@ -108,6 +109,7 @@ export function redactBookingContact<
     ...row,
     contactFirstName: redactString(row.contactFirstName),
     contactLastName: redactString(row.contactLastName),
+    contactTaxId: redactString(row.contactTaxId),
     contactEmail: redactEmail(row.contactEmail),
     contactPhone: redactPhone(row.contactPhone),
     contactAddressLine1: redactString(row.contactAddressLine1),

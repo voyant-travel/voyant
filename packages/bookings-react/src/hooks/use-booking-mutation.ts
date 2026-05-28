@@ -30,6 +30,8 @@ export interface CreateBookingInput {
   // Billing-contact snapshot — editable post-create via PATCH.
   contactFirstName?: string | null
   contactLastName?: string | null
+  contactPartyType?: "individual" | "company" | null
+  contactTaxId?: string | null
   contactEmail?: string | null
   contactPhone?: string | null
   contactPreferredLanguage?: string | null

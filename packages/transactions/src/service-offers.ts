@@ -54,6 +54,8 @@ function pickPrimaryContactSnapshot(
   CreateOfferInput,
   | "contactFirstName"
   | "contactLastName"
+  | "contactPartyType"
+  | "contactTaxId"
   | "contactEmail"
   | "contactPhone"
   | "contactPreferredLanguage"
@@ -67,6 +69,8 @@ function pickPrimaryContactSnapshot(
   if (
     offer.contactFirstName ??
     offer.contactLastName ??
+    offer.contactPartyType ??
+    offer.contactTaxId ??
     offer.contactEmail ??
     offer.contactPhone ??
     offer.contactPreferredLanguage ??
@@ -80,6 +84,8 @@ function pickPrimaryContactSnapshot(
     return {
       contactFirstName: offer.contactFirstName ?? null,
       contactLastName: offer.contactLastName ?? null,
+      contactPartyType: offer.contactPartyType ?? null,
+      contactTaxId: offer.contactTaxId ?? null,
       contactEmail: offer.contactEmail ?? null,
       contactPhone: offer.contactPhone ?? null,
       contactPreferredLanguage: offer.contactPreferredLanguage ?? null,
@@ -104,6 +110,8 @@ function pickPrimaryContactSnapshot(
   return {
     contactFirstName: contactAssignment?.firstName ?? null,
     contactLastName: contactAssignment?.lastName ?? null,
+    contactPartyType: contactAssignment ? "individual" : null,
+    contactTaxId: null,
     contactEmail: contactAssignment?.email ?? null,
     contactPhone: contactAssignment?.phone ?? null,
     contactPreferredLanguage: contactAssignment?.preferredLanguage ?? null,

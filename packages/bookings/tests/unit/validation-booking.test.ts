@@ -97,6 +97,23 @@ describe("Booking schema", () => {
     ).toBe(validOrganizationId)
   })
 
+  it("accepts a company billing snapshot with tax id", () => {
+    const result = insertBookingSchema.parse({
+      ...valid,
+      organizationId: validOrganizationId,
+      contactPartyType: "company",
+      contactFirstName: "Acme Travel SRL",
+      contactLastName: null,
+      contactTaxId: "RO12345678",
+    })
+    expect(result.contactPartyType).toBe("company")
+    expect(result.contactTaxId).toBe("RO12345678")
+  })
+
+  it("rejects unknown billing party snapshot types", () => {
+    expect(() => insertBookingSchema.parse({ ...valid, contactPartyType: "agency" })).toThrow()
+  })
+
   it("rejects placeholder billing-party IDs", () => {
     expect(() => insertBookingSchema.parse({ ...valid, organizationId: "org_dummy" })).toThrow()
     expect(() => insertBookingSchema.parse({ ...valid, organizationId: "org_test" })).toThrow()
