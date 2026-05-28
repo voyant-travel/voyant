@@ -3,8 +3,10 @@
  *
  * Templates register adapters at app startup:
  *
- *   import { createConnectCruiseAdapter } from "@voyantjs/cruises-adapter-connect"
- *   registerCruiseAdapter(createConnectCruiseAdapter({ apiKey: env.VOYANT_CONNECT_API_KEY }))
+ *   import { registerCruiseAdapter } from "@voyantjs/cruises/adapters"
+ *   import { createCruiseAdapter } from "external-cruise-adapter"
+ *
+ *   registerCruiseAdapter(createCruiseAdapter({ token: env.CRUISE_ADAPTER_TOKEN }))
  *
  * The route layer resolves an adapter by `sourceProvider` (the prefix in the
  * unified key `<provider>:<ref>`) before dispatching detail reads, refresh,

@@ -25,6 +25,10 @@ export type {
   AdapterCallContext,
   CreateExternalBookingInput,
   CruiseAdapter,
+  CruiseAdapterCompatibilityCheck,
+  CruiseAdapterCompatibilityCheckName,
+  CruiseAdapterCompatibilityFixture,
+  CruiseAdapterCompatibilityReport,
   CruiseSearchProjectionEntry,
   ExternalBookingResult,
   ExternalBookingTerms,
@@ -43,6 +47,10 @@ export type {
   ListEntriesOptions,
   ListEntriesResult,
   SourceRef,
+} from "./adapters/index.js"
+export {
+  assertCruiseAdapterCompatibility,
+  validateCruiseAdapterCompatibility,
 } from "./adapters/index.js"
 export { type MemoizeOptions, memoizeCruiseAdapter } from "./adapters/memoize.js"
 export { MockCruiseAdapter, type MockCruiseAdapterOptions } from "./adapters/mock.js"

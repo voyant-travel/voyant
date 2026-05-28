@@ -318,6 +318,15 @@ export interface CruiseAdapter {
 
 export type AdapterCallContext = { adapterName: string; method: string }
 
+export {
+  assertCruiseAdapterCompatibility,
+  type CruiseAdapterCompatibilityCheck,
+  type CruiseAdapterCompatibilityCheckName,
+  type CruiseAdapterCompatibilityFixture,
+  type CruiseAdapterCompatibilityReport,
+  validateCruiseAdapterCompatibility,
+} from "./contract-fixture.js"
+
 // ---------- catalog SourceAdapter shim ----------
 
 export {

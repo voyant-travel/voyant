@@ -4,12 +4,27 @@ Opt-in cruises module for OTA, tour-operator, and DMC deployments. Provides the
 canonical schema, services, and admin/storefront/booking integration for cruise
 inventory - both self-managed (a tour operator or DMC publishes its own
 small-scale or specialized cruises) and external (sourced from a registered
-adapter such as Voyant Connect).
+adapter package).
 
 Cruises are an inventory and operations capability inside the target scenarios,
 not a separate cruise-line implementation scenario.
 
-See [docs/architecture/cruises-module.md](../../docs/architecture/cruises-module.md) for the full design.
+See [docs/architecture/cruises-module.md](../../docs/architecture/cruises-module.md)
+for the full design and
+[docs/architecture/cruise-adapter-contract.md](../../docs/architecture/cruise-adapter-contract.md)
+for external adapter implementation requirements.
+
+## External Adapter Contract
+
+`@voyantjs/cruises` exports the provider-neutral `CruiseAdapter` contract from
+`@voyantjs/cruises/adapters`. Adapter packages register at application startup
+and keep upstream clients, credentials, and provider-specific mappings outside
+the framework package.
+
+Adapter packages can run
+`assertCruiseAdapterCompatibility(...)` against a sandbox fixture to verify full
+`SourceRef` round-tripping, multi-connection identity, detail lookup, pricing
+lookup, and booking commit payload handling.
 
 ## Status
 
