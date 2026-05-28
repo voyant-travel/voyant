@@ -10,11 +10,7 @@ import { createCustomerPortalHonoModule } from "@voyantjs/customer-portal"
 import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
 import { externalRefsHonoModule } from "@voyantjs/external-refs"
 import { extrasHonoModule } from "@voyantjs/extras"
-import {
-  bookingsCreateExtension,
-  createFinanceHonoModule,
-  createVoyantDataFxExchangeRateResolver,
-} from "@voyantjs/finance"
+import { bookingsCreateExtension, createFinanceHonoModule } from "@voyantjs/finance"
 import { createApp, createPublicDocumentDeliveryHonoModule } from "@voyantjs/hono"
 import { identityHonoModule } from "@voyantjs/identity"
 import { createLegalHonoModule } from "@voyantjs/legal"
@@ -36,8 +32,6 @@ import { suppliersHonoModule } from "@voyantjs/suppliers"
 import { transactionsBookingExtension, transactionsHonoModule } from "@voyantjs/transactions"
 import { createTravelComposerHonoModule } from "@voyantjs/travel-composer"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyantjs/workflow-runs"
-import { createCloudflareEdgeDriver } from "@voyantjs/workflows-orchestrator-cloudflare"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { resolveNotificationProviders } from "../lib/notifications"
 import { mountActionLedgerHealthRoutes } from "./action-ledger-health"
 import authHandler, {
@@ -61,29 +55,33 @@ import {
 import { mountCatalogContentRoutes } from "./catalog-content"
 import { channelPushBundle, mountChannelPushAdminRoutes } from "./channel-push"
 import { mountOperatorContractDocumentRoutes } from "./contract-document-routes"
-import {
-  AUTO_GENERATE_CONTRACT_OPTIONS,
-  generateContractPdfForBooking,
-  resolveContractDocumentGenerator,
-} from "./contract-document-runtime"
+import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./contract-document-runtime"
 import { mountFlightRoutes } from "./flights"
 import { createInvitationsRoutes } from "./invitations"
 import { mountOperatorLazyAdditionalRoutes } from "./lazy-additional-routes"
 import { buildCatalogContext } from "./lib/catalog-context"
-import { dbFromEnvForApp, getDbFromEnv } from "./lib/db"
-import {
-  createDocumentStorage,
-  readDocumentContentBase64,
-  resolveDocumentDownloadUrl,
-} from "./lib/storage"
+import { dbFromEnvForApp } from "./lib/db"
+import { createDocumentStorage } from "./lib/storage"
 import { mountCatalogMcpRoutes } from "./mcp"
 import { mountOperatorMediaUploadRoutes } from "./media-upload-routes"
+import {
+  createOperatorDocumentStorage,
+  createOperatorInvoiceExchangeRateResolver,
+  createOperatorInvoiceSettlementPollers,
+  createOperatorWorkflowDriver,
+  generateContractPdfForBooking,
+  operatorPostgresDb,
+  readOperatorDocumentContentBase64,
+  resolveOperatorContractDocumentGenerator,
+  resolveOperatorDb,
+  resolveOperatorDocumentDownloadUrl,
+} from "./operator-runtime-adapter"
 import {
   resolveBankTransferDetails,
   resolvePublicCheckoutBaseUrlFromBindings,
 } from "./payment-config"
 import { mountOperatorSettingsRoutes } from "./settings"
-import { createSmartbillSettlementPollers, smartbillOperatorBundle } from "./smartbill"
+import { smartbillOperatorBundle } from "./smartbill"
 import {
   createOperatorTravelComposerRoutesOptions,
   travelComposerPaymentBundle,
@@ -94,10 +92,7 @@ const notificationsHonoModule = createNotificationsHonoModule({
   resolvePublicCheckoutBaseUrl: resolvePublicCheckoutBaseUrlFromBindings,
   resolveDocumentAttachmentResolver: (bindings) => async (document) => {
     if (document.storageKey) {
-      const contentBase64 = await readDocumentContentBase64(
-        bindings as unknown as CloudflareBindings,
-        document.storageKey,
-      )
+      const contentBase64 = await readOperatorDocumentContentBase64(bindings, document.storageKey)
       if (contentBase64) {
         return {
           filename: document.name,
@@ -106,10 +101,7 @@ const notificationsHonoModule = createNotificationsHonoModule({
         }
       }
 
-      const path = await resolveDocumentDownloadUrl(
-        bindings as unknown as CloudflareBindings,
-        document.storageKey,
-      )
+      const path = await resolveOperatorDocumentDownloadUrl(bindings, document.storageKey)
       if (path) {
         return {
           filename: document.name,
@@ -134,7 +126,7 @@ const notificationsHonoModule = createNotificationsHonoModule({
   // requires widening the module-factory contract in `@voyantjs/bookings`
   // to accept the `DisposableDb` shape — tracked alongside the rest of
   // the audit in #510.
-  resolveDb: (bindings) => getDbFromEnv(bindings as unknown as CloudflareBindings),
+  resolveDb: resolveOperatorDb,
   autoConfirmAndDispatch: {
     enabled: true,
     templateSlug: "booking-confirmation",
@@ -199,7 +191,7 @@ const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 
 const customerPortalHonoModule = createCustomerPortalHonoModule({
   resolveDocumentDownloadUrl: (bindings, storageKey) =>
-    resolveDocumentDownloadUrl(bindings as CloudflareBindings, storageKey),
+    resolveOperatorDocumentDownloadUrl(bindings, storageKey),
 })
 
 // Wires the env-driven KMS provider into CRM admin routes so
@@ -243,28 +235,19 @@ const bookingsHonoModule = createBookingsHonoModule({
 
 const financeModule = createFinanceHonoModule({
   resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
-    resolveDocumentDownloadUrl(bindings as unknown as CloudflareBindings, storageKey),
-  resolveInvoiceExchangeRateResolver: (bindings) => {
-    const env = bindings as unknown as CloudflareBindings
-    return createVoyantDataFxExchangeRateResolver({
-      apiKey: env.VOYANT_CLOUD_API_KEY,
-      baseUrl: env.VOYANT_CLOUD_API_URL,
-    })
-  },
-  resolveInvoiceSettlementPollers: (bindings) =>
-    createSmartbillSettlementPollers(bindings as unknown as CloudflareBindings),
+    resolveOperatorDocumentDownloadUrl(bindings, storageKey),
+  resolveInvoiceExchangeRateResolver: createOperatorInvoiceExchangeRateResolver,
+  resolveInvoiceSettlementPollers: createOperatorInvoiceSettlementPollers,
 })
 const legalModule = createLegalHonoModule({
   // KNOWN LEAK: same shape as the bookings `resolveDb` above — leaks a
   // Pool per legal-event subscriber call until the module factory's
   // contract widens to accept `DisposableDb`. Tracked in #510.
-  resolveDb: (bindings) => getDbFromEnv(bindings as unknown as CloudflareBindings),
+  resolveDb: resolveOperatorDb,
   resolveDocumentDownloadUrl: (bindings, storageKey) =>
-    resolveDocumentDownloadUrl(bindings as unknown as CloudflareBindings, storageKey),
-  resolveDocumentStorage: (bindings) =>
-    createDocumentStorage(bindings as unknown as CloudflareBindings),
-  resolveDocumentGenerator: (bindings) =>
-    resolveContractDocumentGenerator(bindings as unknown as CloudflareBindings) ?? undefined,
+    resolveOperatorDocumentDownloadUrl(bindings, storageKey),
+  resolveDocumentStorage: createOperatorDocumentStorage,
+  resolveDocumentGenerator: resolveOperatorContractDocumentGenerator,
   autoGenerateContractOnConfirmed: AUTO_GENERATE_CONTRACT_OPTIONS,
 })
 
@@ -290,13 +273,7 @@ export const app = createApp<CloudflareBindings>({
   // run `wrangler kv namespace create WORKFLOW_MANIFESTS` to provision
   // the bindings; without them, bootstrap fails with a clear error.
   workflows: {
-    driver: (bindings: unknown) => {
-      const env = bindings as CloudflareBindings
-      return createCloudflareEdgeDriver({
-        orchestratorNamespace: env.WORKFLOW_RUN_DO,
-        manifestKv: env.WORKFLOW_MANIFESTS,
-      })
-    },
+    driver: createOperatorWorkflowDriver,
   },
   publicPaths: [
     "/v1/public/customer-portal/contact-exists",
@@ -446,10 +423,7 @@ export const app = createApp<CloudflareBindings>({
     hono.post("/v1/admin/bookings/:bookingId/rebuild-tax-lines", async (c) => {
       const bookingId = c.req.param("bookingId")
       try {
-        const result = await rebuildBookingItemTaxLines(
-          c.get("db") as unknown as PostgresJsDatabase,
-          bookingId,
-        )
+        const result = await rebuildBookingItemTaxLines(operatorPostgresDb(c.get("db")), bookingId)
         return c.json({ data: result })
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)
