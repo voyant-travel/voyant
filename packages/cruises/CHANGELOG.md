@@ -1,5 +1,19 @@
 # @voyantjs/cruises
 
+## 0.85.0
+
+### Minor Changes
+
+- d8ec16f: Align the external cruise adapter contract for Connect-backed inventory by preserving full SourceRef route keys, passenger composition, external pricing terms, and booking snapshots.
+
+### Patch Changes
+
+- @voyantjs/bookings@0.85.0
+- @voyantjs/catalog@0.85.0
+- @voyantjs/core@0.85.0
+- @voyantjs/db@0.85.0
+- @voyantjs/hono@0.85.0
+
 ## 0.84.4
 
 ### Patch Changes
