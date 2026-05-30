@@ -4,7 +4,7 @@ import { bookingPaymentSchedules } from "@voyantjs/finance/schema"
 import type { AutoGenerateContractOptions } from "@voyantjs/legal"
 import { asc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { readPolicySourceFromInternalNotes } from "./booking-schedule"
+import { readPolicySourceFromInternalNotes } from "./booking-payment-policy-runtime"
 import { getOperatorPaymentInstructions, getOperatorProfile } from "./settings"
 
 export const DEFAULT_CONTRACT_SERIES_NAME = "customer-contracts"
