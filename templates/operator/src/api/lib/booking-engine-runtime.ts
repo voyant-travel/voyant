@@ -36,6 +36,7 @@ import {
   type SourceAdapterRegistry,
   type TravelerFieldRequirement,
 } from "@voyantjs/catalog/booking-engine"
+import { createVoyantConnectSourceAdapter } from "@voyantjs/connect-adapter"
 import { cruisesBookingService } from "@voyantjs/cruises"
 import { createCruiseBookingHandler } from "@voyantjs/cruises/booking-engine"
 import { getCruiseContent } from "@voyantjs/cruises/service-content"
@@ -81,6 +82,7 @@ export function getBookingEngineRegistry(env: BookingEngineEnv): SourceAdapterRe
     if (env.CATALOG_DEMO_API_URL) {
       registry.register(createDemoCatalogAdapter({ baseUrl: env.CATALOG_DEMO_API_URL }))
     }
+    registerVoyantConnectAdapter(registry, env)
     _registry = registry
   }
   return _registry
@@ -584,6 +586,49 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
 
 export interface BookingEngineEnv {
   CATALOG_DEMO_API_URL?: string
+  VOYANT_API_KEY?: string
+  VOYANT_CLOUD_API_KEY?: string
+  VOYANT_CONNECT_API_KEY?: string
+  VOYANT_CONNECT_API_URL?: string
+  VOYANT_CONNECT_MARKET?: string
+  VOYANT_CONNECT_OPERATOR_ID?: string
+  VOYANT_CONNECT_SYNC_LIMIT?: string
+}
+
+function registerVoyantConnectAdapter(
+  registry: SourceAdapterRegistry,
+  env: BookingEngineEnv,
+): void {
+  const apiKey = env.VOYANT_API_KEY ?? env.VOYANT_CONNECT_API_KEY ?? env.VOYANT_CLOUD_API_KEY
+  const operatorId = env.VOYANT_CONNECT_OPERATOR_ID
+  if (!apiKey && !operatorId) return
+
+  if (!apiKey || !operatorId) {
+    console.warn(
+      "[booking-engine] incomplete Voyant Connect config; set VOYANT_API_KEY, " +
+        "and VOYANT_CONNECT_OPERATOR_ID to enable it.",
+    )
+    return
+  }
+
+  registry.register(
+    createVoyantConnectSourceAdapter({
+      connect: {
+        apiKey,
+        operatorId,
+        baseUrl: env.VOYANT_CONNECT_API_URL,
+      },
+      operatorId,
+      market: env.VOYANT_CONNECT_MARKET,
+      discoverLimit: positiveInteger(env.VOYANT_CONNECT_SYNC_LIMIT) ?? 500,
+    }),
+  )
+}
+
+function positiveInteger(value: string | undefined): number | undefined {
+  if (!value) return undefined
+  const parsed = Number.parseInt(value, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
 }
 
 async function persistBookingCreateTaxLines(

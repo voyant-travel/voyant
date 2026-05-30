@@ -8,6 +8,8 @@ import {
 import type { Trip, TripCheckoutInput, TripCheckoutResult } from "@voyantjs/travel-composer"
 import type { Context } from "hono"
 
+import { resolveVoyantApiKey } from "../lib/voyant-cloud"
+
 interface TripCheckoutAllocation {
   componentId: string
   kind: string
@@ -252,9 +254,14 @@ async function quoteFx(
     return { rate: 1, quotedAt: new Date().toISOString(), validUntil: null }
   }
 
-  const env = c.env as { VOYANT_CLOUD_API_KEY?: string; VOYANT_CLOUD_API_URL?: string }
-  if (!env.VOYANT_CLOUD_API_KEY) {
-    throw new Error("trip_checkout_fx_requires_voyant_cloud_api_key")
+  const env = c.env as {
+    VOYANT_API_KEY?: string
+    VOYANT_CLOUD_API_KEY?: string
+    VOYANT_CLOUD_API_URL?: string
+  }
+  const apiKey = resolveVoyantApiKey(env)
+  if (!apiKey) {
+    throw new Error("trip_checkout_fx_requires_voyant_api_key")
   }
 
   const baseUrl = (env.VOYANT_CLOUD_API_URL ?? "https://api.voyantjs.com").replace(/\/$/, "")
@@ -266,7 +273,7 @@ async function quoteFx(
   )
   const response = await fetch(url, {
     headers: {
-      authorization: `Bearer ${env.VOYANT_CLOUD_API_KEY}`,
+      authorization: `Bearer ${apiKey}`,
       "x-voyant-sdk": "voyant-operator-travel-composer",
     },
   })

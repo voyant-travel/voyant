@@ -96,6 +96,7 @@ export function mountOperatorMediaUploadRoutes(hono: Hono<OperatorMediaUploadRou
 
   hono.post("/v1/uploads/video", async (c) => {
     const body = await c.req.json<{
+      fileSize: number
       maxDurationSeconds: number
       name?: string | null
       requireSignedUrls?: boolean

@@ -32,8 +32,10 @@ interface CloudflareBindings {
   VOYANT_CLOUD_DEPLOYMENT_ID?: string
   VOYANT_CLOUD_ENVIRONMENT?: string
 
-  // Voyant Cloud (canonical email/sms/verify/vault provider)
-  VOYANT_CLOUD_API_KEY: string
+  // Voyant API (canonical email/sms/verify/vault/connect provider)
+  VOYANT_API_KEY: string
+  /** Legacy alias for VOYANT_API_KEY. */
+  VOYANT_CLOUD_API_KEY?: string
   VOYANT_CLOUD_API_URL?: string
   VOYANT_CLOUD_VAULT_SLUG?: string
   EMAIL_FROM: string
@@ -145,6 +147,14 @@ interface CloudflareBindings {
    * replacing the adapter in `src/api/flights.ts`.
    */
   FLIGHTS_DEMO_API_URL?: string
+
+  // Voyant Connect source adapter. Uses VOYANT_API_KEY for authentication.
+  VOYANT_CONNECT_API_URL?: string
+  VOYANT_CONNECT_OPERATOR_ID?: string
+  VOYANT_CONNECT_MARKET?: string
+  VOYANT_CONNECT_SYNC_LIMIT?: string
+  /** Legacy alias for VOYANT_API_KEY. */
+  VOYANT_CONNECT_API_KEY?: string
 
   // Manual bank-transfer block rendered on the public payment landing page.
   // Leave BENEFICIARY + IBAN empty to hide the bank-transfer tab. Currency

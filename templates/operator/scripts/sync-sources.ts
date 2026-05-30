@@ -12,14 +12,20 @@
  * Env required:
  *   TYPESENSE_HOST            — e.g. http://localhost:8108
  *   TYPESENSE_ADMIN_API_KEY   — admin key (or TYPESENSE_API_KEY)
- *   CATALOG_DEMO_API_URL      — the demo upstream's URL when the demo
- *                               adapter should participate
+ *   DATABASE_URL              — catalog DB where sourced-entry rows are upserted
+ *
+ * Configure at least one source adapter:
+ *   CATALOG_DEMO_API_URL      — demo upstream URL
+ *   VOYANT_API_KEY            — Voyant API key, used for Connect + embeddings
+ *   VOYANT_CONNECT_OPERATOR_ID
  *
  * Env optional:
- *   VOYANT_CLOUD_API_KEY      — when set, projections get a
- *                               `text_embedding` vector via the Voyant
- *                               Cloud Gemini gateway. Without it,
- *                               sourced rows are keyword-only.
+ *   VOYANT_CONNECT_API_URL
+ *   VOYANT_CONNECT_MARKET
+ *   VOYANT_CONNECT_SYNC_LIMIT
+ *   VOYANT_CATALOG_EMBEDDINGS — set to `false` to skip sync-time embeddings
+ *   VOYANT_CLOUD_API_KEY      — legacy alias for VOYANT_API_KEY
+ *   VOYANT_CONNECT_API_KEY    — legacy alias for VOYANT_API_KEY
  */
 
 import { accommodationCatalogPolicy } from "@voyantjs/accommodations/catalog-policy"
@@ -40,6 +46,8 @@ import {
 } from "@voyantjs/catalog/booking-engine"
 import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs/catalog-rag"
 import { charterCatalogPolicy } from "@voyantjs/charters/catalog-policy"
+import { createVoyantConnectSourceAdapter } from "@voyantjs/connect-adapter"
+import { createVoyantConnectClient } from "@voyantjs/connect-sdk"
 import { cruiseCatalogPolicy } from "@voyantjs/cruises/catalog-policy"
 import { extrasCatalogPolicy } from "@voyantjs/extras/catalog-policy"
 import { createDemoCatalogAdapter } from "@voyantjs/plugin-catalog-demo"
@@ -56,12 +64,23 @@ config({ path: ".dev.vars", override: true })
 
 const typesenseHost = process.env.TYPESENSE_HOST
 const typesenseKey = process.env.TYPESENSE_ADMIN_API_KEY ?? process.env.TYPESENSE_API_KEY
-const cloudApiKey = process.env.VOYANT_CLOUD_API_KEY
+const cloudApiKey =
+  process.env.VOYANT_CATALOG_EMBEDDINGS === "false"
+    ? undefined
+    : (process.env.VOYANT_API_KEY ?? process.env.VOYANT_CLOUD_API_KEY)
 const cloudApiUrl = (process.env.VOYANT_CLOUD_API_URL ?? "https://api.voyantjs.com").replace(
   /\/$/,
   "",
 )
 const catalogDemoUrl = process.env.CATALOG_DEMO_API_URL
+const voyantConnectApiKey =
+  process.env.VOYANT_API_KEY ??
+  process.env.VOYANT_CONNECT_API_KEY ??
+  process.env.VOYANT_CLOUD_API_KEY
+const voyantConnectApiUrl = process.env.VOYANT_CONNECT_API_URL
+const voyantConnectMarket = process.env.VOYANT_CONNECT_MARKET
+const voyantConnectOperatorId = process.env.VOYANT_CONNECT_OPERATOR_ID
+const voyantConnectSyncLimit = process.env.VOYANT_CONNECT_SYNC_LIMIT
 const databaseUrl = process.env.DATABASE_URL
 
 if (!typesenseHost) throw new Error("TYPESENSE_HOST is not set")
@@ -80,8 +99,40 @@ const registry = createSourceAdapterRegistry()
 if (catalogDemoUrl) {
   registry.register(createDemoCatalogAdapter({ baseUrl: catalogDemoUrl }))
 }
-// Add other adapters here as they ship: voyant-connect, hotelbeds, etc.
-// registry.register(createVoyantConnectAdapter({ ... }))
+if (voyantConnectApiKey || voyantConnectOperatorId) {
+  if (!voyantConnectApiKey || !voyantConnectOperatorId) {
+    console.warn(
+      "[sync-sources] incomplete Voyant Connect config; set VOYANT_API_KEY, " +
+        "and VOYANT_CONNECT_OPERATOR_ID to enable it.",
+    )
+  } else {
+    const client = createVoyantConnectClient({
+      apiKey: voyantConnectApiKey,
+      operatorId: voyantConnectOperatorId,
+      baseUrl: voyantConnectApiUrl,
+    })
+    const connections = (await client.connections.list(voyantConnectOperatorId)).filter(
+      (connection) => connection.status === "active",
+    )
+    if (connections.length === 0) {
+      console.warn(
+        `[sync-sources] Voyant Connect has no active connections for operator ${voyantConnectOperatorId}`,
+      )
+    }
+    for (const connection of connections) {
+      registry.register(
+        connection.id,
+        createVoyantConnectSourceAdapter({
+          client,
+          operatorId: voyantConnectOperatorId,
+          sourceProvider: connection.providerKey ?? undefined,
+          market: voyantConnectMarket,
+          discoverLimit: positiveInteger(voyantConnectSyncLimit) ?? 500,
+        }),
+      )
+    }
+  }
+}
 
 const adapterKinds = registry.kinds()
 if (adapterKinds.length === 0) {
@@ -210,4 +261,10 @@ function composeMerchandisableText(doc: IndexerDocument): string {
     }
   }
   return parts.join(" — ")
+}
+
+function positiveInteger(value: string | undefined): number | undefined {
+  if (!value) return undefined
+  const parsed = Number.parseInt(value, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
 }

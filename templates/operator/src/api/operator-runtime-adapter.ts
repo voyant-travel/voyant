@@ -2,6 +2,7 @@ import { createVoyantDataFxExchangeRateResolver } from "@voyantjs/finance"
 import type { VoyantDb } from "@voyantjs/hono"
 import { createCloudflareEdgeDriver } from "@voyantjs/workflows-orchestrator-cloudflare"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { resolveVoyantApiKey } from "../lib/voyant-cloud"
 import {
   generateContractPdfForBooking,
   resolveContractDocumentGenerator,
@@ -50,8 +51,10 @@ export function resolveOperatorContractDocumentGenerator(bindings: unknown) {
 
 export function createOperatorInvoiceExchangeRateResolver(bindings: unknown) {
   const env = operatorBindings(bindings)
+  const apiKey = resolveVoyantApiKey(env)
+  if (!apiKey) throw new Error("VOYANT_API_KEY is not set")
   return createVoyantDataFxExchangeRateResolver({
-    apiKey: env.VOYANT_CLOUD_API_KEY,
+    apiKey,
     baseUrl: env.VOYANT_CLOUD_API_URL,
   })
 }

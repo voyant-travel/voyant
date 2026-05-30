@@ -1,5 +1,5 @@
-import { getVoyantCloudClient, type VoyantCloudEnv } from "@voyantjs/cloud-sdk"
 import { brochureBodyToHtml, type ProductBrochurePrinter } from "@voyantjs/products/tasks"
+import { getCloudClient, type VoyantApiEnv } from "./voyant-cloud"
 
 /**
  * Default brochure printer for this template.
@@ -9,8 +9,8 @@ import { brochureBodyToHtml, type ProductBrochurePrinter } from "@voyantjs/produ
  * exports alternatives like `createCloudflareBrowserProductBrochurePrinter`
  * (direct Cloudflare API) and `createBasicPdfProductBrochurePrinter` (pdf-lib).
  */
-export function createProductBrochurePrinter(env: VoyantCloudEnv): ProductBrochurePrinter {
-  const client = getVoyantCloudClient(env)
+export function createProductBrochurePrinter(env: VoyantApiEnv): ProductBrochurePrinter {
+  const client = getCloudClient(env)
 
   return async ({ template, context }) => {
     const body = await client.browser.pdf({

@@ -1,9 +1,5 @@
-import {
-  type CreateVideoUploadInput,
-  getVoyantCloudClient,
-  type VideoUploadTicket,
-  type VoyantCloudEnv,
-} from "@voyantjs/cloud-sdk"
+import type { CreateVideoUploadInput, VideoUploadTicket } from "@voyantjs/cloud-sdk"
+import { getCloudClient, type VoyantApiEnv } from "./voyant-cloud"
 
 /**
  * Default video upload handler for this template.
@@ -14,9 +10,9 @@ import {
  * with one that constructs the equivalent ticket.
  */
 export function createVideoUploadTicket(
-  env: VoyantCloudEnv,
+  env: VoyantApiEnv,
   input: CreateVideoUploadInput,
 ): Promise<VideoUploadTicket> {
-  const client = getVoyantCloudClient(env)
+  const client = getCloudClient(env)
   return client.video.videos.createUpload(input)
 }
