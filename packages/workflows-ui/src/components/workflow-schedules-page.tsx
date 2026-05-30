@@ -255,7 +255,7 @@ function ScheduleRow({
       <td className="px-3 py-2 text-xs text-muted-foreground">
         {formatNextRun(row, messages, rootMessages)}
       </td>
-      <td className="px-3 py-2 text-xs">{formatLastRun(lastRun, messages, rootMessages)}</td>
+      <td className="px-3 py-2 text-xs">{formatLastRun(lastRun, row, messages, rootMessages)}</td>
       <td className="px-3 py-2">
         <StatusPill row={row} envFlagDisabled={envFlagDisabled} messages={messages} />
       </td>
@@ -336,18 +336,48 @@ function formatNextRun(
 
 function formatLastRun(
   lastRun: WorkflowRun | null,
+  row: WorkflowScheduleSummary,
   messages: SchedulesMessages,
   rootMessages: WorkflowRunsUiMessages,
 ) {
-  if (!lastRun) return <span className="text-muted-foreground">{messages.lastRunNone}</span>
-  const relative = formatRelative(lastRun.startedAt, rootMessages)
-  const label = lastRunLabel(lastRun.status, relative, messages)
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <StatusIcon status={lastRun.status} />
-      {label}
-    </span>
-  )
+  if (lastRun) {
+    const relative = formatRelative(lastRun.startedAt, rootMessages)
+    const label = lastRunLabel(lastRun.status, relative, messages)
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <StatusIcon status={lastRun.status} />
+        {label}
+      </span>
+    )
+  }
+  if (row.lastError && row.lastFireAt !== undefined && row.lastFireAt !== null) {
+    const relative = formatRelative(new Date(row.lastFireAt).toISOString(), rootMessages)
+    return (
+      <span className="inline-flex items-center gap-1.5" title={row.lastError}>
+        <StatusIcon status="failed" />
+        {messages.lastRunFailed(relative)}
+      </span>
+    )
+  }
+  if (row.lastSuccessfulRunAt !== undefined && row.lastSuccessfulRunAt !== null) {
+    const relative = formatRelative(new Date(row.lastSuccessfulRunAt).toISOString(), rootMessages)
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <StatusIcon status="succeeded" />
+        {messages.lastRunSucceeded(relative)}
+      </span>
+    )
+  }
+  if (row.lastFireAt !== undefined && row.lastFireAt !== null) {
+    const relative = formatRelative(new Date(row.lastFireAt).toISOString(), rootMessages)
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+        {messages.lastFireRecorded(relative)}
+      </span>
+    )
+  }
+  return <span className="text-muted-foreground">{messages.lastRunNone}</span>
 }
 
 function lastRunLabel(

@@ -1,20 +1,23 @@
 // HTTP handler for `/api/schedules/:env`. Reads the registered manifest
 // for the requested environment, projects each workflow's schedule blocks
-// into a flat list, and computes `nextRun` per entry via the same cron /
-// every / at logic the live scheduler uses.
-//
-// Aggregate "lastRun" is intentionally out of scope here — runs in the
-// Cloudflare orchestrator live in per-run Durable Objects, indexed by
-// runId, with no list-by-workflow path. The UI is expected to fetch
-// last-run state separately from the template-side `workflow-runs`
-// admin API (`/v1/admin/workflow-runs?workflowName=…&limit=1`).
+// into a flat list, computes `nextRun` per entry via the same cron / every /
+// at logic the live scheduler uses, and optionally merges persisted scheduler
+// dispatch state when a control plane provides it.
 
-import type { ManifestSchedule, WorkflowManifest } from "@voyantjs/workflows/protocol"
+import type { ManifestSchedule } from "@voyantjs/workflows/protocol"
 import { computeNextFire } from "@voyantjs/workflows-orchestrator"
 
 import type { CfManifestStore } from "./manifest-kv-store.js"
+import type { CfScheduleStateStore, ScheduleStateRecord } from "./schedule-state-store.js"
 
-const ALLOWED_ENVS = new Set(["production", "preview", "development"])
+const ALLOWED_ENVS = ["production", "preview", "development"] as const
+
+type AllowedEnvironment = (typeof ALLOWED_ENVS)[number]
+
+interface ManifestWorkflowScheduleEntry {
+  id: string
+  schedules: ManifestSchedule[]
+}
 
 export interface ScheduleHandlerDeps {
   manifestStore: CfManifestStore
@@ -28,6 +31,11 @@ export interface ScheduleHandlerDeps {
    * UIs can ignore the field.
    */
   schedulesEnabledByEnv?: boolean
+  /**
+   * Optional state store populated by the runtime scheduler/control plane.
+   * When present, each schedule row includes last-fire/run/error fields.
+   */
+  scheduleStateStore?: CfScheduleStateStore
   now?: () => number
   logger?: (level: "info" | "warn" | "error", msg: string, data?: object) => void
 }
@@ -45,6 +53,18 @@ export interface ScheduleSummary {
    */
   enabled: boolean
   disabledReason?: "registration_disabled" | "env_filtered"
+  /** Epoch millis of the last scheduler dispatch attempt, when known. */
+  lastFireAt?: number | null
+  /** Run id produced by the last scheduler dispatch attempt, when known. */
+  lastRunId?: string | null
+  /** Last scheduler dispatch/lock error, when known. */
+  lastError?: string | null
+  /** Epoch millis until which this schedule is locked, when known. */
+  lockedUntil?: number | null
+  /** Epoch millis of the last successful scheduled run, when known. */
+  lastSuccessfulRunAt?: number | null
+  /** Epoch millis when the persisted scheduler state was last updated. */
+  stateUpdatedAt?: number | null
 }
 
 export interface ScheduleListResponse {
@@ -62,10 +82,10 @@ export async function handleGetSchedules(
   environment: string,
   deps: ScheduleHandlerDeps,
 ): Promise<Response> {
-  if (!ALLOWED_ENVS.has(environment)) {
+  if (!isAllowedEnvironment(environment)) {
     return json(400, {
       error: "invalid_environment",
-      message: `environment must be one of ${[...ALLOWED_ENVS].join(", ")}`,
+      message: `environment must be one of ${ALLOWED_ENVS.join(", ")}`,
     })
   }
 
@@ -75,16 +95,14 @@ export async function handleGetSchedules(
   }
 
   const now = deps.now ? deps.now() : Date.now()
-  const manifest = envelope.manifest as unknown as WorkflowManifest
   const data: ScheduleSummary[] = []
 
-  for (const workflow of manifest.workflows ?? []) {
-    const schedules = Array.isArray(workflow.schedules) ? workflow.schedules : []
-    schedules.forEach((schedule, index) => {
+  for (const workflow of readManifestWorkflows(envelope.manifest)) {
+    workflow.schedules.forEach((schedule, index) => {
       const scheduleId = `${envelope.versionId}:${workflow.id}:${schedule.name ?? index}`
       const registrationDisabled = schedule.enabled === false
       const envFiltered = Array.isArray(schedule.environments)
-        ? !schedule.environments.includes(environment as never)
+        ? !schedule.environments.includes(environment)
         : false
 
       let nextRunAt: number | null = null
@@ -120,6 +138,22 @@ export async function handleGetSchedules(
     })
   }
 
+  if (deps.scheduleStateStore) {
+    const scheduleIds = data.map((row) => row.scheduleId)
+    let states = new Map<string, ScheduleStateRecord>()
+    try {
+      states = await deps.scheduleStateStore.getStates(environment, scheduleIds)
+    } catch (err) {
+      deps.logger?.("warn", "schedules: cannot load scheduler state", {
+        environment,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
+    for (const row of data) {
+      attachState(row, states.get(row.scheduleId))
+    }
+  }
+
   const response: ScheduleListResponse = {
     environment,
     versionId: envelope.versionId,
@@ -129,6 +163,35 @@ export async function handleGetSchedules(
       : {}),
   }
   return json(200, response)
+}
+
+function isAllowedEnvironment(value: string): value is AllowedEnvironment {
+  return ALLOWED_ENVS.includes(value as AllowedEnvironment)
+}
+
+function readManifestWorkflows(manifest: Record<string, unknown>): ManifestWorkflowScheduleEntry[] {
+  const workflows = manifest.workflows
+  if (!Array.isArray(workflows)) return []
+  return workflows.flatMap((workflow): ManifestWorkflowScheduleEntry[] => {
+    if (!isRecord(workflow) || typeof workflow.id !== "string") return []
+    const schedules = Array.isArray(workflow.schedules)
+      ? workflow.schedules.filter(isManifestSchedule)
+      : []
+    return [{ id: workflow.id, schedules }]
+  })
+}
+
+function isManifestSchedule(value: unknown): value is ManifestSchedule {
+  return isRecord(value)
+}
+
+function attachState(row: ScheduleSummary, state: ScheduleStateRecord | undefined): void {
+  row.lastFireAt = state?.lastFireAt ?? null
+  row.lastRunId = state?.lastRunId ?? null
+  row.lastError = state?.lastError ?? null
+  row.lockedUntil = state?.lockedUntil ?? null
+  row.lastSuccessfulRunAt = state?.lastSuccessfulRunAt ?? null
+  row.stateUpdatedAt = state?.updatedAt ?? null
 }
 
 function json(status: number, body: unknown): Response {
@@ -141,4 +204,8 @@ function json(status: number, body: unknown): Response {
       "access-control-allow-headers": "content-type, x-voyant-protocol",
     },
   })
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null
 }

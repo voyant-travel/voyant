@@ -87,6 +87,11 @@ needed for `runtime: "node"` steps end-to-end:
    `<projectId>/<workflowVersion>/container.mjs` artifacts.
 4. **`BUNDLE_HASHES`** — KV namespace that stores each bundle's
    deploy-time SHA-256, keyed `<projectId>:<workflowVersion>`.
+5. **`WORKFLOW_MANIFESTS`** — optional KV namespace storing the active
+   manifest per environment for `/api/manifests`, `/api/events`, and
+   `/api/schedules/:env`.
+6. **`WORKFLOW_SCHEDULE_STATE`** — optional KV namespace storing
+   schedule fire/run/error state exposed on `/api/schedules/:env`.
 
 ### Who actually calls the container?
 

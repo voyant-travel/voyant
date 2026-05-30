@@ -23,6 +23,7 @@ import { handleIngestEvent } from "./event-handler.js"
 import { handleGetManifest, handleRegisterManifest } from "./manifest-handler.js"
 import type { CfManifestStore } from "./manifest-kv-store.js"
 import { handleGetSchedules } from "./schedule-handler.js"
+import type { CfScheduleStateStore } from "./schedule-state-store.js"
 
 const DEFAULT_TENANT_META = {
   tenantId: "default",
@@ -68,6 +69,11 @@ export interface WorkerFetchDeps<Id = unknown> {
    * When omitted, the schedules response leaves the flag out.
    */
   schedulesEnabledByEnv?: boolean
+  /**
+   * Optional persisted scheduler execution state read by
+   * `/api/schedules/:env`.
+   */
+  scheduleStateStore?: CfScheduleStateStore
   /**
    * Tenant metadata stamped on event-triggered runs. Defaults to
    * `{ tenantId: "default", projectId: "default", organizationId: "default" }`.
@@ -139,6 +145,7 @@ export async function handleWorkerRequest<Id>(
       return handleGetSchedules(env, {
         manifestStore: deps.manifestStore,
         schedulesEnabledByEnv: deps.schedulesEnabledByEnv,
+        scheduleStateStore: deps.scheduleStateStore,
         now: deps.now,
         logger: deps.logger,
       })
@@ -176,7 +183,31 @@ export async function handleWorkerRequest<Id>(
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ ...publicPayload, runId }),
     })
-    return forwardToRunDO(runId, forward, deps)
+    const fireAt = deps.now ? deps.now() : Date.now()
+    const scheduleTrigger = getScheduleTrigger(publicPayload)
+    try {
+      const triggerRes = await forwardToRunDO(runId, forward, deps)
+      const runResult = triggerRes.ok ? await safeResponseJson(triggerRes.clone()) : undefined
+      const runError = triggerRes.ok
+        ? failedRunError(runResult)
+        : `do_returned_${triggerRes.status}`
+      await recordScheduleDispatch(deps, {
+        scheduleTrigger,
+        runId: triggerRes.ok ? runId : null,
+        fireAt,
+        error: runError,
+        lastSuccessfulRunAt: completedRunAt(runResult),
+      })
+      return triggerRes
+    } catch (err) {
+      await recordScheduleDispatch(deps, {
+        scheduleTrigger,
+        runId: null,
+        fireAt,
+        error: errMsg(err),
+      })
+      throw err
+    }
   }
 
   // Everything below operates on a specific runId.
@@ -499,6 +530,108 @@ function sanitizePublicTriggerPayload(payload: Record<string, unknown>): Record<
     ...publicPayload
   } = payload
   return publicPayload
+}
+
+function getScheduleTrigger(payload: Record<string, unknown>): {
+  environment: "production" | "preview" | "development"
+  scheduleId: string
+} | null {
+  const triggeredBy = payload.triggeredBy
+  const environment = payload.environment ?? "development"
+  if (
+    typeof triggeredBy !== "object" ||
+    triggeredBy === null ||
+    !("kind" in triggeredBy) ||
+    triggeredBy.kind !== "schedule" ||
+    !("scheduleId" in triggeredBy) ||
+    typeof triggeredBy.scheduleId !== "string" ||
+    triggeredBy.scheduleId.length === 0 ||
+    (environment !== "production" && environment !== "preview" && environment !== "development")
+  ) {
+    return null
+  }
+  return {
+    environment,
+    scheduleId: triggeredBy.scheduleId,
+  }
+}
+
+async function recordScheduleDispatch<Id>(
+  deps: WorkerFetchDeps<Id>,
+  args: {
+    scheduleTrigger: ReturnType<typeof getScheduleTrigger>
+    runId: string | null
+    fireAt: number
+    error: string | null
+    lastSuccessfulRunAt?: number
+  },
+): Promise<void> {
+  if (!deps.scheduleStateStore || !args.scheduleTrigger) return
+  try {
+    const existing = (
+      await deps.scheduleStateStore.getStates(args.scheduleTrigger.environment, [
+        args.scheduleTrigger.scheduleId,
+      ])
+    ).get(args.scheduleTrigger.scheduleId)
+    await deps.scheduleStateStore.putState(args.scheduleTrigger.environment, {
+      ...existing,
+      scheduleId: args.scheduleTrigger.scheduleId,
+      environment: args.scheduleTrigger.environment,
+      lastFireAt: args.fireAt,
+      lastRunId: args.runId,
+      lastError: args.error,
+      ...(args.lastSuccessfulRunAt !== undefined
+        ? { lastSuccessfulRunAt: args.lastSuccessfulRunAt }
+        : {}),
+      updatedAt: deps.now ? deps.now() : Date.now(),
+    })
+  } catch (err) {
+    deps.logger?.("warn", "schedules: cannot persist scheduler dispatch state", {
+      environment: args.scheduleTrigger.environment,
+      scheduleId: args.scheduleTrigger.scheduleId,
+      error: errMsg(err),
+    })
+  }
+}
+
+async function safeResponseJson(response: Response): Promise<unknown> {
+  try {
+    return await response.json()
+  } catch {
+    return undefined
+  }
+}
+
+function completedRunAt(value: unknown): number | undefined {
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "status" in value &&
+    value.status === "completed" &&
+    "completedAt" in value &&
+    typeof value.completedAt === "number" &&
+    Number.isFinite(value.completedAt)
+  ) {
+    return value.completedAt
+  }
+  return undefined
+}
+
+function failedRunError(value: unknown): string | null {
+  if (typeof value !== "object" || value === null || !("status" in value)) return null
+  const status = value.status
+  if (status !== "failed" && status !== "compensation_failed") return null
+  const error = "error" in value ? value.error : undefined
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string" &&
+    error.message.length > 0
+  ) {
+    return error.message
+  }
+  return `run_${status}`
 }
 
 function json(status: number, body: unknown): Response {

@@ -83,6 +83,12 @@ export {
   type ScheduleListResponse,
   type ScheduleSummary,
 } from "./schedule-handler.js"
+export {
+  type CfScheduleStateStore,
+  type CreateKvScheduleStateStoreOptions,
+  createKvScheduleStateStore,
+  type ScheduleStateRecord,
+} from "./schedule-state-store.js"
 export * from "./types.js"
 export {
   type DurableObjectNamespaceLike,

@@ -136,6 +136,7 @@ export const workflowRunsUiRo: WorkflowRunsUiMessages = {
     lastRunFailed: (relative) => `esuata acum ${relative}`,
     lastRunRunning: "in rulare",
     lastRunCancelled: (relative) => `anulata acum ${relative}`,
+    lastFireRecorded: (relative) => `declansata acum ${relative}`,
     lastRunNone: "nu a rulat niciodata",
   },
 }
