@@ -7,6 +7,22 @@ export { booleanQueryParam, typeIdSchema, z }
 export const cruiseTypeSchema = z.enum(["ocean", "river", "expedition", "coastal"])
 export const cruiseStatusSchema = z.enum(["draft", "awaiting_review", "live", "archived"])
 export const cruiseSourceSchema = z.enum(["local", "external"])
+export const cruiseVoyageGroupKindSchema = z.enum([
+  "combination",
+  "grand_voyage",
+  "world_cruise",
+  "cruise_tour",
+])
+export const cruiseVoyageSegmentKindSchema = z.enum([
+  "cruise",
+  "land",
+  "hotel",
+  "transfer",
+  "rail",
+  "air",
+  "other",
+])
+export const cruiseVoyageSegmentRoleSchema = z.enum(["core", "pre_extension", "post_extension"])
 
 export const shipTypeSchema = z.enum([
   "ocean",

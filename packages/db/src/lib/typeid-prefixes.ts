@@ -312,6 +312,8 @@ export const PREFIXES = {
 
   // --- CRUISES ---
   cruises: "cru",
+  cruise_voyage_groups: "crvg",
+  cruise_voyage_group_segments: "crvs",
   cruise_sailings: "crsl",
   cruise_ships: "crsh",
   cruise_decks: "crdk",

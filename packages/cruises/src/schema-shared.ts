@@ -11,6 +11,29 @@ export const cruiseStatusEnum = pgEnum("cruise_status", [
 
 export const cruiseSourceEnum = pgEnum("cruise_source", ["local", "external"])
 
+export const cruiseVoyageGroupKindEnum = pgEnum("cruise_voyage_group_kind", [
+  "combination",
+  "grand_voyage",
+  "world_cruise",
+  "cruise_tour",
+])
+
+export const cruiseVoyageSegmentKindEnum = pgEnum("cruise_voyage_segment_kind", [
+  "cruise",
+  "land",
+  "hotel",
+  "transfer",
+  "rail",
+  "air",
+  "other",
+])
+
+export const cruiseVoyageSegmentRoleEnum = pgEnum("cruise_voyage_segment_role", [
+  "core",
+  "pre_extension",
+  "post_extension",
+])
+
 export const shipTypeEnum = pgEnum("cruise_ship_type", [
   "ocean",
   "river",
