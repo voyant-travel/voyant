@@ -1,5 +1,19 @@
 # @voyantjs/finance
 
+## 0.85.2
+
+### Patch Changes
+
+- Updated dependencies [2aac1f9]
+  - @voyantjs/action-ledger@0.85.2
+  - @voyantjs/bookings@0.85.2
+  - @voyantjs/core@0.85.2
+  - @voyantjs/db@0.85.2
+  - @voyantjs/hono@0.85.2
+  - @voyantjs/products@0.85.2
+  - @voyantjs/storage@0.85.2
+  - @voyantjs/utils@0.85.2
+
 ## 0.85.1
 
 ### Patch Changes

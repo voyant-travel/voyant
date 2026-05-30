@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/booking-requirements",
-  "version": "0.85.1",
+  "version": "0.85.2",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
