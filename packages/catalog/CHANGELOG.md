@@ -1,5 +1,17 @@
 # @voyantjs/catalog
 
+## 0.86.0
+
+### Minor Changes
+
+- ddf4a19: Add typed catalog search sort options and an optional storefront card projection for public listing pages.
+
+### Patch Changes
+
+- @voyantjs/core@0.86.0
+- @voyantjs/db@0.86.0
+- @voyantjs/hono@0.86.0
+
 ## 0.85.4
 
 ### Patch Changes
