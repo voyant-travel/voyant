@@ -1,5 +1,14 @@
 # @voyantjs/catalog-ui
 
+## 0.85.3
+
+### Patch Changes
+
+- 7f0970e: Expose cruise sourced-content sailing price summaries as `lowest_price_cents` integer minor units plus `currency`, and map cruise sailings directly into catalog UI departure prices.
+  - @voyantjs/catalog-react@0.85.3
+  - @voyantjs/i18n@0.85.3
+  - @voyantjs/ui@0.85.3
+
 ## 0.85.2
 
 ### Patch Changes
