@@ -1,5 +1,20 @@
 # @voyantjs/crm
 
+## 0.89.0
+
+### Minor Changes
+
+- ed45995: Rename CRM organization `vatNumber` to `taxId` and support exact organization lookup by tax id.
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.89.0
+- @voyantjs/core@0.89.0
+- @voyantjs/db@0.89.0
+- @voyantjs/hono@0.89.0
+- @voyantjs/identity@0.89.0
+- @voyantjs/utils@0.89.0
+
 ## 0.88.0
 
 ### Patch Changes
