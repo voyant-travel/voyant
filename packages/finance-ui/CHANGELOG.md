@@ -1,5 +1,18 @@
 # @voyantjs/finance-ui
 
+## 0.85.4
+
+### Patch Changes
+
+- bed4a3f: Expose invoice-from-booking due-date resolver hooks for schedule-derived documents and clamp overdue schedule dates in operator runtimes.
+- Updated dependencies [bed4a3f]
+  - @voyantjs/bookings-ui@0.85.4
+  - @voyantjs/finance@0.85.4
+  - @voyantjs/finance-react@0.85.4
+  - @voyantjs/i18n@0.85.4
+  - @voyantjs/suppliers-ui@0.85.4
+  - @voyantjs/ui@0.85.4
+
 ## 0.85.3
 
 ### Patch Changes

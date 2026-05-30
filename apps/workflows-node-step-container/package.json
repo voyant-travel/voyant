@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/workflows-node-step-container",
-  "version": "0.85.3",
+  "version": "0.85.4",
   "description": "Reference Node container image for executing `runtime: \"node\"` steps. Deployed alongside the orchestrator as a Cloudflare Container.",
   "license": "Apache-2.0",
   "repository": {
