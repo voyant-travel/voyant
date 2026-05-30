@@ -119,6 +119,7 @@ export type WorkflowRunsUiMessages = {
     lastRunFailed: (relative: string) => string
     lastRunRunning: string
     lastRunCancelled: (relative: string) => string
+    lastFireRecorded: (relative: string) => string
     lastRunNone: string
   }
 }

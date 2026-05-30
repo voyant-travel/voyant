@@ -65,6 +65,10 @@ export class WorkflowRunDO implements DurableObject {
 |---|---|
 | `POST /api/runs` | Trigger a new run. Body: `{ workflowId, workflowVersion, input, tenantMeta, runId? }`. |
 | `GET  /api/runs/:id` | Fetch the current `RunRecord`. |
+| `POST /api/manifests` | Register a workflow manifest for an environment when `manifestStore` is configured. |
+| `GET  /api/manifests/:env` | Fetch the current workflow manifest for an environment. |
+| `GET  /api/schedules/:env` | List manifest schedules with computed `nextRunAt`; when `scheduleStateStore` is configured, rows also include `lastFireAt`, `lastRunId`, `lastError`, `lockedUntil`, and `lastSuccessfulRunAt`. |
+| `POST /api/events` | Route an event through the registered manifest and trigger matching workflows. |
 | `POST /api/runs/:id/resume` | Start a new run from a failed parent run. Body: `{ input?, workflowId?, resumeFromStep?, seedResults?, runId?, tags?, triggeredByUserId? }`. |
 | `POST /api/runs/:id/events` | Inject an `EVENT` waitpoint resolution. |
 | `POST /api/runs/:id/signals` | Inject a `SIGNAL` waitpoint resolution. |

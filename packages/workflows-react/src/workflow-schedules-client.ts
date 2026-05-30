@@ -23,6 +23,18 @@ export interface WorkflowScheduleSummary {
   nextRunAt: number | null
   enabled: boolean
   disabledReason?: "registration_disabled" | "env_filtered"
+  /** Epoch millis of the last scheduler dispatch attempt, when known. */
+  lastFireAt?: number | null
+  /** Run id produced by the last scheduler dispatch attempt, when known. */
+  lastRunId?: string | null
+  /** Last scheduler dispatch/lock error, when known. */
+  lastError?: string | null
+  /** Epoch millis until which this schedule is locked, when known. */
+  lockedUntil?: number | null
+  /** Epoch millis of the last successful scheduled run, when known. */
+  lastSuccessfulRunAt?: number | null
+  /** Epoch millis when the persisted scheduler state was last updated. */
+  stateUpdatedAt?: number | null
 }
 
 export interface ListWorkflowSchedulesResponse {

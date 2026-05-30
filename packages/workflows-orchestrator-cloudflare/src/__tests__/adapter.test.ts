@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it } from "vitest"
 import {
   createDurableObjectRunStore,
   createInlineDispatcher,
+  createInMemoryKv,
+  createKvScheduleStateStore,
   createServiceBindingDispatcher,
   type DurableObjectNamespaceLike,
   type DurableObjectStorageLike,
@@ -293,6 +295,46 @@ describe("handleWorkerRequest (Worker → DO → tenant)", () => {
     const body = (await res.json()) as RunRecord
     expect(body.status).toBe("completed")
     expect(body.output).toEqual({ doubled: 42 })
+  })
+
+  it("records schedule dispatch state for scheduled triggers", async () => {
+    workflow<{ n: number }, { doubled: number }>({
+      id: "scheduled-double",
+      async run(input) {
+        return { doubled: input.n * 2 }
+      },
+    })
+    const runDO = inProcessRunDONamespace()
+    const scheduleStateStore = createKvScheduleStateStore({ kv: createInMemoryKv() })
+    const now = Date.UTC(2026, 4, 30, 11, 0, 0)
+
+    const res = await handleWorkerRequest(
+      new Request("https://orch/api/runs", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          workflowId: "scheduled-double",
+          workflowVersion: "v1",
+          input: { n: 21 },
+          tenantMeta,
+          environment: "production",
+          runId: "run_scheduled",
+          triggeredBy: { kind: "schedule", scheduleId: "v_1:scheduled-double:hourly" },
+        }),
+      }),
+      { runDO, scheduleStateStore, now: () => now },
+    )
+
+    expect(res.status).toBe(200)
+    const states = await scheduleStateStore.getStates("production", ["v_1:scheduled-double:hourly"])
+    expect(states.get("v_1:scheduled-double:hourly")).toMatchObject({
+      scheduleId: "v_1:scheduled-double:hourly",
+      environment: "production",
+      lastFireAt: now,
+      lastRunId: "run_scheduled",
+      lastError: null,
+      updatedAt: now,
+    })
   })
 
   it("parks a run on a waitpoint and serves GET /api/runs/:id", async () => {

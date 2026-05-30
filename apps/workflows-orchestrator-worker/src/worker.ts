@@ -36,6 +36,7 @@ import { Container } from "@cloudflare/containers"
 import { createBearerVerifier } from "@voyantjs/workflows/auth"
 import {
   createKvManifestStore,
+  createKvScheduleStateStore,
   createServiceBindingDispatcher,
   handleDurableObjectAlarm,
   handleDurableObjectRequest,
@@ -65,6 +66,12 @@ export interface Env {
    */
   WORKFLOW_MANIFESTS?: KVNamespace
   /**
+   * KV namespace storing schedule fire/run/error state keyed by schedule id.
+   * Optional — when unset, `/api/schedules/:env` only returns manifest
+   * projection fields.
+   */
+  WORKFLOW_SCHEDULE_STATE?: KVNamespace
+  /**
    * Comma-separated bearer tokens accepted on the public
    * `/api/runs/*` + `/api/events` + `/api/manifests*` surfaces. Unset =
    * no auth (fine for local dev, dangerous in production). A control
@@ -84,6 +91,9 @@ export default {
       verifyRequest: tokens.length > 0 ? createBearerVerifier(tokens) : undefined,
       manifestStore: env.WORKFLOW_MANIFESTS
         ? createKvManifestStore({ kv: env.WORKFLOW_MANIFESTS })
+        : undefined,
+      scheduleStateStore: env.WORKFLOW_SCHEDULE_STATE
+        ? createKvScheduleStateStore({ kv: env.WORKFLOW_SCHEDULE_STATE })
         : undefined,
     })
   },

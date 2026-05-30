@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest"
 
 import { createInMemoryKv, createKvManifestStore } from "../manifest-kv-store.js"
 import { handleGetSchedules, type ScheduleListResponse } from "../schedule-handler.js"
+import { createKvScheduleStateStore } from "../schedule-state-store.js"
 
 function makeManifest(
   versionId: string,
@@ -179,5 +180,57 @@ describe("handleGetSchedules", () => {
     const res = await handleGetSchedules("production", { manifestStore: store, now: () => NOW })
     const body = (await res.json()) as ScheduleListResponse
     expect(body.data[0]?.nextRunAt).toBeNull()
+  })
+
+  test("merges persisted scheduler state into schedule rows", async () => {
+    const manifestKv = createInMemoryKv()
+    const stateKv = createInMemoryKv()
+    const store = createKvManifestStore({ kv: manifestKv })
+    const scheduleStateStore = createKvScheduleStateStore({ kv: stateKv })
+    await store.registerManifest({
+      environment: "production",
+      versionId: "v_6",
+      manifest: makeManifest("v_6", [
+        { id: "wf.stateful", schedules: [{ cron: "0 * * * *", name: "hourly" }] },
+        { id: "wf.empty", schedules: [{ every: "30s" }] },
+      ]),
+    })
+    await scheduleStateStore.putState("production", {
+      scheduleId: "v_6:wf.stateful:hourly",
+      workflowId: "wf.stateful",
+      versionId: "v_6",
+      lastFireAt: NOW - 60_000,
+      lastRunId: "run_123",
+      lastError: "dispatch failed",
+      lockedUntil: NOW + 15_000,
+      lastSuccessfulRunAt: NOW - 120_000,
+      updatedAt: NOW - 30_000,
+    })
+
+    const res = await handleGetSchedules("production", {
+      manifestStore: store,
+      scheduleStateStore,
+      now: () => NOW,
+    })
+    const body = (await res.json()) as ScheduleListResponse
+    const stateful = body.data.find((row) => row.workflowId === "wf.stateful")
+    const empty = body.data.find((row) => row.workflowId === "wf.empty")
+
+    expect(stateful).toMatchObject({
+      lastFireAt: NOW - 60_000,
+      lastRunId: "run_123",
+      lastError: "dispatch failed",
+      lockedUntil: NOW + 15_000,
+      lastSuccessfulRunAt: NOW - 120_000,
+      stateUpdatedAt: NOW - 30_000,
+    })
+    expect(empty).toMatchObject({
+      lastFireAt: null,
+      lastRunId: null,
+      lastError: null,
+      lockedUntil: null,
+      lastSuccessfulRunAt: null,
+      stateUpdatedAt: null,
+    })
   })
 })

@@ -134,6 +134,7 @@ export const workflowRunsUiEn: WorkflowRunsUiMessages = {
     lastRunFailed: (relative) => `failed ${relative} ago`,
     lastRunRunning: "running",
     lastRunCancelled: (relative) => `cancelled ${relative} ago`,
+    lastFireRecorded: (relative) => `fired ${relative} ago`,
     lastRunNone: "never run",
   },
 }

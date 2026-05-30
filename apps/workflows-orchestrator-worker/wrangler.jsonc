@@ -81,6 +81,9 @@
   //                          Last 3 versions retained per environment via
   //                          `pruneToVersions`. KV's eventual consistency
   //                          is acceptable for the manifest read path.
+  //   WORKFLOW_SCHEDULE_STATE — persisted scheduler fire/run/error state
+  //                          keyed by schedule id and exposed by
+  //                          GET /api/schedules/:env when configured.
   "kv_namespaces": [
     {
       "binding": "BUNDLE_HASHES",
@@ -88,6 +91,10 @@
     },
     {
       "binding": "WORKFLOW_MANIFESTS",
+      "id": "replace-me-after-wrangler-kv-namespace-create"
+    },
+    {
+      "binding": "WORKFLOW_SCHEDULE_STATE",
       "id": "replace-me-after-wrangler-kv-namespace-create"
     }
   ],
