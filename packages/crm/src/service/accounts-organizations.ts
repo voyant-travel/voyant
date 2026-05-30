@@ -16,7 +16,10 @@ export const organizationAccountsService = {
     if (query.ownerId) conditions.push(eq(organizations.ownerId, query.ownerId))
     if (query.relation) conditions.push(eq(organizations.relation, query.relation))
     if (query.status) conditions.push(eq(organizations.status, query.status))
-    if (query.search) {
+    if (query.taxId) conditions.push(eq(organizations.taxId, query.taxId))
+    // Exact tax-id lookup is used for de-duplication; do not let a stale or
+    // fuzzy name search hide the matching organization.
+    if (query.search && !query.taxId) {
       const term = `%${query.search}%`
       conditions.push(
         or(

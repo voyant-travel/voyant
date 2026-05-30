@@ -58,6 +58,12 @@ export const customFieldTypeSchema = z.enum([
   "phone",
 ])
 
+const nullableTrimmedStringSchema = z
+  .string()
+  .nullable()
+  .optional()
+  .transform((value) => (typeof value === "string" ? value.trim() || null : value))
+
 export const organizationCoreSchema = z.object({
   name: z.string().min(1),
   legalName: z.string().nullable().optional(),
@@ -68,7 +74,7 @@ export const organizationCoreSchema = z.object({
     .optional()
     .or(z.literal(""))
     .transform((v) => v || null),
-  vatNumber: z.string().nullable().optional(),
+  taxId: nullableTrimmedStringSchema,
   industry: z.string().nullable().optional(),
   relation: relationTypeSchema.nullable().optional(),
   ownerId: z.string().nullable().optional(),
@@ -96,14 +102,21 @@ export const organizationListSortFieldSchema = z.enum([
 
 export const organizationListSortDirSchema = z.enum(["asc", "desc"])
 
-export const organizationListQuerySchema = paginationSchema.extend({
-  ownerId: z.string().optional(),
-  relation: relationTypeSchema.optional(),
-  status: recordStatusSchema.optional(),
-  search: z.string().optional(),
-  sortBy: organizationListSortFieldSchema.default("updatedAt"),
-  sortDir: organizationListSortDirSchema.default("desc"),
-})
+export const organizationListQuerySchema = paginationSchema
+  .extend({
+    ownerId: z.string().optional(),
+    relation: relationTypeSchema.optional(),
+    status: recordStatusSchema.optional(),
+    search: z.string().optional(),
+    taxId: z.string().optional(),
+    tax_id: z.string().optional(),
+    sortBy: organizationListSortFieldSchema.default("updatedAt"),
+    sortDir: organizationListSortDirSchema.default("desc"),
+  })
+  .transform(({ tax_id: taxIdSnake, ...query }) => ({
+    ...query,
+    taxId: query.taxId?.trim() || taxIdSnake?.trim() || undefined,
+  }))
 
 export const personCoreSchema = z.object({
   organizationId: z.string().nullable().optional(),

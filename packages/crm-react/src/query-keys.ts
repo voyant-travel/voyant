@@ -29,6 +29,7 @@ export type OrganizationsListSortDir = "asc" | "desc"
 
 export interface OrganizationsListFilters {
   search?: string | undefined
+  taxId?: string | undefined
   ownerId?: string | undefined
   relation?: string | undefined
   status?: string | undefined

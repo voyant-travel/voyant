@@ -156,6 +156,16 @@ describe("Organization list query", () => {
     expect(result.search).toBe("acme")
   })
 
+  it("accepts and trims taxId filter", () => {
+    const result = organizationListQuerySchema.parse({ taxId: " RO44255073 " })
+    expect(result.taxId).toBe("RO44255073")
+  })
+
+  it("accepts snake_case tax_id filter", () => {
+    const result = organizationListQuerySchema.parse({ tax_id: "44255073" })
+    expect(result.taxId).toBe("44255073")
+  })
+
   it("accepts ownerId filter", () => {
     const result = organizationListQuerySchema.parse({ ownerId: "user_123" })
     expect(result.ownerId).toBe("user_123")

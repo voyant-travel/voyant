@@ -66,7 +66,7 @@ export const organizations = pgTable(
     legalName: text("legal_name"),
     website: text("website"),
     /** Tax / VAT identification number — used for billing + e-invoicing. */
-    vatNumber: text("vat_number"),
+    taxId: text("tax_id"),
     industry: text("industry"),
     relation: relationTypeEnum("relation"),
     ownerId: text("owner_id"),
@@ -86,6 +86,7 @@ export const organizations = pgTable(
     index("idx_organizations_name").on(table.name),
     index("idx_organizations_owner").on(table.ownerId),
     index("idx_organizations_status").on(table.status),
+    index("idx_organizations_tax_id").on(table.taxId),
     index("idx_organizations_owner_updated").on(table.ownerId, table.updatedAt),
     index("idx_organizations_relation_updated").on(table.relation, table.updatedAt),
     index("idx_organizations_status_updated").on(table.status, table.updatedAt),

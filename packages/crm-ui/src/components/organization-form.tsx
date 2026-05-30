@@ -33,7 +33,7 @@ export interface OrganizationFormProps {
 interface FormState {
   name: string
   legalName: string
-  vatNumber: string
+  taxId: string
   website: string
   industry: string
   billingEmail: string
@@ -51,7 +51,7 @@ function initialState(mode: Mode): FormState {
     return {
       name: org.name,
       legalName: org.legalName ?? "",
-      vatNumber: org.vatNumber ?? "",
+      taxId: org.taxId ?? "",
       website: org.website ?? "",
       industry: org.industry ?? "",
       billingEmail: "",
@@ -67,7 +67,7 @@ function initialState(mode: Mode): FormState {
   return {
     name: "",
     legalName: "",
-    vatNumber: "",
+    taxId: "",
     website: "",
     industry: "",
     billingEmail: "",
@@ -84,7 +84,7 @@ function toPayload(state: FormState): CreateOrganizationInput {
   return {
     name: state.name.trim(),
     legalName: state.legalName.trim() || null,
-    vatNumber: state.vatNumber.trim() || null,
+    taxId: state.taxId.trim() || null,
     website: state.website.trim() || null,
     industry: state.industry.trim() || null,
   }
@@ -279,14 +279,8 @@ export function OrganizationForm({ mode, onSuccess, onCancel }: OrganizationForm
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="organization-vat-number">
-            {messages.organizationForm.fields.vatNumber}
-          </Label>
-          <Input
-            id="organization-vat-number"
-            value={state.vatNumber}
-            onChange={field("vatNumber")}
-          />
+          <Label htmlFor="organization-tax-id">{messages.organizationForm.fields.taxId}</Label>
+          <Input id="organization-tax-id" value={state.taxId} onChange={field("taxId")} />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="organization-website">{messages.organizationForm.fields.website}</Label>

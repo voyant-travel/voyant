@@ -965,7 +965,7 @@ export function BookingCreateForm({
         : billingOrganizationRecord
           ? {
               contactPartyType: "company",
-              contactTaxId: billingOrganizationRecord.vatNumber,
+              contactTaxId: billingOrganizationRecord.taxId,
               contactFirstName: billingOrganizationRecord.name,
               contactLastName: null,
               contactEmail: null,

@@ -81,6 +81,42 @@ describe.skipIf(!DB_AVAILABLE)("Account routes", () => {
       expect(body.total).toBe(2)
     })
 
+    it("finds organizations by exact tax id even when names do not match", async () => {
+      await app.request("/organizations", {
+        method: "POST",
+        ...json({
+          name: "Existing Travel Company",
+          legalName: "Existing Travel SRL",
+          taxId: "RO44255073",
+        }),
+      })
+      await app.request("/organizations", {
+        method: "POST",
+        ...json({ name: "Different Company", legalName: "Different SRL", taxId: "RO00000000" }),
+      })
+
+      const res = await app.request("/organizations?search=Missing&taxId=%20RO44255073%20", {
+        method: "GET",
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.data).toHaveLength(1)
+      expect(body.data[0]).toMatchObject({
+        name: "Existing Travel Company",
+        taxId: "RO44255073",
+      })
+
+      const byTaxId = await app.request("/organizations?tax_id=RO44255073", { method: "GET" })
+      expect(byTaxId.status).toBe(200)
+      const byTaxIdBody = await byTaxId.json()
+      expect(byTaxIdBody.data).toHaveLength(1)
+      expect(byTaxIdBody.data[0]).toMatchObject({
+        name: "Existing Travel Company",
+        taxId: "RO44255073",
+      })
+    })
+
     it("gets an organization by id", async () => {
       const createRes = await app.request("/organizations", {
         method: "POST",

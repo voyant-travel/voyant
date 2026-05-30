@@ -712,7 +712,7 @@ export function BookingBillingContextCard({
     ""
   const email = booking.contactEmail ?? person?.email ?? null
   const phone = booking.contactPhone ?? person?.phone ?? null
-  const taxId = booking.contactTaxId ?? organization?.vatNumber ?? null
+  const taxId = booking.contactTaxId ?? organization?.taxId ?? null
   const address = [
     booking.contactAddressLine1,
     booking.contactAddressLine2,

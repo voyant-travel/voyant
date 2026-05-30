@@ -54,7 +54,7 @@ export type CrmUiMessages = {
     fields: {
       name: string
       legalName: string
-      vatNumber: string
+      taxId: string
       website: string
       industry: string
       billingEmail: string

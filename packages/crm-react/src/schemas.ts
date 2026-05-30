@@ -74,7 +74,7 @@ export const organizationRecordSchema = z.object({
   name: z.string(),
   legalName: z.string().nullable(),
   website: z.string().nullable(),
-  vatNumber: z.string().nullable(),
+  taxId: z.string().nullable(),
   industry: z.string().nullable(),
   relation: z.string().nullable(),
   ownerId: z.string().nullable(),

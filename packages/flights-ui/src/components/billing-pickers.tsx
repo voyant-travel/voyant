@@ -157,7 +157,7 @@ export function BillingOrgPicker({ apply }: BillingOrgPickerProps) {
                     apply({
                       mode: "company",
                       companyName: org.name,
-                      ...(org.vatNumber ? { vatNumber: org.vatNumber } : {}),
+                      ...(org.taxId ? { vatNumber: org.taxId } : {}),
                       email: contactPoints.email ?? "",
                       ...(contactPoints.phone ? { phone: contactPoints.phone } : {}),
                       line1: address?.line1 ?? "",
