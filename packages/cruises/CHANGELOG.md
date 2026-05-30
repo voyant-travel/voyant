@@ -1,5 +1,19 @@
 # @voyantjs/cruises
 
+## 0.90.0
+
+### Minor Changes
+
+- 0cdd0ea: Add cruise pricing fields for compare-at prices, fare variants, explicit single pricing, and early-booking metadata.
+
+### Patch Changes
+
+- @voyantjs/bookings@0.90.0
+- @voyantjs/catalog@0.90.0
+- @voyantjs/core@0.90.0
+- @voyantjs/db@0.90.0
+- @voyantjs/hono@0.90.0
+
 ## 0.89.0
 
 ### Patch Changes

@@ -1,5 +1,15 @@
 # @voyantjs/pricing
 
+## 0.90.0
+
+### Patch Changes
+
+- @voyantjs/availability@0.90.0
+- @voyantjs/core@0.90.0
+- @voyantjs/db@0.90.0
+- @voyantjs/hono@0.90.0
+- @voyantjs/products@0.90.0
+
 ## 0.89.0
 
 ### Patch Changes
