@@ -529,6 +529,54 @@ describe("financeService.createInvoiceFromBooking number allocation", () => {
     ])
   })
 
+  it("uses service date fields for direct payment schedule line descriptions", async () => {
+    const { db, insertedInvoiceLineItems } = makeDb({})
+
+    await financeService.createInvoiceFromBooking(
+      db,
+      {
+        bookingId: "book_123",
+        invoiceNumber: "MANUAL-1",
+        issueDate: "2026-05-23",
+        dueDate: "2026-06-23",
+      },
+      {
+        booking: {
+          ...bookingData.booking,
+          bookingNumber: "BK-2605-5046",
+          sellAmountCents: 64_000,
+        },
+        paymentSchedule: {
+          id: "bps_123",
+          bookingId: "book_123",
+          bookingItemId: null,
+          scheduleType: "balance",
+          dueDate: "2026-06-01",
+          currency: "RON",
+          amountCents: 32_000,
+        },
+        items: [
+          {
+            id: "bkit_123",
+            title: "Fallback booking item title",
+            productNameSnapshot: "Excursie Bulgaria",
+            serviceDate: "2026-08-22",
+            startsAt: "2026-08-22T06:00:00.000Z",
+            quantity: 2,
+            unitSellAmountCents: 32_000,
+            totalSellAmountCents: 64_000,
+          },
+        ],
+      },
+    )
+
+    expect(insertedInvoiceLineItems[0]).toMatchObject({
+      bookingItemId: null,
+      bookingPaymentScheduleId: "bps_123",
+      description: "Balance 50% Excursie Bulgaria | 2026-08-22",
+    })
+  })
+
   it("supports product-only schedule line descriptions from runtime options", async () => {
     const { db, insertedInvoiceLineItems } = makeDb({})
 
