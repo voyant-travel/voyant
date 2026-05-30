@@ -12,11 +12,13 @@
  *   TYPESENSE_ADMIN_API_KEY   — admin key
  *
  * Env optional:
- *   VOYANT_CLOUD_API_KEY      — when set, every emitted document gets a
+ *   VOYANT_API_KEY            — when set, every emitted document gets a
  *                               `text_embedding` vector via the Voyant
  *                               Cloud Gemini gateway. Without it, the
  *                               index works for keyword search only.
+ *   VOYANT_CLOUD_API_KEY      — legacy alias for VOYANT_API_KEY.
  *   VOYANT_CLOUD_API_URL      — defaults to `https://api.voyantjs.com`.
+ *   VOYANT_CATALOG_EMBEDDINGS — set to `false` to skip embedding generation.
  */
 
 import { roomTypes } from "@voyantjs/accommodations/schema"
@@ -57,7 +59,10 @@ config({ path: ".dev.vars", override: true })
 const databaseUrl = process.env.DATABASE_URL
 const typesenseHost = process.env.TYPESENSE_HOST
 const typesenseKey = process.env.TYPESENSE_ADMIN_API_KEY ?? process.env.TYPESENSE_API_KEY
-const cloudApiKey = process.env.VOYANT_CLOUD_API_KEY
+const cloudApiKey =
+  process.env.VOYANT_CATALOG_EMBEDDINGS === "false"
+    ? undefined
+    : (process.env.VOYANT_API_KEY ?? process.env.VOYANT_CLOUD_API_KEY)
 const cloudApiUrl = (process.env.VOYANT_CLOUD_API_URL ?? "https://api.voyantjs.com").replace(
   /\/$/,
   "",
@@ -89,7 +94,7 @@ if (embeddings) {
     `[reindex] embeddings enabled via Voyant Cloud — model=${embeddings.capabilities.modelId} dims=${embeddings.capabilities.dimensions}`,
   )
 } else {
-  console.info("[reindex] embeddings disabled (VOYANT_CLOUD_API_KEY not set) — keyword-only index")
+  console.info("[reindex] embeddings disabled — keyword-only index")
 }
 
 const parsed = new URL(typesenseHost)

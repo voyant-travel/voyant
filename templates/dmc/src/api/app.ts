@@ -235,6 +235,7 @@ export const app = createApp<CloudflareBindings>({
     // protocol). See `src/lib/video-uploads.ts` to swap providers.
     hono.post("/v1/uploads/video", async (c) => {
       const body = await c.req.json<{
+        fileSize: number
         maxDurationSeconds: number
         name?: string | null
         requireSignedUrls?: boolean

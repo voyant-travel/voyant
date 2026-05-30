@@ -248,8 +248,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/checkout
       '@voyantjs/cloud-sdk':
-        specifier: ^0.6.2
-        version: 0.6.2(typesense@3.0.6(@babel/runtime@7.29.2))
+        specifier: ^0.8.0
+        version: 0.8.0(typesense@3.0.6(@babel/runtime@7.29.2))
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -3650,8 +3650,8 @@ importers:
         specifier: workspace:*
         version: link:../bookings
       '@voyantjs/cloud-sdk':
-        specifier: ^0.6.2
-        version: 0.6.2(typesense@3.0.6(@babel/runtime@7.29.2))
+        specifier: ^0.8.0
+        version: 0.8.0(typesense@3.0.6(@babel/runtime@7.29.2))
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../core
@@ -5720,8 +5720,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/checkout
       '@voyantjs/cloud-sdk':
-        specifier: ^0.6.2
-        version: 0.6.2(typesense@3.0.6(@babel/runtime@7.29.2))
+        specifier: ^0.8.0
+        version: 0.8.0(typesense@3.0.6(@babel/runtime@7.29.2))
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -6099,8 +6099,14 @@ importers:
         specifier: workspace:*
         version: link:../../packages/checkout-ui
       '@voyantjs/cloud-sdk':
-        specifier: ^0.6.2
-        version: 0.6.2(typesense@3.0.6(@babel/runtime@7.29.2))
+        specifier: ^0.8.0
+        version: 0.8.0(typesense@3.0.6(@babel/runtime@7.29.2))
+      '@voyantjs/connect-adapter':
+        specifier: ^0.2.11
+        version: 0.2.11(@voyantjs/catalog@packages+catalog)
+      '@voyantjs/connect-sdk':
+        specifier: ^0.1.6
+        version: 0.1.6
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -9745,13 +9751,23 @@ packages:
     resolution: {integrity: sha512-oOzqzy2WMh1iVglNRGQ/EXjjZtacOm2/zCxig8yO7g8lcufjdiDbOBRyCWvdMfx3iIXOuatgsyVqkiWFbn6Qzg==}
     hasBin: true
 
-  '@voyantjs/cloud-sdk@0.6.2':
-    resolution: {integrity: sha512-T9073qILcix61oqUcVNCeijHgxC8i2OsjWi5EDvSIZZLx4T4HJS+lBYr39b8Dh+EYdGwSd3HvIcteVrHeuHNow==}
+  '@voyantjs/cloud-sdk@0.8.0':
+    resolution: {integrity: sha512-dptd/6dbP+4BvNrcvzJZCpz5KQ3BaTMN+Jpvtb5sC8uAAvDe2kooHUGKhisaKeUsNqFq+Yvu5WquDFLiZSuKeA==}
     peerDependencies:
       typesense: '>=2.0.0 <4.0.0'
     peerDependenciesMeta:
       typesense:
         optional: true
+    bundledDependencies:
+      - '@voyant-sdk/sdk-core'
+
+  '@voyantjs/connect-adapter@0.2.11':
+    resolution: {integrity: sha512-+e6tj8fegogwOclyEkl3ky9rDz3GjADl7UetqrViYZAhfyuDw7MeUjCMPiugvEulJClDbgXGNkCBn3yCQ8+FnA==}
+    peerDependencies:
+      '@voyantjs/catalog': '>=0.85.3 <1'
+
+  '@voyantjs/connect-sdk@0.1.6':
+    resolution: {integrity: sha512-o+0WklXaSEMTePqIi3U7SVROdssaaaqEgLRlqvwiuOIw87Kd8IRTT4qwjNzGewbQVe17O9Ly5HgIUDM4K3wbvg==}
     bundledDependencies:
       - '@voyant-sdk/sdk-core'
 
@@ -16513,9 +16529,16 @@ snapshots:
       - sqlite3
       - zod
 
-  '@voyantjs/cloud-sdk@0.6.2(typesense@3.0.6(@babel/runtime@7.29.2))':
+  '@voyantjs/cloud-sdk@0.8.0(typesense@3.0.6(@babel/runtime@7.29.2))':
     optionalDependencies:
       typesense: 3.0.6(@babel/runtime@7.29.2)
+
+  '@voyantjs/connect-adapter@0.2.11(@voyantjs/catalog@packages+catalog)':
+    dependencies:
+      '@voyantjs/catalog': link:packages/catalog
+      '@voyantjs/connect-sdk': 0.1.6
+
+  '@voyantjs/connect-sdk@0.1.6': {}
 
   '@voyantjs/core@0.19.0': {}
 
