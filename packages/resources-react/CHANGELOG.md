@@ -1,5 +1,12 @@
 # @voyantjs/resources-react
 
+## 0.90.0
+
+### Patch Changes
+
+- @voyantjs/react@0.90.0
+- @voyantjs/resources@0.90.0
+
 ## 0.89.0
 
 ### Patch Changes
