@@ -62,6 +62,8 @@ export type PromotionsUiMessages = {
       destinationsScope: string
       marketsScope: string
       audiencesScope: string
+      fareCodesScope: string
+      cabinGradesScope: string
       productNouns: {
         singular: string
         plural: string
@@ -119,6 +121,8 @@ export type PromotionsUiMessages = {
       categoryIds: string
       destinationIds: string
       marketIds: string
+      fareCodes: string
+      cabinGradeCodes: string
     }
     hints: {
       globalScope: string

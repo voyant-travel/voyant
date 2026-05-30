@@ -62,6 +62,8 @@ const SCOPE_KINDS: ScopeKind[] = [
   "destinations",
   "markets",
   "audiences",
+  "fare_codes",
+  "cabin_grades",
 ]
 
 const AUDIENCE_OPTIONS: Array<"staff" | "customer" | "partner" | "supplier"> = [
@@ -80,7 +82,7 @@ interface FormState {
   discountAmountCents: number | null
   currency: string
   scopeKind: ScopeKind
-  scopeIds: string // comma-separated for products/categories/destinations/markets
+  scopeIds: string // comma-separated for ID/code scopes
   scopeAudiences: Array<"staff" | "customer" | "partner" | "supplier">
   minPax: string
   validFrom: string
@@ -142,6 +144,10 @@ function scopeIdsToString(scope: PromotionalOfferScope): string {
       return scope.destinationIds.join(", ")
     case "markets":
       return scope.marketIds.join(", ")
+    case "fare_codes":
+      return scope.fareCodes.join(", ")
+    case "cabin_grades":
+      return scope.cabinGradeCodes.join(", ")
     default:
       return ""
   }
@@ -166,6 +172,10 @@ function buildScope(state: FormState): PromotionalOfferScope {
       return { kind: "markets", marketIds: parseIds(state.scopeIds) }
     case "audiences":
       return { kind: "audiences", audiences: state.scopeAudiences }
+    case "fare_codes":
+      return { kind: "fare_codes", fareCodes: parseIds(state.scopeIds) }
+    case "cabin_grades":
+      return { kind: "cabin_grades", cabinGradeCodes: parseIds(state.scopeIds) }
   }
 }
 
@@ -397,7 +407,9 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
             {(state.scopeKind === "products" ||
               state.scopeKind === "categories" ||
               state.scopeKind === "destinations" ||
-              state.scopeKind === "markets") && (
+              state.scopeKind === "markets" ||
+              state.scopeKind === "fare_codes" ||
+              state.scopeKind === "cabin_grades") && (
               <div className="grid gap-1.5">
                 <Label htmlFor="promotion-scope-ids">
                   {formatMessage(dialogMessages.fields.scopeIds, {
@@ -523,14 +535,14 @@ export function PromotionDialog({ open, onOpenChange, offer }: PromotionDialogPr
 }
 
 function scopeIdsLabel(
-  kind: "products" | "categories" | "destinations" | "markets",
+  kind: "products" | "categories" | "destinations" | "markets" | "fare_codes" | "cabin_grades",
   labels: Record<PromotionalOfferScopeKind, string>,
 ): string {
   return labels[kind]
 }
 
 function scopeIdsPlaceholder(
-  kind: "products" | "categories" | "destinations" | "markets",
+  kind: "products" | "categories" | "destinations" | "markets" | "fare_codes" | "cabin_grades",
   placeholders: PromotionsUiMessages["promotionDialog"]["placeholders"],
 ): string {
   switch (kind) {
@@ -542,5 +554,9 @@ function scopeIdsPlaceholder(
       return placeholders.destinationIds
     case "markets":
       return placeholders.marketIds
+    case "fare_codes":
+      return placeholders.fareCodes
+    case "cabin_grades":
+      return placeholders.cabinGradeCodes
   }
 }

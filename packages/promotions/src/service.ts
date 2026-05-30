@@ -82,7 +82,8 @@ function shouldEmitForUpdate(patch: Partial<UpdatePromotionalOffer>): boolean {
  * `recomputeOfferLinks` and by the event emitter to populate
  * `affected.productIds`.
  *
- * Returns `null` for slice-shaped scopes (`global`, `markets`, `audiences`)
+ * Returns `null` for slice-shaped or checkout-shaped scopes (`global`,
+ * `markets`, `audiences`, `fare_codes`, `cabin_grades`)
  * to signal that the link table should be empty AND that the event payload
  * should fall back to `affected: { kind: "all" }` — these scopes can match
  * an unbounded product set and we don't enumerate them at write time
@@ -114,6 +115,8 @@ export async function resolveScopeProductIds(
     case "global":
     case "markets":
     case "audiences":
+    case "fare_codes":
+    case "cabin_grades":
       return null
   }
 }

@@ -28,6 +28,8 @@ export const promotionsUiRo: PromotionsUiMessages = {
       destinations: "Destinatii",
       markets: "Piete",
       audiences: "Audiente",
+      fare_codes: "Coduri tarifare",
+      cabin_grades: "Grade cabine",
     },
     audienceLabels: {
       staff: "Echipa",
@@ -81,6 +83,8 @@ export const promotionsUiRo: PromotionsUiMessages = {
       destinationsScope: "{count} {noun}",
       marketsScope: "Piete: {markets}",
       audiencesScope: "Audiente: {audiences}",
+      fareCodesScope: "Coduri tarifare: {fareCodes}",
+      cabinGradesScope: "Grade cabine: {cabinGradeCodes}",
       productNouns: { singular: "produs", plural: "produse" },
       categoryNouns: { singular: "categorie", plural: "categorii" },
       destinationNouns: { singular: "destinatie", plural: "destinatii" },
@@ -130,6 +134,8 @@ export const promotionsUiRo: PromotionsUiMessages = {
       categoryIds: "Adauga referinte de categorii",
       destinationIds: "Adauga referinte de destinatii",
       marketIds: "Adauga referinte de piete",
+      fareCodes: "Adauga coduri tarifare",
+      cabinGradeCodes: "Adauga coduri de grade cabine",
     },
     hints: {
       globalScope: "Se aplica tuturor produselor.",

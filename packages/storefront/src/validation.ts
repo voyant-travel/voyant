@@ -409,7 +409,7 @@ export const storefrontDeparturePriceExtraImpactSchema = z.object({
 export const storefrontDeparturePriceOfferImpactSchema = z.object({
   offer: z.lazy(() => storefrontPromotionalOfferSchema),
   status: z.enum(["applied", "not_applicable", "conflict"]),
-  reason: z.enum(["min_pax", "currency", "no_discount", "conflict"]).nullable(),
+  reason: z.enum(["min_pax", "eligibility", "currency", "no_discount", "conflict"]).nullable(),
   selected: z.boolean(),
   discountAppliedCents: z.number().int(),
   discountedPriceCents: z.number().int(),
@@ -678,6 +678,7 @@ export const storefrontOfferMutationReasonSchema = z
     "code_not_yet_valid",
     "scope",
     "min_pax",
+    "eligibility",
     "currency",
     "no_discount",
     "booking_mismatch",

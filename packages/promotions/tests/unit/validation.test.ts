@@ -46,6 +46,16 @@ describe("promotionalOfferScopeSchema", () => {
     expect(promotionalOfferScopeSchema.parse(scope)).toEqual(scope)
   })
 
+  it("accepts fare-code scope", () => {
+    const scope = { kind: "fare_codes" as const, fareCodes: ["EARLY_BIRD", "PAST_GUEST"] }
+    expect(promotionalOfferScopeSchema.parse(scope)).toEqual(scope)
+  })
+
+  it("accepts cabin-grade scope", () => {
+    const scope = { kind: "cabin_grades" as const, cabinGradeCodes: ["SUITE", "BALCONY"] }
+    expect(promotionalOfferScopeSchema.parse(scope)).toEqual(scope)
+  })
+
   it("rejects audiences scope with unknown audience literal", () => {
     expect(() =>
       promotionalOfferScopeSchema.parse({ kind: "audiences", audiences: ["nope"] }),
@@ -66,6 +76,22 @@ describe("promotionalOfferConditionsSchema", () => {
 
   it("accepts minPax as a positive integer", () => {
     expect(promotionalOfferConditionsSchema.parse({ minPax: 4 })).toEqual({ minPax: 4 })
+  })
+
+  it("accepts structured eligibility flags", () => {
+    expect(
+      promotionalOfferConditionsSchema.parse({
+        pastGuestOnly: true,
+        soloTravelerOnly: true,
+        childTravelerOnly: true,
+        familyOnly: true,
+      }),
+    ).toEqual({
+      pastGuestOnly: true,
+      soloTravelerOnly: true,
+      childTravelerOnly: true,
+      familyOnly: true,
+    })
   })
 
   it("rejects minPax = 0", () => {

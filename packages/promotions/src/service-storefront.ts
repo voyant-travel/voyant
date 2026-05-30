@@ -166,6 +166,10 @@ function matchesProduct(scope: PromotionalOfferScope, inLinkTable: boolean): boo
     // honored by the catalog projection (PR3) when products are indexed.
     case "markets":
     case "audiences":
+    // Fare/cabin-grade scopes need booking-line context and are evaluated
+    // by the checkout path rather than this product-listing endpoint.
+    case "fare_codes":
+    case "cabin_grades":
       return false
   }
 }
