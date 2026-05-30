@@ -37,6 +37,8 @@ export type ExternalPassengerComposition = {
 
 export type ExternalBookingTerms = QuoteBookingTerms
 
+export type ExternalFareVariant = "cruise_only" | "air_inclusive"
+
 // ---------- canonical external shapes ----------
 // These mirror the local cruises schema fields the UI renders. Adapters return
 // them; the route layer hands them to the client with `source: 'external'` and
@@ -131,13 +133,18 @@ export type ExternalPriceRow = {
   passengerComposition?: ExternalPassengerComposition | null
   fareCode?: string | null
   fareCodeName?: string | null
+  fareVariant?: ExternalFareVariant
   currency: string
   pricePerPerson: string
+  originalPricePerPerson?: string | null
   secondGuestPricePerPerson?: string | null
+  singlePricePerPerson?: string | null
   singleSupplementPercent?: string | null
   availability: "available" | "limited" | "on_request" | "wait_list" | "sold_out"
   availabilityCount?: number | null
   bookingDeadline?: string | null // ISO date
+  earlyBookingDeadline?: string | null // ISO date
+  earlyBookingBonusDescription?: string | null
   requiresRequest?: boolean
   notes?: string | null
   components?: ExternalPriceComponent[]
@@ -257,6 +264,7 @@ export type CreateExternalBookingInput = {
   occupancy: number
   passengerComposition?: ExternalPassengerComposition | null
   fareCode?: string | null
+  fareVariant?: ExternalFareVariant | null
   passengers: ExternalPassengerInput[]
   contact: ExternalContactInput
   bookingTerms?: ExternalBookingTerms | null

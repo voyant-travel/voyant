@@ -30,6 +30,7 @@ const quotePayloadSchema = z.object({
   guestCount: z.number().int().min(1).max(8).optional(),
   passengerComposition: passengerCompositionSchema().optional().nullable(),
   fareCode: z.string().optional().nullable(),
+  fareVariant: z.enum(["cruise_only", "air_inclusive"]).optional().nullable(),
   bookingTerms: z.record(z.string(), z.unknown()).optional().nullable(),
 })
 
@@ -213,6 +214,7 @@ export const cruisePublicRoutes = new Hono<Env>()
         occupancy: payload.occupancy,
         guestCount,
         fareCode: payload.fareCode ?? null,
+        fareVariant: payload.fareVariant ?? null,
       })
       return c.json({ data: quote })
     }
@@ -228,17 +230,23 @@ export const cruisePublicRoutes = new Hono<Env>()
         sourceRefMatches(p.cabinCategoryRef, cabinCategoryRef) &&
         p.occupancy === payload.occupancy &&
         passengerCompositionMatches(p.passengerComposition, payload.passengerComposition) &&
-        (!payload.fareCode || p.fareCode === payload.fareCode),
+        (!payload.fareCode || p.fareCode === payload.fareCode) &&
+        (!payload.fareVariant || p.fareVariant === payload.fareVariant),
     )
     if (!matching) return c.json({ error: "no_matching_price" }, 404)
     const quote = composeQuote({
       price: {
         pricePerPerson: matching.pricePerPerson,
+        originalPricePerPerson: matching.originalPricePerPerson ?? null,
         secondGuestPricePerPerson: matching.secondGuestPricePerPerson ?? null,
+        singlePricePerPerson: matching.singlePricePerPerson ?? null,
         singleSupplementPercent: matching.singleSupplementPercent ?? null,
         currency: matching.currency,
         fareCode: matching.fareCode ?? null,
         fareCodeName: matching.fareCodeName ?? null,
+        fareVariant: matching.fareVariant ?? "cruise_only",
+        earlyBookingDeadline: matching.earlyBookingDeadline ?? null,
+        earlyBookingBonusDescription: matching.earlyBookingBonusDescription ?? null,
       },
       components: (matching.components ?? []).map((c) => ({
         kind: c.kind,

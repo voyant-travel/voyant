@@ -20,6 +20,7 @@ import {
   priceAvailabilityEnum,
   priceComponentDirectionEnum,
   priceComponentKindEnum,
+  priceFareVariantEnum,
 } from "./schema-shared.js"
 
 export const cruisePrices = pgTable(
@@ -35,9 +36,15 @@ export const cruisePrices = pgTable(
     occupancy: smallint("occupancy").notNull(),
     fareCode: text("fare_code"),
     fareCodeName: text("fare_code_name"),
+    fareVariant: priceFareVariantEnum("fare_variant").notNull().default("cruise_only"),
     currency: text("currency").notNull(),
     pricePerPerson: numeric("price_per_person", { precision: 12, scale: 2 }).notNull(),
+    originalPricePerPerson: numeric("original_price_per_person", { precision: 12, scale: 2 }),
     secondGuestPricePerPerson: numeric("second_guest_price_per_person", {
+      precision: 12,
+      scale: 2,
+    }),
+    singlePricePerPerson: numeric("single_price_per_person", {
       precision: 12,
       scale: 2,
     }),
@@ -50,6 +57,8 @@ export const cruisePrices = pgTable(
     priceCatalogId: text("price_catalog_id"),
     priceScheduleId: text("price_schedule_id"),
     bookingDeadline: date("booking_deadline"),
+    earlyBookingDeadline: date("early_booking_deadline"),
+    earlyBookingBonusDescription: text("early_booking_bonus_description"),
     requiresRequest: boolean("requires_request").notNull().default(false),
     notes: text("notes"),
     externalRefs: jsonb("external_refs").$type<Record<string, string>>().default({}),
@@ -63,12 +72,19 @@ export const cruisePrices = pgTable(
       table.cabinCategoryId,
       table.occupancy,
       table.fareCode,
+      table.fareVariant,
     ),
     index("idx_cruise_prices_lowest").on(table.sailingId, table.availability, table.pricePerPerson),
     index("idx_cruise_prices_catalog").on(table.priceCatalogId),
     index("idx_cruise_prices_schedule").on(table.priceScheduleId),
     uniqueIndex("uidx_cruise_prices_standing")
-      .on(table.sailingId, table.cabinCategoryId, table.occupancy, table.fareCode)
+      .on(
+        table.sailingId,
+        table.cabinCategoryId,
+        table.occupancy,
+        table.fareCode,
+        table.fareVariant,
+      )
       .where(sql`${table.priceScheduleId} IS NULL`),
   ],
 )

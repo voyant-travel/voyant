@@ -6,11 +6,16 @@ const makePrice = (
   overrides: Partial<ComposeQuoteInput["price"]> = {},
 ): ComposeQuoteInput["price"] => ({
   pricePerPerson: "1000.00",
+  originalPricePerPerson: null,
   secondGuestPricePerPerson: null,
+  singlePricePerPerson: null,
   singleSupplementPercent: null,
   currency: "USD",
   fareCode: "STANDARD",
   fareCodeName: "Standard fare",
+  fareVariant: "cruise_only",
+  earlyBookingDeadline: null,
+  earlyBookingBonusDescription: null,
   ...overrides,
 })
 
@@ -41,6 +46,22 @@ describe("composeQuote — basic per-person multiplication", () => {
 })
 
 describe("composeQuote — single supplement", () => {
+  it("uses an explicit single price before percentage supplement math", () => {
+    const quote = composeQuote({
+      price: makePrice({
+        pricePerPerson: "1000.00",
+        singlePricePerPerson: "1625.00",
+        singleSupplementPercent: "75.00",
+      }),
+      components: [],
+      occupancy: 1,
+      guestCount: 1,
+    })
+    expect(quote.totalForCabin).toBe("1625.00")
+    expect(quote.totalPerPerson).toBe("1625.00")
+    expect(quote.singlePricePerPerson).toBe("1625.00")
+  })
+
   it("applies a percentage supplement when occupancy=1", () => {
     const quote = composeQuote({
       price: makePrice({ pricePerPerson: "1000.00", singleSupplementPercent: "75.00" }),
@@ -354,6 +375,24 @@ describe("composeQuote — input validation", () => {
 })
 
 describe("composeQuote — exposes fare metadata", () => {
+  it("returns compare-at and fare variant metadata from the price row", () => {
+    const quote = composeQuote({
+      price: makePrice({
+        fareVariant: "air_inclusive",
+        originalPricePerPerson: "1400.00",
+        earlyBookingDeadline: "2026-12-31",
+        earlyBookingBonusDescription: "Suite upgrade when booked by deadline",
+      }),
+      components: [],
+      occupancy: 2,
+      guestCount: 2,
+    })
+    expect(quote.fareVariant).toBe("air_inclusive")
+    expect(quote.originalPricePerPerson).toBe("1400.00")
+    expect(quote.earlyBookingDeadline).toBe("2026-12-31")
+    expect(quote.earlyBookingBonusDescription).toBe("Suite upgrade when booked by deadline")
+  })
+
   it("returns fareCode and fareCodeName from the price row", () => {
     const quote = composeQuote({
       price: makePrice({ fareCode: "EARLY_BIRD", fareCodeName: "Early Booking Discount" }),

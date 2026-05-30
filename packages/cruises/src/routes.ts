@@ -186,6 +186,7 @@ const createBookingPayloadSchema = z.object({
   occupancy: z.number().int().min(1).max(8),
   passengerComposition: passengerCompositionSchema().optional().nullable(),
   fareCode: z.string().optional().nullable(),
+  fareVariant: z.enum(["cruise_only", "air_inclusive"]).optional().nullable(),
   mode: z.enum(["inquiry", "reserve"]).optional(),
   personId: z.string().optional().nullable(),
   organizationId: z.string().optional().nullable(),
@@ -232,6 +233,7 @@ const createPartyBookingPayloadSchema = z.object({
         cabinId: z.string().optional().nullable(),
         occupancy: z.number().int().min(1).max(8),
         fareCode: z.string().optional().nullable(),
+        fareVariant: z.enum(["cruise_only", "air_inclusive"]).optional().nullable(),
         passengers: z
           .array(
             z.object({
@@ -282,6 +284,7 @@ const quotePayloadSchema = z.object({
   guestCount: z.number().int().min(1).max(8).optional(),
   passengerComposition: passengerCompositionSchema().optional().nullable(),
   fareCode: z.string().optional().nullable(),
+  fareVariant: z.enum(["cruise_only", "air_inclusive"]).optional().nullable(),
 })
 
 function passengerCompositionSchema() {
@@ -561,18 +564,24 @@ export const cruiseAdminRoutes = new Hono<Env>()
           sourceRefMatches(p.cabinCategoryRef, cabinCategoryRef) &&
           p.occupancy === payload.occupancy &&
           passengerCompositionMatches(p.passengerComposition, payload.passengerComposition) &&
-          (!payload.fareCode || p.fareCode === payload.fareCode),
+          (!payload.fareCode || p.fareCode === payload.fareCode) &&
+          (!payload.fareVariant || p.fareVariant === payload.fareVariant),
       )
       if (!matching) return c.json({ error: "no_matching_price" }, 404)
       const { composeQuote } = await import("./service-pricing.js")
       const quote = composeQuote({
         price: {
           pricePerPerson: matching.pricePerPerson,
+          originalPricePerPerson: matching.originalPricePerPerson ?? null,
           secondGuestPricePerPerson: matching.secondGuestPricePerPerson ?? null,
+          singlePricePerPerson: matching.singlePricePerPerson ?? null,
           singleSupplementPercent: matching.singleSupplementPercent ?? null,
           currency: matching.currency,
           fareCode: matching.fareCode ?? null,
           fareCodeName: matching.fareCodeName ?? null,
+          fareVariant: matching.fareVariant ?? "cruise_only",
+          earlyBookingDeadline: matching.earlyBookingDeadline ?? null,
+          earlyBookingBonusDescription: matching.earlyBookingBonusDescription ?? null,
         },
         components: (matching.components ?? []).map((c) => ({
           kind: c.kind,
@@ -594,6 +603,7 @@ export const cruiseAdminRoutes = new Hono<Env>()
       occupancy: payload.occupancy,
       guestCount,
       fareCode: payload.fareCode ?? null,
+      fareVariant: payload.fareVariant ?? null,
     })
     return c.json({ data: quote })
   })
@@ -615,6 +625,7 @@ export const cruiseAdminRoutes = new Hono<Env>()
           occupancy: payload.occupancy,
           passengerComposition: payload.passengerComposition ?? null,
           fareCode: payload.fareCode ?? null,
+          fareVariant: payload.fareVariant ?? null,
           mode: payload.mode,
           personId: payload.personId ?? null,
           organizationId: payload.organizationId ?? null,

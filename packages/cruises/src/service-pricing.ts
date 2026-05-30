@@ -96,10 +96,15 @@ export type QuoteComponent = {
 export type Quote = {
   fareCode: string | null
   fareCodeName: string | null
+  fareVariant: CruisePrice["fareVariant"]
   currency: string
   occupancy: number
   guestCount: number
   basePerPerson: string
+  originalPricePerPerson: string | null
+  singlePricePerPerson: string | null
+  earlyBookingDeadline: string | null
+  earlyBookingBonusDescription: string | null
   components: QuoteComponent[]
   totalPerPerson: string
   totalForCabin: string
@@ -110,11 +115,16 @@ export type ComposeQuoteInput = {
   price: Pick<
     CruisePrice,
     | "pricePerPerson"
+    | "originalPricePerPerson"
     | "secondGuestPricePerPerson"
+    | "singlePricePerPerson"
     | "singleSupplementPercent"
     | "currency"
     | "fareCode"
     | "fareCodeName"
+    | "fareVariant"
+    | "earlyBookingDeadline"
+    | "earlyBookingBonusDescription"
   >
   components: Array<
     Pick<CruisePriceComponent, "label" | "amount" | "currency" | "direction" | "perPerson"> & {
@@ -138,7 +148,9 @@ export function composeQuote(input: ComposeQuoteInput): Quote {
 
   // Resolve effective base per cabin, accounting for second-guest reduction and single supplement.
   let baseCabinCents: bigint
-  if (occupancy === 1 && price.singleSupplementPercent && guestCount === 1) {
+  if (occupancy === 1 && price.singlePricePerPerson && guestCount === 1) {
+    baseCabinCents = decimalStringToCents(price.singlePricePerPerson)
+  } else if (occupancy === 1 && price.singleSupplementPercent && guestCount === 1) {
     const supplementCents = percentOf(basePerPersonCents, price.singleSupplementPercent)
     baseCabinCents = basePerPersonCents + supplementCents
   } else if (occupancy === 2 && price.secondGuestPricePerPerson && guestCount === 2) {
@@ -184,10 +196,15 @@ export function composeQuote(input: ComposeQuoteInput): Quote {
   return {
     fareCode: price.fareCode ?? null,
     fareCodeName: price.fareCodeName ?? null,
+    fareVariant: price.fareVariant,
     currency: price.currency,
     occupancy,
     guestCount,
     basePerPerson: centsToDecimalString(basePerPersonCents),
+    originalPricePerPerson: price.originalPricePerPerson ?? null,
+    singlePricePerPerson: price.singlePricePerPerson ?? null,
+    earlyBookingDeadline: price.earlyBookingDeadline ?? null,
+    earlyBookingBonusDescription: price.earlyBookingBonusDescription ?? null,
     components: renderedComponents,
     totalPerPerson: centsToDecimalString(totalPerPersonCents),
     totalForCabin: centsToDecimalString(totalForCabinCents),
@@ -202,13 +219,16 @@ export type LowestPriceResult = {
   currency: string
   cabinCategoryId: string
   fareCode: string | null
+  fareVariant: CruisePrice["fareVariant"]
 } | null
 
 export type GridCell = {
   cabinCategoryId: string
   occupancy: number
   fareCode: string | null
+  fareVariant: CruisePrice["fareVariant"]
   pricePerPerson: string
+  originalPricePerPerson: string | null
   currency: string
   availability: CruisePrice["availability"]
 }
@@ -224,6 +244,7 @@ export const pricingService = {
         currency: cruisePrices.currency,
         cabinCategoryId: cruisePrices.cabinCategoryId,
         fareCode: cruisePrices.fareCode,
+        fareVariant: cruisePrices.fareVariant,
       })
       .from(cruisePrices)
       .where(
@@ -245,7 +266,9 @@ export const pricingService = {
         cabinCategoryId: cruisePrices.cabinCategoryId,
         occupancy: cruisePrices.occupancy,
         fareCode: cruisePrices.fareCode,
+        fareVariant: cruisePrices.fareVariant,
         pricePerPerson: cruisePrices.pricePerPerson,
+        originalPricePerPerson: cruisePrices.originalPricePerPerson,
         currency: cruisePrices.currency,
         availability: cruisePrices.availability,
       })
@@ -268,6 +291,7 @@ export const pricingService = {
       occupancy: number
       guestCount: number
       fareCode?: string | null
+      fareVariant?: CruisePrice["fareVariant"] | null
     },
   ): Promise<Quote> {
     // Validate cabin category exists and respects occupancy bounds.
@@ -295,6 +319,7 @@ export const pricingService = {
       eq(cruisePrices.occupancy, args.occupancy),
     ]
     if (args.fareCode) conditions.push(eq(cruisePrices.fareCode, args.fareCode))
+    if (args.fareVariant) conditions.push(eq(cruisePrices.fareVariant, args.fareVariant))
 
     const [price] = await db
       .select()
@@ -307,7 +332,7 @@ export const pricingService = {
       throw new Error(
         `No price found for sailing=${args.sailingId} category=${args.cabinCategoryId} occupancy=${args.occupancy}${
           args.fareCode ? ` fareCode=${args.fareCode}` : ""
-        }`,
+        }${args.fareVariant ? ` fareVariant=${args.fareVariant}` : ""}`,
       )
     }
 

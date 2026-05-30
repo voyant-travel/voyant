@@ -1,6 +1,7 @@
 import type {
   CreateExternalBookingInput,
   CruiseAdapter,
+  ExternalFareVariant,
   ExternalPassengerComposition,
   ExternalPriceRow,
   SourceRef,
@@ -19,6 +20,7 @@ export type CruiseAdapterCompatibilityFixture = {
   minimumItineraryDays?: number
   passengerComposition?: ExternalPassengerComposition | null
   fareCode?: string | null
+  fareVariant?: ExternalFareVariant | null
   bookingInput: CreateExternalBookingInput
 }
 
@@ -197,6 +199,7 @@ function priceMatchesFixture(
 ): boolean {
   if (!sameRef(price.cabinCategoryRef, fixture.cabinCategoryRef)) return false
   if (fixture.fareCode && price.fareCode !== fixture.fareCode) return false
+  if (fixture.fareVariant && price.fareVariant !== fixture.fareVariant) return false
   if (fixture.passengerComposition && price.passengerComposition) {
     return stableJson(price.passengerComposition) === stableJson(fixture.passengerComposition)
   }
