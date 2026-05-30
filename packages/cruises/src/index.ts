@@ -103,6 +103,11 @@ export {
 } from "./service-bookings.js"
 export { detachExternalCruise } from "./service-detach.js"
 export {
+  type ExternalCruiseCatalogRefreshOptions,
+  type ExternalCruiseCatalogRefreshResult,
+  refreshExternalCruiseCatalog,
+} from "./service-external-refresh.js"
+export {
   type ComposeQuoteInput,
   composeQuote,
   type GridCell,

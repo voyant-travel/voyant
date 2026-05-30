@@ -12,7 +12,7 @@
  *     `searchProjection()` deltas) to keep external entries fresh.
  */
 
-import { and, asc, eq, gte, ilike, lte, or, type SQL, sql } from "drizzle-orm"
+import { and, asc, eq, gte, ilike, lte, notInArray, or, type SQL, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { CruiseAdapter, SourceRef } from "./adapters/index.js"
@@ -64,7 +64,13 @@ export type BulkSearchIndexEntry = {
 export type RebuildResult = {
   localUpserted: number
   externalUpserted: number
+  externalRemoved: number
   externalErrors: Array<{ adapter: string; error: string }>
+}
+
+export type ExternalAdapterRefreshResult = {
+  upserted: number
+  removed: number
 }
 
 export const cruisesSearchService = {
@@ -214,6 +220,49 @@ export const cruisesSearchService = {
     return { removed: result.length }
   },
 
+  async removeExternalByIdsExcept(
+    db: PostgresJsDatabase,
+    sourceProvider: string,
+    keepIds: ReadonlyArray<string>,
+    sourceConnectionId?: string | null,
+  ): Promise<{ removed: number }> {
+    const conditions: SQL[] = [
+      eq(cruiseSearchIndex.source, "external"),
+      eq(cruiseSearchIndex.sourceProvider, sourceProvider),
+      sourceConnectionId == null
+        ? sql`coalesce(${cruiseSearchIndex.sourceRef}->>'connectionId', '') = ''`
+        : sql`${cruiseSearchIndex.sourceRef}->>'connectionId' = ${sourceConnectionId}`,
+    ]
+    if (keepIds.length > 0) {
+      conditions.push(notInArray(cruiseSearchIndex.id, [...keepIds]))
+    }
+    const result = await db
+      .delete(cruiseSearchIndex)
+      .where(and(...conditions))
+      .returning({ id: cruiseSearchIndex.id })
+    return { removed: result.length }
+  },
+
+  async listExternalConnectionIds(
+    db: PostgresJsDatabase,
+    sourceProvider: string,
+  ): Promise<Array<string | null>> {
+    const connectionId = sql<
+      string | null
+    >`nullif(${cruiseSearchIndex.sourceRef}->>'connectionId', '')`
+    const rows = await db
+      .select({ connectionId })
+      .from(cruiseSearchIndex)
+      .where(
+        and(
+          eq(cruiseSearchIndex.source, "external"),
+          eq(cruiseSearchIndex.sourceProvider, sourceProvider),
+        ),
+      )
+      .groupBy(connectionId)
+    return rows.map((row) => row.connectionId)
+  },
+
   // ---------- projection from local cruises ----------
 
   /**
@@ -272,9 +321,26 @@ export const cruisesSearchService = {
     db: PostgresJsDatabase,
     adapter: CruiseAdapter,
   ): Promise<{ upserted: number }> {
+    const result = await this.refreshExternalForAdapter(db, adapter)
+    return { upserted: result.upserted }
+  },
+
+  /**
+   * Drain `searchProjection()` from a single adapter and reconcile the local
+   * external search-index rows for that provider. Existing rows stay intact
+   * until the adapter stream completes; only then are missing rows removed.
+   */
+  async refreshExternalForAdapter(
+    db: PostgresJsDatabase,
+    adapter: CruiseAdapter,
+  ): Promise<ExternalAdapterRefreshResult> {
     let upserted = 0
+    const keptIdsByConnection = new Map<string | null, string[]>()
+    const pruneConnectionIds = new Set<string | null>(
+      await this.listExternalConnectionIds(db, adapter.name),
+    )
     for await (const entry of adapter.searchProjection()) {
-      await this.upsertEntry(db, {
+      const row = await this.upsertEntry(db, {
         source: "external",
         sourceProvider: adapter.name,
         sourceRef: entry.sourceRef,
@@ -295,9 +361,21 @@ export const cruisesSearchService = {
         salesStatus: entry.salesStatus ?? null,
         heroImageUrl: entry.heroImageUrl ?? null,
       })
+      const connectionId = sourceRefConnectionId(entry.sourceRef)
+      const keptIds = keptIdsByConnection.get(connectionId) ?? []
+      keptIds.push(row.id)
+      keptIdsByConnection.set(connectionId, keptIds)
+      pruneConnectionIds.add(connectionId)
       upserted++
     }
-    return { upserted }
+
+    let removed = 0
+    for (const connectionId of pruneConnectionIds) {
+      const keptIds = keptIdsByConnection.get(connectionId) ?? []
+      const result = await this.removeExternalByIdsExcept(db, adapter.name, keptIds, connectionId)
+      removed += result.removed
+    }
+    return { upserted, removed }
   },
 
   /**
@@ -308,18 +386,12 @@ export const cruisesSearchService = {
     const localResult = await this.rebuildLocal(db)
     const externalErrors: RebuildResult["externalErrors"] = []
     let externalUpserted = 0
+    let externalRemoved = 0
     for (const adapter of listCruiseAdapters()) {
       try {
-        await db
-          .delete(cruiseSearchIndex)
-          .where(
-            and(
-              eq(cruiseSearchIndex.source, "external"),
-              eq(cruiseSearchIndex.sourceProvider, adapter.name),
-            ),
-          )
-        const result = await this.rebuildExternalForAdapter(db, adapter)
+        const result = await this.refreshExternalForAdapter(db, adapter)
         externalUpserted += result.upserted
+        externalRemoved += result.removed
       } catch (err) {
         externalErrors.push({ adapter: adapter.name, error: (err as Error).message })
       }
@@ -327,6 +399,7 @@ export const cruisesSearchService = {
     return {
       localUpserted: localResult.upserted,
       externalUpserted,
+      externalRemoved,
       externalErrors,
     }
   },
@@ -371,6 +444,10 @@ async function findExisting(
 
 export function sourceRefIdentityJson(sourceRef: SourceRef): string {
   return JSON.stringify(sortValue(sourceRef))
+}
+
+function sourceRefConnectionId(sourceRef: SourceRef): string | null {
+  return typeof sourceRef.connectionId === "string" ? sourceRef.connectionId : null
 }
 
 function sortValue(value: unknown): unknown {

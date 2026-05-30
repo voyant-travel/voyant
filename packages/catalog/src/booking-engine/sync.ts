@@ -33,7 +33,10 @@ import type { IndexerDocument, IndexerSlice } from "../indexer/contract.js"
 import { isOwned } from "../provenance.js"
 import type { DocumentBuilder, IndexerService } from "../services/indexer-service.js"
 import { buildIndexerDocument } from "../services/indexer-service.js"
-import { upsertSourcedEntry } from "../services/sourced-entry-service.js"
+import {
+  markMissingSourcedEntriesWithdrawn,
+  upsertSourcedEntry,
+} from "../services/sourced-entry-service.js"
 
 import type { SourceAdapterRegistry } from "./registry.js"
 
@@ -79,6 +82,17 @@ export interface SyncSourcesOptions {
   wrapBuilder?: (builder: DocumentBuilder) => DocumentBuilder
   /** Per-page log hook — called every page so callers can show progress. */
   onProgress?: (event: SyncProgressEvent) => void
+  /**
+   * Optional vertical allow-list. Scheduled vertical refreshes use this to run
+   * only the adapter projections relevant to the current job.
+   */
+  verticals?: ReadonlyArray<string>
+  /**
+   * When true, rows from the same source/connection/vertical that were not
+   * emitted by a successful discovery pass are marked withdrawn and deleted
+   * from catalog search slices. Failed adapter passes never prune.
+   */
+  pruneMissing?: boolean
 }
 
 export interface SyncProgressEvent {
@@ -116,6 +130,11 @@ export interface SyncAdapterSummary {
    * the indexer.
    */
   ownedProjections: number
+  /**
+   * Previously active sourced rows that were not emitted by a successful
+   * discovery pass, marked withdrawn and removed from search slices.
+   */
+  withdrawnProjections: number
 }
 
 export interface SyncSourcesSummary {
@@ -129,6 +148,7 @@ export interface SyncSourcesSummary {
  * adapters wishing to participate in the sync must implement it).
  */
 export async function syncSources(options: SyncSourcesOptions): Promise<SyncSourcesSummary> {
+  const verticalFilter = options.verticals ? new Set(options.verticals) : undefined
   // Iterate every registered (connection_id, adapter) pair — multiple
   // connections of the same kind each get their own discovery pass.
   // Skip adapters that don't implement `discover` (outbound-only
@@ -140,6 +160,11 @@ export async function syncSources(options: SyncSourcesOptions): Promise<SyncSour
       adapter: options.registry.resolveByConnectionOrThrow(connectionId),
     }))
     .filter((e) => typeof e.adapter.discover === "function")
+    .filter(
+      (e) =>
+        !verticalFilter ||
+        e.adapter.capabilities.verticals.some((vertical) => verticalFilter.has(vertical)),
+    )
   const adapterSummaries: SyncAdapterSummary[] = []
   let totalProjections = 0
 
@@ -155,8 +180,10 @@ export async function syncSources(options: SyncSourcesOptions): Promise<SyncSour
       skippedNoRegistry: 0,
       sourcedEntriesUpserted: 0,
       ownedProjections: 0,
+      withdrawnProjections: 0,
     }
     const verticals = new Set<string>()
+    const seenBySource = new Map<string, SourcedSeenSet>()
 
     let cursor: string | undefined
     do {
@@ -173,6 +200,9 @@ export async function syncSources(options: SyncSourcesOptions): Promise<SyncSour
       })
 
       for (const projection of page.projections) {
+        if (verticalFilter && !verticalFilter.has(projection.entity_module)) {
+          continue
+        }
         const registry = options.fieldPolicyRegistries.get(projection.entity_module)
         if (!registry) {
           summary.skippedNoRegistry += 1
@@ -191,6 +221,14 @@ export async function syncSources(options: SyncSourcesOptions): Promise<SyncSour
         } else if (options.db) {
           await upsertSourcedEntry(options.db, { projection })
           summary.sourcedEntriesUpserted += 1
+          if (options.pruneMissing) {
+            trackSeenSourcedProjection(seenBySource, {
+              entityModule: projection.entity_module,
+              entityId: projection.entity_id,
+              sourceKind: projection.provenance.source_kind,
+              sourceConnectionId: projection.provenance.source_connection_id,
+            })
+          }
         }
 
         const projectionMap = toProjectionMap(projection.fields)
@@ -213,6 +251,22 @@ export async function syncSources(options: SyncSourcesOptions): Promise<SyncSour
       cursor = page.next_cursor
     } while (cursor)
 
+    if (options.pruneMissing && options.db) {
+      ensureAdapterVerticalPruneScopes(seenBySource, adapter, connectionId, verticalFilter)
+      for (const seen of seenBySource.values()) {
+        const withdrawn = await markMissingSourcedEntriesWithdrawn(options.db, {
+          entityModule: seen.entityModule,
+          sourceKind: seen.sourceKind,
+          sourceConnectionId: seen.sourceConnectionId,
+          seenEntityIds: seen.entityIds,
+        })
+        for (const row of withdrawn) {
+          await options.indexerService.deleteEntity(row.entity_module, row.entity_id)
+        }
+        summary.withdrawnProjections += withdrawn.length
+      }
+    }
+
     summary.verticalsTouched = [...verticals]
     adapterSummaries.push(summary)
   }
@@ -222,4 +276,66 @@ export async function syncSources(options: SyncSourcesOptions): Promise<SyncSour
 
 function toProjectionMap(fields: Record<string, unknown>): ReadonlyMap<string, unknown> {
   return new Map(Object.entries(fields))
+}
+
+type SourcedSeenSet = {
+  entityModule: string
+  sourceKind: string
+  sourceConnectionId?: string | null
+  entityIds: Set<string>
+}
+
+function trackSeenSourcedProjection(
+  seenBySource: Map<string, SourcedSeenSet>,
+  input: {
+    entityModule: string
+    entityId: string
+    sourceKind: string
+    sourceConnectionId?: string | null
+  },
+): void {
+  const key = sourceScopeKey(input)
+  let seen = seenBySource.get(key)
+  if (!seen) {
+    seen = {
+      entityModule: input.entityModule,
+      sourceKind: input.sourceKind,
+      sourceConnectionId: input.sourceConnectionId,
+      entityIds: new Set(),
+    }
+    seenBySource.set(key, seen)
+  }
+  seen.entityIds.add(input.entityId)
+}
+
+function ensureAdapterVerticalPruneScopes(
+  seenBySource: Map<string, SourcedSeenSet>,
+  adapter: SourceAdapter,
+  connectionId: string,
+  verticalFilter: Set<string> | undefined,
+): void {
+  const verticals = adapter.capabilities.verticals.filter(
+    (vertical) => !verticalFilter || verticalFilter.has(vertical),
+  )
+  for (const entityModule of verticals) {
+    const input = {
+      entityModule,
+      sourceKind: adapter.kind,
+      sourceConnectionId: connectionId,
+    }
+    const key = sourceScopeKey(input)
+    if (seenBySource.has(key)) continue
+    seenBySource.set(key, {
+      ...input,
+      entityIds: new Set(),
+    })
+  }
+}
+
+function sourceScopeKey(input: {
+  entityModule: string
+  sourceKind: string
+  sourceConnectionId?: string | null
+}): string {
+  return `${input.entityModule}\u0000${input.sourceKind}\u0000${input.sourceConnectionId ?? ""}`
 }
