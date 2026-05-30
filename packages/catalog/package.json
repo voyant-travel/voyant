@@ -181,6 +181,7 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
+    "@voyantjs/catalog-contracts": "workspace:*",
     "@voyantjs/core": "workspace:*",
     "@voyantjs/db": "workspace:*",
     "@voyantjs/hono": "workspace:*",
