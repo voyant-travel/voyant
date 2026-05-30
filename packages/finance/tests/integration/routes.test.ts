@@ -1647,6 +1647,47 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(data.balanceDueCents).toBeGreaterThan(0)
     })
 
+    it("uses product and service date for booking item fallback invoice lines", async () => {
+      const booking = await seedBooking({ sellAmountCents: 50000 })
+      await seedBookingItem(booking.id, {
+        title: "Adult",
+        productNameSnapshot:
+          "Excursie de 1 Zi in Bulgaria: Cascadele Krushuna, Pestera Devetashka si Fortareata Lovech",
+        serviceDate: "2026-08-22",
+        quantity: 1,
+        unitSellAmountCents: 50000,
+        totalSellAmountCents: 50000,
+      })
+
+      const res = await app.request("/invoices/from-booking", {
+        method: "POST",
+        ...json({
+          bookingId: booking.id,
+          invoiceNumber: nextInvoiceNumber(),
+          issueDate: "2025-06-01",
+          dueDate: "2025-07-01",
+        }),
+      })
+
+      expect(res.status).toBe(201)
+      const { data } = await res.json()
+      const lines = await db
+        .select()
+        .from(invoiceLineItems)
+        .where(eq(invoiceLineItems.invoiceId, data.id))
+
+      expect(lines).toHaveLength(1)
+      expect(lines[0]).toMatchObject({
+        bookingItemId: expect.stringMatching(/^bkit_/),
+        bookingPaymentScheduleId: null,
+        description:
+          "Excursie de 1 Zi in Bulgaria: Cascadele Krushuna, Pestera Devetashka si Fortareata Lovech | 2026-08-22",
+        quantity: 1,
+        unitPriceCents: 50000,
+        totalCents: 50000,
+      })
+    })
+
     it("replays invoice-from-booking creates with the same idempotency key", async () => {
       const booking = await seedBooking({ sellAmountCents: 20000 })
       await seedBookingItem(booking.id)

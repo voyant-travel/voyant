@@ -475,7 +475,10 @@ export interface InvoiceFromBookingData {
     unitNameSnapshot?: string | null
     departureLabelSnapshot?: string | null
     startDate?: string | Date | null
+    serviceDate?: string | Date | null
+    startsAt?: string | Date | null
     endDate?: string | Date | null
+    endsAt?: string | Date | null
     quantity: number
     unitSellAmountCents: number | null
     totalSellAmountCents: number | null
@@ -543,7 +546,7 @@ function bookingItemToInvoiceLine(
   return {
     bookingItemId: item.id,
     bookingPaymentScheduleId: null,
-    description: item.title,
+    description: renderBookingItemInvoiceLineDescription(item),
     quantity: item.quantity,
     unitPriceCents:
       item.unitSellAmountCents ??
@@ -560,6 +563,16 @@ function bookingItemToInvoiceLine(
   }
 }
 
+function renderBookingItemInvoiceLineDescription(item: InvoiceFromBookingData["items"][number]) {
+  const base = resolveBookingItemDisplayName(item) ?? item.title
+  const dates = formatInvoiceLineDateRange(
+    resolveBookingItemStartDate(item),
+    resolveBookingItemEndDate(item),
+  )
+
+  return dates ? `${base} | ${dates}` : base
+}
+
 function bookingPaymentScheduleToInvoiceLine(
   booking: InvoiceFromBookingData["booking"],
   schedule: NonNullable<InvoiceFromBookingData["paymentSchedule"]>,
@@ -571,8 +584,8 @@ function bookingPaymentScheduleToInvoiceLine(
   const head = percent != null && percent < 100 ? `${label} ${percent}%` : label
   const base = resolveBookingItemDisplayName(item) ?? `booking ${booking.bookingNumber}`
   const dates = formatInvoiceLineDateRange(
-    item?.startDate ?? booking.startDate,
-    item?.endDate ?? item?.startDate ?? booking.endDate,
+    item ? (resolveBookingItemStartDate(item) ?? booking.startDate) : booking.startDate,
+    item ? (resolveBookingItemEndDate(item) ?? booking.endDate) : booking.endDate,
   )
 
   return {
@@ -628,6 +641,14 @@ function resolveBookingItemDisplayName(item: InvoiceFromBookingData["items"][num
   )
 }
 
+function resolveBookingItemStartDate(item: InvoiceFromBookingData["items"][number]) {
+  return item.startDate ?? item.serviceDate ?? item.startsAt
+}
+
+function resolveBookingItemEndDate(item: InvoiceFromBookingData["items"][number]) {
+  return item.endDate ?? item.endsAt ?? item.serviceDate ?? resolveBookingItemStartDate(item)
+}
+
 function compareBookingItemsForScheduleDisplay(
   left: InvoiceFromBookingData["items"][number],
   right: InvoiceFromBookingData["items"][number],
@@ -646,7 +667,9 @@ function compareBookingItemsForScheduleDisplay(
 }
 
 function resolveBookingItemDateSortKey(item: InvoiceFromBookingData["items"][number]) {
-  return toDateOnly(item.startDate) ?? toDateOnly(item.endDate)
+  return (
+    toDateOnly(resolveBookingItemStartDate(item)) ?? toDateOnly(resolveBookingItemEndDate(item))
+  )
 }
 
 function compareNullableStrings(left: string | null, right: string | null) {
