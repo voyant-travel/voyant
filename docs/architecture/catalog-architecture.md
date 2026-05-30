@@ -1200,6 +1200,7 @@ Phase 2 (RAG) and Phase 3 (Flights) carry their own glossaries in their respecti
 
 - [`catalog-rag-architecture.md`](./catalog-rag-architecture.md) — **Phase 2.** Vector embeddings, the `EmbeddingProvider` contract, async embedding generation pipeline, per-audience embedding pools with isolation guarantees, AI agent access via API / MCP, embedding model versioning. Builds on Phase 1's IndexerAdapter contract, overlay store, and field-policy registry.
 - [`catalog-flights-architecture.md`](./catalog-flights-architecture.md) — **Phase 3.** Flights as a partial-adoption vertical: `FlightConnectorAdapter` contract borrowed from voyant-cloud, slice-based search, intent-driven booking, multi-connection fan-out with itinerary fingerprint dedupe, the swappable `ReferenceDataProvider` contract for global reference data. Independent of Phase 2 — either can ship first.
+- [`provider-catalog-contracts.md`](./provider-catalog-contracts.md) — provider capability declarations, promotion applicability/display contracts, and normalized availability projection semantics for source adapters and downstream SDK/UI consumers.
 
 ### Voyant-wide context
 
