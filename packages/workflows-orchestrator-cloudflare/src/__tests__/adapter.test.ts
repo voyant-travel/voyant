@@ -337,6 +337,89 @@ describe("handleWorkerRequest (Worker → DO → tenant)", () => {
     })
   })
 
+  it("defaults scheduled trigger state to development when environment is omitted", async () => {
+    workflow<{ n: number }, { doubled: number }>({
+      id: "scheduled-default-env",
+      async run(input) {
+        return { doubled: input.n * 2 }
+      },
+    })
+    const runDO = inProcessRunDONamespace()
+    const scheduleStateStore = createKvScheduleStateStore({ kv: createInMemoryKv() })
+    const now = Date.UTC(2026, 4, 30, 12, 0, 0)
+
+    const res = await handleWorkerRequest(
+      new Request("https://orch/api/runs", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          workflowId: "scheduled-default-env",
+          workflowVersion: "v1",
+          input: { n: 21 },
+          tenantMeta,
+          runId: "run_scheduled_default_env",
+          triggeredBy: { kind: "schedule", scheduleId: "v_1:scheduled-default-env:hourly" },
+        }),
+      }),
+      { runDO, scheduleStateStore, now: () => now },
+    )
+
+    expect(res.status).toBe(200)
+    const states = await scheduleStateStore.getStates("development", [
+      "v_1:scheduled-default-env:hourly",
+    ])
+    expect(states.get("v_1:scheduled-default-env:hourly")).toMatchObject({
+      scheduleId: "v_1:scheduled-default-env:hourly",
+      environment: "development",
+      lastFireAt: now,
+      lastRunId: "run_scheduled_default_env",
+      lastError: null,
+      updatedAt: now,
+    })
+  })
+
+  it("records failed scheduled run outcomes in schedule dispatch state", async () => {
+    workflow({
+      id: "scheduled-fail",
+      async run() {
+        throw new Error("scheduled boom")
+      },
+    })
+    const runDO = inProcessRunDONamespace()
+    const scheduleStateStore = createKvScheduleStateStore({ kv: createInMemoryKv() })
+    const now = Date.UTC(2026, 4, 30, 13, 0, 0)
+
+    const res = await handleWorkerRequest(
+      new Request("https://orch/api/runs", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          workflowId: "scheduled-fail",
+          workflowVersion: "v1",
+          input: null,
+          tenantMeta,
+          environment: "production",
+          runId: "run_scheduled_fail",
+          triggeredBy: { kind: "schedule", scheduleId: "v_1:scheduled-fail:hourly" },
+        }),
+      }),
+      { runDO, scheduleStateStore, now: () => now },
+    )
+
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as RunRecord
+    expect(body.status).toBe("failed")
+    const states = await scheduleStateStore.getStates("production", ["v_1:scheduled-fail:hourly"])
+    expect(states.get("v_1:scheduled-fail:hourly")).toMatchObject({
+      scheduleId: "v_1:scheduled-fail:hourly",
+      environment: "production",
+      lastFireAt: now,
+      lastRunId: "run_scheduled_fail",
+      lastError: "scheduled boom",
+      updatedAt: now,
+    })
+  })
+
   it("parks a run on a waitpoint and serves GET /api/runs/:id", async () => {
     workflow({
       id: "wait",

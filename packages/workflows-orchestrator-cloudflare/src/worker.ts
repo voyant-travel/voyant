@@ -188,11 +188,14 @@ export async function handleWorkerRequest<Id>(
     try {
       const triggerRes = await forwardToRunDO(runId, forward, deps)
       const runResult = triggerRes.ok ? await safeResponseJson(triggerRes.clone()) : undefined
+      const runError = triggerRes.ok
+        ? failedRunError(runResult)
+        : `do_returned_${triggerRes.status}`
       await recordScheduleDispatch(deps, {
         scheduleTrigger,
-        runId,
+        runId: triggerRes.ok ? runId : null,
         fireAt,
-        error: triggerRes.ok ? null : `do_returned_${triggerRes.status}`,
+        error: runError,
         lastSuccessfulRunAt: completedRunAt(runResult),
       })
       return triggerRes
@@ -534,7 +537,7 @@ function getScheduleTrigger(payload: Record<string, unknown>): {
   scheduleId: string
 } | null {
   const triggeredBy = payload.triggeredBy
-  const environment = payload.environment
+  const environment = payload.environment ?? "development"
   if (
     typeof triggeredBy !== "object" ||
     triggeredBy === null ||
@@ -575,7 +578,7 @@ async function recordScheduleDispatch<Id>(
       scheduleId: args.scheduleTrigger.scheduleId,
       environment: args.scheduleTrigger.environment,
       lastFireAt: args.fireAt,
-      lastRunId: args.error ? null : args.runId,
+      lastRunId: args.runId,
       lastError: args.error,
       ...(args.lastSuccessfulRunAt !== undefined
         ? { lastSuccessfulRunAt: args.lastSuccessfulRunAt }
@@ -612,6 +615,23 @@ function completedRunAt(value: unknown): number | undefined {
     return value.completedAt
   }
   return undefined
+}
+
+function failedRunError(value: unknown): string | null {
+  if (typeof value !== "object" || value === null || !("status" in value)) return null
+  const status = value.status
+  if (status !== "failed" && status !== "compensation_failed") return null
+  const error = "error" in value ? value.error : undefined
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string" &&
+    error.message.length > 0
+  ) {
+    return error.message
+  }
+  return `run_${status}`
 }
 
 function json(status: number, body: unknown): Response {
