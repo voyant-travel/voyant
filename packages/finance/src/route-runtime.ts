@@ -4,6 +4,7 @@ import type { InvoiceFxOptions } from "./invoice-fx.js"
 import type { FinanceDocumentRouteOptions, InvoiceDocumentGenerator } from "./routes-documents.js"
 import type { FinanceSettlementRouteOptions, InvoiceSettlementPoller } from "./routes-settlement.js"
 import type {
+  InvoiceDueDateResolver,
   InvoiceLineDescriptionResolver,
   PaymentScheduleLineDescriptionFormat,
 } from "./service.js"
@@ -14,6 +15,7 @@ export type FinanceRouteRuntime = {
   invoiceSettlementPollers: Record<string, InvoiceSettlementPoller>
   eventBus?: EventBus
   descriptionResolver?: InvoiceLineDescriptionResolver
+  invoiceDueDateResolver?: InvoiceDueDateResolver
   paymentScheduleLineDescriptionFormat?: PaymentScheduleLineDescriptionFormat
 } & InvoiceFxOptions
 
@@ -24,6 +26,7 @@ export interface FinanceRuntimeOptions
     FinanceSettlementRouteOptions,
     InvoiceFxOptions {
   descriptionResolver?: InvoiceLineDescriptionResolver
+  invoiceDueDateResolver?: InvoiceDueDateResolver
   paymentScheduleLineDescriptionFormat?: PaymentScheduleLineDescriptionFormat
 }
 
@@ -39,6 +42,7 @@ export function buildFinanceRouteRuntime(
       options.resolveInvoiceSettlementPollers?.(bindings) ?? options.invoiceSettlementPollers ?? {},
     eventBus: options.resolveEventBus?.(bindings) ?? options.eventBus,
     descriptionResolver: options.descriptionResolver,
+    invoiceDueDateResolver: options.invoiceDueDateResolver,
     paymentScheduleLineDescriptionFormat: options.paymentScheduleLineDescriptionFormat,
     invoiceFxSettings: options.invoiceFxSettings,
     resolveInvoiceFxSettings: options.resolveInvoiceFxSettings,

@@ -439,6 +439,16 @@ export class InvoiceLineItemsPersistenceError extends Error {
 }
 
 /** Booking data needed for createInvoiceFromBooking — supplied by the caller (template). */
+export type InvoiceFromBookingPaymentScheduleData = {
+  id: string
+  bookingId: string
+  bookingItemId: string | null
+  scheduleType: "deposit" | "installment" | "balance" | "hold" | "other"
+  dueDate: string
+  currency: string
+  amountCents: number
+}
+
 export interface InvoiceFromBookingData {
   booking: {
     id: string
@@ -453,15 +463,8 @@ export interface InvoiceFromBookingData {
     sellAmountCents: number | null
     baseSellAmountCents: number | null
   }
-  paymentSchedule?: {
-    id: string
-    bookingId: string
-    bookingItemId: string | null
-    scheduleType: "deposit" | "installment" | "balance" | "hold" | "other"
-    dueDate: string
-    currency: string
-    amountCents: number
-  } | null
+  paymentSchedule?: InvoiceFromBookingPaymentScheduleData | null
+  dueDatePaymentSchedule?: InvoiceFromBookingPaymentScheduleData | null
   items: Array<{
     id: string
     title: string
@@ -500,6 +503,18 @@ export interface InvoiceLineDescriptionResolverInput {
 
 export type InvoiceLineDescriptionResolver = (
   input: InvoiceLineDescriptionResolverInput,
+) => string | Promise<string>
+
+export interface InvoiceDueDateResolverInput {
+  issueDate: string
+  dueDate: string
+  invoiceType: NonNullable<CreateInvoiceFromBookingInput["invoiceType"]>
+  booking: InvoiceFromBookingData["booking"]
+  bookingPaymentSchedule?: NonNullable<InvoiceFromBookingData["paymentSchedule"]>
+}
+
+export type InvoiceDueDateResolver = (
+  input: InvoiceDueDateResolverInput,
 ) => string | Promise<string>
 
 const PAYMENT_SCHEDULE_LINE_LABELS: Record<
@@ -717,6 +732,35 @@ async function resolveInvoiceLineDescriptions(
         })) ?? line.description,
     })),
   )
+}
+
+async function resolveInvoiceFromBookingDueDate(
+  data: CreateInvoiceFromBookingInput,
+  bookingData: InvoiceFromBookingData,
+  runtime: FinanceServiceRuntime,
+) {
+  if (!runtime.invoiceDueDateResolver) return data.dueDate
+
+  const dueDate = await runtime.invoiceDueDateResolver({
+    issueDate: data.issueDate,
+    dueDate: data.dueDate,
+    invoiceType: data.invoiceType ?? "invoice",
+    booking: bookingData.booking,
+    bookingPaymentSchedule:
+      bookingData.paymentSchedule ?? bookingData.dueDatePaymentSchedule ?? undefined,
+  })
+
+  if (!dueDate) {
+    throw new InvoiceFromBookingValidationError(
+      "Invoice due date resolver returned an empty date",
+      {
+        issueDate: data.issueDate,
+        dueDate: data.dueDate,
+      },
+    )
+  }
+
+  return dueDate
 }
 
 function assertInvoiceFromBookingOverrideTotals(
@@ -998,6 +1042,7 @@ export interface FinanceServiceRuntime extends InvoiceFxOptions {
   actionLedgerContext?: ActionLedgerRequestContextValues
   actionLedgerAuthorizationSource?: string | null
   descriptionResolver?: InvoiceLineDescriptionResolver
+  invoiceDueDateResolver?: InvoiceDueDateResolver
   paymentScheduleLineDescriptionFormat?: PaymentScheduleLineDescriptionFormat
 }
 
@@ -3848,6 +3893,7 @@ export const financeService = {
     runtime: FinanceServiceRuntime = {},
   ) {
     const { booking, items, paymentSchedule } = bookingData
+    const invoiceDueDate = await resolveInvoiceFromBookingDueDate(data, bookingData, runtime)
     const requestedCurrency = normalizeCurrencyCode(data.currency)
     const bookingSellCurrency = normalizeCurrencyCode(booking.sellCurrency) ?? booking.sellCurrency
     const invoiceCurrency =
@@ -4049,7 +4095,7 @@ export const financeService = {
             baseBalanceDueCents: hasBaseCurrency ? invoiceBaseAmountCents : null,
             commissionAmountCents: commissionAmountCents > 0 ? commissionAmountCents : null,
             issueDate: data.issueDate,
-            dueDate: data.dueDate,
+            dueDate: invoiceDueDate,
             notes: data.notes ?? null,
           })
           .returning()

@@ -544,6 +544,46 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     expect(renditionRows[0]?.status).toBe("pending")
   })
 
+  it("applies the invoice due-date resolver to schedule-derived booking-create invoices", async () => {
+    const { productId } = await seedProduct()
+    let resolverScheduleDueDate: string | null = null
+
+    const outcome = await createBooking(
+      db,
+      {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...bookingParty(),
+        paymentSchedules: [
+          {
+            scheduleType: "balance",
+            dueDate: "2020-01-01",
+            currency: "EUR",
+            amountCents: 50000,
+          },
+        ],
+        documentGeneration: {
+          contractDocument: false,
+          invoiceDocument: true,
+        },
+      },
+      {
+        runtime: {
+          invoiceDueDateResolver: ({ issueDate, dueDate, bookingPaymentSchedule }) => {
+            resolverScheduleDueDate = bookingPaymentSchedule?.dueDate ?? null
+            return bookingPaymentSchedule && dueDate < issueDate ? issueDate : dueDate
+          },
+        },
+      },
+    )
+
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+    expect(resolverScheduleDueDate).toBe("2020-01-01")
+    expect(outcome.result.invoice?.issueDate).toBeTruthy()
+    expect(outcome.result.invoice?.dueDate).toBe(outcome.result.invoice?.issueDate)
+  })
+
   it("creates explicit booking item lines for multiple selected units", async () => {
     const { productId, optionId, unitId } = await seedProduct()
     const secondUnitId = `opun_bc_single_${productSeq}`

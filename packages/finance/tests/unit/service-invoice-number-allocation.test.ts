@@ -624,6 +624,54 @@ describe("financeService.createInvoiceFromBooking number allocation", () => {
     })
   })
 
+  it("lets callers resolve schedule-derived invoice due dates", async () => {
+    const { db, insertedInvoices } = makeDb({})
+    const invoiceDueDateResolver = vi.fn(({ issueDate }) => issueDate)
+
+    await financeService.createInvoiceFromBooking(
+      db,
+      {
+        bookingId: "book_123",
+        invoiceNumber: "MANUAL-1",
+        issueDate: "2026-05-23",
+        dueDate: "2026-05-01",
+        invoiceType: "proforma",
+      },
+      {
+        ...bookingData,
+        paymentSchedule: {
+          id: "bps_123",
+          bookingId: "book_123",
+          bookingItemId: null,
+          scheduleType: "balance",
+          dueDate: "2026-05-01",
+          currency: "RON",
+          amountCents: 12_000,
+        },
+      },
+      { invoiceDueDateResolver },
+    )
+
+    expect(invoiceDueDateResolver).toHaveBeenCalledWith({
+      issueDate: "2026-05-23",
+      dueDate: "2026-05-01",
+      invoiceType: "proforma",
+      booking: bookingData.booking,
+      bookingPaymentSchedule: {
+        id: "bps_123",
+        bookingId: "book_123",
+        bookingItemId: null,
+        scheduleType: "balance",
+        dueDate: "2026-05-01",
+        currency: "RON",
+        amountCents: 12_000,
+      },
+    })
+    expect(insertedInvoices[0]).toMatchObject({
+      dueDate: "2026-05-23",
+    })
+  })
+
   it("persists external refs in the invoice transaction", async () => {
     const { db, insertedInvoiceExternalRefs } = makeDb({})
 

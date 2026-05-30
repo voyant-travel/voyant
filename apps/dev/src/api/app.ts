@@ -77,6 +77,8 @@ const financeModule = createFinanceHonoModule({
       baseUrl: env.VOYANT_CLOUD_API_URL,
     })
   },
+  invoiceDueDateResolver: ({ issueDate, dueDate, bookingPaymentSchedule }) =>
+    bookingPaymentSchedule && dueDate < issueDate ? issueDate : dueDate,
 })
 
 const publicDocumentDeliveryModule = createPublicDocumentDeliveryHonoModule<CloudflareBindings>({

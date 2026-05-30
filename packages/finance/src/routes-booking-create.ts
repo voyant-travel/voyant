@@ -34,12 +34,7 @@ const createBookingRoutes = new Hono<{
 
     const outcome = await createBooking(c.get("db"), input, {
       userId: c.get("userId"),
-      runtime: runtime
-        ? {
-            eventBus: runtime.eventBus,
-            invoiceDocumentGenerator: runtime.invoiceDocumentGenerator,
-          }
-        : undefined,
+      runtime: runtime ?? undefined,
     })
 
     switch (outcome.status) {

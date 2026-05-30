@@ -11,7 +11,6 @@ import {
 import type { Booking, BookingGroupMember, BookingTraveler } from "@voyantjs/bookings/schema"
 import { bookingItems, bookingItemTravelers, bookingTravelers } from "@voyantjs/bookings/schema"
 import { bookingStatusSchema } from "@voyantjs/bookings/validation"
-import type { EventBus } from "@voyantjs/core"
 import { eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { z } from "zod"
@@ -24,7 +23,7 @@ import type {
   VoucherRedemption,
 } from "./schema.js"
 import { bookingPaymentSchedules, vouchers } from "./schema.js"
-import { financeService, toRows } from "./service.js"
+import { type FinanceServiceRuntime, financeService, toRows } from "./service.js"
 import { financeDocumentsService, type InvoiceDocumentGenerator } from "./service-documents.js"
 import { VoucherServiceError, vouchersService } from "./service-vouchers.js"
 import {
@@ -418,8 +417,7 @@ export type BookingCreateTravelerInput = z.infer<typeof travelerInputSchema>
  * with the booking service itself (the booking lands in `draft` status so no
  * `booking.confirmed` should fire here).
  */
-export interface BookingCreateRuntime {
-  eventBus?: EventBus
+export interface BookingCreateRuntime extends FinanceServiceRuntime {
   invoiceDocumentGenerator?: InvoiceDocumentGenerator
   bindings?: Record<string, unknown>
 }
@@ -1218,6 +1216,8 @@ export async function createBooking(
       input.paymentSchedules?.find((schedule) => schedule.dueDate)?.dueDate ??
       result.booking.endDate ??
       issueDate
+    const dueDatePaymentSchedule =
+      result.paymentSchedules.find((schedule) => schedule.dueDate === dueDate) ?? null
 
     const invoice = await financeService.createInvoiceFromBooking(
       db,
@@ -1229,7 +1229,8 @@ export async function createBooking(
         invoiceType: documentGeneration.invoiceType,
         notes: "Generated from booking create.",
       },
-      { booking: result.booking, items },
+      { booking: result.booking, dueDatePaymentSchedule, items },
+      runtime,
     )
 
     result = {
