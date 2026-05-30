@@ -714,6 +714,100 @@ describe.skipIf(!DB_AVAILABLE)("Public booking routes", () => {
     )
   })
 
+  it("preserves a position-matched traveler person link when state omits row ids", async () => {
+    const slot = await seedSlot()
+
+    const createRes = await app.request("/sessions", {
+      method: "POST",
+      ...json({
+        sellCurrency: "EUR",
+        items: [
+          {
+            title: "Sibiu weekend",
+            availabilitySlotId: slot.id,
+            quantity: 1,
+            totalSellAmountCents: 18000,
+            productId: slot.productId,
+            optionId: slot.optionId,
+          },
+        ],
+      }),
+    })
+
+    const session = (await createRes.json()).data
+
+    const firstStateRes = await app.request(`/sessions/${session.sessionId}/state`, {
+      method: "PUT",
+      headers: { ...json({}).headers, ...capabilityHeaders(session) },
+      body: JSON.stringify({
+        currentStep: "rooms",
+        completedSteps: ["travelers"],
+        payload: {
+          stepData: {
+            travelers: {
+              travelers: [
+                {
+                  firstName: "Companion",
+                  lastName: "One",
+                  travelerCategory: "adult",
+                },
+              ],
+            },
+          },
+        },
+      }),
+    })
+
+    expect(firstStateRes.status).toBe(200)
+
+    const [firstTraveler] = await db
+      .select()
+      .from(bookingTravelers)
+      .where(eq(bookingTravelers.bookingId, session.sessionId))
+
+    expect(firstTraveler?.personId).toBe(
+      travelerPersonId({ firstName: "Companion", lastName: "One" }),
+    )
+
+    const secondStateRes = await app.request(`/sessions/${session.sessionId}/state`, {
+      method: "PUT",
+      headers: { ...json({}).headers, ...capabilityHeaders(session) },
+      body: JSON.stringify({
+        currentStep: "rooms",
+        completedSteps: ["travelers"],
+        payload: {
+          stepData: {
+            travelers: {
+              travelers: [
+                {
+                  firstName: "Companion",
+                  lastName: "Edited",
+                  travelerCategory: "adult",
+                },
+              ],
+            },
+          },
+        },
+      }),
+    })
+
+    expect(secondStateRes.status).toBe(200)
+
+    const [updatedTraveler] = await db
+      .select()
+      .from(bookingTravelers)
+      .where(eq(bookingTravelers.bookingId, session.sessionId))
+
+    expect(updatedTraveler).toEqual(
+      expect.objectContaining({
+        id: firstTraveler?.id,
+        firstName: "Companion",
+        lastName: "Edited",
+        personId: firstTraveler?.personId,
+      }),
+    )
+  })
+
   it("syncs billing contact from wizard state into the booking snapshot", async () => {
     const slot = await seedSlot()
 

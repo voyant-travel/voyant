@@ -34,6 +34,11 @@ export interface UpsertPersonFromContactOptions {
   tags?: string[]
   /** Status override; defaults to `"active"`. */
   status?: "active" | "inactive"
+  /**
+   * When true, returns `null` instead of creating a person if the
+   * snapshot has no email or phone dedupe key.
+   */
+  requireContactPoint?: boolean
 }
 
 function splitName(name: string | null | undefined): {
@@ -133,6 +138,10 @@ export async function upsertPersonFromContact(
   if (phone) {
     const existing = await findPersonByContactPoint(db, { kind: "phone", value: phone })
     if (existing) return existing
+  }
+
+  if (options.requireContactPoint && !email && !phone) {
+    return null
   }
 
   // No match — create a new person. `personNameFromContact` ensures

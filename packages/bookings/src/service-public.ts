@@ -319,8 +319,9 @@ async function syncTravelerRowsFromStatePayload(
       (participant.id
         ? undefined
         : existingTravelers.find((traveler) => !usedExistingIds.has(traveler.id)))
+    const hasStableContactPoint = Boolean(participant.email?.trim() || participant.phone?.trim())
     const reusablePersonId =
-      participant.id && matchingExisting?.id === participant.id ? matchingExisting.personId : null
+      participant.id || !hasStableContactPoint ? (matchingExisting?.personId ?? null) : null
     const personId = await resolveTravelerPersonForParticipant(
       db,
       resolvers.resolveTravelerPerson,
