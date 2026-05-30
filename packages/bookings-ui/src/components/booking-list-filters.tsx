@@ -383,7 +383,7 @@ export function BookingListFiltersPopover({
               selectedItem={selectedOrganization}
               getKey={(organization) => organization.id}
               getLabel={(organization) => organization.name}
-              getSecondary={(organization) => organization.vatNumber ?? undefined}
+              getSecondary={(organization) => organization.taxId ?? undefined}
               onSearchChange={setOrganizationSearch}
               placeholder={filterMessages.organization}
               emptyText={filterMessages.organizationEmpty}

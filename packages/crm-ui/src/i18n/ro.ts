@@ -71,7 +71,7 @@ export const crmUiRo = {
     fields: {
       name: "Nume",
       legalName: "Nume legal",
-      vatNumber: "Cod TVA",
+      taxId: "Cod fiscal",
       website: "Website",
       industry: "Industrie",
       billingEmail: "Email facturare",

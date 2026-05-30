@@ -71,7 +71,7 @@ export const crmUiEn = {
     fields: {
       name: "Name",
       legalName: "Legal name",
-      vatNumber: "VAT number",
+      taxId: "Tax ID",
       website: "Website",
       industry: "Industry",
       billingEmail: "Billing email",

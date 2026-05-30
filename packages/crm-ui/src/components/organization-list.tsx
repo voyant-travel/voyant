@@ -337,8 +337,8 @@ export function OrganizationList({
                 >
                   <TableCell>
                     <div className="font-medium">{organization.name}</div>
-                    {organization.vatNumber ? (
-                      <div className="text-xs text-muted-foreground">{organization.vatNumber}</div>
+                    {organization.taxId ? (
+                      <div className="text-xs text-muted-foreground">{organization.taxId}</div>
                     ) : null}
                   </TableCell>
                   <TableCell>{organization.industry ?? messages.common.none}</TableCell>

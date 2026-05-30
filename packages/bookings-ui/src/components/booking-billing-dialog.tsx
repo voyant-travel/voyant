@@ -306,7 +306,7 @@ export function BookingBillingDialog({
     form.setValue("contactPartyType", "company", { shouldDirty: true })
     form.setValue("contactFirstName", organization.name, { shouldDirty: true })
     form.setValue("contactLastName", "", { shouldDirty: true })
-    form.setValue("contactTaxId", organization.vatNumber ?? "", { shouldDirty: true })
+    form.setValue("contactTaxId", organization.taxId ?? "", { shouldDirty: true })
     form.setValue("contactEmail", "", { shouldDirty: true, shouldValidate: true })
     form.setValue("contactPhone", "", { shouldDirty: true })
     setSelectedPersonId("")
@@ -435,9 +435,9 @@ export function BookingBillingDialog({
                                     <span className="truncate font-medium">
                                       {organization.name}
                                     </span>
-                                    {organization.vatNumber ? (
+                                    {organization.taxId ? (
                                       <span className="truncate text-xs text-muted-foreground">
-                                        {organization.vatNumber}
+                                        {organization.taxId}
                                       </span>
                                     ) : null}
                                   </div>

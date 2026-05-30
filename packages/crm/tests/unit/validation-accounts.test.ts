@@ -33,6 +33,16 @@ describe("Organization schemas", () => {
     expect(result.website).toBe("https://acme.com")
   })
 
+  it("accepts taxId", () => {
+    const result = insertOrganizationSchema.parse({ name: "Acme", taxId: " RO44255073 " })
+    expect(result.taxId).toBe("RO44255073")
+  })
+
+  it("normalizes empty taxId to null", () => {
+    const result = insertOrganizationSchema.parse({ name: "Acme", taxId: "" })
+    expect(result.taxId).toBeNull()
+  })
+
   it("rejects invalid website URL", () => {
     expect(() => insertOrganizationSchema.parse({ name: "Acme", website: "not-a-url" })).toThrow()
   })

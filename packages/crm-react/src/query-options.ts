@@ -148,6 +148,7 @@ export function getOrganizationsQueryOptions(
     queryFn: () => {
       const params = new URLSearchParams()
       if (filters.search) params.set("search", filters.search)
+      if (filters.taxId) params.set("taxId", filters.taxId)
       if (filters.ownerId) params.set("ownerId", filters.ownerId)
       if (filters.relation) params.set("relation", filters.relation)
       if (filters.status) params.set("status", filters.status)
