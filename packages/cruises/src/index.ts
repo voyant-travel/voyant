@@ -232,6 +232,7 @@ export {
   priceAvailabilityEnum,
   priceComponentDirectionEnum,
   priceComponentKindEnum,
+  priceFareVariantEnum,
   sailingSalesStatusEnum,
   shipTypeEnum,
 } from "./schema-shared.js"

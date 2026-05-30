@@ -42,6 +42,8 @@ export const priceAvailabilitySchema = z.enum([
   "sold_out",
 ])
 
+export const priceFareVariantSchema = z.enum(["cruise_only", "air_inclusive"])
+
 export const priceComponentKindSchema = z.enum([
   "gratuity",
   "onboard_credit",

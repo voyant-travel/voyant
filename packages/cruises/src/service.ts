@@ -636,6 +636,7 @@ export const cruisesService = {
       conditions.push(eq(cruisePrices.cabinCategoryId, query.cabinCategoryId))
     if (query.occupancy) conditions.push(eq(cruisePrices.occupancy, query.occupancy))
     if (query.fareCode) conditions.push(eq(cruisePrices.fareCode, query.fareCode))
+    if (query.fareVariant) conditions.push(eq(cruisePrices.fareVariant, query.fareVariant))
     if (query.availability) conditions.push(eq(cruisePrices.availability, query.availability))
     if (query.priceCatalogId) conditions.push(eq(cruisePrices.priceCatalogId, query.priceCatalogId))
     const where = conditions.length > 0 ? and(...conditions) : undefined

@@ -77,9 +77,18 @@ or the adapter package's own normalized live replica.
 
 `createBooking(input)` is the commit boundary. It receives the full sailing ref,
 cabin category ref, occupancy, passenger composition, passenger rows, contact,
-fare code, and booking terms accepted by the caller. It returns an upstream
-confirmation reference and any final quote, component, or terms snapshot the
-framework should store locally.
+fare code, fare variant, and booking terms accepted by the caller. It returns an
+upstream confirmation reference and any final quote, component, or terms
+snapshot the framework should store locally.
+
+Pricing rows should use `fareVariant: "cruise_only"` for the base cruise fare
+and `fareVariant: "air_inclusive"` when the row represents the upstream
+air-inclusive cabin fare. When an upstream source exposes sale pricing, map the
+sell price to `pricePerPerson` and the compare-at price to
+`originalPricePerPerson`. Explicit single-occupancy prices should use
+`singlePricePerPerson`; percentage-only supplements should continue to use
+`singleSupplementPercent`. Optional early-booking signals can be carried through
+`earlyBookingDeadline` and `earlyBookingBonusDescription`.
 
 ## Catalog SourceAdapter Shim
 
@@ -170,12 +179,14 @@ describe("cruise adapter contract", () => {
       minimumItineraryDays: 1,
       passengerComposition: { adults: 2 },
       fareCode: "FLEX",
+      fareVariant: "cruise_only",
       bookingInput: {
         sailingRef: { externalId: "fixture-sailing", connectionId: "sandbox-a" },
         cabinCategoryRef: { externalId: "fixture-cabin", connectionId: "sandbox-a" },
         occupancy: 2,
         passengerComposition: { adults: 2 },
         fareCode: "FLEX",
+        fareVariant: "cruise_only",
         passengers: [
           { firstName: "Test", lastName: "One", travelerCategory: "adult", isPrimary: true },
           { firstName: "Test", lastName: "Two", travelerCategory: "adult" },
@@ -192,7 +203,8 @@ The fixture checks:
 - full `SourceRef` round-tripping through `listEntries` and `searchProjection`;
 - multi-connection identity with two refs sharing the same `externalId`;
 - cruise, sailing, itinerary, ship, and cruise-to-sailings detail lookup;
-- sailing pricing lookup by cabin ref, passenger composition, and fare code;
+- sailing pricing lookup by cabin ref, passenger composition, fare code, and
+  fare variant when supplied;
 - booking commit payload acceptance and upstream confirmation return.
 
 Adapter packages should run this fixture against a sandbox data set where the

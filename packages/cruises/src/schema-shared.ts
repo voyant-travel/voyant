@@ -45,6 +45,11 @@ export const priceAvailabilityEnum = pgEnum("cruise_price_availability", [
   "sold_out",
 ])
 
+export const priceFareVariantEnum = pgEnum("cruise_price_fare_variant", [
+  "cruise_only",
+  "air_inclusive",
+])
+
 export const priceComponentKindEnum = pgEnum("cruise_price_component_kind", [
   "gratuity",
   "onboard_credit",

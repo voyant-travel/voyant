@@ -19,7 +19,7 @@ import { Hono } from "hono"
 import { z } from "zod"
 
 import type { ExternalPassengerComposition, SourceRef } from "./adapters/index.js"
-import { cruiseSourceEnum } from "./schema-shared.js"
+import { cruiseSourceEnum, priceFareVariantEnum } from "./schema-shared.js"
 import type { QuoteBookingTerms, QuoteComponent } from "./service-pricing.js"
 
 // ---------- enums ----------
@@ -59,6 +59,7 @@ export const bookingCruiseDetails = pgTable(
     cabinDisplayName: text("cabin_display_name"),
     occupancy: smallint("occupancy").notNull(),
     fareCode: text("fare_code"),
+    fareVariant: priceFareVariantEnum("fare_variant").notNull().default("cruise_only"),
     mode: cruiseBookingModeEnum("mode").notNull().default("inquiry"),
     quotedPricePerPerson: numeric("quoted_price_per_person", { precision: 12, scale: 2 }).notNull(),
     quotedTotalForCabin: numeric("quoted_total_for_cabin", { precision: 12, scale: 2 }).notNull(),
@@ -167,6 +168,7 @@ const cruiseDetailUpsertSchema = z
     cabinDisplayName: z.string().optional().nullable(),
     occupancy: z.number().int().min(1).max(8),
     fareCode: z.string().optional().nullable(),
+    fareVariant: z.enum(["cruise_only", "air_inclusive"]).default("cruise_only"),
     mode: z.enum(["inquiry", "reserve"]).default("inquiry"),
     quotedPricePerPerson: z.string().regex(/^-?\d+(\.\d{1,2})?$/),
     quotedTotalForCabin: z.string().regex(/^-?\d+(\.\d{1,2})?$/),

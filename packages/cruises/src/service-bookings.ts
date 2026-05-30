@@ -4,6 +4,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type {
   CruiseAdapter,
   ExternalBookingTerms,
+  ExternalFareVariant,
   ExternalPassengerComposition,
   SourceRef,
 } from "./adapters/index.js"
@@ -53,6 +54,7 @@ export type CreateCruiseBookingInput = {
   cabinId?: string | null
   occupancy: number
   fareCode?: string | null
+  fareVariant?: ExternalFareVariant | null
   mode?: CruiseBookingMode
   personId?: string | null
   organizationId?: string | null
@@ -225,6 +227,7 @@ export const cruisesBookingService = {
         occupancy: input.occupancy,
         guestCount,
         fareCode: input.fareCode ?? null,
+        fareVariant: input.fareVariant ?? null,
       })
 
       // 2. Create the booking row.
@@ -289,6 +292,7 @@ export const cruisesBookingService = {
         cabinDisplayName: null,
         occupancy: input.occupancy,
         fareCode: input.fareCode ?? null,
+        fareVariant: quote.fareVariant,
         mode: input.mode ?? "inquiry",
         quotedPricePerPerson: quote.totalPerPerson,
         quotedTotalForCabin: quote.totalForCabin,
@@ -348,6 +352,7 @@ export const cruisesBookingService = {
           occupancy: cabin.occupancy,
           guestCount,
           fareCode: cabin.fareCode ?? null,
+          fareVariant: cabin.fareVariant ?? null,
         })
         quotes.push({ quote, cabin })
       }
@@ -436,6 +441,7 @@ export const cruisesBookingService = {
           cabinDisplayName: null,
           occupancy: cabin.occupancy,
           fareCode: cabin.fareCode ?? null,
+          fareVariant: quote.fareVariant,
           mode: input.mode ?? "inquiry",
           quotedPricePerPerson: quote.totalPerPerson,
           quotedTotalForCabin: quote.totalForCabin,
@@ -534,7 +540,8 @@ export const cruisesBookingService = {
         sourceRefMatches(p.cabinCategoryRef, input.cabinCategoryRef) &&
         p.occupancy === input.occupancy &&
         passengerCompositionMatches(p.passengerComposition, passengerComposition) &&
-        (!input.fareCode || p.fareCode === input.fareCode),
+        (!input.fareCode || p.fareCode === input.fareCode) &&
+        (!input.fareVariant || p.fareVariant === input.fareVariant),
     )
     if (!matching) {
       throw new Error(
@@ -546,11 +553,16 @@ export const cruisesBookingService = {
     const quote = composeQuote({
       price: {
         pricePerPerson: matching.pricePerPerson,
+        originalPricePerPerson: matching.originalPricePerPerson ?? null,
         secondGuestPricePerPerson: matching.secondGuestPricePerPerson ?? null,
+        singlePricePerPerson: matching.singlePricePerPerson ?? null,
         singleSupplementPercent: matching.singleSupplementPercent ?? null,
         currency: matching.currency,
         fareCode: matching.fareCode ?? null,
         fareCodeName: matching.fareCodeName ?? null,
+        fareVariant: matching.fareVariant ?? "cruise_only",
+        earlyBookingDeadline: matching.earlyBookingDeadline ?? null,
+        earlyBookingBonusDescription: matching.earlyBookingBonusDescription ?? null,
       },
       components: (matching.components ?? []).map((c) => ({
         kind: c.kind,
@@ -573,6 +585,7 @@ export const cruisesBookingService = {
       occupancy: input.occupancy,
       passengerComposition,
       fareCode: input.fareCode ?? null,
+      fareVariant: input.fareVariant ?? null,
       passengers: input.passengers,
       contact: input.contact,
       bookingTerms: input.bookingTerms ?? matching.bookingTerms ?? null,
@@ -655,6 +668,7 @@ export const cruisesBookingService = {
         cabinDisplayName: null,
         occupancy: input.occupancy,
         fareCode: input.fareCode ?? null,
+        fareVariant: finalQuote.fareVariant,
         mode: input.mode ?? "inquiry",
         quotedPricePerPerson: finalQuote.totalPerPerson,
         quotedTotalForCabin: finalQuote.totalForCabin,
@@ -684,6 +698,7 @@ export type CruisePartyCabinEntry = {
   cabinId?: string | null
   occupancy: number
   fareCode?: string | null
+  fareVariant?: ExternalFareVariant | null
   passengers: CruiseBookingPassenger[]
   notes?: string | null
 }
@@ -714,6 +729,7 @@ export type CreateExternalCruiseBookingInput = {
   occupancy: number
   passengerComposition?: ExternalPassengerComposition | null
   fareCode?: string | null
+  fareVariant?: ExternalFareVariant | null
   mode?: CruiseBookingMode
   personId?: string | null
   organizationId?: string | null
