@@ -1,5 +1,15 @@
 # @voyantjs/legal-ui
 
+## 0.88.0
+
+### Patch Changes
+
+- @voyantjs/crm-react@0.88.0
+- @voyantjs/i18n@0.88.0
+- @voyantjs/legal-react@0.88.0
+- @voyantjs/ui@0.88.0
+- @voyantjs/utils@0.88.0
+
 ## 0.87.1
 
 ### Patch Changes
