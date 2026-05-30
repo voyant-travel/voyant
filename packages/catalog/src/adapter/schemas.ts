@@ -22,6 +22,167 @@ export const postBookOperationSchema = z.enum([
   "void",
 ])
 
+export const capabilitySupportSchema = z.enum(["supported", "unsupported", "unknown"])
+
+export const providerCapabilityKeySchema = z.enum([
+  "category_availability_counts",
+  "physical_inventory_units",
+  "inventory_assignment_selection",
+  "price_ranges",
+  "offer_applicability_evaluation",
+  "promotion_media",
+  "promotion_stacking_rules",
+])
+
+export const providerCapabilityDeclarationSchema = z.object({
+  capability: providerCapabilityKeySchema,
+  support: capabilitySupportSchema,
+  applies_to: z.array(z.string()).readonly().optional(),
+  reason: z.string().optional(),
+  evidence: z.string().optional(),
+  source_updated_at: dateOrStringSchema.optional(),
+})
+
+export const promotionApplicabilityEvaluationSchema = z.enum([
+  "evaluable",
+  "not_evaluable_locally",
+  "unknown",
+])
+
+export const promotionPriceEffectSchema = z.enum([
+  "price_affecting",
+  "informational_only",
+  "unknown",
+])
+
+export const promotionApplicabilityConstraintKindSchema = z.enum([
+  "loyalty",
+  "solo_traveler",
+  "market",
+  "language",
+  "currency",
+  "fare_code",
+  "passenger_occupancy",
+  "booking_window",
+  "travel_window",
+  "customer_session",
+])
+
+export const promotionApplicabilityResolutionSchema = z.enum([
+  "eligible",
+  "ineligible",
+  "customer_context_required",
+  "not_evaluable_locally",
+  "unknown",
+])
+
+export const promotionApplicabilityConstraintSchema = z.object({
+  kind: promotionApplicabilityConstraintKindSchema,
+  resolution: promotionApplicabilityResolutionSchema,
+  values: z.array(z.string()).readonly().optional(),
+  min: z.number().optional(),
+  max: z.number().optional(),
+  starts_at: dateOrStringSchema.optional(),
+  ends_at: dateOrStringSchema.optional(),
+  requires_customer_context: z.boolean().optional(),
+  reason: z.string().optional(),
+})
+
+export const promotionApplicabilitySchema = z.object({
+  evaluation: promotionApplicabilityEvaluationSchema,
+  price_effect: promotionPriceEffectSchema,
+  constraints: z.array(promotionApplicabilityConstraintSchema).readonly(),
+})
+
+export const promotionMediaKindSchema = z.enum(["hero", "primary", "thumbnail", "logo", "other"])
+
+export const promotionMediaAssetSchema = z.object({
+  kind: promotionMediaKindSchema,
+  url: z.url(),
+  alt_text: z.string().optional(),
+  mime_type: z.string().optional(),
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
+})
+
+export const promotionDisplayFieldsSchema = z.object({
+  display_name: z.string().optional(),
+  subtitle: z.string().optional(),
+  rich_description: z.string().optional(),
+  terms_and_conditions: z.string().optional(),
+  media: z.array(promotionMediaAssetSchema).readonly().optional(),
+  featured: z.boolean().optional(),
+  display_priority: z.number().int().optional(),
+})
+
+export const promotionStackingSemanticsSchema = z.enum([
+  "stackable",
+  "exclusive",
+  "provider_defined",
+  "unknown",
+])
+
+export const providerPromotionSchema = z.object({
+  source_offer_id: z.string(),
+  source_offer_ref: z.string().optional(),
+  provider: z.string().optional(),
+  display: promotionDisplayFieldsSchema.optional(),
+  applicability: promotionApplicabilitySchema,
+  stacking: promotionStackingSemanticsSchema,
+  raw_payload: recordSchema.optional(),
+})
+
+export const availabilityRowKindSchema = z.enum([
+  "entity",
+  "departure",
+  "sailing",
+  "category",
+  "fare",
+  "other",
+])
+
+export const availabilityUnitPrecisionSchema = z.enum([
+  "exact",
+  "category_count",
+  "lower_bound",
+  "upper_bound",
+  "unknown",
+])
+
+export const availabilityStatusSchema = z.enum([
+  "available",
+  "low",
+  "unavailable",
+  "sold_out",
+  "on_request",
+  "unknown",
+])
+
+export const availabilityBadgeKindSchema = z.enum([
+  "available",
+  "low_availability",
+  "sold_out",
+  "on_request",
+  "unknown",
+])
+
+export const availabilityBadgeSchema = z.object({
+  kind: availabilityBadgeKindSchema,
+  label: z.string().optional(),
+})
+
+export const availabilityProjectionSchema = z.object({
+  row_kind: availabilityRowKindSchema,
+  row_id: z.string().optional(),
+  available_units: z.number().int().min(0).nullable(),
+  precision: availabilityUnitPrecisionSchema,
+  status: availabilityStatusSchema,
+  low_availability_threshold: z.number().int().min(0).nullable().optional(),
+  badge: availabilityBadgeSchema.optional(),
+  sort_priority: z.number().int().optional(),
+  source_updated_at: dateOrStringSchema.optional(),
+})
+
 export const adapterCapabilitiesSchema = z.object({
   verticals: z.array(catalogVerticalSchema),
   supportsLiveResolution: z.boolean(),
@@ -39,6 +200,7 @@ export const adapterCapabilitiesSchema = z.object({
   supportsBookingPush: z.boolean().optional(),
   supportsAvailabilityPush: z.boolean().optional(),
   supportsContentPush: z.boolean().optional(),
+  providerCapabilities: z.array(providerCapabilityDeclarationSchema).readonly().optional(),
 })
 
 export const connectionStateSchema = z.enum(["active", "paused", "disconnected", "error"])

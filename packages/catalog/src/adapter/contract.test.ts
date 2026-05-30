@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import type {
   AdapterCapabilities,
+  AvailabilityProjection,
   CancelRequest,
   CancelResult,
   GetContentRequest,
@@ -9,15 +10,18 @@ import type {
   GetReservationRequest,
   GetReservationResult,
   ListReservationsPage,
+  ProviderPromotion,
   ReservationStatus,
   ReserveRequest,
   SourceAdapter,
 } from "./contract.js"
 import {
+  availabilityProjectionSchema,
   cancelRequestSchema,
   getReservationRequestSchema,
   getReservationResultSchema,
   listReservationsPageSchema,
+  providerPromotionSchema,
   reservationStatusSchema,
   reserveRequestSchema,
 } from "./schemas.js"
@@ -55,6 +59,103 @@ describe("AdapterCapabilities — content fetch declaration", () => {
     expect(cap.ownsContentCache).toBe(true)
     expect(cap.ownsAvailabilityCache).toBe(true)
     expect(cap.supportsReservationRetrieval).toBe(true)
+  })
+})
+
+describe("AdapterCapabilities — provider capability declarations", () => {
+  it("can state supported and explicitly unsupported provider features", () => {
+    const cap: AdapterCapabilities = {
+      verticals: ["cruises"],
+      supportsLiveResolution: true,
+      supportsDriftDetection: true,
+      supportsBookingForwarding: true,
+      postBookOperations: ["cancel", "status"],
+      providerCapabilities: [
+        {
+          capability: "category_availability_counts",
+          support: "supported",
+          applies_to: ["sailings", "cabin_categories"],
+        },
+        {
+          capability: "physical_inventory_units",
+          support: "unsupported",
+          applies_to: ["cabins"],
+          reason: "current feed exposes category inventory counts but not cabin numbers",
+        },
+        {
+          capability: "offer_applicability_evaluation",
+          support: "unknown",
+          reason: "customer/session eligibility is provider-side",
+        },
+      ],
+    }
+
+    expect(cap.providerCapabilities?.map((item) => [item.capability, item.support])).toEqual([
+      ["category_availability_counts", "supported"],
+      ["physical_inventory_units", "unsupported"],
+      ["offer_applicability_evaluation", "unknown"],
+    ])
+  })
+})
+
+describe("ProviderPromotion / AvailabilityProjection contract shape", () => {
+  it("represents non-evaluable loyalty offers with normalized display media", () => {
+    const promotion: ProviderPromotion = {
+      source_offer_id: "UNI-PAST-GUEST",
+      provider: "uniworld",
+      display: {
+        display_name: "Past Guest Savings",
+        subtitle: "Exclusive loyalty pricing",
+        media: [
+          {
+            kind: "primary",
+            url: "https://example.com/offers/past-guest.jpg",
+            alt_text: "River ship suite",
+          },
+        ],
+        featured: true,
+      },
+      applicability: {
+        evaluation: "not_evaluable_locally",
+        price_effect: "price_affecting",
+        constraints: [
+          {
+            kind: "loyalty",
+            resolution: "customer_context_required",
+            values: ["past_guest"],
+            requires_customer_context: true,
+          },
+          {
+            kind: "fare_code",
+            resolution: "not_evaluable_locally",
+            values: ["PG"],
+          },
+        ],
+      },
+      stacking: "unknown",
+      raw_payload: { offerCode: "UNI-PAST-GUEST" },
+    }
+
+    expect(providerPromotionSchema.parse(promotion)).toEqual(promotion)
+    expect(promotion.applicability.evaluation).toBe("not_evaluable_locally")
+    expect(promotion.display?.media?.[0]?.kind).toBe("primary")
+  })
+
+  it("distinguishes category-count availability from exact physical units", () => {
+    const projection: AvailabilityProjection = {
+      row_kind: "category",
+      row_id: "suite-deluxe",
+      available_units: 3,
+      precision: "category_count",
+      status: "low",
+      low_availability_threshold: 4,
+      badge: { kind: "low_availability", label: "Only 3 left" },
+      sort_priority: 20,
+    }
+
+    expect(availabilityProjectionSchema.parse(projection)).toEqual(projection)
+    expect(projection.precision).toBe("category_count")
+    expect(projection.status).toBe("low")
   })
 })
 

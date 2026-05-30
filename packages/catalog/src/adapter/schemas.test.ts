@@ -145,6 +145,20 @@ const capabilities: AdapterCapabilities = {
   supportsBookingPush: true,
   supportsAvailabilityPush: true,
   supportsContentPush: true,
+  providerCapabilities: [
+    {
+      capability: "category_availability_counts",
+      support: "supported",
+      applies_to: ["cruises"],
+      evidence: "category inventory feed",
+    },
+    {
+      capability: "physical_inventory_units",
+      support: "unsupported",
+      applies_to: ["cruises"],
+      reason: "provider feed exposes category counts but not cabin numbers",
+    },
+  ],
 }
 
 const context: SourceAdapterContext = {
