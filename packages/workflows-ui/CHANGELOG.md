@@ -1,5 +1,15 @@
 # @voyantjs/workflows-ui
 
+## 0.87.1
+
+### Patch Changes
+
+- 6c4133f: Expose persisted workflow schedule execution state on schedule API rows and surface it in the schedules UI when run history is not wired.
+- Updated dependencies [6c4133f]
+  - @voyantjs/i18n@0.87.1
+  - @voyantjs/ui@0.87.1
+  - @voyantjs/workflows-react@0.87.1
+
 ## 0.87.0
 
 ### Patch Changes
