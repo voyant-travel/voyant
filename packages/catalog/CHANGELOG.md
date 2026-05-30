@@ -1,5 +1,17 @@
 # @voyantjs/catalog
 
+## 0.88.0
+
+### Minor Changes
+
+- 27afa4b: Add provider-agnostic external cruise catalog refresh and reindex helpers.
+
+### Patch Changes
+
+- @voyantjs/core@0.88.0
+- @voyantjs/db@0.88.0
+- @voyantjs/hono@0.88.0
+
 ## 0.87.1
 
 ### Patch Changes

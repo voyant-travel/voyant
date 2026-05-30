@@ -1,5 +1,16 @@
 # @voyantjs/charters
 
+## 0.88.0
+
+### Patch Changes
+
+- Updated dependencies [27afa4b]
+  - @voyantjs/bookings@0.88.0
+  - @voyantjs/catalog@0.88.0
+  - @voyantjs/core@0.88.0
+  - @voyantjs/db@0.88.0
+  - @voyantjs/hono@0.88.0
+
 ## 0.87.1
 
 ### Patch Changes
