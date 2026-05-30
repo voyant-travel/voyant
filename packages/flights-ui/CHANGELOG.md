@@ -1,5 +1,19 @@
 # @voyantjs/flights-ui
 
+## 0.89.0
+
+### Patch Changes
+
+- ed45995: Rename CRM organization `vatNumber` to `taxId` and support exact organization lookup by tax id.
+- Updated dependencies [ed45995]
+  - @voyantjs/checkout-ui@0.89.0
+  - @voyantjs/crm-react@0.89.0
+  - @voyantjs/finance@0.89.0
+  - @voyantjs/flights@0.89.0
+  - @voyantjs/flights-react@0.89.0
+  - @voyantjs/i18n@0.89.0
+  - @voyantjs/ui@0.89.0
+
 ## 0.88.0
 
 ### Patch Changes
