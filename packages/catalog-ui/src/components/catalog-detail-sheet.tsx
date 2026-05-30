@@ -75,23 +75,47 @@ export interface CatalogDetailEnrichment {
     title?: string | null
     description?: string | null
     location?: string | null
+    date?: string | null
+    arrivalTime?: string | null
+    departureTime?: string | null
+    isAtSea?: boolean | null
     /** Optional hero image rendered alongside the day card. */
     heroImageUrl?: string | null
   }>
   media?: ReadonlyArray<{ url: string; type?: string; caption?: string | null }>
-  options?: ReadonlyArray<{ id: string; name: string; description?: string | null }>
+  options?: ReadonlyArray<{
+    id: string
+    name: string
+    description?: string | null
+    code?: string | null
+    type?: string | null
+  }>
   policies?: ReadonlyArray<{ kind: string; body: string }>
   departures?: ReadonlyArray<{
     id: string
+    sourceRef?: string | null
     startsAt: string
     endsAt?: string | null
+    durationNights?: number | null
     status?: string | null
+    embarkationPort?: string | null
+    disembarkationPort?: string | null
     unlimited?: boolean | null
     capacity?: number | null
     remaining?: number | null
     lowestPriceCents?: number | null
     currency?: string | null
     note?: string | null
+    itinerary?: ReadonlyArray<{
+      dayNumber: number
+      title?: string | null
+      description?: string | null
+      location?: string | null
+      date?: string | null
+      arrivalTime?: string | null
+      departureTime?: string | null
+      isAtSea?: boolean | null
+    }>
   }>
   /** Resolution metadata — drives the chips at the top. */
   servedLocale?: string

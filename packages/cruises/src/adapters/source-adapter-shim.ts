@@ -214,10 +214,8 @@ export function cruiseAdapterToSourceAdapter(
       request: GetContentRequest,
     ): Promise<GetContentResult> {
       // Compose the cruise adapter's per-aspect fetches into one
-      // `CruiseContent` payload. Itinerary stays empty — itinerary
-      // is per-sailing, not per-cruise; the journey wires it via
-      // sailing-level reads. This shim is "what's structurally true
-      // about the cruise"; per-departure detail comes via journey.
+      // `CruiseContent` payload. Itinerary is per-sailing, so it stays
+      // attached to each sailing instead of being flattened onto the cruise.
       const sourceRef = entityIdToSourceRef(request.entity_id)
       const cruise = await cruiseAdapter.fetchCruise(sourceRef)
       if (!cruise) {
@@ -230,11 +228,16 @@ export function cruiseAdapterToSourceAdapter(
         ? await cruiseAdapter.fetchShip(cruise.defaultShipRef)
         : null
       const sailings = await cruiseAdapter.listSailingsForCruise(cruise.sourceRef)
+      const sailingsWithItinerary = await Promise.all(
+        sailings.map(async (sailing) =>
+          cruiseSailingFrom(sailing, await cruiseAdapter.fetchSailingItinerary(sailing.sourceRef)),
+        ),
+      )
 
       const content: CruiseContent = {
         cruise: cruiseSummaryFrom(cruise),
         ship: ship ? cruiseShipFrom(ship) : null,
-        sailings: sailings.map(cruiseSailingFrom),
+        sailings: sailingsWithItinerary,
         cabin_categories: ship?.categories?.map(cruiseCabinCategoryFrom) ?? [],
         itinerary_stops: [],
         policies: cruisePoliciesFrom(cruise),
@@ -301,7 +304,10 @@ function cruiseShipFrom(s: ExternalShip): NonNullable<CruiseContent["ship"]> {
   }
 }
 
-function cruiseSailingFrom(sail: ExternalSailing): CruiseContent["sailings"][number] {
+function cruiseSailingFrom(
+  sail: ExternalSailing,
+  itinerary: ReadonlyArray<ExternalItineraryDay> = [],
+): CruiseContent["sailings"][number] {
   // Sailing duration: derived from departure→return when both are
   // present. Handles the common case where the upstream ships dates
   // but no explicit duration_nights.
@@ -321,6 +327,9 @@ function cruiseSailingFrom(sail: ExternalSailing): CruiseContent["sailings"][num
     status: sail.salesStatus ?? null,
     embarkation_port: sail.embarkPortName ?? null,
     disembarkation_port: sail.disembarkPortName ?? null,
+    itinerary_stops: itinerary.map((day) => cruiseItineraryStopFrom(day)),
+    lowest_price_cents: sail.lowestPriceCents ?? null,
+    currency: sail.currency ?? null,
   }
 }
 

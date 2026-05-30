@@ -80,6 +80,8 @@ function makeStubAdapter(overrides: Partial<CruiseAdapter> = {}): CruiseAdapter 
       embarkPortName: "Athens",
       disembarkPortName: "Athens",
       salesStatus: "open",
+      lowestPriceCents: 349900,
+      currency: "EUR",
     },
   ]
 
@@ -102,8 +104,21 @@ function makeStubAdapter(overrides: Partial<CruiseAdapter> = {}): CruiseAdapter 
     async fetchSailingPricing() {
       return []
     },
-    async fetchSailingItinerary() {
-      return []
+    async fetchSailingItinerary(sourceRef) {
+      if (sourceRef.externalId !== "sailing-1") return []
+      return [
+        {
+          dayNumber: 1,
+          portName: "Athens",
+          departureTime: "17:00",
+        },
+        {
+          dayNumber: 2,
+          portName: "Mykonos",
+          arrivalTime: "08:00",
+          departureTime: "18:00",
+        },
+      ]
     },
     async fetchShip(sourceRef) {
       if (sourceRef.externalId === ship.sourceRef.externalId) return ship
@@ -251,6 +266,12 @@ describe("cruiseAdapterToSourceAdapter.getContent", () => {
     expect(content.ship?.capacity).toBe(1200)
     expect(content.sailings).toHaveLength(1)
     expect(content.sailings[0].duration_nights).toBe(7)
+    expect(content.sailings[0].lowest_price_cents).toBe(349900)
+    expect(content.sailings[0].currency).toBe("EUR")
+    expect(content.sailings[0].itinerary_stops).toMatchObject([
+      { day_number: 1, port_name: "Athens", departure_time: "17:00" },
+      { day_number: 2, port_name: "Mykonos", arrival_time: "08:00", departure_time: "18:00" },
+    ])
     expect(content.cabin_categories).toHaveLength(1)
     expect(content.cabin_categories[0].type).toBe("inside")
     expect(content.itinerary_stops).toEqual([])

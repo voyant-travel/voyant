@@ -66,42 +66,9 @@ export interface CatalogSlotAvailability {
   initialPax?: number | null
 }
 
-interface ProductSourcedContentResponse {
+interface ContentResponseEnvelope {
   data: {
-    content: {
-      product: {
-        id: string
-        name: string
-        description?: string | null
-        highlights?: string[]
-        hero_image_url?: string | null
-        duration_days?: number | null
-        sell_currency?: string | null
-        supplier?: string | null
-        country?: string | null
-      }
-      options: Array<{ id: string; name: string; description?: string | null }>
-      days: Array<{
-        day_number: number
-        title?: string | null
-        description?: string | null
-        location?: string | null
-        hero_image_url?: string | null
-      }>
-      media: Array<{ url: string; type: string; caption?: string | null }>
-      policies: Array<{ kind: string; body: string }>
-      departures?: Array<{
-        id: string
-        starts_at: string
-        ends_at?: string | null
-        status?: string | null
-        capacity?: number | null
-        remaining?: number | null
-        lowest_price_cents?: number | null
-        currency?: string | null
-        note?: string | null
-      }>
-    }
+    content: SourcedContentPayload
     served_locale: string
     match_kind: "exact" | "language_match" | "fallback_chain" | "any"
     source: "sourced-cache" | "sourced-fresh" | "synthesized" | "owned"
@@ -109,6 +76,87 @@ interface ProductSourcedContentResponse {
     synthesized: boolean
     machine_translated: boolean
   }
+}
+
+type SourcedContentPayload = ProductContentPayload | CruiseContentPayload
+
+interface ProductContentPayload {
+  product: {
+    id: string
+    name: string
+    description?: string | null
+    highlights?: string[]
+    hero_image_url?: string | null
+    duration_days?: number | null
+    sell_currency?: string | null
+    supplier?: string | null
+    country?: string | null
+  }
+  options: Array<{ id: string; name: string; description?: string | null }>
+  days: Array<{
+    day_number: number
+    title?: string | null
+    description?: string | null
+    location?: string | null
+    hero_image_url?: string | null
+  }>
+  media: Array<{ url: string; type: string; caption?: string | null }>
+  policies: Array<{ kind: string; body: string }>
+  departures?: Array<{
+    id: string
+    starts_at: string
+    ends_at?: string | null
+    status?: string | null
+    capacity?: number | null
+    remaining?: number | null
+    lowest_price_cents?: number | null
+    currency?: string | null
+    note?: string | null
+  }>
+}
+
+interface CruiseContentPayload {
+  cruise: {
+    id: string
+    name: string
+    description?: string | null
+    highlights?: string[]
+    hero_image_url?: string | null
+    cruise_line?: string | null
+  }
+  ship?: { id?: string | null; name: string; description?: string | null } | null
+  sailings?: Array<{
+    id: string
+    source_ref?: string | null
+    start_date: string
+    end_date: string
+    duration_nights?: number | null
+    status?: string | null
+    embarkation_port?: string | null
+    disembarkation_port?: string | null
+    itinerary_stops?: CruiseItineraryStopPayload[]
+    lowest_price_cents: number | null
+    currency: string | null
+  }>
+  cabin_categories?: Array<{
+    id: string
+    code?: string | null
+    name: string
+    description?: string | null
+    type?: string | null
+  }>
+  itinerary_stops?: CruiseItineraryStopPayload[]
+  policies: Array<{ kind: string; body: string }>
+}
+
+interface CruiseItineraryStopPayload {
+  day_number: number
+  port_name: string
+  description?: string | null
+  date?: string | null
+  arrival_time?: string | null
+  departure_time?: string | null
+  is_at_sea?: boolean | null
 }
 
 let warnedAboutMissingMount = false
@@ -162,7 +210,7 @@ export function createCatalogEnrichmentFetchers(
       throw new Error(`catalog enrichment fetch failed: ${response.status} ${response.statusText}`)
     }
 
-    const payload = (await response.json()) as ProductSourcedContentResponse
+    const payload = (await response.json()) as ContentResponseEnvelope
     const availability = loadSlotAvailability
       ? // i18n-literal-ok: `=> new Map<…>` trips the JSX-text heuristic — no user-facing copy here.
         await loadSlotAvailability(hit.id).catch(() => new Map<string, CatalogSlotAvailability>())
@@ -193,7 +241,7 @@ function maybeWarnMissingMount(response: Response, url: string): void {
 }
 
 function mapContentToEnrichment(
-  payload: ProductSourcedContentResponse,
+  payload: ContentResponseEnvelope,
   availability: Map<string, CatalogSlotAvailability>,
   formatSupplier?: (id: string) => string,
 ): CatalogDetailEnrichment {
@@ -206,6 +254,30 @@ function mapContentToEnrichment(
     synthesized,
     machine_translated,
   } = payload.data
+  const base = isCruiseContent(content)
+    ? mapCruiseContentToEnrichment(content)
+    : mapProductContentToEnrichment(content, availability, formatSupplier)
+
+  return {
+    ...base,
+    servedLocale: served_locale,
+    matchKind: match_kind,
+    source,
+    servedStale: served_stale,
+    synthesized,
+    machineTranslated: machine_translated,
+  }
+}
+
+function isCruiseContent(content: SourcedContentPayload): content is CruiseContentPayload {
+  return "cruise" in content
+}
+
+function mapProductContentToEnrichment(
+  content: ProductContentPayload,
+  availability: Map<string, CatalogSlotAvailability>,
+  formatSupplier?: (id: string) => string,
+): CatalogDetailEnrichment {
   const supplierName =
     typeof content.product.supplier === "string"
       ? formatSupplier
@@ -251,13 +323,64 @@ function mapContentToEnrichment(
         note: d.note ?? null,
       }
     }),
-    servedLocale: served_locale,
-    matchKind: match_kind,
-    source,
-    servedStale: served_stale,
-    synthesized,
-    machineTranslated: machine_translated,
   }
+}
+
+function mapCruiseContentToEnrichment(content: CruiseContentPayload): CatalogDetailEnrichment {
+  return {
+    description: content.cruise.description ?? null,
+    highlights: content.cruise.highlights ?? [],
+    heroImageUrl: content.cruise.hero_image_url ?? null,
+    supplier: content.cruise.cruise_line ?? null,
+    itinerary: mapCruiseItineraryStops(content.itinerary_stops ?? []),
+    media: [],
+    options: (content.cabin_categories ?? []).map((c) => ({
+      id: c.id,
+      name: formatCruiseCabinCategoryName(c),
+      description: c.description ?? null,
+      code: c.code ?? null,
+      type: c.type ?? null,
+    })),
+    policies: content.policies.map((p) => ({ kind: p.kind, body: p.body })),
+    departures: (content.sailings ?? []).map((s) => ({
+      id: s.id,
+      sourceRef: s.source_ref ?? null,
+      startsAt: s.start_date,
+      endsAt: s.end_date,
+      durationNights: s.duration_nights ?? null,
+      status: s.status ?? null,
+      embarkationPort: s.embarkation_port ?? null,
+      disembarkationPort: s.disembarkation_port ?? null,
+      lowestPriceCents: s.lowest_price_cents,
+      currency: s.currency,
+      itinerary: mapCruiseItineraryStops(s.itinerary_stops ?? []),
+    })),
+  }
+}
+
+function mapCruiseItineraryStops(
+  stops: ReadonlyArray<CruiseItineraryStopPayload>,
+): NonNullable<CatalogDetailEnrichment["itinerary"]> {
+  return stops.map((d) => ({
+    dayNumber: d.day_number,
+    title: d.port_name,
+    description: d.description ?? null,
+    location: d.port_name,
+    date: d.date ?? null,
+    arrivalTime: d.arrival_time ?? null,
+    departureTime: d.departure_time ?? null,
+    isAtSea: d.is_at_sea ?? null,
+  }))
+}
+
+function formatCruiseCabinCategoryName(category: {
+  code?: string | null
+  name: string
+  type?: string | null
+}): string {
+  if (category.code) return `${category.code} - ${category.name}`
+  if (!category.name && category.type) return category.type
+  return category.name
 }
 
 function buildContentUrl(

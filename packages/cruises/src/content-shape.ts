@@ -10,9 +10,10 @@
  * to one `GetContentResult.content` blob; the public adapter contract
  * gets one method, not five.
  *
- * Pricing stays out — it's volatile and continues to flow through
- * `liveResolve`. The content blob carries cabin categories (structural)
- * and itinerary stops (structural), but not per-sailing fare prices.
+ * Full pricing stays out — it's volatile and continues to flow through
+ * `liveResolve`. The content blob carries structural cabin categories and
+ * itinerary stops, plus optional per-sailing browse price summaries as
+ * integer minor units paired with currency.
  *
  * See `docs/architecture/catalog-sourced-content.md` §3.2, §E.
  */
@@ -49,16 +50,40 @@ export const cruiseShipSchema = z.object({
   year_built: z.number().int().nonnegative().nullable().optional(),
 })
 
-export const cruiseSailingSchema = z.object({
-  id: z.string(),
-  source_ref: z.string().nullable().optional(),
-  start_date: z.string(),
-  end_date: z.string(),
-  duration_nights: z.number().int().nonnegative().nullable().optional(),
-  status: z.string().nullable().optional(),
-  embarkation_port: z.string().nullable().optional(),
-  disembarkation_port: z.string().nullable().optional(),
+export const cruiseItineraryStopSchema = z.object({
+  day_number: z.number().int().positive(),
+  date: z.string().nullable().optional(),
+  port_name: z.string(),
+  arrival_time: z.string().nullable().optional(),
+  departure_time: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  is_at_sea: z.boolean().optional().default(false),
 })
+
+export const cruiseSailingSchema = z
+  .object({
+    id: z.string(),
+    source_ref: z.string().nullable().optional(),
+    start_date: z.string(),
+    end_date: z.string(),
+    duration_nights: z.number().int().nonnegative().nullable().optional(),
+    status: z.string().nullable().optional(),
+    embarkation_port: z.string().nullable().optional(),
+    disembarkation_port: z.string().nullable().optional(),
+    itinerary_stops: z.array(cruiseItineraryStopSchema).default([]),
+    lowest_price_cents: z.number().int().nonnegative().nullable().default(null),
+    currency: z.string().min(1).nullable().default(null),
+  })
+  .superRefine((sailing, ctx) => {
+    const hasLowestPrice = sailing.lowest_price_cents !== null
+    const hasCurrency = sailing.currency !== null
+    if (hasLowestPrice === hasCurrency) return
+    ctx.addIssue({
+      code: "custom",
+      path: hasLowestPrice ? ["currency"] : ["lowest_price_cents"],
+      message: "lowest_price_cents and currency must both be present or both be null",
+    })
+  })
 
 export const cruiseCabinCategorySchema = z.object({
   id: z.string(),
@@ -69,16 +94,6 @@ export const cruiseCabinCategorySchema = z.object({
   capacity_min: z.number().int().nonnegative().nullable().optional(),
   capacity_max: z.number().int().nonnegative().nullable().optional(),
   inclusions: z.array(z.string()).optional().default([]),
-})
-
-export const cruiseItineraryStopSchema = z.object({
-  day_number: z.number().int().positive(),
-  date: z.string().nullable().optional(),
-  port_name: z.string(),
-  arrival_time: z.string().nullable().optional(),
-  departure_time: z.string().nullable().optional(),
-  description: z.string().nullable().optional(),
-  is_at_sea: z.boolean().optional().default(false),
 })
 
 export const cruisePolicySchema = z.object({
