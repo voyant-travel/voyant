@@ -140,3 +140,32 @@ export const catalogSearchModule = createCatalogSearchHonoModule({
 Search defaults to hybrid mode, downgrades to keyword when no embeddings are
 available, and retries semantic/hybrid execution as keyword when the semantic
 path fails. Pass `fallbackToKeywordOnSearchError: false` to fail closed instead.
+
+Storefront listing pages can request typed index-layer sorting and a compact
+card projection from the public route:
+
+```typescript
+await fetch("/v1/public/catalog/search", {
+  method: "POST",
+  body: JSON.stringify({
+    vertical: "products",
+    query: "",
+    mode: "keyword",
+    sort: "price-asc",
+    projection: "storefront-card",
+    pagination: { limit: 12 },
+    facets: [{ field: "categorySlugs[]" }, { field: "departureMonths[]" }],
+  }),
+})
+```
+
+Supported sort values are `relevance`, `price-asc`, `price-desc`,
+`departure-asc`, and `newest`. Sorts are translated by the indexer adapter to
+safe indexed fields such as `priceFromAmountCents` and `nextDepartureAt`; they
+are not applied after app-side hydration.
+
+When `projection: "storefront-card"` is present, the response keeps the raw
+`hits`, `total`, and engine facet counts, and also includes `cards` with the
+fields storefront product grids commonly need: localized name/slug, primary
+category, media URLs, price-from and offer badge data, departure aggregates,
+destinations, and coordinates.

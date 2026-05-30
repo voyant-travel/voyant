@@ -51,6 +51,12 @@ export interface IndexerDocument {
 /** Search query mode. Phase 1 ships keyword + hybrid; semantic is Phase 2. */
 export type SearchMode = "keyword" | "semantic" | "hybrid"
 
+/**
+ * Storefront-safe sort options. Adapters translate these to engine fields
+ * that are present in the indexed slice instead of exposing raw field names.
+ */
+export type SearchSortOption = "relevance" | "price-asc" | "price-desc" | "departure-asc" | "newest"
+
 /** Pagination shape. Cursor-based by default; page/offset is engine-dependent. */
 export interface SearchPagination {
   cursor?: string
@@ -82,6 +88,7 @@ export interface SearchRequest {
   /** Optional caller-supplied query embedding (BYO vector). */
   query_embedding?: number[]
   mode: SearchMode
+  sort?: SearchSortOption
   filters?: SearchFilter[]
   facets?: FacetRequest[]
   pagination?: SearchPagination

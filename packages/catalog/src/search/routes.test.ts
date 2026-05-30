@@ -192,6 +192,164 @@ describe("createCatalogSearchRoutes", () => {
     )
   })
 
+  it("passes typed storefront sort options into the search request", async () => {
+    const executeSearch = vi.fn(
+      async (_input: CatalogSearchExecuteInput): Promise<SearchResults> => emptyResults,
+    )
+    const app = routeApp({
+      surface: "public",
+      resolveRuntime: () => ({
+        indexer: createIndexer(),
+        defaultScope: { locale: "en-GB", audience: "staff", market: "default" },
+      }),
+      executeSearch,
+    })
+
+    const response = await app.request("/v1/admin/catalog/search", {
+      method: "POST",
+      body: JSON.stringify({
+        vertical: "products",
+        mode: "keyword",
+        sort: "price-asc",
+        pagination: { limit: 12 },
+      }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(executeSearch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        request: expect.objectContaining({
+          sort: "price-asc",
+          pagination: { limit: 12 },
+        }),
+      }),
+    )
+  })
+
+  it("projects storefront cards from indexed fields when requested", async () => {
+    const executeSearch = vi.fn(
+      async (_input: CatalogSearchExecuteInput): Promise<SearchResults> => ({
+        total: 1,
+        facets: {
+          "categorySlugs[]": [{ value: "cruises", count: 4 }],
+        },
+        hits: [
+          {
+            id: "prod_abc",
+            score: 12,
+            document: {
+              id: "prod_abc",
+              fields: {
+                name: "Danube Cruise",
+                slug: "danube-cruise",
+                primaryCategoryId: "cat_cruises",
+                primaryCategoryName: "Cruises",
+                primaryCategorySlug: "cruises",
+                thumbnailUrl: "https://cdn.example/thumb.jpg",
+                coverMediaUrl: "https://cdn.example/cover.jpg",
+                priceFromAmountCents: 125000,
+                priceFromCurrency: "EUR",
+                originalPriceFromAmountCents: 150000,
+                hasOffer: true,
+                bestOfferId: "offer_spring",
+                bestOfferName: "Spring Sale",
+                bestOfferDiscountKind: "percentage",
+                bestOfferDiscountPercent: 15,
+                upcomingDepartureCount: 3,
+                nextDepartureAt: "2026-06-01T09:00:00Z",
+                nextDepartureDate: "2026-06-01",
+                "departureMonths[]": ["2026-06", "2026-07"],
+                "departureDates[]": ["2026-06-01", "2026-07-15"],
+                "regions[]": ["Europe"],
+                "countries[]": ["Romania"],
+                "cities[]": ["Tulcea"],
+                "destinationIds[]": ["dest_ro"],
+                "destinationSlugs[]": ["romania"],
+                latitude: 45.18,
+                longitude: 28.8,
+              },
+            },
+          },
+        ],
+      }),
+    )
+    const module = createCatalogSearchHonoModule({
+      resolveRuntime: () => ({
+        indexer: createIndexer(),
+        defaultScope: { locale: "en-GB", audience: "staff", market: "default" },
+      }),
+      executeSearch,
+    })
+    const app = new Hono()
+    app.route("/v1/public/catalog", module.publicRoutes!)
+
+    const response = await app.request("/v1/public/catalog/search", {
+      method: "POST",
+      body: JSON.stringify({
+        vertical: "products",
+        mode: "keyword",
+        projection: "storefront-card",
+        pagination: { limit: 12 },
+      }),
+    })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      total: 1,
+      facets: {
+        "categorySlugs[]": [{ value: "cruises", count: 4 }],
+      },
+      cards: [
+        {
+          id: "prod_abc",
+          name: "Danube Cruise",
+          slug: "danube-cruise",
+          primaryCategory: {
+            id: "cat_cruises",
+            name: "Cruises",
+            slug: "cruises",
+          },
+          media: {
+            thumbnailUrl: "https://cdn.example/thumb.jpg",
+            coverMediaUrl: "https://cdn.example/cover.jpg",
+          },
+          priceFrom: {
+            amountCents: 125000,
+            currency: "EUR",
+            originalAmountCents: 150000,
+          },
+          offerBadges: [
+            {
+              id: "offer_spring",
+              name: "Spring Sale",
+              discountKind: "percentage",
+              discountPercent: 15,
+              discountAmountCents: null,
+            },
+          ],
+          departures: {
+            upcomingCount: 3,
+            nextDepartureAt: "2026-06-01T09:00:00Z",
+            nextDepartureDate: "2026-06-01",
+            months: ["2026-06", "2026-07"],
+            dates: ["2026-06-01", "2026-07-15"],
+          },
+          destinations: {
+            regions: ["Europe"],
+            countries: ["Romania"],
+            cities: ["Tulcea"],
+            ids: ["dest_ro"],
+            slugs: ["romania"],
+          },
+          coordinates: {
+            latitude: 45.18,
+            longitude: 28.8,
+          },
+        },
+      ],
+    })
+  })
+
   it("retries hybrid searches as keyword when semantic execution fails", async () => {
     const executeSearch = vi
       .fn(async (_input: CatalogSearchExecuteInput): Promise<SearchResults> => emptyResults)
