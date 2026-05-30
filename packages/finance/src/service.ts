@@ -439,6 +439,16 @@ export class InvoiceLineItemsPersistenceError extends Error {
 }
 
 /** Booking data needed for createInvoiceFromBooking — supplied by the caller (template). */
+export type InvoiceFromBookingPaymentScheduleData = {
+  id: string
+  bookingId: string
+  bookingItemId: string | null
+  scheduleType: "deposit" | "installment" | "balance" | "hold" | "other"
+  dueDate: string
+  currency: string
+  amountCents: number
+}
+
 export interface InvoiceFromBookingData {
   booking: {
     id: string
@@ -453,15 +463,8 @@ export interface InvoiceFromBookingData {
     sellAmountCents: number | null
     baseSellAmountCents: number | null
   }
-  paymentSchedule?: {
-    id: string
-    bookingId: string
-    bookingItemId: string | null
-    scheduleType: "deposit" | "installment" | "balance" | "hold" | "other"
-    dueDate: string
-    currency: string
-    amountCents: number
-  } | null
+  paymentSchedule?: InvoiceFromBookingPaymentScheduleData | null
+  dueDatePaymentSchedule?: InvoiceFromBookingPaymentScheduleData | null
   items: Array<{
     id: string
     title: string
@@ -743,7 +746,8 @@ async function resolveInvoiceFromBookingDueDate(
     dueDate: data.dueDate,
     invoiceType: data.invoiceType ?? "invoice",
     booking: bookingData.booking,
-    bookingPaymentSchedule: bookingData.paymentSchedule ?? undefined,
+    bookingPaymentSchedule:
+      bookingData.paymentSchedule ?? bookingData.dueDatePaymentSchedule ?? undefined,
   })
 
   if (!dueDate) {
