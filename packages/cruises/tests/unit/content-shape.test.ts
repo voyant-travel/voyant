@@ -22,6 +22,14 @@ const baseContent: CruiseContent = cruiseContentSchema.parse({
       start_date: "2026-06-01",
       end_date: "2026-06-08",
       duration_nights: 7,
+      embarkation_port: "Athens",
+      disembarkation_port: "Athens",
+      itinerary_stops: [
+        { day_number: 1, port_name: "Athens", date: "2026-06-01" },
+        { day_number: 2, port_name: "Mykonos", date: "2026-06-02" },
+      ],
+      lowest_price_cents: 349900,
+      currency: "EUR",
     },
   ],
   cabin_categories: [
@@ -52,6 +60,97 @@ describe("validateCruiseContent", () => {
 
   it("accepts a full valid payload", () => {
     expect(validateCruiseContent(baseContent).valid).toBe(true)
+  })
+
+  it("accepts per-sailing price summaries as integer minor units", () => {
+    const parsed = cruiseContentSchema.parse({
+      cruise: { id: "crus_abc", name: "X" },
+      sailings: [
+        {
+          id: "sail_1",
+          start_date: "2026-06-01",
+          end_date: "2026-06-08",
+          lowest_price_cents: 349900,
+          currency: "EUR",
+        },
+      ],
+    })
+
+    expect(parsed.sailings[0]?.lowest_price_cents).toBe(349900)
+    expect(parsed.sailings[0]?.currency).toBe("EUR")
+  })
+
+  it("defaults absent per-sailing price summaries to null", () => {
+    const parsed = cruiseContentSchema.parse({
+      cruise: { id: "crus_abc", name: "X" },
+      sailings: [{ id: "sail_1", start_date: "2026-06-01", end_date: "2026-06-08" }],
+    })
+
+    expect(parsed.sailings[0]?.lowest_price_cents).toBeNull()
+    expect(parsed.sailings[0]?.currency).toBeNull()
+  })
+
+  it("rejects asymmetric per-sailing price summaries", () => {
+    expect(
+      validateCruiseContent({
+        cruise: { id: "crus_abc", name: "X" },
+        sailings: [
+          {
+            id: "sail_1",
+            start_date: "2026-06-01",
+            end_date: "2026-06-08",
+            lowest_price_cents: 349900,
+          },
+        ],
+      }).valid,
+    ).toBe(false)
+
+    expect(
+      validateCruiseContent({
+        cruise: { id: "crus_abc", name: "X" },
+        sailings: [
+          {
+            id: "sail_1",
+            start_date: "2026-06-01",
+            end_date: "2026-06-08",
+            currency: "EUR",
+          },
+        ],
+      }).valid,
+    ).toBe(false)
+  })
+
+  it("accepts per-sailing itinerary stops", () => {
+    const parsed = cruiseContentSchema.parse({
+      cruise: { id: "crus_abc", name: "X" },
+      sailings: [
+        {
+          id: "sail_1",
+          start_date: "2026-06-01",
+          end_date: "2026-06-08",
+          itinerary_stops: [{ day_number: 1, port_name: "Athens", date: "2026-06-01" }],
+        },
+      ],
+    })
+
+    expect(parsed.sailings[0]?.itinerary_stops[0]?.port_name).toBe("Athens")
+  })
+
+  it("rejects decimal-string sailing price summaries", () => {
+    expect(
+      validateCruiseContent({
+        cruise: { id: "crus_abc", name: "X" },
+        sailings: [
+          {
+            id: "sail_1",
+            start_date: "2026-06-01",
+            end_date: "2026-06-08",
+            lowest_price_cents: "3499.00",
+            currency: "EUR",
+          },
+        ],
+      }).valid,
+    ).toBe(false)
   })
 
   it("rejects missing cruise.id / cruise.name", () => {

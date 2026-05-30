@@ -47,6 +47,8 @@ const samplePayload = {
           status: "open",
           capacity: 10,
           remaining: 7,
+          lowest_price_cents: 12000,
+          currency: "EUR",
         },
       ],
     },
@@ -147,6 +149,108 @@ describe("createCatalogEnrichmentFetchers", () => {
       status: "open",
       capacity: 10,
       remaining: 7,
+      lowestPriceCents: 12000,
+      currency: "EUR",
+    })
+  })
+
+  test("maps cruise sourced-content sailings to UI departures without decimal parsing", async () => {
+    const fetchImpl = vi.fn<typeof globalThis.fetch>(async () =>
+      ok({
+        data: {
+          content: {
+            cruise: {
+              id: "crus_1",
+              name: "Greek Isles",
+              description: "Seven-night cruise",
+              highlights: ["Aegean"],
+              hero_image_url: "https://example.com/cruise.jpg",
+              cruise_line: "Sample Line",
+            },
+            ship: { name: "MS Sample" },
+            sailings: [
+              {
+                id: "sail_1",
+                source_ref: "ext_sail_1",
+                start_date: "2026-06-01",
+                end_date: "2026-06-08",
+                duration_nights: 7,
+                status: "open",
+                embarkation_port: "Athens",
+                disembarkation_port: "Athens",
+                itinerary_stops: [
+                  {
+                    day_number: 1,
+                    port_name: "Athens",
+                    date: "2026-06-01",
+                    departure_time: "17:00",
+                  },
+                  {
+                    day_number: 2,
+                    port_name: "Mykonos",
+                    date: "2026-06-02",
+                    arrival_time: "08:00",
+                    departure_time: "18:00",
+                  },
+                ],
+                lowest_price_cents: 349900,
+                currency: "EUR",
+              },
+            ],
+            cabin_categories: [{ id: "cab_1", code: "BA", name: "Balcony", type: "balcony" }],
+            policies: [{ kind: "cancellation", body: "Free up to 60 days." }],
+          },
+          served_locale: "en-GB",
+          match_kind: "exact",
+          source: "sourced-fresh",
+          served_stale: false,
+          synthesized: false,
+          machine_translated: false,
+        },
+      }),
+    )
+    const fetchers = createCatalogEnrichmentFetchers({ baseUrl: "/api", fetch: fetchImpl })
+
+    const result = await fetchers.loadProductDetail(hit("crus_1"))
+
+    expect(result).toMatchObject({
+      description: "Seven-night cruise",
+      highlights: ["Aegean"],
+      heroImageUrl: "https://example.com/cruise.jpg",
+      supplier: "Sample Line",
+      itinerary: [],
+      options: [{ id: "cab_1", name: "BA - Balcony", code: "BA", type: "balcony" }],
+      policies: [{ kind: "cancellation", body: "Free up to 60 days." }],
+      source: "sourced-fresh",
+    })
+    expect(result?.departures?.[0]).toMatchObject({
+      id: "sail_1",
+      sourceRef: "ext_sail_1",
+      startsAt: "2026-06-01",
+      endsAt: "2026-06-08",
+      durationNights: 7,
+      status: "open",
+      embarkationPort: "Athens",
+      disembarkationPort: "Athens",
+      lowestPriceCents: 349900,
+      currency: "EUR",
+      itinerary: [
+        {
+          dayNumber: 1,
+          title: "Athens",
+          location: "Athens",
+          date: "2026-06-01",
+          departureTime: "17:00",
+        },
+        {
+          dayNumber: 2,
+          title: "Mykonos",
+          location: "Mykonos",
+          date: "2026-06-02",
+          arrivalTime: "08:00",
+          departureTime: "18:00",
+        },
+      ],
     })
   })
 

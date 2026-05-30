@@ -635,6 +635,15 @@ export interface CruiseAdapter {
 export type SourceRef = { connectionId?: string; externalId: string; [k: string]: unknown }
 ```
 
+Cruise sourced-content JSON uses snake_case. Per-sailing browse price
+summaries are represented as integer minor units plus currency on the sailing
+payload (`lowest_price_cents`, `currency`), not decimal strings. They are a
+pair: both fields are present with values, or both are null. Per-sailing
+itinerary detail remains under the sailing's `itinerary_stops`; a top-level
+`itinerary_stops` array is only an overview/fallback. Adapter/domain objects
+remain camelCase (`lowestPriceCents`, `currency`) and are translated at the
+sourced-content boundary.
+
 `SourceRef` is round-trippable adapter state, not a display id. Adapter-backed
 refs must preserve connection id, source namespace, upstream cruise, sailing,
 ship, cabin ids, synced-row ids, and opaque metadata needed by the adapter.

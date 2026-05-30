@@ -76,6 +76,8 @@ export type ExternalSailing = {
   availabilityNote?: string | null
   isCharter?: boolean
   salesStatus?: "open" | "on_request" | "wait_list" | "sold_out" | "closed"
+  lowestPriceCents?: number | null
+  currency?: string | null
 }
 
 export type ExternalShip = {
