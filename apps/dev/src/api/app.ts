@@ -87,10 +87,11 @@ const crmHonoModule = createCrmHonoModule()
 const bookingsHonoModule = createBookingsHonoModule({
   resolveTravelSnapshot: (db, personId, { kms }) =>
     crmService.loadPersonTravelSnapshot(db, personId, { kms }),
-  // See issue #961 — storefront booking flows resolve CRM people from
-  // billing contact + per-traveler snapshots, dedupe by normalized
-  // email/phone, upsert on miss. Mirrored from the DMC + operator
-  // templates so the dev playground sees the same shape.
+  // See issues #961 / #1399 — storefront booking flows resolve CRM
+  // people from billing contact + per-traveler snapshots, dedupe by
+  // normalized email/phone, and keep name-only traveler snapshots
+  // booking-only. Mirrored from the DMC + operator templates so the dev
+  // playground sees the same shape.
   resolveBillingPerson: async (db, contact, ctx) => {
     const person = await crmService.upsertPersonFromContact(db, contact, {
       source: ctx.source,
@@ -102,6 +103,7 @@ const bookingsHonoModule = createBookingsHonoModule({
     const person = await crmService.upsertPersonFromContact(db, contact, {
       source: ctx.source,
       sourceRef: ctx.sourceRef,
+      requireContactPoint: true,
     })
     return person?.id ?? null
   },

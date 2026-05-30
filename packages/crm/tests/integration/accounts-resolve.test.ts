@@ -102,4 +102,14 @@ describe.skipIf(!DB_AVAILABLE)("CRM person resolution helpers (issue #961)", () 
     expect(created?.firstName).toBe("lonely traveler")
     expect(created?.lastName).toBe("Guest")
   })
+
+  it("upsertPersonFromContact can skip name-only snapshots without a contact point", async () => {
+    const created = await upsertPersonFromContact(
+      db,
+      { firstName: "Name", lastName: "Only" },
+      { source: "storefront-booking", sourceRef: "book_100", requireContactPoint: true },
+    )
+
+    expect(created).toBeNull()
+  })
 })
