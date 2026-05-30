@@ -1,5 +1,13 @@
 # @voyantjs/action-ledger
 
+## 0.87.0
+
+### Patch Changes
+
+- @voyantjs/core@0.87.0
+- @voyantjs/db@0.87.0
+- @voyantjs/hono@0.87.0
+
 ## 0.86.0
 
 ### Patch Changes
