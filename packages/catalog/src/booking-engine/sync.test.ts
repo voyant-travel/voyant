@@ -21,8 +21,10 @@ import { syncSources } from "./sync.js"
 function makeStubIndexer(slicesByVertical: Record<string, IndexerSlice[]>): {
   service: IndexerService
   upserted: Array<{ slice: IndexerSlice; doc: IndexerDocument }>
+  deleted: Array<{ entityModule: string; entityId: string }>
 } {
   const upserted: Array<{ slice: IndexerSlice; doc: IndexerDocument }> = []
+  const deleted: Array<{ entityModule: string; entityId: string }> = []
   const service: IndexerService = {
     async ensureCollections() {},
     async reindexEntity(entityModule, entityId, builder: DocumentBuilder) {
@@ -36,7 +38,9 @@ function makeStubIndexer(slicesByVertical: Record<string, IndexerSlice[]>): {
       const doc = await builder(entityId, slice)
       if (doc) upserted.push({ slice, doc })
     },
-    async deleteEntity() {},
+    async deleteEntity(entityModule, entityId) {
+      deleted.push({ entityModule, entityId })
+    },
     async search(_slice: IndexerSlice, _request: SearchRequest): Promise<SearchResults> {
       return { total: 0, hits: [] }
     },
@@ -44,7 +48,7 @@ function makeStubIndexer(slicesByVertical: Record<string, IndexerSlice[]>): {
       return slicesByVertical[entityModule] ?? []
     },
   }
-  return { service, upserted }
+  return { service, upserted, deleted }
 }
 
 /**
@@ -314,5 +318,105 @@ describe("syncSources", () => {
 
     expect(wrapped).toBe(1)
     expect(upserted[0]?.doc.fields.wrapped).toBe(true)
+  })
+
+  it("marks missing sourced rows withdrawn and deletes them from index slices after a successful pruned sync", async () => {
+    const registry = createSourceAdapterRegistry()
+    registry.register("conn-a", {
+      kind: "demo",
+      capabilities: {
+        verticals: ["products"],
+        supportsLiveResolution: false,
+        supportsDriftDetection: false,
+        supportsBookingForwarding: false,
+        postBookOperations: [],
+      },
+      connect: async () => undefined,
+      pause: async () => undefined,
+      disconnect: async () => undefined,
+      getState: async () => "active",
+      discover: async () => ({
+        projections: [
+          {
+            entity_module: "products",
+            entity_id: "active_a",
+            provenance: {
+              source_kind: "demo",
+              source_connection_id: "conn-a",
+              source_ref: "src-a",
+              source_freshness: "sync" as const,
+            },
+            fields: { id: "active_a", name: "Active A", status: "active" },
+          },
+        ],
+        next_cursor: undefined,
+      }),
+    })
+
+    const { service, deleted } = makeStubIndexer({
+      products: [{ vertical: "products", locale: "en-GB", audience: "staff", market: "default" }],
+    })
+    const fieldPolicyRegistries = new Map([["products", makePassthroughRegistry()]])
+
+    const updatedIds: string[][] = []
+    const stubDb = {
+      insert() {
+        return {
+          values() {
+            return {
+              onConflictDoUpdate() {
+                return {
+                  async returning() {
+                    return [{ id: "cse_active", entity_module: "products", entity_id: "active_a" }]
+                  },
+                }
+              },
+            }
+          },
+        }
+      },
+      select() {
+        return {
+          from() {
+            return {
+              async where() {
+                return [
+                  {
+                    id: "cse_stale",
+                    entity_module: "products",
+                    entity_id: "stale_b",
+                  },
+                ]
+              },
+            }
+          },
+        }
+      },
+      update() {
+        return {
+          set() {
+            return {
+              async where(condition: unknown) {
+                updatedIds.push([String(condition)])
+              },
+            }
+          },
+        }
+      },
+    }
+
+    const summary = await syncSources({
+      registry,
+      indexerService: service,
+      fieldPolicyRegistries,
+      // biome-ignore lint/suspicious/noExplicitAny: stub mirrors the drizzle chain shape
+      db: stubDb as any,
+      pruneMissing: true,
+      verticals: ["products"],
+    })
+
+    expect(summary.adapters[0]?.withdrawnProjections).toBe(1)
+    expect(deleted).toEqual([{ entityModule: "products", entityId: "stale_b" }])
+    expect(updatedIds).toHaveLength(1)
   })
 })

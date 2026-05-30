@@ -28,7 +28,7 @@
  */
 
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import { and, eq, sql } from "drizzle-orm"
+import { and, eq, inArray, isNull, notInArray, type SQL, sql } from "drizzle-orm"
 
 import type { CatalogProjection } from "../adapter/contract.js"
 import type { SourceFreshness } from "../contract.js"
@@ -291,4 +291,53 @@ export async function markSourcedEntryWithdrawn(
         eq(catalogSourcedEntriesTable.entity_id, entityId),
       ),
     )
+}
+
+/**
+ * Mark active sourced rows missing from a successful full-source discovery pass
+ * as withdrawn. Callers should invoke this only after an adapter completed its
+ * projection stream; failed refreshes must leave existing rows untouched.
+ */
+export async function markMissingSourcedEntriesWithdrawn(
+  db: AnyDrizzleDb,
+  input: {
+    entityModule: string
+    sourceKind: string
+    sourceConnectionId?: string | null
+    seenEntityIds: ReadonlySet<string>
+  },
+): Promise<SelectCatalogSourcedEntry[]> {
+  const conditions: SQL[] = [
+    eq(catalogSourcedEntriesTable.entity_module, input.entityModule),
+    eq(catalogSourcedEntriesTable.source_kind, input.sourceKind as SourceKind),
+    eq(catalogSourcedEntriesTable.status, "active"),
+    input.sourceConnectionId == null
+      ? isNull(catalogSourcedEntriesTable.source_connection_id)
+      : eq(catalogSourcedEntriesTable.source_connection_id, input.sourceConnectionId),
+  ]
+
+  const seen = [...input.seenEntityIds]
+  if (seen.length > 0) {
+    conditions.push(notInArray(catalogSourcedEntriesTable.entity_id, seen))
+  }
+
+  const rows = await db
+    .select()
+    .from(catalogSourcedEntriesTable)
+    .where(and(...conditions))
+
+  if (rows.length === 0) return []
+
+  const now = new Date()
+  await db
+    .update(catalogSourcedEntriesTable)
+    .set({ status: "withdrawn", updated_at: now })
+    .where(
+      inArray(
+        catalogSourcedEntriesTable.id,
+        rows.map((row) => row.id),
+      ),
+    )
+
+  return rows
 }

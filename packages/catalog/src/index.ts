@@ -239,6 +239,7 @@ export {
 } from "./services/snapshot-service.js"
 export {
   createReadProvenance,
+  markMissingSourcedEntriesWithdrawn,
   markSourcedEntryWithdrawn,
   type OwnedChecker,
   type ProvenanceReadResult,

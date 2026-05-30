@@ -15,6 +15,7 @@
     "./service-catalog-plane": "./src/service-catalog-plane.ts",
     "./content-shape": "./src/content-shape.ts",
     "./service-content": "./src/service-content.ts",
+    "./service-external-refresh": "./src/service-external-refresh.ts",
     "./service-content-synthesizer": "./src/service-content-synthesizer.ts",
     "./routes-content": "./src/routes-content.ts",
     "./draft-shape": "./src/draft-shape.ts",
@@ -105,6 +106,11 @@
         "types": "./dist/service-content.d.ts",
         "import": "./dist/service-content.js",
         "default": "./dist/service-content.js"
+      },
+      "./service-external-refresh": {
+        "types": "./dist/service-external-refresh.d.ts",
+        "import": "./dist/service-external-refresh.js",
+        "default": "./dist/service-external-refresh.js"
       },
       "./service-content-synthesizer": {
         "types": "./dist/service-content-synthesizer.d.ts",

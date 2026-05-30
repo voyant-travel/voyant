@@ -96,6 +96,42 @@ cancellation through the catalog source adapter remain explicit capability
 stubs; external cruise booking commits should use the cruises vertical booking
 path.
 
+## Refresh And Reindex
+
+External cruise adapters may sync upstream data on their own cadence. Voyant
+deployments still need a provider-neutral bridge that reconciles local browse
+and catalog search surfaces from adapter projections.
+
+The cruises package exposes `refreshExternalCruiseCatalog(...)` for that bridge.
+It performs two independent refreshes:
+
+- `cruise_search_index`: drains each registered `CruiseAdapter.searchProjection()`
+  stream, upserts emitted rows, then removes rows for that adapter that were not
+  emitted by the successful run.
+- Catalog plane: when the caller supplies a catalog `SourceAdapterRegistry`,
+  `IndexerService`, and field-policy registries, it runs `syncSources(...)` for
+  the `cruises` vertical, upserts `catalog_sourced_entries`, reindexes configured
+  catalog search slices, and marks missing sourced rows withdrawn.
+
+Pruning only runs after an adapter finishes successfully. A failed adapter is
+reported in the refresh summary and leaves existing indexed rows in place.
+Multiple connections stay isolated by full source identity: `cruise_search_index`
+matches by provider plus full `SourceRef`, while catalog rows prune by
+`source_kind`, `source_connection_id`, and `entity_module`.
+
+Manual operator refresh paths:
+
+- `POST /v1/admin/cruises/search-index/rebuild` refreshes the cruise vertical
+  browse index from registered cruise adapters.
+- `pnpm sync:sources` in `templates/operator` refreshes catalog sourced entries
+  and search slices from registered catalog source adapters.
+
+Scheduled refresh in `templates/operator` runs daily at `30 3 * * *` via
+`EXTERNAL_CRUISE_CATALOG_REFRESH_CRON`. Deployments can add adapter-specific
+webhook/event handlers that call the same `refreshExternalCruiseCatalog(...)`
+service for targeted near-real-time refreshes without coupling the framework to
+any provider.
+
 ## Compatibility Tests
 
 External adapter packages can run the framework compatibility fixture in their
