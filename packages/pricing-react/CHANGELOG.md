@@ -1,5 +1,12 @@
 # @voyantjs/pricing-react
 
+## 0.87.0
+
+### Patch Changes
+
+- @voyantjs/pricing@0.87.0
+- @voyantjs/react@0.87.0
+
 ## 0.86.0
 
 ### Patch Changes

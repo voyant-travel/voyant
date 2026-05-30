@@ -1,5 +1,17 @@
 # @voyantjs/catalog
 
+## 0.87.0
+
+### Minor Changes
+
+- 85505e6: Add provider capability, promotion applicability/display, and availability projection contracts for catalog source adapters.
+
+### Patch Changes
+
+- @voyantjs/core@0.87.0
+- @voyantjs/db@0.87.0
+- @voyantjs/hono@0.87.0
+
 ## 0.86.0
 
 ### Minor Changes
