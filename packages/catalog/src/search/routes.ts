@@ -11,9 +11,12 @@ import type {
   SearchMode,
   SearchRequest,
   SearchResults,
+  SearchSortOption,
 } from "../indexer/contract.js"
 
 const searchModeSchema = z.enum(["keyword", "semantic", "hybrid"])
+const searchSortSchema = z.enum(["relevance", "price-asc", "price-desc", "departure-asc", "newest"])
+const searchProjectionSchema = z.enum(["raw", "storefront-card"])
 const searchFilterSchema: z.ZodType<SearchFilter> = z.lazy(() =>
   z.union([
     z.object({
@@ -47,6 +50,8 @@ const catalogSearchBodySchema = z.object({
   vertical: z.string().min(1).optional(),
   query: z.string().optional(),
   mode: searchModeSchema.optional(),
+  sort: searchSortSchema.optional(),
+  projection: searchProjectionSchema.optional(),
   filters: z.array(searchFilterSchema).optional(),
   facets: z
     .array(z.object({ field: z.string().min(1), limit: z.number().int().positive().optional() }))
@@ -65,6 +70,58 @@ const catalogSearchBodySchema = z.object({
 })
 
 export type CatalogSearchBody = z.infer<typeof catalogSearchBodySchema>
+export type CatalogSearchProjection = z.infer<typeof searchProjectionSchema>
+export type CatalogSearchSort = SearchSortOption
+
+export interface StorefrontCatalogCard {
+  id: string
+  name: string | null
+  slug: string | null
+  primaryCategory: StorefrontCatalogCardTaxon | null
+  media: {
+    thumbnailUrl: string | null
+    coverMediaUrl: string | null
+  }
+  priceFrom: {
+    amountCents: number
+    currency: string | null
+    originalAmountCents: number | null
+  } | null
+  offerBadges: StorefrontCatalogCardOffer[]
+  departures: {
+    upcomingCount: number | null
+    nextDepartureAt: string | null
+    nextDepartureDate: string | null
+    months: string[]
+    dates: string[]
+  }
+  destinations: {
+    regions: string[]
+    countries: string[]
+    cities: string[]
+    ids: string[]
+    slugs: string[]
+  }
+  coordinates: {
+    latitude: number
+    longitude: number
+  } | null
+}
+
+export interface StorefrontCatalogCardTaxon {
+  id: string | null
+  name: string | null
+  slug: string | null
+}
+
+export interface StorefrontCatalogCardOffer {
+  id: string | null
+  name: string | null
+  discountKind: string | null
+  discountPercent: number | null
+  discountAmountCents: number | null
+  minPax?: number | null
+}
 
 export interface CatalogSearchRuntime {
   indexer?: IndexerAdapter
@@ -182,6 +239,10 @@ async function handleSearch(
       mode: responseMode,
       total: results.total,
       hits: results.hits,
+      cards:
+        body.projection === "storefront-card"
+          ? results.hits.map((hit) => projectStorefrontCatalogCard(hit.document))
+          : undefined,
       facets: results.facets ?? {},
     })
   } catch (err) {
@@ -202,6 +263,7 @@ function buildSearchRequest(body: CatalogSearchBody, mode: SearchMode): SearchRe
   return {
     query: body.query ?? "",
     mode,
+    sort: body.sort,
     filters: body.filters,
     facets: body.facets,
     pagination: body.pagination,
@@ -255,4 +317,133 @@ function shouldUseEmbeddingMode(mode: SearchMode): boolean {
 
 async function defaultExecuteSearch(input: CatalogSearchExecuteInput): Promise<SearchResults> {
   return input.adapter.search(input.slice, input.request)
+}
+
+function projectStorefrontCatalogCard(
+  document: SearchResults["hits"][number]["document"],
+): StorefrontCatalogCard {
+  const fields = document.fields
+  const priceAmount = numberField(fields, "priceFromAmountCents", "sellAmountCents")
+  const latitude = numberField(fields, "latitude")
+  const longitude = numberField(fields, "longitude")
+
+  return {
+    id: document.id,
+    name: stringField(fields, "name", "title"),
+    slug: stringField(fields, "slug"),
+    primaryCategory: taxonFromFields(fields),
+    media: {
+      thumbnailUrl: stringField(fields, "thumbnailUrl", "primaryMediaUrl", "coverMediaUrl"),
+      coverMediaUrl: stringField(fields, "coverMediaUrl", "primaryMediaUrl", "thumbnailUrl"),
+    },
+    priceFrom:
+      priceAmount == null
+        ? null
+        : {
+            amountCents: priceAmount,
+            currency: stringField(fields, "priceFromCurrency", "sellCurrency"),
+            originalAmountCents: numberField(fields, "originalPriceFromAmountCents"),
+          },
+    offerBadges: offerBadgesFromFields(fields),
+    departures: {
+      upcomingCount: numberField(
+        fields,
+        "upcomingDepartureCount",
+        "availableDeparturesCount",
+        "availableUnitsTotal",
+      ),
+      nextDepartureAt: stringField(fields, "nextDepartureAt"),
+      nextDepartureDate: stringField(fields, "nextDepartureDate"),
+      months: stringArrayField(fields, "departureMonths"),
+      dates: stringArrayField(fields, "departureDates"),
+    },
+    destinations: {
+      regions: stringArrayField(fields, "regions"),
+      countries: stringArrayField(fields, "countries"),
+      cities: stringArrayField(fields, "cities"),
+      ids: stringArrayField(fields, "destinationIds"),
+      slugs: stringArrayField(fields, "destinationSlugs"),
+    },
+    coordinates:
+      latitude == null || longitude == null
+        ? null
+        : {
+            latitude,
+            longitude,
+          },
+  }
+}
+
+function taxonFromFields(fields: Record<string, unknown>): StorefrontCatalogCardTaxon | null {
+  const id = stringField(fields, "primaryCategoryId", "categoryIds")
+  const name = stringField(fields, "primaryCategoryName", "categories", "categoryNames")
+  const slug = stringField(fields, "primaryCategorySlug", "categorySlugs")
+  if (!id && !name && !slug) return null
+  return { id, name, slug }
+}
+
+function offerBadgesFromFields(fields: Record<string, unknown>): StorefrontCatalogCardOffer[] {
+  const badges: StorefrontCatalogCardOffer[] = []
+  if (booleanField(fields, "hasOffer")) {
+    badges.push({
+      id: stringField(fields, "bestOfferId"),
+      name: stringField(fields, "bestOfferName"),
+      discountKind: stringField(fields, "bestOfferDiscountKind"),
+      discountPercent: numberField(fields, "bestOfferDiscountPercent"),
+      discountAmountCents: numberField(fields, "bestOfferDiscountAmountCents"),
+    })
+  }
+  if (booleanField(fields, "hasConditionalOffer")) {
+    badges.push({
+      id: stringField(fields, "conditionalOfferId"),
+      name: stringField(fields, "conditionalOfferName"),
+      discountKind: stringField(fields, "conditionalOfferDiscountKind"),
+      discountPercent: numberField(fields, "conditionalOfferDiscountPercent"),
+      discountAmountCents: numberField(fields, "conditionalOfferDiscountAmountCents"),
+      minPax: numberField(fields, "conditionalOfferMinPax"),
+    })
+  }
+  return badges
+}
+
+function stringField(fields: Record<string, unknown>, ...keys: string[]): string | null {
+  for (const key of keys) {
+    const value = fieldValue(fields, key)
+    if (typeof value === "string" && value.length > 0) return value
+    if (Array.isArray(value)) {
+      const first = value.find((item) => typeof item === "string" && item.length > 0)
+      if (typeof first === "string") return first
+    }
+  }
+  return null
+}
+
+function stringArrayField(fields: Record<string, unknown>, key: string): string[] {
+  const value = fieldValue(fields, key)
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is string => typeof item === "string" && item.length > 0)
+}
+
+function numberField(fields: Record<string, unknown>, ...keys: string[]): number | null {
+  for (const key of keys) {
+    const value = fieldValue(fields, key)
+    if (typeof value === "number" && Number.isFinite(value)) return value
+    if (typeof value === "string" && value.trim().length > 0) {
+      const parsed = Number(value)
+      if (Number.isFinite(parsed)) return parsed
+    }
+  }
+  return null
+}
+
+function booleanField(fields: Record<string, unknown>, key: string): boolean {
+  const value = fieldValue(fields, key)
+  return value === true || value === "true"
+}
+
+function fieldValue(fields: Record<string, unknown>, key: string): unknown {
+  if (key in fields) return fields[key]
+  const collectionKey = `${key}[]`
+  if (collectionKey in fields) return fields[collectionKey]
+  return undefined
 }

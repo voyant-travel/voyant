@@ -7,10 +7,17 @@ import { useVoyantCatalogContext } from "../provider.js"
 import { type CatalogSearchResponse, catalogSearchResponseSchema } from "../schemas.js"
 
 export type CatalogSearchMode = "keyword" | "hybrid" | "semantic"
+export type CatalogSearchSort =
+  | "relevance"
+  | "price-asc"
+  | "price-desc"
+  | "departure-asc"
+  | "newest"
+export type CatalogSearchProjection = "raw" | "storefront-card"
 
 export interface CatalogSearchFilter {
   field: string
-  // biome-ignore lint/suspicious/noExplicitAny: filter shape mirrors the SearchFilter union from @voyantjs/catalog
+  // biome-ignore lint/suspicious/noExplicitAny: reason: filter shape mirrors the SearchFilter union from @voyantjs/catalog
   [key: string]: any
 }
 
@@ -18,6 +25,8 @@ export interface UseCatalogSearchOptions {
   vertical: string
   query?: string
   mode?: CatalogSearchMode
+  sort?: CatalogSearchSort
+  projection?: CatalogSearchProjection
   filters?: CatalogSearchFilter[]
   facets?: Array<{ field: string }>
   pagination?: { limit?: number; cursor?: string }
@@ -50,6 +59,8 @@ export function useCatalogSearch(options: UseCatalogSearchOptions) {
     vertical,
     query = "",
     mode = "keyword",
+    sort,
+    projection,
     filters,
     facets,
     pagination,
@@ -70,6 +81,8 @@ export function useCatalogSearch(options: UseCatalogSearchOptions) {
       vertical,
       query,
       mode,
+      sort,
+      projection,
       filters,
       facets,
       pagination,
@@ -90,6 +103,8 @@ export function useCatalogSearch(options: UseCatalogSearchOptions) {
             vertical,
             query,
             mode,
+            sort,
+            projection,
             filters,
             facets,
             pagination,
