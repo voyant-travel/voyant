@@ -1,5 +1,17 @@
 # @voyantjs/crm
 
+## 0.85.2
+
+### Patch Changes
+
+- 2aac1f9: Prevent public booking session state saves from repeatedly resolving position-matched traveler people, and add a CRM option to skip creating people for name-only contact snapshots.
+  - @voyantjs/action-ledger@0.85.2
+  - @voyantjs/core@0.85.2
+  - @voyantjs/db@0.85.2
+  - @voyantjs/hono@0.85.2
+  - @voyantjs/identity@0.85.2
+  - @voyantjs/utils@0.85.2
+
 ## 0.85.1
 
 ### Patch Changes
