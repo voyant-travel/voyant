@@ -370,6 +370,48 @@ describe("financeService.createInvoiceFromBooking number allocation", () => {
     ])
   })
 
+  it("uses product and service date for full-booking item fallback descriptions", async () => {
+    const { db, insertedInvoiceLineItems } = makeDb({})
+
+    await financeService.createInvoiceFromBooking(
+      db,
+      {
+        bookingId: "book_123",
+        invoiceNumber: "MANUAL-1",
+        issueDate: "2026-05-23",
+        dueDate: "2026-06-23",
+      },
+      {
+        ...bookingData,
+        items: [
+          {
+            id: "bkit_123",
+            title: "Adult",
+            productNameSnapshot:
+              "Excursie de 1 Zi in Bulgaria: Cascadele Krushuna, Pestera Devetashka si Fortareata Lovech",
+            serviceDate: "2026-08-22",
+            quantity: 1,
+            unitSellAmountCents: 50_000,
+            totalSellAmountCents: 50_000,
+          },
+        ],
+      },
+    )
+
+    expect(insertedInvoiceLineItems).toEqual([
+      expect.objectContaining({
+        bookingItemId: "bkit_123",
+        bookingPaymentScheduleId: null,
+        description:
+          "Excursie de 1 Zi in Bulgaria: Cascadele Krushuna, Pestera Devetashka si Fortareata Lovech | 2026-08-22",
+        quantity: 1,
+        unitPriceCents: 50_000,
+        totalCents: 50_000,
+        sortOrder: 0,
+      }),
+    ])
+  })
+
   it("persists payment schedule context on schedule-derived line items", async () => {
     const { db, insertedInvoiceLineItems } = makeDb({})
 

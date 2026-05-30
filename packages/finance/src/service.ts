@@ -475,7 +475,10 @@ export interface InvoiceFromBookingData {
     unitNameSnapshot?: string | null
     departureLabelSnapshot?: string | null
     startDate?: string | Date | null
+    serviceDate?: string | Date | null
+    startsAt?: string | Date | null
     endDate?: string | Date | null
+    endsAt?: string | Date | null
     quantity: number
     unitSellAmountCents: number | null
     totalSellAmountCents: number | null
@@ -543,7 +546,7 @@ function bookingItemToInvoiceLine(
   return {
     bookingItemId: item.id,
     bookingPaymentScheduleId: null,
-    description: item.title,
+    description: renderBookingItemInvoiceLineDescription(item),
     quantity: item.quantity,
     unitPriceCents:
       item.unitSellAmountCents ??
@@ -558,6 +561,15 @@ function bookingItemToInvoiceLine(
         : null,
     sortOrder,
   }
+}
+
+function renderBookingItemInvoiceLineDescription(item: InvoiceFromBookingData["items"][number]) {
+  const base = resolveBookingItemDisplayName(item) ?? item.title
+  const startDate = item.startDate ?? item.serviceDate ?? item.startsAt
+  const endDate = item.endDate ?? item.endsAt ?? item.serviceDate ?? startDate
+  const dates = formatInvoiceLineDateRange(startDate, endDate)
+
+  return dates ? `${base} | ${dates}` : base
 }
 
 function bookingPaymentScheduleToInvoiceLine(
@@ -646,7 +658,13 @@ function compareBookingItemsForScheduleDisplay(
 }
 
 function resolveBookingItemDateSortKey(item: InvoiceFromBookingData["items"][number]) {
-  return toDateOnly(item.startDate) ?? toDateOnly(item.endDate)
+  return (
+    toDateOnly(item.startDate) ??
+    toDateOnly(item.serviceDate) ??
+    toDateOnly(item.startsAt) ??
+    toDateOnly(item.endDate) ??
+    toDateOnly(item.endsAt)
+  )
 }
 
 function compareNullableStrings(left: string | null, right: string | null) {
