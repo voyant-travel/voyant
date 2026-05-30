@@ -457,6 +457,15 @@ describe("code validation — every CodeStatus", () => {
     expect(result.codeStatus).toEqual({ kind: "code_not_applicable", reason: "min_pax" })
   })
 
+  it("returns code_not_applicable with reason='eligibility' when eligibility excludes", async () => {
+    const offer = makeOffer({ code: "family", conditions: { familyOnly: true } })
+    const result = await evaluateOffersForProduct(
+      makeSource({ coded: [offer] }),
+      baseCtx({ code: "FAMILY", eligibility: { family: false }, date: evalDate }),
+    )
+    expect(result.codeStatus).toEqual({ kind: "code_not_applicable", reason: "eligibility" })
+  })
+
   it("returns code_not_applicable with reason='currency' when fixed_amount currency mismatch", async () => {
     const offer = makeOffer({
       code: "fivebucks",

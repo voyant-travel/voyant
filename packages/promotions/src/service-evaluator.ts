@@ -422,7 +422,7 @@ export async function evaluateOffersForProduct(
       continue
     }
     if (cond.kind === "excluded") {
-      if (offer === codeOffer) codeOfferRejection = { kind: "min_pax" }
+      if (offer === codeOffer) codeOfferRejection = { kind: cond.reason }
       continue
     }
 
