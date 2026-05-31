@@ -1,5 +1,12 @@
 # @voyantjs/db
 
+## 0.91.0
+
+### Patch Changes
+
+- dc8554b: Add cruise voyage group schema, validation, service helpers, and admin routes for combined voyages, grand voyages, world cruises, cruise-tours, and pre/post extensions.
+  - @voyantjs/core@0.91.0
+
 ## 0.90.0
 
 ### Patch Changes

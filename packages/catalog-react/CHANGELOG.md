@@ -1,5 +1,13 @@
 # @voyantjs/catalog-react
 
+## 0.91.0
+
+### Patch Changes
+
+- Updated dependencies [5de3d72]
+  - @voyantjs/catalog@0.91.0
+  - @voyantjs/react@0.91.0
+
 ## 0.90.0
 
 ### Patch Changes

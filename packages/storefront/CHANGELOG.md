@@ -1,5 +1,24 @@
 # @voyantjs/storefront
 
+## 0.91.0
+
+### Minor Changes
+
+- 5de3d72: Extend promotion scopes with fare-code and cabin-grade targeting, and add structured eligibility flags for past-guest, solo-traveler, child-traveler, and family offers.
+
+### Patch Changes
+
+- @voyantjs/availability@0.91.0
+- @voyantjs/bookings@0.91.0
+- @voyantjs/core@0.91.0
+- @voyantjs/crm@0.91.0
+- @voyantjs/extras@0.91.0
+- @voyantjs/finance@0.91.0
+- @voyantjs/hono@0.91.0
+- @voyantjs/pricing@0.91.0
+- @voyantjs/products@0.91.0
+- @voyantjs/sellability@0.91.0
+
 ## 0.90.0
 
 ### Patch Changes
