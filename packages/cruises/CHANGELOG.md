@@ -1,5 +1,20 @@
 # @voyantjs/cruises
 
+## 0.93.0
+
+### Minor Changes
+
+- 5df6824: Add canonical place references for product destinations and cruise itinerary geography.
+- 43c409b: Promote cruise cabin and deck facets into the catalog plane and add structured cabin feature fields for bed configuration, accessibility, and view filtering.
+
+### Patch Changes
+
+- @voyantjs/bookings@0.93.0
+- @voyantjs/catalog@0.93.0
+- @voyantjs/core@0.93.0
+- @voyantjs/db@0.93.0
+- @voyantjs/hono@0.93.0
+
 ## 0.92.0
 
 ### Patch Changes

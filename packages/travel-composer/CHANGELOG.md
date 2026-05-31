@@ -1,5 +1,15 @@
 # @voyantjs/travel-composer
 
+## 0.93.0
+
+### Patch Changes
+
+- @voyantjs/catalog@0.93.0
+- @voyantjs/catalog-mcp@0.93.0
+- @voyantjs/core@0.93.0
+- @voyantjs/db@0.93.0
+- @voyantjs/hono@0.93.0
+
 ## 0.92.0
 
 ### Patch Changes
