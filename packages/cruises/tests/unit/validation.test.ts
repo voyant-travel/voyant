@@ -4,7 +4,7 @@ import {
   insertEnrichmentProgramSchema,
   replaceEnrichmentProgramsSchema,
 } from "../../src/validation-content.js"
-import { insertSailingSchema } from "../../src/validation-core.js"
+import { insertCruiseSchema, insertSailingSchema } from "../../src/validation-core.js"
 
 describe("insertSailingSchema — direction enum", () => {
   const baseSailing = {
@@ -39,6 +39,30 @@ describe("insertSailingSchema — direction enum", () => {
   it("rejects misspelled direction values", () => {
     const result = insertSailingSchema.safeParse({ ...baseSailing, direction: "upStream" })
     expect(result.success).toBe(false)
+  })
+})
+
+describe("insertCruiseSchema — canonical geography facets", () => {
+  const baseCruise = {
+    slug: "danube-highlights",
+    name: "Danube Highlights",
+    cruiseType: "river",
+    nights: 7,
+  }
+
+  it("accepts canonical ids and localized display labels", () => {
+    const result = insertCruiseSchema.safeParse({
+      ...baseCruise,
+      regionIds: ["region:europe"],
+      waterwayIds: ["river:Q1653"],
+      portIds: ["port:HUBUD"],
+      countryIso: ["HU"],
+      regions: ["Europe"],
+      waterways: ["Danube"],
+      ports: ["Budapest"],
+      countries: ["Hungary"],
+    })
+    expect(result.success).toBe(true)
   })
 })
 

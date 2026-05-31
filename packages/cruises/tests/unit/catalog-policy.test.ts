@@ -37,6 +37,26 @@ describe("cruiseCatalogPolicy", () => {
     expect(registry.byPath.get("disembarkPortCanonicalPlaceId")?.reindex).toBe("facet-affecting")
   })
 
+  it("declares canonical geography ids and labels as customer-visible facets", () => {
+    const registry = createFieldPolicyRegistry(cruiseCatalogPolicy)
+    for (const path of ["region_ids[]", "waterway_ids[]", "port_ids[]", "country_iso[]"]) {
+      const policy = registry.byPath.get(path)
+      expect(policy?.class).toBe("structural")
+      expect(policy?.reindex).toBe("facet-affecting")
+      expect(policy?.query).toBe("indexed-column")
+      expect(policy?.localized).toBe(false)
+      expect(policy?.visibility).toEqual(["staff", "customer", "partner"])
+    }
+    for (const path of ["waterways[]", "ports[]", "countries[]"]) {
+      const policy = registry.byPath.get(path)
+      expect(policy?.class).toBe("structural")
+      expect(policy?.reindex).toBe("facet-affecting")
+      expect(policy?.query).toBe("indexed-column")
+      expect(policy?.localized).toBe(true)
+      expect(policy?.visibility).toEqual(["staff", "customer", "partner"])
+    }
+  })
+
   it("classifies cached price/departure summaries as volatile-indexed (Tier 1)", () => {
     const registry = createFieldPolicyRegistry(cruiseCatalogPolicy)
     expect(registry.byPath.get("lowestPriceCached")?.class).toBe("volatile-indexed")

@@ -1,25 +1,8 @@
 /**
- * Catalog plane field policy for `packages/cruises`.
+ * Catalog plane field policy for root `cruises` rows.
  *
- * Declares every cruise field's governance under the
- * `@voyantjs/catalog` 12-attribute contract. See
- * `docs/architecture/catalog-architecture.md` and the cruise vertical's
- * design doc `docs/architecture/cruises-module.md`.
- *
- * Scope of this file:
- *   - The root `cruises` table (from `schema-core.ts`).
- *   - Provenance + identity fields the catalog plane needs to track.
- *
- * Out of scope (deferred to follow-up adoption passes — these are promoted
- * child entities per architecture §6.2):
- *   - `cruiseSailings` — own lifecycle (sales status), own query surface
- *     ("all sailings after Oct 2026"), own booking-decision identity. Gets
- *     its own micro-registry.
- *   - `cruiseCabinCategories` / `cruiseShipDecks` — selectable variant axis,
- *     own micro-registry per the §6.2 promotion gate.
- *   - `cruiseItineraryDays` — composite list with mixed-class leaves
- *     (managed port codes + merchandisable descriptions).
- *   - Pricing grid, fare codes — pricing module's responsibility.
+ * Deferred child-entity registries: sailings, cabin categories/decks,
+ * itinerary days, and pricing grids.
  */
 
 import { defineFieldPolicy, type FieldPolicyInput } from "@voyantjs/catalog/contract"
@@ -400,6 +383,62 @@ const CRUISE_FIELD_POLICY: FieldPolicyInput[] = [
     overrideFriction: "none",
     sourceFreshness: "sync",
   },
+  {
+    path: "region_ids[]",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "waterway_ids[]",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "port_ids[]",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "country_iso[]",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
   // TODO(catalog): split into marketing_regions + facet_regions per §7.1.
   // Today's schema has one `regions` column; declared structural so search
   // facets work, but that means marketing edits to it would drift faceting.
@@ -416,6 +455,48 @@ const CRUISE_FIELD_POLICY: FieldPolicyInput[] = [
     visibility: ["staff", "customer", "partner"],
     editRole: "ops",
     overrideFriction: "confirm",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "waterways[]",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: true,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "ports[]",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: true,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "countries[]",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: true,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
     sourceFreshness: "sync",
   },
   {

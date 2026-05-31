@@ -103,7 +103,14 @@ export function cruiseRowToProjection(
     ["embarkPortCanonicalPlaceId", row.embarkPortCanonicalPlaceId],
     ["disembarkPortFacilityId", row.disembarkPortFacilityId],
     ["disembarkPortCanonicalPlaceId", row.disembarkPortCanonicalPlaceId],
+    ["region_ids[]", row.regionIds],
+    ["waterway_ids[]", row.waterwayIds],
+    ["port_ids[]", row.portIds],
+    ["country_iso[]", row.countryIso],
     ["regions[]", row.regions],
+    ["waterways[]", row.waterways],
+    ["ports[]", row.ports],
+    ["countries[]", row.countries],
     ["themes[]", row.themes],
 
     // Volatile-indexed (browse-time approximations)

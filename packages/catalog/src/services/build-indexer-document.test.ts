@@ -100,6 +100,16 @@ describe("buildIndexerDocument", () => {
     expect(doc.fields.tags).toEqual(["wellness", "yoga"])
   })
 
+  it("accepts natural projection keys for list policies", () => {
+    const doc = buildIndexerDocument(
+      registry,
+      new Map<string, unknown>([["tags", ["wellness", "yoga"]]]),
+      customerSlice,
+      "prod_xyz",
+    )
+    expect(doc.fields.tags).toEqual(["wellness", "yoga"])
+  })
+
   it("ignores fields not declared in the registry", () => {
     const projectionWithExtra = new Map<string, unknown>([
       ["title", "Hello"],

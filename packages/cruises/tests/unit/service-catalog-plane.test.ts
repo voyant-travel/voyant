@@ -22,7 +22,14 @@ const sampleRow = {
   highlights: ["Cologne Cathedral", "Black Forest"],
   inclusionsHtml: "<p>All meals</p>",
   exclusionsHtml: "<p>Excursions extra</p>",
+  regionIds: ["region:western-europe"],
+  waterwayIds: ["river:Q584"],
+  portIds: ["port:NLAMS", "port:CHBSL"],
+  countryIso: ["NL", "CH"],
   regions: ["Western Europe"],
+  waterways: ["Rhine"],
+  ports: ["Amsterdam", "Basel"],
+  countries: ["Netherlands", "Switzerland"],
   themes: ["culture", "history"],
   heroImageUrl: "https://example.com/hero.jpg",
   mapImageUrl: "https://example.com/map.jpg",
@@ -46,6 +53,13 @@ describe("cruiseRowToProjection", () => {
     expect(projection.get("lineSupplierId")).toBe("supp_viking")
     expect(projection.get("embarkPortCanonicalPlaceId")).toBe("NLAMS")
     expect(projection.get("disembarkPortCanonicalPlaceId")).toBe("CHBSL")
+    expect(projection.get("region_ids[]")).toEqual(["region:western-europe"])
+    expect(projection.get("waterway_ids[]")).toEqual(["river:Q584"])
+    expect(projection.get("port_ids[]")).toEqual(["port:NLAMS", "port:CHBSL"])
+    expect(projection.get("country_iso[]")).toEqual(["NL", "CH"])
+    expect(projection.get("waterways[]")).toEqual(["Rhine"])
+    expect(projection.get("ports[]")).toEqual(["Amsterdam", "Basel"])
+    expect(projection.get("countries[]")).toEqual(["Netherlands", "Switzerland"])
     expect(projection.get("highlights")).toEqual(["Cologne Cathedral", "Black Forest"])
     expect(projection.get("thumbnailUrl")).toBe("https://example.com/hero.jpg")
   })

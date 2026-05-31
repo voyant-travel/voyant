@@ -49,6 +49,7 @@ import {
   priceListQuerySchema,
   updatePriceSchema,
 } from "./validation-pricing.js"
+import { insertSearchIndexSchema } from "./validation-search.js"
 
 // ---------- Hono env ----------
 
@@ -905,30 +906,7 @@ export const cruiseAdminRoutes = new Hono<Env>()
     const payload = await parseJsonBody(
       c,
       z.object({
-        entries: z.array(
-          z.object({
-            source: z.enum(["local", "external"]),
-            sourceProvider: z.string().optional().nullable(),
-            sourceRef: z.record(z.string(), z.unknown()).optional().nullable(),
-            localCruiseId: z.string().optional().nullable(),
-            slug: z.string().min(1),
-            name: z.string().min(1),
-            cruiseType: z.enum(["ocean", "river", "expedition", "coastal"]),
-            lineName: z.string().min(1),
-            shipName: z.string().min(1),
-            nights: z.number().int().positive(),
-            embarkPortName: z.string().optional().nullable(),
-            disembarkPortName: z.string().optional().nullable(),
-            regions: z.array(z.string()).optional(),
-            themes: z.array(z.string()).optional(),
-            earliestDeparture: z.string().optional().nullable(),
-            latestDeparture: z.string().optional().nullable(),
-            lowestPrice: z.string().optional().nullable(),
-            lowestPriceCurrency: z.string().optional().nullable(),
-            salesStatus: z.string().optional().nullable(),
-            heroImageUrl: z.string().optional().nullable(),
-          }),
-        ),
+        entries: z.array(insertSearchIndexSchema),
       }),
     )
     const result = await cruisesSearchService.bulkUpsert(c.get("db"), payload.entries as never)

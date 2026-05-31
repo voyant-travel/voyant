@@ -1,15 +1,7 @@
 /**
- * Search-index service. Powers the storefront's catalog browse + filter and
- * the admin "list everything" view when both local and external entries are
- * mixed together.
- *
- * The `cruise_search_index` table is intentionally optional — operators
- * running back-office only never populate it. Storefront-enabled deployments
- * either:
- *   - Let the local-projection trigger keep self-managed entries fresh
- *     (already wired into cruisesService mutations), and
- *   - Have each registered adapter call `bulkUpsert` (or feed
- *     `searchProjection()` deltas) to keep external entries fresh.
+ * Search-index service for mixed local/external cruise browse rows.
+ * `cruise_search_index` is optional; storefront deployments populate it
+ * from local projection hooks and adapter `searchProjection()` streams.
  */
 
 import { and, asc, eq, gte, ilike, lte, notInArray, or, type SQL, sql } from "drizzle-orm"
@@ -53,7 +45,14 @@ export type BulkSearchIndexEntry = {
   embarkPortCanonicalPlaceId?: string | null
   disembarkPortName?: string | null
   disembarkPortCanonicalPlaceId?: string | null
+  regionIds?: string[]
+  waterwayIds?: string[]
+  portIds?: string[]
+  countryIso?: string[]
   regions?: string[]
+  waterways?: string[]
+  ports?: string[]
+  countries?: string[]
   themes?: string[]
   earliestDeparture?: string | null
   latestDeparture?: string | null
@@ -84,6 +83,24 @@ export const cruisesSearchService = {
     if (query.source) conditions.push(eq(cruiseSearchIndex.source, query.source))
     if (query.region) {
       conditions.push(sql`${cruiseSearchIndex.regions} @> ${JSON.stringify([query.region])}::jsonb`)
+    }
+    if (query.regionId) {
+      conditions.push(
+        sql`${cruiseSearchIndex.regionIds} @> ${JSON.stringify([query.regionId])}::jsonb`,
+      )
+    }
+    if (query.waterwayId) {
+      conditions.push(
+        sql`${cruiseSearchIndex.waterwayIds} @> ${JSON.stringify([query.waterwayId])}::jsonb`,
+      )
+    }
+    if (query.portId) {
+      conditions.push(sql`${cruiseSearchIndex.portIds} @> ${JSON.stringify([query.portId])}::jsonb`)
+    }
+    if (query.countryIso) {
+      conditions.push(
+        sql`${cruiseSearchIndex.countryIso} @> ${JSON.stringify([query.countryIso])}::jsonb`,
+      )
     }
     if (query.theme) {
       conditions.push(sql`${cruiseSearchIndex.themes} @> ${JSON.stringify([query.theme])}::jsonb`)
@@ -174,7 +191,14 @@ export const cruisesSearchService = {
       embarkPortCanonicalPlaceId: entry.embarkPortCanonicalPlaceId ?? null,
       disembarkPortName: entry.disembarkPortName ?? null,
       disembarkPortCanonicalPlaceId: entry.disembarkPortCanonicalPlaceId ?? null,
+      regionIds: entry.regionIds ?? [],
+      waterwayIds: entry.waterwayIds ?? [],
+      portIds: entry.portIds ?? [],
+      countryIso: entry.countryIso ?? [],
       regions: entry.regions ?? [],
+      waterways: entry.waterways ?? [],
+      ports: entry.ports ?? [],
+      countries: entry.countries ?? [],
       themes: entry.themes ?? [],
       earliestDeparture: entry.earliestDeparture ?? null,
       latestDeparture: entry.latestDeparture ?? null,
@@ -375,7 +399,14 @@ export const cruisesSearchService = {
         embarkPortCanonicalPlaceId: entry.embarkPortCanonicalPlaceId ?? null,
         disembarkPortName: entry.disembarkPortName ?? null,
         disembarkPortCanonicalPlaceId: entry.disembarkPortCanonicalPlaceId ?? null,
+        regionIds: entry.regionIds ?? [],
+        waterwayIds: entry.waterwayIds ?? [],
+        portIds: entry.portIds ?? [],
+        countryIso: entry.countryIso ?? [],
         regions: entry.regions ?? [],
+        waterways: entry.waterways ?? [],
+        ports: entry.ports ?? [],
+        countries: entry.countries ?? [],
         themes: entry.themes ?? [],
         earliestDeparture: entry.earliestDeparture ?? null,
         latestDeparture: entry.latestDeparture ?? null,
@@ -544,7 +575,14 @@ async function buildLocalEntry(
     nights: cruise.nights,
     embarkPortCanonicalPlaceId: cruise.embarkPortCanonicalPlaceId ?? null,
     disembarkPortCanonicalPlaceId: cruise.disembarkPortCanonicalPlaceId ?? null,
+    regionIds: cruise.regionIds ?? [],
+    waterwayIds: cruise.waterwayIds ?? [],
+    portIds: cruise.portIds ?? [],
+    countryIso: cruise.countryIso ?? [],
     regions: cruise.regions ?? [],
+    waterways: cruise.waterways ?? [],
+    ports: cruise.ports ?? [],
+    countries: cruise.countries ?? [],
     themes: cruise.themes ?? [],
     earliestDeparture: dateAgg?.earliest ?? null,
     latestDeparture: dateAgg?.latest ?? null,
