@@ -25,6 +25,12 @@ import {
 } from "@voyantjs/catalog"
 import { z } from "zod"
 
+import {
+  CABIN_ACCESSIBILITY_FEATURES,
+  CABIN_BED_CONFIGURATIONS,
+  CABIN_VIEW_TYPES,
+} from "./cabin-features.js"
+
 export const CRUISES_CONTENT_SCHEMA_VERSION = "cruises/v1"
 
 export const cruiseSummarySchema = z.object({
@@ -94,6 +100,10 @@ export const cruiseCabinCategorySchema = z.object({
   capacity_min: z.number().int().nonnegative().nullable().optional(),
   capacity_max: z.number().int().nonnegative().nullable().optional(),
   inclusions: z.array(z.string()).optional().default([]),
+  feature_codes: z.array(z.string()).default([]),
+  bed_configurations: z.array(z.enum(CABIN_BED_CONFIGURATIONS)).default([]),
+  accessibility_features: z.array(z.enum(CABIN_ACCESSIBILITY_FEATURES)).default([]),
+  view_type: z.enum(CABIN_VIEW_TYPES).nullable().default(null),
 })
 
 export const cruisePolicySchema = z.object({

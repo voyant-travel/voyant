@@ -11,7 +11,11 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core"
-
+import type {
+  CabinAccessibilityFeature,
+  CabinBedConfiguration,
+  CabinViewType,
+} from "./cabin-features.js"
 import { cabinRoomTypeEnum, shipTypeEnum } from "./schema-shared.js"
 
 export const cruiseShips = pgTable(
@@ -89,6 +93,12 @@ export const cruiseCabinCategories = pgTable(
     squareFeet: numeric("square_feet", { precision: 8, scale: 2 }),
     wheelchairAccessible: boolean("wheelchair_accessible").notNull().default(false),
     amenities: jsonb("amenities").$type<string[]>().default([]),
+    featureCodes: jsonb("feature_codes").$type<string[]>().default([]),
+    bedConfigurations: jsonb("bed_configurations").$type<CabinBedConfiguration[]>().default([]),
+    accessibilityFeatures: jsonb("accessibility_features")
+      .$type<CabinAccessibilityFeature[]>()
+      .default([]),
+    viewType: text("view_type").$type<CabinViewType>(),
     images: jsonb("images").$type<string[]>().default([]),
     floorplanImages: jsonb("floorplan_images").$type<string[]>().default([]),
     gradeCodes: jsonb("grade_codes").$type<string[]>().default([]),
@@ -106,6 +116,13 @@ export const cruiseCabinCategories = pgTable(
   (table) => [
     uniqueIndex("uidx_cruise_cabin_categories_ship_code").on(table.shipId, table.code),
     index("idx_cruise_cabin_categories_ship_type").on(table.shipId, table.roomType),
+    index("idx_cruise_cabin_categories_features_gin").using("gin", table.featureCodes),
+    index("idx_cruise_cabin_categories_beds_gin").using("gin", table.bedConfigurations),
+    index("idx_cruise_cabin_categories_accessibility_gin").using(
+      "gin",
+      table.accessibilityFeatures,
+    ),
+    index("idx_cruise_cabin_categories_view_type").on(table.viewType),
   ],
 )
 

@@ -76,6 +76,22 @@ export {
   type NewBookingGroupCruiseDetail,
 } from "./booking-extension.js"
 export {
+  CABIN_ACCESSIBILITY_FEATURES,
+  CABIN_BED_CONFIGURATIONS,
+  CABIN_VIEW_TYPES,
+  type CabinAccessibilityFeature,
+  type CabinBedConfiguration,
+  type CabinViewType,
+} from "./cabin-features.js"
+export {
+  CRUISE_CABIN_CATEGORY_FIELD_POLICY,
+  CRUISE_CABIN_FACETS_FIELD_POLICY,
+  CRUISE_DECK_FIELD_POLICY,
+  cruiseCabinCategoryCatalogPolicy,
+  cruiseCabinFacetsCatalogPolicy,
+  cruiseDeckCatalogPolicy,
+} from "./catalog-policy-cabins.js"
+export {
   CRUISE_CREATED_EVENT,
   CRUISE_DELETED_EVENT,
   CRUISE_UPDATED_EVENT,
@@ -101,6 +117,11 @@ export {
   type CruisePartyCabinEntry,
   cruisesBookingService,
 } from "./service-bookings.js"
+export {
+  type CruiseCabinFacetJoinRow,
+  createCruiseCabinFacetProjectionExtension,
+  projectCruiseCabinFacetRows,
+} from "./service-catalog-plane-cabins.js"
 export { detachExternalCruise } from "./service-detach.js"
 export {
   type ExternalCruiseCatalogRefreshOptions,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-
+import { insertCabinCategorySchema } from "../../src/validation-cabins.js"
 import {
   insertEnrichmentProgramSchema,
   replaceEnrichmentProgramsSchema,
@@ -38,6 +38,38 @@ describe("insertSailingSchema — direction enum", () => {
 
   it("rejects misspelled direction values", () => {
     const result = insertSailingSchema.safeParse({ ...baseSailing, direction: "upStream" })
+    expect(result.success).toBe(false)
+  })
+})
+
+describe("insertCabinCategorySchema — structured cabin features", () => {
+  const baseCategory = {
+    shipId: "crsh_abc",
+    code: "BAL",
+    name: "Balcony Suite",
+    roomType: "balcony",
+    minOccupancy: 1,
+    maxOccupancy: 3,
+  }
+
+  it("accepts normalized bed, accessibility, and view facets", () => {
+    const result = insertCabinCategorySchema.safeParse({
+      ...baseCategory,
+      featureCodes: ["minibar", "laundry"],
+      bedConfigurations: ["king", "convertible_twins"],
+      accessibilityFeatures: ["step_free_access", "roll_in_shower"],
+      viewType: "balcony",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("rejects free-text bed, accessibility, and view facets", () => {
+    const result = insertCabinCategorySchema.safeParse({
+      ...baseCategory,
+      bedConfigurations: ["huge"],
+      accessibilityFeatures: ["pretty accessible"],
+      viewType: "panoramic-ish",
+    })
     expect(result.success).toBe(false)
   })
 })
