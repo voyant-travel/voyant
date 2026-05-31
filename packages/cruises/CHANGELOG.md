@@ -1,5 +1,20 @@
 # @voyantjs/cruises
 
+## 0.95.0
+
+### Minor Changes
+
+- a8d3a3f: Carry canonical cruise geography through cruise models and catalog indexing so sourced and owned cruise documents can facet on regions, waterways, ports, and countries.
+
+### Patch Changes
+
+- Updated dependencies [a8d3a3f]
+  - @voyantjs/bookings@0.95.0
+  - @voyantjs/catalog@0.95.0
+  - @voyantjs/core@0.95.0
+  - @voyantjs/db@0.95.0
+  - @voyantjs/hono@0.95.0
+
 ## 0.94.0
 
 ### Minor Changes
