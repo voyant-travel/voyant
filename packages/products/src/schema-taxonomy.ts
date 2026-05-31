@@ -1,6 +1,7 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
 import {
   boolean,
+  doublePrecision,
   index,
   integer,
   jsonb,
@@ -179,7 +180,10 @@ export const destinations = pgTable(
     parentId: typeIdRef("parent_id"),
     slug: text("slug").notNull(),
     code: text("code"),
+    canonicalPlaceId: text("canonical_place_id"),
     destinationType: text("destination_type").notNull().default("destination"),
+    latitude: doublePrecision("latitude"),
+    longitude: doublePrecision("longitude"),
     sortOrder: integer("sort_order").notNull().default(0),
     active: boolean("active").notNull().default(true),
     metadata: jsonb("metadata").$type<Record<string, unknown>>(),
@@ -191,6 +195,7 @@ export const destinations = pgTable(
     uniqueIndex("uidx_destinations_code").on(table.code),
     index("idx_destinations_parent").on(table.parentId),
     index("idx_destinations_active").on(table.active),
+    index("idx_destinations_canonical_place").on(table.canonicalPlaceId),
     index("idx_destinations_sort_slug").on(table.sortOrder, table.slug),
     index("idx_destinations_active_sort_slug").on(table.active, table.sortOrder, table.slug),
     index("idx_destinations_type_sort_slug").on(table.destinationType, table.sortOrder, table.slug),

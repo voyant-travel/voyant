@@ -53,7 +53,9 @@ export type ExternalCruise = {
   defaultShipRef?: SourceRef
   nights: number
   embarkPortName?: string | null
+  embarkPortCanonicalPlaceId?: string | null
   disembarkPortName?: string | null
+  disembarkPortCanonicalPlaceId?: string | null
   description?: string | null
   shortDescription?: string | null
   highlights?: string[]
@@ -73,7 +75,9 @@ export type ExternalSailing = {
   departureDate: string // ISO YYYY-MM-DD
   returnDate: string
   embarkPortName?: string | null
+  embarkPortCanonicalPlaceId?: string | null
   disembarkPortName?: string | null
+  disembarkPortCanonicalPlaceId?: string | null
   direction?: "upstream" | "downstream" | "round_trip" | "one_way" | null
   availabilityNote?: string | null
   isCharter?: boolean
@@ -175,6 +179,7 @@ export type ExternalItineraryDay = {
   title?: string | null
   description?: string | null
   portName?: string | null
+  portCanonicalPlaceId?: string | null
   arrivalTime?: string | null
   departureTime?: string | null
   isOvernight?: boolean
@@ -194,7 +199,9 @@ export type CruiseSearchProjectionEntry = {
   shipName: string
   nights: number
   embarkPortName?: string | null
+  embarkPortCanonicalPlaceId?: string | null
   disembarkPortName?: string | null
+  disembarkPortCanonicalPlaceId?: string | null
   regions?: string[]
   themes?: string[]
   earliestDeparture?: string | null

@@ -79,7 +79,9 @@ export function cruiseRowToProjection(
     ["defaultShipId", row.defaultShipId],
     ["nights", row.nights],
     ["embarkPortFacilityId", row.embarkPortFacilityId],
+    ["embarkPortCanonicalPlaceId", row.embarkPortCanonicalPlaceId],
     ["disembarkPortFacilityId", row.disembarkPortFacilityId],
+    ["disembarkPortCanonicalPlaceId", row.disembarkPortCanonicalPlaceId],
     ["regions[]", row.regions],
     ["themes[]", row.themes],
 

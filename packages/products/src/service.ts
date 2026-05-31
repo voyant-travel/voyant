@@ -1308,6 +1308,14 @@ export const productsService = {
       conditions.push(eq(destinations.active, query.active))
     }
 
+    if (query.destinationType) {
+      conditions.push(eq(destinations.destinationType, query.destinationType))
+    }
+
+    if (query.canonicalPlaceId) {
+      conditions.push(eq(destinations.canonicalPlaceId, query.canonicalPlaceId))
+    }
+
     if (query.search) {
       const term = `%${query.search}%`
       const translationRows = await db

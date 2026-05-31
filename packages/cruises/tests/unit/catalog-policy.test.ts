@@ -32,7 +32,9 @@ describe("cruiseCatalogPolicy", () => {
     expect(registry.byPath.get("cruiseType")?.reindex).toBe("facet-affecting")
     expect(registry.byPath.get("nights")?.reindex).toBe("facet-affecting")
     expect(registry.byPath.get("embarkPortFacilityId")?.reindex).toBe("facet-affecting")
+    expect(registry.byPath.get("embarkPortCanonicalPlaceId")?.reindex).toBe("facet-affecting")
     expect(registry.byPath.get("disembarkPortFacilityId")?.reindex).toBe("facet-affecting")
+    expect(registry.byPath.get("disembarkPortCanonicalPlaceId")?.reindex).toBe("facet-affecting")
   })
 
   it("classifies cached price/departure summaries as volatile-indexed (Tier 1)", () => {

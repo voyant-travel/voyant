@@ -245,7 +245,10 @@ async function loadCatalogHydrationData(
         destinationId: destinations.id,
         parentId: destinations.parentId,
         slug: destinations.slug,
+        canonicalPlaceId: destinations.canonicalPlaceId,
         destinationType: destinations.destinationType,
+        latitude: destinations.latitude,
+        longitude: destinations.longitude,
         sortOrder: productDestinations.sortOrder,
         fallbackSortOrder: destinations.sortOrder,
         translationLanguageTag: destinationTranslations.languageTag,
@@ -344,7 +347,10 @@ async function loadCatalogHydrationData(
       id: string
       parentId: string | null
       slug: string
+      canonicalPlaceId: string | null
       destinationType: string
+      latitude: number | null
+      longitude: number | null
       sortOrder: number
       name: string
       description: string | null
@@ -381,7 +387,10 @@ async function loadCatalogHydrationData(
       id: first.destinationId,
       parentId: first.parentId ?? null,
       slug: first.slug,
+      canonicalPlaceId: first.canonicalPlaceId ?? null,
       destinationType: first.destinationType,
+      latitude: first.latitude ?? null,
+      longitude: first.longitude ?? null,
       sortOrder: first.sortOrder ?? first.fallbackSortOrder ?? 0,
       name: translated?.translationName ?? first.slug,
       description: translated?.translationDescription ?? null,
@@ -507,11 +516,14 @@ export const catalogProductsService = {
           id: row.id,
           parentId: row.parentId,
           slug: row.slug,
+          canonicalPlaceId: row.canonicalPlaceId,
           name: row.name,
           description: row.description,
           seoTitle: row.seoTitle,
           seoDescription: row.seoDescription,
           destinationType: row.destinationType,
+          latitude: row.latitude,
+          longitude: row.longitude,
           sortOrder: row.sortOrder,
         })),
         locations: (hydrationData.locationsByProduct.get(product.id) ?? []).map((row) => ({

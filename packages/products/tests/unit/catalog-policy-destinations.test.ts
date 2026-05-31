@@ -13,8 +13,11 @@ describe("productDestinationsCatalogPolicy", () => {
     expect(paths).toContain("regions[]")
     expect(paths).toContain("countries[]")
     expect(paths).toContain("cities[]")
+    expect(paths).toContain("ports[]")
+    expect(paths).toContain("waterways[]")
     expect(paths).toContain("destinationSlugs[]")
     expect(paths).toContain("destinationIds[]")
+    expect(paths).toContain("destinationCanonicalPlaceIds[]")
   })
 
   it("marks locale-aware label fields as localized", () => {
@@ -24,9 +27,12 @@ describe("productDestinationsCatalogPolicy", () => {
     expect(localizedPaths).toContain("regions[]")
     expect(localizedPaths).toContain("countries[]")
     expect(localizedPaths).toContain("cities[]")
+    expect(localizedPaths).toContain("ports[]")
+    expect(localizedPaths).toContain("waterways[]")
     // Slugs and IDs are not locale-stable
     expect(localizedPaths).not.toContain("destinationSlugs[]")
     expect(localizedPaths).not.toContain("destinationIds[]")
+    expect(localizedPaths).not.toContain("destinationCanonicalPlaceIds[]")
   })
 
   it("makes every field visible to staff/customer/partner so storefront cards can render", () => {
@@ -46,7 +52,9 @@ describe("productDestinationsCatalogPolicy", () => {
     expect(registry.resolve("name")).toBeDefined()
     expect(registry.resolve("regions[]")).toBeDefined()
     expect(registry.resolve("countries[]")).toBeDefined()
+    expect(registry.resolve("ports[]")).toBeDefined()
     expect(registry.resolve("destinationSlugs[]")).toBeDefined()
+    expect(registry.resolve("destinationCanonicalPlaceIds[]")).toBeDefined()
   })
 
   it("does not duplicate any path against productCatalogPolicy", () => {

@@ -30,6 +30,7 @@ interface DestinationJoinRow {
   destinationId: string
   destinationType: string
   slug: string
+  canonicalPlaceId: string | null
   translatedName: string | null
 }
 
@@ -47,6 +48,7 @@ async function joinProductDestinations(
       destinationId: productDestinations.destinationId,
       destinationType: destinations.destinationType,
       slug: destinations.slug,
+      canonicalPlaceId: destinations.canonicalPlaceId,
       active: destinations.active,
     })
     .from(productDestinations)
@@ -79,6 +81,7 @@ async function joinProductDestinations(
     destinationId: row.destinationId,
     destinationType: row.destinationType,
     slug: row.slug,
+    canonicalPlaceId: row.canonicalPlaceId ?? null,
     translatedName: nameByDestinationId.get(row.destinationId) ?? null,
   }))
 }
@@ -88,14 +91,20 @@ function bucketByType(rows: ReadonlyArray<DestinationJoinRow>): {
   regions: string[]
   countries: string[]
   cities: string[]
+  ports: string[]
+  waterways: string[]
   slugs: string[]
   ids: string[]
+  canonicalPlaceIds: string[]
 } {
   const regions: string[] = []
   const countries: string[] = []
   const cities: string[] = []
+  const ports: string[] = []
+  const waterways: string[] = []
   const slugs: string[] = []
   const ids: string[] = []
+  const canonicalPlaceIds: string[] = []
 
   for (const row of rows) {
     const label = row.translatedName ?? row.slug
@@ -109,15 +118,28 @@ function bucketByType(rows: ReadonlyArray<DestinationJoinRow>): {
       case "city":
         cities.push(label)
         break
+      case "port":
+        ports.push(label)
+        break
+      case "river":
+      case "sea":
+      case "ocean":
+      case "canal":
+      case "lake":
+        waterways.push(label)
+        break
       // "destination" (the catch-all default) doesn't bucket into any of
       // the typed lists. Its slug + id still land in the doc so storefronts
       // can filter generically.
     }
     slugs.push(row.slug)
     ids.push(row.destinationId)
+    if (row.canonicalPlaceId) {
+      canonicalPlaceIds.push(row.canonicalPlaceId)
+    }
   }
 
-  return { regions, countries, cities, slugs, ids }
+  return { regions, countries, cities, ports, waterways, slugs, ids, canonicalPlaceIds }
 }
 
 /**
@@ -136,18 +158,25 @@ export function createProductDestinationsProjectionExtension(): ProductProjectio
           ["regions[]", []],
           ["countries[]", []],
           ["cities[]", []],
+          ["ports[]", []],
+          ["waterways[]", []],
           ["destinationSlugs[]", []],
           ["destinationIds[]", []],
+          ["destinationCanonicalPlaceIds[]", []],
         ])
       }
 
-      const { regions, countries, cities, slugs, ids } = bucketByType(rows)
+      const { regions, countries, cities, ports, waterways, slugs, ids, canonicalPlaceIds } =
+        bucketByType(rows)
       return new Map<string, unknown>([
         ["regions[]", regions],
         ["countries[]", countries],
         ["cities[]", cities],
+        ["ports[]", ports],
+        ["waterways[]", waterways],
         ["destinationSlugs[]", slugs],
         ["destinationIds[]", ids],
+        ["destinationCanonicalPlaceIds[]", canonicalPlaceIds],
       ])
     },
   }

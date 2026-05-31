@@ -53,6 +53,7 @@ export const publicCatalogDestinationListQuerySchema = z.object({
   active: booleanQueryParam.optional(),
   languageTag: languageTagSchema.optional(),
   destinationType: destinationTypeSchema.optional(),
+  canonicalPlaceId: z.string().trim().min(1).max(255).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(100),
   offset: z.coerce.number().int().min(0).default(0),
 })
@@ -127,11 +128,14 @@ export const publicCatalogDestinationSchema = z.object({
   id: z.string(),
   parentId: z.string().nullable(),
   slug: z.string(),
+  canonicalPlaceId: z.string().nullable(),
   name: z.string(),
   description: z.string().nullable(),
   seoTitle: z.string().nullable(),
   seoDescription: z.string().nullable(),
   destinationType: destinationTypeSchema,
+  latitude: z.number().nullable(),
+  longitude: z.number().nullable(),
   sortOrder: z.number().int(),
 })
 

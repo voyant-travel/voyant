@@ -964,6 +964,7 @@ export type EffectiveItineraryDay = {
   title: string | null
   description: string | null
   portFacilityId: string | null
+  portCanonicalPlaceId: string | null
   arrivalTime: string | null
   departureTime: string | null
   isOvernight: boolean
@@ -981,6 +982,7 @@ function mergeDay(base: CruiseDay, override: CruiseSailingDay | undefined): Effe
       title: base.title,
       description: base.description,
       portFacilityId: base.portFacilityId,
+      portCanonicalPlaceId: base.portCanonicalPlaceId,
       arrivalTime: base.arrivalTime,
       departureTime: base.departureTime,
       isOvernight: base.isOvernight,
@@ -996,6 +998,7 @@ function mergeDay(base: CruiseDay, override: CruiseSailingDay | undefined): Effe
     title: override.title ?? base.title,
     description: override.description ?? base.description,
     portFacilityId: override.portFacilityId ?? base.portFacilityId,
+    portCanonicalPlaceId: override.portCanonicalPlaceId ?? base.portCanonicalPlaceId,
     arrivalTime: override.arrivalTime ?? base.arrivalTime,
     departureTime: override.departureTime ?? base.departureTime,
     isOvernight: override.isOvernight ?? base.isOvernight,

@@ -11,6 +11,7 @@
  *   - "trips to Italy" (filter: `countries[]` includes "Italy")
  *   - "trips in Rome" (filter: `cities[]` includes "Rome")
  *   - "Mediterranean cruises" (filter: `regions[]` includes "Mediterranean")
+ *   - "cruises from Amsterdam" (filter: `ports[]` or canonical place ids)
  *
  * Wire this policy into the products registry by composing with
  * `productCatalogPolicy`:
@@ -23,10 +24,11 @@
  * and wire `createProductDestinationsProjectionExtension` into
  * `createProductDocumentBuilder` so the values land in the doc.
  *
+ * Destination rows can carry canonical place ids (for example UN/LOCODE)
+ * and optional display coordinates. The gazetteer itself remains external;
+ * this module stores stable pointers/snapshots for faceting.
+ *
  * Out of scope here:
- *   - Coordinates / geopoints. The `destinations` table has no coordinate
- *     columns; product geolocation lives on `product_locations` and will
- *     ship as its own policy in a follow-up PR.
  *   - Slug fields per locale. Destinations have one canonical slug today;
  *     locale-specific slugs are a follow-up if marketing needs them.
  */
@@ -80,6 +82,34 @@ const PRODUCT_DESTINATIONS_FIELD_POLICY: FieldPolicyInput[] = [
     overrideFriction: "none",
     sourceFreshness: "sync",
   },
+  {
+    path: "ports[]",
+    class: "structural",
+    merge: "source-only",
+    drift: "low",
+    reindex: "entry-locale",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: true,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "waterways[]",
+    class: "structural",
+    merge: "source-only",
+    drift: "low",
+    reindex: "entry-locale",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: true,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
 
   // ── Slugs (locale-stable) ────────────────────────────────────────────────
   // Used for category-page links — operators want stable URLs that don't
@@ -104,6 +134,20 @@ const PRODUCT_DESTINATIONS_FIELD_POLICY: FieldPolicyInput[] = [
   // pinned to a destination ID rather than a slug).
   {
     path: "destinationIds[]",
+    class: "structural",
+    merge: "source-only",
+    drift: "low",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "destinationCanonicalPlaceIds[]",
     class: "structural",
     merge: "source-only",
     drift: "low",

@@ -444,6 +444,10 @@ export const publicProductsService = {
       conditions.push(eq(destinations.destinationType, query.destinationType))
     }
 
+    if (query.canonicalPlaceId) {
+      conditions.push(eq(destinations.canonicalPlaceId, query.canonicalPlaceId))
+    }
+
     if (query.search) {
       const translationRows = await db
         .select({ destinationId: destinationTranslations.destinationId })
@@ -510,11 +514,14 @@ export const publicProductsService = {
           id: row.id,
           parentId: row.parentId ?? null,
           slug: row.slug,
+          canonicalPlaceId: row.canonicalPlaceId ?? null,
           name: translation?.name ?? row.slug,
           description: translation?.description ?? null,
           seoTitle: translation?.seoTitle ?? null,
           seoDescription: translation?.seoDescription ?? null,
           destinationType: row.destinationType,
+          latitude: row.latitude ?? null,
+          longitude: row.longitude ?? null,
           sortOrder: row.sortOrder,
         }
       }),
