@@ -33,7 +33,9 @@ export const cruiseSearchIndex = pgTable(
     shipName: text("ship_name").notNull(),
     nights: integer("nights").notNull(),
     embarkPortName: text("embark_port_name"),
+    embarkPortCanonicalPlaceId: text("embark_port_canonical_place_id"),
     disembarkPortName: text("disembark_port_name"),
+    disembarkPortCanonicalPlaceId: text("disembark_port_canonical_place_id"),
     regions: jsonb("regions").$type<string[]>().default([]),
     themes: jsonb("themes").$type<string[]>().default([]),
     earliestDeparture: date("earliest_departure"),
@@ -52,6 +54,8 @@ export const cruiseSearchIndex = pgTable(
     index("idx_cruise_search_index_type_price").on(table.cruiseType, table.lowestPrice),
     index("idx_cruise_search_index_earliest_departure").on(table.earliestDeparture),
     index("idx_cruise_search_index_latest_departure").on(table.latestDeparture),
+    index("idx_cruise_search_index_embark_place").on(table.embarkPortCanonicalPlaceId),
+    index("idx_cruise_search_index_disembark_place").on(table.disembarkPortCanonicalPlaceId),
     index("idx_cruise_search_index_regions_gin").using("gin", table.regions),
     index("idx_cruise_search_index_themes_gin").using("gin", table.themes),
     uniqueIndex("uidx_cruise_search_index_external")

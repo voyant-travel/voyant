@@ -212,7 +212,9 @@ This section is detailed because the schema is most of the design. All tables us
 | `defaultShipId` | text | most cruises have a primary ship; sailings can override |
 | `nights` | integer not null | duration in nights |
 | `embarkPortFacilityId` | text | soft FK to `facilities.id` |
+| `embarkPortCanonicalPlaceId` | text | canonical place reference, e.g. UN/LOCODE; resolved by external geography service |
 | `disembarkPortFacilityId` | text | soft FK to `facilities.id` |
+| `disembarkPortCanonicalPlaceId` | text | canonical place reference |
 | `description` | text | long-form |
 | `shortDescription` | text | |
 | `highlights` | jsonb (text[]) | bullet list |
@@ -243,7 +245,9 @@ The `externalRefs` JSONB is deliberate. The same cruise can be pulled from multi
 | `departureDate` | date not null | |
 | `returnDate` | date not null | |
 | `embarkPortFacilityId` | text | overrides cruise default if set |
+| `embarkPortCanonicalPlaceId` | text | canonical place reference |
 | `disembarkPortFacilityId` | text | |
+| `disembarkPortCanonicalPlaceId` | text | canonical place reference |
 | `direction` | text | river-only: `'upstream' \| 'downstream'` |
 | `availabilityNote` | text | "limited", "wait list" — freeform from connector |
 | `isCharter` | boolean default false | |
@@ -270,6 +274,7 @@ marketing copy, source refs, and price/date roll-ups without overloading
 | `lineSupplierId` | text | soft FK to suppliers, same rule as `cruises.lineSupplierId` |
 | `nights` | integer not null | total composite duration |
 | `embarkPortFacilityId` / `disembarkPortFacilityId` | text | overall journey endpoints |
+| `embarkPortCanonicalPlaceId` / `disembarkPortCanonicalPlaceId` | text | canonical place references for group endpoints |
 | `description`, `shortDescription`, `highlights`, `regions`, `themes`, media URLs | mixed | group-level merchandising fields |
 | `status` | cruise_status enum | draft/review/live/archive lifecycle |
 | `lowestPriceCached`, `lowestPriceCurrencyCached` | numeric/text | group pricing roll-up |
@@ -296,6 +301,7 @@ flags core voyage content versus pre- and post-extensions.
 | `startDay`, `endDay` | integer | group-relative itinerary range |
 | `startDate`, `endDate` | date | dated range when the group is departure-specific |
 | `embarkPortFacilityId`, `disembarkPortFacilityId` | text | segment endpoints |
+| `embarkPortCanonicalPlaceId`, `disembarkPortCanonicalPlaceId` | text | canonical place references for segment endpoints |
 | `nights` | integer | segment duration |
 | `externalRefs`, `metadata` | jsonb | provider IDs and provider-neutral extra shape |
 | `createdAt` / `updatedAt` | timestamptz | |
@@ -452,6 +458,7 @@ The split keeps cruise_prices clean (one row per fare) and makes promotions comp
 | `title` | text | |
 | `description` | text | |
 | `portFacilityId` | text | nullable for sea days |
+| `portCanonicalPlaceId` | text | canonical place reference for itinerary faceting |
 | `arrivalTime` | time | |
 | `departureTime` | time | |
 | `isOvernight` | boolean default false | |

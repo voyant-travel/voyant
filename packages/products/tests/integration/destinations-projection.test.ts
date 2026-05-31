@@ -71,13 +71,19 @@ describe.skipIf(!DB_AVAILABLE)("createProductDestinationsProjectionExtension", (
         parent_id text,
         slug text NOT NULL,
         code text,
+        canonical_place_id text,
         destination_type text DEFAULT 'destination' NOT NULL,
+        latitude double precision,
+        longitude double precision,
         sort_order integer DEFAULT 0 NOT NULL,
         active boolean DEFAULT true NOT NULL,
         metadata jsonb,
         created_at timestamp with time zone DEFAULT now() NOT NULL,
         updated_at timestamp with time zone DEFAULT now() NOT NULL
       )`,
+      sql`ALTER TABLE destinations ADD COLUMN IF NOT EXISTS canonical_place_id text`,
+      sql`ALTER TABLE destinations ADD COLUMN IF NOT EXISTS latitude double precision`,
+      sql`ALTER TABLE destinations ADD COLUMN IF NOT EXISTS longitude double precision`,
       sql`CREATE UNIQUE INDEX IF NOT EXISTS uidx_destinations_slug ON destinations (slug)`,
       sql`CREATE TABLE IF NOT EXISTS destination_translations (
         id text PRIMARY KEY NOT NULL,
@@ -121,7 +127,7 @@ describe.skipIf(!DB_AVAILABLE)("createProductDestinationsProjectionExtension", (
     productId = "prod_dest_test"
     await db.execute(sql`INSERT INTO products (id, name) VALUES (${productId}, 'Italy Loop Tour')`)
 
-    // Three destinations, hierarchy: Mediterranean (region) > Italy (country) > Rome (city).
+    // Destinations include hierarchy plus cruise-specific port/waterway geography.
     await db.insert(destinations).values([
       {
         id: "dest_med",
@@ -136,7 +142,20 @@ describe.skipIf(!DB_AVAILABLE)("createProductDestinationsProjectionExtension", (
       {
         id: "dest_rm",
         slug: "rome",
+        canonicalPlaceId: "ITROM",
         destinationType: "city",
+      },
+      {
+        id: "dest_ams",
+        slug: "amsterdam-port",
+        canonicalPlaceId: "NLAMS",
+        destinationType: "port",
+      },
+      {
+        id: "dest_rhine",
+        slug: "rhine",
+        canonicalPlaceId: "river:rhine",
+        destinationType: "river",
       },
     ])
 
@@ -145,6 +164,8 @@ describe.skipIf(!DB_AVAILABLE)("createProductDestinationsProjectionExtension", (
       { id: "dt_med_en", destinationId: "dest_med", languageTag: "en-GB", name: "Mediterranean" },
       { id: "dt_it_en", destinationId: "dest_it", languageTag: "en-GB", name: "Italy" },
       { id: "dt_rm_en", destinationId: "dest_rm", languageTag: "en-GB", name: "Rome" },
+      { id: "dt_ams_en", destinationId: "dest_ams", languageTag: "en-GB", name: "Amsterdam Port" },
+      { id: "dt_rhine_en", destinationId: "dest_rhine", languageTag: "en-GB", name: "Rhine" },
       { id: "dt_it_it", destinationId: "dest_it", languageTag: "it-IT", name: "Italia" },
       { id: "dt_rm_it", destinationId: "dest_rm", languageTag: "it-IT", name: "Roma" },
       // Note: no Italian translation for Mediterranean — fallback path tested below.
@@ -154,6 +175,8 @@ describe.skipIf(!DB_AVAILABLE)("createProductDestinationsProjectionExtension", (
       { productId, destinationId: "dest_med" },
       { productId, destinationId: "dest_it" },
       { productId, destinationId: "dest_rm" },
+      { productId, destinationId: "dest_ams" },
+      { productId, destinationId: "dest_rhine" },
     ])
   })
 
@@ -163,11 +186,16 @@ describe.skipIf(!DB_AVAILABLE)("createProductDestinationsProjectionExtension", (
     expect(projection.get("regions[]")).toEqual(["Mediterranean"])
     expect(projection.get("countries[]")).toEqual(["Italy"])
     expect(projection.get("cities[]")).toEqual(["Rome"])
+    expect(projection.get("ports[]")).toEqual(["Amsterdam Port"])
+    expect(projection.get("waterways[]")).toEqual(["Rhine"])
     expect(projection.get("destinationSlugs[]")).toEqual(
-      expect.arrayContaining(["mediterranean", "italy", "rome"]),
+      expect.arrayContaining(["mediterranean", "italy", "rome", "amsterdam-port", "rhine"]),
     )
     expect(projection.get("destinationIds[]")).toEqual(
-      expect.arrayContaining(["dest_med", "dest_it", "dest_rm"]),
+      expect.arrayContaining(["dest_med", "dest_it", "dest_rm", "dest_ams", "dest_rhine"]),
+    )
+    expect(projection.get("destinationCanonicalPlaceIds[]")).toEqual(
+      expect.arrayContaining(["ITROM", "NLAMS", "river:rhine"]),
     )
   })
 
@@ -193,8 +221,11 @@ describe.skipIf(!DB_AVAILABLE)("createProductDestinationsProjectionExtension", (
     expect(projection.get("regions[]")).toEqual([])
     expect(projection.get("countries[]")).toEqual([])
     expect(projection.get("cities[]")).toEqual([])
+    expect(projection.get("ports[]")).toEqual([])
+    expect(projection.get("waterways[]")).toEqual([])
     expect(projection.get("destinationSlugs[]")).toEqual([])
     expect(projection.get("destinationIds[]")).toEqual([])
+    expect(projection.get("destinationCanonicalPlaceIds[]")).toEqual([])
   })
 
   it("excludes inactive destinations from the projection", async () => {
@@ -218,5 +249,7 @@ describe.skipIf(!DB_AVAILABLE)("createProductDestinationsProjectionExtension", (
     expect(doc?.fields).toHaveProperty("regions", ["Mediterranean"])
     expect(doc?.fields).toHaveProperty("countries", ["Italy"])
     expect(doc?.fields).toHaveProperty("cities", ["Rome"])
+    expect(doc?.fields).toHaveProperty("ports", ["Amsterdam Port"])
+    expect(doc?.fields).toHaveProperty("waterways", ["Rhine"])
   })
 })

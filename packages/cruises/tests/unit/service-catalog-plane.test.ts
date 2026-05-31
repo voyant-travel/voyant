@@ -14,7 +14,9 @@ const sampleRow = {
   defaultShipId: "ship_eir",
   nights: 14,
   embarkPortFacilityId: "fac_ams",
+  embarkPortCanonicalPlaceId: "NLAMS",
   disembarkPortFacilityId: "fac_bsl",
+  disembarkPortCanonicalPlaceId: "CHBSL",
   description: "Source description",
   shortDescription: "Short blurb",
   highlights: ["Cologne Cathedral", "Black Forest"],
@@ -42,6 +44,8 @@ describe("cruiseRowToProjection", () => {
     expect(projection.get("nights")).toBe(14)
     expect(projection.get("cruiseType")).toBe("river")
     expect(projection.get("lineSupplierId")).toBe("supp_viking")
+    expect(projection.get("embarkPortCanonicalPlaceId")).toBe("NLAMS")
+    expect(projection.get("disembarkPortCanonicalPlaceId")).toBe("CHBSL")
     expect(projection.get("highlights")).toEqual(["Cologne Cathedral", "Black Forest"])
     expect(projection.get("thumbnailUrl")).toBe("https://example.com/hero.jpg")
   })

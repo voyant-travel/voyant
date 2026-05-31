@@ -16,13 +16,19 @@ describe.skipIf(!DB_AVAILABLE)("Product routes", () => {
         parent_id text,
         slug text NOT NULL,
         code text,
+        canonical_place_id text,
         destination_type text DEFAULT 'destination' NOT NULL,
+        latitude double precision,
+        longitude double precision,
         sort_order integer DEFAULT 0 NOT NULL,
         active boolean DEFAULT true NOT NULL,
         metadata jsonb,
         created_at timestamp with time zone DEFAULT now() NOT NULL,
         updated_at timestamp with time zone DEFAULT now() NOT NULL
       )`,
+      sql`ALTER TABLE destinations ADD COLUMN IF NOT EXISTS canonical_place_id text`,
+      sql`ALTER TABLE destinations ADD COLUMN IF NOT EXISTS latitude double precision`,
+      sql`ALTER TABLE destinations ADD COLUMN IF NOT EXISTS longitude double precision`,
       sql`CREATE UNIQUE INDEX IF NOT EXISTS uidx_destinations_slug ON destinations (slug)`,
       sql`CREATE TABLE IF NOT EXISTS destination_translations (
         id text PRIMARY KEY NOT NULL,
@@ -399,12 +405,17 @@ describe.skipIf(!DB_AVAILABLE)("Product routes", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         slug: "romania",
+        canonicalPlaceId: "ROBUH",
         destinationType: "country",
+        latitude: 44.4268,
+        longitude: 26.1025,
       }),
     })
 
     expect(createDestinationRes.status).toBe(201)
     const { data: destination } = await createDestinationRes.json()
+    expect(destination.canonicalPlaceId).toBe("ROBUH")
+    expect(destination.latitude).toBe(44.4268)
 
     const createTranslationRes = await app.request(`/destinations/${destination.id}/translations`, {
       method: "POST",

@@ -26,6 +26,7 @@ export const cruiseDays = pgTable(
     title: text("title"),
     description: text("description"),
     portFacilityId: text("port_facility_id"),
+    portCanonicalPlaceId: text("port_canonical_place_id"),
     arrivalTime: time("arrival_time"),
     departureTime: time("departure_time"),
     isOvernight: boolean("is_overnight").notNull().default(false),
@@ -38,6 +39,7 @@ export const cruiseDays = pgTable(
   (table) => [
     uniqueIndex("uidx_cruise_days_cruise_day").on(table.cruiseId, table.dayNumber),
     index("idx_cruise_days_cruise").on(table.cruiseId),
+    index("idx_cruise_days_port_place").on(table.portCanonicalPlaceId),
   ],
 )
 
@@ -55,6 +57,7 @@ export const cruiseSailingDays = pgTable(
     title: text("title"),
     description: text("description"),
     portFacilityId: text("port_facility_id"),
+    portCanonicalPlaceId: text("port_canonical_place_id"),
     arrivalTime: time("arrival_time"),
     departureTime: time("departure_time"),
     isOvernight: boolean("is_overnight"),
@@ -68,6 +71,7 @@ export const cruiseSailingDays = pgTable(
   (table) => [
     uniqueIndex("uidx_cruise_sailing_days_sailing_day").on(table.sailingId, table.dayNumber),
     index("idx_cruise_sailing_days_sailing").on(table.sailingId),
+    index("idx_cruise_sailing_days_port_place").on(table.portCanonicalPlaceId),
   ],
 )
 

@@ -330,6 +330,13 @@
       "when": 1780141400000,
       "tag": "0047_cruise_voyage_groups",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1780141500000,
+      "tag": "0048_canonical_place_references",
+      "breakpoints": true
     }
   ]
 }
