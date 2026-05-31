@@ -24,6 +24,7 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
+    "@voyantjs/accommodations-contracts": "workspace:*",
     "@voyantjs/bookings": "workspace:*",
     "@voyantjs/catalog": "workspace:*",
     "@voyantjs/db": "workspace:*",
