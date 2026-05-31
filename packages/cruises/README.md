@@ -21,6 +21,12 @@ for external adapter implementation requirements.
 and keep upstream clients, credentials, and provider-specific mappings outside
 the framework package.
 
+Install `@voyantjs/cruises-contracts` when an external adapter or validation
+package only needs the `cruises/v1` rich content schema, schema version, Zod
+validator, and inferred content types. Use `@voyantjs/cruises` when you also
+need Drizzle schema, routes, services, booking integration, adapter registry
+helpers, or runtime content resolution.
+
 Adapter packages can run
 `assertCruiseAdapterCompatibility(...)` against a sandbox fixture to verify full
 `SourceRef` round-tripping, multi-connection identity, detail lookup, pricing

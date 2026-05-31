@@ -12,6 +12,12 @@ See [`docs/architecture/catalog-architecture.md`](../../docs/architecture/catalo
 pnpm add @voyantjs/catalog
 ```
 
+Install `@voyantjs/catalog-contracts` instead when you only need the pure
+adapter payload types, adapter Zod schemas, field-policy contracts,
+provenance, drift payloads, or content locale/overlay helpers. Use this package
+when you also need Drizzle schema, Hono routes, booking-engine integration,
+search services, or catalog runtime services.
+
 ## What's in the box
 
 - **`./contract`** — `FieldPolicy` type and the eleven governance enums. The load-bearing schema decision: every field on every CatalogEntry is declared with a row in a per-vertical policy file.
@@ -77,6 +83,10 @@ const request: ReserveRequest = reserveRequestSchema.parse(await req.json())
 Reserve and cancel requests may include a `scope` matching live resolution plus
 an `idempotency_key`; cancel results may return `status: "pending"` with
 `pending_channel` for async upstream workflows.
+
+External adapters that do not run the catalog package can import the same
+schemas and types from `@voyantjs/catalog-contracts/adapter/schemas` and
+`@voyantjs/catalog-contracts/adapter/contract`.
 
 ## BookingJourney HTTP routes
 

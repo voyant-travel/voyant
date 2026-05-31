@@ -1,0 +1,99 @@
+{
+  "name": "@voyantjs/catalog-contracts",
+  "version": "0.90.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./contract": "./src/contract.ts",
+    "./provenance": "./src/provenance.ts",
+    "./content": "./src/content.ts",
+    "./drift/events": "./src/drift/events.ts",
+    "./adapter/contract": "./src/adapter/contract.ts",
+    "./adapter/schemas": "./src/adapter/schemas.ts",
+    "./adapter/booking-forwarding": "./src/adapter/booking-forwarding.ts",
+    "./adapter/channel-push-contracts": "./src/adapter/channel-push-contracts.ts",
+    "./adapter/provider-contracts": "./src/adapter/provider-contracts.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./contract": {
+        "types": "./dist/contract.d.ts",
+        "import": "./dist/contract.js",
+        "default": "./dist/contract.js"
+      },
+      "./provenance": {
+        "types": "./dist/provenance.d.ts",
+        "import": "./dist/provenance.js",
+        "default": "./dist/provenance.js"
+      },
+      "./content": {
+        "types": "./dist/content.d.ts",
+        "import": "./dist/content.js",
+        "default": "./dist/content.js"
+      },
+      "./drift/events": {
+        "types": "./dist/drift/events.d.ts",
+        "import": "./dist/drift/events.js",
+        "default": "./dist/drift/events.js"
+      },
+      "./adapter/contract": {
+        "types": "./dist/adapter/contract.d.ts",
+        "import": "./dist/adapter/contract.js",
+        "default": "./dist/adapter/contract.js"
+      },
+      "./adapter/schemas": {
+        "types": "./dist/adapter/schemas.d.ts",
+        "import": "./dist/adapter/schemas.js",
+        "default": "./dist/adapter/schemas.js"
+      },
+      "./adapter/booking-forwarding": {
+        "types": "./dist/adapter/booking-forwarding.d.ts",
+        "import": "./dist/adapter/booking-forwarding.js",
+        "default": "./dist/adapter/booking-forwarding.js"
+      },
+      "./adapter/channel-push-contracts": {
+        "types": "./dist/adapter/channel-push-contracts.d.ts",
+        "import": "./dist/adapter/channel-push-contracts.js",
+        "default": "./dist/adapter/channel-push-contracts.js"
+      },
+      "./adapter/provider-contracts": {
+        "types": "./dist/adapter/provider-contracts.d.ts",
+        "import": "./dist/adapter/provider-contracts.js",
+        "default": "./dist/adapter/provider-contracts.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "dependencies": {
+    "zod": "^4.1.4"
+  },
+  "devDependencies": {
+    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyantjs/voyant.git",
+    "directory": "packages/catalog-contracts"
+  }
+}

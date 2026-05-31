@@ -38,6 +38,7 @@
     "@voyantjs/db": "workspace:*",
     "@voyantjs/hono": "workspace:*",
     "@voyantjs/catalog": "workspace:*",
+    "@voyantjs/cruises-contracts": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "zod": "^4.3.6"
