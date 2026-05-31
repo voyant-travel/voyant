@@ -35,7 +35,6 @@ import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs
 import { charterProducts } from "@voyantjs/charters/schema"
 import { createCharterDocumentBuilder } from "@voyantjs/charters/service-catalog-plane"
 import { cruises } from "@voyantjs/cruises/schema"
-import { createCruiseDocumentBuilder } from "@voyantjs/cruises/service-catalog-plane"
 import { createDbClient } from "@voyantjs/db"
 import { productExtras } from "@voyantjs/extras/schema"
 import { createExtraDocumentBuilder } from "@voyantjs/extras/service-catalog-plane"
@@ -46,6 +45,7 @@ import { Client as TypesenseSdkClient } from "typesense"
 
 import {
   CATALOG_VERTICALS,
+  createCruisesDocumentBuilder,
   createProductsDocumentBuilder,
   getFieldPolicyRegistries,
   loadCatalogSlices,
@@ -153,7 +153,7 @@ const VERTICAL_CONFIGS: VerticalConfig[] = [
   {
     vertical: "cruises",
     table: cruises as unknown as VerticalConfig["table"],
-    builder: createCruiseDocumentBuilder(db, { sellerOperatorId }),
+    builder: createCruisesDocumentBuilder(db, { sellerOperatorId }),
   },
   {
     vertical: "charters",

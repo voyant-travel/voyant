@@ -48,7 +48,8 @@ import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs
 import { charterCatalogPolicy } from "@voyantjs/charters/catalog-policy"
 import { createVoyantConnectSourceAdapter } from "@voyantjs/connect-adapter"
 import { createVoyantConnectClient } from "@voyantjs/connect-sdk"
-import { cruiseCatalogPolicy } from "@voyantjs/cruises/catalog-policy"
+import { cruiseCabinFacetsCatalogPolicy } from "@voyantjs/cruises/catalog-policy-cabins"
+import { createCruisesRegistry } from "@voyantjs/cruises/service-catalog-plane"
 import { extrasCatalogPolicy } from "@voyantjs/extras/catalog-policy"
 import { createDemoCatalogAdapter } from "@voyantjs/plugin-catalog-demo"
 import { productCatalogPolicy } from "@voyantjs/products/catalog-policy"
@@ -178,7 +179,7 @@ const indexer = createTypesenseIndexer({
 const fieldPolicyRegistries = new Map<string, FieldPolicyRegistry>([
   ["products", createFieldPolicyRegistry(productCatalogPolicy)],
   ["extras", createFieldPolicyRegistry(extrasCatalogPolicy)],
-  ["cruises", createFieldPolicyRegistry(cruiseCatalogPolicy)],
+  ["cruises", createCruisesRegistry(cruiseCabinFacetsCatalogPolicy)],
   ["charters", createFieldPolicyRegistry(charterCatalogPolicy)],
   ["accommodations", createFieldPolicyRegistry(accommodationCatalogPolicy)],
 ])
