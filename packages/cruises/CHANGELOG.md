@@ -1,5 +1,19 @@
 # @voyantjs/cruises
 
+## 0.94.0
+
+### Minor Changes
+
+- 43c409b: Promote cruise cabin and deck facets into the catalog plane and add structured cabin feature fields for bed configuration, accessibility, and view filtering.
+
+### Patch Changes
+
+- @voyantjs/bookings@0.94.0
+- @voyantjs/catalog@0.94.0
+- @voyantjs/core@0.94.0
+- @voyantjs/db@0.94.0
+- @voyantjs/hono@0.94.0
+
 ## 0.93.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # @voyantjs/suppliers-ui
 
+## 0.94.0
+
+### Patch Changes
+
+- @voyantjs/i18n@0.94.0
+- @voyantjs/suppliers-react@0.94.0
+- @voyantjs/ui@0.94.0
+
 ## 0.93.0
 
 ### Patch Changes
