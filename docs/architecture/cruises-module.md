@@ -220,7 +220,8 @@ This section is detailed because the schema is most of the design. All tables us
 | `highlights` | jsonb (text[]) | bullet list |
 | `inclusionsHtml` | text | what's included (line-specific copy) |
 | `exclusionsHtml` | text | |
-| `regions` | jsonb (text[]) | searchable taxonomy |
+| `regionIds`, `waterwayIds`, `portIds`, `countryIso` | jsonb (text[]) | canonical data-geo facet/filter keys from sourced geography resolution |
+| `regions`, `waterways`, `ports`, `countries` | jsonb (text[]) | localized display labels parallel to canonical geography keys |
 | `themes` | jsonb (text[]) | "wine voyage", "wildlife", "cultural" |
 | `heroImageUrl` | text | |
 | `mapImageUrl` | text | |
@@ -511,7 +512,8 @@ This is the deliberate departure from the JSONB-per-sailing shortcut described i
 | `nights` | integer not null | |
 | `embarkPortName` | text | denormalized |
 | `disembarkPortName` | text | denormalized |
-| `regions` | jsonb (text[]) | |
+| `regionIds`, `waterwayIds`, `portIds`, `countryIso` | jsonb (text[]) | canonical data-geo facet/filter keys |
+| `regions`, `waterways`, `ports`, `countries` | jsonb (text[]) | localized display labels |
 | `themes` | jsonb (text[]) | |
 | `earliestDeparture` | date | aggregate across the cruise's sailings |
 | `latestDeparture` | date | |
@@ -525,7 +527,7 @@ Indexes:
 - `(source, refreshedAt)` — to drive freshness checks and stale-row sweeps
 - `(slug)` unique
 - `(cruiseType, lowestPrice)`, `(earliestDeparture)`, `(latestDeparture)` — the storefront's typical filter axes
-- A GIN index on `regions` and `themes` for tag filtering
+- GIN indexes on canonical geography, display geography, `regions`, and `themes` for destination/tag filtering
 - Partial unique `(sourceProvider, sourceRef->>externalId) where source='external'` — same external cruise can't be indexed twice
 
 How rows arrive in this table:

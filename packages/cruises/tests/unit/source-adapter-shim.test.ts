@@ -1,3 +1,4 @@
+import { buildIndexerDocument, createFieldPolicyRegistry } from "@voyantjs/catalog"
 import { describe, expect, it } from "vitest"
 import type {
   CruiseAdapter,
@@ -7,6 +8,7 @@ import type {
   ExternalShip,
 } from "../../src/adapters/index.js"
 import { cruiseAdapterToSourceAdapter } from "../../src/adapters/source-adapter-shim.js"
+import { cruiseCatalogPolicy } from "../../src/catalog-policy.js"
 import { CRUISES_CONTENT_SCHEMA_VERSION } from "../../src/content-shape.js"
 import { encodeSourceRef } from "../../src/lib/key.js"
 
@@ -23,7 +25,14 @@ function makeProjectionEntries(count: number): CruiseSearchProjectionEntry[] {
       nights: 7,
       embarkPortName: "Athens",
       disembarkPortName: "Athens",
+      regionIds: ["region:mediterranean"],
+      waterwayIds: ["sea:aegean"],
+      portIds: ["port:GRATH"],
+      countryIso: ["GR"],
       regions: ["Aegean"],
+      waterways: ["Aegean Sea"],
+      ports: ["Athens"],
+      countries: ["Greece"],
       themes: ["Cultural"],
       heroImageUrl: `https://cdn/c${i}.jpg`,
       salesStatus: "open",
@@ -185,8 +194,38 @@ describe("cruiseAdapterToSourceAdapter.discover", () => {
     expect(page.projections[0]?.provenance.source_freshness).toBe("sync")
     expect(page.projections[0]?.fields.cruise_line).toBe("Sample Line")
     expect(page.projections[0]?.fields.duration_nights).toBe(7)
+    expect(page.projections[0]?.fields.region_ids).toEqual(["region:mediterranean"])
+    expect(page.projections[0]?.fields.waterway_ids).toEqual(["sea:aegean"])
+    expect(page.projections[0]?.fields.port_ids).toEqual(["port:GRATH"])
+    expect(page.projections[0]?.fields.country_iso).toEqual(["GR"])
+    expect(page.projections[0]?.fields.waterways).toEqual(["Aegean Sea"])
+    expect(page.projections[0]?.fields.ports).toEqual(["Athens"])
+    expect(page.projections[0]?.fields.countries).toEqual(["Greece"])
     // No more pages.
     expect(page.next_cursor).toBeUndefined()
+  })
+
+  it("indexes natural canonical geography projection keys through list policies", async () => {
+    const entries = makeProjectionEntries(1)
+    const adapter = makeStubAdapter({
+      async *searchProjection() {
+        for (const e of entries) yield e
+      },
+    })
+    const shim = cruiseAdapterToSourceAdapter(adapter, { pageSize: 100 })
+    const page = await shim.discover({ connection_id: "conn-x" })
+    const projection = new Map(Object.entries(page.projections[0]!.fields))
+    const doc = buildIndexerDocument(
+      createFieldPolicyRegistry(cruiseCatalogPolicy),
+      projection,
+      { vertical: "cruises", locale: "en-GB", audience: "customer", market: "default" },
+      page.projections[0]!.entity_id,
+    )
+
+    expect(doc.fields.waterway_ids).toEqual(["sea:aegean"])
+    expect(doc.fields.waterways).toEqual(["Aegean Sea"])
+    expect(doc.fields.country_iso).toEqual(["GR"])
+    expect(doc.fields.countries).toEqual(["Greece"])
   })
 
   it("emits a cursor when more pages exist", async () => {

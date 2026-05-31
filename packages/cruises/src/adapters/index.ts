@@ -66,7 +66,14 @@ export type ExternalCruise = {
   highlights?: string[]
   inclusionsHtml?: string | null
   exclusionsHtml?: string | null
+  regionIds?: string[]
+  waterwayIds?: string[]
+  portIds?: string[]
+  countryIso?: string[]
   regions?: string[]
+  waterways?: string[]
+  ports?: string[]
+  countries?: string[]
   themes?: string[]
   heroImageUrl?: string | null
   mapImageUrl?: string | null
@@ -211,7 +218,14 @@ export type CruiseSearchProjectionEntry = {
   embarkPortCanonicalPlaceId?: string | null
   disembarkPortName?: string | null
   disembarkPortCanonicalPlaceId?: string | null
+  regionIds?: string[]
+  waterwayIds?: string[]
+  portIds?: string[]
+  countryIso?: string[]
   regions?: string[]
+  waterways?: string[]
+  ports?: string[]
+  countries?: string[]
   themes?: string[]
   earliestDeparture?: string | null
   latestDeparture?: string | null

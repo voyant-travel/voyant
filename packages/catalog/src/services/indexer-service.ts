@@ -199,10 +199,16 @@ export function buildIndexerDocument(
 ): IndexerDocument {
   const fields: Record<string, unknown> = {}
   for (const [path, value] of projection) {
-    const policy = registry.resolve(path)
+    let policy = registry.resolve(path)
+    let policyPath = path
+    if (!policy && Array.isArray(value)) {
+      const listPath = `${path}[]`
+      policy = registry.resolve(listPath)
+      policyPath = listPath
+    }
     if (!policy) continue
     if (!shouldIndexInDocument(policy, slice.audience)) continue
-    const fieldName = path.endsWith("[]") ? path.slice(0, -2) : path
+    const fieldName = policyPath.endsWith("[]") ? policyPath.slice(0, -2) : policyPath
     fields[fieldName] = value
   }
   return { id: entityId, fields }

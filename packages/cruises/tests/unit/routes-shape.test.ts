@@ -6,6 +6,7 @@ import { MockCruiseAdapter } from "../../src/adapters/mock.js"
 import { clearCruiseAdapters, registerCruiseAdapter } from "../../src/adapters/registry.js"
 import { cruiseAdminRoutes } from "../../src/routes.js"
 import { cruisesService } from "../../src/service.js"
+import { cruisesSearchService } from "../../src/service-search.js"
 
 afterEach(() => {
   clearCruiseAdapters()
@@ -189,6 +190,68 @@ describe("admin routes — voyage groups", () => {
         segmentKind: "land",
         segmentRole: "pre_extension",
       }),
+    )
+  })
+})
+
+describe("admin routes — search index bulk", () => {
+  const app = mountTestApp(cruiseAdminRoutes, { db: undefined })
+
+  it("passes canonical geography arrays through the bulk route schema", async () => {
+    const bulkUpsert = vi
+      .spyOn(cruisesSearchService, "bulkUpsert")
+      .mockResolvedValueOnce({ upserted: 1 })
+
+    const entry = {
+      source: "external",
+      sourceProvider: "voyant-connect",
+      sourceRef: { externalId: "ext-cru-1", connectionId: "cnx_123" },
+      slug: "danube-discovery",
+      name: "Danube Discovery",
+      cruiseType: "river",
+      lineName: "Acme Cruises",
+      shipName: "River Star",
+      nights: 7,
+      embarkPortName: "Budapest",
+      disembarkPortName: "Vienna",
+      regionIds: ["region:europe"],
+      waterwayIds: ["river:Q1653"],
+      portIds: ["port:budapest", "port:vienna"],
+      countryIso: ["HU", "AT"],
+      regions: ["Europe"],
+      waterways: ["Danube"],
+      ports: ["Budapest", "Vienna"],
+      countries: ["Hungary", "Austria"],
+      themes: ["culture"],
+      earliestDeparture: "2026-07-01",
+      latestDeparture: "2026-07-08",
+      lowestPrice: "1200.00",
+      lowestPriceCurrency: "EUR",
+      salesStatus: "open",
+      heroImageUrl: "https://example.com/cruises/danube.jpg",
+    }
+
+    const res = await app.request("/search-index/bulk", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entries: [entry] }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(bulkUpsert).toHaveBeenCalledWith(
+      undefined,
+      expect.arrayContaining([
+        expect.objectContaining({
+          regionIds: entry.regionIds,
+          waterwayIds: entry.waterwayIds,
+          portIds: entry.portIds,
+          countryIso: entry.countryIso,
+          regions: entry.regions,
+          waterways: entry.waterways,
+          ports: entry.ports,
+          countries: entry.countries,
+        }),
+      ]),
     )
   })
 })
