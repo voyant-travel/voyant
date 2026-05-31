@@ -1,5 +1,13 @@
 # @voyantjs/workflows-ui
 
+## 0.93.0
+
+### Patch Changes
+
+- @voyantjs/i18n@0.93.0
+- @voyantjs/ui@0.93.0
+- @voyantjs/workflows-react@0.93.0
+
 ## 0.92.0
 
 ### Patch Changes
