@@ -1,5 +1,12 @@
 # @voyantjs/catalog-rag
 
+## 0.92.0
+
+### Patch Changes
+
+- Updated dependencies [5de3d72]
+  - @voyantjs/catalog@0.92.0
+
 ## 0.91.0
 
 ### Patch Changes
