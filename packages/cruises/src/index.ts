@@ -125,6 +125,13 @@ export const cruiseLinkable: LinkableDefinition = {
   idPrefix: "cru",
 }
 
+export const cruiseVoyageGroupLinkable: LinkableDefinition = {
+  module: "cruises",
+  entity: "cruise_voyage_group",
+  table: "cruise_voyage_groups",
+  idPrefix: "crvg",
+}
+
 export const cruiseSailingLinkable: LinkableDefinition = {
   module: "cruises",
   entity: "cruise_sailing",
@@ -143,6 +150,7 @@ export const cruisesModule: Module = {
   name: "cruises",
   linkable: {
     cruise: cruiseLinkable,
+    cruise_voyage_group: cruiseVoyageGroupLinkable,
     cruise_sailing: cruiseSailingLinkable,
     cruise_ship: cruiseShipLinkable,
   },
@@ -188,12 +196,18 @@ export {
 export type {
   Cruise,
   CruiseSailing,
+  CruiseVoyageGroup,
+  CruiseVoyageGroupSegment,
   NewCruise,
   NewCruiseSailing,
+  NewCruiseVoyageGroup,
+  NewCruiseVoyageGroupSegment,
 } from "./schema-core.js"
 export {
   cruiseSailings,
   cruises,
+  cruiseVoyageGroupSegments,
+  cruiseVoyageGroups,
 } from "./schema-core.js"
 export type {
   CruiseDay,
@@ -228,6 +242,9 @@ export {
   cruiseSourceEnum,
   cruiseStatusEnum,
   cruiseTypeEnum,
+  cruiseVoyageGroupKindEnum,
+  cruiseVoyageSegmentKindEnum,
+  cruiseVoyageSegmentRoleEnum,
   enrichmentProgramKindEnum,
   priceAvailabilityEnum,
   priceComponentDirectionEnum,

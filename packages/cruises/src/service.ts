@@ -22,10 +22,16 @@ import { type CruiseEnrichmentProgram, cruiseEnrichmentPrograms } from "./schema
 import {
   type Cruise,
   type CruiseSailing,
+  type CruiseVoyageGroup,
+  type CruiseVoyageGroupSegment,
   cruiseSailings,
   cruises,
+  cruiseVoyageGroupSegments,
+  cruiseVoyageGroups,
   type NewCruise,
   type NewCruiseSailing,
+  type NewCruiseVoyageGroup,
+  type NewCruiseVoyageGroupSegment,
 } from "./schema-core.js"
 import {
   type CruiseDay,
@@ -61,9 +67,15 @@ import type {
   CruiseListQuery,
   InsertCruise,
   InsertSailing,
+  InsertVoyageGroup,
+  InsertVoyageGroupSegment,
   SailingListQuery,
   UpdateCruise,
   UpdateSailing,
+  UpdateVoyageGroup,
+  UpdateVoyageGroupSegment,
+  VoyageGroupListQuery,
+  VoyageGroupSegmentListQuery,
 } from "./validation-core.js"
 import type { ReplaceCruiseDays, ReplaceSailingDays } from "./validation-itinerary.js"
 import type {
@@ -111,6 +123,167 @@ async function reprojectIfPossible(db: PostgresJsDatabase, cruiseId: string | nu
 // ---------- cruises ----------
 
 export const cruisesService = {
+  async listVoyageGroups(db: PostgresJsDatabase, query: VoyageGroupListQuery) {
+    const conditions = []
+    if (query.groupKind) conditions.push(eq(cruiseVoyageGroups.groupKind, query.groupKind))
+    if (query.status) conditions.push(eq(cruiseVoyageGroups.status, query.status))
+    if (query.lineSupplierId) {
+      conditions.push(eq(cruiseVoyageGroups.lineSupplierId, query.lineSupplierId))
+    }
+    if (query.region) {
+      conditions.push(
+        sql`${cruiseVoyageGroups.regions} @> ${JSON.stringify([query.region])}::jsonb`,
+      )
+    }
+    if (query.search) {
+      const term = `%${query.search}%`
+      conditions.push(
+        or(ilike(cruiseVoyageGroups.name, term), ilike(cruiseVoyageGroups.description, term)),
+      )
+    }
+    const where = conditions.length > 0 ? and(...conditions) : undefined
+    const { limit, offset } = paginate(query)
+
+    const [rows, totalRows] = await Promise.all([
+      db
+        .select()
+        .from(cruiseVoyageGroups)
+        .where(where)
+        .orderBy(desc(cruiseVoyageGroups.createdAt))
+        .limit(limit)
+        .offset(offset),
+      db.select({ value: count() }).from(cruiseVoyageGroups).where(where),
+    ])
+    return { data: rows, total: totalRows[0]?.value ?? 0, limit, offset }
+  },
+
+  async getVoyageGroupById(
+    db: PostgresJsDatabase,
+    id: string,
+    options: { withSegments?: boolean } = {},
+  ): Promise<
+    | (CruiseVoyageGroup & {
+        segments?: CruiseVoyageGroupSegment[]
+      })
+    | null
+  > {
+    const [row] = await db
+      .select()
+      .from(cruiseVoyageGroups)
+      .where(eq(cruiseVoyageGroups.id, id))
+      .limit(1)
+    if (!row) return null
+
+    const out: CruiseVoyageGroup & { segments?: CruiseVoyageGroupSegment[] } = { ...row }
+    if (options.withSegments) {
+      out.segments = await db
+        .select()
+        .from(cruiseVoyageGroupSegments)
+        .where(eq(cruiseVoyageGroupSegments.voyageGroupId, id))
+        .orderBy(asc(cruiseVoyageGroupSegments.sortOrder))
+    }
+    return out
+  },
+
+  async createVoyageGroup(
+    db: PostgresJsDatabase,
+    data: InsertVoyageGroup,
+  ): Promise<CruiseVoyageGroup> {
+    const [row] = await db
+      .insert(cruiseVoyageGroups)
+      .values(data as NewCruiseVoyageGroup)
+      .returning()
+    if (!row) throw new Error("Failed to create voyage group")
+    return row
+  },
+
+  async updateVoyageGroup(
+    db: PostgresJsDatabase,
+    id: string,
+    data: UpdateVoyageGroup,
+  ): Promise<CruiseVoyageGroup | null> {
+    const [row] = await db
+      .update(cruiseVoyageGroups)
+      .set({ ...data, ...setUpdated })
+      .where(eq(cruiseVoyageGroups.id, id))
+      .returning()
+    return row ?? null
+  },
+
+  async archiveVoyageGroup(db: PostgresJsDatabase, id: string): Promise<CruiseVoyageGroup | null> {
+    const [row] = await db
+      .update(cruiseVoyageGroups)
+      .set({ status: "archived", ...setUpdated })
+      .where(eq(cruiseVoyageGroups.id, id))
+      .returning()
+    return row ?? null
+  },
+
+  async listVoyageGroupSegments(db: PostgresJsDatabase, query: VoyageGroupSegmentListQuery) {
+    const conditions = []
+    if (query.voyageGroupId) {
+      conditions.push(eq(cruiseVoyageGroupSegments.voyageGroupId, query.voyageGroupId))
+    }
+    if (query.cruiseId) conditions.push(eq(cruiseVoyageGroupSegments.cruiseId, query.cruiseId))
+    if (query.sailingId) conditions.push(eq(cruiseVoyageGroupSegments.sailingId, query.sailingId))
+    if (query.segmentKind) {
+      conditions.push(eq(cruiseVoyageGroupSegments.segmentKind, query.segmentKind))
+    }
+    if (query.segmentRole) {
+      conditions.push(eq(cruiseVoyageGroupSegments.segmentRole, query.segmentRole))
+    }
+    const where = conditions.length > 0 ? and(...conditions) : undefined
+    const { limit, offset } = paginate(query)
+
+    const [rows, totalRows] = await Promise.all([
+      db
+        .select()
+        .from(cruiseVoyageGroupSegments)
+        .where(where)
+        .orderBy(
+          asc(cruiseVoyageGroupSegments.voyageGroupId),
+          asc(cruiseVoyageGroupSegments.sortOrder),
+        )
+        .limit(limit)
+        .offset(offset),
+      db.select({ value: count() }).from(cruiseVoyageGroupSegments).where(where),
+    ])
+    return { data: rows, total: totalRows[0]?.value ?? 0, limit, offset }
+  },
+
+  async createVoyageGroupSegment(
+    db: PostgresJsDatabase,
+    data: InsertVoyageGroupSegment,
+  ): Promise<CruiseVoyageGroupSegment> {
+    const [row] = await db
+      .insert(cruiseVoyageGroupSegments)
+      .values(data as NewCruiseVoyageGroupSegment)
+      .returning()
+    if (!row) throw new Error("Failed to create voyage group segment")
+    return row
+  },
+
+  async updateVoyageGroupSegment(
+    db: PostgresJsDatabase,
+    id: string,
+    data: UpdateVoyageGroupSegment,
+  ): Promise<CruiseVoyageGroupSegment | null> {
+    const [row] = await db
+      .update(cruiseVoyageGroupSegments)
+      .set({ ...data, ...setUpdated })
+      .where(eq(cruiseVoyageGroupSegments.id, id))
+      .returning()
+    return row ?? null
+  },
+
+  async deleteVoyageGroupSegment(db: PostgresJsDatabase, id: string): Promise<boolean> {
+    const rows = await db
+      .delete(cruiseVoyageGroupSegments)
+      .where(eq(cruiseVoyageGroupSegments.id, id))
+      .returning({ id: cruiseVoyageGroupSegments.id })
+    return rows.length > 0
+  },
+
   async listCruises(db: PostgresJsDatabase, query: CruiseListQuery) {
     const conditions = []
     if (query.cruiseType) conditions.push(eq(cruises.cruiseType, query.cruiseType))

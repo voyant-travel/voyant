@@ -74,6 +74,119 @@ describe("admin routes — static subresource ordering", () => {
     await expect(shipsRes.json()).resolves.toMatchObject({ data: [] })
     await expect(pricesRes.json()).resolves.toMatchObject({ data: [] })
   })
+
+  it("routes voyage group collections ahead of GET /:key", async () => {
+    const listVoyageGroups = vi.spyOn(cruisesService, "listVoyageGroups").mockResolvedValueOnce({
+      data: [],
+      total: 0,
+      limit: 25,
+      offset: 0,
+    })
+
+    const res = await app.request("/voyage-groups?limit=25&offset=0")
+
+    expect(res.status).toBe(200)
+    await expect(res.json()).resolves.toMatchObject({ data: [] })
+    expect(listVoyageGroups).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe("admin routes — voyage groups", () => {
+  const app = mountTestApp(cruiseAdminRoutes, { db: undefined })
+
+  it("creates voyage groups with composite voyage fields", async () => {
+    vi.spyOn(cruisesService, "createVoyageGroup").mockResolvedValueOnce({
+      id: "crvg_123",
+      slug: "world-cruise-2027",
+      name: "World Cruise 2027",
+      groupKind: "world_cruise",
+      lineSupplierId: null,
+      nights: 120,
+      embarkPortFacilityId: null,
+      disembarkPortFacilityId: null,
+      description: null,
+      shortDescription: null,
+      highlights: [],
+      regions: [],
+      themes: [],
+      heroImageUrl: null,
+      mapImageUrl: null,
+      status: "draft",
+      lowestPriceCached: null,
+      lowestPriceCurrencyCached: null,
+      earliestDepartureCached: null,
+      latestDepartureCached: null,
+      externalRefs: {},
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    })
+
+    const res = await app.request("/voyage-groups", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        slug: "world-cruise-2027",
+        name: "World Cruise 2027",
+        groupKind: "world_cruise",
+        nights: 120,
+      }),
+    })
+
+    expect(res.status).toBe(201)
+    expect(cruisesService.createVoyageGroup).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({ groupKind: "world_cruise", nights: 120 }),
+    )
+  })
+
+  it("creates scoped pre-extension segments from the voyage group route", async () => {
+    vi.spyOn(cruisesService, "createVoyageGroupSegment").mockResolvedValueOnce({
+      id: "crvs_123",
+      voyageGroupId: "crvg_123",
+      sortOrder: 0,
+      segmentKind: "land",
+      segmentRole: "pre_extension",
+      title: "Reykjavik pre-tour",
+      description: null,
+      cruiseId: null,
+      sailingId: null,
+      startDay: 1,
+      endDay: 3,
+      startDate: null,
+      endDate: null,
+      embarkPortFacilityId: null,
+      disembarkPortFacilityId: null,
+      nights: 2,
+      externalRefs: {},
+      metadata: {},
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    })
+
+    const res = await app.request("/voyage-groups/crvg_123/segments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sortOrder: 0,
+        segmentKind: "land",
+        segmentRole: "pre_extension",
+        title: "Reykjavik pre-tour",
+        startDay: 1,
+        endDay: 3,
+        nights: 2,
+      }),
+    })
+
+    expect(res.status).toBe(201)
+    expect(cruisesService.createVoyageGroupSegment).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({
+        voyageGroupId: "crvg_123",
+        segmentKind: "land",
+        segmentRole: "pre_extension",
+      }),
+    )
+  })
 })
 
 describe("admin routes — external key dispatch (no catalog registry configured)", () => {

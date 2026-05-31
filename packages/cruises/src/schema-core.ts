@@ -16,8 +16,53 @@ import {
   cruiseSailingDirectionEnum,
   cruiseStatusEnum,
   cruiseTypeEnum,
+  cruiseVoyageGroupKindEnum,
+  cruiseVoyageSegmentKindEnum,
+  cruiseVoyageSegmentRoleEnum,
   sailingSalesStatusEnum,
 } from "./schema-shared.js"
+
+export const cruiseVoyageGroups = pgTable(
+  "cruise_voyage_groups",
+  {
+    id: typeId("cruise_voyage_groups"),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    groupKind: cruiseVoyageGroupKindEnum("group_kind").notNull(),
+    lineSupplierId: text("line_supplier_id"),
+    nights: integer("nights").notNull(),
+    embarkPortFacilityId: text("embark_port_facility_id"),
+    disembarkPortFacilityId: text("disembark_port_facility_id"),
+    description: text("description"),
+    shortDescription: text("short_description"),
+    highlights: jsonb("highlights").$type<string[]>().default([]),
+    regions: jsonb("regions").$type<string[]>().default([]),
+    themes: jsonb("themes").$type<string[]>().default([]),
+    heroImageUrl: text("hero_image_url"),
+    mapImageUrl: text("map_image_url"),
+    status: cruiseStatusEnum("status").notNull().default("draft"),
+    lowestPriceCached: numeric("lowest_price_cached", { precision: 12, scale: 2 }),
+    lowestPriceCurrencyCached: text("lowest_price_currency_cached"),
+    earliestDepartureCached: date("earliest_departure_cached"),
+    latestDepartureCached: date("latest_departure_cached"),
+    externalRefs: jsonb("external_refs").$type<Record<string, string>>().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("uidx_cruise_voyage_groups_slug").on(table.slug),
+    index("idx_cruise_voyage_groups_kind_status").on(table.groupKind, table.status),
+    index("idx_cruise_voyage_groups_supplier_status").on(table.lineSupplierId, table.status),
+    index("idx_cruise_voyage_groups_earliest_status").on(
+      table.earliestDepartureCached,
+      table.status,
+    ),
+    index("idx_cruise_voyage_groups_status_created").on(table.status, table.createdAt),
+  ],
+)
+
+export type CruiseVoyageGroup = typeof cruiseVoyageGroups.$inferSelect
+export type NewCruiseVoyageGroup = typeof cruiseVoyageGroups.$inferInsert
 
 export const cruises = pgTable(
   "cruises",
@@ -113,3 +158,42 @@ export const cruiseSailings = pgTable(
 
 export type CruiseSailing = typeof cruiseSailings.$inferSelect
 export type NewCruiseSailing = typeof cruiseSailings.$inferInsert
+
+export const cruiseVoyageGroupSegments = pgTable(
+  "cruise_voyage_group_segments",
+  {
+    id: typeId("cruise_voyage_group_segments"),
+    voyageGroupId: typeIdRef("voyage_group_id")
+      .notNull()
+      .references(() => cruiseVoyageGroups.id, { onDelete: "cascade" }),
+    sortOrder: integer("sort_order").notNull(),
+    segmentKind: cruiseVoyageSegmentKindEnum("segment_kind").notNull(),
+    segmentRole: cruiseVoyageSegmentRoleEnum("segment_role").notNull().default("core"),
+    title: text("title").notNull(),
+    description: text("description"),
+    cruiseId: typeIdRef("cruise_id").references(() => cruises.id, { onDelete: "set null" }),
+    sailingId: typeIdRef("sailing_id").references(() => cruiseSailings.id, {
+      onDelete: "set null",
+    }),
+    startDay: integer("start_day"),
+    endDay: integer("end_day"),
+    startDate: date("start_date"),
+    endDate: date("end_date"),
+    embarkPortFacilityId: text("embark_port_facility_id"),
+    disembarkPortFacilityId: text("disembark_port_facility_id"),
+    nights: integer("nights"),
+    externalRefs: jsonb("external_refs").$type<Record<string, string>>().default({}),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("uidx_cruise_voyage_segments_group_sort").on(table.voyageGroupId, table.sortOrder),
+    index("idx_cruise_voyage_segments_group_role").on(table.voyageGroupId, table.segmentRole),
+    index("idx_cruise_voyage_segments_cruise").on(table.cruiseId),
+    index("idx_cruise_voyage_segments_sailing").on(table.sailingId),
+  ],
+)
+
+export type CruiseVoyageGroupSegment = typeof cruiseVoyageGroupSegments.$inferSelect
+export type NewCruiseVoyageGroupSegment = typeof cruiseVoyageGroupSegments.$inferInsert

@@ -254,6 +254,52 @@ The `externalRefs` JSONB is deliberate. The same cruise can be pulled from multi
 
 Indexes: `(cruiseId, departureDate)`, `(shipId, departureDate)`, `(salesStatus, departureDate)`, unique `(cruiseId, departureDate, shipId)`.
 
+#### `cruise_voyage_groups` — composite voyage identity
+
+Some upstream sources sell products above a single cruise template: back-to-back
+combinations, grand/world cruises, and cruise-tours with land before or after
+the sailing. These rows give that composite product its own identity, status,
+marketing copy, source refs, and price/date roll-ups without overloading
+`cruises`.
+
+| column | type | notes |
+|---|---|---|
+| `id` | typeId("cruise_voyage_groups") | prefix `crvg` |
+| `slug` / `name` | text not null | group-level URL/display identity |
+| `groupKind` | enum | `combination`, `grand_voyage`, `world_cruise`, `cruise_tour` |
+| `lineSupplierId` | text | soft FK to suppliers, same rule as `cruises.lineSupplierId` |
+| `nights` | integer not null | total composite duration |
+| `embarkPortFacilityId` / `disembarkPortFacilityId` | text | overall journey endpoints |
+| `description`, `shortDescription`, `highlights`, `regions`, `themes`, media URLs | mixed | group-level merchandising fields |
+| `status` | cruise_status enum | draft/review/live/archive lifecycle |
+| `lowestPriceCached`, `lowestPriceCurrencyCached` | numeric/text | group pricing roll-up |
+| `earliestDepartureCached`, `latestDepartureCached` | date | group date roll-up |
+| `externalRefs` | jsonb | provider IDs for the composite product |
+| `createdAt` / `updatedAt` | timestamptz | |
+
+#### `cruise_voyage_group_segments` — ordered constituents and extensions
+
+Segments are the ordered itinerary surface for a voyage group. A segment can
+point at a local cruise template and/or sailing when the constituent is a cruise
+leg, or it can stand alone as a land/hotel/transfer/rail/air segment. `segmentRole`
+flags core voyage content versus pre- and post-extensions.
+
+| column | type | notes |
+|---|---|---|
+| `id` | typeId("cruise_voyage_group_segments") | prefix `crvs` |
+| `voyageGroupId` | text not null | FK to `cruise_voyage_groups` |
+| `sortOrder` | integer not null | unique inside a voyage group |
+| `segmentKind` | enum | `cruise`, `land`, `hotel`, `transfer`, `rail`, `air`, `other` |
+| `segmentRole` | enum | `core`, `pre_extension`, `post_extension` |
+| `title`, `description` | text | display copy for this leg |
+| `cruiseId`, `sailingId` | text | optional same-package FKs for cruise constituents |
+| `startDay`, `endDay` | integer | group-relative itinerary range |
+| `startDate`, `endDate` | date | dated range when the group is departure-specific |
+| `embarkPortFacilityId`, `disembarkPortFacilityId` | text | segment endpoints |
+| `nights` | integer | segment duration |
+| `externalRefs`, `metadata` | jsonb | provider IDs and provider-neutral extra shape |
+| `createdAt` / `updatedAt` | timestamptz | |
+
 #### `cruise_ships`
 
 | column | type | notes |
@@ -816,7 +862,7 @@ Lead-gen is therefore not a "mode" of the cruises module — it's a state on the
 | **suppliers** | cruise lines are `suppliers` rows, linked from `cruises.lineSupplierId` (soft FK, schema-discipline rule) |
 | **finance** | bookings → invoices via existing finance module; cruise-specific line items live in the booking quote snapshot, not finance |
 | **pricing** | `cruise_prices.priceCatalogId` and `cruise_prices.priceScheduleId` soft-FK into `pricing.price_catalogs` / `pricing.price_schedules`. Same pattern accommodations already use. No promo/discount primitives are reinvented in cruises. |
-| **products** | pre/post Cruise Extensions (a 3-night Reykjavik hotel before the cruise) are reusable `products` rows linked to one or more cruises/sailings via a template link such as `cruiseProductExtensionLink` |
+| **products** | voyage-group segments model the cruise-side itinerary/extension structure. When a pre/post extension is also a reusable sellable `products` row, link it via a template link such as `cruiseProductExtensionLink`; do not add a cross-package FK in cruises. |
 | **identity / facilities** | ports are `facilities` rows; cruise schema soft-FKs by `facilityId` |
 | **storage** | `cruise_media` uses the same R2/S3 pattern as `product_media`, no new infra |
 | **availability** | not used (cruise availability is per-price-row, not per-product-day) |
