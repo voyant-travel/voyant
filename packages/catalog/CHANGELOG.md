@@ -1,5 +1,13 @@
 # @voyantjs/catalog
 
+## 0.93.0
+
+### Patch Changes
+
+- @voyantjs/core@0.93.0
+- @voyantjs/db@0.93.0
+- @voyantjs/hono@0.93.0
+
 ## 0.92.0
 
 ### Minor Changes
