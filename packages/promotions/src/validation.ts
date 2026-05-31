@@ -41,6 +41,14 @@ export const promotionalOfferScopeSchema = z.discriminatedUnion("kind", [
     kind: z.literal("audiences"),
     audiences: z.array(audienceLiteral).min(1),
   }),
+  z.object({
+    kind: z.literal("fare_codes"),
+    fareCodes: z.array(z.string().min(1)).min(1),
+  }),
+  z.object({
+    kind: z.literal("cabin_grades"),
+    cabinGradeCodes: z.array(z.string().min(1)).min(1),
+  }),
 ])
 
 export type PromotionalOfferScope = z.infer<typeof promotionalOfferScopeSchema>
@@ -56,6 +64,14 @@ export const promotionalOfferConditionsSchema = z.object({
    *  conditional offer when pax is unknown; checkout treats below-minimum
    *  as a hard exclusion. */
   minPax: z.number().int().positive().optional(),
+  /** Requires a known past guest / loyalty customer signal. */
+  pastGuestOnly: z.boolean().optional(),
+  /** Requires a single-traveler party. Falls back to `pax === 1` when pax is known. */
+  soloTravelerOnly: z.boolean().optional(),
+  /** Requires at least one child traveler in the party. */
+  childTravelerOnly: z.boolean().optional(),
+  /** Requires the booking party to qualify as a family. */
+  familyOnly: z.boolean().optional(),
 })
 
 export type PromotionalOfferConditions = z.infer<typeof promotionalOfferConditionsSchema>
@@ -165,7 +181,16 @@ export const promotionalOfferListQuerySchema = z.object({
   applicationMode: z.enum(["auto", "code"]).optional(),
   status: z.enum(["active", "scheduled", "expired", "archived"]).optional(),
   scopeKind: z
-    .enum(["global", "products", "categories", "destinations", "markets", "audiences"])
+    .enum([
+      "global",
+      "products",
+      "categories",
+      "destinations",
+      "markets",
+      "audiences",
+      "fare_codes",
+      "cabin_grades",
+    ])
     .optional(),
   validFrom: z.string().date().optional(),
   validUntil: z.string().date().optional(),

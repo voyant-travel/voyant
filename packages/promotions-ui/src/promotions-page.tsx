@@ -63,6 +63,8 @@ const scopeKinds: PromotionalOfferScopeKind[] = [
   "destinations",
   "markets",
   "audiences",
+  "fare_codes",
+  "cabin_grades",
 ]
 
 const applicationModes: PromotionalOfferApplicationMode[] = ["auto", "code"]
@@ -569,6 +571,14 @@ function summarizeScope(scope: PromotionalOfferScope, messages: PromotionsUiMess
         audiences: scope.audiences
           .map((audience) => messages.common.audienceLabels[audience])
           .join(", "),
+      })
+    case "fare_codes":
+      return formatMessage(summary.fareCodesScope, {
+        fareCodes: scope.fareCodes.join(", "),
+      })
+    case "cabin_grades":
+      return formatMessage(summary.cabinGradesScope, {
+        cabinGradeCodes: scope.cabinGradeCodes.join(", "),
       })
   }
 }

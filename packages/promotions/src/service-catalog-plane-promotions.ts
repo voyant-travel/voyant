@@ -109,7 +109,8 @@ export function createProductPromotionsProjectionExtension(
         // these. minPax-conditioned offers land in `result.conditional`.
       })
 
-      const conditional = evaluation.conditional[0] ?? null
+      const conditional =
+        evaluation.conditional.find((offer) => offer.unmet.kind === "min_pax") ?? null
       // Surface `originalPriceFromAmountCents` ONLY when an offer applies —
       // §3.7 keeps the doc lean by leaving it null otherwise.
       const original = evaluation.best != null ? amountCents : null

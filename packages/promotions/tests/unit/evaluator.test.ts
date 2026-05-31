@@ -203,6 +203,55 @@ describe("scope filter", () => {
       ).applied,
     ).toHaveLength(0)
   })
+
+  it("fare-code scope matches booking-line fareCode", async () => {
+    const offer = makeOffer({
+      scope: { kind: "fare_codes", fareCodes: ["EARLY_BIRD", "PAST_GUEST"] },
+    })
+
+    expect(
+      (
+        await evaluateOffersForProduct(
+          makeSource({ auto: [offer] }),
+          baseCtx({ fareCode: "EARLY_BIRD" }),
+        )
+      ).applied,
+    ).toHaveLength(1)
+    expect(
+      (
+        await evaluateOffersForProduct(
+          makeSource({ auto: [offer] }),
+          baseCtx({ fareCode: "STANDARD" }),
+        )
+      ).applied,
+    ).toHaveLength(0)
+    expect(
+      (await evaluateOffersForProduct(makeSource({ auto: [offer] }), baseCtx())).applied,
+    ).toHaveLength(0)
+  })
+
+  it("cabin-grade scope matches booking-line cabinGradeCode", async () => {
+    const offer = makeOffer({
+      scope: { kind: "cabin_grades", cabinGradeCodes: ["SUITE", "BALCONY"] },
+    })
+
+    expect(
+      (
+        await evaluateOffersForProduct(
+          makeSource({ auto: [offer] }),
+          baseCtx({ cabinGradeCode: "SUITE" }),
+        )
+      ).applied,
+    ).toHaveLength(1)
+    expect(
+      (
+        await evaluateOffersForProduct(
+          makeSource({ auto: [offer] }),
+          baseCtx({ cabinGradeCode: "OCEANVIEW" }),
+        )
+      ).applied,
+    ).toHaveLength(0)
+  })
 })
 
 describe("conditions filter — minPax", () => {
@@ -251,6 +300,60 @@ describe("conditions filter — minPax", () => {
       baseCtx({ pax: undefined }),
     )
     expect(result.conditional).toEqual([])
+  })
+
+  it("catalog-plane surfaces unknown eligibility flags as conditional offers", async () => {
+    const offer = makeOffer({ conditions: { pastGuestOnly: true } })
+    const result = await evaluateOffersForProduct(makeSource({ auto: [offer] }), baseCtx())
+
+    expect(result.applied).toEqual([])
+    expect(result.conditional[0]?.unmet).toEqual({ kind: "past_guest" })
+  })
+
+  it("checkout applies structured eligibility flags when satisfied", async () => {
+    const offer = makeOffer({
+      conditions: {
+        pastGuestOnly: true,
+        soloTravelerOnly: true,
+        childTravelerOnly: true,
+        familyOnly: true,
+      },
+    })
+    const result = await evaluateOffersForProduct(
+      makeSource({ auto: [offer] }),
+      baseCtx({
+        eligibility: {
+          pastGuest: true,
+          soloTraveler: true,
+          hasChildTraveler: true,
+          family: true,
+        },
+      }),
+    )
+
+    expect(result.applied).toHaveLength(1)
+    expect(result.conditional).toEqual([])
+  })
+
+  it("checkout excludes structured eligibility flags when unsatisfied", async () => {
+    const offer = makeOffer({ conditions: { familyOnly: true } })
+    const result = await evaluateOffersForProduct(
+      makeSource({ auto: [offer] }),
+      baseCtx({ eligibility: { family: false } }),
+    )
+
+    expect(result.applied).toEqual([])
+    expect(result.conditional).toEqual([])
+  })
+
+  it("soloTravelerOnly can be satisfied from pax", async () => {
+    const offer = makeOffer({ conditions: { soloTravelerOnly: true } })
+    const result = await evaluateOffersForProduct(
+      makeSource({ auto: [offer] }),
+      baseCtx({ pax: 1 }),
+    )
+
+    expect(result.applied).toHaveLength(1)
   })
 })
 
@@ -352,6 +455,15 @@ describe("code validation — every CodeStatus", () => {
       baseCtx({ code: "GROUPS4", pax: 2, date: evalDate }),
     )
     expect(result.codeStatus).toEqual({ kind: "code_not_applicable", reason: "min_pax" })
+  })
+
+  it("returns code_not_applicable with reason='eligibility' when eligibility excludes", async () => {
+    const offer = makeOffer({ code: "family", conditions: { familyOnly: true } })
+    const result = await evaluateOffersForProduct(
+      makeSource({ coded: [offer] }),
+      baseCtx({ code: "FAMILY", eligibility: { family: false }, date: evalDate }),
+    )
+    expect(result.codeStatus).toEqual({ kind: "code_not_applicable", reason: "eligibility" })
   })
 
   it("returns code_not_applicable with reason='currency' when fixed_amount currency mismatch", async () => {

@@ -86,6 +86,8 @@ type PromotionalOfferScope =
   | { kind: "destinations"; destinationIds: string[] }
   | { kind: "markets"; marketIds: string[] }
   | { kind: "audiences"; audiences: Array<"staff" | "customer" | "partner" | "supplier"> }
+  | { kind: "fare_codes"; fareCodes: string[] }
+  | { kind: "cabin_grades"; cabinGradeCodes: string[] }
 ```
 
 **No `channels` scope kind in v1.** The natural fit (`channelScope`) lives on `market_product_rules` (`packages/markets/src/schema.ts:224`), not on `markets`, so a channel-scoped offer would need a per-(product, market) rule lookup. Worse, `IndexerSlice` (`packages/catalog/src/indexer/contract.ts:21`) has no channel dimension — `{ vertical, locale, audience, market }` only. Modeling channels properly means either a per-product rule join on the projection hot path or extending `IndexerSlice` to carry channel — both are larger work than promotions should drag in. Operators who need channel-wide promos in v1 model them via `audiences` (e.g., `partner` ≈ b2b) and / or per-market scoping. Tracked as a deferred follow-up in §14.
@@ -95,7 +97,7 @@ Two reasons for the JSONB shape over multiple link tables:
 1. **The evaluator's matching predicate is the same for every scope kind** (a `(productId, slice, scope)` tuple). One function with a `switch (scope.kind)` is clearer than five JOINs.
 2. **Adding a new scope kind doesn't migrate existing rows.** The discriminator is a new union variant; old offers stay valid.
 
-For the product-shaped scopes (`products`, `categories`, `destinations`), we additionally maintain a denormalized link table `promotional_offer_products` (offer_id, product_id) populated when an offer is created/edited. The denormalized table is what the catalog projection joins against — the JSON `scope` is the source of truth for editing, the link table is the index for matching. Categories and destinations are expanded to product IDs at write time, so taxonomy / destination membership changes don't silently change which products an offer applies to. Slice-shaped scopes (`global`, `markets`, `audiences`) leave the link table empty and are matched at evaluation time against `slice.market` / `slice.audience`.
+For the product-shaped scopes (`products`, `categories`, `destinations`), we additionally maintain a denormalized link table `promotional_offer_products` (offer_id, product_id) populated when an offer is created/edited. The denormalized table is what the catalog projection joins against — the JSON `scope` is the source of truth for editing, the link table is the index for matching. Categories and destinations are expanded to product IDs at write time, so taxonomy / destination membership changes don't silently change which products an offer applies to. Slice-shaped scopes (`global`, `markets`, `audiences`) leave the link table empty and are matched at evaluation time against `slice.market` / `slice.audience`. Fare-code and cabin-grade scopes also leave the link table empty; they are checkout-line dimensions supplied by vertical booking flows, not product-index dimensions.
 
 ### 3.3. Stacking is single-pick by default, with `stackable: true` as the explicit override
 
@@ -228,7 +230,7 @@ CREATE INDEX idx_pop_product ON promotional_offer_products (product_id);
 
 Populated by service-layer code on offer create/update for `scope.kind ∈ {products, categories, destinations}`. For `categories` and `destinations`, the service expands the scope IDs to the current product set at write time. Recomputation triggered by category- or destination-membership mutations is **out of scope for v1**; operators who add a product to a category / destination and want it picked up by an existing offer either re-save the offer or wait for the next offer edit. Tracked as a follow-up.
 
-Scopes that are not product-shaped (`global`, `markets`, `audiences`, `channels`) leave this table empty for that offer — they are matched at evaluation time against `slice.market` / `slice.audience` / market-channel lookup, not via the link table.
+Scopes that are not product-shaped (`global`, `markets`, `audiences`, `fare_codes`, `cabin_grades`) leave this table empty for that offer — they are matched at evaluation time against slice or booking-line context, not via the link table.
 
 ### 4.3. `promotional_offer_redemptions`
 
@@ -687,7 +689,7 @@ The validation schema enforces:
 
 Recorded here as the rationale trail. The two larger architectural threads have their full discussion in §15; the headline decisions appear as items 17 + 18 below.
 
-1. **Conditions schema** — typed JSONB validated by Zod, starting with `{ minPax?: number }` only. Date validity stays on the offer header (`valid_from` / `valid_until`); no `validDateRanges` duplication in `conditions` for v1.
+1. **Conditions schema** — typed JSONB validated by Zod, starting with `{ minPax?: number }` plus structured eligibility flags (`pastGuestOnly`, `soloTravelerOnly`, `childTravelerOnly`, `familyOnly`). Date validity stays on the offer header (`valid_from` / `valid_until`); no `validDateRanges` duplication in `conditions`.
 2. **Conditional-offer projection field shape** — single `conditionalOffer*` set on the catalog document, matching the `bestOffer*` budget. Richer merchandising goes through a future offer-detail endpoint, not by bloating every search document.
 3. **Materializing destination scope** — `products`, `categories`, *and* `destinations` all populate `promotional_offer_products` at write time. The projection path never has to traverse taxonomy / destination joins.
 4. **Code case-sensitivity** — store + compare lowercased for matching and uniqueness; preserve the customer's typed case in `promotional_offer_redemptions.code_used` for audit / debugging.

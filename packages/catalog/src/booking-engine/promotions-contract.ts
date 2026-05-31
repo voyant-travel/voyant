@@ -21,7 +21,7 @@ export type CodeStatus =
   | { kind: "code_not_found" }
   | { kind: "code_expired" }
   | { kind: "code_not_yet_valid" }
-  | { kind: "code_not_applicable"; reason: "scope" | "min_pax" | "currency" }
+  | { kind: "code_not_applicable"; reason: "scope" | "min_pax" | "eligibility" | "currency" }
 
 /**
  * One offer that applied to the quote. Carried on `PricingBasis.appliedOffers`
@@ -51,6 +51,16 @@ export interface PromotionEvaluationInput {
   slice: {
     audience: "staff" | "customer" | "partner" | "supplier"
     market: string
+  }
+  /** Optional booking-line fare code, used by fare-scoped offers. */
+  fareCode?: string | null
+  /** Optional booking-line cabin grade code, used by cabin-grade-scoped offers. */
+  cabinGradeCode?: string | null
+  eligibility?: {
+    pastGuest?: boolean
+    soloTraveler?: boolean
+    hasChildTraveler?: boolean
+    family?: boolean
   }
   pax?: number
   date?: Date

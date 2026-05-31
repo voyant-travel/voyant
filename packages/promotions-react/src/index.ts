@@ -9,9 +9,11 @@ import {
 } from "@tanstack/react-query"
 import {
   type PromotionalOfferApplicationMode,
+  type PromotionalOfferConditions,
   type PromotionalOfferListStatus,
   type PromotionalOfferScope,
   type PromotionalOfferScopeKind,
+  promotionalOfferConditionsSchema,
   promotionalOfferScopeSchema,
 } from "@voyantjs/promotions/validation"
 import {
@@ -39,9 +41,11 @@ export {
 
 export {
   type PromotionalOfferApplicationMode,
+  type PromotionalOfferConditions,
   type PromotionalOfferListStatus,
   type PromotionalOfferScope,
   type PromotionalOfferScopeKind,
+  promotionalOfferConditionsSchema,
   promotionalOfferScopeSchema,
 } from "@voyantjs/promotions/validation"
 
@@ -55,7 +59,7 @@ const promotionalOfferRecordSchema = z.object({
   discountAmountCents: z.number().nullable(),
   currency: z.string().nullable(),
   scope: promotionalOfferScopeSchema,
-  conditions: z.object({ minPax: z.number().int().positive().optional() }).catchall(z.unknown()),
+  conditions: promotionalOfferConditionsSchema,
   validFrom: z.string().nullable(),
   validUntil: z.string().nullable(),
   code: z.string().nullable(),
@@ -240,7 +244,7 @@ export interface PromotionInsertInput {
   discountAmountCents?: number | null
   currency?: string | null
   scope: PromotionalOfferScope
-  conditions?: { minPax?: number }
+  conditions?: PromotionalOfferConditions
   validFrom?: string | null
   validUntil?: string | null
   code?: string | null

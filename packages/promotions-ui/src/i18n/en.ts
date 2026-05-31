@@ -28,6 +28,8 @@ export const promotionsUiEn: PromotionsUiMessages = {
       destinations: "Destinations",
       markets: "Markets",
       audiences: "Audiences",
+      fare_codes: "Fare codes",
+      cabin_grades: "Cabin grades",
     },
     audienceLabels: {
       staff: "Staff",
@@ -81,6 +83,8 @@ export const promotionsUiEn: PromotionsUiMessages = {
       destinationsScope: "{count} {noun}",
       marketsScope: "Markets: {markets}",
       audiencesScope: "Audiences: {audiences}",
+      fareCodesScope: "Fare codes: {fareCodes}",
+      cabinGradesScope: "Cabin grades: {cabinGradeCodes}",
       productNouns: { singular: "product", plural: "products" },
       categoryNouns: { singular: "category", plural: "categories" },
       destinationNouns: { singular: "destination", plural: "destinations" },
@@ -130,6 +134,8 @@ export const promotionsUiEn: PromotionsUiMessages = {
       categoryIds: "Add category references",
       destinationIds: "Add destination references",
       marketIds: "Add market references",
+      fareCodes: "Add fare codes",
+      cabinGradeCodes: "Add cabin grade codes",
     },
     hints: {
       globalScope: "Applies to every product.",

@@ -31,6 +31,16 @@ export interface OfferEvaluationContext {
     audience: "staff" | "customer" | "partner" | "supplier"
     market: string
   }
+  /** Optional booking-line fare code, used by fare-scoped offers. */
+  fareCode?: string | null
+  /** Optional cabin grade code, used by cruise cabin-grade-scoped offers. */
+  cabinGradeCode?: string | null
+  eligibility?: {
+    pastGuest?: boolean
+    soloTraveler?: boolean
+    hasChildTraveler?: boolean
+    family?: boolean
+  }
   /** Total travelers. Absent at catalog-index time; supplied at checkout. */
   pax?: number
   /** Defaults to `now()` when undefined. */
@@ -70,7 +80,12 @@ export interface ConditionalOffer {
   discountKind: "percentage" | "fixed_amount"
   discountPercent: number | null
   discountAmountCents: number | null
-  unmet: { kind: "min_pax"; required: number }
+  unmet:
+    | { kind: "min_pax"; required: number }
+    | { kind: "past_guest" }
+    | { kind: "solo_traveler" }
+    | { kind: "child_traveler" }
+    | { kind: "family" }
 }
 
 /** Outcome of code validation when `ctx.code` is supplied. `null` when ctx.code was not set. */
@@ -80,7 +95,7 @@ export type CodeStatus =
   | { kind: "code_not_found" }
   | { kind: "code_expired" }
   | { kind: "code_not_yet_valid" }
-  | { kind: "code_not_applicable"; reason: "scope" | "min_pax" | "currency" }
+  | { kind: "code_not_applicable"; reason: "scope" | "min_pax" | "eligibility" | "currency" }
 
 export interface EvaluationResult {
   /** All applied offers (1+ when stacking; 0 when no offer applies). May include a code-gated offer alongside auto offers. */
@@ -209,13 +224,17 @@ function matchesScope(
       return scope.marketIds.includes(ctx.slice.market)
     case "audiences":
       return scope.audiences.includes(ctx.slice.audience)
+    case "fare_codes":
+      return ctx.fareCode != null && scope.fareCodes.includes(ctx.fareCode)
+    case "cabin_grades":
+      return ctx.cabinGradeCode != null && scope.cabinGradeCodes.includes(ctx.cabinGradeCode)
   }
 }
 
 type ConditionsResult =
   | { kind: "ok" }
-  | { kind: "conditional"; unmet: { kind: "min_pax"; required: number } }
-  | { kind: "excluded"; reason: "min_pax" }
+  | { kind: "conditional"; unmet: ConditionalOffer["unmet"] }
+  | { kind: "excluded"; reason: "min_pax" | "eligibility" }
 
 function evaluateConditions(
   conditions: PromotionalOfferConditions,
@@ -229,7 +248,36 @@ function evaluateConditions(
       return { kind: "excluded", reason: "min_pax" }
     }
   }
+  if (conditions.pastGuestOnly === true) {
+    const result = evaluateEligibilityFlag(ctx.eligibility?.pastGuest, { kind: "past_guest" })
+    if (result.kind !== "ok") return result
+  }
+  if (conditions.soloTravelerOnly === true) {
+    const soloTraveler =
+      ctx.eligibility?.soloTraveler ?? (ctx.pax != null ? ctx.pax === 1 : undefined)
+    const result = evaluateEligibilityFlag(soloTraveler, { kind: "solo_traveler" })
+    if (result.kind !== "ok") return result
+  }
+  if (conditions.childTravelerOnly === true) {
+    const result = evaluateEligibilityFlag(ctx.eligibility?.hasChildTraveler, {
+      kind: "child_traveler",
+    })
+    if (result.kind !== "ok") return result
+  }
+  if (conditions.familyOnly === true) {
+    const result = evaluateEligibilityFlag(ctx.eligibility?.family, { kind: "family" })
+    if (result.kind !== "ok") return result
+  }
   return { kind: "ok" }
+}
+
+function evaluateEligibilityFlag(
+  value: boolean | undefined,
+  unmet: ConditionalOffer["unmet"],
+): ConditionsResult {
+  if (value === true) return { kind: "ok" }
+  if (value === false) return { kind: "excluded", reason: "eligibility" }
+  return { kind: "conditional", unmet }
 }
 
 function currencyMatches(offer: PromotionalOffer, ctx: OfferEvaluationContext): boolean {
@@ -355,7 +403,7 @@ export async function evaluateOffersForProduct(
   // Steps 3 + 4 + 5: scope / conditions / currency filter, partition.
   const applied: PromotionalOffer[] = []
   const conditional: ConditionalOffer[] = []
-  let codeOfferRejection: { kind: "scope" | "min_pax" | "currency" } | null = null
+  let codeOfferRejection: { kind: "scope" | "min_pax" | "eligibility" | "currency" } | null = null
 
   for (const offer of allCandidates) {
     if (!matchesScope(offer.scope, ctx, productMatchSet.has(offer.id))) {
@@ -374,7 +422,7 @@ export async function evaluateOffersForProduct(
       continue
     }
     if (cond.kind === "excluded") {
-      if (offer === codeOffer) codeOfferRejection = { kind: "min_pax" }
+      if (offer === codeOffer) codeOfferRejection = { kind: cond.reason }
       continue
     }
 
