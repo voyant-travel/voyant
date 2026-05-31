@@ -5,6 +5,8 @@ ALTER TABLE "cruise_voyage_groups" ADD COLUMN "embark_port_canonical_place_id" t
 ALTER TABLE "cruise_voyage_groups" ADD COLUMN "disembark_port_canonical_place_id" text;--> statement-breakpoint
 ALTER TABLE "cruises" ADD COLUMN "embark_port_canonical_place_id" text;--> statement-breakpoint
 ALTER TABLE "cruises" ADD COLUMN "disembark_port_canonical_place_id" text;--> statement-breakpoint
+ALTER TABLE "cruise_search_index" ADD COLUMN "embark_port_canonical_place_id" text;--> statement-breakpoint
+ALTER TABLE "cruise_search_index" ADD COLUMN "disembark_port_canonical_place_id" text;--> statement-breakpoint
 ALTER TABLE "cruise_sailings" ADD COLUMN "embark_port_canonical_place_id" text;--> statement-breakpoint
 ALTER TABLE "cruise_sailings" ADD COLUMN "disembark_port_canonical_place_id" text;--> statement-breakpoint
 ALTER TABLE "cruise_voyage_group_segments" ADD COLUMN "embark_port_canonical_place_id" text;--> statement-breakpoint
@@ -16,6 +18,8 @@ CREATE INDEX "idx_cruise_voyage_groups_embark_place" ON "cruise_voyage_groups" U
 CREATE INDEX "idx_cruise_voyage_groups_disembark_place" ON "cruise_voyage_groups" USING btree ("disembark_port_canonical_place_id");--> statement-breakpoint
 CREATE INDEX "idx_cruises_embark_place" ON "cruises" USING btree ("embark_port_canonical_place_id");--> statement-breakpoint
 CREATE INDEX "idx_cruises_disembark_place" ON "cruises" USING btree ("disembark_port_canonical_place_id");--> statement-breakpoint
+CREATE INDEX "idx_cruise_search_index_embark_place" ON "cruise_search_index" USING btree ("embark_port_canonical_place_id");--> statement-breakpoint
+CREATE INDEX "idx_cruise_search_index_disembark_place" ON "cruise_search_index" USING btree ("disembark_port_canonical_place_id");--> statement-breakpoint
 CREATE INDEX "idx_cruise_sailings_embark_place" ON "cruise_sailings" USING btree ("embark_port_canonical_place_id");--> statement-breakpoint
 CREATE INDEX "idx_cruise_sailings_disembark_place" ON "cruise_sailings" USING btree ("disembark_port_canonical_place_id");--> statement-breakpoint
 CREATE INDEX "idx_cruise_voyage_segments_embark_place" ON "cruise_voyage_group_segments" USING btree ("embark_port_canonical_place_id");--> statement-breakpoint

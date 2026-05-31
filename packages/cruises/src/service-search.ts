@@ -50,7 +50,9 @@ export type BulkSearchIndexEntry = {
   shipName: string
   nights: number
   embarkPortName?: string | null
+  embarkPortCanonicalPlaceId?: string | null
   disembarkPortName?: string | null
+  disembarkPortCanonicalPlaceId?: string | null
   regions?: string[]
   themes?: string[]
   earliestDeparture?: string | null
@@ -90,6 +92,23 @@ export const cruisesSearchService = {
     if (query.dateTo) conditions.push(lte(cruiseSearchIndex.latestDeparture, query.dateTo))
     if (query.priceMax !== undefined) {
       conditions.push(sql`${cruiseSearchIndex.lowestPrice}::numeric <= ${query.priceMax}`)
+    }
+    if (query.embarkPortCanonicalPlaceId) {
+      conditions.push(
+        eq(cruiseSearchIndex.embarkPortCanonicalPlaceId, query.embarkPortCanonicalPlaceId),
+      )
+    }
+    if (query.disembarkPortCanonicalPlaceId) {
+      conditions.push(
+        eq(cruiseSearchIndex.disembarkPortCanonicalPlaceId, query.disembarkPortCanonicalPlaceId),
+      )
+    }
+    if (query.portCanonicalPlaceId) {
+      const portClause = or(
+        eq(cruiseSearchIndex.embarkPortCanonicalPlaceId, query.portCanonicalPlaceId),
+        eq(cruiseSearchIndex.disembarkPortCanonicalPlaceId, query.portCanonicalPlaceId),
+      )
+      if (portClause) conditions.push(portClause)
     }
     if (query.search) {
       const term = `%${query.search}%`
@@ -152,7 +171,9 @@ export const cruisesSearchService = {
       shipName: entry.shipName,
       nights: entry.nights,
       embarkPortName: entry.embarkPortName ?? null,
+      embarkPortCanonicalPlaceId: entry.embarkPortCanonicalPlaceId ?? null,
       disembarkPortName: entry.disembarkPortName ?? null,
+      disembarkPortCanonicalPlaceId: entry.disembarkPortCanonicalPlaceId ?? null,
       regions: entry.regions ?? [],
       themes: entry.themes ?? [],
       earliestDeparture: entry.earliestDeparture ?? null,
@@ -351,7 +372,9 @@ export const cruisesSearchService = {
         shipName: entry.shipName,
         nights: entry.nights,
         embarkPortName: entry.embarkPortName ?? null,
+        embarkPortCanonicalPlaceId: entry.embarkPortCanonicalPlaceId ?? null,
         disembarkPortName: entry.disembarkPortName ?? null,
+        disembarkPortCanonicalPlaceId: entry.disembarkPortCanonicalPlaceId ?? null,
         regions: entry.regions ?? [],
         themes: entry.themes ?? [],
         earliestDeparture: entry.earliestDeparture ?? null,
@@ -519,6 +542,8 @@ async function buildLocalEntry(
     lineName: cruise.lineSupplierId ?? "—",
     shipName,
     nights: cruise.nights,
+    embarkPortCanonicalPlaceId: cruise.embarkPortCanonicalPlaceId ?? null,
+    disembarkPortCanonicalPlaceId: cruise.disembarkPortCanonicalPlaceId ?? null,
     regions: cruise.regions ?? [],
     themes: cruise.themes ?? [],
     earliestDeparture: dateAgg?.earliest ?? null,

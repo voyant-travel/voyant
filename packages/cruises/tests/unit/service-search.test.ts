@@ -72,13 +72,16 @@ describe("cruisesSearchService external refresh pruning", () => {
   it("prunes missing existing scopes while keeping refreshed entries", async () => {
     const db = {} as Parameters<typeof cruisesSearchService.refreshExternalForAdapter>[0]
     const calls: Array<{ keepIds: string[]; connectionId: string | null }> = []
+    const upsertedEntries: Array<Parameters<typeof cruisesSearchService.upsertEntry>[1]> = []
     const originalListExternalConnectionIds = cruisesSearchService.listExternalConnectionIds
     const originalRemoveExternalByIdsExcept = cruisesSearchService.removeExternalByIdsExcept
     const originalUpsertEntry = cruisesSearchService.upsertEntry
 
     cruisesSearchService.listExternalConnectionIds = async () => ["conn-a", "conn-b"]
-    cruisesSearchService.upsertEntry = async () =>
-      ({ id: "kept-row" }) as Awaited<ReturnType<typeof cruisesSearchService.upsertEntry>>
+    cruisesSearchService.upsertEntry = async (_db, entry) => {
+      upsertedEntries.push(entry)
+      return { id: "kept-row" } as Awaited<ReturnType<typeof cruisesSearchService.upsertEntry>>
+    }
     cruisesSearchService.removeExternalByIdsExcept = async (
       _db,
       _sourceProvider,
@@ -102,6 +105,10 @@ describe("cruisesSearchService external refresh pruning", () => {
         { keepIds: ["kept-row"], connectionId: "conn-a" },
         { keepIds: [], connectionId: "conn-b" },
       ])
+      expect(upsertedEntries[0]).toMatchObject({
+        embarkPortCanonicalPlaceId: "GRPIR",
+        disembarkPortCanonicalPlaceId: "GRPIR",
+      })
     } finally {
       cruisesSearchService.listExternalConnectionIds = originalListExternalConnectionIds
       cruisesSearchService.removeExternalByIdsExcept = originalRemoveExternalByIdsExcept
@@ -129,5 +136,7 @@ function searchProjectionEntry(
     lineName: "Test Line",
     shipName: "Test Ship",
     nights: 7,
+    embarkPortCanonicalPlaceId: "GRPIR",
+    disembarkPortCanonicalPlaceId: "GRPIR",
   }
 }
