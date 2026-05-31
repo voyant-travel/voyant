@@ -70,7 +70,11 @@ export async function cancelEntity(
     }
   }
 
-  const result = await adapter.cancel(request.adapterContext, {
+  const adapterContext = contextForSourceConnection(
+    request.adapterContext,
+    snapshot.source_connection_id ?? undefined,
+  )
+  const result = await adapter.cancel(adapterContext, {
     upstream_ref: snapshot.source_ref ?? snapshot.id,
     reason: request.reason,
     scope: request.scope,
@@ -84,6 +88,14 @@ export async function cancelEntity(
     pendingChannel: result.pending_channel,
     snapshotId: snapshot.id,
   }
+}
+
+function contextForSourceConnection(
+  context: SourceAdapterContext,
+  sourceConnectionId: string | undefined,
+): SourceAdapterContext {
+  if (!sourceConnectionId || context.connection_id === sourceConnectionId) return context
+  return { ...context, connection_id: sourceConnectionId }
 }
 
 async function loadSnapshot(

@@ -214,6 +214,7 @@ function catalogHitThumbnailUrl(hit: CatalogSearchHit): string | null {
 function catalogHitSourceConnectionId(hit: CatalogSearchHit): string | null {
   return (
     catalogHitStringField(hit, "source.connectionId") ??
+    catalogHitStringField(hit, "source.connection_id") ??
     catalogHitStringField(hit, "source_connection_id")
   )
 }

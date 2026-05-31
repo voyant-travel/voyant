@@ -5,24 +5,24 @@
   "compatibility_date": "2025-10-03",
   "compatibility_flags": ["nodejs_compat"],
   "observability": {
-    "enabled": true
+    "enabled": true,
   },
   "vars": {
     "APP_URL": "http://localhost:3300/api",
     "DASH_BASE_URL": "http://localhost:3300",
     "VOYANT_ADMIN_AUTH_MODE": "local",
     "KMS_PROVIDER": "local",
-    "EMAIL_FROM": "Voyant <voyant@notifications.example.com>"
+    "EMAIL_FROM": "Voyant <voyant@notifications.example.com>",
   },
   "r2_buckets": [
     {
       "binding": "MEDIA_BUCKET",
-      "bucket_name": "voyant-media"
+      "bucket_name": "voyant-media",
     },
     {
       "binding": "DOCUMENTS_BUCKET",
-      "bucket_name": "voyant-documents"
-    }
+      "bucket_name": "voyant-documents",
+    },
   ],
   // Workflow runtime — Cloudflare edge composition.
   //
@@ -35,15 +35,15 @@
     "bindings": [
       {
         "name": "WORKFLOW_RUN_DO",
-        "class_name": "WorkflowRunDO"
-      }
-    ]
+        "class_name": "WorkflowRunDO",
+      },
+    ],
   },
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["WorkflowRunDO"]
-    }
+      "new_sqlite_classes": ["WorkflowRunDO"],
+    },
   ],
   // WORKFLOW_MANIFESTS — KV namespace storing serialized
   //                      `WorkflowManifest` payloads. Written by
@@ -55,8 +55,8 @@
   "kv_namespaces": [
     {
       "binding": "WORKFLOW_MANIFESTS",
-      "id": "replace-me-after-wrangler-kv-namespace-create"
-    }
+      "id": "replace-me-after-wrangler-kv-namespace-create",
+    },
   ],
   "triggers": {
     "crons": [
@@ -74,7 +74,7 @@
       // Promotions boundary scheduler (per promotions-architecture.md
       // §9.2) — every 5 minutes; emits/dispatches `promotion.changed`
       // for offers crossing valid_from / valid_until since the last tick.
-      "*/5 * * * *"
-    ]
-  }
+      "*/5 * * * *",
+    ],
+  },
 }

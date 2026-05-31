@@ -92,6 +92,13 @@ export interface CatalogDetailEnrichment {
     lowestPriceCents?: number | null
     currency?: string | null
     note?: string | null
+    itinerary?: ReadonlyArray<{
+      dayNumber: number
+      title?: string | null
+      description?: string | null
+      location?: string | null
+      heroImageUrl?: string | null
+    }>
   }>
   /** Resolution metadata — drives the chips at the top. */
   servedLocale?: string
@@ -123,6 +130,7 @@ export type CatalogDetailRenderSlot = (
 export interface CatalogDetailSheetProps {
   hit: CatalogSearchHit | null
   onOpenChange: (open: boolean) => void
+  entityModule?: string
   formatters?: Record<string, (value: unknown) => ReactNode>
   actions?: CatalogDetailAction[]
   imageField?: string
@@ -253,6 +261,7 @@ const ARRAY_LABEL_OVERRIDES: Record<string, string> = {
 export function CatalogDetailSheet({
   hit,
   onOpenChange,
+  entityModule,
   formatters,
   actions,
   imageField = "thumbnailUrl",
@@ -272,6 +281,7 @@ export function CatalogDetailSheet({
   const messages = catalogMessages.detail
   const open = hit != null
   const fields = hit?.document.fields ?? {}
+  const isCruise = entityModule === "cruises"
   const name = stringOr(fields.name, catalogMessages.fallbacks.detailName)
   const status = stringOr(fields.status, null)
 
@@ -449,7 +459,7 @@ export function CatalogDetailSheet({
 
           {/* Body */}
           {(() => {
-            const hasItinerary = (enrichment?.itinerary?.length ?? 0) > 0
+            const hasItinerary = !isCruise && (enrichment?.itinerary?.length ?? 0) > 0
             const hasOptions = (enrichment?.options?.length ?? 0) > 0
             const hasDepartures = (enrichment?.departures?.length ?? 0) > 0
             const hasPolicies = (enrichment?.policies?.length ?? 0) > 0
@@ -473,7 +483,9 @@ export function CatalogDetailSheet({
                     )}
                     {hasOptions && <TabsTrigger value="options">{messages.options}</TabsTrigger>}
                     {hasDepartures && (
-                      <TabsTrigger value="departures">{messages.departures}</TabsTrigger>
+                      <TabsTrigger value="departures">
+                        {isCruise ? messages.sailings : messages.departures}
+                      </TabsTrigger>
                     )}
                     {shouldRenderMediaSection && (
                       <TabsTrigger value="media">{messages.media}</TabsTrigger>
@@ -550,8 +562,8 @@ export function CatalogDetailSheet({
                   {hasItinerary && (
                     <TabsContent value="itinerary" className="flex flex-col gap-2">
                       <ol className="space-y-2">
-                        {enrichment!.itinerary!.map((d) => (
-                          <li key={d.dayNumber}>
+                        {enrichment!.itinerary!.map((d, idx) => (
+                          <li key={itineraryDayKey(d, idx)}>
                             {renderItineraryDay && hit ? (
                               renderItineraryDay(d, hit, enrichment!)
                             ) : (
@@ -596,6 +608,7 @@ export function CatalogDetailSheet({
                         }
                         onBookDeparture={onBookDeparture}
                         onBookOption={onBookOption}
+                        variant={isCruise ? "sailings" : "departures"}
                         messages={messages}
                       />
                     </TabsContent>
@@ -720,6 +733,16 @@ function DefaultItineraryDay({
   )
 }
 
+function itineraryDayKey(day: CatalogDetailItineraryDay, idx: number): string {
+  return [
+    day.dayNumber,
+    day.title ?? "",
+    day.location ?? "",
+    day.description ?? "",
+    idx,
+  ].join(":")
+}
+
 /**
  * Header-side "From {price}" indicator. Prefers per-departure
  * `lowestPriceCents` minimums (only counting open/limited slots); falls
@@ -831,6 +854,7 @@ function DeparturesTable({
   productSellCurrency,
   onBookDeparture,
   onBookOption,
+  variant,
   messages,
 }: {
   hit: CatalogSearchHit | null
@@ -840,6 +864,7 @@ function DeparturesTable({
   productSellCurrency: string | null
   onBookDeparture?: (hit: CatalogSearchHit, departure: DepartureEntry) => void
   onBookOption?: (hit: CatalogSearchHit, departure: DepartureEntry, option: DepartureOption) => void
+  variant?: "departures" | "sailings"
   messages: CatalogUiMessages["catalogPage"]["detail"]
 }) {
   const tableMessages = messages.departuresTable
@@ -987,7 +1012,11 @@ function DeparturesTable({
 
       {sorted.length === 0 ? (
         <div className="rounded-md border bg-muted/10 px-3 py-6 text-center text-sm text-muted-foreground">
-          {filtersActive ? tableMessages.noResults : messages.noUpcomingDepartures}
+          {filtersActive
+            ? tableMessages.noResults
+            : variant === "sailings"
+              ? messages.noUpcomingSailings
+              : messages.noUpcomingDepartures}
         </div>
       ) : (
         <div className="overflow-hidden rounded-md border">
@@ -1086,6 +1115,7 @@ function DeparturesTable({
                             productSellCurrency={productSellCurrency}
                             onBookDeparture={onBookDeparture}
                             onBookOption={onBookOption}
+                            variant={variant}
                             messages={messages}
                           />
                         </td>
@@ -1170,6 +1200,7 @@ function DepartureDetailPanel({
   productSellCurrency,
   onBookDeparture,
   onBookOption,
+  variant,
   messages,
 }: {
   hit: CatalogSearchHit | null
@@ -1179,6 +1210,7 @@ function DepartureDetailPanel({
   productSellCurrency: string | null
   onBookDeparture?: (hit: CatalogSearchHit, departure: DepartureEntry) => void
   onBookOption?: (hit: CatalogSearchHit, departure: DepartureEntry, option: DepartureOption) => void
+  variant?: "departures" | "sailings"
   messages: CatalogUiMessages["catalogPage"]["detail"]
 }) {
   const tableMessages = messages.departuresTable
@@ -1197,6 +1229,20 @@ function DepartureDetailPanel({
 
   return (
     <div className="flex flex-col gap-2">
+      {variant === "sailings" && departure.itinerary && departure.itinerary.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            {messages.itinerary}
+          </div>
+          <ol className="space-y-2">
+            {departure.itinerary.map((day, idx) => (
+              <li key={itineraryDayKey(day, idx)}>
+                <DefaultItineraryDay day={day} dayLabel={messages.day} />
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
       <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
         {tableMessages.optionsHeading}
       </div>

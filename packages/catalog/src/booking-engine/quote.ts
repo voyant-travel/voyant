@@ -199,6 +199,7 @@ export async function quoteEntity(
   let pricing: PricingBasis | undefined
   let upstreamPayload: Record<string, unknown> | undefined
   let ownedShape: BookingDraftShape | undefined
+  let sourceAdapterContext = request.adapterContext
 
   if (request.sourceKind === OWNED_SOURCE_KIND && deps.ownedHandlers) {
     const handler = deps.ownedHandlers.resolveOrThrow(request.entityModule)
@@ -223,9 +224,13 @@ export async function quoteEntity(
         deps.registry.resolveOrThrow(request.sourceKind))
       : deps.registry.resolveOrThrow(request.sourceKind)
 
+    sourceAdapterContext = contextForSourceConnection(
+      request.adapterContext,
+      request.sourceConnectionId,
+    )
     let liveResolve: LiveResolveResult = { values: {} }
     if (adapter.liveResolve) {
-      liveResolve = await adapter.liveResolve(request.adapterContext, {
+      liveResolve = await adapter.liveResolve(sourceAdapterContext, {
         ids: [request.entityId],
         scope: {
           locale: request.scope.locale,
@@ -346,7 +351,7 @@ export async function quoteEntity(
         sourceRef: request.sourceRef,
         scope: request.scope,
         parameters: request.parameters,
-        adapterContext: request.adapterContext,
+        adapterContext: sourceAdapterContext,
       })
       shape = enriched ?? undefined
     } catch (err) {
@@ -368,6 +373,14 @@ export async function quoteEntity(
     upstreamPayload,
     shape,
   }
+}
+
+function contextForSourceConnection(
+  context: SourceAdapterContext,
+  sourceConnectionId: string | undefined,
+): SourceAdapterContext {
+  if (!sourceConnectionId || context.connection_id === sourceConnectionId) return context
+  return { ...context, connection_id: sourceConnectionId }
 }
 
 /**

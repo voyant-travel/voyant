@@ -49,17 +49,6 @@ export const cruiseShipSchema = z.object({
   year_built: z.number().int().nonnegative().nullable().optional(),
 })
 
-export const cruiseSailingSchema = z.object({
-  id: z.string(),
-  source_ref: z.string().nullable().optional(),
-  start_date: z.string(),
-  end_date: z.string(),
-  duration_nights: z.number().int().nonnegative().nullable().optional(),
-  status: z.string().nullable().optional(),
-  embarkation_port: z.string().nullable().optional(),
-  disembarkation_port: z.string().nullable().optional(),
-})
-
 export const cruiseCabinCategorySchema = z.object({
   id: z.string(),
   code: z.string().nullable().optional(),
@@ -79,6 +68,20 @@ export const cruiseItineraryStopSchema = z.object({
   departure_time: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   is_at_sea: z.boolean().optional().default(false),
+})
+
+export const cruiseSailingSchema = z.object({
+  id: z.string(),
+  source_ref: z.string().nullable().optional(),
+  start_date: z.string(),
+  end_date: z.string(),
+  duration_nights: z.number().int().nonnegative().nullable().optional(),
+  status: z.string().nullable().optional(),
+  embarkation_port: z.string().nullable().optional(),
+  disembarkation_port: z.string().nullable().optional(),
+  lowestPriceCached: z.string().nullable().optional(),
+  lowestPriceCachedCurrency: z.string().nullable().optional(),
+  itinerary_stops: z.array(cruiseItineraryStopSchema).optional(),
 })
 
 export const cruisePolicySchema = z.object({

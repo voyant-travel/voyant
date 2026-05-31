@@ -124,6 +124,7 @@ export type CatalogUiMessages = {
       tagsThemes: string
       attributes: string
       departures: string
+      sailings: string
       ends: string
       book: string
       options: string
@@ -149,6 +150,7 @@ export type CatalogUiMessages = {
       }
       priceFromLabel: string
       noUpcomingDepartures: string
+      noUpcomingSailings: string
       departuresTable: {
         date: string
         status: string

@@ -25,6 +25,7 @@ export interface CatalogEnrichmentFetchers {
    * back to the bare indexed projection.
    */
   loadProductDetail: (hit: CatalogSearchHit) => Promise<CatalogDetailEnrichment | null>
+  loadCruiseDetail?: (hit: CatalogSearchHit) => Promise<CatalogDetailEnrichment | null>
 }
 
 export interface CatalogEnrichmentFetchersOptions {
@@ -36,6 +37,8 @@ export interface CatalogEnrichmentFetchersOptions {
    * pass `/v1/public/products`.
    */
   contentBasePath?: string
+  /** Hono-mount path for `createCruiseContentRoutes`. Defaults to `/v1/admin/cruises`. */
+  cruiseContentBasePath?: string
   fetch?: typeof globalThis.fetch
   credentials?: RequestCredentials
   /**
@@ -111,6 +114,67 @@ interface ProductSourcedContentResponse {
   }
 }
 
+interface CruiseSourcedContentResponse {
+  data: {
+    content: {
+      cruise: {
+        id: string
+        name: string
+        status?: string | null
+        description?: string | null
+        cruise_type?: string | null
+        hero_image_url?: string | null
+        highlights?: string[]
+        cruise_line?: string | null
+        duration_nights?: number | null
+        embarkation_port?: string | null
+        disembarkation_port?: string | null
+      }
+      ship?: { id?: string | null; name: string; description?: string | null } | null
+      sailings: Array<{
+        id: string
+        source_ref?: string | null
+        start_date: string
+        end_date: string
+        duration_nights?: number | null
+        status?: string | null
+        embarkation_port?: string | null
+        disembarkation_port?: string | null
+        lowestPriceCached?: string | null
+        lowestPriceCachedCurrency?: string | null
+        itinerary_stops?: Array<{
+          day_number: number
+          date?: string | null
+          port_name: string
+          description?: string | null
+          is_at_sea?: boolean
+        }>
+      }>
+      cabin_categories: Array<{
+        id: string
+        code?: string | null
+        name: string
+        description?: string | null
+        type?: string | null
+      }>
+      itinerary_stops: Array<{
+        day_number: number
+        date?: string | null
+        port_name: string
+        description?: string | null
+        is_at_sea?: boolean
+      }>
+      policies: Array<{ kind: string; body: string }>
+    }
+    served_locale: string
+    match_kind: "exact" | "language_match" | "fallback_chain" | "any"
+    source: "sourced-cache" | "sourced-fresh" | "synthesized" | "owned"
+    served_stale: boolean
+    synthesized: boolean
+    machine_translated: boolean
+  }
+}
+
 let warnedAboutMissingMount = false
 
 /**
@@ -123,6 +187,7 @@ export function createCatalogEnrichmentFetchers(
   const {
     baseUrl,
     contentBasePath = "/v1/admin/products",
+    cruiseContentBasePath = "/v1/admin/cruises",
     fetch: fetchImpl = globalThis.fetch,
     credentials = "include",
     formatSupplier,
@@ -133,6 +198,7 @@ export function createCatalogEnrichmentFetchers(
 
   const root = trimTrailingSlash(baseUrl)
   const basePath = ensureLeadingSlash(contentBasePath)
+  const cruiseBasePath = ensureLeadingSlash(cruiseContentBasePath)
 
   const loadProductDetail = async (
     hit: CatalogSearchHit,
@@ -170,7 +236,33 @@ export function createCatalogEnrichmentFetchers(
     return mapContentToEnrichment(payload, availability, formatSupplier)
   }
 
-  return { loadProductDetail }
+  const loadCruiseDetail = async (
+    hit: CatalogSearchHit,
+  ): Promise<CatalogDetailEnrichment | null> => {
+    const url = buildContentUrl(root, cruiseBasePath, hit.id, { locale, market })
+    let response: Response
+    try {
+      response = await fetchImpl(url, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        credentials,
+      })
+    } catch (err) {
+      throw new Error(
+        `catalog enrichment fetch failed: ${err instanceof Error ? err.message : String(err)}`,
+      )
+    }
+    if (response.status === 404 || response.status === 503) {
+      maybeWarnMissingMount(response, url)
+      return null
+    }
+    if (!response.ok) {
+      throw new Error(`catalog enrichment fetch failed: ${response.status} ${response.statusText}`)
+    }
+    return mapCruiseContentToEnrichment((await response.json()) as CruiseSourcedContentResponse)
+  }
+
+  return { loadProductDetail, loadCruiseDetail }
 }
 
 function maybeWarnMissingMount(response: Response, url: string): void {
@@ -258,6 +350,99 @@ function mapContentToEnrichment(
     synthesized,
     machineTranslated: machine_translated,
   }
+}
+
+function mapCruiseContentToEnrichment(
+  payload: CruiseSourcedContentResponse,
+): CatalogDetailEnrichment {
+  const {
+    content,
+    served_locale,
+    match_kind,
+    source,
+    served_stale,
+    synthesized,
+    machine_translated,
+  } = payload.data
+  return {
+    description: content.cruise.description ?? null,
+    highlights: content.cruise.highlights ?? [],
+    heroImageUrl: content.cruise.hero_image_url ?? null,
+    supplier: content.cruise.cruise_line ?? null,
+    itinerary: uniqueCruiseItineraryStops(content.itinerary_stops).map((d) => ({
+      dayNumber: d.day_number,
+      title: d.port_name,
+      description: d.description ?? null,
+      location: d.port_name,
+    })),
+    options: content.cabin_categories.map((category) => ({
+      id: category.id,
+      name: category.code ? `${category.code} - ${category.name}` : category.name,
+      description: category.description ?? category.type ?? null,
+    })),
+    policies: content.policies.map((p) => ({ kind: p.kind, body: p.body })),
+    departures: content.sailings.map((sailing) => ({
+      id: sailing.id,
+      startsAt: sailing.start_date,
+      endsAt: sailing.end_date,
+      status: sailing.status ?? null,
+      unlimited: null,
+      capacity: null,
+      remaining: null,
+      lowestPriceCents: decimalMoneyToCents(sailing.lowestPriceCached),
+      currency: sailing.lowestPriceCachedCurrency ?? null,
+      note:
+        sailing.embarkation_port || sailing.disembarkation_port
+          ? [sailing.embarkation_port, sailing.disembarkation_port].filter(Boolean).join(" -> ")
+          : null,
+      itinerary: (sailing.itinerary_stops ?? []).map((d) => ({
+        dayNumber: d.day_number,
+        title: d.port_name,
+        description: d.description ?? null,
+        location: d.port_name,
+      })),
+    })),
+    servedLocale: served_locale,
+    matchKind: match_kind,
+    source,
+    servedStale: served_stale,
+    synthesized,
+    machineTranslated: machine_translated,
+  }
+}
+
+function uniqueCruiseItineraryStops(
+  stops: CruiseSourcedContentResponse["data"]["content"]["itinerary_stops"],
+): CruiseSourcedContentResponse["data"]["content"]["itinerary_stops"] {
+  const seen = new Set<string>()
+  const unique: CruiseSourcedContentResponse["data"]["content"]["itinerary_stops"] = []
+  let previousDayNumber = 0
+  for (const stop of stops) {
+    if (unique.length > 0 && stop.day_number < previousDayNumber) break
+    previousDayNumber = stop.day_number
+    const key = [
+      stop.day_number,
+      stop.port_name,
+      stop.description ?? "",
+      stop.is_at_sea === true ? "sea" : "port",
+    ].join("\u0000")
+    if (seen.has(key)) continue
+    seen.add(key)
+    unique.push(stop)
+  }
+  return unique
+}
+
+function decimalMoneyToCents(amount: string | null | undefined): number | null {
+  if (typeof amount !== "string") return null
+  const trimmed = amount.trim()
+  const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(trimmed)
+  if (!match) return null
+  const sign = match[1] === "-" ? -1 : 1
+  const whole = Number.parseInt(match[2]!, 10)
+  const cents = Number.parseInt((match[3] ?? "").padEnd(2, "0"), 10) || 0
+  if (!Number.isSafeInteger(whole)) return null
+  return sign * (whole * 100 + cents)
 }
 
 function buildContentUrl(

@@ -192,12 +192,12 @@ export function kmsConfigFromEnv(env: Record<string, string | undefined>): KmsCo
   }
 
   if (provider === "voyant-cloud") {
-    const apiKey = env.VOYANT_CLOUD_API_KEY
+    const apiKey = env.VOYANT_API_KEY ?? env.VOYANT_CLOUD_API_KEY
     const vaultSlug = env.VOYANT_CLOUD_VAULT_SLUG
     const apiUrl = env.VOYANT_CLOUD_API_URL
 
     const missing: string[] = []
-    if (!apiKey) missing.push("VOYANT_CLOUD_API_KEY")
+    if (!apiKey) missing.push("VOYANT_API_KEY")
     if (!vaultSlug) missing.push("VOYANT_CLOUD_VAULT_SLUG")
 
     if (!apiKey || !vaultSlug) {

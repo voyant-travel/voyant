@@ -141,6 +141,7 @@ export type CatalogRuntimeEnv = {
   TYPESENSE_HOST?: string
   TYPESENSE_ADMIN_API_KEY?: string
   TYPESENSE_API_KEY?: string
+  VOYANT_API_KEY?: string
   VOYANT_CLOUD_API_KEY?: string
   VOYANT_CLOUD_API_URL?: string
 }
@@ -168,10 +169,11 @@ export type CatalogRuntimeEnv = {
  * `embedding_model_id`, so mid-migration mixes are handled cleanly.
  */
 export function buildEmbeddingProvider(env: CatalogRuntimeEnv): EmbeddingProvider | undefined {
-  if (!env.VOYANT_CLOUD_API_KEY) return undefined
+  const apiKey = env.VOYANT_API_KEY ?? env.VOYANT_CLOUD_API_KEY
+  if (!apiKey) return undefined
   const cloudBase = (env.VOYANT_CLOUD_API_URL ?? "https://api.voyantjs.com").replace(/\/$/, "")
   return createGeminiEmbeddingProvider({
-    apiKey: env.VOYANT_CLOUD_API_KEY,
+    apiKey,
     auth: "bearer",
     baseUrl: `${cloudBase}/ai/v1/gemini`,
   })

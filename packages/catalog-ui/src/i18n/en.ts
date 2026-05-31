@@ -123,6 +123,7 @@ export const catalogUiEn = {
       tagsThemes: "Tags & themes",
       attributes: "Attributes",
       departures: "Departures",
+      sailings: "Sailings",
       ends: "ends {date}",
       book: "Book",
       options: "Options",
@@ -148,6 +149,7 @@ export const catalogUiEn = {
       },
       priceFromLabel: "From",
       noUpcomingDepartures: "No upcoming departures.",
+      noUpcomingSailings: "No upcoming sailings.",
       departuresTable: {
         date: "Date",
         status: "Status",

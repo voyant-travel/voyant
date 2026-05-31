@@ -270,7 +270,11 @@ export async function bookEntity(
     idempotency_key: request.idempotencyKey,
   }
 
-  const reserveResult = await adapter.reserve(request.adapterContext, reserveRequest)
+  const adapterContext = contextForSourceConnection(
+    request.adapterContext,
+    quote.source_connection_id ?? undefined,
+  )
+  const reserveResult = await adapter.reserve(adapterContext, reserveRequest)
   if (reserveResult.status === "failed") {
     throw new ReserveFailedError(reserveResult.upstream_payload, quote.source_kind, quote.entity_id)
   }
@@ -293,7 +297,7 @@ export async function bookEntity(
       locale: request.contentScope.locale,
       market: request.contentScope.market,
       currency: request.contentScope.currency,
-      adapterContext: request.adapterContext,
+      adapterContext,
     })
   }
 
@@ -344,6 +348,14 @@ export async function bookEntity(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+
+function contextForSourceConnection(
+  context: SourceAdapterContext,
+  sourceConnectionId: string | undefined,
+): SourceAdapterContext {
+  if (!sourceConnectionId || context.connection_id === sourceConnectionId) return context
+  return { ...context, connection_id: sourceConnectionId }
+}
 
 async function loadSnapshotByIdempotencyKey(
   db: AnyDrizzleDb,

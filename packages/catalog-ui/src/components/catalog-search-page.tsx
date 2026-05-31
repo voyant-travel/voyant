@@ -569,6 +569,7 @@ function CatalogTabPanel({
         onOpenChange={(open) => {
           if (!open) setOpenHit(null)
         }}
+        entityModule={tab.vertical}
         formatters={tab.detailFormatters}
         actions={tab.detailActions}
         imageField={tab.imageField ?? "thumbnailUrl"}

@@ -16,6 +16,7 @@ import { buildEmbeddingProvider, buildTypesenseIndexer, DEFAULT_SLICES } from ".
 
 export function buildCatalogContext(c: Context): McpToolContext {
   const env = c.env as CloudflareBindings & {
+    VOYANT_API_KEY?: string
     VOYANT_CLOUD_API_KEY?: string
     TENANT_ID?: string
     TYPESENSE_HOST?: string

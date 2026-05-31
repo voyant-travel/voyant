@@ -44,9 +44,9 @@ export function resolveContractDocumentGenerator(
     // Local dev / no cloud key — fall back to the basic pdf-lib
     // serializer. Contract PDFs will be plain text but the worker
     // boots and downstream flows complete. Prod deploys MUST set
-    // VOYANT_CLOUD_API_KEY.
+    // VOYANT_API_KEY.
     console.warn(
-      "[operator] VOYANT_CLOUD_API_KEY not set — using basic pdf-lib serializer. " +
+      "[operator] VOYANT_API_KEY not set — using basic pdf-lib serializer. " +
         "Contract PDFs will be unstyled. Set the key to enable browser-rendered output.",
     )
     const generator = legal.createPdfContractDocumentGenerator({ storage })

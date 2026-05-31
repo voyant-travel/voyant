@@ -245,14 +245,14 @@ export function createCatalogBookingHonoModule(options: CatalogBookingRoutesOpti
 async function handleQuote(c: Context, options: CatalogBookingRoutesOptions): Promise<Response> {
   const body = await parseJsonBody(c, quoteBodySchema)
   const db = options.resolveDb(c)
-  const provenance = body.sourceKind
-    ? {
-        sourceKind: body.sourceKind,
-        sourceProvider: body.sourceProvider,
-        sourceConnectionId: body.sourceConnectionId,
-        sourceRef: body.sourceRef,
-      }
-    : await resolveEntityProvenance(c, options, db, body.entityModule, body.entityId)
+  const provenance = await resolveRequestedEntityProvenance(c, options, db, {
+    entityModule: body.entityModule,
+    entityId: body.entityId,
+    sourceKind: body.sourceKind,
+    sourceProvider: body.sourceProvider,
+    sourceConnectionId: body.sourceConnectionId,
+    sourceRef: body.sourceRef,
+  })
   const correlationId = resolveCorrelationId(c, options)
   const adapterContext = resolveAdapterContext(c, options, {
     db,
@@ -395,13 +395,13 @@ async function handleDraftPut(c: Context, options: CatalogBookingRoutesOptions):
     throw new RequestValidationError("entityModule and entityId are required when creating a draft")
   }
 
-  const provenance = body.sourceKind
-    ? {
-        sourceKind: body.sourceKind,
-        sourceConnectionId: body.sourceConnectionId,
-        sourceRef: body.sourceRef,
-      }
-    : await resolveEntityProvenance(c, options, db, body.entityModule, body.entityId)
+  const provenance = await resolveRequestedEntityProvenance(c, options, db, {
+    entityModule: body.entityModule,
+    entityId: body.entityId,
+    sourceKind: body.sourceKind,
+    sourceConnectionId: body.sourceConnectionId,
+    sourceRef: body.sourceRef,
+  })
 
   const created = await createBookingDraft(db, {
     id,
@@ -531,6 +531,41 @@ async function resolveEntityProvenance(
     sourceProvider: row.source_provider ?? undefined,
     sourceConnectionId: row.source_connection_id ?? undefined,
     sourceRef: row.source_ref ?? undefined,
+  }
+}
+
+async function resolveRequestedEntityProvenance(
+  c: Context,
+  options: CatalogBookingRoutesOptions,
+  db: AnyDrizzleDb,
+  input: {
+    entityModule: string
+    entityId: string
+    sourceKind?: string
+    sourceProvider?: string
+    sourceConnectionId?: string
+    sourceRef?: string
+  },
+): Promise<CatalogBookingProvenance> {
+  if (!input.sourceKind) {
+    return resolveEntityProvenance(c, options, db, input.entityModule, input.entityId)
+  }
+
+  if (input.sourceKind === OWNED_SOURCE_KIND || input.sourceConnectionId) {
+    return {
+      sourceKind: input.sourceKind,
+      sourceProvider: input.sourceProvider,
+      sourceConnectionId: input.sourceConnectionId,
+      sourceRef: input.sourceRef,
+    }
+  }
+
+  const resolved = await resolveEntityProvenance(c, options, db, input.entityModule, input.entityId)
+  return {
+    sourceKind: input.sourceKind,
+    sourceProvider: input.sourceProvider ?? resolved.sourceProvider,
+    sourceConnectionId: resolved.sourceConnectionId,
+    sourceRef: input.sourceRef ?? resolved.sourceRef,
   }
 }
 

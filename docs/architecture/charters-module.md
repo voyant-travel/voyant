@@ -553,7 +553,7 @@ import { createApp } from "@voyantjs/hono"
 import { chartersHonoModule, registerCharterAdapter } from "@voyantjs/charters"
 import { createConnectCharterAdapter } from "@voyantjs/charters-adapter-connect"
 
-registerCharterAdapter(createConnectCharterAdapter({ apiKey: env.VOYANT_CONNECT_API_KEY }))
+registerCharterAdapter(createConnectCharterAdapter({ apiKey: env.VOYANT_API_KEY }))
 
 export const app = createApp({ modules: [chartersHonoModule, ...] })
 ```

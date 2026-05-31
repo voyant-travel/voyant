@@ -57,6 +57,7 @@ export interface CatalogPageProps {
    * default integration uses `enrichmentFetchers` for the common case.
    */
   onLoadProductDetail?: (hit: CatalogSearchHit) => Promise<CatalogDetailEnrichment | null>
+  onLoadCruiseDetail?: (hit: CatalogSearchHit) => Promise<CatalogDetailEnrichment | null>
   /**
    * Declarative detail-enrichment fetchers. Build with
    * `createCatalogEnrichmentFetchers({ baseUrl, … })`. When provided
@@ -103,6 +104,7 @@ export function CatalogPage({
   onBookOption,
   onOpenProductEditor,
   onLoadProductDetail,
+  onLoadCruiseDetail,
   enrichmentFetchers,
   detailSheetWidth,
   detailHeaderExtras,
@@ -119,6 +121,14 @@ export function CatalogPage({
   const resolvedLoadProductDetail = useMemo(
     () => onLoadProductDetail ?? enrichmentFetchers?.loadProductDetail,
     [onLoadProductDetail, enrichmentFetchers],
+  )
+  const resolvedLoadCruiseDetail = useMemo(
+    () =>
+      onLoadCruiseDetail ??
+      enrichmentFetchers?.loadCruiseDetail ??
+      onLoadProductDetail ??
+      enrichmentFetchers?.loadProductDetail,
+    [onLoadCruiseDetail, onLoadProductDetail, enrichmentFetchers],
   )
   const supplierFormatter = (value: unknown) =>
     typeof value === "string" ? formatSupplier(value) : String(value ?? "")
@@ -192,6 +202,7 @@ export function CatalogPage({
         lineSupplierId: supplierFormatter,
         "source.kind": sourceKindFormatter,
       },
+      onLoadDetail: resolvedLoadCruiseDetail,
     },
     {
       id: "charters",

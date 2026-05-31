@@ -188,6 +188,58 @@ describe("createCatalogBookingRoutes", () => {
     )
   })
 
+  it("fills missing source connection provenance for explicit sourced quote requests", async () => {
+    vi.mocked(quoteEntity).mockResolvedValue({
+      quoteId: "quote_1",
+      quotedAt: new Date("2026-05-05T10:00:00.000Z"),
+      expiresAt: new Date("2026-05-05T10:10:00.000Z"),
+      available: true,
+      pricing,
+    })
+    const resolveEntityProvenance = vi.fn(async () => ({
+      sourceKind: "voyant-connect",
+      sourceProvider: "croisi",
+      sourceConnectionId: "conn_voyant",
+      sourceRef: "upstream_1",
+    }))
+    const resolveAdapterContext = vi.fn(({ sourceConnectionId, correlationId }) => ({
+      connection_id: sourceConnectionId ?? "fallback",
+      correlation_id: correlationId,
+    }))
+    const { app } = createTestApp({
+      resolveCorrelationId: () => "req_1",
+      resolveEntityProvenance,
+      resolveAdapterContext,
+    })
+
+    const response = await app.request("/v1/public/catalog/quote", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        entityModule: "cruises",
+        entityId: "cruise_1",
+        sourceKind: "voyant-connect",
+        draft: { configure: { departureSlotId: "slot_1", pax: { adult: 2 } } },
+      }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(resolveEntityProvenance).toHaveBeenCalledWith(
+      expect.objectContaining({ db, entityModule: "cruises", entityId: "cruise_1" }),
+    )
+    expect(quoteEntity).toHaveBeenCalledWith(
+      db,
+      expect.any(Object),
+      expect.objectContaining({
+        sourceKind: "voyant-connect",
+        sourceProvider: "croisi",
+        sourceConnectionId: "conn_voyant",
+        sourceRef: "upstream_1",
+        adapterContext: { connection_id: "conn_voyant", correlation_id: "req_1" },
+      }),
+    )
+  })
+
   it("creates drafts with actor identity and explicit source provenance", async () => {
     vi.mocked(getBookingDraft).mockResolvedValue(null)
     vi.mocked(createBookingDraft).mockResolvedValue({

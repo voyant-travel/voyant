@@ -129,6 +129,7 @@ export const catalogBridgeBundle: HonoBundle = {
       TYPESENSE_HOST?: string
       TYPESENSE_ADMIN_API_KEY?: string
       TYPESENSE_API_KEY?: string
+      VOYANT_API_KEY?: string
       VOYANT_CLOUD_API_KEY?: string
     }
     const sellerOperatorId = env.TENANT_ID ?? "default"

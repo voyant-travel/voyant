@@ -123,6 +123,7 @@ export const catalogUiRo = {
       tagsThemes: "Taguri si teme",
       attributes: "Atribute",
       departures: "Plecari",
+      sailings: "Navigari",
       ends: "se termina {date}",
       book: "Rezerva",
       options: "Optiuni",
@@ -148,6 +149,7 @@ export const catalogUiRo = {
       },
       priceFromLabel: "De la",
       noUpcomingDepartures: "Nicio plecare disponibila.",
+      noUpcomingSailings: "Nicio navigare disponibila.",
       departuresTable: {
         date: "Data",
         status: "Status",

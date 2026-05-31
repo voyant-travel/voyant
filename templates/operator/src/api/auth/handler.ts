@@ -18,13 +18,13 @@ import {
 } from "@voyantjs/auth/cloud-broker"
 import { createBetterAuth, handleApiTokenManagementRequest } from "@voyantjs/auth/server"
 import { ensureCurrentUserProfile } from "@voyantjs/auth/workspace"
-import { tryGetVoyantCloudClient } from "@voyantjs/cloud-sdk"
 import { authUser, type SelectApikey, userProfilesTable } from "@voyantjs/db/schema/iam"
 import type { VoyantDb, VoyantRequestAuthContext } from "@voyantjs/hono"
 import { eq, sql } from "drizzle-orm"
 import { type Context, Hono } from "hono"
 
 import { resolveEmailReplyTo } from "../../lib/notifications"
+import { tryGetCloudClient } from "../../lib/voyant-cloud"
 import { dbFromEnvForApp } from "../lib/db"
 
 // Type ctx so that `c.get("db")` resolves to the parent app's middleware-
@@ -198,7 +198,7 @@ function useBrowserEvidenceAuthFallback(env: CloudflareBindings, request: Reques
  * cached either.
  */
 function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEnvForApp>["db"]) {
-  const cloud = tryGetVoyantCloudClient(env as unknown as Record<string, unknown>)
+  const cloud = tryGetCloudClient(env)
   const emailFrom = env.EMAIL_FROM || "Voyant <noreply@voyantcloud.app>"
   const emailReplyTo = resolveEmailReplyTo(env)
   const cloudAuthExchange = isVoyantCloudAuthMode(env) ? getCloudAuthExchangeConfig(env) : null
@@ -228,7 +228,7 @@ function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEn
       : undefined,
     sendResetPassword: async ({ user, url }) => {
       if (!cloud) {
-        console.info(`[auth] reset-password (no VOYANT_CLOUD_API_KEY) → ${user.email}: ${url}`)
+        console.info(`[auth] reset-password (no VOYANT_API_KEY) → ${user.email}: ${url}`)
         return
       }
       await cloud.email.sendMessage({
@@ -241,9 +241,7 @@ function buildBetterAuth(env: CloudflareBindings, db: ReturnType<typeof dbFromEn
     },
     sendVerificationOTP: async ({ email, otp, type }) => {
       if (!cloud) {
-        console.info(
-          `[auth] verification-otp (no VOYANT_CLOUD_API_KEY) [${type}] → ${email}: ${otp}`,
-        )
+        console.info(`[auth] verification-otp (no VOYANT_API_KEY) [${type}] → ${email}: ${otp}`)
         return
       }
       await cloud.email.sendMessage({

@@ -13,7 +13,6 @@
  *     Better Auth session via signInEmail and forward the cookie.
  */
 
-import { tryGetVoyantCloudClient } from "@voyantjs/cloud-sdk"
 import { newId } from "@voyantjs/db/lib/typeid"
 import {
   authAccount,
@@ -28,6 +27,7 @@ import { Hono } from "hono"
 import { z } from "zod"
 
 import { resolveEmailReplyTo } from "../lib/notifications"
+import { tryGetCloudClient } from "../lib/voyant-cloud"
 import { withDbFromEnv } from "./lib/db"
 
 type InvitationsBindings = CloudflareBindings
@@ -164,7 +164,7 @@ export function createInvitationsRoutes() {
     // Best-effort email. If Voyant Cloud isn't configured (no key), we return
     // the link so the admin can hand-deliver it (useful in dev).
     let emailSent = false
-    const cloud = tryGetVoyantCloudClient(c.env as unknown as Record<string, unknown>)
+    const cloud = tryGetCloudClient(c.env)
     if (cloud) {
       try {
         const from = c.env.EMAIL_FROM || "Voyant <noreply@voyantcloud.app>"

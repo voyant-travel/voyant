@@ -150,6 +150,105 @@ describe("createCatalogEnrichmentFetchers", () => {
     })
   })
 
+  test("deduplicates repeated cruise itinerary templates from multiple sailings", async () => {
+    const cruisePayload = {
+      data: {
+        content: {
+          cruise: {
+            id: "cruise_1",
+            name: "Portraits of Eastern Europe",
+            description: "Long cruise description",
+            hero_image_url: "https://example.com/cruise.jpg",
+            cruise_line: "Uniworld",
+          },
+          ship: null,
+          sailings: [
+            {
+              id: "sailing_1",
+              start_date: "2026-07-03",
+              end_date: "2026-07-21",
+              status: "open",
+              lowestPriceCached: "5039.00",
+              lowestPriceCachedCurrency: "USD",
+              itinerary_stops: [
+                {
+                  day_number: 1,
+                  date: "2026-07-03",
+                  port_name: "Prague",
+                  description: "Arrive in Prague.",
+                  is_at_sea: false,
+                },
+              ],
+            },
+          ],
+          cabin_categories: [],
+          itinerary_stops: [
+            {
+              day_number: 1,
+              date: "2026-07-03",
+              port_name: "Prague",
+              description: "Arrive in Prague.",
+              is_at_sea: false,
+            },
+            {
+              day_number: 2,
+              date: "2026-07-04",
+              port_name: "Prague",
+              description: "Explore Prague.",
+              is_at_sea: false,
+            },
+            {
+              day_number: 1,
+              date: "2027-04-09",
+              port_name: "Prague",
+              description: "Arrive in Prague.",
+              is_at_sea: false,
+            },
+          ],
+          policies: [],
+        },
+        served_locale: "en",
+        match_kind: "exact" as const,
+        source: "sourced-fresh" as const,
+        served_stale: false,
+        synthesized: false,
+        machine_translated: false,
+      },
+    }
+    const fetchImpl = vi.fn<typeof globalThis.fetch>(async () => ok(cruisePayload))
+    const fetchers = createCatalogEnrichmentFetchers({
+      baseUrl: "/api",
+      fetch: fetchImpl,
+    })
+
+    const result = await fetchers.loadCruiseDetail?.(hit("cruise:217_52-until-2026:en"))
+
+    expect(result?.itinerary).toEqual([
+      {
+        dayNumber: 1,
+        title: "Prague",
+        description: "Arrive in Prague.",
+        location: "Prague",
+      },
+      {
+        dayNumber: 2,
+        title: "Prague",
+        description: "Explore Prague.",
+        location: "Prague",
+      },
+    ])
+    expect(result?.departures?.[0]?.itinerary).toEqual([
+      {
+        dayNumber: 1,
+        title: "Prague",
+        description: "Arrive in Prague.",
+        location: "Prague",
+      },
+    ])
+    expect(result?.departures?.[0]?.lowestPriceCents).toBe(503900)
+    expect(result?.departures?.[0]?.currency).toBe("USD")
+  })
+
   test("merges slot-availability data over the content departures", async () => {
     const fetchImpl = vi.fn<typeof globalThis.fetch>(async () => ok(samplePayload))
     const fetchers = createCatalogEnrichmentFetchers({

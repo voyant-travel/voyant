@@ -44,7 +44,7 @@
     "@voyantjs/bookings-react": "workspace:*",
     "@voyantjs/bookings-ui": "workspace:*",
     "@voyantjs/checkout": "workspace:*",
-    "@voyantjs/cloud-sdk": "^0.6.2",
+    "@voyantjs/cloud-sdk": "^0.8.0",
     "@voyantjs/core": "workspace:*",
     "@voyantjs/crm": "workspace:*",
     "@voyantjs/crm-react": "workspace:*",

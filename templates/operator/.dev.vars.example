@@ -32,12 +32,12 @@ INTERNAL_API_KEY="<generate with: openssl rand -hex 32>"
 API_BASE_URL="http://localhost:3100/api"
 CORS_ALLOWLIST="http://localhost:3100"
 
-# Voyant Cloud (canonical email / sms / verify / vault provider).
+# Voyant API (canonical email / sms / verify / vault / connect provider).
 # Required — templates do not fall back to direct Resend/Twilio.
 # Self-hosters who want a different transport can swap the provider in
 # src/lib/notifications.ts (see @voyantjs/notifications for the
 # NotificationProvider interface).
-VOYANT_CLOUD_API_KEY="vc_..."
+VOYANT_API_KEY="vc_..."
 # VOYANT_CLOUD_API_URL="https://api.voyantjs.com"
 # VOYANT_CLOUD_VAULT_SLUG="main"
 
@@ -58,7 +58,7 @@ KMS_LOCAL_KEY="<generate with: openssl rand -base64 32>"
 # KMS_PROVIDER=env: master key (base64-encoded 32 bytes).
 KMS_ENV_KEY="<generate with: openssl rand -base64 32>"
 
-# KMS_PROVIDER=voyant-cloud only: uses VOYANT_CLOUD_API_KEY,
+# KMS_PROVIDER=voyant-cloud only: uses VOYANT_API_KEY,
 # VOYANT_CLOUD_VAULT_SLUG, and optional VOYANT_CLOUD_API_URL above.
 
 # KMS_PROVIDER=aws only:
@@ -121,6 +121,14 @@ SMARTBILL_LANGUAGE="RO"
 # Postgres — orders persist there, not in this template's DB. Swap to a
 # real GDS connector by replacing the adapter in src/api/flights.ts.
 FLIGHTS_DEMO_API_URL="http://localhost:3320"
+
+# Voyant Connect catalog source adapter. Source sync discovers active
+# connections for the operator; quote/book/cancel dispatch uses the
+# source_connection_id stored on each synced catalog entry.
+# VOYANT_CONNECT_API_URL="https://api.voyantjs.com"
+# VOYANT_CONNECT_OPERATOR_ID="op_..."
+# VOYANT_CONNECT_MARKET="default"
+# VOYANT_CONNECT_SYNC_LIMIT="500"
 
 # Manual bank-transfer block rendered on the public payment landing page.
 # Both BENEFICIARY and IBAN must be set, otherwise the tab is hidden.

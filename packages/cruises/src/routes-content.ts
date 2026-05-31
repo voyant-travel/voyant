@@ -87,10 +87,16 @@ export function createCruiseContentRoutes(
     const scope = parseScope(c)
     const registry = options.resolveRegistry(c)
 
-    const result = await getCruiseContent(c.var.db, entityId, scope, {
+    let result = await getCruiseContent(c.var.db, entityId, scope, {
       registry,
       onOverlayError: options.onOverlayError,
     })
+    if (!result && entityId !== rawKey) {
+      result = await getCruiseContent(c.var.db, rawKey, scope, {
+        registry,
+        onOverlayError: options.onOverlayError,
+      })
+    }
 
     if (!result) {
       return c.json(

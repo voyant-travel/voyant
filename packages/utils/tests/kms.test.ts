@@ -187,7 +187,7 @@ describe("kmsConfigFromEnv", () => {
   it("returns voyant-cloud config with all required vars set", () => {
     const config = kmsConfigFromEnv({
       KMS_PROVIDER: "voyant-cloud",
-      VOYANT_CLOUD_API_KEY: "vc_test",
+      VOYANT_API_KEY: "vc_test",
       VOYANT_CLOUD_VAULT_SLUG: "main-vault",
       VOYANT_CLOUD_API_URL: "https://cloud.test/",
     })
@@ -198,6 +198,22 @@ describe("kmsConfigFromEnv", () => {
         apiKey: "vc_test",
         vaultSlug: "main-vault",
         apiUrl: "https://cloud.test/",
+      },
+    })
+  })
+
+  it("accepts the legacy Voyant Cloud API key env var", () => {
+    const config = kmsConfigFromEnv({
+      KMS_PROVIDER: "voyant-cloud",
+      VOYANT_CLOUD_API_KEY: "vc_legacy",
+      VOYANT_CLOUD_VAULT_SLUG: "main-vault",
+    })
+
+    expect(config).toMatchObject({
+      provider: "voyant-cloud",
+      voyantCloud: {
+        apiKey: "vc_legacy",
+        vaultSlug: "main-vault",
       },
     })
   })
@@ -216,7 +232,7 @@ describe("kmsConfigFromEnv", () => {
 
   it("throws listing missing Voyant Cloud vars when KMS_PROVIDER=voyant-cloud but vars are absent", () => {
     expect(() => kmsConfigFromEnv({ KMS_PROVIDER: "voyant-cloud" })).toThrow(
-      /VOYANT_CLOUD_API_KEY.*VOYANT_CLOUD_VAULT_SLUG/,
+      /VOYANT_API_KEY.*VOYANT_CLOUD_VAULT_SLUG/,
     )
   })
 
@@ -276,7 +292,7 @@ describe("createKmsProviderFromEnv", () => {
   it("builds a Voyant Cloud provider from env-like input", () => {
     const provider = createKmsProviderFromEnv({
       KMS_PROVIDER: "voyant-cloud",
-      VOYANT_CLOUD_API_KEY: "vc_test",
+      VOYANT_API_KEY: "vc_test",
       VOYANT_CLOUD_VAULT_SLUG: "main-vault",
     })
 
