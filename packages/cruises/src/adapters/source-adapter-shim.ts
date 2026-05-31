@@ -345,6 +345,10 @@ function cruiseCabinCategoryFrom(
     capacity_min: cat.minOccupancy,
     capacity_max: cat.maxOccupancy,
     inclusions: cat.amenities ?? [],
+    feature_codes: cat.featureCodes ?? [],
+    bed_configurations: cat.bedConfigurations ?? [],
+    accessibility_features: cat.accessibilityFeatures ?? [],
+    view_type: cat.viewType ?? null,
   }
 }
 

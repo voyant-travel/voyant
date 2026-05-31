@@ -11,6 +11,11 @@
  * implementation instead. See docs/architecture/cruises-module.md §10.
  */
 
+import type {
+  CabinAccessibilityFeature,
+  CabinBedConfiguration,
+  CabinViewType,
+} from "../cabin-features.js"
 import type { Quote, QuoteBookingTerms, QuoteComponent } from "../service-pricing.js"
 
 // ---------- pointers + provenance ----------
@@ -125,6 +130,10 @@ export type ExternalCabinCategory = {
   squareFeet?: string | null
   wheelchairAccessible?: boolean
   amenities?: string[]
+  featureCodes?: string[]
+  bedConfigurations?: CabinBedConfiguration[]
+  accessibilityFeatures?: CabinAccessibilityFeature[]
+  viewType?: CabinViewType | null
   images?: string[]
   floorplanImages?: string[]
   gradeCodes?: string[]

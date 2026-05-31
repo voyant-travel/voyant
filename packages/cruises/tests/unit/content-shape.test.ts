@@ -33,8 +33,16 @@ const baseContent: CruiseContent = cruiseContentSchema.parse({
     },
   ],
   cabin_categories: [
-    { id: "cab_inside", name: "Inside", type: "inside" },
-    { id: "cab_balcony", name: "Balcony", type: "balcony" },
+    { id: "cab_inside", name: "Inside", type: "inside", view_type: "interior" },
+    {
+      id: "cab_balcony",
+      name: "Balcony",
+      type: "balcony",
+      feature_codes: ["minibar"],
+      bed_configurations: ["king", "convertible_twins"],
+      accessibility_features: ["step_free_access"],
+      view_type: "balcony",
+    },
   ],
   itinerary_stops: [
     { day_number: 1, port_name: "Athens", date: "2026-06-01" },
@@ -60,6 +68,14 @@ describe("validateCruiseContent", () => {
 
   it("accepts a full valid payload", () => {
     expect(validateCruiseContent(baseContent).valid).toBe(true)
+  })
+
+  it("accepts structured cabin feature facets", () => {
+    const parsed = cruiseContentSchema.parse(baseContent)
+    expect(parsed.cabin_categories[1]?.feature_codes).toEqual(["minibar"])
+    expect(parsed.cabin_categories[1]?.bed_configurations).toEqual(["king", "convertible_twins"])
+    expect(parsed.cabin_categories[1]?.accessibility_features).toEqual(["step_free_access"])
+    expect(parsed.cabin_categories[1]?.view_type).toBe("balcony")
   })
 
   it("accepts per-sailing price summaries as integer minor units", () => {

@@ -352,7 +352,11 @@ Cabins are modeled in two layers: **categories** (the archetype) and optionally 
 | `maxOccupancy` | smallint not null | |
 | `squareFeet` | numeric(8,2) | |
 | `wheelchairAccessible` | boolean default false | |
-| `amenities` | jsonb (text[]) | |
+| `amenities` | jsonb (text[]) | display labels from the line/operator; not used for machine filtering |
+| `featureCodes` | jsonb (text[]) | normalized machine-filterable cabin features |
+| `bedConfigurations` | jsonb (text[]) | normalized bed setup codes, e.g. `king`, `convertible_twins`, `pullman` |
+| `accessibilityFeatures` | jsonb (text[]) | normalized accessibility capability codes beyond the legacy boolean |
+| `viewType` | text | normalized view facet, e.g. `balcony`, `river_view`, `obstructed` |
 | `images` | jsonb (text[]) | |
 | `floorplanImages` | jsonb (text[]) | |
 | `gradeCodes` | jsonb (text[]) | additional codes that map to this category — many lines have several codes for the same physical cabin type |

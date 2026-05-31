@@ -12,7 +12,9 @@
     "./booking-extension": "./src/booking-extension.ts",
     "./adapters": "./src/adapters/index.ts",
     "./catalog-policy": "./src/catalog-policy.ts",
+    "./catalog-policy-cabins": "./src/catalog-policy-cabins.ts",
     "./service-catalog-plane": "./src/service-catalog-plane.ts",
+    "./service-catalog-plane-cabins": "./src/service-catalog-plane-cabins.ts",
     "./content-shape": "./src/content-shape.ts",
     "./service-content": "./src/service-content.ts",
     "./service-external-refresh": "./src/service-external-refresh.ts",
@@ -92,10 +94,20 @@
         "import": "./dist/catalog-policy.js",
         "default": "./dist/catalog-policy.js"
       },
+      "./catalog-policy-cabins": {
+        "types": "./dist/catalog-policy-cabins.d.ts",
+        "import": "./dist/catalog-policy-cabins.js",
+        "default": "./dist/catalog-policy-cabins.js"
+      },
       "./service-catalog-plane": {
         "types": "./dist/service-catalog-plane.d.ts",
         "import": "./dist/service-catalog-plane.js",
         "default": "./dist/service-catalog-plane.js"
+      },
+      "./service-catalog-plane-cabins": {
+        "types": "./dist/service-catalog-plane-cabins.d.ts",
+        "import": "./dist/service-catalog-plane-cabins.js",
+        "default": "./dist/service-catalog-plane-cabins.js"
       },
       "./content-shape": {
         "types": "./dist/content-shape.d.ts",

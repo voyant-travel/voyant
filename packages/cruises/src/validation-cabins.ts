@@ -1,10 +1,22 @@
 import {
+  CABIN_ACCESSIBILITY_FEATURES,
+  CABIN_BED_CONFIGURATIONS,
+  CABIN_VIEW_TYPES,
+  type CabinAccessibilityFeature,
+  type CabinBedConfiguration,
+  type CabinViewType,
+} from "./cabin-features.js"
+import {
   cabinRoomTypeSchema,
   externalRefsSchema,
   shipTypeSchema,
   slugSchema,
   z,
 } from "./validation-shared.js"
+
+export const cabinBedConfigurationSchema = z.enum(CABIN_BED_CONFIGURATIONS)
+export const cabinAccessibilityFeatureSchema = z.enum(CABIN_ACCESSIBILITY_FEATURES)
+export const cabinViewTypeSchema = z.enum(CABIN_VIEW_TYPES)
 
 const shipCoreSchema = z.object({
   lineSupplierId: z.string().optional().nullable(),
@@ -68,6 +80,10 @@ const cabinCategoryCoreSchema = z.object({
   squareFeet: z.string().optional().nullable(),
   wheelchairAccessible: z.boolean().default(false),
   amenities: z.array(z.string()).default([]),
+  featureCodes: z.array(z.string()).default([]),
+  bedConfigurations: z.array(cabinBedConfigurationSchema).default([]),
+  accessibilityFeatures: z.array(cabinAccessibilityFeatureSchema).default([]),
+  viewType: cabinViewTypeSchema.optional().nullable(),
   images: z.array(z.string()).default([]),
   floorplanImages: z.array(z.string()).default([]),
   gradeCodes: z.array(z.string()).default([]),
@@ -82,6 +98,7 @@ export const updateCabinCategorySchema = cabinCategoryCoreSchema.partial()
 
 export type InsertCabinCategory = z.infer<typeof insertCabinCategorySchema>
 export type UpdateCabinCategory = z.infer<typeof updateCabinCategorySchema>
+export type { CabinAccessibilityFeature, CabinBedConfiguration, CabinViewType }
 
 const cabinCoreSchema = z.object({
   categoryId: z.string(),

@@ -14,6 +14,7 @@ import {
   createFieldPolicyRegistry,
   type DocumentBuilder,
   type DocumentEmitter,
+  type FieldPolicy,
   type FieldPolicyRegistry,
   type IndexerDocument,
   type IndexerSlice,
@@ -35,6 +36,26 @@ function getCruisesRegistry(): FieldPolicyRegistry {
     _registry = createFieldPolicyRegistry(cruiseCatalogPolicy)
   }
   return _registry
+}
+
+export interface CruiseProjectionExtension {
+  readonly name: string
+  project(
+    db: AnyDrizzleDb,
+    cruiseId: string,
+    slice: IndexerSlice,
+  ): Promise<ReadonlyMap<string, unknown>>
+}
+
+export function createCruisesRegistry(
+  ...extensionPolicies: ReadonlyArray<ReadonlyArray<FieldPolicy>>
+): FieldPolicyRegistry {
+  if (extensionPolicies.length === 0) return getCruisesRegistry()
+  const composed: FieldPolicy[] = [...cruiseCatalogPolicy]
+  for (const policies of extensionPolicies) {
+    composed.push(...policies)
+  }
+  return createFieldPolicyRegistry(composed)
 }
 
 /**
@@ -186,8 +207,9 @@ export function createCruiseDocumentEmitter(context: {
   sellerOperatorId: string
   sourceKind?: string
   sourceRef?: string
+  registry?: FieldPolicyRegistry
 }): DocumentEmitter<typeof cruises.$inferSelect> {
-  const registry = getCruisesRegistry()
+  const registry = context.registry ?? getCruisesRegistry()
   return {
     vertical: "cruises",
     emit(source, slice) {
@@ -203,14 +225,38 @@ export function createCruiseDocumentEmitter(context: {
 
 export function createCruiseDocumentBuilder(
   db: AnyDrizzleDb,
-  context: { sellerOperatorId: string; sourceKind?: string; sourceRef?: string },
+  context: {
+    sellerOperatorId: string
+    sourceKind?: string
+    sourceRef?: string
+    extensions?: ReadonlyArray<CruiseProjectionExtension>
+    registry?: FieldPolicyRegistry
+  },
 ): DocumentBuilder {
-  const emitter = createCruiseDocumentEmitter(context)
+  const registry = context.registry ?? getCruisesRegistry()
+  const extensions = context.extensions ?? []
+  const emitter = createCruiseDocumentEmitter({ ...context, registry })
   return async (entityId: string, slice: IndexerSlice): Promise<IndexerDocument | null> => {
     const rows = await db.select().from(cruises).where(eq(cruises.id, entityId)).limit(1)
     const row = rows[0]
     if (!row) return null
-    return emitter.emit(row, slice)
+    if (extensions.length === 0) return emitter.emit(row, slice)
+
+    const baseProjection = cruiseRowToProjection(row, {
+      sellerOperatorId: context.sellerOperatorId,
+      sourceKind: context.sourceKind,
+      sourceRef: context.sourceRef,
+    })
+    const extensionProjections = await Promise.all(
+      extensions.map((ext) => ext.project(db, entityId, slice)),
+    )
+    const merged = new Map<string, unknown>(baseProjection)
+    for (const projection of extensionProjections) {
+      for (const [path, value] of projection) {
+        merged.set(path, value)
+      }
+    }
+    return buildIndexerDocument(registry, merged, slice, entityId)
   }
 }
 

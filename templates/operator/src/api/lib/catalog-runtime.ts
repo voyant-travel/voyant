@@ -23,7 +23,12 @@ import {
 } from "@voyantjs/catalog"
 import { createGeminiEmbeddingProvider, type EmbeddingProvider } from "@voyantjs/catalog-rag"
 import { charterCatalogPolicy } from "@voyantjs/charters/catalog-policy"
-import { cruiseCatalogPolicy } from "@voyantjs/cruises/catalog-policy"
+import { cruiseCabinFacetsCatalogPolicy } from "@voyantjs/cruises/catalog-policy-cabins"
+import {
+  createCruiseDocumentBuilder,
+  createCruisesRegistry,
+} from "@voyantjs/cruises/service-catalog-plane"
+import { createCruiseCabinFacetProjectionExtension } from "@voyantjs/cruises/service-catalog-plane-cabins"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { extrasCatalogPolicy } from "@voyantjs/extras/catalog-policy"
 import { marketLocales, markets } from "@voyantjs/markets"
@@ -328,7 +333,7 @@ export function getFieldPolicyRegistries(): Map<string, FieldPolicyRegistry> {
         ]),
       ],
       ["extras", createFieldPolicyRegistry(extrasCatalogPolicy)],
-      ["cruises", createFieldPolicyRegistry(cruiseCatalogPolicy)],
+      ["cruises", createCruisesRegistry(cruiseCabinFacetsCatalogPolicy)],
       ["charters", createFieldPolicyRegistry(charterCatalogPolicy)],
       ["accommodations", createFieldPolicyRegistry(accommodationCatalogPolicy)],
     ])
@@ -362,6 +367,23 @@ export function createProductsDocumentBuilder(
       createProductPricingProjectionExtension(),
       createProductPromotionsProjectionExtension({ loadOriginalPrice: loadProductPriceFrom }),
     ],
+  })
+}
+
+/**
+ * Build the cruises `DocumentBuilder` with cabin/deck facets wired in.
+ * The registry and projection extension are paired: the registry admits
+ * the denormalized cabin/deck fields, and the extension supplies them.
+ */
+export function createCruisesDocumentBuilder(
+  db: AnyDrizzleDb,
+  context: { sellerOperatorId: string },
+): DocumentBuilder {
+  const registry = getFieldPolicyRegistries().get("cruises")
+  return createCruiseDocumentBuilder(db, {
+    sellerOperatorId: context.sellerOperatorId,
+    registry,
+    extensions: [createCruiseCabinFacetProjectionExtension()],
   })
 }
 
