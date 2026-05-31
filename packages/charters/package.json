@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@voyantjs/bookings": "workspace:*",
+    "@voyantjs/charters-contracts": "workspace:*",
     "@voyantjs/core": "workspace:*",
     "@voyantjs/db": "workspace:*",
     "@voyantjs/hono": "workspace:*",

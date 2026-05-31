@@ -42,6 +42,7 @@
     "@voyantjs/core": "workspace:*",
     "@voyantjs/db": "workspace:*",
     "@voyantjs/hono": "workspace:*",
+    "@voyantjs/products-contracts": "workspace:*",
     "@voyantjs/utils": "workspace:*",
     "@voyantjs/catalog": "workspace:*",
     "@voyantjs/storage": "workspace:*",
