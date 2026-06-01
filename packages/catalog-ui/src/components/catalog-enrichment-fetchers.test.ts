@@ -251,7 +251,12 @@ describe("createCatalogEnrichmentFetchers", () => {
       highlights: ["Aegean"],
       heroImageUrl: "https://example.com/cruise.jpg",
       supplier: "Sample Line",
-      itinerary: [],
+      // Cruise-level itinerary is empty for sourced cruises, so the Itinerary
+      // tab falls back to the first sailing's stops.
+      itinerary: [
+        { dayNumber: 1, title: "Athens", location: "Athens", date: "2026-06-01" },
+        { dayNumber: 2, title: "Mykonos", location: "Mykonos", date: "2026-06-02" },
+      ],
       options: [{ id: "cab_1", name: "BA - Balcony", code: "BA", type: "balcony" }],
       policies: [{ kind: "cancellation", body: "Free up to 60 days." }],
       source: "sourced-fresh",
@@ -285,6 +290,47 @@ describe("createCatalogEnrichmentFetchers", () => {
         },
       ],
     })
+  })
+
+  test("sanitizes cruise cabin names (strips HTML, dedupes name===code grades)", async () => {
+    const fetchImpl = vi.fn<typeof globalThis.fetch>(async () =>
+      ok({
+        data: {
+          content: {
+            cruise: { id: "crus_1", name: "X", description: "", highlights: [], cruise_line: "L" },
+            sailings: [],
+            cabin_categories: [
+              {
+                id: "c1",
+                code: "DV1",
+                name: "<p>Deluxe Veranda Stateroom (DV)</p>",
+                type: "balcony",
+              },
+              { id: "c2", code: "DV2", name: "DV2", type: "balcony" },
+            ],
+            policies: [],
+          },
+          served_locale: "en-GB",
+          match_kind: "exact",
+          source: "sourced-fresh",
+          served_stale: false,
+          synthesized: false,
+          machine_translated: false,
+        },
+      }),
+    )
+    const fetchers = createCatalogEnrichmentFetchers({ baseUrl: "/api", fetch: fetchImpl })
+    const result = await fetchers.loadProductDetail(hit("crus_1"))
+    expect(result?.options).toEqual([
+      {
+        id: "c1",
+        name: "DV1 - Deluxe Veranda Stateroom (DV)",
+        description: null,
+        code: "DV1",
+        type: "balcony",
+      },
+      { id: "c2", name: "DV2", description: null, code: "DV2", type: "balcony" },
+    ])
   })
 
   test("merges slot-availability data over the content departures", async () => {

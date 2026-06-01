@@ -27,6 +27,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  Copy,
   ExternalLink,
   Loader2,
   Minus,
@@ -44,6 +45,7 @@ import {
 } from "react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 import type { CatalogUiMessages } from "../i18n/messages.js"
+import type { CatalogDeparturePricingRow } from "./catalog-enrichment-fetchers.js"
 
 export interface CatalogDetailAction {
   label: string
@@ -151,6 +153,12 @@ export interface CatalogDetailSheetProps {
   actions?: CatalogDetailAction[]
   imageField?: string
   /**
+   * The catalog vertical this sheet renders. Used for per-vertical labels —
+   * e.g. cruises label the "Options" tab "Cabins" since the options are cabin
+   * categories.
+   */
+  vertical?: string
+  /**
    * Sheet max-width token or class name. Defaults to `5xl` so rich catalog
    * details can use two columns on wide operator screens.
    */
@@ -164,6 +172,15 @@ export interface CatalogDetailSheetProps {
    * shows the indexed-projection fallback.
    */
   onLoadDetail?: (hit: CatalogSearchHit) => Promise<CatalogDetailEnrichment | null>
+  /**
+   * Called lazily when a departure (cruise sailing) row expands, to fetch live
+   * per-cabin pricing + availability. Returns `null` when unavailable. The
+   * caller binds the vertical; the sheet passes the cruise hit + sailing ref.
+   */
+  onLoadDeparturePricing?: (
+    hit: CatalogSearchHit,
+    sailingRef: string,
+  ) => Promise<CatalogDeparturePricingRow[] | null>
   /**
    * Called when the operator clicks a per-departure Book button. When
    * omitted, departures render without a book affordance — the
@@ -281,8 +298,10 @@ export function CatalogDetailSheet({
   actions,
   imageField = "thumbnailUrl",
   width = "5xl",
+  vertical,
   headerExtras,
   onLoadDetail,
+  onLoadDeparturePricing,
   onBookDeparture,
   onBookOption,
   renderBrochure,
@@ -294,6 +313,8 @@ export function CatalogDetailSheet({
 }: CatalogDetailSheetProps) {
   const catalogMessages = useCatalogUiMessagesOrDefault().catalogPage
   const messages = catalogMessages.detail
+  // Cruises sell cabin categories, not generic options — label the tab "Cabins".
+  const optionsLabel = vertical === "cruises" ? messages.cabins : messages.options
   const open = hit != null
   const fields = hit?.document.fields ?? {}
   const name = stringOr(fields.name, catalogMessages.fallbacks.detailName)
@@ -426,11 +447,7 @@ export function CatalogDetailSheet({
                         {status}
                       </Badge>
                     )}
-                    {hit?.id && (
-                      <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-                        {hit.id}
-                      </code>
-                    )}
+                    {hit?.id && <IdChip id={hit.id} />}
                     {enrichment?.servedLocale && (
                       <Badge variant="outline" className="font-normal">
                         {enrichment.servedLocale}
@@ -495,7 +512,7 @@ export function CatalogDetailSheet({
                     {hasItinerary && (
                       <TabsTrigger value="itinerary">{messages.itinerary}</TabsTrigger>
                     )}
-                    {hasOptions && <TabsTrigger value="options">{messages.options}</TabsTrigger>}
+                    {hasOptions && <TabsTrigger value="options">{optionsLabel}</TabsTrigger>}
                     {hasDepartures && (
                       <TabsTrigger value="departures">{messages.departures}</TabsTrigger>
                     )}
@@ -608,6 +625,7 @@ export function CatalogDetailSheet({
                         hit={hit}
                         departures={enrichment!.departures!}
                         options={enrichment?.options ?? []}
+                        onLoadDeparturePricing={onLoadDeparturePricing}
                         productSellAmountCents={
                           typeof fields.sellAmountCents === "number"
                             ? fields.sellAmountCents
@@ -855,6 +873,7 @@ function DeparturesTable({
   productSellCurrency,
   onBookDeparture,
   onBookOption,
+  onLoadDeparturePricing,
   messages,
 }: {
   hit: CatalogSearchHit | null
@@ -864,6 +883,10 @@ function DeparturesTable({
   productSellCurrency: string | null
   onBookDeparture?: (hit: CatalogSearchHit, departure: DepartureEntry) => void
   onBookOption?: (hit: CatalogSearchHit, departure: DepartureEntry, option: DepartureOption) => void
+  onLoadDeparturePricing?: (
+    hit: CatalogSearchHit,
+    sailingRef: string,
+  ) => Promise<CatalogDeparturePricingRow[] | null>
   messages: CatalogUiMessages["catalogPage"]["detail"]
 }) {
   const tableMessages = messages.departuresTable
@@ -1110,6 +1133,7 @@ function DeparturesTable({
                             productSellCurrency={productSellCurrency}
                             onBookDeparture={onBookDeparture}
                             onBookOption={onBookOption}
+                            onLoadDeparturePricing={onLoadDeparturePricing}
                             messages={messages}
                           />
                         </td>
@@ -1194,6 +1218,7 @@ function DepartureDetailPanel({
   productSellCurrency,
   onBookDeparture,
   onBookOption,
+  onLoadDeparturePricing,
   messages,
 }: {
   hit: CatalogSearchHit | null
@@ -1203,12 +1228,52 @@ function DepartureDetailPanel({
   productSellCurrency: string | null
   onBookDeparture?: (hit: CatalogSearchHit, departure: DepartureEntry) => void
   onBookOption?: (hit: CatalogSearchHit, departure: DepartureEntry, option: DepartureOption) => void
+  onLoadDeparturePricing?: (
+    hit: CatalogSearchHit,
+    sailingRef: string,
+  ) => Promise<CatalogDeparturePricingRow[] | null>
   messages: CatalogUiMessages["catalogPage"]["detail"]
 }) {
   const tableMessages = messages.departuresTable
   const currency = departure.currency ?? productSellCurrency ?? undefined
   const departurePriceCents = departure.lowestPriceCents ?? productSellAmountCents
   const departureRemaining = typeof departure.remaining === "number" ? departure.remaining : null
+
+  // Live per-cabin pricing (cruises). This panel only mounts when its departure
+  // row is expanded, so fetch lazily here — pricing is volatile-live, never
+  // baked into the cached content.
+  const [livePricing, setLivePricing] = useState<CatalogDeparturePricingRow[] | null>(null)
+  const sailingRef = departure.sourceRef ?? null
+  useEffect(() => {
+    if (!hit || !onLoadDeparturePricing || !sailingRef) return
+    let cancelled = false
+    onLoadDeparturePricing(hit, sailingRef).then(
+      (rows) => {
+        if (!cancelled) setLivePricing(rows)
+      },
+      () => undefined,
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [hit, onLoadDeparturePricing, sailingRef])
+
+  // Index the cheapest live price per cabin code. The upstream cabin ref is
+  // `<shipId>_<code>`, so the code is the trailing segment — matched against the
+  // option's `code`.
+  const livePriceByCode = useMemo(() => {
+    const byCode = new Map<string, { cents: number; currency: string; availability: string }>()
+    for (const row of livePricing ?? []) {
+      const code = row.cabinExternalId.slice(row.cabinExternalId.lastIndexOf("_") + 1)
+      const cents = Math.round(Number(row.pricePerPerson) * 100)
+      if (!Number.isFinite(cents)) continue
+      const existing = byCode.get(code)
+      if (!existing || cents < existing.cents) {
+        byCode.set(code, { cents, currency: row.currency, availability: row.availability })
+      }
+    }
+    return byCode
+  }, [livePricing])
 
   const handleBook = (option: DepartureOption) => {
     if (!hit) return
@@ -1233,6 +1298,7 @@ function DepartureDetailPanel({
               isDepartureBookable(departure) &&
               hit != null &&
               (onBookOption != null || onBookDeparture != null)
+            const livePrice = option.code ? livePriceByCode.get(option.code) : undefined
             return (
               <li
                 key={option.id}
@@ -1245,23 +1311,41 @@ function DepartureDetailPanel({
                   )}
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="text-right text-xs text-muted-foreground">
-                    {departureRemaining != null ? (
-                      <span className="tabular-nums">
-                        <span className="font-medium text-foreground">{departureRemaining}</span>{" "}
-                        {tableMessages.remainingLabel}
+                  {livePrice ? (
+                    <>
+                      <span className="text-right text-xs capitalize text-muted-foreground">
+                        {livePrice.availability.replace(/_/g, " ")}
                       </span>
-                    ) : (
-                      "—"
-                    )}
-                  </div>
-                  {departurePriceCents != null && (
-                    <div className="text-right text-xs text-muted-foreground">
-                      {tableMessages.priceFrom}{" "}
-                      <span className="font-medium text-foreground tabular-nums">
-                        {formatPriceCents(departurePriceCents, currency)}
-                      </span>
-                    </div>
+                      <div className="text-right text-xs text-muted-foreground">
+                        {tableMessages.priceFrom}{" "}
+                        <span className="font-medium text-foreground tabular-nums">
+                          {formatPriceCents(livePrice.cents, livePrice.currency)}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-right text-xs text-muted-foreground">
+                        {departureRemaining != null ? (
+                          <span className="tabular-nums">
+                            <span className="font-medium text-foreground">
+                              {departureRemaining}
+                            </span>{" "}
+                            {tableMessages.remainingLabel}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </div>
+                      {departurePriceCents != null && (
+                        <div className="text-right text-xs text-muted-foreground">
+                          {tableMessages.priceFrom}{" "}
+                          <span className="font-medium text-foreground tabular-nums">
+                            {formatPriceCents(departurePriceCents, currency)}
+                          </span>
+                        </div>
+                      )}
+                    </>
                   )}
                   {canBook && (
                     <Button
@@ -1710,4 +1794,36 @@ function formatTemplate(template: string, values: Record<string, string | number
     const value = values[key]
     return value === undefined ? "" : String(value)
   })
+}
+
+/**
+ * Compact, copyable id chip. Sourced cruise ids embed the full upstream
+ * SourceRef (`crus_sr_<base64url>`) so they're long; truncate the display,
+ * keep the full id on hover (`title`), and copy it on click.
+ */
+function IdChip({ id }: { id: string }): ReactNode {
+  const [copied, setCopied] = useState(false)
+  return (
+    <button
+      type="button"
+      title={id}
+      onClick={() => {
+        void navigator.clipboard?.writeText(id).then(
+          () => {
+            setCopied(true)
+            setTimeout(() => setCopied(false), 1200)
+          },
+          () => undefined,
+        )
+      }}
+      className="inline-flex max-w-[14rem] items-center gap-1 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground transition-colors hover:text-foreground"
+    >
+      <span className="truncate">{id}</span>
+      {copied ? (
+        <Check className="h-3 w-3 shrink-0 text-emerald-500" />
+      ) : (
+        <Copy className="h-3 w-3 shrink-0 opacity-60" />
+      )}
+    </button>
+  )
 }

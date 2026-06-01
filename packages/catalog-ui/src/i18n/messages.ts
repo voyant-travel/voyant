@@ -127,6 +127,7 @@ export type CatalogUiMessages = {
       ends: string
       book: string
       options: string
+      cabins: string
       policies: string
       brochure: string
       media: string

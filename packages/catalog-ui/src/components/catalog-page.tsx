@@ -131,6 +131,13 @@ export function CatalogPage({
     resolvedLoadProductDetail
       ? (hit: CatalogSearchHit) => resolvedLoadProductDetail(hit, vertical)
       : undefined
+  // Lazy per-cabin pricing loader, bound per vertical (cruises only today).
+  const loadDeparturePricing = enrichmentFetchers?.loadDeparturePricing
+  const departurePricingLoaderFor = (vertical: string) =>
+    loadDeparturePricing
+      ? (hit: CatalogSearchHit, sailingRef: string) =>
+          loadDeparturePricing(hit, sailingRef, vertical)
+      : undefined
   const supplierFormatter = (value: unknown) =>
     typeof value === "string" ? formatSupplier(value) : String(value ?? "")
   const sourceKindFormatter = (value: unknown) =>
@@ -205,6 +212,7 @@ export function CatalogPage({
         "source.kind": sourceKindFormatter,
       },
       onLoadDetail: detailLoaderFor("cruises"),
+      onLoadDeparturePricing: departurePricingLoaderFor("cruises"),
     },
     {
       id: "charters",

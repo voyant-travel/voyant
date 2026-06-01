@@ -126,6 +126,7 @@ export const catalogUiEn = {
       ends: "ends {date}",
       book: "Book",
       options: "Options",
+      cabins: "Cabins",
       policies: "Policies & terms",
       brochure: "Brochure",
       media: "Media",

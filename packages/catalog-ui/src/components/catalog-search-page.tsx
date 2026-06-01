@@ -131,6 +131,8 @@ export interface CatalogSearchTab {
    * subtle "no extra detail" hint in the sheet).
    */
   onLoadDetail?: (hit: CatalogSearchHit) => Promise<CatalogDetailEnrichment | null>
+  /** Lazy per-cabin pricing loader for cruise departures (see detail sheet). */
+  onLoadDeparturePricing?: CatalogDetailSheetProps["onLoadDeparturePricing"]
   /**
    * Called when the operator clicks a per-departure Book button on a
    * catalog row. Templates typically navigate to the catalog booking
@@ -572,9 +574,11 @@ function CatalogTabPanel({
         formatters={tab.detailFormatters}
         actions={tab.detailActions}
         imageField={tab.imageField ?? "thumbnailUrl"}
+        vertical={tab.vertical}
         width={tab.detailSheetWidth ?? detailSheetWidth}
         headerExtras={tab.detailHeaderExtras ?? detailHeaderExtras}
         onLoadDetail={tab.onLoadDetail}
+        onLoadDeparturePricing={tab.onLoadDeparturePricing}
         onBookDeparture={tab.onBookDeparture}
         onBookOption={tab.onBookOption}
         renderBrochure={tab.renderDetailBrochure ?? renderDetailBrochure}

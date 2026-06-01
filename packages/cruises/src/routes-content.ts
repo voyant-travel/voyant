@@ -34,7 +34,11 @@ import {
   parseUnifiedKey,
   sourceRefFromExternalKeyRef,
 } from "./lib/key.js"
-import { type CruiseContentScope, getCruiseContent } from "./service-content.js"
+import {
+  type CruiseContentScope,
+  getCruiseContent,
+  getCruiseSailingPricing,
+} from "./service-content.js"
 
 export interface CruiseContentRoutesEnv {
   Variables: {
@@ -59,70 +63,102 @@ export interface CreateCruiseContentRoutesOptions {
 export function createCruiseContentRoutes(
   options: CreateCruiseContentRoutesOptions,
 ): Hono<CruiseContentRoutesEnv> {
-  return new Hono<CruiseContentRoutesEnv>().get("/:key/content", async (c) => {
-    const rawKey = c.req.param("key")
-    const parsed = parseUnifiedKey(rawKey)
+  return new Hono<CruiseContentRoutesEnv>()
+    .get("/:key/content", async (c) => {
+      const rawKey = c.req.param("key")
+      const parsed = parseUnifiedKey(rawKey)
 
-    if (parsed.kind === "invalid") {
-      return c.json(
-        {
-          error: "invalid_key",
-          detail: `Unrecognized cruise key: ${parsed.raw}`,
+      if (parsed.kind === "invalid") {
+        return c.json(
+          {
+            error: "invalid_key",
+            detail: `Unrecognized cruise key: ${parsed.raw}`,
+          },
+          400,
+        )
+      }
+
+      // A catalog sourced entity id (`crus_sr_<base64>`) is inherently sourced,
+      // so it dispatches regardless of `allowOwnedKeys`. Only plain owned TypeIDs
+      // (`crus_<base32>`) need the opt-in.
+      const isSourcedEntityId = parsed.kind === "local" && isEncodedSourceEntityId(parsed.id)
+      if (parsed.kind === "local" && !isSourcedEntityId && !options.allowOwnedKeys) {
+        return c.json(
+          {
+            error: "owned_not_supported",
+            detail:
+              "GET /:key/content serves sourced cruises only. Owned cruises use GET /:key. Set allowOwnedKeys: true on the route factory to opt into owned dispatch.",
+          },
+          404,
+        )
+      }
+
+      // For external keys we resolve through the catalog sourced-entry
+      // store via service-content. The cruise adapter must be registered
+      // against the catalog SourceAdapterRegistry (typically via
+      // cruiseAdapterToSourceAdapter) for this to find a row.
+      const entityId = parsed.kind === "local" ? parsed.id : entityIdFromExternal(parsed)
+      const scope = parseScope(c)
+      const registry = options.resolveRegistry(c)
+
+      const result = await getCruiseContent(c.var.db, entityId, scope, {
+        registry,
+        onOverlayError: options.onOverlayError,
+      })
+
+      if (!result) {
+        return c.json(
+          {
+            error: "not_found",
+            detail: `Cruise ${rawKey} (entity ${entityId}) has no sourced-content row. Either no adapter is registered for this provider, or discovery hasn't run yet.`,
+          },
+          404,
+        )
+      }
+
+      return c.json({
+        data: {
+          content: result.content,
+          served_locale: result.resolution.served_locale,
+          match_kind: result.resolution.match_kind,
+          source: result.source,
+          served_stale: result.served_stale,
+          synthesized: result.synthesized,
+          machine_translated: result.machine_translated,
         },
-        400,
-      )
-    }
-
-    // A catalog sourced entity id (`crus_sr_<base64>`) is inherently sourced,
-    // so it dispatches regardless of `allowOwnedKeys`. Only plain owned TypeIDs
-    // (`crus_<base32>`) need the opt-in.
-    const isSourcedEntityId = parsed.kind === "local" && isEncodedSourceEntityId(parsed.id)
-    if (parsed.kind === "local" && !isSourcedEntityId && !options.allowOwnedKeys) {
-      return c.json(
-        {
-          error: "owned_not_supported",
-          detail:
-            "GET /:key/content serves sourced cruises only. Owned cruises use GET /:key. Set allowOwnedKeys: true on the route factory to opt into owned dispatch.",
-        },
-        404,
-      )
-    }
-
-    // For external keys we resolve through the catalog sourced-entry
-    // store via service-content. The cruise adapter must be registered
-    // against the catalog SourceAdapterRegistry (typically via
-    // cruiseAdapterToSourceAdapter) for this to find a row.
-    const entityId = parsed.kind === "local" ? parsed.id : entityIdFromExternal(parsed)
-    const scope = parseScope(c)
-    const registry = options.resolveRegistry(c)
-
-    const result = await getCruiseContent(c.var.db, entityId, scope, {
-      registry,
-      onOverlayError: options.onOverlayError,
+      })
     })
-
-    if (!result) {
-      return c.json(
-        {
-          error: "not_found",
-          detail: `Cruise ${rawKey} (entity ${entityId}) has no sourced-content row. Either no adapter is registered for this provider, or discovery hasn't run yet.`,
-        },
-        404,
-      )
-    }
-
-    return c.json({
-      data: {
-        content: result.content,
-        served_locale: result.resolution.served_locale,
-        match_kind: result.resolution.match_kind,
-        source: result.source,
-        served_stale: result.served_stale,
-        synthesized: result.synthesized,
-        machine_translated: result.machine_translated,
-      },
+    .get("/:key/sailings/:sailingExternalId/pricing", async (c) => {
+      // Live per-sailing cabin pricing for the detail sheet's Departures tab.
+      // Fetched fresh from the adapter (price is volatile-live), not cached.
+      const rawKey = c.req.param("key")
+      const parsed = parseUnifiedKey(rawKey)
+      if (parsed.kind === "invalid") {
+        return c.json(
+          { error: "invalid_key", detail: `Unrecognized cruise key: ${parsed.raw}` },
+          400,
+        )
+      }
+      const isSourcedEntityId = parsed.kind === "local" && isEncodedSourceEntityId(parsed.id)
+      if (parsed.kind === "local" && !isSourcedEntityId && !options.allowOwnedKeys) {
+        return c.json({ error: "owned_not_supported", detail: "Sourced cruises only." }, 404)
+      }
+      const entityId = parsed.kind === "local" ? parsed.id : entityIdFromExternal(parsed)
+      const sailingExternalId = c.req.param("sailingExternalId")
+      const pricing = await getCruiseSailingPricing(c.var.db, entityId, sailingExternalId, {
+        registry: options.resolveRegistry(c),
+      })
+      if (pricing == null) {
+        return c.json(
+          {
+            error: "not_found",
+            detail: `No pricing for sailing ${sailingExternalId} on cruise ${rawKey} (no sourced row or adapter can't price sailings).`,
+          },
+          404,
+        )
+      }
+      return c.json({ data: { pricing } })
     })
-  })
 
   function parseScope(c: Context): CruiseContentScope {
     const localeParams = c.req.queries("locale") ?? c.req.queries("locales") ?? []

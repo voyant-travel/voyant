@@ -33,6 +33,29 @@ export interface CatalogEnrichmentFetchers {
     hit: CatalogSearchHit,
     vertical?: string,
   ) => Promise<CatalogDetailEnrichment | null>
+  /**
+   * Fetch live per-cabin pricing for one sailing (cruises). Called lazily when
+   * a departure row expands — pricing is volatile-live, so it's never cached in
+   * the detail enrichment. Returns `null` when unavailable (non-cruise vertical,
+   * no sailing ref, or the adapter can't price).
+   */
+  loadDeparturePricing: (
+    hit: CatalogSearchHit,
+    sailingRef: string,
+    vertical?: string,
+  ) => Promise<CatalogDeparturePricingRow[] | null>
+}
+
+/** One live per-cabin price row for a cruise sailing. */
+export interface CatalogDeparturePricingRow {
+  cabinExternalId: string
+  occupancy: number
+  fareCode: string | null
+  fareName: string | null
+  currency: string
+  /** Major-unit price string as the adapter returns it (e.g. "12959.00"). */
+  pricePerPerson: string
+  availability: string
 }
 
 export interface CatalogEnrichmentFetchersOptions {
@@ -201,20 +224,22 @@ export function createCatalogEnrichmentFetchers(
   const root = trimTrailingSlash(baseUrl)
   const defaultBasePath = ensureLeadingSlash(contentBasePath)
 
+  // Resolve the content mount for a vertical. Returns null when a per-vertical
+  // map is configured but this vertical has no entry (so callers skip the fetch
+  // rather than hitting the products route with a foreign id, which 404s).
+  const resolveBasePath = (vertical?: string): string | null => {
+    if (!contentBasePathByVertical) return defaultBasePath
+    if (!vertical) return null
+    const mapped = contentBasePathByVertical[vertical]
+    return mapped ? ensureLeadingSlash(mapped) : null
+  }
+
   const loadProductDetail = async (
     hit: CatalogSearchHit,
     vertical?: string,
   ): Promise<CatalogDetailEnrichment | null> => {
-    // Route to the vertical's content mount when configured. A vertical
-    // absent from the map has no content route, so skip the fetch rather
-    // than hitting the products route with a foreign id (which 404s).
-    let basePath = defaultBasePath
-    if (contentBasePathByVertical) {
-      if (!vertical) return null
-      const mapped = contentBasePathByVertical[vertical]
-      if (!mapped) return null
-      basePath = ensureLeadingSlash(mapped)
-    }
+    const basePath = resolveBasePath(vertical)
+    if (!basePath) return null
     const url = buildContentUrl(root, basePath, hit.id, { locale, market })
     let response: Response
     try {
@@ -248,7 +273,32 @@ export function createCatalogEnrichmentFetchers(
     return mapContentToEnrichment(payload, availability, formatSupplier)
   }
 
-  return { loadProductDetail }
+  const loadDeparturePricing = async (
+    hit: CatalogSearchHit,
+    sailingRef: string,
+    vertical?: string,
+  ): Promise<CatalogDeparturePricingRow[] | null> => {
+    const basePath = resolveBasePath(vertical)
+    if (!basePath) return null
+    const url = `${root}${basePath}/${encodeURIComponent(hit.id)}/sailings/${encodeURIComponent(
+      sailingRef,
+    )}/pricing`
+    let response: Response
+    try {
+      response = await fetchImpl(url, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        credentials,
+      })
+    } catch {
+      return null
+    }
+    if (!response.ok) return null
+    const payload = (await response.json()) as { data?: { pricing?: CatalogDeparturePricingRow[] } }
+    return payload.data?.pricing ?? null
+  }
+
+  return { loadProductDetail, loadDeparturePricing }
 }
 
 function maybeWarnMissingMount(response: Response, url: string): void {
@@ -362,7 +412,14 @@ function mapCruiseContentToEnrichment(content: CruiseContentPayload): CatalogDet
     highlights: content.cruise.highlights ?? [],
     heroImageUrl: content.cruise.hero_image_url ?? null,
     supplier: content.cruise.cruise_line ?? null,
-    itinerary: mapCruiseItineraryStops(content.itinerary_stops ?? []),
+    // Cruise itinerary lives per-sailing in the content payload; the cruise-level
+    // `itinerary_stops` is empty for sourced cruises. Fall back to the first
+    // sailing's stops so the Itinerary tab shows the representative route.
+    itinerary: mapCruiseItineraryStops(
+      content.itinerary_stops?.length
+        ? content.itinerary_stops
+        : (content.sailings?.[0]?.itinerary_stops ?? []),
+    ),
     media: [],
     options: (content.cabin_categories ?? []).map((c) => ({
       id: c.id,
@@ -408,9 +465,22 @@ function formatCruiseCabinCategoryName(category: {
   name: string
   type?: string | null
 }): string {
-  if (category.code) return `${category.code} - ${category.name}`
-  if (!category.name && category.type) return category.type
-  return category.name
+  // Upstream cabin names occasionally arrive wrapped in HTML (e.g. Viking sends
+  // `<p>Deluxe Veranda Stateroom (DV)</p>`); strip it so it never renders raw.
+  const name = stripHtmlTags(category.name).trim()
+  const code = category.code?.trim()
+  if (!name) return code ?? category.type ?? ""
+  // Grade rows where the upstream has no distinct display name come through as
+  // name === code; show just the code instead of "DV2 - DV2".
+  if (code && code !== name) return `${code} - ${name}`
+  return name
+}
+
+function stripHtmlTags(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
 }
 
 function buildContentUrl(

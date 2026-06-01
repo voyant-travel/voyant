@@ -126,6 +126,7 @@ export const catalogUiRo = {
       ends: "se termina {date}",
       book: "Rezerva",
       options: "Optiuni",
+      cabins: "Cabine",
       policies: "Politici si termeni",
       brochure: "Brosura",
       media: "Media",
