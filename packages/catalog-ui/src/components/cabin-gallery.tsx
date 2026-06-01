@@ -107,7 +107,7 @@ function CabinLightbox({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl border-0 bg-transparent p-0 shadow-none">
+      <DialogContent className="gap-2 border-0 bg-black/95 p-3 text-white ring-0 sm:max-w-5xl">
         <DialogTitle className="sr-only">{alt}</DialogTitle>
         <Carousel
           // Remount per-open so embla honors the clicked start index.
@@ -122,20 +122,20 @@ function CabinLightbox({
                 <img
                   src={src}
                   alt={`${alt} (${i + 1})`}
-                  className="max-h-[80vh] w-full rounded-lg object-contain"
+                  className="max-h-[78vh] w-full rounded object-contain"
                 />
               </CarouselItem>
             ))}
           </CarouselContent>
           {images.length > 1 && (
             <>
-              <CarouselPrevious className="left-2" />
-              <CarouselNext className="right-2" />
+              <CarouselPrevious className="left-2 border-0 bg-white/15 text-white hover:bg-white/25" />
+              <CarouselNext className="right-2 border-0 bg-white/15 text-white hover:bg-white/25" />
             </>
           )}
         </Carousel>
         {images.length > 1 && (
-          <div className="text-center text-xs text-white/80 tabular-nums">
+          <div className="text-center text-xs text-white/70 tabular-nums">
             {current + 1} / {images.length}
           </div>
         )}
