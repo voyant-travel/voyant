@@ -1,5 +1,7 @@
 # @voyantjs/transactions-contracts
 
+## 0.98.0
+
 ## 0.97.0
 
 ### Minor Changes
