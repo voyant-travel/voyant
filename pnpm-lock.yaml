@@ -1446,6 +1446,9 @@ importers:
       '@voyantjs/action-ledger':
         specifier: workspace:*
         version: link:../action-ledger
+      '@voyantjs/bookings-contracts':
+        specifier: workspace:*
+        version: link:../bookings-contracts
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../core
@@ -1477,6 +1480,25 @@ importers:
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
+
+  packages/bookings-contracts:
+    dependencies:
+      '@voyantjs/schema-kit':
+        specifier: workspace:*
+        version: link:../schema-kit
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
   packages/bookings-react:
     dependencies:
@@ -2061,6 +2083,9 @@ importers:
       '@voyantjs/core':
         specifier: workspace:*
         version: link:../core
+      '@voyantjs/crm-contracts':
+        specifier: workspace:*
+        version: link:../crm-contracts
       '@voyantjs/db':
         specifier: workspace:*
         version: link:../db
@@ -2089,6 +2114,25 @@ importers:
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
+
+  packages/crm-contracts:
+    dependencies:
+      '@voyantjs/schema-kit':
+        specifier: workspace:*
+        version: link:../schema-kit
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
   packages/crm-react:
     dependencies:
@@ -2960,6 +3004,9 @@ importers:
       '@voyantjs/db':
         specifier: workspace:*
         version: link:../db
+      '@voyantjs/finance-contracts':
+        specifier: workspace:*
+        version: link:../finance-contracts
       '@voyantjs/hono':
         specifier: workspace:*
         version: link:../hono
@@ -2988,6 +3035,25 @@ importers:
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
+
+  packages/finance-contracts:
+    dependencies:
+      '@voyantjs/schema-kit':
+        specifier: workspace:*
+        version: link:../schema-kit
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
   packages/finance-react:
     dependencies:
@@ -3353,6 +3419,9 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:*
         version: link:../hono
+      '@voyantjs/identity-contracts':
+        specifier: workspace:*
+        version: link:../identity-contracts
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
@@ -3369,6 +3438,25 @@ importers:
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
+
+  packages/identity-contracts:
+    dependencies:
+      '@voyantjs/schema-kit':
+        specifier: workspace:*
+        version: link:../schema-kit
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
   packages/identity-react:
     dependencies:
@@ -3488,6 +3576,9 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:*
         version: link:../hono
+      '@voyantjs/legal-contracts':
+        specifier: workspace:*
+        version: link:../legal-contracts
       '@voyantjs/storage':
         specifier: workspace:*
         version: link:../storage
@@ -3518,6 +3609,28 @@ importers:
         version: 6.0.2
       vitest:
         specifier: ^4.0.0
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+
+  packages/legal-contracts:
+    dependencies:
+      '@voyantjs/schema-kit':
+        specifier: workspace:*
+        version: link:../schema-kit
+      '@voyantjs/utils':
+        specifier: workspace:*
+        version: link:../utils
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
   packages/legal-react:
@@ -5017,6 +5130,9 @@ importers:
       '@voyantjs/identity':
         specifier: workspace:*
         version: link:../identity
+      '@voyantjs/suppliers-contracts':
+        specifier: workspace:*
+        version: link:../suppliers-contracts
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
@@ -5033,6 +5149,25 @@ importers:
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
+
+  packages/suppliers-contracts:
+    dependencies:
+      '@voyantjs/schema-kit':
+        specifier: workspace:*
+        version: link:../schema-kit
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
   packages/suppliers-react:
     dependencies:
@@ -5153,6 +5288,9 @@ importers:
       '@voyantjs/hono':
         specifier: workspace:*
         version: link:../hono
+      '@voyantjs/transactions-contracts':
+        specifier: workspace:*
+        version: link:../transactions-contracts
       '@voyantjs/utils':
         specifier: workspace:*
         version: link:../utils
@@ -5172,6 +5310,22 @@ importers:
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
+
+  packages/transactions-contracts:
+    dependencies:
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
   packages/transactions-react:
     dependencies:

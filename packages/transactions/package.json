@@ -22,6 +22,7 @@
     "@voyantjs/core": "workspace:*",
     "@voyantjs/db": "workspace:*",
     "@voyantjs/hono": "workspace:*",
+    "@voyantjs/transactions-contracts": "workspace:*",
     "@voyantjs/utils": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
