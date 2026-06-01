@@ -1,5 +1,7 @@
 export * from "./adapter/contract.js"
 export * from "./adapter/schemas.js"
+export * from "./booking-engine/contracts.js"
+export * from "./booking-engine/promotions-contract.js"
 export * from "./content.js"
 export * from "./contract.js"
 export * from "./drift/events.js"
