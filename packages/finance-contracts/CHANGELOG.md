@@ -1,5 +1,11 @@
 # @voyantjs/finance-contracts
 
+## 0.99.0
+
+### Patch Changes
+
+- @voyantjs/schema-kit@0.99.0
+
 ## 0.98.0
 
 ### Patch Changes

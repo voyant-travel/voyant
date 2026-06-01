@@ -1,5 +1,33 @@
 # @voyantjs/hono
 
+## 0.99.0
+
+### Minor Changes
+
+- b7dde79: Add the admin capability-discovery route — `GET /v1/admin/_meta/capabilities`.
+
+  `createApp` now serves a built-in capabilities route (under the `/v1/admin/*`
+  staff guard) when the deployment supplies the operation catalogue via the new
+  `adminMeta` config: `{ contractVersion, deploymentVersion?, operations }`. It
+  returns the enabled modules, the operation catalogue, the contract/deployment
+  version, and the caller's resolved actor + scopes — so the admin SDK's
+  `client.capabilities()` returns live data.
+
+  `adminMeta` is typed structurally, so `@voyantjs/hono` stays decoupled from
+  `@voyantjs/admin-contracts`; deployments inject the catalogue from
+  `admin-contracts`' `ADMIN_CONTRACT_VERSION` + `operationCapabilities()`. When
+  `adminMeta` is omitted, the route is not mounted. Wired in `templates/dmc` as the
+  reference. (#1411 roadmap item 1.)
+
+### Patch Changes
+
+- @voyantjs/core@0.99.0
+- @voyantjs/db@0.99.0
+- @voyantjs/storage@0.99.0
+- @voyantjs/types@0.99.0
+- @voyantjs/utils@0.99.0
+- @voyantjs/workflows@0.99.0
+
 ## 0.98.0
 
 ### Patch Changes
