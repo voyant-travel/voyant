@@ -1,6 +1,8 @@
 import {
   AdminApiError,
+  AdminApprovalRequiredError,
   type AnyOperation,
+  approvalRequiredSchema,
   CAPABILITIES_PATH,
   type DeploymentCapabilities,
   deploymentCapabilitiesSchema,
@@ -117,6 +119,17 @@ export function createExecutor(config: AdminClientConfig) {
     const raw = await readJson(res)
     if (!res.ok) {
       throw new AdminApiError(res.status, toAdminError(res.status, raw))
+    }
+
+    // A gated operation may return HTTP 202 with an approval-required envelope
+    // instead of the entity (agent/workflow callers on confirm/cancel etc.).
+    // Surface it as a typed error so callers can continue the approval flow
+    // rather than hit a generic output-parse failure.
+    if (res.status === 202) {
+      const approval = approvalRequiredSchema.safeParse(unwrapData(raw))
+      if (approval.success) {
+        throw new AdminApprovalRequiredError(approval.data)
+      }
     }
 
     const payload = op.envelope === "data" ? unwrapData(raw) : raw

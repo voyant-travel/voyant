@@ -59,12 +59,15 @@ export const paymentLinkSchema = z.object({
 
 export type PaymentLink = z.infer<typeof paymentLinkSchema>
 
+// Fields mirror the route's `invoiceListQuerySchema` (no `invoiceType` filter
+// exists server-side — `invoiceType` is an output field, not a list filter).
 export const invoiceListInputSchema = pageQuerySchema.extend({
   status: z.string().optional(),
-  invoiceType: z.enum(["invoice", "proforma"]).optional(),
   bookingId: z.string().optional(),
   personId: z.string().optional(),
   organizationId: z.string().optional(),
+  currency: z.string().optional(),
+  search: z.string().optional(),
 })
 
 const PAYMENT_METHODS = [
@@ -89,14 +92,19 @@ export const recordPaymentInputSchema = z.object({
   notes: z.string().optional(),
 })
 
+// The route derives currency + amount from the invoice balance, so they are
+// NOT accepted here. Fields mirror the route's payment-session provisioning
+// schema (all optional).
 export const createPaymentLinkInputSchema = z.object({
-  currency: z.string().length(3),
-  amountCents: z.number().int().positive(),
+  provider: z.string().optional(),
   paymentMethod: z.enum(PAYMENT_METHODS).optional(),
   payerEmail: z.string().email().optional(),
   payerName: z.string().optional(),
   returnUrl: z.string().url().optional(),
   cancelUrl: z.string().url().optional(),
+  callbackUrl: z.string().url().optional(),
+  externalReference: z.string().optional(),
+  expiresAt: z.string().optional(),
 })
 
 const invoicesList = defineOperation({
@@ -147,7 +155,8 @@ const paymentLinksCreate = defineOperation({
   classification: "routine_write",
   scopes: ["finance:write"],
   idempotent: true,
-  summary: "Create a payment link (payment session) for an invoice.",
+  summary:
+    "Create a payment link (payment session) for an invoice. Amount and currency are taken from the invoice balance.",
 })
 
 export const financeOperations = {

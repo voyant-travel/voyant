@@ -43,6 +43,9 @@ const link = await client.finance.paymentLinks.create(
   injection.
 - **Typed errors** — non-2xx responses throw `AdminApiError` carrying `status`,
   `code`, and `requestId`.
+- **Approval flow** — a `requires_confirmation` operation that returns HTTP 202
+  (an agent/workflow caller hitting an approval gate) throws
+  `AdminApprovalRequiredError`; read `.approvalId` to continue the flow.
 - **Pagination** — list operations return the `{ data, total, limit, offset }`
   envelope; query params are serialized for you.
 - **Idempotency** — an `Idempotency-Key` header is attached to idempotent

@@ -1,4 +1,4 @@
-import { AdminApiError } from "@voyantjs/admin-contracts"
+import { AdminApiError, AdminApprovalRequiredError } from "@voyantjs/admin-contracts"
 import { describe, expect, it } from "vitest"
 import type { FetchLike } from "./http.js"
 import { createAdminClient } from "./index.js"
@@ -132,6 +132,39 @@ describe("createAdminClient", () => {
 
     expect(result.id).toBe("pay_1")
     expect(calls[0]?.url).toBe("https://acme.voyant.app/v1/admin/finance/invoices/inv_9/payments")
+  })
+
+  it("surfaces a 202 approval-required response as AdminApprovalRequiredError", async () => {
+    const { fetchImpl } = mockFetch(() => ({
+      status: 202,
+      body: {
+        data: {
+          approvalRequired: true,
+          requestedAction: {
+            id: "act_1",
+            status: "pending_approval",
+            actionName: "booking.status.confirm",
+          },
+          approval: { id: "appr_1", status: "pending", requestedActionId: "act_1" },
+          replayed: false,
+        },
+      },
+    }))
+    const client = createAdminClient({
+      baseUrl: "https://acme.voyant.app",
+      auth: { type: "apiKey", apiKey: "voy_test" },
+      fetch: fetchImpl,
+    })
+
+    await expect(client.bookings.confirm({ id: "book_123" }, {})).rejects.toBeInstanceOf(
+      AdminApprovalRequiredError,
+    )
+    try {
+      await client.bookings.confirm({ id: "book_123" }, {})
+    } catch (err) {
+      expect(err).toBeInstanceOf(AdminApprovalRequiredError)
+      expect((err as AdminApprovalRequiredError).approvalId).toBe("appr_1")
+    }
   })
 
   it("discovers deployment capabilities", async () => {

@@ -54,7 +54,7 @@ export function createAdminClient(config: AdminClientConfig) {
       paymentLinks: {
         create: (
           params: { id: string },
-          input: InferInput<typeof financeOperations.paymentLinks.create>,
+          input?: InferInput<typeof financeOperations.paymentLinks.create>,
         ) => execute(financeOperations.paymentLinks.create, params, input),
       },
     },
