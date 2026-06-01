@@ -1,0 +1,64 @@
+{
+  "name": "@voyantjs/schema-kit",
+  "version": "0.95.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./typeid": "./src/typeid/index.ts",
+    "./query-params": "./src/query-params.ts",
+    "./kms": "./src/kms.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./typeid": {
+        "types": "./dist/typeid/index.d.ts",
+        "import": "./dist/typeid/index.js",
+        "default": "./dist/typeid/index.js"
+      },
+      "./query-params": {
+        "types": "./dist/query-params.d.ts",
+        "import": "./dist/query-params.js",
+        "default": "./dist/query-params.js"
+      },
+      "./kms": {
+        "types": "./dist/kms.d.ts",
+        "import": "./dist/kms.js",
+        "default": "./dist/kms.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "dependencies": {
+    "typeid-js": "^1.2.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyantjs/voyant.git",
+    "directory": "packages/schema-kit"
+  }
+}

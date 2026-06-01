@@ -1,17 +1,8 @@
 import { z } from "zod"
 
-/**
- * KMS Encrypted Envelope schema
- * All toxic PII is encrypted with GCP KMS before storage.
- * Format: { enc: "base64-encoded-ciphertext" }
- */
-export const kmsEnvelopeSchema = z
-  .object({
-    enc: z.string().min(1, "Encrypted value is required"),
-  })
-  .nullable()
-
-export type KmsEnvelope = z.infer<typeof kmsEnvelopeSchema>
+// `kmsEnvelopeSchema` now lives in @voyantjs/schema-kit (pure). Re-exported here
+// to keep the @voyantjs/db/schema/iam/kms import path stable.
+export { type KmsEnvelope, kmsEnvelopeSchema } from "@voyantjs/schema-kit/kms"
 
 /**
  * Travel document types (plaintext structure before encryption)

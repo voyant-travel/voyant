@@ -115,7 +115,8 @@
       "@voyantjs/charters-contracts",
       "@voyantjs/cruises-contracts",
       "@voyantjs/extras-contracts",
-      "@voyantjs/products-contracts"
+      "@voyantjs/products-contracts",
+      "@voyantjs/schema-kit"
     ]
   ],
   "linked": [],
