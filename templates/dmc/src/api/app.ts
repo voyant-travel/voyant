@@ -1,4 +1,5 @@
 import { actionLedgerHonoModule } from "@voyantjs/action-ledger"
+import { ADMIN_CONTRACT_VERSION, operationCapabilities } from "@voyantjs/admin-contracts"
 import { availabilityHonoModule } from "@voyantjs/availability"
 import { bookingRequirementsHonoModule } from "@voyantjs/booking-requirements"
 import { bookingsSupplierExtension, createBookingsHonoModule } from "@voyantjs/bookings"
@@ -139,6 +140,12 @@ export const app = createApp<CloudflareBindings>({
   // response is sent, so each request gets its own Pool and closes it
   // before the isolate sleeps.
   db: (env) => dbFromEnvForApp(env),
+  // Admin capability discovery — served at GET /v1/admin/_meta/capabilities so
+  // the admin SDK can introspect this deployment (modules, operations, version).
+  adminMeta: {
+    contractVersion: ADMIN_CONTRACT_VERSION,
+    operations: operationCapabilities(),
+  },
   publicPaths: [
     "/v1/public/customer-portal/contact-exists",
     "/v1/public/storefront-verification",

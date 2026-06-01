@@ -99,6 +99,51 @@ describe("createApp surface mounting", () => {
     expect(body.surface).toBe("admin")
   })
 
+  it("serves capabilities at /v1/admin/_meta/capabilities when adminMeta is provided", async () => {
+    const app = createApp({
+      // biome-ignore lint/suspicious/noExplicitAny: test doesn't use db
+      db: () => ({}) as any,
+      modules: [
+        makeModule({ name: "bookings", admin: true }),
+        makeModule({ name: "finance", admin: true }),
+      ],
+      auth: { resolve: () => ({ userId: "u1", actor: "staff" }) },
+      adminMeta: {
+        contractVersion: "0.1.0",
+        deploymentVersion: "2026.06.01",
+        operations: [
+          {
+            id: "bookings.confirm",
+            method: "POST",
+            pathTemplate: "/v1/admin/bookings/:id/confirm",
+            classification: "requires_confirmation",
+            scopes: ["bookings:write"],
+          },
+        ],
+      },
+    })
+    const res = await app.request("/v1/admin/_meta/capabilities", {}, TEST_ENV, TEST_CTX)
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as {
+      contractVersion: string
+      deploymentVersion?: string
+      modules: string[]
+      operations: { id: string }[]
+      actor?: string
+    }
+    expect(body.contractVersion).toBe("0.1.0")
+    expect(body.deploymentVersion).toBe("2026.06.01")
+    expect(body.modules).toEqual(["bookings", "finance"])
+    expect(body.operations[0]?.id).toBe("bookings.confirm")
+    expect(body.actor).toBe("staff")
+  })
+
+  it("does not mount the capabilities route when adminMeta is omitted", async () => {
+    const app = build("staff", [makeModule({ name: "things", admin: true })])
+    const res = await app.request("/v1/admin/_meta/capabilities", {}, TEST_ENV, TEST_CTX)
+    expect(res.status).toBe(404)
+  })
+
   it("mounts publicRoutes under /v1/public/{name}", async () => {
     const app = build("customer", [makeModule({ name: "things", public_: true })])
     const res = await app.request("/v1/public/things/ping", {}, TEST_ENV, TEST_CTX)
