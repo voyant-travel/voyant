@@ -77,6 +77,13 @@ export function requireActor<TBindings extends VoyantBindings = VoyantBindings>(
 
     if (c.get("callerType") === "api_key") {
       const resource = apiKeyResourceFromPath(new URL(c.req.url).pathname)
+
+      // Meta/discovery endpoints (e.g. `/v1/admin/_meta/capabilities`) report
+      // what the caller can do — including the key's own granted scopes — so any
+      // authenticated API key may read them, regardless of module scope. `_meta`
+      // is a reserved namespace (no module is named `_meta`).
+      if (resource === "_meta") return next()
+
       const actions = apiKeyPermissionActionsForMethod(c.req.method)
 
       if (resource && hasAnyApiKeyPermission(c.get("scopes"), resource, actions)) {

@@ -31,6 +31,30 @@ describe("requireActor", () => {
     expect(res.status).toBe(200)
   })
 
+  it("lets a scoped API key read /v1/admin/_meta/* without a matching module scope", async () => {
+    const app = makeApp((c) => {
+      c.set("callerType", "api_key")
+      c.set("scopes", ["bookings:read"]) // no _meta or wildcard scope
+    })
+    app.use("*", requireActor("staff"))
+    app.get("/v1/admin/_meta/capabilities", (c) => c.json({ ok: true }))
+
+    const res = await app.request("/v1/admin/_meta/capabilities")
+    expect(res.status).toBe(200)
+  })
+
+  it("still enforces module scopes for an API key on non-_meta admin routes", async () => {
+    const app = makeApp((c) => {
+      c.set("callerType", "api_key")
+      c.set("scopes", ["bookings:read"])
+    })
+    app.use("*", requireActor("staff"))
+    app.get("/v1/admin/finance/invoices", (c) => c.json({ ok: true }))
+
+    const res = await app.request("/v1/admin/finance/invoices")
+    expect(res.status).toBe(403)
+  })
+
   it("rejects a request whose actor is not allowed", async () => {
     const app = makeApp((c) => c.set("actor", "customer"))
     app.use("*", requireActor("staff"))
