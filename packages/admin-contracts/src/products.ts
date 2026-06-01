@@ -32,9 +32,11 @@ export type ProductSummary = z.infer<typeof productSummarySchema>
 // Delete/ack response — kept loose (route may return `{ success }` or the row).
 const ackSchema = z.object({ success: z.boolean().optional(), id: z.string().optional() })
 
-// List input derives from the canonical route query schema, so the SDK
-// advertises exactly the filters the route accepts.
-export const productsListInputSchema = productListQuerySchema
+// List input derives from the canonical route query schema, minus the filters
+// the service doesn't actually implement — so the SDK never advertises a no-op
+// filter. `productListQuerySchema` accepts `taxClassId`, but
+// `productsService.listProducts` adds no predicate for it (Codex P2).
+export const productsListInputSchema = productListQuerySchema.omit({ taxClassId: true })
 
 const list = defineOperation({
   id: "products.list",

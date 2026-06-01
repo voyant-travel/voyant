@@ -152,11 +152,16 @@ describe("@voyantjs/admin-contracts registry", () => {
     }) as Record<string, unknown>
     expect(peopleList.organizationId).toBe("org_1")
 
-    // Products: the filter field is `productTypeId`, not `productType`.
+    // Products: derives the route's real filters (productTypeId/supplierId/…)
+    // but drops `taxClassId`, which the list service never filters on.
     const productList = productsOperations.list.input.parse({
       productTypeId: "ptype_1",
+      supplierId: "supp_1",
+      taxClassId: "tax_1",
     }) as Record<string, unknown>
     expect(productList.productTypeId).toBe("ptype_1")
+    expect(productList.supplierId).toBe("supp_1")
+    expect("taxClassId" in productList).toBe(false)
   })
 
   it("projects to a deployment capability descriptor", () => {
