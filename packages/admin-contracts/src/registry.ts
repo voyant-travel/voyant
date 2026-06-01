@@ -1,7 +1,10 @@
 import { bookingsOperations } from "./bookings.js"
 import type { OperationCapability } from "./core/capabilities.js"
 import type { OperationDescriptor } from "./core/operation.js"
+import { crmOperations } from "./crm.js"
 import { financeOperations } from "./finance.js"
+import { legalOperations } from "./legal.js"
+import { productsOperations } from "./products.js"
 
 // biome-ignore lint/suspicious/noExplicitAny: heterogeneous descriptor registry
 export type AnyOperation = OperationDescriptor<any, any, any>
@@ -31,6 +34,9 @@ export const allOperations: AnyOperation[] = (() => {
   const out: AnyOperation[] = []
   collect(bookingsOperations, out)
   collect(financeOperations, out)
+  collect(crmOperations, out)
+  collect(legalOperations, out)
+  collect(productsOperations, out)
   return out
 })()
 

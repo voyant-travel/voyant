@@ -1,0 +1,76 @@
+{
+  "name": "@voyantjs/admin-react",
+  "version": "0.99.0",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyantjs/voyant.git",
+    "directory": "packages/admin-react"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./provider": "./src/provider.tsx",
+    "./hooks": "./src/hooks.ts",
+    "./query-keys": "./src/query-keys.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "react": "^19.0.0"
+  },
+  "dependencies": {
+    "@voyantjs/admin-client": "workspace:*"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.100.11",
+    "@testing-library/react": "^16.0.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "jsdom": "^25.0.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2",
+    "zod": "^4.3.6"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./provider": {
+        "types": "./dist/provider.d.ts",
+        "import": "./dist/provider.js",
+        "default": "./dist/provider.js"
+      },
+      "./hooks": {
+        "types": "./dist/hooks.d.ts",
+        "import": "./dist/hooks.js",
+        "default": "./dist/hooks.js"
+      },
+      "./query-keys": {
+        "types": "./dist/query-keys.d.ts",
+        "import": "./dist/query-keys.js",
+        "default": "./dist/query-keys.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  }
+}
