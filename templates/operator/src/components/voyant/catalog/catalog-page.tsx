@@ -74,6 +74,14 @@ export function CatalogPage() {
     () =>
       createCatalogEnrichmentFetchers({
         baseUrl: getApiUrl(),
+        // Route the detail-sheet content fetch to each vertical's content
+        // mount (see src/api/catalog-content.ts). Verticals omitted here have
+        // no content route mounted, so their sheet renders the projection only.
+        contentBasePathByVertical: {
+          products: "/v1/admin/products",
+          cruises: "/v1/admin/cruises",
+          accommodations: "/v1/admin/accommodations",
+        },
         formatSupplier: (id) => supplierMap.get(String(id)) ?? String(id),
         locale: selectedLocale,
         market: selectedMarketId,

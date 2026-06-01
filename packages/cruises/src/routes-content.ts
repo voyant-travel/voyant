@@ -28,7 +28,12 @@ import type { AnyDrizzleDb } from "@voyantjs/db"
 import type { Context } from "hono"
 import { Hono } from "hono"
 
-import { encodeSourceRef, parseUnifiedKey, sourceRefFromExternalKeyRef } from "./lib/key.js"
+import {
+  encodeSourceRef,
+  isEncodedSourceEntityId,
+  parseUnifiedKey,
+  sourceRefFromExternalKeyRef,
+} from "./lib/key.js"
 import { type CruiseContentScope, getCruiseContent } from "./service-content.js"
 
 export interface CruiseContentRoutesEnv {
@@ -68,7 +73,11 @@ export function createCruiseContentRoutes(
       )
     }
 
-    if (parsed.kind === "local" && !options.allowOwnedKeys) {
+    // A catalog sourced entity id (`crus_sr_<base64>`) is inherently sourced,
+    // so it dispatches regardless of `allowOwnedKeys`. Only plain owned TypeIDs
+    // (`crus_<base32>`) need the opt-in.
+    const isSourcedEntityId = parsed.kind === "local" && isEncodedSourceEntityId(parsed.id)
+    if (parsed.kind === "local" && !isSourcedEntityId && !options.allowOwnedKeys) {
       return c.json(
         {
           error: "owned_not_supported",

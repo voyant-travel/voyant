@@ -413,15 +413,32 @@ function toCatalogProjection(
     entity_id: buildEntityId(entry.sourceRef),
     provenance,
     fields: {
+      // Provenance — mirrors the owned-cruise builder (`cruiseRowToProjection`)
+      // so the catalog's Source column + sourced-row bookkeeping behave the
+      // same for owned and sourced cruises.
+      "source.kind": sourceKind,
+      "source.ref": encodeSourceRef(entry.sourceRef),
       id: buildEntityId(entry.sourceRef),
       name: entry.name,
       slug: entry.slug,
-      cruise_type: entry.cruiseType,
-      cruise_line: entry.lineName,
-      ship_name: entry.shipName,
-      duration_nights: entry.nights,
-      embarkation_port: entry.embarkPortName ?? null,
-      disembarkation_port: entry.disembarkPortName ?? null,
+      // Structural scalars — keys MUST match the cruise field policy
+      // (`catalog-policy.ts`) and the catalog-ui columns, which are camelCase.
+      // The indexer drops any field whose key isn't a policy path, so emitting
+      // snake_case here silently blanked Type/Nights/etc. (issue #1466).
+      cruiseType: entry.cruiseType,
+      status: entry.salesStatus ?? null,
+      nights: entry.nights,
+      // Supplier / Ship columns facet on ids. connect-cruises ≥0.3.0 surfaces
+      // the upstream external ids; map them onto the policy's id fields (#1466
+      // fix 2). Falls back to null on older adapters that only carry names.
+      lineSupplierId: entry.lineExternalId ?? null,
+      defaultShipId: entry.shipExternalId ?? null,
+      heroImageUrl: entry.heroImageUrl ?? null,
+      thumbnailUrl: entry.heroImageUrl ?? null,
+      embarkPortCanonicalPlaceId: entry.embarkPortCanonicalPlaceId ?? null,
+      disembarkPortCanonicalPlaceId: entry.disembarkPortCanonicalPlaceId ?? null,
+      // Canonical geography — the policy paths for these arrays are snake_case
+      // (`region_ids[]` …), so the keys stay snake_case here (issue #1466).
       region_ids: entry.regionIds ?? [],
       waterway_ids: entry.waterwayIds ?? [],
       port_ids: entry.portIds ?? [],
@@ -431,13 +448,12 @@ function toCatalogProjection(
       ports: entry.ports ?? [],
       countries: entry.countries ?? [],
       themes: entry.themes ?? [],
-      hero_image_url: entry.heroImageUrl ?? null,
-      status: entry.salesStatus ?? null,
-      // Lowest-price hints aren't part of CruiseContent (pricing is
-      // volatile-live), but the projection captures them so search
-      // indexes downstream can render result-card price badges.
-      lowest_price: entry.lowestPrice ?? null,
-      lowest_price_currency: entry.lowestPriceCurrency ?? null,
+      // Browse-time price + departure-window hints (Tier-1 indexed summaries;
+      // quote-time price is volatile-live and resolved elsewhere).
+      lowestPriceCached: entry.lowestPrice ?? null,
+      lowestPriceCurrencyCached: entry.lowestPriceCurrency ?? null,
+      earliestDepartureCached: entry.earliestDeparture ?? null,
+      latestDepartureCached: entry.latestDeparture ?? null,
     },
   }
 }

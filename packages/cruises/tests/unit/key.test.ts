@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   decodeSourceRef,
   encodeSourceRef,
+  isEncodedSourceEntityId,
   makeExternalSourceKey,
   parseUnifiedKey,
   sourceRefFromExternalKeyRef,
@@ -22,6 +23,25 @@ describe("parseUnifiedKey — local TypeIDs", () => {
   it("accepts mixed case in the suffix", () => {
     const result = parseUnifiedKey("cru_AbCdEf")
     expect(result).toEqual({ kind: "local", id: "cru_AbCdEf" })
+  })
+})
+
+describe("parseUnifiedKey — catalog sourced entity ids", () => {
+  it("parses a `crus_sr_<base64url>` sourced entity id as local", () => {
+    const id = `crus_${encodeSourceRef({
+      connectionId: "conn_abc",
+      externalId: "ocean-greek-isles-2027",
+    })}`
+    // Sanity: the id carries the second underscore that the TypeID regex rejects.
+    expect(id).toContain("_sr_")
+    expect(parseUnifiedKey(id)).toEqual({ kind: "local", id })
+  })
+
+  it("isEncodedSourceEntityId distinguishes sourced ids from owned TypeIDs", () => {
+    const sourced = `crus_${encodeSourceRef({ connectionId: "c", externalId: "x" })}`
+    expect(isEncodedSourceEntityId(sourced)).toBe(true)
+    expect(isEncodedSourceEntityId("crus_01HMABCDEF12345678")).toBe(false)
+    expect(isEncodedSourceEntityId("notypeid")).toBe(false)
   })
 })
 

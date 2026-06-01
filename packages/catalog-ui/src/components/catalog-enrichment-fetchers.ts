@@ -23,8 +23,16 @@ export interface CatalogEnrichmentFetchers {
    * Fetch the rich detail enrichment for a single hit. Returns `null`
    * when the server has no content row (404 / 503) — the sheet falls
    * back to the bare indexed projection.
+   *
+   * `vertical` selects the content route when `contentBasePathByVertical`
+   * is configured (e.g. cruises read `/v1/admin/cruises/:id/content`,
+   * not the products route). Returns `null` for verticals with no
+   * configured content route so the sheet renders the projection only.
    */
-  loadProductDetail: (hit: CatalogSearchHit) => Promise<CatalogDetailEnrichment | null>
+  loadProductDetail: (
+    hit: CatalogSearchHit,
+    vertical?: string,
+  ) => Promise<CatalogDetailEnrichment | null>
 }
 
 export interface CatalogEnrichmentFetchersOptions {
@@ -36,6 +44,16 @@ export interface CatalogEnrichmentFetchersOptions {
    * pass `/v1/public/products`.
    */
   contentBasePath?: string
+  /**
+   * Per-vertical content mount paths, e.g.
+   * `{ products: "/v1/admin/products", cruises: "/v1/admin/cruises" }`.
+   * When set, the detail loader routes by the hit's vertical: a vertical
+   * present in the map fetches from its path; a vertical absent from the
+   * map skips the fetch (returns `null`) so the sheet shows the projection
+   * only — avoiding a spurious request to the products route. When unset,
+   * every fetch uses `contentBasePath` (legacy single-vertical behavior).
+   */
+  contentBasePathByVertical?: Record<string, string>
   fetch?: typeof globalThis.fetch
   credentials?: RequestCredentials
   /**
@@ -171,6 +189,7 @@ export function createCatalogEnrichmentFetchers(
   const {
     baseUrl,
     contentBasePath = "/v1/admin/products",
+    contentBasePathByVertical,
     fetch: fetchImpl = globalThis.fetch,
     credentials = "include",
     formatSupplier,
@@ -180,11 +199,22 @@ export function createCatalogEnrichmentFetchers(
   } = options
 
   const root = trimTrailingSlash(baseUrl)
-  const basePath = ensureLeadingSlash(contentBasePath)
+  const defaultBasePath = ensureLeadingSlash(contentBasePath)
 
   const loadProductDetail = async (
     hit: CatalogSearchHit,
+    vertical?: string,
   ): Promise<CatalogDetailEnrichment | null> => {
+    // Route to the vertical's content mount when configured. A vertical
+    // absent from the map has no content route, so skip the fetch rather
+    // than hitting the products route with a foreign id (which 404s).
+    let basePath = defaultBasePath
+    if (contentBasePathByVertical) {
+      if (!vertical) return null
+      const mapped = contentBasePathByVertical[vertical]
+      if (!mapped) return null
+      basePath = ensureLeadingSlash(mapped)
+    }
     const url = buildContentUrl(root, basePath, hit.id, { locale, market })
     let response: Response
     try {

@@ -22,6 +22,8 @@ function makeProjectionEntries(count: number): CruiseSearchProjectionEntry[] {
       cruiseType: "ocean",
       lineName: "Sample Line",
       shipName: "MS Sample",
+      lineExternalId: "sample-line",
+      shipExternalId: "ms-sample",
       nights: 7,
       embarkPortName: "Athens",
       disembarkPortName: "Athens",
@@ -192,8 +194,16 @@ describe("cruiseAdapterToSourceAdapter.discover", () => {
     expect(page.projections[0]?.provenance.source_kind).toBe("cruise:stub")
     expect(page.projections[0]?.provenance.source_ref).toBe(encodeSourceRef(entries[0]!.sourceRef))
     expect(page.projections[0]?.provenance.source_freshness).toBe("sync")
-    expect(page.projections[0]?.fields.cruise_line).toBe("Sample Line")
-    expect(page.projections[0]?.fields.duration_nights).toBe(7)
+    // Scalars use the camelCase field-policy keys (issue #1466) so the indexer
+    // keeps them instead of dropping unrecognized snake_case keys.
+    expect(page.projections[0]?.fields.cruiseType).toBe("ocean")
+    expect(page.projections[0]?.fields.nights).toBe(7)
+    expect(page.projections[0]?.fields.lineSupplierId).toBe("sample-line")
+    expect(page.projections[0]?.fields.defaultShipId).toBe("ms-sample")
+    expect(page.projections[0]?.fields.heroImageUrl).toBe("https://cdn/c0.jpg")
+    expect(page.projections[0]?.fields.thumbnailUrl).toBe("https://cdn/c0.jpg")
+    expect(page.projections[0]?.fields.status).toBe("open")
+    expect(page.projections[0]?.fields["source.kind"]).toBe("cruise:stub")
     expect(page.projections[0]?.fields.region_ids).toEqual(["region:mediterranean"])
     expect(page.projections[0]?.fields.waterway_ids).toEqual(["sea:aegean"])
     expect(page.projections[0]?.fields.port_ids).toEqual(["port:GRATH"])
@@ -226,6 +236,13 @@ describe("cruiseAdapterToSourceAdapter.discover", () => {
     expect(doc.fields.waterways).toEqual(["Aegean Sea"])
     expect(doc.fields.country_iso).toEqual(["GR"])
     expect(doc.fields.countries).toEqual(["Greece"])
+    // CamelCase scalars now survive the field policy too (issue #1466) — these
+    // were silently dropped when the shim emitted snake_case keys.
+    expect(doc.fields.cruiseType).toBe("ocean")
+    expect(doc.fields.nights).toBe(7)
+    expect(doc.fields.thumbnailUrl).toBe("https://cdn/c0.jpg")
+    expect(doc.fields.lineSupplierId).toBe("sample-line")
+    expect(doc.fields.defaultShipId).toBe("ms-sample")
   })
 
   it("emits a cursor when more pages exist", async () => {

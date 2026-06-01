@@ -213,6 +213,13 @@ export type CruiseSearchProjectionEntry = {
   cruiseType: "ocean" | "river" | "expedition" | "coastal"
   lineName: string
   shipName: string
+  /**
+   * Upstream external ids for the cruise line + ship. Map onto the catalog
+   * `lineSupplierId` / `defaultShipId` columns (the search index facets on
+   * ids, not the display names). Surfaced by `@voyantjs/connect-cruises` ≥0.3.0.
+   */
+  lineExternalId?: string
+  shipExternalId?: string
   nights: number
   embarkPortName?: string | null
   embarkPortCanonicalPlaceId?: string | null
