@@ -23,8 +23,39 @@ export interface CatalogEnrichmentFetchers {
    * Fetch the rich detail enrichment for a single hit. Returns `null`
    * when the server has no content row (404 / 503) — the sheet falls
    * back to the bare indexed projection.
+   *
+   * `vertical` selects the content route when `contentBasePathByVertical`
+   * is configured (e.g. cruises read `/v1/admin/cruises/:id/content`,
+   * not the products route). Returns `null` for verticals with no
+   * configured content route so the sheet renders the projection only.
    */
-  loadProductDetail: (hit: CatalogSearchHit) => Promise<CatalogDetailEnrichment | null>
+  loadProductDetail: (
+    hit: CatalogSearchHit,
+    vertical?: string,
+  ) => Promise<CatalogDetailEnrichment | null>
+  /**
+   * Fetch live per-cabin pricing for one sailing (cruises). Called lazily when
+   * a departure row expands — pricing is volatile-live, so it's never cached in
+   * the detail enrichment. Returns `null` when unavailable (non-cruise vertical,
+   * no sailing ref, or the adapter can't price).
+   */
+  loadDeparturePricing: (
+    hit: CatalogSearchHit,
+    sailingRef: string,
+    vertical?: string,
+  ) => Promise<CatalogDeparturePricingRow[] | null>
+}
+
+/** One live per-cabin price row for a cruise sailing. */
+export interface CatalogDeparturePricingRow {
+  cabinExternalId: string
+  occupancy: number
+  fareCode: string | null
+  fareName: string | null
+  currency: string
+  /** Major-unit price string as the adapter returns it (e.g. "12959.00"). */
+  pricePerPerson: string
+  availability: string
 }
 
 export interface CatalogEnrichmentFetchersOptions {
@@ -36,6 +67,16 @@ export interface CatalogEnrichmentFetchersOptions {
    * pass `/v1/public/products`.
    */
   contentBasePath?: string
+  /**
+   * Per-vertical content mount paths, e.g.
+   * `{ products: "/v1/admin/products", cruises: "/v1/admin/cruises" }`.
+   * When set, the detail loader routes by the hit's vertical: a vertical
+   * present in the map fetches from its path; a vertical absent from the
+   * map skips the fetch (returns `null`) so the sheet shows the projection
+   * only — avoiding a spurious request to the products route. When unset,
+   * every fetch uses `contentBasePath` (legacy single-vertical behavior).
+   */
+  contentBasePathByVertical?: Record<string, string>
   fetch?: typeof globalThis.fetch
   credentials?: RequestCredentials
   /**
@@ -124,7 +165,16 @@ interface CruiseContentPayload {
     hero_image_url?: string | null
     cruise_line?: string | null
   }
-  ship?: { id?: string | null; name: string; description?: string | null } | null
+  ship?: {
+    id?: string | null
+    name: string
+    ship_type?: string | null
+    description?: string | null
+    capacity?: number | null
+    decks?: number | null
+    year_built?: number | null
+    gallery?: string[]
+  } | null
   sailings?: Array<{
     id: string
     source_ref?: string | null
@@ -144,6 +194,10 @@ interface CruiseContentPayload {
     name: string
     description?: string | null
     type?: string | null
+    images?: string[]
+    square_feet?: string | null
+    capacity_max?: number | null
+    inclusions?: string[]
   }>
   itinerary_stops?: CruiseItineraryStopPayload[]
   policies: Array<{ kind: string; body: string }>
@@ -171,6 +225,7 @@ export function createCatalogEnrichmentFetchers(
   const {
     baseUrl,
     contentBasePath = "/v1/admin/products",
+    contentBasePathByVertical,
     fetch: fetchImpl = globalThis.fetch,
     credentials = "include",
     formatSupplier,
@@ -180,11 +235,24 @@ export function createCatalogEnrichmentFetchers(
   } = options
 
   const root = trimTrailingSlash(baseUrl)
-  const basePath = ensureLeadingSlash(contentBasePath)
+  const defaultBasePath = ensureLeadingSlash(contentBasePath)
+
+  // Resolve the content mount for a vertical. Returns null when a per-vertical
+  // map is configured but this vertical has no entry (so callers skip the fetch
+  // rather than hitting the products route with a foreign id, which 404s).
+  const resolveBasePath = (vertical?: string): string | null => {
+    if (!contentBasePathByVertical) return defaultBasePath
+    if (!vertical) return null
+    const mapped = contentBasePathByVertical[vertical]
+    return mapped ? ensureLeadingSlash(mapped) : null
+  }
 
   const loadProductDetail = async (
     hit: CatalogSearchHit,
+    vertical?: string,
   ): Promise<CatalogDetailEnrichment | null> => {
+    const basePath = resolveBasePath(vertical)
+    if (!basePath) return null
     const url = buildContentUrl(root, basePath, hit.id, { locale, market })
     let response: Response
     try {
@@ -218,7 +286,32 @@ export function createCatalogEnrichmentFetchers(
     return mapContentToEnrichment(payload, availability, formatSupplier)
   }
 
-  return { loadProductDetail }
+  const loadDeparturePricing = async (
+    hit: CatalogSearchHit,
+    sailingRef: string,
+    vertical?: string,
+  ): Promise<CatalogDeparturePricingRow[] | null> => {
+    const basePath = resolveBasePath(vertical)
+    if (!basePath) return null
+    const url = `${root}${basePath}/${encodeURIComponent(hit.id)}/sailings/${encodeURIComponent(
+      sailingRef,
+    )}/pricing`
+    let response: Response
+    try {
+      response = await fetchImpl(url, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        credentials,
+      })
+    } catch {
+      return null
+    }
+    if (!response.ok) return null
+    const payload = (await response.json()) as { data?: { pricing?: CatalogDeparturePricingRow[] } }
+    return payload.data?.pricing ?? null
+  }
+
+  return { loadProductDetail, loadDeparturePricing }
 }
 
 function maybeWarnMissingMount(response: Response, url: string): void {
@@ -332,14 +425,37 @@ function mapCruiseContentToEnrichment(content: CruiseContentPayload): CatalogDet
     highlights: content.cruise.highlights ?? [],
     heroImageUrl: content.cruise.hero_image_url ?? null,
     supplier: content.cruise.cruise_line ?? null,
-    itinerary: mapCruiseItineraryStops(content.itinerary_stops ?? []),
+    ship: content.ship
+      ? {
+          id: content.ship.id ?? null,
+          name: content.ship.name,
+          shipType: content.ship.ship_type ?? null,
+          description: content.ship.description ?? null,
+          capacity: content.ship.capacity ?? null,
+          decks: content.ship.decks ?? null,
+          yearBuilt: content.ship.year_built ?? null,
+          images: content.ship.gallery ?? [],
+        }
+      : null,
+    // Cruise itinerary lives per-sailing in the content payload; the cruise-level
+    // `itinerary_stops` is empty for sourced cruises. Fall back to the first
+    // sailing's stops so the Itinerary tab shows the representative route.
+    itinerary: mapCruiseItineraryStops(
+      content.itinerary_stops?.length
+        ? content.itinerary_stops
+        : (content.sailings?.[0]?.itinerary_stops ?? []),
+    ),
     media: [],
     options: (content.cabin_categories ?? []).map((c) => ({
       id: c.id,
       name: formatCruiseCabinCategoryName(c),
-      description: c.description ?? null,
+      description: c.description ? stripHtmlTags(c.description) : null,
       code: c.code ?? null,
       type: c.type ?? null,
+      images: c.images ?? [],
+      squareFeet: c.square_feet ?? null,
+      capacityMax: c.capacity_max ?? null,
+      amenities: c.inclusions ?? [],
     })),
     policies: content.policies.map((p) => ({ kind: p.kind, body: p.body })),
     departures: (content.sailings ?? []).map((s) => ({
@@ -378,9 +494,28 @@ function formatCruiseCabinCategoryName(category: {
   name: string
   type?: string | null
 }): string {
-  if (category.code) return `${category.code} - ${category.name}`
-  if (!category.name && category.type) return category.type
-  return category.name
+  // Upstream cabin names occasionally arrive wrapped in HTML (e.g. Viking sends
+  // `<p>Deluxe Veranda Stateroom (DV)</p>`); strip it so it never renders raw.
+  const name = stripHtmlTags(category.name).trim()
+  const code = category.code?.trim()
+  if (!name) return code ?? category.type ?? ""
+  // Grade rows where the upstream has no distinct display name come through as
+  // name === code; show just the code instead of "DV2 - DV2".
+  if (code && code !== name) return `${code} - ${name}`
+  return name
+}
+
+function stripHtmlTags(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/\s+/g, " ")
+    .trim()
 }
 
 function buildContentUrl(

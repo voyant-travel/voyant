@@ -34,8 +34,25 @@ export function parseUnifiedKey(raw: string): ParsedKey {
     if (provider && ref) return { kind: "external", provider, ref }
     return { kind: "invalid", raw: decoded }
   }
+  // Catalog sourced entity id (`<prefix>_sr_<base64url>`) — the id the catalog
+  // plane builds for sourced cruises (`buildEntityId`) and indexes. It carries
+  // a second underscore (and base64url `-`/`_`) the TypeID regex rejects, so
+  // detect it explicitly and pass it through as the entity id.
+  if (isEncodedSourceEntityId(decoded)) return { kind: "local", id: decoded }
   if (TYPEID_RE.test(decoded)) return { kind: "local", id: decoded }
   return { kind: "invalid", raw: decoded }
+}
+
+/**
+ * True when `id` is a catalog sourced entity id: a TypeID prefix followed by an
+ * encoded SourceRef (`<prefix>_sr_<base64url>`). Distinguishes sourced ids from
+ * owned TypeIDs so content routes dispatch sourced ids without the owned-key
+ * opt-in. See `cruiseAdapterToSourceAdapter`'s `buildEntityId`.
+ */
+export function isEncodedSourceEntityId(id: string): boolean {
+  const underscore = id.indexOf("_")
+  if (underscore <= 0) return false
+  return decodeSourceRef(id.slice(underscore + 1)) !== null
 }
 
 export function makeExternalSourceKey(provider: string, sourceRef: EncodableSourceRef): string {

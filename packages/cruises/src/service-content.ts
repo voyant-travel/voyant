@@ -33,6 +33,8 @@ import type { SourceAdapterRegistry } from "@voyantjs/catalog/booking-engine"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { and, eq } from "drizzle-orm"
 
+import type { CruiseAdapter, ExternalPriceRow, SourceRef } from "./adapters/index.js"
+
 import {
   CRUISES_CONTENT_SCHEMA_VERSION,
   type CruiseContent,
@@ -186,6 +188,63 @@ export async function getCruiseContent(
   }
 
   return finalizeFresh(db, entityId, fresh, scope, options)
+}
+
+export interface CruiseSailingPricingRow {
+  /** Upstream cabin-category external id (e.g. `<ship>_<grade>`). */
+  cabinExternalId: string
+  occupancy: number
+  fareCode: string | null
+  fareName: string | null
+  currency: string
+  /** Major-unit price string as the adapter returns it (e.g. "12959.00"). */
+  pricePerPerson: string
+  availability: string
+}
+
+/**
+ * Live per-sailing cabin pricing for a sourced cruise. Pricing is volatile-live
+ * (architecture §5.4) so it is fetched fresh from the adapter per call rather
+ * than baked into the cached content — the catalog detail sheet calls this
+ * lazily when a departure row is expanded.
+ *
+ * Returns `null` when the entity has no sourced row or the registered adapter
+ * can't price sailings (e.g. a thin adapter without `fetchSailingPricing`).
+ */
+export async function getCruiseSailingPricing(
+  db: AnyDrizzleDb,
+  entityId: string,
+  sailingExternalId: string,
+  options: { registry: SourceAdapterRegistry },
+): Promise<CruiseSailingPricingRow[] | null> {
+  const sourcedEntry = await readSourcedEntry(db, "cruises", entityId)
+  if (!sourcedEntry) return null
+
+  const adapter = sourcedEntry.source_connection_id
+    ? (options.registry.resolveByConnection(sourcedEntry.source_connection_id) ??
+      options.registry.byKind(sourcedEntry.source_kind)[0]?.adapter)
+    : options.registry.byKind(sourcedEntry.source_kind)[0]?.adapter
+
+  // The catalog SourceAdapter for cruises is the `cruiseAdapterToSourceAdapter`
+  // shim, which exposes the underlying multi-method `CruiseAdapter`. Pricing
+  // isn't part of the catalog SourceAdapter surface, so reach through to it.
+  const cruiseAdapter = (adapter as { cruiseAdapter?: CruiseAdapter } | undefined)?.cruiseAdapter
+  if (!cruiseAdapter?.fetchSailingPricing) return null
+
+  const sailingRef: SourceRef = {
+    connectionId: sourcedEntry.source_connection_id ?? undefined,
+    externalId: sailingExternalId,
+  }
+  const rows = await cruiseAdapter.fetchSailingPricing(sailingRef)
+  return rows.map((row: ExternalPriceRow) => ({
+    cabinExternalId: row.cabinCategoryRef.externalId,
+    occupancy: row.occupancy,
+    fareCode: row.fareCode ?? null,
+    fareName: row.fareCodeName ?? null,
+    currency: row.currency,
+    pricePerPerson: row.pricePerPerson,
+    availability: row.availability,
+  }))
 }
 
 async function fetchCacheCandidates(

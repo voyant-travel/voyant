@@ -117,6 +117,39 @@ describe("createCatalogEnrichmentFetchers", () => {
     )
   })
 
+  test("routes the content fetch by vertical when contentBasePathByVertical is set", async () => {
+    const fetchImpl = vi.fn<typeof globalThis.fetch>(async () => ok(samplePayload))
+    const fetchers = createCatalogEnrichmentFetchers({
+      baseUrl: "/api",
+      contentBasePathByVertical: {
+        products: "/v1/admin/products",
+        cruises: "/v1/admin/cruises",
+      },
+      fetch: fetchImpl,
+    })
+
+    await fetchers.loadProductDetail(hit("crus_1"), "cruises")
+    expect(fetchImpl.mock.calls[0]![0]).toBe("/api/v1/admin/cruises/crus_1/content")
+
+    await fetchers.loadProductDetail(hit("prod_1"), "products")
+    expect(fetchImpl.mock.calls[1]![0]).toBe("/api/v1/admin/products/prod_1/content")
+  })
+
+  test("skips the fetch for verticals without a configured content route", async () => {
+    const fetchImpl = vi.fn<typeof globalThis.fetch>(async () => ok(samplePayload))
+    const fetchers = createCatalogEnrichmentFetchers({
+      baseUrl: "/api",
+      contentBasePathByVertical: { cruises: "/v1/admin/cruises" },
+      fetch: fetchImpl,
+    })
+
+    // Unmapped vertical → no request, projection-only.
+    expect(await fetchers.loadProductDetail(hit("ext_1"), "extras")).toBeNull()
+    // No vertical provided with a map → no request.
+    expect(await fetchers.loadProductDetail(hit("crus_1"))).toBeNull()
+    expect(fetchImpl).not.toHaveBeenCalled()
+  })
+
   test("maps the content payload to a CatalogDetailEnrichment", async () => {
     const fetchImpl = vi.fn<typeof globalThis.fetch>(async () => ok(samplePayload))
     const fetchers = createCatalogEnrichmentFetchers({
@@ -218,7 +251,12 @@ describe("createCatalogEnrichmentFetchers", () => {
       highlights: ["Aegean"],
       heroImageUrl: "https://example.com/cruise.jpg",
       supplier: "Sample Line",
-      itinerary: [],
+      // Cruise-level itinerary is empty for sourced cruises, so the Itinerary
+      // tab falls back to the first sailing's stops.
+      itinerary: [
+        { dayNumber: 1, title: "Athens", location: "Athens", date: "2026-06-01" },
+        { dayNumber: 2, title: "Mykonos", location: "Mykonos", date: "2026-06-02" },
+      ],
       options: [{ id: "cab_1", name: "BA - Balcony", code: "BA", type: "balcony" }],
       policies: [{ kind: "cancellation", body: "Free up to 60 days." }],
       source: "sourced-fresh",
@@ -252,6 +290,61 @@ describe("createCatalogEnrichmentFetchers", () => {
         },
       ],
     })
+  })
+
+  test("sanitizes cruise cabin names (strips HTML, dedupes name===code grades)", async () => {
+    const fetchImpl = vi.fn<typeof globalThis.fetch>(async () =>
+      ok({
+        data: {
+          content: {
+            cruise: { id: "crus_1", name: "X", description: "", highlights: [], cruise_line: "L" },
+            sailings: [],
+            cabin_categories: [
+              {
+                id: "c1",
+                code: "DV1",
+                name: "<p>Deluxe Veranda Stateroom (DV)</p>",
+                type: "balcony",
+              },
+              { id: "c2", code: "DV2", name: "DV2", type: "balcony" },
+            ],
+            policies: [],
+          },
+          served_locale: "en-GB",
+          match_kind: "exact",
+          source: "sourced-fresh",
+          served_stale: false,
+          synthesized: false,
+          machine_translated: false,
+        },
+      }),
+    )
+    const fetchers = createCatalogEnrichmentFetchers({ baseUrl: "/api", fetch: fetchImpl })
+    const result = await fetchers.loadProductDetail(hit("crus_1"))
+    expect(result?.options).toEqual([
+      {
+        id: "c1",
+        name: "DV1 - Deluxe Veranda Stateroom (DV)",
+        description: null,
+        code: "DV1",
+        type: "balcony",
+        images: [],
+        squareFeet: null,
+        capacityMax: null,
+        amenities: [],
+      },
+      {
+        id: "c2",
+        name: "DV2",
+        description: null,
+        code: "DV2",
+        type: "balcony",
+        images: [],
+        squareFeet: null,
+        capacityMax: null,
+        amenities: [],
+      },
+    ])
   })
 
   test("merges slot-availability data over the content departures", async () => {

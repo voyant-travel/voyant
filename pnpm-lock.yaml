@@ -6531,6 +6531,9 @@ importers:
       '@voyantjs/connect-adapter':
         specifier: ^0.2.11
         version: 0.2.11(@voyantjs/catalog@packages+catalog)
+      '@voyantjs/connect-cruises':
+        specifier: ^0.3.4
+        version: 0.3.4(@voyantjs/cruises@packages+cruises)
       '@voyantjs/connect-sdk':
         specifier: ^0.1.6
         version: 0.1.6
@@ -6555,6 +6558,9 @@ importers:
       '@voyantjs/customer-portal':
         specifier: workspace:*
         version: link:../../packages/customer-portal
+      '@voyantjs/data-sdk':
+        specifier: ^0.3.1
+        version: 0.3.1
       '@voyantjs/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -10193,6 +10199,14 @@ packages:
     peerDependencies:
       '@voyantjs/catalog': '>=0.85.3 <1'
 
+  '@voyantjs/connect-cruises@0.3.4':
+    resolution: {integrity: sha512-0QDxzpYxDbtsdOxxWs0XnBcq/wwXi7K6NbeVTRYKhJUdS+mnjxkPN8xDzDR0XQMb9Qe3mpT6CRbbJUY35r2mKg==}
+    peerDependencies:
+      '@voyantjs/cruises': '>=0.85.3 <1'
+    peerDependenciesMeta:
+      '@voyantjs/cruises':
+        optional: true
+
   '@voyantjs/connect-sdk@0.1.6':
     resolution: {integrity: sha512-o+0WklXaSEMTePqIi3U7SVROdssaaaqEgLRlqvwiuOIw87Kd8IRTT4qwjNzGewbQVe17O9Ly5HgIUDM4K3wbvg==}
     bundledDependencies:
@@ -10203,6 +10217,11 @@ packages:
 
   '@voyantjs/data-sdk@0.1.3':
     resolution: {integrity: sha512-3BxQYksdvD5eaPSJSoNYrQwYCY4Gaj0r8SEV5f/7YgcXdP18Di3Qepme5vzqkq/5W37aj9Ia5uTRgNBQiSbOXg==}
+    bundledDependencies:
+      - '@voyant-sdk/sdk-core'
+
+  '@voyantjs/data-sdk@0.3.1':
+    resolution: {integrity: sha512-Pw+hU8/CkmmwLOCi01UQW9Yvpa8MhTeDMxUD4v9odq/J8wD1cdqbw60fvKlzDpFmTRxdebMISEBB63OnbqU1Ug==}
     bundledDependencies:
       - '@voyant-sdk/sdk-core'
 
@@ -16965,11 +16984,19 @@ snapshots:
       '@voyantjs/catalog': link:packages/catalog
       '@voyantjs/connect-sdk': 0.1.6
 
+  '@voyantjs/connect-cruises@0.3.4(@voyantjs/cruises@packages+cruises)':
+    dependencies:
+      '@voyantjs/connect-sdk': 0.1.6
+    optionalDependencies:
+      '@voyantjs/cruises': link:packages/cruises
+
   '@voyantjs/connect-sdk@0.1.6': {}
 
   '@voyantjs/core@0.19.0': {}
 
   '@voyantjs/data-sdk@0.1.3': {}
+
+  '@voyantjs/data-sdk@0.3.1': {}
 
   '@voyantjs/workflows-errors@0.19.0': {}
 

@@ -27,6 +27,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  Copy,
   ExternalLink,
   Loader2,
   Minus,
@@ -44,6 +45,8 @@ import {
 } from "react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 import type { CatalogUiMessages } from "../i18n/messages.js"
+import type { CatalogDeparturePricingRow } from "./catalog-enrichment-fetchers.js"
+import { MediaGallery } from "./media-gallery.js"
 
 export interface CatalogDetailAction {
   label: string
@@ -70,6 +73,17 @@ export interface CatalogDetailEnrichment {
   highlights?: ReadonlyArray<string>
   heroImageUrl?: string | null
   supplier?: string | null
+  /** The vessel a cruise sails on (Ship tab). */
+  ship?: {
+    id?: string | null
+    name: string
+    shipType?: string | null
+    description?: string | null
+    capacity?: number | null
+    decks?: number | null
+    yearBuilt?: number | null
+    images?: string[]
+  } | null
   itinerary?: ReadonlyArray<{
     dayNumber: number
     title?: string | null
@@ -89,6 +103,10 @@ export interface CatalogDetailEnrichment {
     description?: string | null
     code?: string | null
     type?: string | null
+    images?: string[]
+    squareFeet?: string | null
+    capacityMax?: number | null
+    amenities?: string[]
   }>
   policies?: ReadonlyArray<{ kind: string; body: string }>
   departures?: ReadonlyArray<{
@@ -151,6 +169,12 @@ export interface CatalogDetailSheetProps {
   actions?: CatalogDetailAction[]
   imageField?: string
   /**
+   * The catalog vertical this sheet renders. Used for per-vertical labels —
+   * e.g. cruises label the "Options" tab "Cabins" since the options are cabin
+   * categories.
+   */
+  vertical?: string
+  /**
    * Sheet max-width token or class name. Defaults to `5xl` so rich catalog
    * details can use two columns on wide operator screens.
    */
@@ -164,6 +188,15 @@ export interface CatalogDetailSheetProps {
    * shows the indexed-projection fallback.
    */
   onLoadDetail?: (hit: CatalogSearchHit) => Promise<CatalogDetailEnrichment | null>
+  /**
+   * Called lazily when a departure (cruise sailing) row expands, to fetch live
+   * per-cabin pricing + availability. Returns `null` when unavailable. The
+   * caller binds the vertical; the sheet passes the cruise hit + sailing ref.
+   */
+  onLoadDeparturePricing?: (
+    hit: CatalogSearchHit,
+    sailingRef: string,
+  ) => Promise<CatalogDeparturePricingRow[] | null>
   /**
    * Called when the operator clicks a per-departure Book button. When
    * omitted, departures render without a book affordance — the
@@ -255,6 +288,13 @@ const HIDDEN_ARRAY_FIELDS = new Set([
   // the operator-authored `tags` jsonb column.
   "tagIds",
   "tagLabels",
+  // Canonical geography id mirrors — the resolved name lists
+  // (`countries`/`regions`/`ports`/`waterways`) carry the display values, so
+  // the raw id columns are noise in the overview.
+  "country_iso",
+  "region_ids",
+  "port_ids",
+  "waterway_ids",
 ])
 
 /**
@@ -281,8 +321,10 @@ export function CatalogDetailSheet({
   actions,
   imageField = "thumbnailUrl",
   width = "5xl",
+  vertical,
   headerExtras,
   onLoadDetail,
+  onLoadDeparturePricing,
   onBookDeparture,
   onBookOption,
   renderBrochure,
@@ -294,6 +336,10 @@ export function CatalogDetailSheet({
 }: CatalogDetailSheetProps) {
   const catalogMessages = useCatalogUiMessagesOrDefault().catalogPage
   const messages = catalogMessages.detail
+  // Cruises sell cabin categories, not generic options — label the tab "Cabins".
+  const optionsLabel = vertical === "cruises" ? messages.cabins : messages.options
+  // In the cruise industry a scheduled departure is a "sailing".
+  const departuresLabel = vertical === "cruises" ? messages.sailings : messages.departures
   const open = hit != null
   const fields = hit?.document.fields ?? {}
   const name = stringOr(fields.name, catalogMessages.fallbacks.detailName)
@@ -359,11 +405,29 @@ export function CatalogDetailSheet({
       if (SYSTEM_FIELD_PREFIXES.some((p) => k.startsWith(p))) system.push([k, v])
       else if (ARRAY_FIELDS.has(k) || Array.isArray(v)) {
         if (HIDDEN_ARRAY_FIELDS.has(k)) continue
+        // Skip empty arrays (e.g. ports/themes/waterways with no values) so the
+        // overview doesn't show bare "—" rows. `tags` stays — it renders the
+        // inline editor used to add the first tag.
+        if (k !== "tags" && Array.isArray(v) && v.length === 0) continue
         array.push([k, v])
       } else attrs.push([k, v])
     }
     return { arrayEntries: array, attributeEntries: attrs, systemEntries: system }
   }, [fields])
+
+  // Overview media gallery — the cruise cover plus one photo per cabin type.
+  // Cruise-level media upstream is just the hero, so we surface the rich cabin
+  // imagery here as a visual summary. Only shown when there's more than the
+  // single hero (i.e. cabins carry photos).
+  const overviewGalleryImages = useMemo(() => {
+    const urls: string[] = []
+    if (enrichment?.heroImageUrl) urls.push(enrichment.heroImageUrl)
+    for (const option of enrichment?.options ?? []) {
+      const cover = option.images?.[0]
+      if (cover) urls.push(cover)
+    }
+    return Array.from(new Set(urls))
+  }, [enrichment])
 
   // ─── Attribute reshaping ──────────────────────────────────────────────
   // Indexed projections expose `sellAmountCents` + `sellCurrency` as two
@@ -426,11 +490,7 @@ export function CatalogDetailSheet({
                         {status}
                       </Badge>
                     )}
-                    {hit?.id && (
-                      <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-                        {hit.id}
-                      </code>
-                    )}
+                    {hit?.id && <IdChip id={hit.id} />}
                     {enrichment?.servedLocale && (
                       <Badge variant="outline" className="font-normal">
                         {enrichment.servedLocale}
@@ -474,6 +534,7 @@ export function CatalogDetailSheet({
           {/* Body */}
           {(() => {
             const hasItinerary = (enrichment?.itinerary?.length ?? 0) > 0
+            const hasShip = enrichment?.ship != null
             const hasOptions = (enrichment?.options?.length ?? 0) > 0
             const hasDepartures = (enrichment?.departures?.length ?? 0) > 0
             const hasPolicies = (enrichment?.policies?.length ?? 0) > 0
@@ -495,9 +556,10 @@ export function CatalogDetailSheet({
                     {hasItinerary && (
                       <TabsTrigger value="itinerary">{messages.itinerary}</TabsTrigger>
                     )}
-                    {hasOptions && <TabsTrigger value="options">{messages.options}</TabsTrigger>}
+                    {hasShip && <TabsTrigger value="ship">{messages.ship}</TabsTrigger>}
+                    {hasOptions && <TabsTrigger value="options">{optionsLabel}</TabsTrigger>}
                     {hasDepartures && (
-                      <TabsTrigger value="departures">{messages.departures}</TabsTrigger>
+                      <TabsTrigger value="departures">{departuresLabel}</TabsTrigger>
                     )}
                     {shouldRenderMediaSection && (
                       <TabsTrigger value="media">{messages.media}</TabsTrigger>
@@ -509,6 +571,17 @@ export function CatalogDetailSheet({
                   </TabsList>
 
                   <TabsContent value="overview" className="flex flex-col gap-6">
+                    {overviewGalleryImages.length > 1 && (
+                      <Section title={messages.media}>
+                        <MediaGallery
+                          images={overviewGalleryImages}
+                          alt={name}
+                          className="w-full max-w-lg"
+                          imageClassName="h-56 w-full"
+                        />
+                      </Section>
+                    )}
+
                     {(shortDescription || description) && (
                       <Section>
                         {shortDescription && (
@@ -587,16 +660,17 @@ export function CatalogDetailSheet({
                     </TabsContent>
                   )}
 
+                  {hasShip && (
+                    <TabsContent value="ship">
+                      <ShipCard ship={enrichment!.ship!} />
+                    </TabsContent>
+                  )}
+
                   {hasOptions && (
                     <TabsContent value="options">
-                      <ul className="space-y-1.5 text-sm">
+                      <ul className="space-y-3">
                         {enrichment!.options!.map((o) => (
-                          <li key={o.id} className="rounded-md border border-border px-3 py-2">
-                            <div className="font-medium">{o.name}</div>
-                            {o.description && (
-                              <div className="text-xs text-muted-foreground">{o.description}</div>
-                            )}
-                          </li>
+                          <CabinCard key={o.id} cabin={o} />
                         ))}
                       </ul>
                     </TabsContent>
@@ -606,8 +680,10 @@ export function CatalogDetailSheet({
                     <TabsContent value="departures">
                       <DeparturesTable
                         hit={hit}
+                        vertical={vertical}
                         departures={enrichment!.departures!}
                         options={enrichment?.options ?? []}
+                        onLoadDeparturePricing={onLoadDeparturePricing}
                         productSellAmountCents={
                           typeof fields.sellAmountCents === "number"
                             ? fields.sellAmountCents
@@ -849,24 +925,35 @@ const ALL_FILTER_VALUE = "__all__"
  */
 function DeparturesTable({
   hit,
+  vertical,
   departures,
   options,
   productSellAmountCents,
   productSellCurrency,
   onBookDeparture,
   onBookOption,
+  onLoadDeparturePricing,
   messages,
 }: {
   hit: CatalogSearchHit | null
+  vertical?: string
   departures: ReadonlyArray<DepartureEntry>
   options: NonNullable<CatalogDetailEnrichment["options"]>
   productSellAmountCents: number | null
   productSellCurrency: string | null
   onBookDeparture?: (hit: CatalogSearchHit, departure: DepartureEntry) => void
   onBookOption?: (hit: CatalogSearchHit, departure: DepartureEntry, option: DepartureOption) => void
+  onLoadDeparturePricing?: (
+    hit: CatalogSearchHit,
+    sailingRef: string,
+  ) => Promise<CatalogDeparturePricingRow[] | null>
   messages: CatalogUiMessages["catalogPage"]["detail"]
 }) {
   const tableMessages = messages.departuresTable
+  // Cruises call a scheduled departure a "sailing" — pick the cruise wording.
+  const isCruise = vertical === "cruises"
+  const noUpcomingLabel = isCruise ? messages.noUpcomingSailings : messages.noUpcomingDepartures
+  const noResultsLabel = isCruise ? tableMessages.noResultsSailings : tableMessages.noResults
   const monthOptions = useMemo(() => collectMonthOptions(departures), [departures])
   const statusOptions = useMemo(() => collectStatusOptions(departures), [departures])
 
@@ -1011,7 +1098,7 @@ function DeparturesTable({
 
       {sorted.length === 0 ? (
         <div className="rounded-md border bg-muted/10 px-3 py-6 text-center text-sm text-muted-foreground">
-          {filtersActive ? tableMessages.noResults : messages.noUpcomingDepartures}
+          {filtersActive ? noResultsLabel : noUpcomingLabel}
         </div>
       ) : (
         <div className="overflow-hidden rounded-md border">
@@ -1110,6 +1197,7 @@ function DeparturesTable({
                             productSellCurrency={productSellCurrency}
                             onBookDeparture={onBookDeparture}
                             onBookOption={onBookOption}
+                            onLoadDeparturePricing={onLoadDeparturePricing}
                             messages={messages}
                           />
                         </td>
@@ -1194,6 +1282,7 @@ function DepartureDetailPanel({
   productSellCurrency,
   onBookDeparture,
   onBookOption,
+  onLoadDeparturePricing,
   messages,
 }: {
   hit: CatalogSearchHit | null
@@ -1203,12 +1292,52 @@ function DepartureDetailPanel({
   productSellCurrency: string | null
   onBookDeparture?: (hit: CatalogSearchHit, departure: DepartureEntry) => void
   onBookOption?: (hit: CatalogSearchHit, departure: DepartureEntry, option: DepartureOption) => void
+  onLoadDeparturePricing?: (
+    hit: CatalogSearchHit,
+    sailingRef: string,
+  ) => Promise<CatalogDeparturePricingRow[] | null>
   messages: CatalogUiMessages["catalogPage"]["detail"]
 }) {
   const tableMessages = messages.departuresTable
   const currency = departure.currency ?? productSellCurrency ?? undefined
   const departurePriceCents = departure.lowestPriceCents ?? productSellAmountCents
   const departureRemaining = typeof departure.remaining === "number" ? departure.remaining : null
+
+  // Live per-cabin pricing (cruises). This panel only mounts when its departure
+  // row is expanded, so fetch lazily here — pricing is volatile-live, never
+  // baked into the cached content.
+  const [livePricing, setLivePricing] = useState<CatalogDeparturePricingRow[] | null>(null)
+  const sailingRef = departure.sourceRef ?? null
+  useEffect(() => {
+    if (!hit || !onLoadDeparturePricing || !sailingRef) return
+    let cancelled = false
+    onLoadDeparturePricing(hit, sailingRef).then(
+      (rows) => {
+        if (!cancelled) setLivePricing(rows)
+      },
+      () => undefined,
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [hit, onLoadDeparturePricing, sailingRef])
+
+  // Index the cheapest live price per cabin code. The upstream cabin ref is
+  // `<shipId>_<code>`, so the code is the trailing segment — matched against the
+  // option's `code`.
+  const livePriceByCode = useMemo(() => {
+    const byCode = new Map<string, { cents: number; currency: string; availability: string }>()
+    for (const row of livePricing ?? []) {
+      const code = row.cabinExternalId.slice(row.cabinExternalId.lastIndexOf("_") + 1)
+      const cents = Math.round(Number(row.pricePerPerson) * 100)
+      if (!Number.isFinite(cents)) continue
+      const existing = byCode.get(code)
+      if (!existing || cents < existing.cents) {
+        byCode.set(code, { cents, currency: row.currency, availability: row.availability })
+      }
+    }
+    return byCode
+  }, [livePricing])
 
   const handleBook = (option: DepartureOption) => {
     if (!hit) return
@@ -1233,6 +1362,7 @@ function DepartureDetailPanel({
               isDepartureBookable(departure) &&
               hit != null &&
               (onBookOption != null || onBookDeparture != null)
+            const livePrice = option.code ? livePriceByCode.get(option.code) : undefined
             return (
               <li
                 key={option.id}
@@ -1245,23 +1375,41 @@ function DepartureDetailPanel({
                   )}
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="text-right text-xs text-muted-foreground">
-                    {departureRemaining != null ? (
-                      <span className="tabular-nums">
-                        <span className="font-medium text-foreground">{departureRemaining}</span>{" "}
-                        {tableMessages.remainingLabel}
+                  {livePrice ? (
+                    <>
+                      <span className="text-right text-xs capitalize text-muted-foreground">
+                        {livePrice.availability.replace(/_/g, " ")}
                       </span>
-                    ) : (
-                      "—"
-                    )}
-                  </div>
-                  {departurePriceCents != null && (
-                    <div className="text-right text-xs text-muted-foreground">
-                      {tableMessages.priceFrom}{" "}
-                      <span className="font-medium text-foreground tabular-nums">
-                        {formatPriceCents(departurePriceCents, currency)}
-                      </span>
-                    </div>
+                      <div className="text-right text-xs text-muted-foreground">
+                        {tableMessages.priceFrom}{" "}
+                        <span className="font-medium text-foreground tabular-nums">
+                          {formatPriceCents(livePrice.cents, livePrice.currency)}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-right text-xs text-muted-foreground">
+                        {departureRemaining != null ? (
+                          <span className="tabular-nums">
+                            <span className="font-medium text-foreground">
+                              {departureRemaining}
+                            </span>{" "}
+                            {tableMessages.remainingLabel}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </div>
+                      {departurePriceCents != null && (
+                        <div className="text-right text-xs text-muted-foreground">
+                          {tableMessages.priceFrom}{" "}
+                          <span className="font-medium text-foreground tabular-nums">
+                            {formatPriceCents(departurePriceCents, currency)}
+                          </span>
+                        </div>
+                      )}
+                    </>
                   )}
                   {canBook && (
                     <Button
@@ -1710,4 +1858,134 @@ function formatTemplate(template: string, values: Record<string, string | number
     const value = values[key]
     return value === undefined ? "" : String(value)
   })
+}
+
+/**
+ * Compact, copyable id chip. Sourced cruise ids embed the full upstream
+ * SourceRef (`crus_sr_<base64url>`) so they're long; truncate the display,
+ * keep the full id on hover (`title`), and copy it on click.
+ */
+function IdChip({ id }: { id: string }): ReactNode {
+  const [copied, setCopied] = useState(false)
+  return (
+    <button
+      type="button"
+      title={id}
+      onClick={() => {
+        void navigator.clipboard?.writeText(id).then(
+          () => {
+            setCopied(true)
+            setTimeout(() => setCopied(false), 1200)
+          },
+          () => undefined,
+        )
+      }}
+      className="inline-flex max-w-[14rem] items-center gap-1 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground transition-colors hover:text-foreground"
+    >
+      <span className="truncate">{id}</span>
+      {copied ? (
+        <Check className="h-3 w-3 shrink-0 text-emerald-500" />
+      ) : (
+        <Copy className="h-3 w-3 shrink-0 opacity-60" />
+      )}
+    </button>
+  )
+}
+
+/**
+ * One cabin in the cruise Cabins tab: photo gallery (carousel + lightbox),
+ * name + size/capacity, description, and amenity chips.
+ */
+function CabinCard({
+  cabin,
+}: {
+  cabin: NonNullable<CatalogDetailEnrichment["options"]>[number]
+}): ReactNode {
+  const desc = cabin.description?.trim() ?? ""
+  const meta = [
+    cabin.squareFeet ? `${cabin.squareFeet} sqft` : null,
+    cabin.capacityMax ? `sleeps ${cabin.capacityMax}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ")
+  // The upstream amenity list leads with the cabin size + a copy of the
+  // description; drop those so the chips show genuine, non-duplicated perks.
+  const amenities = (cabin.amenities ?? []).filter(
+    (a) => a.trim() !== desc && !/^stateroom size/i.test(a.trim()),
+  )
+  return (
+    <li className="flex gap-4 rounded-lg border border-border p-3">
+      <MediaGallery images={cabin.images ?? []} alt={cabin.name} />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-baseline gap-x-2">
+          <h4 className="font-medium text-sm">{cabin.name}</h4>
+          {meta && <span className="text-xs text-muted-foreground">{meta}</span>}
+        </div>
+        {desc && <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{desc}</p>}
+        {amenities.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {amenities.slice(0, 6).map((a) => (
+              <span
+                key={a}
+                className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
+              >
+                {a}
+              </span>
+            ))}
+            {amenities.length > 6 && (
+              <span className="px-1 text-[10px] text-muted-foreground">
+                +{amenities.length - 6}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    </li>
+  )
+}
+
+/**
+ * The vessel a cruise sails on: gallery + name/type, key specs (capacity,
+ * decks, year built) and a description.
+ */
+function ShipCard({ ship }: { ship: NonNullable<CatalogDetailEnrichment["ship"]> }): ReactNode {
+  const desc = ship.description?.trim() ?? ""
+  const specs = [
+    ship.shipType ? { label: "Type", value: ship.shipType } : null,
+    ship.capacity ? { label: "Capacity", value: `${ship.capacity} guests` } : null,
+    ship.decks ? { label: "Decks", value: String(ship.decks) } : null,
+    ship.yearBuilt ? { label: "Year built", value: String(ship.yearBuilt) } : null,
+  ].filter((s): s is { label: string; value: string } => s != null)
+  const images = ship.images ?? []
+  return (
+    <div className="flex flex-col gap-4">
+      {images.length > 0 && (
+        <MediaGallery
+          images={images}
+          alt={ship.name}
+          className="w-full max-w-lg"
+          imageClassName="h-56 w-full"
+        />
+      )}
+      <div>
+        <h3 className="text-base font-medium text-foreground">{ship.name}</h3>
+        {ship.shipType && <p className="mt-0.5 text-xs text-muted-foreground">{ship.shipType}</p>}
+      </div>
+      {specs.length > 0 && (
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+          {specs.map((s) => (
+            <div key={s.label} className="flex flex-col gap-0.5">
+              <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                {s.label}
+              </dt>
+              <dd className="text-sm text-foreground">{s.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      {desc && (
+        <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{desc}</p>
+      )}
+    </div>
+  )
 }

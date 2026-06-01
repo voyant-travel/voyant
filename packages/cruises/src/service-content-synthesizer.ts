@@ -134,6 +134,7 @@ function pickShip(projection: Record<string, unknown>): CruiseContent["ship"] {
     description: stringOr(projection.ship_description, null),
     capacity: numberOr(projection.ship_capacity, null),
     decks: numberOr(projection.ship_decks, null),
+    gallery: [],
   }
 }
 

@@ -131,6 +131,8 @@ export interface CatalogSearchTab {
    * subtle "no extra detail" hint in the sheet).
    */
   onLoadDetail?: (hit: CatalogSearchHit) => Promise<CatalogDetailEnrichment | null>
+  /** Lazy per-cabin pricing loader for cruise departures (see detail sheet). */
+  onLoadDeparturePricing?: CatalogDetailSheetProps["onLoadDeparturePricing"]
   /**
    * Called when the operator clicks a per-departure Book button on a
    * catalog row. Templates typically navigate to the catalog booking
@@ -288,19 +290,9 @@ export function CatalogSearchPage({
   return (
     <div className="flex flex-col gap-4">
       {title}
-      <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto]">
-        <div className="relative">
-          <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            value={rawQuery}
-            onChange={(e) => setInternalRawQuery(e.target.value)}
-            placeholder={resolvedSearchPlaceholder}
-            className="pl-9"
-          />
-        </div>
-        {toolbarEnd ? <div className="flex flex-wrap items-center gap-2">{toolbarEnd}</div> : null}
-      </div>
+      {toolbarEnd ? (
+        <div className="flex flex-wrap items-center justify-end gap-2">{toolbarEnd}</div>
+      ) : null}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           {tabs.map((tab) => (
@@ -310,7 +302,19 @@ export function CatalogSearchPage({
           ))}
         </TabsList>
         {tabs.map((tab) => (
-          <TabsContent key={tab.id} value={tab.id} className="mt-4">
+          <TabsContent key={tab.id} value={tab.id} className="mt-4 flex flex-col gap-4">
+            {/* The search box lives inside each tab — it queries that tab's
+                vertical index, so it belongs with the vertical, not the page. */}
+            <div className="relative max-w-xl">
+              <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                value={rawQuery}
+                onChange={(e) => setInternalRawQuery(e.target.value)}
+                placeholder={resolvedSearchPlaceholder}
+                className="pl-9"
+              />
+            </div>
             <CatalogTabPanel
               tab={tab}
               query={debouncedQuery}
@@ -572,9 +576,11 @@ function CatalogTabPanel({
         formatters={tab.detailFormatters}
         actions={tab.detailActions}
         imageField={tab.imageField ?? "thumbnailUrl"}
+        vertical={tab.vertical}
         width={tab.detailSheetWidth ?? detailSheetWidth}
         headerExtras={tab.detailHeaderExtras ?? detailHeaderExtras}
         onLoadDetail={tab.onLoadDetail}
+        onLoadDeparturePricing={tab.onLoadDeparturePricing}
         onBookDeparture={tab.onBookDeparture}
         onBookOption={tab.onBookOption}
         renderBrochure={tab.renderDetailBrochure ?? renderDetailBrochure}

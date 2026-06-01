@@ -58,6 +58,12 @@ import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import { Client as TypesenseSdkClient } from "typesense"
 
+import {
+  createConnectCruiseSourceAdapter,
+  skipCruiseConnectDocuments,
+} from "../src/api/lib/connect-cruise-source.js"
+import { createGeoNameResolver } from "../src/api/lib/geo-resolver.js"
+
 config({ path: ".env" })
 config({ path: "../../.env" })
 config({ path: "../../.env.local" })
@@ -120,6 +126,13 @@ if (voyantConnectApiKey || voyantConnectOperatorId) {
         `[sync-sources] Voyant Connect has no active connections for operator ${voyantConnectOperatorId}`,
       )
     }
+    // Resolve canonical-geography ids (ports/regions/waterways) to display
+    // names via Voyant Data geo so the catalog shows "Istanbul", not
+    // "city:geonames:745044".
+    const geoResolver = createGeoNameResolver({
+      apiKey: voyantConnectApiKey,
+      baseUrl: cloudApiUrl,
+    })
     for (const connection of connections) {
       registry.register(
         connection.id,
@@ -129,7 +142,26 @@ if (voyantConnectApiKey || voyantConnectOperatorId) {
           sourceProvider: connection.providerKey ?? undefined,
           market: voyantConnectMarket,
           discoverLimit: positiveInteger(voyantConnectSyncLimit) ?? 500,
+          // Cruises are sourced through the structured cruise adapter below so
+          // the canonical geography survives; skip them on the generic path.
+          mapDocument: skipCruiseConnectDocuments,
         }),
+      )
+      // Structured cruise sourcing — lands sourced cruises in the cruise
+      // vertical with facetable geography (waterways / regions / countries +
+      // canonical ids) instead of the generic flat discovery doc.
+      registry.register(
+        `${connection.id}:cruises`,
+        createConnectCruiseSourceAdapter(
+          {
+            client,
+            operatorId: voyantConnectOperatorId,
+            connectionIds: [connection.id],
+            sourceProvider: connection.providerKey ?? undefined,
+          },
+          undefined,
+          { geo: geoResolver },
+        ),
       )
     }
   }

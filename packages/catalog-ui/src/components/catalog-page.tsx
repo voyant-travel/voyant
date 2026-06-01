@@ -56,7 +56,10 @@ export interface CatalogPageProps {
    * request (auth headers, locale resolution, side-channel data). The
    * default integration uses `enrichmentFetchers` for the common case.
    */
-  onLoadProductDetail?: (hit: CatalogSearchHit) => Promise<CatalogDetailEnrichment | null>
+  onLoadProductDetail?: (
+    hit: CatalogSearchHit,
+    vertical?: string,
+  ) => Promise<CatalogDetailEnrichment | null>
   /**
    * Declarative detail-enrichment fetchers. Build with
    * `createCatalogEnrichmentFetchers({ baseUrl, … })`. When provided
@@ -120,6 +123,21 @@ export function CatalogPage({
     () => onLoadProductDetail ?? enrichmentFetchers?.loadProductDetail,
     [onLoadProductDetail, enrichmentFetchers],
   )
+  // Each tab binds the loader to its vertical so the detail sheet fetches
+  // from the right content route (e.g. cruises → /v1/admin/cruises). Without
+  // this, only the products tab loaded enrichment and every other vertical's
+  // sheet rendered the bare projection.
+  const detailLoaderFor = (vertical: string) =>
+    resolvedLoadProductDetail
+      ? (hit: CatalogSearchHit) => resolvedLoadProductDetail(hit, vertical)
+      : undefined
+  // Lazy per-cabin pricing loader, bound per vertical (cruises only today).
+  const loadDeparturePricing = enrichmentFetchers?.loadDeparturePricing
+  const departurePricingLoaderFor = (vertical: string) =>
+    loadDeparturePricing
+      ? (hit: CatalogSearchHit, sailingRef: string) =>
+          loadDeparturePricing(hit, sailingRef, vertical)
+      : undefined
   const supplierFormatter = (value: unknown) =>
     typeof value === "string" ? formatSupplier(value) : String(value ?? "")
   const sourceKindFormatter = (value: unknown) =>
@@ -162,7 +180,7 @@ export function CatalogPage({
             ]
           : []),
       ],
-      onLoadDetail: resolvedLoadProductDetail,
+      onLoadDetail: detailLoaderFor("products"),
       onBookDeparture: onBookDeparture
         ? (hit, departure) => onBookDeparture(hit, "products", departure)
         : undefined,
@@ -180,6 +198,7 @@ export function CatalogPage({
         supplierId: supplierFormatter,
         "source.kind": sourceKindFormatter,
       },
+      onLoadDetail: detailLoaderFor("extras"),
     },
     {
       id: "cruises",
@@ -192,6 +211,8 @@ export function CatalogPage({
         lineSupplierId: supplierFormatter,
         "source.kind": sourceKindFormatter,
       },
+      onLoadDetail: detailLoaderFor("cruises"),
+      onLoadDeparturePricing: departurePricingLoaderFor("cruises"),
     },
     {
       id: "charters",
@@ -204,6 +225,7 @@ export function CatalogPage({
         lineSupplierId: supplierFormatter,
         "source.kind": sourceKindFormatter,
       },
+      onLoadDetail: detailLoaderFor("charters"),
     },
     {
       id: "accommodations",
@@ -215,6 +237,7 @@ export function CatalogPage({
         supplierId: supplierFormatter,
         "source.kind": sourceKindFormatter,
       },
+      onLoadDetail: detailLoaderFor("accommodations"),
     },
   ]
 

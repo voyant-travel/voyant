@@ -45,10 +45,14 @@ export const cruiseSummarySchema = z.object({
 export const cruiseShipSchema = z.object({
   id: z.string().nullable().optional(),
   name: z.string(),
+  /** ocean / river / expedition / yacht / sailing / coastal. */
+  ship_type: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   capacity: z.number().int().nonnegative().nullable().optional(),
   decks: z.number().int().nonnegative().nullable().optional(),
   year_built: z.number().int().nonnegative().nullable().optional(),
+  /** Ship photo URLs (cover first). */
+  gallery: z.array(z.string()).optional().default([]),
 })
 
 export const cruiseItineraryStopSchema = z.object({
@@ -94,6 +98,10 @@ export const cruiseCabinCategorySchema = z.object({
   type: z.string().nullable().optional(), // inside, outside, balcony, suite
   capacity_min: z.number().int().nonnegative().nullable().optional(),
   capacity_max: z.number().int().nonnegative().nullable().optional(),
+  /** Cabin photo URLs (cover first). */
+  images: z.array(z.string()).optional().default([]),
+  /** Cabin size, as the source reports it (e.g. "270" sqft). */
+  square_feet: z.string().nullable().optional(),
   inclusions: z.array(z.string()).optional().default([]),
   feature_codes: z.array(z.string()).default([]),
   bed_configurations: z.array(z.enum(CABIN_BED_CONFIGURATIONS)).default([]),
