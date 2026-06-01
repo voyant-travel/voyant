@@ -3218,6 +3218,9 @@ importers:
 
   packages/flights-contracts:
     dependencies:
+      '@voyantjs/catalog-contracts':
+        specifier: workspace:*
+        version: link:../catalog-contracts
       zod:
         specifier: ^4.3.6
         version: 4.3.6
