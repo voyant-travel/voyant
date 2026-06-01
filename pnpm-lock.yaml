@@ -3670,9 +3670,9 @@ importers:
       '@voyantjs/schema-kit':
         specifier: workspace:*
         version: link:../schema-kit
-      '@voyantjs/utils':
+      '@voyantjs/templating':
         specifier: workspace:*
-        version: link:../utils
+        version: link:../templating
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -5309,6 +5309,22 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
 
+  packages/templating:
+    dependencies:
+      liquidjs:
+        specifier: ^10.24.0
+        version: 10.25.5
+    devDependencies:
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+
   packages/test-utils:
     dependencies:
       '@voyantjs/db':
@@ -5642,6 +5658,9 @@ importers:
 
   packages/utils:
     dependencies:
+      '@voyantjs/templating':
+        specifier: workspace:*
+        version: link:../templating
       '@voyantjs/types':
         specifier: workspace:*
         version: link:../types

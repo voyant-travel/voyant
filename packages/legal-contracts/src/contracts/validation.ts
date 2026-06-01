@@ -1,5 +1,5 @@
 import { booleanQueryParam } from "@voyantjs/schema-kit/query-params"
-import { validateStructuredTemplateSyntax } from "@voyantjs/utils/template-renderer"
+import { validateStructuredTemplateSyntax } from "@voyantjs/templating"
 import { z } from "zod"
 
 export const contractScopeSchema = z.enum(["customer", "supplier", "partner", "channel", "other"])
