@@ -1,5 +1,3 @@
-export * from "./validation-config.js"
-export * from "./validation-content.js"
-export * from "./validation-core.js"
-export * from "./validation-public.js"
-export * from "./validation-shared.js"
+// Re-export stub: the canonical schema now lives in @voyantjs/products-contracts
+// (pure, zero-runtime). This preserves the existing import path.
+export * from "@voyantjs/products-contracts/validation"

@@ -5,7 +5,14 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./content-shape": "./src/content-shape.ts"
+    "./content-shape": "./src/content-shape.ts",
+    "./validation": "./src/validation.ts",
+    "./validation-shared": "./src/validation-shared.ts",
+    "./validation-core": "./src/validation-core.ts",
+    "./validation-public": "./src/validation-public.ts",
+    "./validation-config": "./src/validation-config.ts",
+    "./validation-content": "./src/validation-content.ts",
+    "./validation-catalog": "./src/validation-catalog.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -30,12 +37,48 @@
         "types": "./dist/content-shape.d.ts",
         "import": "./dist/content-shape.js",
         "default": "./dist/content-shape.js"
+      },
+      "./validation": {
+        "types": "./dist/validation.d.ts",
+        "import": "./dist/validation.js",
+        "default": "./dist/validation.js"
+      },
+      "./validation-shared": {
+        "types": "./dist/validation-shared.d.ts",
+        "import": "./dist/validation-shared.js",
+        "default": "./dist/validation-shared.js"
+      },
+      "./validation-core": {
+        "types": "./dist/validation-core.d.ts",
+        "import": "./dist/validation-core.js",
+        "default": "./dist/validation-core.js"
+      },
+      "./validation-public": {
+        "types": "./dist/validation-public.d.ts",
+        "import": "./dist/validation-public.js",
+        "default": "./dist/validation-public.js"
+      },
+      "./validation-config": {
+        "types": "./dist/validation-config.d.ts",
+        "import": "./dist/validation-config.js",
+        "default": "./dist/validation-config.js"
+      },
+      "./validation-content": {
+        "types": "./dist/validation-content.d.ts",
+        "import": "./dist/validation-content.js",
+        "default": "./dist/validation-content.js"
+      },
+      "./validation-catalog": {
+        "types": "./dist/validation-catalog.d.ts",
+        "import": "./dist/validation-catalog.js",
+        "default": "./dist/validation-catalog.js"
       }
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
+    "@voyantjs/schema-kit": "workspace:*",
     "zod": "^4.3.6"
   },
   "devDependencies": {

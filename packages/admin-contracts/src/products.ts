@@ -1,19 +1,22 @@
 /**
- * Products admin operations — read surface (list, get).
+ * Products admin operations: list/get + create/update/delete.
  *
- * Write operations (create/update/delete) are intentionally deferred: products
- * validation still lives in the runtime `@voyantjs/products` package (which
- * carries drizzle/db deps), not in a pure `*-contracts` package. Deriving write
- * inputs here would pollute this zero-runtime contract package. Once products'
- * validation is extracted to `@voyantjs/products-contracts` (mirroring the
- * bookings/finance/crm/legal split), the write descriptors derive from it. The
- * read surface needs no input schema, so it ships now.
+ * Input schemas derive from `@voyantjs/products-contracts` — the products
+ * validation was extracted out of the runtime `@voyantjs/products` package into
+ * that pure, zero-runtime contract package, so this package can depend on it
+ * (mirroring the bookings/finance/crm/legal split). Output schemas stay loose
+ * client-facing projections (ADR-0003).
  */
 
+import {
+  insertProductSchema,
+  productListQuerySchema,
+  updateProductSchema,
+} from "@voyantjs/products-contracts/validation"
 import { z } from "zod"
 
 import { defineOperation } from "./core/operation.js"
-import { pageQuerySchema, paginated } from "./core/pagination.js"
+import { paginated } from "./core/pagination.js"
 
 export const productSummarySchema = z.object({
   id: z.string(),
@@ -26,15 +29,14 @@ export const productSummarySchema = z.object({
 })
 export type ProductSummary = z.infer<typeof productSummarySchema>
 
-// `productListQuerySchema` lives in the runtime `@voyantjs/products` package, so
-// this pure package can't derive from it. Mirror a curated subset using the
-// route's EXACT field names — the filter is `productTypeId`, not `productType`
-// (Codex P2) — until products validation moves to `@voyantjs/products-contracts`.
-export const productsListInputSchema = pageQuerySchema.extend({
-  search: z.string().optional(),
-  status: z.string().optional(),
-  productTypeId: z.string().optional(),
-})
+// Delete/ack response — kept loose (route may return `{ success }` or the row).
+const ackSchema = z.object({ success: z.boolean().optional(), id: z.string().optional() })
+
+// List input derives from the canonical route query schema, minus the filters
+// the service doesn't actually implement — so the SDK never advertises a no-op
+// filter. `productListQuerySchema` accepts `taxClassId`, but
+// `productsService.listProducts` adds no predicate for it (Codex P2).
+export const productsListInputSchema = productListQuerySchema.omit({ taxClassId: true })
 
 const list = defineOperation({
   id: "products.list",
@@ -61,4 +63,40 @@ const get = defineOperation({
   summary: "Get a single product by id.",
 })
 
-export const productsOperations = { list, get } as const
+const create = defineOperation({
+  id: "products.create",
+  method: "POST",
+  path: () => "/v1/admin/products",
+  pathTemplate: "/v1/admin/products",
+  input: insertProductSchema,
+  output: productSummarySchema,
+  classification: "routine_write",
+  scopes: ["products:write"],
+  summary: "Create a product.",
+})
+
+const update = defineOperation({
+  id: "products.update",
+  method: "PATCH",
+  path: (p: { id: string }) => `/v1/admin/products/${p.id}`,
+  pathTemplate: "/v1/admin/products/:id",
+  input: updateProductSchema,
+  output: productSummarySchema,
+  classification: "routine_write",
+  scopes: ["products:write"],
+  summary: "Update a product.",
+})
+
+const del = defineOperation({
+  id: "products.delete",
+  method: "DELETE",
+  path: (p: { id: string }) => `/v1/admin/products/${p.id}`,
+  pathTemplate: "/v1/admin/products/:id",
+  input: z.object({}),
+  output: ackSchema,
+  classification: "destructive",
+  scopes: ["products:delete"],
+  summary: "Delete a product.",
+})
+
+export const productsOperations = { list, get, create, update, delete: del } as const

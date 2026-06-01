@@ -240,6 +240,26 @@ describe("createAdminClient", () => {
     expect(calls[1]?.url).toContain("/v1/admin/products?")
   })
 
+  it("creates a product (input derived from @voyantjs/products-contracts)", async () => {
+    const { fetchImpl, calls } = mockFetch(() => ({
+      status: 201,
+      body: { data: { id: "prod_9", name: "City Tour", status: "draft" } },
+    }))
+    const client = createAdminClient({
+      baseUrl: "https://acme.voyant.app",
+      auth: { type: "apiKey", apiKey: "voy_test" },
+      fetch: fetchImpl,
+    })
+
+    const result = await client.products.create({ name: "City Tour", sellCurrency: "EUR" })
+
+    expect(result.id).toBe("prod_9")
+    expect(calls[0]?.method).toBe("POST")
+    expect(calls[0]?.url).toBe("https://acme.voyant.app/v1/admin/products")
+    // Defaults from the route schema are applied before send (e.g. status=draft).
+    expect(JSON.parse(calls[0]?.body ?? "{}")).toMatchObject({ name: "City Tour", status: "draft" })
+  })
+
   it("discovers deployment capabilities", async () => {
     const { fetchImpl, calls } = mockFetch(() => ({
       status: 200,

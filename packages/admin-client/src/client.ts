@@ -126,6 +126,11 @@ export function createAdminClient(config: AdminClientConfig) {
       list: (input?: InferInput<typeof productsOperations.list>) =>
         execute(productsOperations.list, undefined, input),
       get: (params: { id: string }) => execute(productsOperations.get, params),
+      create: (input: InferInput<typeof productsOperations.create>) =>
+        execute(productsOperations.create, undefined, input),
+      update: (params: { id: string }, input: InferInput<typeof productsOperations.update>) =>
+        execute(productsOperations.update, params, input),
+      delete: (params: { id: string }) => execute(productsOperations.delete, params),
     },
   }
 }

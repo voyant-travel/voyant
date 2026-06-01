@@ -109,6 +109,9 @@ describe("@voyantjs/admin-contracts registry", () => {
       "legal.policies.evaluate",
       "products.list",
       "products.get",
+      "products.create",
+      "products.update",
+      "products.delete",
     ]) {
       expect(ids, id).toContain(id)
     }
@@ -118,6 +121,8 @@ describe("@voyantjs/admin-contracts registry", () => {
       "crm-pii:read",
     ])
     expect(getOperation("crm.people.delete")?.scopes).toEqual(["crm:delete"])
+    expect(getOperation("products.create")?.scopes).toEqual(["products:write"])
+    expect(getOperation("products.delete")?.scopes).toEqual(["products:delete"])
     expect(getOperation("nope.missing")).toBeUndefined()
   })
 
@@ -147,11 +152,16 @@ describe("@voyantjs/admin-contracts registry", () => {
     }) as Record<string, unknown>
     expect(peopleList.organizationId).toBe("org_1")
 
-    // Products: the filter field is `productTypeId`, not `productType`.
+    // Products: derives the route's real filters (productTypeId/supplierId/…)
+    // but drops `taxClassId`, which the list service never filters on.
     const productList = productsOperations.list.input.parse({
       productTypeId: "ptype_1",
+      supplierId: "supp_1",
+      taxClassId: "tax_1",
     }) as Record<string, unknown>
     expect(productList.productTypeId).toBe("ptype_1")
+    expect(productList.supplierId).toBe("supp_1")
+    expect("taxClassId" in productList).toBe(false)
   })
 
   it("projects to a deployment capability descriptor", () => {
