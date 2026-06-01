@@ -91,7 +91,11 @@ type AnyOperation = OperationDescriptor<any, any, any>
 
 export type InferParams<D extends AnyOperation> =
   D extends OperationDescriptor<infer P, infer _I, infer _O> ? P : never
+// Input uses z.input (the caller-facing, pre-parse type) so schema defaults
+// (e.g. a status that defaults to "pending") are optional for the caller, not
+// required. Output uses z.infer (post-parse) since that's what the client
+// returns after parsing the response.
 export type InferInput<D extends AnyOperation> =
-  D extends OperationDescriptor<infer _P, infer I, infer _O> ? z.infer<I> : never
+  D extends OperationDescriptor<infer _P, infer I, infer _O> ? z.input<I> : never
 export type InferOutput<D extends AnyOperation> =
   D extends OperationDescriptor<infer _P, infer _I, infer O> ? z.infer<O> : never
