@@ -126,6 +126,7 @@
       "@voyantjs/legal-contracts",
       "@voyantjs/admin-contracts",
       "@voyantjs/admin-client",
+      "@voyantjs/admin-react",
       "@voyantjs/flights-contracts",
       "@voyantjs/templating"
     ]

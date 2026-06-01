@@ -4,7 +4,7 @@ export type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE"
 
 /**
  * How cautious an operation is — drives confirm dialogs in native UIs, risk
- * gating in Max/AI tool wrappers, and the audit `actionKind`. A single,
+ * gating in AI tool wrappers, and the audit `actionKind`. A single,
  * escalating ladder:
  *
  *   - `read`                  — no mutation.

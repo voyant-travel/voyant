@@ -88,18 +88,33 @@ describe("@voyantjs/admin-contracts operation descriptors", () => {
 
 describe("@voyantjs/admin-contracts registry", () => {
   it("flattens every domain operation and looks them up by id", () => {
-    const ids = allOperations.map((op) => op.id).sort()
-    expect(ids).toEqual([
-      "bookings.cancel",
-      "bookings.confirm",
-      "bookings.get",
+    const ids = allOperations.map((op) => op.id)
+    // Spot-check representative ids per domain rather than a brittle exact list
+    // (the catalogue grows). Uniqueness/well-formedness is covered by
+    // consistency.test.ts.
+    for (const id of [
       "bookings.list",
+      "bookings.confirm",
       "finance.invoices.get",
-      "finance.invoices.list",
-      "finance.paymentLinks.create",
       "finance.payments.record",
-    ])
+      "crm.people.list",
+      "crm.people.create",
+      "crm.people.documents.reveal",
+      "crm.organizations.delete",
+      "legal.contracts.create",
+      "legal.contracts.void",
+      "legal.policies.evaluate",
+      "products.list",
+      "products.get",
+    ]) {
+      expect(ids, id).toContain(id)
+    }
     expect(getOperation("finance.payments.record")?.scopes).toEqual(["finance:write"])
+    expect(getOperation("crm.people.documents.reveal")?.scopes).toEqual([
+      "crm:read",
+      "crm-pii:read",
+    ])
+    expect(getOperation("crm.people.delete")?.scopes).toEqual(["crm:delete"])
     expect(getOperation("nope.missing")).toBeUndefined()
   })
 

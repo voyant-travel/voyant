@@ -167,6 +167,79 @@ describe("createAdminClient", () => {
     }
   })
 
+  it("creates a CRM person: POST with idempotency, data-unwrapped result", async () => {
+    const person = {
+      id: "pers_1",
+      firstName: "Ada",
+      lastName: "Lovelace",
+      email: "ada@example.com",
+      createdAt: "2026-06-01T00:00:00Z",
+      updatedAt: "2026-06-01T00:00:00Z",
+    }
+    const { fetchImpl, calls } = mockFetch(() => ({ status: 201, body: { data: person } }))
+    const client = createAdminClient({
+      baseUrl: "https://acme.voyant.app",
+      auth: { type: "apiKey", apiKey: "voy_test" },
+      fetch: fetchImpl,
+      idempotencyKey: (op) => `idem-${op}`,
+    })
+
+    const result = await client.crm.people.create({
+      firstName: "Ada",
+      lastName: "Lovelace",
+      email: "ada@example.com",
+    })
+
+    expect(result.id).toBe("pers_1")
+    expect(calls[0]?.method).toBe("POST")
+    expect(calls[0]?.url).toBe("https://acme.voyant.app/v1/admin/crm/people")
+    expect(calls[0]?.headers["idempotency-key"]).toBe("idem-crm.people.create")
+  })
+
+  it("reveals a person document (PII-gated GET)", async () => {
+    const { fetchImpl, calls } = mockFetch(() => ({
+      status: 200,
+      body: { data: { documentNumber: "X1234567" } },
+    }))
+    const client = createAdminClient({
+      baseUrl: "https://acme.voyant.app",
+      auth: { type: "apiKey", apiKey: "voy_test" },
+      fetch: fetchImpl,
+    })
+
+    const result = await client.crm.people.revealDocument({ id: "pdoc_1" })
+
+    expect(result.documentNumber).toBe("X1234567")
+    expect(calls[0]?.method).toBe("GET")
+    expect(calls[0]?.url).toBe(
+      "https://acme.voyant.app/v1/admin/crm/person-documents/pdoc_1/reveal",
+    )
+  })
+
+  it("voids a contract and lists products", async () => {
+    const { fetchImpl, calls } = mockFetch((req) =>
+      req.method === "POST"
+        ? { status: 200, body: { data: { id: "cont_1", status: "void" } } }
+        : {
+            status: 200,
+            body: { data: [{ id: "prod_1", name: "Tour" }], total: 1, limit: 50, offset: 0 },
+          },
+    )
+    const client = createAdminClient({
+      baseUrl: "https://acme.voyant.app",
+      auth: { type: "apiKey", apiKey: "voy_test" },
+      fetch: fetchImpl,
+    })
+
+    const voided = await client.legal.contracts.void({ id: "cont_1" })
+    expect(voided.status).toBe("void")
+    expect(calls[0]?.url).toBe("https://acme.voyant.app/v1/admin/legal/contracts/cont_1/void")
+
+    const page = await client.products.list({ search: "tour" })
+    expect(page.data[0]?.id).toBe("prod_1")
+    expect(calls[1]?.url).toContain("/v1/admin/products?")
+  })
+
   it("discovers deployment capabilities", async () => {
     const { fetchImpl, calls } = mockFetch(() => ({
       status: 200,
