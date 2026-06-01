@@ -185,6 +185,10 @@ interface CruiseContentPayload {
     name: string
     description?: string | null
     type?: string | null
+    images?: string[]
+    square_feet?: string | null
+    capacity_max?: number | null
+    inclusions?: string[]
   }>
   itinerary_stops?: CruiseItineraryStopPayload[]
   policies: Array<{ kind: string; body: string }>
@@ -424,9 +428,13 @@ function mapCruiseContentToEnrichment(content: CruiseContentPayload): CatalogDet
     options: (content.cabin_categories ?? []).map((c) => ({
       id: c.id,
       name: formatCruiseCabinCategoryName(c),
-      description: c.description ?? null,
+      description: c.description ? stripHtmlTags(c.description) : null,
       code: c.code ?? null,
       type: c.type ?? null,
+      images: c.images ?? [],
+      squareFeet: c.square_feet ?? null,
+      capacityMax: c.capacity_max ?? null,
+      amenities: c.inclusions ?? [],
     })),
     policies: content.policies.map((p) => ({ kind: p.kind, body: p.body })),
     departures: (content.sailings ?? []).map((s) => ({
@@ -479,6 +487,12 @@ function formatCruiseCabinCategoryName(category: {
 function stripHtmlTags(value: string): string {
   return value
     .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&quot;/gi, '"')
     .replace(/\s+/g, " ")
     .trim()
 }

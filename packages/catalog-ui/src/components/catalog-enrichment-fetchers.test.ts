@@ -328,8 +328,22 @@ describe("createCatalogEnrichmentFetchers", () => {
         description: null,
         code: "DV1",
         type: "balcony",
+        images: [],
+        squareFeet: null,
+        capacityMax: null,
+        amenities: [],
       },
-      { id: "c2", name: "DV2", description: null, code: "DV2", type: "balcony" },
+      {
+        id: "c2",
+        name: "DV2",
+        description: null,
+        code: "DV2",
+        type: "balcony",
+        images: [],
+        squareFeet: null,
+        capacityMax: null,
+        amenities: [],
+      },
     ])
   })
 

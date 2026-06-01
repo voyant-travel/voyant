@@ -94,6 +94,10 @@ export const cruiseCabinCategorySchema = z.object({
   type: z.string().nullable().optional(), // inside, outside, balcony, suite
   capacity_min: z.number().int().nonnegative().nullable().optional(),
   capacity_max: z.number().int().nonnegative().nullable().optional(),
+  /** Cabin photo URLs (cover first). */
+  images: z.array(z.string()).optional().default([]),
+  /** Cabin size, as the source reports it (e.g. "270" sqft). */
+  square_feet: z.string().nullable().optional(),
   inclusions: z.array(z.string()).optional().default([]),
   feature_codes: z.array(z.string()).default([]),
   bed_configurations: z.array(z.enum(CABIN_BED_CONFIGURATIONS)).default([]),

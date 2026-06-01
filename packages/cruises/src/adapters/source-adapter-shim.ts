@@ -351,6 +351,8 @@ function cruiseCabinCategoryFrom(
     type: cat.roomType,
     capacity_min: cat.minOccupancy,
     capacity_max: cat.maxOccupancy,
+    images: [...(cat.images ?? []), ...(cat.floorplanImages ?? [])],
+    square_feet: cat.squareFeet ?? null,
     inclusions: cat.amenities ?? [],
     feature_codes: cat.featureCodes ?? [],
     bed_configurations: cat.bedConfigurations ?? [],

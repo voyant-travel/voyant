@@ -91,6 +91,10 @@ export interface CatalogDetailEnrichment {
     description?: string | null
     code?: string | null
     type?: string | null
+    images?: string[]
+    squareFeet?: string | null
+    capacityMax?: number | null
+    amenities?: string[]
   }>
   policies?: ReadonlyArray<{ kind: string; body: string }>
   departures?: ReadonlyArray<{
@@ -606,15 +610,60 @@ export function CatalogDetailSheet({
 
                   {hasOptions && (
                     <TabsContent value="options">
-                      <ul className="space-y-1.5 text-sm">
-                        {enrichment!.options!.map((o) => (
-                          <li key={o.id} className="rounded-md border border-border px-3 py-2">
-                            <div className="font-medium">{o.name}</div>
-                            {o.description && (
-                              <div className="text-xs text-muted-foreground">{o.description}</div>
-                            )}
-                          </li>
-                        ))}
+                      <ul className="space-y-2 text-sm">
+                        {enrichment!.options!.map((o) => {
+                          const meta = [
+                            o.squareFeet ? `${o.squareFeet} sqft` : null,
+                            o.capacityMax ? `sleeps ${o.capacityMax}` : null,
+                          ].filter(Boolean)
+                          return (
+                            <li
+                              key={o.id}
+                              className="flex gap-3 rounded-md border border-border px-3 py-2"
+                            >
+                              {o.images?.[0] && (
+                                <img
+                                  src={o.images[0]}
+                                  alt={o.name}
+                                  className="h-16 w-16 shrink-0 rounded object-cover ring-1 ring-border"
+                                  loading="lazy"
+                                />
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-baseline gap-x-2">
+                                  <span className="font-medium">{o.name}</span>
+                                  {meta.length > 0 && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {meta.join(" · ")}
+                                    </span>
+                                  )}
+                                </div>
+                                {o.description && (
+                                  <div className="text-xs text-muted-foreground">
+                                    {o.description}
+                                  </div>
+                                )}
+                                {o.amenities && o.amenities.length > 0 && (
+                                  <div className="mt-1 flex flex-wrap gap-1">
+                                    {o.amenities.slice(0, 6).map((a) => (
+                                      <span
+                                        key={a}
+                                        className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                                      >
+                                        {a}
+                                      </span>
+                                    ))}
+                                    {o.amenities.length > 6 && (
+                                      <span className="px-1 text-[10px] text-muted-foreground">
+                                        +{o.amenities.length - 6}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </li>
+                          )
+                        })}
                       </ul>
                     </TabsContent>
                   )}
