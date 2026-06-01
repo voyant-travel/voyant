@@ -1,5 +1,12 @@
 # @voyantjs/admin-react
 
+## 0.101.0
+
+### Patch Changes
+
+- Updated dependencies [8e7b56a]
+  - @voyantjs/admin-client@0.101.0
+
 ## 0.100.0
 
 ### Minor Changes

@@ -1,5 +1,39 @@
 # @voyantjs/products
 
+## 0.101.0
+
+### Patch Changes
+
+- 8e7b56a: Extract products validation into the pure `@voyantjs/products-contracts` package
+  and complete the products admin SDK surface.
+
+  - **products-contracts:** now owns the products validation cluster
+    (`validation`, `validation-core`, `validation-public`, `validation-shared`,
+    `validation-config`, `validation-content`, `validation-catalog`), moved out of
+    the runtime `@voyantjs/products` package. Its only external imports — the two
+    `@voyantjs/db` helpers — are repointed to `@voyantjs/schema-kit`, so the
+    package stays zero-runtime (zod + schema-kit). Mirrors the
+    bookings/finance/crm/legal split.
+  - **products:** the moved files become one-line re-export stubs, so every
+    existing import path (`@voyantjs/products/validation`,
+    `@voyantjs/products/public-validation`, and internal `./validation-*`) keeps
+    working unchanged.
+  - **admin-contracts:** products gains its write descriptors —
+    `products.create`/`update`/`delete` deriving from `insertProductSchema`/
+    `updateProductSchema`, and `products.list` now derives from
+    `productListQuerySchema` — all from the newly-pure `@voyantjs/products-contracts`.
+  - **admin-client:** typed `products.create`/`update`/`delete` methods.
+
+- Updated dependencies [8e7b56a]
+  - @voyantjs/action-ledger@0.101.0
+  - @voyantjs/catalog@0.101.0
+  - @voyantjs/core@0.101.0
+  - @voyantjs/db@0.101.0
+  - @voyantjs/hono@0.101.0
+  - @voyantjs/products-contracts@0.101.0
+  - @voyantjs/storage@0.101.0
+  - @voyantjs/utils@0.101.0
+
 ## 0.100.0
 
 ### Patch Changes
