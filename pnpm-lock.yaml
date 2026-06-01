@@ -1094,6 +1094,9 @@ importers:
       '@voyantjs/legal-contracts':
         specifier: workspace:*
         version: link:../legal-contracts
+      '@voyantjs/products-contracts':
+        specifier: workspace:*
+        version: link:../products-contracts
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -4486,6 +4489,9 @@ importers:
 
   packages/products-contracts:
     dependencies:
+      '@voyantjs/schema-kit':
+        specifier: workspace:*
+        version: link:../schema-kit
       zod:
         specifier: ^4.3.6
         version: 4.3.6

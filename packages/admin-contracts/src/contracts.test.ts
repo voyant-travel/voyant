@@ -109,6 +109,9 @@ describe("@voyantjs/admin-contracts registry", () => {
       "legal.policies.evaluate",
       "products.list",
       "products.get",
+      "products.create",
+      "products.update",
+      "products.delete",
     ]) {
       expect(ids, id).toContain(id)
     }
@@ -118,6 +121,8 @@ describe("@voyantjs/admin-contracts registry", () => {
       "crm-pii:read",
     ])
     expect(getOperation("crm.people.delete")?.scopes).toEqual(["crm:delete"])
+    expect(getOperation("products.create")?.scopes).toEqual(["products:write"])
+    expect(getOperation("products.delete")?.scopes).toEqual(["products:delete"])
     expect(getOperation("nope.missing")).toBeUndefined()
   })
 

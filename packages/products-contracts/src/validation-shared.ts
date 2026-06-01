@@ -1,0 +1,101 @@
+import { booleanQueryParam } from "@voyantjs/schema-kit/query-params"
+import { typeIdSchema } from "@voyantjs/schema-kit/typeid"
+import { z } from "zod"
+
+export { booleanQueryParam, typeIdSchema, z }
+
+export const productStatusSchema = z.enum(["draft", "active", "archived"])
+export const productOptionStatusSchema = z.enum(["draft", "active", "archived"])
+export const optionUnitTypeSchema = z.enum([
+  "person",
+  "group",
+  "room",
+  "vehicle",
+  "service",
+  "other",
+])
+export const productBookingModeSchema = z.enum([
+  "date",
+  "date_time",
+  "open",
+  "stay",
+  "transfer",
+  "itinerary",
+  "other",
+])
+export const productCapacityModeSchema = z.enum(["free_sale", "limited", "on_request"])
+export const productVisibilitySchema = z.enum(["public", "private", "hidden"])
+export const productActivationModeSchema = z.enum(["manual", "scheduled", "channel_controlled"])
+export const productTicketFulfillmentSchema = z.enum([
+  "none",
+  "per_booking",
+  "per_participant",
+  "per_item",
+])
+export const productDeliveryFormatSchema = z.enum([
+  "voucher",
+  "ticket",
+  "pdf",
+  "qr_code",
+  "barcode",
+  "email",
+  "mobile",
+  "none",
+])
+export const productCapabilitySchema = z.enum([
+  "instant_confirmation",
+  "on_request",
+  "pickup_available",
+  "dropoff_available",
+  "guided",
+  "private",
+  "shared",
+  "digital_ticket",
+  "voucher_required",
+  "external_inventory",
+  "multi_day",
+  "accommodation",
+  "transport",
+])
+export const productFeatureTypeSchema = z.enum([
+  "inclusion",
+  "exclusion",
+  "highlight",
+  "important_information",
+  "other",
+])
+export const productLocationTypeSchema = z.enum([
+  "start",
+  "end",
+  "meeting_point",
+  "pickup",
+  "dropoff",
+  "point_of_interest",
+  "other",
+])
+export const destinationTypeSchema = z.enum([
+  "destination",
+  "region",
+  "country",
+  "city",
+  "port",
+  "river",
+  "sea",
+  "ocean",
+  "canal",
+  "lake",
+])
+export const productMediaTypeSchema = z.enum(["image", "video", "document"])
+export const languageTagSchema = z
+  .string()
+  .min(2)
+  .max(35)
+  .regex(/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/)
+export const serviceTypeSchema = z.enum([
+  "accommodation",
+  "transfer",
+  "experience",
+  "guide",
+  "meal",
+  "other",
+])

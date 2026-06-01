@@ -34,6 +34,7 @@
     "@voyantjs/crm-contracts": "workspace:*",
     "@voyantjs/finance-contracts": "workspace:*",
     "@voyantjs/legal-contracts": "workspace:*",
+    "@voyantjs/products-contracts": "workspace:*",
     "zod": "^4.3.6"
   },
   "devDependencies": {
