@@ -84,12 +84,19 @@ identical across callers.**
   injection (API key **or** bearer/session), typed errors, pagination,
   idempotency keys, and capability discovery. **No React, no web-UI, no
   framework runtime deps** — runs in Expo, Node, Workers, and Max tools.
-- **`@voyantjs/admin-react`** / **`@voyantjs/admin-expo`** *(follow-up)* — thin
-  adapter layers (React Query hooks; Expo-friendly helpers). Max-tool wrappers
-  and the Cloud broker caller also build on `admin-client`.
+- **`@voyantjs/admin-react`** *(optional, follow-up)* — React Query hooks over
+  `admin-client` for React UIs. TanStack Query is renderer-agnostic, so the one
+  package serves the web admin **and** a React Native / Expo app.
+
+There is deliberately **no `admin-expo` and no Max adapter package**. Expo (React
+Native is just TypeScript), Max/AI tools, and the Voyant Cloud broker are all
+TypeScript + zod and call `admin-client` directly. Max in particular needs no
+wrapper layer: a descriptor already carries the zod input schema and
+`classification`, so turning the catalogue into agent tool definitions is a small
+mapping helper, not an adapter.
 
 The naming uses the `-contracts` suffix established by ADR-0002 (so the family
-reads `admin-contracts` / `admin-client` / `admin-react` / `admin-expo`),
+reads `admin-contracts` / `admin-client`, plus an optional `admin-react`),
 rather than the alternative per-domain `bookings-client` / `finance-client`
 split — see Alternatives.
 
@@ -213,9 +220,12 @@ The descriptor approach is a thin typed layer over what already ships.
    operation ids, deployment/contract version, and required scopes.
 2. Expand the operation catalogue beyond the first slice (CRM, legal, products,
    workflows, settings) per #1411's priority list.
-3. `@voyantjs/admin-react` (React Query hooks) and `@voyantjs/admin-expo`.
-4. Max-tool wrappers that turn descriptors into agent tools with risk gating
-   from `classification`, and the Cloud broker caller.
+3. An optional `@voyantjs/admin-react` (React Query hooks) for React UIs —
+   serves both the web admin and a React Native / Expo app (no separate Expo
+   adapter; TanStack Query is renderer-agnostic).
+4. A small descriptor→agent-tool mapping helper (risk-gated by `classification`)
+   so Max/AI tools and the Cloud broker call `admin-client` directly — no Max
+   adapter package.
 5. CI guard asserting descriptor ↔ route consistency.
 
 ## How to apply this decision
