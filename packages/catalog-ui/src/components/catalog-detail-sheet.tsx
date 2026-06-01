@@ -45,6 +45,7 @@ import {
 } from "react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 import type { CatalogUiMessages } from "../i18n/messages.js"
+import { CabinGallery } from "./cabin-gallery.js"
 import type { CatalogDeparturePricingRow } from "./catalog-enrichment-fetchers.js"
 
 export interface CatalogDetailAction {
@@ -610,60 +611,10 @@ export function CatalogDetailSheet({
 
                   {hasOptions && (
                     <TabsContent value="options">
-                      <ul className="space-y-2 text-sm">
-                        {enrichment!.options!.map((o) => {
-                          const meta = [
-                            o.squareFeet ? `${o.squareFeet} sqft` : null,
-                            o.capacityMax ? `sleeps ${o.capacityMax}` : null,
-                          ].filter(Boolean)
-                          return (
-                            <li
-                              key={o.id}
-                              className="flex gap-3 rounded-md border border-border px-3 py-2"
-                            >
-                              {o.images?.[0] && (
-                                <img
-                                  src={o.images[0]}
-                                  alt={o.name}
-                                  className="h-16 w-16 shrink-0 rounded object-cover ring-1 ring-border"
-                                  loading="lazy"
-                                />
-                              )}
-                              <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-baseline gap-x-2">
-                                  <span className="font-medium">{o.name}</span>
-                                  {meta.length > 0 && (
-                                    <span className="text-xs text-muted-foreground">
-                                      {meta.join(" · ")}
-                                    </span>
-                                  )}
-                                </div>
-                                {o.description && (
-                                  <div className="text-xs text-muted-foreground">
-                                    {o.description}
-                                  </div>
-                                )}
-                                {o.amenities && o.amenities.length > 0 && (
-                                  <div className="mt-1 flex flex-wrap gap-1">
-                                    {o.amenities.slice(0, 6).map((a) => (
-                                      <span
-                                        key={a}
-                                        className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
-                                      >
-                                        {a}
-                                      </span>
-                                    ))}
-                                    {o.amenities.length > 6 && (
-                                      <span className="px-1 text-[10px] text-muted-foreground">
-                                        +{o.amenities.length - 6}
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </li>
-                          )
-                        })}
+                      <ul className="space-y-3">
+                        {enrichment!.options!.map((o) => (
+                          <CabinCard key={o.id} cabin={o} />
+                        ))}
                       </ul>
                     </TabsContent>
                   )}
@@ -1874,5 +1825,57 @@ function IdChip({ id }: { id: string }): ReactNode {
         <Copy className="h-3 w-3 shrink-0 opacity-60" />
       )}
     </button>
+  )
+}
+
+/**
+ * One cabin in the cruise Cabins tab: photo gallery (carousel + lightbox),
+ * name + size/capacity, description, and amenity chips.
+ */
+function CabinCard({
+  cabin,
+}: {
+  cabin: NonNullable<CatalogDetailEnrichment["options"]>[number]
+}): ReactNode {
+  const desc = cabin.description?.trim() ?? ""
+  const meta = [
+    cabin.squareFeet ? `${cabin.squareFeet} sqft` : null,
+    cabin.capacityMax ? `sleeps ${cabin.capacityMax}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ")
+  // The upstream amenity list leads with the cabin size + a copy of the
+  // description; drop those so the chips show genuine, non-duplicated perks.
+  const amenities = (cabin.amenities ?? []).filter(
+    (a) => a.trim() !== desc && !/^stateroom size/i.test(a.trim()),
+  )
+  return (
+    <li className="flex gap-4 rounded-lg border border-border p-3">
+      <CabinGallery images={cabin.images ?? []} alt={cabin.name} />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-baseline gap-x-2">
+          <h4 className="font-medium text-sm">{cabin.name}</h4>
+          {meta && <span className="text-xs text-muted-foreground">{meta}</span>}
+        </div>
+        {desc && <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{desc}</p>}
+        {amenities.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {amenities.slice(0, 6).map((a) => (
+              <span
+                key={a}
+                className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
+              >
+                {a}
+              </span>
+            ))}
+            {amenities.length > 6 && (
+              <span className="px-1 text-[10px] text-muted-foreground">
+                +{amenities.length - 6}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    </li>
   )
 }
