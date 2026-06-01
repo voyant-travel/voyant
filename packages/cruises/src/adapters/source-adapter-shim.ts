@@ -318,6 +318,13 @@ function cruiseSailingFrom(
       ? Math.max(0, Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)))
       : null
 
+  // The content schema requires lowest_price_cents + currency to be both-or-
+  // neither. Some adapters surface a price without its currency (or vice versa);
+  // an indicative "from" price without a currency isn't displayable anyway, so
+  // drop the pair rather than fail validation. Accurate per-cabin pricing comes
+  // from the live pricing endpoint, not this cached hint.
+  const hasPricePair = sail.lowestPriceCents != null && sail.currency != null
+
   return {
     id: defaultBuildEntityId(sail.sourceRef),
     source_ref: sail.sourceRef.externalId,
@@ -328,8 +335,8 @@ function cruiseSailingFrom(
     embarkation_port: sail.embarkPortName ?? null,
     disembarkation_port: sail.disembarkPortName ?? null,
     itinerary_stops: itinerary.map((day) => cruiseItineraryStopFrom(day)),
-    lowest_price_cents: sail.lowestPriceCents ?? null,
-    currency: sail.currency ?? null,
+    lowest_price_cents: hasPricePair ? (sail.lowestPriceCents ?? null) : null,
+    currency: hasPricePair ? (sail.currency ?? null) : null,
   }
 }
 

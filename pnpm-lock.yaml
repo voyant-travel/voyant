@@ -6532,8 +6532,8 @@ importers:
         specifier: ^0.2.11
         version: 0.2.11(@voyantjs/catalog@packages+catalog)
       '@voyantjs/connect-cruises':
-        specifier: ^0.3.2
-        version: 0.3.2(@voyantjs/cruises@packages+cruises)
+        specifier: ^0.3.4
+        version: 0.3.4(@voyantjs/cruises@packages+cruises)
       '@voyantjs/connect-sdk':
         specifier: ^0.1.6
         version: 0.1.6
@@ -10196,8 +10196,8 @@ packages:
     peerDependencies:
       '@voyantjs/catalog': '>=0.85.3 <1'
 
-  '@voyantjs/connect-cruises@0.3.2':
-    resolution: {integrity: sha512-KfLw48RQcAqYDTw6BNnnk8e+g3f6SZvBZuviazTMplI2U5T1qM/Ke/g6XazkGdZsokvhXpy05lVBawow6KeTHw==}
+  '@voyantjs/connect-cruises@0.3.4':
+    resolution: {integrity: sha512-0QDxzpYxDbtsdOxxWs0XnBcq/wwXi7K6NbeVTRYKhJUdS+mnjxkPN8xDzDR0XQMb9Qe3mpT6CRbbJUY35r2mKg==}
     peerDependencies:
       '@voyantjs/cruises': '>=0.85.3 <1'
     peerDependenciesMeta:
@@ -16976,7 +16976,7 @@ snapshots:
       '@voyantjs/catalog': link:packages/catalog
       '@voyantjs/connect-sdk': 0.1.6
 
-  '@voyantjs/connect-cruises@0.3.2(@voyantjs/cruises@packages+cruises)':
+  '@voyantjs/connect-cruises@0.3.4(@voyantjs/cruises@packages+cruises)':
     dependencies:
       '@voyantjs/connect-sdk': 0.1.6
     optionalDependencies:
