@@ -126,7 +126,8 @@
       "@voyantjs/legal-contracts",
       "@voyantjs/admin-contracts",
       "@voyantjs/admin-client",
-      "@voyantjs/flights-contracts"
+      "@voyantjs/flights-contracts",
+      "@voyantjs/templating"
     ]
   ],
   "linked": [],

@@ -7,8 +7,7 @@ runtime (Drizzle schema, Hono routes, services).
 `@voyantjs/legal` re-exports these from `./contracts/validation` and
 `./policies/validation`, so existing import paths are unchanged.
 
-> Note: `contracts/validation` pulls `validateStructuredTemplateSyntax` from
-> `@voyantjs/utils`, so this package isn't strictly zod-only yet (it transitively
-> depends on `@voyantjs/utils`). Extracting that template-syntax validator into a
-> pure home (e.g. `@voyantjs/schema-kit`) is a follow-up that would make
-> `legal-contracts` fully zod-only.
+> Contract bodies are Liquid templates, so `contracts/validation` validates
+> their syntax via `@voyantjs/templating` (a lean, `liquidjs`-only package). This
+> package depends on `zod` + `@voyantjs/schema-kit` + `@voyantjs/templating` — no
+> data layer (Drizzle / `@voyantjs/db`) in the dependency tree.
