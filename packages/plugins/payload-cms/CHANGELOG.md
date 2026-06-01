@@ -1,5 +1,11 @@
 # @voyantjs/plugin-payload-cms
 
+## 0.100.0
+
+### Patch Changes
+
+- @voyantjs/core@0.100.0
+
 ## 0.99.0
 
 ### Patch Changes
