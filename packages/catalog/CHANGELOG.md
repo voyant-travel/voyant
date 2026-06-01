@@ -1,5 +1,16 @@
 # @voyantjs/catalog
 
+## 0.99.0
+
+### Patch Changes
+
+- Updated dependencies [b7dde79]
+- Updated dependencies [c893886]
+  - @voyantjs/catalog-contracts@0.99.0
+  - @voyantjs/core@0.99.0
+  - @voyantjs/db@0.99.0
+  - @voyantjs/hono@0.99.0
+
 ## 0.98.0
 
 ### Patch Changes

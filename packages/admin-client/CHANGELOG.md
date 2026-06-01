@@ -1,5 +1,12 @@
 # @voyantjs/admin-client
 
+## 0.99.0
+
+### Patch Changes
+
+- Updated dependencies [cb22020]
+  - @voyantjs/admin-contracts@0.99.0
+
 ## 0.98.0
 
 ### Patch Changes
