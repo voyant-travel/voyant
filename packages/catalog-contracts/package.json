@@ -13,7 +13,9 @@
     "./adapter/schemas": "./src/adapter/schemas.ts",
     "./adapter/booking-forwarding": "./src/adapter/booking-forwarding.ts",
     "./adapter/channel-push-contracts": "./src/adapter/channel-push-contracts.ts",
-    "./adapter/provider-contracts": "./src/adapter/provider-contracts.ts"
+    "./adapter/provider-contracts": "./src/adapter/provider-contracts.ts",
+    "./booking-engine/contracts": "./src/booking-engine/contracts.ts",
+    "./booking-engine/promotions-contract": "./src/booking-engine/promotions-contract.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -78,6 +80,16 @@
         "types": "./dist/adapter/provider-contracts.d.ts",
         "import": "./dist/adapter/provider-contracts.js",
         "default": "./dist/adapter/provider-contracts.js"
+      },
+      "./booking-engine/contracts": {
+        "types": "./dist/booking-engine/contracts.d.ts",
+        "import": "./dist/booking-engine/contracts.js",
+        "default": "./dist/booking-engine/contracts.js"
+      },
+      "./booking-engine/promotions-contract": {
+        "types": "./dist/booking-engine/promotions-contract.d.ts",
+        "import": "./dist/booking-engine/promotions-contract.js",
+        "default": "./dist/booking-engine/promotions-contract.js"
       }
     },
     "main": "./dist/index.js",
