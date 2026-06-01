@@ -165,7 +165,16 @@ interface CruiseContentPayload {
     hero_image_url?: string | null
     cruise_line?: string | null
   }
-  ship?: { id?: string | null; name: string; description?: string | null } | null
+  ship?: {
+    id?: string | null
+    name: string
+    ship_type?: string | null
+    description?: string | null
+    capacity?: number | null
+    decks?: number | null
+    year_built?: number | null
+    gallery?: string[]
+  } | null
   sailings?: Array<{
     id: string
     source_ref?: string | null
@@ -416,6 +425,18 @@ function mapCruiseContentToEnrichment(content: CruiseContentPayload): CatalogDet
     highlights: content.cruise.highlights ?? [],
     heroImageUrl: content.cruise.hero_image_url ?? null,
     supplier: content.cruise.cruise_line ?? null,
+    ship: content.ship
+      ? {
+          id: content.ship.id ?? null,
+          name: content.ship.name,
+          shipType: content.ship.ship_type ?? null,
+          description: content.ship.description ?? null,
+          capacity: content.ship.capacity ?? null,
+          decks: content.ship.decks ?? null,
+          yearBuilt: content.ship.year_built ?? null,
+          images: content.ship.gallery ?? [],
+        }
+      : null,
     // Cruise itinerary lives per-sailing in the content payload; the cruise-level
     // `itinerary_stops` is empty for sourced cruises. Fall back to the first
     // sailing's stops so the Itinerary tab shows the representative route.

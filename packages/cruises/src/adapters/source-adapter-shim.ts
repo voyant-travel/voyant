@@ -297,10 +297,12 @@ function cruiseShipFrom(s: ExternalShip): NonNullable<CruiseContent["ship"]> {
   return {
     id: defaultBuildEntityId(s.sourceRef),
     name: s.name,
+    ship_type: s.shipType ?? null,
     description: s.description ?? null,
     capacity: s.capacityGuests ?? null,
     decks: s.deckCount ?? null,
     year_built: s.yearBuilt ?? null,
+    gallery: s.gallery ?? [],
   }
 }
 

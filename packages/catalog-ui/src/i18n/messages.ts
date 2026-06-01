@@ -121,9 +121,11 @@ export type CatalogUiMessages = {
       highlights: string
       supplier: string
       itinerary: string
+      ship: string
       tagsThemes: string
       attributes: string
       departures: string
+      sailings: string
       ends: string
       book: string
       options: string
@@ -150,6 +152,7 @@ export type CatalogUiMessages = {
       }
       priceFromLabel: string
       noUpcomingDepartures: string
+      noUpcomingSailings: string
       departuresTable: {
         date: string
         status: string
@@ -167,6 +170,7 @@ export type CatalogUiMessages = {
         minAvailability: string
         clearFilters: string
         noResults: string
+        noResultsSailings: string
         remainingLabel: string
       }
     }

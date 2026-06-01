@@ -73,6 +73,17 @@ export interface CatalogDetailEnrichment {
   highlights?: ReadonlyArray<string>
   heroImageUrl?: string | null
   supplier?: string | null
+  /** The vessel a cruise sails on (Ship tab). */
+  ship?: {
+    id?: string | null
+    name: string
+    shipType?: string | null
+    description?: string | null
+    capacity?: number | null
+    decks?: number | null
+    yearBuilt?: number | null
+    images?: string[]
+  } | null
   itinerary?: ReadonlyArray<{
     dayNumber: number
     title?: string | null
@@ -327,6 +338,8 @@ export function CatalogDetailSheet({
   const messages = catalogMessages.detail
   // Cruises sell cabin categories, not generic options — label the tab "Cabins".
   const optionsLabel = vertical === "cruises" ? messages.cabins : messages.options
+  // In the cruise industry a scheduled departure is a "sailing".
+  const departuresLabel = vertical === "cruises" ? messages.sailings : messages.departures
   const open = hit != null
   const fields = hit?.document.fields ?? {}
   const name = stringOr(fields.name, catalogMessages.fallbacks.detailName)
@@ -521,6 +534,7 @@ export function CatalogDetailSheet({
           {/* Body */}
           {(() => {
             const hasItinerary = (enrichment?.itinerary?.length ?? 0) > 0
+            const hasShip = enrichment?.ship != null
             const hasOptions = (enrichment?.options?.length ?? 0) > 0
             const hasDepartures = (enrichment?.departures?.length ?? 0) > 0
             const hasPolicies = (enrichment?.policies?.length ?? 0) > 0
@@ -542,9 +556,10 @@ export function CatalogDetailSheet({
                     {hasItinerary && (
                       <TabsTrigger value="itinerary">{messages.itinerary}</TabsTrigger>
                     )}
+                    {hasShip && <TabsTrigger value="ship">{messages.ship}</TabsTrigger>}
                     {hasOptions && <TabsTrigger value="options">{optionsLabel}</TabsTrigger>}
                     {hasDepartures && (
-                      <TabsTrigger value="departures">{messages.departures}</TabsTrigger>
+                      <TabsTrigger value="departures">{departuresLabel}</TabsTrigger>
                     )}
                     {shouldRenderMediaSection && (
                       <TabsTrigger value="media">{messages.media}</TabsTrigger>
@@ -645,6 +660,12 @@ export function CatalogDetailSheet({
                     </TabsContent>
                   )}
 
+                  {hasShip && (
+                    <TabsContent value="ship">
+                      <ShipCard ship={enrichment!.ship!} />
+                    </TabsContent>
+                  )}
+
                   {hasOptions && (
                     <TabsContent value="options">
                       <ul className="space-y-3">
@@ -659,6 +680,7 @@ export function CatalogDetailSheet({
                     <TabsContent value="departures">
                       <DeparturesTable
                         hit={hit}
+                        vertical={vertical}
                         departures={enrichment!.departures!}
                         options={enrichment?.options ?? []}
                         onLoadDeparturePricing={onLoadDeparturePricing}
@@ -903,6 +925,7 @@ const ALL_FILTER_VALUE = "__all__"
  */
 function DeparturesTable({
   hit,
+  vertical,
   departures,
   options,
   productSellAmountCents,
@@ -913,6 +936,7 @@ function DeparturesTable({
   messages,
 }: {
   hit: CatalogSearchHit | null
+  vertical?: string
   departures: ReadonlyArray<DepartureEntry>
   options: NonNullable<CatalogDetailEnrichment["options"]>
   productSellAmountCents: number | null
@@ -926,6 +950,10 @@ function DeparturesTable({
   messages: CatalogUiMessages["catalogPage"]["detail"]
 }) {
   const tableMessages = messages.departuresTable
+  // Cruises call a scheduled departure a "sailing" — pick the cruise wording.
+  const isCruise = vertical === "cruises"
+  const noUpcomingLabel = isCruise ? messages.noUpcomingSailings : messages.noUpcomingDepartures
+  const noResultsLabel = isCruise ? tableMessages.noResultsSailings : tableMessages.noResults
   const monthOptions = useMemo(() => collectMonthOptions(departures), [departures])
   const statusOptions = useMemo(() => collectStatusOptions(departures), [departures])
 
@@ -1070,7 +1098,7 @@ function DeparturesTable({
 
       {sorted.length === 0 ? (
         <div className="rounded-md border bg-muted/10 px-3 py-6 text-center text-sm text-muted-foreground">
-          {filtersActive ? tableMessages.noResults : messages.noUpcomingDepartures}
+          {filtersActive ? noResultsLabel : noUpcomingLabel}
         </div>
       ) : (
         <div className="overflow-hidden rounded-md border">
@@ -1913,5 +1941,51 @@ function CabinCard({
         )}
       </div>
     </li>
+  )
+}
+
+/**
+ * The vessel a cruise sails on: gallery + name/type, key specs (capacity,
+ * decks, year built) and a description.
+ */
+function ShipCard({ ship }: { ship: NonNullable<CatalogDetailEnrichment["ship"]> }): ReactNode {
+  const desc = ship.description?.trim() ?? ""
+  const specs = [
+    ship.shipType ? { label: "Type", value: ship.shipType } : null,
+    ship.capacity ? { label: "Capacity", value: `${ship.capacity} guests` } : null,
+    ship.decks ? { label: "Decks", value: String(ship.decks) } : null,
+    ship.yearBuilt ? { label: "Year built", value: String(ship.yearBuilt) } : null,
+  ].filter((s): s is { label: string; value: string } => s != null)
+  const images = ship.images ?? []
+  return (
+    <div className="flex flex-col gap-4">
+      {images.length > 0 && (
+        <MediaGallery
+          images={images}
+          alt={ship.name}
+          className="w-full max-w-lg"
+          imageClassName="h-56 w-full"
+        />
+      )}
+      <div>
+        <h3 className="text-base font-medium text-foreground">{ship.name}</h3>
+        {ship.shipType && <p className="mt-0.5 text-xs text-muted-foreground">{ship.shipType}</p>}
+      </div>
+      {specs.length > 0 && (
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+          {specs.map((s) => (
+            <div key={s.label} className="flex flex-col gap-0.5">
+              <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                {s.label}
+              </dt>
+              <dd className="text-sm text-foreground">{s.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      {desc && (
+        <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{desc}</p>
+      )}
+    </div>
   )
 }

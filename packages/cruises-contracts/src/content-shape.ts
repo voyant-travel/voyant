@@ -45,10 +45,14 @@ export const cruiseSummarySchema = z.object({
 export const cruiseShipSchema = z.object({
   id: z.string().nullable().optional(),
   name: z.string(),
+  /** ocean / river / expedition / yacht / sailing / coastal. */
+  ship_type: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   capacity: z.number().int().nonnegative().nullable().optional(),
   decks: z.number().int().nonnegative().nullable().optional(),
   year_built: z.number().int().nonnegative().nullable().optional(),
+  /** Ship photo URLs (cover first). */
+  gallery: z.array(z.string()).optional().default([]),
 })
 
 export const cruiseItineraryStopSchema = z.object({
