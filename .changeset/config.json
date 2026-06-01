@@ -115,7 +115,15 @@
       "@voyantjs/charters-contracts",
       "@voyantjs/cruises-contracts",
       "@voyantjs/extras-contracts",
-      "@voyantjs/products-contracts"
+      "@voyantjs/products-contracts",
+      "@voyantjs/schema-kit",
+      "@voyantjs/finance-contracts",
+      "@voyantjs/crm-contracts",
+      "@voyantjs/transactions-contracts",
+      "@voyantjs/suppliers-contracts",
+      "@voyantjs/identity-contracts",
+      "@voyantjs/bookings-contracts",
+      "@voyantjs/legal-contracts"
     ]
   ],
   "linked": [],

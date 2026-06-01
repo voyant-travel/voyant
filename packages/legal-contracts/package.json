@@ -1,0 +1,59 @@
+{
+  "name": "@voyantjs/legal-contracts",
+  "version": "0.95.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./contracts/validation": "./src/contracts/validation.ts",
+    "./policies/validation": "./src/policies/validation.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./contracts/validation": {
+        "types": "./dist/contracts/validation.d.ts",
+        "import": "./dist/contracts/validation.js",
+        "default": "./dist/contracts/validation.js"
+      },
+      "./policies/validation": {
+        "types": "./dist/policies/validation.d.ts",
+        "import": "./dist/policies/validation.js",
+        "default": "./dist/policies/validation.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "dependencies": {
+    "@voyantjs/schema-kit": "workspace:*",
+    "@voyantjs/utils": "workspace:*",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyantjs/voyant.git",
+    "directory": "packages/legal-contracts"
+  }
+}

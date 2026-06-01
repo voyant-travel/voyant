@@ -1,3 +1,7 @@
+import {
+  bookingTravelerBedPreferenceSchema,
+  travelerAllocationMapSchema,
+} from "@voyantjs/bookings-contracts/traveler-schemas"
 import { type KmsEnvelope, kmsEnvelopeSchema } from "@voyantjs/db/schema/iam"
 import { sql } from "drizzle-orm"
 import { boolean, index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
@@ -62,14 +66,9 @@ export const bookingTravelerAccessibilitySchema = z.object({
   accessibilityNeeds: z.string().optional().nullable(),
 })
 
-export const bookingTravelerBedPreferenceSchema = z.enum([
-  "single",
-  "twin",
-  "double",
-  "no-preference",
-])
-
-export const travelerAllocationMapSchema = z.record(z.string(), z.string())
+// Defined in @voyantjs/bookings-contracts (pure); re-exported so existing
+// @voyantjs/bookings/schema/travel-details import paths keep working.
+export { bookingTravelerBedPreferenceSchema, travelerAllocationMapSchema }
 
 const decryptedBookingTravelerTravelDetailRecordSchema = z.object({
   travelerId: z.string(),
