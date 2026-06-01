@@ -10,7 +10,8 @@
     "./contract/schemas": "./src/contract/schemas.ts",
     "./contract/post-book-types": "./src/contract/post-book-types.ts",
     "./reference/contract": "./src/reference/contract.ts",
-    "./reference/static-bundle": "./src/reference/static-bundle.ts"
+    "./reference/static-bundle": "./src/reference/static-bundle.ts",
+    "./snapshot": "./src/snapshot.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -60,12 +61,18 @@
         "types": "./dist/reference/static-bundle.d.ts",
         "import": "./dist/reference/static-bundle.js",
         "default": "./dist/reference/static-bundle.js"
+      },
+      "./snapshot": {
+        "types": "./dist/snapshot.d.ts",
+        "import": "./dist/snapshot.js",
+        "default": "./dist/snapshot.js"
       }
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
+    "@voyantjs/catalog-contracts": "workspace:*",
     "zod": "^4.3.6"
   },
   "devDependencies": {

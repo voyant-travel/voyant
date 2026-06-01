@@ -10,33 +10,16 @@
  * See `docs/architecture/catalog-architecture.md` §5.3 for the full design.
  */
 
+import type { PricingBasis } from "@voyantjs/catalog-contracts/snapshot"
 import { typeId } from "@voyantjs/db/lib/typeid-column"
 import { sql } from "drizzle-orm"
 import { jsonb, numeric, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
 import type { AppliedOffer } from "../booking-engine/promotions-contract.js"
 
-/**
- * Structured pricing breakdown stored alongside the JSONB blob so finance,
- * invoicing, and refund engines can query it without parsing.
- */
-export interface PricingBasis {
-  base_amount: number
-  taxes: number
-  fees: number
-  surcharges: number
-  currency: string
-  /** Free-form line-item breakdown for engines that need full detail. */
-  breakdown?: Record<string, unknown>
-  /**
-   * Promotional offers applied to the quote (and frozen onto the
-   * snapshot at booking commit). The post-commit redemption recorder
-   * reads this back via `consumed_booking_id` to populate
-   * `promotional_offer_redemptions`. Per
-   * `docs/architecture/promotions-architecture.md` §7.1.3.
-   */
-  appliedOffers?: AppliedOffer[]
-}
+// `PricingBasis` is imported above (used by the snapshot table column type) and
+// re-exported here to keep existing @voyantjs/catalog import paths stable.
+export type { PricingBasis }
 
 /**
  * `booking_catalog_snapshot` — frozen view of a CatalogEntry captured at

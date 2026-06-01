@@ -14,6 +14,7 @@
  * See `docs/architecture/catalog-architecture.md` §5.3 for the design.
  */
 
+import type { CaptureSnapshotInput } from "@voyantjs/catalog-contracts/snapshot"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { newId } from "@voyantjs/db/lib/typeid"
 import { and, eq } from "drizzle-orm"
@@ -29,28 +30,9 @@ import {
 // Captures
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Input for a single snapshot row capture. */
-export interface CaptureSnapshotInput {
-  bookingId: string
-  entityModule: string
-  entityId: string
-  sourceKind: string
-  sourceProvider?: string
-  sourceConnectionId?: string
-  sourceRef?: string
-  /** The resolved CatalogEntry view at booking time. */
-  frozenPayload: unknown
-  /**
-   * The overlay values that were live at capture time (audit needs this to
-   * reconstruct exactly what the customer saw).
-   */
-  overlayStateAtCapture?: unknown
-  /** Structured pricing breakdown alongside the JSONB blob. */
-  pricingBasis?: PricingBasis
-  /** Caller-supplied idempotency key — when set, a duplicate
-   *  `bookEntity` call returns the prior result. */
-  idempotencyKey?: string
-}
+// `CaptureSnapshotInput` now lives in @voyantjs/catalog-contracts (pure).
+// Re-exported here to keep existing @voyantjs/catalog import paths stable.
+export type { CaptureSnapshotInput }
 
 /**
  * Capture a single booking-catalog-snapshot row. Idempotent on
