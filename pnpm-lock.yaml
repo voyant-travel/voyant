@@ -6049,6 +6049,9 @@ importers:
       '@voyantjs/admin':
         specifier: workspace:*
         version: link:../../packages/admin
+      '@voyantjs/admin-contracts':
+        specifier: workspace:*
+        version: link:../../packages/admin-contracts
       '@voyantjs/allocation-ui':
         specifier: workspace:*
         version: link:../../packages/allocation-ui

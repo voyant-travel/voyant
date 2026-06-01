@@ -122,12 +122,16 @@ definition, many consumers.
 
 ### Capability discovery
 
-`admin-contracts` defines a capabilities descriptor, and the framework gains a
-small `GET /v1/admin/_meta/capabilities` route *(follow-up, server side)* that
-returns: enabled modules, the operation ids available on this deployment, the
-deployment/contract version, and the scopes/permissions each operation
-requires. Clients call `client.capabilities()` to adapt to module availability
-and version — no hard-coding which modules a given deployment runs.
+`admin-contracts` defines a capabilities descriptor, and `createApp` serves a
+small built-in `GET /v1/admin/_meta/capabilities` route (under the staff guard)
+that returns: enabled modules, the operation ids available on this deployment,
+the deployment/contract version, and the caller's resolved actor + scopes.
+Clients call `client.capabilities()` to adapt to module availability and version
+— no hard-coding which modules a given deployment runs. To keep `@voyantjs/hono`
+decoupled from `admin-contracts`, the deployment injects the catalogue via
+`createApp({ adminMeta: { contractVersion, operations } })` (from
+`admin-contracts`' `ADMIN_CONTRACT_VERSION` + `operationCapabilities()`); when
+omitted, the route is not mounted.
 
 ### Boundaries this decision keeps
 
@@ -216,17 +220,22 @@ The descriptor approach is a thin typed layer over what already ships.
 
 ## Roadmap (follow-ups, not this slice)
 
-1. Server-side `GET /v1/admin/_meta/capabilities` returning enabled modules,
-   operation ids, deployment/contract version, and required scopes.
+1. ✅ **Done** — server-side `GET /v1/admin/_meta/capabilities`, mounted by
+   `createApp({ adminMeta })`.
 2. Expand the operation catalogue beyond the first slice (CRM, legal, products,
    workflows, settings) per #1411's priority list.
 3. An optional `@voyantjs/admin-react` (React Query hooks) for React UIs —
    serves both the web admin and a React Native / Expo app (no separate Expo
    adapter; TanStack Query is renderer-agnostic).
-4. A small descriptor→agent-tool mapping helper (risk-gated by `classification`)
-   so Max/AI tools and the Cloud broker call `admin-client` directly — no Max
-   adapter package.
-5. CI guard asserting descriptor ↔ route consistency.
+4. CI guard asserting descriptor ↔ route consistency.
+
+**Out of scope for this framework repo:** the Max / AI agent product is part of
+Voyant Cloud. It consumes `admin-client` and the descriptors directly — the
+descriptors already carry the zod input schema and `classification` needed to
+build agent tools — so there is no Max adapter package here. At most the
+framework might offer a small *provider-agnostic* descriptor→tool-definition
+helper; the Max-specific integration (agent runtime, auth context, the Cloud
+broker) is Cloud's.
 
 ## How to apply this decision
 

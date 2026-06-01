@@ -282,6 +282,25 @@ export function createApp<TBindings extends VoyantBindings>(
   app.use("/v1/admin/*", requireActor("staff"))
   app.use("/v1/public/*", requireActor("customer", "partner", "supplier"))
 
+  // Admin capability discovery — GET /v1/admin/_meta/capabilities. A built-in
+  // framework route (like /health), mounted only when the deployment supplies
+  // the operation catalogue via `config.adminMeta` (from
+  // `@voyantjs/admin-contracts`) — keeping `@voyantjs/hono` decoupled from it.
+  // Guarded by the `/v1/admin/*` staff actor guard above.
+  if (config.adminMeta) {
+    const adminMeta = config.adminMeta
+    app.get("/v1/admin/_meta/capabilities", (c) =>
+      c.json({
+        contractVersion: adminMeta.contractVersion,
+        ...(adminMeta.deploymentVersion ? { deploymentVersion: adminMeta.deploymentVersion } : {}),
+        modules: allModules.map((m) => m.module.name),
+        operations: adminMeta.operations,
+        actor: c.get("actor"),
+        scopes: c.get("scopes"),
+      }),
+    )
+  }
+
   // Mount module routes
   for (const mod of allModules) {
     if (mod.adminRoutes) {

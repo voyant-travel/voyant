@@ -180,6 +180,27 @@ export interface VoyantAppConfig<TBindings extends VoyantBindings = VoyantBindin
    * See `docs/architecture/workflows-runtime-architecture.md` §6, §18.
    */
   workflows?: VoyantWorkflowsConfig
+  /**
+   * Admin API capability metadata, served at `GET /v1/admin/_meta/capabilities`
+   * so clients (the admin SDK) can discover what this deployment supports —
+   * enabled modules, available operations, contract/deployment version, and the
+   * caller's resolved actor + scopes. Provide it from `@voyantjs/admin-contracts`:
+   * `{ contractVersion: ADMIN_CONTRACT_VERSION, operations: operationCapabilities() }`.
+   * When omitted, the route is not mounted. Typed structurally so `@voyantjs/hono`
+   * stays decoupled from `@voyantjs/admin-contracts`.
+   */
+  adminMeta?: {
+    contractVersion: string
+    deploymentVersion?: string
+    operations: ReadonlyArray<{
+      id: string
+      method: string
+      pathTemplate: string
+      classification: string
+      scopes: string[]
+      capabilityKey?: string
+    }>
+  }
   // biome-ignore lint/suspicious/noExplicitAny: Hono sub-apps have varied env generics
   additionalRoutes?: (app: Hono<any>) => void
 }
