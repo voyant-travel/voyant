@@ -19,17 +19,21 @@ export const productSummarySchema = z.object({
   id: z.string(),
   name: z.string().nullable().optional(),
   status: z.string().nullable().optional(),
-  productType: z.string().nullable().optional(),
+  productTypeId: z.string().nullable().optional(),
   reference: z.string().nullable().optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
 })
 export type ProductSummary = z.infer<typeof productSummarySchema>
 
+// `productListQuerySchema` lives in the runtime `@voyantjs/products` package, so
+// this pure package can't derive from it. Mirror a curated subset using the
+// route's EXACT field names — the filter is `productTypeId`, not `productType`
+// (Codex P2) — until products validation moves to `@voyantjs/products-contracts`.
 export const productsListInputSchema = pageQuerySchema.extend({
   search: z.string().optional(),
   status: z.string().optional(),
-  productType: z.string().optional(),
+  productTypeId: z.string().optional(),
 })
 
 const list = defineOperation({

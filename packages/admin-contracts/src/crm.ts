@@ -11,13 +11,15 @@
 import {
   insertOrganizationSchema,
   insertPersonSchema,
+  organizationListQuerySchema,
+  personListQuerySchema,
   updateOrganizationSchema,
   updatePersonSchema,
 } from "@voyantjs/crm-contracts"
 import { z } from "zod"
 
 import { defineOperation } from "./core/operation.js"
-import { pageQuerySchema, paginated } from "./core/pagination.js"
+import { paginated } from "./core/pagination.js"
 
 export const personSummarySchema = z.object({
   id: z.string(),
@@ -46,14 +48,11 @@ export type OrganizationSummary = z.infer<typeof organizationSummarySchema>
 // object (extra keys are stripped).
 const ackSchema = z.object({ success: z.boolean().optional(), id: z.string().optional() })
 
-export const crmPeopleListInputSchema = pageQuerySchema.extend({
-  search: z.string().optional(),
-  organizationId: z.string().optional(),
-})
-
-export const crmOrganizationsListInputSchema = pageQuerySchema.extend({
-  search: z.string().optional(),
-})
+// List inputs derive from the canonical route query schemas so the SDK
+// advertises exactly the filters the routes accept — not a hand-written subset
+// that the server would silently strip (Codex P2).
+export const crmPeopleListInputSchema = personListQuerySchema
+export const crmOrganizationsListInputSchema = organizationListQuerySchema
 
 const peopleList = defineOperation({
   id: "crm.people.list",

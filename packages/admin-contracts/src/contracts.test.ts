@@ -3,12 +3,15 @@ import { describe, expect, it } from "vitest"
 import {
   allOperations,
   bookingsOperations,
+  crmOperations,
   deploymentCapabilitiesSchema,
   financeOperations,
   getOperation,
   type InferInput,
   type InferOutput,
+  legalOperations,
   operationCapabilities,
+  productsOperations,
 } from "./index.js"
 
 describe("@voyantjs/admin-contracts operation descriptors", () => {
@@ -116,6 +119,39 @@ describe("@voyantjs/admin-contracts registry", () => {
     ])
     expect(getOperation("crm.people.delete")?.scopes).toEqual(["crm:delete"])
     expect(getOperation("nope.missing")).toBeUndefined()
+  })
+
+  it("list inputs match the real route filters (no advertised-but-stripped fields)", () => {
+    // Legal policies: the route accepts kind/language/search — NOT status.
+    // A descriptor that advertised `status` would silently strip it server-side.
+    const policyList = legalOperations.policies.list.input.parse({
+      language: "en",
+      search: "refund",
+      status: "active",
+    }) as Record<string, unknown>
+    expect(policyList.language).toBe("en")
+    expect(policyList.search).toBe("refund")
+    expect("status" in policyList).toBe(false)
+
+    // Legal contracts derive the full route filter set (scope/supplierId/etc.).
+    const contractList = legalOperations.contracts.list.input.parse({
+      scope: "customer",
+      supplierId: "supp_1",
+    }) as Record<string, unknown>
+    expect(contractList.supplierId).toBe("supp_1")
+
+    // CRM people derive organizationId + search from the route schema.
+    const peopleList = crmOperations.people.list.input.parse({
+      organizationId: "org_1",
+      search: "ada",
+    }) as Record<string, unknown>
+    expect(peopleList.organizationId).toBe("org_1")
+
+    // Products: the filter field is `productTypeId`, not `productType`.
+    const productList = productsOperations.list.input.parse({
+      productTypeId: "ptype_1",
+    }) as Record<string, unknown>
+    expect(productList.productTypeId).toBe("ptype_1")
   })
 
   it("projects to a deployment capability descriptor", () => {

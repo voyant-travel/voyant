@@ -8,18 +8,20 @@
  */
 
 import {
+  contractListQuerySchema,
   insertContractSchema,
   updateContractSchema,
 } from "@voyantjs/legal-contracts/contracts/validation"
 import {
   evaluateCancellationInputSchema,
   insertPolicySchema,
+  policyListQuerySchema,
   updatePolicySchema,
 } from "@voyantjs/legal-contracts/policies/validation"
 import { z } from "zod"
 
 import { defineOperation } from "./core/operation.js"
-import { pageQuerySchema, paginated } from "./core/pagination.js"
+import { paginated } from "./core/pagination.js"
 
 export const contractSummarySchema = z.object({
   id: z.string(),
@@ -43,16 +45,12 @@ export const policySummarySchema = z.object({
 })
 export type PolicySummary = z.infer<typeof policySummarySchema>
 
-export const contractsListInputSchema = pageQuerySchema.extend({
-  status: z.string().optional(),
-  personId: z.string().optional(),
-  organizationId: z.string().optional(),
-})
-
-export const policiesListInputSchema = pageQuerySchema.extend({
-  kind: z.string().optional(),
-  status: z.string().optional(),
-})
+// List inputs derive from the canonical route query schemas so the SDK
+// advertises exactly the filters the routes accept — not a hand-written subset
+// that the server would silently strip (Codex P2). `policyListQuerySchema`
+// notably has no `status` filter (it offers `kind`/`language`/`search`).
+export const contractsListInputSchema = contractListQuerySchema
+export const policiesListInputSchema = policyListQuerySchema
 
 const contractsList = defineOperation({
   id: "legal.contracts.list",
