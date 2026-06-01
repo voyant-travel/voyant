@@ -1,12 +1,13 @@
 /**
  * Bookings admin operations (first slice: list, get, confirm, cancel).
  *
- * Output schemas are the curated client-facing projection of the booking
- * entity — not a 1:1 dump of `@voyantjs/bookings`' Drizzle row. When a
- * `@voyantjs/bookings-contracts` package exists, these should re-export from
- * it (see ADR-0002 / ADR-0003).
+ * Input schemas derive from `@voyantjs/bookings-contracts` (the canonical route
+ * validation) so the SDK can't drift from the routes. Output schemas stay a
+ * curated client-facing projection — loose where the field is a server-returned
+ * status, for forward-compatibility (see ADR-0002 / ADR-0003).
  */
 
+import { cancelBookingSchema, confirmBookingSchema } from "@voyantjs/bookings-contracts"
 import { z } from "zod"
 
 import { defineOperation } from "./core/operation.js"
@@ -40,14 +41,11 @@ export const bookingListInputSchema = pageQuerySchema.extend({
   dateTo: z.string().optional(),
 })
 
-export const confirmBookingInputSchema = z.object({
-  note: z.string().optional(),
-  suppressNotifications: z.boolean().optional(),
-})
-
-export const cancelBookingInputSchema = z.object({
-  note: z.string().optional(),
-})
+// Re-use the canonical route validation from @voyantjs/bookings-contracts so the
+// SDK input matches what the confirm/cancel routes accept (which also allow a
+// null note).
+export const confirmBookingInputSchema = confirmBookingSchema
+export const cancelBookingInputSchema = cancelBookingSchema
 
 const list = defineOperation({
   id: "bookings.list",

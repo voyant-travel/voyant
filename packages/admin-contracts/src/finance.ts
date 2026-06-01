@@ -6,6 +6,10 @@
  * entities — not a 1:1 dump of `@voyantjs/finance`' Drizzle rows.
  */
 
+import {
+  createPaymentSessionFromInvoiceSchema,
+  insertPaymentSchema,
+} from "@voyantjs/finance-contracts"
 import { z } from "zod"
 
 import { defineOperation } from "./core/operation.js"
@@ -70,41 +74,31 @@ export const invoiceListInputSchema = pageQuerySchema.extend({
   search: z.string().optional(),
 })
 
-const PAYMENT_METHODS = [
-  "bank_transfer",
-  "credit_card",
-  "debit_card",
-  "cash",
-  "cheque",
-  "wallet",
-  "direct_bill",
-  "voucher",
-  "other",
-] as const
-
-export const recordPaymentInputSchema = z.object({
-  amountCents: z.number().int().positive(),
-  currency: z.string().length(3),
-  paymentMethod: z.enum(PAYMENT_METHODS),
-  paymentDate: z.string(),
-  status: z.enum(["pending", "completed", "failed", "refunded"]).optional(),
-  referenceNumber: z.string().max(255).optional(),
-  notes: z.string().optional(),
+// Derived from the route's canonical payment schema (`@voyantjs/finance-contracts`)
+// so the SDK input matches what `POST /invoices/:id/payments` accepts — single
+// source of truth, no re-declared payment-method / status enums.
+export const recordPaymentInputSchema = insertPaymentSchema.pick({
+  amountCents: true,
+  currency: true,
+  paymentMethod: true,
+  paymentDate: true,
+  status: true,
+  referenceNumber: true,
+  notes: true,
 })
 
-// The route derives currency + amount from the invoice balance, so they are
-// NOT accepted here. Fields mirror the route's payment-session provisioning
-// schema (all optional).
-export const createPaymentLinkInputSchema = z.object({
-  provider: z.string().optional(),
-  paymentMethod: z.enum(PAYMENT_METHODS).optional(),
-  payerEmail: z.string().email().optional(),
-  payerName: z.string().optional(),
-  returnUrl: z.string().url().optional(),
-  cancelUrl: z.string().url().optional(),
-  callbackUrl: z.string().url().optional(),
-  externalReference: z.string().optional(),
-  expiresAt: z.string().optional(),
+// Derived from the route's payment-session provisioning schema. The route
+// derives currency + amount from the invoice balance, so those are not picked.
+export const createPaymentLinkInputSchema = createPaymentSessionFromInvoiceSchema.pick({
+  provider: true,
+  paymentMethod: true,
+  payerEmail: true,
+  payerName: true,
+  returnUrl: true,
+  cancelUrl: true,
+  callbackUrl: true,
+  externalReference: true,
+  expiresAt: true,
 })
 
 const invoicesList = defineOperation({
