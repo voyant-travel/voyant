@@ -21,6 +21,13 @@ const VALID_CLASSIFICATIONS: ActionClassification[] = [
   "requires_confirmation",
 ]
 
+// Mirrors the canonical API-key scope grammar (`permissionStringPattern` in
+// `packages/types/src/api-keys.ts`): a lowercase, hyphen-allowed `resource:action`
+// pair — so PII-aware scopes like `bookings-pii:read` are accepted. Descriptors
+// always name concrete scopes, so the `*` wildcards the canonical pattern allows
+// are intentionally disallowed here (a wildcard in a descriptor is a bug).
+const SCOPE = /^[a-z][a-z0-9-]*:[a-z][a-z0-9-]*$/
+
 describe("admin-contracts descriptor consistency", () => {
   it("has unique operation ids", () => {
     const ids = allOperations.map((op) => op.id)
@@ -41,21 +48,29 @@ describe("admin-contracts descriptor consistency", () => {
       expect(VALID_METHODS, op.id).toContain(op.method)
       expect(VALID_CLASSIFICATIONS, op.id).toContain(op.classification)
 
-      // Scopes are `resource:action`.
+      // Scopes are a canonical `resource:action` pair (hyphens allowed).
       for (const scope of op.scopes) {
-        expect(scope, `${op.id} scope`).toMatch(/^[a-z_]+:[a-z_]+$/)
+        expect(scope, `${op.id} scope`).toMatch(SCOPE)
       }
 
-      // `path()` substitutes every `:param` from the template and leaves no
-      // unresolved params — so the descriptor's path builder matches its
-      // declared template shape.
+      // `path()` must reproduce `pathTemplate` exactly once every `:param` is
+      // substituted by a distinct sample value. Comparing the whole built path
+      // to the substituted template catches omitted, reordered, AND
+      // unsubstituted params — not just a leftover `/:`. (e.g. a `/:id/confirm`
+      // template whose builder returns `.../confirm` would slip past a mere
+      // "no leftover colon" check but calls the wrong route.)
       const params: Record<string, string> = {}
-      for (const seg of op.pathTemplate.split("/")) {
-        if (seg.startsWith(":")) params[seg.slice(1)] = "sample"
-      }
+      const expectedPath = op.pathTemplate
+        .split("/")
+        .map((seg) => {
+          if (!seg.startsWith(":")) return seg
+          const name = seg.slice(1)
+          params[name] = `sample-${name}`
+          return params[name]
+        })
+        .join("/")
       const built = op.path(params as never)
-      expect(built.startsWith("/v1/admin/"), op.id).toBe(true)
-      expect(built.includes("/:"), `${op.id} has an unsubstituted param`).toBe(false)
+      expect(built, `${op.id} path() must match its declared template`).toBe(expectedPath)
     }
   })
 })
