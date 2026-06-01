@@ -109,7 +109,13 @@
       "@voyantjs/workflows-orchestrator-cloudflare",
       "@voyantjs/workflows-orchestrator-node",
       "@voyantjs/workflows-react",
-      "@voyantjs/workflows-ui"
+      "@voyantjs/workflows-ui",
+      "@voyantjs/accommodations-contracts",
+      "@voyantjs/catalog-contracts",
+      "@voyantjs/charters-contracts",
+      "@voyantjs/cruises-contracts",
+      "@voyantjs/extras-contracts",
+      "@voyantjs/products-contracts"
     ]
   ],
   "linked": [],
