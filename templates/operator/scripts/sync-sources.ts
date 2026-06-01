@@ -58,6 +58,11 @@ import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import { Client as TypesenseSdkClient } from "typesense"
 
+import {
+  createConnectCruiseSourceAdapter,
+  skipCruiseConnectDocuments,
+} from "../src/api/lib/connect-cruise-source.js"
+
 config({ path: ".env" })
 config({ path: "../../.env" })
 config({ path: "../../.env.local" })
@@ -129,6 +134,21 @@ if (voyantConnectApiKey || voyantConnectOperatorId) {
           sourceProvider: connection.providerKey ?? undefined,
           market: voyantConnectMarket,
           discoverLimit: positiveInteger(voyantConnectSyncLimit) ?? 500,
+          // Cruises are sourced through the structured cruise adapter below so
+          // the canonical geography survives; skip them on the generic path.
+          mapDocument: skipCruiseConnectDocuments,
+        }),
+      )
+      // Structured cruise sourcing — lands sourced cruises in the cruise
+      // vertical with facetable geography (waterways / regions / countries +
+      // canonical ids) instead of the generic flat discovery doc.
+      registry.register(
+        `${connection.id}:cruises`,
+        createConnectCruiseSourceAdapter({
+          client,
+          operatorId: voyantConnectOperatorId,
+          connectionIds: [connection.id],
+          sourceProvider: connection.providerKey ?? undefined,
         }),
       )
     }

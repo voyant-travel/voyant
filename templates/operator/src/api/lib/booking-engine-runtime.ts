@@ -63,6 +63,10 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
 import { resolveBookingTaxSettings } from "../settings"
+import {
+  createConnectCruiseSourceAdapter,
+  skipCruiseConnectDocuments,
+} from "./connect-cruise-source"
 import { withDbFromEnv } from "./db"
 
 let _registry: SourceAdapterRegistry | undefined
@@ -621,6 +625,24 @@ function registerVoyantConnectAdapter(
       operatorId,
       market: env.VOYANT_CONNECT_MARKET,
       discoverLimit: positiveInteger(env.VOYANT_CONNECT_SYNC_LIMIT) ?? 500,
+      // Cruises are sourced through the structured cruise adapter below so the
+      // canonical geography survives; skip them on the generic path.
+      mapDocument: skipCruiseConnectDocuments,
+    }),
+  )
+
+  // Structured cruise sourcing — lands sourced cruises in the cruise vertical
+  // with facetable geography (waterways / regions / countries + canonical ids).
+  // Also powers `getCruiseContent` detail reads for sourced cruises through the
+  // catalog source-adapter registry (external-cruise refresh cron + routes).
+  registry.register(
+    createConnectCruiseSourceAdapter({
+      connect: {
+        apiKey,
+        operatorId,
+        baseUrl: env.VOYANT_CONNECT_API_URL,
+      },
+      operatorId,
     }),
   )
 }
