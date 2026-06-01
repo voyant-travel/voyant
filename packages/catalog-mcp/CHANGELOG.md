@@ -1,5 +1,13 @@
 # @voyantjs/catalog-mcp
 
+## 0.97.0
+
+### Patch Changes
+
+- Updated dependencies [2555264]
+  - @voyantjs/catalog@0.97.0
+  - @voyantjs/catalog-rag@0.97.0
+
 ## 0.96.0
 
 ### Patch Changes

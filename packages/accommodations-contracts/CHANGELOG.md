@@ -1,5 +1,7 @@
 # @voyantjs/accommodations-contracts
 
+## 0.97.0
+
 ## 0.96.0
 
 ### Minor Changes
