@@ -123,7 +123,10 @@
       "@voyantjs/suppliers-contracts",
       "@voyantjs/identity-contracts",
       "@voyantjs/bookings-contracts",
-      "@voyantjs/legal-contracts"
+      "@voyantjs/legal-contracts",
+      "@voyantjs/admin-contracts",
+      "@voyantjs/admin-client",
+      "@voyantjs/flights-contracts"
     ]
   ],
   "linked": [],
