@@ -1,5 +1,13 @@
 # @voyantjs/booking-requirements-ui
 
+## 0.96.0
+
+### Patch Changes
+
+- @voyantjs/booking-requirements-react@0.96.0
+- @voyantjs/i18n@0.96.0
+- @voyantjs/ui@0.96.0
+
 ## 0.95.0
 
 ### Patch Changes
