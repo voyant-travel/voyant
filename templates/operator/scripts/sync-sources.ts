@@ -62,6 +62,7 @@ import {
   createConnectCruiseSourceAdapter,
   skipCruiseConnectDocuments,
 } from "../src/api/lib/connect-cruise-source.js"
+import { createGeoNameResolver } from "../src/api/lib/geo-resolver.js"
 
 config({ path: ".env" })
 config({ path: "../../.env" })
@@ -125,6 +126,13 @@ if (voyantConnectApiKey || voyantConnectOperatorId) {
         `[sync-sources] Voyant Connect has no active connections for operator ${voyantConnectOperatorId}`,
       )
     }
+    // Resolve canonical-geography ids (ports/regions/waterways) to display
+    // names via Voyant Data geo so the catalog shows "Istanbul", not
+    // "city:geonames:745044".
+    const geoResolver = createGeoNameResolver({
+      apiKey: voyantConnectApiKey,
+      baseUrl: cloudApiUrl,
+    })
     for (const connection of connections) {
       registry.register(
         connection.id,
@@ -144,12 +152,16 @@ if (voyantConnectApiKey || voyantConnectOperatorId) {
       // canonical ids) instead of the generic flat discovery doc.
       registry.register(
         `${connection.id}:cruises`,
-        createConnectCruiseSourceAdapter({
-          client,
-          operatorId: voyantConnectOperatorId,
-          connectionIds: [connection.id],
-          sourceProvider: connection.providerKey ?? undefined,
-        }),
+        createConnectCruiseSourceAdapter(
+          {
+            client,
+            operatorId: voyantConnectOperatorId,
+            connectionIds: [connection.id],
+            sourceProvider: connection.providerKey ?? undefined,
+          },
+          undefined,
+          { geo: geoResolver },
+        ),
       )
     }
   }

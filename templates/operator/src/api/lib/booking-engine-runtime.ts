@@ -68,6 +68,7 @@ import {
   skipCruiseConnectDocuments,
 } from "./connect-cruise-source"
 import { withDbFromEnv } from "./db"
+import { createGeoNameResolver } from "./geo-resolver"
 
 let _registry: SourceAdapterRegistry | undefined
 let _ownedHandlers: OwnedBookingHandlerRegistry | undefined
@@ -636,14 +637,20 @@ function registerVoyantConnectAdapter(
   // Also powers `getCruiseContent` detail reads for sourced cruises through the
   // catalog source-adapter registry (external-cruise refresh cron + routes).
   registry.register(
-    createConnectCruiseSourceAdapter({
-      connect: {
-        apiKey,
+    createConnectCruiseSourceAdapter(
+      {
+        connect: {
+          apiKey,
+          operatorId,
+          baseUrl: env.VOYANT_CONNECT_API_URL,
+        },
         operatorId,
-        baseUrl: env.VOYANT_CONNECT_API_URL,
       },
-      operatorId,
-    }),
+      undefined,
+      // Resolve canonical-geography ids → display names (ports/regions/waterways)
+      // via Voyant Data geo so the catalog shows resolved names, not raw ids.
+      { geo: createGeoNameResolver({ apiKey }) },
+    ),
   )
 }
 

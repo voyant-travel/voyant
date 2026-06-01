@@ -9,22 +9,38 @@ import {
   CarouselPrevious,
 } from "@voyantjs/ui/components/carousel"
 import { Dialog, DialogContent, DialogTitle } from "@voyantjs/ui/components/dialog"
+import { cn } from "@voyantjs/ui/lib/utils"
 import { ImageIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 
 /**
- * Cabin photo gallery: a compact carousel thumbnail that opens a full-screen
- * lightbox carousel on click. Used in the catalog detail sheet's Cabins tab
- * (cruise cabins ship multiple photos). Falls back to a placeholder when a
- * cabin has no images.
+ * Photo gallery: a carousel thumbnail that opens a full-screen lightbox
+ * carousel on click. Used for cruise cabins (Cabins tab) and the cruise
+ * Overview media gallery. Falls back to a placeholder when there are no images.
+ * Size is controlled by `className` (container) + `imageClassName` (thumbnail).
  */
-export function CabinGallery({ images, alt }: { images: string[]; alt: string }) {
+export function MediaGallery({
+  images,
+  alt,
+  className,
+  imageClassName,
+}: {
+  images: string[]
+  alt: string
+  className?: string
+  imageClassName?: string
+}) {
   const [open, setOpen] = useState(false)
   const [startIndex, setStartIndex] = useState(0)
 
   if (images.length === 0) {
     return (
-      <div className="flex h-24 w-36 shrink-0 items-center justify-center rounded-md bg-muted">
+      <div
+        className={cn(
+          "flex h-24 w-36 shrink-0 items-center justify-center rounded-md bg-muted",
+          className,
+        )}
+      >
         <ImageIcon className="h-5 w-5 text-muted-foreground/50" />
       </div>
     )
@@ -36,7 +52,7 @@ export function CabinGallery({ images, alt }: { images: string[]; alt: string })
   }
 
   return (
-    <div className="w-36 shrink-0">
+    <div className={cn("w-36 shrink-0", className)}>
       <Carousel className="group relative" opts={{ loop: images.length > 1 }}>
         <CarouselContent>
           {images.map((src, i) => (
@@ -50,7 +66,10 @@ export function CabinGallery({ images, alt }: { images: string[]; alt: string })
                 <img
                   src={src}
                   alt={alt}
-                  className="h-24 w-36 object-cover transition group-hover:opacity-90"
+                  className={cn(
+                    "h-24 w-36 object-cover transition group-hover:opacity-90",
+                    imageClassName,
+                  )}
                   loading="lazy"
                 />
               </button>

@@ -45,8 +45,8 @@ import {
 } from "react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 import type { CatalogUiMessages } from "../i18n/messages.js"
-import { CabinGallery } from "./cabin-gallery.js"
 import type { CatalogDeparturePricingRow } from "./catalog-enrichment-fetchers.js"
+import { MediaGallery } from "./media-gallery.js"
 
 export interface CatalogDetailAction {
   label: string
@@ -277,6 +277,13 @@ const HIDDEN_ARRAY_FIELDS = new Set([
   // the operator-authored `tags` jsonb column.
   "tagIds",
   "tagLabels",
+  // Canonical geography id mirrors — the resolved name lists
+  // (`countries`/`regions`/`ports`/`waterways`) carry the display values, so
+  // the raw id columns are noise in the overview.
+  "country_iso",
+  "region_ids",
+  "port_ids",
+  "waterway_ids",
 ])
 
 /**
@@ -385,11 +392,29 @@ export function CatalogDetailSheet({
       if (SYSTEM_FIELD_PREFIXES.some((p) => k.startsWith(p))) system.push([k, v])
       else if (ARRAY_FIELDS.has(k) || Array.isArray(v)) {
         if (HIDDEN_ARRAY_FIELDS.has(k)) continue
+        // Skip empty arrays (e.g. ports/themes/waterways with no values) so the
+        // overview doesn't show bare "—" rows. `tags` stays — it renders the
+        // inline editor used to add the first tag.
+        if (k !== "tags" && Array.isArray(v) && v.length === 0) continue
         array.push([k, v])
       } else attrs.push([k, v])
     }
     return { arrayEntries: array, attributeEntries: attrs, systemEntries: system }
   }, [fields])
+
+  // Overview media gallery — the cruise cover plus one photo per cabin type.
+  // Cruise-level media upstream is just the hero, so we surface the rich cabin
+  // imagery here as a visual summary. Only shown when there's more than the
+  // single hero (i.e. cabins carry photos).
+  const overviewGalleryImages = useMemo(() => {
+    const urls: string[] = []
+    if (enrichment?.heroImageUrl) urls.push(enrichment.heroImageUrl)
+    for (const option of enrichment?.options ?? []) {
+      const cover = option.images?.[0]
+      if (cover) urls.push(cover)
+    }
+    return Array.from(new Set(urls))
+  }, [enrichment])
 
   // ─── Attribute reshaping ──────────────────────────────────────────────
   // Indexed projections expose `sellAmountCents` + `sellCurrency` as two
@@ -531,6 +556,17 @@ export function CatalogDetailSheet({
                   </TabsList>
 
                   <TabsContent value="overview" className="flex flex-col gap-6">
+                    {overviewGalleryImages.length > 1 && (
+                      <Section title={messages.media}>
+                        <MediaGallery
+                          images={overviewGalleryImages}
+                          alt={name}
+                          className="w-full max-w-lg"
+                          imageClassName="h-56 w-full"
+                        />
+                      </Section>
+                    )}
+
                     {(shortDescription || description) && (
                       <Section>
                         {shortDescription && (
@@ -1851,7 +1887,7 @@ function CabinCard({
   )
   return (
     <li className="flex gap-4 rounded-lg border border-border p-3">
-      <CabinGallery images={cabin.images ?? []} alt={cabin.name} />
+      <MediaGallery images={cabin.images ?? []} alt={cabin.name} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-2">
           <h4 className="font-medium text-sm">{cabin.name}</h4>

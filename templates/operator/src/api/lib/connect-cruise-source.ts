@@ -27,10 +27,13 @@ import type { SearchDocument } from "@voyantjs/connect-sdk"
 import { type MemoizeOptions, memoizeCruiseAdapter } from "@voyantjs/cruises"
 import {
   type CruiseAdapter,
+  type CruiseSearchProjectionEntry,
   type CruiseSourceAdapterShim,
   type CruiseSourceAdapterShimOptions,
   cruiseAdapterToSourceAdapter,
 } from "@voyantjs/cruises/adapters"
+
+import type { GeoNameResolver } from "./geo-resolver"
 
 /**
  * `mapDocument` for the generic Voyant Connect adapter that drops cruise
@@ -60,16 +63,48 @@ export function skipCruiseConnectDocuments(
 export function createConnectCruiseSourceAdapter(
   options: ConnectCruiseAdapterOptions,
   shimOptions?: CruiseSourceAdapterShimOptions,
-  memoizeOptions?: MemoizeOptions,
+  extras?: { memoize?: MemoizeOptions; geo?: GeoNameResolver },
 ): CruiseSourceAdapterShim {
   // The published `ConnectCruiseAdapter` is the same method surface as the
   // cruise vertical's `CruiseAdapter`, but its `fetchSailingPricing` types the
   // price-component `kind` as `string` (vs the vertical's narrowed union). The
   // shim's `discover()` / `getContent()` never read price components, so the
   // cast is runtime-safe; it only bridges the published contract drift.
-  const adapter = memoizeCruiseAdapter(
+  let adapter = memoizeCruiseAdapter(
     createConnectCruiseAdapter(options) as unknown as CruiseAdapter,
-    memoizeOptions,
+    extras?.memoize,
   )
+  if (extras?.geo) adapter = withResolvedGeoNames(adapter, extras.geo)
   return cruiseAdapterToSourceAdapter(adapter, shimOptions)
+}
+
+/**
+ * Wrap a cruise adapter so its `searchProjection` stream fills `ports` /
+ * `regions` / `waterways` name arrays from the matching `*Ids` via Voyant Data
+ * geo, when the upstream only carried ids (e.g. ports). Names that are already
+ * present (upstream-resolved) are left untouched.
+ */
+function withResolvedGeoNames(adapter: CruiseAdapter, geo: GeoNameResolver): CruiseAdapter {
+  return {
+    ...adapter,
+    searchProjection: (opts) => resolveGeoNamesOnEntries(adapter.searchProjection(opts), geo),
+  }
+}
+
+async function* resolveGeoNamesOnEntries(
+  source: AsyncIterable<CruiseSearchProjectionEntry>,
+  geo: GeoNameResolver,
+): AsyncIterable<CruiseSearchProjectionEntry> {
+  for await (const entry of source) {
+    if (!entry.ports?.length && entry.portIds?.length) {
+      entry.ports = await geo.resolveMany(entry.portIds)
+    }
+    if (!entry.regions?.length && entry.regionIds?.length) {
+      entry.regions = await geo.resolveMany(entry.regionIds)
+    }
+    if (!entry.waterways?.length && entry.waterwayIds?.length) {
+      entry.waterways = await geo.resolveMany(entry.waterwayIds)
+    }
+    yield entry
+  }
 }

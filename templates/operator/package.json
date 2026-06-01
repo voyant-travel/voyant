@@ -73,6 +73,7 @@
     "@voyantjs/cruises": "workspace:*",
     "@voyantjs/cruises-react": "workspace:*",
     "@voyantjs/customer-portal": "workspace:*",
+    "@voyantjs/data-sdk": "^0.3.1",
     "@voyantjs/db": "workspace:*",
     "@voyantjs/distribution": "workspace:*",
     "@voyantjs/distribution-react": "workspace:*",
