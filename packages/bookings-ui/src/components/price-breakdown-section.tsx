@@ -79,6 +79,39 @@ interface TierRow {
   sellAmountCents: number | null
 }
 
+interface UnitPriceLookupRow {
+  unitId: string
+  pricingCategoryId?: string | null
+}
+
+export function createUnitPriceLookup<TUnitPrice extends UnitPriceLookupRow>(
+  unitPrices: ReadonlyArray<TUnitPrice>,
+): (unitId: string, pricingCategoryId: string | null) => TUnitPrice | undefined {
+  const defaultUnitPricesByUnit = new Map<string, TUnitPrice>()
+  const unitPricesByUnitAndCategory = new Map<string, TUnitPrice>()
+  for (const unitPrice of unitPrices) {
+    if (unitPrice.pricingCategoryId) {
+      unitPricesByUnitAndCategory.set(
+        `${unitPrice.unitId}:${unitPrice.pricingCategoryId}`,
+        unitPrice,
+      )
+      continue
+    }
+
+    if (!defaultUnitPricesByUnit.has(unitPrice.unitId)) {
+      defaultUnitPricesByUnit.set(unitPrice.unitId, unitPrice)
+    }
+  }
+
+  return (unitId, pricingCategoryId) => {
+    if (!pricingCategoryId) return defaultUnitPricesByUnit.get(unitId)
+    return (
+      unitPricesByUnitAndCategory.get(`${unitId}:${pricingCategoryId}`) ??
+      defaultUnitPricesByUnit.get(unitId)
+    )
+  }
+}
+
 /**
  * Picks the tier whose quantity range contains `qty`. Tiers are expected
  * oldest-to-newest, `minQuantity`-ascending. Ties are broken by first-match —
@@ -192,16 +225,7 @@ export function PriceBreakdownSection({
       rulesByOption.set(rule.optionId, existing)
     }
 
-    const unitPricesByUnit = new Map<string, (typeof snapshot.unitPrices)[number]>()
-    const unitPricesByUnitAndCategory = new Map<string, (typeof snapshot.unitPrices)[number]>()
-    for (const up of snapshot.unitPrices) {
-      if (!unitPricesByUnit.has(up.unitId)) {
-        unitPricesByUnit.set(up.unitId, up)
-      }
-      if (up.pricingCategoryId) {
-        unitPricesByUnitAndCategory.set(`${up.unitId}:${up.pricingCategoryId}`, up)
-      }
-    }
+    const findUnitPrice = createUnitPriceLookup(snapshot.unitPrices)
 
     for (const [unitId, quantity] of Object.entries(unitQuantities)) {
       if (quantity <= 0) continue
@@ -213,15 +237,13 @@ export function PriceBreakdownSection({
           ? categoryEntries.map(([pricingCategoryId, categoryQuantity]) => ({
               pricingCategoryId,
               quantity: categoryQuantity,
-              unitPrice:
-                unitPricesByUnitAndCategory.get(`${unitId}:${pricingCategoryId}`) ??
-                unitPricesByUnit.get(unitId),
+              unitPrice: findUnitPrice(unitId, pricingCategoryId),
             }))
           : [
               {
                 pricingCategoryId: null,
                 quantity,
-                unitPrice: unitPricesByUnit.get(unitId),
+                unitPrice: findUnitPrice(unitId, null),
               },
             ]
 

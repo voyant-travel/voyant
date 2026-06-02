@@ -139,7 +139,11 @@ function roleFromPricingCategoryType(categoryType: string | null | undefined): T
   return "adult"
 }
 
-function categoryMatchesDob(category: TravelerPricingCategoryOption, dob: string | null): boolean {
+export function categoryMatchesDob(
+  category: TravelerPricingCategoryOption,
+  dob: string | null,
+): boolean {
+  if (category.minAge == null && category.maxAge == null) return false
   const age = _computeAgeYears(dob)
   if (age == null) return false
   return (
@@ -158,7 +162,7 @@ function categoryMatchesRole(
   return false
 }
 
-function matchPricingCategoryForTraveler(
+export function matchPricingCategoryForTraveler(
   categories: ReadonlyArray<TravelerPricingCategoryOption> | undefined,
   dob: string | null,
   role: TravelerRole | null,

@@ -14,6 +14,8 @@ import {
   optionUnitPriceRules,
   optionUnitTiers,
   pickupPriceRules,
+  pricingCategories,
+  pricingCategoryDependencies,
 } from "@voyantjs/pricing"
 import {
   optionUnits,
@@ -86,6 +88,7 @@ export async function duplicateProductAsDraft(db: PostgresJsDatabase, productId:
     const slotIdMap = new Map<string, string>()
     const optionPriceRuleIdMap = new Map<string, string>()
     const optionUnitPriceRuleIdMap = new Map<string, string>()
+    const pricingCategoryIdMap = new Map<string, string>()
     const productExtraIdMap = new Map<string, string>()
     const optionExtraConfigIdMap = new Map<string, string>()
 
@@ -278,6 +281,47 @@ export async function duplicateProductAsDraft(db: PostgresJsDatabase, productId:
         await tx.insert(productOptionResourceTemplates).values({
           ...withoutSystemColumns(row),
           productOptionId: targetOptionId,
+        })
+      }
+    }
+
+    const pricingCategoryRows = await tx
+      .select()
+      .from(pricingCategories)
+      .where(eq(pricingCategories.productId, productId))
+    for (const row of pricingCategoryRows) {
+      const targetOptionId = row.optionId ? (optionIdMap.get(row.optionId) ?? null) : null
+      const targetUnitId = row.unitId ? (unitIdMap.get(row.unitId) ?? null) : null
+      if (row.optionId && !targetOptionId) continue
+      if (row.unitId && !targetUnitId) continue
+
+      const [copy] = await tx
+        .insert(pricingCategories)
+        .values({
+          ...withoutSystemColumns(row),
+          productId: targetProductId,
+          optionId: targetOptionId,
+          unitId: targetUnitId,
+        })
+        .returning()
+      if (copy) pricingCategoryIdMap.set(row.id, copy.id)
+    }
+
+    const sourcePricingCategoryIds = pricingCategoryRows.map((row) => row.id)
+    if (sourcePricingCategoryIds.length > 0) {
+      const dependencyRows = await tx
+        .select()
+        .from(pricingCategoryDependencies)
+        .where(inArray(pricingCategoryDependencies.pricingCategoryId, sourcePricingCategoryIds))
+      for (const row of dependencyRows) {
+        const targetPricingCategoryId = pricingCategoryIdMap.get(row.pricingCategoryId)
+        const targetMasterPricingCategoryId = pricingCategoryIdMap.get(row.masterPricingCategoryId)
+        if (!targetPricingCategoryId || !targetMasterPricingCategoryId) continue
+
+        await tx.insert(pricingCategoryDependencies).values({
+          ...withoutSystemColumns(row),
+          pricingCategoryId: targetPricingCategoryId,
+          masterPricingCategoryId: targetMasterPricingCategoryId,
         })
       }
     }
@@ -478,7 +522,11 @@ export async function duplicateProductAsDraft(db: PostgresJsDatabase, productId:
           const targetPriceRuleId = optionPriceRuleIdMap.get(row.optionPriceRuleId)
           const targetOptionId = optionIdMap.get(row.optionId)
           const targetUnitId = unitIdMap.get(row.unitId)
+          const targetPricingCategoryId = row.pricingCategoryId
+            ? (pricingCategoryIdMap.get(row.pricingCategoryId) ?? null)
+            : null
           if (!targetPriceRuleId || !targetOptionId || !targetUnitId) continue
+          if (row.pricingCategoryId && !targetPricingCategoryId) continue
           const [copy] = await tx
             .insert(optionUnitPriceRules)
             .values({
@@ -486,6 +534,7 @@ export async function duplicateProductAsDraft(db: PostgresJsDatabase, productId:
               optionPriceRuleId: targetPriceRuleId,
               optionId: targetOptionId,
               unitId: targetUnitId,
+              pricingCategoryId: targetPricingCategoryId,
             })
             .returning()
           if (copy) optionUnitPriceRuleIdMap.set(row.id, copy.id)
