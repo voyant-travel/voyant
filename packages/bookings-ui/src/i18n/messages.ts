@@ -1193,6 +1193,7 @@ export type BookingsUiMessages = {
       billingEmailInvalid: string
       travelerRequired: string
       firstAndLastNameRequired: string
+      roomCapacityExceeded: string
       selectSharedRoomGroup: string
       confirmFailedPrefix: string
       confirmFailed: string

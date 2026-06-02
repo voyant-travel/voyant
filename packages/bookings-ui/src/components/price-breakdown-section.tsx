@@ -9,6 +9,7 @@ import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i
 
 export interface PriceBreakdownLine {
   unitId: string
+  pricingCategoryId?: string | null
   label: string
   quantity: number
   /** Per-unit price for the matched tier/row. `null` = on-request pricing. */
@@ -40,6 +41,10 @@ export interface PriceBreakdownSectionProps {
   unitQuantities: Record<string, number>
   /** Display labels keyed by option_unit id. */
   unitLabels?: Record<string, string>
+  /** Traveler pricing quantities keyed by option_unit id and pricing_category id. */
+  pricingCategoryQuantities?: Record<string, Record<string, number>>
+  /** Display labels keyed by pricing_category id. */
+  pricingCategoryLabels?: Record<string, string>
   /**
    * Force a specific catalog. Defaults to the public catalog the storefront
    * uses — matches what a customer would see.
@@ -109,6 +114,8 @@ export function PriceBreakdownSection({
   optionId,
   unitQuantities,
   unitLabels,
+  pricingCategoryQuantities,
+  pricingCategoryLabels,
   catalogId,
   labels,
   onChange,
@@ -186,89 +193,124 @@ export function PriceBreakdownSection({
     }
 
     const unitPricesByUnit = new Map<string, (typeof snapshot.unitPrices)[number]>()
+    const unitPricesByUnitAndCategory = new Map<string, (typeof snapshot.unitPrices)[number]>()
     for (const up of snapshot.unitPrices) {
       if (!unitPricesByUnit.has(up.unitId)) {
         unitPricesByUnit.set(up.unitId, up)
+      }
+      if (up.pricingCategoryId) {
+        unitPricesByUnitAndCategory.set(`${up.unitId}:${up.pricingCategoryId}`, up)
       }
     }
 
     for (const [unitId, quantity] of Object.entries(unitQuantities)) {
       if (quantity <= 0) continue
-      const up = unitPricesByUnit.get(unitId)
-      if (!up) {
-        // The unit isn't priced in this catalog — show it on-request so the
-        // operator knows they need to quote manually.
+      const categoryEntries = Object.entries(pricingCategoryQuantities?.[unitId] ?? {}).filter(
+        ([, categoryQuantity]) => categoryQuantity > 0,
+      )
+      const selections =
+        categoryEntries.length > 0
+          ? categoryEntries.map(([pricingCategoryId, categoryQuantity]) => ({
+              pricingCategoryId,
+              quantity: categoryQuantity,
+              unitPrice:
+                unitPricesByUnitAndCategory.get(`${unitId}:${pricingCategoryId}`) ??
+                unitPricesByUnit.get(unitId),
+            }))
+          : [
+              {
+                pricingCategoryId: null,
+                quantity,
+                unitPrice: unitPricesByUnit.get(unitId),
+              },
+            ]
+
+      for (const selection of selections) {
+        const up = selection.unitPrice
+        if (!up) {
+          // The unit isn't priced in this catalog — show it on-request so the
+          // operator knows they need to quote manually.
+          out.push({
+            unitId,
+            pricingCategoryId: selection.pricingCategoryId,
+            label: unitLabels?.[unitId] ?? unitId,
+            quantity: selection.quantity,
+            unitAmountCents: null,
+            totalAmountCents: null,
+            tierLabel: null,
+            isGroupRate: false,
+          })
+          anyOnRequest = true
+          continue
+        }
+
+        const categoryLabel = selection.pricingCategoryId
+          ? pricingCategoryLabels?.[selection.pricingCategoryId]
+          : null
+        const unitLabel = unitLabels?.[unitId] ?? up.unitName ?? unitId
+        const label = categoryLabel ? `${unitLabel} · ${categoryLabel}` : unitLabel
+
+        if (up.pricingMode === "on_request") {
+          out.push({
+            unitId,
+            pricingCategoryId: selection.pricingCategoryId,
+            label,
+            quantity: selection.quantity,
+            unitAmountCents: null,
+            totalAmountCents: null,
+            tierLabel: merged.onRequest,
+            isGroupRate: false,
+          })
+          anyOnRequest = true
+          continue
+        }
+
+        if (up.pricingMode === "free" || up.pricingMode === "included") {
+          out.push({
+            unitId,
+            pricingCategoryId: selection.pricingCategoryId,
+            label,
+            quantity: selection.quantity,
+            unitAmountCents: 0,
+            totalAmountCents: 0,
+            tierLabel: null,
+            isGroupRate: false,
+          })
+          continue
+        }
+
+        // per_unit (and anything else that falls through to explicit amounts).
+        const matchedTier = matchTier(up.tiers, selection.quantity)
+        const unitAmount = matchedTier?.sellAmountCents ?? up.sellAmountCents
+        if (unitAmount === null) {
+          out.push({
+            unitId,
+            pricingCategoryId: selection.pricingCategoryId,
+            label,
+            quantity: selection.quantity,
+            unitAmountCents: null,
+            totalAmountCents: null,
+            tierLabel: merged.onRequest,
+            isGroupRate: false,
+          })
+          anyOnRequest = true
+          continue
+        }
+
+        const lineTotal = unitAmount * selection.quantity
+        const isGroupRate = matchedTier !== null && matchedTier.minQuantity > 1
         out.push({
           unitId,
-          label: unitLabels?.[unitId] ?? unitId,
-          quantity,
-          unitAmountCents: null,
-          totalAmountCents: null,
-          tierLabel: null,
-          isGroupRate: false,
-        })
-        anyOnRequest = true
-        continue
-      }
-
-      const label = unitLabels?.[unitId] ?? up.unitName ?? unitId
-
-      if (up.pricingMode === "on_request") {
-        out.push({
-          unitId,
+          pricingCategoryId: selection.pricingCategoryId,
           label,
-          quantity,
-          unitAmountCents: null,
-          totalAmountCents: null,
-          tierLabel: merged.onRequest,
-          isGroupRate: false,
+          quantity: selection.quantity,
+          unitAmountCents: unitAmount,
+          totalAmountCents: lineTotal,
+          tierLabel: isGroupRate ? merged.groupRate : null,
+          isGroupRate,
         })
-        anyOnRequest = true
-        continue
+        runningTotal += lineTotal
       }
-
-      if (up.pricingMode === "free" || up.pricingMode === "included") {
-        out.push({
-          unitId,
-          label,
-          quantity,
-          unitAmountCents: 0,
-          totalAmountCents: 0,
-          tierLabel: null,
-          isGroupRate: false,
-        })
-        continue
-      }
-
-      // per_unit (and anything else that falls through to explicit amounts).
-      const matchedTier = matchTier(up.tiers, quantity)
-      const unitAmount = matchedTier?.sellAmountCents ?? up.sellAmountCents
-      if (unitAmount === null) {
-        out.push({
-          unitId,
-          label,
-          quantity,
-          unitAmountCents: null,
-          totalAmountCents: null,
-          tierLabel: merged.onRequest,
-          isGroupRate: false,
-        })
-        anyOnRequest = true
-        continue
-      }
-
-      const lineTotal = unitAmount * quantity
-      const isGroupRate = matchedTier !== null && matchedTier.minQuantity > 1
-      out.push({
-        unitId,
-        label,
-        quantity,
-        unitAmountCents: unitAmount,
-        totalAmountCents: lineTotal,
-        tierLabel: isGroupRate ? merged.groupRate : null,
-        isGroupRate,
-      })
-      runningTotal += lineTotal
     }
 
     return { lines: out, total: anyOnRequest ? null : runningTotal }
@@ -278,6 +320,8 @@ export function PriceBreakdownSection({
     fallbackUnitAmountCents,
     unitQuantities,
     unitLabels,
+    pricingCategoryQuantities,
+    pricingCategoryLabels,
     merged.onRequest,
     merged.groupRate,
   ])

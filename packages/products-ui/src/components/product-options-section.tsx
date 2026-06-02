@@ -48,6 +48,53 @@ function formatRange(min: number | null, max: number | null) {
   return `${min ?? 0}–${max ?? "∞"}`
 }
 
+function formatMessage(template: string, replacements: Record<string, string | number>) {
+  return Object.entries(replacements).reduce(
+    (message, [key, value]) => message.replaceAll(`{${key}}`, String(value)),
+    template,
+  )
+}
+
+function formatInventory(
+  unit: OptionUnitRecord,
+  messages: ReturnType<typeof useProductsUiMessagesOrDefault>["productOptionsSection"],
+) {
+  if (unit.unitType === "room") {
+    if (unit.maxQuantity != null && unit.maxQuantity > 0) {
+      return formatMessage(messages.unitSummaries.roomsWithCount, { count: unit.maxQuantity })
+    }
+    return messages.unitSummaries.rooms
+  }
+
+  if (unit.unitType === "vehicle") {
+    if (unit.maxQuantity != null && unit.maxQuantity > 0) {
+      return formatMessage(messages.unitSummaries.vehiclesWithCount, { count: unit.maxQuantity })
+    }
+    return messages.unitSummaries.vehicles
+  }
+
+  return formatMessage(messages.unitSummaries.range, {
+    range: formatRange(unit.minQuantity, unit.maxQuantity),
+  })
+}
+
+function formatOccupancyText(
+  unit: OptionUnitRecord,
+  messages: ReturnType<typeof useProductsUiMessagesOrDefault>["productOptionsSection"],
+) {
+  if (unit.occupancyMin == null && unit.occupancyMax == null) {
+    return "—"
+  }
+
+  if (unit.occupancyMin === unit.occupancyMax) {
+    return formatMessage(messages.unitSummaries.sleeps, { count: unit.occupancyMin ?? 0 })
+  }
+
+  return formatMessage(messages.unitSummaries.sleepsRange, {
+    range: `${unit.occupancyMin ?? 0}–${unit.occupancyMax ?? "∞"}`,
+  })
+}
+
 export interface ProductOptionsSectionProps {
   productId: string
   pageSize?: number
@@ -279,17 +326,41 @@ function UnitsPanel({
     [data?.data],
   )
   const nextSortOrder = units.length > 0 ? Math.max(...units.map((unit) => unit.sortOrder)) + 1 : 0
+  const isPersonOnly = units.length > 0 && units.every((unit) => unit.unitType === "person")
+  const showAge = units.some((unit) => unit.unitType === "person")
+  const hasRoomUnits = units.some((unit) => unit.unitType === "room")
+  const showOccupancy = units.some(
+    (unit) => unit.unitType === "room" || unit.occupancyMin != null || unit.occupancyMax != null,
+  )
+  const unitsTitle = isPersonOnly
+    ? messages.productOptionsSection.titles.personUnits
+    : hasRoomUnits
+      ? messages.productOptionsSection.titles.roomUnits
+      : messages.productOptionsSection.titles.units
+  const unitsDescription = isPersonOnly
+    ? messages.productOptionsSection.descriptions.personUnits
+    : hasRoomUnits
+      ? messages.productOptionsSection.descriptions.roomUnits
+      : messages.productOptionsSection.descriptions.units
+  const addUnitLabel = isPersonOnly
+    ? messages.productOptionsSection.actions.addPersonUnit
+    : hasRoomUnits
+      ? messages.productOptionsSection.actions.addRoomUnit
+      : messages.productOptionsSection.actions.addUnit
+  const quantityColumnLabel = isPersonOnly
+    ? messages.productOptionsSection.columns.personQuantity
+    : hasRoomUnits
+      ? messages.productOptionsSection.columns.roomQuantity
+      : messages.productOptionsSection.columns.quantity
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {messages.productOptionsSection.titles.units}
+            {unitsTitle}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {messages.productOptionsSection.descriptions.units}
-          </p>
+          <p className="text-xs text-muted-foreground">{unitsDescription}</p>
         </div>
         <Button
           variant="outline"
@@ -300,7 +371,7 @@ function UnitsPanel({
           }}
         >
           <Plus className="mr-2 size-3.5" aria-hidden="true" />
-          {messages.productOptionsSection.actions.addUnit}
+          {addUnitLabel}
         </Button>
       </div>
 
@@ -323,9 +394,13 @@ function UnitsPanel({
               <TableRow>
                 <TableHead>{messages.productOptionsSection.columns.unitType}</TableHead>
                 <TableHead>{messages.productOptionsSection.columns.unitName}</TableHead>
-                <TableHead>{messages.productOptionsSection.columns.quantity}</TableHead>
-                <TableHead>{messages.productOptionsSection.columns.age}</TableHead>
-                <TableHead>{messages.productOptionsSection.columns.occupancy}</TableHead>
+                <TableHead>{quantityColumnLabel}</TableHead>
+                {showAge ? (
+                  <TableHead>{messages.productOptionsSection.columns.age}</TableHead>
+                ) : null}
+                {showOccupancy ? (
+                  <TableHead>{messages.productOptionsSection.columns.occupancy}</TableHead>
+                ) : null}
                 <TableHead className="w-[88px] text-right">
                   {messages.productOptionsSection.columns.actions}
                 </TableHead>
@@ -345,15 +420,23 @@ function UnitsPanel({
                       <div className="font-mono text-xs text-muted-foreground">{unit.code}</div>
                     ) : null}
                   </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {formatRange(unit.minQuantity, unit.maxQuantity)}
+                  <TableCell>
+                    <div className="text-xs">
+                      {formatInventory(unit, messages.productOptionsSection)}
+                    </div>
                   </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {formatRange(unit.minAge, unit.maxAge)}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {formatRange(unit.occupancyMin, unit.occupancyMax)}
-                  </TableCell>
+                  {showAge ? (
+                    <TableCell className="font-mono text-xs">
+                      {formatRange(unit.minAge, unit.maxAge)}
+                    </TableCell>
+                  ) : null}
+                  {showOccupancy ? (
+                    <TableCell>
+                      <div className="text-xs">
+                        {formatOccupancyText(unit, messages.productOptionsSection)}
+                      </div>
+                    </TableCell>
+                  ) : null}
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Button

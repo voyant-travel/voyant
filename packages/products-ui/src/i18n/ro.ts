@@ -641,34 +641,35 @@ export const productsUiRo = {
   },
   optionUnitDialog: {
     titles: {
-      create: "Unitate noua pentru optiune",
-      edit: "Editeaza unitatea optiunii",
+      create: "Unitate vandabila noua",
+      edit: "Editeaza unitatea vandabila",
     },
     descriptions: {
-      create: "Creeaza o unitate selectabila sub aceasta optiune.",
-      edit: "Actualizeaza constrangerile unitatii, limitele de cantitate si regulile de ocupare.",
+      create:
+        "Adauga ce se vinde sau se aloca: bilet adult, bilet copil, camera dubla, loc in autocar, cabina sau serviciu.",
+      edit: "Actualizeaza limitele de inventar, regulile de varsta si ocuparea cand unitatea este o camera.",
     },
   },
   optionUnitForm: {
     fields: {
       name: "Nume",
       code: "Cod",
-      unitType: "Tip unitate",
+      unitType: "Ce se aloca?",
       sortOrder: "Ordine sortare",
-      minQuantity: "Cantitate minima",
-      maxQuantity: "Cantitate maxima",
+      minQuantity: "Minim per plecare",
+      maxQuantity: "Disponibil per plecare",
       minAge: "Varsta minima",
       maxAge: "Varsta maxima",
-      occupancyMin: "Ocupare minima",
-      occupancyMax: "Ocupare maxima",
+      occupancyMin: "Oaspeti minim",
+      occupancyMax: "Oaspeti maxim",
       description: "Descriere",
       required: "Obligatoriu",
       hidden: "Ascuns",
     },
     placeholders: {
-      name: "Adult",
+      name: "Bilet adult",
       code: "adult",
-      description: "Descriere optionala a unitatii",
+      description: "Nota interna optionala despre aceasta unitate vandabila",
     },
     validation: {
       nameRequired: "Numele unitatii este obligatoriu.",
@@ -711,12 +712,13 @@ export const productsUiRo = {
   },
   productOptionDialog: {
     titles: {
-      create: "Optiune noua",
-      edit: "Editeaza optiunea",
+      create: "Optiune de rezervare noua",
+      edit: "Editeaza optiunea de rezervare",
     },
     descriptions: {
-      create: "Creeaza o optiune reutilizabila sub acest produs.",
-      edit: "Actualizeaza disponibilitatea optiunii, ordonarea si comportamentul implicit.",
+      create:
+        "Creeaza o alegere vizibila clientului: Default, bilet adult, Double, Single, cabina standard sau transfer VIP.",
+      edit: "Actualizeaza disponibilitatea, ordonarea si optiunea afisata prima clientilor.",
     },
   },
   productOptionForm: {
@@ -728,12 +730,12 @@ export const productsUiRo = {
       sortOrder: "Ordine sortare",
       availableFrom: "Disponibil de la",
       availableTo: "Disponibil pana la",
-      defaultOption: "Optiune implicita",
+      defaultOption: "Afiseaza primul clientilor",
     },
     placeholders: {
-      name: "Camera single",
-      code: "camera-single",
-      description: "Descriere optionala a optiunii",
+      name: "Default",
+      code: "default",
+      description: "Nota interna optionala despre aceasta optiune de rezervare",
       availableFrom: "Selecteaza data de inceput",
       availableTo: "Selecteaza data de sfarsit",
     },
@@ -747,16 +749,25 @@ export const productsUiRo = {
   },
   productOptionsSection: {
     titles: {
-      default: "Optiuni si unitati",
-      units: "Unitati",
+      default: "Optiuni de rezervare si preturi",
+      units: "Inventar pentru aceasta optiune",
+      personUnits: "Tipuri de calatori pentru aceasta optiune",
+      roomUnits: "Inventar camere pentru aceasta optiune",
     },
     descriptions: {
-      default: "Gestioneaza variantele de optiuni si unitatile disponibile sub fiecare optiune.",
-      units: "Configureaza unitatile selectabile care apartin acestei optiuni.",
+      default:
+        "Configureaza ce alege clientul, ce inventar sau tipuri de calatori sunt disponibile si cat plateste fiecare calator.",
+      units:
+        "Defineste unitatea fizica, tipul de bilet, camera, locul, cabina sau serviciul din spatele acestei optiuni.",
+      personUnits:
+        "Defineste intervalele de varsta ale calatorilor care pot fi rezervati. Capacitatea plecarii controleaza cate persoane pot calatori.",
+      roomUnits: "Defineste camerele fizice disponibile pentru aceasta optiune.",
     },
     actions: {
       addOption: "Adauga optiune",
-      addUnit: "Adauga unitate",
+      addUnit: "Adauga unitate vandabila",
+      addPersonUnit: "Adauga tip calator",
+      addRoomUnit: "Adauga unitate camera",
       duplicate: "Duplica optiunea",
       edit: "Editeaza",
       delete: "Sterge",
@@ -766,23 +777,34 @@ export const productsUiRo = {
       units: "Incarcarea unitatilor optiunii a esuat.",
     },
     empty: {
-      options: "Nu exista optiuni configurate pentru acest produs.",
-      units: "Nu exista unitati configurate pentru aceasta optiune.",
+      options: "Nu exista inca optiuni pentru clienti.",
+      units: "Nu exista unitate vandabila configurata pentru aceasta optiune.",
     },
     deleteConfirm: {
-      option: 'Stergi optiunea "{name}" si toate unitatile ei?',
-      unit: 'Stergi unitatea "{name}"?',
+      option: 'Stergi optiunea "{name}" si configurarea ei?',
+      unit: 'Stergi unitatea vandabila "{name}"?',
     },
     columns: {
       unitType: "Tip",
       unitName: "Nume",
-      quantity: "Cantitate",
-      age: "Varsta",
-      occupancy: "Ocupare",
+      quantity: "Inventar",
+      personQuantity: "Cantitate rezervare",
+      roomQuantity: "Inventar camere",
+      age: "Varsta calator",
+      occupancy: "Ocupare camera",
       actions: "Actiuni",
     },
+    unitSummaries: {
+      range: "{range}",
+      rooms: "Camere pe plecare",
+      roomsWithCount: "Pana la {count} camere pe plecare",
+      vehicles: "Vehicule pe plecare",
+      vehiclesWithCount: "Pana la {count} vehicule pe plecare",
+      sleeps: "Capacitate {count}",
+      sleepsRange: "Capacitate {range}",
+    },
     badges: {
-      defaultOption: "Implicita",
+      defaultOption: "Afisata prima",
     },
   },
 } satisfies ProductsUiMessages

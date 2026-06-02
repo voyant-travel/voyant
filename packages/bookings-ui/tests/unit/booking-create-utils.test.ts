@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   getBookableDepartureSlots,
+  getOverCapacityInventoryAssignments,
   getSelectedSharedRoomUnitId,
   getTravelerAssignableStepperUnits,
   itemLinesToRows,
@@ -176,6 +177,68 @@ describe("booking create helpers", () => {
     expect(result[0]?.travelerIndexes).toBeUndefined()
   })
 
+  it("splits selected room lines by traveler pricing category", () => {
+    const result = itemLinesToRows(
+      { optu_double: 1 },
+      [{ optionId: "opto_standard", optionUnitId: "optu_double", unitName: "Double" }],
+      {
+        confirmedAmountCents: 120000,
+        lines: [
+          {
+            unitId: "optu_double",
+            pricingCategoryId: "pcat_adult",
+            label: "Double · Adult",
+            quantity: 2,
+            unitAmountCents: 48000,
+            totalAmountCents: 96000,
+          },
+          {
+            unitId: "optu_double",
+            pricingCategoryId: "pcat_child_under6",
+            label: "Double · Child under 6",
+            quantity: 1,
+            unitAmountCents: 24000,
+            totalAmountCents: 24000,
+          },
+        ],
+      },
+      { optu_double: [0, 1, 2] },
+      { optu_double: ["trav:adult1", "trav:adult2", "trav:child"] },
+      { optu_double: { pcat_adult: [0, 1], pcat_child_under6: [2] } },
+      {
+        optu_double: {
+          pcat_adult: ["trav:adult1", "trav:adult2"],
+          pcat_child_under6: ["trav:child"],
+        },
+      },
+    )
+
+    expect(result).toEqual([
+      {
+        clientLineKey: "unit:optu_double:category:pcat_adult",
+        optionId: "opto_standard",
+        optionUnitId: "optu_double",
+        pricingCategoryId: "pcat_adult",
+        quantity: 2,
+        title: "Double · Adult",
+        unitSellAmountCents: 48000,
+        totalSellAmountCents: 96000,
+        travelerKeys: ["trav:adult1", "trav:adult2"],
+      },
+      {
+        clientLineKey: "unit:optu_double:category:pcat_child_under6",
+        optionId: "opto_standard",
+        optionUnitId: "optu_double",
+        pricingCategoryId: "pcat_child_under6",
+        quantity: 1,
+        title: "Double · Child under 6",
+        unitSellAmountCents: 24000,
+        totalSellAmountCents: 24000,
+        travelerKeys: ["trav:child"],
+      },
+    ])
+  })
+
   it("uses the selected unit for new shared-room groups", () => {
     expect(
       getSelectedSharedRoomUnitId({
@@ -237,5 +300,33 @@ describe("booking create helpers", () => {
     ])
 
     expect(result.map((unit) => unit.optionUnitId)).toEqual(["optu_double", "optu_excursion_child"])
+  })
+
+  it("detects travelers assigned beyond selected room capacity", () => {
+    const result = getOverCapacityInventoryAssignments(
+      [
+        {
+          optionUnitId: "optu_double",
+          unitName: "Double",
+          unitType: "room",
+          occupancyMax: 2,
+        },
+      ],
+      { optu_double: 1 },
+      [
+        { inventoryUnitId: "optu_double" },
+        { inventoryUnitId: "optu_double" },
+        { inventoryUnitId: "optu_double" },
+      ],
+    )
+
+    expect(result).toEqual([
+      {
+        optionUnitId: "optu_double",
+        unitName: "Double",
+        assignedTravelers: 3,
+        capacity: 2,
+      },
+    ])
   })
 })

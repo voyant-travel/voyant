@@ -1,5 +1,5 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
-import { boolean, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import { boolean, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
 export const priceCatalogsRef = pgTable("price_catalogs", {
   id: typeId("price_catalogs").primaryKey(),
@@ -50,6 +50,25 @@ export const optionUnitTiersRef = pgTable("option_unit_tiers", {
   sellAmountCents: integer("sell_amount_cents"),
   active: boolean("active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
+})
+
+export const pricingCategoriesRef = pgTable("pricing_categories", {
+  id: typeId("pricing_categories").primaryKey(),
+  productId: text("product_id"),
+  optionId: text("option_id"),
+  unitId: text("unit_id"),
+  code: text("code"),
+  name: text("name").notNull(),
+  categoryType: text("category_type").notNull(),
+  seatOccupancy: integer("seat_occupancy").notNull().default(1),
+  groupSize: integer("group_size"),
+  isAgeQualified: boolean("is_age_qualified").notNull().default(false),
+  minAge: integer("min_age"),
+  maxAge: integer("max_age"),
+  internalUseOnly: boolean("internal_use_only").notNull().default(false),
+  active: boolean("active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>(),
 })
 
 export const departurePriceOverridesRef = pgTable("departure_price_overrides", {

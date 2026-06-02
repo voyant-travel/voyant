@@ -1,6 +1,6 @@
 import { useAdminBreadcrumbs } from "@voyantjs/admin"
 import { Badge, Button, DropdownMenuItem } from "@voyantjs/ui/components"
-import { CalendarPlus, Pencil, Trash2 } from "lucide-react"
+import { CalendarPlus, Copy, Pencil, Trash2 } from "lucide-react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 import { ActionMenu } from "./product-detail-sections"
@@ -9,17 +9,21 @@ import { getProductStatusLabel, statusVariant } from "./product-detail-shared"
 
 export interface ProductDetailHeaderProps {
   product: ProductRecord
+  isDuplicating: boolean
   isDeleting: boolean
   onEdit: () => void
   onAddBooking: () => void
+  onDuplicate: () => void
   onDelete: () => void
 }
 
 export function ProductDetailHeader({
   product,
+  isDuplicating,
   isDeleting,
   onEdit,
   onAddBooking,
+  onDuplicate,
   onDelete,
 }: ProductDetailHeaderProps) {
   const messages = useAdminMessages()
@@ -46,6 +50,10 @@ export function ProductDetailHeader({
           {productMessages.addBooking}
         </Button>
         <ActionMenu>
+          <DropdownMenuItem disabled={isDuplicating} onClick={onDuplicate}>
+            <Copy className="h-4 w-4" />
+            {productMessages.duplicate}
+          </DropdownMenuItem>
           <DropdownMenuItem variant="destructive" disabled={isDeleting} onClick={onDelete}>
             <Trash2 className="h-4 w-4" />
             {productMessages.delete}

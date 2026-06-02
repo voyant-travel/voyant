@@ -639,34 +639,35 @@ export const productsUiEn = {
   },
   optionUnitDialog: {
     titles: {
-      create: "New option unit",
-      edit: "Edit option unit",
+      create: "New sellable unit",
+      edit: "Edit sellable unit",
     },
     descriptions: {
-      create: "Create a selectable unit under this option.",
-      edit: "Update unit constraints, quantity limits, and occupancy rules.",
+      create:
+        "Add what is sold or allocated, such as an adult ticket, child ticket, double room, coach seat, cabin, or service.",
+      edit: "Update inventory limits, age rules, and occupancy when this unit represents a room.",
     },
   },
   optionUnitForm: {
     fields: {
       name: "Name",
       code: "Code",
-      unitType: "Unit type",
+      unitType: "What is being allocated?",
       sortOrder: "Sort order",
-      minQuantity: "Min quantity",
-      maxQuantity: "Max quantity",
+      minQuantity: "Minimum per departure",
+      maxQuantity: "Available per departure",
       minAge: "Min age",
       maxAge: "Max age",
-      occupancyMin: "Occupancy min",
-      occupancyMax: "Occupancy max",
+      occupancyMin: "Guests min",
+      occupancyMax: "Guests max",
       description: "Description",
       required: "Required",
       hidden: "Hidden",
     },
     placeholders: {
-      name: "Adult",
+      name: "Adult ticket",
       code: "adult",
-      description: "Optional unit description",
+      description: "Optional internal note about this sellable unit",
     },
     validation: {
       nameRequired: "Unit name is required.",
@@ -709,12 +710,13 @@ export const productsUiEn = {
   },
   productOptionDialog: {
     titles: {
-      create: "New option",
-      edit: "Edit option",
+      create: "New booking option",
+      edit: "Edit booking option",
     },
     descriptions: {
-      create: "Create a reusable option under this product.",
-      edit: "Update option availability, ordering, and default behavior.",
+      create:
+        "Create a customer-facing choice, such as Default, Adult ticket, Double, Single, Standard cabin, or VIP transfer.",
+      edit: "Update availability, ordering, and which option is shown first to customers.",
     },
   },
   productOptionForm: {
@@ -726,12 +728,12 @@ export const productsUiEn = {
       sortOrder: "Sort order",
       availableFrom: "Available from",
       availableTo: "Available to",
-      defaultOption: "Default option",
+      defaultOption: "Show first to customers",
     },
     placeholders: {
-      name: "Single room",
-      code: "single-room",
-      description: "Optional option description",
+      name: "Default",
+      code: "default",
+      description: "Optional internal note about this booking option",
       availableFrom: "Select start date",
       availableTo: "Select end date",
     },
@@ -740,21 +742,30 @@ export const productsUiEn = {
       saveFailed: "Failed to save product option.",
     },
     actions: {
-      createOption: "Create option",
+      createOption: "Create booking option",
     },
   },
   productOptionsSection: {
     titles: {
-      default: "Options and units",
-      units: "Units",
+      default: "Booking options and prices",
+      units: "Inventory for this option",
+      personUnits: "Traveler types for this option",
+      roomUnits: "Room inventory for this option",
     },
     descriptions: {
-      default: "Manage option variants and the units available under each option.",
-      units: "Configure the selectable units that belong to this option.",
+      default:
+        "Set up what customers choose, what inventory or traveler types are available, and what each traveler pays.",
+      units:
+        "Define the physical unit, ticket type, room, seat, cabin, or service behind this option.",
+      personUnits:
+        "Define the traveler age bands customers can book. Departure capacity controls how many people can travel.",
+      roomUnits: "Define the physical rooms available for this option.",
     },
     actions: {
       addOption: "Add option",
-      addUnit: "Add unit",
+      addUnit: "Add sellable unit",
+      addPersonUnit: "Add traveler type",
+      addRoomUnit: "Add room unit",
       duplicate: "Duplicate option",
       edit: "Edit",
       delete: "Delete",
@@ -764,23 +775,34 @@ export const productsUiEn = {
       units: "Failed to load option units.",
     },
     empty: {
-      options: "No options configured for this product.",
-      units: "No units configured for this option.",
+      options: "No customer options configured yet.",
+      units: "No sellable unit configured for this option.",
     },
     deleteConfirm: {
-      option: 'Delete option "{name}" and all its units?',
-      unit: 'Delete unit "{name}"?',
+      option: 'Delete option "{name}" and its setup?',
+      unit: 'Delete sellable unit "{name}"?',
     },
     columns: {
       unitType: "Type",
       unitName: "Name",
-      quantity: "Quantity",
-      age: "Age",
-      occupancy: "Occupancy",
+      quantity: "Inventory",
+      personQuantity: "Booking quantity",
+      roomQuantity: "Room inventory",
+      age: "Traveler age",
+      occupancy: "Room occupancy",
       actions: "Actions",
     },
+    unitSummaries: {
+      range: "{range}",
+      rooms: "Rooms per departure",
+      roomsWithCount: "Up to {count} rooms per departure",
+      vehicles: "Vehicles per departure",
+      vehiclesWithCount: "Up to {count} vehicles per departure",
+      sleeps: "Sleeps {count}",
+      sleepsRange: "Sleeps {range}",
+    },
     badges: {
-      defaultOption: "Default",
+      defaultOption: "Shown first",
     },
   },
 } satisfies ProductsUiMessages

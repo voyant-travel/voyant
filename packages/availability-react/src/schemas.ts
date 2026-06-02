@@ -332,6 +332,7 @@ export const resourceTemplateSchema = z.object({
   capacity: z.number().int(),
   namePattern: z.string(),
   layout: z.string().nullable(),
+  defaultCount: z.number().int().nullable(),
   flags: z.record(z.string(), z.unknown()),
   createdAt: z.string(),
   updatedAt: z.string(),

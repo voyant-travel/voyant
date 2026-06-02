@@ -87,6 +87,7 @@ export function OptionResourceTemplatesPanel({
   const [editingKind, setEditingKind] = useState<string | null>(null)
   const [kindValue, setKindValue] = useState<string>("room")
   const [capacityValue, setCapacityValue] = useState<number>(2)
+  const [defaultCountValue, setDefaultCountValue] = useState<number>(1)
   const [namePatternValue, setNamePatternValue] = useState<string>("Room {sequence}")
   const [layoutSpec, setLayoutSpec] = useState<SeatLayoutSpec | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -98,6 +99,7 @@ export function OptionResourceTemplatesPanel({
     setEditingKind(null)
     setKindValue("room")
     setCapacityValue(2)
+    setDefaultCountValue(1)
     setNamePatternValue("Room {sequence}")
     setLayoutSpec(null)
     setError(null)
@@ -107,12 +109,14 @@ export function OptionResourceTemplatesPanel({
   function openEdit(template: {
     kind: string
     capacity: number
+    defaultCount: number | null
     namePattern: string
     flags: Record<string, unknown>
   }) {
     setEditingKind(template.kind)
     setKindValue(template.kind)
     setCapacityValue(template.capacity)
+    setDefaultCountValue(template.defaultCount ?? 0)
     setNamePatternValue(template.namePattern)
     setLayoutSpec(extractLayoutSpec(template.flags))
     setError(null)
@@ -139,6 +143,7 @@ export function OptionResourceTemplatesPanel({
         kind: trimmedKind,
         input: {
           capacity: effectiveCapacity,
+          defaultCount: defaultCountValue > 0 ? defaultCountValue : null,
           namePattern: trimmedPattern,
           flags,
         },
@@ -197,6 +202,7 @@ export function OptionResourceTemplatesPanel({
                     <span className="text-sm">
                       {formatMessage(t.capacitySummary, {
                         capacity: template.capacity,
+                        count: template.defaultCount ?? 0,
                         pattern: template.namePattern,
                       })}
                     </span>
@@ -214,6 +220,7 @@ export function OptionResourceTemplatesPanel({
                       openEdit({
                         kind: template.kind,
                         capacity: template.capacity,
+                        defaultCount: template.defaultCount,
                         namePattern: template.namePattern,
                         flags: template.flags,
                       })
@@ -337,6 +344,17 @@ export function OptionResourceTemplatesPanel({
                     {formatMessage(t.capacityDerivedHint, { count: derivedSeatCount })}
                   </p>
                 ) : null}
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="resource-template-count">{t.defaultCountLabel}</Label>
+                <Input
+                  id="resource-template-count"
+                  type="number"
+                  min={0}
+                  value={defaultCountValue}
+                  onChange={(event) => setDefaultCountValue(Number(event.target.value) || 0)}
+                />
+                <p className="text-muted-foreground text-xs">{t.defaultCountHint}</p>
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="resource-template-pattern">{t.namePatternLabel}</Label>

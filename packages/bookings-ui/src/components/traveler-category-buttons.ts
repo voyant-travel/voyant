@@ -10,6 +10,28 @@ export interface TravelerCategoryUnitState {
   unitCode: string | null
 }
 
+export interface TravelerCategorySelectableUnitState {
+  unitType?: string | null
+}
+
+export function getSelectableTravelerCategoryUnits<
+  TUnit extends TravelerCategorySelectableUnitState,
+>(units: readonly TUnit[]): TUnit[] {
+  const hasInventoryUnits = units.some(
+    (unit) => unit.unitType === "room" || unit.unitType === "vehicle",
+  )
+  return units.filter(
+    (unit) => unit.unitType === "person" || (!hasInventoryUnits && unit.unitType == null),
+  )
+}
+
+export function shouldUseStaticTravelerCategoryFallback(
+  hasGroup: boolean,
+  selectableUnitCount: number,
+): boolean {
+  return !hasGroup || selectableUnitCount === 0
+}
+
 export function inferTravelerRoleFromUnit(
   unit: TravelerCategoryUnitState,
 ): Exclude<TravelerCategoryRole, "lead"> {
