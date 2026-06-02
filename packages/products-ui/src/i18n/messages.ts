@@ -755,6 +755,10 @@ export type ProductsUiMessages = {
       options: string
       units: string
     }
+    configurationWarnings: {
+      roomOptionsTitle: string
+      roomOptionsDescription: string
+    }
     deleteConfirm: {
       option: string
       unit: string

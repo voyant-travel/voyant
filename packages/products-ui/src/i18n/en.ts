@@ -778,6 +778,11 @@ export const productsUiEn = {
       options: "No customer options configured yet.",
       units: "No sellable unit configured for this option.",
     },
+    configurationWarnings: {
+      roomOptionsTitle: "This looks like room types configured as options",
+      roomOptionsDescription:
+        "Options {options} look like room arrangements. For Single, Double, Triple, or similar room choices, use one option with multiple room units. Use separate options only when the customer is choosing genuinely different packages.",
+    },
     deleteConfirm: {
       option: 'Delete option "{name}" and its setup?',
       unit: 'Delete sellable unit "{name}"?',

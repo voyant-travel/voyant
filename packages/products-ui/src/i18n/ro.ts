@@ -780,6 +780,11 @@ export const productsUiRo = {
       options: "Nu exista inca optiuni pentru clienti.",
       units: "Nu exista unitate vandabila configurata pentru aceasta optiune.",
     },
+    configurationWarnings: {
+      roomOptionsTitle: "Pare ca tipurile de camera sunt configurate ca optiuni",
+      roomOptionsDescription:
+        "Optiunile {options} par aranjamente de camera. Pentru Single, Double, Triple sau alegeri similare, foloseste o singura optiune cu mai multe unitati camera. Foloseste optiuni separate doar cand clientul alege pachete cu adevarat diferite.",
+    },
     deleteConfirm: {
       option: 'Stergi optiunea "{name}" si configurarea ei?',
       unit: 'Stergi unitatea vandabila "{name}"?',

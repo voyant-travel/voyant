@@ -1,7 +1,9 @@
 "use client"
 
+import { useQueries } from "@tanstack/react-query"
 import { useDuplicateOptionPricingMutation } from "@voyantjs/pricing-react"
 import {
+  getOptionUnitsQueryOptions,
   type OptionUnitRecord,
   type ProductOptionRecord,
   useDuplicateProductOptionMutation,
@@ -9,7 +11,9 @@ import {
   useOptionUnits,
   useProductOptionMutation,
   useProductOptions,
+  useVoyantProductsContext,
 } from "@voyantjs/products-react"
+import { Alert, AlertDescription, AlertTitle } from "@voyantjs/ui/components/alert"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import {
@@ -27,7 +31,16 @@ import {
   TableHeader,
   TableRow,
 } from "@voyantjs/ui/components/table"
-import { ChevronDown, ChevronRight, Copy, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
+import {
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react"
 import * as React from "react"
 
 import { useProductsUiMessagesOrDefault } from "../i18n/provider.js"
@@ -53,6 +66,38 @@ function formatMessage(template: string, replacements: Record<string, string | n
     (message, [key, value]) => message.replaceAll(`{${key}}`, String(value)),
     template,
   )
+}
+
+const ROOM_ARRANGEMENT_LABEL_PATTERN =
+  /\b(single|sgl|double|dbl|twin|triple|tpl|quad|dubla|tripla|camera)\b/i
+
+function normalizeConfigurationLabel(value: string | null | undefined): string {
+  return (value ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+}
+
+export function optionLooksLikeRoomArrangementLabel(
+  option: Pick<ProductOptionRecord, "code" | "name">,
+): boolean {
+  return [option.name, option.code].some((value) =>
+    ROOM_ARRANGEMENT_LABEL_PATTERN.test(normalizeConfigurationLabel(value)),
+  )
+}
+
+export function getRoomArrangementOptionNames(
+  options: ReadonlyArray<Pick<ProductOptionRecord, "code" | "id" | "name" | "status">>,
+  unitsByOptionId: ReadonlyMap<string, readonly Pick<OptionUnitRecord, "unitType">[]>,
+): string[] {
+  return options
+    .filter((option) => option.status !== "archived")
+    .filter(optionLooksLikeRoomArrangementLabel)
+    .filter((option) => {
+      const units = unitsByOptionId.get(option.id) ?? []
+      return units.length > 0 && units.every((unit) => unit.unitType === "room")
+    })
+    .map((option) => option.name)
 }
 
 function formatInventory(
@@ -111,6 +156,7 @@ export function ProductOptionsSection({
   renderOptionDetails,
 }: ProductOptionsSectionProps) {
   const messages = useProductsUiMessagesOrDefault()
+  const productsClient = useVoyantProductsContext()
   const [expandedOptionId, setExpandedOptionId] = React.useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editingOption, setEditingOption] = React.useState<ProductOptionRecord | undefined>(
@@ -129,6 +175,24 @@ export function ProductOptionsSection({
     () => (data?.data ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder),
     [data?.data],
   )
+  const optionUnitQueries = useQueries({
+    queries: options.map((option) => ({
+      ...getOptionUnitsQueryOptions(productsClient, {
+        optionId: option.id,
+        limit: 100,
+      }),
+      enabled: options.length > 1,
+    })),
+  })
+  const roomArrangementOptionNames = React.useMemo(() => {
+    const unitsByOptionId = new Map<string, OptionUnitRecord[]>()
+    options.forEach((option, index) => {
+      const units = optionUnitQueries[index]?.data?.data
+      if (units) unitsByOptionId.set(option.id, units)
+    })
+    return getRoomArrangementOptionNames(options, unitsByOptionId)
+  }, [options, optionUnitQueries])
+  const showRoomArrangementWarning = roomArrangementOptionNames.length >= 2
   const nextSortOrder =
     options.length > 0 ? Math.max(...options.map((option) => option.sortOrder)) + 1 : 0
   const resolvedTitle = title ?? messages.productOptionsSection.titles.default
@@ -152,6 +216,21 @@ export function ProductOptionsSection({
         </Button>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
+        {showRoomArrangementWarning ? (
+          <Alert className="border-amber-500/40 bg-amber-500/10">
+            <TriangleAlert className="size-4 text-amber-600" aria-hidden="true" />
+            <AlertTitle>
+              {messages.productOptionsSection.configurationWarnings.roomOptionsTitle}
+            </AlertTitle>
+            <AlertDescription>
+              {formatMessage(
+                messages.productOptionsSection.configurationWarnings.roomOptionsDescription,
+                { options: roomArrangementOptionNames.join(", ") },
+              )}
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
         {isPending ? (
           <div className="flex min-h-24 items-center justify-center">
             <Loader2 className="size-4 animate-spin text-muted-foreground" />
