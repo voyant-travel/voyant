@@ -45,6 +45,8 @@ import {
 } from "react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 import type { CatalogUiMessages } from "../i18n/messages.js"
+import type { CatalogDetailComponent } from "./catalog-component-enrichment.js"
+import { ProductComponentsList } from "./catalog-component-list.js"
 import type { CatalogDeparturePricingRow } from "./catalog-enrichment-fetchers.js"
 import { MediaGallery } from "./media-gallery.js"
 
@@ -65,7 +67,7 @@ export interface CatalogDetailAction {
  * Fetched separately from the search index — the index keeps a lean
  * facetable projection; the enrichment carries everything else via the
  * catalog content service (description, itinerary, media, options,
- * policies, supplier).
+ * components, policies, supplier).
  */
 export interface CatalogDetailEnrichment {
   description?: string | null
@@ -108,6 +110,7 @@ export interface CatalogDetailEnrichment {
     capacityMax?: number | null
     amenities?: string[]
   }>
+  components?: ReadonlyArray<CatalogDetailComponent>
   policies?: ReadonlyArray<{ kind: string; body: string }>
   departures?: ReadonlyArray<{
     id: string
@@ -536,6 +539,7 @@ export function CatalogDetailSheet({
             const hasItinerary = (enrichment?.itinerary?.length ?? 0) > 0
             const hasShip = enrichment?.ship != null
             const hasOptions = (enrichment?.options?.length ?? 0) > 0
+            const hasComponents = (enrichment?.components?.length ?? 0) > 0
             const hasDepartures = (enrichment?.departures?.length ?? 0) > 0
             const hasPolicies = (enrichment?.policies?.length ?? 0) > 0
             const hasAttributes =
@@ -558,6 +562,9 @@ export function CatalogDetailSheet({
                     )}
                     {hasShip && <TabsTrigger value="ship">{messages.ship}</TabsTrigger>}
                     {hasOptions && <TabsTrigger value="options">{optionsLabel}</TabsTrigger>}
+                    {hasComponents && (
+                      <TabsTrigger value="components">{messages.components}</TabsTrigger>
+                    )}
                     {hasDepartures && (
                       <TabsTrigger value="departures">{departuresLabel}</TabsTrigger>
                     )}
@@ -673,6 +680,12 @@ export function CatalogDetailSheet({
                           <CabinCard key={o.id} cabin={o} />
                         ))}
                       </ul>
+                    </TabsContent>
+                  )}
+
+                  {hasComponents && (
+                    <TabsContent value="components">
+                      <ProductComponentsList components={enrichment!.components!} />
                     </TabsContent>
                   )}
 

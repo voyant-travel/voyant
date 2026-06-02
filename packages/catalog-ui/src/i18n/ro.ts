@@ -125,6 +125,7 @@ export const catalogUiRo = {
       attributes: "Atribute",
       departures: "Plecari",
       sailings: "Plecari",
+      components: "Componente",
       ends: "se termina {date}",
       book: "Rezerva",
       options: "Optiuni",

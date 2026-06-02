@@ -42,6 +42,7 @@ describe("product contract templates", () => {
         status: "active",
         bookingMode: "date",
         capacityMode: "limited",
+        sellableKind: "product",
         visibility: "public",
         activated: true,
         termsShowOnContract: false,

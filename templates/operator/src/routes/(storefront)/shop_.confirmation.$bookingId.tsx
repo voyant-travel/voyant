@@ -45,6 +45,12 @@ interface BankTransferInstructions {
   dueAt: string | null
 }
 
+interface PackageReferenceStash {
+  bookingId: string
+  tripEnvelopeId: string
+  tripComponentId: string | null
+}
+
 export const Route = createFileRoute("/(storefront)/shop_/confirmation/$bookingId")({
   component: ShopConfirmationRouteComponent,
   validateSearch: confirmationSearchSchema,
@@ -71,6 +77,7 @@ function ShopConfirmationRouteComponent(): React.ReactElement {
       ) : (
         <DefaultPanel bookingId={bookingId} />
       )}
+      <PackageReferencePanel bookingId={bookingId} />
       <BackLink />
     </div>
   )
@@ -132,6 +139,58 @@ function BankTransferPanel({ bookingId }: { bookingId: string }): React.ReactEle
       </CardContent>
     </Card>
   )
+}
+
+function PackageReferencePanel({ bookingId }: { bookingId: string }): React.ReactElement | null {
+  const packageReference = usePackageReference(bookingId)
+  if (!packageReference) return null
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Package reference</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        <dl className="space-y-2 rounded border bg-muted/30 p-4">
+          <Row label="Package reference" value={packageReference.tripEnvelopeId} />
+          <Row label="Booking reference" value={bookingId} />
+        </dl>
+        <p className="text-muted-foreground">
+          Some package items are handled as separate reservations. Our team will confirm those
+          details with the same booking reference.
+        </p>
+      </CardContent>
+    </Card>
+  )
+}
+
+function usePackageReference(bookingId: string): PackageReferenceStash | null {
+  const [stash, setStash] = useState<PackageReferenceStash | null>(null)
+
+  useEffect(() => {
+    if (typeof sessionStorage === "undefined") return
+    const raw = sessionStorage.getItem(`voyant.package.${bookingId}`)
+    if (!raw) return
+    try {
+      const parsed = JSON.parse(raw) as Partial<PackageReferenceStash>
+      if (
+        parsed.bookingId === bookingId &&
+        typeof parsed.tripEnvelopeId === "string" &&
+        parsed.tripEnvelopeId.length > 0
+      ) {
+        setStash({
+          bookingId,
+          tripEnvelopeId: parsed.tripEnvelopeId,
+          tripComponentId:
+            typeof parsed.tripComponentId === "string" ? parsed.tripComponentId : null,
+        })
+      }
+    } catch {
+      // Bad stash — ignore.
+    }
+  }, [bookingId])
+
+  return stash
 }
 
 interface CheckoutStatus {

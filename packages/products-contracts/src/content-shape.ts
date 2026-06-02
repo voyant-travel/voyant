@@ -15,7 +15,9 @@
  * See `docs/architecture/catalog-sourced-content.md` §3.2, §3.5.4, §3.6.
  */
 
+import { type TravelComponent, travelComponentSchema } from "@voyantjs/travel-components-contracts"
 import { z } from "zod"
+import { productSellableKindSchema } from "./validation-shared.js"
 
 /**
  * The current content-schema version. Stamped on every cache write.
@@ -32,6 +34,7 @@ export const productSummarySchema = z.object({
   id: z.string(),
   name: z.string(),
   status: z.string().optional(),
+  sellable_kind: productSellableKindSchema.default("product"),
   description: z.string().nullable().optional(),
   inclusions_html: z.string().nullable().optional(),
   exclusions_html: z.string().nullable().optional(),
@@ -125,6 +128,7 @@ export const productDepartureSchema = z.object({
 export const productContentSchema = z.object({
   product: productSummarySchema,
   options: z.array(productOptionSchema).default([]),
+  components: z.array(travelComponentSchema).default([]),
   days: z.array(productDaySchema).default([]),
   media: z.array(productMediaItemSchema).default([]),
   policies: z.array(productPolicySchema).default([]),
@@ -135,6 +139,7 @@ export type ProductContent = z.infer<typeof productContentSchema>
 export type ProductSummary = z.infer<typeof productSummarySchema>
 export type ProductMediaItem = z.infer<typeof productMediaItemSchema>
 export type ProductOption = z.infer<typeof productOptionSchema>
+export type ProductComponent = TravelComponent
 export type ProductDeparture = z.infer<typeof productDepartureSchema>
 export type ProductDay = z.infer<typeof productDaySchema>
 export type ProductPolicy = z.infer<typeof productPolicySchema>

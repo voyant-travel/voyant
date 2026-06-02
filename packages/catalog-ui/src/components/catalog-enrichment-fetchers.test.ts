@@ -11,10 +11,10 @@ function hit(id: string): CatalogSearchHit {
     id,
     score: 1,
     document: {
-      entity: { module: "products", entityId: id },
+      id,
       fields: {},
     },
-  } as unknown as CatalogSearchHit
+  }
 }
 
 function ok(body: unknown, init: ResponseInit = {}): Response {
@@ -37,6 +37,27 @@ const samplePayload = {
         supplier: "supp_1",
       },
       options: [{ id: "opt_1", name: "Standard" }],
+      components: [
+        {
+          id: "cmp_hotel",
+          component_kind: "accommodation",
+          title: "Hotel stay",
+          sort_order: 10,
+          binding: {
+            type: "inline",
+            content: {
+              property: {
+                name: "Sample Hotel",
+                hero_image_url: "https://example.com/hotel.jpg",
+                location: { city: "Brasov", country: "RO" },
+              },
+              room_type: { name: "Standard Double" },
+              rate_plan: { name: "Half board", board_basis: "half_board" },
+              nights: 5,
+            },
+          },
+        },
+      ],
       days: [{ day_number: 1, title: "Arrival", description: "Land at airport" }],
       media: [{ url: "https://example.com/1.jpg", type: "image" }],
       policies: [{ kind: "cancellation", body: "no refunds" }],
@@ -167,6 +188,24 @@ describe("createCatalogEnrichmentFetchers", () => {
       itinerary: [{ dayNumber: 1, title: "Arrival" }],
       media: [{ url: "https://example.com/1.jpg", type: "image" }],
       options: [{ id: "opt_1", name: "Standard" }],
+      components: [
+        {
+          id: "cmp_hotel",
+          title: "Hotel stay",
+          kind: "accommodation",
+          priceDisposition: null,
+          sortOrder: 10,
+          media: [{ url: "https://example.com/hotel.jpg", type: "image" }],
+          detailLines: [
+            "Sample Hotel",
+            "Brasov, RO",
+            "Standard Double",
+            "Half board",
+            "half board",
+            "5 nights",
+          ],
+        },
+      ],
       policies: [{ kind: "cancellation", body: "no refunds" }],
       servedLocale: "en-GB",
       matchKind: "exact",

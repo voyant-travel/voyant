@@ -16,6 +16,10 @@
 
 import type { CatalogSearchHit } from "@voyantjs/catalog-react"
 
+import {
+  mapProductComponentToDetailComponent,
+  type ProductComponentPayload,
+} from "./catalog-component-enrichment.js"
 import type { CatalogDetailEnrichment } from "./catalog-detail-sheet.js"
 
 export interface CatalogEnrichmentFetchers {
@@ -134,6 +138,7 @@ interface ProductContentPayload {
     country?: string | null
   }
   options: Array<{ id: string; name: string; description?: string | null }>
+  components?: ProductComponentPayload[]
   days: Array<{
     day_number: number
     title?: string | null
@@ -400,6 +405,7 @@ function mapProductContentToEnrichment(
       name: o.name,
       description: o.description ?? null,
     })),
+    components: (content.components ?? []).map(mapProductComponentToDetailComponent),
     policies: content.policies.map((p) => ({ kind: p.kind, body: p.body })),
     departures: (content.departures ?? []).map((d) => {
       const slot = availability.get(d.id)

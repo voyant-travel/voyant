@@ -91,6 +91,7 @@ export function synthesizeProductContent(
   const baseContent: ProductContent = {
     product,
     options: [],
+    components: [],
     days: [],
     media,
     policies,
@@ -165,6 +166,10 @@ function pickProductSummary(
     id: stringOr(projection.id, "") || provenance.entry_id,
     name: stringOr(projection.name, "") || stringOr(projection.title, "") || "Unnamed product",
     status: stringOr(projection.status, undefined),
+    sellable_kind:
+      sellableKindOr(projection.sellable_kind, null) ??
+      sellableKindOr(projection.sellableKind, null) ??
+      "product",
     description: stringOr(projection.description, null),
     inclusions_html:
       stringOr(projection.inclusions_html, null) ?? stringOr(projection.inclusionsHtml, null),
@@ -227,6 +232,36 @@ function pickMediaType(value: unknown): ProductMediaTypeLiteral {
   return "image"
 }
 type ProductMediaTypeLiteral = "image" | "video" | "document"
+
+function sellableKindOr<T>(
+  value: unknown,
+  fallback: T,
+):
+  | "product"
+  | "package"
+  | "tour"
+  | "activity"
+  | "transfer"
+  | "accommodation"
+  | "cruise"
+  | "charter"
+  | "other"
+  | T {
+  switch (value) {
+    case "product":
+    case "package":
+    case "tour":
+    case "activity":
+    case "transfer":
+    case "accommodation":
+    case "cruise":
+    case "charter":
+    case "other":
+      return value
+    default:
+      return fallback
+  }
+}
 
 function pickPolicies(projection: Record<string, unknown>): ProductContent["policies"] {
   const policies: ProductContent["policies"] = []

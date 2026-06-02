@@ -125,6 +125,7 @@ export const catalogUiEn = {
       attributes: "Attributes",
       departures: "Departures",
       sailings: "Sailings",
+      components: "Components",
       ends: "ends {date}",
       book: "Book",
       options: "Options",

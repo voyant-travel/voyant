@@ -51,6 +51,49 @@ describe("buildOwnedProductDraftShape", () => {
     })
   })
 
+  it("exposes component choices as configure substeps", () => {
+    const shape = buildOwnedProductDraftShape({
+      componentChoices: [
+        {
+          componentId: "pcmp_room",
+          componentKind: "accommodation",
+          title: "Room choice",
+          selection: "choose_one",
+          commitmentBoundary: "internal",
+          priceDisposition: "included",
+          choices: [
+            {
+              id: "double",
+              title: "Double room",
+              pricingRef: { optionId: "popt_room", optionUnitId: "ount_double" },
+            },
+          ],
+        },
+      ],
+    })
+
+    expect(shape.configureSubSteps?.[0]).toEqual({
+      kind: "component-choice",
+      components: [
+        {
+          componentId: "pcmp_room",
+          componentKind: "accommodation",
+          title: "Room choice",
+          selection: "choose_one",
+          commitmentBoundary: "internal",
+          priceDisposition: "included",
+          choices: [
+            {
+              id: "double",
+              title: "Double room",
+              pricingRef: { optionId: "popt_room", optionUnitId: "ount_double" },
+            },
+          ],
+        },
+      ],
+    })
+  })
+
   it("omits addons when the catalog is empty", () => {
     const shape = buildOwnedProductDraftShape({ addonCatalog: [] })
     expect(shape.showsAddons).toBe(false)

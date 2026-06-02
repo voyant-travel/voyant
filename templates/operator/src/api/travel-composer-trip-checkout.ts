@@ -1,3 +1,4 @@
+import { bookings } from "@voyantjs/bookings/schema"
 import type { AnyDrizzleDb } from "@voyantjs/db"
 import { buildPaymentLinkUrl, financeService } from "@voyantjs/finance"
 import {
@@ -6,9 +7,14 @@ import {
   type ResolvedNetopiaRuntimeOptions,
 } from "@voyantjs/plugin-netopia"
 import type { Trip, TripCheckoutInput, TripCheckoutResult } from "@voyantjs/travel-composer"
+import { eq } from "drizzle-orm"
 import type { Context } from "hono"
 
 import { resolveVoyantApiKey } from "../lib/voyant-cloud"
+import {
+  contractAcceptanceSchema,
+  persistAcceptanceDraftContract,
+} from "./catalog-checkout-start-service"
 
 interface TripCheckoutAllocation {
   componentId: string
@@ -43,6 +49,7 @@ export async function startTripCheckout(
   if (!payerName || !payerEmail) {
     throw new Error("trip_checkout_billing_required")
   }
+  await persistTripContractAcceptance(c, input.trip, input.request)
   const paymentMethod = input.intent === "bank_transfer" ? "bank_transfer" : "credit_card"
   const session = await financeService.createPaymentSession(db, {
     targetType: "other",
@@ -96,6 +103,43 @@ export async function startTripCheckout(
       baseUrl: resolvePublicCheckoutBaseUrl(c.env as CloudflareBindings),
     }),
   }
+}
+
+async function persistTripContractAcceptance(
+  c: Context,
+  trip: Trip,
+  request: Record<string, unknown>,
+): Promise<void> {
+  const accepted = contractAcceptanceSchema.safeParse(request.contractAcceptance)
+  if (!accepted.success) return
+
+  const bookingId = coreTripBookingId(trip)
+  if (!bookingId) return
+
+  try {
+    const db = getDb(c) as Parameters<typeof persistAcceptanceDraftContract>[0]
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)
+    if (!booking) return
+    await persistAcceptanceDraftContract(db, checkoutRequestMeta(c), booking, accepted.data)
+  } catch (error) {
+    console.error("[travel-composer] persistAcceptanceDraftContract failed", error)
+  }
+}
+
+function coreTripBookingId(trip: Trip): string | null {
+  const coreComponent =
+    trip.components.find((component) => {
+      const metadata = asRecord(component.metadata)
+      return asRecord(metadata?.catalogBooking)?.committedBookingId
+    }) ?? trip.components.find((component) => component.bookingId)
+  if (!coreComponent) return null
+
+  const metadata = asRecord(coreComponent.metadata)
+  const committedBookingId = asRecord(metadata?.catalogBooking)?.committedBookingId
+  if (typeof committedBookingId === "string" && committedBookingId.length > 0) {
+    return committedBookingId
+  }
+  return coreComponent.bookingId
 }
 
 function resolvePublicCheckoutBaseUrl(env: CloudflareBindings): string | null {
@@ -397,4 +441,15 @@ function getDb(c: Context): AnyDrizzleDb {
 
 function getContainer(c: Context): { resolve(key: string): unknown } | undefined {
   return (c.var as { container?: { resolve(key: string): unknown } }).container
+}
+
+function checkoutRequestMeta(c: Context) {
+  return {
+    clientIp:
+      c.req.header("cf-connecting-ip") ??
+      c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
+      c.req.header("x-real-ip") ??
+      "",
+    userAgent: c.req.header("user-agent") ?? "",
+  }
 }

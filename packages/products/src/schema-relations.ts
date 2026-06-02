@@ -1,6 +1,6 @@
 import { relations } from "drizzle-orm"
 
-import { optionUnits, productOptions, products } from "./schema-core.js"
+import { optionUnits, productComponents, productOptions, products } from "./schema-core.js"
 import {
   productDayServices,
   productDays,
@@ -46,6 +46,7 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   features: many(productFeatures),
   faqs: many(productFaqs),
   locations: many(productLocations),
+  components: many(productComponents),
   options: many(productOptions),
   itineraries: many(productItineraries),
   translations: many(productTranslations),
@@ -55,6 +56,13 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   categoryLinks: many(productCategoryProducts),
   destinationLinks: many(productDestinations),
   tagLinks: many(productTagProducts),
+}))
+
+export const productComponentsRelations = relations(productComponents, ({ one }) => ({
+  product: one(products, {
+    fields: [productComponents.productId],
+    references: [products.id],
+  }),
 }))
 
 export const productOptionsRelations = relations(productOptions, ({ one, many }) => ({

@@ -163,6 +163,75 @@ describe.skipIf(!DB_AVAILABLE)("Product routes", () => {
     expect(body.data).toBeInstanceOf(Array)
   })
 
+  it("imports product components with dry-run and replace modes", async () => {
+    const product = await createProduct()
+    const payload = {
+      mode: "replace",
+      dryRun: true,
+      components: [
+        {
+          componentKind: "transport",
+          title: "Coach transfer",
+          binding: {
+            type: "inline",
+            content: { legs: [{ mode: "coach" }] },
+          },
+        },
+      ],
+    }
+
+    const dryRunRes = await app.request(`/${product.id}/components/import`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+    expect(dryRunRes.status).toBe(200)
+    const dryRunBody = await dryRunRes.json()
+    expect(dryRunBody.data).toHaveLength(0)
+    expect(dryRunBody.summary).toMatchObject({ dryRun: true, requested: 1, created: 1 })
+
+    const importRes = await app.request(`/${product.id}/components/import`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...payload, dryRun: false }),
+    })
+    expect(importRes.status).toBe(200)
+    const importBody = await importRes.json()
+    expect(importBody.data).toHaveLength(1)
+    expect(importBody.data[0].title).toBe("Coach transfer")
+
+    const replaceRes = await app.request(`/${product.id}/components/import`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        mode: "replace",
+        dryRun: false,
+        components: [
+          {
+            componentKind: "accommodation",
+            title: "Hotel stay",
+            binding: {
+              type: "inline",
+              content: {
+                property: { name: "Sample Hotel" },
+                room_type: { name: "Double room", max_occupancy: 2 },
+              },
+            },
+          },
+        ],
+      }),
+    })
+    expect(replaceRes.status).toBe(200)
+    const replaceBody = await replaceRes.json()
+    expect(replaceBody.summary.deleted).toBe(1)
+    expect(replaceBody.data[0].title).toBe("Hotel stay")
+
+    const listRes = await app.request(`/components?productId=${product.id}`, { method: "GET" })
+    const listBody = await listRes.json()
+    expect(listBody.data).toHaveLength(1)
+    expect(listBody.data[0].title).toBe("Hotel stay")
+  })
+
   it("creates a new default itinerary without violating the unique default constraint", async () => {
     const product = await createProduct()
 

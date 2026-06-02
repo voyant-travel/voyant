@@ -145,9 +145,41 @@ export const addonOfferV1 = z.object({
   defaultQuantity: z.number().int().nonnegative().nullable().optional(),
 })
 
+export const componentChoicePricingRefV1 = z.object({
+  optionId: z.string().optional(),
+  optionUnitId: z.string().optional(),
+  pricingCategoryId: z.string().optional(),
+  priceCatalogId: z.string().optional(),
+  priceScheduleId: z.string().optional(),
+})
+
+export const componentChoiceOptionV1 = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().nullable().optional(),
+  isDefault: z.boolean().optional(),
+  sortOrder: z.number().int().optional(),
+  pricingRef: componentChoicePricingRefV1.optional(),
+})
+
+export const componentChoiceGroupV1 = z.object({
+  componentId: z.string(),
+  componentKind: z.enum(["accommodation", "transport", "activity", "meal", "insurance", "other"]),
+  title: z.string(),
+  description: z.string().nullable().optional(),
+  selection: z.enum(["fixed", "choose_one", "multi", "optional"]),
+  commitmentBoundary: z.enum(["internal", "dependent_component", "independent_component"]),
+  priceDisposition: z.enum(["included", "add_on"]),
+  required: z.boolean().optional(),
+  quantity: z.number().int().positive().nullable().optional(),
+  sortOrder: z.number().int().optional(),
+  choices: z.array(componentChoiceOptionV1),
+})
+
 export const configureSubStepV1 = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("departure"), required: z.literal(true) }),
   z.object({ kind: z.literal("product-option"), options: z.array(productVariantOptionV1) }),
+  z.object({ kind: z.literal("component-choice"), components: z.array(componentChoiceGroupV1) }),
   z.object({ kind: z.literal("cabin-category"), categories: z.array(cabinCategoryOptionV1) }),
   z.object({
     kind: z.literal("cabin-number"),
@@ -311,6 +343,21 @@ export const bookingDraftV1 = z.object({
           }),
         )
         .optional(),
+      componentSelections: z
+        .array(
+          z.object({
+            componentId: z.string(),
+            componentKind: z
+              .enum(["accommodation", "transport", "activity", "meal", "insurance", "other"])
+              .optional(),
+            choiceId: z.string().optional(),
+            choiceTitle: z.string().optional(),
+            optionId: z.string().optional(),
+            optionUnitId: z.string().optional(),
+            quantity: z.number().int().positive().default(1),
+          }),
+        )
+        .optional(),
       cabinCategoryId: z.string().optional(),
       cabinNumberId: z.string().optional(),
       dateRange: z
@@ -442,6 +489,9 @@ export const bookingDraftV1 = z.object({
 
 export type BookingDraftV1 = z.infer<typeof bookingDraftV1>
 export type BookingDraftShapeV1 = z.infer<typeof bookingDraftShapeV1>
+export type ComponentChoiceGroupV1 = z.infer<typeof componentChoiceGroupV1>
+export type ComponentChoiceOptionV1 = z.infer<typeof componentChoiceOptionV1>
+export type ComponentChoicePricingRefV1 = z.infer<typeof componentChoicePricingRefV1>
 export type PricingBreakdownV1 = z.infer<typeof pricingBreakdownV1>
 
 // ─────────────────────────────────────────────────────────────────

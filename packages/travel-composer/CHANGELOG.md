@@ -1,5 +1,13 @@
 # @voyantjs/travel-composer
 
+## Unreleased
+
+### Patch Changes
+
+- Add `projectIndependentCatalogComponents(...)` for projecting selected
+  independent travel components into catalog-backed trip component inputs with
+  `bookingDraftV1` metadata.
+
 ## 0.101.0
 
 ### Patch Changes

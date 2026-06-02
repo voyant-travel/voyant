@@ -126,6 +126,7 @@ export type CatalogUiMessages = {
       attributes: string
       departures: string
       sailings: string
+      components: string
       ends: string
       book: string
       options: string

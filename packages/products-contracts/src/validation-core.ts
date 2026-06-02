@@ -1,4 +1,13 @@
 import {
+  componentChoiceSchema,
+  componentCommitmentBoundarySchema,
+  componentPriceDispositionSchema,
+  componentSelectionModeSchema,
+  travelComponentKindSchema,
+  travelComponentMediaItemSchema,
+  travelComponentSchema,
+} from "@voyantjs/travel-components-contracts"
+import {
   booleanQueryParam,
   optionUnitTypeSchema,
   productBookingModeSchema,
@@ -127,6 +136,122 @@ export const productAggregatesQuerySchema = z.object({
 export type InsertProduct = z.infer<typeof insertProductSchema>
 export type UpdateProduct = z.infer<typeof updateProductSchema>
 export type SelectProduct = z.infer<typeof selectProductSchema>
+
+const productComponentCoreSchema = z.object({
+  componentKind: travelComponentKindSchema,
+  title: z.string().min(1).max(255),
+  summary: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  selection: componentSelectionModeSchema.default("fixed"),
+  commitmentBoundary: componentCommitmentBoundarySchema.default("internal"),
+  priceDisposition: componentPriceDispositionSchema.default("included"),
+  required: z.boolean().default(false),
+  quantity: z.number().int().positive().optional().nullable(),
+  sortOrder: z.number().int().default(0),
+  binding: z.unknown(),
+  choices: z.array(componentChoiceSchema).default([]),
+  media: z.array(travelComponentMediaItemSchema).default([]),
+  tags: z.array(z.string()).default([]),
+  metadata: z.record(z.string(), z.unknown()).optional().nullable(),
+})
+
+export type ProductComponentValidationShape = z.infer<typeof productComponentCoreSchema>
+
+export interface ProductComponentValidationIssue {
+  path: string[]
+  message: string
+}
+
+function validateProductComponentShape(
+  id: string,
+  data: ProductComponentValidationShape,
+): { ok: true } | { ok: false; issues: ProductComponentValidationIssue[] } {
+  const parsed = travelComponentSchema.safeParse({
+    id,
+    component_kind: data.componentKind,
+    title: data.title,
+    summary: data.summary,
+    description: data.description,
+    selection: data.selection,
+    commitment_boundary: data.commitmentBoundary,
+    price_disposition: data.priceDisposition,
+    required: data.required,
+    quantity: data.quantity,
+    sort_order: data.sortOrder,
+    binding: data.binding,
+    choices: data.choices,
+    media: data.media,
+    tags: data.tags,
+    metadata: data.metadata ?? undefined,
+  })
+  if (parsed.success) {
+    return { ok: true }
+  }
+  return {
+    ok: false,
+    issues: parsed.error.issues.map((issue) => ({
+      path: issue.path.map(String),
+      message: issue.message,
+    })),
+  }
+}
+
+export const insertProductComponentSchema = productComponentCoreSchema.superRefine((data, ctx) => {
+  const validation = validateProductComponentShape("pcmp_validation", data)
+  if (validation.ok) return
+  for (const issue of validation.issues) {
+    ctx.addIssue({ code: "custom", ...issue })
+  }
+})
+
+export const updateProductComponentSchema = productComponentCoreSchema
+  .extend({
+    selection: componentSelectionModeSchema,
+    commitmentBoundary: componentCommitmentBoundarySchema,
+    priceDisposition: componentPriceDispositionSchema,
+    required: z.boolean(),
+    sortOrder: z.number().int(),
+    choices: z.array(componentChoiceSchema),
+    media: z.array(travelComponentMediaItemSchema),
+    tags: z.array(z.string()),
+  })
+  .partial()
+  .superRefine((data, ctx) => {
+    if (data.quantity != null && data.quantity < 1) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["quantity"],
+        message: "quantity must be positive",
+      })
+    }
+  })
+
+export const productComponentListQuerySchema = z.object({
+  productId: z.string().optional(),
+  componentKind: travelComponentKindSchema.optional(),
+  commitmentBoundary: componentCommitmentBoundarySchema.optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+})
+
+export const productComponentImportModeSchema = z.enum(["append", "replace"])
+
+export const importProductComponentsSchema = z.object({
+  mode: productComponentImportModeSchema.default("append"),
+  dryRun: z.boolean().default(false),
+  components: z.array(insertProductComponentSchema).min(1).max(200),
+})
+
+export function validateMergedProductComponent(
+  id: string,
+  merged: ProductComponentValidationShape,
+): { ok: true } | { ok: false; issues: ProductComponentValidationIssue[] } {
+  return validateProductComponentShape(id, merged)
+}
+
+export type InsertProductComponent = z.infer<typeof insertProductComponentSchema>
+export type UpdateProductComponent = z.infer<typeof updateProductComponentSchema>
+export type ImportProductComponents = z.infer<typeof importProductComponentsSchema>
 
 const productOptionCoreSchema = z.object({
   name: z.string().min(1).max(255),

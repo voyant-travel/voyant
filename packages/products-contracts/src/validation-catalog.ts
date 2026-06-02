@@ -4,7 +4,7 @@ import {
   publicCatalogProductDetailSchema,
   publicCatalogProductSummarySchema,
 } from "./validation-public.js"
-import { languageTagSchema } from "./validation-shared.js"
+import { languageTagSchema, productSellableKindSchema } from "./validation-shared.js"
 
 export const localizedCatalogProductSummarySchema = publicCatalogProductSummarySchema
 export const localizedCatalogProductDetailSchema = publicCatalogProductDetailSchema
@@ -26,6 +26,7 @@ export const catalogSearchDocumentSchema = z.object({
   pax: z.number().int().nullable(),
   productTypeCode: z.string().nullable(),
   productTypeName: z.string().nullable(),
+  sellableKind: productSellableKindSchema,
   categoryIds: z.array(z.string()),
   categoryNames: z.array(z.string()),
   categorySlugs: z.array(z.string()),

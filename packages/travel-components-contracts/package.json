@@ -1,0 +1,63 @@
+{
+  "name": "@voyantjs/travel-components-contracts",
+  "version": "0.101.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./board-basis": "./src/board-basis.ts",
+    "./component-ref": "./src/component-ref.ts",
+    "./content-shape": "./src/content-shape.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "prepack": "pnpm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./board-basis": {
+        "types": "./dist/board-basis.d.ts",
+        "import": "./dist/board-basis.js",
+        "default": "./dist/board-basis.js"
+      },
+      "./component-ref": {
+        "types": "./dist/component-ref.d.ts",
+        "import": "./dist/component-ref.js",
+        "default": "./dist/component-ref.js"
+      },
+      "./content-shape": {
+        "types": "./dist/content-shape.d.ts",
+        "import": "./dist/content-shape.js",
+        "default": "./dist/content-shape.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyantjs/voyant.git",
+    "directory": "packages/travel-components-contracts"
+  }
+}

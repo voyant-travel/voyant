@@ -4,6 +4,18 @@
 
 ### Minor Changes
 
+- Add a `components` block to `products/v1` content using
+  `@voyantjs/travel-components-contracts`, so product/package detail payloads
+  can carry structured accommodation, transport, activity, meal, insurance, and
+  other travel components. Component CRUD payloads are validated through
+  `insertProductComponentSchema` and `updateProductComponentSchema`; bulk import
+  payloads are validated through `importProductComponentsSchema`.
+
+- Add `productSellableKindSchema`, public `sellableKind`, catalog
+  `sellableKind`, and content `product.sellable_kind` so package-like sellables
+  can be projected and filtered without introducing a products table
+  discriminator.
+
 - 8e7b56a: Extract products validation into the pure `@voyantjs/products-contracts` package
   and complete the products admin SDK surface.
 

@@ -1,6 +1,6 @@
 # @voyantjs/products-react
 
-React runtime package for Voyant products. Provides the shared products provider, typed fetch client, query keys, and TanStack Query hooks that power product-focused frontend experiences.
+React runtime package for Voyant products. Provides the shared products provider, typed fetch client, query keys, and TanStack Query hooks that power product-focused frontend experiences, including product component authoring.
 
 ## Install
 
@@ -26,6 +26,11 @@ function ProductsList() {
   return <>{data?.data.map((product) => <div key={product.id}>{product.name}</div>)}</>
 }
 ```
+
+Product component endpoints are available through `useProductComponents`,
+`useProductComponent`, and `useProductComponentMutation`. The component
+mutation hook also exposes typed JSON component import through
+`importComponents`, including dry-run and append/replace modes.
 
 ## Relationship To The Registry
 

@@ -29,6 +29,7 @@ import {
   type PaymentPolicy,
   type PaymentPolicySource,
 } from "@voyantjs/finance"
+import { defaultFetcher, reserveTrip, startTripCheckout } from "@voyantjs/travel-composer-react"
 
 import { getApiUrl } from "@/lib/env"
 import { type OperatorInfoVariables, resolveContractVariables } from "./resolve-contract-variables"
@@ -164,10 +165,32 @@ export function StorefrontBookingJourney({
         console.error("[storefront] /book failed", errBody)
         return
       }
-      const bookJson = (await bookRes.json()) as { bookingId?: string }
+      const bookJson = (await bookRes.json()) as {
+        bookingId?: string
+        upstreamPayload?: Record<string, unknown>
+      }
       const bookingId = bookJson.bookingId
       if (!bookingId) {
         console.error("[storefront] /book returned no bookingId", bookJson)
+        return
+      }
+      stashPackageReference(bookingId, bookJson.upstreamPayload)
+      const tripEnvelopeId = tripEnvelopeIdFromUpstreamPayload(bookJson.upstreamPayload)
+      if (tripEnvelopeId && isAggregateTripCheckoutIntent(intent)) {
+        const aggregateStarted = await startAggregatePackageCheckout({
+          tripEnvelopeId,
+          intent,
+          acceptance,
+          contact,
+          payerName,
+        })
+        if (!aggregateStarted) {
+          navigate({
+            to: "/shop/confirmation/$bookingId",
+            params: { bookingId },
+            search: { kind: "hold" } as never,
+          })
+        }
         return
       }
 
@@ -361,6 +384,93 @@ function checkoutIntentFromDraft(
 ): "card" | "bank_transfer" | "hold" | "inquiry" {
   if (intent === "card" || intent === "bank_transfer" || intent === "inquiry") return intent
   return "hold"
+}
+
+function stashPackageReference(
+  bookingId: string,
+  upstreamPayload: Record<string, unknown> | undefined,
+): void {
+  const tripEnvelopeId = tripEnvelopeIdFromUpstreamPayload(upstreamPayload)
+  if (!tripEnvelopeId) return
+  if (typeof sessionStorage === "undefined") return
+
+  const tripComponentIdValue = upstreamPayload?.tripComponentId
+  const tripComponentId = typeof tripComponentIdValue === "string" ? tripComponentIdValue : null
+  sessionStorage.setItem(
+    `voyant.package.${bookingId}`,
+    JSON.stringify({ bookingId, tripEnvelopeId, tripComponentId }),
+  )
+}
+
+function tripEnvelopeIdFromUpstreamPayload(
+  upstreamPayload: Record<string, unknown> | undefined,
+): string | null {
+  const tripEnvelopeId = upstreamPayload?.tripEnvelopeId
+  return typeof tripEnvelopeId === "string" && tripEnvelopeId.length > 0 ? tripEnvelopeId : null
+}
+
+function isAggregateTripCheckoutIntent(
+  intent: ReturnType<typeof checkoutIntentFromDraft>,
+): intent is "card" | "bank_transfer" {
+  return intent === "card" || intent === "bank_transfer"
+}
+
+async function startAggregatePackageCheckout({
+  tripEnvelopeId,
+  intent,
+  acceptance,
+  contact,
+  payerName,
+}: {
+  tripEnvelopeId: string
+  intent: "card" | "bank_transfer"
+  acceptance: ContractAcceptanceEvent | null
+  contact: BookingJourneyCheckoutContext["draft"]["billing"]["contact"] | undefined
+  payerName: string
+}): Promise<boolean> {
+  const client = {
+    baseUrl: getApiUrl(),
+    fetcher: defaultFetcher,
+    surface: "public" as const,
+  }
+  const reserve = await reserveTrip(client, tripEnvelopeId, {
+    idempotencyKey: `reserve-${tripEnvelopeId}`,
+  })
+  if (reserve.failures.length > 0) {
+    console.error("[storefront] package reserve failed", reserve.failures)
+    return false
+  }
+
+  const checkout = await startTripCheckout(client, tripEnvelopeId, {
+    intent,
+    idempotencyKey: `checkout-${tripEnvelopeId}-${intent}`,
+    request: {
+      returnOrigin: window.location.origin,
+      ...(acceptance
+        ? {
+            contractAcceptance: {
+              templateId: acceptance.templateId,
+              templateSlug: acceptance.templateSlug,
+              acceptedTerms: true as const,
+              acceptedMarketing: acceptance.acceptedMarketing,
+              acceptedAt: acceptance.acceptedAt,
+              renderedHtml: acceptance.renderedHtml,
+            },
+          }
+        : {}),
+      ...(contact?.email ? { payerEmail: contact.email } : {}),
+      ...(payerName ? { payerName } : {}),
+    },
+  })
+  if (checkout.failures.length > 0) {
+    console.error("[storefront] package checkout failed", checkout.failures)
+    return false
+  }
+  if (checkout.target.checkoutUrl) {
+    window.location.assign(checkout.target.checkoutUrl)
+    return true
+  }
+  return checkout.target.paymentSessionId !== null
 }
 
 /**

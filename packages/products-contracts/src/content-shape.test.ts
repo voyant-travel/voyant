@@ -19,8 +19,48 @@ describe("@voyantjs/products-contracts content shape", () => {
     expect(PRODUCTS_CONTENT_SCHEMA_VERSION).toBe("products/v1")
     expect(validateProductContent(content)).toMatchObject({ valid: true })
     expect(content.media).toEqual([])
+    expect(content.components).toEqual([])
     expect(content.departures).toEqual([])
     expect(content.options[0]?.units).toEqual([])
+    expect(content.product.sellable_kind).toBe("product")
+  })
+
+  it("validates package-style travel components", () => {
+    const content = productContentSchema.parse({
+      product: { id: "prod_pkg", name: "Coach and hotel package", sellable_kind: "package" },
+      components: [
+        {
+          id: "cmp_stay",
+          component_kind: "accommodation",
+          title: "Hotel stay",
+          binding: {
+            type: "inline",
+            content: {
+              property: { name: "Sample Hotel", star_rating: 5 },
+              room_type: { name: "Double room", max_occupancy: 2 },
+              board_basis: "half_board",
+              nights: 4,
+            },
+          },
+        },
+        {
+          id: "cmp_transport",
+          component_kind: "transport",
+          title: "Coach transfer",
+          binding: {
+            type: "inline",
+            content: {
+              legs: [{ mode: "coach", from: { name: "City" }, to: { name: "Hotel" } }],
+            },
+          },
+        },
+      ],
+    }) satisfies ProductContent
+
+    expect(validateProductContent(content)).toMatchObject({ valid: true })
+    expect(content.product.sellable_kind).toBe("package")
+    expect(content.components).toHaveLength(2)
+    expect(content.components[0]?.component_kind).toBe("accommodation")
   })
 
   it("defaults a media item type to image", () => {

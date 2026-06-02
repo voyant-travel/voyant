@@ -19,6 +19,7 @@ import {
   productTypes,
   productVisibilitySettings,
 } from "./schema.js"
+import { inferProductSellableKind } from "./sellable-kind.js"
 import type {
   CatalogSearchDocument,
   CatalogSearchDocumentListQuery,
@@ -474,6 +475,10 @@ export const catalogProductsService = {
         allMedia.find((item) => item.isBrochure) ??
         null
       const media = allMedia.filter((item) => !item.isBrochure)
+      const productType = product.productTypeId
+        ? (hydrationData.typeById.get(product.productTypeId) ?? null)
+        : null
+      const capabilities = hydrationData.capabilitiesByProduct.get(product.id) ?? []
 
       const base = {
         id: product.id,
@@ -496,9 +501,14 @@ export const catalogProductsService = {
         endDate: normalizeDate(product.endDate),
         pax: product.pax ?? null,
         contractTemplateId: product.contractTemplateId ?? null,
-        productType: product.productTypeId
-          ? (hydrationData.typeById.get(product.productTypeId) ?? null)
-          : null,
+        sellableKind: inferProductSellableKind({
+          bookingMode: product.bookingMode,
+          productTypeCode: productType?.code ?? null,
+          productTypeName: productType?.name ?? null,
+          tags: Array.isArray(product.tags) ? product.tags : [],
+          capabilities,
+        }),
+        productType,
         categories: (hydrationData.categoriesByProduct.get(product.id) ?? []).map((row) => ({
           id: row.id,
           parentId: row.parentId ?? null,
@@ -511,7 +521,7 @@ export const catalogProductsService = {
           id: row.id,
           name: row.name,
         })),
-        capabilities: hydrationData.capabilitiesByProduct.get(product.id) ?? [],
+        capabilities,
         destinations: (hydrationData.destinationsByProduct.get(product.id) ?? []).map((row) => ({
           id: row.id,
           parentId: row.parentId,
@@ -628,6 +638,7 @@ export const catalogProductsService = {
         pax: product.pax,
         productTypeCode: product.productType?.code ?? null,
         productTypeName: product.productType?.name ?? null,
+        sellableKind: product.sellableKind,
         categoryIds: product.categories.map((category) => category.id),
         categoryNames: product.categories.map((category) => category.name),
         categorySlugs: product.categories.map((category) => category.slug),

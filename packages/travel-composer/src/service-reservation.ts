@@ -85,11 +85,19 @@ export async function reserveTrip(
   const reserved: Array<{
     component: TripComponent
     result: ReserveComponentResult
-  }> = []
+    preCommitted?: boolean
+  }> = trip.components.filter(isReservedTripComponent).map((component) => ({
+    component,
+    result: existingReserveResultFromComponent(component),
+    preCommitted: true,
+  }))
   const componentsById = new Map(trip.components.map((component) => [component.id, component]))
 
   for (const component of trip.components) {
     if (component.status === "removed" || component.status === "cancelled") {
+      continue
+    }
+    if (isReservedTripComponent(component)) {
       continue
     }
 
@@ -138,7 +146,11 @@ export async function reserveTrip(
       const failed = await applyReservationFailureToComponent(db, component, reason)
       componentsById.set(failed.id, failed)
 
-      const compensations = await compensateReservedComponents(db, reserved, deps)
+      const compensations = await compensateReservedComponents(
+        db,
+        reserved.filter((item) => !item.preCommitted),
+        deps,
+      )
       for (const compensation of compensations) {
         if (compensation.status !== "released") warnings.add(compensation.status)
       }
@@ -222,6 +234,7 @@ async function refreshComponentsBeforeReserve(
     if (component.status === "removed" || component.status === "cancelled") continue
 
     if (isCatalogBackedTripComponent(component)) {
+      if (isReservedTripComponent(component)) continue
       if (!deps.quoteCatalogComponentBeforeReserve) continue
       const quote = await deps.quoteCatalogComponentBeforeReserve({
         component,
@@ -554,6 +567,19 @@ function isReservedTripComponent(
   component: TripComponent,
 ): component is TripComponent & { status: "held" | "booked" } {
   return component.status === "held" || component.status === "booked"
+}
+
+function existingReserveResultFromComponent(component: TripComponent): ReserveComponentResult {
+  const result: ReserveComponentResult = { status: component.status as "held" | "booked" }
+  if (component.bookingId) result.bookingId = component.bookingId
+  if (component.bookingGroupId) result.bookingGroupId = component.bookingGroupId
+  if (component.orderId) result.orderId = component.orderId
+  if (component.paymentSessionId) result.paymentSessionId = component.paymentSessionId
+  if (component.providerRef) result.providerRef = component.providerRef
+  if (component.supplierRef) result.supplierRef = component.supplierRef
+  if (component.holdToken) result.holdToken = component.holdToken
+  if (component.holdExpiresAt) result.holdExpiresAt = component.holdExpiresAt.toISOString()
+  return result
 }
 
 function commonEnvelopeRefs(results: ReserveComponentResult[]): Partial<NewTripEnvelope> {

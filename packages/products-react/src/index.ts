@@ -16,6 +16,7 @@ export {
 export {
   type ProductActionLedgerListCursor,
   type ProductActionLedgerListFilters,
+  type ProductComponentsListFilters,
   type ProductsListFilters,
   type ProductsListSortDir,
   type ProductsListSortField,
@@ -26,6 +27,8 @@ export {
   getOptionUnitQueryOptions,
   getOptionUnitsQueryOptions,
   getProductCategoriesQueryOptions,
+  getProductComponentQueryOptions,
+  getProductComponentsQueryOptions,
   getProductDayServicesQueryOptions,
   getProductDaysQueryOptions,
   getProductItinerariesQueryOptions,

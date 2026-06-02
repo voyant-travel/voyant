@@ -127,7 +127,9 @@ function makeFakeDb(state: {
           ? state.components.find((item) => item.status === "priced")
           : patch.status === "cancelled"
             ? state.components.find((item) => item.status === "held" || item.status === "booked")
-            : state.components[0]
+            : patch.status === "priced"
+              ? state.components.find((item) => item.status === "priced")
+              : state.components[0]
 
     if (!componentToUpdate) return undefined
     Object.assign(componentToUpdate, patch)
@@ -266,6 +268,69 @@ describe("travel composer reservation helpers", () => {
       { componentId: "trcp_2", status: "held" },
     ])
     expect(state.components.map((item) => item.bookingId)).toEqual(["book_trcp_1", "book_trcp_2"])
+  })
+
+  it("keeps pre-committed package components and reserves only priced siblings", async () => {
+    const state = {
+      envelope: envelope(),
+      components: [
+        component({
+          id: "trcp_core",
+          status: "booked",
+          bookingId: "book_core",
+          bookingGroupId: "bkgrp_123",
+        }),
+        component({ id: "trcp_hotel", sequence: 1 }),
+      ],
+      events: [],
+    }
+    const quoted: string[] = []
+    const reserved: string[] = []
+
+    const result = await travelComposerService.reserveTrip(
+      makeFakeDb(state),
+      { envelopeId: state.envelope.id, idempotencyKey: "attempt-1" },
+      {
+        quoteCatalogComponentBeforeReserve: async ({ component: item }) => {
+          quoted.push(item.id)
+          return {
+            quoteId: `quote_${item.id}`,
+            available: true,
+            quotedAt: "2026-05-18T10:00:00.000Z",
+            expiresAt: "2099-05-18T11:00:00.000Z",
+            pricing: {
+              currency: "EUR",
+              subtotal: 10000,
+              taxTotal: 900,
+              total: 10900,
+              lines: [],
+              taxes: [],
+            },
+          }
+        },
+        reserveCatalogComponent: async ({ component: item }) => {
+          reserved.push(item.id)
+          return {
+            status: "held",
+            bookingId: `book_${item.id}`,
+            bookingGroupId: "bkgrp_123",
+            holdToken: `hold_${item.id}`,
+          }
+        },
+      },
+    )
+
+    expect(quoted).toEqual(["trcp_hotel"])
+    expect(reserved).toEqual(["trcp_hotel"])
+    expect(result.envelope.status).toBe("reserved")
+    expect(result.reserved).toEqual([
+      { componentId: "trcp_core", status: "booked" },
+      { componentId: "trcp_hotel", status: "held" },
+    ])
+    expect(state.components.map((item) => [item.id, item.status, item.bookingId])).toEqual([
+      ["trcp_core", "booked", "book_core"],
+      ["trcp_hotel", "held", "book_trcp_hotel"],
+    ])
   })
 
   it("compensates earlier reserved components when a later reserve fails", async () => {

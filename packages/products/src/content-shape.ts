@@ -11,6 +11,7 @@ import {
 
 export {
   PRODUCTS_CONTENT_SCHEMA_VERSION,
+  type ProductComponent,
   type ProductContent,
   type ProductDay,
   type ProductDeparture,

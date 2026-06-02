@@ -10,6 +10,12 @@ describe("@voyantjs/schema-kit", () => {
     expect(typeIdSchema("bookings").safeParse("not-a-typeid").success).toBe(false)
   })
 
+  it("generates product component TypeIDs", () => {
+    const id = newId("product_components")
+    expect(id.startsWith("pcmp_")).toBe(true)
+    expect(typeIdSchema("product_components").safeParse(id).success).toBe(true)
+  })
+
   it("coerces boolean query params correctly (the z.coerce.boolean footgun)", () => {
     expect(booleanQueryParam.parse("true")).toBe(true)
     expect(booleanQueryParam.parse("1")).toBe(true)

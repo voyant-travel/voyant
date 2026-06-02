@@ -346,5 +346,100 @@ export const departurePriceOverrideListQuerySchema = paginationSchema.extend({
   active: booleanQueryParam.optional(),
 })
 
+const codedPriceScheduleSchema = priceScheduleCoreSchema
+  .omit({ priceCatalogId: true, code: true })
+  .extend({
+    code: z.string().min(1).max(100),
+  })
+
+const codedPricingCategorySchema = pricingCategoryCoreSchema
+  .omit({ productId: true, optionId: true, code: true })
+  .extend({
+    code: z.string().min(1).max(100),
+    productId: z.string().nullable().optional(),
+    optionId: z.string().nullable().optional(),
+  })
+
+const ratePlanUnitPriceSchema = optionUnitPriceRuleCoreSchema
+  .omit({
+    optionPriceRuleId: true,
+    optionId: true,
+    pricingCategoryId: true,
+  })
+  .extend({
+    pricingCategoryId: z.string().nullable().optional(),
+    categoryCode: z.string().min(1).max(100).nullable().optional(),
+  })
+
+const ratePlanSchema = optionPriceRuleCoreSchema
+  .omit({
+    productId: true,
+    optionId: true,
+    priceCatalogId: true,
+    priceScheduleId: true,
+    allPricingCategories: true,
+  })
+  .extend({
+    code: z.string().min(1).max(100),
+    priceScheduleId: z.string().nullable().optional(),
+    scheduleCode: z.string().min(1).max(100).nullable().optional(),
+    allPricingCategories: z.boolean().default(false),
+    unitPrices: z.array(ratePlanUnitPriceSchema).default([]),
+  })
+  .superRefine((data, ctx) => {
+    if (data.pricingMode === "per_booking" && data.unitPrices.length > 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["unitPrices"],
+        message: "per_booking rate plans cannot carry unit price cells",
+      })
+    }
+  })
+
+const matrixDepartureOverrideSchema = departurePriceOverrideCoreSchema.omit({
+  optionId: true,
+  priceCatalogId: true,
+})
+
+export const ratePlanMatrixImportSchema = z
+  .object({
+    mode: z.enum(["upsert"]).default("upsert"),
+    dryRun: z.boolean().default(true),
+    productId: z.string().min(1),
+    optionId: z.string().min(1),
+    priceCatalogId: z.string().min(1),
+    schedules: z.array(codedPriceScheduleSchema).default([]),
+    pricingCategories: z.array(codedPricingCategorySchema).default([]),
+    ratePlans: z.array(ratePlanSchema).default([]),
+    departureOverrides: z.array(matrixDepartureOverrideSchema).default([]),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      data.schedules.length === 0 &&
+      data.pricingCategories.length === 0 &&
+      data.ratePlans.length === 0 &&
+      data.departureOverrides.length === 0
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["ratePlans"],
+        message:
+          "matrix import must include at least one schedule, category, rate plan, or override",
+      })
+    }
+
+    for (const [index, plan] of data.ratePlans.entries()) {
+      if (plan.scheduleCode && plan.priceScheduleId) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["ratePlans", index, "scheduleCode"],
+          message: "use either scheduleCode or priceScheduleId, not both",
+        })
+      }
+    }
+  })
+
+export type RatePlanMatrixImport = z.infer<typeof ratePlanMatrixImportSchema>
+
 export * from "./validation-public.js"
 export * from "./validation-shared.js"

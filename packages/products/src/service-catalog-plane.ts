@@ -44,6 +44,7 @@ import { productCatalogPolicy } from "./catalog-policy.js"
 import { products } from "./schema-core.js"
 import { productDays, productItineraries, productMedia } from "./schema-itinerary.js"
 import { productLocations, productTranslations } from "./schema-settings.js"
+import { inferProductSellableKind } from "./sellable-kind.js"
 
 /**
  * Lazy-initialized registry. Built once per process; the field-policy file
@@ -93,6 +94,13 @@ export function productRowToProjection(
     // Structural
     ["status", row.status],
     ["bookingMode", row.bookingMode],
+    [
+      "sellableKind",
+      inferProductSellableKind({
+        bookingMode: row.bookingMode,
+        tags: Array.isArray(row.tags) ? row.tags : [],
+      }),
+    ],
     ["capacityMode", row.capacityMode],
     ["visibility", row.visibility],
     ["activated", row.activated],

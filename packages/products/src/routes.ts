@@ -3,6 +3,7 @@ import { Hono } from "hono"
 import type { Env } from "./route-env.js"
 import { productAssociationRoutes } from "./routes-associations.js"
 import { productCatalogRoutes } from "./routes-catalog.js"
+import { productComponentRoutes } from "./routes-components.js"
 import { productConfigurationRoutes } from "./routes-configuration.js"
 import { productCoreRoutes } from "./routes-core.js"
 import { productItineraryRoutes } from "./routes-itinerary.js"
@@ -18,6 +19,7 @@ export type { Env } from "./route-env.js"
 export const productRoutes = new Hono<Env>()
   .route("/", productConfigurationRoutes)
   .route("/", productMerchandisingRoutes)
+  .route("/", productComponentRoutes)
   .route("/", productOptionRoutes)
   .route("/", productTranslationRoutes)
   .route("/", productCatalogRoutes)

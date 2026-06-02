@@ -152,10 +152,45 @@ export interface AddonOffer {
   defaultQuantity?: number | null
 }
 
+/** Existing pricing identifiers a component choice maps to. */
+export interface ComponentChoicePricingRef {
+  optionId?: string
+  optionUnitId?: string
+  pricingCategoryId?: string
+  priceCatalogId?: string
+  priceScheduleId?: string
+}
+
+/** A selectable choice under a typed travel component. */
+export interface ComponentChoiceOption {
+  id: string
+  title: string
+  description?: string | null
+  isDefault?: boolean
+  sortOrder?: number
+  pricingRef?: ComponentChoicePricingRef
+}
+
+/** A typed component selector rendered in Configure. */
+export interface ComponentChoiceGroup {
+  componentId: string
+  componentKind: "accommodation" | "transport" | "activity" | "meal" | "insurance" | "other"
+  title: string
+  description?: string | null
+  selection: "fixed" | "choose_one" | "multi" | "optional"
+  commitmentBoundary: "internal" | "dependent_component" | "independent_component"
+  priceDisposition: "included" | "add_on"
+  required?: boolean
+  quantity?: number | null
+  sortOrder?: number
+  choices: ReadonlyArray<ComponentChoiceOption>
+}
+
 /** Configure step sub-step union. */
 export type ConfigureSubStep =
   | { kind: "departure"; required: true }
   | { kind: "product-option"; options: ReadonlyArray<ProductVariantOption> }
+  | { kind: "component-choice"; components: ReadonlyArray<ComponentChoiceGroup> }
   | { kind: "cabin-category"; categories: ReadonlyArray<CabinCategoryOption> }
   | { kind: "cabin-number"; perCategory: Record<string, ReadonlyArray<CabinNumberOption>> }
   | { kind: "date-range"; minNights: number; maxNights: number }

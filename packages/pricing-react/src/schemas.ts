@@ -1,3 +1,4 @@
+import type { ratePlanMatrixImportSchema } from "@voyantjs/pricing"
 import { z } from "zod"
 
 export const paginatedEnvelope = <T extends z.ZodTypeAny>(item: T) =>
@@ -291,3 +292,25 @@ export const departurePriceOverrideSingleResponse = singleEnvelope(
 )
 export const optionStartTimeRuleListResponse = paginatedEnvelope(optionStartTimeRuleRecordSchema)
 export const optionStartTimeRuleSingleResponse = singleEnvelope(optionStartTimeRuleRecordSchema)
+
+export type RatePlanMatrixImportInput = z.input<typeof ratePlanMatrixImportSchema>
+
+export const matrixImportTableSummarySchema = z.object({
+  requested: z.number().int(),
+  created: z.number().int(),
+  updated: z.number().int(),
+})
+
+export const ratePlanMatrixImportResponseSchema = z.object({
+  summary: z.object({
+    dryRun: z.boolean(),
+    mode: z.literal("upsert"),
+    schedules: matrixImportTableSummarySchema,
+    pricingCategories: matrixImportTableSummarySchema,
+    ratePlans: matrixImportTableSummarySchema,
+    unitPrices: matrixImportTableSummarySchema,
+    departureOverrides: matrixImportTableSummarySchema,
+  }),
+})
+
+export type RatePlanMatrixImportResponse = z.infer<typeof ratePlanMatrixImportResponseSchema>

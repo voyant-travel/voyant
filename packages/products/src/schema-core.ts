@@ -1,4 +1,8 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
+import type {
+  ComponentChoice,
+  TravelComponentMediaItem,
+} from "@voyantjs/travel-components-contracts"
 import {
   boolean,
   date,
@@ -98,6 +102,46 @@ export const products = pgTable(
 
 export type Product = typeof products.$inferSelect
 export type NewProduct = typeof products.$inferInsert
+
+export const productComponents = pgTable(
+  "product_components",
+  {
+    id: typeId("product_components"),
+    productId: typeIdRef("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    componentKind: text("component_kind").notNull(),
+    title: text("title").notNull(),
+    summary: text("summary"),
+    description: text("description"),
+    selection: text("selection").notNull().default("fixed"),
+    commitmentBoundary: text("commitment_boundary").notNull().default("internal"),
+    priceDisposition: text("price_disposition").notNull().default("included"),
+    required: boolean("required").notNull().default(false),
+    quantity: integer("quantity"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    binding: jsonb("binding").$type<unknown>().notNull(),
+    choices: jsonb("choices").$type<ComponentChoice[]>().notNull().default([]),
+    media: jsonb("media").$type<TravelComponentMediaItem[]>().notNull().default([]),
+    tags: jsonb("tags").$type<string[]>().notNull().default([]),
+    metadata: jsonb("metadata").$type<Record<string, unknown> | null>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_product_components_product").on(table.productId),
+    index("idx_product_components_product_sort").on(
+      table.productId,
+      table.sortOrder,
+      table.createdAt,
+    ),
+    index("idx_product_components_kind").on(table.componentKind),
+    index("idx_product_components_commitment").on(table.commitmentBoundary),
+  ],
+)
+
+export type ProductComponentRow = typeof productComponents.$inferSelect
+export type NewProductComponentRow = typeof productComponents.$inferInsert
 
 export const productOptions = pgTable(
   "product_options",

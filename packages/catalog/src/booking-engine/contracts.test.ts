@@ -24,7 +24,18 @@ describe("V1 contracts", () => {
     it("preserves explicit field values", () => {
       const result = bookingDraftV1.parse({
         entity: { module: "products", id: "prod_1", sourceKind: "owned" },
-        configure: { pax: { adult: 2 } },
+        configure: {
+          pax: { adult: 2 },
+          componentSelections: [
+            {
+              componentId: "pcmp_room",
+              componentKind: "accommodation",
+              choiceId: "double",
+              optionId: "popt_room",
+              optionUnitId: "ount_double",
+            },
+          ],
+        },
         billing: {
           buyerType: "B2B",
           contact: { firstName: "Mihai", lastName: "U", email: "a@b.com" },
@@ -33,6 +44,14 @@ describe("V1 contracts", () => {
         },
       })
       expect(result.configure.pax.adult).toBe(2)
+      expect(result.configure.componentSelections?.[0]).toEqual({
+        componentId: "pcmp_room",
+        componentKind: "accommodation",
+        choiceId: "double",
+        optionId: "popt_room",
+        optionUnitId: "ount_double",
+        quantity: 1,
+      })
       expect(result.billing.buyerType).toBe("B2B")
       expect(result.billing.address.country).toBe("RO")
       expect(result.billing.company?.name).toBe("Voyant")
@@ -126,6 +145,56 @@ describe("V1 contracts", () => {
         available: false,
         invalidReason: "out_of_stock",
       })
+      expect(result.success).toBe(true)
+    })
+
+    it("validates component-choice configure descriptors", () => {
+      const result = quoteResponseV1.safeParse({
+        quoteId: "q1",
+        quotedAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+        available: true,
+        shape: {
+          showsConfigure: true,
+          showsBilling: true,
+          showsTravelers: true,
+          showsAccommodation: false,
+          showsAddons: false,
+          showsPayment: true,
+          showsReview: true,
+          paxBands: [{ code: "adult", label: "Adult", minCount: 1, maxCount: 8 }],
+          paxBandsAllowedTotal: { min: 1, max: 8 },
+          travelerFields: [],
+          bookingFields: [],
+          paymentIntents: ["hold"],
+          configureSubSteps: [
+            {
+              kind: "component-choice",
+              components: [
+                {
+                  componentId: "pcmp_room",
+                  componentKind: "accommodation",
+                  title: "Room choice",
+                  selection: "choose_one",
+                  commitmentBoundary: "internal",
+                  priceDisposition: "included",
+                  choices: [
+                    {
+                      id: "double",
+                      title: "Double room",
+                      pricingRef: {
+                        optionId: "popt_room",
+                        optionUnitId: "ount_double",
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      })
+
       expect(result.success).toBe(true)
     })
   })

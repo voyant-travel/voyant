@@ -12,6 +12,7 @@ import {
   productCategories,
   productCategoryProducts,
   productCategoryTranslations,
+  productComponents,
   productDayServices,
   productDays,
   productDeliveryFormats,
@@ -38,6 +39,7 @@ import { getProductAggregates } from "./service-aggregates.js"
 import type {
   destinationListQuerySchema,
   destinationTranslationListQuerySchema,
+  importProductComponentsSchema,
   insertDaySchema,
   insertDayServiceSchema,
   insertDestinationSchema,
@@ -71,6 +73,7 @@ import type {
   productCapabilityListQuerySchema,
   productCategoryListQuerySchema,
   productCategoryTranslationListQuerySchema,
+  productComponentListQuerySchema,
   productDeliveryFormatListQuerySchema,
   productDestinationListQuerySchema,
   productFaqListQuerySchema,
@@ -98,6 +101,7 @@ import type {
   updateProductCapabilitySchema,
   updateProductCategorySchema,
   updateProductCategoryTranslationSchema,
+  updateProductComponentSchema,
   updateProductDeliveryFormatSchema,
   updateProductFaqSchema,
   updateProductFeatureSchema,
@@ -114,11 +118,19 @@ import type {
   updateProductVisibilitySettingSchema,
   upsertProductBrochureSchema,
 } from "./validation.js"
-import { validateMergedOptionUnit } from "./validation-core.js"
+import {
+  insertProductComponentSchema,
+  validateMergedOptionUnit,
+  validateMergedProductComponent,
+} from "./validation-core.js"
 
 type ProductListQuery = z.infer<typeof productListQuerySchema>
 type CreateProductInput = z.infer<typeof insertProductSchema>
 type UpdateProductInput = z.infer<typeof updateProductSchema>
+type ProductComponentListQuery = z.infer<typeof productComponentListQuerySchema>
+type CreateProductComponentInput = z.infer<typeof insertProductComponentSchema>
+type UpdateProductComponentInput = z.infer<typeof updateProductComponentSchema>
+type ImportProductComponentsInput = z.infer<typeof importProductComponentsSchema>
 type ProductOptionListQuery = z.infer<typeof productOptionListQuerySchema>
 type CreateProductOptionInput = z.infer<typeof insertProductOptionSchema>
 type UpdateProductOptionInput = z.infer<typeof updateProductOptionSchema>
@@ -1846,6 +1858,198 @@ export const productsService = {
         productId: productDestinations.productId,
         destinationId: productDestinations.destinationId,
       })
+
+    return row ?? null
+  },
+
+  async listComponents(db: PostgresJsDatabase, query: ProductComponentListQuery) {
+    const conditions = []
+
+    if (query.productId) {
+      conditions.push(eq(productComponents.productId, query.productId))
+    }
+
+    if (query.componentKind) {
+      conditions.push(eq(productComponents.componentKind, query.componentKind))
+    }
+
+    if (query.commitmentBoundary) {
+      conditions.push(eq(productComponents.commitmentBoundary, query.commitmentBoundary))
+    }
+
+    const where = conditions.length > 0 ? and(...conditions) : undefined
+
+    const [rows, countResult] = await Promise.all([
+      db
+        .select()
+        .from(productComponents)
+        .where(where)
+        .limit(query.limit)
+        .offset(query.offset)
+        .orderBy(asc(productComponents.sortOrder), asc(productComponents.createdAt)),
+      db.select({ count: sql<number>`count(*)::int` }).from(productComponents).where(where),
+    ])
+
+    return {
+      data: rows,
+      total: countResult[0]?.count ?? 0,
+      limit: query.limit,
+      offset: query.offset,
+    }
+  },
+
+  async getComponentById(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .select()
+      .from(productComponents)
+      .where(eq(productComponents.id, id))
+      .limit(1)
+    return row ?? null
+  },
+
+  async createComponent(
+    db: PostgresJsDatabase,
+    productId: string,
+    data: CreateProductComponentInput,
+  ) {
+    const [product] = await db
+      .select({ id: products.id })
+      .from(products)
+      .where(eq(products.id, productId))
+      .limit(1)
+
+    if (!product) {
+      return null
+    }
+
+    const [row] = await db
+      .insert(productComponents)
+      .values({ ...data, productId })
+      .returning()
+
+    return row
+  },
+
+  async importComponents(
+    db: PostgresJsDatabase,
+    productId: string,
+    input: ImportProductComponentsInput,
+  ) {
+    return db.transaction(async (tx) => {
+      const [product] = await tx
+        .select({ id: products.id })
+        .from(products)
+        .where(eq(products.id, productId))
+        .limit(1)
+
+      if (!product) {
+        return null
+      }
+
+      const [countResult] = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(productComponents)
+        .where(eq(productComponents.productId, productId))
+      const deleted = input.mode === "replace" ? (countResult?.count ?? 0) : 0
+
+      if (input.dryRun) {
+        return {
+          data: [],
+          summary: {
+            mode: input.mode,
+            dryRun: true,
+            requested: input.components.length,
+            created: input.components.length,
+            deleted,
+          },
+        }
+      }
+
+      if (input.mode === "replace") {
+        await tx.delete(productComponents).where(eq(productComponents.productId, productId))
+      }
+
+      const rows = await tx
+        .insert(productComponents)
+        .values(input.components.map((component) => ({ ...component, productId })))
+        .returning()
+
+      return {
+        data: rows,
+        summary: {
+          mode: input.mode,
+          dryRun: false,
+          requested: input.components.length,
+          created: rows.length,
+          deleted,
+        },
+      }
+    })
+  },
+
+  async updateComponent(db: PostgresJsDatabase, id: string, data: UpdateProductComponentInput) {
+    const [existing] = await db
+      .select()
+      .from(productComponents)
+      .where(eq(productComponents.id, id))
+      .limit(1)
+
+    if (!existing) {
+      return null
+    }
+
+    const merged = {
+      componentKind: "componentKind" in data ? data.componentKind : existing.componentKind,
+      title: "title" in data ? data.title : existing.title,
+      summary: "summary" in data ? data.summary : existing.summary,
+      description: "description" in data ? data.description : existing.description,
+      selection: "selection" in data ? data.selection : existing.selection,
+      commitmentBoundary:
+        "commitmentBoundary" in data ? data.commitmentBoundary : existing.commitmentBoundary,
+      priceDisposition:
+        "priceDisposition" in data ? data.priceDisposition : existing.priceDisposition,
+      required: "required" in data ? data.required : existing.required,
+      quantity: "quantity" in data ? data.quantity : existing.quantity,
+      sortOrder: "sortOrder" in data ? data.sortOrder : existing.sortOrder,
+      binding: "binding" in data ? data.binding : existing.binding,
+      choices: "choices" in data ? data.choices : existing.choices,
+      media: "media" in data ? data.media : existing.media,
+      tags: "tags" in data ? data.tags : existing.tags,
+      metadata: "metadata" in data ? data.metadata : existing.metadata,
+    }
+
+    const parsedMerged = insertProductComponentSchema.safeParse(merged)
+    if (!parsedMerged.success) {
+      const issues = parsedMerged.error.issues.map((issue) => ({
+        path: issue.path.map(String),
+        message: issue.message,
+      }))
+      const first = issues[0]
+      throw new RequestValidationError(first?.message ?? "Invalid product component", { issues })
+    }
+
+    const validation = validateMergedProductComponent(id, parsedMerged.data)
+    if (!validation.ok) {
+      const first = validation.issues[0]
+      throw new RequestValidationError(first?.message ?? "Invalid product component", {
+        issues: validation.issues,
+      })
+    }
+
+    const [row] = await db
+      .update(productComponents)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(productComponents.id, id))
+      .returning()
+
+    return row ?? null
+  },
+
+  async deleteComponent(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .delete(productComponents)
+      .where(eq(productComponents.id, id))
+      .returning({ id: productComponents.id })
 
     return row ?? null
   },

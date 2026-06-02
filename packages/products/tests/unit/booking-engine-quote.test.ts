@@ -27,7 +27,7 @@ function makeDb(rows: unknown[]) {
         }),
       }),
     }),
-  } as unknown as OwnedHandlerContext["db"]
+  } as OwnedHandlerContext["db"]
 }
 
 function makeCtx(rows: unknown[]): OwnedHandlerContext {

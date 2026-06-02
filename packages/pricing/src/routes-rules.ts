@@ -19,6 +19,7 @@ import {
   optionUnitPriceRuleListQuerySchema,
   optionUnitTierListQuerySchema,
   pickupPriceRuleListQuerySchema,
+  ratePlanMatrixImportSchema,
   updateDeparturePriceOverrideSchema,
   updateDropoffPriceRuleSchema,
   updateExtraPriceRuleSchema,
@@ -30,6 +31,15 @@ import {
 } from "./validation.js"
 
 export const pricingRuleRoutes = new Hono<Env>()
+  .post("/rate-plan-matrix/import", async (c) =>
+    c.json(
+      await pricingService.importRatePlanMatrix(
+        c.get("db"),
+        await parseJsonBody(c, ratePlanMatrixImportSchema),
+        { eventBus: c.get("eventBus") },
+      ),
+    ),
+  )
   .get("/option-price-rules", async (c) =>
     c.json(
       await pricingService.listOptionPriceRules(

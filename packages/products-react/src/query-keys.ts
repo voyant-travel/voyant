@@ -59,6 +59,13 @@ export interface ProductOptionsListFilters {
   offset?: number | undefined
 }
 
+export interface ProductComponentsListFilters {
+  productId?: string | undefined
+  componentKind?: string | undefined
+  limit?: number | undefined
+  offset?: number | undefined
+}
+
 export interface OptionUnitsListFilters {
   optionId?: string | undefined
   unitType?: string | undefined
@@ -120,6 +127,12 @@ export const productsQueryKeys = {
   productTagsList: (filters: ProductTagsListFilters) =>
     [...productsQueryKeys.productTags(), "list", filters] as const,
   productTag: (id: string) => [...productsQueryKeys.productTags(), "detail", id] as const,
+
+  productComponents: () => [...productsQueryKeys.all, "product-components"] as const,
+  productComponentsList: (filters: ProductComponentsListFilters) =>
+    [...productsQueryKeys.productComponents(), "list", filters] as const,
+  productComponent: (id: string) =>
+    [...productsQueryKeys.productComponents(), "detail", id] as const,
 
   productOptions: () => [...productsQueryKeys.all, "product-options"] as const,
   productOptionsList: (filters: ProductOptionsListFilters) =>

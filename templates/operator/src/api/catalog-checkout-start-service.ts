@@ -17,19 +17,19 @@ import { z } from "zod"
 import { materializeBookingFromSnapshot } from "./catalog-checkout-materialization"
 import { getOperatorPaymentInstructions, getOperatorProfile } from "./settings"
 
+export const contractAcceptanceSchema = z.object({
+  templateId: z.string().min(1),
+  templateSlug: z.string().min(1),
+  acceptedTerms: z.literal(true),
+  acceptedMarketing: z.boolean(),
+  acceptedAt: z.string().datetime(),
+  renderedHtml: z.string().min(1),
+})
+
 export const checkoutStartSchema = z.object({
   bookingId: z.string().min(1),
   paymentIntent: z.enum(["card", "bank_transfer", "hold", "inquiry"]),
-  contractAcceptance: z
-    .object({
-      templateId: z.string().min(1),
-      templateSlug: z.string().min(1),
-      acceptedTerms: z.literal(true),
-      acceptedMarketing: z.boolean(),
-      acceptedAt: z.string().datetime(),
-      renderedHtml: z.string().min(1),
-    })
-    .optional(),
+  contractAcceptance: contractAcceptanceSchema.optional(),
   payerEmail: z.string().email().optional(),
   payerName: z.string().optional(),
   returnOrigin: z.string().url().optional(),
@@ -536,7 +536,7 @@ async function resolveBankTransferInstructions(
  * and updates its `metadata.acceptance` in place (last acceptance
  * wins — typical when customer hits Back, edits acceptance, resubmits).
  */
-async function persistAcceptanceDraftContract(
+export async function persistAcceptanceDraftContract(
   db: PostgresJsDatabase,
   requestMeta: CheckoutStartRequestMeta,
   booking: typeof bookings.$inferSelect,

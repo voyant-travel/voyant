@@ -10,6 +10,7 @@ import {
   productFeatureTypeSchema,
   productLocationTypeSchema,
   productMediaTypeSchema,
+  productSellableKindSchema,
   productVisibilitySchema,
 } from "./validation-shared.js"
 
@@ -150,6 +151,7 @@ export const publicCatalogProductSummarySchema = z.object({
   seoDescription: z.string().nullable(),
   bookingMode: productBookingModeSchema,
   capacityMode: productCapacityModeSchema,
+  sellableKind: productSellableKindSchema.default("product"),
   visibility: productVisibilitySchema,
   sellCurrency: z.string(),
   sellAmountCents: z.number().int().nullable(),

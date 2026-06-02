@@ -1,8 +1,10 @@
 import {
   duplicateItinerarySchema,
+  type importProductComponentsSchema,
   insertDaySchema,
   insertDayServiceSchema,
   insertItinerarySchema,
+  insertProductComponentSchema,
   insertProductMediaSchema,
   insertProductTranslationSchema,
   insertVersionSchema,
@@ -10,6 +12,7 @@ import {
   updateDaySchema,
   updateDayServiceSchema,
   updateItinerarySchema,
+  updateProductComponentSchema,
   updateProductMediaSchema,
   updateProductTranslationSchema,
 } from "@voyantjs/products"
@@ -150,6 +153,73 @@ export const productTagRecordSchema = z.object({
 
 export type ProductTagRecord = z.infer<typeof productTagRecordSchema>
 
+export const productComponentChoicePricingRefSchema = z.object({
+  option_id: z.string().optional().nullable(),
+  option_unit_id: z.string().optional().nullable(),
+  pricing_category_id: z.string().optional().nullable(),
+  price_catalog_id: z.string().optional().nullable(),
+  price_schedule_id: z.string().optional().nullable(),
+})
+
+export const productComponentChoiceSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  summary: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  required: z.boolean().optional(),
+  quantity: z.number().int().positive().optional().nullable(),
+  is_default: z.boolean().optional(),
+  sort_order: z.number().int().optional(),
+  pricing_ref: productComponentChoicePricingRefSchema.optional().nullable(),
+  binding: z.unknown().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional().nullable(),
+})
+
+export const productComponentRecordSchema = z.object({
+  id: z.string(),
+  productId: z.string(),
+  componentKind: z.enum(["accommodation", "transport", "activity", "meal", "insurance", "other"]),
+  title: z.string(),
+  summary: z.string().nullable(),
+  description: z.string().nullable(),
+  selection: z.enum(["fixed", "choose_one", "multi", "optional"]),
+  commitmentBoundary: z.enum(["internal", "dependent_component", "independent_component"]),
+  priceDisposition: z.enum(["included", "add_on"]),
+  required: z.boolean(),
+  quantity: z.number().int().nullable(),
+  sortOrder: z.number().int(),
+  binding: z.unknown(),
+  choices: z.array(productComponentChoiceSchema),
+  media: z.array(z.unknown()),
+  tags: z.array(z.string()),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type ProductComponentChoicePricingRef = z.infer<
+  typeof productComponentChoicePricingRefSchema
+>
+export type ProductComponentChoiceRecord = z.infer<typeof productComponentChoiceSchema>
+export type ProductComponentRecord = z.infer<typeof productComponentRecordSchema>
+export type ImportProductComponentsInput = z.input<typeof importProductComponentsSchema>
+
+export const productComponentImportSummarySchema = z.object({
+  mode: z.enum(["append", "replace"]),
+  dryRun: z.boolean(),
+  requested: z.number().int(),
+  created: z.number().int(),
+  deleted: z.number().int(),
+})
+
+export const productComponentImportResponseSchema = z.object({
+  data: z.array(productComponentRecordSchema),
+  summary: productComponentImportSummarySchema,
+})
+
+export type ProductComponentImportSummary = z.infer<typeof productComponentImportSummarySchema>
+export type ProductComponentImportResponse = z.infer<typeof productComponentImportResponseSchema>
+
 export const productOptionRecordSchema = z.object({
   id: z.string(),
   productId: z.string(),
@@ -271,6 +341,8 @@ export const productCategoryListResponse = paginatedEnvelope(productCategoryReco
 export const productCategorySingleResponse = singleEnvelope(productCategoryRecordSchema)
 export const productTagListResponse = paginatedEnvelope(productTagRecordSchema)
 export const productTagSingleResponse = singleEnvelope(productTagRecordSchema)
+export const productComponentListResponse = paginatedEnvelope(productComponentRecordSchema)
+export const productComponentSingleResponse = singleEnvelope(productComponentRecordSchema)
 export const productOptionListResponse = paginatedEnvelope(productOptionRecordSchema)
 export const productOptionSingleResponse = singleEnvelope(productOptionRecordSchema)
 export const optionUnitListResponse = paginatedEnvelope(optionUnitRecordSchema)
@@ -383,6 +455,7 @@ export {
   insertDaySchema,
   insertDayServiceSchema,
   insertItinerarySchema,
+  insertProductComponentSchema,
   insertProductMediaSchema,
   insertProductTranslationSchema,
   insertVersionSchema,
@@ -390,6 +463,7 @@ export {
   updateDaySchema,
   updateDayServiceSchema,
   updateItinerarySchema,
+  updateProductComponentSchema,
   updateProductMediaSchema,
   updateProductTranslationSchema,
 }
@@ -397,6 +471,8 @@ export {
 export type CreateProductItineraryInput = z.input<typeof insertItinerarySchema>
 export type UpdateProductItineraryInput = z.input<typeof updateItinerarySchema>
 export type DuplicateProductItineraryInput = z.input<typeof duplicateItinerarySchema>
+export type CreateProductComponentInput = z.input<typeof insertProductComponentSchema>
+export type UpdateProductComponentInput = z.input<typeof updateProductComponentSchema>
 export type CreateProductDayInput = z.input<typeof insertDaySchema>
 export type UpdateProductDayInput = z.input<typeof updateDaySchema>
 export type CreateProductDayServiceInput = z.input<typeof insertDayServiceSchema>

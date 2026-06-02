@@ -41,7 +41,10 @@ import {
   productContentSchema,
   validateProductContent,
 } from "./content-shape.js"
+import { productComponentRowToTravelComponent } from "./product-components.js"
 import {
+  productCapabilities,
+  productComponents,
   productDays,
   productItineraries,
   productMedia,
@@ -49,7 +52,9 @@ import {
   productOptionTranslations,
   products,
   productTranslations,
+  productTypes,
 } from "./schema.js"
+import { inferProductSellableKind } from "./sellable-kind.js"
 
 export interface BuildOwnedProductContentOptions {
   /**
@@ -95,7 +100,12 @@ export async function buildOwnedProductContent(
   )[0]
   if (!productRow) return null
 
-  const [optionRows, mediaRows, itineraryRows, productTrns] = await Promise.all([
+  const [componentRows, optionRows, mediaRows, itineraryRows, productTrns] = await Promise.all([
+    db
+      .select()
+      .from(productComponents)
+      .where(eq(productComponents.productId, entityId))
+      .orderBy(asc(productComponents.sortOrder), asc(productComponents.createdAt)),
     db
       .select()
       .from(productOptions)
@@ -113,6 +123,19 @@ export async function buildOwnedProductContent(
       .orderBy(asc(productItineraries.sortOrder)),
     db.select().from(productTranslations).where(eq(productTranslations.productId, entityId)),
   ])
+  const [capabilityRows, productTypeRows] = await Promise.all([
+    db
+      .select({ capability: productCapabilities.capability })
+      .from(productCapabilities)
+      .where(
+        and(eq(productCapabilities.productId, entityId), eq(productCapabilities.enabled, true)),
+      )
+      .orderBy(asc(productCapabilities.capability)),
+    productRow.productTypeId
+      ? db.select().from(productTypes).where(eq(productTypes.id, productRow.productTypeId)).limit(1)
+      : Promise.resolve([]),
+  ])
+  const productTypeRow = productTypeRows[0] ?? null
 
   // biome-ignore lint/suspicious/noExplicitAny: drizzle row shape
   const defaultItinerary: any =
@@ -165,6 +188,13 @@ export async function buildOwnedProductContent(
       id: productRow.id,
       name: localizedName,
       status: productRow.status,
+      sellable_kind: inferProductSellableKind({
+        bookingMode: productRow.bookingMode,
+        productTypeCode: productTypeRow?.code ?? null,
+        productTypeName: productTypeRow?.name ?? null,
+        tags: Array.isArray(productRow.tags) ? productRow.tags : [],
+        capabilities: capabilityRows.map((row) => row.capability),
+      }),
       description: localizedDescription,
       inclusions_html: localizedInclusions,
       exclusions_html: localizedExclusions,
@@ -179,6 +209,7 @@ export async function buildOwnedProductContent(
       supplier: productRow.supplierId ?? null,
       tags: Array.isArray(productRow.tags) ? productRow.tags : [],
     },
+    components: componentRows.map(productComponentRowToTravelComponent),
     options: optionRows.map((opt: typeof productOptions.$inferSelect) => {
       const trnsForOption = optionTrns.filter(
         (t: typeof productOptionTranslations.$inferSelect) => t.optionId === opt.id,

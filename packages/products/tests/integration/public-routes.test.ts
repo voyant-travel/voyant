@@ -545,6 +545,7 @@ describe.skipIf(!DB_AVAILABLE)("Public product routes", () => {
         categorySlugs: ["cruises"],
         tagIds: [tag.id],
         tagNames: ["River"],
+        sellableKind: "product",
         capabilities: ["instant_confirmation"],
         locationTitles: ["Budapest"],
         locationCities: ["Budapest"],

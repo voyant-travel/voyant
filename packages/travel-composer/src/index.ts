@@ -13,6 +13,12 @@ export {
   toBookingDraftV1,
 } from "./catalog-component-adapter.js"
 export {
+  type ComponentSelectionInput,
+  type ProjectedIndependentCatalogComponent,
+  type ProjectIndependentCatalogComponentsInput,
+  projectIndependentCatalogComponents,
+} from "./component-routing.js"
+export {
   CRUISE_EXTENSION_METADATA_KIND,
   type CruiseExtensionExtra,
   type CruiseExtensionLifecycle,

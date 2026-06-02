@@ -7,6 +7,8 @@ import type { UseOptionUnitOptions } from "./hooks/use-option-unit.js"
 import type { UseOptionUnitsOptions } from "./hooks/use-option-units.js"
 import type { UseProductOptions } from "./hooks/use-product.js"
 import type { UseProductCategoriesOptions } from "./hooks/use-product-categories.js"
+import type { UseProductComponentOptions } from "./hooks/use-product-component.js"
+import type { UseProductComponentsOptions } from "./hooks/use-product-components.js"
 import type { UseProductDayServicesOptions } from "./hooks/use-product-day-services.js"
 import type { UseProductDaysOptions } from "./hooks/use-product-days.js"
 import type { UseProductItinerariesOptions } from "./hooks/use-product-itineraries.js"
@@ -23,6 +25,8 @@ import {
   optionUnitListResponse,
   optionUnitSingleResponse,
   productCategoryListResponse,
+  productComponentListResponse,
+  productComponentSingleResponse,
   productDayServicesResponse,
   productDaysResponse,
   productItinerariesResponse,
@@ -231,6 +235,53 @@ export function getProductOptionQueryOptions(
       const { data } = await fetchWithValidation(
         `/v1/products/options/${id}`,
         productOptionSingleResponse,
+        client,
+      )
+      return data
+    },
+  })
+}
+
+export function getProductComponentsQueryOptions(
+  client: FetchWithValidationOptions,
+  options: UseProductComponentsOptions = {},
+) {
+  const { enabled: _enabled = true, ...filters } = options
+
+  return queryOptions({
+    queryKey: productsQueryKeys.productComponentsList(filters),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (filters.productId) params.set("productId", filters.productId)
+      if (filters.componentKind) params.set("componentKind", filters.componentKind)
+      if (filters.limit !== undefined) params.set("limit", String(filters.limit))
+      if (filters.offset !== undefined) params.set("offset", String(filters.offset))
+      const qs = params.toString()
+
+      return fetchWithValidation(
+        `/v1/products/components${qs ? `?${qs}` : ""}`,
+        productComponentListResponse,
+        client,
+      )
+    },
+  })
+}
+
+export function getProductComponentQueryOptions(
+  client: FetchWithValidationOptions,
+  id: string | null | undefined,
+  options: UseProductComponentOptions = {},
+) {
+  const { enabled: _enabled = true } = options
+
+  return queryOptions({
+    queryKey: productsQueryKeys.productComponent(id ?? ""),
+    queryFn: async () => {
+      if (!id) throw new Error("getProductComponentQueryOptions requires an id")
+
+      const { data } = await fetchWithValidation(
+        `/v1/products/components/${id}`,
+        productComponentSingleResponse,
         client,
       )
       return data

@@ -26,8 +26,7 @@ const sampleRow = {
   tags: ["wellness", "yoga"],
   createdAt: new Date("2026-01-01"),
   updatedAt: new Date("2026-04-01"),
-  // biome-ignore lint/suspicious/noExplicitAny: test fixture
-} as any
+} as Parameters<ReturnType<typeof createProductDocumentEmitter>["emit"]>[0]
 
 const customerSlice: IndexerSlice = {
   vertical: "products",
@@ -59,9 +58,15 @@ describe("createProductDocumentEmitter", () => {
     const doc = emitter.emit(sampleRow, customerSlice)
     // bookingMode, productTypeId, start/end dates are visibility:[staff,customer,partner]
     expect(doc.fields).toHaveProperty("bookingMode")
+    expect(doc.fields).toHaveProperty("sellableKind")
     expect(doc.fields).toHaveProperty("productTypeId")
     expect(doc.fields).toHaveProperty("startDate")
     expect(doc.fields).toHaveProperty("endDate")
+  })
+
+  it("emits package sellableKind for package-marked products", () => {
+    const doc = emitter.emit({ ...sampleRow, tags: ["package"] }, customerSlice)
+    expect(doc.fields.sellableKind).toBe("package")
   })
 
   it("excludes staff-only operational fields from customer documents (status, visibility, activated)", () => {

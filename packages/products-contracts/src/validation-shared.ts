@@ -25,6 +25,17 @@ export const productBookingModeSchema = z.enum([
 ])
 export const productCapacityModeSchema = z.enum(["free_sale", "limited", "on_request"])
 export const productVisibilitySchema = z.enum(["public", "private", "hidden"])
+export const productSellableKindSchema = z.enum([
+  "product",
+  "package",
+  "tour",
+  "activity",
+  "transfer",
+  "accommodation",
+  "cruise",
+  "charter",
+  "other",
+])
 export const productActivationModeSchema = z.enum(["manual", "scheduled", "channel_controlled"])
 export const productTicketFulfillmentSchema = z.enum([
   "none",

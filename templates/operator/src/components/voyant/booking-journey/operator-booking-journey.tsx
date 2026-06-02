@@ -64,6 +64,11 @@ export function OperatorBookingJourney({
       return <CrmLeadPicker apply={apply} variant="traveler" />
     },
     onCommitted(result) {
+      const tripEnvelopeId = tripEnvelopeIdFromCommitResult(result)
+      if (tripEnvelopeId) {
+        navigate({ to: "/trips/$id", params: { id: tripEnvelopeId } })
+        return
+      }
       navigate({ to: "/bookings", search: { highlight: result.bookingId } as never })
     },
     onCancelled() {
@@ -94,6 +99,13 @@ export function OperatorBookingJourney({
       {...slots}
     />
   )
+}
+
+function tripEnvelopeIdFromCommitResult(result: {
+  upstreamPayload?: Record<string, unknown>
+}): string | null {
+  const value = result.upstreamPayload?.tripEnvelopeId
+  return typeof value === "string" && value.length > 0 ? value : null
 }
 
 /**

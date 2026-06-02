@@ -30,6 +30,7 @@ import {
   type BookingDraftShape,
   type CommitOwnedRequest,
   type CommitOwnedResult,
+  type ComponentChoiceGroup,
   type ComputeQuoteRequest,
   type ComputeQuoteResult,
   DEFAULT_PAX_BANDS,
@@ -185,6 +186,15 @@ interface DraftLike {
       optionUnitName?: string
       quantity: number
     }>
+    componentSelections?: Array<{
+      componentId: string
+      componentKind?: string
+      choiceId?: string
+      choiceTitle?: string
+      optionId?: string
+      optionUnitId?: string
+      quantity?: number
+    }>
   }
   billing?: {
     buyerType?: "B2C" | "B2B"
@@ -225,6 +235,12 @@ export interface BuildOwnedProductDraftShapeOptions {
    * booking configuration, while extras add optional line items.
    */
   productOptions?: ReadonlyArray<ProductVariantOption>
+  /**
+   * Operated typed components that expose customer-selectable choices.
+   * Choices may carry pricing refs to existing product option/unit IDs;
+   * the booking handler reuses those IDs for quote and commit.
+   */
+  componentChoices?: ReadonlyArray<ComponentChoiceGroup>
 }
 
 export function buildOwnedProductDraftShape(
@@ -234,6 +250,7 @@ export function buildOwnedProductDraftShape(
   const fields = options.travelerFields ?? defaultTravelerFields()
   const addons = options.addonCatalog ?? []
   const variants = options.productOptions ?? []
+  const componentChoices = options.componentChoices ?? []
   const flags = defaultDraftShapeFlags()
   return {
     ...flags,
@@ -245,6 +262,9 @@ export function buildOwnedProductDraftShape(
     paymentIntents: ["hold", "card"],
     configureSubSteps: [
       ...(variants.length > 0 ? [{ kind: "product-option" as const, options: variants }] : []),
+      ...(componentChoices.length > 0
+        ? [{ kind: "component-choice" as const, components: componentChoices }]
+        : []),
       { kind: "occupancy", bands: paxBands },
     ],
     addons: addons.length > 0 ? { catalog: addons } : undefined,
@@ -323,6 +343,16 @@ export interface OwnedProductsShapeLoaders {
     ctx: OwnedHandlerContext,
     productId: string,
   ) => Promise<ReadonlyArray<ProductVariantOption>>
+
+  /**
+   * Resolve operated product components that have customer-selectable choices.
+   * Kept caller-supplied so products' booking handler does not force a DB read
+   * in deployments/tests that have not enabled component booking yet.
+   */
+  loadProductComponents?: (
+    ctx: OwnedHandlerContext,
+    productId: string,
+  ) => Promise<ReadonlyArray<ComponentChoiceGroup>>
 
   /**
    * Resolve the tax rate for a given (product, buyer country) pair.
@@ -456,23 +486,39 @@ export function createProductsBookingHandler(
       // Concurrent enrichment + slot-date lookup. The slot date is
       // needed before we can call loadResolvedOptionPrice, so it
       // joins this batch.
-      const [travelerFields, addonCatalog, productOptionCatalog, taxRate, slotDate] =
-        await Promise.all([
-          options.loadTravelerFields?.(ctx, request.entityId) ?? Promise.resolve(undefined),
-          options.loadAddonCatalog?.(ctx, request.entityId) ?? Promise.resolve(undefined),
-          options.loadProductOptions?.(ctx, request.entityId) ?? Promise.resolve(undefined),
-          options.loadTaxRate?.(ctx, {
-            productId: request.entityId,
-            buyerCountry: draft.billing?.address?.country,
-            buyerType: draft.billing?.buyerType,
-          }) ?? Promise.resolve(null),
-          slotId && options.loadSlotDate
-            ? options.loadSlotDate(ctx, slotId)
-            : Promise.resolve(draft.configure?.departureDate ?? null),
-        ])
+      const [
+        travelerFields,
+        addonCatalog,
+        productOptionCatalog,
+        componentChoiceCatalog,
+        taxRate,
+        slotDate,
+      ] = await Promise.all([
+        options.loadTravelerFields?.(ctx, request.entityId) ?? Promise.resolve(undefined),
+        options.loadAddonCatalog?.(ctx, request.entityId) ?? Promise.resolve(undefined),
+        options.loadProductOptions?.(ctx, request.entityId) ?? Promise.resolve(undefined),
+        options.loadProductComponents?.(ctx, request.entityId) ?? Promise.resolve(undefined),
+        options.loadTaxRate?.(ctx, {
+          productId: request.entityId,
+          buyerCountry: draft.billing?.address?.country,
+          buyerType: draft.billing?.buyerType,
+        }) ?? Promise.resolve(null),
+        slotId && options.loadSlotDate
+          ? options.loadSlotDate(ctx, slotId)
+          : Promise.resolve(draft.configure?.departureDate ?? null),
+      ])
+      const componentOptionSelections = normalizeComponentSelections(
+        draft.configure?.componentSelections,
+        componentChoiceCatalog ?? [],
+      )
+      const pricingSelections = [...optionSelections, ...componentOptionSelections]
+      const productOptionsForPricing = [
+        ...(productOptionCatalog ?? []),
+        ...componentChoicesToProductVariantOptions(componentChoiceCatalog ?? []),
+      ]
 
       const resolvedPrice =
-        optionSelections.length === 0 && optionId && slotDate && options.loadResolvedOptionPrice
+        pricingSelections.length === 0 && optionId && slotDate && options.loadResolvedOptionPrice
           ? await options.loadResolvedOptionPrice(ctx, {
               productId: request.entityId,
               optionId,
@@ -487,13 +533,13 @@ export function createProductsBookingHandler(
       const effectivePax = paxCount > 0 ? paxCount : 1
 
       const priced =
-        optionSelections.length > 0
+        pricingSelections.length > 0
           ? await priceOptionSelections({
               ctx,
               options,
               product,
-              productOptions: productOptionCatalog ?? [],
-              selections: optionSelections,
+              productOptions: productOptionsForPricing,
+              selections: pricingSelections,
               slotDate,
             })
           : priceQuote({
@@ -567,6 +613,7 @@ export function createProductsBookingHandler(
           travelerFields,
           addonCatalog,
           productOptions: productOptionCatalog,
+          componentChoices: componentChoiceCatalog,
         }),
       }
     },
@@ -677,13 +724,19 @@ export function createProductsBookingHandler(
       // gross breakdown total when an included tax line is present.
       const sellAmountCentsOverride = resolveSellAmountCentsOverride(request.pricing)
       const optionSelections = normalizeOptionSelections(draft.configure?.optionSelections)
+      const componentChoiceCatalog = await options.loadProductComponents?.(ctx, product.id)
+      const componentOptionSelections = normalizeComponentSelections(
+        draft.configure?.componentSelections,
+        componentChoiceCatalog ?? [],
+      )
+      const allOptionSelections = [...optionSelections, ...componentOptionSelections]
       const selectedOptionIds = [
-        ...new Set(optionSelections.map((selection) => selection.optionId)),
+        ...new Set(allOptionSelections.map((selection) => selection.optionId)),
       ]
       const primaryOptionId =
         selectedOptionIds.length === 1
           ? selectedOptionIds[0]
-          : optionSelections.length === 0
+          : allOptionSelections.length === 0
             ? (draft.configure?.variantId ?? null)
             : null
 
@@ -710,7 +763,7 @@ export function createProductsBookingHandler(
           : undefined,
         sellAmountCentsOverride,
         taxLines: extractTaxLines(request.pricing),
-        itemLines: bookingItemLinesFromOptionSelections(optionSelections),
+        itemLines: bookingItemLinesFromOptionSelections(allOptionSelections),
         extraLines: bookingExtraLinesFromAddonSelections({
           addons: draft.addons,
           addonCatalog: await options.loadAddonCatalog?.(ctx, product.id),
@@ -746,7 +799,7 @@ async function loadProduct(
   db: AnyDrizzleDb,
   productId: string,
 ): Promise<typeof products.$inferSelect | undefined> {
-  const drizzle = db as unknown as PostgresJsDatabase
+  const drizzle = db as PostgresJsDatabase
   const rows = (await drizzle
     .select()
     .from(products)
@@ -787,6 +840,10 @@ type DraftOptionSelection = NonNullable<
   NonNullable<DraftLike["configure"]>["optionSelections"]
 >[number]
 
+type DraftComponentSelection = NonNullable<
+  NonNullable<DraftLike["configure"]>["componentSelections"]
+>[number]
+
 function normalizeOptionSelections(
   selections: ReadonlyArray<DraftOptionSelection> | undefined,
 ): NormalizedOptionSelection[] {
@@ -815,6 +872,79 @@ function normalizeOptionSelections(
       },
     ]
   })
+}
+
+function normalizeComponentSelections(
+  selections: ReadonlyArray<DraftComponentSelection> | undefined,
+  componentChoices: ReadonlyArray<ComponentChoiceGroup>,
+): NormalizedOptionSelection[] {
+  if (!Array.isArray(selections)) return []
+  const componentsById = new Map(
+    componentChoices.map((component) => [component.componentId, component]),
+  )
+
+  return selections.flatMap((selection) => {
+    if (
+      !selection ||
+      typeof selection !== "object" ||
+      typeof selection.componentId !== "string" ||
+      selection.componentId.length === 0
+    ) {
+      return []
+    }
+
+    const component = componentsById.get(selection.componentId)
+    if (component?.commitmentBoundary === "independent_component") return []
+
+    const choice =
+      component?.choices.find((candidate) => candidate.id === selection.choiceId) ??
+      component?.choices.find((candidate) => candidate.isDefault) ??
+      (component?.choices.length === 1 ? component.choices[0] : undefined)
+    const optionId = selection.optionId ?? choice?.pricingRef?.optionId
+    if (!optionId) return []
+
+    const quantity =
+      typeof selection.quantity === "number" && Number.isFinite(selection.quantity)
+        ? Math.floor(selection.quantity)
+        : 1
+    if (quantity <= 0) return []
+
+    return [
+      {
+        optionId,
+        ...((selection.optionUnitId ?? choice?.pricingRef?.optionUnitId)
+          ? { optionUnitId: selection.optionUnitId ?? choice?.pricingRef?.optionUnitId }
+          : {}),
+        quantity,
+      },
+    ]
+  })
+}
+
+function componentChoicesToProductVariantOptions(
+  components: ReadonlyArray<ComponentChoiceGroup>,
+): ProductVariantOption[] {
+  return components.flatMap((component) =>
+    component.choices.flatMap((choice) => {
+      const optionId = choice.pricingRef?.optionId
+      if (!optionId) return []
+      return [
+        {
+          id: optionId,
+          name: choice.title || component.title,
+          description: choice.description ?? component.description ?? null,
+          units: choice.pricingRef?.optionUnitId
+            ? [
+                {
+                  id: choice.pricingRef.optionUnitId,
+                  name: choice.title || component.title,
+                },
+              ]
+            : undefined,
+        },
+      ]
+    }),
+  )
 }
 
 async function priceOptionSelections(input: {

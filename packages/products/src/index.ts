@@ -10,6 +10,10 @@ export {
   PRODUCT_CONTENT_CHANGED_EVENT,
   type ProductContentChangedEvent,
 } from "./events.js"
+export {
+  productComponentRowToBookingChoiceGroup,
+  productComponentRowToTravelComponent,
+} from "./product-components.js"
 export type { ProductRoutes } from "./routes.js"
 export type { PublicProductRoutes } from "./routes-public.js"
 export { publicProductRoutes } from "./routes-public.js"
@@ -57,6 +61,7 @@ export type {
   NewProductActivationSetting,
   NewProductCapability,
   NewProductCategory,
+  NewProductComponentRow,
   NewProductDay,
   NewProductDayService,
   NewProductDeliveryFormat,
@@ -80,6 +85,7 @@ export type {
   ProductActivationSetting,
   ProductCapability,
   ProductCategory,
+  ProductComponentRow,
   ProductDay,
   ProductDayService,
   ProductDeliveryFormat,
@@ -107,6 +113,7 @@ export {
   productCapabilities,
   productCategories,
   productCategoryProducts,
+  productComponents,
   productDayServices,
   productDays,
   productDeliveryFormats,
@@ -131,6 +138,7 @@ export {
 } from "./schema.js"
 export {
   duplicateItinerarySchema,
+  importProductComponentsSchema,
   insertDaySchema,
   insertDayServiceSchema,
   insertItinerarySchema,
@@ -139,6 +147,7 @@ export {
   insertProductActivationSettingSchema,
   insertProductCapabilitySchema,
   insertProductCategorySchema,
+  insertProductComponentSchema,
   insertProductDeliveryFormatSchema,
   insertProductFaqSchema,
   insertProductFeatureSchema,
@@ -159,6 +168,7 @@ export {
   productActivationSettingListQuerySchema,
   productCapabilityListQuerySchema,
   productCategoryListQuerySchema,
+  productComponentListQuerySchema,
   productDeliveryFormatListQuerySchema,
   productFaqListQuerySchema,
   productFeatureListQuerySchema,
@@ -182,6 +192,7 @@ export {
   updateProductActivationSettingSchema,
   updateProductCapabilitySchema,
   updateProductCategorySchema,
+  updateProductComponentSchema,
   updateProductDeliveryFormatSchema,
   updateProductFaqSchema,
   updateProductFeatureSchema,

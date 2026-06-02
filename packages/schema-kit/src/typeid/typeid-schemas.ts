@@ -70,6 +70,7 @@ export const typeIdSchemas = {
   marketProductRule: typeIdSchema("market_product_rules"),
   marketChannelRule: typeIdSchema("market_channel_rules"),
   product: typeIdSchema("products"),
+  productComponent: typeIdSchema("product_components"),
   productOption: typeIdSchema("product_options"),
   optionUnit: typeIdSchema("option_units"),
   productActivationSetting: typeIdSchema("product_activation_settings"),

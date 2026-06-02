@@ -52,6 +52,7 @@ export const PREFIXES = {
   supplier_availability: "sava",
   supplier_contracts: "scon",
   products: "prod",
+  product_components: "pcmp",
   product_options: "popt",
   option_units: "ount",
   product_activation_settings: "pras",

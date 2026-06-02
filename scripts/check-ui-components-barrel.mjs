@@ -11,6 +11,21 @@ const excludedFiles = new Set([
   // These are implementation splits re-exported through sidebar.tsx.
   "sidebar-core.tsx",
   "sidebar-menu.tsx",
+  // Intentionally kept out of the components barrel to preserve tree-shaking.
+  // They remain available through @voyantjs/ui/components/<subpath>.
+  "chart.tsx",
+  "dashboard-widgets.tsx",
+  "notification-deliveries-page.tsx",
+  "notification-delivery-detail-dialog.tsx",
+  "notification-reminder-rule-dialog.tsx",
+  "notification-reminder-rules-page.tsx",
+  "notification-reminder-runs-page.tsx",
+  "notification-template-authoring-help.tsx",
+  "notification-template-detail-page.tsx",
+  "notification-template-dialog.tsx",
+  "notification-templates-page.tsx",
+  "phone-input.tsx",
+  "rich-text-editor.tsx",
 ])
 
 const barrelSource = readFileSync(barrelPath, "utf8")

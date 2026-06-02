@@ -63,6 +63,7 @@ import {
   updateCancellationPolicy,
   updateCancellationPolicyRule,
 } from "./service-policies.js"
+import { importRatePlanMatrix } from "./service-rate-plan-matrix.js"
 import {
   createDropoffPriceRule,
   createExtraPriceRule,
@@ -152,4 +153,5 @@ export const pricingService = {
   createDeparturePriceOverride,
   updateDeparturePriceOverride,
   deleteDeparturePriceOverride,
+  importRatePlanMatrix,
 }

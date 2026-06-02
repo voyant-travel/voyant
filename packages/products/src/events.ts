@@ -4,7 +4,7 @@
  * Emitted by the products module on lifecycle and content changes.
  * `product.content.changed` is the load-bearing channel-push signal —
  * fired when ANY content axis (description, itinerary, media, options,
- * days) changes.
+ * components, days) changes.
  *
  * Per docs/architecture/channel-push-architecture.md §6.
  */
@@ -24,6 +24,7 @@ export interface ProductContentChangedEvent {
    */
   axis?:
     | "product"
+    | "component"
     | "itinerary"
     | "option"
     | "day"

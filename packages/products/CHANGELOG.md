@@ -1,5 +1,14 @@
 # @voyantjs/products
 
+## Unreleased
+
+### Patch Changes
+
+- Add typed JSON product component import with dry-run and append/replace modes.
+- Keep `independent_component` product component choices out of the core product
+  quote and booking item lines so they can route through trip composer as
+  sibling component bookings.
+
 ## 0.101.0
 
 ### Patch Changes

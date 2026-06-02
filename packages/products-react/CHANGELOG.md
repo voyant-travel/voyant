@@ -1,5 +1,12 @@
 # @voyantjs/products-react
 
+## Unreleased
+
+### Patch Changes
+
+- Add product component query and mutation hooks for maintaining operated product
+  component choices, pricing references, and typed JSON component imports.
+
 ## 0.101.0
 
 ### Patch Changes

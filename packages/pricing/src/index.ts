@@ -123,6 +123,7 @@ export {
   pricingCategoryListQuerySchema,
   pricingCategoryTypeSchema,
   pricingDependencyTypeSchema,
+  ratePlanMatrixImportSchema,
   updateCancellationPolicyRuleSchema,
   updateCancellationPolicySchema,
   updateDeparturePriceOverrideSchema,

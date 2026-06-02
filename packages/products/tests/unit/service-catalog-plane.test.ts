@@ -33,8 +33,7 @@ const sampleRow = {
   tags: ["wellness", "yoga"],
   createdAt: new Date("2026-01-01"),
   updatedAt: new Date("2026-04-01"),
-  // biome-ignore lint/suspicious/noExplicitAny: test fixture; product row may have additional cols
-} as any
+} as Parameters<typeof productRowToProjection>[0]
 
 const customerSlice = {
   vertical: "products",
@@ -58,7 +57,7 @@ function projectionDb(selectResponses: ReadonlyArray<ReadonlyArray<Record<string
     },
     execute: async () => [{ count: 0 }],
   }
-  return db as unknown as AnyDrizzleDb
+  return db as AnyDrizzleDb
 }
 
 describe("productRowToProjection", () => {
@@ -70,6 +69,15 @@ describe("productRowToProjection", () => {
     expect(projection.get("sellAmountCents")).toBe(250000)
     expect(projection.get("tags[]")).toEqual(["wellness", "yoga"])
     expect(projection.get("productTypeId")).toBe("ptyp_wellness")
+    expect(projection.get("sellableKind")).toBe("product")
+  })
+
+  it("projects package sellableKind from explicit package markers", () => {
+    const projection = productRowToProjection(
+      { ...sampleRow, tags: ["tour-package"] },
+      { sellerOperatorId: "op_xyz" },
+    )
+    expect(projection.get("sellableKind")).toBe("package")
   })
 
   it("synthesizes provenance fields for owned products", () => {

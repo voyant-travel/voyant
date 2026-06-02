@@ -5,11 +5,15 @@ consumers that need to validate `products/v1` rich content payloads
 without installing the full products runtime package.
 
 Use this package for `PRODUCTS_CONTENT_SCHEMA_VERSION`,
-`productContentSchema`, `ProductContent`, nested content types, and
-`validateProductContent`. Use `@voyantjs/products` when you also need
-Drizzle schema, routes, services, booking integration, catalog projection, or
-runtime content resolution (including the `mergeOverlaysIntoProductContent`
-overlay composition).
+`productContentSchema`, `ProductContent`, nested content types,
+`productSellableKindSchema`, product `components`,
+`insertProductComponentSchema`, `updateProductComponentSchema`,
+`importProductComponentsSchema`, and `validateProductContent`. Product
+components use the shared `@voyantjs/travel-components-contracts` schemas. Use
+`@voyantjs/products` when you also need Drizzle schema, routes, services,
+booking integration, catalog projection, sellable-kind inference, or runtime
+content resolution (including the `mergeOverlaysIntoProductContent` overlay
+composition).
 
 ## Install
 

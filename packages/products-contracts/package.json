@@ -79,6 +79,7 @@
   },
   "dependencies": {
     "@voyantjs/schema-kit": "workspace:*",
+    "@voyantjs/travel-components-contracts": "workspace:*",
     "zod": "^4.3.6"
   },
   "devDependencies": {

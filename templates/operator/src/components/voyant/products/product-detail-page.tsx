@@ -7,6 +7,7 @@ import { Button } from "@voyantjs/ui/components"
 import { useMemo } from "react"
 import { OptionResourceTemplatesPanel } from "@/components/voyant/availability/option-resource-templates-panel"
 import { useAdminMessages } from "@/lib/admin-i18n"
+import { ProductComponentsSection } from "./product-components-section"
 import { DepartureDialog } from "./product-departure-dialog"
 import { DeparturePricingOverrideDialog } from "./product-departure-pricing-override-dialog"
 import { ProductDialog } from "./product-detail-dialog"
@@ -151,6 +152,8 @@ export function ProductDetailPage({ id }: { id: string }) {
           />
 
           <ProductDetailItinerarySection productId={id} />
+
+          <ProductComponentsSection productId={id} />
 
           <ProductOptionsSection
             productId={id}

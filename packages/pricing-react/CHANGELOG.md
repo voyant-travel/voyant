@@ -1,5 +1,12 @@
 # @voyantjs/pricing-react
 
+## Unreleased
+
+### Patch Changes
+
+- Add a `useRatePlanMatrixImportMutation` hook for dry-run and upsert package
+  pricing matrix imports.
+
 ## 0.101.0
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @voyantjs/pricing
 
+## Unreleased
+
+### Patch Changes
+
+- Add a typed rate-plan matrix import endpoint with dry-run and upsert support
+  over existing schedules, pricing categories, option price rules, option unit
+  price rules, and departure price overrides.
+
 ## 0.101.0
 
 ### Patch Changes
