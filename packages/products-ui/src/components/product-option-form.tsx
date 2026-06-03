@@ -64,7 +64,7 @@ function initialState(mode: Mode): FormState {
     name: "",
     code: "",
     description: "",
-    status: "draft",
+    status: "active",
     isDefault: false,
     sortOrder: String(mode.sortOrder ?? 0),
     availableFrom: "",

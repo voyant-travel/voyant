@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest"
 
 import {
   getDynamicTravelerCategoryButtonState,
+  getSelectableTravelerCategoryUnits,
   getStaticTravelerCategoryButtonState,
+  shouldUseStaticTravelerCategoryFallback,
 } from "../../src/components/traveler-category-buttons.js"
 
 describe("traveler category button state", () => {
@@ -50,5 +52,27 @@ describe("traveler category button state", () => {
       nextRole: "child",
       shouldUpdate: true,
     })
+  })
+
+  it("uses static role buttons for room-only product options", () => {
+    const selectableUnits = getSelectableTravelerCategoryUnits([
+      { unitType: "room" },
+      { unitType: "room" },
+      { unitType: "room" },
+    ])
+
+    expect(selectableUnits).toEqual([])
+    expect(shouldUseStaticTravelerCategoryFallback(true, selectableUnits.length)).toBe(true)
+  })
+
+  it("keeps configured person units as dynamic category buttons", () => {
+    const selectableUnits = getSelectableTravelerCategoryUnits([
+      { unitType: "room" },
+      { unitType: "person" },
+      { unitType: "person" },
+    ])
+
+    expect(selectableUnits).toHaveLength(2)
+    expect(shouldUseStaticTravelerCategoryFallback(true, selectableUnits.length)).toBe(false)
   })
 })

@@ -128,6 +128,10 @@ export function UnitForm({ optionId, unit, nextSortOrder, onSuccess, onCancel }:
   }, [unit, nextSortOrder, form])
 
   const onSubmit = async (values: UnitFormOutput) => {
+    const canHaveAge = values.unitType === "person"
+    const canHaveOccupancy =
+      values.unitType === "group" || values.unitType === "room" || values.unitType === "vehicle"
+
     const payload = {
       name: values.name,
       code: values.code || null,
@@ -135,10 +139,12 @@ export function UnitForm({ optionId, unit, nextSortOrder, onSuccess, onCancel }:
       unitType: values.unitType,
       minQuantity: typeof values.minQuantity === "number" ? values.minQuantity : null,
       maxQuantity: typeof values.maxQuantity === "number" ? values.maxQuantity : null,
-      minAge: typeof values.minAge === "number" ? values.minAge : null,
-      maxAge: typeof values.maxAge === "number" ? values.maxAge : null,
-      occupancyMin: typeof values.occupancyMin === "number" ? values.occupancyMin : null,
-      occupancyMax: typeof values.occupancyMax === "number" ? values.occupancyMax : null,
+      minAge: canHaveAge && typeof values.minAge === "number" ? values.minAge : null,
+      maxAge: canHaveAge && typeof values.maxAge === "number" ? values.maxAge : null,
+      occupancyMin:
+        canHaveOccupancy && typeof values.occupancyMin === "number" ? values.occupancyMin : null,
+      occupancyMax:
+        canHaveOccupancy && typeof values.occupancyMax === "number" ? values.occupancyMax : null,
       isRequired: values.isRequired,
       isHidden: values.isHidden,
       sortOrder: values.sortOrder,

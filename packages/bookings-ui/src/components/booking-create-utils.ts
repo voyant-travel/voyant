@@ -18,9 +18,11 @@ export interface BookingCreateUnitLineRecord {
 
 export interface BookingCreatePricingLineRecord {
   unitId: string
+  pricingCategoryId?: string | null
   label: string
   unitAmountCents: number | null
   totalAmountCents: number | null
+  quantity?: number
 }
 
 export interface BookingCreatePricingRecord {
@@ -41,6 +43,24 @@ export interface BookingCreateTravelerAssignableUnitRecord {
   optionId?: string | null
   optionUnitId: string
   unitType?: BookingCreateStepperUnitType
+}
+
+export interface BookingCreateCapacityUnitRecord {
+  optionUnitId: string
+  unitName: string
+  unitType?: BookingCreateStepperUnitType
+  occupancyMax?: number | null
+}
+
+export interface BookingCreateCapacityTravelerRecord {
+  inventoryUnitId?: string | null
+}
+
+export interface BookingCreateOverCapacityAssignment {
+  optionUnitId: string
+  unitName: string
+  assignedTravelers: number
+  capacity: number
 }
 
 export function normalizeBookingSearchText(value: string): string {
@@ -110,6 +130,40 @@ export function getTravelerAssignableStepperUnits<
   })
 }
 
+export function getOverCapacityInventoryAssignments(
+  units: readonly BookingCreateCapacityUnitRecord[],
+  quantities: Record<string, number>,
+  travelers: readonly BookingCreateCapacityTravelerRecord[],
+): BookingCreateOverCapacityAssignment[] {
+  const inventoryUnits = units.filter(
+    (unit) => unit.unitType === "room" || unit.unitType === "vehicle",
+  )
+  const assignedByUnitId = new Map<string, number>()
+  for (const traveler of travelers) {
+    if (!traveler.inventoryUnitId) continue
+    assignedByUnitId.set(
+      traveler.inventoryUnitId,
+      (assignedByUnitId.get(traveler.inventoryUnitId) ?? 0) + 1,
+    )
+  }
+
+  return inventoryUnits.flatMap((unit) => {
+    const quantity = Math.max(0, quantities[unit.optionUnitId] ?? 0)
+    const occupancy = Math.max(1, unit.occupancyMax ?? 1)
+    const capacity = quantity * occupancy
+    const assignedTravelers = assignedByUnitId.get(unit.optionUnitId) ?? 0
+    if (assignedTravelers <= capacity) return []
+    return [
+      {
+        optionUnitId: unit.optionUnitId,
+        unitName: unit.unitName,
+        assignedTravelers,
+        capacity,
+      },
+    ]
+  })
+}
+
 export function getBookableDepartureSlots<TSlot extends DepartureSlotSearchRecord>(
   slots: readonly TSlot[],
   options: {
@@ -133,10 +187,23 @@ export function itemLinesToRows(
   pricing: BookingCreatePricingRecord | null,
   travelerIndexesByUnitId: Record<string, number[]> = {},
   travelerKeysByUnitId: Record<string, string[]> = {},
+  travelerIndexesByUnitAndCategoryId: Record<string, Record<string, number[]>> = {},
+  travelerKeysByUnitAndCategoryId: Record<string, Record<string, string[]>> = {},
 ): BookingCreateItemLineInput[] {
   const unitsById = new Map(units.map((unit) => [unit.optionUnitId, unit]))
   const unitNames = new Map(units.map((unit) => [unit.optionUnitId, unit.unitName]))
-  const pricedLines = new Map((pricing?.lines ?? []).map((line) => [line.unitId, line]))
+  const pricedLines = new Map(
+    (pricing?.lines ?? [])
+      .filter((line) => !line.pricingCategoryId)
+      .map((line) => [line.unitId, line]),
+  )
+  const categoryPricedLinesByUnitId = new Map<string, BookingCreatePricingLineRecord[]>()
+  for (const line of pricing?.lines ?? []) {
+    if (!line.pricingCategoryId) continue
+    const existing = categoryPricedLinesByUnitId.get(line.unitId) ?? []
+    existing.push(line)
+    categoryPricedLinesByUnitId.set(line.unitId, existing)
+  }
   const selectedLines = Object.entries(quantities).filter(([, quantity]) => quantity > 0)
   const pricedTotal = selectedLines.reduce((sum, [optionUnitId]) => {
     const total = pricedLines.get(optionUnitId)?.totalAmountCents
@@ -152,7 +219,39 @@ export function itemLinesToRows(
       : null
   let allocatedManualTotal = 0
 
-  return selectedLines.map(([optionUnitId, quantity]) => {
+  return selectedLines.flatMap(([optionUnitId, quantity]) => {
+    const categoryPricedLines = categoryPricedLinesByUnitId.get(optionUnitId) ?? []
+    if (categoryPricedLines.length > 0) {
+      return categoryPricedLines.map((pricedLine) => {
+        const pricingCategoryId = pricedLine.pricingCategoryId
+        const categoryQuantity = Math.max(1, pricedLine.quantity ?? 1)
+        const travelerIndexes = pricingCategoryId
+          ? travelerIndexesByUnitAndCategoryId[optionUnitId]?.[pricingCategoryId]
+          : undefined
+        const travelerKeys = pricingCategoryId
+          ? travelerKeysByUnitAndCategoryId[optionUnitId]?.[pricingCategoryId]
+          : undefined
+        const hasTravelerLinks = Boolean(travelerKeys?.length || travelerIndexes?.length)
+        return {
+          clientLineKey: hasTravelerLinks
+            ? `unit:${optionUnitId}:category:${pricingCategoryId ?? "default"}`
+            : undefined,
+          optionId: unitsById.get(optionUnitId)?.optionId ?? null,
+          optionUnitId,
+          pricingCategoryId,
+          quantity: categoryQuantity,
+          title: pricedLine.label ?? unitNames.get(optionUnitId) ?? null,
+          unitSellAmountCents: pricedLine.unitAmountCents,
+          totalSellAmountCents: pricedLine.totalAmountCents,
+          ...(travelerKeys?.length
+            ? { travelerKeys }
+            : travelerIndexes?.length
+              ? { travelerIndexes }
+              : {}),
+        }
+      })
+    }
+
     const pricedLine = pricedLines.get(optionUnitId)
     let totalSellAmountCents = pricedLine?.totalAmountCents ?? null
     if (totalSellAmountCents == null && manualRemainder != null && unpricedQuantity > 0) {

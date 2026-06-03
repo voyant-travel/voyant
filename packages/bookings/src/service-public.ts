@@ -7,6 +7,7 @@ import {
   optionUnitPriceRulesRef,
   optionUnitTiersRef,
   priceCatalogsRef,
+  pricingCategoriesRef,
 } from "./pricing-ref.js"
 import { optionUnitsRef, productOptionsRef, productsRef } from "./products-ref.js"
 import type {
@@ -137,14 +138,27 @@ type SessionPricingRule = {
 type SessionPricingUnitPrice = {
   id: string
   optionPriceRuleId: string
+  optionId: string
   unitId: string
   unitName: string | null
   unitType: string | null
+  occupancyMax: number | null
   pricingCategoryId: string | null
   pricingMode: string
   sellAmountCents: number | null
   minQuantity: number | null
   maxQuantity: number | null
+}
+
+type SessionPricingCategory = {
+  id: string
+  name: string
+  code: string | null
+  categoryType: string
+  minAge: number | null
+  maxAge: number | null
+  metadata: Record<string, unknown> | null
+  sortOrder: number
 }
 
 function normalizeDate(value: Date | string | null | undefined) {
@@ -860,9 +874,11 @@ export async function resolveSessionPricingSnapshot(
       .select({
         id: optionUnitPriceRulesRef.id,
         optionPriceRuleId: optionUnitPriceRulesRef.optionPriceRuleId,
+        optionId: optionUnitPriceRulesRef.optionId,
         unitId: optionUnitPriceRulesRef.unitId,
         unitName: optionUnitsRef.name,
         unitType: optionUnitsRef.unitType,
+        occupancyMax: optionUnitsRef.occupancyMax,
         pricingCategoryId: optionUnitPriceRulesRef.pricingCategoryId,
         pricingMode: optionUnitPriceRulesRef.pricingMode,
         sellAmountCents: optionUnitPriceRulesRef.sellAmountCents,
@@ -880,7 +896,11 @@ export async function resolveSessionPricingSnapshot(
       .orderBy(asc(optionUnitPriceRulesRef.sortOrder), asc(optionUnitPriceRulesRef.createdAt)),
   ])
 
-  const [tiers, departureOverrides] = await Promise.all([
+  const pricingCategoryIds = Array.from(
+    new Set(unitPrices.flatMap((row) => (row.pricingCategoryId ? [row.pricingCategoryId] : []))),
+  )
+
+  const [tiers, departureOverrides, pricingCategories] = await Promise.all([
     unitPrices.length > 0
       ? db
           .select({
@@ -918,6 +938,27 @@ export async function resolveSessionPricingSnapshot(
             ),
           )
       : Promise.resolve([]),
+    pricingCategoryIds.length > 0
+      ? db
+          .select({
+            id: pricingCategoriesRef.id,
+            name: pricingCategoriesRef.name,
+            code: pricingCategoriesRef.code,
+            categoryType: pricingCategoriesRef.categoryType,
+            minAge: pricingCategoriesRef.minAge,
+            maxAge: pricingCategoriesRef.maxAge,
+            metadata: pricingCategoriesRef.metadata,
+            sortOrder: pricingCategoriesRef.sortOrder,
+          })
+          .from(pricingCategoriesRef)
+          .where(
+            and(
+              inArray(pricingCategoriesRef.id, pricingCategoryIds),
+              eq(pricingCategoriesRef.active, true),
+            ),
+          )
+          .orderBy(asc(pricingCategoriesRef.sortOrder), asc(pricingCategoriesRef.name))
+      : Promise.resolve([]),
   ])
 
   const tiersByUnitPriceId = new Map<string, typeof tiers>()
@@ -934,6 +975,7 @@ export async function resolveSessionPricingSnapshot(
     catalog: catalog satisfies SessionPricingCatalog,
     options: options satisfies SessionPricingOption[],
     rules: rules satisfies SessionPricingRule[],
+    pricingCategories: pricingCategories satisfies SessionPricingCategory[],
     unitPrices: unitPrices.map((row) => {
       const override = departureOverrideByUnitId.get(row.unitId)
       return {

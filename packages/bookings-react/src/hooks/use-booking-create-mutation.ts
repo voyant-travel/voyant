@@ -64,6 +64,7 @@ export interface BookingCreateItemLineInput {
   clientLineKey?: string | null
   optionId?: string | null
   optionUnitId: string
+  pricingCategoryId?: string | null
   quantity: number
   title?: string | null
   description?: string | null

@@ -1296,6 +1296,8 @@ export const bookingsUiRo = {
       billingEmailInvalid: "Emailul persoanei de facturare este invalid",
       travelerRequired: "Adauga cel putin un calator",
       firstAndLastNameRequired: "Prenumele si numele sunt obligatorii",
+      roomCapacityExceeded:
+        "{room} are capacitate pentru {capacity} calatori, dar sunt asignati {assigned}.",
       selectSharedRoomGroup: "Selecteaza un partaj la care sa te alaturi",
       confirmFailedPrefix: "Rezervarea a fost creata, dar confirmarea a esuat: {message}",
       confirmFailed: "Rezervarea a fost creata, dar confirmarea a esuat",

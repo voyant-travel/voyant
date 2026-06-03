@@ -1,8 +1,10 @@
 import { useQueries } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import { useLocale } from "@voyantjs/admin"
 import { ProductActionLedgerCard } from "@voyantjs/products-ui/components/product-action-ledger-card"
 import { ProductOptionsSection } from "@voyantjs/products-ui/components/product-options-section"
 import { ProductTranslationsCard } from "@voyantjs/products-ui/components/product-translations-card"
+import { ProductsUiMessagesProvider } from "@voyantjs/products-ui/i18n"
 import { Button } from "@voyantjs/ui/components"
 import { useMemo } from "react"
 import { OptionResourceTemplatesPanel } from "@/components/voyant/availability/option-resource-templates-panel"
@@ -35,6 +37,7 @@ export function ProductDetailPage({ id }: { id: string }) {
   const messages = useAdminMessages()
   const productMessages = messages.products.core
   const navigate = useNavigate()
+  const { resolvedLocale } = useLocale()
 
   const data = useProductDetailData(id)
   const dialogs = useProductDetailDialogs()
@@ -83,6 +86,7 @@ export function ProductDetailPage({ id }: { id: string }) {
     <div className="flex flex-col gap-6 p-6">
       <ProductDetailHeader
         product={product}
+        isDuplicating={mutations.duplicateProduct.isPending}
         isDeleting={mutations.deleteProduct.isPending}
         onEdit={dialogs.edit.openNow}
         onAddBooking={() =>
@@ -92,6 +96,13 @@ export function ProductDetailPage({ id }: { id: string }) {
             search: { productId: id },
           })
         }
+        onDuplicate={() => {
+          mutations.duplicateProduct.mutate(undefined, {
+            onSuccess: (result) => {
+              void navigate({ to: "/products/$id", params: { id: result.data.id } })
+            },
+          })
+        }}
         onDelete={() => {
           if (confirm(productMessages.deleteConfirm)) {
             mutations.deleteProduct.mutate(undefined, {
@@ -152,19 +163,21 @@ export function ProductDetailPage({ id }: { id: string }) {
 
           <ProductDetailItinerarySection productId={id} />
 
-          <ProductOptionsSection
-            productId={id}
-            renderOptionDetails={(option) => (
-              <div className="flex flex-col gap-4">
-                <PricingPanel
-                  productId={id}
-                  optionId={option.id}
-                  productCurrency={product.sellCurrency}
-                />
-                <OptionResourceTemplatesPanel productId={id} optionId={option.id} />
-              </div>
-            )}
-          />
+          <ProductsUiMessagesProvider locale={resolvedLocale}>
+            <ProductOptionsSection
+              productId={id}
+              renderOptionDetails={(option) => (
+                <div className="flex flex-col gap-4">
+                  <PricingPanel
+                    productId={id}
+                    optionId={option.id}
+                    productCurrency={product.sellCurrency}
+                  />
+                  <OptionResourceTemplatesPanel productId={id} optionId={option.id} />
+                </div>
+              )}
+            />
+          </ProductsUiMessagesProvider>
 
           <ProductExtrasSection productId={id} />
 

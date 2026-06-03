@@ -197,12 +197,10 @@ export function OptionUnitsStepperSection({
     onUnitsChange?.(units)
   }, [onUnitsChange, units])
 
-  // Group the unit rows by option — operators choose how many of each
-  // *option* to book, not how many of each age-banded unit. The age
-  // categorization (Adult / Child / Senior / Infant) is derived from
-  // each traveler's date of birth and resolved on submit, so we route
-  // the per-option quantity through the option's "primary" unit
-  // (preferring `ADULT` by code, otherwise the first unit) here.
+  // Person-priced options are grouped by option: operators choose pax
+  // count, then traveler rows split Adult / Child / Infant. Inventory
+  // options are different: rooms and vehicles are physical containers,
+  // so each room/vehicle unit must be selectable independently.
   const optionRows = React.useMemo(() => {
     const groups = new Map<
       string,
@@ -220,21 +218,35 @@ export function OptionUnitsStepperSection({
         groups.set(key, { primary: unit, allUnits: [unit] })
       }
     }
-    return Array.from(groups.entries()).map(([optionKey, group]) => {
+    return Array.from(groups.entries()).flatMap(([optionKey, group]) => {
       const optionName =
         productOptions.find((option) => option.id === optionKey)?.name ?? group.primary.unitName
+      const inventoryUnits = group.allUnits.filter(isInventoryUnit)
+
+      if (inventoryUnits.length > 0) {
+        return inventoryUnits.map((unit) => ({
+          optionKey: unit.optionUnitId,
+          optionName: unit.unitName,
+          primary: unit,
+          allUnits: [unit],
+          totalRemaining: unit.remaining,
+        }))
+      }
+
       const totalRemaining = group.allUnits.reduce<number | null>((acc, unit) => {
         if (unit.remaining === null) return null
         if (acc === null) return null
         return acc + unit.remaining
       }, 0)
-      return {
-        optionKey,
-        optionName,
-        primary: group.primary,
-        allUnits: group.allUnits,
-        totalRemaining,
-      }
+      return [
+        {
+          optionKey,
+          optionName,
+          primary: group.primary,
+          allUnits: group.allUnits,
+          totalRemaining,
+        },
+      ]
     })
   }, [units, productOptions])
 
@@ -421,6 +433,10 @@ function isAdultUnit(unit: OptionUnitsStepperUnit): boolean {
 
 function isPersonUnit(unit: Pick<OptionUnitsStepperUnit, "unitType">): boolean {
   return unit.unitType === "person"
+}
+
+function isInventoryUnit(unit: Pick<OptionUnitsStepperUnit, "unitType">): boolean {
+  return unit.unitType === "room" || unit.unitType === "vehicle"
 }
 
 function optionUnitToStepperUnit(

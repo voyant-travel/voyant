@@ -20,14 +20,22 @@ import {
   type BookingCreatePaymentScheduleInput,
   type BookingCreateVoucherRedemptionInput,
   type BookingRecord,
+  type PricingPreviewSnapshot,
   useBookingCreateMutation,
   useBookingTaxPreview,
+  usePricingPreview,
   VoyantApiError,
 } from "@voyantjs/bookings-react"
 import { useOrganization, usePerson } from "@voyantjs/crm-react"
 import { type ProductExtraRecord, useProductExtras } from "@voyantjs/extras-react"
 import { useAddresses } from "@voyantjs/identity-react"
-import { getExtraPriceRulesQueryOptions, useVoyantPricingContext } from "@voyantjs/pricing-react"
+import {
+  getExtraPriceRulesQueryOptions,
+  type PricingCategoryRecord,
+  useOptionUnitPriceRules,
+  usePricingCategories,
+  useVoyantPricingContext,
+} from "@voyantjs/pricing-react"
 import { useProduct, useProductMedia } from "@voyantjs/products-react"
 import {
   Button,
@@ -51,6 +59,7 @@ import {
 } from "../i18n/provider.js"
 import {
   getBookableDepartureSlots,
+  getOverCapacityInventoryAssignments,
   getSelectedSharedRoomUnitId,
   getTravelerAssignableStepperUnits,
   isRealBookingEmail,
@@ -86,6 +95,7 @@ import {
   type RoomUnitOption,
   type TravelerEntry,
   type TravelerListValue,
+  type TravelerPricingCategoryOption,
   TravelersSection,
 } from "./travelers-section.js"
 import {
@@ -210,10 +220,118 @@ function sameRoomUnits(left: OptionUnitsStepperUnit[], right: OptionUnitsStepper
       unit.optionId === other.optionId &&
       unit.optionUnitId === other.optionUnitId &&
       unit.unitName === other.unitName &&
+      unit.unitCode === other.unitCode &&
+      unit.unitType === other.unitType &&
+      unit.minAge === other.minAge &&
+      unit.maxAge === other.maxAge &&
       unit.occupancyMax === other.occupancyMax &&
       unit.remaining === other.remaining
     )
   })
+}
+
+function inferTravelerPricingCategoryId(
+  traveler: TravelerEntry,
+  categories: ReadonlyArray<TravelerPricingCategoryOption>,
+): string | null {
+  if (traveler.pricingCategoryId) return traveler.pricingCategoryId
+  const pool = traveler.inventoryUnitId
+    ? categories.filter((category) => category.unitIds.includes(traveler.inventoryUnitId ?? ""))
+    : categories
+  if (pool.length === 0) return null
+  const roleType = traveler.role === "child" || traveler.role === "infant" ? traveler.role : "adult"
+  return (
+    pool.find((category) => category.categoryType === roleType)?.categoryId ??
+    pool[0]?.categoryId ??
+    null
+  )
+}
+
+function toStepperUnitType(
+  value: string | null | undefined,
+): OptionUnitsStepperUnit["unitType"] | null {
+  if (
+    value === "person" ||
+    value === "group" ||
+    value === "room" ||
+    value === "vehicle" ||
+    value === "service" ||
+    value === "other"
+  ) {
+    return value
+  }
+  return null
+}
+
+function normalizeBookingUnit(unit: OptionUnitsStepperUnit): OptionUnitsStepperUnit {
+  return {
+    ...unit,
+    unitType: unit.unitType ?? (unit.occupancyMax != null ? "room" : null),
+  }
+}
+
+function isBookingInventoryUnit(
+  unit: Pick<OptionUnitsStepperUnit, "unitType" | "occupancyMax">,
+): boolean {
+  return unit.unitType === "room" || unit.unitType === "vehicle" || unit.occupancyMax != null
+}
+
+function pricingSnapshotRoomUnits(
+  snapshot: PricingPreviewSnapshot | null | undefined,
+): OptionUnitsStepperUnit[] {
+  if (!snapshot) return []
+  const unitsById = new Map<string, OptionUnitsStepperUnit>()
+  for (const unitPrice of snapshot.unitPrices) {
+    if (unitPrice.unitType !== "room" && unitPrice.unitType !== "vehicle") continue
+    if (unitsById.has(unitPrice.unitId)) continue
+    unitsById.set(unitPrice.unitId, {
+      optionId: unitPrice.optionId,
+      optionUnitId: unitPrice.unitId,
+      unitName: unitPrice.unitName ?? unitPrice.unitId,
+      unitCode: null,
+      minAge: null,
+      maxAge: null,
+      unitType: toStepperUnitType(unitPrice.unitType) ?? "room",
+      occupancyMax: unitPrice.occupancyMax,
+      initial: null,
+      reserved: 0,
+      remaining: null,
+    })
+  }
+  return Array.from(unitsById.values())
+}
+
+function mergePricingRoomMetadata(
+  units: readonly OptionUnitsStepperUnit[],
+  pricingUnits: readonly OptionUnitsStepperUnit[],
+): OptionUnitsStepperUnit[] {
+  if (pricingUnits.length === 0) return units.map(normalizeBookingUnit)
+  const pricingUnitById = new Map(pricingUnits.map((unit) => [unit.optionUnitId, unit]))
+  const seen = new Set<string>()
+  const merged = units.map((unit) => {
+    seen.add(unit.optionUnitId)
+    const pricingUnit = pricingUnitById.get(unit.optionUnitId)
+    if (!pricingUnit) return normalizeBookingUnit(unit)
+    return normalizeBookingUnit({
+      ...pricingUnit,
+      ...unit,
+      optionId: unit.optionId ?? pricingUnit.optionId,
+      unitName: unit.unitName || pricingUnit.unitName,
+      unitType: unit.unitType ?? pricingUnit.unitType,
+      occupancyMax: unit.occupancyMax ?? pricingUnit.occupancyMax,
+    })
+  })
+  for (const pricingUnit of pricingUnits) {
+    if (!seen.has(pricingUnit.optionUnitId)) merged.push(pricingUnit)
+  }
+  return merged
+}
+
+type PricingCategoryLike = Pick<
+  PricingCategoryRecord,
+  "id" | "name" | "code" | "minAge" | "maxAge" | "sortOrder"
+> & {
+  categoryType: string
 }
 
 interface PayloadResolverMismatch {
@@ -544,9 +662,34 @@ export function BookingCreateForm({
     slotId: slotId ?? undefined,
     enabled: enabled && Boolean(slotId),
   })
+  const pricingPreview = usePricingPreview({
+    productId: product.productId,
+    optionId: product.optionId,
+    enabled: enabled && Boolean(product.productId),
+  })
+  const pricingCategoriesQuery = usePricingCategories({
+    active: true,
+    limit: 200,
+    enabled: enabled && Boolean(product.productId),
+  })
+  const optionUnitPriceRulesQuery = useOptionUnitPriceRules({
+    optionId: product.optionId ?? selectedSlot?.optionId ?? undefined,
+    active: true,
+    limit: 200,
+    enabled: enabled && Boolean(product.productId),
+  })
   const handleRoomUnitsChange = React.useCallback((units: OptionUnitsStepperUnit[]) => {
     setRoomUnits((prev) => (sameRoomUnits(prev, units) ? prev : units))
   }, [])
+  const pricingRoomUnits = React.useMemo(
+    () => pricingSnapshotRoomUnits(pricingPreview.data?.data),
+    [pricingPreview.data],
+  )
+  const hasRoomPricingMatrix = pricingRoomUnits.length > 0
+  const bookingUnits = React.useMemo(
+    () => mergePricingRoomMetadata(roomUnits, pricingRoomUnits),
+    [roomUnits, pricingRoomUnits],
+  )
   // Room choices presented to the traveler row are inventory options
   // (e.g. "Standard double", "Junior suite upgrade"). The age-band
   // lives separately on the traveler as a pricing unit.
@@ -560,64 +703,25 @@ export function BookingCreateForm({
       occupancyMax: number | null
     }
     const sourceUnits: UnitLike[] =
-      roomUnits.length > 0 ? roomUnits : (slotUnitAvailability.data?.data ?? [])
-    const quantityByOption = new Map<string, number>()
-    for (const unit of sourceUnits) {
-      const key = unit.optionId ?? unit.optionUnitId
-      quantityByOption.set(
-        key,
-        (quantityByOption.get(key) ?? 0) + (rooms.quantities[unit.optionUnitId] ?? 0),
-      )
-    }
-    const units = sourceUnits.filter(
-      (unit) => unit.unitType === "room" || unit.unitType === "vehicle",
-    )
+      bookingUnits.length > 0 ? bookingUnits : (slotUnitAvailability.data?.data ?? [])
+    const units = sourceUnits.filter(isBookingInventoryUnit)
     if (units.length === 0) return []
-    const optionGroups = new Map<
-      string,
-      {
-        primaryUnitId: string
-        optionName: string
-        units: UnitLike[]
-      }
-    >()
-    for (const unit of units) {
-      const key = unit.optionId ?? unit.optionUnitId
-      const existing = optionGroups.get(key)
-      if (existing) {
-        existing.units.push(unit)
-      } else {
-        optionGroups.set(key, {
-          primaryUnitId: unit.optionUnitId,
-          // Strip the trailing " - Adult" / " - Child" suffix the
-          // upstream stepper appends when an option has multiple units.
-          optionName: stripUnitSuffix(unit.unitName),
-          units: [unit],
-        })
-      }
-    }
-    return Array.from(optionGroups.values())
-      .filter((group) => {
-        const optionKey = group.units[0]?.optionId ?? group.primaryUnitId
-        const totalQty = quantityByOption.get(optionKey) ?? 0
-        return totalQty > 0
-      })
-      .map((group) => {
-        const optionKey = group.units[0]?.optionId ?? group.primaryUnitId
-        const totalQty = quantityByOption.get(optionKey) ?? 0
-        const occupancyMax = Math.max(1, ...group.units.map((u) => u.occupancyMax ?? 1))
+    return units
+      .filter((unit) => (rooms.quantities[unit.optionUnitId] ?? 0) > 0)
+      .map((unit) => {
+        const totalQty = rooms.quantities[unit.optionUnitId] ?? 0
+        const occupancyMax = Math.max(1, unit.occupancyMax ?? 1)
         const seats = totalQty * occupancyMax
-        const optionUnitIds = new Set(group.units.map((u) => u.optionUnitId))
         const assigned = travelers.travelers.filter(
-          (traveler) => traveler.inventoryUnitId && optionUnitIds.has(traveler.inventoryUnitId),
+          (traveler) => traveler.inventoryUnitId === unit.optionUnitId,
         ).length
         return {
-          unitId: group.primaryUnitId,
-          unitName: group.optionName,
+          unitId: unit.optionUnitId,
+          unitName: stripOptionPrefix(unit.unitName),
           remainingCapacity: Math.max(0, seats - assigned),
         }
       })
-  }, [roomUnits, slotUnitAvailability.data, rooms.quantities, travelers.travelers])
+  }, [bookingUnits, slotUnitAvailability.data, rooms.quantities, travelers.travelers])
 
   // Per-option breakdown of all configured units, with the
   // attributes the TravelersSection's dynamic category buttons need
@@ -625,12 +729,13 @@ export function BookingCreateForm({
   // `roomUnitOptions` but exposes every unit instead of collapsing
   // to one primary.
   const roomGroups: RoomGroup[] = React.useMemo(() => {
-    if (roomUnits.length === 0) return []
+    if (bookingUnits.length === 0) return []
     const groups = new Map<string, RoomGroup>()
-    for (const u of roomUnits) {
+    for (const rawUnit of bookingUnits) {
+      const u = normalizeBookingUnit(rawUnit)
       if (!u.optionId) continue
       const groupKey = u.optionId
-      const isInventory = u.unitType === "room" || u.unitType === "vehicle"
+      const isInventory = isBookingInventoryUnit(u)
       const isAdultCoded = (u.unitCode ?? "").toUpperCase() === "ADULT"
       const unit = {
         unitId: u.optionUnitId,
@@ -665,7 +770,84 @@ export function BookingCreateForm({
       }
     }
     return Array.from(groups.values())
-  }, [roomUnits])
+  }, [bookingUnits])
+
+  const travelerPricingCategories: TravelerPricingCategoryOption[] = React.useMemo(() => {
+    const snapshot = pricingPreview.data?.data
+    const categoriesById = new Map<string, PricingCategoryLike>()
+    const bookingUnitIds = new Set(bookingUnits.map((unit) => unit.optionUnitId))
+    for (const category of pricingCategoriesQuery.data?.data ?? []) {
+      categoriesById.set(category.id, category)
+    }
+    for (const category of snapshot?.pricingCategories ?? []) {
+      categoriesById.set(category.id, category)
+    }
+    const unitIdsByCategoryId = new Map<string, Set<string>>()
+    for (const unitPrice of snapshot?.unitPrices ?? []) {
+      if (!unitPrice.pricingCategoryId) continue
+      if (bookingUnitIds.size > 0 && !bookingUnitIds.has(unitPrice.unitId)) continue
+      const existing = unitIdsByCategoryId.get(unitPrice.pricingCategoryId) ?? new Set<string>()
+      existing.add(unitPrice.unitId)
+      unitIdsByCategoryId.set(unitPrice.pricingCategoryId, existing)
+    }
+    for (const unitPriceRule of optionUnitPriceRulesQuery.data?.data ?? []) {
+      if (!unitPriceRule.pricingCategoryId) continue
+      if (bookingUnitIds.size > 0 && !bookingUnitIds.has(unitPriceRule.unitId)) continue
+      const existing = unitIdsByCategoryId.get(unitPriceRule.pricingCategoryId) ?? new Set<string>()
+      existing.add(unitPriceRule.unitId)
+      unitIdsByCategoryId.set(unitPriceRule.pricingCategoryId, existing)
+    }
+
+    return Array.from(unitIdsByCategoryId.entries())
+      .flatMap(([categoryId, unitIds]) => {
+        const category = categoriesById.get(categoryId)
+        if (!category) return []
+        return [
+          {
+            categoryId,
+            name: category.name,
+            code: category.code,
+            categoryType: category.categoryType,
+            minAge: category.minAge,
+            maxAge: category.maxAge,
+            unitIds: Array.from(unitIds),
+          },
+        ]
+      })
+      .sort((left, right) => {
+        const leftSort = categoriesById.get(left.categoryId)?.sortOrder ?? 0
+        const rightSort = categoriesById.get(right.categoryId)?.sortOrder ?? 0
+        return leftSort - rightSort || left.name.localeCompare(right.name)
+      })
+  }, [
+    pricingPreview.data,
+    pricingCategoriesQuery.data?.data,
+    optionUnitPriceRulesQuery.data?.data,
+    bookingUnits,
+  ])
+
+  const travelerPricingCategoryLabels = React.useMemo(
+    () =>
+      Object.fromEntries(
+        travelerPricingCategories.map((category) => [category.categoryId, category.name]),
+      ),
+    [travelerPricingCategories],
+  )
+
+  const travelerPricingCategoryQuantities = React.useMemo(() => {
+    const quantities: Record<string, Record<string, number>> = {}
+    if (travelerPricingCategories.length === 0) return quantities
+    for (const traveler of travelers.travelers) {
+      if (!traveler.inventoryUnitId) continue
+      const pricingCategoryId = inferTravelerPricingCategoryId(traveler, travelerPricingCategories)
+      if (!pricingCategoryId) continue
+      const unitCategoryQuantities = quantities[traveler.inventoryUnitId] ?? {}
+      unitCategoryQuantities[pricingCategoryId] =
+        (unitCategoryQuantities[pricingCategoryId] ?? 0) + 1
+      quantities[traveler.inventoryUnitId] = unitCategoryQuantities
+    }
+    return quantities
+  }, [travelers.travelers, travelerPricingCategories])
 
   // Apply the same draft resolver we use at submit so live pricing
   // and persisted item lines cannot drift. Person-priced options
@@ -676,9 +858,9 @@ export function BookingCreateForm({
       resolveBookingDraft({
         quantities: rooms.quantities,
         travelers: travelers.travelers,
-        units: roomUnits as PricingAssignmentUnit[],
+        units: bookingUnits as PricingAssignmentUnit[],
       }),
-    [rooms.quantities, travelers.travelers, roomUnits],
+    [rooms.quantities, travelers.travelers, bookingUnits],
   )
   const displayQuantities = displayDraft.quantities
   const displayExtraLines = React.useMemo(
@@ -708,8 +890,8 @@ export function BookingCreateForm({
   const pricingCurrency = productSellCurrency ?? pricing?.currency ?? currency
   const pricingTotalAmountCents = pricing?.confirmedAmountCents ?? undefined
   const roomUnitLabels = React.useMemo(
-    () => Object.fromEntries(roomUnits.map((unit) => [unit.optionUnitId, unit.unitName])),
-    [roomUnits],
+    () => Object.fromEntries(bookingUnits.map((unit) => [unit.optionUnitId, unit.unitName])),
+    [bookingUnits],
   )
 
   const createBookingMutation = useBookingCreateMutation()
@@ -815,6 +997,22 @@ export function BookingCreateForm({
       return
     }
 
+    const overCapacity = getOverCapacityInventoryAssignments(
+      bookingUnits,
+      rooms.quantities,
+      travelers.travelers,
+    )[0]
+    if (overCapacity) {
+      setError(
+        formatMessage(messages.bookingCreateDialog.validation.roomCapacityExceeded, {
+          room: overCapacity.unitName,
+          assigned: overCapacity.assignedTravelers,
+          capacity: overCapacity.capacity,
+        }),
+      )
+      return
+    }
+
     try {
       if (sharedRoom.enabled && sharedRoom.mode === "join" && !sharedRoom.groupId) {
         setError(messages.bookingCreateDialog.validation.selectSharedRoomGroup)
@@ -843,8 +1041,8 @@ export function BookingCreateForm({
       // room quantities. Server gets `clientLineKey` + `travelerKeys`
       // on each line so it can write `booking_item_travelers` rows.
       const submitUnits =
-        roomUnits.length > 0
-          ? roomUnits
+        bookingUnits.length > 0
+          ? bookingUnits
           : getTravelerAssignableStepperUnits(
               (slotUnitAvailability.data?.data ?? []).map((unit) => ({
                 ...unit,
@@ -866,6 +1064,28 @@ export function BookingCreateForm({
             : [],
         ]),
       )
+      const travelerIndexesByUnitAndCategoryId: Record<string, Record<string, number[]>> = {}
+      const travelerKeysByUnitAndCategoryId: Record<string, Record<string, string[]>> = {}
+      for (const [unitId, indexes] of Object.entries(redistributed.travelerIndexesByUnitId)) {
+        for (const index of indexes) {
+          const traveler = redistributed.travelers[index]
+          if (!traveler) continue
+          const pricingCategoryId = inferTravelerPricingCategoryId(
+            traveler,
+            travelerPricingCategories,
+          )
+          if (!pricingCategoryId) continue
+          travelerIndexesByUnitAndCategoryId[unitId] ??= {}
+          travelerIndexesByUnitAndCategoryId[unitId][pricingCategoryId] ??= []
+          travelerIndexesByUnitAndCategoryId[unitId][pricingCategoryId].push(index)
+          const key = traveler.clientTravelerKey
+          if (key) {
+            travelerKeysByUnitAndCategoryId[unitId] ??= {}
+            travelerKeysByUnitAndCategoryId[unitId][pricingCategoryId] ??= []
+            travelerKeysByUnitAndCategoryId[unitId][pricingCategoryId].push(key)
+          }
+        }
+      }
       const travelerKeys = redistributed.travelers
         .map((traveler) => traveler.clientTravelerKey)
         .filter((key): key is string => Boolean(key))
@@ -876,6 +1096,8 @@ export function BookingCreateForm({
         pricing,
         redistributed.travelerIndexesByUnitId,
         travelerKeysByUnitId,
+        travelerIndexesByUnitAndCategoryId,
+        travelerKeysByUnitAndCategoryId,
       )
       const resolvedExtraLines = resolveBookingExtraLines({
         extraLines,
@@ -1172,6 +1394,11 @@ export function BookingCreateForm({
               }}
               roomUnits={roomUnitOptions.length > 0 ? roomUnitOptions : undefined}
               roomGroups={roomGroups.length > 0 ? roomGroups : undefined}
+              pricingCategories={
+                hasRoomPricingMatrix || roomUnitOptions.length > 0
+                  ? travelerPricingCategories
+                  : undefined
+              }
               billingPersonId={(person.billTo ?? "person") === "person" ? person.personId : null}
               labels={{
                 heading: messages.bookingCreateDialog.labels.travelerHeading,
@@ -1307,6 +1534,8 @@ export function BookingCreateForm({
           })()}
           unitQuantities={displayQuantities}
           unitLabels={roomUnitLabels}
+          pricingCategoryQuantities={travelerPricingCategoryQuantities}
+          pricingCategoryLabels={travelerPricingCategoryLabels}
           extraLines={displayExtraLines}
           travelers={travelers.travelers}
           messages={messages}
@@ -1544,6 +1773,8 @@ function BookingPreviewCard({
   slotLabel,
   unitQuantities,
   unitLabels,
+  pricingCategoryQuantities,
+  pricingCategoryLabels,
   extraLines,
   travelers,
   messages,
@@ -1555,6 +1786,8 @@ function BookingPreviewCard({
   slotLabel: string | null
   unitQuantities: Record<string, number>
   unitLabels: Record<string, string>
+  pricingCategoryQuantities: Record<string, Record<string, number>>
+  pricingCategoryLabels: Record<string, string>
   extraLines: BookingCreateExtraLineInput[]
   travelers: TravelerEntry[]
   messages: ReturnType<typeof useBookingsUiMessagesOrDefault>
@@ -1708,6 +1941,8 @@ function BookingPreviewCard({
               optionId={optionId}
               unitQuantities={unitQuantities}
               unitLabels={unitLabels}
+              pricingCategoryQuantities={pricingCategoryQuantities}
+              pricingCategoryLabels={pricingCategoryLabels}
               labels={{
                 heading: labels.breakdownHeading,
                 total: labels.breakdownTotal,

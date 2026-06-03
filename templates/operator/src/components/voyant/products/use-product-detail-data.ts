@@ -36,6 +36,7 @@ export interface UseProductDetailDataResult {
   mutations: {
     addChannelMapping: ReturnType<typeof useMutation<unknown, Error, string>>
     removeChannelMapping: ReturnType<typeof useMutation<unknown, Error, string>>
+    duplicateProduct: ReturnType<typeof useMutation<{ data: { id: string } }, Error, void>>
     deleteProduct: ReturnType<typeof useMutation<unknown, Error, void>>
     deleteSlot: ReturnType<typeof useMutation<unknown, Error, string>>
     deleteRule: ReturnType<typeof useMutation<unknown, Error, string>>
@@ -88,6 +89,14 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["products"] })
       void queryClient.invalidateQueries({ queryKey: productActionLedgerQueryKey })
+    },
+  })
+
+  const duplicateProduct = useMutation({
+    mutationFn: () =>
+      api.post<{ data: { id: string } }>(`/v1/admin/products/${productId}/duplicate`),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: productsQueryKeys.products() })
     },
   })
 
@@ -207,6 +216,7 @@ export function useProductDetailData(productId: string): UseProductDetailDataRes
     mutations: {
       addChannelMapping,
       removeChannelMapping,
+      duplicateProduct,
       deleteProduct,
       deleteSlot,
       deleteRule,
