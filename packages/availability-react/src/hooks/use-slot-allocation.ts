@@ -166,9 +166,21 @@ export function useResourceTemplateMutation(productId: string) {
   })
 
   const remove = useMutation({
-    mutationFn: async ({ optionId, kind }: { optionId: string; kind: string }) =>
+    // refId targets a single template when an option holds several of the same
+    // kind (e.g. one "room" per option_unit); omit it for ref-less templates.
+    mutationFn: async ({
+      optionId,
+      kind,
+      refId,
+    }: {
+      optionId: string
+      kind: string
+      refId?: string | null
+    }) =>
       fetchWithValidation(
-        `/v1/admin/availability/products/${productId}/options/${optionId}/allocation/resource-templates/${kind}`,
+        `/v1/admin/availability/products/${productId}/options/${optionId}/allocation/resource-templates/${kind}${
+          refId ? `?refId=${encodeURIComponent(refId)}` : ""
+        }`,
         singleEnvelope(z.object({ productOptionId: z.string(), kind: z.string() })),
         { baseUrl, fetcher },
         { method: "DELETE" },

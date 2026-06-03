@@ -20,6 +20,7 @@ import {
   ExtraPriceRulesPanel,
   formatProductMoney,
   getCategoryCondition,
+  isTravelerCategory,
   TravelerCategoryDialog,
 } from "./product-options-pricing.js"
 import {
@@ -160,7 +161,8 @@ export function OptionPricingGrid({
     .filter(
       (category) =>
         category.active &&
-        (((category.productId == null || category.productId === productId) &&
+        ((isTravelerCategory(category) &&
+          (category.productId == null || category.productId === productId) &&
           (category.optionId == null || category.optionId === optionId)) ||
           referencedCategoryIds.has(category.id)),
     )
