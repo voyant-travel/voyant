@@ -27,7 +27,7 @@ import {
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 import { useProductDetailMessages } from "./host.js"
-import { ActionMenu, EmptyState, Section } from "./product-detail-sections"
+import { ActionMenu, EmptyState, Section } from "./product-detail-sections.js"
 
 const selectionTypes = ["optional", "required", "default_selected", "unavailable"] as const
 const pricingModes = [

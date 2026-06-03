@@ -1,7 +1,7 @@
 import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTitle } from "@voyantjs/ui/components"
 import { useProductDetailMessages } from "./host.js"
 
-import { type AvailabilityRule, ScheduleForm } from "./product-schedule-form"
+import { type AvailabilityRule, ScheduleForm } from "./product-schedule-form.js"
 
 export type { AvailabilityRule }
 

@@ -5,12 +5,12 @@ import { useMemo } from "react"
 import { ProductsUiMessagesProvider } from "../../i18n/index.js"
 import { ProductOptionsSection } from "../product-options-section.js"
 import { useProductDetailHost, useProductDetailMessages, useProductLocale } from "./host.js"
-import { ProductActivitySection } from "./product-activity-section"
-import { DepartureDialog } from "./product-departure-dialog"
-import { DeparturePricingOverrideDialog } from "./product-departure-pricing-override-dialog"
-import { ProductDialog } from "./product-detail-dialog"
-import { ProductDetailHeader } from "./product-detail-header"
-import { ProductDetailItinerarySection } from "./product-detail-itinerary-section"
+import { ProductActivitySection } from "./product-activity-section.js"
+import { DepartureDialog } from "./product-departure-dialog.js"
+import { DeparturePricingOverrideDialog } from "./product-departure-pricing-override-dialog.js"
+import { ProductDialog } from "./product-detail-dialog.js"
+import { ProductDetailHeader } from "./product-detail-header.js"
+import { ProductDetailItinerarySection } from "./product-detail-itinerary-section.js"
 import {
   ProductBrochureSection,
   ProductChannelsSection,
@@ -19,16 +19,16 @@ import {
   ProductMediaSection,
   ProductOrganizeSection,
   ProductSchedulesSection,
-} from "./product-detail-sections"
-import { ProductDetailSkeleton } from "./product-detail-skeleton"
-import { ProductExtrasSection } from "./product-extras-section"
-import { ProductMarketRulesSection } from "./product-market-rules-section"
-import { PricingPanel } from "./product-options-pricing"
-import { getDeparturePriceOverridesQueryOptions } from "./product-options-shared"
-import { ProductPaymentPolicySection } from "./product-payment-policy-section"
-import { ScheduleDialog } from "./product-schedule-dialog"
-import { useProductDetailData } from "./use-product-detail-data"
-import { useProductDetailDialogs } from "./use-product-detail-dialogs"
+} from "./product-detail-sections.js"
+import { ProductDetailSkeleton } from "./product-detail-skeleton.js"
+import { ProductExtrasSection } from "./product-extras-section.js"
+import { ProductMarketRulesSection } from "./product-market-rules-section.js"
+import { PricingPanel } from "./product-options-pricing.js"
+import { getDeparturePriceOverridesQueryOptions } from "./product-options-shared.js"
+import { ProductPaymentPolicySection } from "./product-payment-policy-section.js"
+import { ScheduleDialog } from "./product-schedule-dialog.js"
+import { useProductDetailData } from "./use-product-detail-data.js"
+import { useProductDetailDialogs } from "./use-product-detail-dialogs.js"
 
 export function ProductDetailPage({ id }: { id: string }) {
   const messages = useProductDetailMessages()

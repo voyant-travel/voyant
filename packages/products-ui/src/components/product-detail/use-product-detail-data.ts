@@ -15,7 +15,7 @@ import {
   getProductRulesQueryOptions,
   getProductSlotsQueryOptions,
   type ProductMediaItem,
-} from "./product-detail-shared"
+} from "./product-detail-shared.js"
 
 export interface UseProductDetailDataResult {
   product: ReturnType<typeof useProduct>["data"]

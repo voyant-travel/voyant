@@ -1,7 +1,7 @@
 import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTitle } from "@voyantjs/ui/components"
 import { useProductDetailMessages } from "./host.js"
 
-import { DepartureForm, type DepartureSlot } from "./product-departure-form"
+import { DepartureForm, type DepartureSlot } from "./product-departure-form.js"
 
 export type { DepartureSlot }
 

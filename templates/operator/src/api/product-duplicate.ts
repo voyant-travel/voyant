@@ -25,6 +25,7 @@ import {
   productCategoryProducts,
   productDayServices,
   productDays,
+  productDayTranslations,
   productDeliveryFormats,
   productDestinations,
   productFaqs,
@@ -374,6 +375,18 @@ export async function duplicateProductAsDraft(db: PostgresJsDatabase, productId:
           if (!targetDayId) continue
           await tx
             .insert(productDayServices)
+            .values({ ...withoutSystemColumns(row), dayId: targetDayId })
+        }
+
+        const dayTranslationRows = await tx
+          .select()
+          .from(productDayTranslations)
+          .where(inArray(productDayTranslations.dayId, sourceDayIds))
+        for (const row of dayTranslationRows) {
+          const targetDayId = dayIdMap.get(row.dayId)
+          if (!targetDayId) continue
+          await tx
+            .insert(productDayTranslations)
             .values({ ...withoutSystemColumns(row), dayId: targetDayId })
         }
       }

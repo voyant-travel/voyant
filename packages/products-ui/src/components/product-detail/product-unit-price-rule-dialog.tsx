@@ -1,8 +1,8 @@
 import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTitle } from "@voyantjs/ui/components"
 import { useProductDetailMessages } from "./host.js"
 
-import type { OptionUnitData } from "./product-unit-form"
-import { type OptionUnitPriceRuleData, UnitPriceRuleForm } from "./product-unit-price-rule-form"
+import type { OptionUnitData } from "./product-unit-form.js"
+import { type OptionUnitPriceRuleData, UnitPriceRuleForm } from "./product-unit-price-rule-form.js"
 
 export type { OptionUnitPriceRuleData }
 

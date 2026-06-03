@@ -1,7 +1,7 @@
 import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTitle } from "@voyantjs/ui/components"
 import { useProductDetailMessages } from "./host.js"
 
-import { type DayServiceData, ServiceForm } from "./product-service-form"
+import { type DayServiceData, ServiceForm } from "./product-service-form.js"
 
 export type { DayServiceData }
 

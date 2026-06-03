@@ -32,7 +32,7 @@ import {
   useProductDetailMessages,
   useProductLocale,
 } from "./host.js"
-import type { DepartureSlot } from "./product-departure-dialog"
+import type { DepartureSlot } from "./product-departure-dialog.js"
 import {
   type AvailabilityRule,
   type ChannelInfo,
@@ -47,8 +47,8 @@ import {
   type ProductMediaItem,
   type ProductRecord,
   slotStatusVariant,
-} from "./product-detail-shared"
-import { ProductMediaGallery } from "./product-media-gallery"
+} from "./product-detail-shared.js"
+import { ProductMediaGallery } from "./product-media-gallery.js"
 
 export function Section({
   title,

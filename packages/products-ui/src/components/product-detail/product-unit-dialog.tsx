@@ -1,7 +1,7 @@
 import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTitle } from "@voyantjs/ui/components"
 import { useProductDetailMessages } from "./host.js"
 
-import { type OptionUnitData, UnitForm } from "./product-unit-form"
+import { type OptionUnitData, UnitForm } from "./product-unit-form.js"
 
 export type { OptionUnitData }
 

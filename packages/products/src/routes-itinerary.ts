@@ -347,7 +347,12 @@ export const productItineraryRoutes = new Hono<Env>()
     const productId = c.req.param("id")
     const dayId = c.req.param("dayId")
     const body = await parseJsonBody(c, validation.insertProductDayTranslationSchema)
-    const row = await productsService.createProductDayTranslation(c.get("db"), dayId, body)
+    const row = await productsService.createProductDayTranslation(
+      c.get("db"),
+      productId,
+      dayId,
+      body,
+    )
 
     if (!row) {
       return c.json({ error: "Day not found" }, 404)

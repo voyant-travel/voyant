@@ -26,7 +26,7 @@ import {
 import { Reorder } from "motion/react"
 import { useEffect, useRef, useState } from "react"
 import { type ProductDetailApi, useProductDetailApi, useProductDetailMessages } from "./host.js"
-import type { ProductMediaItem } from "./product-detail-shared"
+import type { ProductMediaItem } from "./product-detail-shared.js"
 
 interface ProductMediaGalleryProps {
   productId: string

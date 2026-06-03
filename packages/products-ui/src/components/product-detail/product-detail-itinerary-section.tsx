@@ -34,10 +34,10 @@ import { useEffect, useMemo, useState } from "react"
 import { ProductItineraryDialog } from "../product-itinerary-dialog.js"
 import type { ProductMediaUploadHandler } from "../product-media-section.js"
 import { useProductDetailApi, useProductDetailMessages } from "./host.js"
-import { ProductDaySheet } from "./product-day-sheet"
-import { ProductDetailDayRow } from "./product-detail-day-row"
-import { ActionMenu, EmptyState, Section } from "./product-detail-sections"
-import { ServiceDialog } from "./product-service-dialog"
+import { ProductDaySheet } from "./product-day-sheet.js"
+import { ProductDetailDayRow } from "./product-detail-day-row.js"
+import { ActionMenu, EmptyState, Section } from "./product-detail-sections.js"
+import { ServiceDialog } from "./product-service-dialog.js"
 
 /**
  * Storage-only upload handler for the day media tray. The tray does its

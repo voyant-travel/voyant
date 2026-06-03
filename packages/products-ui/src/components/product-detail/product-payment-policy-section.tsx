@@ -13,7 +13,7 @@ import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { useProductDetailMessages } from "./host.js"
-import { Section } from "./product-detail-sections"
+import { Section } from "./product-detail-sections.js"
 
 const DEFAULT_POLICY: PaymentPolicy = {
   deposit: { kind: "percent", percent: 50 },

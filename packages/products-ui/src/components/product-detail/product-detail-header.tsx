@@ -3,9 +3,9 @@ import { CalendarPlus, Copy, Pencil, Trash2 } from "lucide-react"
 import { useEffect } from "react"
 import { useProductDetailHost, useProductDetailMessages } from "./host.js"
 
-import { ActionMenu } from "./product-detail-sections"
-import type { ProductRecord } from "./product-detail-shared"
-import { getProductStatusLabel, statusVariant } from "./product-detail-shared"
+import { ActionMenu } from "./product-detail-sections.js"
+import type { ProductRecord } from "./product-detail-shared.js"
+import { getProductStatusLabel, statusVariant } from "./product-detail-shared.js"
 
 export interface ProductDetailHeaderProps {
   product: ProductRecord

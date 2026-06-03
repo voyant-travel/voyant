@@ -29,7 +29,7 @@ import {
   LanguageCombobox,
   TranslatableField,
   useProductTranslationDrafts,
-} from "./product-translation-popover"
+} from "./product-translation-popover.js"
 import { zodResolver } from "./zod-resolver.js"
 
 const CURRENCY_OPTIONS = Object.values(currencies).map((c) => ({

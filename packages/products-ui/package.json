@@ -110,6 +110,11 @@
         "import": "./dist/i18n/ro.js",
         "default": "./dist/i18n/ro.js"
       },
+      "./components/product-detail": {
+        "types": "./dist/components/product-detail/index.d.ts",
+        "import": "./dist/components/product-detail/index.js",
+        "default": "./dist/components/product-detail/index.js"
+      },
       "./components/*": {
         "types": "./dist/components/*.d.ts",
         "import": "./dist/components/*.js",

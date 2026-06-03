@@ -2,8 +2,8 @@ import { queryOptions } from "@tanstack/react-query"
 import type { ProductRecord } from "@voyantjs/products-react"
 import type { ProductDetailApi, ProductMessagesRoot } from "./host.js"
 
-import type { DepartureSlot } from "./product-departure-dialog"
-import type { AvailabilityRule } from "./product-schedule-dialog"
+import type { DepartureSlot } from "./product-departure-dialog.js"
+import type { AvailabilityRule } from "./product-schedule-dialog.js"
 
 export type { AvailabilityRule, DepartureSlot, ProductRecord }
 

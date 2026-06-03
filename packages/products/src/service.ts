@@ -2216,11 +2216,12 @@ export const productsService = {
 
   async createProductDayTranslation(
     db: PostgresJsDatabase,
+    productId: string,
     dayId: string,
     data: CreateProductDayTranslationInput,
   ) {
     const dayRef = await getDayById(db, dayId)
-    if (!dayRef) {
+    if (!dayRef || dayRef.productId !== productId) {
       return null
     }
 

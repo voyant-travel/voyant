@@ -11,7 +11,7 @@ import {
   actionLedgerStatusVariant,
 } from "../product-action-ledger-card.js"
 import { useProductDetailMessages, useProductLocale } from "./host.js"
-import { Section } from "./product-detail-sections"
+import { Section } from "./product-detail-sections.js"
 
 function formatActionLedgerName(actionName: string) {
   const label = actionName.replace(/^product\./, "").replace(/[._-]/g, " ")

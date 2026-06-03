@@ -3,13 +3,13 @@ import { formatMessage } from "@voyantjs/i18n"
 import { Badge, DropdownMenuItem, DropdownMenuSeparator } from "@voyantjs/ui/components"
 import { ChevronDown, ChevronRight, Image as ImageIcon, Pencil, Plus, Trash2 } from "lucide-react"
 import { useProductDetailApi, useProductDetailMessages } from "./host.js"
-import { ActionMenu } from "./product-detail-sections"
+import { ActionMenu } from "./product-detail-sections.js"
 import {
   type DayService,
   getProductDayMediaQueryOptions,
   getProductDayServicesQueryOptions,
   type ProductDay,
-} from "./product-detail-shared"
+} from "./product-detail-shared.js"
 
 export interface ProductDetailDayRowProps {
   day: ProductDay

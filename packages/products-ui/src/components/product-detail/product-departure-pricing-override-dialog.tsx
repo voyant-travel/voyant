@@ -21,7 +21,7 @@ import {
   getDeparturePriceOverridesQueryOptions,
   getOptionUnitsQueryOptions,
   getPriceCatalogsQueryOptions,
-} from "./product-options-shared"
+} from "./product-options-shared.js"
 
 interface UnitRow {
   unitId: string

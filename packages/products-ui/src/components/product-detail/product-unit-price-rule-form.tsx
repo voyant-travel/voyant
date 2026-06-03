@@ -17,7 +17,7 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { useProductDetailMessages } from "./host.js"
-import type { OptionUnitData } from "./product-unit-form"
+import type { OptionUnitData } from "./product-unit-form.js"
 import { zodResolver } from "./zod-resolver.js"
 
 type UnitPriceMessages = ReturnType<

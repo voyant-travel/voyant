@@ -15,8 +15,8 @@ import { ProductsUiMessagesProvider } from "../../i18n/index.js"
 import { ProductDayMediaTray } from "../product-day-media-tray.js"
 import type { ProductMediaUploadHandler } from "../product-media-section.js"
 import { useProductDetailMessages, useProductLocale } from "./host.js"
-import { DayTranslatableField, useProductDayTranslationDrafts } from "./product-day-translation"
-import { ContentLanguageSwitcher, richTextHasContent } from "./product-translation-popover"
+import { DayTranslatableField, useProductDayTranslationDrafts } from "./product-day-translation.js"
+import { ContentLanguageSwitcher, richTextHasContent } from "./product-translation-popover.js"
 
 export interface ProductDaySheetProps {
   open: boolean

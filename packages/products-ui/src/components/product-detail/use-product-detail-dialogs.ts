@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-import type { AvailabilityRule, DepartureSlot } from "./product-detail-shared"
+import type { AvailabilityRule, DepartureSlot } from "./product-detail-shared.js"
 
 export interface Toggle {
   open: boolean

@@ -133,6 +133,7 @@ function DatePickerFooter({ clearable, hasValue, onClear }: FooterProps) {
       <div className="flex justify-end p-2">
         <Button type="button" variant="ghost" size="sm" onClick={onClear}>
           <XIcon className="h-4 w-4" />
+          {/* i18n-literal-ok shadcn-style primitive default label */}
           Clear
         </Button>
       </div>
@@ -205,7 +206,7 @@ export function DatePicker({
   defaultValue,
   onChange,
   presets = [],
-  placeholder = "Pick a date",
+  placeholder = "Pick a date", // i18n-literal-ok primitive default, overridden by callers
   displayFormat = "PPP",
   className,
   contentClassName,
@@ -284,7 +285,7 @@ export function DateRangePicker({
   defaultValue,
   onChange,
   presets = [],
-  placeholder = "Pick a date range",
+  placeholder = "Pick a date range", // i18n-literal-ok primitive default, overridden by callers
   displayFormat = "LLL d, y",
   className,
   contentClassName,

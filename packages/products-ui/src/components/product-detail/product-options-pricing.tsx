@@ -39,15 +39,21 @@ import { Checkbox } from "@voyantjs/ui/components/checkbox"
 import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useProductDetailMessages } from "./host.js"
-import { type OptionPriceRuleData, OptionPriceRuleDialog } from "./product-option-price-rule-dialog"
+import {
+  type OptionPriceRuleData,
+  OptionPriceRuleDialog,
+} from "./product-option-price-rule-dialog.js"
 import {
   getOptionPriceRulesQueryOptions,
   getOptionUnitPriceRulesQueryOptions,
   getOptionUnitsQueryOptions,
   getPricingCategoriesQueryOptions,
-} from "./product-options-shared"
-import type { OptionUnitData } from "./product-unit-dialog"
-import { type OptionUnitPriceRuleData, UnitPriceRuleDialog } from "./product-unit-price-rule-dialog"
+} from "./product-options-shared.js"
+import type { OptionUnitData } from "./product-unit-dialog.js"
+import {
+  type OptionUnitPriceRuleData,
+  UnitPriceRuleDialog,
+} from "./product-unit-price-rule-dialog.js"
 
 function getRulePricingModeLabel(
   value: OptionPriceRuleData["pricingMode"],

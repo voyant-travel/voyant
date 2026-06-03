@@ -1,7 +1,7 @@
 import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTitle } from "@voyantjs/ui/components"
 import { useProductDetailMessages } from "./host.js"
 
-import { type OptionPriceRuleData, OptionPriceRuleForm } from "./product-option-price-rule-form"
+import { type OptionPriceRuleData, OptionPriceRuleForm } from "./product-option-price-rule-form.js"
 
 export type { OptionPriceRuleData }
 

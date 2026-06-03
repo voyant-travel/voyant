@@ -7,7 +7,7 @@ import { Input, Label } from "@voyantjs/ui/components"
 import { RichTextEditor } from "@voyantjs/ui/components/rich-text-editor"
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { useProductDetailMessages } from "./host.js"
-import { richTextHasContent, TranslationIndicator } from "./product-translation-popover"
+import { richTextHasContent, TranslationIndicator } from "./product-translation-popover.js"
 
 type ProductCoreMessages = ReturnType<typeof useProductDetailMessages>["products"]["core"]
 
