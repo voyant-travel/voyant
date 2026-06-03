@@ -105,6 +105,24 @@ export function getUnitTypeLabel(
   }
 }
 
+// Pricing categories that describe the *unit* dimension (room/vehicle — already
+// the grid's rows) or a standalone add-on (`service`, handled by the extras
+// panel) are not per-traveler price columns. Excluding them stops a product
+// whose data carries such categories — e.g. legacy data migrated with a
+// "Double room" pricing category alongside the real Adult/Child split — from
+// rendering one bogus price column per room next to the traveler columns.
+const NON_TRAVELER_CATEGORY_TYPES = new Set<PricingCategoryRecord["categoryType"]>([
+  "room",
+  "vehicle",
+  "service",
+])
+
+export function isTravelerCategory(category: {
+  categoryType: PricingCategoryRecord["categoryType"]
+}) {
+  return !NON_TRAVELER_CATEGORY_TYPES.has(category.categoryType)
+}
+
 export function getCategoryCondition(metadata: Record<string, unknown> | null | undefined) {
   const condition = metadata?.condition
   return typeof condition === "string" && condition.trim().length > 0 ? condition : null
@@ -440,7 +458,8 @@ function UnitPriceMatrix({
   const categories = (categoriesData?.data ?? []).filter(
     (category) =>
       category.active &&
-      (((category.productId == null || category.productId === productId) &&
+      ((isTravelerCategory(category) &&
+        (category.productId == null || category.productId === productId) &&
         (category.optionId == null || category.optionId === optionId)) ||
         referencedCategoryIds.has(category.id)),
   )

@@ -1,5 +1,5 @@
 import { typeId, typeIdRef } from "@voyantjs/db/lib/typeid-column"
-import { relations } from "drizzle-orm"
+import { relations, sql } from "drizzle-orm"
 import {
   boolean,
   date,
@@ -239,9 +239,15 @@ export const productOptionResourceTemplates = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
+    // Unique per (option, kind, ref) — `COALESCE(ref_id,'')` keeps "one
+    // non-ref template per kind" while allowing multiple unit-keyed room
+    // templates under one option (Single/Double/Triple all kind="room",
+    // distinguished by their option_unit ref). The allocator's option_unit
+    // matching depends on this.
     uniqueIndex("idx_product_option_resource_templates_option_kind").on(
       table.productOptionId,
       table.kind,
+      sql`coalesce(${table.refId}, '')`,
     ),
     index("idx_product_option_resource_templates_kind").on(table.kind, table.createdAt),
   ],

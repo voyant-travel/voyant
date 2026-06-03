@@ -79,18 +79,6 @@ const COMMON_KINDS: ReadonlyArray<{ value: ResourceTemplateKind; defaultPattern:
   { value: "flight_seat", defaultPattern: "Seat {sequence}" },
 ]
 
-// Derive a stable, unique resource `kind` from a room unit so each room type
-// (Single/Double/Triple) generates its own physical resources. The kind is a
-// free-text slug — distinct kinds avoid the (option, kind) unique constraint.
-function roomUnitToKind(unit: { code: string | null; name: string }): string {
-  const slug = (unit.code || unit.name || "room")
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "")
-  return slug || "room"
-}
-
 export function OptionResourceTemplatesPanel({
   productId,
   optionId,
@@ -207,14 +195,18 @@ export function OptionResourceTemplatesPanel({
       for (const unit of roomUnits) {
         await upsert.mutateAsync({
           optionId,
-          kind: roomUnitToKind(unit),
+          // All room types share kind "room"; they're distinguished — and
+          // travelers are constrained to their booked type — by the option_unit
+          // ref (allocator's groupUnitMatchScore: refType "option_unit" + refId
+          // === bookedOptionUnitId). The widened (option, kind, ref) unique
+          // index lets one option carry a "room" template per unit.
+          kind: "room",
           input: {
             capacity: unit.occupancyMax ?? unit.occupancyMin ?? 1,
             defaultCount: unit.maxQuantity ?? null,
-            namePattern: `${unit.name} {sequence}`,
-            // Link the template back to its option unit so the allocator can
-            // strongly match a traveler's booked room type to this inventory
-            // (groupUnitMatchScore: refType "option_unit" + refId === unitId).
+            // {index} numbers each room type from 1 (Double 1…20), not the
+            // global {sequence}, so the shared "room" pool reads cleanly.
+            namePattern: `${unit.name} {index}`,
             refType: "option_unit",
             refId: unit.id,
             flags: {},

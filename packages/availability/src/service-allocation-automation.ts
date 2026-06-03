@@ -487,12 +487,16 @@ export async function materializeSlotResourcesFromTemplateDefaults(
 
   const skipExisting = opts.skipExisting !== false
   const existing = skipExisting
-    ? await executeRows<{ kind: string }>(
+    ? await executeRows<{ kind: string; ref_id: string | null }>(
         db,
-        sql`SELECT DISTINCT kind FROM allocation_resources WHERE slot_id = ${slotId}`,
+        sql`SELECT DISTINCT kind, ref_id FROM allocation_resources WHERE slot_id = ${slotId}`,
       )
     : []
-  const existingKinds = new Set(existing.map((row) => row.kind))
+  // Key by (kind, ref) — not kind alone — so a second room type (another
+  // option_unit, same kind="room") still materializes when re-applying, rather
+  // than the whole "room" kind being skipped once one room exists.
+  const templateKey = (kind: string, refId: string | null) => `${kind}::${refId ?? ""}`
+  const existingKeys = new Set(existing.map((row) => templateKey(row.kind, row.ref_id)))
 
   const resources: AllocationResource[] = []
   let sequence = 0
@@ -500,7 +504,7 @@ export async function materializeSlotResourcesFromTemplateDefaults(
   for (const template of templates) {
     if (template.defaultCount == null || template.defaultCount <= 0) continue
     if (template.kind === "vehicle_seat") continue
-    if (skipExisting && existingKinds.has(template.kind)) continue
+    if (skipExisting && existingKeys.has(templateKey(template.kind, template.refId))) continue
 
     for (let index = 0; index < template.defaultCount; index++) {
       sequence += 1
