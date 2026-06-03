@@ -1,16 +1,15 @@
 "use client"
 
+import { Button } from "@voyantjs/ui/components/button"
+import { Calendar } from "@voyantjs/ui/components/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
+import { Separator } from "@voyantjs/ui/components/separator"
+
+import { cn } from "@voyantjs/ui/lib/utils"
 import { format, isValid, parseISO } from "date-fns"
 import { CalendarIcon, XIcon } from "lucide-react"
 import * as React from "react"
 import type { DateRange } from "react-day-picker"
-
-import { cn } from "@voyantjs/ui/lib/utils"
-
-import { Button } from "./button"
-import { Calendar } from "./calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "./popover"
-import { Separator } from "./separator"
 
 type CalendarProps = React.ComponentProps<typeof Calendar>
 
@@ -134,6 +133,7 @@ function DatePickerFooter({ clearable, hasValue, onClear }: FooterProps) {
       <div className="flex justify-end p-2">
         <Button type="button" variant="ghost" size="sm" onClick={onClear}>
           <XIcon className="h-4 w-4" />
+          {/* i18n-literal-ok shadcn-style primitive default label */}
           Clear
         </Button>
       </div>
@@ -206,7 +206,7 @@ export function DatePicker({
   defaultValue,
   onChange,
   presets = [],
-  placeholder = "Pick a date",
+  placeholder = "Pick a date", // i18n-literal-ok primitive default, overridden by callers
   displayFormat = "PPP",
   className,
   contentClassName,
@@ -245,7 +245,9 @@ export function DatePicker({
   return (
     <Popover open={disabled ? false : open} onOpenChange={disabled ? undefined : setOpen}>
       <PopoverTrigger
-        render={<DatePickerTrigger className={className} empty={!selectedDate} disabled={disabled} />}
+        render={
+          <DatePickerTrigger className={className} empty={!selectedDate} disabled={disabled} />
+        }
       >
         {label}
       </PopoverTrigger>
@@ -283,7 +285,7 @@ export function DateRangePicker({
   defaultValue,
   onChange,
   presets = [],
-  placeholder = "Pick a date range",
+  placeholder = "Pick a date range", // i18n-literal-ok primitive default, overridden by callers
   displayFormat = "LLL d, y",
   className,
   contentClassName,

@@ -3,6 +3,7 @@ import {
   insertDaySchema,
   insertDayServiceSchema,
   insertItinerarySchema,
+  insertProductDayTranslationSchema,
   insertProductMediaSchema,
   insertProductTranslationSchema,
   insertVersionSchema,
@@ -10,6 +11,7 @@ import {
   updateDaySchema,
   updateDayServiceSchema,
   updateItinerarySchema,
+  updateProductDayTranslationSchema,
   updateProductMediaSchema,
   updateProductTranslationSchema,
 } from "@voyantjs/products"
@@ -55,6 +57,7 @@ export const productRecordSchema = z.object({
   bookingMode: z.enum(["date", "date_time", "open", "stay", "transfer", "itinerary", "other"]),
   capacityMode: z.enum(["free_sale", "limited", "on_request"]),
   timezone: z.string().nullable(),
+  defaultLanguageTag: z.string().nullable().optional(),
   visibility: z.enum(["public", "private", "hidden"]),
   activated: z.boolean(),
   reservationTimeoutMinutes: z.number().int().nullable(),
@@ -210,6 +213,19 @@ export const productDayRecordSchema = z.object({
   updatedAt: z.string(),
 })
 
+export const productDayTranslationRecordSchema = z.object({
+  id: z.string(),
+  dayId: z.string(),
+  languageTag: z.string(),
+  title: z.string().nullable(),
+  description: z.string().nullable(),
+  location: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type ProductDayTranslationRecord = z.infer<typeof productDayTranslationRecordSchema>
+
 export type ProductDayRecord = z.infer<typeof productDayRecordSchema>
 
 export const productDayServiceRecordSchema = z.object({
@@ -265,6 +281,10 @@ export const productListResponse = paginatedEnvelope(productRecordSchema)
 export const productSingleResponse = singleEnvelope(productRecordSchema)
 export const productTranslationListResponse = paginatedEnvelope(productTranslationRecordSchema)
 export const productTranslationSingleResponse = singleEnvelope(productTranslationRecordSchema)
+export const productDayTranslationListResponse = paginatedEnvelope(
+  productDayTranslationRecordSchema,
+)
+export const productDayTranslationSingleResponse = singleEnvelope(productDayTranslationRecordSchema)
 export const productTypeListResponse = paginatedEnvelope(productTypeRecordSchema)
 export const productTypeSingleResponse = singleEnvelope(productTypeRecordSchema)
 export const productCategoryListResponse = paginatedEnvelope(productCategoryRecordSchema)
@@ -383,6 +403,7 @@ export {
   insertDaySchema,
   insertDayServiceSchema,
   insertItinerarySchema,
+  insertProductDayTranslationSchema,
   insertProductMediaSchema,
   insertProductTranslationSchema,
   insertVersionSchema,
@@ -390,6 +411,7 @@ export {
   updateDaySchema,
   updateDayServiceSchema,
   updateItinerarySchema,
+  updateProductDayTranslationSchema,
   updateProductMediaSchema,
   updateProductTranslationSchema,
 }
@@ -406,4 +428,6 @@ export type CreateProductMediaInput = z.input<typeof insertProductMediaSchema>
 export type UpdateProductMediaInput = z.input<typeof updateProductMediaSchema>
 export type CreateProductTranslationInput = z.input<typeof insertProductTranslationSchema>
 export type UpdateProductTranslationInput = z.input<typeof updateProductTranslationSchema>
+export type CreateProductDayTranslationInput = z.input<typeof insertProductDayTranslationSchema>
+export type UpdateProductDayTranslationInput = z.input<typeof updateProductDayTranslationSchema>
 export type ReorderProductMediaInput = z.input<typeof reorderProductMediaSchema>

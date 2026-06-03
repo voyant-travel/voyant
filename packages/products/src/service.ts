@@ -14,6 +14,7 @@ import {
   productCategoryTranslations,
   productDayServices,
   productDays,
+  productDayTranslations,
   productDeliveryFormats,
   productDestinations,
   productFaqs,
@@ -49,6 +50,7 @@ import type {
   insertProductCapabilitySchema,
   insertProductCategorySchema,
   insertProductCategoryTranslationSchema,
+  insertProductDayTranslationSchema,
   insertProductDeliveryFormatSchema,
   insertProductFaqSchema,
   insertProductFeatureSchema,
@@ -71,6 +73,7 @@ import type {
   productCapabilityListQuerySchema,
   productCategoryListQuerySchema,
   productCategoryTranslationListQuerySchema,
+  productDayTranslationListQuerySchema,
   productDeliveryFormatListQuerySchema,
   productDestinationListQuerySchema,
   productFaqListQuerySchema,
@@ -98,6 +101,7 @@ import type {
   updateProductCapabilitySchema,
   updateProductCategorySchema,
   updateProductCategoryTranslationSchema,
+  updateProductDayTranslationSchema,
   updateProductDeliveryFormatSchema,
   updateProductFaqSchema,
   updateProductFeatureSchema,
@@ -128,6 +132,9 @@ type UpdateOptionUnitInput = z.infer<typeof updateOptionUnitSchema>
 type ProductTranslationListQuery = z.infer<typeof productTranslationListQuerySchema>
 type CreateProductTranslationInput = z.infer<typeof insertProductTranslationSchema>
 type UpdateProductTranslationInput = z.infer<typeof updateProductTranslationSchema>
+type ProductDayTranslationListQuery = z.infer<typeof productDayTranslationListQuerySchema>
+type CreateProductDayTranslationInput = z.infer<typeof insertProductDayTranslationSchema>
+type UpdateProductDayTranslationInput = z.infer<typeof updateProductDayTranslationSchema>
 type ProductOptionTranslationListQuery = z.infer<typeof productOptionTranslationListQuerySchema>
 type CreateProductOptionTranslationInput = z.infer<typeof insertProductOptionTranslationSchema>
 type UpdateProductOptionTranslationInput = z.infer<typeof updateProductOptionTranslationSchema>
@@ -2147,6 +2154,104 @@ export const productsService = {
       .delete(productTranslations)
       .where(eq(productTranslations.id, id))
       .returning({ id: productTranslations.id })
+
+    return row ?? null
+  },
+
+  async listProductDayTranslations(db: PostgresJsDatabase, query: ProductDayTranslationListQuery) {
+    const conditions = []
+
+    if (query.dayId) {
+      conditions.push(eq(productDayTranslations.dayId, query.dayId))
+    }
+
+    if (query.languageTag) {
+      conditions.push(eq(productDayTranslations.languageTag, query.languageTag))
+    }
+
+    const where = conditions.length > 0 ? and(...conditions) : undefined
+
+    const [rows, countResult] = await Promise.all([
+      db
+        .select()
+        .from(productDayTranslations)
+        .where(where)
+        .limit(query.limit)
+        .offset(query.offset)
+        .orderBy(asc(productDayTranslations.languageTag), asc(productDayTranslations.createdAt)),
+      db.select({ count: sql<number>`count(*)::int` }).from(productDayTranslations).where(where),
+    ])
+
+    return {
+      data: rows,
+      total: countResult[0]?.count ?? 0,
+      limit: query.limit,
+      offset: query.offset,
+    }
+  },
+
+  async getProductDayTranslationById(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .select()
+      .from(productDayTranslations)
+      .where(eq(productDayTranslations.id, id))
+      .limit(1)
+
+    return row ?? null
+  },
+
+  async getDayTranslationForProductMutation(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .select()
+      .from(productDayTranslations)
+      .where(eq(productDayTranslations.id, id))
+      .limit(1)
+    if (!row) {
+      return null
+    }
+
+    const dayRef = await getDayById(db, row.dayId)
+    return dayRef ? { ...row, productId: dayRef.productId } : null
+  },
+
+  async createProductDayTranslation(
+    db: PostgresJsDatabase,
+    productId: string,
+    dayId: string,
+    data: CreateProductDayTranslationInput,
+  ) {
+    const dayRef = await getDayById(db, dayId)
+    if (!dayRef || dayRef.productId !== productId) {
+      return null
+    }
+
+    const [row] = await db
+      .insert(productDayTranslations)
+      .values({ ...data, dayId })
+      .returning()
+
+    return row ?? null
+  },
+
+  async updateProductDayTranslation(
+    db: PostgresJsDatabase,
+    id: string,
+    data: UpdateProductDayTranslationInput,
+  ) {
+    const [row] = await db
+      .update(productDayTranslations)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(productDayTranslations.id, id))
+      .returning()
+
+    return row ?? null
+  },
+
+  async deleteProductDayTranslation(db: PostgresJsDatabase, id: string) {
+    const [row] = await db
+      .delete(productDayTranslations)
+      .where(eq(productDayTranslations.id, id))
+      .returning({ id: productDayTranslations.id })
 
     return row ?? null
   },

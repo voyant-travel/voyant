@@ -1,0 +1,1006 @@
+import { useMutation, useQuery } from "@tanstack/react-query"
+import { useProductExtras } from "@voyantjs/extras-react"
+import { formatMessage } from "@voyantjs/i18n"
+import {
+  type ExtraPriceRuleRecord,
+  type PricingCategoryRecord,
+  useExtraPriceRuleMutation,
+  useExtraPriceRules,
+  useOptionPriceRuleMutation,
+  useOptionUnitPriceRuleMutation,
+  usePricingCategoryMutation,
+} from "@voyantjs/pricing-react"
+import { useVoyantProductsContext } from "@voyantjs/products-react"
+import {
+  Badge,
+  Button,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from "@voyantjs/ui/components"
+import { Checkbox } from "@voyantjs/ui/components/checkbox"
+import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useProductDetailMessages } from "./host.js"
+import {
+  type OptionPriceRuleData,
+  OptionPriceRuleDialog,
+} from "./product-option-price-rule-dialog.js"
+import {
+  getOptionPriceRulesQueryOptions,
+  getOptionUnitPriceRulesQueryOptions,
+  getOptionUnitsQueryOptions,
+  getPricingCategoriesQueryOptions,
+} from "./product-options-shared.js"
+import type { OptionUnitData } from "./product-unit-dialog.js"
+import {
+  type OptionUnitPriceRuleData,
+  UnitPriceRuleDialog,
+} from "./product-unit-price-rule-dialog.js"
+
+function getRulePricingModeLabel(
+  value: OptionPriceRuleData["pricingMode"],
+  messages: ReturnType<typeof useProductDetailMessages>["products"]["operations"]["priceRules"],
+) {
+  switch (value) {
+    case "per_person":
+      return messages.pricingModePerPerson
+    case "per_booking":
+      return messages.pricingModePerBooking
+    case "starting_from":
+      return messages.pricingModeStartingFrom
+    case "free":
+      return messages.pricingModeFree
+    case "on_request":
+      return messages.pricingModeOnRequest
+    default:
+      return value
+  }
+}
+
+function getUnitTypeLabel(
+  type: OptionUnitData["unitType"],
+  messages: ReturnType<typeof useProductDetailMessages>["products"]["operations"]["units"],
+) {
+  switch (type) {
+    case "person":
+      return messages.typePerson
+    case "group":
+      return messages.typeGroup
+    case "room":
+      return messages.typeRoom
+    case "vehicle":
+      return messages.typeVehicle
+    case "service":
+      return messages.typeService
+    case "other":
+      return messages.typeOther
+    default:
+      return type
+  }
+}
+
+function getCategoryCondition(metadata: Record<string, unknown> | null | undefined) {
+  const condition = metadata?.condition
+  return typeof condition === "string" && condition.trim().length > 0 ? condition : null
+}
+
+function categoryAppliesToUnit(
+  category: { id: string | null; metadata?: Record<string, unknown> | null },
+  unit: OptionUnitData,
+) {
+  if (!category.id) return true
+  const allowedUnitIds = category.metadata?.allowedUnitIds
+  if (!Array.isArray(allowedUnitIds) || allowedUnitIds.length === 0) return true
+  return allowedUnitIds.includes(unit.id)
+}
+
+function ActionMenu({ children }: { children: React.ReactNode }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">{children}</DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+export function PricingPanel({
+  productId,
+  optionId,
+  productCurrency,
+}: {
+  productId: string
+  optionId: string
+  productCurrency: string
+}) {
+  const messages = useProductDetailMessages()
+  const client = useVoyantProductsContext()
+  const priceRuleMessages = messages.products.operations.priceRules
+  const [ruleDialogOpen, setRuleDialogOpen] = useState(false)
+  const [editingRule, setEditingRule] = useState<OptionPriceRuleData | undefined>()
+  const { data, refetch } = useQuery(getOptionPriceRulesQueryOptions(client, optionId))
+  const { remove: removeRule } = useOptionPriceRuleMutation()
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => removeRule.mutateAsync(id),
+    onSuccess: () => void refetch(),
+  })
+  const rules = data?.data ?? []
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {priceRuleMessages.sectionTitle}
+          </p>
+          <p className="text-xs text-muted-foreground">{priceRuleMessages.sectionDescription}</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setEditingRule(undefined)
+            setRuleDialogOpen(true)
+          }}
+        >
+          <Plus className="mr-1 h-3 w-3" />
+          {priceRuleMessages.addAction}
+        </Button>
+      </div>
+
+      {rules.length === 0 ? (
+        <p className="py-2 text-center text-xs text-muted-foreground">{priceRuleMessages.empty}</p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {rules.map((rule) => (
+            <PriceRuleCard
+              key={rule.id}
+              rule={rule}
+              productId={productId}
+              optionId={optionId}
+              productCurrency={productCurrency}
+              onEdit={() => {
+                setEditingRule(rule)
+                setRuleDialogOpen(true)
+              }}
+              onDelete={() => {
+                if (
+                  confirm(formatMessage(priceRuleMessages.deleteRuleConfirm, { name: rule.name }))
+                ) {
+                  deleteMutation.mutate(rule.id)
+                }
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      <OptionPriceRuleDialog
+        open={ruleDialogOpen}
+        onOpenChange={setRuleDialogOpen}
+        productId={productId}
+        optionId={optionId}
+        rule={editingRule}
+        onSuccess={() => {
+          setRuleDialogOpen(false)
+          setEditingRule(undefined)
+          void refetch()
+        }}
+      />
+    </div>
+  )
+}
+
+function PriceRuleCard({
+  rule,
+  productId,
+  optionId,
+  productCurrency,
+  onEdit,
+  onDelete,
+}: {
+  rule: OptionPriceRuleData
+  productId: string
+  optionId: string
+  productCurrency: string
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  const messages = useProductDetailMessages()
+  const priceRuleMessages = messages.products.operations.priceRules
+  return (
+    <div className="rounded-lg border bg-background p-4">
+      <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">{rule.name}</span>
+            <Badge variant="outline" className="text-xs capitalize">
+              {getRulePricingModeLabel(rule.pricingMode, priceRuleMessages)}
+            </Badge>
+            {rule.isDefault && <Badge variant="secondary">{priceRuleMessages.defaultBadge}</Badge>}
+            <Badge variant={rule.active ? "default" : "outline"}>
+              {rule.active ? priceRuleMessages.activeBadge : priceRuleMessages.inactiveBadge}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span>
+              {priceRuleMessages.baseSellLabel}:{" "}
+              <span className="font-mono text-foreground">
+                {formatProductMoney(rule.baseSellAmountCents, productCurrency)}
+              </span>
+            </span>
+            <span>
+              {priceRuleMessages.baseCostLabel}:{" "}
+              <span className="font-mono text-foreground">
+                {formatProductMoney(rule.baseCostAmountCents, productCurrency)}
+              </span>
+            </span>
+            {rule.allPricingCategories && <span>{priceRuleMessages.allCategoriesLabel}</span>}
+          </div>
+        </div>
+        <ActionMenu>
+          <DropdownMenuItem onClick={onEdit}>
+            <Pencil className="h-4 w-4" />
+            {priceRuleMessages.editAction}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive" onClick={onDelete}>
+            <Trash2 className="h-4 w-4" />
+            {priceRuleMessages.deleteAction}
+          </DropdownMenuItem>
+        </ActionMenu>
+      </div>
+
+      <div className="mt-3">
+        <UnitPriceMatrix
+          productId={productId}
+          optionPriceRuleId={rule.id}
+          optionId={optionId}
+          pricingMode={rule.pricingMode}
+          allPricingCategories={rule.allPricingCategories}
+          productCurrency={productCurrency}
+        />
+        <ExtraPriceRulesPanel
+          productId={productId}
+          optionId={optionId}
+          optionPriceRuleId={rule.id}
+          productCurrency={productCurrency}
+        />
+      </div>
+    </div>
+  )
+}
+
+function UnitPriceMatrix({
+  productId,
+  optionPriceRuleId,
+  optionId,
+  pricingMode,
+  allPricingCategories,
+  productCurrency,
+}: {
+  productId: string
+  optionPriceRuleId: string
+  optionId: string
+  pricingMode: OptionPriceRuleData["pricingMode"]
+  allPricingCategories: boolean
+  productCurrency: string
+}) {
+  const messages = useProductDetailMessages()
+  const client = useVoyantProductsContext()
+  const priceRuleMessages = messages.products.operations.priceRules
+  const unitMessages = messages.products.operations.units
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingCell, setEditingCell] = useState<OptionUnitPriceRuleData | undefined>()
+  const [preselectedUnitId, setPreselectedUnitId] = useState<string | undefined>()
+  const [preselectedCategoryId, setPreselectedCategoryId] = useState<string | null | undefined>()
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false)
+
+  const { data: unitsData } = useQuery(getOptionUnitsQueryOptions(client, optionId))
+  const { data: categoriesData, refetch: refetchCategories } = useQuery(
+    getPricingCategoriesQueryOptions(client),
+  )
+  const { data: cellsData, refetch: refetchCells } = useQuery(
+    getOptionUnitPriceRulesQueryOptions(client, optionPriceRuleId),
+  )
+  const { remove } = useOptionUnitPriceRuleMutation()
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => remove.mutateAsync(id),
+    onSuccess: () => void refetchCells(),
+  })
+
+  const units = (unitsData?.data ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder)
+  const cells = cellsData?.data ?? []
+  const referencedCategoryIds = new Set(
+    cells.flatMap((cell) => (cell.pricingCategoryId ? [cell.pricingCategoryId] : [])),
+  )
+  const categories = (categoriesData?.data ?? []).filter(
+    (category) =>
+      category.active &&
+      (((category.productId == null || category.productId === productId) &&
+        (category.optionId == null || category.optionId === optionId)) ||
+        referencedCategoryIds.has(category.id)),
+  )
+  const isPersonOnly = units.length > 0 && units.every((unit) => unit.unitType === "person")
+  const findCell = (unitId: string, categoryId: string | null) =>
+    cells.find(
+      (cell) => cell.unitId === unitId && (cell.pricingCategoryId ?? null) === categoryId,
+    ) ?? null
+
+  if (units.length === 0) {
+    return <p className="text-xs italic text-muted-foreground">{priceRuleMessages.addUnitsHint}</p>
+  }
+
+  if (pricingMode === "per_booking") {
+    return (
+      <p className="text-xs italic text-muted-foreground">{priceRuleMessages.perBookingFlatHint}</p>
+    )
+  }
+
+  // Per-pax tour with no category cross-cut: render a simple unit-only table
+  // (Sell / Cost) instead of the unit×category matrix. Operators on
+  // accommodation products (or rules with allPricingCategories=false) still
+  // get the full matrix.
+  const useSimpleTable = pricingMode === "per_person" && allPricingCategories
+
+  const tableTitle = useSimpleTable
+    ? isPersonOnly
+      ? priceRuleMessages.personUnitPricingTitle
+      : priceRuleMessages.unitPricingTitle
+    : isPersonOnly
+      ? priceRuleMessages.personUnitCategoryTitle
+      : priceRuleMessages.unitCategoryTitle
+  const unitColumnLabel = isPersonOnly
+    ? priceRuleMessages.tableTravelerUnit
+    : priceRuleMessages.tableUnit
+
+  const columns: Array<{
+    id: string | null
+    name: string
+    metadata?: Record<string, unknown> | null
+  }> = useSimpleTable
+    ? [{ id: null, name: priceRuleMessages.tableSell }]
+    : categories.length > 0
+      ? categories.map((category) => ({
+          id: category.id,
+          name: category.name,
+          metadata: category.metadata,
+        }))
+      : [{ id: null, name: priceRuleMessages.defaultBadge }]
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          {tableTitle}
+        </p>
+        {!useSimpleTable ? (
+          <Button variant="outline" size="sm" onClick={() => setCategoryDialogOpen(true)}>
+            <Plus className="mr-1 h-3 w-3" />
+            {priceRuleMessages.addTravelerCategory}
+          </Button>
+        ) : null}
+      </div>
+      <div className="overflow-x-auto rounded border">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b bg-muted/50 text-muted-foreground">
+              <th className="p-2 text-left font-medium">{unitColumnLabel}</th>
+              {columns.map((category) => {
+                const condition = getCategoryCondition(category.metadata)
+                return (
+                  <th key={category.id ?? "__default__"} className="p-2 text-left font-medium">
+                    <div>{category.name}</div>
+                    {condition ? (
+                      <div className="mt-0.5 max-w-[220px] text-[10px] font-normal leading-snug text-muted-foreground normal-case">
+                        {condition}
+                      </div>
+                    ) : null}
+                  </th>
+                )
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {units.map((unit) => (
+              <tr key={unit.id} className="border-b last:border-b-0">
+                <td className="p-2 font-medium">
+                  {unit.name}
+                  <span className="ml-1 text-[10px] text-muted-foreground">
+                    ({getUnitTypeLabel(unit.unitType, unitMessages)})
+                  </span>
+                </td>
+                {columns.map((category) => {
+                  const cell = findCell(unit.id, category.id)
+                  const canPriceCategory = categoryAppliesToUnit(category, unit)
+                  return (
+                    <td key={category.id ?? "__default__"} className="p-2">
+                      {cell ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingCell(cell)
+                              setPreselectedUnitId(undefined)
+                              setPreselectedCategoryId(undefined)
+                              setDialogOpen(true)
+                            }}
+                            className="font-mono text-foreground hover:underline"
+                          >
+                            {formatProductMoney(cell.sellAmountCents, productCurrency)}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (confirm(priceRuleMessages.deleteCellConfirm)) {
+                                deleteMutation.mutate(cell.id)
+                              }
+                            }}
+                            className="text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : canPriceCategory ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingCell(undefined)
+                            setPreselectedUnitId(unit.id)
+                            setPreselectedCategoryId(category.id)
+                            setDialogOpen(true)
+                          }}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </button>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <TravelerCategoryDialog
+        open={categoryDialogOpen}
+        onOpenChange={setCategoryDialogOpen}
+        productId={productId}
+        units={units}
+        nextSortOrder={
+          categories.length > 0 ? Math.max(...categories.map((c) => c.sortOrder)) + 1 : 0
+        }
+        onSuccess={() => {
+          setCategoryDialogOpen(false)
+          void refetchCategories()
+        }}
+      />
+
+      <UnitPriceRuleDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        optionPriceRuleId={optionPriceRuleId}
+        optionId={optionId}
+        units={units}
+        preselectedUnitId={preselectedUnitId}
+        preselectedCategoryId={preselectedCategoryId}
+        cell={editingCell}
+        onSuccess={() => {
+          setDialogOpen(false)
+          setEditingCell(undefined)
+          setPreselectedUnitId(undefined)
+          setPreselectedCategoryId(undefined)
+          void refetchCells()
+        }}
+      />
+    </div>
+  )
+}
+
+type TravelerCategoryType = CreateTravelerCategoryState["categoryType"]
+
+type CreateTravelerCategoryState = {
+  name: string
+  code: string
+  categoryType: PricingCategoryRecord["categoryType"]
+  minAge: string
+  maxAge: string
+  condition: string
+  allowedUnitIds: string[]
+}
+
+function initialTravelerCategoryState(): CreateTravelerCategoryState {
+  return {
+    name: "",
+    code: "",
+    categoryType: "child",
+    minAge: "",
+    maxAge: "",
+    condition: "",
+    allowedUnitIds: [],
+  }
+}
+
+function parseOptionalInteger(value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  const parsed = Number(trimmed)
+  return Number.isFinite(parsed) ? Math.trunc(parsed) : null
+}
+
+function TravelerCategoryDialog({
+  open,
+  onOpenChange,
+  productId,
+  units,
+  nextSortOrder,
+  onSuccess,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  productId: string
+  units: OptionUnitData[]
+  nextSortOrder: number
+  onSuccess: () => void
+}) {
+  const messages = useProductDetailMessages()
+  const priceRuleMessages = messages.products.operations.priceRules
+  const pricingCategoryMessages = messages.pricing.categories
+  const { create } = usePricingCategoryMutation()
+  const [state, setState] = useState<CreateTravelerCategoryState>(() =>
+    initialTravelerCategoryState(),
+  )
+  const [error, setError] = useState<string | null>(null)
+  const travelerCategoryTypes: Array<{ value: TravelerCategoryType; label: string }> = [
+    { value: "adult", label: pricingCategoryMessages.typeAdult },
+    { value: "child", label: pricingCategoryMessages.typeChild },
+    { value: "infant", label: pricingCategoryMessages.typeInfant },
+    { value: "senior", label: pricingCategoryMessages.typeSenior },
+    { value: "group", label: pricingCategoryMessages.typeGroup },
+    { value: "other", label: pricingCategoryMessages.typeOther },
+  ]
+
+  useEffect(() => {
+    if (open) {
+      setState(initialTravelerCategoryState())
+      setError(null)
+    }
+  }, [open])
+
+  const toggleUnit = (unitId: string, checked: boolean) => {
+    setState((prev) => ({
+      ...prev,
+      allowedUnitIds: checked
+        ? [...prev.allowedUnitIds, unitId]
+        : prev.allowedUnitIds.filter((id) => id !== unitId),
+    }))
+  }
+
+  const save = async () => {
+    const name = state.name.trim()
+    if (!name) {
+      setError(priceRuleMessages.travelerCategoryNameRequired)
+      return
+    }
+
+    const selectedUnits = units.filter((unit) => state.allowedUnitIds.includes(unit.id))
+    const minAge = parseOptionalInteger(state.minAge)
+    const maxAge = parseOptionalInteger(state.maxAge)
+    const condition = state.condition.trim()
+    const metadata: Record<string, unknown> = {}
+    if (condition) metadata.condition = condition
+    if (selectedUnits.length > 0) {
+      metadata.allowedUnitIds = selectedUnits.map((unit) => unit.id)
+      metadata.allowedUnitCodes = selectedUnits.map((unit) => unit.code).filter(Boolean)
+      metadata.allowedUnitNames = selectedUnits.map((unit) => unit.name)
+    }
+
+    try {
+      await create.mutateAsync({
+        productId,
+        optionId: null,
+        unitId: null,
+        name,
+        code: state.code.trim() || null,
+        categoryType: state.categoryType,
+        seatOccupancy: 1,
+        isAgeQualified: minAge != null || maxAge != null,
+        minAge,
+        maxAge,
+        internalUseOnly: false,
+        active: true,
+        sortOrder: nextSortOrder,
+        metadata: Object.keys(metadata).length > 0 ? metadata : null,
+      })
+      onSuccess()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : priceRuleMessages.travelerCategorySaveFailed)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{priceRuleMessages.travelerCategoryDialogTitle}</DialogTitle>
+          <DialogDescription>
+            {priceRuleMessages.travelerCategoryDialogDescription}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogBody className="grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="traveler-category-name">{pricingCategoryMessages.nameLabel}</Label>
+              <Input
+                id="traveler-category-name"
+                autoFocus
+                value={state.name}
+                placeholder={priceRuleMessages.travelerCategoryNamePlaceholder}
+                onChange={(event) => setState((prev) => ({ ...prev, name: event.target.value }))}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="traveler-category-code">{pricingCategoryMessages.codeLabel}</Label>
+              <Input
+                id="traveler-category-code"
+                value={state.code}
+                placeholder={priceRuleMessages.travelerCategoryCodePlaceholder}
+                onChange={(event) => setState((prev) => ({ ...prev, code: event.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="flex flex-col gap-1.5">
+              <Label>{pricingCategoryMessages.typeLabel}</Label>
+              <Select
+                value={state.categoryType}
+                onValueChange={(value) =>
+                  setState((prev) => ({
+                    ...prev,
+                    categoryType: (value ?? "child") as TravelerCategoryType,
+                  }))
+                }
+                items={travelerCategoryTypes}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {travelerCategoryTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="traveler-category-min-age">
+                {pricingCategoryMessages.minAgeLabel}
+              </Label>
+              <Input
+                id="traveler-category-min-age"
+                type="number"
+                min="0"
+                value={state.minAge}
+                onChange={(event) => setState((prev) => ({ ...prev, minAge: event.target.value }))}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="traveler-category-max-age">
+                {pricingCategoryMessages.maxAgeLabel}
+              </Label>
+              <Input
+                id="traveler-category-max-age"
+                type="number"
+                min="0"
+                value={state.maxAge}
+                onChange={(event) => setState((prev) => ({ ...prev, maxAge: event.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>{priceRuleMessages.travelerCategoryAppliesToLabel}</Label>
+            <div className="grid gap-2 rounded border p-3 sm:grid-cols-3">
+              {units.map((unit) => {
+                const checkboxId = `traveler-category-unit-${unit.id}`
+                return (
+                  <div key={unit.id} className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      id={checkboxId}
+                      checked={state.allowedUnitIds.includes(unit.id)}
+                      onCheckedChange={(checked) => toggleUnit(unit.id, checked === true)}
+                    />
+                    <Label htmlFor={checkboxId} className="font-normal">
+                      {unit.name}
+                    </Label>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="text-muted-foreground text-xs">
+              {priceRuleMessages.travelerCategoryAppliesToHint}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="traveler-category-condition">
+              {priceRuleMessages.travelerCategoryConditionLabel}
+            </Label>
+            <Textarea
+              id="traveler-category-condition"
+              value={state.condition}
+              placeholder={priceRuleMessages.travelerCategoryConditionPlaceholder}
+              onChange={(event) => setState((prev) => ({ ...prev, condition: event.target.value }))}
+            />
+          </div>
+
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        </DialogBody>
+        <DialogFooter className="-mx-6 -mb-6">
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            {pricingCategoryMessages.cancel}
+          </Button>
+          <Button onClick={() => void save()} disabled={create.isPending}>
+            {priceRuleMessages.createTravelerCategory}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function ExtraPriceRulesPanel({
+  productId,
+  optionId,
+  optionPriceRuleId,
+  productCurrency,
+}: {
+  productId: string
+  optionId: string
+  optionPriceRuleId: string
+  productCurrency: string
+}) {
+  const messages = useProductDetailMessages()
+  const extraPriceMessages = messages.products.operations.extraPrices
+  const extrasQuery = useProductExtras({ productId, active: true, limit: 100 })
+  const rulesQuery = useExtraPriceRules({ optionPriceRuleId, optionId, active: true, limit: 100 })
+  const { remove } = useExtraPriceRuleMutation()
+  const [pricingExtraId, setPricingExtraId] = useState<string | null>(null)
+  const extras = extrasQuery.data?.data ?? []
+  const rules = rulesQuery.data?.data ?? []
+  const ruleByExtraId = new Map(
+    rules.flatMap((rule) => (rule.productExtraId ? [[rule.productExtraId, rule] as const] : [])),
+  )
+
+  if (extras.length === 0) return null
+  const pricingExtra = extras.find((extra) => extra.id === pricingExtraId) ?? null
+
+  return (
+    <div className="mt-4 border-t pt-3">
+      <div className="mb-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        {extraPriceMessages.sectionTitle}
+      </div>
+      <div className="flex flex-col gap-2">
+        {extras.map((extra) => {
+          const rule = ruleByExtraId.get(extra.id)
+          return (
+            <div
+              key={extra.id}
+              className="flex items-center justify-between gap-3 rounded border px-2 py-1.5 text-xs"
+            >
+              <div className="min-w-0">
+                <span className="font-medium">{extra.name}</span>
+                {extra.pricedPerPerson ? (
+                  <span className="ml-2 text-muted-foreground">
+                    {extraPriceMessages.perTraveler}
+                  </span>
+                ) : null}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono">
+                  {rule?.sellAmountCents != null
+                    ? formatProductMoney(rule.sellAmountCents, productCurrency)
+                    : extraPriceMessages.noAmount}
+                </span>
+                <Button variant="outline" size="sm" onClick={() => setPricingExtraId(extra.id)}>
+                  {extraPriceMessages.setPrice}
+                </Button>
+                {rule ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      remove.mutate(rule.id, { onSuccess: () => void rulesQuery.refetch() })
+                    }
+                  >
+                    {extraPriceMessages.remove}
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      {pricingExtra ? (
+        <ExtraPriceRuleDialog
+          open={!!pricingExtra}
+          onOpenChange={(open) => {
+            if (!open) setPricingExtraId(null)
+          }}
+          optionPriceRuleId={optionPriceRuleId}
+          optionId={optionId}
+          extra={pricingExtra}
+          existingRule={ruleByExtraId.get(pricingExtra.id)}
+          nextSortOrder={rules.length}
+          productCurrency={productCurrency}
+          onSuccess={() => {
+            setPricingExtraId(null)
+            void rulesQuery.refetch()
+          }}
+        />
+      ) : null}
+    </div>
+  )
+}
+
+function ExtraPriceRuleDialog({
+  open,
+  onOpenChange,
+  optionPriceRuleId,
+  optionId,
+  extra,
+  existingRule,
+  nextSortOrder,
+  productCurrency,
+  onSuccess,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  optionPriceRuleId: string
+  optionId: string
+  extra: { id: string; name: string; pricingMode: string; pricedPerPerson: boolean }
+  existingRule?: ExtraPriceRuleRecord
+  nextSortOrder: number
+  productCurrency: string
+  onSuccess: () => void
+}) {
+  const messages = useProductDetailMessages()
+  const extraPriceMessages = messages.products.operations.extraPrices
+  const { create, update } = useExtraPriceRuleMutation()
+  const [amount, setAmount] = useState("")
+  const [pricingMode, setPricingMode] = useState<ExtraPriceRuleRecord["pricingMode"]>("per_booking")
+
+  const isEditing = !!existingRule
+  const pricingModes = [
+    { value: "per_booking", label: extraPriceMessages.pricingPerBooking },
+    { value: "per_person", label: extraPriceMessages.pricingPerPerson },
+    { value: "included", label: extraPriceMessages.pricingIncluded },
+    { value: "on_request", label: extraPriceMessages.pricingOnRequest },
+    { value: "unavailable", label: extraPriceMessages.pricingUnavailable },
+  ] as const
+
+  useEffect(() => {
+    setAmount(
+      existingRule?.sellAmountCents != null ? String(existingRule.sellAmountCents / 100) : "",
+    )
+    setPricingMode(existingRule?.pricingMode ?? defaultExtraPriceRuleMode(extra))
+  }, [existingRule, extra])
+
+  const save = async () => {
+    const parsedAmount = amount.trim() === "" ? null : Math.round(Number(amount) * 100)
+    if (parsedAmount != null && (!Number.isFinite(parsedAmount) || parsedAmount < 0)) return
+    const payload = {
+      optionPriceRuleId,
+      optionId,
+      productExtraId: extra.id,
+      optionExtraConfigId: null,
+      pricingMode,
+      sellAmountCents: parsedAmount,
+      costAmountCents: null,
+      active: true,
+      sortOrder: existingRule?.sortOrder ?? nextSortOrder,
+    }
+    if (existingRule) await update.mutateAsync({ id: existingRule.id, input: payload })
+    else await create.mutateAsync(payload)
+    onSuccess()
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {isEditing ? extraPriceMessages.editTitle : extraPriceMessages.newTitle}
+          </DialogTitle>
+          <DialogDescription>{extra.name}</DialogDescription>
+        </DialogHeader>
+        <DialogBody className="grid gap-4">
+          <div className="flex flex-col gap-2">
+            <Label>{extraPriceMessages.pricingModeLabel}</Label>
+            <Select
+              value={pricingMode}
+              onValueChange={(value) =>
+                setPricingMode((value ?? "per_booking") as ExtraPriceRuleRecord["pricingMode"])
+              }
+              items={pricingModes}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {pricingModes.map((mode) => (
+                  <SelectItem key={mode.value} value={mode.value}>
+                    {mode.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label>{extraPriceMessages.sellAmountLabel}</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                value={amount}
+                type="number"
+                min="0"
+                step="0.01"
+                onChange={(event) => setAmount(event.target.value)}
+              />
+              <span className="min-w-12 text-muted-foreground text-sm">{productCurrency}</span>
+            </div>
+          </div>
+        </DialogBody>
+        <DialogFooter className="-mx-6 -mb-6">
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            {extraPriceMessages.cancel}
+          </Button>
+          <Button onClick={() => void save()}>{extraPriceMessages.save}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function defaultExtraPriceRuleMode(extra: {
+  pricingMode: string
+  pricedPerPerson: boolean
+}): ExtraPriceRuleRecord["pricingMode"] {
+  if (extra.pricedPerPerson || extra.pricingMode === "per_person") return "per_person"
+  if (extra.pricingMode === "included" || extra.pricingMode === "free") return "included"
+  if (extra.pricingMode === "on_request") return "on_request"
+  return "per_booking"
+}
+
+function formatProductMoney(amountCents: number | null | undefined, currency: string) {
+  if (amountCents == null) return "-"
+  return `${(amountCents / 100).toFixed(2)} ${currency}`
+}

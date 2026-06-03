@@ -91,6 +91,12 @@ export interface ProductTranslationsListFilters {
   offset?: number | undefined
 }
 
+export interface ProductDayTranslationsListFilters {
+  languageTag?: string | undefined
+  limit?: number | undefined
+  offset?: number | undefined
+}
+
 export const productsQueryKeys = {
   all: ["voyant", "products"] as const,
 
@@ -138,6 +144,13 @@ export const productsQueryKeys = {
   productDays: (productId: string) => [...productsQueryKeys.product(productId), "days"] as const,
   productDayServices: (productId: string, dayId: string) =>
     [...productsQueryKeys.productDays(productId), dayId, "services"] as const,
+  productDayTranslationsRoot: (productId: string, dayId: string) =>
+    [...productsQueryKeys.productDays(productId), dayId, "translations"] as const,
+  productDayTranslations: (
+    productId: string,
+    dayId: string,
+    filters: ProductDayTranslationsListFilters = {},
+  ) => [...productsQueryKeys.productDayTranslationsRoot(productId, dayId), filters] as const,
   productVersions: (productId: string) =>
     [...productsQueryKeys.product(productId), "versions"] as const,
   productMedia: (productId: string) => [...productsQueryKeys.product(productId), "media"] as const,

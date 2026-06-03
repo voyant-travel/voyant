@@ -67,6 +67,30 @@ export const productDays = pgTable(
 export type ProductDay = typeof productDays.$inferSelect
 export type NewProductDay = typeof productDays.$inferInsert
 
+export const productDayTranslations = pgTable(
+  "product_day_translations",
+  {
+    id: typeId("product_day_translations"),
+    dayId: typeIdRef("day_id")
+      .notNull()
+      .references(() => productDays.id, { onDelete: "cascade" }),
+    languageTag: text("language_tag").notNull(),
+    title: text("title"),
+    description: text("description"),
+    location: text("location"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_product_day_translations_day").on(table.dayId),
+    index("idx_product_day_translations_language").on(table.languageTag),
+    uniqueIndex("uidx_product_day_translations_day_language").on(table.dayId, table.languageTag),
+  ],
+)
+
+export type ProductDayTranslation = typeof productDayTranslations.$inferSelect
+export type NewProductDayTranslation = typeof productDayTranslations.$inferInsert
+
 export const productDayServices = pgTable(
   "product_day_services",
   {

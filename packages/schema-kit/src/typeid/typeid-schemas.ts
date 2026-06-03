@@ -82,6 +82,7 @@ export const typeIdSchemas = {
   optionUnitTranslation: typeIdSchema("option_unit_translations"),
   productDay: typeIdSchema("product_days"),
   productDayService: typeIdSchema("product_day_services"),
+  productDayTranslation: typeIdSchema("product_day_translations"),
   productVersion: typeIdSchema("product_versions"),
   productNote: typeIdSchema("product_notes"),
   booking: typeIdSchema("bookings"),
