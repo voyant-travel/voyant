@@ -51,7 +51,9 @@ import { useAdminMessages } from "@/lib/admin-i18n"
  * for an option, no rooms/seats/etc. are materialized when bookings hit
  * a slot.
  *
- * Each template is identified by `(optionId, kind)`. Common kinds:
+ * Each template is identified by `(optionId, kind, refId)` — an option can
+ * hold several templates of the same kind, one per `option_unit` (e.g. a
+ * "room" template per room type), distinguished by `refId`. Common kinds:
  *   - `room` — accommodation rooms (default capacity 2)
  *   - `vehicle_seat` — coach/van seats (capacity 1)
  *   - `cabin` — cruise cabins
@@ -110,6 +112,11 @@ export function OptionResourceTemplatesPanel({
   const [dialogOpen, setDialogOpen] = useState(false)
   const [seatMapOpen, setSeatMapOpen] = useState(false)
   const [editingKind, setEditingKind] = useState<string | null>(null)
+  // The ref of the template being edited, so submit updates that exact
+  // (option, kind, refId) row rather than colliding with siblings of the same
+  // kind. Null for ref-less templates (the manual "Add" path).
+  const [editingRefType, setEditingRefType] = useState<string | null>(null)
+  const [editingRefId, setEditingRefId] = useState<string | null>(null)
   const [kindValue, setKindValue] = useState<string>("room")
   const [capacityValue, setCapacityValue] = useState<number>(2)
   const [defaultCountValue, setDefaultCountValue] = useState<number>(1)
@@ -123,6 +130,8 @@ export function OptionResourceTemplatesPanel({
 
   function openCreate() {
     setEditingKind(null)
+    setEditingRefType(null)
+    setEditingRefId(null)
     setKindValue("room")
     setCapacityValue(2)
     setDefaultCountValue(1)
@@ -134,12 +143,16 @@ export function OptionResourceTemplatesPanel({
 
   function openEdit(template: {
     kind: string
+    refType: string | null
+    refId: string | null
     capacity: number
     defaultCount: number | null
     namePattern: string
     flags: Record<string, unknown>
   }) {
     setEditingKind(template.kind)
+    setEditingRefType(template.refType)
+    setEditingRefId(template.refId)
     setKindValue(template.kind)
     setCapacityValue(template.capacity)
     setDefaultCountValue(template.defaultCount ?? 0)
@@ -171,6 +184,10 @@ export function OptionResourceTemplatesPanel({
           capacity: effectiveCapacity,
           defaultCount: defaultCountValue > 0 ? defaultCountValue : null,
           namePattern: trimmedPattern,
+          // Preserve the edited template's ref so the upsert targets its exact
+          // (option, kind, refId) row instead of clobbering a sibling.
+          refType: editingRefType,
+          refId: editingRefId,
           flags,
         },
       })
@@ -180,10 +197,10 @@ export function OptionResourceTemplatesPanel({
     }
   }
 
-  async function handleRemove(kind: string) {
-    if (!globalThis.confirm?.(formatMessage(t.deleteConfirm, { kind }))) return
+  async function handleRemove(kind: string, refId: string | null, label: string) {
+    if (!globalThis.confirm?.(formatMessage(t.deleteConfirm, { kind: label }))) return
     try {
-      await remove.mutateAsync({ optionId, kind })
+      await remove.mutateAsync({ optionId, kind, refId })
     } catch (err) {
       setError(err instanceof Error ? err.message : t.deleteFailed)
     }
@@ -313,57 +330,72 @@ export function OptionResourceTemplatesPanel({
               </p>
             ) : (
               <ul className="divide-y overflow-hidden rounded-md border">
-                {templates.map((template) => (
-                  <li
-                    key={template.kind}
-                    className="flex items-center justify-between gap-3 px-3 py-2.5"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px]">
-                          {(t.kinds as Record<string, string>)[template.kind] ?? template.kind}
-                        </Badge>
-                        <span className="text-sm">
-                          {formatMessage(t.capacitySummary, {
-                            capacity: template.capacity,
-                            count: template.defaultCount ?? 0,
-                            pattern: template.namePattern,
-                          })}
-                        </span>
-                        {template.kind === "vehicle_seat" ? (
-                          <SeatMapSummaryBadge flags={template.flags} messages={t} />
-                        ) : null}
+                {templates.map((template) => {
+                  const kindLabel =
+                    (t.kinds as Record<string, string>)[template.kind] ?? template.kind
+                  // Several "room" templates share a kind but map to different
+                  // option_units — surface the unit name so the operator can
+                  // tell Single / Double / Triple rows apart.
+                  const unit = template.refId
+                    ? roomUnits.find((entry) => entry.id === template.refId)
+                    : undefined
+                  const displayLabel = unit?.name ?? kindLabel
+                  return (
+                    <li
+                      key={template.id}
+                      className="flex items-center justify-between gap-3 px-3 py-2.5"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-[10px]">
+                            {displayLabel}
+                          </Badge>
+                          <span className="text-sm">
+                            {formatMessage(t.capacitySummary, {
+                              capacity: template.capacity,
+                              count: template.defaultCount ?? 0,
+                              pattern: template.namePattern,
+                            })}
+                          </span>
+                          {template.kind === "vehicle_seat" ? (
+                            <SeatMapSummaryBadge flags={template.flags} messages={t} />
+                          ) : null}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 px-2"
-                        onClick={() =>
-                          openEdit({
-                            kind: template.kind,
-                            capacity: template.capacity,
-                            defaultCount: template.defaultCount,
-                            namePattern: template.namePattern,
-                            flags: template.flags,
-                          })
-                        }
-                      >
-                        <Pencil className="size-3.5" aria-hidden="true" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 px-2 text-destructive hover:text-destructive"
-                        onClick={() => void handleRemove(template.kind)}
-                        disabled={remove.isPending}
-                      >
-                        <Trash2 className="size-3.5" aria-hidden="true" />
-                      </Button>
-                    </div>
-                  </li>
-                ))}
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2"
+                          onClick={() =>
+                            openEdit({
+                              kind: template.kind,
+                              refType: template.refType,
+                              refId: template.refId,
+                              capacity: template.capacity,
+                              defaultCount: template.defaultCount,
+                              namePattern: template.namePattern,
+                              flags: template.flags,
+                            })
+                          }
+                        >
+                          <Pencil className="size-3.5" aria-hidden="true" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-destructive hover:text-destructive"
+                          onClick={() =>
+                            void handleRemove(template.kind, template.refId, displayLabel)
+                          }
+                          disabled={remove.isPending}
+                        >
+                          <Trash2 className="size-3.5" aria-hidden="true" />
+                        </Button>
+                      </div>
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </div>

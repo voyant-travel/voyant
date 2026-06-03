@@ -139,33 +139,46 @@ export async function upsertProductOptionResourceTemplate(
 ): Promise<ResourceTemplate> {
   await assertProductOptionBelongsToProduct(db, productId, productOptionId)
 
-  const [row] = await db
-    .insert(productOptionResourceTemplates)
-    .values({
-      productOptionId,
-      kind,
-      refType: input.refType ?? null,
-      refId: input.refId ?? null,
-      capacity: input.capacity,
-      namePattern: input.namePattern,
-      layout: input.layout ?? null,
-      defaultCount: input.defaultCount ?? null,
-      flags: input.flags ?? {},
-    })
-    .onConflictDoUpdate({
-      target: [productOptionResourceTemplates.productOptionId, productOptionResourceTemplates.kind],
-      set: {
-        refType: input.refType ?? null,
-        refId: input.refId ?? null,
-        capacity: input.capacity,
-        namePattern: input.namePattern,
-        layout: input.layout ?? null,
-        defaultCount: input.defaultCount ?? null,
-        flags: input.flags ?? {},
-        updatedAt: new Date(),
-      },
-    })
-    .returning()
+  const refId = input.refId ?? null
+  const values = {
+    refType: input.refType ?? null,
+    refId,
+    capacity: input.capacity,
+    namePattern: input.namePattern,
+    layout: input.layout ?? null,
+    defaultCount: input.defaultCount ?? null,
+    flags: input.flags ?? {},
+  }
+
+  // An option can hold several templates of the same kind, one per option_unit
+  // (see the widened unique index in migration 0053:
+  // (product_option_id, kind, coalesce(ref_id, ''))). Drizzle 0.45 can't express
+  // that coalesce in an onConflict target, so we resolve the row by (option,
+  // kind, refId) ourselves — coalescing so a null refId matches the ref-less
+  // template — then update it in place or insert a new one. The unique index
+  // still guards against a concurrent duplicate.
+  const [existing] = await db
+    .select({ id: productOptionResourceTemplates.id })
+    .from(productOptionResourceTemplates)
+    .where(
+      and(
+        eq(productOptionResourceTemplates.productOptionId, productOptionId),
+        eq(productOptionResourceTemplates.kind, kind),
+        sql`coalesce(${productOptionResourceTemplates.refId}, '') = ${refId ?? ""}`,
+      ),
+    )
+    .limit(1)
+
+  const [row] = existing
+    ? await db
+        .update(productOptionResourceTemplates)
+        .set({ ...values, updatedAt: new Date() })
+        .where(eq(productOptionResourceTemplates.id, existing.id))
+        .returning()
+    : await db
+        .insert(productOptionResourceTemplates)
+        .values({ productOptionId, kind, ...values })
+        .returning()
 
   if (!row) throw new AllocationServiceError("Resource template upsert failed", 500)
   return {
@@ -189,15 +202,21 @@ export async function deleteProductOptionResourceTemplate(
   productId: string,
   productOptionId: string,
   kind: string,
+  refId?: string | null,
 ) {
   await assertProductOptionBelongsToProduct(db, productId, productOptionId)
 
+  // An option can hold several templates of the same kind (e.g. one "room"
+  // per option_unit), distinguished by ref_id. Match the specific row via
+  // coalesce so a null refId targets the ref-less template rather than wiping
+  // every row of that kind.
   const [row] = await db
     .delete(productOptionResourceTemplates)
     .where(
       and(
         eq(productOptionResourceTemplates.productOptionId, productOptionId),
         eq(productOptionResourceTemplates.kind, kind),
+        sql`coalesce(${productOptionResourceTemplates.refId}, '') = coalesce(${refId ?? null}, '')`,
       ),
     )
     .returning({ id: productOptionResourceTemplates.id })

@@ -150,6 +150,7 @@ export const availabilityAllocationRoutes = new Hono<Env>()
           c.req.param("productId"),
           c.req.param("optionId"),
           c.req.param("kind"),
+          c.req.query("refId") ?? null,
         )
         return data ? c.json({ data }) : c.json({ error: "Resource template not found" }, 404)
       } catch (error) {
