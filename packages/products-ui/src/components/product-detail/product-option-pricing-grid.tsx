@@ -3,9 +3,11 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { formatMessage } from "@voyantjs/i18n"
 import {
+  type PricingCategoryRecord,
   useOptionPriceRuleMutation,
   useOptionUnitPriceRuleMutation,
   usePriceCatalogMutation,
+  usePricingCategoryMutation,
 } from "@voyantjs/pricing-react"
 import { useOptionUnitMutation, useVoyantProductsContext } from "@voyantjs/products-react"
 import { Button } from "@voyantjs/ui/components/button"
@@ -15,6 +17,7 @@ import { useState } from "react"
 import { useProductDetailMessages } from "./host.js"
 import {
   categoryAppliesToUnit,
+  ExtraPriceRulesPanel,
   formatProductMoney,
   getCategoryCondition,
   TravelerCategoryDialog,
@@ -80,6 +83,7 @@ export function OptionPricingGrid({
   const client = useVoyantProductsContext()
   const messages = useProductDetailMessages()
   const t = messages.products.operations.pricingGrid
+  const priceRuleMessages = messages.products.operations.priceRules
 
   const { data: unitsData, refetch: refetchUnits } = useQuery(
     getOptionUnitsQueryOptions(client, optionId),
@@ -104,6 +108,7 @@ export function OptionPricingGrid({
   const { remove: removeCell } = useOptionUnitPriceRuleMutation()
   const { create: createRule } = useOptionPriceRuleMutation()
   const { create: createCatalog } = usePriceCatalogMutation()
+  const { remove: removeCategory } = usePricingCategoryMutation()
 
   const deleteUnitMutation = useMutation({
     mutationFn: (id: string) => removeUnit.mutateAsync(id),
@@ -121,6 +126,7 @@ export function OptionPricingGrid({
   const [editingUnit, setEditingUnit] = useState<OptionUnitData | undefined>()
   const [defaultUnitType, setDefaultUnitType] = useState<OptionUnitData["unitType"]>("room")
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false)
+  const [editingCategory, setEditingCategory] = useState<PricingCategoryRecord | undefined>()
   const [cellDialogOpen, setCellDialogOpen] = useState(false)
   const [cellRuleId, setCellRuleId] = useState<string | undefined>()
   const [editingCell, setEditingCell] = useState<OptionUnitPriceRuleData | undefined>()
@@ -234,6 +240,37 @@ export function OptionPricingGrid({
     setUnitDialogOpen(true)
   }
 
+  const editTravelerType = (category: PricingCategoryRecord) => {
+    setEditingCategory(category)
+    setCategoryDialogOpen(true)
+  }
+
+  async function removeTravelerType(category: PricingCategoryRecord) {
+    if (
+      !confirm(
+        formatMessage(messages.products.operations.priceRules.travelerCategoryDeleteConfirm, {
+          name: category.name,
+        }),
+      )
+    ) {
+      return
+    }
+    // Categories this product/option owns are deleted outright. A global
+    // category only shows here because some cell references it, so removing
+    // its prices drops the column from this option without touching the
+    // shared category.
+    if (category.productId === productId || category.optionId === optionId) {
+      await removeCategory.mutateAsync(category.id)
+      void refetchCategories()
+      void refetchCells()
+    } else {
+      for (const cell of cells.filter((entry) => entry.pricingCategoryId === category.id)) {
+        await removeCell.mutateAsync(cell.id)
+      }
+      void refetchCells()
+    }
+  }
+
   const unitColumnLabel = effectiveLayout === "rooms" ? t.roomColumn : t.travelerColumn
 
   return (
@@ -249,7 +286,14 @@ export function OptionPricingGrid({
         </div>
         <div className="flex items-center gap-2">
           {effectiveLayout === "rooms" ? (
-            <Button variant="outline" size="sm" onClick={() => setCategoryDialogOpen(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setEditingCategory(undefined)
+                setCategoryDialogOpen(true)
+              }}
+            >
               <Plus className="mr-1 h-3.5 w-3.5" />
               {t.addTravelerType}
             </Button>
@@ -274,14 +318,41 @@ export function OptionPricingGrid({
                 <th className="p-2.5 text-left font-medium">{t.availableColumn}</th>
                 {columns.map((column) => {
                   const condition = getCategoryCondition(column.metadata)
+                  const category = column.id
+                    ? categories.find((entry) => entry.id === column.id)
+                    : undefined
                   return (
-                    <th key={column.id ?? "__base__"} className="p-2.5 text-left font-medium">
-                      <div>{column.name}</div>
-                      {condition ? (
-                        <div className="mt-0.5 max-w-[220px] text-[10px] font-normal normal-case leading-snug text-muted-foreground">
-                          {condition}
+                    <th key={column.id ?? "__base__"} className="group p-2.5 text-left font-medium">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div>{column.name}</div>
+                          {condition ? (
+                            <div className="mt-0.5 max-w-[220px] text-[10px] font-normal normal-case leading-snug text-muted-foreground">
+                              {condition}
+                            </div>
+                          ) : null}
                         </div>
-                      ) : null}
+                        {category ? (
+                          <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
+                            <button
+                              type="button"
+                              aria-label={priceRuleMessages.travelerCategoryEdit}
+                              onClick={() => editTravelerType(category)}
+                              className="text-muted-foreground hover:text-foreground"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={priceRuleMessages.travelerCategoryDelete}
+                              onClick={() => void removeTravelerType(category)}
+                              className="text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
                     </th>
                   )
                 })}
@@ -380,6 +451,17 @@ export function OptionPricingGrid({
         </div>
       )}
 
+      {/* Per-option add-on prices (the "Extra" definitions are product-level;
+          their price is set here, on the option's default plan). */}
+      {defaultRule?.id ? (
+        <ExtraPriceRulesPanel
+          productId={productId}
+          optionId={optionId}
+          optionPriceRuleId={defaultRule.id}
+          productCurrency={productCurrency}
+        />
+      ) : null}
+
       <UnitDialog
         open={unitDialogOpen}
         onOpenChange={setUnitDialogOpen}
@@ -397,14 +479,19 @@ export function OptionPricingGrid({
 
       <TravelerCategoryDialog
         open={categoryDialogOpen}
-        onOpenChange={setCategoryDialogOpen}
+        onOpenChange={(open) => {
+          setCategoryDialogOpen(open)
+          if (!open) setEditingCategory(undefined)
+        }}
         productId={productId}
         units={units}
+        category={editingCategory}
         nextSortOrder={
           categories.length > 0 ? Math.max(...categories.map((c) => c.sortOrder)) + 1 : 0
         }
         onSuccess={() => {
           setCategoryDialogOpen(false)
+          setEditingCategory(undefined)
           void refetchCategories()
         }}
       />

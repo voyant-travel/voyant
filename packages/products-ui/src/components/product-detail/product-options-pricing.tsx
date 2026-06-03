@@ -1,5 +1,9 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { useProductExtras } from "@voyantjs/extras-react"
+import {
+  type ProductExtraRecord,
+  useProductExtraMutation,
+  useProductExtras,
+} from "@voyantjs/extras-react"
 import { formatMessage } from "@voyantjs/i18n"
 import {
   type ExtraPriceRuleRecord,
@@ -40,6 +44,7 @@ import { ChevronDown, ChevronRight, MoreHorizontal, Pencil, Plus, Trash2 } from 
 import type * as React from "react"
 import { useEffect, useState } from "react"
 import { useProductDetailMessages } from "./host.js"
+import { getExtraPricingModeLabel, ProductExtraDialog } from "./product-extra-dialog.js"
 import {
   type OptionPriceRuleData,
   OptionPriceRuleDialog,
@@ -644,6 +649,22 @@ function initialTravelerCategoryState(): CreateTravelerCategoryState {
   }
 }
 
+function stateFromCategory(category: PricingCategoryRecord): CreateTravelerCategoryState {
+  const metadata = category.metadata ?? {}
+  const allowedUnitIds = Array.isArray(metadata.allowedUnitIds)
+    ? metadata.allowedUnitIds.filter((id): id is string => typeof id === "string")
+    : []
+  return {
+    name: category.name,
+    code: category.code ?? "",
+    categoryType: category.categoryType,
+    minAge: category.minAge != null ? String(category.minAge) : "",
+    maxAge: category.maxAge != null ? String(category.maxAge) : "",
+    condition: typeof metadata.condition === "string" ? metadata.condition : "",
+    allowedUnitIds,
+  }
+}
+
 function parseOptionalInteger(value: string) {
   const trimmed = value.trim()
   if (!trimmed) return null
@@ -657,6 +678,7 @@ export function TravelerCategoryDialog({
   productId,
   units,
   nextSortOrder,
+  category,
   onSuccess,
 }: {
   open: boolean
@@ -664,12 +686,14 @@ export function TravelerCategoryDialog({
   productId: string
   units: OptionUnitData[]
   nextSortOrder: number
+  category?: PricingCategoryRecord
   onSuccess: () => void
 }) {
   const messages = useProductDetailMessages()
   const priceRuleMessages = messages.products.operations.priceRules
   const pricingCategoryMessages = messages.pricing.categories
-  const { create } = usePricingCategoryMutation()
+  const { create, update } = usePricingCategoryMutation()
+  const isEditing = !!category
   const [state, setState] = useState<CreateTravelerCategoryState>(() =>
     initialTravelerCategoryState(),
   )
@@ -685,10 +709,10 @@ export function TravelerCategoryDialog({
 
   useEffect(() => {
     if (open) {
-      setState(initialTravelerCategoryState())
+      setState(category ? stateFromCategory(category) : initialTravelerCategoryState())
       setError(null)
     }
-  }, [open])
+  }, [open, category])
 
   const toggleUnit = (unitId: string, checked: boolean) => {
     setState((prev) => ({
@@ -718,23 +742,29 @@ export function TravelerCategoryDialog({
       metadata.allowedUnitNames = selectedUnits.map((unit) => unit.name)
     }
 
+    const payload = {
+      productId,
+      optionId: category?.optionId ?? null,
+      unitId: null,
+      name,
+      code: state.code.trim() || null,
+      categoryType: state.categoryType,
+      seatOccupancy: 1,
+      isAgeQualified: minAge != null || maxAge != null,
+      minAge,
+      maxAge,
+      internalUseOnly: false,
+      active: true,
+      sortOrder: category?.sortOrder ?? nextSortOrder,
+      metadata: Object.keys(metadata).length > 0 ? metadata : null,
+    }
+
     try {
-      await create.mutateAsync({
-        productId,
-        optionId: null,
-        unitId: null,
-        name,
-        code: state.code.trim() || null,
-        categoryType: state.categoryType,
-        seatOccupancy: 1,
-        isAgeQualified: minAge != null || maxAge != null,
-        minAge,
-        maxAge,
-        internalUseOnly: false,
-        active: true,
-        sortOrder: nextSortOrder,
-        metadata: Object.keys(metadata).length > 0 ? metadata : null,
-      })
+      if (category) {
+        await update.mutateAsync({ id: category.id, input: payload })
+      } else {
+        await create.mutateAsync(payload)
+      }
       onSuccess()
     } catch (err) {
       setError(err instanceof Error ? err.message : priceRuleMessages.travelerCategorySaveFailed)
@@ -745,7 +775,11 @@ export function TravelerCategoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{priceRuleMessages.travelerCategoryDialogTitle}</DialogTitle>
+          <DialogTitle>
+            {isEditing
+              ? priceRuleMessages.travelerCategoryEditTitle
+              : priceRuleMessages.travelerCategoryDialogTitle}
+          </DialogTitle>
           <DialogDescription>
             {priceRuleMessages.travelerCategoryDialogDescription}
           </DialogDescription>
@@ -866,8 +900,10 @@ export function TravelerCategoryDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {pricingCategoryMessages.cancel}
           </Button>
-          <Button onClick={() => void save()} disabled={create.isPending}>
-            {priceRuleMessages.createTravelerCategory}
+          <Button onClick={() => void save()} disabled={create.isPending || update.isPending}>
+            {isEditing
+              ? priceRuleMessages.updateTravelerCategory
+              : priceRuleMessages.createTravelerCategory}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -875,7 +911,7 @@ export function TravelerCategoryDialog({
   )
 }
 
-function ExtraPriceRulesPanel({
+export function ExtraPriceRulesPanel({
   productId,
   optionId,
   optionPriceRuleId,
@@ -888,65 +924,115 @@ function ExtraPriceRulesPanel({
 }) {
   const messages = useProductDetailMessages()
   const extraPriceMessages = messages.products.operations.extraPrices
-  const extrasQuery = useProductExtras({ productId, active: true, limit: 100 })
+  const extraMessages = messages.products.operations.extras
+  const extrasQuery = useProductExtras({ productId, limit: 100 })
   const rulesQuery = useExtraPriceRules({ optionPriceRuleId, optionId, active: true, limit: 100 })
-  const { remove } = useExtraPriceRuleMutation()
+  const { remove: removeExtra } = useProductExtraMutation()
   const [pricingExtraId, setPricingExtraId] = useState<string | null>(null)
-  const extras = extrasQuery.data?.data ?? []
+  const [definitionDialogOpen, setDefinitionDialogOpen] = useState(false)
+  const [editingExtra, setEditingExtra] = useState<ProductExtraRecord | undefined>()
+  const extras = (extrasQuery.data?.data ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder)
   const rules = rulesQuery.data?.data ?? []
   const ruleByExtraId = new Map(
     rules.flatMap((rule) => (rule.productExtraId ? [[rule.productExtraId, rule] as const] : [])),
   )
-
-  if (extras.length === 0) return null
   const pricingExtra = extras.find((extra) => extra.id === pricingExtraId) ?? null
 
   return (
     <div className="mt-4 border-t pt-3">
-      <div className="mb-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-        {extraPriceMessages.sectionTitle}
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          {extraMessages.sectionTitle}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setEditingExtra(undefined)
+            setDefinitionDialogOpen(true)
+          }}
+        >
+          <Plus className="mr-1 h-3 w-3" />
+          {extraMessages.addAction}
+        </Button>
       </div>
-      <div className="flex flex-col gap-2">
-        {extras.map((extra) => {
-          const rule = ruleByExtraId.get(extra.id)
-          return (
-            <div
-              key={extra.id}
-              className="flex items-center justify-between gap-3 rounded border px-2 py-1.5 text-xs"
-            >
-              <div className="min-w-0">
-                <span className="font-medium">{extra.name}</span>
-                {extra.pricedPerPerson ? (
-                  <span className="ml-2 text-muted-foreground">
-                    {extraPriceMessages.perTraveler}
+      {extras.length === 0 ? (
+        <p className="py-2 text-center text-xs text-muted-foreground">{extraMessages.empty}</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {extras.map((extra) => {
+            const rule = ruleByExtraId.get(extra.id)
+            return (
+              <div
+                key={extra.id}
+                className="flex items-center justify-between gap-3 rounded border px-2 py-1.5 text-xs"
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="font-medium">{extra.name}</span>
+                  <Badge variant="secondary" className="text-[10px]">
+                    {getExtraPricingModeLabel(extra.pricingMode, extraMessages)}
+                  </Badge>
+                  {extra.pricedPerPerson ? (
+                    <span className="text-muted-foreground">{extraPriceMessages.perTraveler}</span>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono">
+                    {rule?.sellAmountCents != null
+                      ? formatProductMoney(rule.sellAmountCents, productCurrency)
+                      : extraPriceMessages.noAmount}
                   </span>
-                ) : null}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-mono">
-                  {rule?.sellAmountCents != null
-                    ? formatProductMoney(rule.sellAmountCents, productCurrency)
-                    : extraPriceMessages.noAmount}
-                </span>
-                <Button variant="outline" size="sm" onClick={() => setPricingExtraId(extra.id)}>
-                  {extraPriceMessages.setPrice}
-                </Button>
-                {rule ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      remove.mutate(rule.id, { onSuccess: () => void rulesQuery.refetch() })
-                    }
-                  >
-                    {extraPriceMessages.remove}
+                  <Button variant="outline" size="sm" onClick={() => setPricingExtraId(extra.id)}>
+                    {extraPriceMessages.setPrice}
                   </Button>
-                ) : null}
+                  <button
+                    type="button"
+                    aria-label={extraMessages.editAction}
+                    onClick={() => {
+                      setEditingExtra(extra)
+                      setDefinitionDialogOpen(true)
+                    }}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={extraMessages.deleteAction}
+                    onClick={() => {
+                      if (
+                        confirm(formatMessage(extraMessages.deleteConfirm, { name: extra.name }))
+                      ) {
+                        removeExtra.mutate(extra.id, {
+                          onSuccess: () => void extrasQuery.refetch(),
+                        })
+                      }
+                    }}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
               </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
+      <ProductExtraDialog
+        open={definitionDialogOpen}
+        onOpenChange={(open) => {
+          setDefinitionDialogOpen(open)
+          if (!open) setEditingExtra(undefined)
+        }}
+        productId={productId}
+        extra={editingExtra}
+        nextSortOrder={extras.length}
+        onSuccess={() => {
+          setDefinitionDialogOpen(false)
+          setEditingExtra(undefined)
+          void extrasQuery.refetch()
+        }}
+      />
       {pricingExtra ? (
         <ExtraPriceRuleDialog
           open={!!pricingExtra}

@@ -21,7 +21,6 @@ import {
   ProductSchedulesSection,
 } from "./product-detail-sections.js"
 import { ProductDetailSkeleton } from "./product-detail-skeleton.js"
-import { ProductExtrasSection } from "./product-extras-section.js"
 import { ProductMarketRulesSection } from "./product-market-rules-section.js"
 import { PricingPanel } from "./product-options-pricing.js"
 import {
@@ -169,8 +168,6 @@ export function ProductDetailPage({ id }: { id: string }) {
               )}
             />
           </ProductsUiMessagesProvider>
-
-          <ProductExtrasSection productId={id} />
 
           <ProductPaymentPolicySection product={product} onSuccess={invalidateProduct} />
           <ProductMarketRulesSection productId={id} />

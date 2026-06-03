@@ -42,6 +42,9 @@ export type ProductData = {
   name: string
   status: "draft" | "active" | "archived"
   description: string | null
+  inclusionsHtml: string | null
+  exclusionsHtml: string | null
+  termsHtml: string | null
   bookingMode: "date" | "date_time" | "open" | "stay" | "transfer" | "itinerary" | "other"
   productTypeId: string | null
   taxClassId: string | null
@@ -76,6 +79,9 @@ function initialValues(product: ProductData | undefined) {
       name: product.name,
       status: product.status,
       description: product.description ?? "",
+      inclusionsHtml: product.inclusionsHtml ?? "",
+      exclusionsHtml: product.exclusionsHtml ?? "",
+      termsHtml: product.termsHtml ?? "",
       bookingMode: product.bookingMode,
       productTypeId: product.productTypeId ?? "",
       taxClassId: product.taxClassId ?? "",
@@ -88,6 +94,9 @@ function initialValues(product: ProductData | undefined) {
     name: "",
     status: "draft" as const,
     description: "",
+    inclusionsHtml: "",
+    exclusionsHtml: "",
+    termsHtml: "",
     bookingMode: "itinerary" as const,
     productTypeId: "",
     taxClassId: "",
@@ -106,6 +115,9 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
     name: z.string().min(1, productMessages.validationNameRequired),
     status: z.enum(["draft", "active", "archived"]),
     description: z.string().optional().nullable(),
+    inclusionsHtml: z.string().optional().nullable(),
+    exclusionsHtml: z.string().optional().nullable(),
+    termsHtml: z.string().optional().nullable(),
     bookingMode: z.enum(["date", "date_time", "open", "stay", "transfer", "itinerary", "other"]),
     productTypeId: z.string().optional().nullable(),
     taxClassId: z.string().optional().nullable(),
@@ -181,6 +193,9 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
       name: values.name,
       status: values.status,
       description: values.description || null,
+      inclusionsHtml: values.inclusionsHtml || null,
+      exclusionsHtml: values.exclusionsHtml || null,
+      termsHtml: values.termsHtml || null,
       bookingMode: values.bookingMode,
       productTypeId: values.productTypeId || null,
       taxClassId: values.taxClassId || null,
@@ -192,6 +207,9 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
       defaultLanguageTag: resolvedDefaultLanguage,
       baseName: values.name,
       baseDescription: values.description ?? "",
+      baseInclusionsHtml: values.inclusionsHtml ?? "",
+      baseExclusionsHtml: values.exclusionsHtml ?? "",
+      baseTermsHtml: values.termsHtml ?? "",
     }
 
     if (isEditing) {
@@ -269,6 +287,51 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
           translations={translations}
           messages={productMessages}
           placeholder={productMessages.slugPlaceholder}
+        />
+
+        <TranslatableField
+          label={productMessages.inclusionsLabel}
+          type="richtext"
+          field="inclusionsHtml"
+          activeLanguage={activeLanguage}
+          defaultLanguageTag={defaultLanguageTag}
+          base={{
+            value: form.watch("inclusionsHtml") ?? "",
+            onChange: (value) => form.setValue("inclusionsHtml", value, { shouldDirty: true }),
+          }}
+          translations={translations}
+          messages={productMessages}
+          placeholder={productMessages.inclusionsPlaceholder}
+        />
+
+        <TranslatableField
+          label={productMessages.exclusionsLabel}
+          type="richtext"
+          field="exclusionsHtml"
+          activeLanguage={activeLanguage}
+          defaultLanguageTag={defaultLanguageTag}
+          base={{
+            value: form.watch("exclusionsHtml") ?? "",
+            onChange: (value) => form.setValue("exclusionsHtml", value, { shouldDirty: true }),
+          }}
+          translations={translations}
+          messages={productMessages}
+          placeholder={productMessages.exclusionsPlaceholder}
+        />
+
+        <TranslatableField
+          label={productMessages.termsLabel}
+          type="richtext"
+          field="termsHtml"
+          activeLanguage={activeLanguage}
+          defaultLanguageTag={defaultLanguageTag}
+          base={{
+            value: form.watch("termsHtml") ?? "",
+            onChange: (value) => form.setValue("termsHtml", value, { shouldDirty: true }),
+          }}
+          translations={translations}
+          messages={productMessages}
+          placeholder={productMessages.termsPlaceholder}
         />
 
         <div className="flex flex-col gap-2">
