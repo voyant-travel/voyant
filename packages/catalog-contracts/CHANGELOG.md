@@ -1,5 +1,7 @@
 # @voyantjs/catalog-contracts
 
+## 0.102.0
+
 ## 0.101.2
 
 ## 0.101.1

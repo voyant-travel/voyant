@@ -1,5 +1,12 @@
 # @voyantjs/travel-composer-react
 
+## 0.102.0
+
+### Patch Changes
+
+- @voyantjs/react@0.102.0
+- @voyantjs/travel-composer@0.102.0
+
 ## 0.101.2
 
 ### Patch Changes

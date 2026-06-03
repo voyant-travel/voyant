@@ -1,5 +1,15 @@
 # @voyantjs/booking-requirements
 
+## 0.102.0
+
+### Patch Changes
+
+- Updated dependencies [b6d0673]
+  - @voyantjs/core@0.102.0
+  - @voyantjs/db@0.102.0
+  - @voyantjs/hono@0.102.0
+  - @voyantjs/products@0.102.0
+
 ## 0.101.2
 
 ### Patch Changes
