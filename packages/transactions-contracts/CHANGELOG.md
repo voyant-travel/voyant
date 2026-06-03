@@ -1,5 +1,7 @@
 # @voyantjs/transactions-contracts
 
+## 0.104.0
+
 ## 0.103.0
 
 ## 0.102.0

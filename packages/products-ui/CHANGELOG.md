@@ -1,5 +1,30 @@
 # @voyantjs/products-ui
 
+## 0.104.0
+
+### Patch Changes
+
+- e2ae9ff: Fix room-typed pricing categories leaking into the pricing grid, and make room allocation respect the booked room type (#1476).
+
+  - **Pricing grid no longer shows a bogus price column per room type.** The rooms/seats grid built one traveler-type column from every in-scope pricing category, so a tenant whose data carries `room`/`vehicle`/`service`-typed categories — e.g. a global default set or legacy-migrated "Double room" categories — got a phantom price column for each room alongside the real Adult/Child split. Columns are now restricted to per-traveler categories via a new `isTravelerCategory` guard, with an escape hatch that still surfaces any category that actually has a price cell (no data loss). Applies to both the merged grid and the Advanced view.
+  - **"Generate from rooms" now creates `room`-kind resource templates keyed by `option_unit`.** Previously each room type became its own distinct template `kind`, which the allocator couldn't use to constrain a traveler to their booked room type. Templates now share `kind: "room"` and carry `refType: "option_unit"` / `refId`, so the auto-allocator's unit match keeps a Double-booked traveler in a Double room. The `(product_option_id, kind)` unique index is widened to `(product_option_id, kind, coalesce(ref_id, ''))` to allow one room template per unit, and the per-slot materializer's skip-existing check is refined to `(kind, ref_id)`. Template upsert and delete now resolve a row by `(option, kind, ref_id)` so editing or removing one room type no longer affects its siblings, and the panel labels each room template by its unit name.
+
+- Updated dependencies [e2ae9ff]
+  - @voyantjs/availability@0.104.0
+  - @voyantjs/availability-react@0.104.0
+  - @voyantjs/catalog-react@0.104.0
+  - @voyantjs/extras-react@0.104.0
+  - @voyantjs/finance@0.104.0
+  - @voyantjs/finance-ui@0.104.0
+  - @voyantjs/i18n@0.104.0
+  - @voyantjs/markets-react@0.104.0
+  - @voyantjs/pricing-react@0.104.0
+  - @voyantjs/pricing-ui@0.104.0
+  - @voyantjs/products-react@0.104.0
+  - @voyantjs/suppliers-react@0.104.0
+  - @voyantjs/ui@0.104.0
+  - @voyantjs/utils@0.104.0
+
 ## 0.103.0
 
 ### Minor Changes

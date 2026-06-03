@@ -1,5 +1,7 @@
 # @voyantjs/i18n
 
+## 0.104.0
+
 ## 0.103.0
 
 ### Minor Changes
