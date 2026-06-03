@@ -1,5 +1,7 @@
 # @voyantjs/cruises-contracts
 
+## 0.101.2
+
 ## 0.101.1
 
 ### Patch Changes

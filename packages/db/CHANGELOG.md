@@ -1,5 +1,13 @@
 # @voyantjs/db
 
+## 0.101.2
+
+### Patch Changes
+
+- Updated dependencies [577eaf5]
+  - @voyantjs/core@0.101.2
+  - @voyantjs/schema-kit@0.101.2
+
 ## 0.101.1
 
 ### Patch Changes

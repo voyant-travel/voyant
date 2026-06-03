@@ -1,5 +1,15 @@
 # @voyantjs/extras
 
+## 0.101.2
+
+### Patch Changes
+
+- @voyantjs/catalog@0.101.2
+- @voyantjs/core@0.101.2
+- @voyantjs/db@0.101.2
+- @voyantjs/extras-contracts@0.101.2
+- @voyantjs/hono@0.101.2
+
 ## 0.100.0
 
 ### Patch Changes

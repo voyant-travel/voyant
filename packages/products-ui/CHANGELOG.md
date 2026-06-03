@@ -1,5 +1,32 @@
 # @voyantjs/products-ui
 
+## 0.101.2
+
+### Patch Changes
+
+- 577eaf5: Consolidate the operator's forked product-detail page into `@voyantjs/products-ui` as the canonical, app-agnostic `ProductDetailPage`.
+
+  - `@voyantjs/products-ui`: new `components/product-detail` module — the full product-detail page (details, in-context translations, itinerary + day sheet, options/pricing, media, departures, schedules, channels, organize, brochure, market rules, payment policy, extras, activity) plus a `ProductDetailHostProvider` that injects everything app-specific (messages, REST client, locale, navigation callbacks, media upload, breadcrumbs, an option-extras slot). Templates mount the page by supplying the host instead of forking it.
+  - `@voyantjs/ui`: `DatePicker`/`DateRangePicker` triggers now forward base-ui's `PopoverTrigger` props so the calendar popover opens on click (fixes a regression where clicking the trigger did nothing).
+
+- Updated dependencies [577eaf5]
+- Updated dependencies [577eaf5]
+- Updated dependencies [577eaf5]
+  - @voyantjs/availability@0.101.2
+  - @voyantjs/availability-react@0.101.2
+  - @voyantjs/catalog-react@0.101.2
+  - @voyantjs/extras-react@0.101.2
+  - @voyantjs/finance@0.101.2
+  - @voyantjs/finance-ui@0.101.2
+  - @voyantjs/i18n@0.101.2
+  - @voyantjs/markets-react@0.101.2
+  - @voyantjs/pricing-react@0.101.2
+  - @voyantjs/pricing-ui@0.101.2
+  - @voyantjs/products-react@0.101.2
+  - @voyantjs/suppliers-react@0.101.2
+  - @voyantjs/ui@0.101.2
+  - @voyantjs/utils@0.101.2
+
 ## 0.101.1
 
 ### Patch Changes
