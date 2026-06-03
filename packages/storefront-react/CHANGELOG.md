@@ -1,5 +1,12 @@
 # @voyantjs/storefront-react
 
+## 0.101.2
+
+### Patch Changes
+
+- @voyantjs/react@0.101.2
+- @voyantjs/storefront@0.101.2
+
 ## 0.101.1
 
 ### Patch Changes

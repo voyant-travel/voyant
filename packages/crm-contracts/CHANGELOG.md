@@ -1,5 +1,12 @@
 # @voyantjs/crm-contracts
 
+## 0.101.2
+
+### Patch Changes
+
+- Updated dependencies [577eaf5]
+  - @voyantjs/schema-kit@0.101.2
+
 ## 0.101.1
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @voyantjs/legal-react
 
+## 0.101.2
+
+### Patch Changes
+
+- Updated dependencies [577eaf5]
+  - @voyantjs/legal@0.101.2
+  - @voyantjs/react@0.101.2
+
 ## 0.101.1
 
 ### Patch Changes

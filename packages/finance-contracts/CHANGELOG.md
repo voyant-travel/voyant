@@ -1,5 +1,13 @@
 # @voyantjs/finance-contracts
 
+## 0.101.2
+
+### Patch Changes
+
+- 577eaf5: Republish finance and legal contract packages with the next release so exact internal package dependencies resolve from the public registry.
+- Updated dependencies [577eaf5]
+  - @voyantjs/schema-kit@0.101.2
+
 ## 0.101.1
 
 ### Patch Changes
