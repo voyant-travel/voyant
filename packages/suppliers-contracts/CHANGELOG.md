@@ -1,5 +1,11 @@
 # @voyantjs/suppliers-contracts
 
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/schema-kit@0.104.1
+
 ## 0.104.0
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @voyantjs/db
 
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/core@0.104.1
+- @voyantjs/schema-kit@0.104.1
+
 ## 0.104.0
 
 ### Patch Changes
