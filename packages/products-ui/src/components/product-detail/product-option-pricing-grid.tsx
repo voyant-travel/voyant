@@ -451,16 +451,16 @@ export function OptionPricingGrid({
         </div>
       )}
 
-      {/* Per-option add-on prices (the "Extra" definitions are product-level;
-          their price is set here, on the option's default plan). */}
-      {defaultRule?.id ? (
-        <ExtraPriceRulesPanel
-          productId={productId}
-          optionId={optionId}
-          optionPriceRuleId={defaultRule.id}
-          productCurrency={productCurrency}
-        />
-      ) : null}
+      {/* Add-on extras: defined here (product-level) and priced on the option's
+          default plan. Always rendered so extras can be added before any price
+          exists; setting a price lazily creates the default rate plan. */}
+      <ExtraPriceRulesPanel
+        productId={productId}
+        optionId={optionId}
+        optionPriceRuleId={defaultRule?.id}
+        ensureOptionPriceRuleId={ensureRatePlanId}
+        productCurrency={productCurrency}
+      />
 
       <UnitDialog
         open={unitDialogOpen}

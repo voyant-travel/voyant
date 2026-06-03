@@ -743,8 +743,12 @@ export function TravelerCategoryDialog({
     }
 
     const payload = {
-      productId,
-      optionId: category?.optionId ?? null,
+      // On edit, preserve the category's existing scope — re-stamping a shared
+      // (global) category with this product's id would silently steal it from
+      // every other product that relies on it. Only a freshly created category
+      // is scoped to the current product.
+      productId: category ? (category.productId ?? null) : productId,
+      optionId: category ? (category.optionId ?? null) : null,
       unitId: null,
       name,
       code: state.code.trim() || null,
@@ -915,20 +919,32 @@ export function ExtraPriceRulesPanel({
   productId,
   optionId,
   optionPriceRuleId,
+  ensureOptionPriceRuleId,
   productCurrency,
 }: {
   productId: string
   optionId: string
-  optionPriceRuleId: string
+  // Optional: extras can be *defined* before the option has a default rate
+  // plan. Pricing requires a rule, so `ensureOptionPriceRuleId` lazily creates
+  // one when the operator first sets an extra's price.
+  optionPriceRuleId?: string
+  ensureOptionPriceRuleId?: () => Promise<string>
   productCurrency: string
 }) {
   const messages = useProductDetailMessages()
   const extraPriceMessages = messages.products.operations.extraPrices
   const extraMessages = messages.products.operations.extras
   const extrasQuery = useProductExtras({ productId, limit: 100 })
-  const rulesQuery = useExtraPriceRules({ optionPriceRuleId, optionId, active: true, limit: 100 })
+  const rulesQuery = useExtraPriceRules({
+    optionPriceRuleId: optionPriceRuleId ?? "__none__",
+    optionId,
+    active: true,
+    limit: 100,
+    enabled: !!optionPriceRuleId,
+  })
   const { remove: removeExtra } = useProductExtraMutation()
   const [pricingExtraId, setPricingExtraId] = useState<string | null>(null)
+  const [pricingRuleId, setPricingRuleId] = useState<string | undefined>(optionPriceRuleId)
   const [definitionDialogOpen, setDefinitionDialogOpen] = useState(false)
   const [editingExtra, setEditingExtra] = useState<ProductExtraRecord | undefined>()
   const extras = (extrasQuery.data?.data ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder)
@@ -982,7 +998,20 @@ export function ExtraPriceRulesPanel({
                       ? formatProductMoney(rule.sellAmountCents, productCurrency)
                       : extraPriceMessages.noAmount}
                   </span>
-                  <Button variant="outline" size="sm" onClick={() => setPricingExtraId(extra.id)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      void (async () => {
+                        const ruleId =
+                          optionPriceRuleId ??
+                          (ensureOptionPriceRuleId ? await ensureOptionPriceRuleId() : undefined)
+                        if (!ruleId) return
+                        setPricingRuleId(ruleId)
+                        setPricingExtraId(extra.id)
+                      })()
+                    }}
+                  >
                     {extraPriceMessages.setPrice}
                   </Button>
                   <button
@@ -1033,13 +1062,13 @@ export function ExtraPriceRulesPanel({
           void extrasQuery.refetch()
         }}
       />
-      {pricingExtra ? (
+      {pricingExtra && (pricingRuleId ?? optionPriceRuleId) ? (
         <ExtraPriceRuleDialog
           open={!!pricingExtra}
           onOpenChange={(open) => {
             if (!open) setPricingExtraId(null)
           }}
-          optionPriceRuleId={optionPriceRuleId}
+          optionPriceRuleId={(pricingRuleId ?? optionPriceRuleId) as string}
           optionId={optionId}
           extra={pricingExtra}
           existingRule={ruleByExtraId.get(pricingExtra.id)}
