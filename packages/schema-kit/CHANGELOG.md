@@ -1,5 +1,7 @@
 # @voyantjs/schema-kit
 
+## 0.102.0
+
 ## 0.101.2
 
 ### Patch Changes
