@@ -4,18 +4,18 @@ import { SeatMapBuilder } from "@voyantjs/allocation-ui"
 import {
   type SeatLayoutSpec,
   seatLayoutSpecSchema,
+  useMaterializeOpenSlotsMutation,
   useProductResourceTemplates,
   useResourceTemplateMutation,
 } from "@voyantjs/availability-react"
 import { formatMessage } from "@voyantjs/i18n"
+import { useOptionUnits } from "@voyantjs/products-react"
 import {
   Badge,
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
   Dialog,
   DialogBody,
   DialogContent,
@@ -30,7 +30,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@voyantjs/ui/components"
-import { Armchair, Bed, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
+import {
+  Armchair,
+  Bed,
+  CalendarCheck,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  Pencil,
+  Plus,
+  Sparkles,
+  Trash2,
+} from "lucide-react"
 import { useMemo, useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
@@ -68,6 +79,18 @@ const COMMON_KINDS: ReadonlyArray<{ value: ResourceTemplateKind; defaultPattern:
   { value: "flight_seat", defaultPattern: "Seat {sequence}" },
 ]
 
+// Derive a stable, unique resource `kind` from a room unit so each room type
+// (Single/Double/Triple) generates its own physical resources. The kind is a
+// free-text slug — distinct kinds avoid the (option, kind) unique constraint.
+function roomUnitToKind(unit: { code: string | null; name: string }): string {
+  const slug = (unit.code || unit.name || "room")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+  return slug || "room"
+}
+
 export function OptionResourceTemplatesPanel({
   productId,
   optionId,
@@ -76,12 +99,26 @@ export function OptionResourceTemplatesPanel({
   const t = adminMessages.availability.details.resourceTemplates
   const { data, isPending, isError } = useProductResourceTemplates({ productId })
   const { upsert, remove } = useResourceTemplateMutation(productId)
+  const materializeOpenSlots = useMaterializeOpenSlotsMutation(productId)
 
   const templates = useMemo(() => {
     const option = (data?.data ?? []).find((entry) => entry.id === optionId)
     return option?.templates ?? []
   }, [data?.data, optionId])
+  const totalPerDeparture = useMemo(
+    () => templates.reduce((sum, template) => sum + (template.defaultCount ?? 0), 0),
+    [templates],
+  )
 
+  // The option's room units already carry quantity (maxQuantity) and occupancy
+  // — generate departure inventory straight from them instead of re-typing it.
+  const { data: unitsData } = useOptionUnits({ optionId, limit: 100 })
+  const roomUnits = useMemo(
+    () => (unitsData?.data ?? []).filter((unit) => unit.unitType === "room"),
+    [unitsData?.data],
+  )
+
+  const [open, setOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [seatMapOpen, setSeatMapOpen] = useState(false)
   const [editingKind, setEditingKind] = useState<string | null>(null)
@@ -91,6 +128,7 @@ export function OptionResourceTemplatesPanel({
   const [namePatternValue, setNamePatternValue] = useState<string>("Room {sequence}")
   const [layoutSpec, setLayoutSpec] = useState<SeatLayoutSpec | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [applyResult, setApplyResult] = useState<string | null>(null)
 
   const derivedSeatCount = useMemo(() => countSeats(layoutSpec), [layoutSpec])
   const usingSeatMap = kindValue === "vehicle_seat" && layoutSpec !== null
@@ -163,86 +201,177 @@ export function OptionResourceTemplatesPanel({
     }
   }
 
+  async function generateFromRooms() {
+    setError(null)
+    try {
+      for (const unit of roomUnits) {
+        await upsert.mutateAsync({
+          optionId,
+          kind: roomUnitToKind(unit),
+          input: {
+            capacity: unit.occupancyMax ?? unit.occupancyMin ?? 1,
+            defaultCount: unit.maxQuantity ?? null,
+            namePattern: `${unit.name} {sequence}`,
+            flags: {},
+          },
+        })
+      }
+      setOpen(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.saveFailed)
+    }
+  }
+
+  async function applyToOpenDepartures() {
+    if (!globalThis.confirm?.(t.applyToOpenConfirm)) return
+    setError(null)
+    setApplyResult(null)
+    try {
+      const result = await materializeOpenSlots.mutateAsync({ optionId })
+      setApplyResult(
+        result.slots === 0
+          ? t.applyToOpenEmpty
+          : formatMessage(t.applyToOpenResult, {
+              created: result.created,
+              slots: result.slots,
+            }),
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.applyToOpenFailed)
+    }
+  }
+
   const matchingCommon = COMMON_KINDS.find((entry) => entry.value === kindValue)
   const isExtendedKind = !matchingCommon && kindValue.trim().length > 0
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-        <div className="space-y-1">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Bed className="size-4 text-muted-foreground" aria-hidden="true" />
-            {t.title}
-          </CardTitle>
-          <CardDescription>{t.description}</CardDescription>
-        </div>
-        <Button size="sm" onClick={openCreate}>
-          <Plus className="mr-1 size-4" aria-hidden="true" />
-          {t.addButton}
-        </Button>
-      </CardHeader>
-      <CardContent className="p-0">
-        {isPending ? (
-          <p className="flex items-center justify-center gap-2 px-6 py-6 text-muted-foreground text-sm">
-            <Loader2 className="size-3.5 animate-spin" />
-          </p>
-        ) : isError ? (
-          <p className="px-6 py-6 text-center text-destructive text-sm">{t.loadFailed}</p>
-        ) : templates.length === 0 ? (
-          <p className="px-6 py-6 text-center text-muted-foreground text-sm">{t.emptyMessage}</p>
-        ) : (
-          <ul className="divide-y">
-            {templates.map((template) => (
-              <li key={template.kind} className="flex items-center justify-between gap-3 px-6 py-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-[10px] uppercase">
-                      {template.kind}
-                    </Badge>
-                    <span className="text-sm">
-                      {formatMessage(t.capacitySummary, {
-                        capacity: template.capacity,
-                        count: template.defaultCount ?? 0,
-                        pattern: template.namePattern,
-                      })}
-                    </span>
-                    {template.kind === "vehicle_seat" ? (
-                      <SeatMapSummaryBadge flags={template.flags} messages={t} />
-                    ) : null}
-                  </div>
-                </div>
-                <div className="flex items-center gap-1">
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <div className="rounded-md border bg-background/60">
+        <CollapsibleTrigger className="flex w-full items-center gap-2 px-3 py-2.5 text-left">
+          <Bed className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <span className="font-medium text-sm">{t.title}</span>
+          <Badge variant="secondary" className="font-normal">
+            {templates.length === 0
+              ? t.collapsedEmpty
+              : formatMessage(t.collapsedSummary, {
+                  count: templates.length,
+                  total: totalPerDeparture,
+                })}
+          </Badge>
+          <span className="flex-1" />
+          {open ? (
+            <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          ) : (
+            <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          )}
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="flex flex-col gap-3 border-t p-3">
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-muted-foreground text-xs">{t.description}</p>
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                {templates.length > 0 ? (
                   <Button
                     size="sm"
-                    variant="ghost"
-                    className="h-7 px-2"
-                    onClick={() =>
-                      openEdit({
-                        kind: template.kind,
-                        capacity: template.capacity,
-                        defaultCount: template.defaultCount,
-                        namePattern: template.namePattern,
-                        flags: template.flags,
-                      })
-                    }
+                    variant="outline"
+                    onClick={() => void applyToOpenDepartures()}
+                    disabled={materializeOpenSlots.isPending}
                   >
-                    <Pencil className="size-3.5" aria-hidden="true" />
+                    <CalendarCheck className="mr-1 size-4" aria-hidden="true" />
+                    {t.applyToOpenButton}
                   </Button>
+                ) : null}
+                {roomUnits.length > 0 ? (
                   <Button
                     size="sm"
-                    variant="ghost"
-                    className="h-7 px-2 text-destructive hover:text-destructive"
-                    onClick={() => void handleRemove(template.kind)}
-                    disabled={remove.isPending}
+                    variant="outline"
+                    onClick={() => void generateFromRooms()}
+                    disabled={upsert.isPending}
                   >
-                    <Trash2 className="size-3.5" aria-hidden="true" />
+                    <Sparkles className="mr-1 size-4" aria-hidden="true" />
+                    {t.generateFromRooms}
                   </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
+                ) : null}
+                <Button size="sm" variant="outline" onClick={openCreate}>
+                  <Plus className="mr-1 size-4" aria-hidden="true" />
+                  {t.addButton}
+                </Button>
+              </div>
+            </div>
+            {applyResult ? (
+              <p className="rounded-md bg-muted/50 px-3 py-2 text-muted-foreground text-xs">
+                {applyResult}
+              </p>
+            ) : null}
+            {error ? <p className="text-destructive text-xs">{error}</p> : null}
+            {isPending ? (
+              <p className="flex items-center justify-center gap-2 py-4 text-muted-foreground text-sm">
+                <Loader2 className="size-3.5 animate-spin" />
+              </p>
+            ) : isError ? (
+              <p className="py-4 text-center text-destructive text-sm">{t.loadFailed}</p>
+            ) : templates.length === 0 ? (
+              <p className="rounded-md border border-dashed px-3 py-4 text-center text-muted-foreground text-xs">
+                {roomUnits.length > 0 ? t.generateFromRoomsHint : t.emptyMessage}
+              </p>
+            ) : (
+              <ul className="divide-y overflow-hidden rounded-md border">
+                {templates.map((template) => (
+                  <li
+                    key={template.kind}
+                    className="flex items-center justify-between gap-3 px-3 py-2.5"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[10px]">
+                          {(t.kinds as Record<string, string>)[template.kind] ?? template.kind}
+                        </Badge>
+                        <span className="text-sm">
+                          {formatMessage(t.capacitySummary, {
+                            capacity: template.capacity,
+                            count: template.defaultCount ?? 0,
+                            pattern: template.namePattern,
+                          })}
+                        </span>
+                        {template.kind === "vehicle_seat" ? (
+                          <SeatMapSummaryBadge flags={template.flags} messages={t} />
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2"
+                        onClick={() =>
+                          openEdit({
+                            kind: template.kind,
+                            capacity: template.capacity,
+                            defaultCount: template.defaultCount,
+                            namePattern: template.namePattern,
+                            flags: template.flags,
+                          })
+                        }
+                      >
+                        <Pencil className="size-3.5" aria-hidden="true" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-destructive hover:text-destructive"
+                        onClick={() => void handleRemove(template.kind)}
+                        disabled={remove.isPending}
+                      >
+                        <Trash2 className="size-3.5" aria-hidden="true" />
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </CollapsibleContent>
+      </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
@@ -409,7 +538,7 @@ export function OptionResourceTemplatesPanel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </Collapsible>
   )
 }
 

@@ -1,3 +1,4 @@
+import { useProductResourceTemplates } from "@voyantjs/availability-react"
 import { formatMessage } from "@voyantjs/i18n"
 import { useProductItineraries } from "@voyantjs/products-react"
 import {
@@ -22,7 +23,7 @@ import {
   ComboboxList,
 } from "@voyantjs/ui/components/combobox"
 import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { DatePicker } from "./date-picker.js"
@@ -186,6 +187,37 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
   const { data: itineraryData } = useProductItineraries(productId)
   const itineraries = itineraryData?.data ?? []
   const defaultItinerary = itineraries.find((itinerary) => itinerary.isDefault) ?? itineraries[0]
+
+  // Suggested pax = total physical capacity of the configured departure
+  // inventory (each room/seat type's count × its capacity, e.g. 20 doubles
+  // sleeping 2 = 40). Lets a new departure inherit capacity from the rooms the
+  // operator already set up, while staying editable for an override.
+  const { data: resourceTemplateData } = useProductResourceTemplates({ productId })
+  const suggestedPax = useMemo(
+    () =>
+      (resourceTemplateData?.data ?? []).reduce(
+        (optionTotal, option) =>
+          optionTotal +
+          option.templates.reduce(
+            (sum, template) => sum + (template.defaultCount ?? 0) * template.capacity,
+            0,
+          ),
+        0,
+      ),
+    [resourceTemplateData?.data],
+  )
+
+  // Pre-fill capacity once for a brand-new departure, only while the field is
+  // still untouched — never clobber an edit or an existing slot's value.
+  const prefilledPaxRef = useRef(false)
+  useEffect(() => {
+    if (isEditing || prefilledPaxRef.current || suggestedPax <= 0) return
+    const current = form.getValues("initialPax")
+    if (current === "" || current == null) {
+      form.setValue("initialPax", suggestedPax)
+      prefilledPaxRef.current = true
+    }
+  }, [isEditing, suggestedPax, form])
 
   const nights = (() => {
     if (!startDate || !endDate || typeof endDate !== "string" || endDate.length === 0) return 0
@@ -482,6 +514,15 @@ export function DepartureForm({ productId, slot, onSuccess, onCancel }: Departur
               placeholder="0"
               disabled={unlimited}
             />
+            {!unlimited && suggestedPax > 0 ? (
+              <button
+                type="button"
+                onClick={() => form.setValue("initialPax", suggestedPax)}
+                className="text-left text-xs text-muted-foreground hover:text-foreground"
+              >
+                {formatMessage(departureMessages.capacityAutoHint, { count: suggestedPax })}
+              </button>
+            ) : null}
           </div>
         </div>
         <div className="flex items-center gap-2">

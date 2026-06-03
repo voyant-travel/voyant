@@ -10,6 +10,8 @@ type UnitDialogProps = {
   onOpenChange: (open: boolean) => void
   optionId: string
   unit?: OptionUnitData
+  defaultUnitType?: OptionUnitData["unitType"]
+  lockUnitType?: boolean
   nextSortOrder?: number
   onSuccess: () => void
 }
@@ -19,6 +21,8 @@ export function UnitDialog({
   onOpenChange,
   optionId,
   unit,
+  defaultUnitType,
+  lockUnitType,
   nextSortOrder,
   onSuccess,
 }: UnitDialogProps) {
@@ -36,6 +40,8 @@ export function UnitDialog({
           <UnitForm
             optionId={optionId}
             unit={unit}
+            defaultUnitType={defaultUnitType}
+            lockUnitType={lockUnitType}
             nextSortOrder={nextSortOrder}
             onSuccess={onSuccess}
             onCancel={() => onOpenChange(false)}

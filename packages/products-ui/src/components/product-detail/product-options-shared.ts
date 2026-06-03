@@ -27,6 +27,38 @@ export const optionStatusVariant: Record<
   archived: "secondary",
 }
 
+/**
+ * Which pricing layout an option shows. "rooms" = a room×traveler-type grid
+ * (accommodation / multi-day). "seats" = a flat traveler-type price list
+ * (single-day excursions, transfers). Derived from the product's bookingMode
+ * so the agent never picks a pricing model directly.
+ */
+export type OptionPricingLayout = "rooms" | "seats"
+
+/**
+ * Derive the pricing layout from the product's booking mode. Multi-day /
+ * overnight modes imply rooms; single-day activity modes imply per-person
+ * seats. `dayCount` is a fallback for the ambiguous `other` mode (>1 day →
+ * rooms), matching the operator rule "more than one day means rooms".
+ */
+export function deriveOptionPricingLayout(
+  bookingMode: string | null | undefined,
+  dayCount?: number,
+): OptionPricingLayout {
+  switch (bookingMode) {
+    case "stay":
+    case "itinerary":
+      return "rooms"
+    case "date":
+    case "date_time":
+    case "open":
+    case "transfer":
+      return "seats"
+    default:
+      return dayCount != null && dayCount > 1 ? "rooms" : "seats"
+  }
+}
+
 export function getProductOptionsQueryOptions(client: OptionsClient, productId: string) {
   return getSharedProductOptionsQueryOptions(client, { productId, limit: 100 })
 }

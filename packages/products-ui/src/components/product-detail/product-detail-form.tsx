@@ -123,13 +123,16 @@ export function ProductDetailForm({ product, onSuccess, onCancel }: ProductDetai
     { value: "active", label: productMessages.statusActive },
     { value: "archived", label: productMessages.statusArchived },
   ] as const
+  // Ordered most-common-first for this operator (multi-day tours, then day
+  // trips). The chosen mode also drives the option pricing layout
+  // (rooms vs per-person seats) — see deriveOptionPricingLayout.
   const bookingModes = [
+    { value: "itinerary", label: productMessages.bookingModeItinerary },
+    { value: "stay", label: productMessages.bookingModeStay },
     { value: "date", label: productMessages.bookingModeDate },
     { value: "date_time", label: productMessages.bookingModeDateTime },
-    { value: "open", label: productMessages.bookingModeOpen },
-    { value: "stay", label: productMessages.bookingModeStay },
     { value: "transfer", label: productMessages.bookingModeTransfer },
-    { value: "itinerary", label: productMessages.bookingModeItinerary },
+    { value: "open", label: productMessages.bookingModeOpen },
     { value: "other", label: productMessages.bookingModeOther },
   ] as const
 

@@ -24,7 +24,10 @@ import { ProductDetailSkeleton } from "./product-detail-skeleton.js"
 import { ProductExtrasSection } from "./product-extras-section.js"
 import { ProductMarketRulesSection } from "./product-market-rules-section.js"
 import { PricingPanel } from "./product-options-pricing.js"
-import { getDeparturePriceOverridesQueryOptions } from "./product-options-shared.js"
+import {
+  deriveOptionPricingLayout,
+  getDeparturePriceOverridesQueryOptions,
+} from "./product-options-shared.js"
 import { ProductPaymentPolicySection } from "./product-payment-policy-section.js"
 import { ScheduleDialog } from "./product-schedule-dialog.js"
 import { useProductDetailData } from "./use-product-detail-data.js"
@@ -155,14 +158,14 @@ export function ProductDetailPage({ id }: { id: string }) {
             <ProductOptionsSection
               productId={id}
               renderOptionDetails={(option) => (
-                <div className="flex flex-col gap-4">
-                  <PricingPanel
-                    productId={id}
-                    optionId={option.id}
-                    productCurrency={product.sellCurrency}
-                  />
-                  {renderOptionExtras?.(id, option.id)}
-                </div>
+                <PricingPanel
+                  productId={id}
+                  optionId={option.id}
+                  optionName={option.name}
+                  productCurrency={product.sellCurrency}
+                  layout={deriveOptionPricingLayout(product.bookingMode)}
+                  extras={renderOptionExtras?.(id, option.id)}
+                />
               )}
             />
           </ProductsUiMessagesProvider>

@@ -90,6 +90,7 @@ vi.mock("@voyantjs/availability-react", () => ({
   useAllocationAutomationMutation: () => ({
     autoAllocate: { isPending: false, mutateAsync: vi.fn() },
     autoMaterialize: { isPending: false, mutateAsync: vi.fn() },
+    materializeTemplates: { isPending: false, mutateAsync: vi.fn() },
   }),
   useAllocationResourceMutation: () => ({
     create: { isPending: false, mutateAsync: vi.fn() },

@@ -12,6 +12,7 @@ type UnitPriceRuleDialogProps = {
   optionPriceRuleId: string
   optionId: string
   units: OptionUnitData[]
+  productCurrency?: string
   preselectedUnitId?: string
   preselectedCategoryId?: string | null
   cell?: OptionUnitPriceRuleData
@@ -24,6 +25,7 @@ export function UnitPriceRuleDialog({
   optionPriceRuleId,
   optionId,
   units,
+  productCurrency,
   preselectedUnitId,
   preselectedCategoryId,
   cell,
@@ -46,6 +48,7 @@ export function UnitPriceRuleDialog({
             optionPriceRuleId={optionPriceRuleId}
             optionId={optionId}
             units={units}
+            productCurrency={productCurrency}
             preselectedUnitId={preselectedUnitId}
             preselectedCategoryId={preselectedCategoryId}
             cell={cell}

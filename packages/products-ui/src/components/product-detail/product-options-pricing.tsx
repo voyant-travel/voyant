@@ -36,18 +36,21 @@ import {
   Textarea,
 } from "@voyantjs/ui/components"
 import { Checkbox } from "@voyantjs/ui/components/checkbox"
-import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
+import { ChevronDown, ChevronRight, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
+import type * as React from "react"
 import { useEffect, useState } from "react"
 import { useProductDetailMessages } from "./host.js"
 import {
   type OptionPriceRuleData,
   OptionPriceRuleDialog,
 } from "./product-option-price-rule-dialog.js"
+import { OptionPricingGrid } from "./product-option-pricing-grid.js"
 import {
   getOptionPriceRulesQueryOptions,
   getOptionUnitPriceRulesQueryOptions,
   getOptionUnitsQueryOptions,
   getPricingCategoriesQueryOptions,
+  type OptionPricingLayout,
 } from "./product-options-shared.js"
 import type { OptionUnitData } from "./product-unit-dialog.js"
 import {
@@ -75,7 +78,7 @@ function getRulePricingModeLabel(
   }
 }
 
-function getUnitTypeLabel(
+export function getUnitTypeLabel(
   type: OptionUnitData["unitType"],
   messages: ReturnType<typeof useProductDetailMessages>["products"]["operations"]["units"],
 ) {
@@ -97,12 +100,12 @@ function getUnitTypeLabel(
   }
 }
 
-function getCategoryCondition(metadata: Record<string, unknown> | null | undefined) {
+export function getCategoryCondition(metadata: Record<string, unknown> | null | undefined) {
   const condition = metadata?.condition
   return typeof condition === "string" && condition.trim().length > 0 ? condition : null
 }
 
-function categoryAppliesToUnit(
+export function categoryAppliesToUnit(
   category: { id: string | null; metadata?: Record<string, unknown> | null },
   unit: OptionUnitData,
 ) {
@@ -125,7 +128,76 @@ function ActionMenu({ children }: { children: React.ReactNode }) {
   )
 }
 
+/**
+ * Per-option pricing surface. The everyday view is the merged rooms/seats
+ * grid; the full rate-plan machinery (multiple plans, catalogs, cost prices,
+ * cancellation) plus any injected per-departure inventory live behind an
+ * Advanced disclosure so low-tech agents never have to see them.
+ */
 export function PricingPanel({
+  productId,
+  optionId,
+  optionName,
+  productCurrency,
+  layout,
+  extras,
+}: {
+  productId: string
+  optionId: string
+  optionName: string
+  productCurrency: string
+  layout: OptionPricingLayout
+  extras?: React.ReactNode
+}) {
+  const messages = useProductDetailMessages()
+  const gridMessages = messages.products.operations.pricingGrid
+  const [advancedOpen, setAdvancedOpen] = useState(false)
+
+  return (
+    <div className="flex flex-col gap-4">
+      <OptionPricingGrid
+        productId={productId}
+        optionId={optionId}
+        optionName={optionName}
+        productCurrency={productCurrency}
+        layout={layout}
+      />
+
+      <div className="rounded-md border bg-background/60">
+        <button
+          type="button"
+          onClick={() => setAdvancedOpen((open) => !open)}
+          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {advancedOpen ? (
+            <ChevronDown className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5" />
+          )}
+          <span>{gridMessages.advancedToggle}</span>
+          {!advancedOpen ? (
+            <span className="font-normal normal-case">— {gridMessages.advancedHint}</span>
+          ) : null}
+        </button>
+        {advancedOpen ? (
+          <div className="flex flex-col gap-4 border-t p-3">
+            <AdvancedRatePlans
+              productId={productId}
+              optionId={optionId}
+              productCurrency={productCurrency}
+            />
+          </div>
+        ) : null}
+      </div>
+
+      {/* Per-departure inventory is its own concern (not a pricing/rate-plan
+          setting), so it lives in its own collapsible slot below Advanced. */}
+      {extras}
+    </div>
+  )
+}
+
+function AdvancedRatePlans({
   productId,
   optionId,
   productCurrency,
@@ -146,34 +218,58 @@ export function PricingPanel({
     onSuccess: () => void refetch(),
   })
   const rules = data?.data ?? []
+  // The default rate plan IS the everyday grid above — don't re-render its
+  // identical matrix here. Advanced only manages the *extra* plans (net,
+  // contract, promo) plus the default plan's hidden settings (cost,
+  // cancellation, catalog) via "Edit default pricing".
+  const defaultRule = rules.find((rule) => rule.isDefault) ?? rules[0]
+  const additionalRules = rules.filter((rule) => rule.id !== defaultRule?.id)
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2 flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {priceRuleMessages.sectionTitle}
+            {priceRuleMessages.additionalSectionTitle}
           </p>
-          <p className="text-xs text-muted-foreground">{priceRuleMessages.sectionDescription}</p>
+          <p className="text-xs text-muted-foreground">
+            {priceRuleMessages.additionalSectionDescription}
+          </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setEditingRule(undefined)
-            setRuleDialogOpen(true)
-          }}
-        >
-          <Plus className="mr-1 h-3 w-3" />
-          {priceRuleMessages.addAction}
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          {defaultRule ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setEditingRule(defaultRule)
+                setRuleDialogOpen(true)
+              }}
+            >
+              {priceRuleMessages.editDefaultAction}
+            </Button>
+          ) : null}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setEditingRule(undefined)
+              setRuleDialogOpen(true)
+            }}
+          >
+            <Plus className="mr-1 h-3 w-3" />
+            {priceRuleMessages.addAction}
+          </Button>
+        </div>
       </div>
 
-      {rules.length === 0 ? (
-        <p className="py-2 text-center text-xs text-muted-foreground">{priceRuleMessages.empty}</p>
+      {additionalRules.length === 0 ? (
+        <p className="py-2 text-center text-xs text-muted-foreground">
+          {priceRuleMessages.additionalEmpty}
+        </p>
       ) : (
         <div className="flex flex-col gap-3">
-          {rules.map((rule) => (
+          {additionalRules.map((rule) => (
             <PriceRuleCard
               key={rule.id}
               rule={rule}
@@ -508,6 +604,7 @@ function UnitPriceMatrix({
         optionPriceRuleId={optionPriceRuleId}
         optionId={optionId}
         units={units}
+        productCurrency={productCurrency}
         preselectedUnitId={preselectedUnitId}
         preselectedCategoryId={preselectedCategoryId}
         cell={editingCell}
@@ -554,7 +651,7 @@ function parseOptionalInteger(value: string) {
   return Number.isFinite(parsed) ? Math.trunc(parsed) : null
 }
 
-function TravelerCategoryDialog({
+export function TravelerCategoryDialog({
   open,
   onOpenChange,
   productId,
@@ -1000,7 +1097,7 @@ function defaultExtraPriceRuleMode(extra: {
   return "per_booking"
 }
 
-function formatProductMoney(amountCents: number | null | undefined, currency: string) {
+export function formatProductMoney(amountCents: number | null | undefined, currency: string) {
   if (amountCents == null) return "-"
   return `${(amountCents / 100).toFixed(2)} ${currency}`
 }

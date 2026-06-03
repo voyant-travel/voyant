@@ -206,6 +206,10 @@ export const allocationAutomationSchema = z.object({
   kind: allocationResourceKindSchema.default("room"),
 })
 
+export const materializeOpenSlotsSchema = z.object({
+  optionId: z.string().optional(),
+})
+
 export const allocationAuditLogQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
 })
