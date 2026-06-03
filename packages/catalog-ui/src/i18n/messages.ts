@@ -138,6 +138,13 @@ export type CatalogUiMessages = {
       leftWithCapacity: string
       left: string
       capacity: string
+      shipSpecs: {
+        type: string
+        capacity: string
+        capacityGuests: string
+        decks: string
+        yearBuilt: string
+      }
       tabs: {
         overview: string
       }

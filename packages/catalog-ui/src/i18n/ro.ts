@@ -137,6 +137,13 @@ export const catalogUiRo = {
       leftWithCapacity: "{remaining} / {capacity} ramase",
       left: "{remaining} ramase",
       capacity: "{capacity} capacitate",
+      shipSpecs: {
+        type: "Tip",
+        capacity: "Capacitate",
+        capacityGuests: "{count} oaspeti",
+        decks: "Punti",
+        yearBuilt: "An constructie",
+      },
       tabs: {
         overview: "Prezentare",
       },

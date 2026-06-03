@@ -137,6 +137,13 @@ export const catalogUiEn = {
       leftWithCapacity: "{remaining} / {capacity} left",
       left: "{remaining} left",
       capacity: "{capacity} capacity",
+      shipSpecs: {
+        type: "Type",
+        capacity: "Capacity",
+        capacityGuests: "{count} guests",
+        decks: "Decks",
+        yearBuilt: "Year built",
+      },
       tabs: {
         overview: "Overview",
       },

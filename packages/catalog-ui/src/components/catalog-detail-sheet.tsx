@@ -662,7 +662,7 @@ export function CatalogDetailSheet({
 
                   {hasShip && (
                     <TabsContent value="ship">
-                      <ShipCard ship={enrichment!.ship!} />
+                      <ShipCard ship={enrichment!.ship!} messages={messages} />
                     </TabsContent>
                   )}
 
@@ -1948,13 +1948,24 @@ function CabinCard({
  * The vessel a cruise sails on: gallery + name/type, key specs (capacity,
  * decks, year built) and a description.
  */
-function ShipCard({ ship }: { ship: NonNullable<CatalogDetailEnrichment["ship"]> }): ReactNode {
+function ShipCard({
+  ship,
+  messages,
+}: {
+  ship: NonNullable<CatalogDetailEnrichment["ship"]>
+  messages: CatalogUiMessages["catalogPage"]["detail"]
+}): ReactNode {
   const desc = ship.description?.trim() ?? ""
   const specs = [
-    ship.shipType ? { label: "Type", value: ship.shipType } : null,
-    ship.capacity ? { label: "Capacity", value: `${ship.capacity} guests` } : null,
-    ship.decks ? { label: "Decks", value: String(ship.decks) } : null,
-    ship.yearBuilt ? { label: "Year built", value: String(ship.yearBuilt) } : null,
+    ship.shipType ? { label: messages.shipSpecs.type, value: ship.shipType } : null,
+    ship.capacity
+      ? {
+          label: messages.shipSpecs.capacity,
+          value: formatTemplate(messages.shipSpecs.capacityGuests, { count: ship.capacity }),
+        }
+      : null,
+    ship.decks ? { label: messages.shipSpecs.decks, value: String(ship.decks) } : null,
+    ship.yearBuilt ? { label: messages.shipSpecs.yearBuilt, value: String(ship.yearBuilt) } : null,
   ].filter((s): s is { label: string; value: string } => s != null)
   const images = ship.images ?? []
   return (
