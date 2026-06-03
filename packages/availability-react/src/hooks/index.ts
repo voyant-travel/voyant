@@ -16,6 +16,7 @@ export {
   useAllocationAutomationMutation,
   useAllocationResourceMutation,
   useAssignTravelerAllocationMutation,
+  useMaterializeOpenSlotsMutation,
   useProductResourceTemplates,
   useResourceTemplateMutation,
   useSharingGroupLabelMutation,

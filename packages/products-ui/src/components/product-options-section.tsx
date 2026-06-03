@@ -198,6 +198,38 @@ export function ProductOptionsSection({
   const resolvedTitle = title ?? messages.productOptionsSection.titles.default
   const resolvedDescription = description ?? messages.productOptionsSection.descriptions.default
 
+  // A product with a single option needs no option chrome — show its pricing
+  // table directly. Only flatten when a host injects the details (the grid);
+  // bare mounts (apps/dev) keep the expandable units table.
+  const flattenedOption = renderOptionDetails && options.length === 1 ? options[0] : undefined
+
+  const editOption = (option: ProductOptionRecord) => {
+    setEditingOption(option)
+    setDialogOpen(true)
+  }
+  const duplicateOptionFlow = (option: ProductOptionRecord) => {
+    duplicateOption.mutate(
+      { sourceOptionId: option.id, productId },
+      {
+        onSuccess: async ({ option: duplicatedOption, unitIdMap }) => {
+          await duplicatePricing.mutateAsync({
+            sourceOptionId: option.id,
+            targetOptionId: duplicatedOption.id,
+            productId,
+            unitIdMap,
+          })
+        },
+      },
+    )
+  }
+  const deleteOption = (option: ProductOptionRecord) => {
+    if (
+      confirm(messages.productOptionsSection.deleteConfirm.option.replace("{name}", option.name))
+    ) {
+      remove.mutate(option.id)
+    }
+  }
+
   return (
     <Card data-slot="product-options-section">
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -243,6 +275,11 @@ export function ProductOptionsSection({
           <p className="text-sm text-muted-foreground">
             {messages.productOptionsSection.empty.options}
           </p>
+        ) : flattenedOption ? (
+          // A single option needs no chrome at all — show its pricing table
+          // directly. Per-option actions (duplicate/edit/delete) only appear
+          // once there are 2+ options to disambiguate.
+          renderOptionDetails?.(flattenedOption)
         ) : (
           options.map((option) => (
             <OptionRow
@@ -252,37 +289,9 @@ export function ProductOptionsSection({
               onToggle={() =>
                 setExpandedOptionId((current) => (current === option.id ? null : option.id))
               }
-              onEdit={() => {
-                setEditingOption(option)
-                setDialogOpen(true)
-              }}
-              onDuplicate={() => {
-                duplicateOption.mutate(
-                  { sourceOptionId: option.id, productId },
-                  {
-                    onSuccess: async ({ option: duplicatedOption, unitIdMap }) => {
-                      await duplicatePricing.mutateAsync({
-                        sourceOptionId: option.id,
-                        targetOptionId: duplicatedOption.id,
-                        productId,
-                        unitIdMap,
-                      })
-                    },
-                  },
-                )
-              }}
-              onDelete={() => {
-                if (
-                  confirm(
-                    messages.productOptionsSection.deleteConfirm.option.replace(
-                      "{name}",
-                      option.name,
-                    ),
-                  )
-                ) {
-                  remove.mutate(option.id)
-                }
-              }}
+              onEdit={() => editOption(option)}
+              onDuplicate={() => duplicateOptionFlow(option)}
+              onDelete={() => deleteOption(option)}
               messages={messages}
             >
               {renderOptionDetails?.(option)}
@@ -380,8 +389,10 @@ function OptionRow({
 
       {expanded ? (
         <div className="flex flex-col gap-4 border-t bg-muted/30 p-3">
-          <UnitsPanel optionId={option.id} messages={messages} />
-          {children}
+          {/* When a host injects option details (the merged pricing grid that
+              manages its own inventory), use it. Otherwise fall back to the
+              standalone units table — e.g. apps/dev mounts this section bare. */}
+          {children ?? <UnitsPanel optionId={option.id} messages={messages} />}
         </div>
       ) : null}
     </div>

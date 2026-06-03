@@ -12,11 +12,12 @@ import {
   Switch,
   Textarea,
 } from "@voyantjs/ui/components"
+import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { useProductDetailMessages } from "./host.js"
+import { useProductDetailMessages, useProductLocale } from "./host.js"
 import type { OptionUnitData } from "./product-unit-form.js"
 import { zodResolver } from "./zod-resolver.js"
 
@@ -46,6 +47,25 @@ function getUnitTypeLabel(
   }
 }
 
+// "Min/Max quantity" means different things per pricing mode — travelers for
+// per-person, units for per-unit, the whole booking for per-booking. Label it
+// for what's actually being counted.
+function cellQuantityLabels(
+  pricingMode: OptionUnitPriceRuleData["pricingMode"],
+  m: UnitPriceMessages,
+) {
+  switch (pricingMode) {
+    case "per_person":
+      return { min: m.minQuantityPerson, max: m.maxQuantityPerson }
+    case "per_unit":
+      return { min: m.minQuantityUnit, max: m.maxQuantityUnit }
+    case "per_booking":
+      return { min: m.minQuantityBooking, max: m.maxQuantityBooking }
+    default:
+      return { min: m.minQuantityLabel, max: m.maxQuantityLabel }
+  }
+}
+
 const buildCellFormSchema = (messages: UnitPriceMessages) =>
   z.object({
     unitId: z.string().min(1, messages.validationUnitRequired),
@@ -58,8 +78,10 @@ const buildCellFormSchema = (messages: UnitPriceMessages) =>
       "free",
       "on_request",
     ]),
-    sell: z.coerce.number().min(0),
-    cost: z.coerce.number().min(0),
+    // Stored in minor units (cents) so CurrencyInput can render the currency
+    // prefix and parse locale-formatted amounts directly.
+    sell: z.number().int().min(0),
+    cost: z.number().int().min(0),
     minQuantity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
     maxQuantity: z.coerce.number().int().min(0).optional().or(z.literal("")).nullable(),
     sortOrder: z.coerce.number().int(),
@@ -91,6 +113,7 @@ export interface UnitPriceRuleFormProps {
   optionPriceRuleId: string
   optionId: string
   units: OptionUnitData[]
+  productCurrency?: string
   preselectedUnitId?: string
   preselectedCategoryId?: string | null
   cell?: OptionUnitPriceRuleData
@@ -108,8 +131,8 @@ function initialValues(
       unitId: cell.unitId,
       pricingCategoryId: cell.pricingCategoryId ?? "",
       pricingMode: cell.pricingMode,
-      sell: (cell.sellAmountCents ?? 0) / 100,
-      cost: (cell.costAmountCents ?? 0) / 100,
+      sell: cell.sellAmountCents ?? 0,
+      cost: cell.costAmountCents ?? 0,
       minQuantity: cell.minQuantity ?? "",
       maxQuantity: cell.maxQuantity ?? "",
       sortOrder: cell.sortOrder,
@@ -135,6 +158,7 @@ export function UnitPriceRuleForm({
   optionPriceRuleId,
   optionId,
   units,
+  productCurrency,
   preselectedUnitId,
   preselectedCategoryId,
   cell,
@@ -145,6 +169,7 @@ export function UnitPriceRuleForm({
   const productMessages = messages.products.core
   const unitPriceMessages = messages.products.operations.unitPrices
   const unitMessages = messages.products.operations.units
+  const locale = useProductLocale()
   const isEditing = !!cell
   const { create, update } = useOptionUnitPriceRuleMutation()
   const cellFormSchema = buildCellFormSchema(unitPriceMessages)
@@ -173,8 +198,8 @@ export function UnitPriceRuleForm({
       unitId: values.unitId,
       pricingCategoryId: values.pricingCategoryId || null,
       pricingMode: values.pricingMode,
-      sellAmountCents: Math.round(values.sell * 100),
-      costAmountCents: Math.round(values.cost * 100),
+      sellAmountCents: Math.round(values.sell),
+      costAmountCents: Math.round(values.cost),
       minQuantity: typeof values.minQuantity === "number" ? values.minQuantity : null,
       maxQuantity: typeof values.maxQuantity === "number" ? values.maxQuantity : null,
       sortOrder: values.sortOrder,
@@ -257,21 +282,31 @@ export function UnitPriceRuleForm({
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <Label>{unitPriceMessages.sellLabel}</Label>
-            <Input {...form.register("sell")} type="number" step="0.01" min="0" />
+            <CurrencyInput
+              value={form.watch("sell")}
+              onChange={(value) => form.setValue("sell", value ?? 0, { shouldValidate: true })}
+              currency={productCurrency}
+              locale={locale}
+            />
           </div>
           <div className="flex flex-col gap-2">
             <Label>{unitPriceMessages.costLabel}</Label>
-            <Input {...form.register("cost")} type="number" step="0.01" min="0" />
+            <CurrencyInput
+              value={form.watch("cost")}
+              onChange={(value) => form.setValue("cost", value ?? 0, { shouldValidate: true })}
+              currency={productCurrency}
+              locale={locale}
+            />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
-            <Label>{unitPriceMessages.minQuantityLabel}</Label>
+            <Label>{cellQuantityLabels(form.watch("pricingMode"), unitPriceMessages).min}</Label>
             <Input {...form.register("minQuantity")} type="number" min="0" />
           </div>
           <div className="flex flex-col gap-2">
-            <Label>{unitPriceMessages.maxQuantityLabel}</Label>
+            <Label>{cellQuantityLabels(form.watch("pricingMode"), unitPriceMessages).max}</Label>
             <Input {...form.register("maxQuantity")} type="number" min="0" />
           </div>
         </div>

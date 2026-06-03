@@ -179,6 +179,32 @@ export function useResourceTemplateMutation(productId: string) {
   return { upsert, remove }
 }
 
+/**
+ * Back-fill resources across a product's open future departures from the
+ * option's templates (idempotent — slots that already have a kind are skipped).
+ * Lets an operator apply newly-configured departure inventory to slots that
+ * already exist, not just future ones.
+ */
+export function useMaterializeOpenSlotsMutation(productId: string) {
+  const { baseUrl, fetcher } = useVoyantAvailabilityContext()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (input: { optionId?: string }) => {
+      const result = await fetchWithValidation(
+        `/v1/admin/availability/products/${productId}/allocation/materialize-open-slots`,
+        singleEnvelope(z.object({ slots: z.number(), created: z.number() })),
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify(input) },
+      )
+      return result.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: availabilityQueryKeys.slots() })
+    },
+  })
+}
+
 export function useAllocationAutomationMutation(slotId: string) {
   const { baseUrl, fetcher } = useVoyantAvailabilityContext()
   const queryClient = useQueryClient()
@@ -215,7 +241,22 @@ export function useAllocationAutomationMutation(slotId: string) {
     onSuccess: invalidate,
   })
 
-  return { autoMaterialize, autoAllocate }
+  // Materialize the slot's full configured inventory (all kinds, from template
+  // default_count) in one call — distinct from the pax-derived autoMaterialize.
+  const materializeTemplates = useMutation({
+    mutationFn: async () => {
+      const result = await fetchWithValidation(
+        `/v1/admin/availability/slots/${slotId}/allocation/materialize-templates`,
+        singleEnvelope(z.object({ created: z.number() })),
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify({}) },
+      )
+      return result.data
+    },
+    onSuccess: invalidate,
+  })
+
+  return { autoMaterialize, autoAllocate, materializeTemplates }
 }
 
 export function useAssignTravelerAllocationMutation(slotId: string) {

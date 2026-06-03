@@ -280,6 +280,39 @@ async function ensureDefaultItinerary(db: PostgresJsDatabase, productId: string)
   return row
 }
 
+// Every product needs at least one bookable option for the operator pricing
+// grid to have something to attach inventory and prices to. Seed a single
+// "Standard" default option on creation so a brand-new product opens straight
+// into the (flattened) pricing table instead of an empty options state.
+async function ensureDefaultOption(db: PostgresJsDatabase, productId: string) {
+  const [existing] = await db
+    .select({ id: productOptions.id })
+    .from(productOptions)
+    .where(eq(productOptions.productId, productId))
+    .limit(1)
+  if (existing) {
+    return existing
+  }
+
+  const [row] = await db
+    .insert(productOptions)
+    .values({
+      productId,
+      name: "Standard",
+      code: "standard",
+      status: "active",
+      isDefault: true,
+      sortOrder: 0,
+    })
+    .returning({ id: productOptions.id })
+
+  if (!row) {
+    throw new Error(`Failed to create default option for product ${productId}`)
+  }
+
+  return row
+}
+
 async function getItineraryById(db: PostgresJsDatabase, itineraryId: string) {
   const [itinerary] = await db
     .select()
@@ -494,6 +527,7 @@ export const productsService = {
       throw new Error("Failed to create product")
     }
     await ensureDefaultItinerary(db, row.id)
+    await ensureDefaultOption(db, row.id)
     return row
   },
 

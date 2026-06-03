@@ -20,6 +20,38 @@ import { zodResolver } from "./zod-resolver.js"
 
 type UnitMessages = ReturnType<typeof useProductDetailMessages>["products"]["operations"]["units"]
 
+type UnitType = OptionUnitData["unitType"]
+
+// "Min/Max quantity" is meaningless to an agent — phrase it in terms of the
+// thing being counted (rooms / vehicles / travelers) for the selected type.
+function quantityLabels(unitType: UnitType, m: UnitMessages) {
+  switch (unitType) {
+    case "room":
+      return { min: m.quantityRoomMin, max: m.quantityRoomMax }
+    case "vehicle":
+      return { min: m.quantityVehicleMin, max: m.quantityVehicleMax }
+    case "person":
+      return { min: m.quantityPersonMin, max: m.quantityPersonMax }
+    default:
+      return { min: m.minQuantityLabel, max: m.maxQuantityLabel }
+  }
+}
+
+// Occupancy = how many people fit in one unit (guests per room, seats per
+// vehicle, group size). Label it for the selected type.
+function occupancyLabels(unitType: UnitType, m: UnitMessages) {
+  switch (unitType) {
+    case "room":
+      return { min: m.occupancyRoomMin, max: m.occupancyRoomMax }
+    case "vehicle":
+      return { min: m.occupancyVehicleMin, max: m.occupancyVehicleMax }
+    case "group":
+      return { min: m.occupancyGroupMin, max: m.occupancyGroupMax }
+    default:
+      return { min: m.occupancyMinLabel, max: m.occupancyMaxLabel }
+  }
+}
+
 const buildUnitFormSchema = (messages: UnitMessages) =>
   z.object({
     name: z.string().min(1, messages.validationNameRequired).max(255),
@@ -62,12 +94,24 @@ export type OptionUnitData = {
 export interface UnitFormProps {
   optionId: string
   unit?: OptionUnitData
+  /** Pre-selected unit type for the "add" path (e.g. Room vs Traveler type). */
+  defaultUnitType?: OptionUnitData["unitType"]
+  /**
+   * Hide the unit-type picker entirely. Used when the form is opened from a
+   * type-specific context (e.g. "Add room"), so the agent can't turn a room
+   * into a vehicle and create a nonsensical mix in the pricing grid.
+   */
+  lockUnitType?: boolean
   nextSortOrder?: number
   onSuccess: () => void
   onCancel?: () => void
 }
 
-function initialValues(unit: OptionUnitData | undefined, nextSortOrder: number | undefined) {
+function initialValues(
+  unit: OptionUnitData | undefined,
+  nextSortOrder: number | undefined,
+  defaultUnitType: OptionUnitData["unitType"] | undefined,
+) {
   if (unit) {
     return {
       name: unit.name,
@@ -89,7 +133,7 @@ function initialValues(unit: OptionUnitData | undefined, nextSortOrder: number |
     name: "",
     code: "",
     description: "",
-    unitType: "person",
+    unitType: defaultUnitType ?? "person",
     minQuantity: "",
     maxQuantity: "",
     minAge: "",
@@ -102,7 +146,15 @@ function initialValues(unit: OptionUnitData | undefined, nextSortOrder: number |
   } satisfies UnitFormValues
 }
 
-export function UnitForm({ optionId, unit, nextSortOrder, onSuccess, onCancel }: UnitFormProps) {
+export function UnitForm({
+  optionId,
+  unit,
+  defaultUnitType,
+  lockUnitType,
+  nextSortOrder,
+  onSuccess,
+  onCancel,
+}: UnitFormProps) {
   const messages = useProductDetailMessages()
   const productMessages = messages.products.core
   const unitMessages = messages.products.operations.units
@@ -120,12 +172,12 @@ export function UnitForm({ optionId, unit, nextSortOrder, onSuccess, onCancel }:
 
   const form = useForm<UnitFormValues, unknown, UnitFormOutput>({
     resolver: zodResolver(unitFormSchema),
-    defaultValues: initialValues(unit, nextSortOrder),
+    defaultValues: initialValues(unit, nextSortOrder, defaultUnitType),
   })
 
   useEffect(() => {
-    form.reset(initialValues(unit, nextSortOrder))
-  }, [unit, nextSortOrder, form])
+    form.reset(initialValues(unit, nextSortOrder, defaultUnitType))
+  }, [unit, nextSortOrder, defaultUnitType, form])
 
   const onSubmit = async (values: UnitFormOutput) => {
     const canHaveAge = values.unitType === "person"
@@ -159,6 +211,8 @@ export function UnitForm({ optionId, unit, nextSortOrder, onSuccess, onCancel }:
   }
 
   const unitType = form.watch("unitType")
+  const qtyLabels = quantityLabels(unitType, unitMessages)
+  const occLabels = occupancyLabels(unitType, unitMessages)
 
   return (
     <form
@@ -181,25 +235,27 @@ export function UnitForm({ optionId, unit, nextSortOrder, onSuccess, onCancel }:
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-2">
-            <Label>{unitMessages.typeLabel}</Label>
-            <Select
-              value={unitType}
-              onValueChange={(v) => form.setValue("unitType", v as UnitFormValues["unitType"])}
-              items={unitTypes}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {unitTypes.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {lockUnitType ? null : (
+            <div className="flex flex-col gap-2">
+              <Label>{unitMessages.typeLabel}</Label>
+              <Select
+                value={unitType}
+                onValueChange={(v) => form.setValue("unitType", v as UnitFormValues["unitType"])}
+                items={unitTypes}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {unitTypes.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="flex flex-col gap-2">
             <Label>{unitMessages.sortOrderLabel}</Label>
             <Input {...form.register("sortOrder")} type="number" />
@@ -208,11 +264,11 @@ export function UnitForm({ optionId, unit, nextSortOrder, onSuccess, onCancel }:
 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
-            <Label>{unitMessages.minQuantityLabel}</Label>
+            <Label>{qtyLabels.min}</Label>
             <Input {...form.register("minQuantity")} type="number" min="0" />
           </div>
           <div className="flex flex-col gap-2">
-            <Label>{unitMessages.maxQuantityLabel}</Label>
+            <Label>{qtyLabels.max}</Label>
             <Input {...form.register("maxQuantity")} type="number" min="0" />
           </div>
         </div>
@@ -233,11 +289,11 @@ export function UnitForm({ optionId, unit, nextSortOrder, onSuccess, onCancel }:
         {(unitType === "room" || unitType === "vehicle" || unitType === "group") && (
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
-              <Label>{unitMessages.occupancyMinLabel}</Label>
+              <Label>{occLabels.min}</Label>
               <Input {...form.register("occupancyMin")} type="number" min="0" />
             </div>
             <div className="flex flex-col gap-2">
-              <Label>{unitMessages.occupancyMaxLabel}</Label>
+              <Label>{occLabels.max}</Label>
               <Input {...form.register("occupancyMax")} type="number" min="0" />
             </div>
           </div>

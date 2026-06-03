@@ -1,4 +1,4 @@
-import { and, eq, type SQL, sql } from "drizzle-orm"
+import { and, eq, inArray, type SQL, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
@@ -413,6 +413,12 @@ export interface MaterializeSlotResourcesFromTemplatesOptions {
    */
   kind?: string
   /**
+   * Restrict materialisation to a single option's templates. Needed when a
+   * product-level slot (no `optionId`) is seeded on behalf of one option —
+   * without it, every option's templates would be materialised.
+   */
+  optionId?: string
+  /**
    * Skip templates whose `kind` already has resources for the slot.
    * Defaults to true so the helper is safe to call repeatedly during
    * slot generation.
@@ -438,13 +444,35 @@ export async function materializeSlotResourcesFromTemplateDefaults(
   opts: MaterializeSlotResourcesFromTemplatesOptions = {},
 ): Promise<{ created: number; resources: AllocationResource[] }> {
   const [slot] = await db
-    .select({ id: availabilitySlots.id, optionId: availabilitySlots.optionId })
+    .select({
+      id: availabilitySlots.id,
+      optionId: availabilitySlots.optionId,
+      productId: availabilitySlots.productId,
+    })
     .from(availabilitySlots)
     .where(eq(availabilitySlots.id, slotId))
     .limit(1)
-  if (!slot?.optionId) return { created: 0, resources: [] }
+  if (!slot) return { created: 0, resources: [] }
 
-  const templateConditions = [eq(productOptionResourceTemplates.productOptionId, slot.optionId)]
+  // Resolve which option(s) supply templates. An explicit `opts.optionId`
+  // wins (used when back-filling a product-level slot on behalf of one
+  // option). Otherwise an option-scoped slot uses its own option, and a
+  // product-level slot draws from every option of its product.
+  let optionIds: string[]
+  if (opts.optionId) {
+    optionIds = [opts.optionId]
+  } else if (slot.optionId) {
+    optionIds = [slot.optionId]
+  } else {
+    const optionRows = await executeRows<{ id: string }>(
+      db,
+      sql`SELECT id FROM product_options WHERE product_id = ${slot.productId}`,
+    )
+    optionIds = optionRows.map((row) => row.id)
+  }
+  if (optionIds.length === 0) return { created: 0, resources: [] }
+
+  const templateConditions = [inArray(productOptionResourceTemplates.productOptionId, optionIds)]
   if (opts.kind) {
     templateConditions.push(eq(productOptionResourceTemplates.kind, opts.kind))
   }
@@ -497,6 +525,45 @@ export async function materializeSlotResourcesFromTemplateDefaults(
   }
 
   return { created: resources.length, resources }
+}
+
+/**
+ * Back-fill every open, future departure for a product (optionally scoped to a
+ * single option) with resources from its templates' `default_count`. Reuses
+ * the per-slot, idempotent {@link materializeSlotResourcesFromTemplateDefaults}
+ * — slots that already have a kind's resources are skipped — so an operator can
+ * configure departure inventory once and apply it across already-open slots.
+ */
+export async function materializeOpenSlotsFromTemplateDefaults(
+  db: PostgresJsDatabase,
+  params: { productId: string; optionId?: string },
+): Promise<{ slots: number; created: number }> {
+  // Departures are usually product-level (no optionId), so we select the
+  // product's open future slots and scope the *materialisation* — not the slot
+  // query — to the requested option. Filtering slots by optionId here would
+  // exclude every product-level departure and seed nothing.
+  const slots = await db
+    .select({ id: availabilitySlots.id })
+    .from(availabilitySlots)
+    .where(
+      and(
+        eq(availabilitySlots.productId, params.productId),
+        eq(availabilitySlots.status, "open"),
+        sql`${availabilitySlots.startsAt} >= now()`,
+      ),
+    )
+
+  let created = 0
+  for (const slot of slots) {
+    const result = await materializeSlotResourcesFromTemplateDefaults(
+      db,
+      slot.id,
+      params.optionId ? { optionId: params.optionId } : {},
+    )
+    created += result.created
+  }
+
+  return { slots: slots.length, created }
 }
 
 async function materializeVehicleSeatGroup(

@@ -267,6 +267,17 @@ export const adminAvailabilityMessages = {
           description:
             "Define how many rooms, seats, cabins, or other physical resources this arrangement creates for each departure.",
           addButton: "Add inventory",
+          collapsedEmpty: "Not set up yet",
+          collapsedSummary: "{count} types · {total} per departure",
+          generateFromRooms: "Generate from rooms",
+          generateFromRoomsHint:
+            "Create departure inventory automatically from the rooms and quantities you defined above.",
+          applyToOpenButton: "Apply to open departures",
+          applyToOpenConfirm:
+            "Generate this inventory for every open, future departure of this product? Departures that already have it are skipped.",
+          applyToOpenResult: "Created {created} resources across {slots} departures.",
+          applyToOpenEmpty: "No open future departures needed updating.",
+          applyToOpenFailed: "Could not apply to existing departures.",
           editTitle: 'Edit "{kind}" inventory',
           newTitle: "Add departure inventory",
           loadFailed: "Could not load templates.",
@@ -745,6 +756,17 @@ export const adminAvailabilityMessages = {
           description:
             "Defineste cate camere, locuri, cabine sau alte resurse fizice creeaza acest aranjament pentru fiecare plecare.",
           addButton: "Adauga inventar",
+          collapsedEmpty: "Neconfigurat încă",
+          collapsedSummary: "{count} tipuri · {total} pe plecare",
+          generateFromRooms: "Generează din camere",
+          generateFromRoomsHint:
+            "Creează inventarul pe plecare automat din camerele și cantitățile definite mai sus.",
+          applyToOpenButton: "Aplică la plecările deschise",
+          applyToOpenConfirm:
+            "Generezi acest inventar pentru toate plecările viitoare deschise ale acestui produs? Plecările care îl au deja sunt omise.",
+          applyToOpenResult: "S-au creat {created} resurse pentru {slots} plecări.",
+          applyToOpenEmpty: "Nicio plecare viitoare deschisă nu necesita actualizare.",
+          applyToOpenFailed: "Nu s-a putut aplica la plecările existente.",
           editTitle: 'Editeaza inventarul "{kind}"',
           newTitle: "Adauga inventar pe plecare",
           loadFailed: "Sabloanele nu au putut fi incarcate.",

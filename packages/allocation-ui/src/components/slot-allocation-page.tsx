@@ -294,7 +294,10 @@ export function SlotAllocationPage({
   async function generateResources() {
     setError(null)
     try {
-      await automationMutation.autoMaterialize.mutateAsync({ kind: activeKind })
+      // Materialize the full configured inventory across all kinds (e.g. all 20
+      // doubles + 20 singles + 6 triples) in one click, rather than the
+      // pax-derived single-kind auto-materialize.
+      await automationMutation.materializeTemplates.mutateAsync()
     } catch (err) {
       setError(err instanceof Error ? err.message : messages.generateResourcesFailed)
     }
@@ -370,10 +373,10 @@ export function SlotAllocationPage({
         <Button
           variant="outline"
           onClick={() => void generateResources()}
-          disabled={automationMutation.autoMaterialize.isPending}
+          disabled={automationMutation.materializeTemplates.isPending}
         >
           <Sparkles data-icon="inline-start" aria-hidden="true" />
-          {automationMutation.autoMaterialize.isPending
+          {automationMutation.materializeTemplates.isPending
             ? messages.generatingResources
             : messages.generateResources}
         </Button>
