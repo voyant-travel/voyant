@@ -413,6 +413,12 @@ export interface MaterializeSlotResourcesFromTemplatesOptions {
    */
   kind?: string
   /**
+   * Restrict materialisation to a single option's templates. Needed when a
+   * product-level slot (no `optionId`) is seeded on behalf of one option —
+   * without it, every option's templates would be materialised.
+   */
+  optionId?: string
+  /**
    * Skip templates whose `kind` already has resources for the slot.
    * Defaults to true so the helper is safe to call repeatedly during
    * slot generation.
@@ -448,11 +454,14 @@ export async function materializeSlotResourcesFromTemplateDefaults(
     .limit(1)
   if (!slot) return { created: 0, resources: [] }
 
-  // Departures are usually product-level (no optionId). In that case draw
-  // templates from every option of the slot's product; an option-scoped slot
-  // uses just its own option.
+  // Resolve which option(s) supply templates. An explicit `opts.optionId`
+  // wins (used when back-filling a product-level slot on behalf of one
+  // option). Otherwise an option-scoped slot uses its own option, and a
+  // product-level slot draws from every option of its product.
   let optionIds: string[]
-  if (slot.optionId) {
+  if (opts.optionId) {
+    optionIds = [opts.optionId]
+  } else if (slot.optionId) {
     optionIds = [slot.optionId]
   } else {
     const optionRows = await executeRows<{ id: string }>(
@@ -529,23 +538,28 @@ export async function materializeOpenSlotsFromTemplateDefaults(
   db: PostgresJsDatabase,
   params: { productId: string; optionId?: string },
 ): Promise<{ slots: number; created: number }> {
-  const conditions: SQL[] = [
-    eq(availabilitySlots.productId, params.productId),
-    eq(availabilitySlots.status, "open"),
-    sql`${availabilitySlots.startsAt} >= now()`,
-  ]
-  if (params.optionId) {
-    conditions.push(eq(availabilitySlots.optionId, params.optionId))
-  }
-
+  // Departures are usually product-level (no optionId), so we select the
+  // product's open future slots and scope the *materialisation* — not the slot
+  // query — to the requested option. Filtering slots by optionId here would
+  // exclude every product-level departure and seed nothing.
   const slots = await db
     .select({ id: availabilitySlots.id })
     .from(availabilitySlots)
-    .where(and(...conditions))
+    .where(
+      and(
+        eq(availabilitySlots.productId, params.productId),
+        eq(availabilitySlots.status, "open"),
+        sql`${availabilitySlots.startsAt} >= now()`,
+      ),
+    )
 
   let created = 0
   for (const slot of slots) {
-    const result = await materializeSlotResourcesFromTemplateDefaults(db, slot.id)
+    const result = await materializeSlotResourcesFromTemplateDefaults(
+      db,
+      slot.id,
+      params.optionId ? { optionId: params.optionId } : {},
+    )
     created += result.created
   }
 

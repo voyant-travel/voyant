@@ -212,6 +212,11 @@ export function OptionResourceTemplatesPanel({
             capacity: unit.occupancyMax ?? unit.occupancyMin ?? 1,
             defaultCount: unit.maxQuantity ?? null,
             namePattern: `${unit.name} {sequence}`,
+            // Link the template back to its option unit so the allocator can
+            // strongly match a traveler's booked room type to this inventory
+            // (groupUnitMatchScore: refType "option_unit" + refId === unitId).
+            refType: "option_unit",
+            refId: unit.id,
             flags: {},
           },
         })
