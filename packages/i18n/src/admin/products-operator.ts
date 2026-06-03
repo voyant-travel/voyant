@@ -87,6 +87,10 @@ export const operatorAdminProductsMessages = {
         termsLabel: "Terms",
         termsPlaceholder:
           "Add cancellation fine print, regulatory disclaimers, or supplier terms...",
+        inclusionsLabel: "What's included",
+        inclusionsPlaceholder: "List what the price covers — meals, transfers, guide, entries…",
+        exclusionsLabel: "What's not included",
+        exclusionsPlaceholder: "List what travelers pay separately — flights, insurance, tips…",
         fieldLabels: {
           terms: "Terms",
         },
@@ -568,6 +572,11 @@ export const operatorAdminProductsMessages = {
           addUnitsHint: "Add sellable units before configuring prices.",
           addTravelerCategory: "Add traveler category",
           travelerCategoryDialogTitle: "New traveler category",
+          travelerCategoryEditTitle: "Edit traveler type",
+          updateTravelerCategory: "Save changes",
+          travelerCategoryDeleteConfirm: 'Remove the "{name}" traveler type?',
+          travelerCategoryEdit: "Edit traveler type",
+          travelerCategoryDelete: "Remove traveler type",
           travelerCategoryDialogDescription:
             "Create a product-specific traveler category such as Child under 6, then price the allowed room rows.",
           travelerCategoryNamePlaceholder: "Child under 6",
@@ -793,6 +802,11 @@ export const operatorAdminProductsMessages = {
         descriptionPlaceholder: "Prezentare scurta a produsului...",
         termsLabel: "Termeni",
         termsPlaceholder: "Adauga conditii de anulare, note legale sau termeni de furnizor...",
+        inclusionsLabel: "Ce este inclus",
+        inclusionsPlaceholder: "Enumeră ce acoperă prețul — mese, transferuri, ghid, intrări…",
+        exclusionsLabel: "Ce nu este inclus",
+        exclusionsPlaceholder:
+          "Enumeră ce plătesc separat călătorii — zboruri, asigurare, bacșișuri…",
         fieldLabels: {
           terms: "Termeni",
         },
@@ -1278,6 +1292,11 @@ export const operatorAdminProductsMessages = {
           addUnitsHint: "Adauga unitati vandabile inainte de a configura preturile.",
           addTravelerCategory: "Adauga categorie calator",
           travelerCategoryDialogTitle: "Categorie calator noua",
+          travelerCategoryEditTitle: "Editează tipul de călător",
+          updateTravelerCategory: "Salvează modificările",
+          travelerCategoryDeleteConfirm: 'Elimini tipul de călător "{name}"?',
+          travelerCategoryEdit: "Editează tipul de călător",
+          travelerCategoryDelete: "Elimină tipul de călător",
           travelerCategoryDialogDescription:
             "Creeaza o categorie specifica produsului, precum Child under 6, apoi seteaza pretul doar pe randurile de camera permise.",
           travelerCategoryNamePlaceholder: "Child under 6",

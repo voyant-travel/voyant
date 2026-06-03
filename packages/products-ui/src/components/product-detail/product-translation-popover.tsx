@@ -28,7 +28,20 @@ import type { useProductDetailMessages } from "./host.js"
 
 type ProductCoreMessages = ReturnType<typeof useProductDetailMessages>["products"]["core"]
 
-export type TranslatableField = "name" | "description" | "slug"
+export type TranslatableField =
+  | "name"
+  | "description"
+  | "slug"
+  | "inclusionsHtml"
+  | "exclusionsHtml"
+  | "termsHtml"
+
+const RICH_TEXT_FIELDS = new Set<TranslatableField>([
+  "description",
+  "inclusionsHtml",
+  "exclusionsHtml",
+  "termsHtml",
+])
 
 export type TranslationDraft = {
   id: string | null
@@ -88,8 +101,9 @@ export function richTextHasContent(html: string): boolean {
 }
 
 function fieldHasContent(draft: TranslationDraft, field: TranslatableField): boolean {
-  if (field === "description") return richTextHasContent(draft.description)
-  return draft[field].trim().length > 0
+  const value = draft[field] ?? ""
+  if (RICH_TEXT_FIELDS.has(field)) return richTextHasContent(value)
+  return value.trim().length > 0
 }
 
 export function languageLabel(tag: string): string {
@@ -101,6 +115,17 @@ export interface PersistTranslationsOptions {
   defaultLanguageTag: string
   baseName: string
   baseDescription: string
+  baseInclusionsHtml: string
+  baseExclusionsHtml: string
+  baseTermsHtml: string
+}
+
+// Resolve a rich-text translation column: the default-language row mirrors the
+// base product column (when it has content), every row otherwise uses its own
+// draft, and empty markup collapses to null so the column stays clean.
+function resolveRichText(isDefault: boolean, baseValue: string, draftValue: string | null) {
+  if (isDefault && richTextHasContent(baseValue)) return baseValue
+  return richTextHasContent(draftValue ?? "") ? (draftValue ?? "") : null
 }
 
 export interface ProductTranslationDrafts {
@@ -170,7 +195,14 @@ export function useProductTranslationDrafts(productId: string | null): ProductTr
 
   const persist = useCallback(
     async (resolvedProductId: string, options: PersistTranslationsOptions) => {
-      const { defaultLanguageTag, baseName, baseDescription } = options
+      const {
+        defaultLanguageTag,
+        baseName,
+        baseDescription,
+        baseInclusionsHtml,
+        baseExclusionsHtml,
+        baseTermsHtml,
+      } = options
       const original = existingRef.current
       const currentLanguages = new Set(drafts.map((draft) => draft.languageTag))
 
@@ -200,24 +232,29 @@ export function useProductTranslationDrafts(productId: string | null): ProductTr
             ? draft.description
             : null
         const slug = draft.slug.trim() ? draft.slug.trim() : null
+        const inclusionsHtml = resolveRichText(isDefault, baseInclusionsHtml, draft.inclusionsHtml)
+        const exclusionsHtml = resolveRichText(isDefault, baseExclusionsHtml, draft.exclusionsHtml)
+        const termsHtml = resolveRichText(isDefault, baseTermsHtml, draft.termsHtml)
+        const richInput = { inclusionsHtml, exclusionsHtml, termsHtml }
 
         if (draft.id) {
           return mutations.update.mutateAsync({
             productId: resolvedProductId,
             translationId: draft.id,
-            input: { name, description, slug },
+            input: { name, description, slug, ...richInput },
           })
         }
 
         // A brand-new row is only worth creating once it carries content.
+        const hasRichContent = !!inclusionsHtml || !!exclusionsHtml || !!termsHtml
         const isEmpty = isDefault
-          ? !slug
-          : !draft.name.trim() && !richTextHasContent(draft.description) && !slug
+          ? !slug && !hasRichContent
+          : !draft.name.trim() && !richTextHasContent(draft.description) && !slug && !hasRichContent
         if (isEmpty) return Promise.resolve(null)
 
         return mutations.create.mutateAsync({
           productId: resolvedProductId,
-          input: { languageTag: draft.languageTag, name, description, slug },
+          input: { languageTag: draft.languageTag, name, description, slug, ...richInput },
         })
       })
 
