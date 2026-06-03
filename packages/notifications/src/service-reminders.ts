@@ -791,10 +791,7 @@ export async function deliverReminderRun(
     .where(
       and(
         eq(notificationReminderRuns.id, input.reminderRunId),
-        or(
-          eq(notificationReminderRuns.status, "queued"),
-          eq(notificationReminderRuns.status, "failed"),
-        ),
+        eq(notificationReminderRuns.status, "queued"),
       ),
     )
     .returning()
@@ -894,7 +891,7 @@ async function emitStageChannelRun(
     .from(notificationReminderRuns)
     .where(eq(notificationReminderRuns.dedupeKey, dedupeKey))
     .limit(1)
-  if (existingRun && existingRun.status !== "failed") {
+  if (existingRun) {
     return { status: "skipped", runId: existingRun.id }
   }
 
@@ -924,32 +921,20 @@ async function emitStageChannelRun(
   }
 
   if (!recipient?.email) {
-    const [run] = existingRun
-      ? await db
-          .update(notificationReminderRuns)
-          .set({ ...baseValues, status: "skipped", errorMessage: "no_recipient" })
-          .where(eq(notificationReminderRuns.id, existingRun.id))
-          .returning()
-      : await db
-          .insert(notificationReminderRuns)
-          .values({ ...baseValues, status: "skipped", errorMessage: "no_recipient" })
-          .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
-          .returning()
+    const [run] = await db
+      .insert(notificationReminderRuns)
+      .values({ ...baseValues, status: "skipped", errorMessage: "no_recipient" })
+      .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
+      .returning()
     return { status: "skipped", runId: run?.id ?? null }
   }
 
   if (enqueueDelivery && !dispatcher) {
-    const [queuedRun] = existingRun
-      ? await db
-          .update(notificationReminderRuns)
-          .set({ ...baseValues, status: "queued" })
-          .where(eq(notificationReminderRuns.id, existingRun.id))
-          .returning()
-      : await db
-          .insert(notificationReminderRuns)
-          .values({ ...baseValues, status: "queued" })
-          .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
-          .returning()
+    const [queuedRun] = await db
+      .insert(notificationReminderRuns)
+      .values({ ...baseValues, status: "queued" })
+      .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
+      .returning()
     if (!queuedRun) return { status: "skipped", runId: null }
     try {
       await enqueueDelivery({ reminderRunId: queuedRun.id })
@@ -965,17 +950,11 @@ async function emitStageChannelRun(
     return { status: "skipped", runId: null }
   }
 
-  const [processingRun] = existingRun
-    ? await db
-        .update(notificationReminderRuns)
-        .set({ ...baseValues, status: "processing" })
-        .where(eq(notificationReminderRuns.id, existingRun.id))
-        .returning()
-    : await db
-        .insert(notificationReminderRuns)
-        .values({ ...baseValues, status: "processing" })
-        .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
-        .returning()
+  const [processingRun] = await db
+    .insert(notificationReminderRuns)
+    .values({ ...baseValues, status: "processing" })
+    .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
+    .returning()
 
   if (!processingRun) {
     return { status: "skipped", runId: null }

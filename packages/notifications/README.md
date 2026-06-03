@@ -87,6 +87,10 @@ Reminder rules can currently target:
 - `booking_payment_schedule`
 - `invoice`
 
+Stage cadence and `maxSendsInStage` are evaluated against reminder run attempts.
+A queued, sent, skipped, or failed run consumes the stage slot; failed runs are
+terminal until an operator or explicit recovery flow requeues them.
+
 For finance-aware collection sends, the routes also support:
 
 - `POST /payment-sessions/:id/send`

@@ -95,18 +95,28 @@ export async function listChannelsForStage(
 
 export function pickActiveStage(
   stages: NotificationReminderRuleStage[],
-  sendsSoFar: number,
+  attemptsSoFar: number,
 ): NotificationReminderRuleStage | null {
   if (stages.length === 0) return null
   let cumulative = 0
   for (const stage of stages) {
     const cap = stage.maxSendsInStage ?? Number.POSITIVE_INFINITY
-    if (sendsSoFar < cumulative + cap) {
+    if (attemptsSoFar < cumulative + cap) {
       return stage
     }
     cumulative += cap
   }
   return null
+}
+
+function isDeliveryAttempt(status: string) {
+  return (
+    status === "queued" ||
+    status === "processing" ||
+    status === "sent" ||
+    status === "skipped" ||
+    status === "failed"
+  )
 }
 
 export function inWindow(today: Date, anchorDate: Date, stage: NotificationReminderRuleStage) {
@@ -208,8 +218,8 @@ export function evaluateStage(
   if (target.isTerminal) {
     return { fire: false, reason: "target_terminal_state" }
   }
-  const sentHistory = history.filter((h) => h.status === "sent")
-  const stage = pickActiveStage(stages, sentHistory.length)
+  const attemptHistory = history.filter((h) => isDeliveryAttempt(h.status))
+  const stage = pickActiveStage(stages, attemptHistory.length)
   if (!stage) {
     return { fire: false, reason: "no_active_stage" }
   }
@@ -221,7 +231,7 @@ export function evaluateStage(
     return { fire: false, reason: "outside_window", stage }
   }
 
-  const lastSent = sentHistory.reduce<Date | null>((acc, e) => {
+  const lastAttempt = attemptHistory.reduce<Date | null>((acc, e) => {
     const stamp = e.sentAt ?? e.scheduledFor
     return acc && acc > stamp ? acc : stamp
   }, null)
@@ -231,11 +241,11 @@ export function evaluateStage(
     daysUntilDue = daysBetweenUtc(new Date(`${target.dueDate}T00:00:00Z`), today)
   }
 
-  if (!cadenceElapsed(today, lastSent, stage, daysUntilDue)) {
+  if (!cadenceElapsed(today, lastAttempt, stage, daysUntilDue)) {
     return { fire: false, reason: "cadence_not_elapsed", stage }
   }
 
-  return { fire: true, stage, anchorDate, sendCountAtFire: sentHistory.length + 1 }
+  return { fire: true, stage, anchorDate, sendCountAtFire: attemptHistory.length + 1 }
 }
 
 function parseTimeOfDayUtcMinutes(value: string): number {

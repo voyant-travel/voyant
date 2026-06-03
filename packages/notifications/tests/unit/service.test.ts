@@ -87,6 +87,15 @@ describe("createNotificationService", () => {
     expect(service.getProvider("slack")).toBeUndefined()
   })
 
+  it("getProviderByName returns a named provider", () => {
+    const resend = fakeProvider("resend", ["email"])
+    const local = fakeProvider("local", ["email"])
+    const service = createNotificationService([resend, local])
+    expect(service.getProviderByName?.("resend")).toBe(resend)
+    expect(service.getProviderByName?.("local")).toBe(local)
+    expect(service.getProviderByName?.("missing")).toBeUndefined()
+  })
+
   it("integrates with the local provider end-to-end", async () => {
     const sink = vi.fn()
     const service = createNotificationService([createLocalProvider({ sink, channels: ["email"] })])
