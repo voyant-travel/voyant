@@ -1,5 +1,18 @@
 # @voyantjs/products
 
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.103.0
+- @voyantjs/catalog@0.103.0
+- @voyantjs/core@0.103.0
+- @voyantjs/db@0.103.0
+- @voyantjs/hono@0.103.0
+- @voyantjs/products-contracts@0.103.0
+- @voyantjs/storage@0.103.0
+- @voyantjs/utils@0.103.0
+
 ## 0.102.0
 
 ### Minor Changes

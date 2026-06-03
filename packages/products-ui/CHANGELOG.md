@@ -1,5 +1,33 @@
 # @voyantjs/products-ui
 
+## 0.103.0
+
+### Minor Changes
+
+- a02f2f3: Follow-up polish for the operator product detail, from client review:
+
+  - **Inclusions / exclusions / terms are now editable in the product sheet — and localizable.** The whole stack already carried `inclusionsHtml`/`exclusionsHtml`/`termsHtml` (product + `product_translations` columns, validation, react schemas, services); the form just never exposed them, so clients forked their own UI. They're now three rich-text `TranslatableField`s that switch with the language switcher and persist to the base columns + per-language translation rows.
+  - **Traveler-type columns are editable/removable.** Hovering an Adult / Child column header reveals edit (opens the category dialog pre-filled) and remove (deletes a product/option-owned category, or just drops its prices for a shared global one). `TravelerCategoryDialog` is now edit-capable.
+  - **Extras define + price in one place.** The standalone product-level "Extra" card is removed; each booking option's pricing has a single Extras section that both defines (new reusable `ProductExtraDialog`) and prices each add-on (per the option's rate plan), with edit/delete.
+
+### Patch Changes
+
+- Updated dependencies [a02f2f3]
+  - @voyantjs/availability@0.103.0
+  - @voyantjs/availability-react@0.103.0
+  - @voyantjs/catalog-react@0.103.0
+  - @voyantjs/extras-react@0.103.0
+  - @voyantjs/finance@0.103.0
+  - @voyantjs/finance-ui@0.103.0
+  - @voyantjs/i18n@0.103.0
+  - @voyantjs/markets-react@0.103.0
+  - @voyantjs/pricing-react@0.103.0
+  - @voyantjs/pricing-ui@0.103.0
+  - @voyantjs/products-react@0.103.0
+  - @voyantjs/suppliers-react@0.103.0
+  - @voyantjs/ui@0.103.0
+  - @voyantjs/utils@0.103.0
+
 ## 0.102.0
 
 ### Minor Changes

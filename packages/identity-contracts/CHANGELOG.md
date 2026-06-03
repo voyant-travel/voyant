@@ -1,5 +1,11 @@
 # @voyantjs/identity-contracts
 
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/schema-kit@0.103.0
+
 ## 0.102.0
 
 ### Patch Changes
