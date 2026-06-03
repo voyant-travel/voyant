@@ -1,5 +1,12 @@
 # @voyantjs/legal-contracts
 
+## 0.101.1
+
+### Patch Changes
+
+- @voyantjs/schema-kit@0.101.1
+- @voyantjs/templating@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes
