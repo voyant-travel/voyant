@@ -1,5 +1,14 @@
 # @voyantjs/facilities-ui
 
+## 0.101.1
+
+### Patch Changes
+
+- Updated dependencies [f736ba5]
+  - @voyantjs/facilities-react@0.101.1
+  - @voyantjs/i18n@0.101.1
+  - @voyantjs/ui@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes

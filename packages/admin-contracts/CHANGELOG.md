@@ -1,5 +1,15 @@
 # @voyantjs/admin-contracts
 
+## 0.101.1
+
+### Patch Changes
+
+- @voyantjs/bookings-contracts@0.101.1
+- @voyantjs/crm-contracts@0.101.1
+- @voyantjs/finance-contracts@0.101.1
+- @voyantjs/legal-contracts@0.101.1
+- @voyantjs/products-contracts@0.101.1
+
 ## 0.101.0
 
 ### Minor Changes

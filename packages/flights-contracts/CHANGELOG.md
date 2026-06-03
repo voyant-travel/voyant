@@ -1,5 +1,11 @@
 # @voyantjs/flights-contracts
 
+## 0.101.1
+
+### Patch Changes
+
+- @voyantjs/catalog-contracts@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes
