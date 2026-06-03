@@ -262,9 +262,13 @@ export async function sendNotification(
     throw new NotificationError("Notification channel is required")
   }
 
-  const provider = input.provider ?? template?.provider ?? dispatcher.getProvider(channel)?.name
+  const defaultProvider = dispatcher.getProvider(channel)
+  const provider = input.provider ?? template?.provider ?? defaultProvider?.name
   if (!provider) {
     throw new NotificationError(`No notification provider available for channel "${channel}"`)
+  }
+  if (provider !== defaultProvider?.name && dispatcher.getProviderByName?.(provider) == null) {
+    throw new NotificationError(`No notification provider registered with name "${provider}"`)
   }
 
   const subject = input.subject ?? renderNotificationTemplate(template?.subjectTemplate, data)
@@ -316,7 +320,7 @@ export async function sendNotification(
 
   try {
     const result =
-      provider === dispatcher.getProvider(channel)?.name
+      provider === defaultProvider?.name
         ? await dispatcher.send({
             to: input.to,
             channel,
