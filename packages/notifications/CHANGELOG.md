@@ -1,5 +1,19 @@
 # @voyantjs/notifications
 
+## 0.104.1
+
+### Patch Changes
+
+- ba5daa6: Stop stage-based notification reminder sweeps from automatically retrying failed
+  one-shot reminder runs, and treat queued/skipped/failed reminder runs as attempts
+  for stage cadence and caps.
+  - @voyantjs/bookings@0.104.1
+  - @voyantjs/core@0.104.1
+  - @voyantjs/db@0.104.1
+  - @voyantjs/finance@0.104.1
+  - @voyantjs/hono@0.104.1
+  - @voyantjs/legal@0.104.1
+
 ## 0.104.0
 
 ### Patch Changes
