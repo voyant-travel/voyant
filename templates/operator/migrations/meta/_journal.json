@@ -351,6 +351,20 @@
       "when": 1780141700000,
       "tag": "0050_cruise_canonical_geography",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1780141800000,
+      "tag": "0051_product_default_language",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1780141900000,
+      "tag": "0052_product_day_translations",
+      "breakpoints": true
     }
   ]
 }

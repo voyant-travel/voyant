@@ -187,6 +187,23 @@ export const productTranslationListQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 })
+const productDayTranslationCoreSchema = z.object({
+  languageTag: languageTagSchema,
+  title: z.string().max(255).optional().nullable(),
+  description: z.string().optional().nullable(),
+  location: z.string().max(255).optional().nullable(),
+})
+export const insertProductDayTranslationSchema = productDayTranslationCoreSchema
+export const updateProductDayTranslationSchema = productDayTranslationCoreSchema.partial()
+export const productDayTranslationListQuerySchema = z.object({
+  dayId: z.string().optional(),
+  languageTag: languageTagSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+})
+export type InsertProductDayTranslation = z.infer<typeof insertProductDayTranslationSchema>
+export type UpdateProductDayTranslation = z.infer<typeof updateProductDayTranslationSchema>
+
 export const insertProductOptionTranslationSchema = optionTranslationCoreSchema
 export const updateProductOptionTranslationSchema = optionTranslationCoreSchema.partial()
 export const productOptionTranslationListQuerySchema = z.object({

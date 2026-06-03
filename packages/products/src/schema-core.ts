@@ -34,6 +34,12 @@ export const products = pgTable(
     bookingMode: productBookingModeEnum("booking_mode").notNull().default("date"),
     capacityMode: productCapacityModeEnum("capacity_mode").notNull().default("limited"),
     timezone: text("timezone"),
+    /**
+     * BCP-47 tag for the language the base `name`/`description` columns are
+     * written in. Translations cover the other languages; public serving
+     * falls back to these base columns for this locale. Null until set.
+     */
+    defaultLanguageTag: text("default_language_tag"),
     visibility: productVisibilityEnum("visibility").notNull().default("private"),
     activated: boolean("activated").notNull().default(false),
     reservationTimeoutMinutes: integer("reservation_timeout_minutes"),

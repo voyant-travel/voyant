@@ -328,6 +328,105 @@ export const productItineraryRoutes = new Hono<Env>()
   })
 
   // ==========================================================================
+  // Day translations
+  // ==========================================================================
+
+  // GET /:id/days/:dayId/translations — List translations for a day
+  .get("/:id/days/:dayId/translations", async (c) => {
+    return c.json(
+      await productsService.listProductDayTranslations(c.get("db"), {
+        dayId: c.req.param("dayId"),
+        limit: 100,
+        offset: 0,
+      }),
+    )
+  })
+
+  // POST /:id/days/:dayId/translations — Add a translation to a day
+  .post("/:id/days/:dayId/translations", async (c) => {
+    const productId = c.req.param("id")
+    const dayId = c.req.param("dayId")
+    const body = await parseJsonBody(c, validation.insertProductDayTranslationSchema)
+    const row = await productsService.createProductDayTranslation(c.get("db"), dayId, body)
+
+    if (!row) {
+      return c.json({ error: "Day not found" }, 404)
+    }
+
+    await appendProductMutationLedgerEntry(c, {
+      action: "create",
+      productId,
+      changedFields: changedMutationFields(body, null, row),
+      subject: "product day translation",
+      actionName: "product.day_translation.create",
+      routeOrToolName: "products.day_translation.create",
+    })
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "day" })
+    return c.json({ data: row }, 201)
+  })
+
+  // PATCH /:id/days/:dayId/translations/:translationId — Update a day translation
+  .patch("/:id/days/:dayId/translations/:translationId", async (c) => {
+    const productId = c.req.param("id")
+    const translationId = c.req.param("translationId")
+    const before = await productsService.getDayTranslationForProductMutation(
+      c.get("db"),
+      translationId,
+    )
+    if (!before || before.productId !== productId || before.dayId !== c.req.param("dayId")) {
+      return c.json({ error: "Day translation not found" }, 404)
+    }
+
+    const body = await parseJsonBody(c, validation.updateProductDayTranslationSchema)
+    const row = await productsService.updateProductDayTranslation(c.get("db"), translationId, body)
+
+    if (!row) {
+      return c.json({ error: "Day translation not found" }, 404)
+    }
+
+    await appendProductMutationLedgerEntry(c, {
+      action: "update",
+      productId,
+      changedFields: changedMutationFields(body, before, row),
+      subject: "product day translation",
+      actionName: "product.day_translation.update",
+      routeOrToolName: "products.day_translation.update",
+    })
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "day" })
+    return c.json({ data: row })
+  })
+
+  // DELETE /:id/days/:dayId/translations/:translationId — Delete a day translation
+  .delete("/:id/days/:dayId/translations/:translationId", async (c) => {
+    const productId = c.req.param("id")
+    const translationId = c.req.param("translationId")
+    const before = await productsService.getDayTranslationForProductMutation(
+      c.get("db"),
+      translationId,
+    )
+    if (!before || before.productId !== productId || before.dayId !== c.req.param("dayId")) {
+      return c.json({ error: "Day translation not found" }, 404)
+    }
+
+    const row = await productsService.deleteProductDayTranslation(c.get("db"), translationId)
+
+    if (!row) {
+      return c.json({ error: "Day translation not found" }, 404)
+    }
+
+    await appendProductMutationLedgerEntry(c, {
+      action: "delete",
+      productId,
+      changedFields: [],
+      subject: "product day translation",
+      actionName: "product.day_translation.delete",
+      routeOrToolName: "products.day_translation.delete",
+    })
+    await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "day" })
+    return c.json({ success: true }, 200)
+  })
+
+  // ==========================================================================
   // Versions
   // ==========================================================================
 

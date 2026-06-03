@@ -1,16 +1,15 @@
 "use client"
 
+import { Button } from "@voyantjs/ui/components/button"
+import { Calendar } from "@voyantjs/ui/components/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
+import { Separator } from "@voyantjs/ui/components/separator"
+
+import { cn } from "@voyantjs/ui/lib/utils"
 import { format, isValid, parseISO } from "date-fns"
 import { CalendarIcon, XIcon } from "lucide-react"
 import * as React from "react"
 import type { DateRange } from "react-day-picker"
-
-import { cn } from "@voyantjs/ui/lib/utils"
-
-import { Button } from "./button"
-import { Calendar } from "./calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "./popover"
-import { Separator } from "./separator"
 
 type CalendarProps = React.ComponentProps<typeof Calendar>
 
@@ -245,7 +244,9 @@ export function DatePicker({
   return (
     <Popover open={disabled ? false : open} onOpenChange={disabled ? undefined : setOpen}>
       <PopoverTrigger
-        render={<DatePickerTrigger className={className} empty={!selectedDate} disabled={disabled} />}
+        render={
+          <DatePickerTrigger className={className} empty={!selectedDate} disabled={disabled} />
+        }
       >
         {label}
       </PopoverTrigger>
