@@ -24,8 +24,8 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
-    "@voyantjs/checkout": "workspace:*",
-    "@voyantjs/finance": "workspace:*",
+    "@voyantjs/checkout": "workspace:^",
+    "@voyantjs/finance": "workspace:^",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -33,19 +33,19 @@
     "@tanstack/react-query": "^5.100.11",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@voyantjs/checkout": "workspace:*",
-    "@voyantjs/finance": "workspace:*",
-    "@voyantjs/finance-react": "workspace:*",
-    "@voyantjs/react": "workspace:*",
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/checkout": "workspace:^",
+    "@voyantjs/finance": "workspace:^",
+    "@voyantjs/finance-react": "workspace:^",
+    "@voyantjs/react": "workspace:^",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
   "dependencies": {
-    "@voyantjs/finance-react": "workspace:*",
-    "@voyantjs/react": "workspace:*"
+    "@voyantjs/finance-react": "workspace:^",
+    "@voyantjs/react": "workspace:^"
   },
   "files": [
     "dist"

@@ -84,14 +84,14 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
-    "@voyantjs/db": "workspace:*",
-    "@voyantjs/catalog": "workspace:*",
-    "@voyantjs/flights-contracts": "workspace:*",
+    "@voyantjs/db": "workspace:^",
+    "@voyantjs/catalog": "workspace:^",
+    "@voyantjs/flights-contracts": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },

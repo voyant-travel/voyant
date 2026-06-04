@@ -34,14 +34,14 @@
     "test:workers": "pnpm -C ../.. --filter @voyantjs/workflows-orchestrator build && vitest run --config vitest.workers.config.ts"
   },
   "dependencies": {
-    "@voyantjs/workflows-orchestrator": "workspace:*",
-    "@voyantjs/workflows": "workspace:*"
+    "@voyantjs/workflows-orchestrator": "workspace:^",
+    "@voyantjs/workflows": "workspace:^"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.15.1",
     "@cloudflare/workers-types": "^4.20260426.1",
     "@types/node": "^20.12.0",
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^5.9.2",
     "vitest": "^4.1.2",
     "wrangler": "^4.86.0"

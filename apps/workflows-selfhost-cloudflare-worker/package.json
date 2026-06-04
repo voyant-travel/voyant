@@ -13,13 +13,13 @@
   },
   "dependencies": {
     "@cloudflare/containers": "^0.3.2",
-    "@voyantjs/workflows-orchestrator": "workspace:*",
-    "@voyantjs/workflows-orchestrator-cloudflare": "workspace:*",
-    "@voyantjs/workflows": "workspace:*"
+    "@voyantjs/workflows-orchestrator": "workspace:^",
+    "@voyantjs/workflows-orchestrator-cloudflare": "workspace:^",
+    "@voyantjs/workflows": "workspace:^"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260426.1",
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^5.9.2",
     "wrangler": "^4.86.0"
   }

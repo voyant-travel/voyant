@@ -78,11 +78,11 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
-    "@voyantjs/schema-kit": "workspace:*",
+    "@voyantjs/schema-kit": "workspace:^",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },

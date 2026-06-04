@@ -28,23 +28,23 @@
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-table": "^8.0.0",
-    "@voyantjs/resources-react": "workspace:*",
-    "@voyantjs/ui": "workspace:*",
+    "@voyantjs/resources-react": "workspace:^",
+    "@voyantjs/ui": "workspace:^",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "dependencies": {
-    "@voyantjs/i18n": "workspace:*"
+    "@voyantjs/i18n": "workspace:^"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.100.11",
     "@tanstack/react-table": "^8.21.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@voyantjs/i18n": "workspace:*",
-    "@voyantjs/resources-react": "workspace:*",
-    "@voyantjs/ui": "workspace:*",
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/i18n": "workspace:^",
+    "@voyantjs/resources-react": "workspace:^",
+    "@voyantjs/ui": "workspace:^",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

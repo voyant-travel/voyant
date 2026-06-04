@@ -22,7 +22,7 @@ cd my-travel-app
 pnpm install
 ```
 
-Built-in starters are downloaded from the matching GitHub Release for your installed CLI version. You can also point `--template` at a custom local starter directory.
+Built-in starters are downloaded from GitHub Release assets for the starter/CLI release version. You can also point `--template` at a custom local starter directory.
 
 ### 3. Configure the app
 

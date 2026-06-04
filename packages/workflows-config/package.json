@@ -25,10 +25,10 @@
     "dev": "tsc -w -p tsconfig.json"
   },
   "dependencies": {
-    "@voyantjs/workflows": "workspace:*"
+    "@voyantjs/workflows": "workspace:^"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^5.9.2"
   }
 }

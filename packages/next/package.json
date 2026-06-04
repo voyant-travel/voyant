@@ -17,11 +17,11 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/core": "workspace:*",
+    "@voyantjs/core": "workspace:^",
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2"
   },
   "files": [

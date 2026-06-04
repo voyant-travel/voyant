@@ -17,14 +17,14 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@voyantjs/db": "workspace:*"
+    "@voyantjs/db": "workspace:^"
   },
   "peerDependencies": {
     "hono": "^4.0.0",
     "vitest": "^4.0.0"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "typescript": "^6.0.2",

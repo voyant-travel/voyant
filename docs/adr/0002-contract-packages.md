@@ -166,7 +166,7 @@ aggregate, ship `@voyantjs/<vertical>-contracts` alongside it:
    re-export stub: re-export the whole surface from
    `@voyantjs/<vertical>-contracts/content-shape`, keep
    `mergeOverlaysInto<Vertical>Content` defined locally.
-5. Add `"@voyantjs/<vertical>-contracts": "workspace:*"` to the runtime
+5. Add `"@voyantjs/<vertical>-contracts": "workspace:^"` to the runtime
    package's dependencies.
 
 When you are tempted to import a schema from a runtime package into an external
