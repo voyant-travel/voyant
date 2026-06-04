@@ -3,7 +3,7 @@
 Voyant keeps workflows public package names small and role-based. New
 workflows packages must pass the deletion test: deleting the package should
 move meaningful implementation complexity behind an existing interface, not
-only remove release-train overhead.
+only remove release-cohort overhead.
 
 ## Public Packages
 

@@ -25,11 +25,11 @@
     "dev": "tsc -w -p tsconfig.json"
   },
   "dependencies": {
-    "@voyantjs/workflows": "workspace:*"
+    "@voyantjs/workflows": "workspace:^"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260426.1",
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^5.9.2"
   }
 }

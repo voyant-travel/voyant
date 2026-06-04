@@ -22,6 +22,9 @@ importers:
       '@changesets/apply-release-plan':
         specifier: ^7.1.0
         version: 7.1.0
+      '@changesets/assemble-release-plan':
+        specifier: ^6.0.9
+        version: 6.0.9
       '@changesets/cli':
         specifier: ^2.30.0
         version: 2.30.0(@types/node@25.5.2)
@@ -31,6 +34,12 @@ importers:
       '@changesets/get-release-plan':
         specifier: ^4.0.15
         version: 4.0.15
+      '@changesets/pre':
+        specifier: ^2.0.2
+        version: 2.0.2
+      '@changesets/read':
+        specifier: ^0.6.7
+        version: 0.6.7
       '@commitlint/cli':
         specifier: ^20.5.0
         version: 20.5.0(@types/node@25.5.2)(conventional-commits-parser@6.4.0)(typescript@6.0.2)
@@ -84,7 +93,7 @@ importers:
         specifier: ^4.20260426.1
         version: 4.20260426.1
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/typescript-config
       typescript:
         specifier: ^6.0.2
@@ -109,7 +118,7 @@ importers:
         specifier: ^4.20260426.1
         version: 4.20260426.1
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/typescript-config
       typescript:
         specifier: ^6.0.2
@@ -127,10 +136,10 @@ importers:
         specifier: ^1.13.7
         version: 1.19.12(hono@4.12.10)
       '@voyantjs/catalog':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/catalog
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/db
       dotenv:
         specifier: ^17.4.0
@@ -158,7 +167,7 @@ importers:
         specifier: ^8.15.6
         version: 8.20.0
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/typescript-config
       drizzle-kit:
         specifier: ^0.31.10
@@ -215,211 +224,211 @@ importers:
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@voyantjs/action-ledger':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/action-ledger
       '@voyantjs/auth':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/auth
       '@voyantjs/availability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/availability
       '@voyantjs/availability-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/availability-react
       '@voyantjs/booking-requirements':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/booking-requirements
       '@voyantjs/booking-requirements-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/booking-requirements-react
       '@voyantjs/booking-requirements-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/booking-requirements-ui
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/bookings
       '@voyantjs/bookings-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/bookings-react
       '@voyantjs/bookings-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/bookings-ui
       '@voyantjs/checkout':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/checkout
       '@voyantjs/cloud-sdk':
         specifier: ^0.8.0
         version: 0.8.0(typesense@3.0.6(@babel/runtime@7.29.2))
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/core
       '@voyantjs/crm':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/crm
       '@voyantjs/crm-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/crm-react
       '@voyantjs/crm-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/crm-ui
       '@voyantjs/customer-portal':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/customer-portal
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/db
       '@voyantjs/distribution':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/distribution
       '@voyantjs/distribution-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/distribution-react
       '@voyantjs/distribution-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/distribution-ui
       '@voyantjs/external-refs':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/external-refs
       '@voyantjs/external-refs-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/external-refs-react
       '@voyantjs/external-refs-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/external-refs-ui
       '@voyantjs/extras':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/extras
       '@voyantjs/extras-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/extras-react
       '@voyantjs/extras-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/extras-ui
       '@voyantjs/facilities':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/facilities
       '@voyantjs/facilities-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/facilities-react
       '@voyantjs/finance':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/finance
       '@voyantjs/finance-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/finance-react
       '@voyantjs/finance-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/finance-ui
       '@voyantjs/ground':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/ground
       '@voyantjs/ground-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/ground-react
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/hono
       '@voyantjs/identity':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/identity
       '@voyantjs/identity-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/identity-react
       '@voyantjs/identity-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/identity-ui
       '@voyantjs/legal-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/legal-react
       '@voyantjs/legal-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/legal-ui
       '@voyantjs/markets':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/markets
       '@voyantjs/markets-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/markets-react
       '@voyantjs/markets-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/markets-ui
       '@voyantjs/notifications':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/notifications
       '@voyantjs/octo':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/octo
       '@voyantjs/pricing':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/pricing
       '@voyantjs/pricing-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/pricing-react
       '@voyantjs/pricing-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/pricing-ui
       '@voyantjs/products':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/products
       '@voyantjs/products-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/products-react
       '@voyantjs/products-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/products-ui
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/react
       '@voyantjs/resources':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/resources
       '@voyantjs/resources-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/resources-react
       '@voyantjs/resources-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/resources-ui
       '@voyantjs/sellability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/sellability
       '@voyantjs/sellability-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/sellability-react
       '@voyantjs/sellability-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/sellability-ui
       '@voyantjs/storage':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/storage
       '@voyantjs/storefront':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/storefront
       '@voyantjs/suppliers':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/suppliers
       '@voyantjs/suppliers-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/suppliers-react
       '@voyantjs/suppliers-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/suppliers-ui
       '@voyantjs/transactions':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/transactions
       '@voyantjs/transactions-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/transactions-react
       '@voyantjs/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/types
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/ui
       '@voyantjs/utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/utils
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows
       better-auth:
         specifier: 1.6.11
@@ -558,7 +567,7 @@ importers:
         specifier: ^1.13.7
         version: 1.19.12(hono@4.12.10)
       '@voyantjs/flights':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/flights
       dotenv:
         specifier: ^17.4.0
@@ -586,7 +595,7 @@ importers:
         specifier: ^8.15.6
         version: 8.20.0
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/typescript-config
       drizzle-kit:
         specifier: ^0.31.10
@@ -616,28 +625,28 @@ importers:
   apps/scripts:
     dependencies:
       '@voyantjs/availability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/availability
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/bookings
       '@voyantjs/crm':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/crm
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/db
       '@voyantjs/finance':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/finance
       '@voyantjs/products':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/products
       '@voyantjs/suppliers':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/suppliers
       '@voyantjs/transactions':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/transactions
       dotenv:
         specifier: ^17.4.0
@@ -665,10 +674,10 @@ importers:
   apps/workflow-runs-dashboard:
     dependencies:
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/ui
       '@voyantjs/workflows-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows-ui
       lucide-react:
         specifier: ^0.475.0
@@ -687,7 +696,7 @@ importers:
         specifier: ^4.3.4
         version: 4.7.0(vite@6.4.2(@types/node@25.5.2)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/typescript-config
       react:
         specifier: ^19.1.0
@@ -717,13 +726,13 @@ importers:
         specifier: ^4.23.6
         version: 4.25.9(@babel/runtime@7.29.2)(@codemirror/autocomplete@6.20.1)(@codemirror/language@6.12.3)(@codemirror/lint@6.9.5)(@codemirror/search@6.6.0)(@codemirror/state@6.6.0)(@codemirror/theme-one-dark@6.1.3)(@codemirror/view@6.41.1)(codemirror@6.0.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/ui
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows
       '@voyantjs/workflows-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows-react
       lucide-react:
         specifier: ^0.475.0
@@ -745,7 +754,7 @@ importers:
         specifier: ^4.3.4
         version: 4.7.0(vite@6.4.2(@types/node@20.19.39)(jiti@2.7.0)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/typescript-config
       react:
         specifier: ^19.1.0
@@ -766,14 +775,14 @@ importers:
   apps/workflows-node-step-container:
     dependencies:
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows
     devDependencies:
       '@types/node':
         specifier: ^20.12.0
         version: 20.19.39
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/typescript-config
       typescript:
         specifier: ^5.9.2
@@ -785,20 +794,20 @@ importers:
         specifier: ^0.3.2
         version: 0.3.2
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows
       '@voyantjs/workflows-orchestrator':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows-orchestrator
       '@voyantjs/workflows-orchestrator-cloudflare':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows-orchestrator-cloudflare
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20260426.1
         version: 4.20260426.1
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/typescript-config
       typescript:
         specifier: ^5.9.2
@@ -816,20 +825,20 @@ importers:
         specifier: ^0.3.2
         version: 0.3.2
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows
       '@voyantjs/workflows-orchestrator':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows-orchestrator
       '@voyantjs/workflows-orchestrator-cloudflare':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows-orchestrator-cloudflare
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20260426.1
         version: 4.20260426.1
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/typescript-config
       typescript:
         specifier: ^5.9.2
@@ -841,17 +850,17 @@ importers:
   apps/workflows-selfhost-node-server:
     dependencies:
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows
       '@voyantjs/workflows-orchestrator-node':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows-orchestrator-node
     devDependencies:
       '@types/node':
         specifier: ^20.12.0
         version: 20.19.39
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/typescript-config
       typescript:
         specifier: ^5.9.2
@@ -860,17 +869,17 @@ importers:
   apps/workflows-tenant-worker:
     dependencies:
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows
       '@voyantjs/workflows-orchestrator-cloudflare':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows-orchestrator-cloudflare
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20260426.1
         version: 4.20260426.1
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/typescript-config
       typescript:
         specifier: ^5.9.2
@@ -885,19 +894,19 @@ importers:
         specifier: ^5.100.11
         version: 5.100.11(react@19.2.4)
       '@voyantjs/customer-portal':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/customer-portal
       '@voyantjs/customer-portal-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/customer-portal-react
       '@voyantjs/finance':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/finance
       '@voyantjs/finance-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/finance-react
       '@voyantjs/storefront-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/storefront-react
       next:
         specifier: ^15.5.7
@@ -928,19 +937,19 @@ importers:
   packages/accommodations:
     dependencies:
       '@voyantjs/accommodations-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../accommodations-contracts
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings
       '@voyantjs/catalog':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/facilities':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../facilities
       drizzle-orm:
         specifier: ^0.45.2
@@ -953,7 +962,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -969,7 +978,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -981,13 +990,13 @@ importers:
   packages/action-ledger:
     dependencies:
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       drizzle-orm:
         specifier: ^0.45.2
@@ -1000,7 +1009,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -1012,10 +1021,10 @@ importers:
   packages/admin:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -1034,10 +1043,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       jsdom:
         specifier: ^25.0.0
@@ -1064,14 +1073,14 @@ importers:
   packages/admin-client:
     dependencies:
       '@voyantjs/admin-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../admin-contracts
       zod:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -1083,26 +1092,26 @@ importers:
   packages/admin-contracts:
     dependencies:
       '@voyantjs/bookings-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings-contracts
       '@voyantjs/crm-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../crm-contracts
       '@voyantjs/finance-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../finance-contracts
       '@voyantjs/legal-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../legal-contracts
       '@voyantjs/products-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products-contracts
       zod:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -1114,7 +1123,7 @@ importers:
   packages/admin-react:
     dependencies:
       '@voyantjs/admin-client':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../admin-client
     devDependencies:
       '@tanstack/react-query':
@@ -1130,7 +1139,7 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       jsdom:
         specifier: ^25.0.0
@@ -1163,16 +1172,16 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/availability-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../availability-react
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^1.7.0
@@ -1196,10 +1205,10 @@ importers:
         specifier: 1.6.11
         version: 1.6.11(54ef0a5b885dd37cb58b519abb92106c)
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../utils
       better-auth:
         specifier: 1.6.11
@@ -1212,7 +1221,7 @@ importers:
         specifier: 25.5.2
         version: 25.5.2
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -1221,7 +1230,7 @@ importers:
   packages/auth-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -1234,13 +1243,13 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/auth':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../auth
       '@voyantjs/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../types
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -1270,22 +1279,22 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/admin':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../admin
       '@voyantjs/auth-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../auth-react
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
       '@voyantjs/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../types
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^1.7.0
@@ -1306,13 +1315,13 @@ importers:
   packages/availability:
     dependencies:
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       drizzle-orm:
         specifier: ^0.45.2
@@ -1325,10 +1334,10 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/products':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -1337,7 +1346,7 @@ importers:
   packages/availability-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -1350,10 +1359,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/availability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../availability
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -1374,7 +1383,7 @@ importers:
   packages/availability-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -1390,13 +1399,13 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/availability-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../availability-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^1.7.0
@@ -1423,16 +1432,16 @@ importers:
   packages/booking-requirements:
     dependencies:
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/products':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products
       drizzle-orm:
         specifier: ^0.45.2
@@ -1445,10 +1454,10 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -1457,7 +1466,7 @@ importers:
   packages/booking-requirements-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -1470,10 +1479,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/booking-requirements':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../booking-requirements
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -1494,7 +1503,7 @@ importers:
   packages/booking-requirements-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -1507,13 +1516,13 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/booking-requirements-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../booking-requirements-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -1534,22 +1543,22 @@ importers:
   packages/bookings:
     dependencies:
       '@voyantjs/action-ledger':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../action-ledger
       '@voyantjs/bookings-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings-contracts
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../utils
       drizzle-orm:
         specifier: ^0.45.2
@@ -1562,10 +1571,10 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/products':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -1574,14 +1583,14 @@ importers:
   packages/bookings-contracts:
     dependencies:
       '@voyantjs/schema-kit':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../schema-kit
       zod:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -1593,7 +1602,7 @@ importers:
   packages/bookings-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -1606,10 +1615,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -1630,7 +1639,7 @@ importers:
   packages/bookings-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
       sonner:
         specifier: ^2.0.7
@@ -1649,52 +1658,52 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/availability-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../availability-react
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings
       '@voyantjs/bookings-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings-react
       '@voyantjs/catalog':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog
       '@voyantjs/catalog-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog-react
       '@voyantjs/crm-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../crm-react
       '@voyantjs/crm-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../crm-ui
       '@voyantjs/extras-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../extras-react
       '@voyantjs/finance-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../finance-react
       '@voyantjs/identity-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../identity-react
       '@voyantjs/legal-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../legal-react
       '@voyantjs/pricing-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../pricing-react
       '@voyantjs/products-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products-react
       '@voyantjs/suppliers-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../suppliers-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -1721,16 +1730,16 @@ importers:
   packages/catalog:
     dependencies:
       '@voyantjs/catalog-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog-contracts
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       drizzle-orm:
         specifier: ^0.45.2
@@ -1743,7 +1752,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       drizzle-kit:
         specifier: ^0.31.10
@@ -1762,7 +1771,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -1774,17 +1783,17 @@ importers:
   packages/catalog-mcp:
     dependencies:
       '@voyantjs/catalog':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog
       '@voyantjs/catalog-rag':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog-rag
       zod:
         specifier: ^4.1.4
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -1796,11 +1805,11 @@ importers:
   packages/catalog-rag:
     dependencies:
       '@voyantjs/catalog':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -1812,7 +1821,7 @@ importers:
   packages/catalog-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -1825,10 +1834,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/catalog':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -1849,7 +1858,7 @@ importers:
   packages/catalog-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -1865,13 +1874,13 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/catalog-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^1.7.0
@@ -1892,22 +1901,22 @@ importers:
   packages/charters:
     dependencies:
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings
       '@voyantjs/catalog':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog
       '@voyantjs/charters-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../charters-contracts
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       drizzle-orm:
         specifier: ^0.45.2
@@ -1920,10 +1929,10 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-test-utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../test-utils
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -1939,7 +1948,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -1951,7 +1960,7 @@ importers:
   packages/charters-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -1964,10 +1973,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/charters':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../charters
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -1988,7 +1997,7 @@ importers:
   packages/charters-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -2001,16 +2010,16 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/catalog-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog-react
       '@voyantjs/charters-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../charters-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -2031,19 +2040,19 @@ importers:
   packages/checkout:
     dependencies:
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/finance':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../finance
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/notifications':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../notifications
       drizzle-orm:
         specifier: ^0.45.2
@@ -2056,7 +2065,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -2068,10 +2077,10 @@ importers:
   packages/checkout-react:
     dependencies:
       '@voyantjs/finance-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../finance-react
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -2084,13 +2093,13 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/checkout':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../checkout
       '@voyantjs/finance':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../finance
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -2117,25 +2126,25 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/checkout':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../checkout
       '@voyantjs/checkout-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../checkout-react
       '@voyantjs/finance':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../finance
       '@voyantjs/finance-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../finance-react
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -2159,7 +2168,7 @@ importers:
   packages/core:
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -2168,25 +2177,25 @@ importers:
   packages/crm:
     dependencies:
       '@voyantjs/action-ledger':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../action-ledger
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/crm-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../crm-contracts
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/identity':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../identity
       '@voyantjs/utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../utils
       drizzle-orm:
         specifier: ^0.45.2
@@ -2199,7 +2208,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -2208,14 +2217,14 @@ importers:
   packages/crm-contracts:
     dependencies:
       '@voyantjs/schema-kit':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../schema-kit
       zod:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -2227,7 +2236,7 @@ importers:
   packages/crm-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -2240,10 +2249,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/crm':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../crm
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -2264,10 +2273,10 @@ importers:
   packages/crm-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
       '@voyantjs/utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../utils
     devDependencies:
       '@tanstack/react-query':
@@ -2280,16 +2289,16 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/crm-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../crm-react
       '@voyantjs/identity-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../identity-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -2310,22 +2319,22 @@ importers:
   packages/cruises:
     dependencies:
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings
       '@voyantjs/catalog':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/cruises-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../cruises-contracts
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       drizzle-orm:
         specifier: ^0.45.2
@@ -2338,10 +2347,10 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-test-utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../test-utils
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -2357,7 +2366,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -2369,7 +2378,7 @@ importers:
   packages/cruises-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -2382,10 +2391,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/cruises':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../cruises
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -2406,7 +2415,7 @@ importers:
   packages/cruises-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -2419,16 +2428,16 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/catalog-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog-react
       '@voyantjs/cruises-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../cruises-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -2449,31 +2458,31 @@ importers:
   packages/customer-portal:
     dependencies:
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/crm':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../crm
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/finance':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../finance
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/identity':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../identity
       '@voyantjs/legal':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../legal
       '@voyantjs/utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../utils
       drizzle-orm:
         specifier: ^0.45.2
@@ -2486,7 +2495,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -2498,7 +2507,7 @@ importers:
   packages/customer-portal-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -2511,10 +2520,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/customer-portal':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../customer-portal
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -2538,10 +2547,10 @@ importers:
         specifier: ^1.0.2
         version: 1.0.2
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/schema-kit':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../schema-kit
       drizzle-orm:
         specifier: ^0.45.2
@@ -2557,7 +2566,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -2569,34 +2578,34 @@ importers:
   packages/distribution:
     dependencies:
       '@voyantjs/availability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../availability
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings
       '@voyantjs/catalog':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/identity':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../identity
       '@voyantjs/products':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products
       '@voyantjs/suppliers':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../suppliers
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows
       drizzle-orm:
         specifier: ^0.45.2
@@ -2609,7 +2618,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -2618,7 +2627,7 @@ importers:
   packages/distribution-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -2631,10 +2640,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/distribution':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../distribution
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -2655,7 +2664,7 @@ importers:
   packages/distribution-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -2671,13 +2680,13 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/distribution-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../distribution-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -2698,13 +2707,13 @@ importers:
   packages/external-refs:
     dependencies:
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       drizzle-orm:
         specifier: ^0.45.2
@@ -2717,7 +2726,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -2726,7 +2735,7 @@ importers:
   packages/external-refs-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -2739,10 +2748,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/external-refs':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../external-refs
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -2763,7 +2772,7 @@ importers:
   packages/external-refs-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -2779,25 +2788,25 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/bookings-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings-ui
       '@voyantjs/crm-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../crm-ui
       '@voyantjs/external-refs-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../external-refs-react
       '@voyantjs/products-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products-ui
       '@voyantjs/suppliers-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../suppliers-ui
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -2824,19 +2833,19 @@ importers:
   packages/extras:
     dependencies:
       '@voyantjs/catalog':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/extras-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../extras-contracts
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       drizzle-orm:
         specifier: ^0.45.2
@@ -2849,16 +2858,16 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/availability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../availability
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings
       '@voyantjs/products':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -2871,7 +2880,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -2883,7 +2892,7 @@ importers:
   packages/extras-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -2896,10 +2905,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/extras':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../extras
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -2920,7 +2929,7 @@ importers:
   packages/extras-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -2936,19 +2945,19 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/catalog-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog-react
       '@voyantjs/extras-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../extras-react
       '@voyantjs/products-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -2975,16 +2984,16 @@ importers:
   packages/facilities:
     dependencies:
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/identity':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../identity
       drizzle-orm:
         specifier: ^0.45.2
@@ -2997,7 +3006,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -3006,7 +3015,7 @@ importers:
   packages/facilities-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -3019,10 +3028,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/facilities':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../facilities
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -3043,7 +3052,7 @@ importers:
   packages/facilities-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -3056,13 +3065,13 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/facilities-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../facilities-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -3080,34 +3089,34 @@ importers:
   packages/finance:
     dependencies:
       '@voyantjs/action-ledger':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../action-ledger
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/data-sdk':
         specifier: 0.1.3
         version: 0.1.3
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/finance-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../finance-contracts
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/products':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products
       '@voyantjs/storage':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../storage
       '@voyantjs/utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../utils
       drizzle-orm:
         specifier: ^0.45.2
@@ -3120,7 +3129,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -3129,14 +3138,14 @@ importers:
   packages/finance-contracts:
     dependencies:
       '@voyantjs/schema-kit':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../schema-kit
       zod:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -3148,7 +3157,7 @@ importers:
   packages/finance-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -3161,10 +3170,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/finance':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../finance
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -3185,7 +3194,7 @@ importers:
   packages/finance-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -3198,22 +3207,22 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/bookings-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings-ui
       '@voyantjs/finance':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../finance
       '@voyantjs/finance-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../finance-react
       '@voyantjs/suppliers-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../suppliers-ui
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -3240,13 +3249,13 @@ importers:
   packages/flights:
     dependencies:
       '@voyantjs/catalog':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/flights-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../flights-contracts
       drizzle-orm:
         specifier: ^0.45.2
@@ -3256,7 +3265,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -3268,14 +3277,14 @@ importers:
   packages/flights-contracts:
     dependencies:
       '@voyantjs/catalog-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog-contracts
       zod:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -3287,7 +3296,7 @@ importers:
   packages/flights-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -3300,10 +3309,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/flights':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../flights
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -3324,7 +3333,7 @@ importers:
   packages/flights-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -3340,25 +3349,25 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/checkout-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../checkout-ui
       '@voyantjs/crm-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../crm-react
       '@voyantjs/finance':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../finance
       '@voyantjs/flights':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../flights
       '@voyantjs/flights-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../flights-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -3379,19 +3388,19 @@ importers:
   packages/ground:
     dependencies:
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/facilities':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../facilities
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/identity':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../identity
       drizzle-orm:
         specifier: ^0.45.2
@@ -3404,13 +3413,13 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings
       '@voyantjs/resources':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../resources
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -3419,7 +3428,7 @@ importers:
   packages/ground-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -3432,10 +3441,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/ground':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ground
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -3456,22 +3465,22 @@ importers:
   packages/hono:
     dependencies:
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/storage':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../storage
       '@voyantjs/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../types
       '@voyantjs/utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../utils
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows
       drizzle-orm:
         specifier: ^0.45.2
@@ -3487,10 +3496,10 @@ importers:
         specifier: ^4.20260426.1
         version: 4.20260426.1
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       '@voyantjs/workflows-orchestrator':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows-orchestrator
       typescript:
         specifier: ^6.0.2
@@ -3508,7 +3517,7 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -3523,16 +3532,16 @@ importers:
   packages/identity:
     dependencies:
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/identity-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../identity-contracts
       drizzle-orm:
         specifier: ^0.45.2
@@ -3545,7 +3554,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -3554,14 +3563,14 @@ importers:
   packages/identity-contracts:
     dependencies:
       '@voyantjs/schema-kit':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../schema-kit
       zod:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -3573,7 +3582,7 @@ importers:
   packages/identity-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -3586,10 +3595,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/identity':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../identity
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -3610,7 +3619,7 @@ importers:
   packages/identity-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -3626,25 +3635,25 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/bookings-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings-ui
       '@voyantjs/crm-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../crm-ui
       '@voyantjs/identity-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../identity-react
       '@voyantjs/products-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products-ui
       '@voyantjs/suppliers-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../suppliers-ui
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -3671,34 +3680,34 @@ importers:
   packages/legal:
     dependencies:
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/crm':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../crm
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/finance':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../finance
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/legal-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../legal-contracts
       '@voyantjs/storage':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../storage
       '@voyantjs/suppliers':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../suppliers
       '@voyantjs/utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../utils
       drizzle-orm:
         specifier: ^0.45.2
@@ -3711,10 +3720,10 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-test-utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../test-utils
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -3726,17 +3735,17 @@ importers:
   packages/legal-contracts:
     dependencies:
       '@voyantjs/schema-kit':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../schema-kit
       '@voyantjs/templating':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../templating
       zod:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -3748,7 +3757,7 @@ importers:
   packages/legal-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -3761,10 +3770,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/legal':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../legal
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -3785,10 +3794,10 @@ importers:
   packages/legal-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
       '@voyantjs/utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../utils
     devDependencies:
       '@tanstack/react-query':
@@ -3801,16 +3810,16 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/crm-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../crm-react
       '@voyantjs/legal-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../legal-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -3837,13 +3846,13 @@ importers:
   packages/markets:
     dependencies:
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       drizzle-orm:
         specifier: ^0.45.2
@@ -3856,10 +3865,10 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/products':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -3868,7 +3877,7 @@ importers:
   packages/markets-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -3881,10 +3890,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/markets':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../markets
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -3905,7 +3914,7 @@ importers:
   packages/markets-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -3921,13 +3930,13 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/markets-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../markets-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -3954,14 +3963,14 @@ importers:
   packages/next:
     dependencies:
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -3970,25 +3979,25 @@ importers:
   packages/notifications:
     dependencies:
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings
       '@voyantjs/cloud-sdk':
         specifier: ^0.8.0
         version: 0.8.0(typesense@3.0.6(@babel/runtime@7.29.2))
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/finance':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../finance
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/legal':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../legal
       drizzle-orm:
         specifier: ^0.45.2
@@ -4004,7 +4013,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -4016,7 +4025,7 @@ importers:
   packages/notifications-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -4029,10 +4038,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/notifications':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../notifications
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -4053,7 +4062,7 @@ importers:
   packages/notifications-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -4066,13 +4075,13 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/notifications-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../notifications-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -4096,25 +4105,25 @@ importers:
   packages/octo:
     dependencies:
       '@voyantjs/availability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../availability
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/products':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products
       '@voyantjs/transactions':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../transactions
       drizzle-orm:
         specifier: ^0.45.2
@@ -4127,7 +4136,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -4136,11 +4145,11 @@ importers:
   packages/plugins/catalog-demo:
     dependencies:
       '@voyantjs/catalog':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../catalog
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -4152,10 +4161,10 @@ importers:
   packages/plugins/flights-demo:
     devDependencies:
       '@voyantjs/flights':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../flights
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -4167,19 +4176,19 @@ importers:
   packages/plugins/netopia:
     dependencies:
       '@voyantjs/checkout':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../checkout
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../core
       '@voyantjs/finance':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../finance
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../hono
       '@voyantjs/notifications':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../notifications
       drizzle-orm:
         specifier: ^0.45.2
@@ -4192,7 +4201,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -4204,14 +4213,14 @@ importers:
   packages/plugins/payload-cms:
     dependencies:
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../core
       zod:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -4223,14 +4232,14 @@ importers:
   packages/plugins/sanity-cms:
     dependencies:
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../core
       zod:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -4242,16 +4251,16 @@ importers:
   packages/plugins/smartbill:
     dependencies:
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../core
       '@voyantjs/finance':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../finance
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../hono
       '@voyantjs/storage':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../storage
       drizzle-orm:
         specifier: ^0.45.2
@@ -4273,13 +4282,13 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/finance-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../finance-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -4300,19 +4309,19 @@ importers:
   packages/pricing:
     dependencies:
       '@voyantjs/availability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../availability
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/products':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products
       drizzle-orm:
         specifier: ^0.45.2
@@ -4328,13 +4337,13 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/extras':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../extras
       '@voyantjs/facilities':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../facilities
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -4343,7 +4352,7 @@ importers:
   packages/pricing-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -4356,10 +4365,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/pricing':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../pricing
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -4380,7 +4389,7 @@ importers:
   packages/pricing-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -4396,19 +4405,19 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/pricing-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../pricing-react
       '@voyantjs/products-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../utils
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -4435,28 +4444,28 @@ importers:
   packages/products:
     dependencies:
       '@voyantjs/action-ledger':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../action-ledger
       '@voyantjs/catalog':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/products-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products-contracts
       '@voyantjs/storage':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../storage
       '@voyantjs/utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../utils
       drizzle-orm:
         specifier: ^0.45.2
@@ -4481,7 +4490,7 @@ importers:
         specifier: ^2.16.1
         version: 2.16.1
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -4490,14 +4499,14 @@ importers:
   packages/products-contracts:
     dependencies:
       '@voyantjs/schema-kit':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../schema-kit
       zod:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -4509,7 +4518,7 @@ importers:
   packages/products-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -4522,10 +4531,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/products':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -4546,7 +4555,7 @@ importers:
   packages/products-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
       date-fns:
         specifier: ^4.1.0
@@ -4571,46 +4580,46 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/availability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../availability
       '@voyantjs/availability-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../availability-react
       '@voyantjs/catalog-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog-react
       '@voyantjs/extras-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../extras-react
       '@voyantjs/finance':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../finance
       '@voyantjs/finance-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../finance-ui
       '@voyantjs/markets-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../markets-react
       '@voyantjs/pricing-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../pricing-react
       '@voyantjs/pricing-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../pricing-ui
       '@voyantjs/products-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products-react
       '@voyantjs/suppliers-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../suppliers-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../utils
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -4637,25 +4646,25 @@ importers:
   packages/promotions:
     dependencies:
       '@voyantjs/catalog':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/products':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products
       '@voyantjs/storefront':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../storefront
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows
       drizzle-orm:
         specifier: ^0.45.2
@@ -4668,10 +4677,10 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-test-utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../test-utils
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -4689,13 +4698,13 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/promotions':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../promotions
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -4716,7 +4725,7 @@ importers:
   packages/promotions-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -4729,13 +4738,13 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/promotions-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../promotions-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -4765,7 +4774,7 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -4783,13 +4792,13 @@ importers:
   packages/resources:
     dependencies:
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       drizzle-orm:
         specifier: ^0.45.2
@@ -4802,13 +4811,13 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/availability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../availability
       '@voyantjs/products':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -4817,7 +4826,7 @@ importers:
   packages/resources-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -4830,10 +4839,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/resources':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../resources
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -4854,7 +4863,7 @@ importers:
   packages/resources-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -4870,13 +4879,13 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/resources-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../resources-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -4904,7 +4913,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -4916,31 +4925,31 @@ importers:
   packages/sellability:
     dependencies:
       '@voyantjs/availability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../availability
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/distribution':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../distribution
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/markets':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../markets
       '@voyantjs/pricing':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../pricing
       '@voyantjs/products':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products
       '@voyantjs/transactions':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../transactions
       drizzle-orm:
         specifier: ^0.45.2
@@ -4953,7 +4962,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -4962,7 +4971,7 @@ importers:
   packages/sellability-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -4975,10 +4984,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/sellability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../sellability
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -4999,7 +5008,7 @@ importers:
   packages/sellability-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -5015,22 +5024,22 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/distribution-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../distribution-react
       '@voyantjs/markets-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../markets-react
       '@voyantjs/products-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products-react
       '@voyantjs/sellability-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../sellability-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -5057,7 +5066,7 @@ importers:
   packages/storage:
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -5069,34 +5078,34 @@ importers:
   packages/storefront:
     dependencies:
       '@voyantjs/availability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../availability
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/crm':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../crm
       '@voyantjs/extras':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../extras
       '@voyantjs/finance':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../finance
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/pricing':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../pricing
       '@voyantjs/products':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../products
       '@voyantjs/sellability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../sellability
       drizzle-orm:
         specifier: ^0.45.2
@@ -5109,10 +5118,10 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -5124,7 +5133,7 @@ importers:
   packages/storefront-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -5137,10 +5146,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/storefront':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../storefront
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -5161,16 +5170,16 @@ importers:
   packages/storefront-sdk:
     devDependencies:
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../bookings
       '@voyantjs/checkout':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../checkout
       '@voyantjs/storefront':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../storefront
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -5194,13 +5203,13 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/storefront-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../storefront-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^1.7.0
@@ -5224,16 +5233,16 @@ importers:
   packages/storefront-verification:
     dependencies:
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/notifications':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../notifications
       drizzle-orm:
         specifier: ^0.45.2
@@ -5246,7 +5255,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -5258,22 +5267,22 @@ importers:
   packages/suppliers:
     dependencies:
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/facilities':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../facilities
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/identity':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../identity
       '@voyantjs/suppliers-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../suppliers-contracts
       drizzle-orm:
         specifier: ^0.45.2
@@ -5286,7 +5295,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -5295,14 +5304,14 @@ importers:
   packages/suppliers-contracts:
     dependencies:
       '@voyantjs/schema-kit':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../schema-kit
       zod:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -5314,7 +5323,7 @@ importers:
   packages/suppliers-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -5327,10 +5336,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/suppliers':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../suppliers
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -5351,7 +5360,7 @@ importers:
   packages/suppliers-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
     devDependencies:
       '@tanstack/react-query':
@@ -5367,13 +5376,13 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/suppliers-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../suppliers-react
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^0.475.0
@@ -5404,7 +5413,7 @@ importers:
         version: 10.25.5
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -5416,11 +5425,11 @@ importers:
   packages/test-utils:
     dependencies:
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       drizzle-orm:
         specifier: ^0.45.2
@@ -5438,19 +5447,19 @@ importers:
   packages/transactions:
     dependencies:
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/transactions-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../transactions-contracts
       '@voyantjs/utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../utils
       drizzle-orm:
         specifier: ^0.45.2
@@ -5463,7 +5472,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -5476,7 +5485,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -5488,7 +5497,7 @@ importers:
   packages/transactions-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -5501,10 +5510,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/transactions':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../transactions
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -5525,19 +5534,19 @@ importers:
   packages/travel-composer:
     dependencies:
       '@voyantjs/catalog':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog
       '@voyantjs/catalog-mcp':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog-mcp
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       drizzle-orm:
         specifier: ^0.45.2
@@ -5550,7 +5559,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -5562,7 +5571,7 @@ importers:
   packages/travel-composer-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
     devDependencies:
       '@tanstack/react-query':
@@ -5575,10 +5584,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/travel-composer':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../travel-composer
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.2.4
@@ -5599,14 +5608,14 @@ importers:
   packages/types:
     dependencies:
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       zod:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -5644,16 +5653,16 @@ importers:
         specifier: ^3.7.2
         version: 3.22.4
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
       '@voyantjs/notifications':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../notifications
       '@voyantjs/notifications-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../notifications-react
       '@voyantjs/utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../utils
       class-variance-authority:
         specifier: ^0.7.1
@@ -5732,7 +5741,7 @@ importers:
         specifier: ^19.1.6
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       recharts:
         specifier: 3.8.1
@@ -5747,10 +5756,10 @@ importers:
   packages/utils:
     dependencies:
       '@voyantjs/templating':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../templating
       '@voyantjs/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../types
       drizzle-orm:
         specifier: ^0.45.2
@@ -5769,7 +5778,7 @@ importers:
         specifier: ^25.5.2
         version: 25.5.2
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^6.0.2
@@ -5781,16 +5790,16 @@ importers:
   packages/workflow-runs:
     dependencies:
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../db
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hono
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows
       drizzle-orm:
         specifier: ^0.45.2
@@ -5803,10 +5812,10 @@ importers:
         version: 4.3.6
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       '@voyantjs/workflows-orchestrator':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows-orchestrator
       typescript:
         specifier: ^6.0.2
@@ -5818,7 +5827,7 @@ importers:
   packages/workflow-runs-ui:
     dependencies:
       '@voyantjs/workflows-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows-ui
     devDependencies:
       '@types/react':
@@ -5828,10 +5837,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^1.7.0
@@ -5859,7 +5868,7 @@ importers:
         specifier: ^20.12.0
         version: 20.19.39
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^5.9.2
@@ -5871,14 +5880,14 @@ importers:
   packages/workflows-bindings:
     dependencies:
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20260426.1
         version: 4.20260426.1
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^5.9.2
@@ -5887,20 +5896,20 @@ importers:
   packages/workflows-cloud-adapter:
     dependencies:
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows
       '@voyantjs/workflows-orchestrator':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows-orchestrator
       '@voyantjs/workflows-orchestrator-cloudflare':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows-orchestrator-cloudflare
     devDependencies:
       '@types/node':
         specifier: ^20.12.0
         version: 20.19.39
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^5.9.2
@@ -5912,11 +5921,11 @@ importers:
   packages/workflows-config:
     dependencies:
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^5.9.2
@@ -5925,11 +5934,11 @@ importers:
   packages/workflows-errors:
     dependencies:
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows
     devDependencies:
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^5.9.2
@@ -5938,14 +5947,14 @@ importers:
   packages/workflows-orchestrator:
     dependencies:
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows
     devDependencies:
       '@types/node':
         specifier: ^20.12.0
         version: 20.19.39
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^5.9.2
@@ -5957,10 +5966,10 @@ importers:
   packages/workflows-orchestrator-cloudflare:
     dependencies:
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows
       '@voyantjs/workflows-orchestrator':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows-orchestrator
     devDependencies:
       '@cloudflare/vitest-pool-workers':
@@ -5973,7 +5982,7 @@ importers:
         specifier: ^20.12.0
         version: 20.19.39
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       typescript:
         specifier: ^5.9.2
@@ -5988,10 +5997,10 @@ importers:
   packages/workflows-orchestrator-node:
     dependencies:
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows
       '@voyantjs/workflows-orchestrator':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows-orchestrator
       drizzle-orm:
         specifier: ^0.45.2
@@ -6007,7 +6016,7 @@ importers:
         specifier: ^8.20.0
         version: 8.20.0
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       drizzle-kit:
         specifier: ^0.31.10
@@ -6022,10 +6031,10 @@ importers:
   packages/workflows-react:
     dependencies:
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows
     devDependencies:
       '@tanstack/react-query':
@@ -6038,7 +6047,7 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       react:
         specifier: ^19.1.0
@@ -6056,10 +6065,10 @@ importers:
   packages/workflows-ui:
     dependencies:
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
       '@voyantjs/workflows-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../workflows-react
     devDependencies:
       '@types/react':
@@ -6069,10 +6078,10 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../ui
       '@voyantjs/voyant-typescript-config':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../typescript-config
       lucide-react:
         specifier: ^1.7.0
@@ -6123,187 +6132,187 @@ importers:
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@voyantjs/accommodations':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/accommodations
       '@voyantjs/action-ledger':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/action-ledger
       '@voyantjs/admin':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/admin
       '@voyantjs/admin-contracts':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/admin-contracts
       '@voyantjs/allocation-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/allocation-ui
       '@voyantjs/auth':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/auth
       '@voyantjs/availability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/availability
       '@voyantjs/availability-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/availability-react
       '@voyantjs/availability-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/availability-ui
       '@voyantjs/booking-requirements':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/booking-requirements
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/bookings
       '@voyantjs/bookings-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/bookings-react
       '@voyantjs/bookings-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/bookings-ui
       '@voyantjs/catalog':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/catalog
       '@voyantjs/catalog-mcp':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/catalog-mcp
       '@voyantjs/catalog-rag':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/catalog-rag
       '@voyantjs/checkout':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/checkout
       '@voyantjs/cloud-sdk':
         specifier: ^0.8.0
         version: 0.8.0(typesense@3.0.6(@babel/runtime@7.29.2))
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/core
       '@voyantjs/crm':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/crm
       '@voyantjs/crm-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/crm-react
       '@voyantjs/crm-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/crm-ui
       '@voyantjs/customer-portal':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/customer-portal
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/db
       '@voyantjs/distribution':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/distribution
       '@voyantjs/distribution-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/distribution-react
       '@voyantjs/distribution-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/distribution-ui
       '@voyantjs/external-refs':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/external-refs
       '@voyantjs/extras':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/extras
       '@voyantjs/facilities':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/facilities
       '@voyantjs/finance':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/finance
       '@voyantjs/finance-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/finance-react
       '@voyantjs/finance-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/finance-ui
       '@voyantjs/ground':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/ground
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/hono
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/i18n
       '@voyantjs/identity':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/identity
       '@voyantjs/legal':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/legal
       '@voyantjs/legal-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/legal-react
       '@voyantjs/markets':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/markets
       '@voyantjs/notifications':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/notifications
       '@voyantjs/pricing':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/pricing
       '@voyantjs/products':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/products
       '@voyantjs/products-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/products-react
       '@voyantjs/products-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/products-ui
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/react
       '@voyantjs/resources':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/resources
       '@voyantjs/resources-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/resources-react
       '@voyantjs/resources-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/resources-ui
       '@voyantjs/sellability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/sellability
       '@voyantjs/storage':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/storage
       '@voyantjs/storefront':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/storefront
       '@voyantjs/storefront-verification':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/storefront-verification
       '@voyantjs/suppliers':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/suppliers
       '@voyantjs/suppliers-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/suppliers-react
       '@voyantjs/suppliers-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/suppliers-ui
       '@voyantjs/transactions':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/transactions
       '@voyantjs/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/types
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/ui
       '@voyantjs/utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/utils
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows
       better-auth:
         specifier: 1.6.11
@@ -6487,70 +6496,70 @@ importers:
         specifier: ^3.7.2
         version: 3.22.4
       '@voyantjs/accommodations':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/accommodations
       '@voyantjs/action-ledger':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/action-ledger
       '@voyantjs/admin':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/admin
       '@voyantjs/allocation-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/allocation-ui
       '@voyantjs/auth':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/auth
       '@voyantjs/auth-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/auth-ui
       '@voyantjs/availability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/availability
       '@voyantjs/availability-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/availability-react
       '@voyantjs/availability-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/availability-ui
       '@voyantjs/booking-requirements':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/booking-requirements
       '@voyantjs/bookings':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/bookings
       '@voyantjs/bookings-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/bookings-react
       '@voyantjs/bookings-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/bookings-ui
       '@voyantjs/catalog':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/catalog
       '@voyantjs/catalog-mcp':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/catalog-mcp
       '@voyantjs/catalog-rag':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/catalog-rag
       '@voyantjs/catalog-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/catalog-react
       '@voyantjs/catalog-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/catalog-ui
       '@voyantjs/charters':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/charters
       '@voyantjs/checkout':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/checkout
       '@voyantjs/checkout-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/checkout-react
       '@voyantjs/checkout-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/checkout-ui
       '@voyantjs/cloud-sdk':
         specifier: ^0.8.0
@@ -6565,211 +6574,211 @@ importers:
         specifier: ^0.1.6
         version: 0.1.6
       '@voyantjs/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/core
       '@voyantjs/crm':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/crm
       '@voyantjs/crm-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/crm-react
       '@voyantjs/crm-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/crm-ui
       '@voyantjs/cruises':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/cruises
       '@voyantjs/cruises-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/cruises-react
       '@voyantjs/customer-portal':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/customer-portal
       '@voyantjs/data-sdk':
         specifier: ^0.3.1
         version: 0.3.1
       '@voyantjs/db':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/db
       '@voyantjs/distribution':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/distribution
       '@voyantjs/distribution-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/distribution-react
       '@voyantjs/distribution-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/distribution-ui
       '@voyantjs/external-refs':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/external-refs
       '@voyantjs/extras':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/extras
       '@voyantjs/extras-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/extras-react
       '@voyantjs/extras-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/extras-ui
       '@voyantjs/facilities':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/facilities
       '@voyantjs/facilities-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/facilities-react
       '@voyantjs/finance':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/finance
       '@voyantjs/finance-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/finance-react
       '@voyantjs/finance-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/finance-ui
       '@voyantjs/flights':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/flights
       '@voyantjs/flights-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/flights-react
       '@voyantjs/flights-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/flights-ui
       '@voyantjs/hono':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/hono
       '@voyantjs/i18n':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/i18n
       '@voyantjs/identity':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/identity
       '@voyantjs/legal':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/legal
       '@voyantjs/legal-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/legal-react
       '@voyantjs/legal-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/legal-ui
       '@voyantjs/markets':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/markets
       '@voyantjs/markets-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/markets-react
       '@voyantjs/notifications':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/notifications
       '@voyantjs/notifications-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/notifications-react
       '@voyantjs/notifications-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/notifications-ui
       '@voyantjs/plugin-catalog-demo':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/plugins/catalog-demo
       '@voyantjs/plugin-flights-demo':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/plugins/flights-demo
       '@voyantjs/plugin-netopia':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/plugins/netopia
       '@voyantjs/plugin-smartbill':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/plugins/smartbill
       '@voyantjs/pricing':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/pricing
       '@voyantjs/pricing-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/pricing-react
       '@voyantjs/pricing-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/pricing-ui
       '@voyantjs/products':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/products
       '@voyantjs/products-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/products-react
       '@voyantjs/products-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/products-ui
       '@voyantjs/promotions':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/promotions
       '@voyantjs/promotions-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/promotions-react
       '@voyantjs/promotions-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/promotions-ui
       '@voyantjs/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/react
       '@voyantjs/resources':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/resources
       '@voyantjs/resources-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/resources-react
       '@voyantjs/resources-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/resources-ui
       '@voyantjs/sellability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/sellability
       '@voyantjs/storage':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/storage
       '@voyantjs/storefront':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/storefront
       '@voyantjs/storefront-verification':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/storefront-verification
       '@voyantjs/suppliers':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/suppliers
       '@voyantjs/suppliers-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/suppliers-react
       '@voyantjs/suppliers-ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/suppliers-ui
       '@voyantjs/transactions':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/transactions
       '@voyantjs/travel-composer':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/travel-composer
       '@voyantjs/travel-composer-react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/travel-composer-react
       '@voyantjs/types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/types
       '@voyantjs/ui':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/ui
       '@voyantjs/utils':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/utils
       '@voyantjs/workflow-runs':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflow-runs
       '@voyantjs/workflows':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows
       '@voyantjs/workflows-orchestrator':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows-orchestrator
       '@voyantjs/workflows-orchestrator-cloudflare':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/workflows-orchestrator-cloudflare
       better-auth:
         specifier: 1.6.11

@@ -29,19 +29,19 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/action-ledger": "workspace:*",
-    "@voyantjs/bookings-contracts": "workspace:*",
-    "@voyantjs/core": "workspace:*",
-    "@voyantjs/db": "workspace:*",
-    "@voyantjs/hono": "workspace:*",
-    "@voyantjs/utils": "workspace:*",
+    "@voyantjs/action-ledger": "workspace:^",
+    "@voyantjs/bookings-contracts": "workspace:^",
+    "@voyantjs/core": "workspace:^",
+    "@voyantjs/db": "workspace:^",
+    "@voyantjs/hono": "workspace:^",
+    "@voyantjs/utils": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/products": "workspace:*",
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/products": "workspace:^",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2"
   },
   "files": [

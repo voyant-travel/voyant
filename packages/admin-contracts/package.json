@@ -30,15 +30,15 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
-    "@voyantjs/bookings-contracts": "workspace:*",
-    "@voyantjs/crm-contracts": "workspace:*",
-    "@voyantjs/finance-contracts": "workspace:*",
-    "@voyantjs/legal-contracts": "workspace:*",
-    "@voyantjs/products-contracts": "workspace:*",
+    "@voyantjs/bookings-contracts": "workspace:^",
+    "@voyantjs/crm-contracts": "workspace:^",
+    "@voyantjs/finance-contracts": "workspace:^",
+    "@voyantjs/legal-contracts": "workspace:^",
+    "@voyantjs/products-contracts": "workspace:^",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },

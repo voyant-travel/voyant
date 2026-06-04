@@ -1,4 +1,7 @@
-// Verifies the publish tarball for every public package under packages/.
+// Verifies publish tarballs for public packages in the workspace package roots.
+// By default every package is checked. Pass --package <name> one or more times
+// to check only the packages that are about to be published.
+//
 // For each package this clean-builds (`pnpm run clean` + `.tsbuildinfo` removal
 // + `pnpm run build`), then `pnpm pack`s and inspects the resulting tarball.
 // The clean build is required so stale `dist` output from a prior compile
@@ -22,9 +25,10 @@ const execFileAsync = promisify(execFile)
 const PACK_CONCURRENCY = Number(process.env.VOYANT_PACK_CONCURRENCY) || 8
 const REUSE_DIST =
   process.argv.includes("--reuse-dist") || process.env.VOYANT_PACK_REUSE_DIST === "1"
+const PACKAGE_FILTERS = getPackageFilters(process.argv.slice(2))
 
 const rootDir = process.cwd()
-const packagesRoot = path.join(rootDir, "packages")
+const packageRoots = ["packages", "apps"].map((dir) => path.join(rootDir, dir))
 
 function findPackageDirs(dir) {
   const packageJsonPath = path.join(dir, "package.json")
@@ -39,6 +43,26 @@ function findPackageDirs(dir) {
     dirs.push(...findPackageDirs(path.join(dir, entry.name)))
   }
   return dirs
+}
+
+function getPackageFilters(argv) {
+  const packageNames = new Set()
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index]
+
+    if (arg === "--package") {
+      packageNames.add(argv[index + 1])
+      index += 1
+      continue
+    }
+
+    if (arg.startsWith("--package=")) {
+      packageNames.add(arg.slice("--package=".length))
+    }
+  }
+
+  return packageNames
 }
 
 function listPackageFiles(dir, baseDir = dir) {
@@ -234,7 +258,40 @@ function getPublishedTargets(pkg) {
   return [...targets].sort()
 }
 
-const packageDirs = findPackageDirs(packagesRoot).sort()
+function shouldVerifyPackageDir(packageDir) {
+  if (PACKAGE_FILTERS.size === 0) {
+    return true
+  }
+
+  const packageJsonPath = path.join(packageDir, "package.json")
+  const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"))
+
+  return PACKAGE_FILTERS.has(pkg.name)
+}
+
+const packageDirs = packageRoots
+  .filter((packageRoot) => fs.existsSync(packageRoot))
+  .flatMap((packageRoot) => findPackageDirs(packageRoot))
+  .filter(shouldVerifyPackageDir)
+  .sort()
+
+if (PACKAGE_FILTERS.size > 0) {
+  const foundPackageNames = new Set(
+    packageDirs.map((packageDir) => {
+      const pkg = JSON.parse(fs.readFileSync(path.join(packageDir, "package.json"), "utf8"))
+      return pkg.name
+    }),
+  )
+  const missingPackageNames = [...PACKAGE_FILTERS].filter((packageName) => {
+    if (!packageName.startsWith("@voyantjs/")) return false
+    return !foundPackageNames.has(packageName)
+  })
+
+  if (missingPackageNames.length > 0) {
+    console.error(`No package directories found for: ${missingPackageNames.join(", ")}`)
+    process.exit(1)
+  }
+}
 
 async function verifyPackage(packageDir) {
   const packageJsonPath = path.join(packageDir, "package.json")

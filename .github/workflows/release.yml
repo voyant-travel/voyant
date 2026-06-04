@@ -7,10 +7,15 @@ on:
   workflow_dispatch:
     inputs:
       release_assets:
-        description: "Create or refresh the GitHub release and starter assets for the current checked-in version"
+        description: "Create or refresh starter assets for an explicit starter release version"
         required: false
         default: false
         type: boolean
+      release_version:
+        description: "Starter release version to tag and attach assets to, for example 0.104.1"
+        required: false
+        default: ""
+        type: string
 
 concurrency:
   group: release-${{ github.ref }}
@@ -25,6 +30,7 @@ jobs:
       id-token: write
     env:
       HUSKY: 0
+      RELEASE_VERSION: ${{ inputs.release_version }}
       # Turbo remote cache. Configure in GitHub Settings → Secrets and variables
       # → Actions; without them turbo silently falls back to no remote cache.
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -39,62 +45,37 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org
           cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
-
-      # `--concurrency=4` caps peak parallelism so a cold-cache cascade rebuild
-      # can't OOM the runner (kernel SIGKILLs the heaviest tsc — exit 137).
-      - name: Build publishable workspaces
-        run: pnpm turbo build --filter='./packages/**' --filter='./apps/workflows-node-step-container' --continue --concurrency=4
-
-      - name: Build registry artifacts
-        run: pnpm registry:build
-
-      # Rescue hatch for when the auto-release loop falls behind npm — devs
-      # land changesets faster than the release PR can merge, so the `release`
-      # job stays in "create release PR" mode and never publishes the
-      # version bumps that already shipped to main's package.json.
-      # `changeset publish` is a no-op for packages whose version is already
-      # on npm, so this is safe to re-run.
-      - name: Verify release train
-        run: pnpm verify:release-train
-
-      - name: Verify package exports
-        run: pnpm verify:package-exports
-
-      - name: Verify publish tarballs
-        env:
-          VOYANT_PACK_REUSE_DIST: "1"
-        run: pnpm verify:publish-tarballs
-
-      - name: Publish pending versions to npm
-        run: pnpm release
-
-      - name: Determine release version
-        id: version
+      - name: Validate starter release version
         run: |
-          VERSION=$(node scripts/print-release-version.cjs)
-          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+          if [ -z "$RELEASE_VERSION" ]; then
+            echo "release_version is required when release_assets is true"
+            exit 1
+          fi
+
+          if ! printf '%s' "$RELEASE_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?(\+[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$'; then
+            echo "release_version must be a semver version, for example 0.104.1"
+            exit 1
+          fi
 
       - name: Package starter archives
-        run: pnpm package:starters -- --version ${{ steps.version.outputs.value }} --out-dir .release/starters
+        run: pnpm package:starters -- --version "$RELEASE_VERSION" --out-dir .release/starters
 
       - name: Ensure repo tag exists
         run: |
-          if git rev-parse -q --verify refs/tags/v${{ steps.version.outputs.value }} >/dev/null; then
-            echo "Tag v${{ steps.version.outputs.value }} already exists"
+          if git rev-parse -q --verify "refs/tags/v$RELEASE_VERSION" >/dev/null; then
+            echo "Tag v$RELEASE_VERSION already exists"
           else
-            git tag v${{ steps.version.outputs.value }}
-            git push origin v${{ steps.version.outputs.value }}
+            git tag "v$RELEASE_VERSION"
+            git push origin "v$RELEASE_VERSION"
           fi
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.value }}
-          name: v${{ steps.version.outputs.value }}
+          tag_name: v${{ inputs.release_version }}
+          name: v${{ inputs.release_version }}
           generate_release_notes: true
           files: .release/starters/*.tar.gz
 
@@ -126,81 +107,54 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Verify release config
+        run: pnpm verify:release-config
+
+      - name: Plan release work
+        id: release_plan
+        run: pnpm release:plan
+
       # `--concurrency=4` caps peak parallelism so a cold-cache cascade rebuild
       # can't OOM the runner (kernel SIGKILLs the heaviest tsc — exit 137).
-      - name: Build publishable workspaces
-        run: pnpm turbo build --filter='./packages/**' --filter='./apps/workflows-node-step-container' --continue --concurrency=4
+      - name: Build pending publish workspaces
+        if: steps.release_plan.outputs.pending == 'true'
+        run: pnpm turbo build ${{ steps.release_plan.outputs.turbo_filters }} --continue --concurrency=4
 
       - name: Build registry artifacts
+        if: steps.release_plan.outputs.pending == 'true' && steps.release_plan.outputs.registry_build_needed == 'true'
         run: pnpm registry:build
 
-      - name: Verify release train
-        run: pnpm verify:release-train
-
       - name: Verify package exports
-        run: pnpm verify:package-exports
+        if: steps.release_plan.outputs.pending == 'true'
+        run: pnpm verify:package-exports ${{ steps.release_plan.outputs.package_filters }}
 
       - name: Verify publish tarballs
-        # `Build packages` above already produced fresh dist via turbo; skip
-        # the per-package clean+rebuild inside the verifier.
+        if: steps.release_plan.outputs.pending == 'true'
+        # `Build pending publish workspaces` above already produced fresh dist
+        # via turbo; skip the per-package clean+rebuild inside the verifier.
         env:
           VOYANT_PACK_REUSE_DIST: "1"
-        run: pnpm verify:publish-tarballs
+        run: pnpm verify:publish-tarballs ${{ steps.release_plan.outputs.package_filters }}
 
-      - name: Detect pending npm publication
-        id: pending_publish
-        run: node scripts/detect-pending-publication.cjs
+      - name: Publish pending packages
+        id: publish_pending
+        if: steps.release_plan.outputs.pending == 'true'
+        run: |
+          pnpm release
+          echo "published=true" >> "$GITHUB_OUTPUT"
 
-      - name: Create Release PR or Publish
+      - name: Create or update Release PR
         id: changesets
-        if: steps.pending_publish.outputs.has_releasable_changesets == 'true'
+        if: steps.release_plan.outputs.has_releasable_changesets == 'true'
         uses: changesets/action@v1
         with:
           createGithubReleases: false
           version: pnpm version-packages
-          publish: pnpm release
           commit: "chore: release packages"
           title: "chore: release packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish pending release train
-        id: publish_pending
-        if: steps.pending_publish.outputs.has_releasable_changesets != 'true' && steps.pending_publish.outputs.pending == 'true'
-        run: |
-          pnpm release
-          echo "published=true" >> "$GITHUB_OUTPUT"
-
       - name: No release action needed
-        if: steps.pending_publish.outputs.has_releasable_changesets != 'true' && steps.pending_publish.outputs.pending != 'true'
+        if: steps.release_plan.outputs.has_releasable_changesets != 'true' && steps.release_plan.outputs.pending != 'true'
         run: echo "No releasable changesets and npm is already up to date."
-
-      - name: Determine release version
-        if: steps.changesets.outputs.published == 'true' || steps.publish_pending.outputs.published == 'true'
-        id: version
-        run: |
-          VERSION=$(node scripts/print-release-version.cjs)
-          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Package starter archives
-        if: steps.changesets.outputs.published == 'true' || steps.publish_pending.outputs.published == 'true'
-        run: pnpm package:starters -- --version ${{ steps.version.outputs.value }} --out-dir .release/starters
-
-      - name: Ensure repo tag exists
-        if: steps.changesets.outputs.published == 'true' || steps.publish_pending.outputs.published == 'true'
-        run: |
-          if git rev-parse -q --verify refs/tags/v${{ steps.version.outputs.value }} >/dev/null; then
-            echo "Tag v${{ steps.version.outputs.value }} already exists"
-          else
-            git tag v${{ steps.version.outputs.value }}
-            git push origin v${{ steps.version.outputs.value }}
-          fi
-
-      - name: Create GitHub release
-        if: steps.changesets.outputs.published == 'true' || steps.publish_pending.outputs.published == 'true'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ steps.version.outputs.value }}
-          name: v${{ steps.version.outputs.value }}
-          generate_release_notes: true
-          files: .release/starters/*.tar.gz

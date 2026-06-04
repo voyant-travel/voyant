@@ -27,9 +27,9 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
-    "@voyantjs/crm-react": "workspace:*",
-    "@voyantjs/identity-react": "workspace:*",
-    "@voyantjs/ui": "workspace:*",
+    "@voyantjs/crm-react": "workspace:^",
+    "@voyantjs/identity-react": "workspace:^",
+    "@voyantjs/ui": "workspace:^",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -37,11 +37,11 @@
     "@tanstack/react-query": "^5.100.11",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@voyantjs/crm-react": "workspace:*",
-    "@voyantjs/i18n": "workspace:*",
-    "@voyantjs/identity-react": "workspace:*",
-    "@voyantjs/ui": "workspace:*",
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/crm-react": "workspace:^",
+    "@voyantjs/i18n": "workspace:^",
+    "@voyantjs/identity-react": "workspace:^",
+    "@voyantjs/ui": "workspace:^",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -49,8 +49,8 @@
     "vitest": "^4.1.2"
   },
   "dependencies": {
-    "@voyantjs/i18n": "workspace:*",
-    "@voyantjs/utils": "workspace:*"
+    "@voyantjs/i18n": "workspace:^",
+    "@voyantjs/utils": "workspace:^"
   },
   "files": [
     "dist",

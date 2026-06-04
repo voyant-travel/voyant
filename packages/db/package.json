@@ -305,15 +305,15 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
-    "@voyantjs/core": "workspace:*",
-    "@voyantjs/schema-kit": "workspace:*",
+    "@voyantjs/core": "workspace:^",
+    "@voyantjs/schema-kit": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "postgres": "^3.4.8",
     "typeid-js": "^1.2.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },

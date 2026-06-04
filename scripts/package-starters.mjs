@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url"
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const cliPackageJsonPath = join(repoRoot, "packages", "cli", "package.json")
 const args = parseArgs(process.argv.slice(2))
-const version = args.version ?? readVersion(cliPackageJsonPath)
+const version = resolveVersion(args.version)
 const outDir = resolve(repoRoot, args.outDir ?? ".release/starters")
 const starters = ["dmc", "operator"]
 const skipNames = new Set([
@@ -87,4 +87,18 @@ function readVersion(pkgPath) {
   const raw = readFileSync(pkgPath, "utf8")
   const pkg = JSON.parse(raw)
   return pkg.version
+}
+
+function resolveVersion(explicitVersion) {
+  if (explicitVersion) {
+    return explicitVersion
+  }
+
+  if (existsSync(cliPackageJsonPath)) {
+    return readVersion(cliPackageJsonPath)
+  }
+
+  throw new Error(
+    "Starter packaging no longer has an implicit repo-wide package version. Pass --version explicitly.",
+  )
 }

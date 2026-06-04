@@ -25,22 +25,22 @@
     "migrate:vouchers": "node --experimental-strip-types --experimental-transform-types scripts/migrate-vouchers.ts"
   },
   "dependencies": {
-    "@voyantjs/action-ledger": "workspace:*",
-    "@voyantjs/bookings": "workspace:*",
-    "@voyantjs/core": "workspace:*",
+    "@voyantjs/action-ledger": "workspace:^",
+    "@voyantjs/bookings": "workspace:^",
+    "@voyantjs/core": "workspace:^",
     "@voyantjs/data-sdk": "0.1.3",
-    "@voyantjs/db": "workspace:*",
-    "@voyantjs/finance-contracts": "workspace:*",
-    "@voyantjs/hono": "workspace:*",
-    "@voyantjs/products": "workspace:*",
-    "@voyantjs/storage": "workspace:*",
-    "@voyantjs/utils": "workspace:*",
+    "@voyantjs/db": "workspace:^",
+    "@voyantjs/finance-contracts": "workspace:^",
+    "@voyantjs/hono": "workspace:^",
+    "@voyantjs/products": "workspace:^",
+    "@voyantjs/storage": "workspace:^",
+    "@voyantjs/utils": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2"
   },
   "files": [

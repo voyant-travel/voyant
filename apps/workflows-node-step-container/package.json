@@ -37,11 +37,11 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
-    "@voyantjs/workflows": "workspace:*"
+    "@voyantjs/workflows": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^20.12.0",
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^5.9.2"
   },
   "publishConfig": {
