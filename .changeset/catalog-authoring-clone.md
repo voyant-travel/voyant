@@ -1,5 +1,0 @@
----
-"@voyantjs/catalog-authoring": minor
----
-
-Add `cloneProduct` + `POST /v1/admin/products/{id}/duplicate` to `@voyantjs/catalog-authoring` (#1493). The comprehensive deep-clone formerly local to the operator template (`duplicateProductAsDraft`) now lives in the package — copying the full product graph (options/units + translations, pricing categories + dependencies with correct id remapping, itineraries/days/services, media, extras, and all option/unit price rules + tiers) into a new draft. It is now parameterized for agent use: `name`/`status`/`visibility` overrides, a `copyDepartures` flag (default `true` to preserve the operator UI's full-copy behavior; the agent passes `false` so departures are dropped per #1493), an optional `product_versions` snapshot, and `Idempotency-Key` support. The operator template now registers this route via the extension instead of its own copy; the UI's no-body clone call is unchanged (`data.id` + full copy named `"{X} (Copy)"`), and the response additionally carries the cloned `options` ids.
