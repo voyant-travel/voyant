@@ -3,8 +3,23 @@ import type {
   InvoiceNumberResetStrategy,
   InvoiceNumberSeriesScope,
   InvoiceRecord,
+  SupplierInvoiceStatus,
   SupplierPaymentRecord,
 } from "@voyantjs/finance-react"
+
+export type CostAllocationTargetType =
+  | "departure"
+  | "product"
+  | "booking"
+  | "traveler"
+  | "unattributed"
+
+export type SupplierInvoiceDetailPaymentMethod =
+  | "bank_transfer"
+  | "credit_card"
+  | "cash"
+  | "cheque"
+  | "other"
 
 export const invoiceStatuses = [
   "draft",
@@ -287,6 +302,82 @@ export type FinanceUiMessages = {
       page: string
       previous: string
       next: string
+    }
+  }
+  supplierInvoicesPage: {
+    title: string
+    recordInvoice: string
+    searchPlaceholder: string
+    statusAll: string
+    statusLabels: Record<SupplierInvoiceStatus, string>
+    columns: {
+      invoiceNo: string
+      supplier: string
+      status: string
+      total: string
+      balanceDue: string
+      dueDate: string
+    }
+    empty: string
+    loadFailed: string
+    noDueDate: string
+  }
+  supplierInvoiceDetail: {
+    loading: string
+    notFound: string
+    document: string
+    summary: {
+      subtotal: string
+      tax: string
+      total: string
+      paid: string
+      balanceDue: string
+      issueDate: string
+      dueDate: string
+      noValue: string
+    }
+    lines: {
+      title: string
+      description: string
+      service: string
+      qty: string
+      unit: string
+      tax: string
+      total: string
+      empty: string
+    }
+    allocation: {
+      title: string
+      add: string
+      target: string
+      /** Templated with `{type}`. */
+      idLabel: string
+      /** Templated with `{currency}`. */
+      amountLabel: string
+      none: string
+      /** Templated with `{amount}`. */
+      remainder: string
+      /** Templated with `{amount}`. */
+      overAllocated: string
+      save: string
+      saving: string
+      saveFailed: string
+      targetTypeLabels: Record<CostAllocationTargetType, string>
+    }
+    payments: {
+      title: string
+      date: string
+      method: string
+      status: string
+      amount: string
+      empty: string
+      /** Templated with `{currency}`. */
+      amountLabel: string
+      methodLabel: string
+      dateLabel: string
+      record: string
+      recording: string
+      methodLabels: Record<SupplierInvoiceDetailPaymentMethod, string>
     }
   }
   invoiceNumberSeriesPage: {

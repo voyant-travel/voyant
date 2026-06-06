@@ -5,6 +5,7 @@ import {
   useSupplierInvoiceMutation,
   useSupplierInvoicePayments,
 } from "@voyantjs/finance-react"
+import { formatMessage } from "@voyantjs/i18n"
 import {
   Badge,
   Button,
@@ -32,6 +33,8 @@ import { cn } from "@voyantjs/ui/lib/utils"
 import { Download, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 
+import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
+import type { SupplierInvoiceDetailPaymentMethod } from "../i18n/messages.js"
 import { formatInvoiceAmount } from "./invoice-table-parts.js"
 
 const STATUS_VARIANT: Record<
@@ -50,7 +53,13 @@ const STATUS_VARIANT: Record<
 const TARGET_TYPES = ["departure", "product", "booking", "traveler", "unattributed"] as const
 type TargetType = (typeof TARGET_TYPES)[number]
 
-const PAYMENT_METHODS = ["bank_transfer", "credit_card", "cash", "cheque", "other"] as const
+const PAYMENT_METHODS: SupplierInvoiceDetailPaymentMethod[] = [
+  "bank_transfer",
+  "credit_card",
+  "cash",
+  "cheque",
+  "other",
+]
 
 /** Editable allocation row — whole-invoice mode (one target id per row). */
 interface AllocationDraft {
@@ -98,6 +107,10 @@ export function SupplierInvoiceDetailPage({
   className,
   onDownloadDocument,
 }: SupplierInvoiceDetailPageProps) {
+  const messages = useFinanceUiMessagesOrDefault()
+  const t = messages.supplierInvoiceDetail
+  const statusLabels = messages.supplierInvoicesPage.statusLabels
+
   const { data, isPending, isError } = useSupplierInvoice(id)
   const paymentsQuery = useSupplierInvoicePayments(id)
   const { setAllocations, recordPayment } = useSupplierInvoiceMutation()
@@ -108,11 +121,10 @@ export function SupplierInvoiceDetailPage({
   const [drafts, setDrafts] = useState<AllocationDraft[] | null>(null)
   const [payAmount, setPayAmount] = useState("")
   const [payMethod, setPayMethod] = useState<string>("bank_transfer")
-  const [payDate, setPayDate] = useState(() => "")
+  const [payDate, setPayDate] = useState("")
 
-  if (isPending) return <div className="p-6 text-muted-foreground">Loading…</div>
-  if (isError || !invoice)
-    return <div className="p-6 text-destructive">Supplier invoice not found.</div>
+  if (isPending) return <div className="p-6 text-muted-foreground">{t.loading}</div>
+  if (isError || !invoice) return <div className="p-6 text-destructive">{t.notFound}</div>
 
   // Lazily seed the allocation editor from the persisted whole-invoice allocations.
   const rows: AllocationDraft[] =
@@ -168,6 +180,9 @@ export function SupplierInvoiceDetailPage({
     )
   }
 
+  const methodLabel = (method: string) =>
+    (t.payments.methodLabels as Record<string, string>)[method] ?? method
+
   const payments = paymentsQuery.data?.data ?? []
 
   return (
@@ -180,51 +195,57 @@ export function SupplierInvoiceDetailPage({
             <p className="text-sm text-muted-foreground">{invoice.supplierId}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={STATUS_VARIANT[invoice.status]}>{invoice.status}</Badge>
+            <Badge variant={STATUS_VARIANT[invoice.status]}>{statusLabels[invoice.status]}</Badge>
             {invoice.storageKey ? (
               <Button variant="outline" size="sm" onClick={onDownloadDocument}>
                 <Download className="size-4" />
-                Document
+                {t.document}
               </Button>
             ) : null}
           </div>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          <Field label="Subtotal" value={formatInvoiceAmount(invoice.subtotalCents, currency)} />
-          <Field label="Tax" value={formatInvoiceAmount(invoice.taxCents, currency)} />
-          <Field label="Total" value={formatInvoiceAmount(invoice.totalCents, currency)} />
-          <Field label="Paid" value={formatInvoiceAmount(invoice.paidCents, currency)} />
           <Field
-            label="Balance due"
+            label={t.summary.subtotal}
+            value={formatInvoiceAmount(invoice.subtotalCents, currency)}
+          />
+          <Field label={t.summary.tax} value={formatInvoiceAmount(invoice.taxCents, currency)} />
+          <Field
+            label={t.summary.total}
+            value={formatInvoiceAmount(invoice.totalCents, currency)}
+          />
+          <Field label={t.summary.paid} value={formatInvoiceAmount(invoice.paidCents, currency)} />
+          <Field
+            label={t.summary.balanceDue}
             value={formatInvoiceAmount(invoice.balanceDueCents, currency)}
           />
-          <Field label="Issue date" value={invoice.issueDate} />
-          <Field label="Due date" value={invoice.dueDate ?? "—"} />
+          <Field label={t.summary.issueDate} value={invoice.issueDate} />
+          <Field label={t.summary.dueDate} value={invoice.dueDate ?? t.summary.noValue} />
         </CardContent>
       </Card>
 
       {/* Lines */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Lines</CardTitle>
+          <CardTitle className="text-base">{t.lines.title}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Description</TableHead>
-                <TableHead>Service</TableHead>
-                <TableHead className="text-right">Qty</TableHead>
-                <TableHead className="text-right">Unit</TableHead>
-                <TableHead className="text-right">Tax</TableHead>
-                <TableHead className="text-right">Total</TableHead>
+                <TableHead>{t.lines.description}</TableHead>
+                <TableHead>{t.lines.service}</TableHead>
+                <TableHead className="text-right">{t.lines.qty}</TableHead>
+                <TableHead className="text-right">{t.lines.unit}</TableHead>
+                <TableHead className="text-right">{t.lines.tax}</TableHead>
+                <TableHead className="text-right">{t.lines.total}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {invoice.lines.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground">
-                    No lines.
+                    {t.lines.empty}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -253,7 +274,7 @@ export function SupplierInvoiceDetailPage({
       {/* Allocation editor */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Cost allocation</CardTitle>
+          <CardTitle className="text-base">{t.allocation.title}</CardTitle>
           <Button
             variant="outline"
             size="sm"
@@ -265,19 +286,17 @@ export function SupplierInvoiceDetailPage({
             }
           >
             <Plus className="size-4" />
-            Add allocation
+            {t.allocation.add}
           </Button>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No allocations — this invoice's cost is unattributed.
-            </p>
+            <p className="text-sm text-muted-foreground">{t.allocation.none}</p>
           ) : (
             rows.map((row, index) => (
               <div key={row.key} className="flex flex-wrap items-end gap-2">
                 <div className="w-40">
-                  <Label className="text-xs">Target</Label>
+                  <Label className="text-xs">{t.allocation.target}</Label>
                   <Select
                     value={row.targetType}
                     onValueChange={(value) =>
@@ -290,7 +309,7 @@ export function SupplierInvoiceDetailPage({
                     <SelectContent>
                       {TARGET_TYPES.map((value) => (
                         <SelectItem key={value} value={value}>
-                          {value}
+                          {t.allocation.targetTypeLabels[value]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -298,7 +317,11 @@ export function SupplierInvoiceDetailPage({
                 </div>
                 {row.targetType !== "unattributed" ? (
                   <div className="flex-1 min-w-48">
-                    <Label className="text-xs">{`${row.targetType} id`}</Label>
+                    <Label className="text-xs">
+                      {formatMessage(t.allocation.idLabel, {
+                        type: t.allocation.targetTypeLabels[row.targetType],
+                      })}
+                    </Label>
                     <Input
                       value={row.targetId}
                       onChange={(event) => updateRow(index, { targetId: event.target.value })}
@@ -306,7 +329,9 @@ export function SupplierInvoiceDetailPage({
                   </div>
                 ) : null}
                 <div className="w-32">
-                  <Label className="text-xs">{`Amount (${currency})`}</Label>
+                  <Label className="text-xs">
+                    {formatMessage(t.allocation.amountLabel, { currency })}
+                  </Label>
                   <Input
                     inputMode="decimal"
                     value={row.amountMajor}
@@ -327,20 +352,24 @@ export function SupplierInvoiceDetailPage({
           <div className="flex items-center justify-between border-t pt-3 text-sm">
             <span className={cn("text-muted-foreground", overAllocated && "text-destructive")}>
               {overAllocated
-                ? `Over-allocated by ${formatInvoiceAmount(-remainderCents, currency)}`
-                : `Unattributed remainder: ${formatInvoiceAmount(remainderCents, currency)}`}
+                ? formatMessage(t.allocation.overAllocated, {
+                    amount: formatInvoiceAmount(-remainderCents, currency),
+                  })
+                : formatMessage(t.allocation.remainder, {
+                    amount: formatInvoiceAmount(remainderCents, currency),
+                  })}
             </span>
             <Button
               size="sm"
               disabled={overAllocated || setAllocations.isPending}
               onClick={saveAllocations}
             >
-              {setAllocations.isPending ? "Saving…" : "Save allocations"}
+              {setAllocations.isPending ? t.allocation.saving : t.allocation.save}
             </Button>
           </div>
           {setAllocations.isError ? (
             <p className="text-sm text-destructive">
-              {(setAllocations.error as Error)?.message ?? "Failed to save allocations."}
+              {(setAllocations.error as Error)?.message ?? t.allocation.saveFailed}
             </p>
           ) : null}
         </CardContent>
@@ -349,30 +378,32 @@ export function SupplierInvoiceDetailPage({
       {/* Payments */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Payments</CardTitle>
+          <CardTitle className="text-base">{t.payments.title}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Method</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
+                <TableHead>{t.payments.date}</TableHead>
+                <TableHead>{t.payments.method}</TableHead>
+                <TableHead>{t.payments.status}</TableHead>
+                <TableHead className="text-right">{t.payments.amount}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {payments.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center text-muted-foreground">
-                    No payments recorded.
+                    {t.payments.empty}
                   </TableCell>
                 </TableRow>
               ) : (
                 payments.map((payment) => (
                   <TableRow key={payment.id}>
                     <TableCell>{payment.paymentDate}</TableCell>
-                    <TableCell className="text-muted-foreground">{payment.paymentMethod}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {methodLabel(payment.paymentMethod)}
+                    </TableCell>
                     <TableCell>{payment.status}</TableCell>
                     <TableCell className="text-right tabular-nums">
                       {formatInvoiceAmount(payment.amountCents, payment.currency)}
@@ -385,7 +416,9 @@ export function SupplierInvoiceDetailPage({
 
           <div className="flex flex-wrap items-end gap-2 border-t pt-3">
             <div className="w-32">
-              <Label className="text-xs">{`Amount (${currency})`}</Label>
+              <Label className="text-xs">
+                {formatMessage(t.payments.amountLabel, { currency })}
+              </Label>
               <Input
                 inputMode="decimal"
                 value={payAmount}
@@ -393,7 +426,7 @@ export function SupplierInvoiceDetailPage({
               />
             </div>
             <div className="w-40">
-              <Label className="text-xs">Method</Label>
+              <Label className="text-xs">{t.payments.methodLabel}</Label>
               <Select value={payMethod} onValueChange={(value) => setPayMethod(value ?? "other")}>
                 <SelectTrigger>
                   <SelectValue />
@@ -401,14 +434,14 @@ export function SupplierInvoiceDetailPage({
                 <SelectContent>
                   {PAYMENT_METHODS.map((value) => (
                     <SelectItem key={value} value={value}>
-                      {value}
+                      {t.payments.methodLabels[value]}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="w-40">
-              <Label className="text-xs">Date</Label>
+              <Label className="text-xs">{t.payments.dateLabel}</Label>
               <Input
                 type="date"
                 value={payDate}
@@ -420,7 +453,7 @@ export function SupplierInvoiceDetailPage({
               disabled={!payAmount || recordPayment.isPending}
               onClick={submitPayment}
             >
-              {recordPayment.isPending ? "Recording…" : "Record payment"}
+              {recordPayment.isPending ? t.payments.recording : t.payments.record}
             </Button>
           </div>
         </CardContent>

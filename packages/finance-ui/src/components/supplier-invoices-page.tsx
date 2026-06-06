@@ -26,6 +26,7 @@ import { cn } from "@voyantjs/ui/lib/utils"
 import { Plus, Search } from "lucide-react"
 import { useState } from "react"
 
+import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
 import {
   formatInvoiceAmount,
   InvoiceRowSkeleton,
@@ -59,58 +60,10 @@ const STATUS_VARIANT: Record<
   void: "outline",
 }
 
-/** Labels for the page — English defaults, overridable by the host for i18n. */
-export interface SupplierInvoicesPageLabels {
-  title: string
-  recordInvoice: string
-  searchPlaceholder: string
-  statusAll: string
-  statuses: Record<SupplierInvoiceStatus, string>
-  columns: {
-    invoiceNo: string
-    supplier: string
-    status: string
-    total: string
-    balanceDue: string
-    dueDate: string
-  }
-  empty: string
-  error: string
-  noDueDate: string
-}
-
-export const defaultSupplierInvoicesPageLabels: SupplierInvoicesPageLabels = {
-  title: "Supplier invoices",
-  recordInvoice: "Record supplier invoice",
-  searchPlaceholder: "Search invoice no, reference, notes…",
-  statusAll: "All statuses",
-  statuses: {
-    draft: "Draft",
-    received: "Received",
-    approved: "Approved",
-    partially_paid: "Partially paid",
-    paid: "Paid",
-    disputed: "Disputed",
-    void: "Void",
-  },
-  columns: {
-    invoiceNo: "Invoice no",
-    supplier: "Supplier",
-    status: "Status",
-    total: "Total",
-    balanceDue: "Balance due",
-    dueDate: "Due date",
-  },
-  empty: "No supplier invoices yet.",
-  error: "Failed to load supplier invoices.",
-  noDueDate: "—",
-}
-
 export interface SupplierInvoicesPageProps {
   className?: string
   onOpenSupplierInvoice?: (id: string) => void
   onRecordSupplierInvoice?: () => void
-  labels?: Partial<SupplierInvoicesPageLabels>
 }
 
 type SortableField = Exclude<FinanceSupplierInvoiceListSortField, "createdAt">
@@ -119,9 +72,8 @@ export function SupplierInvoicesPage({
   className,
   onOpenSupplierInvoice,
   onRecordSupplierInvoice,
-  labels,
 }: SupplierInvoicesPageProps = {}) {
-  const t = { ...defaultSupplierInvoicesPageLabels, ...labels }
+  const t = useFinanceUiMessagesOrDefault().supplierInvoicesPage
 
   const [search, setSearch] = useState("")
   const [status, setStatus] = useState<string>(STATUS_ALL)
@@ -193,7 +145,7 @@ export function SupplierInvoicesPage({
             <SelectItem value={STATUS_ALL}>{t.statusAll}</SelectItem>
             {STATUS_ORDER.map((value) => (
               <SelectItem key={value} value={value}>
-                {t.statuses[value]}
+                {t.statusLabels[value]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -242,7 +194,7 @@ export function SupplierInvoicesPage({
             ) : isError ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-destructive">
-                  {t.error}
+                  {t.loadFailed}
                 </TableCell>
               </TableRow>
             ) : invoices.length === 0 ? (
@@ -264,7 +216,7 @@ export function SupplierInvoicesPage({
                   <TableCell className="text-muted-foreground">{invoice.supplierId}</TableCell>
                   <TableCell>
                     <Badge variant={STATUS_VARIANT[invoice.status]}>
-                      {t.statuses[invoice.status]}
+                      {t.statusLabels[invoice.status]}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right tabular-nums">

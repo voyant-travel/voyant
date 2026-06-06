@@ -107,9 +107,7 @@ export {
   type SupplierInvoiceDetailPageProps,
 } from "./components/supplier-invoice-detail-page.js"
 export {
-  defaultSupplierInvoicesPageLabels,
   SupplierInvoicesPage,
-  type SupplierInvoicesPageLabels,
   type SupplierInvoicesPageProps,
 } from "./components/supplier-invoices-page.js"
 export {
