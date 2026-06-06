@@ -15,7 +15,11 @@ const baseContent: CruiseContent = cruiseContentSchema.parse({
     duration_nights: 7,
     cruise_line: "Sample Line",
   },
-  ship: { name: "MS Sample" },
+  ship: {
+    name: "MS Sample",
+    deck_plan_url: "https://cdn.example.com/ship/deck-plan.pdf",
+    deck_plans: [{ name: "Upper Deck", level: 3, image_url: "https://cdn.example.com/deck-3.jpg" }],
+  },
   sailings: [
     {
       id: "sail_1",
@@ -42,6 +46,11 @@ const baseContent: CruiseContent = cruiseContentSchema.parse({
       bed_configurations: ["king", "convertible_twins"],
       accessibility_features: ["step_free_access"],
       view_type: "balcony",
+      images: ["https://cdn.example.com/balcony.jpg"],
+      floorplan_images: ["https://cdn.example.com/balcony-plan.jpg"],
+      square_feet: "270",
+      grade_codes: ["BA", "BB"],
+      wheelchair_accessible: true,
     },
   ],
   itinerary_stops: [
@@ -76,6 +85,19 @@ describe("validateCruiseContent", () => {
     expect(parsed.cabin_categories[1]?.bed_configurations).toEqual(["king", "convertible_twins"])
     expect(parsed.cabin_categories[1]?.accessibility_features).toEqual(["step_free_access"])
     expect(parsed.cabin_categories[1]?.view_type).toBe("balcony")
+    expect(parsed.cabin_categories[1]?.floorplan_images).toEqual([
+      "https://cdn.example.com/balcony-plan.jpg",
+    ])
+    expect(parsed.cabin_categories[1]?.grade_codes).toEqual(["BA", "BB"])
+    expect(parsed.cabin_categories[1]?.wheelchair_accessible).toBe(true)
+  })
+
+  it("accepts ship deck plans", () => {
+    const parsed = cruiseContentSchema.parse(baseContent)
+    expect(parsed.ship?.deck_plan_url).toBe("https://cdn.example.com/ship/deck-plan.pdf")
+    expect(parsed.ship?.deck_plans).toEqual([
+      { name: "Upper Deck", level: 3, image_url: "https://cdn.example.com/deck-3.jpg" },
+    ])
   })
 
   it("accepts per-sailing price summaries as integer minor units", () => {

@@ -170,6 +170,12 @@ interface CruiseContentPayload {
     name: string
     ship_type?: string | null
     description?: string | null
+    deck_plan_url?: string | null
+    deck_plans?: Array<{
+      name: string
+      level?: number | null
+      image_url?: string | null
+    }>
     capacity?: number | null
     decks?: number | null
     year_built?: number | null
@@ -195,7 +201,10 @@ interface CruiseContentPayload {
     description?: string | null
     type?: string | null
     images?: string[]
+    floorplan_images?: string[]
     square_feet?: string | null
+    grade_codes?: string[]
+    wheelchair_accessible?: boolean
     capacity_max?: number | null
     inclusions?: string[]
   }>
@@ -431,6 +440,12 @@ function mapCruiseContentToEnrichment(content: CruiseContentPayload): CatalogDet
           name: content.ship.name,
           shipType: content.ship.ship_type ?? null,
           description: content.ship.description ?? null,
+          deckPlanUrl: content.ship.deck_plan_url ?? null,
+          deckPlans: (content.ship.deck_plans ?? []).map((deck) => ({
+            name: deck.name,
+            level: deck.level ?? null,
+            imageUrl: deck.image_url ?? null,
+          })),
           capacity: content.ship.capacity ?? null,
           decks: content.ship.decks ?? null,
           yearBuilt: content.ship.year_built ?? null,
@@ -453,7 +468,10 @@ function mapCruiseContentToEnrichment(content: CruiseContentPayload): CatalogDet
       code: c.code ?? null,
       type: c.type ?? null,
       images: c.images ?? [],
+      floorplanImages: c.floorplan_images ?? [],
       squareFeet: c.square_feet ?? null,
+      gradeCodes: c.grade_codes ?? [],
+      wheelchairAccessible: c.wheelchair_accessible ?? false,
       capacityMax: c.capacity_max ?? null,
       amenities: c.inclusions ?? [],
     })),
