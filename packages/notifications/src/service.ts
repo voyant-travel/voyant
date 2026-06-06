@@ -20,6 +20,7 @@ import {
   sendNotification,
   sendPaymentSessionNotification,
 } from "./service-deliveries.js"
+import { composeNotificationReminderRule } from "./service-reminder-authoring.js"
 import { runDueReminders } from "./service-reminders.js"
 import { previewReminders } from "./service-sequence.js"
 import { previewNotificationTemplate } from "./service-shared.js"
@@ -40,6 +41,8 @@ import {
 import {
   createReminderRule,
   createTemplate,
+  deleteReminderRule,
+  deleteTemplate,
   getReminderRuleById,
   getReminderRunById,
   getTemplateById,
@@ -57,6 +60,7 @@ export const notificationsService = {
   getTemplateBySlug,
   createTemplate,
   updateTemplate,
+  deleteTemplate,
   previewNotificationTemplate,
   listDeliveries,
   getDeliveryById,
@@ -66,7 +70,9 @@ export const notificationsService = {
   getReminderRuleById,
   getReminderRunById,
   createReminderRule,
+  composeNotificationReminderRule,
   updateReminderRule,
+  deleteReminderRule,
   listReminderRuns,
   runDueReminders,
   previewReminders,

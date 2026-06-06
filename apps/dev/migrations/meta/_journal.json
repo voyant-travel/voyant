@@ -281,6 +281,13 @@
       "when": 1780141400000,
       "tag": "0043_organization_tax_id",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1780141500000,
+      "tag": "0044_notification_reminder_rule_authoring_requests",
+      "breakpoints": true
     }
   ]
 }

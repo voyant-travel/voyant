@@ -134,7 +134,7 @@ export const insertNotificationReminderRuleSchema = notificationReminderRuleCore
 
 export const updateNotificationReminderRuleSchema = notificationReminderRuleCoreSchema.partial()
 
-const notificationReminderRuleStageBaseSchema = z.object({
+export const notificationReminderRuleStageBaseSchema = z.object({
   name: z.string().max(255).optional().nullable(),
   orderIndex: z.coerce.number().int().min(0).max(1000),
   anchor: notificationReminderStageAnchorSchema,
@@ -188,7 +188,7 @@ export const reorderReminderRuleStagesSchema = z.object({
   stageIds: z.array(z.string().min(1)).min(1).max(50),
 })
 
-const notificationReminderStageChannelBaseSchema = z.object({
+export const notificationReminderStageChannelBaseSchema = z.object({
   orderIndex: z.coerce.number().int().min(0).max(50).default(0),
   channel: notificationChannelSchema,
   provider: z.string().max(255).optional().nullable(),
@@ -210,6 +210,17 @@ export const insertNotificationReminderStageChannelSchema =
 
 export const updateNotificationReminderStageChannelSchema =
   notificationReminderStageChannelBaseSchema.partial()
+
+export const composeNotificationReminderRuleStageSchema =
+  notificationReminderRuleStageBaseSchema.extend({
+    channels: z.array(notificationReminderStageChannelBaseSchema).min(1).max(50),
+  })
+
+export const composeNotificationReminderRuleSchema = z.object({
+  rule: insertNotificationReminderRuleSchema,
+  stages: z.array(composeNotificationReminderRuleStageSchema).min(1).max(50),
+  idempotencyKey: z.string().min(1).max(255).optional(),
+})
 
 const notificationQuietHoursConfigSchema = z.object({
   start: z.string().regex(/^\d{2}:\d{2}$/),
