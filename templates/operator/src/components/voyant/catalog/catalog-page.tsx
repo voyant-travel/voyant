@@ -25,7 +25,6 @@ import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 import { getApiUrl } from "@/lib/env"
 import type { CatalogSearchParams, CatalogVerticalPageId } from "./catalog-route-state"
-import { PackageOffersSection } from "./package-offers-section"
 
 type CatalogBrowserMessages = ReturnType<
   typeof useAdminMessages
@@ -268,24 +267,6 @@ export function CatalogVerticalPage({
       // routes to the right detail page.
       onOpenProductDetail={onOpenDetail ? (hit) => onOpenDetail(hit) : undefined}
       enrichmentFetchers={enrichmentFetchers}
-      renderDetailExtraSections={
-        vertical === "products"
-          ? (hit) => {
-              // Live package departures/options/prices for sourced packages
-              // (owned products carry their own departures in content).
-              const sourceKind = stringField(hit, "source.kind", null)
-              if (sourceKind === "owned" || sourceKind == null) return null
-              return (
-                <PackageOffersSection
-                  hit={hit}
-                  onBookOffer={(bookedHit) =>
-                    goToBookingPage(bookedHit, "products", navigate, browserMessages)
-                  }
-                />
-              )
-            }
-          : undefined
-      }
       renderSupplierLink={(supplierId, displayName) => (
         <Link
           to="/suppliers/$id"

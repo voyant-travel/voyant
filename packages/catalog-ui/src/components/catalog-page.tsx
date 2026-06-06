@@ -445,7 +445,7 @@ function makeProductFilters(
     {
       field: "board",
       label: messages.filters.board,
-      formatValue: (value) => formatBoard(String(value)) ?? String(value),
+      formatValue: (value) => formatBoard(String(value), messages) ?? String(value),
     },
     {
       field: "stars",
@@ -849,7 +849,7 @@ function makeProductCard(
     chips: (fields) =>
       [
         formatTransport(asString(fields.transport), messages),
-        formatBoard(asString(fields.board)),
+        formatBoard(asString(fields.board), messages),
         ...asStringArray(fields.categories),
       ]
         .filter((v): v is string => Boolean(v))
@@ -866,18 +866,11 @@ function productSubtitle(fields: Record<string, unknown>): string | null {
   return parts.length > 0 ? parts.join(" · ") : null
 }
 
-const BOARD_LABELS: Record<string, string> = {
-  RO: "Room only",
-  BB: "Bed & breakfast",
-  HB: "Half board",
-  FB: "Full board",
-  AI: "All-inclusive",
-}
-
-/** Resolve a board code (AI/HB/BB/RO/FB) to a readable label. */
-function formatBoard(value: string | null): string | null {
+/** Resolve a board code (AI/HB/BB/RO/FB) to a localized, readable label. */
+function formatBoard(value: string | null, messages: CatalogPageMessages): string | null {
   if (!value) return null
-  return BOARD_LABELS[value.toUpperCase()] ?? value
+  const code = value.toUpperCase()
+  return (messages.boards as Record<string, string>)[code] ?? value
 }
 
 /** Resolve a transport code ("flight") to a readable label. */

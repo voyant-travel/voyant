@@ -310,6 +310,7 @@ export function DynamicCatalogPage({ search, onSearchChange }: DynamicCatalogPag
     setSelected((prev) => (prev && byDate.has(prev) ? prev : first))
   }, [state.status, byDate])
 
+  // i18n-literal-ok: "results" is a status discriminant and "EUR" a currency-code fallback, not UI copy.
   const currency = state.status === "results" ? state.currency : "EUR"
 
   const selectedOffers = useMemo(() => {

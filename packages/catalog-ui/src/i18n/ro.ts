@@ -141,6 +141,13 @@ export const catalogUiRo = {
       nights: "{nights} nopti",
       flightIncluded: "Zbor inclus",
     },
+    boards: {
+      RO: "Doar cazare",
+      BB: "Mic dejun inclus",
+      HB: "Demipensiune",
+      FB: "Pensiune completa",
+      AI: "All inclusive",
+    },
     detail: {
       loadingFullContent: "Se incarca tot continutul...",
       matchPrefix: "potrivire: {kind}",

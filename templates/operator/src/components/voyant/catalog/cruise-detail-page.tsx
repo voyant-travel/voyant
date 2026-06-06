@@ -696,6 +696,8 @@ function mapCruiseContent(content: unknown): CruiseDetail | null {
       return {
         id: asStr(r.id) ?? `cabin-${i}`,
         externalId: decodeCatalogExternalId(asStr(r.id)),
+        // Pure mapper, no messages in scope; "Cabin" is a last-resort fallback for an unnamed upstream cabin, not chrome copy.
+        // i18n-literal-ok
         name: asStr(r.name) ?? asStr(r.code) ?? "Cabin",
         type: asStr(r.type),
         view: asStr(r.view_type) ?? asStr(r.type),

@@ -142,6 +142,8 @@ export type CatalogUiMessages = {
       nights: string
       flightIncluded: string
     }
+    /** Meal/board basis labels keyed by code (RO/BB/HB/FB/AI). */
+    boards: Record<"RO" | "BB" | "HB" | "FB" | "AI", string>
     detail: {
       loadingFullContent: string
       matchPrefix: string

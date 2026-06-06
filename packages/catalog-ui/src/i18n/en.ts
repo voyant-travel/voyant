@@ -141,6 +141,13 @@ export const catalogUiEn = {
       nights: "{nights} nights",
       flightIncluded: "Flight included",
     },
+    boards: {
+      RO: "Room only",
+      BB: "Bed & breakfast",
+      HB: "Half board",
+      FB: "Full board",
+      AI: "All-inclusive",
+    },
     detail: {
       loadingFullContent: "Loading full content...",
       matchPrefix: "match: {kind}",
