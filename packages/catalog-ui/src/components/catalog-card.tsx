@@ -6,7 +6,13 @@ import { Button } from "@voyantjs/ui/components/button"
 import { Card } from "@voyantjs/ui/components/card"
 import { Image as ImageIcon } from "lucide-react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
-import { asString, formatHitPrice, stringField } from "./catalog-hit.js"
+import {
+  asString,
+  formatHitPrice,
+  type PriceUnit,
+  resolveHitPriceUnit,
+  stringField,
+} from "./catalog-hit.js"
 
 export interface CatalogCardBadge {
   label: string
@@ -39,7 +45,13 @@ export interface CatalogCardConfig {
    * Whether the amount field holds integer minor units (cents, the default) or
    * major currency units.
    */
-  priceUnit?: "minor" | "major"
+  priceUnit?: PriceUnit
+  /**
+   * Optional field carrying `minor` or `major`. When present it overrides
+   * `priceUnit`, which keeps legacy index documents display-compatible while
+   * letting newly indexed rows declare their units.
+   */
+  priceUnitField?: string
   /** Secondary line under the title — typically location (e.g. "Spain · Palma"). */
   subtitle?: (fields: Record<string, unknown>) => string | null
   /** Compact overlay chip on the image — typically duration (e.g. "8d / 7n"). */
@@ -91,6 +103,7 @@ export function CatalogCard({
     config.priceAmountField,
     config.priceCurrencyField,
     config.priceUnit,
+    config.priceUnitField,
   )
 
   const open = () => onOpen(hit)
@@ -181,14 +194,16 @@ function resolveCardPrice(
   hit: CatalogSearchHit,
   amountField: string | string[] | undefined,
   currencyField: string | string[] | undefined,
-  unit: "minor" | "major" = "minor",
+  unit: PriceUnit = "minor",
+  unitField?: string,
 ): string | null {
   if (!amountField || !currencyField) return null
+  const resolvedUnit = resolveHitPriceUnit(hit, unit, unitField)
   const amounts = Array.isArray(amountField) ? amountField : [amountField]
   const currencies = Array.isArray(currencyField) ? currencyField : [currencyField]
   for (const amount of amounts) {
     for (const currency of currencies) {
-      const formatted = formatHitPrice(hit, amount, currency, unit)
+      const formatted = formatHitPrice(hit, amount, currency, resolvedUnit)
       if (formatted) return formatted
     }
   }

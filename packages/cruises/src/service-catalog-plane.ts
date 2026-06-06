@@ -116,6 +116,7 @@ export function cruiseRowToProjection(
     // Volatile-indexed (browse-time approximations)
     ["lowestPriceCached", moneyStringToCents(row.lowestPriceCached)],
     ["lowestPriceCurrencyCached", row.lowestPriceCurrencyCached],
+    ["lowestPriceUnit", "minor"],
     ["earliestDepartureCached", row.earliestDepartureCached],
     ["latestDepartureCached", row.latestDepartureCached],
   ])

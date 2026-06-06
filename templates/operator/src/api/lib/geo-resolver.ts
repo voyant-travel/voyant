@@ -75,6 +75,34 @@ export interface DestinationNameResolver {
   resolve(token: string): Promise<string>
 }
 
+type AirportLookup = (iata: string) => Promise<unknown>
+
+type AirportLookupClient = {
+  static?: {
+    airports?: {
+      get?: AirportLookup
+    }
+  }
+  air?: {
+    airports?: {
+      get?: AirportLookup
+    }
+  }
+}
+
+function resolveAirportLookup(client: unknown): AirportLookup | null {
+  const candidate = client as AirportLookupClient
+  const staticAirports = candidate.static?.airports
+  if (typeof staticAirports?.get === "function") {
+    return (iata) => staticAirports.get?.(iata) ?? Promise.resolve(null)
+  }
+  const airAirports = candidate.air?.airports
+  if (typeof airAirports?.get === "function") {
+    return (iata) => airAirports.get?.(iata) ?? Promise.resolve(null)
+  }
+  return null
+}
+
 export function createDestinationNameResolver(
   options: GeoNameResolverOptions,
 ): DestinationNameResolver {
@@ -94,8 +122,13 @@ export function createDestinationNameResolver(
       cache.set(token, passthrough)
       return passthrough
     }
-    const pending = client.static.airports
-      .get(token)
+    const airportLookup = resolveAirportLookup(client)
+    if (!airportLookup) {
+      const passthrough = Promise.resolve(token)
+      cache.set(token, passthrough)
+      return passthrough
+    }
+    const pending = airportLookup(token)
       .then((res: unknown) => {
         const airport = (res as { data?: unknown })?.data ?? res
         const city = (airport as { city?: unknown })?.city

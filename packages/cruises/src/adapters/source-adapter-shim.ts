@@ -475,6 +475,7 @@ function toCatalogProjection(
       // quote-time price is volatile-live and resolved elsewhere).
       lowestPriceCached: entry.lowestPriceCents ?? null,
       lowestPriceCurrencyCached: entry.lowestPriceCurrency ?? null,
+      lowestPriceUnit: "minor",
       earliestDepartureCached: entry.earliestDeparture ?? null,
       latestDepartureCached: entry.latestDeparture ?? null,
       // Departure month facet + count — populated by the source enrichment

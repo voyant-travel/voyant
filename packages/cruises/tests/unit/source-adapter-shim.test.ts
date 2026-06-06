@@ -220,6 +220,7 @@ describe("cruiseAdapterToSourceAdapter.discover", () => {
     expect(page.projections[0]?.fields.status).toBe("open")
     expect(page.projections[0]?.fields.lowestPriceCached).toBe(349900)
     expect(page.projections[0]?.fields.lowestPriceCurrencyCached).toBe("EUR")
+    expect(page.projections[0]?.fields.lowestPriceUnit).toBe("minor")
     expect(page.projections[0]?.fields.departureCount).toBe(1)
     expect(page.projections[0]?.fields["source.kind"]).toBe("cruise:stub")
     expect(page.projections[0]?.fields.region_ids).toEqual(["region:mediterranean"])

@@ -63,6 +63,7 @@ describe("cruiseRowToProjection", () => {
     expect(projection.get("highlights")).toEqual(["Cologne Cathedral", "Black Forest"])
     expect(projection.get("thumbnailUrl")).toBe("https://example.com/hero.jpg")
     expect(projection.get("lowestPriceCached")).toBe(349900)
+    expect(projection.get("lowestPriceUnit")).toBe("minor")
   })
 
   it("synthesizes owned provenance by default", () => {
