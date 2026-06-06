@@ -43,6 +43,7 @@ async function resetTables(
     "booking_supplier_statuses",
     "booking_items",
     "bookings",
+    "availability_slots",
     "option_units",
     "product_day_services",
     "product_days",
@@ -250,6 +251,47 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     return group!
   }
 
+  async function seedSlot(input: { productId: string; optionId?: string | null }) {
+    const slotId = `avsl_bc_${productSeq}_${Date.now()}`
+    const rows = await db.execute<{ id: string }>(sql`
+      INSERT INTO availability_slots (
+        id,
+        product_id,
+        option_id,
+        date_local,
+        starts_at,
+        ends_at,
+        timezone,
+        status,
+        unlimited,
+        initial_pax,
+        remaining_pax,
+        created_at,
+        updated_at
+      )
+      VALUES (
+        ${slotId},
+        ${input.productId},
+        ${input.optionId ?? null},
+        '2026-07-01',
+        '2026-07-01T09:00:00.000Z',
+        '2026-07-01T11:00:00.000Z',
+        'Europe/Bucharest',
+        'open',
+        false,
+        10,
+        10,
+        now(),
+        now()
+      )
+      RETURNING id
+    `)
+
+    const slot = rows[0]
+    if (!slot) throw new Error("seedSlot: insert returned no rows")
+    return slot
+  }
+
   function bookingParty() {
     return {
       personId: "pers_booking_create",
@@ -400,6 +442,100 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       .from(bookingPaymentSchedules)
       .where(eq(bookingPaymentSchedules.bookingId, outcome.result.booking.id))
     expect(scheduleRows).toHaveLength(2)
+  })
+
+  it("rejects duplicate active bookings for the same billing party and slot", async () => {
+    const { productId, optionId } = await seedProduct()
+    const slot = await seedSlot({ productId, optionId })
+
+    const first = await createBooking(db, {
+      productId,
+      optionId,
+      slotId: slot.id,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+    })
+
+    expect(first.status).toBe("ok")
+    if (first.status !== "ok") return
+
+    const duplicate = await createBooking(db, {
+      productId,
+      optionId,
+      slotId: slot.id,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+    })
+
+    expect(duplicate.status).toBe("duplicate_booking")
+    if (duplicate.status !== "duplicate_booking") return
+    expect(duplicate.existingBooking).toMatchObject({
+      id: first.result.booking.id,
+      bookingNumber: first.result.booking.bookingNumber,
+      status: first.result.booking.status,
+    })
+
+    const bookingRows = await db.select().from(bookings)
+    expect(bookingRows).toHaveLength(1)
+  })
+
+  it("allows duplicate active bookings when explicitly overridden", async () => {
+    const { productId, optionId } = await seedProduct()
+    const slot = await seedSlot({ productId, optionId })
+
+    const first = await createBooking(db, {
+      productId,
+      optionId,
+      slotId: slot.id,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+    })
+    expect(first.status).toBe("ok")
+
+    const second = await createBooking(db, {
+      productId,
+      optionId,
+      slotId: slot.id,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      allowDuplicate: true,
+    })
+
+    expect(second.status).toBe("ok")
+    const bookingRows = await db.select().from(bookings)
+    expect(bookingRows).toHaveLength(2)
+  })
+
+  it("ignores cancelled bookings when checking duplicates", async () => {
+    const { productId, optionId } = await seedProduct()
+    const slot = await seedSlot({ productId, optionId })
+
+    const first = await createBooking(db, {
+      productId,
+      optionId,
+      slotId: slot.id,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+    })
+    expect(first.status).toBe("ok")
+    if (first.status !== "ok") return
+
+    await db
+      .update(bookings)
+      .set({ status: "cancelled" })
+      .where(eq(bookings.id, first.result.booking.id))
+
+    const second = await createBooking(db, {
+      productId,
+      optionId,
+      slotId: slot.id,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+    })
+
+    expect(second.status).toBe("ok")
+    const bookingRows = await db.select().from(bookings)
+    expect(bookingRows).toHaveLength(2)
   })
 
   it("rejects payment schedules in a currency different from booking sell currency", async () => {
