@@ -20,6 +20,7 @@ import {
   SelectValue,
   Textarea,
 } from "@voyantjs/ui/components"
+import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { useEffect, useState } from "react"
@@ -142,7 +143,7 @@ export function SupplierInvoiceFormDialog({
               value={form.status}
               onValueChange={(v) => set({ status: (v as SupplierInvoiceStatus) ?? "received" })}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="h-9 w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -155,10 +156,10 @@ export function SupplierInvoiceFormDialog({
             </Select>
           </Field>
           <Field label={t.currency}>
-            <Input
-              value={form.currency}
-              maxLength={3}
-              onChange={(e) => set({ currency: e.target.value })}
+            <CurrencyCombobox
+              value={form.currency || null}
+              onChange={(v) => set({ currency: v ?? "" })}
+              className="w-full"
             />
           </Field>
           <Field label={t.issueDate}>

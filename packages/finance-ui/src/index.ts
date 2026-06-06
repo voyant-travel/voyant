@@ -1,3 +1,4 @@
+export { AsyncCombobox, type AsyncComboboxOption } from "./components/async-combobox.js"
 export {
   BookingInvoiceDialog,
   type BookingInvoiceDialogProps,
@@ -106,6 +107,7 @@ export {
   type SupplierInvoiceAttachmentUpload,
   SupplierInvoiceDetailPage,
   type SupplierInvoiceDetailPageProps,
+  type SupplierInvoiceTargetSearch,
 } from "./components/supplier-invoice-detail-page.js"
 export {
   SupplierInvoiceFormDialog,

@@ -1,9 +1,13 @@
+import { useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import { getBookingsQueryOptions } from "@voyantjs/bookings-react"
 import { getSupplierInvoiceQueryOptions } from "@voyantjs/finance-react"
 import {
   type SupplierInvoiceAttachmentUpload,
   SupplierInvoiceDetailPage,
+  type SupplierInvoiceTargetSearch,
 } from "@voyantjs/finance-ui"
+import { getProductsQueryOptions } from "@voyantjs/products-react"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
@@ -41,6 +45,24 @@ export const Route = createFileRoute("/_workspace/finance/supplier-invoices/$id"
 function SupplierInvoiceDetailRoute() {
   const { id } = Route.useParams()
   const navigate = Route.useNavigate()
+  const queryClient = useQueryClient()
+
+  const searchTargets: SupplierInvoiceTargetSearch = async (targetType, query) => {
+    const client = { baseUrl: getApiUrl(), fetcher: operatorFetcher }
+    if (targetType === "product") {
+      const res = await queryClient.fetchQuery(
+        getProductsQueryOptions(client, { search: query || undefined, limit: 20 }),
+      )
+      return res.data.map((p) => ({ value: p.id, label: `${p.name} (${p.id})` }))
+    }
+    if (targetType === "booking") {
+      const res = await queryClient.fetchQuery(
+        getBookingsQueryOptions(client, { search: query || undefined, limit: 20 }),
+      )
+      return res.data.map((b) => ({ value: b.id, label: `${b.bookingNumber} (${b.id})` }))
+    }
+    return []
+  }
 
   return (
     <SupplierInvoiceDetailPage
@@ -54,6 +76,7 @@ function SupplierInvoiceDetailRoute() {
         )
       }}
       uploadFile={uploadSupplierInvoiceAttachment}
+      searchTargets={searchTargets}
       onDownloadAttachment={(attachmentId) => {
         window.open(
           `${getApiUrl()}/v1/admin/finance/supplier-invoice-attachments/${attachmentId}/download`,

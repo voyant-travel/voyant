@@ -64,8 +64,14 @@ import { Download, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
+import { AsyncCombobox, type AsyncComboboxOption } from "./async-combobox.js"
 import { formatInvoiceAmount } from "./invoice-table-parts.js"
 import { SupplierInvoiceFormDialog } from "./supplier-invoice-form-dialog.js"
+
+export type SupplierInvoiceTargetSearch = (
+  targetType: "departure" | "product" | "booking" | "traveler",
+  query: string,
+) => Promise<AsyncComboboxOption[]>
 
 const STATUS_VARIANT: Record<
   SupplierInvoiceStatus,
@@ -82,6 +88,13 @@ const STATUS_VARIANT: Record<
 
 const TARGET_TYPES = ["departure", "product", "booking", "traveler", "unattributed"] as const
 type TargetType = (typeof TARGET_TYPES)[number]
+
+/**
+ * Target types that support search-and-select; others fall back to a text id.
+ * Departures (availability slots) and travelers have no global free-text search
+ * endpoint, so they stay as raw-id inputs.
+ */
+const SEARCHABLE_TARGETS = new Set<TargetType>(["product", "booking"])
 
 const SERVICE_TYPES: ApServiceType[] = [
   "transport",
@@ -163,6 +176,12 @@ export interface SupplierInvoiceDetailPageProps {
   uploadFile?: (file: File) => Promise<SupplierInvoiceAttachmentUpload>
   /** Operator wires this to open an attachment's download endpoint. */
   onDownloadAttachment?: (attachmentId: string) => void
+  /**
+   * Resolve searchable options for an allocation target (departure / product /
+   * booking). When provided, those targets use a search-and-select combobox in
+   * the allocation dialog instead of a raw id field.
+   */
+  searchTargets?: SupplierInvoiceTargetSearch
 }
 
 function formatFileSize(bytes: number | null): string {
@@ -179,6 +198,7 @@ export function SupplierInvoiceDetailPage({
   onDownloadDocument,
   uploadFile,
   onDownloadAttachment,
+  searchTargets,
 }: SupplierInvoiceDetailPageProps) {
   const messages = useFinanceUiMessagesOrDefault()
   const t = messages.supplierInvoiceDetail
@@ -617,6 +637,7 @@ export function SupplierInvoiceDetailPage({
         allocation={allocationDialog?.allocation ?? null}
         currency={currency}
         pending={setAllocations.isPending}
+        searchTargets={searchTargets}
         onOpenChange={(open) =>
           setAllocationDialog(open ? (allocationDialog ?? { allocation: null }) : null)
         }
@@ -731,7 +752,7 @@ function LineDialog({
               value={serviceType}
               onValueChange={(v) => setServiceType((v as ApServiceType) ?? "other")}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="h-9 w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -781,6 +802,7 @@ function AllocationDialog({
   allocation,
   currency,
   pending,
+  searchTargets,
   onOpenChange,
   onSubmit,
 }: {
@@ -788,6 +810,7 @@ function AllocationDialog({
   allocation: SupplierCostAllocationRecord | null
   currency: string
   pending: boolean
+  searchTargets?: SupplierInvoiceTargetSearch
   onOpenChange: (open: boolean) => void
   onSubmit: (input: SupplierCostAllocationInput) => void
 }) {
@@ -834,9 +857,12 @@ function AllocationDialog({
             <Label>{t.target}</Label>
             <Select
               value={targetType}
-              onValueChange={(v) => setTargetType((v as TargetType) ?? "departure")}
+              onValueChange={(v) => {
+                setTargetType((v as TargetType) ?? "departure")
+                setTargetId("")
+              }}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="h-9 w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -855,7 +881,20 @@ function AllocationDialog({
           {targetType !== "unattributed" ? (
             <div className="col-span-2 flex flex-col gap-2">
               <Label>{formatMessage(t.idLabel, { type: t.targetTypeLabels[targetType] })}</Label>
-              <Input value={targetId} onChange={(e) => setTargetId(e.target.value)} />
+              {searchTargets && SEARCHABLE_TARGETS.has(targetType) ? (
+                <AsyncCombobox
+                  value={targetId || null}
+                  onChange={(v) => setTargetId(v ?? "")}
+                  search={(query) =>
+                    searchTargets(
+                      targetType as "departure" | "product" | "booking" | "traveler",
+                      query,
+                    )
+                  }
+                />
+              ) : (
+                <Input value={targetId} onChange={(e) => setTargetId(e.target.value)} />
+              )}
             </div>
           ) : null}
         </DialogBody>
@@ -933,7 +972,7 @@ function PaymentDialog({
           <div className="flex flex-col gap-2">
             <Label>{t.methodLabel}</Label>
             <Select value={method} onValueChange={(v) => setMethod(v ?? "other")}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="h-9 w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
