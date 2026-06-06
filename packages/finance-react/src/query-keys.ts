@@ -184,6 +184,8 @@ export const financeQueryKeys = {
   supplierInvoicesList: (filters: FinanceSupplierInvoiceListFilters) =>
     [...financeQueryKeys.supplierInvoices(), "list", filters] as const,
   supplierInvoice: (id: string) => [...financeQueryKeys.supplierInvoices(), "detail", id] as const,
+  supplierInvoicePayments: (id: string) =>
+    [...financeQueryKeys.supplierInvoice(id), "payments"] as const,
 
   supplierPayments: () => [...financeQueryKeys.all, "supplier-payments"] as const,
   supplierPaymentsList: (filters: FinanceSupplierPaymentListFilters) =>

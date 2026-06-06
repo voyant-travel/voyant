@@ -103,6 +103,10 @@ export {
   type RecordBookingPaymentDialogProps,
 } from "./components/record-booking-payment-dialog.js"
 export {
+  SupplierInvoiceDetailPage,
+  type SupplierInvoiceDetailPageProps,
+} from "./components/supplier-invoice-detail-page.js"
+export {
   defaultSupplierInvoicesPageLabels,
   SupplierInvoicesPage,
   type SupplierInvoicesPageLabels,

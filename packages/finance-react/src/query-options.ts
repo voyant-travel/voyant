@@ -198,6 +198,21 @@ export function getSupplierInvoiceQueryOptions(
   })
 }
 
+export function getSupplierInvoicePaymentsQueryOptions(
+  client: FetchWithValidationOptions,
+  id: string | null | undefined,
+) {
+  return queryOptions({
+    queryKey: financeQueryKeys.supplierInvoicePayments(id ?? ""),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/admin/finance/supplier-invoices/${id}/payments`,
+        supplierPaymentListResponse,
+        client,
+      ),
+  })
+}
+
 export function getInvoiceNumberSeriesQueryOptions(
   client: FetchWithValidationOptions,
   options: UseInvoiceNumberSeriesOptions = {},

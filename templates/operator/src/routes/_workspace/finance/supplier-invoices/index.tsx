@@ -15,5 +15,16 @@ export const Route = createFileRoute("/_workspace/finance/supplier-invoices/")({
 })
 
 function RouteComponent() {
-  return <SupplierInvoicesPage />
+  const navigate = Route.useNavigate()
+
+  return (
+    <SupplierInvoicesPage
+      onOpenSupplierInvoice={(id) =>
+        void navigate({
+          to: "/finance/supplier-invoices/$id",
+          params: { id },
+        })
+      }
+    />
+  )
 }
