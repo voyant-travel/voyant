@@ -24,6 +24,7 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
+    "@voyantjs/action-ledger": "workspace:^",
     "@voyantjs/bookings": "workspace:^",
     "@voyantjs/core": "workspace:^",
     "@voyantjs/crm": "workspace:^",

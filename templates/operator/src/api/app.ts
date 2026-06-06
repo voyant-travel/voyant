@@ -65,6 +65,7 @@ import { createDocumentStorage } from "./lib/storage"
 import { mountCatalogMcpRoutes } from "./mcp"
 import { mountOperatorMediaUploadRoutes } from "./media-upload-routes"
 import {
+  createOperatorBookingPiiService,
   createOperatorDocumentStorage,
   createOperatorInvoiceExchangeRateResolver,
   createOperatorInvoiceSettlementPollers,
@@ -251,6 +252,7 @@ const legalModule = createLegalHonoModule({
     resolveOperatorDocumentDownloadUrl(bindings, storageKey),
   resolveDocumentStorage: createOperatorDocumentStorage,
   resolveDocumentGenerator: resolveOperatorContractDocumentGenerator,
+  resolveBookingPiiService: createOperatorBookingPiiService,
   autoGenerateContractOnConfirmed: AUTO_GENERATE_CONTRACT_OPTIONS,
 })
 

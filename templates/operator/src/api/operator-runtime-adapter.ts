@@ -1,3 +1,4 @@
+import { buildBookingRouteRuntime, createBookingPiiService } from "@voyantjs/bookings"
 import { createVoyantDataFxExchangeRateResolver } from "@voyantjs/finance"
 import type { VoyantDb } from "@voyantjs/hono"
 import { createCloudflareEdgeDriver } from "@voyantjs/workflows-orchestrator-cloudflare"
@@ -47,6 +48,16 @@ export function createOperatorDocumentStorage(bindings: unknown) {
 
 export function resolveOperatorContractDocumentGenerator(bindings: unknown) {
   return resolveContractDocumentGenerator(operatorBindings(bindings)) ?? undefined
+}
+
+export async function createOperatorBookingPiiService(bindings: unknown) {
+  const env = operatorBindings(bindings)
+  const runtime = buildBookingRouteRuntime(env)
+  try {
+    return createBookingPiiService({ kms: await runtime.getKmsProvider() })
+  } catch {
+    return null
+  }
 }
 
 export function createOperatorInvoiceExchangeRateResolver(bindings: unknown) {

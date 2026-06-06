@@ -1,3 +1,5 @@
+import type { ActionLedgerRequestContextValues } from "@voyantjs/action-ledger"
+import { type BookingPiiService, shouldRevealBookingPii } from "@voyantjs/bookings"
 import type { EventBus, ModuleContainer } from "@voyantjs/core"
 import {
   createDrizzlePublicDocumentDeliveryGrantStore,
@@ -49,6 +51,19 @@ type Env = {
     container: ModuleContainer
     db: PostgresJsDatabase
     userId?: string
+    agentId?: string
+    workflowPrincipalId?: string
+    principalSubtype?: string
+    sessionId?: string
+    apiTokenId?: string
+    apiKeyId?: string
+    callerType?: string
+    actor?: string
+    scopes?: string[]
+    isInternalRequest?: boolean
+    organizationId?: string
+    workflowRunId?: string
+    workflowStepId?: string
   }
 }
 
@@ -73,6 +88,10 @@ export interface ContractsRouteOptions {
   resolveLifecycleHooks?: (
     bindings: Record<string, unknown>,
   ) => readonly ContractLifecycleHook[] | undefined
+  bookingPiiService?: BookingPiiService | null
+  resolveBookingPiiService?: (
+    bindings: Record<string, unknown>,
+  ) => BookingPiiService | Promise<BookingPiiService | null | undefined> | null | undefined
 }
 
 function getRuntime(
@@ -84,6 +103,39 @@ function getRuntime(
     resolveFromContainer?.(CONTRACTS_ROUTE_RUNTIME_CONTAINER_KEY) ??
     buildContractsRouteRuntime(bindings, options)
   )
+}
+
+function getActionLedgerRequestContext(c: Context<Env>): ActionLedgerRequestContextValues {
+  return {
+    userId: c.get("userId") ?? null,
+    agentId: c.get("agentId") ?? null,
+    workflowPrincipalId: c.get("workflowPrincipalId") ?? null,
+    principalSubtype: c.get("principalSubtype") ?? null,
+    sessionId: c.get("sessionId") ?? null,
+    apiTokenId: c.get("apiTokenId") ?? c.get("apiKeyId") ?? null,
+    callerType: c.get("callerType") ?? null,
+    actor: c.get("actor") ?? null,
+    isInternalRequest: c.get("isInternalRequest") ?? false,
+    organizationId: c.get("organizationId") ?? null,
+    workflowRunId: c.get("workflowRunId") ?? null,
+    workflowStepId: c.get("workflowStepId") ?? null,
+    correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
+  }
+}
+
+async function resolveAuthorizedBookingPiiService(
+  c: Context<Env>,
+  runtime: ContractsRouteRuntime,
+): Promise<BookingPiiService | null> {
+  const reveal = shouldRevealBookingPii({
+    actor: c.get("actor"),
+    scopes: c.get("scopes"),
+    callerType: c.get("callerType"),
+    isInternalRequest: c.get("isInternalRequest"),
+  })
+  if (!reveal) return null
+
+  return runtime.bookingPiiService ?? (await runtime.resolveBookingPiiService?.(c.env)) ?? null
 }
 
 function getMultipartString(value: unknown) {
@@ -303,6 +355,8 @@ async function generateContractDocumentForBooking(c: Context<Env>, options: Cont
       bindings: c.env,
       eventBus: runtime.eventBus,
       lifecycleHooks: runtime.lifecycleHooks,
+      bookingPiiService: await resolveAuthorizedBookingPiiService(c, runtime),
+      actionLedgerContext: getActionLedgerRequestContext(c),
     },
     c.get("userId") ?? null,
   )
