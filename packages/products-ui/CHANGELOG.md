@@ -1,5 +1,19 @@
 # @voyantjs/products-ui
 
+## 0.105.0
+
+### Patch Changes
+
+- @voyantjs/availability@0.104.1
+- @voyantjs/finance@0.105.0
+- @voyantjs/products-react@0.105.0
+- @voyantjs/pricing-ui@0.105.0
+- @voyantjs/finance-ui@0.105.0
+- @voyantjs/catalog-react@0.104.4
+- @voyantjs/extras-react@0.105.0
+- @voyantjs/pricing-react@0.105.0
+- @voyantjs/suppliers-react@0.104.2
+
 ## 0.104.3
 
 ### Patch Changes

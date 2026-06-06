@@ -1,5 +1,12 @@
 # @voyantjs/charters
 
+## 0.104.2
+
+### Patch Changes
+
+- @voyantjs/catalog@0.104.4
+- @voyantjs/bookings@0.105.0
+
 ## 0.104.1
 
 ### Patch Changes
