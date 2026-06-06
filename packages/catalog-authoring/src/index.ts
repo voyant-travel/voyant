@@ -9,6 +9,12 @@ export {
   type BuildProductGraphResult,
   buildProductGraph,
 } from "./builder.js"
+export {
+  type ClonedOption,
+  type CloneProductOptions,
+  type CloneProductOutcome,
+  cloneProduct,
+} from "./clone.js"
 export { type AuthoringIssue, AuthoringValidationError } from "./errors.js"
 export { catalogAuthoringExtension, catalogAuthoringRoutes } from "./extension.js"
 export type { NewProductAuthoringRequest, ProductAuthoringRequest } from "./schema.js"
