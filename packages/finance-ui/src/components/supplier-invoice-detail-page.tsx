@@ -48,6 +48,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@voyantjs/ui/components/breadcrumb"
+import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import {
   Table,
   TableBody,
@@ -385,14 +386,14 @@ export function SupplierInvoiceDetailPage({
             rows.map((row, index) => (
               <div key={row.key} className="flex flex-wrap items-end gap-2">
                 <div className="w-40">
-                  <Label className="text-xs">{t.allocation.target}</Label>
+                  <Label>{t.allocation.target}</Label>
                   <Select
                     value={row.targetType}
                     onValueChange={(value) =>
                       updateRow(index, { targetType: (value as TargetType) ?? "departure" })
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -406,7 +407,7 @@ export function SupplierInvoiceDetailPage({
                 </div>
                 {row.targetType !== "unattributed" ? (
                   <div className="flex-1 min-w-48">
-                    <Label className="text-xs">
+                    <Label>
                       {formatMessage(t.allocation.idLabel, {
                         type: t.allocation.targetTypeLabels[row.targetType],
                       })}
@@ -418,9 +419,7 @@ export function SupplierInvoiceDetailPage({
                   </div>
                 ) : null}
                 <div className="w-32">
-                  <Label className="text-xs">
-                    {formatMessage(t.allocation.amountLabel, { currency })}
-                  </Label>
+                  <Label>{formatMessage(t.allocation.amountLabel, { currency })}</Label>
                   <Input
                     inputMode="decimal"
                     value={row.amountMajor}
@@ -620,17 +619,17 @@ function LineDialog({
           <DialogTitle>{line ? t.editTitle : t.addTitle}</DialogTitle>
         </DialogHeader>
         <DialogBody className="grid grid-cols-2 gap-3">
-          <div className="col-span-2">
-            <Label className="text-xs">{t.description}</Label>
+          <div className="col-span-2 flex flex-col gap-2">
+            <Label>{t.description}</Label>
             <Input value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
-          <div>
-            <Label className="text-xs">{t.serviceType}</Label>
+          <div className="flex flex-col gap-2">
+            <Label>{t.serviceType}</Label>
             <Select
               value={serviceType}
               onValueChange={(v) => setServiceType((v as ApServiceType) ?? "other")}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -642,24 +641,24 @@ function LineDialog({
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label className="text-xs">{t.quantity}</Label>
+          <div className="flex flex-col gap-2">
+            <Label>{t.quantity}</Label>
             <Input
               inputMode="numeric"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
             />
           </div>
-          <div>
-            <Label className="text-xs">{`${t.unitAmount} (${currency})`}</Label>
+          <div className="flex flex-col gap-2">
+            <Label>{`${t.unitAmount} (${currency})`}</Label>
             <Input inputMode="decimal" value={unit} onChange={(e) => setUnit(e.target.value)} />
           </div>
-          <div>
-            <Label className="text-xs">{`${t.taxAmount} (${currency})`}</Label>
+          <div className="flex flex-col gap-2">
+            <Label>{`${t.taxAmount} (${currency})`}</Label>
             <Input inputMode="decimal" value={tax} onChange={(e) => setTax(e.target.value)} />
           </div>
-          <div className="col-span-2">
-            <Label className="text-xs">{`${t.total} (${currency})`}</Label>
+          <div className="col-span-2 flex flex-col gap-2">
+            <Label>{`${t.total} (${currency})`}</Label>
             <Input inputMode="decimal" value={total} onChange={(e) => setTotal(e.target.value)} />
           </div>
         </DialogBody>
@@ -726,14 +725,14 @@ function PaymentDialog({
           <DialogTitle>{t.recordTitle}</DialogTitle>
         </DialogHeader>
         <DialogBody className="grid grid-cols-2 gap-3">
-          <div>
-            <Label className="text-xs">{formatMessage(t.amountLabel, { currency })}</Label>
+          <div className="flex flex-col gap-2">
+            <Label>{formatMessage(t.amountLabel, { currency })}</Label>
             <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
-          <div>
-            <Label className="text-xs">{t.methodLabel}</Label>
+          <div className="flex flex-col gap-2">
+            <Label>{t.methodLabel}</Label>
             <Select value={method} onValueChange={(v) => setMethod(v ?? "other")}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -745,9 +744,13 @@ function PaymentDialog({
               </SelectContent>
             </Select>
           </div>
-          <div className="col-span-2">
-            <Label className="text-xs">{t.dateLabel}</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <div className="col-span-2 flex flex-col gap-2">
+            <Label>{t.dateLabel}</Label>
+            <DatePicker
+              value={date || null}
+              onChange={(v) => setDate(v ?? "")}
+              className="w-full"
+            />
           </div>
         </DialogBody>
         <DialogFooter>

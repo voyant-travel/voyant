@@ -20,6 +20,8 @@ import {
   SelectValue,
   Textarea,
 } from "@voyantjs/ui/components"
+import { DatePicker } from "@voyantjs/ui/components/date-picker"
+import { cn } from "@voyantjs/ui/lib/utils"
 import { useEffect, useState } from "react"
 
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
@@ -140,7 +142,7 @@ export function SupplierInvoiceFormDialog({
               value={form.status}
               onValueChange={(v) => set({ status: (v as SupplierInvoiceStatus) ?? "received" })}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -160,17 +162,17 @@ export function SupplierInvoiceFormDialog({
             />
           </Field>
           <Field label={t.issueDate}>
-            <Input
-              type="date"
-              value={form.issueDate}
-              onChange={(e) => set({ issueDate: e.target.value })}
+            <DatePicker
+              value={form.issueDate || null}
+              onChange={(v) => set({ issueDate: v ?? "" })}
+              className="w-full"
             />
           </Field>
           <Field label={t.dueDate}>
-            <Input
-              type="date"
-              value={form.dueDate}
-              onChange={(e) => set({ dueDate: e.target.value })}
+            <DatePicker
+              value={form.dueDate || null}
+              onChange={(v) => set({ dueDate: v ?? "" })}
+              className="w-full"
             />
           </Field>
           <Field label={t.internalRef} className="col-span-2">
@@ -203,8 +205,8 @@ function Field({
   children: React.ReactNode
 }) {
   return (
-    <div className={className}>
-      <Label className="text-xs">{label}</Label>
+    <div className={cn("flex flex-col gap-2", className)}>
+      <Label>{label}</Label>
       {children}
     </div>
   )
