@@ -56,7 +56,8 @@ export type BulkSearchIndexEntry = {
   themes?: string[]
   earliestDeparture?: string | null
   latestDeparture?: string | null
-  lowestPrice?: string | null
+  departureCount?: number | null
+  lowestPriceCents?: number | null
   lowestPriceCurrency?: string | null
   salesStatus?: string | null
   heroImageUrl?: string | null
@@ -107,8 +108,8 @@ export const cruisesSearchService = {
     }
     if (query.dateFrom) conditions.push(gte(cruiseSearchIndex.earliestDeparture, query.dateFrom))
     if (query.dateTo) conditions.push(lte(cruiseSearchIndex.latestDeparture, query.dateTo))
-    if (query.priceMax !== undefined) {
-      conditions.push(sql`${cruiseSearchIndex.lowestPrice}::numeric <= ${query.priceMax}`)
+    if (query.priceMaxCents !== undefined) {
+      conditions.push(sql`${cruiseSearchIndex.lowestPriceCents} <= ${query.priceMaxCents}`)
     }
     if (query.embarkPortCanonicalPlaceId) {
       conditions.push(
@@ -146,7 +147,7 @@ export const cruisesSearchService = {
         .where(where)
         .orderBy(
           asc(cruiseSearchIndex.earliestDeparture),
-          asc(sql`${cruiseSearchIndex.lowestPrice}::numeric NULLS LAST`),
+          asc(sql`${cruiseSearchIndex.lowestPriceCents} NULLS LAST`),
           asc(cruiseSearchIndex.name),
         )
         .limit(query.limit)
@@ -202,7 +203,8 @@ export const cruisesSearchService = {
       themes: entry.themes ?? [],
       earliestDeparture: entry.earliestDeparture ?? null,
       latestDeparture: entry.latestDeparture ?? null,
-      lowestPrice: entry.lowestPrice ?? null,
+      departureCount: entry.departureCount ?? null,
+      lowestPriceCents: entry.lowestPriceCents ?? null,
       lowestPriceCurrency: entry.lowestPriceCurrency ?? null,
       salesStatus: entry.salesStatus ?? null,
       heroImageUrl: entry.heroImageUrl ?? null,
@@ -410,7 +412,8 @@ export const cruisesSearchService = {
         themes: entry.themes ?? [],
         earliestDeparture: entry.earliestDeparture ?? null,
         latestDeparture: entry.latestDeparture ?? null,
-        lowestPrice: entry.lowestPrice ?? null,
+        departureCount: entry.departureCount ?? null,
+        lowestPriceCents: entry.lowestPriceCents ?? null,
         lowestPriceCurrency: entry.lowestPriceCurrency ?? null,
         salesStatus: entry.salesStatus ?? null,
         heroImageUrl: entry.heroImageUrl ?? null,
@@ -504,6 +507,13 @@ function sourceRefConnectionId(sourceRef: SourceRef): string | null {
   return typeof sourceRef.connectionId === "string" ? sourceRef.connectionId : null
 }
 
+function moneyStringToCents(value: string | null | undefined): number | null {
+  if (!value) return null
+  const major = Number.parseFloat(value)
+  if (!Number.isFinite(major)) return null
+  return Math.round(major * 100)
+}
+
 function sortValue(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sortValue)
   if (!value || typeof value !== "object") return value
@@ -535,13 +545,16 @@ async function buildLocalEntry(
     .select({
       earliest: sql<string | null>`MIN(${cruiseSailings.departureDate})`,
       latest: sql<string | null>`MAX(${cruiseSailings.departureDate})`,
+      count: sql<number>`COUNT(*)::int`,
     })
     .from(cruiseSailings)
     .where(eq(cruiseSailings.cruiseId, cruise.id))
 
   const [priceAgg] = await db
     .select({
-      lowest: sql<string | null>`MIN(${cruisePrices.pricePerPerson}::numeric)::text`,
+      lowestCents: sql<
+        number | null
+      >`MIN(ROUND(${cruisePrices.pricePerPerson}::numeric * 100))::int`,
       currency: sql<
         string | null
       >`(ARRAY_AGG(${cruisePrices.currency} ORDER BY ${cruisePrices.pricePerPerson}::numeric ASC))[1]`,
@@ -586,7 +599,9 @@ async function buildLocalEntry(
     themes: cruise.themes ?? [],
     earliestDeparture: dateAgg?.earliest ?? null,
     latestDeparture: dateAgg?.latest ?? null,
-    lowestPrice: priceAgg?.lowest ?? cruise.lowestPriceCached ?? null,
+    departureCount: dateAgg?.count ?? null,
+    lowestPriceCents:
+      priceAgg?.lowestCents ?? moneyStringToCents(cruise.lowestPriceCached ?? null) ?? null,
     lowestPriceCurrency: priceAgg?.currency ?? cruise.lowestPriceCurrencyCached ?? null,
     salesStatus,
     heroImageUrl: cruise.heroImageUrl ?? null,

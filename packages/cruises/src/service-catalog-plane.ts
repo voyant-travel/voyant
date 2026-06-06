@@ -114,11 +114,18 @@ export function cruiseRowToProjection(
     ["themes[]", row.themes],
 
     // Volatile-indexed (browse-time approximations)
-    ["lowestPriceCached", row.lowestPriceCached],
+    ["lowestPriceCached", moneyStringToCents(row.lowestPriceCached)],
     ["lowestPriceCurrencyCached", row.lowestPriceCurrencyCached],
     ["earliestDepartureCached", row.earliestDepartureCached],
     ["latestDepartureCached", row.latestDepartureCached],
   ])
+}
+
+function moneyStringToCents(value: string | null | undefined): number | null {
+  if (!value) return null
+  const major = Number.parseFloat(value)
+  if (!Number.isFinite(major)) return null
+  return Math.round(major * 100)
 }
 
 /**

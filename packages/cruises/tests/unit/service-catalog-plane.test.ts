@@ -62,6 +62,7 @@ describe("cruiseRowToProjection", () => {
     expect(projection.get("countries[]")).toEqual(["Netherlands", "Switzerland"])
     expect(projection.get("highlights")).toEqual(["Cologne Cathedral", "Black Forest"])
     expect(projection.get("thumbnailUrl")).toBe("https://example.com/hero.jpg")
+    expect(projection.get("lowestPriceCached")).toBe(349900)
   })
 
   it("synthesizes owned provenance by default", () => {

@@ -62,11 +62,11 @@ export default async function CruisesPage() {
                   )}
                   <div className="card-footer">
                     <div>
-                      {cruise.lowestPrice ? (
+                      {cruise.lowestPriceCents != null ? (
                         <>
                           <span className="price">
                             {cruise.lowestPriceCurrency}{" "}
-                            {Number(cruise.lowestPrice).toLocaleString()}
+                            {(cruise.lowestPriceCents / 100).toLocaleString()}
                           </span>{" "}
                           <span className="price-unit">from / pp</span>
                         </>

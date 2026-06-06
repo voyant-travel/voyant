@@ -533,9 +533,10 @@ const CRUISE_FIELD_POLICY: FieldPolicyInput[] = [
   },
 
   // ── Volatile-indexed (browse-time approximations) ──────────────────────
-  // The cached lowest-price + departure window are explicit Tier 1 indexed
-  // price summaries (architecture §5.4.3). Refreshed on source freshness
-  // sync; quote-time price comes through volatile-live elsewhere.
+  // The cached lowest-price (integer minor units) + departure window are
+  // explicit Tier 1 indexed price summaries (architecture §5.4.3). Refreshed
+  // on source freshness sync; quote-time price comes through volatile-live
+  // elsewhere.
   {
     path: "lowestPriceCached",
     class: "volatile-indexed",

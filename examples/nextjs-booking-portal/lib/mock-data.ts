@@ -112,7 +112,7 @@ export const MOCK_CRUISES: readonly PublicCruiseSummary[] = [
     themes: ["Scenic", "Wildlife"],
     earliestDeparture: "2026-06-15",
     latestDeparture: "2026-09-21",
-    lowestPrice: "2999.00",
+    lowestPriceCents: 299900,
     lowestPriceCurrency: "USD",
     salesStatus: "open",
     heroImageUrl:
@@ -134,7 +134,7 @@ export const MOCK_CRUISES: readonly PublicCruiseSummary[] = [
     themes: ["Cultural", "Historic"],
     earliestDeparture: "2026-04-12",
     latestDeparture: "2026-10-25",
-    lowestPrice: "3450.00",
+    lowestPriceCents: 345000,
     lowestPriceCurrency: "EUR",
     salesStatus: "open",
     heroImageUrl:
@@ -156,7 +156,7 @@ export const MOCK_CRUISES: readonly PublicCruiseSummary[] = [
     themes: ["Polar", "Wildlife", "Photography"],
     earliestDeparture: "2026-11-20",
     latestDeparture: "2027-02-28",
-    lowestPrice: "12500.00",
+    lowestPriceCents: 1250000,
     lowestPriceCurrency: "USD",
     salesStatus: "open",
     heroImageUrl:

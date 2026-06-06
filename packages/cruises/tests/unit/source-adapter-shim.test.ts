@@ -38,6 +38,9 @@ function makeProjectionEntries(count: number): CruiseSearchProjectionEntry[] {
       ports: ["Athens"],
       countries: ["Greece"],
       themes: ["Cultural"],
+      departureCount: 1,
+      lowestPriceCents: 349900,
+      lowestPriceCurrency: "EUR",
       heroImageUrl: `https://cdn/c${i}.jpg`,
       salesStatus: "open",
     })
@@ -215,6 +218,9 @@ describe("cruiseAdapterToSourceAdapter.discover", () => {
     expect(page.projections[0]?.fields.heroImageUrl).toBe("https://cdn/c0.jpg")
     expect(page.projections[0]?.fields.thumbnailUrl).toBe("https://cdn/c0.jpg")
     expect(page.projections[0]?.fields.status).toBe("open")
+    expect(page.projections[0]?.fields.lowestPriceCached).toBe(349900)
+    expect(page.projections[0]?.fields.lowestPriceCurrencyCached).toBe("EUR")
+    expect(page.projections[0]?.fields.departureCount).toBe(1)
     expect(page.projections[0]?.fields["source.kind"]).toBe("cruise:stub")
     expect(page.projections[0]?.fields.region_ids).toEqual(["region:mediterranean"])
     expect(page.projections[0]?.fields.waterway_ids).toEqual(["sea:aegean"])

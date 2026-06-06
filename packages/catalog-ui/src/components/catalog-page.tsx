@@ -892,11 +892,10 @@ function makeCruiseCard(
 ): CatalogCardConfig {
   return {
     // The cruise index carries the picture as `thumbnailUrl` and the "from"
-    // price as `lowestPriceCached` (major currency units, e.g. "5898.00").
+    // price as `lowestPriceCached` (integer cents).
     imageField: "thumbnailUrl",
     priceAmountField: "lowestPriceCached",
     priceCurrencyField: "lowestPriceCurrencyCached",
-    priceUnit: "major",
     subtitle: locationSubtitle,
     meta: (fields) => nightsMeta(fields, messages),
     // Next departure + how many sailings — sourced from the per-cruise sailing

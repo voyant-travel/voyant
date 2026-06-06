@@ -37,7 +37,7 @@ export interface CatalogCardConfig {
   priceCurrencyField?: string | string[]
   /**
    * Whether the amount field holds integer minor units (cents, the default) or
-   * major currency units. Cruises cache `lowestPriceCached` in major units.
+   * major currency units.
    */
   priceUnit?: "minor" | "major"
   /** Secondary line under the title — typically location (e.g. "Spain · Palma"). */

@@ -54,8 +54,6 @@ export function formatHitPrice(
   const amount = numberField(hit, amountField)
   const currency = stringField(hit, currencyField, null)
   if (amount == null || !currency) return null
-  // Most verticals index integer cents (`*AmountCents`); cruises cache the
-  // "from" price in major currency units (`lowestPriceCached` = "5898.00").
   const major = unit === "major" ? amount : amount / 100
   return new Intl.NumberFormat(undefined, {
     style: "currency",

@@ -45,7 +45,7 @@ export interface StorefrontListFilters {
   theme?: string | undefined
   dateFrom?: string | undefined
   dateTo?: string | undefined
-  priceMax?: number | undefined
+  priceMaxCents?: number | undefined
   source?: "local" | "external" | undefined
   search?: string | undefined
   limit?: number | undefined
