@@ -1,6 +1,7 @@
 import {
   type ApServiceType,
   type SupplierCostAllocationInput,
+  type SupplierCostAllocationRecord,
   type SupplierInvoiceLineInput,
   type SupplierInvoiceLineRecord,
   type SupplierInvoiceStatus,
@@ -95,36 +96,35 @@ const SERVICE_TYPES: ApServiceType[] = [
 
 const PAYMENT_METHODS = ["bank_transfer", "credit_card", "cash", "cheque", "other"] as const
 
-interface AllocationDraft {
-  key: string
-  targetType: TargetType
-  targetId: string
-  amountMajor: string
-}
-
-let allocationRowSeq = 0
-function newAllocationKey(): string {
-  allocationRowSeq += 1
-  return `alloc-${allocationRowSeq}`
-}
-
 function toCents(major: string): number {
   const n = Number.parseFloat(major)
   return Number.isFinite(n) ? Math.round(n * 100) : 0
 }
 
-function targetIdFor(draft: AllocationDraft): Partial<SupplierCostAllocationInput> {
-  switch (draft.targetType) {
+function targetIdFor(
+  targetType: TargetType,
+  targetId: string,
+): Partial<SupplierCostAllocationInput> {
+  switch (targetType) {
     case "departure":
-      return { departureId: draft.targetId }
+      return { departureId: targetId }
     case "product":
-      return { productId: draft.targetId }
+      return { productId: targetId }
     case "booking":
-      return { bookingId: draft.targetId }
+      return { bookingId: targetId }
     case "traveler":
-      return { travelerId: draft.targetId }
+      return { travelerId: targetId }
     default:
       return {}
+  }
+}
+
+function allocationToInput(a: SupplierCostAllocationRecord): SupplierCostAllocationInput {
+  return {
+    targetType: a.targetType,
+    amountCents: a.amountCents,
+    splitMethod: a.splitMethod,
+    ...targetIdFor(a.targetType, a.departureId ?? a.productId ?? a.bookingId ?? a.travelerId ?? ""),
   }
 }
 
@@ -194,52 +194,37 @@ export function SupplierInvoiceDetailPage({
   const invoice = data?.data ?? null
   const currency = invoice?.currency ?? ""
 
-  const [drafts, setDrafts] = useState<AllocationDraft[] | null>(null)
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [lineDialog, setLineDialog] = useState<{ line: SupplierInvoiceLineRecord | null } | null>(
     null,
   )
+  const [allocationDialog, setAllocationDialog] = useState<{
+    allocation: SupplierCostAllocationRecord | null
+  } | null>(null)
   const [paymentOpen, setPaymentOpen] = useState(false)
 
   if (isPending) return <div className="p-6 text-muted-foreground">{t.loading}</div>
   if (isError || !invoice) return <div className="p-6 text-destructive">{t.notFound}</div>
 
-  const rows: AllocationDraft[] =
-    drafts ??
-    invoice.allocations
-      .filter((a) => a.supplierInvoiceLineId == null)
-      .map((a) => ({
-        key: a.id,
-        targetType: a.targetType,
-        targetId: a.departureId ?? a.productId ?? a.bookingId ?? a.travelerId ?? "",
-        amountMajor: (a.amountCents / 100).toFixed(2),
-      }))
-
-  const allocatedCents = rows.reduce((sum, r) => sum + toCents(r.amountMajor), 0)
+  // Whole-invoice allocations (per-line allocation is a future mode).
+  const allocationList = invoice.allocations.filter((a) => a.supplierInvoiceLineId == null)
+  const allocatedCents = allocationList.reduce((sum, a) => sum + a.amountCents, 0)
   const remainderCents = invoice.totalCents - allocatedCents
   const overAllocated = remainderCents < 0
 
-  const setRows = (next: AllocationDraft[]) => setDrafts(next)
-  const updateRow = (index: number, patch: Partial<AllocationDraft>) =>
-    setRows(rows.map((r, i) => (i === index ? { ...r, ...patch } : r)))
-
-  const saveAllocations = () => {
-    const allocations: SupplierCostAllocationInput[] = rows
-      .filter((r) => toCents(r.amountMajor) !== 0)
-      .map((r) => ({
-        targetType: r.targetType,
-        amountCents: toCents(r.amountMajor),
-        splitMethod: "manual",
-        ...targetIdFor(r),
-      }))
-    setAllocations.mutate({ id, allocations })
-  }
-
-  // Lines are edited via the full-replace setLines mutation.
+  // Lines + allocations are edited via the full-replace mutations.
   const persistLines = (lines: SupplierInvoiceLineInput[]) => setLines.mutate({ id, lines })
   const removeLine = (lineId: string) =>
     persistLines(invoice.lines.filter((l) => l.id !== lineId).map(lineToInput))
+
+  const persistAllocations = (allocations: SupplierCostAllocationInput[]) =>
+    setAllocations.mutate({ id, allocations })
+  const removeAllocation = (allocationId: string) =>
+    persistAllocations(allocationList.filter((a) => a.id !== allocationId).map(allocationToInput))
+
+  const allocationTargetId = (a: SupplierCostAllocationRecord) =>
+    a.departureId ?? a.productId ?? a.bookingId ?? a.travelerId ?? ""
 
   const methodLabel = (method: string) =>
     (t.payments.methodLabels as Record<string, string>)[method] ?? method
@@ -410,83 +395,71 @@ export function SupplierInvoiceDetailPage({
         </CardContent>
       </Card>
 
-      {/* Allocation editor */}
+      {/* Cost allocation */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">{t.allocation.title}</CardTitle>
           <Button
             variant="outline"
             size="sm"
-            onClick={() =>
-              setRows([
-                ...rows,
-                { key: newAllocationKey(), targetType: "departure", targetId: "", amountMajor: "" },
-              ])
-            }
+            onClick={() => setAllocationDialog({ allocation: null })}
           >
             <Plus className="size-4" />
             {t.allocation.add}
           </Button>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
-          {rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t.allocation.none}</p>
-          ) : (
-            rows.map((row, index) => (
-              <div key={row.key} className="flex flex-wrap items-end gap-2">
-                <div className="w-40">
-                  <Label>{t.allocation.target}</Label>
-                  <Select
-                    value={row.targetType}
-                    onValueChange={(value) =>
-                      updateRow(index, { targetType: (value as TargetType) ?? "departure" })
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TARGET_TYPES.map((value) => (
-                        <SelectItem key={value} value={value}>
-                          {t.allocation.targetTypeLabels[value]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {row.targetType !== "unattributed" ? (
-                  <div className="flex-1 min-w-48">
-                    <Label>
-                      {formatMessage(t.allocation.idLabel, {
-                        type: t.allocation.targetTypeLabels[row.targetType],
-                      })}
-                    </Label>
-                    <Input
-                      value={row.targetId}
-                      onChange={(event) => updateRow(index, { targetId: event.target.value })}
-                    />
-                  </div>
-                ) : null}
-                <div className="w-32">
-                  <Label>{formatMessage(t.allocation.amountLabel, { currency })}</Label>
-                  <Input
-                    inputMode="decimal"
-                    value={row.amountMajor}
-                    onChange={(event) => updateRow(index, { amountMajor: event.target.value })}
-                  />
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setRows(rows.filter((_, i) => i !== index))}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-            ))
-          )}
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t.allocation.target}</TableHead>
+                <TableHead>{formatMessage(t.allocation.idLabel, { type: "" }).trim()}</TableHead>
+                <TableHead className="text-right">{t.payments.amount}</TableHead>
+                <TableHead className="w-20" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {allocationList.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                    {t.allocation.none}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                allocationList.map((allocation) => (
+                  <TableRow key={allocation.id}>
+                    <TableCell>{t.allocation.targetTypeLabels[allocation.targetType]}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {allocationTargetId(allocation) || "—"}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatInvoiceAmount(allocation.amountCents, currency)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setAllocationDialog({ allocation })}
+                        aria-label={t.actions.edit}
+                      >
+                        <Pencil className="size-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeAllocation(allocation.id)}
+                        aria-label={t.lines.remove}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
 
-          <div className="flex items-center justify-between border-t pt-3 text-sm">
+          <div className="border-t pt-3 text-sm">
             <span className={cn("text-muted-foreground", overAllocated && "text-destructive")}>
               {overAllocated
                 ? formatMessage(t.allocation.overAllocated, {
@@ -496,19 +469,7 @@ export function SupplierInvoiceDetailPage({
                     amount: formatInvoiceAmount(remainderCents, currency),
                   })}
             </span>
-            <Button
-              size="sm"
-              disabled={overAllocated || setAllocations.isPending}
-              onClick={saveAllocations}
-            >
-              {setAllocations.isPending ? t.allocation.saving : t.allocation.save}
-            </Button>
           </div>
-          {setAllocations.isError ? (
-            <p className="text-sm text-destructive">
-              {(setAllocations.error as Error)?.message ?? t.allocation.saveFailed}
-            </p>
-          ) : null}
         </CardContent>
       </Card>
 
@@ -651,6 +612,24 @@ export function SupplierInvoiceDetailPage({
         }}
       />
 
+      <AllocationDialog
+        open={allocationDialog != null}
+        allocation={allocationDialog?.allocation ?? null}
+        currency={currency}
+        pending={setAllocations.isPending}
+        onOpenChange={(open) =>
+          setAllocationDialog(open ? (allocationDialog ?? { allocation: null }) : null)
+        }
+        onSubmit={(input) => {
+          const editing = allocationDialog?.allocation
+          const next = editing
+            ? allocationList.map((a) => (a.id === editing.id ? input : allocationToInput(a)))
+            : [...allocationList.map(allocationToInput), input]
+          persistAllocations(next)
+          setAllocationDialog(null)
+        }}
+      />
+
       <PaymentDialog
         open={paymentOpen}
         currency={currency}
@@ -788,6 +767,105 @@ function LineDialog({
         <DialogFooter>
           <Button type="button" disabled={!description.trim() || pending} onClick={submit}>
             {t.save}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ---------- allocation dialog ----------
+
+function AllocationDialog({
+  open,
+  allocation,
+  currency,
+  pending,
+  onOpenChange,
+  onSubmit,
+}: {
+  open: boolean
+  allocation: SupplierCostAllocationRecord | null
+  currency: string
+  pending: boolean
+  onOpenChange: (open: boolean) => void
+  onSubmit: (input: SupplierCostAllocationInput) => void
+}) {
+  const t = useFinanceUiMessagesOrDefault().supplierInvoiceDetail.allocation
+  const [targetType, setTargetType] = useState<TargetType>("departure")
+  const [targetId, setTargetId] = useState("")
+  const [amount, setAmount] = useState("")
+
+  const seedKey = open ? (allocation?.id ?? "new") : "closed"
+  const [seeded, setSeeded] = useState("closed")
+  if (seedKey !== seeded) {
+    setSeeded(seedKey)
+    setTargetType(allocation?.targetType ?? "departure")
+    setTargetId(
+      allocation
+        ? (allocation.departureId ??
+            allocation.productId ??
+            allocation.bookingId ??
+            allocation.travelerId ??
+            "")
+        : "",
+    )
+    setAmount(allocation ? (allocation.amountCents / 100).toFixed(2) : "")
+  }
+
+  const submit = () => {
+    if (!amount) return
+    onSubmit({
+      targetType,
+      amountCents: toCents(amount),
+      splitMethod: "manual",
+      ...targetIdFor(targetType, targetId.trim()),
+    })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t.add}</DialogTitle>
+        </DialogHeader>
+        <DialogBody className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-2">
+            <Label>{t.target}</Label>
+            <Select
+              value={targetType}
+              onValueChange={(v) => setTargetType((v as TargetType) ?? "departure")}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TARGET_TYPES.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {t.targetTypeLabels[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label>{formatMessage(t.amountLabel, { currency })}</Label>
+            <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          </div>
+          {targetType !== "unattributed" ? (
+            <div className="col-span-2 flex flex-col gap-2">
+              <Label>{formatMessage(t.idLabel, { type: t.targetTypeLabels[targetType] })}</Label>
+              <Input value={targetId} onChange={(e) => setTargetId(e.target.value)} />
+            </div>
+          ) : null}
+        </DialogBody>
+        <DialogFooter>
+          <Button
+            type="button"
+            disabled={!amount || (targetType !== "unattributed" && !targetId.trim()) || pending}
+            onClick={submit}
+          >
+            {pending ? t.saving : t.save}
           </Button>
         </DialogFooter>
       </DialogContent>
