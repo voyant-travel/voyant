@@ -159,6 +159,8 @@ export const financeUiRo = {
   },
   supplierInvoicesPage: {
     title: "Facturi furnizori",
+    description:
+      "Facturi primite de la furnizori (transport, zboruri, ghizi, …) si alocarile lor de cost.",
     recordInvoice: "Inregistreaza factura furnizor",
     searchPlaceholder: "Cauta dupa numar factura, referinta, note...",
     statusAll: "Toate statusurile",

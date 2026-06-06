@@ -306,6 +306,7 @@ export type FinanceUiMessages = {
   }
   supplierInvoicesPage: {
     title: string
+    description: string
     recordInvoice: string
     searchPlaceholder: string
     statusAll: string

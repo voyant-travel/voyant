@@ -186,7 +186,7 @@ export function SupplierInvoiceDetailPage({
   const payments = paymentsQuery.data?.data ?? []
 
   return (
-    <div className={cn("flex flex-col gap-4", className)}>
+    <div className={cn("flex flex-col gap-6 p-6", className)}>
       {/* Header */}
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-2">

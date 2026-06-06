@@ -107,9 +107,12 @@ export function SupplierInvoicesPage({
   }
 
   return (
-    <div className={cn("flex flex-col gap-4", className)}>
+    <div className={cn("flex flex-col gap-6 p-6", className)}>
       <div className="flex items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">{t.title}</h1>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
+          <p className="text-sm text-muted-foreground">{t.description}</p>
+        </div>
         {onRecordSupplierInvoice ? (
           <Button onClick={onRecordSupplierInvoice}>
             <Plus className="size-4" />

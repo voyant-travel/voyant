@@ -157,6 +157,8 @@ export const financeUiEn = {
   },
   supplierInvoicesPage: {
     title: "Supplier invoices",
+    description:
+      "Invoices received from suppliers (transport, flights, guides, …) and their cost allocations.",
     recordInvoice: "Record supplier invoice",
     searchPlaceholder: "Search invoice no, reference, notes...",
     statusAll: "All statuses",
