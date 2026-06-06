@@ -1,6 +1,6 @@
 import { productsService } from "@voyantjs/products"
-import { products } from "@voyantjs/products/schema"
-import { eq, sql } from "drizzle-orm"
+import { optionUnits, productOptions, products } from "@voyantjs/products/schema"
+import { eq, inArray, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type CloneContext, copyProductContent, withoutSystemColumns } from "./clone-content.js"
 import { copyPricingAndAvailability } from "./clone-pricing.js"
@@ -39,6 +39,38 @@ export type CloneProductOutcome =
 
 function copyName(name: string) {
   return `${name} (Copy)`
+}
+
+/**
+ * Reads a product's options + units back into the {@link ClonedOption} shape.
+ * Used to reconstruct the result for an idempotent retry, so a re-sent clone
+ * returns the same option/unit ids a fresh response would (the agent needs them
+ * to continue authoring after the exact lost-response case idempotency covers).
+ */
+async function loadClonedOptions(
+  tx: PostgresJsDatabase,
+  productId: string,
+): Promise<ClonedOption[]> {
+  const optionRows = await tx
+    .select({ id: productOptions.id })
+    .from(productOptions)
+    .where(eq(productOptions.productId, productId))
+  if (optionRows.length === 0) return []
+
+  const unitRows = await tx
+    .select({ id: optionUnits.id, optionId: optionUnits.optionId })
+    .from(optionUnits)
+    .where(
+      inArray(
+        optionUnits.optionId,
+        optionRows.map((o) => o.id),
+      ),
+    )
+
+  return optionRows.map((o) => ({
+    id: o.id,
+    units: unitRows.filter((u) => u.optionId === o.id).map((u) => ({ id: u.id })),
+  }))
 }
 
 function newContext(
@@ -149,7 +181,9 @@ export async function cloneProduct(
           .from(products)
           .where(eq(products.id, prev.productId))
           .limit(1)
-        if (product) return { product, options: [] as ClonedOption[], reused: true }
+        if (product) {
+          return { product, options: await loadClonedOptions(tx, product.id), reused: true }
+        }
       }
     }
 

@@ -74,7 +74,9 @@
     "requiresSchemas": [
       "@voyantjs/db",
       "@voyantjs/products",
-      "@voyantjs/pricing"
+      "@voyantjs/pricing",
+      "@voyantjs/availability",
+      "@voyantjs/extras"
     ]
   }
 }
