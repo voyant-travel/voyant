@@ -1,5 +1,11 @@
 # @voyantjs/ui
 
+## 0.104.2
+
+### Patch Changes
+
+- 22ff914: Consolidate the richer DatePicker and DateRangePicker API in the shared UI package and use it for product departure and CRM document dates.
+
 ## 0.104.1
 
 ### Patch Changes
