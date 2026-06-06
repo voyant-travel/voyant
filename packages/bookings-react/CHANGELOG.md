@@ -1,5 +1,12 @@
 # @voyantjs/bookings-react
 
+## 0.104.2
+
+### Patch Changes
+
+- 75a6336: Add an overridable duplicate guard for booking create requests.
+  - @voyantjs/bookings@0.104.2
+
 ## 0.104.1
 
 ### Patch Changes
