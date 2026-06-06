@@ -1,5 +1,11 @@
 # @voyantjs/catalog
 
+## 0.104.3
+
+### Patch Changes
+
+- 5c467ab: Map `departure-asc` catalog search sorting to `nextDepartureDate` before falling back to timestamp fields.
+
 ## 0.104.2
 
 ## 0.104.1
