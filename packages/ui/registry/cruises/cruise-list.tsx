@@ -18,7 +18,7 @@ export interface CruiseListProps extends React.HTMLAttributes<HTMLDivElement> {
 /**
  * Connected cruise list — calls `useStorefrontCruises` and renders a card
  * grid. Pass `filters` to scope the query (cruiseType, region, dateFrom,
- * priceMax, etc.). Empty/loading states are overrideable.
+ * priceMaxCents, etc.). Empty/loading states are overrideable.
  */
 export function CruiseList({
   filters = {},

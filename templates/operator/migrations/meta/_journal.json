@@ -386,6 +386,13 @@
 			"when": 1780142200000,
 			"tag": "0055_notification_reminder_rule_authoring_requests",
 			"breakpoints": true
+		},
+		{
+			"idx": 54,
+			"version": "7",
+			"when": 1780142300000,
+			"tag": "0056_cruise_search_index_cents_departures",
+			"breakpoints": true
 		}
 	]
 }

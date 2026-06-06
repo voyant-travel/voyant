@@ -82,7 +82,7 @@ export const publicCruiseSummarySchema = z.object({
   themes: z.array(z.string()).default([]),
   earliestDeparture: z.string().nullable(),
   latestDeparture: z.string().nullable(),
-  lowestPrice: z.string().nullable(),
+  lowestPriceCents: z.number().int().nullable(),
   lowestPriceCurrency: z.string().nullable(),
   salesStatus: z.string().nullable(),
   heroImageUrl: z.string().nullable(),

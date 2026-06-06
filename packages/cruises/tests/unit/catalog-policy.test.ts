@@ -61,6 +61,7 @@ describe("cruiseCatalogPolicy", () => {
     const registry = createFieldPolicyRegistry(cruiseCatalogPolicy)
     expect(registry.byPath.get("lowestPriceCached")?.class).toBe("volatile-indexed")
     expect(registry.byPath.get("lowestPriceCurrencyCached")?.class).toBe("volatile-indexed")
+    expect(registry.byPath.get("lowestPriceUnit")?.class).toBe("volatile-indexed")
     expect(registry.byPath.get("earliestDepartureCached")?.class).toBe("volatile-indexed")
     expect(registry.byPath.get("latestDepartureCached")?.class).toBe("volatile-indexed")
   })

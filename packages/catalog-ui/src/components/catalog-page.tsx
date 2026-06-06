@@ -23,6 +23,8 @@ import {
   asStringArray,
   formatHitPrice,
   numberField,
+  type PriceUnit,
+  resolveHitPriceUnit,
   stringField,
 } from "./catalog-hit.js"
 import {
@@ -396,6 +398,7 @@ function makeCruiseColumns(
       messages.columns.price,
       messages,
       "major",
+      "lowestPriceUnit",
     ),
   ]
 }
@@ -788,13 +791,15 @@ function priceColumn(
   currencyField: string,
   header: string,
   messages: CatalogPageMessages,
-  unit: "minor" | "major" = "minor",
+  unit: PriceUnit = "minor",
+  unitField?: string,
 ): ColumnDef<CatalogSearchHit, unknown> {
   return {
     id: amountField,
     header,
     cell: ({ row }) => {
-      const formatted = formatHitPrice(row.original, amountField, currencyField, unit)
+      const resolvedUnit = resolveHitPriceUnit(row.original, unit, unitField)
+      const formatted = formatHitPrice(row.original, amountField, currencyField, resolvedUnit)
       return (
         <span className="font-medium">
           {formatted ?? <span className="text-muted-foreground">{messages.values.empty}</span>}
@@ -891,12 +896,13 @@ function makeCruiseCard(
   messages: CatalogPageMessages,
 ): CatalogCardConfig {
   return {
-    // The cruise index carries the picture as `thumbnailUrl` and the "from"
-    // price as `lowestPriceCached` (major currency units, e.g. "5898.00").
+    // Newly indexed cruise docs declare `lowestPriceUnit: "minor"`; legacy
+    // docs without that field stored `lowestPriceCached` as major units.
     imageField: "thumbnailUrl",
     priceAmountField: "lowestPriceCached",
     priceCurrencyField: "lowestPriceCurrencyCached",
     priceUnit: "major",
+    priceUnitField: "lowestPriceUnit",
     subtitle: locationSubtitle,
     meta: (fields) => nightsMeta(fields, messages),
     // Next departure + how many sailings — sourced from the per-cruise sailing

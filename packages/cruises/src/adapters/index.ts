@@ -247,7 +247,7 @@ export type CruiseSearchProjectionEntry = {
   departureMonths?: string[] | null
   /** Total number of sailings (departures) the cruise has. */
   departureCount?: number | null
-  lowestPrice?: string | null
+  lowestPriceCents?: number | null
   lowestPriceCurrency?: string | null
   salesStatus?: string | null
   heroImageUrl?: string | null
@@ -264,7 +264,8 @@ export type ExternalCruiseSummary = {
   shipName?: string
   nights: number
   earliestDeparture?: string | null
-  lowestPrice?: string | null
+  departureCount?: number | null
+  lowestPriceCents?: number | null
   lowestPriceCurrency?: string | null
   heroImageUrl?: string | null
 }

@@ -473,8 +473,9 @@ function toCatalogProjection(
       themes: entry.themes ?? [],
       // Browse-time price + departure-window hints (Tier-1 indexed summaries;
       // quote-time price is volatile-live and resolved elsewhere).
-      lowestPriceCached: entry.lowestPrice ?? null,
+      lowestPriceCached: entry.lowestPriceCents ?? null,
       lowestPriceCurrencyCached: entry.lowestPriceCurrency ?? null,
+      lowestPriceUnit: "minor",
       earliestDepartureCached: entry.earliestDeparture ?? null,
       latestDepartureCached: entry.latestDeparture ?? null,
       // Departure month facet + count — populated by the source enrichment

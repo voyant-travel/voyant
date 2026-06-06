@@ -590,6 +590,22 @@ export const cruiseAdminRoutes = new Hono<Env>()
     })
     return c.json({ data: days })
   })
+  .get("/sailings/:key/pricing", async (c) => {
+    const parsed = parseUnifiedKey(c.req.param("key"))
+    if (parsed.kind === "invalid") return c.json(invalidKey(parsed.raw), 400)
+    if (parsed.kind === "external") {
+      const ext = resolveExternal(parsed)
+      if (!ext) return c.json(adapterNotRegistered(parsed.provider), 501)
+      const prices = await ext.adapter.fetchSailingPricing(ext.sourceRef)
+      return c.json({ data: prices })
+    }
+    const result = await cruisesService.listPrices(c.get("db"), {
+      sailingId: parsed.id,
+      limit: 100,
+      offset: 0,
+    })
+    return c.json(result)
+  })
   .put("/sailings/:key/pricing/bulk", async (c) => {
     const parsed = parseUnifiedKey(c.req.param("key"))
     if (parsed.kind === "external") return c.json({ error: "external_cruise_read_only" }, 409)

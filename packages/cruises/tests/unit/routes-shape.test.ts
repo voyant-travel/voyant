@@ -225,7 +225,8 @@ describe("admin routes — search index bulk", () => {
       themes: ["culture"],
       earliestDeparture: "2026-07-01",
       latestDeparture: "2026-07-08",
-      lowestPrice: "1200.00",
+      departureCount: 1,
+      lowestPriceCents: 120000,
       lowestPriceCurrency: "EUR",
       salesStatus: "open",
       heroImageUrl: "https://example.com/cruises/danube.jpg",
@@ -250,6 +251,8 @@ describe("admin routes — search index bulk", () => {
           waterways: entry.waterways,
           ports: entry.ports,
           countries: entry.countries,
+          departureCount: entry.departureCount,
+          lowestPriceCents: entry.lowestPriceCents,
         }),
       ]),
     )
@@ -405,6 +408,27 @@ describe("admin routes — external dispatch via registered adapter", () => {
     }
     expect(body.data.pricing).toHaveLength(1)
     expect(body.data.itinerary).toHaveLength(1)
+  })
+
+  it("GET /sailings/:key/pricing returns external sailing pricing", async () => {
+    const adapter = new MockCruiseAdapter({ name: "voyant-connect" })
+    adapter.addCruise(seedCruise, [seedSailing])
+    adapter.setSailingPricing(seedSailing.sourceRef, [
+      {
+        cabinCategoryRef: { externalId: "cat-A" },
+        occupancy: 2,
+        currency: "USD",
+        pricePerPerson: "1500.00",
+        availability: "available",
+      },
+    ])
+    registerCruiseAdapter(adapter)
+    const app = mountTestApp(cruiseAdminRoutes, { db: undefined })
+
+    const res = await app.request("/sailings/voyant-connect:ext-sl-1/pricing")
+    const body = (await res.json()) as { data: unknown[] }
+    expect(res.status).toBe(200)
+    expect(body.data).toHaveLength(1)
   })
 
   // POST /:key/refresh happy-path coverage moves to routes-content

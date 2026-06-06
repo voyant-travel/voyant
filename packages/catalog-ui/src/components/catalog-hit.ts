@@ -1,5 +1,7 @@
 import type { CatalogSearchHit } from "@voyantjs/catalog-react"
 
+export type PriceUnit = "minor" | "major"
+
 /**
  * Field-access helpers shared between the catalog table columns
  * (`catalog-page`) and the merchandising card (`catalog-card`). A search hit
@@ -49,17 +51,24 @@ export function formatHitPrice(
   hit: CatalogSearchHit,
   amountField: string,
   currencyField: string,
-  unit: "minor" | "major" = "minor",
+  unit: PriceUnit = "minor",
 ): string | null {
   const amount = numberField(hit, amountField)
   const currency = stringField(hit, currencyField, null)
   if (amount == null || !currency) return null
-  // Most verticals index integer cents (`*AmountCents`); cruises cache the
-  // "from" price in major currency units (`lowestPriceCached` = "5898.00").
   const major = unit === "major" ? amount : amount / 100
   return new Intl.NumberFormat(undefined, {
     style: "currency",
     currency,
     maximumFractionDigits: 0,
   }).format(major)
+}
+
+export function resolveHitPriceUnit(
+  hit: CatalogSearchHit,
+  fallback: PriceUnit = "minor",
+  unitField?: string,
+): PriceUnit {
+  const value = unitField ? hit.document.fields[unitField] : null
+  return value === "minor" || value === "major" ? value : fallback
 }
