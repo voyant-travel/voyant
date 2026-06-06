@@ -538,6 +538,38 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     expect(bookingRows).toHaveLength(2)
   })
 
+  it("ignores expired bookings when checking duplicates", async () => {
+    const { productId, optionId } = await seedProduct()
+    const slot = await seedSlot({ productId, optionId })
+
+    const first = await createBooking(db, {
+      productId,
+      optionId,
+      slotId: slot.id,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+    })
+    expect(first.status).toBe("ok")
+    if (first.status !== "ok") return
+
+    await db
+      .update(bookings)
+      .set({ status: "expired" })
+      .where(eq(bookings.id, first.result.booking.id))
+
+    const second = await createBooking(db, {
+      productId,
+      optionId,
+      slotId: slot.id,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+    })
+
+    expect(second.status).toBe("ok")
+    const bookingRows = await db.select().from(bookings)
+    expect(bookingRows).toHaveLength(2)
+  })
+
   it("rejects payment schedules in a currency different from booking sell currency", async () => {
     const { productId } = await seedProduct()
 
