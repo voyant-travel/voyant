@@ -60,7 +60,7 @@ type LedgerContext = Parameters<typeof appendProductMutationLedgerEntry>[0]
  * reused idempotent response created nothing new).
  */
 async function recordAuthoring(
-  // biome-ignore lint/suspicious/noExplicitAny: bridges this extension's Env to products' ledger context
+  // biome-ignore lint/suspicious/noExplicitAny: bridges this extension's Env to products' ledger Context<Env> (#1493); cast to LedgerContext below
   c: Context<any>,
   action: ProductLedgerMutationAction,
   productId: string,
