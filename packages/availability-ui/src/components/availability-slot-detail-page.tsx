@@ -16,6 +16,8 @@ import {
   getSlotPickupsQueryOptions,
   getSlotQueryOptions,
   getSlotResourcesQueryOptions,
+  slotLocalEnd,
+  slotLocalStart,
   slotStatusTone,
   useAvailabilitySlotMutation,
   useSlotAllocationAuditLog,
@@ -267,7 +269,7 @@ export function AvailabilitySlotDetailPage({
 
   const productName = productQuery.data?.data.name ?? null
   const productTypeName = productQuery.data?.data.productType?.name ?? null
-  const dateRangeLabel = formatSlotDateRange(slot, i18n.formatDateTime)
+  const dateRangeLabel = formatSlotDateRange(slot)
   const nightsLabel = computeSlotNightsLabel(slot, detailMessages.duration)
   const titleText = productName ?? dateRangeLabel
   const flagBadges = [
@@ -776,7 +778,7 @@ function MetaTab({
     {
       label: msg.endsAtLabel,
       value: slot.endsAt ? (
-        msg.format(slot.endsAt)
+        formatSlotLocalDateTime(slotLocalEnd(slot) ?? slotLocalStart(slot))
       ) : (
         <span className="text-muted-foreground">{msg.noValue}</span>
       ),
@@ -830,13 +832,19 @@ function MetaTab({
   )
 }
 
-function formatSlotDateRange(
-  slot: { dateLocal: string; startsAt: string; endsAt: string | null },
-  format: (value: string | Date) => string,
-): string {
-  const start = format(slot.startsAt)
+function formatSlotDateRange(slot: {
+  dateLocal: string
+  startsAt: string
+  endsAt: string | null
+  timezone: string
+}): string {
+  const start = formatSlotLocalDateTime(slotLocalStart(slot))
   if (!slot.endsAt) return start
-  return `${start} → ${format(slot.endsAt)}`
+  return `${start} → ${formatSlotLocalDateTime(slotLocalEnd(slot) ?? slotLocalStart(slot))}`
+}
+
+function formatSlotLocalDateTime(value: { date: string; time: string }) {
+  return `${value.date} ${value.time}`
 }
 
 function computeSlotNightsLabel(

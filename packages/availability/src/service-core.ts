@@ -5,6 +5,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { AVAILABILITY_SLOT_CHANGED_EVENT, type AvailabilitySlotChangedEvent } from "./events.js"
 import { productsRef } from "./products-ref.js"
 import {
+  type AvailabilitySlot,
   availabilityCloseouts,
   availabilityRules,
   availabilitySlots,
@@ -25,6 +26,21 @@ import type {
   UpdateAvailabilityStartTimeInput,
 } from "./service-shared.js"
 import { paginate, toDateOrNull } from "./service-shared.js"
+import { slotEndDateLocal } from "./slot-timezone.js"
+
+type AvailabilitySlotWithEndDateLocal = AvailabilitySlot & {
+  productName?: string | null
+  endDateLocal: string | null
+}
+
+function withSlotEndDateLocal<TSlot extends AvailabilitySlot & { productName?: string | null }>(
+  slot: TSlot,
+): TSlot & { endDateLocal: string | null } {
+  return {
+    ...slot,
+    endDateLocal: slotEndDateLocal(slot),
+  }
+}
 
 export async function listRules(db: PostgresJsDatabase, query: AvailabilityRuleListQuery) {
   const conditions = []
@@ -164,7 +180,7 @@ export async function listSlots(db: PostgresJsDatabase, query: AvailabilitySlotL
   if (query.status) conditions.push(eq(availabilitySlots.status, query.status))
   const where = conditions.length ? and(...conditions) : undefined
 
-  return paginate(
+  const page = await paginate(
     db
       .select({ ...getTableColumns(availabilitySlots), productName: productsRef.name })
       .from(availabilitySlots)
@@ -177,6 +193,10 @@ export async function listSlots(db: PostgresJsDatabase, query: AvailabilitySlotL
     query.limit,
     query.offset,
   )
+  return {
+    ...page,
+    data: page.data.map((slot): AvailabilitySlotWithEndDateLocal => withSlotEndDateLocal(slot)),
+  }
 }
 
 export async function getSlotById(db: PostgresJsDatabase, id: string) {
@@ -185,7 +205,7 @@ export async function getSlotById(db: PostgresJsDatabase, id: string) {
     .from(availabilitySlots)
     .where(eq(availabilitySlots.id, id))
     .limit(1)
-  return row ?? null
+  return row ? withSlotEndDateLocal(row) : null
 }
 
 export interface SlotMutationRuntime {
@@ -249,7 +269,7 @@ export async function createSlot(
     })
   }
 
-  return row
+  return withSlotEndDateLocal(row)
 }
 
 export async function updateSlot(
@@ -325,7 +345,7 @@ export async function updateSlot(
     })
   }
 
-  return row
+  return withSlotEndDateLocal(row)
 }
 
 export async function deleteSlot(

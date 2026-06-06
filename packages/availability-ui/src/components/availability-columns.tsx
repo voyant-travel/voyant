@@ -7,9 +7,10 @@ import {
   type AvailabilityRuleRow,
   type AvailabilitySlotRow,
   type AvailabilityStartTimeRow,
-  formatDateTime,
   type ProductOption,
   productNameById,
+  slotLocalEnd,
+  slotLocalStart,
   slotStatusTone,
 } from "@voyantjs/availability-react"
 import { Badge, Button } from "@voyantjs/ui/components"
@@ -67,6 +68,10 @@ export function getSlotStatusLabel(
     case "cancelled":
       return messages.statusCancelled
   }
+}
+
+function formatSlotLocalDateTime(value: { date: string; time: string }) {
+  return `${value.date} ${value.time}`
 }
 
 function ViewButton({ label, onClick }: { label: string; onClick: () => void }) {
@@ -215,13 +220,15 @@ export const availabilitySlotColumns = (
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={messages.startsAtLabel} />
     ),
-    cell: ({ row }) => formatDateTime(row.original.startsAt),
+    cell: ({ row }) => formatSlotLocalDateTime(slotLocalStart(row.original)),
   },
   {
     accessorKey: "endsAt",
     header: ({ column }) => <DataTableColumnHeader column={column} title={messages.endsAtLabel} />,
     cell: ({ row }) =>
-      row.original.endsAt ? formatDateTime(row.original.endsAt) : messages.details.noValue,
+      row.original.endsAt
+        ? formatSlotLocalDateTime(slotLocalEnd(row.original) ?? slotLocalStart(row.original))
+        : messages.details.noValue,
   },
   {
     accessorKey: "initialPax",

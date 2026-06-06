@@ -59,9 +59,9 @@ function initialState(mode: Mode): FormState {
   if (mode.kind === "edit") {
     return {
       startDate: mode.slot.dateLocal,
-      startTime: isoToLocalTime(mode.slot.startsAt),
-      endDate: mode.slot.endsAt ? isoToLocalDate(mode.slot.endsAt) : "",
-      endTime: mode.slot.endsAt ? isoToLocalTime(mode.slot.endsAt) : "",
+      startTime: isoToLocalTime(mode.slot.startsAt, mode.slot.timezone),
+      endDate: mode.slot.endsAt ? isoToLocalDate(mode.slot.endsAt, mode.slot.timezone) : "",
+      endTime: mode.slot.endsAt ? isoToLocalTime(mode.slot.endsAt, mode.slot.timezone) : "",
       timezone: mode.slot.timezone,
       status: mode.slot.status,
       unlimited: mode.slot.unlimited,
@@ -138,9 +138,11 @@ export function ProductDepartureForm({ mode, onSuccess, onCancel }: ProductDepar
       return
     }
 
-    const startsAt = combineLocalToIso(state.startDate, state.startTime)
+    const startsAt = combineLocalToIso(state.startDate, state.startTime, state.timezone)
     const hasEnd = Boolean(state.endDate || state.endTime)
-    const endsAt = hasEnd ? combineLocalToIso(effectiveEndDate, state.endTime || "18:00") : null
+    const endsAt = hasEnd
+      ? combineLocalToIso(effectiveEndDate, state.endTime || "18:00", state.timezone)
+      : null
 
     const initialPax = state.unlimited ? null : toNullableNumber(state.initialPax)
     const payload = {

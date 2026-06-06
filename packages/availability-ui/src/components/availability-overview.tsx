@@ -6,7 +6,7 @@ import type {
   AvailabilitySlotRow,
   ProductOption,
 } from "@voyantjs/availability-react"
-import { formatDateTime, productNameById } from "@voyantjs/availability-react"
+import { productNameById, slotLocalStart } from "@voyantjs/availability-react"
 import {
   Badge,
   Button,
@@ -223,7 +223,7 @@ export function AvailabilityOverview({
                 items={constrainedSlots.slice(0, 4).map((slot) => ({
                   id: slot.id,
                   primary: `${productNameById(products, slot.productId, slot.productName)} · ${slot.dateLocal}`,
-                  secondary: `${formatDateTime(slot.startsAt)} · ${messages.remainingPaxLabel}: ${
+                  secondary: `${formatSlotLocalDateTime(slotLocalStart(slot))} · ${messages.remainingPaxLabel}: ${
                     slot.remainingPax ?? messages.details.noValue
                   }`,
                   severityLabel:
@@ -286,6 +286,10 @@ export function AvailabilityOverview({
       ) : null}
     </>
   )
+}
+
+function formatSlotLocalDateTime(value: { date: string; time: string }) {
+  return `${value.date} ${value.time}`
 }
 
 interface AttentionItem {

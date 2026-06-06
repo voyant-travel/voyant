@@ -1,6 +1,12 @@
 "use client"
 
-import type { AvailabilitySlotRecord } from "@voyantjs/availability-react"
+import {
+  type AvailabilitySlotRecord,
+  instantToSlotLocal,
+  localToInstant,
+  slotLocalEnd,
+  slotLocalStart,
+} from "@voyantjs/availability-react"
 
 import type { RegistryProductsMessages } from "./i18n/messages"
 
@@ -16,31 +22,26 @@ export const slotStatusVariant: Record<
   cancelled: "destructive",
 }
 
-export function combineLocalToIso(date: string, time: string): string {
-  return new Date(`${date}T${time}:00Z`).toISOString()
+export function combineLocalToIso(date: string, time: string, timezone: string): string {
+  return localToInstant({ date, time, timezone })
 }
 
-export function isoToLocalDate(iso: string): string {
-  const date = new Date(iso)
-  const year = date.getUTCFullYear()
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0")
-  const day = String(date.getUTCDate()).padStart(2, "0")
-  return `${year}-${month}-${day}`
+export function isoToLocalDate(iso: string, timezone: string): string {
+  return instantToSlotLocal(iso, timezone).date
 }
 
-export function isoToLocalTime(iso: string): string {
-  const date = new Date(iso)
-  const hours = String(date.getUTCHours()).padStart(2, "0")
-  const minutes = String(date.getUTCMinutes()).padStart(2, "0")
-  return `${hours}:${minutes}`
+export function isoToLocalTime(iso: string, timezone: string): string {
+  return instantToSlotLocal(iso, timezone).time
 }
 
-export function formatSlotDate(iso: string): string {
-  return isoToLocalDate(iso)
+export function formatSlotDate(slot: AvailabilitySlotRecord, edge: "start" | "end" = "start") {
+  const local = edge === "end" ? slotLocalEnd(slot) : slotLocalStart(slot)
+  return local?.date ?? "—"
 }
 
-export function formatSlotTime(iso: string): string {
-  return isoToLocalTime(iso)
+export function formatSlotTime(slot: AvailabilitySlotRecord, edge: "start" | "end" = "start") {
+  const local = edge === "end" ? slotLocalEnd(slot) : slotLocalStart(slot)
+  return local?.time ?? "—"
 }
 
 export function formatDuration(
@@ -77,8 +78,8 @@ export function formatDuration(
   }
 
   const nights = Math.round(
-    (new Date(`${formatSlotDate(slot.endsAt)}T00:00:00Z`).getTime() -
-      new Date(`${formatSlotDate(slot.startsAt)}T00:00:00Z`).getTime()) /
+    (new Date(`${formatSlotDate(slot, "end")}T00:00:00Z`).getTime() -
+      new Date(`${formatSlotDate(slot)}T00:00:00Z`).getTime()) /
       86_400_000,
   )
   return `${nights} ${nights === 1 ? messages.durationUnits.night : messages.durationUnits.nights}`

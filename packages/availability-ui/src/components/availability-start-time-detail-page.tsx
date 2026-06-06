@@ -8,10 +8,10 @@ import {
   availabilityQueryKeys,
   availabilityStartTimeRecordSchema,
   fetchWithValidation,
-  formatDateTime,
   getProductQueryOptions,
   getSlotsQueryOptions,
   singleEnvelope,
+  slotLocalStart,
   useAvailabilityStartTimeMutation,
   useVoyantAvailabilityContext,
   type VoyantAvailabilityContextValue,
@@ -243,15 +243,17 @@ function SlotButton({
       className="block w-full rounded-md border p-3 text-left hover:bg-muted/40"
       onClick={() => onOpenSlot?.(slot.id)}
     >
-      <div className="font-medium">
-        {slot.dateLocal} · {formatDateTime(slot.startsAt)}
-      </div>
+      <div className="font-medium">{formatSlotLocalDateTime(slotLocalStart(slot))}</div>
       <div className="text-muted-foreground">
         {messages.statusLabel}: {getSlotStatusLabel(slot.status, messages)} ·{" "}
         {messages.remainingPaxLabel}: {slot.remainingPax ?? noValue}
       </div>
     </button>
   )
+}
+
+function formatSlotLocalDateTime(value: { date: string; time: string }) {
+  return `${value.date} ${value.time}`
 }
 
 function formatOptionalDateTime(
