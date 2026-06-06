@@ -6,6 +6,7 @@ import {
   CatalogPage as CatalogUiPage,
   createCatalogEnrichmentFetchers,
   type CatalogSlotAvailability as UiCatalogSlotAvailability,
+  useCatalogUiMessagesOrDefault,
 } from "@voyantjs/catalog-ui"
 import { useMarketLocales, useMarkets } from "@voyantjs/markets-react"
 import { useProductMutation } from "@voyantjs/products-react"
@@ -23,7 +24,8 @@ import { toast } from "sonner"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"
 import { getApiUrl } from "@/lib/env"
-import { type CatalogSearchParams, Route } from "@/routes/_workspace/catalog"
+import type { CatalogSearchParams, CatalogVerticalPageId } from "./catalog-route-state"
+import { PackageOffersSection } from "./package-offers-section"
 
 type CatalogBrowserMessages = ReturnType<
   typeof useAdminMessages
@@ -32,11 +34,51 @@ type CatalogBrowserMessages = ReturnType<
 const DEFAULT_MARKET_VALUE = "__default__"
 const DEFAULT_CATALOG_LOCALE = "en-GB"
 
-export function CatalogPage() {
+interface CatalogVerticalPageProps {
+  vertical: CatalogVerticalPageId
+  search: CatalogSearchParams
+  onSearchChange: (
+    updater: (prev: CatalogSearchParams) => CatalogSearchParams,
+    replace?: boolean,
+  ) => void
+  /**
+   * Embedded under another surface's unified search bar (the Dynamic page).
+   * Hides this page's own search box, title and market/locale chrome so there
+   * is a single search experience; `search.q` is driven externally.
+   */
+  embedded?: boolean
+  /**
+   * Facet filters always applied to this surface, on top of the user's
+   * URL-driven filters and never erased by them (e.g. a Scheduled page pins
+   * `supplyModel: ["scheduled"]`). Kept out of URL state.
+   */
+  lockedFacets?: Record<string, Array<string | number>>
+  /**
+   * Range filters always applied to this surface (e.g. an Excursions page pins
+   * `durationDays: { lte: 1 }`). Like {@link lockedFacets}, kept out of URL.
+   */
+  lockedRanges?: Record<string, { gte?: number; lte?: number }>
+  /**
+   * Open a result's dedicated detail page (in a new tab) instead of the in-page
+   * detail sheet. Each surface passes its own opener so the right detail route
+   * is used (packages → its bespoke page; cruises/accommodations/excursions/
+   * tours → the generic vertical detail). When omitted, the sheet is used.
+   */
+  onOpenDetail?: (hit: CatalogSearchHit) => void
+}
+
+export function CatalogVerticalPage({
+  vertical,
+  search,
+  onSearchChange,
+  embedded = false,
+  lockedFacets,
+  lockedRanges,
+  onOpenDetail,
+}: CatalogVerticalPageProps) {
   const navigate = useNavigate()
   const browserMessages = useAdminMessages().products.operations.catalogBrowser
-  const search = Route.useSearch()
-  const routeNavigate = Route.useNavigate()
+  const catalogMessages = useCatalogUiMessagesOrDefault().catalogPage
   const suppliersQuery = useSuppliers({ limit: 100 })
   const marketsQuery = useMarkets({ status: "active", limit: 100 })
   const selectedMarketId = search.market
@@ -90,72 +132,117 @@ export function CatalogPage() {
     [supplierMap, selectedLocale, selectedMarketId],
   )
 
+  // Merge the always-on locked facets/ranges with the user's URL-driven filters.
+  const effectiveSearch: CatalogSearchParams =
+    lockedFacets || lockedRanges
+      ? {
+          ...search,
+          locale: selectedLocale,
+          filters: {
+            ...search.filters,
+            facets: { ...(search.filters?.facets ?? {}), ...(lockedFacets ?? {}) },
+            ranges: { ...(search.filters?.ranges ?? {}), ...(lockedRanges ?? {}) },
+          },
+        }
+      : { ...search, locale: selectedLocale }
+
   return (
     <CatalogUiPage
-      search={{ ...search, locale: selectedLocale }}
+      vertical={vertical}
+      search={effectiveSearch}
       formatSupplier={formatSupplier}
-      toolbarEnd={
-        <CatalogScopeControls
-          messages={browserMessages}
-          markets={marketsQuery.data?.data ?? []}
-          localeOptions={localeOptions}
-          market={selectedMarketId}
-          locale={selectedLocale}
-          onMarketChange={(marketId) => {
-            const nextMarket = (marketsQuery.data?.data ?? []).find(
-              (market) => market.id === marketId,
-            )
-            void routeNavigate({
-              search: (prev): CatalogSearchParams => ({
-                ...prev,
-                market: marketId,
-                locale: nextMarket?.defaultLanguageTag,
-                page: 1,
-              }),
-              replace: true,
-            })
-          }}
-          onDefaultMarket={() => {
-            void routeNavigate({
-              search: (prev): CatalogSearchParams => ({
-                ...prev,
-                market: undefined,
-                locale: undefined,
-                page: 1,
-              }),
-              replace: true,
-            })
-          }}
-          onLocaleChange={(locale) => {
-            void routeNavigate({
-              search: (prev): CatalogSearchParams => ({ ...prev, locale, page: 1 }),
-              replace: true,
-            })
-          }}
-        />
+      hideSearchInput={embedded}
+      className={embedded ? "px-0 py-0 lg:px-0" : undefined}
+      title={
+        // `false` (not `undefined`) so catalog-ui's `title ?? default` does NOT
+        // fall back to its generic "Catalog" header — the embedding surface
+        // (Dynamic/Scheduled page) renders its own header on top instead.
+        embedded ? (
+          false
+        ) : (
+          <div>
+            <h1 className="font-semibold text-2xl">{catalogMessages.tabs[vertical]}</h1>
+          </div>
+        )
       }
-      onTabChange={(id) =>
-        routeNavigate({
-          search: (prev): CatalogSearchParams => ({ ...prev, tab: id, page: 1 }),
-          replace: false,
-        })
+      toolbarEnd={
+        embedded ? undefined : (
+          <CatalogScopeControls
+            messages={browserMessages}
+            markets={marketsQuery.data?.data ?? []}
+            localeOptions={localeOptions}
+            market={selectedMarketId}
+            locale={selectedLocale}
+            onMarketChange={(marketId) => {
+              const nextMarket = (marketsQuery.data?.data ?? []).find(
+                (market) => market.id === marketId,
+              )
+              onSearchChange(
+                (prev): CatalogSearchParams => ({
+                  ...prev,
+                  market: marketId,
+                  locale: nextMarket?.defaultLanguageTag,
+                  page: 1,
+                }),
+                true,
+              )
+            }}
+            onDefaultMarket={() => {
+              onSearchChange(
+                (prev): CatalogSearchParams => ({
+                  ...prev,
+                  market: undefined,
+                  locale: undefined,
+                  page: 1,
+                }),
+                true,
+              )
+            }}
+            onLocaleChange={(locale) => {
+              onSearchChange((prev): CatalogSearchParams => ({ ...prev, locale, page: 1 }), true)
+            }}
+          />
+        )
       }
       onQueryChange={(q) =>
-        routeNavigate({
-          search: (prev): CatalogSearchParams => ({
+        onSearchChange(
+          (prev): CatalogSearchParams => ({
             ...prev,
             q: q.length > 0 ? q : undefined,
             page: 1,
           }),
-          replace: true,
-        })
+          true,
+        )
       }
       onPageChange={(p) =>
-        routeNavigate({
-          search: (prev): CatalogSearchParams => ({ ...prev, page: p }),
-          replace: true,
-        })
+        onSearchChange((prev): CatalogSearchParams => ({ ...prev, page: p }), true)
       }
+      onViewChange={(view) =>
+        onSearchChange((prev): CatalogSearchParams => ({ ...prev, view }), true)
+      }
+      onSortChange={(sort) =>
+        onSearchChange((prev): CatalogSearchParams => ({ ...prev, sort }), true)
+      }
+      onFiltersChange={(next) => {
+        // Prune empty selections so the URL stays clean; reset to page 1.
+        const facets: Record<string, Array<string | number>> = {}
+        for (const [field, values] of Object.entries(next.facets ?? {})) {
+          if (values.length > 0) facets[field] = values
+        }
+        const ranges: Record<string, { gte?: number; lte?: number }> = {}
+        for (const [field, range] of Object.entries(next.ranges ?? {})) {
+          if (range && (range.gte != null || range.lte != null)) ranges[field] = range
+        }
+        const hasAny = Object.keys(facets).length > 0 || Object.keys(ranges).length > 0
+        onSearchChange(
+          (prev): CatalogSearchParams => ({
+            ...prev,
+            filters: hasAny ? { facets, ranges } : undefined,
+            page: 1,
+          }),
+          true,
+        )
+      }}
       onBookHit={(hit, entityModule) =>
         goToBookingPage(hit, entityModule, navigate, browserMessages)
       }
@@ -166,7 +253,29 @@ export function CatalogPage() {
         goToBookingPage(hit, entityModule, navigate, browserMessages, departure, option)
       }
       onOpenProductEditor={(hit) => navigate({ to: "/products/$id", params: { id: hit.id } })}
+      // When the surface provides a detail-page opener, results open it (new
+      // tab) instead of the in-page sheet. Surface-specific so each vertical
+      // routes to the right detail page.
+      onOpenProductDetail={onOpenDetail ? (hit) => onOpenDetail(hit) : undefined}
       enrichmentFetchers={enrichmentFetchers}
+      renderDetailExtraSections={
+        vertical === "products"
+          ? (hit) => {
+              // Live package departures/options/prices for sourced packages
+              // (owned products carry their own departures in content).
+              const sourceKind = stringField(hit, "source.kind", null)
+              if (sourceKind === "owned" || sourceKind == null) return null
+              return (
+                <PackageOffersSection
+                  hit={hit}
+                  onBookOffer={(bookedHit) =>
+                    goToBookingPage(bookedHit, "products", navigate, browserMessages)
+                  }
+                />
+              )
+            }
+          : undefined
+      }
       renderSupplierLink={(supplierId, displayName) => (
         <Link
           to="/suppliers/$id"

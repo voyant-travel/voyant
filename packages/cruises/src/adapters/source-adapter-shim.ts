@@ -475,6 +475,11 @@ function toCatalogProjection(
       lowestPriceCurrencyCached: entry.lowestPriceCurrency ?? null,
       earliestDepartureCached: entry.earliestDeparture ?? null,
       latestDepartureCached: entry.latestDeparture ?? null,
+      // Departure month facet + count — populated by the source enrichment
+      // (per-cruise sailing rollup). Default empty/null on adapters that
+      // don't supply them so the field is simply absent from the index doc.
+      departureMonths: entry.departureMonths ?? [],
+      departureCount: entry.departureCount ?? null,
     },
   }
 }

@@ -41,8 +41,35 @@ export function createOperatorAdminNavigation({
     {
       id: "catalog",
       title: messages.catalog,
-      url: "/catalog",
+      url: "/catalog/products",
       icon: icons.catalog,
+      items: [
+        {
+          id: "catalog-products",
+          title: messages.catalogProducts,
+          url: "/catalog/products",
+        },
+        {
+          id: "catalog-excursions",
+          title: messages.catalogExcursions,
+          url: "/catalog/excursions",
+        },
+        {
+          id: "catalog-tours",
+          title: messages.catalogTours,
+          url: "/catalog/tours",
+        },
+        {
+          id: "catalog-cruises",
+          title: messages.catalogCruises,
+          url: "/catalog/cruises",
+        },
+        {
+          id: "catalog-accommodations",
+          title: messages.catalogAccommodations,
+          url: "/catalog/accommodations",
+        },
+      ],
     },
     {
       id: "flights",

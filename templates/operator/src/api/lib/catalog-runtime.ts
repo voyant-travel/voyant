@@ -209,6 +209,11 @@ export function buildTypesenseIndexer(
   return createTypesenseIndexer({
     client,
     vectorDimensions: embeddings?.capabilities.dimensions,
+    // Seed the real per-vertical registries so worker-side search (which never
+    // runs ensureCollection) sorts/filters on numeric fields like
+    // `priceFromAmountCents` instead of falling back to the string-only
+    // inferred registry.
+    registries: getFieldPolicyRegistries(),
   })
 }
 

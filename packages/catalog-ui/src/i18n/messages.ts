@@ -42,6 +42,12 @@ export type CatalogUiMessages = {
       | "source"
       | "supplier"
       | "bookingMode"
+      | "departureMonth"
+      | "destination"
+      | "country"
+      | "board"
+      | "stars"
+      | "transport"
       | "type"
       | "capacity"
       | "visibility"
@@ -112,6 +118,29 @@ export type CatalogUiMessages = {
       apply: string
       noResults: string
       clearFilter: string
+    }
+    view: {
+      grid: string
+      list: string
+      filters: string
+      sort: string
+      sortRelevance: string
+      sortPriceAsc: string
+      sortPriceDesc: string
+      sortSoonest: string
+      sortNewest: string
+      showAll: string
+      showLess: string
+    }
+    card: {
+      from: string
+      viewDetails: string
+      nextDeparture: string
+      departures: string
+      oneDeparture: string
+      daysNights: string
+      nights: string
+      flightIncluded: string
     }
     detail: {
       loadingFullContent: string

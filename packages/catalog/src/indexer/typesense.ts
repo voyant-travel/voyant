@@ -95,6 +95,15 @@ export interface TypesenseIndexerOptions {
   vectorDimensions?: number | null
   /** Optional collection-name prefix (useful for multi-tenant single-cluster setups). */
   collectionPrefix?: string
+  /**
+   * Field-policy registries keyed by vertical. Seeds the per-vertical registry
+   * cache so a search-only process (the worker, which never runs
+   * `ensureCollection`) builds queries against the REAL policy — including
+   * numeric sort/filter fields. Without this, search falls back to
+   * `inferRegistryFromCollection`, which only knows string fields, so numeric
+   * sorts (e.g. `price-asc` → `priceFromAmountCents`) silently no-op.
+   */
+  registries?: ReadonlyMap<string, FieldPolicyRegistry>
 }
 
 const TYPESENSE_CAPABILITIES: IndexerCapabilities = {
@@ -245,7 +254,11 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
   // can build a correct `query_by` against actual schema fields. Without
   // this, search falls back to `query_by: "title"` and Typesense returns
   // 404 because the products schema has no `title` field.
-  const registryByVertical = new Map<string, FieldPolicyRegistry>()
+  //
+  // Seeded from `options.registries` so a search-only process (the worker)
+  // has the real policies without running `ensureCollection` — otherwise it
+  // falls back to the string-only inferred registry and numeric sorts no-op.
+  const registryByVertical = new Map<string, FieldPolicyRegistry>(options.registries)
 
   return {
     capabilities,

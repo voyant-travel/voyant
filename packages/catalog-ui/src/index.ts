@@ -16,6 +16,12 @@ export {
   type TravelerEntry,
 } from "./components/catalog-booking-page.js"
 export {
+  CatalogCard,
+  type CatalogCardBadge,
+  type CatalogCardConfig,
+  type CatalogCardProps,
+} from "./components/catalog-card.js"
+export {
   type CatalogDetailAction,
   type CatalogDetailEnrichment,
   type CatalogDetailItineraryDay,
@@ -23,6 +29,8 @@ export {
   CatalogDetailSheet,
   type CatalogDetailSheetProps,
   type CatalogDetailSheetWidth,
+  CatalogDetailView,
+  type CatalogDetailViewProps,
 } from "./components/catalog-detail-sheet.js"
 export {
   type CatalogEnrichmentFetchers,
@@ -34,6 +42,10 @@ export {
   CatalogFacetedFilter,
   type CatalogFacetedFilterProps,
 } from "./components/catalog-faceted-filter.js"
+export {
+  CatalogFilterRail,
+  type CatalogFilterRailProps,
+} from "./components/catalog-filter-rail.js"
 export {
   CatalogPage,
   type CatalogPageProps,
@@ -47,10 +59,12 @@ export {
 export {
   type CatalogFacetFilterField,
   type CatalogFilterField,
+  type CatalogFilterSelections,
   type CatalogRangeFilterField,
   CatalogSearchPage,
   type CatalogSearchPageProps,
   type CatalogSearchTab,
+  type CatalogSortOption,
 } from "./components/catalog-search-page.js"
 export {
   type CatalogUiMessageOverrides,

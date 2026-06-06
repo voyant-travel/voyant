@@ -236,6 +236,15 @@ export type CruiseSearchProjectionEntry = {
   themes?: string[]
   earliestDeparture?: string | null
   latestDeparture?: string | null
+  /**
+   * Distinct departure months across the cruise's sailings as `YYYY-MM`
+   * strings (e.g. `["2027-03", "2027-04"]`). Facetable so browse surfaces can
+   * filter by departure month/year. Populated from the per-cruise sailing list
+   * at sync time (the upstream search projection only carries the window).
+   */
+  departureMonths?: string[] | null
+  /** Total number of sailings (departures) the cruise has. */
+  departureCount?: number | null
   lowestPrice?: string | null
   lowestPriceCurrency?: string | null
   salesStatus?: string | null
