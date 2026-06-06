@@ -14,4 +14,13 @@ export { catalogAuthoringExtension, catalogAuthoringRoutes } from "./extension.j
 export type { NewProductAuthoringRequest, ProductAuthoringRequest } from "./schema.js"
 export { productAuthoringRequests } from "./schema.js"
 export { serializeProductGraph } from "./serialize.js"
+export {
+  type AuthoringRunOptions,
+  type CloneProductOutcome,
+  type CloneProductOverrides,
+  type ComposeProductOutcome,
+  cloneProduct,
+  composeProduct,
+} from "./service.js"
 export { type ProductGraphSpec, productGraphSpecSchema } from "./spec.js"
+export { validateProductGraph } from "./validate.js"

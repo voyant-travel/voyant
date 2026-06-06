@@ -21,14 +21,17 @@ describe("catalogAuthoringExtension mounting", () => {
     catalogAuthoringExtension.adminRoutes ?? new Hono(),
   )
 
+  // With no db/body wired, the handlers error out — but a matched route never
+  // 404s, which is what proves the mount path. (Full behaviour is covered by the
+  // route integration tests.)
   it("resolves POST /v1/admin/products/compose (route matched, not 404)", async () => {
     const res = await app.request("/v1/admin/products/compose", { method: "POST" })
-    expect(res.status).toBe(501)
+    expect(res.status).not.toBe(404)
   })
 
   it("resolves POST /v1/admin/products/:id/duplicate (route matched, not 404)", async () => {
     const res = await app.request("/v1/admin/products/prod_123/duplicate", { method: "POST" })
-    expect(res.status).toBe(501)
+    expect(res.status).not.toBe(404)
   })
 
   it("does not swallow unrelated product paths", async () => {
