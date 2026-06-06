@@ -3147,8 +3147,8 @@ importers:
         specifier: workspace:^
         version: link:../core
       '@voyantjs/data-sdk':
-        specifier: 0.1.3
-        version: 0.1.3
+        specifier: ^0.4.0
+        version: 0.4.0
       '@voyantjs/db':
         specifier: workspace:^
         version: link:../db
@@ -6620,14 +6620,14 @@ importers:
         specifier: ^0.8.0
         version: 0.8.0(typesense@3.0.6(@babel/runtime@7.29.2))
       '@voyantjs/connect-adapter':
-        specifier: ^0.2.11
-        version: 0.2.11(@voyantjs/catalog@packages+catalog)
+        specifier: ^0.2.20
+        version: 0.2.20(@voyantjs/catalog@packages+catalog)
       '@voyantjs/connect-cruises':
-        specifier: ^0.3.4
-        version: 0.3.4(@voyantjs/cruises@packages+cruises)
+        specifier: ^0.3.13
+        version: 0.3.13(@voyantjs/cruises@packages+cruises)
       '@voyantjs/connect-sdk':
-        specifier: ^0.1.6
-        version: 0.1.6
+        specifier: ^0.7.1
+        version: 0.7.1
       '@voyantjs/core':
         specifier: workspace:^
         version: link:../../packages/core
@@ -6650,8 +6650,8 @@ importers:
         specifier: workspace:^
         version: link:../../packages/customer-portal
       '@voyantjs/data-sdk':
-        specifier: ^0.3.1
-        version: 0.3.1
+        specifier: ^0.4.0
+        version: 0.4.0
       '@voyantjs/db':
         specifier: workspace:^
         version: link:../../packages/db
@@ -10285,34 +10285,29 @@ packages:
     bundledDependencies:
       - '@voyant-sdk/sdk-core'
 
-  '@voyantjs/connect-adapter@0.2.11':
-    resolution: {integrity: sha512-+e6tj8fegogwOclyEkl3ky9rDz3GjADl7UetqrViYZAhfyuDw7MeUjCMPiugvEulJClDbgXGNkCBn3yCQ8+FnA==}
+  '@voyantjs/connect-adapter@0.2.20':
+    resolution: {integrity: sha512-GAefGRlykdlvsiHXAhooD2feyC9G+nZycalrbSE7zTQmGXUC2DAz8l9NZf6u1KZ1BaUv9eV1fQtNesAKoSW/Kg==}
     peerDependencies:
       '@voyantjs/catalog': '>=0.85.3 <1'
 
-  '@voyantjs/connect-cruises@0.3.4':
-    resolution: {integrity: sha512-0QDxzpYxDbtsdOxxWs0XnBcq/wwXi7K6NbeVTRYKhJUdS+mnjxkPN8xDzDR0XQMb9Qe3mpT6CRbbJUY35r2mKg==}
+  '@voyantjs/connect-cruises@0.3.13':
+    resolution: {integrity: sha512-4SB6wtvScxNqbV+qcuzD49eTBsnX681olvJL9iJkhcWhqrTPXB2T8NB4N3UKESHyuB/4iRNrHUcPJTiveNtTlw==}
     peerDependencies:
       '@voyantjs/cruises': '>=0.85.3 <1'
     peerDependenciesMeta:
       '@voyantjs/cruises':
         optional: true
 
-  '@voyantjs/connect-sdk@0.1.6':
-    resolution: {integrity: sha512-o+0WklXaSEMTePqIi3U7SVROdssaaaqEgLRlqvwiuOIw87Kd8IRTT4qwjNzGewbQVe17O9Ly5HgIUDM4K3wbvg==}
+  '@voyantjs/connect-sdk@0.7.1':
+    resolution: {integrity: sha512-jD6sLgDvyAXl3yOcfdLXZFYxWJSDdKQA8R0CqDcxLWnAgoAXvXDLzTAI1AL9woNeK+jPHEZIWn2MXnegm44u6Q==}
     bundledDependencies:
       - '@voyant-sdk/sdk-core'
 
   '@voyantjs/core@0.19.0':
     resolution: {integrity: sha512-L3ielbbWsjGJLkyS6Mzee0z6OD98rqyTxksKBIsaKSiCO0R/a32AXSZ/l4Y8Ek8I8ucYrwe7P4+lr+clppIrBQ==}
 
-  '@voyantjs/data-sdk@0.1.3':
-    resolution: {integrity: sha512-3BxQYksdvD5eaPSJSoNYrQwYCY4Gaj0r8SEV5f/7YgcXdP18Di3Qepme5vzqkq/5W37aj9Ia5uTRgNBQiSbOXg==}
-    bundledDependencies:
-      - '@voyant-sdk/sdk-core'
-
-  '@voyantjs/data-sdk@0.3.1':
-    resolution: {integrity: sha512-Pw+hU8/CkmmwLOCi01UQW9Yvpa8MhTeDMxUD4v9odq/J8wD1cdqbw60fvKlzDpFmTRxdebMISEBB63OnbqU1Ug==}
+  '@voyantjs/data-sdk@0.4.0':
+    resolution: {integrity: sha512-Wr88NxxgN/QOZT+o2pfLcE/e2G+ks9udDIsJj+TUkHud/tj2ArHubSyJHinF/nlN3jBG9HfwOzij5Hokg1nE+g==}
     bundledDependencies:
       - '@voyant-sdk/sdk-core'
 
@@ -17070,24 +17065,22 @@ snapshots:
     optionalDependencies:
       typesense: 3.0.6(@babel/runtime@7.29.2)
 
-  '@voyantjs/connect-adapter@0.2.11(@voyantjs/catalog@packages+catalog)':
+  '@voyantjs/connect-adapter@0.2.20(@voyantjs/catalog@packages+catalog)':
     dependencies:
       '@voyantjs/catalog': link:packages/catalog
-      '@voyantjs/connect-sdk': 0.1.6
+      '@voyantjs/connect-sdk': 0.7.1
 
-  '@voyantjs/connect-cruises@0.3.4(@voyantjs/cruises@packages+cruises)':
+  '@voyantjs/connect-cruises@0.3.13(@voyantjs/cruises@packages+cruises)':
     dependencies:
-      '@voyantjs/connect-sdk': 0.1.6
+      '@voyantjs/connect-sdk': 0.7.1
     optionalDependencies:
       '@voyantjs/cruises': link:packages/cruises
 
-  '@voyantjs/connect-sdk@0.1.6': {}
+  '@voyantjs/connect-sdk@0.7.1': {}
 
   '@voyantjs/core@0.19.0': {}
 
-  '@voyantjs/data-sdk@0.1.3': {}
-
-  '@voyantjs/data-sdk@0.3.1': {}
+  '@voyantjs/data-sdk@0.4.0': {}
 
   '@voyantjs/workflows-errors@0.19.0': {}
 

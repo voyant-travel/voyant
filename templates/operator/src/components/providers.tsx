@@ -7,6 +7,7 @@ import {
 import { AllocationUiMessagesProvider } from "@voyantjs/allocation-ui/i18n"
 import { VoyantAvailabilityProvider } from "@voyantjs/availability-react"
 import { BookingsUiMessagesProvider } from "@voyantjs/bookings-ui/i18n"
+import { CatalogUiMessagesProvider } from "@voyantjs/catalog-ui/i18n"
 import { CrmUiMessagesProvider } from "@voyantjs/crm-ui/i18n"
 import { FinanceUiMessagesProvider } from "@voyantjs/finance-ui/i18n"
 import { LegalUiMessagesProvider } from "@voyantjs/legal-ui/i18n"
@@ -31,6 +32,7 @@ const appProviders = [TooltipProvider, AvailabilityProvider] satisfies readonly 
 
 const domainMessageProviders = [
   BookingsUiMessagesProvider,
+  CatalogUiMessagesProvider,
   ProductsUiMessagesProvider,
   PricingUiMessagesProvider,
   LegalUiMessagesProvider,

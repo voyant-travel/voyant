@@ -10,6 +10,7 @@ import type { ReactNode } from "react"
 import { useMemo } from "react"
 
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
+import type { CatalogCardConfig } from "./catalog-card.js"
 import type {
   CatalogDetailEnrichment,
   CatalogDetailRenderSlot,
@@ -17,9 +18,19 @@ import type {
 } from "./catalog-detail-sheet.js"
 import type { CatalogEnrichmentFetchers } from "./catalog-enrichment-fetchers.js"
 import {
+  asNumber,
+  asString,
+  asStringArray,
+  formatHitPrice,
+  numberField,
+  stringField,
+} from "./catalog-hit.js"
+import {
   type CatalogFilterField,
+  type CatalogFilterSelections,
   CatalogSearchPage,
   type CatalogSearchTab,
+  type CatalogSortOption,
 } from "./catalog-search-page.js"
 
 export interface CatalogPageSearchState {
@@ -28,6 +39,9 @@ export interface CatalogPageSearchState {
   page?: number
   market?: string
   locale?: string
+  view?: "grid" | "list"
+  sort?: CatalogSortOption
+  filters?: CatalogFilterSelections
 }
 
 export interface CatalogPageProps {
@@ -35,6 +49,9 @@ export interface CatalogPageProps {
   onTabChange?: (tabId: string) => void
   onQueryChange?: (query: string) => void
   onPageChange?: (page: number) => void
+  onViewChange?: (view: "grid" | "list") => void
+  onSortChange?: (sort: CatalogSortOption) => void
+  onFiltersChange?: (filters: CatalogFilterSelections) => void
   toolbarEnd?: ReactNode
   formatSupplier?: (id: string | number) => string
   onBookHit?: (hit: CatalogSearchHit, entityModule: string) => void
@@ -50,6 +67,13 @@ export interface CatalogPageProps {
     option: NonNullable<CatalogDetailEnrichment["options"]>[number],
   ) => void
   onOpenProductEditor?: (hit: CatalogSearchHit) => void
+  /**
+   * Open the full, URL-addressable detail page for a result (e.g. in a new
+   * tab) instead of the in-page detail sheet. Bound per vertical and passed
+   * the clicked hit + its vertical; return nothing. Provide it only for
+   * verticals that have a dedicated detail page — others keep the sheet.
+   */
+  onOpenProductDetail?: (hit: CatalogSearchHit, vertical: string) => void
   /**
    * Explicit detail-enrichment callback. When set, takes precedence over
    * `enrichmentFetchers` — pass this when you need full control over the
@@ -90,8 +114,18 @@ export interface CatalogPageProps {
    * operator side — sourced rows pass through without an editor.
    */
   onTagsChange?: CatalogDetailSheetProps["onTagsChange"]
+  /**
+   * Restrict the page to one catalog vertical and hide the vertical tab
+   * switcher. Use this when routing owns the vertical selection.
+   */
+  vertical?: string
   title?: ReactNode
   className?: string
+  /**
+   * Hide the built-in search input. Use when an embedding surface provides its
+   * own unified search box and drives `search.q`/`onQueryChange` externally.
+   */
+  hideSearchInput?: boolean
 }
 
 export function CatalogPage({
@@ -99,12 +133,17 @@ export function CatalogPage({
   onTabChange,
   onQueryChange,
   onPageChange,
+  onViewChange,
+  onSortChange,
+  onFiltersChange,
   toolbarEnd,
+  hideSearchInput,
   formatSupplier = (id) => String(id),
   onBookHit,
   onBookDeparture,
   onBookOption,
   onOpenProductEditor,
+  onOpenProductDetail,
   onLoadProductDetail,
   enrichmentFetchers,
   detailSheetWidth,
@@ -115,6 +154,7 @@ export function CatalogPage({
   renderDetailExtraSections,
   renderSupplierLink,
   onTagsChange,
+  vertical,
   title,
   className,
 }: CatalogPageProps) {
@@ -131,6 +171,10 @@ export function CatalogPage({
     resolvedLoadProductDetail
       ? (hit: CatalogSearchHit) => resolvedLoadProductDetail(hit, vertical)
       : undefined
+  // Open the dedicated detail page (e.g. new tab), bound per vertical. Only
+  // verticals with a real detail page get it; the rest fall back to the sheet.
+  const detailOpenerFor = (vertical: string) =>
+    onOpenProductDetail ? (hit: CatalogSearchHit) => onOpenProductDetail(hit, vertical) : undefined
   // Lazy per-cabin pricing loader, bound per vertical (cruises only today).
   const loadDeparturePricing = enrichmentFetchers?.loadDeparturePricing
   const departurePricingLoaderFor = (vertical: string) =>
@@ -152,6 +196,8 @@ export function CatalogPage({
       vertical: "products",
       columns: makeProductColumns(formatSupplier, messages),
       filterFields: makeProductFilters(formatSupplier, messages),
+      card: makeProductCard(formatSupplier, messages),
+      sorts: ["price-asc", "price-desc", "departure-asc", "newest"],
       detailFormatters: {
         supplierId: supplierFormatter,
         "source.kind": sourceKindFormatter,
@@ -206,7 +252,8 @@ export function CatalogPage({
       vertical: "cruises",
       columns: makeCruiseColumns(formatSupplier, messages),
       filterFields: makeCruiseFilters(formatSupplier, messages),
-      imageField: "heroImageUrl",
+      imageField: "thumbnailUrl",
+      card: makeCruiseCard(formatSupplier, messages),
       detailFormatters: {
         lineSupplierId: supplierFormatter,
         "source.kind": sourceKindFormatter,
@@ -221,6 +268,8 @@ export function CatalogPage({
       columns: makeCharterColumns(formatSupplier, messages),
       filterFields: makeCharterFilters(formatSupplier, messages),
       imageField: "heroImageUrl",
+      card: makeCharterCard(formatSupplier),
+      sorts: ["price-asc", "price-desc", "newest"],
       detailFormatters: {
         lineSupplierId: supplierFormatter,
         "source.kind": sourceKindFormatter,
@@ -233,6 +282,7 @@ export function CatalogPage({
       vertical: "accommodations",
       columns: makeAccommodationColumns(formatSupplier, messages),
       filterFields: makeAccommodationFilters(formatSupplier, messages),
+      card: makeAccommodationCard(formatSupplier),
       detailFormatters: {
         supplierId: supplierFormatter,
         "source.kind": sourceKindFormatter,
@@ -240,17 +290,38 @@ export function CatalogPage({
       onLoadDetail: detailLoaderFor("accommodations"),
     },
   ]
+  // Bind the new-tab detail opener per vertical on every tab — when the host
+  // provides `onOpenProductDetail`, results open the dedicated detail page
+  // (new tab) instead of the in-page sheet, for whichever vertical is shown.
+  const tabsWithDetail = tabs.map((tab) => ({
+    ...tab,
+    onOpenDetail: detailOpenerFor(tab.vertical),
+  }))
+  const visibleTabs = vertical
+    ? tabsWithDetail.filter((tab) => tab.id === vertical || tab.vertical === vertical)
+    : tabsWithDetail
+  const activeTab = vertical ? visibleTabs[0]?.id : (search.tab ?? tabs[0]?.id)
 
   return (
     <div className={cn("mx-auto w-full max-w-screen-2xl px-6 py-6 lg:px-8", className)}>
       <CatalogSearchPage
-        tabs={tabs}
-        activeTab={search.tab ?? tabs[0]?.id}
-        onActiveTabChange={(id) => onTabChange?.(id)}
+        tabs={visibleTabs}
+        activeTab={activeTab}
+        onActiveTabChange={(id) => {
+          if (!vertical) onTabChange?.(id)
+        }}
+        showTabs={!vertical}
+        hideSearchInput={hideSearchInput}
         query={search.q ?? ""}
         onQueryChange={(q) => onQueryChange?.(q)}
         page={search.page ?? 1}
         onPageChange={(p) => onPageChange?.(p)}
+        view={search.view}
+        onViewChange={onViewChange}
+        sort={search.sort}
+        onSortChange={onSortChange}
+        filters={search.filters}
+        onFiltersChange={onFiltersChange}
         market={search.market}
         locale={search.locale}
         toolbarEnd={toolbarEnd}
@@ -287,10 +358,8 @@ function makeProductColumns(
     statusColumn(messages),
     sourceColumn(messages),
     lookupColumn("supplierId", messages.columns.supplier, formatSupplier, messages),
-    bookingModeColumn(messages),
     daysColumn(messages),
     nightsColumn(messages),
-    availableDeparturesColumn(messages),
     priceColumn("sellAmountCents", "sellCurrency", messages.columns.price, messages),
   ]
 }
@@ -315,12 +384,19 @@ function makeCruiseColumns(
   messages: CatalogPageMessages,
 ): ColumnDef<CatalogSearchHit, unknown>[] {
   return [
-    nameColumn(messages.fallbacks.cruiseName, messages, "heroImageUrl"),
+    nameColumn(messages.fallbacks.cruiseName, messages),
     statusColumn(messages),
     sourceColumn(messages),
     textColumn("cruiseType", messages.columns.type, messages),
     lookupColumn("lineSupplierId", messages.columns.supplier, formatSupplier, messages),
     textColumn("nights", messages.columns.nights, messages),
+    priceColumn(
+      "lowestPriceCached",
+      "lowestPriceCurrencyCached",
+      messages.columns.price,
+      messages,
+      "major",
+    ),
   ]
 }
 
@@ -364,6 +440,25 @@ function makeProductFilters(
 ): CatalogFilterField[] {
   return [
     { field: "status", label: messages.filters.status },
+    { field: "countryCodes", label: messages.filters.country, formatValue: formatCountry },
+    { field: "destinations", label: messages.filters.destination },
+    {
+      field: "board",
+      label: messages.filters.board,
+      formatValue: (value) => formatBoard(String(value), messages) ?? String(value),
+    },
+    {
+      field: "stars",
+      label: messages.filters.stars,
+      formatValue: (value) => formatStars(value) ?? String(value),
+      // Show 5★ → 0, not by item count.
+      sortValues: "value-desc",
+    },
+    {
+      field: "transport",
+      label: messages.filters.transport,
+      formatValue: (value) => formatTransport(String(value), messages) ?? String(value),
+    },
     {
       field: "source.kind",
       label: messages.filters.source,
@@ -439,6 +534,14 @@ function makeCruiseFilters(
       formatValue: (value) => formatSourceKind(value, messages),
     },
     { field: "cruiseType", label: messages.filters.type },
+    {
+      // Departure month/year facet — `YYYY-MM` values sorted chronologically,
+      // shown as "Mar 2027".
+      field: "departureMonths",
+      label: messages.filters.departureMonth,
+      formatValue: formatDepartureMonth,
+      sortValues: "value-asc",
+    },
     { field: "lineSupplierId", label: messages.filters.supplier, formatValue: formatSupplier },
     { field: "defaultShipId", label: messages.filters.ship },
     { field: "embarkPortFacilityId", label: messages.filters.embark },
@@ -598,22 +701,6 @@ function textColumn(
   }
 }
 
-function bookingModeColumn(messages: CatalogPageMessages): ColumnDef<CatalogSearchHit, unknown> {
-  return {
-    id: "bookingMode",
-    header: messages.columns.bookingMode,
-    cell: ({ row }) => {
-      const mode = stringField(row.original, "bookingMode", null)
-      if (!mode) return <span className="text-muted-foreground">{messages.values.empty}</span>
-      return (
-        <Badge variant="outline" className="capitalize">
-          {mode}
-        </Badge>
-      )
-    },
-  }
-}
-
 function daysColumn(messages: CatalogPageMessages): ColumnDef<CatalogSearchHit, unknown> {
   return {
     id: "durationDays",
@@ -636,21 +723,6 @@ function nightsColumn(messages: CatalogPageMessages): ColumnDef<CatalogSearchHit
       if (days == null || days < 1)
         return <span className="text-muted-foreground">{messages.values.empty}</span>
       return <span className="tabular-nums">{Math.max(0, days - 1)}</span>
-    },
-  }
-}
-
-function availableDeparturesColumn(
-  messages: CatalogPageMessages,
-): ColumnDef<CatalogSearchHit, unknown> {
-  return {
-    id: "availableDeparturesCount",
-    header: messages.columns.availableDepartures,
-    cell: ({ row }) => {
-      const count = numberField(row.original, "availableDeparturesCount")
-      if (count == null)
-        return <span className="text-muted-foreground">{messages.values.empty}</span>
-      return <span className="tabular-nums">{count}</span>
     },
   }
 }
@@ -716,12 +788,13 @@ function priceColumn(
   currencyField: string,
   header: string,
   messages: CatalogPageMessages,
+  unit: "minor" | "major" = "minor",
 ): ColumnDef<CatalogSearchHit, unknown> {
   return {
     id: amountField,
     header,
     cell: ({ row }) => {
-      const formatted = formatHitPrice(row.original, amountField, currencyField)
+      const formatted = formatHitPrice(row.original, amountField, currencyField, unit)
       return (
         <span className="font-medium">
           {formatted ?? <span className="text-muted-foreground">{messages.values.empty}</span>}
@@ -756,32 +829,205 @@ function CatalogThumbnail({ hit, urlField }: { hit: CatalogSearchHit; urlField: 
   )
 }
 
-function stringField<T>(hit: CatalogSearchHit, key: string, fallback: T): string | T {
-  const v = hit.document.fields[key]
-  return typeof v === "string" && v.length > 0 ? v : fallback
-}
+// Card configs ─────────────────────────────────────────────────────────────
+// Each vertical's merchandising card is a declarative projection of indexed
+// fields (no extra fetch). The grid view renders `CatalogCard` from these.
 
-function numberField(hit: CatalogSearchHit, key: string): number | null {
-  const v = hit.document.fields[key]
-  if (typeof v === "number") return v
-  if (typeof v === "string") {
-    const n = Number(v)
-    return Number.isFinite(n) ? n : null
+function makeProductCard(
+  formatSupplier: (id: string | number) => string,
+  messages: CatalogPageMessages,
+): CatalogCardConfig {
+  return {
+    imageField: "thumbnailUrl",
+    // Prefer the computed lowest price; fall back to the headline sell price.
+    priceAmountField: ["priceFromAmountCents", "priceFromAmountMinor", "sellAmountCents"],
+    priceCurrencyField: ["priceFromCurrency", "sellCurrency"],
+    subtitle: productSubtitle,
+    meta: (fields) => durationMeta(fields, messages),
+    footerNote: (fields) => departureNote(fields, messages),
+    // Transport + board basis lead the chips, then categories/themes.
+    chips: (fields) =>
+      [
+        formatTransport(asString(fields.transport), messages),
+        formatBoard(asString(fields.board), messages),
+        ...asStringArray(fields.categories),
+      ]
+        .filter((v): v is string => Boolean(v))
+        .slice(0, 3),
+    badges: (fields) => supplierBadge(fields, "supplierId", formatSupplier),
   }
-  return null
 }
 
-function formatHitPrice(
-  hit: CatalogSearchHit,
-  amountField: string,
-  currencyField: string,
+/** Product card subtitle: star rating + location (e.g. "4.5★ · Belek · Turkey"). */
+function productSubtitle(fields: Record<string, unknown>): string | null {
+  const parts = [formatStars(fields.stars), locationSubtitle(fields)].filter((v): v is string =>
+    Boolean(v),
+  )
+  return parts.length > 0 ? parts.join(" · ") : null
+}
+
+/** Resolve a board code (AI/HB/BB/RO/FB) to a localized, readable label. */
+function formatBoard(value: string | null, messages: CatalogPageMessages): string | null {
+  if (!value) return null
+  const code = value.toUpperCase()
+  return (messages.boards as Record<string, string>)[code] ?? value
+}
+
+/** Resolve a transport code ("flight") to a readable label. */
+function formatTransport(value: string | null, messages: CatalogPageMessages): string | null {
+  if (!value) return null
+  return value === "flight" ? messages.card.flightIncluded : value
+}
+
+/** Format a (possibly fractional) star rating as e.g. "4.5★". */
+function formatStars(value: unknown): string | null {
+  const n = asNumber(value)
+  if (n == null || n <= 0) return null
+  return `${Number.isInteger(n) ? n : n.toFixed(1)}★`
+}
+
+function makeCruiseCard(
+  formatSupplier: (id: string | number) => string,
+  messages: CatalogPageMessages,
+): CatalogCardConfig {
+  return {
+    // The cruise index carries the picture as `thumbnailUrl` and the "from"
+    // price as `lowestPriceCached` (major currency units, e.g. "5898.00").
+    imageField: "thumbnailUrl",
+    priceAmountField: "lowestPriceCached",
+    priceCurrencyField: "lowestPriceCurrencyCached",
+    priceUnit: "major",
+    subtitle: locationSubtitle,
+    meta: (fields) => nightsMeta(fields, messages),
+    // Next departure + how many sailings — sourced from the per-cruise sailing
+    // rollup (`earliestDepartureCached` / `departureCount`).
+    footerNote: (fields) =>
+      departureNote(fields, messages, {
+        dateField: "earliestDepartureCached",
+        countField: "departureCount",
+        withYear: true,
+      }),
+    chips: (fields) =>
+      [...asStringArray(fields.themes), ...asStringArray(fields.regions)].slice(0, 3),
+    badges: (fields) => supplierBadge(fields, "lineSupplierId", formatSupplier),
+  }
+}
+
+function makeCharterCard(formatSupplier: (id: string | number) => string): CatalogCardConfig {
+  return {
+    imageField: "heroImageUrl",
+    priceAmountField: "lowestPriceCachedAmount",
+    priceCurrencyField: "lowestPriceCachedCurrency",
+    subtitle: locationSubtitle,
+    chips: (fields) =>
+      [...asStringArray(fields.themes), ...asStringArray(fields.regions)].slice(0, 3),
+    badges: (fields) => supplierBadge(fields, "lineSupplierId", formatSupplier),
+  }
+}
+
+function makeAccommodationCard(formatSupplier: (id: string | number) => string): CatalogCardConfig {
+  return {
+    imageField: "thumbnailUrl",
+    subtitle: (fields) => asString(fields.roomClass),
+    badges: (fields) => supplierBadge(fields, "supplierId", formatSupplier),
+  }
+}
+
+function locationSubtitle(fields: Record<string, unknown>): string | null {
+  const cities = asStringArray(fields.cities)
+  const regions = asStringArray(fields.regions)
+  const countries = asStringArray(fields.countries)
+  // Owned products carry resolved destination labels (cities/regions/countries);
+  // sourced rows carry raw `destinations` + ISO `countryCodes` from the upstream
+  // search document, so fall back to those and resolve the code to a name.
+  const place = cities[0] ?? regions[0] ?? asStringArray(fields.destinations)[0] ?? null
+  const country = countries[0] ?? asStringArray(fields.countryCodes).map(formatCountry)[0] ?? null
+  const parts = [...new Set([place, country].filter((v): v is string => Boolean(v)))]
+  return parts.length > 0 ? parts.join(" · ") : null
+}
+
+/** Resolve an ISO 3166 alpha-2 country code to a localized name (e.g. TR → Turkey). */
+function formatCountry(value: string | number): string {
+  const code = String(value)
+  if (!/^[A-Za-z]{2}$/.test(code)) return code
+  try {
+    return new Intl.DisplayNames(undefined, { type: "region" }).of(code.toUpperCase()) ?? code
+  } catch {
+    return code
+  }
+}
+
+function durationMeta(
+  fields: Record<string, unknown>,
+  messages: CatalogPageMessages,
 ): string | null {
-  const cents = numberField(hit, amountField)
-  const currency = stringField(hit, currencyField, null)
-  if (cents == null || !currency) return null
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(cents / 100)
+  const days = asNumber(fields.durationDays)
+  if (days == null || days < 1) return null
+  const nights = Math.max(0, days - 1)
+  return messages.card.daysNights
+    .replace("{days}", String(days))
+    .replace("{nights}", String(nights))
+}
+
+function nightsMeta(fields: Record<string, unknown>, messages: CatalogPageMessages): string | null {
+  const nights = asNumber(fields.nights)
+  if (nights == null || nights < 1) return null
+  return messages.card.nights.replace("{nights}", String(nights))
+}
+
+function departureNote(
+  fields: Record<string, unknown>,
+  messages: CatalogPageMessages,
+  opts: { dateField?: string; countField?: string; withYear?: boolean } = {},
+): string | null {
+  const next = asString(fields[opts.dateField ?? "nextDepartureDate"])
+  const count = asNumber(fields[opts.countField ?? "availableDeparturesCount"])
+  const parts: string[] = []
+  if (next)
+    parts.push(messages.card.nextDeparture.replace("{date}", formatShortDate(next, opts.withYear)))
+  if (count != null && count > 0) {
+    parts.push(
+      count === 1
+        ? messages.card.oneDeparture
+        : messages.card.departures.replace("{count}", String(count)),
+    )
+  }
+  return parts.length > 0 ? parts.join(" · ") : null
+}
+
+function supplierBadge(
+  fields: Record<string, unknown>,
+  supplierField: string,
+  formatSupplier: (id: string | number) => string,
+): { label: string; variant?: "default" | "secondary" | "outline" }[] {
+  const id = asString(fields[supplierField])
+  if (!id) return []
+  // The supplier (e.g. "TUI") is the merchandising signal operators care
+  // about — more than the sourcing channel (Voyant Connect), which stays a
+  // filter facet + a detail-sheet attribute.
+  return [{ label: formatSupplier(id), variant: "secondary" }]
+}
+
+function formatShortDate(iso: string, withYear = false): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return new Intl.DateTimeFormat(undefined, {
+    day: "numeric",
+    month: "short",
+    ...(withYear ? { year: "numeric" } : {}),
+  }).format(date)
+}
+
+/**
+ * Render a `YYYY-MM` departure-month facet value as a localized "Mon YYYY"
+ * label (e.g. `2027-03` → "Mar 2027"). Falls back to the raw value when it
+ * isn't a parseable month key.
+ */
+function formatDepartureMonth(value: unknown): string {
+  const raw = String(value)
+  const match = /^(\d{4})-(\d{2})$/.exec(raw)
+  if (!match) return raw
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, 1)
+  if (Number.isNaN(date.getTime())) return raw
+  return new Intl.DateTimeFormat(undefined, { month: "short", year: "numeric" }).format(date)
 }

@@ -75,7 +75,55 @@ export function createConnectCruiseSourceAdapter(
     extras?.memoize,
   )
   if (extras?.geo) adapter = withResolvedGeoNames(adapter, extras.geo)
+  // Roll each cruise's sailings up into departure-window facets on the search
+  // projection (the upstream adapter leaves them null). Applied after the
+  // memoizer so the per-cruise sailing reads are cached within a sync run.
+  adapter = withDepartureWindows(adapter)
   return cruiseAdapterToSourceAdapter(adapter, shimOptions)
+}
+
+/**
+ * Wrap a cruise adapter so its `searchProjection` stream fills the departure
+ * facets — `earliestDeparture` / `latestDeparture` (the [first, last] window),
+ * `departureMonths` (distinct `YYYY-MM` for the month/year filter), and
+ * `departureCount` (total sailings) — derived from each cruise's own sailing
+ * list. The upstream `@voyantjs/connect-cruises` search projection only ships a
+ * (usually empty) window; per-cruise sailings carry the dates. Reads go through
+ * the (memoized) adapter, and a failure on one cruise leaves it un-enriched
+ * rather than aborting the whole sync.
+ */
+function withDepartureWindows(adapter: CruiseAdapter): CruiseAdapter {
+  return {
+    ...adapter,
+    searchProjection: (opts) => resolveDepartureWindows(adapter, adapter.searchProjection(opts)),
+  }
+}
+
+async function* resolveDepartureWindows(
+  adapter: CruiseAdapter,
+  source: AsyncIterable<CruiseSearchProjectionEntry>,
+): AsyncIterable<CruiseSearchProjectionEntry> {
+  for await (const entry of source) {
+    if (entry.departureMonths == null || entry.earliestDeparture == null) {
+      try {
+        const sailings = await adapter.listSailingsForCruise(entry.sourceRef)
+        const dates = sailings
+          .map((sailing) => sailing.departureDate)
+          .filter((date): date is string => typeof date === "string" && date.length >= 7)
+          .sort()
+        if (dates.length > 0) {
+          entry.earliestDeparture = entry.earliestDeparture ?? dates[0]
+          entry.latestDeparture = entry.latestDeparture ?? dates[dates.length - 1]
+          entry.departureMonths =
+            entry.departureMonths ?? [...new Set(dates.map((date) => date.slice(0, 7)))].sort()
+          entry.departureCount = entry.departureCount ?? dates.length
+        }
+      } catch {
+        // Leave departures un-enriched for this cruise; the rest still index.
+      }
+    }
+    yield entry
+  }
 }
 
 /**

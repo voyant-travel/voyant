@@ -13,6 +13,7 @@ import { PersonPickerSection, type PersonPickerValue } from "@voyantjs/bookings-
 import { BookingJourney, type BookingJourneyProps } from "@voyantjs/bookings-ui/journey"
 import { useState } from "react"
 
+import { catalogVerticalPath } from "@/components/voyant/catalog/catalog-route-state"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 const emptyPersonPickerValue: PersonPickerValue = {
@@ -67,7 +68,7 @@ export function OperatorBookingJourney({
       navigate({ to: "/bookings", search: { highlight: result.bookingId } as never })
     },
     onCancelled() {
-      navigate({ to: "/catalog" })
+      navigate({ to: catalogVerticalPath(entityModule) })
     },
   }
 

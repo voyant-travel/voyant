@@ -268,6 +268,103 @@ const PRODUCT_FIELD_POLICY: FieldPolicyInput[] = [
     overrideFriction: "none",
     sourceFreshness: "sync",
   },
+  // ── Sourced merchandising facets ────────────────────────────────────────
+  // Board basis (AI/HB/BB/RO) + star rating are first-class on the Connect
+  // SearchDocument (connect-sdk >= 0.3) and mapped by the connect adapter.
+  // Owned products leave these null until they carry equivalent columns.
+  {
+    path: "board",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "stars",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    // Transport inclusion (e.g. "flight" for flight+stay packages). Sourced
+    // from the upstream package's flightIncluded flag.
+    path: "transport",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    // Raw destination labels/codes from the upstream search doc (sourced rows).
+    // Owned products use the resolved regions/countries/cities arrays instead.
+    path: "destinations[]",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "countryCodes[]",
+    class: "structural",
+    merge: "source-only",
+    drift: "medium",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    // Supply mechanic — durable, product-agnostic split that drives the
+    // search + booking surface: "dynamic" (live-composed, any date, calendar
+    // pricing) vs "scheduled" (fixed dated departures with seat allotment).
+    // See docs/architecture/catalog-supply-models.md. Distinct from `category`
+    // (package/tour/excursion…), which lives on productType/categories.
+    path: "supplyModel",
+    class: "structural",
+    merge: "source-only",
+    drift: "low",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
   {
     path: "capacityMode",
     class: "structural",

@@ -63,3 +63,51 @@ export function createGeoNameResolver(options: GeoNameResolverOptions): GeoNameR
     },
   }
 }
+
+/**
+ * Resolves raw destination tokens from sourced packages to readable city
+ * names. Upstream package destinations are a mix of IATA airport codes
+ * (`AYT`, `PMI`, `CHQ`) and plain area names (`Belek`, `Rethymno`). Airport
+ * codes are resolved to their city via Voyant Data air (`/data/air/v1`);
+ * everything else passes through unchanged. Memoized per token.
+ */
+export interface DestinationNameResolver {
+  resolve(token: string): Promise<string>
+}
+
+export function createDestinationNameResolver(
+  options: GeoNameResolverOptions,
+): DestinationNameResolver {
+  const client = createVoyantDataClient({
+    apiKey: options.apiKey,
+    ...(options.baseUrl ? { baseUrl: options.baseUrl } : {}),
+    lang: options.lang ?? "en",
+  })
+  const cache = new Map<string, Promise<string>>()
+  const isIataCode = (value: string) => /^[A-Z]{3}$/.test(value)
+
+  const resolve = (token: string): Promise<string> => {
+    const cached = cache.get(token)
+    if (cached) return cached
+    if (!isIataCode(token)) {
+      const passthrough = Promise.resolve(token)
+      cache.set(token, passthrough)
+      return passthrough
+    }
+    const pending = client.air.airports
+      .get(token)
+      .then((res: unknown) => {
+        const airport = (res as { data?: unknown })?.data ?? res
+        const city = (airport as { city?: unknown })?.city
+        const name = (airport as { name?: unknown })?.name
+        if (typeof city === "string" && city.length > 0) return city
+        if (typeof name === "string" && name.length > 0) return name
+        return token
+      })
+      .catch(() => token)
+    cache.set(token, pending)
+    return pending
+  }
+
+  return { resolve }
+}

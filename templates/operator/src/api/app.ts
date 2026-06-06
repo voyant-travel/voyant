@@ -52,6 +52,7 @@ import { mountCatalogCheckoutRoutes } from "./catalog-checkout"
 import { createCatalogCheckoutBundle } from "./catalog-checkout-finalize-runtime"
 import { rebuildBookingItemTaxLines } from "./catalog-checkout-materialization"
 import { mountCatalogContentRoutes } from "./catalog-content"
+import { mountCatalogOffersRoutes } from "./catalog-offers"
 import { channelPushBundle, mountChannelPushAdminRoutes } from "./channel-push"
 import { mountOperatorContractDocumentRoutes } from "./contract-document-routes"
 import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./contract-document-runtime"
@@ -454,6 +455,7 @@ export const app = createApp<CloudflareBindings>({
     mountCatalogBookingRoutes(hono)
     mountCatalogCheckoutRoutes(hono)
     mountCatalogContentRoutes(hono)
+    mountCatalogOffersRoutes(hono)
     mountChannelPushAdminRoutes(hono)
     mountFlightRoutes(hono)
 

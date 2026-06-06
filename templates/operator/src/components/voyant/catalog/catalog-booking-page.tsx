@@ -13,6 +13,7 @@ import { PassengerContactPicker } from "@/components/voyant/flights/passenger-co
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
 import { Route } from "@/routes/_workspace/catalog_.book.$entityModule.$entityId"
+import { catalogVerticalPath } from "./catalog-route-state"
 
 export function CatalogBookingPage() {
   const navigate = useNavigate()
@@ -20,6 +21,7 @@ export function CatalogBookingPage() {
   const params = Route.useParams()
   const search = Route.useSearch()
   const fetchers = useMemo(() => createCatalogBookingFetchers({ baseUrl: getApiUrl() }), [])
+  const backToCatalogPath = catalogVerticalPath(params.entityModule)
 
   return (
     <CatalogUiBookingPage
@@ -35,8 +37,8 @@ export function CatalogBookingPage() {
         departureStartsAt: search.departureStartsAt,
       }}
       fetchers={fetchers}
-      onBackToCatalog={() => navigate({ to: "/catalog" })}
-      onCancel={() => navigate({ to: "/catalog" })}
+      onBackToCatalog={() => navigate({ to: backToCatalogPath })}
+      onCancel={() => navigate({ to: backToCatalogPath })}
       onAddContact={() => window.open("/people", "_blank")}
       renderContactPicker={({ onPick, onAddContact }) => (
         <PassengerContactPicker onPick={onPick} onAddContact={onAddContact} />
