@@ -82,6 +82,15 @@ describe("bookingCreateSchema", () => {
     })
   })
 
+  it("accepts explicit duplicate overrides", () => {
+    const result = bookingCreateSchema.parse({
+      ...valid,
+      allowDuplicate: true,
+    })
+
+    expect(result.allowDuplicate).toBe(true)
+  })
+
   it("requires billing and travelers", () => {
     expect(() =>
       bookingCreateSchema.parse({

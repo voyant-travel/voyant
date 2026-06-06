@@ -163,6 +163,11 @@ export interface BookingCreateInput {
    */
   suppressNotifications?: boolean
   /**
+   * Allows a second active booking for the same billing party and departure.
+   * Leave unset for retry/double-submit protection.
+   */
+  allowDuplicate?: boolean
+  /**
    * Billing-contact snapshot. Caller (typically the create dialog)
    * reads the linked CRM person/org and supplies what it knows so the
    * booking detail page renders the right payer even if those CRM
