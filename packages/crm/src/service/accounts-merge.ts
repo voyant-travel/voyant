@@ -254,6 +254,20 @@ async function mergeEntityLinks(
     .set({ entityId: keepId })
     .where(and(eq(activityLinks.entityType, entityType), eq(activityLinks.entityId, mergeId)))
 
+  await db.delete(customFieldValues).where(
+    and(
+      eq(customFieldValues.entityType, entityType),
+      eq(customFieldValues.entityId, mergeId),
+      sql`EXISTS (
+          SELECT 1
+          FROM custom_field_values keep_value
+          WHERE keep_value.definition_id = ${customFieldValues.definitionId}
+            AND keep_value.entity_type = ${entityType}
+            AND keep_value.entity_id = ${keepId}
+        )`,
+    ),
+  )
+
   await db
     .update(customFieldValues)
     .set({ entityId: keepId, updatedAt: new Date() })

@@ -199,6 +199,46 @@ describe.skipIf(!DB_AVAILABLE)("Account routes", () => {
           'EUR'
         )
       `)
+      await db.execute(sql`
+        INSERT INTO custom_field_definitions (
+          id,
+          entity_type,
+          key,
+          label,
+          field_type
+        )
+        VALUES (
+          'cfdef_merge_org_tier_000000000001',
+          'organization',
+          'merge_org_tier',
+          'Merge organization tier',
+          'text'
+        )
+      `)
+      await db.execute(sql`
+        INSERT INTO custom_field_values (
+          id,
+          definition_id,
+          entity_type,
+          entity_id,
+          text_value
+        )
+        VALUES
+          (
+            'cfval_merge_org_keep_000000000001',
+            'cfdef_merge_org_tier_000000000001',
+            'organization',
+            ${keep.id},
+            'gold'
+          ),
+          (
+            'cfval_merge_org_dup_000000000001',
+            'cfdef_merge_org_tier_000000000001',
+            'organization',
+            ${merge.id},
+            'silver'
+          )
+      `)
 
       const res = await app.request(`/organizations/${keep.id}/merge`, {
         method: "POST",
@@ -227,6 +267,13 @@ describe.skipIf(!DB_AVAILABLE)("Account routes", () => {
         WHERE id = 'book_merge_org_000000000000000000001'
       `)
       expect(bookingRows[0]?.organization_id).toBe(keep.id)
+
+      const customFieldRows = await db.execute<{ entity_id: string; text_value: string }>(sql`
+        SELECT entity_id, text_value
+        FROM custom_field_values
+        WHERE definition_id = 'cfdef_merge_org_tier_000000000001'
+      `)
+      expect(customFieldRows).toEqual([{ entity_id: keep.id, text_value: "gold" }])
     })
 
     it("deletes an organization", async () => {
@@ -329,6 +376,46 @@ describe.skipIf(!DB_AVAILABLE)("Account routes", () => {
           'EUR'
         )
       `)
+      await db.execute(sql`
+        INSERT INTO custom_field_definitions (
+          id,
+          entity_type,
+          key,
+          label,
+          field_type
+        )
+        VALUES (
+          'cfdef_merge_person_pref_00000001',
+          'person',
+          'merge_person_pref',
+          'Merge person preference',
+          'text'
+        )
+      `)
+      await db.execute(sql`
+        INSERT INTO custom_field_values (
+          id,
+          definition_id,
+          entity_type,
+          entity_id,
+          text_value
+        )
+        VALUES
+          (
+            'cfval_merge_person_keep_00000001',
+            'cfdef_merge_person_pref_00000001',
+            'person',
+            ${keep.id},
+            'window'
+          ),
+          (
+            'cfval_merge_person_dup_00000001',
+            'cfdef_merge_person_pref_00000001',
+            'person',
+            ${merge.id},
+            'aisle'
+          )
+      `)
 
       const res = await app.request(`/people/${keep.id}/merge`, {
         method: "POST",
@@ -354,6 +441,13 @@ describe.skipIf(!DB_AVAILABLE)("Account routes", () => {
         WHERE id = 'book_merge_person_000000000000000001'
       `)
       expect(bookingRows[0]?.person_id).toBe(keep.id)
+
+      const customFieldRows = await db.execute<{ entity_id: string; text_value: string }>(sql`
+        SELECT entity_id, text_value
+        FROM custom_field_values
+        WHERE definition_id = 'cfdef_merge_person_pref_00000001'
+      `)
+      expect(customFieldRows).toEqual([{ entity_id: keep.id, text_value: "window" }])
     })
 
     it("rejects self person merges", async () => {
