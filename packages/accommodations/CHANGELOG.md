@@ -1,5 +1,19 @@
 # @voyantjs/accommodations
 
+## 0.105.0
+
+### Minor Changes
+
+- 921f4fc: Add a canonical board-basis contract enum and reuse it across accommodation meal plans, product options, and cruise sailings.
+
+### Patch Changes
+
+- Updated dependencies [921f4fc]
+  - @voyantjs/accommodations-contracts@0.105.0
+  - @voyantjs/catalog@0.104.4
+  - @voyantjs/bookings@0.105.0
+  - @voyantjs/facilities@0.104.2
+
 ## 0.104.1
 
 ### Patch Changes

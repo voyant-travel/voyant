@@ -1,5 +1,13 @@
 # @voyantjs/finance
 
+## 0.105.0
+
+### Patch Changes
+
+- Updated dependencies [921f4fc]
+  - @voyantjs/products@0.105.0
+  - @voyantjs/bookings@0.105.0
+
 ## 0.104.2
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @voyantjs/catalog-contracts
 
+## 0.105.0
+
+### Minor Changes
+
+- 921f4fc: Add a canonical board-basis contract enum and reuse it across accommodation meal plans, product options, and cruise sailings.
+
 ## 0.104.1
 
 ## 0.104.0

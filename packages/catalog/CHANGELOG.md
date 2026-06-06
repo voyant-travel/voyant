@@ -1,5 +1,12 @@
 # @voyantjs/catalog
 
+## 0.104.4
+
+### Patch Changes
+
+- Updated dependencies [921f4fc]
+  - @voyantjs/catalog-contracts@0.105.0
+
 ## 0.104.3
 
 ### Patch Changes

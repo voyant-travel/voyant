@@ -1,5 +1,12 @@
 # @voyantjs/cruises-ui
 
+## 0.105.0
+
+### Patch Changes
+
+- @voyantjs/cruises-react@0.105.0
+- @voyantjs/catalog-react@0.104.4
+
 ## 0.104.2
 
 ### Patch Changes
