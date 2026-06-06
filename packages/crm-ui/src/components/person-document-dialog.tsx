@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@voyantjs/ui/components"
 import { Checkbox } from "@voyantjs/ui/components/checkbox"
+import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
 import {
@@ -197,21 +198,19 @@ export function PersonDocumentDialog({
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="doc-issued">{dialog.fields.issueDate}</Label>
-              <Input
-                id="doc-issued"
-                type="date"
-                value={state.issueDate}
-                onChange={(event) => set("issueDate", event.target.value)}
+              <Label>{dialog.fields.issueDate}</Label>
+              <DatePicker
+                value={state.issueDate || null}
+                onChange={(next) => set("issueDate", next ?? "")}
+                className="w-full"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="doc-expiry">{dialog.fields.expiryDate}</Label>
-              <Input
-                id="doc-expiry"
-                type="date"
-                value={state.expiryDate}
-                onChange={(event) => set("expiryDate", event.target.value)}
+              <Label>{dialog.fields.expiryDate}</Label>
+              <DatePicker
+                value={state.expiryDate || null}
+                onChange={(next) => set("expiryDate", next ?? "")}
+                className="w-full"
               />
             </div>
             <div className="col-span-2 flex items-center gap-2">
