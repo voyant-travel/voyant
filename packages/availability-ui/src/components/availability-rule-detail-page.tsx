@@ -8,9 +8,9 @@ import {
   availabilityQueryKeys,
   availabilityRuleSingleResponse,
   fetchWithValidation,
-  formatDateTime,
   getProductQueryOptions,
   getSlotsQueryOptions,
+  slotLocalStart,
   useAvailabilityRuleMutation,
   useVoyantAvailabilityContext,
   type VoyantAvailabilityContextValue,
@@ -242,15 +242,17 @@ function SlotButton({
     >
       <div className="flex items-center gap-2">
         <Badge variant="outline">{getSlotStatusLabel(slot.status, messages)}</Badge>
-        <span>
-          {slot.dateLocal} · {formatDateTime(slot.startsAt)}
-        </span>
+        <span>{formatSlotLocalDateTime(slotLocalStart(slot))}</span>
       </div>
       <div className="mt-2 text-muted-foreground">
         {messages.remainingPaxLabel}: {slot.remainingPax ?? noValue}
       </div>
     </button>
   )
+}
+
+function formatSlotLocalDateTime(value: { date: string; time: string }) {
+  return `${value.date} ${value.time}`
 }
 
 function DetailLine({ label, children }: { label: string; children: import("react").ReactNode }) {

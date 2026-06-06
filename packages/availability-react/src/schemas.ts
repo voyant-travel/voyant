@@ -83,6 +83,7 @@ export const availabilitySlotRecordSchema = z.object({
   availabilityRuleId: z.string().nullable(),
   startTimeId: z.string().nullable(),
   dateLocal: z.string(),
+  endDateLocal: z.string().nullable().optional(),
   startsAt: z.string(),
   endsAt: z.string().nullable(),
   timezone: z.string(),

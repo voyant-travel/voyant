@@ -96,6 +96,16 @@ export {
   buildAllocationRoomingCsv,
 } from "./service-allocation-exports.js"
 export {
+  instantToSlotLocal,
+  type LocalToInstantInput,
+  localToInstant,
+  type SlotLocalDateTime,
+  type SlotTimeRangeInput,
+  slotEndDateLocal,
+  slotLocalEnd,
+  slotLocalStart,
+} from "./slot-timezone.js"
+export {
   allocationAuditLogQuerySchema,
   allocationAutomationSchema,
   assignTravelerAllocationSchema,

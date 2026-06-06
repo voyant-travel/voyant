@@ -131,16 +131,14 @@ export function ProductAvailabilitySection({
                     <TableRow key={slot.id}>
                       <TableCell>
                         <div className="font-mono text-xs">{slot.dateLocal}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatSlotTime(slot.startsAt)}
-                        </div>
+                        <div className="text-xs text-muted-foreground">{formatSlotTime(slot)}</div>
                       </TableCell>
                       <TableCell>
                         {slot.endsAt ? (
                           <>
-                            <div className="font-mono text-xs">{formatSlotDate(slot.endsAt)}</div>
+                            <div className="font-mono text-xs">{formatSlotDate(slot, "end")}</div>
                             <div className="text-xs text-muted-foreground">
-                              {formatSlotTime(slot.endsAt)}
+                              {formatSlotTime(slot, "end")}
                             </div>
                           </>
                         ) : (
