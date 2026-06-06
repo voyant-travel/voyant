@@ -73,6 +73,7 @@ import { Route as WorkspaceLegalTemplatesIndexRouteImport } from './routes/_work
 import { Route as WorkspaceLegalPoliciesIndexRouteImport } from './routes/_workspace/legal/policies/index'
 import { Route as WorkspaceLegalNumberSeriesIndexRouteImport } from './routes/_workspace/legal/number-series/index'
 import { Route as WorkspaceLegalContractsIndexRouteImport } from './routes/_workspace/legal/contracts/index'
+import { Route as WorkspaceFinanceSupplierInvoicesIndexRouteImport } from './routes/_workspace/finance/supplier-invoices/index'
 import { Route as WorkspaceFinancePaymentsIndexRouteImport } from './routes/_workspace/finance/payments/index'
 import { Route as WorkspaceFinanceInvoicesIndexRouteImport } from './routes/_workspace/finance/invoices/index'
 import { Route as WorkspaceFinanceInvoiceNumberSeriesIndexRouteImport } from './routes/_workspace/finance/invoice-number-series/index'
@@ -437,6 +438,12 @@ const WorkspaceLegalContractsIndexRoute =
     path: '/legal/contracts/',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const WorkspaceFinanceSupplierInvoicesIndexRoute =
+  WorkspaceFinanceSupplierInvoicesIndexRouteImport.update({
+    id: '/finance/supplier-invoices/',
+    path: '/finance/supplier-invoices/',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 const WorkspaceFinancePaymentsIndexRoute =
   WorkspaceFinancePaymentsIndexRouteImport.update({
     id: '/finance/payments/',
@@ -637,6 +644,7 @@ export interface FileRoutesByFullPath {
   '/finance/invoice-number-series/': typeof WorkspaceFinanceInvoiceNumberSeriesIndexRoute
   '/finance/invoices/': typeof WorkspaceFinanceInvoicesIndexRoute
   '/finance/payments/': typeof WorkspaceFinancePaymentsIndexRoute
+  '/finance/supplier-invoices/': typeof WorkspaceFinanceSupplierInvoicesIndexRoute
   '/legal/contracts/': typeof WorkspaceLegalContractsIndexRoute
   '/legal/number-series/': typeof WorkspaceLegalNumberSeriesIndexRoute
   '/legal/policies/': typeof WorkspaceLegalPoliciesIndexRoute
@@ -720,6 +728,7 @@ export interface FileRoutesByTo {
   '/finance/invoice-number-series': typeof WorkspaceFinanceInvoiceNumberSeriesIndexRoute
   '/finance/invoices': typeof WorkspaceFinanceInvoicesIndexRoute
   '/finance/payments': typeof WorkspaceFinancePaymentsIndexRoute
+  '/finance/supplier-invoices': typeof WorkspaceFinanceSupplierInvoicesIndexRoute
   '/legal/contracts': typeof WorkspaceLegalContractsIndexRoute
   '/legal/number-series': typeof WorkspaceLegalNumberSeriesIndexRoute
   '/legal/policies': typeof WorkspaceLegalPoliciesIndexRoute
@@ -808,6 +817,7 @@ export interface FileRoutesById {
   '/_workspace/finance/invoice-number-series/': typeof WorkspaceFinanceInvoiceNumberSeriesIndexRoute
   '/_workspace/finance/invoices/': typeof WorkspaceFinanceInvoicesIndexRoute
   '/_workspace/finance/payments/': typeof WorkspaceFinancePaymentsIndexRoute
+  '/_workspace/finance/supplier-invoices/': typeof WorkspaceFinanceSupplierInvoicesIndexRoute
   '/_workspace/legal/contracts/': typeof WorkspaceLegalContractsIndexRoute
   '/_workspace/legal/number-series/': typeof WorkspaceLegalNumberSeriesIndexRoute
   '/_workspace/legal/policies/': typeof WorkspaceLegalPoliciesIndexRoute
@@ -894,6 +904,7 @@ export interface FileRouteTypes {
     | '/finance/invoice-number-series/'
     | '/finance/invoices/'
     | '/finance/payments/'
+    | '/finance/supplier-invoices/'
     | '/legal/contracts/'
     | '/legal/number-series/'
     | '/legal/policies/'
@@ -977,6 +988,7 @@ export interface FileRouteTypes {
     | '/finance/invoice-number-series'
     | '/finance/invoices'
     | '/finance/payments'
+    | '/finance/supplier-invoices'
     | '/legal/contracts'
     | '/legal/number-series'
     | '/legal/policies'
@@ -1064,6 +1076,7 @@ export interface FileRouteTypes {
     | '/_workspace/finance/invoice-number-series/'
     | '/_workspace/finance/invoices/'
     | '/_workspace/finance/payments/'
+    | '/_workspace/finance/supplier-invoices/'
     | '/_workspace/legal/contracts/'
     | '/_workspace/legal/number-series/'
     | '/_workspace/legal/policies/'
@@ -1534,6 +1547,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceLegalContractsIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/finance/supplier-invoices/': {
+      id: '/_workspace/finance/supplier-invoices/'
+      path: '/finance/supplier-invoices'
+      fullPath: '/finance/supplier-invoices/'
+      preLoaderRoute: typeof WorkspaceFinanceSupplierInvoicesIndexRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/_workspace/finance/payments/': {
       id: '/_workspace/finance/payments/'
       path: '/finance/payments'
@@ -1816,6 +1836,7 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceFinanceInvoiceNumberSeriesIndexRoute: typeof WorkspaceFinanceInvoiceNumberSeriesIndexRoute
   WorkspaceFinanceInvoicesIndexRoute: typeof WorkspaceFinanceInvoicesIndexRoute
   WorkspaceFinancePaymentsIndexRoute: typeof WorkspaceFinancePaymentsIndexRoute
+  WorkspaceFinanceSupplierInvoicesIndexRoute: typeof WorkspaceFinanceSupplierInvoicesIndexRoute
   WorkspaceLegalContractsIndexRoute: typeof WorkspaceLegalContractsIndexRoute
   WorkspaceLegalNumberSeriesIndexRoute: typeof WorkspaceLegalNumberSeriesIndexRoute
   WorkspaceLegalPoliciesIndexRoute: typeof WorkspaceLegalPoliciesIndexRoute
@@ -1881,6 +1902,8 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
     WorkspaceFinanceInvoiceNumberSeriesIndexRoute,
   WorkspaceFinanceInvoicesIndexRoute: WorkspaceFinanceInvoicesIndexRoute,
   WorkspaceFinancePaymentsIndexRoute: WorkspaceFinancePaymentsIndexRoute,
+  WorkspaceFinanceSupplierInvoicesIndexRoute:
+    WorkspaceFinanceSupplierInvoicesIndexRoute,
   WorkspaceLegalContractsIndexRoute: WorkspaceLegalContractsIndexRoute,
   WorkspaceLegalNumberSeriesIndexRoute: WorkspaceLegalNumberSeriesIndexRoute,
   WorkspaceLegalPoliciesIndexRoute: WorkspaceLegalPoliciesIndexRoute,
