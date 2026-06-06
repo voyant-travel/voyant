@@ -1,5 +1,13 @@
 # @voyantjs/crm
 
+## 0.105.1
+
+### Patch Changes
+
+- e096b99: Make CRM people search tokenize whitespace-separated names and compare unaccented person fields so family-first names and diacritic variants match.
+- Updated dependencies [e096b99]
+  - @voyantjs/db@0.104.2
+
 ## 0.105.0
 
 ### Patch Changes
