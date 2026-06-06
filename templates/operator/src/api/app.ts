@@ -3,6 +3,7 @@ import { availabilityHonoModule } from "@voyantjs/availability"
 import { bookingRequirementsHonoModule } from "@voyantjs/booking-requirements"
 import { bookingsSupplierExtension, createBookingsHonoModule } from "@voyantjs/bookings"
 import { createCatalogSearchHonoModule } from "@voyantjs/catalog"
+import { catalogAuthoringExtension } from "@voyantjs/catalog-authoring"
 import { type EmbeddingProvider, executeSemanticSearch } from "@voyantjs/catalog-rag"
 import { type CheckoutPaymentStarter, createCheckoutHonoModule } from "@voyantjs/checkout"
 import { createCrmHonoModule, crmBookingExtension, crmService } from "@voyantjs/crm"
@@ -367,6 +368,9 @@ export const app = createApp<CloudflareBindings>({
     bookingsSupplierExtension,
     bookingsCreateExtension,
     productsBookingExtension,
+    // Mounts POST /v1/admin/products/compose for Max AI catalog authoring (new-from-spec).
+    // Cloning stays on the existing duplicateProductAsDraft route below.
+    catalogAuthoringExtension,
     crmBookingExtension,
     transactionsBookingExtension,
     distributionBookingExtension,
