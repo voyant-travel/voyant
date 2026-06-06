@@ -150,6 +150,132 @@ describe.skipIf(!DB_AVAILABLE)("Account routes", () => {
       expect(body.data.name).toBe("New Name")
     })
 
+    it("merges duplicate organizations and repoints people and booking references", async () => {
+      const { createTestDb } = await import("@voyantjs/db/test-utils")
+      const db = createTestDb()
+
+      const keepRes = await app.request("/organizations", {
+        method: "POST",
+        ...json({ name: "Acme Travel", tags: ["agency"] }),
+      })
+      const mergeRes = await app.request("/organizations", {
+        method: "POST",
+        ...json({
+          name: "Acme Travel SRL",
+          legalName: "Acme Travel SRL",
+          taxId: "RO123456",
+          paymentTerms: 14,
+          tags: ["billing"],
+        }),
+      })
+      const keep = (await keepRes.json()).data
+      const merge = (await mergeRes.json()).data
+
+      const personRes = await app.request("/people", {
+        method: "POST",
+        ...json({
+          firstName: "Org",
+          lastName: "Contact",
+          organizationId: merge.id,
+        }),
+      })
+      const person = (await personRes.json()).data
+
+      await db.execute(sql`
+        INSERT INTO bookings (
+          id,
+          booking_number,
+          status,
+          organization_id,
+          source_type,
+          sell_currency
+        )
+        VALUES (
+          'book_merge_org_000000000000000000001',
+          'B-MERGE-ORG-1',
+          'draft',
+          ${merge.id},
+          'manual',
+          'EUR'
+        )
+      `)
+      await db.execute(sql`
+        INSERT INTO custom_field_definitions (
+          id,
+          entity_type,
+          key,
+          label,
+          field_type
+        )
+        VALUES (
+          'cfdef_merge_org_tier_000000000001',
+          'organization',
+          'merge_org_tier',
+          'Merge organization tier',
+          'text'
+        )
+      `)
+      await db.execute(sql`
+        INSERT INTO custom_field_values (
+          id,
+          definition_id,
+          entity_type,
+          entity_id,
+          text_value
+        )
+        VALUES
+          (
+            'cfval_merge_org_keep_000000000001',
+            'cfdef_merge_org_tier_000000000001',
+            'organization',
+            ${keep.id},
+            'gold'
+          ),
+          (
+            'cfval_merge_org_dup_000000000001',
+            'cfdef_merge_org_tier_000000000001',
+            'organization',
+            ${merge.id},
+            'silver'
+          )
+      `)
+
+      const res = await app.request(`/organizations/${keep.id}/merge`, {
+        method: "POST",
+        ...json({ mergeId: merge.id }),
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.data.id).toBe(keep.id)
+      expect(body.data.name).toBe("Acme Travel")
+      expect(body.data.legalName).toBe("Acme Travel SRL")
+      expect(body.data.taxId).toBe("RO123456")
+      expect(body.data.paymentTerms).toBe(14)
+      expect(body.data.tags).toEqual(["agency", "billing"])
+
+      const duplicate = await app.request(`/organizations/${merge.id}`, { method: "GET" })
+      expect(duplicate.status).toBe(404)
+
+      const personAfterMerge = await app.request(`/people/${person.id}`, { method: "GET" })
+      expect(personAfterMerge.status).toBe(200)
+      expect((await personAfterMerge.json()).data.organizationId).toBe(keep.id)
+
+      const bookingRows = await db.execute<{ organization_id: string }>(sql`
+        SELECT organization_id
+        FROM bookings
+        WHERE id = 'book_merge_org_000000000000000000001'
+      `)
+      expect(bookingRows[0]?.organization_id).toBe(keep.id)
+
+      const customFieldRows = await db.execute<{ entity_id: string; text_value: string }>(sql`
+        SELECT entity_id, text_value
+        FROM custom_field_values
+        WHERE definition_id = 'cfdef_merge_org_tier_000000000001'
+      `)
+      expect(customFieldRows).toEqual([{ entity_id: keep.id, text_value: "gold" }])
+    })
+
     it("deletes an organization", async () => {
       const createRes = await app.request("/organizations", {
         method: "POST",
@@ -202,6 +328,141 @@ describe.skipIf(!DB_AVAILABLE)("Account routes", () => {
       expect(body.data.firstName).toBe("John")
       expect(body.data.lastName).toBe("Doe")
       expect(body.data.id).toBeTruthy()
+    })
+
+    it("merges duplicate people and repoints booking references", async () => {
+      const { createTestDb } = await import("@voyantjs/db/test-utils")
+      const db = createTestDb()
+
+      const keepRes = await app.request("/people", {
+        method: "POST",
+        ...json({
+          firstName: "Ana",
+          lastName: "Ionescu",
+          email: "ana@example.com",
+          tags: ["vip"],
+        }),
+      })
+      const mergeRes = await app.request("/people", {
+        method: "POST",
+        ...json({
+          firstName: "Ana Maria",
+          middleName: "Maria",
+          lastName: "Ionescu",
+          phone: "+40 700 000 000",
+          dateOfBirth: "1990-03-12",
+          notes: "Duplicate traveler profile",
+          tags: ["repeat"],
+        }),
+      })
+      const keep = (await keepRes.json()).data
+      const merge = (await mergeRes.json()).data
+
+      await db.execute(sql`
+        INSERT INTO bookings (
+          id,
+          booking_number,
+          status,
+          person_id,
+          source_type,
+          sell_currency
+        )
+        VALUES (
+          'book_merge_person_000000000000000001',
+          'B-MERGE-PERSON-1',
+          'draft',
+          ${merge.id},
+          'manual',
+          'EUR'
+        )
+      `)
+      await db.execute(sql`
+        INSERT INTO custom_field_definitions (
+          id,
+          entity_type,
+          key,
+          label,
+          field_type
+        )
+        VALUES (
+          'cfdef_merge_person_pref_00000001',
+          'person',
+          'merge_person_pref',
+          'Merge person preference',
+          'text'
+        )
+      `)
+      await db.execute(sql`
+        INSERT INTO custom_field_values (
+          id,
+          definition_id,
+          entity_type,
+          entity_id,
+          text_value
+        )
+        VALUES
+          (
+            'cfval_merge_person_keep_00000001',
+            'cfdef_merge_person_pref_00000001',
+            'person',
+            ${keep.id},
+            'window'
+          ),
+          (
+            'cfval_merge_person_dup_00000001',
+            'cfdef_merge_person_pref_00000001',
+            'person',
+            ${merge.id},
+            'aisle'
+          )
+      `)
+
+      const res = await app.request(`/people/${keep.id}/merge`, {
+        method: "POST",
+        ...json({ mergeId: merge.id }),
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.data.id).toBe(keep.id)
+      expect(body.data.email).toBe("ana@example.com")
+      expect(body.data.phone).toBe("+40 700 000 000")
+      expect(body.data.middleName).toBe("Maria")
+      expect(body.data.dateOfBirth).toBe("1990-03-12")
+      expect(body.data.notes).toBe("Duplicate traveler profile")
+      expect(body.data.tags).toEqual(["vip", "repeat"])
+
+      const duplicate = await app.request(`/people/${merge.id}`, { method: "GET" })
+      expect(duplicate.status).toBe(404)
+
+      const bookingRows = await db.execute<{ person_id: string }>(sql`
+        SELECT person_id
+        FROM bookings
+        WHERE id = 'book_merge_person_000000000000000001'
+      `)
+      expect(bookingRows[0]?.person_id).toBe(keep.id)
+
+      const customFieldRows = await db.execute<{ entity_id: string; text_value: string }>(sql`
+        SELECT entity_id, text_value
+        FROM custom_field_values
+        WHERE definition_id = 'cfdef_merge_person_pref_00000001'
+      `)
+      expect(customFieldRows).toEqual([{ entity_id: keep.id, text_value: "window" }])
+    })
+
+    it("rejects self person merges", async () => {
+      const createRes = await app.request("/people", {
+        method: "POST",
+        ...json({ firstName: "Self", lastName: "Merge" }),
+      })
+      const person = (await createRes.json()).data
+
+      const res = await app.request(`/people/${person.id}/merge`, {
+        method: "POST",
+        ...json({ mergeId: person.id }),
+      })
+
+      expect(res.status).toBe(400)
     })
 
     it("replays person creates with the same idempotency key", async () => {

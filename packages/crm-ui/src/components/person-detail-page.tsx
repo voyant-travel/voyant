@@ -44,6 +44,7 @@ import {
   Eye,
   EyeOff,
   FileText,
+  GitMerge,
   Globe,
   Languages,
   Loader2,
@@ -63,6 +64,7 @@ import { InlineCurrencyField } from "./inline-currency-field.js"
 import { InlineField } from "./inline-field.js"
 import { InlineLanguageField } from "./inline-language-field.js"
 import { InlineSelectField } from "./inline-select-field.js"
+import { PersonMergeDialog } from "./merge-dialogs.js"
 import { PersonAddressesSection } from "./person-addresses-section.js"
 import { PersonDialog } from "./person-dialog.js"
 import { PersonDocumentDialog } from "./person-document-dialog.js"
@@ -197,6 +199,7 @@ export function PersonDetailPage({
   const messages = useCrmUiMessagesOrDefault()
   const [activeTab, setActiveTab] = useState<PersonDetailTab>("overview")
   const [editOpen, setEditOpen] = useState(false)
+  const [mergeOpen, setMergeOpen] = useState(false)
   const personQuery = usePerson(id)
   const { remove, update } = usePersonMutation()
   const person = personQuery.data
@@ -275,6 +278,7 @@ export function PersonDetailPage({
         personName={displayName}
         onBack={() => onBack?.()}
         onEdit={() => setEditOpen(true)}
+        onMerge={() => setMergeOpen(true)}
         deletePending={remove.isPending}
         onDelete={async () => {
           await remove.mutateAsync(id)
@@ -313,6 +317,7 @@ export function PersonDetailPage({
       </div>
 
       <PersonDialog open={editOpen} onOpenChange={setEditOpen} person={person} />
+      <PersonMergeDialog open={mergeOpen} onOpenChange={setMergeOpen} keepPerson={person} />
     </div>
   )
 }
@@ -321,6 +326,7 @@ export interface PersonTopBarProps {
   personName: string
   onBack: () => void
   onEdit: () => void
+  onMerge: () => void
   onDelete: () => Promise<void>
   deletePending: boolean
 }
@@ -329,6 +335,7 @@ export function PersonTopBar({
   personName,
   onBack,
   onEdit,
+  onMerge,
   onDelete,
   deletePending,
 }: PersonTopBarProps) {
@@ -350,6 +357,10 @@ export function PersonTopBar({
         <Button variant="outline" size="sm" onClick={onEdit}>
           <Pencil className="size-4" aria-hidden="true" />
           {messages.personDetail.topBar.edit}
+        </Button>
+        <Button variant="outline" size="sm" onClick={onMerge}>
+          <GitMerge className="size-4" aria-hidden="true" />
+          {messages.personDetail.topBar.merge}
         </Button>
         <ConfirmActionButton
           buttonLabel={messages.personDetail.topBar.delete}

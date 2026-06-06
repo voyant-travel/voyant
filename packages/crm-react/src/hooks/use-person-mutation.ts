@@ -36,6 +36,11 @@ export interface UpdatePersonProfilePiiInput {
   insurance?: string | null
 }
 
+export interface MergePersonInput {
+  keepId: string
+  mergeId: string
+}
+
 const deleteResponseSchema = z.object({ success: z.boolean() })
 const successResponseSchema = z.object({ success: z.boolean() })
 
@@ -94,6 +99,23 @@ export function usePersonMutation() {
     },
   })
 
+  const merge = useMutation({
+    mutationFn: async ({ keepId, mergeId }: MergePersonInput) => {
+      const { data } = await fetchWithValidation(
+        `/v1/crm/people/${keepId}/merge`,
+        personSingleResponse,
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify({ mergeId }) },
+      )
+      return data
+    },
+    onSuccess: (data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: crmQueryKeys.people() })
+      queryClient.setQueryData(crmQueryKeys.person(data.id), data)
+      queryClient.removeQueries({ queryKey: crmQueryKeys.person(variables.mergeId) })
+    },
+  })
+
   /**
    * Plaintext PATCH for the four free-text PII slots. Server-side
    * encryption against the people KMS key. Used by the operator
@@ -122,5 +144,5 @@ export function usePersonMutation() {
     },
   })
 
-  return { create, update, remove, updateProfilePii }
+  return { create, update, remove, merge, updateProfilePii }
 }

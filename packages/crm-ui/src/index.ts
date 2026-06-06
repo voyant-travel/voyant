@@ -6,6 +6,12 @@ export {
   type CreateQuoteDialogProps,
 } from "./components/create-quote-dialog.js"
 export {
+  OrganizationMergeDialog,
+  type OrganizationMergeDialogProps,
+  PersonMergeDialog,
+  type PersonMergeDialogProps,
+} from "./components/merge-dialogs.js"
+export {
   OpportunitiesBoard,
   type OpportunitiesBoardProps,
 } from "./components/opportunities-board.js"
