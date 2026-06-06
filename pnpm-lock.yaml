@@ -973,6 +973,9 @@ importers:
 
   packages/accommodations-contracts:
     dependencies:
+      '@voyantjs/catalog-contracts':
+        specifier: workspace:^
+        version: link:../catalog-contracts
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -2404,6 +2407,9 @@ importers:
 
   packages/cruises-contracts:
     dependencies:
+      '@voyantjs/catalog-contracts':
+        specifier: workspace:^
+        version: link:../catalog-contracts
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -4541,6 +4547,9 @@ importers:
 
   packages/products-contracts:
     dependencies:
+      '@voyantjs/catalog-contracts':
+        specifier: workspace:^
+        version: link:../catalog-contracts
       '@voyantjs/schema-kit':
         specifier: workspace:^
         version: link:../schema-kit

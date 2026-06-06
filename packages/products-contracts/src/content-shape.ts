@@ -15,6 +15,7 @@
  * See `docs/architecture/catalog-sourced-content.md` §3.2, §3.5.4, §3.6.
  */
 
+import { boardBasisSchema } from "@voyantjs/catalog-contracts/content"
 import { z } from "zod"
 
 /**
@@ -69,6 +70,7 @@ export const productOptionSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().nullable().optional(),
+  board_basis: boardBasisSchema.nullable().optional(),
   units: z.array(productOptionUnitSchema).optional().default([]),
   inclusions: z.array(z.string()).optional().default([]),
 })
@@ -138,6 +140,15 @@ export type ProductOption = z.infer<typeof productOptionSchema>
 export type ProductDeparture = z.infer<typeof productDepartureSchema>
 export type ProductDay = z.infer<typeof productDaySchema>
 export type ProductPolicy = z.infer<typeof productPolicySchema>
+
+export {
+  BOARD_BASIS_FROM_SHORT_CODE,
+  BOARD_BASIS_SHORT_CODES,
+  BOARD_BASIS_VALUES,
+  type BoardBasis,
+  type BoardBasisShortCode,
+  boardBasisSchema,
+} from "@voyantjs/catalog-contracts/content"
 
 /**
  * Validate a `ProductContent` payload. Returns the parsed result on

@@ -23,6 +23,7 @@
  * See `docs/architecture/catalog-sourced-content.md` §3.2, §3.5.4, §3.6.
  */
 
+import { boardBasisSchema } from "@voyantjs/catalog-contracts/content"
 import { z } from "zod"
 
 export const ACCOMMODATION_CONTENT_SCHEMA_VERSION = "accommodations/v1"
@@ -83,8 +84,7 @@ export const accommodationMealPlanSchema = z.object({
   code: z.string().nullable().optional(),
   name: z.string(),
   description: z.string().nullable().optional(),
-  /** "room_only" | "bed_breakfast" | "half_board" | "full_board" | "all_inclusive". */
-  basis: z.string(),
+  basis: boardBasisSchema,
   inclusions: z.array(z.string()).optional().default([]),
 })
 
@@ -119,6 +119,15 @@ export type AccommodationRatePlan = z.infer<typeof accommodationRatePlanSchema>
 export type AccommodationMealPlan = z.infer<typeof accommodationMealPlanSchema>
 export type AccommodationAmenity = z.infer<typeof accommodationAmenitySchema>
 export type AccommodationPolicy = z.infer<typeof accommodationPolicySchema>
+
+export {
+  BOARD_BASIS_FROM_SHORT_CODE,
+  BOARD_BASIS_SHORT_CODES,
+  BOARD_BASIS_VALUES,
+  type BoardBasis,
+  type BoardBasisShortCode,
+  boardBasisSchema,
+} from "@voyantjs/catalog-contracts/content"
 
 export function validateAccommodationContent(
   payload: unknown,

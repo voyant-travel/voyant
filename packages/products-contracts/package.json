@@ -78,6 +78,7 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
+    "@voyantjs/catalog-contracts": "workspace:^",
     "@voyantjs/schema-kit": "workspace:^",
     "zod": "^4.3.6"
   },

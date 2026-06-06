@@ -4,6 +4,7 @@ import {
   ACCOMMODATION_CONTENT_SCHEMA_VERSION,
   type AccommodationContent,
   accommodationContentSchema,
+  BOARD_BASIS_SHORT_CODES,
   validateAccommodationContent,
 } from "./index.js"
 
@@ -17,6 +18,7 @@ describe("@voyantjs/accommodations-contracts content shape", () => {
     }) satisfies AccommodationContent
 
     expect(ACCOMMODATION_CONTENT_SCHEMA_VERSION).toBe("accommodations/v1")
+    expect(BOARD_BASIS_SHORT_CODES.bed_breakfast).toBe("BB")
     expect(validateAccommodationContent(content)).toMatchObject({ valid: true })
     expect(content.rate_plans).toEqual([])
     expect(content.room_types[0]?.amenities).toEqual([])
@@ -41,6 +43,15 @@ describe("@voyantjs/accommodations-contracts content shape", () => {
       validateAccommodationContent({
         hotel: { id: "hrmt_abc", name: "Hotel Sample" },
         policies: [{ kind: "loyalty", body: "x" }],
+      }),
+    ).toMatchObject({ valid: false })
+  })
+
+  it("rejects unknown meal-plan board basis values", () => {
+    expect(
+      validateAccommodationContent({
+        hotel: { id: "hrmt_abc", name: "Hotel Sample" },
+        meal_plans: [{ id: "mp_x", name: "Mystery", basis: "brunch_only" }],
       }),
     ).toMatchObject({ valid: false })
   })
