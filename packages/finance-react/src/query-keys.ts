@@ -40,6 +40,32 @@ export interface FinanceInvoiceNumberSeriesListFilters {
   offset?: number | undefined
 }
 
+export type FinanceSupplierInvoiceListSortField =
+  | "issueDate"
+  | "dueDate"
+  | "totalCents"
+  | "balanceDueCents"
+  | "status"
+  | "createdAt"
+
+export type FinanceSupplierInvoiceListSortDir = "asc" | "desc"
+
+export interface FinanceSupplierInvoiceListFilters {
+  supplierId?: string | undefined
+  status?: string | undefined
+  currency?: string | undefined
+  dueDateFrom?: string | undefined
+  dueDateTo?: string | undefined
+  departureId?: string | undefined
+  productId?: string | undefined
+  bookingId?: string | undefined
+  search?: string | undefined
+  sortBy?: FinanceSupplierInvoiceListSortField | undefined
+  sortDir?: FinanceSupplierInvoiceListSortDir | undefined
+  limit?: number | undefined
+  offset?: number | undefined
+}
+
 export type FinanceSupplierPaymentListSortField =
   | "amountCents"
   | "status"
@@ -153,6 +179,11 @@ export const financeQueryKeys = {
     [...financeQueryKeys.invoiceNumberSeries(), "list", filters] as const,
   invoiceNumberSeriesDetail: (id: string) =>
     [...financeQueryKeys.invoiceNumberSeries(), "detail", id] as const,
+
+  supplierInvoices: () => [...financeQueryKeys.all, "supplier-invoices"] as const,
+  supplierInvoicesList: (filters: FinanceSupplierInvoiceListFilters) =>
+    [...financeQueryKeys.supplierInvoices(), "list", filters] as const,
+  supplierInvoice: (id: string) => [...financeQueryKeys.supplierInvoices(), "detail", id] as const,
 
   supplierPayments: () => [...financeQueryKeys.all, "supplier-payments"] as const,
   supplierPaymentsList: (filters: FinanceSupplierPaymentListFilters) =>

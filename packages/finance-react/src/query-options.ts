@@ -21,6 +21,8 @@ import type { UsePublicBookingPaymentOptionsOptions } from "./hooks/use-public-b
 import type { UsePublicBookingPaymentsOptions } from "./hooks/use-public-booking-payments.js"
 import type { UsePublicFinanceDocumentByReferenceOptions } from "./hooks/use-public-finance-document-by-reference.js"
 import type { UsePublicPaymentSessionOptions } from "./hooks/use-public-payment-session.js"
+import type { UseSupplierInvoiceOptions } from "./hooks/use-supplier-invoice.js"
+import type { UseSupplierInvoicesOptions } from "./hooks/use-supplier-invoices.js"
 import type { UseSupplierPaymentsOptions } from "./hooks/use-supplier-payments.js"
 import type { UseVoucherOptions } from "./hooks/use-voucher.js"
 import type { UseVouchersOptions } from "./hooks/use-vouchers.js"
@@ -47,6 +49,8 @@ import {
   invoicePaymentsResponse,
   invoiceSingleResponse,
   paymentSingleResponse,
+  supplierInvoiceListResponse,
+  supplierInvoiceSingleResponse,
   supplierPaymentListResponse,
   voucherDetailResponse,
   voucherListResponse,
@@ -139,6 +143,58 @@ export function getInvoicesQueryOptions(
         client,
       )
     },
+  })
+}
+
+export function getSupplierInvoicesQueryOptions(
+  client: FetchWithValidationOptions,
+  options: UseSupplierInvoicesOptions = {},
+) {
+  const { enabled: _enabled = true, ...filters } = options
+
+  return queryOptions({
+    queryKey: financeQueryKeys.supplierInvoicesList(filters),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (filters.supplierId) params.set("supplierId", filters.supplierId)
+      if (filters.status) params.set("status", filters.status)
+      if (filters.currency) params.set("currency", filters.currency)
+      if (filters.dueDateFrom) params.set("dueDateFrom", filters.dueDateFrom)
+      if (filters.dueDateTo) params.set("dueDateTo", filters.dueDateTo)
+      if (filters.departureId) params.set("departureId", filters.departureId)
+      if (filters.productId) params.set("productId", filters.productId)
+      if (filters.bookingId) params.set("bookingId", filters.bookingId)
+      if (filters.search) params.set("search", filters.search)
+      if (filters.sortBy) params.set("sortBy", filters.sortBy)
+      if (filters.sortDir) params.set("sortDir", filters.sortDir)
+      if (filters.limit !== undefined) params.set("limit", String(filters.limit))
+      if (filters.offset !== undefined) params.set("offset", String(filters.offset))
+      const qs = params.toString()
+
+      return fetchWithValidation(
+        `/v1/admin/finance/supplier-invoices${qs ? `?${qs}` : ""}`,
+        supplierInvoiceListResponse,
+        client,
+      )
+    },
+  })
+}
+
+export function getSupplierInvoiceQueryOptions(
+  client: FetchWithValidationOptions,
+  id: string | null | undefined,
+  options: UseSupplierInvoiceOptions = {},
+) {
+  const { enabled: _enabled = true } = options
+
+  return queryOptions({
+    queryKey: financeQueryKeys.supplierInvoice(id ?? ""),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/admin/finance/supplier-invoices/${id}`,
+        supplierInvoiceSingleResponse,
+        client,
+      ),
   })
 }
 
