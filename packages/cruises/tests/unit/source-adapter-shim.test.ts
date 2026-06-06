@@ -26,7 +26,9 @@ function makeProjectionEntries(count: number): CruiseSearchProjectionEntry[] {
       shipExternalId: "ms-sample",
       nights: 7,
       embarkPortName: "Athens",
+      embarkPortFacilityId: "port-facility:GRATH",
       disembarkPortName: "Athens",
+      disembarkPortFacilityId: "port-facility:GRATH",
       regionIds: ["region:mediterranean"],
       waterwayIds: ["sea:aegean"],
       portIds: ["port:GRATH"],
@@ -208,6 +210,8 @@ describe("cruiseAdapterToSourceAdapter.discover", () => {
     expect(page.projections[0]?.fields.nights).toBe(7)
     expect(page.projections[0]?.fields.lineSupplierId).toBe("sample-line")
     expect(page.projections[0]?.fields.defaultShipId).toBe("ms-sample")
+    expect(page.projections[0]?.fields.embarkPortFacilityId).toBe("port-facility:GRATH")
+    expect(page.projections[0]?.fields.disembarkPortFacilityId).toBe("port-facility:GRATH")
     expect(page.projections[0]?.fields.heroImageUrl).toBe("https://cdn/c0.jpg")
     expect(page.projections[0]?.fields.thumbnailUrl).toBe("https://cdn/c0.jpg")
     expect(page.projections[0]?.fields.status).toBe("open")
@@ -251,6 +255,8 @@ describe("cruiseAdapterToSourceAdapter.discover", () => {
     expect(doc.fields.thumbnailUrl).toBe("https://cdn/c0.jpg")
     expect(doc.fields.lineSupplierId).toBe("sample-line")
     expect(doc.fields.defaultShipId).toBe("ms-sample")
+    expect(doc.fields.embarkPortFacilityId).toBe("port-facility:GRATH")
+    expect(doc.fields.disembarkPortFacilityId).toBe("port-facility:GRATH")
   })
 
   it("emits a cursor when more pages exist", async () => {

@@ -456,7 +456,9 @@ function toCatalogProjection(
       defaultShipId: entry.shipExternalId ?? null,
       heroImageUrl: entry.heroImageUrl ?? null,
       thumbnailUrl: entry.heroImageUrl ?? null,
+      embarkPortFacilityId: entry.embarkPortFacilityId ?? null,
       embarkPortCanonicalPlaceId: entry.embarkPortCanonicalPlaceId ?? null,
+      disembarkPortFacilityId: entry.disembarkPortFacilityId ?? null,
       disembarkPortCanonicalPlaceId: entry.disembarkPortCanonicalPlaceId ?? null,
       // Canonical geography — the policy paths for these arrays are snake_case
       // (`region_ids[]` …), so the keys stay snake_case here (issue #1466).

@@ -222,8 +222,10 @@ export type CruiseSearchProjectionEntry = {
   shipExternalId?: string
   nights: number
   embarkPortName?: string | null
+  embarkPortFacilityId?: string | null
   embarkPortCanonicalPlaceId?: string | null
   disembarkPortName?: string | null
+  disembarkPortFacilityId?: string | null
   disembarkPortCanonicalPlaceId?: string | null
   regionIds?: string[]
   waterwayIds?: string[]
