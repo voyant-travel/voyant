@@ -22,11 +22,11 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@voyantjs/ui/components/combobox"
+import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { DatePicker } from "./date-picker.js"
 import { useProductDetailApi, useProductDetailMessages } from "./host.js"
 import { getTimezoneLabel, TIMEZONE_IDS, TIMEZONE_OPTIONS } from "./timezone-options.js"
 import { zodResolver } from "./zod-resolver.js"
