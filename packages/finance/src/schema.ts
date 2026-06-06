@@ -237,6 +237,59 @@ export const voucherSourceTypeEnum = pgEnum("voucher_source_type", [
   "promo",
 ])
 
+// ---------- accounts payable (supplier invoices) ----------
+// See docs/architecture/supplier-invoices-profitability.md §5.
+
+/**
+ * Status flow for a received supplier invoice. Mirrors the AR invoice flow
+ * where it can; `approved` and `disputed` are AP-specific (an operator
+ * approves a payable before it can be paid; a contested bill is disputed).
+ */
+export const supplierInvoiceStatusEnum = pgEnum("supplier_invoice_status", [
+  "draft",
+  "received",
+  "approved",
+  "partially_paid",
+  "paid",
+  "disputed",
+  "void",
+])
+
+/**
+ * AP-local service taxonomy for supplier-invoice lines. Deliberately NOT the
+ * shared `serviceTypeEnum` (suppliers/products) — extending that is a ~17-file
+ * cross-package sweep (§5.6). This local enum carries the categories operators
+ * think in for cost breakdown charts, including `flight` (named in the request
+ * but absent from the shared enum) and `insurance`.
+ */
+export const apServiceTypeEnum = pgEnum("ap_service_type", [
+  "transport",
+  "flight",
+  "accommodation",
+  "guide",
+  "meal",
+  "experience",
+  "insurance",
+  "other",
+])
+
+/** What a supplier cost allocation attributes the cost to (§6). */
+export const costAllocationTargetTypeEnum = pgEnum("cost_allocation_target_type", [
+  "departure",
+  "product",
+  "booking",
+  "traveler",
+  "unattributed",
+])
+
+/** How a multi-target split was derived, for "derived vs explicit" display (§6). */
+export const costAllocationSplitMethodEnum = pgEnum("cost_allocation_split_method", [
+  "manual",
+  "per_pax",
+  "equal",
+  "weighted",
+])
+
 export const vouchers = pgTable(
   "vouchers",
   {
@@ -993,6 +1046,170 @@ export const supplierPayments = pgTable(
 
 export type SupplierPayment = typeof supplierPayments.$inferSelect
 export type NewSupplierPayment = typeof supplierPayments.$inferInsert
+
+// ---------- supplier_invoices (accounts payable) ----------
+// Sibling of `invoices` (AR), NOT a direction flag on it — see
+// docs/architecture/supplier-invoices-profitability.md §4.1 / §5.1.
+
+export const supplierInvoices = pgTable(
+  "supplier_invoices",
+  {
+    id: typeId("supplier_invoices"),
+
+    // Cross-module reference → plain indexed text (§4.3). Which supplier billed us.
+    supplierId: text("supplier_id").notNull(),
+    // The SUPPLIER's invoice number (their document). Unique per supplier, not global.
+    supplierInvoiceNo: text("supplier_invoice_no").notNull(),
+    // Optional internal AP reference / our own series, when an operator wants one.
+    internalRef: text("internal_ref"),
+    status: supplierInvoiceStatusEnum("status").notNull().default("draft"),
+
+    currency: text("currency").notNull(),
+    baseCurrency: text("base_currency"),
+    fxRateSetId: text("fx_rate_set_id"),
+    subtotalCents: integer("subtotal_cents").notNull().default(0),
+    taxCents: integer("tax_cents").notNull().default(0),
+    totalCents: integer("total_cents").notNull().default(0),
+    paidCents: integer("paid_cents").notNull().default(0),
+    balanceDueCents: integer("balance_due_cents").notNull().default(0),
+    // Reuses tax_regimes — supports reverse_charge for cross-border supply.
+    taxRegimeId: typeIdRef("tax_regime_id"),
+
+    issueDate: date("issue_date").notNull(),
+    dueDate: date("due_date"),
+    receivedAt: timestamp("received_at", { withTimezone: true }),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    approvedBy: text("approved_by"),
+
+    // Attached PDF — matches the invoices/invoice_attachments `storageKey`
+    // convention (§5.1), NOT a media id.
+    storageKey: text("storage_key"),
+    // FK to a future invoice_extractions row (PR5); plain text for now.
+    extractionId: text("extraction_id"),
+
+    notes: text("notes"),
+    voidedAt: timestamp("voided_at", { withTimezone: true }),
+    voidReason: text("void_reason"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("idx_supplier_invoices_supplier").on(table.supplierId),
+    index("idx_supplier_invoices_supplier_created").on(table.supplierId, table.createdAt),
+    index("idx_supplier_invoices_status").on(table.status),
+    index("idx_supplier_invoices_status_created").on(table.status, table.createdAt),
+    index("idx_supplier_invoices_due_date").on(table.dueDate),
+    index("idx_supplier_invoices_fx_rate_set").on(table.fxRateSetId),
+    // The supplier's number is unique per supplier (AP convention), ignoring voids.
+    uniqueIndex("supplier_invoices_supplier_number_active_idx")
+      .on(table.supplierId, table.supplierInvoiceNo)
+      .where(sql`${table.status} <> 'void' AND ${table.deletedAt} IS NULL`),
+    // If any base amount is present, base_currency must be set (mirrors invoices).
+    check(
+      "ck_supplier_invoices_base_currency",
+      sql`${table.baseCurrency} IS NOT NULL OR ${table.fxRateSetId} IS NULL`,
+    ),
+  ],
+)
+
+export type SupplierInvoice = typeof supplierInvoices.$inferSelect
+export type NewSupplierInvoice = typeof supplierInvoices.$inferInsert
+
+// ---------- supplier_invoice_lines ----------
+
+export const supplierInvoiceLines = pgTable(
+  "supplier_invoice_lines",
+  {
+    id: typeId("supplier_invoice_lines"),
+    // Finance-local → REAL FK (§4.3).
+    supplierInvoiceId: typeIdRef("supplier_invoice_id")
+      .notNull()
+      .references(() => supplierInvoices.id, { onDelete: "cascade" }),
+
+    description: text("description").notNull(),
+    serviceType: apServiceTypeEnum("service_type").notNull().default("other"),
+    // Cross-module → plain text ref to supplier_services (no FK).
+    supplierServiceId: text("supplier_service_id"),
+
+    quantity: integer("quantity").notNull().default(1),
+    unitAmountCents: integer("unit_amount_cents").notNull(),
+    taxRateBps: integer("tax_rate_bps"),
+    taxAmountCents: integer("tax_amount_cents").notNull().default(0),
+    totalAmountCents: integer("total_amount_cents").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_supplier_invoice_lines_invoice").on(table.supplierInvoiceId),
+    index("idx_supplier_invoice_lines_invoice_sort").on(table.supplierInvoiceId, table.sortOrder),
+    index("idx_supplier_invoice_lines_service_type").on(table.serviceType),
+  ],
+)
+
+export type SupplierInvoiceLine = typeof supplierInvoiceLines.$inferSelect
+export type NewSupplierInvoiceLine = typeof supplierInvoiceLines.$inferInsert
+
+// ---------- supplier_cost_allocations ----------
+// Attributes a line (or whole invoice) to a departure / product / booking /
+// traveller. A line may split across many allocations (§6). Invariants are
+// enforced in the service layer (§6.1).
+
+export const supplierCostAllocations = pgTable(
+  "supplier_cost_allocations",
+  {
+    id: typeId("supplier_cost_allocations"),
+    // Finance-local → REAL FKs (§4.3).
+    supplierInvoiceId: typeIdRef("supplier_invoice_id")
+      .notNull()
+      .references(() => supplierInvoices.id, { onDelete: "cascade" }),
+    // Null = allocates the whole invoice (line-less mode).
+    supplierInvoiceLineId: typeIdRef("supplier_invoice_line_id").references(
+      () => supplierInvoiceLines.id,
+      { onDelete: "cascade" },
+    ),
+
+    targetType: costAllocationTargetTypeEnum("target_type").notNull(),
+    // Cross-module target refs → plain indexed text (§4.3). Exactly one is set
+    // per row to match `targetType` (check constraint below + service guard).
+    departureId: text("departure_id"),
+    productId: text("product_id"),
+    bookingId: text("booking_id"),
+    bookingItemId: text("booking_item_id"),
+    travelerId: text("traveler_id"),
+
+    amountCents: integer("amount_cents").notNull(),
+    baseAmountCents: integer("base_amount_cents"),
+    splitMethod: costAllocationSplitMethodEnum("split_method").notNull().default("manual"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_supplier_cost_allocations_invoice").on(table.supplierInvoiceId),
+    index("idx_supplier_cost_allocations_line").on(table.supplierInvoiceLineId),
+    index("idx_supplier_cost_allocations_departure").on(table.departureId),
+    index("idx_supplier_cost_allocations_product").on(table.productId),
+    index("idx_supplier_cost_allocations_booking").on(table.bookingId),
+    // Exactly one target id is set, and it matches `target_type` (§6.1 rule 2).
+    check(
+      "ck_supplier_cost_allocations_one_target",
+      sql`(
+        (${table.targetType} = 'departure' AND ${table.departureId} IS NOT NULL AND ${table.productId} IS NULL AND ${table.bookingId} IS NULL AND ${table.bookingItemId} IS NULL AND ${table.travelerId} IS NULL)
+        OR (${table.targetType} = 'product' AND ${table.productId} IS NOT NULL AND ${table.departureId} IS NULL AND ${table.bookingId} IS NULL AND ${table.bookingItemId} IS NULL AND ${table.travelerId} IS NULL)
+        OR (${table.targetType} = 'booking' AND ${table.bookingId} IS NOT NULL AND ${table.departureId} IS NULL AND ${table.productId} IS NULL AND ${table.travelerId} IS NULL)
+        OR (${table.targetType} = 'traveler' AND ${table.travelerId} IS NOT NULL AND ${table.departureId} IS NULL AND ${table.productId} IS NULL)
+        OR (${table.targetType} = 'unattributed' AND ${table.departureId} IS NULL AND ${table.productId} IS NULL AND ${table.bookingId} IS NULL AND ${table.bookingItemId} IS NULL AND ${table.travelerId} IS NULL)
+      )`,
+    ),
+  ],
+)
+
+export type SupplierCostAllocation = typeof supplierCostAllocations.$inferSelect
+export type NewSupplierCostAllocation = typeof supplierCostAllocations.$inferInsert
 
 // ---------- finance_notes ----------
 

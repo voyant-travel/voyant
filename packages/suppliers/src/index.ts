@@ -1,4 +1,4 @@
-import type { Module } from "@voyantjs/core"
+import type { LinkableDefinition, Module } from "@voyantjs/core"
 import type { HonoModule } from "@voyantjs/hono/module"
 
 import { supplierRoutes } from "./routes.js"
@@ -6,8 +6,20 @@ import { suppliersService } from "./service.js"
 
 export type { SupplierRoutes } from "./routes.js"
 
+export const supplierLinkable: LinkableDefinition = {
+  module: "suppliers",
+  entity: "supplier",
+  table: "suppliers",
+  idPrefix: "supp",
+}
+
+export const suppliersLinkable = {
+  supplier: supplierLinkable,
+}
+
 export const suppliersModule: Module = {
   name: "suppliers",
+  linkable: suppliersLinkable,
 }
 
 export const suppliersHonoModule: HonoModule = {

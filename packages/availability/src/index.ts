@@ -1,4 +1,4 @@
-import type { Module } from "@voyantjs/core"
+import type { LinkableDefinition, Module } from "@voyantjs/core"
 import type { HonoModule } from "@voyantjs/hono/module"
 
 import { availabilityAdminRoutes, availabilityRoutes } from "./routes.js"
@@ -6,9 +6,25 @@ import { availabilityService } from "./service.js"
 
 export type { AvailabilityAdminRoutes, AvailabilityRoutes } from "./routes.js"
 
+/**
+ * A "departure" in the catalog/profitability sense is a scheduled
+ * availability slot. Exposed so cost allocations / reports can reference it.
+ */
+export const departureLinkable: LinkableDefinition = {
+  module: "availability",
+  entity: "departure",
+  table: "availability_slots",
+  idPrefix: "avsl",
+}
+
+export const availabilityLinkable = {
+  departure: departureLinkable,
+}
+
 export const availabilityModule: Module = {
   name: "availability",
   requiresTransactionalDb: true,
+  linkable: availabilityLinkable,
 }
 
 export const availabilityHonoModule: HonoModule = {

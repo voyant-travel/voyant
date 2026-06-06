@@ -51,10 +51,18 @@ export const creditNoteLinkable: LinkableDefinition = {
   idPrefix: "crn",
 }
 
+export const supplierInvoiceLinkable: LinkableDefinition = {
+  module: "finance",
+  entity: "supplierInvoice",
+  table: "supplier_invoices",
+  idPrefix: "sinv",
+}
+
 export const financeLinkable = {
   invoice: invoiceLinkable,
   invoiceTemplate: invoiceTemplateLinkable,
   creditNote: creditNoteLinkable,
+  supplierInvoice: supplierInvoiceLinkable,
 }
 
 export const financeModule: Module = {
@@ -211,6 +219,9 @@ export type {
   NewPaymentCapture,
   NewPaymentInstrument,
   NewPaymentSession,
+  NewSupplierCostAllocation,
+  NewSupplierInvoice,
+  NewSupplierInvoiceLine,
   NewSupplierPayment,
   NewTaxClass,
   NewTaxRegime,
@@ -221,6 +232,9 @@ export type {
   PaymentCapture,
   PaymentInstrument,
   PaymentSession,
+  SupplierCostAllocation,
+  SupplierInvoice,
+  SupplierInvoiceLine,
   SupplierPayment,
   TaxClass,
   TaxRegime,
@@ -228,10 +242,13 @@ export type {
   VoucherRedemption,
 } from "./schema.js"
 export {
+  apServiceTypeEnum,
   bookingGuarantees,
   bookingItemCommissions,
   bookingItemTaxLines,
   bookingPaymentSchedules,
+  costAllocationSplitMethodEnum,
+  costAllocationTargetTypeEnum,
   creditNoteLineItems,
   creditNotes,
   financeNotes,
@@ -247,6 +264,10 @@ export {
   paymentInstruments,
   paymentSessions,
   payments,
+  supplierCostAllocations,
+  supplierInvoiceLines,
+  supplierInvoiceStatusEnum,
+  supplierInvoices,
   supplierPayments,
   taxClasses,
   taxPolicyProfiles,
@@ -348,6 +369,18 @@ export type {
   InvoiceSettlementPollerResult,
 } from "./service-settlement.js"
 export { financeSettlementService } from "./service-settlement.js"
+export {
+  type AllocationCheckEntry,
+  type AllocationCheckLine,
+  type AllocationCheckResult,
+  type InvoiceTotals,
+  recomputeTotalsFromLines,
+  type SupplierInvoiceErrorCode,
+  SupplierInvoiceServiceError,
+  type SupplierInvoiceServiceRuntime,
+  supplierInvoicesService,
+  validateAllocations,
+} from "./service-supplier-invoices.js"
 export { VoucherServiceError, vouchersService } from "./service-vouchers.js"
 export {
   migrateVouchersFromPaymentInstruments,
@@ -365,8 +398,11 @@ export {
   agingReportQuerySchema,
   allocateInvoiceNumberInputSchema,
   applyDefaultBookingPaymentPlanSchema,
+  apServiceTypeSchema,
   cancelPaymentSessionSchema,
   completePaymentSessionSchema,
+  costAllocationSplitMethodSchema,
+  costAllocationTargetTypeSchema,
   createPaymentSessionFromGuaranteeSchema,
   createPaymentSessionFromInvoiceSchema,
   createPaymentSessionFromScheduleSchema,
@@ -393,6 +429,7 @@ export {
   insertPaymentInstrumentSchema,
   insertPaymentSchema,
   insertPaymentSessionSchema,
+  insertSupplierInvoiceSchema,
   insertSupplierPaymentSchema,
   insertTaxClassSchema,
   insertTaxPolicyProfileSchema,
@@ -417,6 +454,12 @@ export {
   profitabilityQuerySchema,
   renderInvoiceInputSchema,
   revenueReportQuerySchema,
+  setSupplierCostAllocationsSchema,
+  setSupplierInvoiceLinesSchema,
+  supplierCostAllocationInputSchema,
+  supplierInvoiceLineInputSchema,
+  supplierInvoiceListQuerySchema,
+  supplierInvoiceStatusSchema,
   supplierPaymentListQuerySchema,
   taxClassListQuerySchema,
   taxPolicyProfileListQuerySchema,
@@ -439,6 +482,7 @@ export {
   updatePaymentInstrumentSchema,
   updatePaymentSchema,
   updatePaymentSessionSchema,
+  updateSupplierInvoiceSchema,
   updateSupplierPaymentSchema,
   updateTaxClassSchema,
   updateTaxPolicyProfileSchema,
