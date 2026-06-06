@@ -1,5 +1,11 @@
 # @voyantjs/legal
 
+## 0.106.1
+
+### Patch Changes
+
+- 8f2a93c: Populate booking-derived contract variables for product, destination, departure slot, and traveler identity snapshots.
+
 ## 0.106.0
 
 ### Patch Changes
