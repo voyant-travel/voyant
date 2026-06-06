@@ -10,6 +10,12 @@ import {
 } from "@voyantjs/products-contracts/content-shape"
 
 export {
+  BOARD_BASIS_FROM_SHORT_CODE,
+  BOARD_BASIS_SHORT_CODES,
+  BOARD_BASIS_VALUES,
+  type BoardBasis,
+  type BoardBasisShortCode,
+  boardBasisSchema,
   PRODUCTS_CONTENT_SCHEMA_VERSION,
   type ProductContent,
   type ProductDay,

@@ -41,6 +41,7 @@ import {
   ACCOMMODATION_CONTENT_SCHEMA_VERSION,
   type AccommodationContent,
   accommodationContentSchema,
+  type BoardBasis,
   mergeOverlaysIntoAccommodationContent,
   validateAccommodationContent,
 } from "./content-shape.js"
@@ -669,7 +670,10 @@ function contentChargeFrequency(
   return value === "per_stay" || value === "per_person_per_stay" ? "per_stay" : "per_night"
 }
 
-function mealPlanBasis(plan: typeof mealPlans.$inferSelect): string {
+function mealPlanBasis(plan: typeof mealPlans.$inferSelect): BoardBasis {
+  if (plan.includesBreakfast && plan.includesLunch && plan.includesDinner && plan.includesDrinks) {
+    return "all_inclusive"
+  }
   if (plan.includesBreakfast && plan.includesLunch && plan.includesDinner) return "full_board"
   if (plan.includesBreakfast && plan.includesDinner) return "half_board"
   if (plan.includesBreakfast) return "bed_breakfast"

@@ -18,6 +18,7 @@
  * See `docs/architecture/catalog-sourced-content.md` §3.2, §E.
  */
 
+import { boardBasisSchema } from "@voyantjs/catalog-contracts/content"
 import { z } from "zod"
 
 import {
@@ -85,6 +86,7 @@ export const cruiseSailingSchema = z
     status: z.string().nullable().optional(),
     embarkation_port: z.string().nullable().optional(),
     disembarkation_port: z.string().nullable().optional(),
+    board_basis: boardBasisSchema.nullable().optional(),
     itinerary_stops: z.array(cruiseItineraryStopSchema).default([]),
     lowest_price_cents: z.number().int().nonnegative().nullable().default(null),
     currency: z.string().min(1).nullable().default(null),
@@ -145,6 +147,15 @@ export type CruiseSailing = z.infer<typeof cruiseSailingSchema>
 export type CruiseCabinCategory = z.infer<typeof cruiseCabinCategorySchema>
 export type CruiseItineraryStop = z.infer<typeof cruiseItineraryStopSchema>
 export type CruisePolicy = z.infer<typeof cruisePolicySchema>
+
+export {
+  BOARD_BASIS_FROM_SHORT_CODE,
+  BOARD_BASIS_SHORT_CODES,
+  BOARD_BASIS_VALUES,
+  type BoardBasis,
+  type BoardBasisShortCode,
+  boardBasisSchema,
+} from "@voyantjs/catalog-contracts/content"
 
 export function validateCruiseContent(
   payload: unknown,

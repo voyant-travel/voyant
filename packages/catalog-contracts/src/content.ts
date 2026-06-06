@@ -3,6 +3,39 @@
  * adapter content payloads without depending on the catalog runtime package.
  */
 
+import { z } from "zod"
+
+export const BOARD_BASIS_VALUES = [
+  "room_only",
+  "bed_breakfast",
+  "half_board",
+  "full_board",
+  "all_inclusive",
+] as const
+
+export const boardBasisSchema = z.enum(BOARD_BASIS_VALUES)
+
+export type BoardBasis = z.infer<typeof boardBasisSchema>
+
+export const BOARD_BASIS_SHORT_CODES = {
+  room_only: "RO",
+  bed_breakfast: "BB",
+  half_board: "HB",
+  full_board: "FB",
+  all_inclusive: "AI",
+} as const satisfies Record<BoardBasis, string>
+
+export type BoardBasisShortCode =
+  (typeof BOARD_BASIS_SHORT_CODES)[keyof typeof BOARD_BASIS_SHORT_CODES]
+
+export const BOARD_BASIS_FROM_SHORT_CODE = {
+  RO: "room_only",
+  BB: "bed_breakfast",
+  HB: "half_board",
+  FB: "full_board",
+  AI: "all_inclusive",
+} as const satisfies Record<BoardBasisShortCode, BoardBasis>
+
 export function isStale(
   row: { fresh_until: Date | null | undefined },
   now: Date = new Date(),

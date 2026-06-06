@@ -11,7 +11,7 @@ describe("@voyantjs/products-contracts content shape", () => {
   it("validates the products/v1 rich content payload", () => {
     const content = productContentSchema.parse({
       product: { id: "prod_abc", name: "Sahara Desert Trek" },
-      options: [{ id: "opt_std", name: "Standard Departure" }],
+      options: [{ id: "opt_std", name: "Standard Departure", board_basis: "half_board" }],
       days: [{ day_number: 1, title: "Arrival in Marrakech" }],
       policies: [{ kind: "cancellation", body: "Free cancellation up to 30 days." }],
     }) satisfies ProductContent
@@ -21,6 +21,7 @@ describe("@voyantjs/products-contracts content shape", () => {
     expect(content.media).toEqual([])
     expect(content.departures).toEqual([])
     expect(content.options[0]?.units).toEqual([])
+    expect(content.options[0]?.board_basis).toBe("half_board")
   })
 
   it("defaults a media item type to image", () => {
@@ -42,6 +43,15 @@ describe("@voyantjs/products-contracts content shape", () => {
       validateProductContent({
         product: { id: "prod_abc", name: "Sahara Desert Trek" },
         policies: [{ kind: "loyalty", body: "x" }],
+      }),
+    ).toMatchObject({ valid: false })
+  })
+
+  it("rejects unknown option board basis values", () => {
+    expect(
+      validateProductContent({
+        product: { id: "prod_abc", name: "Sahara Desert Trek" },
+        options: [{ id: "opt_std", name: "Standard Departure", board_basis: "brunch_only" }],
       }),
     ).toMatchObject({ valid: false })
   })
