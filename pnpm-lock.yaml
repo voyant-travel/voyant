@@ -1766,12 +1766,18 @@ importers:
 
   packages/catalog-authoring:
     dependencies:
+      '@voyantjs/availability':
+        specifier: workspace:^
+        version: link:../availability
       '@voyantjs/core':
         specifier: workspace:^
         version: link:../core
       '@voyantjs/db':
         specifier: workspace:^
         version: link:../db
+      '@voyantjs/extras':
+        specifier: workspace:^
+        version: link:../extras
       '@voyantjs/hono':
         specifier: workspace:^
         version: link:../hono

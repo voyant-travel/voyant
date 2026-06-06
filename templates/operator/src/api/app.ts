@@ -79,7 +79,6 @@ import {
   resolveBankTransferDetails,
   resolvePublicCheckoutBaseUrlFromBindings,
 } from "./payment-config"
-import { mountProductDuplicateRoutes } from "./product-duplicate"
 import { mountOperatorSettingsRoutes } from "./settings"
 import { smartbillOperatorBundle } from "./smartbill"
 import {
@@ -368,8 +367,9 @@ export const app = createApp<CloudflareBindings>({
     bookingsSupplierExtension,
     bookingsCreateExtension,
     productsBookingExtension,
-    // Mounts POST /v1/admin/products/compose for Max AI catalog authoring (new-from-spec).
-    // Cloning stays on the existing duplicateProductAsDraft route below.
+    // Mounts POST /v1/admin/products/{id}/duplicate (deep-clone) + /compose
+    // (new-from-spec) for catalog authoring. Replaces the former local
+    // product-duplicate route.
     catalogAuthoringExtension,
     crmBookingExtension,
     transactionsBookingExtension,
@@ -411,9 +411,6 @@ export const app = createApp<CloudflareBindings>({
 
     // Operator profile, payment instructions, and booking payment defaults.
     mountOperatorSettingsRoutes(hono)
-
-    // Operator-owned product duplication, including cross-package product setup.
-    mountProductDuplicateRoutes(hono)
 
     // Booking-level payment-policy override + schedule regeneration.
     // POST /v1/admin/bookings/:bookingId/payment-schedule/regenerate
