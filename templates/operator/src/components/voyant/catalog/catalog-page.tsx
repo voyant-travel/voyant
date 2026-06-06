@@ -133,18 +133,28 @@ export function CatalogVerticalPage({
   )
 
   // Merge the always-on locked facets/ranges with the user's URL-driven filters.
-  const effectiveSearch: CatalogSearchParams =
-    lockedFacets || lockedRanges
-      ? {
-          ...search,
-          locale: selectedLocale,
-          filters: {
-            ...search.filters,
-            facets: { ...(search.filters?.facets ?? {}), ...(lockedFacets ?? {}) },
-            ranges: { ...(search.filters?.ranges ?? {}), ...(lockedRanges ?? {}) },
-          },
-        }
-      : { ...search, locale: selectedLocale }
+  // Memoized so locked surfaces hand a STABLE `filters` object to the tab panel:
+  // a fresh object every render reads as "selections changed" and resets back to
+  // page 1, breaking pagination. Key on the locked values' content (callers pass
+  // inline literals), not their identity. `search` is already stable (router).
+  const lockedFacetsKey = JSON.stringify(lockedFacets ?? null)
+  const lockedRangesKey = JSON.stringify(lockedRanges ?? null)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on serialized locked filters, not their object identity
+  const effectiveSearch = useMemo<CatalogSearchParams>(
+    () =>
+      lockedFacets || lockedRanges
+        ? {
+            ...search,
+            locale: selectedLocale,
+            filters: {
+              ...search.filters,
+              facets: { ...(search.filters?.facets ?? {}), ...(lockedFacets ?? {}) },
+              ranges: { ...(search.filters?.ranges ?? {}), ...(lockedRanges ?? {}) },
+            },
+          }
+        : { ...search, locale: selectedLocale },
+    [search, selectedLocale, lockedFacetsKey, lockedRangesKey],
+  )
 
   return (
     <CatalogUiPage

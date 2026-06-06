@@ -153,7 +153,10 @@ export function ProductDetailPage({
     product: ProductDetail | null
     offers: Offer[]
     retryable: boolean
-  }>({ status: "loading", product: null, offers: [], retryable: false })
+    /** Connect provenance for this package — pins the booking to the exact
+     *  connection so multi-connection deployments quote/book the right one. */
+    source: { connectionId: string; ref: string | null } | null
+  }>({ status: "loading", product: null, offers: [], retryable: false, source: null })
   const [monthCursor, setMonthCursor] = useState<MonthCursor | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
   // null = lightbox closed; a number = open at that gallery index.
@@ -181,6 +184,7 @@ export function ProductDetailPage({
           product?: ProductDetail | null
           offers?: Offer[]
           retryable?: boolean
+          source?: { connectionId: string; ref: string | null } | null
         }
         if (cancelled) return
         const offers = Array.isArray(json.offers) ? json.offers : []
@@ -189,6 +193,7 @@ export function ProductDetailPage({
           product: json.product ?? null,
           offers,
           retryable: Boolean(json.retryable),
+          source: json.source ?? null,
         })
         const first = offers
           .map((o) => o.checkIn)
@@ -199,7 +204,8 @@ export function ProductDetailPage({
           setSelected(first.slice(0, 10))
         }
       } catch {
-        if (!cancelled) setState({ status: "error", product: null, offers: [], retryable: true })
+        if (!cancelled)
+          setState({ status: "error", product: null, offers: [], retryable: true, source: null })
       }
     })()
     return () => {
@@ -287,7 +293,13 @@ export function ProductDetailPage({
     navigate({
       to: "/catalog/journey/$entityModule/$entityId",
       params: { entityModule: "products", entityId: productId },
-      search: { sourceKind: "voyant-connect" },
+      // Pin the resolved Connect connection/ref so the server books against the
+      // right one (it otherwise falls back to the first adapter for the kind).
+      search: {
+        sourceKind: "voyant-connect",
+        ...(state.source?.connectionId ? { sourceConnectionId: state.source.connectionId } : {}),
+        ...(state.source?.ref ? { sourceRef: state.source.ref } : {}),
+      },
     })
 
   const stars = formatStars(product?.stars)

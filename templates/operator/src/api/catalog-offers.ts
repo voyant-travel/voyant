@@ -182,7 +182,15 @@ export function mountCatalogOffersRoutes(hono: Hono): void {
       ...input,
       limit: input.limit ?? 200,
     })
-    return c.json({ product, offers: offers.map(mapOffer), retryable })
+    // Return the resolved provenance so the booking journey can pin the exact
+    // Connect connection — without it the server falls back to the first adapter
+    // for the kind, which quotes/books the wrong connection when several are live.
+    return c.json({
+      product,
+      offers: offers.map(mapOffer),
+      retryable,
+      source: { connectionId, ref: entry?.sourceRef ?? null },
+    })
   })
 
   // ── Destination search (search-first Dynamic surface) ───────────────────
