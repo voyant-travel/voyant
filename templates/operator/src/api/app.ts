@@ -368,7 +368,8 @@ export const app = createApp<CloudflareBindings>({
     bookingsSupplierExtension,
     bookingsCreateExtension,
     productsBookingExtension,
-    // Mounts POST /v1/admin/products/{id}/duplicate + /compose for Max AI catalog authoring.
+    // Mounts POST /v1/admin/products/compose for Max AI catalog authoring (new-from-spec).
+    // Cloning stays on the existing duplicateProductAsDraft route below.
     catalogAuthoringExtension,
     crmBookingExtension,
     transactionsBookingExtension,

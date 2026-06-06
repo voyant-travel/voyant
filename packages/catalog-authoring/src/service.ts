@@ -4,25 +4,14 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { type BuildProductGraphResult, buildProductGraph } from "./builder.js"
 import { type AuthoringIssue, AuthoringValidationError } from "./errors.js"
 import { productAuthoringRequests } from "./schema.js"
-import { serializeProductGraph } from "./serialize.js"
 import type { ProductGraphSpec } from "./spec.js"
 import { validateProductGraph } from "./validate.js"
-
-export interface CloneProductOverrides {
-  name: string
-  status?: ProductGraphSpec["product"]["status"]
-  visibility?: ProductGraphSpec["product"]["visibility"]
-}
 
 export interface AuthoringRunOptions {
   userId?: string
   /** Dedup key; a retried request with the same key returns the first result. */
   idempotencyKey?: string
 }
-
-export type CloneProductOutcome =
-  | { status: "ok"; result: BuildProductGraphResult; reused: boolean }
-  | { status: "not_found" }
 
 export type ComposeProductOutcome =
   | { status: "ok"; result: BuildProductGraphResult; reused: boolean }
@@ -75,43 +64,14 @@ async function withIdempotency(
 }
 
 /**
- * Deep-clone a product graph (#1493). Serializes the source, patches the product
- * row, and rebuilds atomically. Cloned price rules keep the source catalog. Does
- * NOT copy availability slots.
- */
-export async function cloneProduct(
-  db: PostgresJsDatabase,
-  sourceProductId: string,
-  overrides: CloneProductOverrides,
-  options: AuthoringRunOptions = {},
-): Promise<CloneProductOutcome> {
-  const source = await serializeProductGraph(db, sourceProductId)
-  if (!source) return { status: "not_found" }
-
-  const spec: ProductGraphSpec = {
-    ...source,
-    product: {
-      ...source.product,
-      name: overrides.name,
-      status: overrides.status ?? "draft",
-      visibility: overrides.visibility ?? source.product.visibility,
-    },
-  }
-
-  const { result, reused } = await db.transaction((tx) =>
-    withIdempotency(tx, options.idempotencyKey, "duplicate", () =>
-      buildProductGraph(tx, spec, { userId: options.userId }),
-    ),
-  )
-
-  return { status: "ok", result, reused }
-}
-
-/**
  * Compose a brand-new product graph from a caller-supplied spec (#1495). Runs the
  * category validator first; an invalid spec is returned (never built) so the
  * caller can self-correct. Rules without a catalog fall back to the operator
  * default.
+ *
+ * Cloning an existing product is intentionally NOT handled here: the operator
+ * template already ships a comprehensive deep-clone (`duplicateProductAsDraft`)
+ * at `POST /v1/admin/products/{id}/duplicate`. See #1493.
  */
 export async function composeProduct(
   db: PostgresJsDatabase,
