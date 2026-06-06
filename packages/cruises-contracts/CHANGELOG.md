@@ -1,5 +1,11 @@
 # @voyantjs/cruises-contracts
 
+## 0.104.2
+
+### Patch Changes
+
+- 23a3dad: Thread rich cruise cabin and ship media through the sourced content contract and catalog detail UI.
+
 ## 0.104.1
 
 ## 0.104.0
