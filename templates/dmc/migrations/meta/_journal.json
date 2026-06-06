@@ -169,6 +169,13 @@
       "when": 1780141300000,
       "tag": "0025_organization_tax_id",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1780771200000,
+      "tag": "0026_enable_unaccent",
+      "breakpoints": true
     }
   ]
 }

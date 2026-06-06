@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm"
 import { Hono } from "hono"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -19,6 +20,7 @@ describe.skipIf(!DB_AVAILABLE)("Account routes", () => {
   beforeAll(async () => {
     const { createTestDb, cleanupTestDb } = await import("@voyantjs/db/test-utils")
     const db = createTestDb()
+    await db.execute(sql`CREATE EXTENSION IF NOT EXISTS "unaccent"`)
     await cleanupTestDb(db)
 
     app = new Hono()
@@ -321,6 +323,47 @@ describe.skipIf(!DB_AVAILABLE)("Account routes", () => {
       const body = await res.json()
       expect(body.total).toBe(1)
       expect(body.data[0]?.phone).toBe("+40 (712) 345-678")
+    })
+
+    it("searches people by name tokens regardless of order or diacritics", async () => {
+      await app.request("/people", {
+        method: "POST",
+        ...json({ firstName: "Ion", lastName: "Gheorghiță" }),
+      })
+      await app.request("/people", {
+        method: "POST",
+        ...json({ firstName: "Ioana", lastName: "Popescu" }),
+      })
+
+      const familyFirst = await app.request(
+        `/people?search=${encodeURIComponent("Gheorghita Ion")}`,
+        {
+          method: "GET",
+        },
+      )
+
+      expect(familyFirst.status).toBe(200)
+      const familyFirstBody = await familyFirst.json()
+      expect(familyFirstBody.total).toBe(1)
+      expect(familyFirstBody.data[0]).toMatchObject({
+        firstName: "Ion",
+        lastName: "Gheorghiță",
+      })
+
+      const givenFirst = await app.request(
+        `/people?search=${encodeURIComponent("Ion Gheorghita")}`,
+        {
+          method: "GET",
+        },
+      )
+
+      expect(givenFirst.status).toBe(200)
+      const givenFirstBody = await givenFirst.json()
+      expect(givenFirstBody.total).toBe(1)
+      expect(givenFirstBody.data[0]).toMatchObject({
+        firstName: "Ion",
+        lastName: "Gheorghiță",
+      })
     })
 
     it("lists people", async () => {

@@ -295,6 +295,13 @@
       "when": 1780141600000,
       "tag": "0045_cruise_search_index_cents_departures",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1780771200000,
+      "tag": "0046_enable_unaccent",
+      "breakpoints": true
     }
   ]
 }
