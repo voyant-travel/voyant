@@ -3657,6 +3657,10 @@ export const financeService = {
       conditions.push(eq(supplierPayments.bookingId, query.bookingId))
     }
 
+    if (query.supplierInvoiceId) {
+      conditions.push(eq(supplierPayments.supplierInvoiceId, query.supplierInvoiceId))
+    }
+
     if (query.supplierId) {
       conditions.push(eq(supplierPayments.supplierId, query.supplierId))
     }

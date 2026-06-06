@@ -13,6 +13,7 @@ import { financeActionLedgerRoutes } from "./routes-action-ledger.js"
 import { createFinanceAdminDocumentRoutes } from "./routes-documents.js"
 import { createPublicFinanceRoutes, type PublicFinanceRouteOptions } from "./routes-public.js"
 import { createFinanceAdminSettlementRoutes } from "./routes-settlement.js"
+import { supplierInvoiceRoutes } from "./routes-supplier-invoices.js"
 
 export {
   type BookingCheckoutUrlSettings,
@@ -28,6 +29,10 @@ export {
   type PublicFinanceRouteOptions,
   publicFinanceRoutes,
 } from "./routes-public.js"
+export {
+  type SupplierInvoiceRoutes,
+  supplierInvoiceRoutes,
+} from "./routes-supplier-invoices.js"
 export { type PublicFinanceRuntimeOptions, publicFinanceService } from "./service-public.js"
 
 export const invoiceLinkable: LinkableDefinition = {
@@ -79,6 +84,7 @@ export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}):
   const adminRoutes = new Hono()
     .route("/", financeRoutes)
     .route("/", financeActionLedgerRoutes)
+    .route("/", supplierInvoiceRoutes)
     .route("/", createInvoiceFxRoutes(options))
     .route("/", createFinanceAdminDocumentRoutes(options))
     .route("/", createFinanceAdminSettlementRoutes(options))

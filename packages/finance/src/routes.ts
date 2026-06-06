@@ -137,7 +137,9 @@ async function buildInlineDownload(
   })
 }
 
-function getFinanceRouteRuntime(c: { var: { container?: { resolve: <T>(key: string) => T } } }) {
+export function getFinanceRouteRuntime(c: {
+  var: { container?: { resolve: <T>(key: string) => T } }
+}) {
   try {
     return c.var.container?.resolve<FinanceRouteRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
   } catch {
@@ -145,7 +147,7 @@ function getFinanceRouteRuntime(c: { var: { container?: { resolve: <T>(key: stri
   }
 }
 
-function getActionLedgerRequestContext(c: Context<Env>) {
+export function getActionLedgerRequestContext(c: Context<Env>) {
   const context = {
     userId: c.get("userId") ?? null,
     agentId: c.get("agentId") ?? null,
