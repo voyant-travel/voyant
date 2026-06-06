@@ -7,6 +7,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 import {
   supplierCostAllocations,
+  supplierInvoiceAttachments,
   supplierInvoiceLines,
   supplierInvoices,
   supplierPayments,
@@ -18,6 +19,7 @@ import {
   buildSupplierInvoiceUpdateActionLedgerInput,
 } from "./service-action-ledger-supplier-invoices.js"
 import type {
+  insertSupplierInvoiceAttachmentSchema,
   insertSupplierInvoiceSchema,
   setSupplierCostAllocationsSchema,
   setSupplierInvoiceLinesSchema,
@@ -34,6 +36,7 @@ type SupplierInvoiceLineInput = z.infer<typeof supplierInvoiceLineInputSchema>
 type SupplierCostAllocationInput = z.infer<typeof supplierCostAllocationInputSchema>
 type SetLinesInput = z.infer<typeof setSupplierInvoiceLinesSchema>
 type SetAllocationsInput = z.infer<typeof setSupplierCostAllocationsSchema>
+type CreateAttachmentInput = z.infer<typeof insertSupplierInvoiceAttachmentSchema>
 
 export type SupplierInvoiceErrorCode =
   | "supplier_invoice_not_found"
@@ -659,5 +662,70 @@ export const supplierInvoicesService = {
       return { id: existing.id }
     })
     return result
+  },
+
+  // ---------- attachments ----------
+
+  listAttachments(db: PostgresJsDatabase, supplierInvoiceId: string) {
+    return db
+      .select()
+      .from(supplierInvoiceAttachments)
+      .where(eq(supplierInvoiceAttachments.supplierInvoiceId, supplierInvoiceId))
+      .orderBy(desc(supplierInvoiceAttachments.createdAt))
+  },
+
+  async getAttachmentById(db: PostgresJsDatabase, attachmentId: string) {
+    const [row] = await db
+      .select()
+      .from(supplierInvoiceAttachments)
+      .where(eq(supplierInvoiceAttachments.id, attachmentId))
+      .limit(1)
+    return row ?? null
+  },
+
+  async createAttachment(
+    db: PostgresJsDatabase,
+    supplierInvoiceId: string,
+    input: CreateAttachmentInput,
+  ) {
+    const [invoice] = await db
+      .select({ id: supplierInvoices.id })
+      .from(supplierInvoices)
+      .where(eq(supplierInvoices.id, supplierInvoiceId))
+      .limit(1)
+    if (!invoice) return null
+
+    const [row] = await db
+      .insert(supplierInvoiceAttachments)
+      .values({
+        supplierInvoiceId,
+        kind: input.kind ?? "supporting_document",
+        name: input.name,
+        mimeType: input.mimeType ?? null,
+        fileSize: input.fileSize ?? null,
+        storageKey: input.storageKey ?? null,
+        checksum: input.checksum ?? null,
+        metadata: input.metadata ?? null,
+      })
+      .returning()
+    return row ?? null
+  },
+
+  async deleteAttachment(db: PostgresJsDatabase, supplierInvoiceId: string, attachmentId: string) {
+    const [existing] = await db
+      .select({ id: supplierInvoiceAttachments.id })
+      .from(supplierInvoiceAttachments)
+      .where(
+        and(
+          eq(supplierInvoiceAttachments.id, attachmentId),
+          eq(supplierInvoiceAttachments.supplierInvoiceId, supplierInvoiceId),
+        ),
+      )
+      .limit(1)
+    if (!existing) return null
+    await db
+      .delete(supplierInvoiceAttachments)
+      .where(eq(supplierInvoiceAttachments.id, attachmentId))
+    return { id: existing.id }
   },
 }

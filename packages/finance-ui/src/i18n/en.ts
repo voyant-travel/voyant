@@ -296,6 +296,16 @@ export const financeUiEn = {
         other: "Other",
       },
     },
+    attachments: {
+      title: "Attachments",
+      upload: "Upload file",
+      uploading: "Uploading...",
+      empty: "No attachments.",
+      name: "Name",
+      size: "Size",
+      download: "Download",
+      remove: "Remove",
+    },
   },
   invoiceNumberSeriesPage: {
     title: "Invoice Number Series",

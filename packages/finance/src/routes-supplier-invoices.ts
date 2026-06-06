@@ -11,6 +11,7 @@ import {
   supplierInvoicesService,
 } from "./service-supplier-invoices.js"
 import {
+  insertSupplierInvoiceAttachmentSchema,
   insertSupplierInvoiceSchema,
   insertSupplierPaymentSchema,
   setSupplierCostAllocationsSchema,
@@ -153,6 +154,53 @@ export const supplierInvoiceRoutes = new Hono<Env>()
       },
     )
     return c.json({ data: row }, 201)
+  })
+
+  .get("/supplier-invoices/:id/attachments", async (c) => {
+    return c.json({
+      data: await supplierInvoicesService.listAttachments(c.get("db"), c.req.param("id")),
+    })
+  })
+
+  .post("/supplier-invoices/:id/attachments", async (c) => {
+    const row = await supplierInvoicesService.createAttachment(
+      c.get("db"),
+      c.req.param("id"),
+      await parseJsonBody(c, insertSupplierInvoiceAttachmentSchema),
+    )
+    if (!row) return c.json({ error: "Supplier invoice not found" }, 404)
+    return c.json({ data: row }, 201)
+  })
+
+  .delete("/supplier-invoices/:id/attachments/:attachmentId", async (c) => {
+    const row = await supplierInvoicesService.deleteAttachment(
+      c.get("db"),
+      c.req.param("id"),
+      c.req.param("attachmentId"),
+    )
+    if (!row) return c.json({ error: "Attachment not found" }, 404)
+    return c.json({ success: true })
+  })
+
+  .get("/supplier-invoice-attachments/:id/download", async (c) => {
+    const attachment = await supplierInvoicesService.getAttachmentById(
+      c.get("db"),
+      c.req.param("id"),
+    )
+    if (!attachment?.storageKey) return c.json({ error: "Attachment not found" }, 404)
+
+    const runtime = getFinanceRouteRuntime(c)
+    const download = await resolveStoredDocumentDownload(
+      { storageKey: attachment.storageKey },
+      { bindings: c.env, resolveDocumentDownloadUrl: runtime?.resolveDocumentDownloadUrl },
+    )
+    if (download.status === "resolver_not_configured") {
+      return c.json({ error: "Document download resolver is not configured" }, 501)
+    }
+    if (download.status !== "ready") {
+      return c.json({ error: "Attachment file is not available" }, 404)
+    }
+    return c.redirect(download.download.url, 302)
   })
 
 export type SupplierInvoiceRoutes = typeof supplierInvoiceRoutes

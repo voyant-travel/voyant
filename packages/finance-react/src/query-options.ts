@@ -49,6 +49,7 @@ import {
   invoicePaymentsResponse,
   invoiceSingleResponse,
   paymentSingleResponse,
+  supplierInvoiceAttachmentsResponse,
   supplierInvoiceListResponse,
   supplierInvoiceSingleResponse,
   supplierPaymentListResponse,
@@ -208,6 +209,21 @@ export function getSupplierInvoicePaymentsQueryOptions(
       fetchWithValidation(
         `/v1/admin/finance/supplier-invoices/${id}/payments`,
         supplierPaymentListResponse,
+        client,
+      ),
+  })
+}
+
+export function getSupplierInvoiceAttachmentsQueryOptions(
+  client: FetchWithValidationOptions,
+  id: string | null | undefined,
+) {
+  return queryOptions({
+    queryKey: financeQueryKeys.supplierInvoiceAttachments(id ?? ""),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/admin/finance/supplier-invoices/${id}/attachments`,
+        supplierInvoiceAttachmentsResponse,
         client,
       ),
   })

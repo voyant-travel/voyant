@@ -71,6 +71,7 @@ export {
   getPublicBookingPaymentsQueryOptions,
   getPublicFinanceDocumentByReferenceQueryOptions,
   getPublicPaymentSessionQueryOptions,
+  getSupplierInvoiceAttachmentsQueryOptions,
   getSupplierInvoicePaymentsQueryOptions,
   getSupplierInvoiceQueryOptions,
   getSupplierInvoicesQueryOptions,

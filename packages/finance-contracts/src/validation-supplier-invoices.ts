@@ -138,6 +138,20 @@ export const setSupplierCostAllocationsSchema = z.object({
   allocations: z.array(supplierCostAllocationInputSchema),
 })
 
+export const insertSupplierInvoiceAttachmentSchema = z.object({
+  kind: z.string().min(1).default("supporting_document"),
+  name: z.string().min(1),
+  mimeType: z.string().optional().nullable(),
+  fileSize: z.number().int().min(0).optional().nullable(),
+  storageKey: z.string().optional().nullable(),
+  checksum: z.string().optional().nullable(),
+  metadata: z.unknown().optional(),
+})
+
+export type InsertSupplierInvoiceAttachmentInput = z.infer<
+  typeof insertSupplierInvoiceAttachmentSchema
+>
+
 export const supplierInvoiceListSortFieldSchema = z.enum([
   "issueDate",
   "dueDate",

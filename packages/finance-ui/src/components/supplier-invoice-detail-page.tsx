@@ -5,6 +5,7 @@ import {
   type SupplierInvoiceLineRecord,
   type SupplierInvoiceStatus,
   useSupplierInvoice,
+  useSupplierInvoiceAttachments,
   useSupplierInvoiceMutation,
   useSupplierInvoicePayments,
 } from "@voyantjs/finance-react"
@@ -141,6 +142,12 @@ function lineToInput(line: SupplierInvoiceLineRecord): SupplierInvoiceLineInput 
   }
 }
 
+export interface SupplierInvoiceAttachmentUpload {
+  storageKey: string
+  mimeType?: string | null
+  fileSize?: number | null
+}
+
 export interface SupplierInvoiceDetailPageProps {
   id: string
   className?: string
@@ -148,6 +155,21 @@ export interface SupplierInvoiceDetailPageProps {
   onBack?: () => void
   /** Operator wires this to open the document download endpoint. */
   onDownloadDocument?: () => void
+  /**
+   * Upload a file's bytes to durable storage (R2) and return its location.
+   * The template owns the upload endpoint (e.g. `/api/v1/uploads`). When
+   * omitted, the attachment upload control is hidden.
+   */
+  uploadFile?: (file: File) => Promise<SupplierInvoiceAttachmentUpload>
+  /** Operator wires this to open an attachment's download endpoint. */
+  onDownloadAttachment?: (attachmentId: string) => void
+}
+
+function formatFileSize(bytes: number | null): string {
+  if (bytes == null) return "—"
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 export function SupplierInvoiceDetailPage({
@@ -155,6 +177,8 @@ export function SupplierInvoiceDetailPage({
   className,
   onBack,
   onDownloadDocument,
+  uploadFile,
+  onDownloadAttachment,
 }: SupplierInvoiceDetailPageProps) {
   const messages = useFinanceUiMessagesOrDefault()
   const t = messages.supplierInvoiceDetail
@@ -162,7 +186,10 @@ export function SupplierInvoiceDetailPage({
 
   const { data, isPending, isError } = useSupplierInvoice(id)
   const paymentsQuery = useSupplierInvoicePayments(id)
-  const { setAllocations, setLines, recordPayment, remove } = useSupplierInvoiceMutation()
+  const attachmentsQuery = useSupplierInvoiceAttachments(id)
+  const { setAllocations, setLines, recordPayment, remove, addAttachment, removeAttachment } =
+    useSupplierInvoiceMutation()
+  const [uploading, setUploading] = useState(false)
 
   const invoice = data?.data ?? null
   const currency = invoice?.currency ?? ""
@@ -218,6 +245,28 @@ export function SupplierInvoiceDetailPage({
     (t.payments.methodLabels as Record<string, string>)[method] ?? method
 
   const payments = paymentsQuery.data?.data ?? []
+  const attachments = attachmentsQuery.data?.data ?? []
+
+  const handleUpload = async (files: FileList | null) => {
+    if (!uploadFile || !files || files.length === 0) return
+    setUploading(true)
+    try {
+      for (const file of Array.from(files)) {
+        const uploaded = await uploadFile(file)
+        await addAttachment.mutateAsync({
+          id,
+          input: {
+            name: file.name,
+            mimeType: uploaded.mimeType ?? file.type ?? null,
+            fileSize: uploaded.fileSize ?? file.size,
+            storageKey: uploaded.storageKey,
+          },
+        })
+      }
+    } finally {
+      setUploading(false)
+    }
+  }
 
   return (
     <div className={cn("flex flex-col gap-6 p-6", className)}>
@@ -499,6 +548,80 @@ export function SupplierInvoiceDetailPage({
                     <TableCell>{payment.status}</TableCell>
                     <TableCell className="text-right tabular-nums">
                       {formatInvoiceAmount(payment.amountCents, payment.currency)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Attachments */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base">{t.attachments.title}</CardTitle>
+          {uploadFile ? (
+            <label className="cursor-pointer">
+              <span className="inline-flex h-8 items-center gap-2 rounded-md border px-3 text-sm font-medium hover:bg-muted">
+                <Plus className="size-4" />
+                {uploading ? t.attachments.uploading : t.attachments.upload}
+              </span>
+              <input
+                type="file"
+                multiple
+                className="sr-only"
+                disabled={uploading}
+                onChange={(e) => {
+                  void handleUpload(e.target.files)
+                  e.target.value = ""
+                }}
+              />
+            </label>
+          ) : null}
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t.attachments.name}</TableHead>
+                <TableHead className="text-right">{t.attachments.size}</TableHead>
+                <TableHead className="w-28" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {attachments.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center text-muted-foreground">
+                    {t.attachments.empty}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                attachments.map((attachment) => (
+                  <TableRow key={attachment.id}>
+                    <TableCell>{attachment.name}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatFileSize(attachment.fileSize)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {onDownloadAttachment && attachment.storageKey ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onDownloadAttachment(attachment.id)}
+                          aria-label={t.attachments.download}
+                        >
+                          <Download className="size-4" />
+                        </Button>
+                      ) : null}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeAttachment.mutate({ id, attachmentId: attachment.id })}
+                        aria-label={t.attachments.remove}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))

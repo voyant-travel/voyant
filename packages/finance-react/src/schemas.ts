@@ -456,8 +456,24 @@ export const supplierInvoiceDetailRecordSchema = supplierInvoiceRecordSchema.ext
 })
 export type SupplierInvoiceDetailRecord = z.infer<typeof supplierInvoiceDetailRecordSchema>
 
+export const supplierInvoiceAttachmentRecordSchema = z.object({
+  id: z.string(),
+  supplierInvoiceId: z.string(),
+  kind: z.string(),
+  name: z.string(),
+  mimeType: z.string().nullable(),
+  fileSize: z.number().int().nullable(),
+  storageKey: z.string().nullable(),
+  checksum: z.string().nullable(),
+  createdAt: z.string(),
+})
+export type SupplierInvoiceAttachmentRecord = z.infer<typeof supplierInvoiceAttachmentRecordSchema>
+
 export const supplierInvoiceListResponse = paginatedEnvelope(supplierInvoiceRecordSchema)
 export const supplierInvoiceSingleResponse = singleEnvelope(supplierInvoiceDetailRecordSchema)
+export const supplierInvoiceAttachmentsResponse = arrayEnvelope(
+  supplierInvoiceAttachmentRecordSchema,
+)
 
 export const invoiceListResponse = paginatedEnvelope(invoiceRecordSchema)
 export const invoiceNumberSeriesListResponse = paginatedEnvelope(invoiceNumberSeriesRecordSchema)

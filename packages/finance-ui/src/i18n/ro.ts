@@ -298,6 +298,16 @@ export const financeUiRo = {
         other: "Altele",
       },
     },
+    attachments: {
+      title: "Atasamente",
+      upload: "Incarca fisier",
+      uploading: "Se incarca...",
+      empty: "Niciun atasament.",
+      name: "Nume",
+      size: "Marime",
+      download: "Descarca",
+      remove: "Sterge",
+    },
   },
   invoiceNumberSeriesPage: {
     title: "Serii Numere Facturi",

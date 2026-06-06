@@ -421,6 +421,16 @@ export type FinanceUiMessages = {
       recording: string
       methodLabels: Record<SupplierInvoiceDetailPaymentMethod, string>
     }
+    attachments: {
+      title: string
+      upload: string
+      uploading: string
+      empty: string
+      name: string
+      size: string
+      download: string
+      remove: string
+    }
   }
   invoiceNumberSeriesPage: {
     title: string

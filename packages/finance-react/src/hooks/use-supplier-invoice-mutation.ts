@@ -61,6 +61,15 @@ export type UpdateSupplierInvoiceInput = Partial<
   Omit<CreateSupplierInvoiceInput, "lines" | "allocations">
 >
 
+export interface CreateSupplierInvoiceAttachmentInput {
+  name: string
+  kind?: string
+  mimeType?: string | null
+  fileSize?: number | null
+  storageKey?: string | null
+  checksum?: string | null
+}
+
 export interface RecordSupplierPaymentInput {
   amountCents: number
   currency: string
@@ -87,6 +96,11 @@ export function useSupplierInvoiceMutation() {
     void queryClient.invalidateQueries({ queryKey: financeQueryKeys.supplierInvoices() })
     if (id) void queryClient.invalidateQueries({ queryKey: financeQueryKeys.supplierInvoice(id) })
   }
+
+  const invalidateAttachments = (id: string) =>
+    void queryClient.invalidateQueries({
+      queryKey: financeQueryKeys.supplierInvoiceAttachments(id),
+    })
 
   const create = useMutation({
     mutationFn: async (input: CreateSupplierInvoiceInput) => {
@@ -170,5 +184,44 @@ export function useSupplierInvoiceMutation() {
     onSuccess: (_data, variables) => invalidate(variables.id),
   })
 
-  return { create, update, remove, setLines, setAllocations, recordPayment }
+  const addAttachment = useMutation({
+    mutationFn: async ({
+      id,
+      input,
+    }: {
+      id: string
+      input: CreateSupplierInvoiceAttachmentInput
+    }) => {
+      const { data } = await fetchWithValidation(
+        `/v1/admin/finance/supplier-invoices/${id}/attachments`,
+        z.object({ data: z.object({ id: z.string() }).passthrough() }),
+        client,
+        { method: "POST", body: JSON.stringify(input) },
+      )
+      return data
+    },
+    onSuccess: (_data, variables) => invalidateAttachments(variables.id),
+  })
+
+  const removeAttachment = useMutation({
+    mutationFn: async ({ id, attachmentId }: { id: string; attachmentId: string }) =>
+      fetchWithValidation(
+        `/v1/admin/finance/supplier-invoices/${id}/attachments/${attachmentId}`,
+        z.object({ success: z.boolean() }),
+        client,
+        { method: "DELETE" },
+      ),
+    onSuccess: (_data, variables) => invalidateAttachments(variables.id),
+  })
+
+  return {
+    create,
+    update,
+    remove,
+    setLines,
+    setAllocations,
+    recordPayment,
+    addAttachment,
+    removeAttachment,
+  }
 }

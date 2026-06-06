@@ -1224,6 +1224,39 @@ export const supplierCostAllocations = pgTable(
 export type SupplierCostAllocation = typeof supplierCostAllocations.$inferSelect
 export type NewSupplierCostAllocation = typeof supplierCostAllocations.$inferInsert
 
+// ---------- supplier_invoice_attachments ----------
+// Mirrors invoice_attachments: metadata + storageKey for supporting files
+// (the received PDF, contracts, proof of payment, …). Bytes live in R2;
+// the template owns the upload endpoint.
+
+export const supplierInvoiceAttachments = pgTable(
+  "supplier_invoice_attachments",
+  {
+    id: typeId("supplier_invoice_attachments"),
+    supplierInvoiceId: typeIdRef("supplier_invoice_id")
+      .notNull()
+      .references(() => supplierInvoices.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull().default("supporting_document"),
+    name: text("name").notNull(),
+    mimeType: text("mime_type"),
+    fileSize: integer("file_size"),
+    storageKey: text("storage_key"),
+    checksum: text("checksum"),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_supplier_invoice_attachments_invoice").on(table.supplierInvoiceId),
+    index("idx_supplier_invoice_attachments_invoice_created").on(
+      table.supplierInvoiceId,
+      table.createdAt,
+    ),
+  ],
+)
+
+export type SupplierInvoiceAttachment = typeof supplierInvoiceAttachments.$inferSelect
+export type NewSupplierInvoiceAttachment = typeof supplierInvoiceAttachments.$inferInsert
+
 // ---------- finance_notes ----------
 
 export const financeNotes = pgTable(
