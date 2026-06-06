@@ -18,8 +18,7 @@ describe("catalogAuthoringExtension mounting", () => {
   // Replicate createApp's extension mount expression verbatim.
   const app = new Hono().route(
     `/v1/admin/${catalogAuthoringExtension.extension.module}`,
-    // biome-ignore lint/style/noNonNullAssertion: asserted above
-    catalogAuthoringExtension.adminRoutes!,
+    catalogAuthoringExtension.adminRoutes ?? new Hono(),
   )
 
   it("resolves POST /v1/admin/products/compose (route matched, not 404)", async () => {

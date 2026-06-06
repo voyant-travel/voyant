@@ -1,3 +1,13 @@
+import { optionPricingModeEnum, optionUnitPricingModeEnum } from "@voyantjs/pricing/schema"
+import {
+  optionUnitTypeEnum,
+  productBookingModeEnum,
+  productCapacityModeEnum,
+  productOptionStatusEnum,
+  productStatusEnum,
+  productVisibilityEnum,
+  serviceTypeEnum,
+} from "@voyantjs/products/schema"
 import { z } from "zod"
 
 /**
@@ -20,13 +30,14 @@ import { z } from "zod"
  */
 
 const money = z.number().int()
+const jsonRecord = z.record(z.string(), z.unknown())
 
 export const unitSpecSchema = z.object({
   ref: z.string().min(1),
   name: z.string().min(1).max(255),
   code: z.string().max(255).nullish(),
   description: z.string().nullish(),
-  unitType: z.enum(["person", "group", "room", "vehicle", "service", "other"]).default("person"),
+  unitType: z.enum(optionUnitTypeEnum.enumValues).default("person"),
   minQuantity: z.number().int().nullish(),
   maxQuantity: z.number().int().nullish(),
   minAge: z.number().int().nullish(),
@@ -51,9 +62,7 @@ export const unitPriceRuleSpecSchema = z.object({
   /** Resolves to a sibling unit's `ref` within the same option. */
   unitRef: z.string().min(1),
   pricingCategoryId: z.string().nullish(),
-  pricingMode: z
-    .enum(["per_unit", "per_person", "per_booking", "included", "free", "on_request"])
-    .default("per_unit"),
+  pricingMode: z.enum(optionUnitPricingModeEnum.enumValues).default("per_unit"),
   sellAmountCents: money.nullish(),
   costAmountCents: money.nullish(),
   minQuantity: z.number().int().nullish(),
@@ -61,6 +70,7 @@ export const unitPriceRuleSpecSchema = z.object({
   active: z.boolean().default(true),
   sortOrder: z.number().int().default(0),
   notes: z.string().nullish(),
+  metadata: jsonRecord.nullish(),
   tiers: z.array(unitTierSpecSchema).default([]),
 })
 
@@ -75,9 +85,7 @@ export const optionPriceRuleSpecSchema = z.object({
   code: z.string().nullish(),
   name: z.string().min(1).max(255),
   description: z.string().nullish(),
-  pricingMode: z
-    .enum(["per_person", "per_booking", "starting_from", "free", "on_request"])
-    .default("per_person"),
+  pricingMode: z.enum(optionPricingModeEnum.enumValues).default("per_person"),
   baseSellAmountCents: money.nullish(),
   baseCostAmountCents: money.nullish(),
   minPerBooking: z.number().int().nullish(),
@@ -85,6 +93,8 @@ export const optionPriceRuleSpecSchema = z.object({
   allPricingCategories: z.boolean().default(true),
   isDefault: z.boolean().default(false),
   active: z.boolean().default(true),
+  notes: z.string().nullish(),
+  metadata: jsonRecord.nullish(),
   unitPriceRules: z.array(unitPriceRuleSpecSchema).default([]),
 })
 
@@ -93,7 +103,7 @@ export const optionSpecSchema = z.object({
   name: z.string().min(1).max(255),
   code: z.string().max(255).nullish(),
   description: z.string().nullish(),
-  status: z.enum(["draft", "active", "inactive", "archived"]).default("draft"),
+  status: z.enum(productOptionStatusEnum.enumValues).default("draft"),
   isDefault: z.boolean().default(false),
   sortOrder: z.number().int().default(0),
   availableFrom: z.string().nullish(),
@@ -114,7 +124,7 @@ export const paxPricingTierSpecSchema = z.object({
 
 export const dayServiceSpecSchema = z.object({
   supplierServiceId: z.string().nullish(),
-  serviceType: z.enum(["accommodation", "transfer", "experience", "guide", "meal", "other"]),
+  serviceType: z.enum(serviceTypeEnum.enumValues),
   name: z.string().min(1).max(255),
   description: z.string().nullish(),
   countryCode: z.string().nullish(),
@@ -142,28 +152,31 @@ export const itinerarySpecSchema = z.object({
 
 export const productRowSpecSchema = z.object({
   name: z.string().min(1).max(255),
-  status: z.enum(["draft", "active", "inactive", "archived"]).default("draft"),
+  status: z.enum(productStatusEnum.enumValues).default("draft"),
   description: z.string().nullish(),
   inclusionsHtml: z.string().nullish(),
   exclusionsHtml: z.string().nullish(),
   termsHtml: z.string().nullish(),
-  bookingMode: z
-    .enum(["date", "date_time", "open", "stay", "transfer", "itinerary", "other"])
-    .default("date"),
-  capacityMode: z.enum(["limited", "unlimited"]).default("limited"),
+  termsShowOnContract: z.boolean().default(false),
+  bookingMode: z.enum(productBookingModeEnum.enumValues).default("date"),
+  capacityMode: z.enum(productCapacityModeEnum.enumValues).default("limited"),
   timezone: z.string().nullish(),
   defaultLanguageTag: z.string().nullish(),
-  visibility: z.enum(["private", "public", "unlisted"]).default("private"),
+  visibility: z.enum(productVisibilityEnum.enumValues).default("private"),
   sellCurrency: z.string().min(3).max(3),
   sellAmountCents: money.nullish(),
   costAmountCents: money.nullish(),
   marginPercent: z.number().int().nullish(),
+  reservationTimeoutMinutes: z.number().int().nullish(),
   facilityId: z.string().nullish(),
   supplierId: z.string().nullish(),
   startDate: z.string().nullish(),
   endDate: z.string().nullish(),
   pax: z.number().int().nullish(),
   productTypeId: z.string().nullish(),
+  contractTemplateId: z.string().nullish(),
+  taxClassId: z.string().nullish(),
+  customerPaymentPolicy: z.unknown().nullish(),
   tags: z.array(z.string()).default([]),
 })
 
