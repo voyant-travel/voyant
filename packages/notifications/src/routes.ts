@@ -8,6 +8,7 @@ import type { BookingDocumentAttachmentResolver } from "./service-booking-docume
 import type { NotificationProvider } from "./types.js"
 import {
   bookingDocumentBundleSchema,
+  composeNotificationReminderRuleSchema,
   confirmAndDispatchBookingResultSchema,
   confirmAndDispatchBookingSchema,
   insertNotificationReminderRuleSchema,
@@ -92,6 +93,13 @@ function getRuntime(
   }
 }
 
+function idempotencyKey(
+  c: { req: { header: (name: string) => string | undefined } },
+  bodyKey?: string,
+) {
+  return c.req.header("Idempotency-Key") ?? bodyKey
+}
+
 export function createNotificationsRoutes(options?: NotificationsRoutesOptions) {
   return new Hono<Env>()
     .get("/templates", async (c) => {
@@ -118,6 +126,11 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
       )
       if (!row) return c.json({ error: "Notification template not found" }, 404)
       return c.json({ data: row })
+    })
+    .delete("/templates/:id", async (c) => {
+      const ok = await notificationsService.deleteTemplate(c.get("db"), c.req.param("id"))
+      if (!ok) return c.json({ error: "Notification template not found" }, 404)
+      return c.body(null, 204)
     })
     .post("/preview", async (c) => {
       const rendered = notificationsService.previewNotificationTemplate(
@@ -161,6 +174,22 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
       )
       return c.json({ data: row }, 201)
     })
+    .post("/reminder-rules/compose", async (c) => {
+      const body = await parseJsonBody(c, composeNotificationReminderRuleSchema)
+      const outcome = await notificationsService.composeNotificationReminderRule(
+        c.get("db"),
+        body,
+        {
+          idempotencyKey: idempotencyKey(c, body.idempotencyKey),
+        },
+      )
+
+      if (outcome.status === "invalid") {
+        return c.json({ error: "invalid_reminder_rule_graph", issues: outcome.issues }, 422)
+      }
+
+      return c.json({ data: outcome.result }, outcome.reused ? 200 : 201)
+    })
     .get("/reminder-rules/:id", async (c) => {
       const row = await notificationsService.getReminderRuleById(c.get("db"), c.req.param("id"))
       if (!row) return c.json({ error: "Notification reminder rule not found" }, 404)
@@ -174,6 +203,11 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
       )
       if (!row) return c.json({ error: "Notification reminder rule not found" }, 404)
       return c.json({ data: row })
+    })
+    .delete("/reminder-rules/:id", async (c) => {
+      const ok = await notificationsService.deleteReminderRule(c.get("db"), c.req.param("id"))
+      if (!ok) return c.json({ error: "Notification reminder rule not found" }, 404)
+      return c.body(null, 204)
     })
     .get("/reminder-rules/:id/stages", async (c) => {
       const stages = await notificationsService.listReminderRuleStages(

@@ -379,6 +379,13 @@
 			"when": 1780142100000,
 			"tag": "0054_catalog_authoring_requests",
 			"breakpoints": true
+		},
+		{
+			"idx": 53,
+			"version": "7",
+			"when": 1780142200000,
+			"tag": "0055_notification_reminder_rule_authoring_requests",
+			"breakpoints": true
 		}
 	]
 }

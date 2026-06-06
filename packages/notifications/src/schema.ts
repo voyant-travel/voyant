@@ -359,6 +359,29 @@ export const notificationSettings = pgTable(
 export type NotificationSettings = typeof notificationSettings.$inferSelect
 export type NewNotificationSettings = typeof notificationSettings.$inferInsert
 
+/**
+ * Dedup ledger for composite reminder-rule authoring. A compose request creates
+ * several rows, so retried calls need a stable way to return the original rule
+ * instead of building a second graph.
+ */
+export const notificationReminderRuleAuthoringRequests = pgTable(
+  "notification_reminder_rule_authoring_requests",
+  {
+    idempotencyKey: text("idempotency_key").primaryKey(),
+    reminderRuleId: typeIdRef("reminder_rule_id")
+      .notNull()
+      .references(() => notificationReminderRules.id, { onDelete: "cascade" }),
+    operation: text("operation").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("idx_notification_reminder_rule_authoring_rule").on(table.reminderRuleId)],
+)
+
+export type NotificationReminderRuleAuthoringRequest =
+  typeof notificationReminderRuleAuthoringRequests.$inferSelect
+export type NewNotificationReminderRuleAuthoringRequest =
+  typeof notificationReminderRuleAuthoringRequests.$inferInsert
+
 export const notificationTemplatesRelations = relations(notificationTemplates, ({ many }) => ({
   deliveries: many(notificationDeliveries),
   reminderRules: many(notificationReminderRules),
