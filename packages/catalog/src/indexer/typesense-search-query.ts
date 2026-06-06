@@ -127,7 +127,7 @@ function resolveTypesenseSortBy(
 const SORT_FIELDS = {
   "price-asc": ["priceFromAmountCents", "sellAmountCents"],
   "price-desc": ["priceFromAmountCents", "sellAmountCents"],
-  "departure-asc": ["nextDepartureAt", "nextDepartureDate", "startDateEpochDays", "startDate"],
+  "departure-asc": ["nextDepartureDate", "nextDepartureAt", "startDateEpochDays", "startDate"],
   newest: ["publishedAt", "createdAt"],
 } as const satisfies Record<Exclude<SearchSortOption, "relevance">, readonly string[]>
 

@@ -49,6 +49,16 @@ const registry = createFieldPolicyRegistry(
       visibility: ["customer"],
     },
     {
+      path: "nextDepartureDate",
+      class: "structural",
+      merge: "source-only",
+      editRole: "none",
+      overrideFriction: "none",
+      snapshot: "on-book",
+      query: "indexed-column",
+      visibility: ["customer"],
+    },
+    {
       path: "createdAt",
       class: "managed",
       merge: "source-only",
@@ -109,6 +119,7 @@ describe("Typesense catalog indexer", () => {
     expect(schema.fields.find((field) => field.name === "latitude")?.type).toBe("float")
     expect(schema.fields.find((field) => field.name === "hasOffer")?.type).toBe("bool")
     expect(schema.fields.find((field) => field.name === "nextDepartureAt")?.sort).toBe(true)
+    expect(schema.fields.find((field) => field.name === "nextDepartureDate")?.sort).toBe(true)
   })
 
   it("keeps non-text fields out of Typesense query_by", () => {
@@ -128,6 +139,16 @@ describe("Typesense catalog indexer", () => {
     )
 
     expect(query.sort_by).toBe("priceFromAmountCents:desc")
+  })
+
+  it("maps departure sort to the sortable local departure date", () => {
+    const query = buildSearchQuery(
+      { query: "", mode: "keyword", sort: "departure-asc" },
+      registry,
+      slice,
+    )
+
+    expect(query.sort_by).toBe("nextDepartureDate:asc")
   })
 
   it("normalizes list policy paths for facets and filters", () => {
