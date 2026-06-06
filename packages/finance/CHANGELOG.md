@@ -1,5 +1,12 @@
 # @voyantjs/finance
 
+## 0.106.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.106.0
+- @voyantjs/products@0.106.0
+
 ## 0.105.0
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @voyantjs/cruises
 
+## 0.105.3
+
+### Patch Changes
+
+- @voyantjs/bookings@0.106.0
+
 ## 0.105.2
 
 ### Patch Changes

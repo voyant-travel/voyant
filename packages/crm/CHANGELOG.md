@@ -1,5 +1,17 @@
 # @voyantjs/crm
 
+## 0.106.0
+
+### Minor Changes
+
+- 6949669: Add CRM people and organization merge contracts, routes, React mutations, and detail-page UI actions.
+
+### Patch Changes
+
+- Updated dependencies [6949669]
+  - @voyantjs/crm-contracts@0.105.0
+  - @voyantjs/identity@0.106.0
+
 ## 0.105.1
 
 ### Patch Changes
