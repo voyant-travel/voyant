@@ -23,6 +23,11 @@ export interface CreateOrganizationInput {
 
 export type UpdateOrganizationInput = Partial<CreateOrganizationInput>
 
+export interface MergeOrganizationInput {
+  keepId: string
+  mergeId: string
+}
+
 const deleteResponseSchema = z.object({ success: z.boolean() })
 
 export function useOrganizationMutation() {
@@ -75,5 +80,23 @@ export function useOrganizationMutation() {
     },
   })
 
-  return { create, update, remove }
+  const merge = useMutation({
+    mutationFn: async ({ keepId, mergeId }: MergeOrganizationInput) => {
+      const { data } = await fetchWithValidation(
+        `/v1/crm/organizations/${keepId}/merge`,
+        organizationSingleResponse,
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify({ mergeId }) },
+      )
+      return data
+    },
+    onSuccess: (data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: crmQueryKeys.organizations() })
+      void queryClient.invalidateQueries({ queryKey: crmQueryKeys.people() })
+      queryClient.setQueryData(crmQueryKeys.organization(data.id), data)
+      queryClient.removeQueries({ queryKey: crmQueryKeys.organization(variables.mergeId) })
+    },
+  })
+
+  return { create, update, remove, merge }
 }

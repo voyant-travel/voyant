@@ -90,6 +90,9 @@ export const organizationCoreSchema = z.object({
 
 export const insertOrganizationSchema = organizationCoreSchema
 export const updateOrganizationSchema = organizationCoreSchema.partial()
+export const mergeOrganizationSchema = z.object({
+  mergeId: z.string().min(1),
+})
 
 export const organizationListSortFieldSchema = z.enum([
   "name",
@@ -159,6 +162,9 @@ export const personCoreSchema = z.object({
 
 export const insertPersonSchema = personCoreSchema
 export const updatePersonSchema = personCoreSchema.partial()
+export const mergePersonSchema = z.object({
+  mergeId: z.string().min(1),
+})
 
 export const personListSortFieldSchema = z.enum([
   "name",

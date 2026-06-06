@@ -327,10 +327,22 @@ export const crmUiRo = {
   organizationDetail: {
     topBar: {
       organizations: "Organizatii",
+      merge: "Uneste",
       delete: "Sterge",
       deleteTitle: "Stergi aceasta organizatie?",
       deleteDescription:
         "Aceasta actiune va sterge definitiv organizatia. Persoanele asociate vor ramane.",
+    },
+    mergeDialog: {
+      title: "Uneste organizatia",
+      description:
+        "Muta istoricul CRM si referintele dintr-o organizatie duplicat in aceasta organizatie.",
+      keepLabel: "Pastreaza",
+      mergeLabel: "Duplicatul de unit",
+      placeholder: "Cauta organizatii...",
+      empty: "Nu s-au gasit organizatii.",
+      selfError: "Alege o alta organizatie pentru unire.",
+      action: "Uneste organizatia",
     },
     sidebar: {
       about: "Despre",
@@ -385,10 +397,22 @@ export const crmUiRo = {
     topBar: {
       people: "Persoane",
       edit: "Editeaza",
+      merge: "Uneste",
       delete: "Sterge",
       deleteTitle: "Stergi aceasta persoana?",
       deleteDescription:
         "Aceasta actiune va sterge definitiv persoana si legaturile CRM din acest workspace.",
+    },
+    mergeDialog: {
+      title: "Uneste persoana",
+      description:
+        "Muta rezervarile, facturile, notele si istoricul CRM dintr-un duplicat in aceasta persoana.",
+      keepLabel: "Pastreaza",
+      mergeLabel: "Duplicatul de unit",
+      placeholder: "Cauta persoane...",
+      empty: "Nu s-au gasit persoane.",
+      selfError: "Alege o alta persoana pentru unire.",
+      action: "Uneste persoana",
     },
     sidebar: {
       about: "Despre",

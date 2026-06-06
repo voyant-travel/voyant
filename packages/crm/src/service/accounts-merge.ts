@@ -1,0 +1,554 @@
+import {
+  identityAddresses,
+  identityContactPoints,
+  identityNamedContacts,
+} from "@voyantjs/identity/schema"
+import { and, eq, inArray, ne, or, sql } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+
+import {
+  activityLinks,
+  activityParticipants,
+  communicationLog,
+  customerSignals,
+  customFieldValues,
+  opportunities,
+  opportunityParticipants,
+  organizationNotes,
+  organizations,
+  people,
+  personDocuments,
+  personNotes,
+  personPaymentMethods,
+  personRelationships,
+  segmentMembers,
+} from "../schema.js"
+import { hydratePeople, organizationEntityType, personEntityType } from "./accounts-shared.js"
+
+export class CrmMergeError extends Error {
+  readonly status: 400 | 404
+
+  constructor(message: string, status: 400 | 404) {
+    super(message)
+    this.name = "CrmMergeError"
+    this.status = status
+  }
+}
+
+type OptionalReference = {
+  table: string
+  column: string
+}
+
+type OptionalEntityTargetReference = {
+  table: string
+  entityType: "person" | "organization"
+}
+
+const OPTIONAL_PERSON_REFERENCES: OptionalReference[] = [
+  { table: "bookings", column: "person_id" },
+  { table: "booking_travelers", column: "person_id" },
+  { table: "booking_staff_assignments", column: "person_id" },
+  { table: "offers", column: "person_id" },
+  { table: "offer_participants", column: "person_id" },
+  { table: "offer_contact_assignments", column: "person_id" },
+  { table: "offer_staff_assignments", column: "person_id" },
+  { table: "orders", column: "person_id" },
+  { table: "order_participants", column: "person_id" },
+  { table: "order_contact_assignments", column: "person_id" },
+  { table: "order_staff_assignments", column: "person_id" },
+  { table: "order_terms", column: "accepted_by" },
+  { table: "invoices", column: "person_id" },
+  { table: "vouchers", column: "issued_to_person_id" },
+  { table: "payment_instruments", column: "person_id" },
+  { table: "payment_sessions", column: "payer_person_id" },
+  { table: "contracts", column: "person_id" },
+  { table: "contract_signatures", column: "person_id" },
+  { table: "policy_acceptances", column: "person_id" },
+  { table: "policy_acceptances", column: "accepted_by" },
+  { table: "notification_deliveries", column: "person_id" },
+  { table: "notification_reminder_runs", column: "person_id" },
+]
+
+const OPTIONAL_ORGANIZATION_REFERENCES: OptionalReference[] = [
+  { table: "bookings", column: "organization_id" },
+  { table: "offers", column: "organization_id" },
+  { table: "orders", column: "organization_id" },
+  { table: "invoices", column: "organization_id" },
+  { table: "vouchers", column: "issued_to_organization_id" },
+  { table: "payment_instruments", column: "organization_id" },
+  { table: "payment_sessions", column: "payer_organization_id" },
+  { table: "contracts", column: "organization_id" },
+  { table: "policy_assignments", column: "organization_id" },
+  { table: "notification_deliveries", column: "organization_id" },
+  { table: "notification_reminder_runs", column: "organization_id" },
+]
+
+const OPTIONAL_PERSON_ENTITY_TARGET_REFERENCES: OptionalEntityTargetReference[] = [
+  { table: "notification_deliveries", entityType: "person" },
+]
+
+const OPTIONAL_ORGANIZATION_ENTITY_TARGET_REFERENCES: OptionalEntityTargetReference[] = [
+  { table: "notification_deliveries", entityType: "organization" },
+]
+
+function quoteIdentifier(identifier: string) {
+  return `"${identifier.replaceAll('"', '""')}"`
+}
+
+function mergeTags(
+  keepTags: string[] | null | undefined,
+  mergeTags: string[] | null | undefined,
+): string[] {
+  return [...new Set([...(keepTags ?? []), ...(mergeTags ?? [])])]
+}
+
+function backfill<T extends Record<string, unknown>>(
+  keep: T,
+  merge: T,
+  keys: Array<keyof T>,
+): Partial<T> {
+  const patch: Partial<T> = {}
+
+  for (const key of keys) {
+    const keepValue = keep[key]
+    const mergeValue = merge[key]
+    if (
+      (keepValue === null || keepValue === undefined || keepValue === "") &&
+      mergeValue !== null &&
+      mergeValue !== undefined &&
+      mergeValue !== ""
+    ) {
+      patch[key] = mergeValue
+    }
+  }
+
+  return patch
+}
+
+async function tableHasColumn(db: PostgresJsDatabase, table: string, column: string) {
+  const rows = await db.execute<{ exists: boolean }>(sql`
+    SELECT EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = ${table}
+        AND column_name = ${column}
+    ) AS "exists"
+  `)
+  return Boolean(rows[0]?.exists)
+}
+
+async function updateOptionalReference(
+  db: PostgresJsDatabase,
+  reference: OptionalReference,
+  keepId: string,
+  mergeId: string,
+) {
+  if (!(await tableHasColumn(db, reference.table, reference.column))) return
+
+  await db.execute(sql`
+    UPDATE ${sql.raw(quoteIdentifier(reference.table))}
+    SET ${sql.raw(quoteIdentifier(reference.column))} = ${keepId}
+    WHERE ${sql.raw(quoteIdentifier(reference.column))} = ${mergeId}
+  `)
+}
+
+async function updateOptionalReferences(
+  db: PostgresJsDatabase,
+  references: OptionalReference[],
+  keepId: string,
+  mergeId: string,
+) {
+  for (const reference of references) {
+    await updateOptionalReference(db, reference, keepId, mergeId)
+  }
+}
+
+async function updateOptionalEntityTargetReference(
+  db: PostgresJsDatabase,
+  reference: OptionalEntityTargetReference,
+  keepId: string,
+  mergeId: string,
+) {
+  const hasTargetType = await tableHasColumn(db, reference.table, "target_type")
+  const hasTargetId = await tableHasColumn(db, reference.table, "target_id")
+  if (!hasTargetType || !hasTargetId) return
+
+  await db.execute(sql`
+    UPDATE ${sql.raw(quoteIdentifier(reference.table))}
+    SET target_id = ${keepId}
+    WHERE target_type = ${reference.entityType}
+      AND target_id = ${mergeId}
+  `)
+}
+
+async function updateOptionalEntityTargetReferences(
+  db: PostgresJsDatabase,
+  references: OptionalEntityTargetReference[],
+  keepId: string,
+  mergeId: string,
+) {
+  for (const reference of references) {
+    await updateOptionalEntityTargetReference(db, reference, keepId, mergeId)
+  }
+}
+
+async function mergeIdentityRows(
+  db: PostgresJsDatabase,
+  entityType: string,
+  keepId: string,
+  mergeId: string,
+) {
+  await db.delete(identityContactPoints).where(
+    and(
+      eq(identityContactPoints.entityType, entityType),
+      eq(identityContactPoints.entityId, mergeId),
+      sql`EXISTS (
+          SELECT 1
+          FROM identity_contact_points keep_point
+          WHERE keep_point.entity_type = ${entityType}
+            AND keep_point.entity_id = ${keepId}
+            AND keep_point.kind = ${identityContactPoints.kind}
+            AND keep_point.value = ${identityContactPoints.value}
+        )`,
+    ),
+  )
+
+  await db
+    .update(identityContactPoints)
+    .set({ entityId: keepId, updatedAt: new Date() })
+    .where(
+      and(
+        eq(identityContactPoints.entityType, entityType),
+        eq(identityContactPoints.entityId, mergeId),
+      ),
+    )
+
+  await db
+    .update(identityAddresses)
+    .set({ entityId: keepId, updatedAt: new Date() })
+    .where(
+      and(eq(identityAddresses.entityType, entityType), eq(identityAddresses.entityId, mergeId)),
+    )
+
+  await db
+    .update(identityNamedContacts)
+    .set({ entityId: keepId, updatedAt: new Date() })
+    .where(
+      and(
+        eq(identityNamedContacts.entityType, entityType),
+        eq(identityNamedContacts.entityId, mergeId),
+      ),
+    )
+}
+
+async function mergeEntityLinks(
+  db: PostgresJsDatabase,
+  entityType: "person" | "organization",
+  keepId: string,
+  mergeId: string,
+) {
+  await db
+    .update(activityLinks)
+    .set({ entityId: keepId })
+    .where(and(eq(activityLinks.entityType, entityType), eq(activityLinks.entityId, mergeId)))
+
+  await db
+    .update(customFieldValues)
+    .set({ entityId: keepId, updatedAt: new Date() })
+    .where(
+      and(eq(customFieldValues.entityType, entityType), eq(customFieldValues.entityId, mergeId)),
+    )
+}
+
+async function dedupePersonJoinTables(db: PostgresJsDatabase, keepId: string, mergeId: string) {
+  await db.delete(opportunityParticipants).where(
+    and(
+      eq(opportunityParticipants.personId, mergeId),
+      sql`EXISTS (
+          SELECT 1
+          FROM opportunity_participants keep_participant
+          WHERE keep_participant.opportunity_id = ${opportunityParticipants.opportunityId}
+            AND keep_participant.person_id = ${keepId}
+        )`,
+    ),
+  )
+
+  await db.delete(activityParticipants).where(
+    and(
+      eq(activityParticipants.personId, mergeId),
+      sql`EXISTS (
+          SELECT 1
+          FROM activity_participants keep_participant
+          WHERE keep_participant.activity_id = ${activityParticipants.activityId}
+            AND keep_participant.person_id = ${keepId}
+        )`,
+    ),
+  )
+
+  await db
+    .delete(personRelationships)
+    .where(
+      or(
+        and(
+          eq(personRelationships.fromPersonId, mergeId),
+          eq(personRelationships.toPersonId, keepId),
+        ),
+        and(
+          eq(personRelationships.fromPersonId, keepId),
+          eq(personRelationships.toPersonId, mergeId),
+        ),
+        and(
+          eq(personRelationships.fromPersonId, mergeId),
+          eq(personRelationships.toPersonId, mergeId),
+        ),
+      ),
+    )
+
+  await db.delete(personRelationships).where(
+    and(
+      eq(personRelationships.fromPersonId, mergeId),
+      ne(personRelationships.toPersonId, mergeId),
+      sql`EXISTS (
+          SELECT 1
+          FROM person_relationships keep_relationship
+          WHERE keep_relationship.from_person_id = ${keepId}
+            AND keep_relationship.to_person_id = ${personRelationships.toPersonId}
+            AND keep_relationship.kind = ${personRelationships.kind}
+        )`,
+    ),
+  )
+
+  await db.delete(personRelationships).where(
+    and(
+      eq(personRelationships.toPersonId, mergeId),
+      ne(personRelationships.fromPersonId, mergeId),
+      sql`EXISTS (
+          SELECT 1
+          FROM person_relationships keep_relationship
+          WHERE keep_relationship.from_person_id = ${personRelationships.fromPersonId}
+            AND keep_relationship.to_person_id = ${keepId}
+            AND keep_relationship.kind = ${personRelationships.kind}
+        )`,
+    ),
+  )
+}
+
+export const accountMergeService = {
+  async mergePerson(db: PostgresJsDatabase, keepId: string, mergeId: string) {
+    if (keepId === mergeId) {
+      throw new CrmMergeError("Cannot merge a person into itself", 400)
+    }
+
+    return db.transaction(async (tx) => {
+      const [keep, merge] = await tx
+        .select()
+        .from(people)
+        .where(inArray(people.id, [keepId, mergeId]))
+        .for("update")
+
+      const keepPerson = keep?.id === keepId ? keep : merge?.id === keepId ? merge : null
+      const mergePerson = keep?.id === mergeId ? keep : merge?.id === mergeId ? merge : null
+
+      if (!keepPerson) throw new CrmMergeError("Person to keep not found", 404)
+      if (!mergePerson) throw new CrmMergeError("Person to merge not found", 404)
+
+      await tx
+        .update(people)
+        .set({
+          ...backfill(keepPerson, mergePerson, [
+            "organizationId",
+            "middleName",
+            "gender",
+            "jobTitle",
+            "relation",
+            "preferredLanguage",
+            "preferredCurrency",
+            "ownerId",
+            "source",
+            "sourceRef",
+            "dateOfBirth",
+            "notes",
+            "accessibilityEncrypted",
+            "dietaryEncrypted",
+            "loyaltyEncrypted",
+            "insuranceEncrypted",
+          ]),
+          tags: mergeTags(keepPerson.tags, mergePerson.tags),
+          updatedAt: new Date(),
+        })
+        .where(eq(people.id, keepId))
+
+      await dedupePersonJoinTables(tx as PostgresJsDatabase, keepId, mergeId)
+      await mergeIdentityRows(tx as PostgresJsDatabase, personEntityType, keepId, mergeId)
+      await mergeEntityLinks(tx as PostgresJsDatabase, "person", keepId, mergeId)
+
+      await tx
+        .update(personNotes)
+        .set({ personId: keepId })
+        .where(eq(personNotes.personId, mergeId))
+      await tx
+        .update(personDocuments)
+        .set({ isPrimary: false, updatedAt: new Date() })
+        .where(
+          and(
+            eq(personDocuments.personId, mergeId),
+            eq(personDocuments.isPrimary, true),
+            sql`EXISTS (
+              SELECT 1
+              FROM person_documents keep_document
+              WHERE keep_document.person_id = ${keepId}
+                AND keep_document.type = ${personDocuments.type}
+                AND keep_document.is_primary = true
+            )`,
+          ),
+        )
+      await tx
+        .update(personDocuments)
+        .set({ personId: keepId, updatedAt: new Date() })
+        .where(eq(personDocuments.personId, mergeId))
+      await tx
+        .update(personPaymentMethods)
+        .set({ personId: keepId })
+        .where(eq(personPaymentMethods.personId, mergeId))
+      await tx
+        .update(communicationLog)
+        .set({ personId: keepId })
+        .where(eq(communicationLog.personId, mergeId))
+      await tx
+        .update(opportunities)
+        .set({ personId: keepId, updatedAt: new Date() })
+        .where(eq(opportunities.personId, mergeId))
+      await tx
+        .update(opportunityParticipants)
+        .set({ personId: keepId })
+        .where(eq(opportunityParticipants.personId, mergeId))
+      await tx
+        .update(activityParticipants)
+        .set({ personId: keepId })
+        .where(eq(activityParticipants.personId, mergeId))
+      await tx
+        .update(personRelationships)
+        .set({ fromPersonId: keepId, updatedAt: new Date() })
+        .where(eq(personRelationships.fromPersonId, mergeId))
+      await tx
+        .update(personRelationships)
+        .set({ toPersonId: keepId, updatedAt: new Date() })
+        .where(eq(personRelationships.toPersonId, mergeId))
+      await tx
+        .update(segmentMembers)
+        .set({ personId: keepId })
+        .where(eq(segmentMembers.personId, mergeId))
+      await tx
+        .update(customerSignals)
+        .set({ personId: keepId, updatedAt: new Date() })
+        .where(eq(customerSignals.personId, mergeId))
+
+      await updateOptionalReferences(
+        tx as PostgresJsDatabase,
+        OPTIONAL_PERSON_REFERENCES,
+        keepId,
+        mergeId,
+      )
+      await updateOptionalEntityTargetReferences(
+        tx as PostgresJsDatabase,
+        OPTIONAL_PERSON_ENTITY_TARGET_REFERENCES,
+        keepId,
+        mergeId,
+      )
+
+      await tx.delete(people).where(eq(people.id, mergeId))
+
+      const [row] = await tx.select().from(people).where(eq(people.id, keepId)).limit(1)
+      if (!row) throw new Error("Merged person disappeared")
+      const [hydrated] = await hydratePeople(tx as PostgresJsDatabase, [row])
+      return hydrated ?? row
+    })
+  },
+
+  async mergeOrganization(db: PostgresJsDatabase, keepId: string, mergeId: string) {
+    if (keepId === mergeId) {
+      throw new CrmMergeError("Cannot merge an organization into itself", 400)
+    }
+
+    return db.transaction(async (tx) => {
+      const [keep, merge] = await tx
+        .select()
+        .from(organizations)
+        .where(inArray(organizations.id, [keepId, mergeId]))
+        .for("update")
+
+      const keepOrganization = keep?.id === keepId ? keep : merge?.id === keepId ? merge : null
+      const mergeOrganization = keep?.id === mergeId ? keep : merge?.id === mergeId ? merge : null
+
+      if (!keepOrganization) throw new CrmMergeError("Organization to keep not found", 404)
+      if (!mergeOrganization) throw new CrmMergeError("Organization to merge not found", 404)
+
+      await tx
+        .update(organizations)
+        .set({
+          ...backfill(keepOrganization, mergeOrganization, [
+            "legalName",
+            "website",
+            "taxId",
+            "industry",
+            "relation",
+            "ownerId",
+            "defaultCurrency",
+            "preferredLanguage",
+            "paymentTerms",
+            "source",
+            "sourceRef",
+            "notes",
+          ]),
+          tags: mergeTags(keepOrganization.tags, mergeOrganization.tags),
+          updatedAt: new Date(),
+        })
+        .where(eq(organizations.id, keepId))
+
+      await mergeIdentityRows(tx as PostgresJsDatabase, organizationEntityType, keepId, mergeId)
+      await mergeEntityLinks(tx as PostgresJsDatabase, "organization", keepId, mergeId)
+
+      await tx
+        .update(people)
+        .set({ organizationId: keepId, updatedAt: new Date() })
+        .where(eq(people.organizationId, mergeId))
+      await tx
+        .update(organizationNotes)
+        .set({ organizationId: keepId })
+        .where(eq(organizationNotes.organizationId, mergeId))
+      await tx
+        .update(communicationLog)
+        .set({ organizationId: keepId })
+        .where(eq(communicationLog.organizationId, mergeId))
+      await tx
+        .update(opportunities)
+        .set({ organizationId: keepId, updatedAt: new Date() })
+        .where(eq(opportunities.organizationId, mergeId))
+
+      await updateOptionalReferences(
+        tx as PostgresJsDatabase,
+        OPTIONAL_ORGANIZATION_REFERENCES,
+        keepId,
+        mergeId,
+      )
+      await updateOptionalEntityTargetReferences(
+        tx as PostgresJsDatabase,
+        OPTIONAL_ORGANIZATION_ENTITY_TARGET_REFERENCES,
+        keepId,
+        mergeId,
+      )
+
+      await tx.delete(organizations).where(eq(organizations.id, mergeId))
+
+      const [row] = await tx
+        .select()
+        .from(organizations)
+        .where(eq(organizations.id, keepId))
+        .limit(1)
+      if (!row) throw new Error("Merged organization disappeared")
+      return row
+    })
+  },
+}

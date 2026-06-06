@@ -25,6 +25,7 @@ import {
   Building,
   Calendar,
   CircleDot,
+  GitMerge,
   Globe,
   Hash,
   Languages,
@@ -120,6 +121,7 @@ export interface OrganizationDetailPageSlots {
 export interface OrganizationTopBarProps {
   orgName: string
   onBack: () => void
+  onMerge?: () => void
   onDelete: () => Promise<void>
   deletePending: boolean
 }
@@ -127,6 +129,7 @@ export interface OrganizationTopBarProps {
 export function OrganizationTopBar({
   orgName,
   onBack,
+  onMerge,
   onDelete,
   deletePending,
 }: OrganizationTopBarProps) {
@@ -145,6 +148,12 @@ export function OrganizationTopBar({
         <span className="text-foreground">{orgName}</span>
       </div>
       <div className="ml-auto flex items-center gap-2">
+        {onMerge ? (
+          <Button variant="outline" size="sm" onClick={onMerge}>
+            <GitMerge className="size-4" aria-hidden="true" />
+            {messages.organizationDetail.topBar.merge}
+          </Button>
+        ) : null}
         <ConfirmActionButton
           buttonLabel={messages.organizationDetail.topBar.delete}
           confirmLabel={messages.organizationDetail.topBar.delete}

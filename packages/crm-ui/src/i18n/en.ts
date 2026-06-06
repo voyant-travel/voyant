@@ -327,10 +327,22 @@ export const crmUiEn = {
   organizationDetail: {
     topBar: {
       organizations: "Organizations",
+      merge: "Merge",
       delete: "Delete",
       deleteTitle: "Delete this organization?",
       deleteDescription:
         "This will permanently remove the organization. People linked to it will remain.",
+    },
+    mergeDialog: {
+      title: "Merge organization",
+      description:
+        "Move CRM history and references from a duplicate organization into this organization.",
+      keepLabel: "Keep",
+      mergeLabel: "Duplicate to merge",
+      placeholder: "Search organizations...",
+      empty: "No organizations found.",
+      selfError: "Choose a different organization to merge.",
+      action: "Merge organization",
     },
     sidebar: {
       about: "About",
@@ -385,10 +397,22 @@ export const crmUiEn = {
     topBar: {
       people: "People",
       edit: "Edit",
+      merge: "Merge",
       delete: "Delete",
       deleteTitle: "Delete this person?",
       deleteDescription:
         "This will permanently remove the person and their CRM links from this workspace.",
+    },
+    mergeDialog: {
+      title: "Merge person",
+      description:
+        "Move bookings, invoices, notes, and CRM history from a duplicate into this person.",
+      keepLabel: "Keep",
+      mergeLabel: "Duplicate to merge",
+      placeholder: "Search people...",
+      empty: "No people found.",
+      selfError: "Choose a different person to merge.",
+      action: "Merge person",
     },
     sidebar: {
       about: "About",
