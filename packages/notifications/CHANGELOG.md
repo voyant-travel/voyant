@@ -1,5 +1,11 @@
 # @voyantjs/notifications
 
+## 0.104.3
+
+### Patch Changes
+
+- 28c5eb3: Add composite reminder-rule authoring with recoverable validation issues, idempotent replay, and hard-delete routes for notification templates and reminder rules.
+
 ## 0.104.2
 
 ### Patch Changes
