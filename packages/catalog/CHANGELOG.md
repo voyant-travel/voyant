@@ -1,5 +1,7 @@
 # @voyantjs/catalog
 
+## 0.104.5
+
 ## 0.104.4
 
 ### Patch Changes

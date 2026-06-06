@@ -1,5 +1,11 @@
 # @voyantjs/ui
 
+## 0.104.3
+
+### Patch Changes
+
+- 72d4c0d: Normalize cruise search/catalog from-prices to integer cents, add explicit catalog price-unit metadata for legacy-safe rendering, add departure counts to cruise search rows, and expose `GET /sailings/:key/pricing` for reading sailing pricing directly.
+
 ## 0.104.2
 
 ### Patch Changes

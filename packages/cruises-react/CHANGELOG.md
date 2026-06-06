@@ -1,5 +1,13 @@
 # @voyantjs/cruises-react
 
+## 0.105.2
+
+### Patch Changes
+
+- 72d4c0d: Normalize cruise search/catalog from-prices to integer cents, add explicit catalog price-unit metadata for legacy-safe rendering, add departure counts to cruise search rows, and expose `GET /sailings/:key/pricing` for reading sailing pricing directly.
+- Updated dependencies [72d4c0d]
+  - @voyantjs/cruises@0.105.2
+
 ## 0.105.1
 
 ### Patch Changes
