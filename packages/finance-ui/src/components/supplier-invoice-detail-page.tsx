@@ -1,5 +1,8 @@
 import {
+  type ApServiceType,
   type SupplierCostAllocationInput,
+  type SupplierInvoiceLineInput,
+  type SupplierInvoiceLineRecord,
   type SupplierInvoiceStatus,
   useSupplierInvoice,
   useSupplierInvoiceMutation,
@@ -13,6 +16,12 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
   Label,
   Select,
@@ -22,6 +31,24 @@ import {
   SelectValue,
 } from "@voyantjs/ui/components"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@voyantjs/ui/components/alert-dialog"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@voyantjs/ui/components/breadcrumb"
+import {
   Table,
   TableBody,
   TableCell,
@@ -30,12 +57,12 @@ import {
   TableRow,
 } from "@voyantjs/ui/components/table"
 import { cn } from "@voyantjs/ui/lib/utils"
-import { Download, Plus, Trash2 } from "lucide-react"
+import { Download, Pencil, Plus, Trash2 } from "lucide-react"
 import { useState } from "react"
 
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
-import type { SupplierInvoiceDetailPaymentMethod } from "../i18n/messages.js"
 import { formatInvoiceAmount } from "./invoice-table-parts.js"
+import { SupplierInvoiceFormDialog } from "./supplier-invoice-form-dialog.js"
 
 const STATUS_VARIANT: Record<
   SupplierInvoiceStatus,
@@ -53,15 +80,19 @@ const STATUS_VARIANT: Record<
 const TARGET_TYPES = ["departure", "product", "booking", "traveler", "unattributed"] as const
 type TargetType = (typeof TARGET_TYPES)[number]
 
-const PAYMENT_METHODS: SupplierInvoiceDetailPaymentMethod[] = [
-  "bank_transfer",
-  "credit_card",
-  "cash",
-  "cheque",
+const SERVICE_TYPES: ApServiceType[] = [
+  "transport",
+  "flight",
+  "accommodation",
+  "guide",
+  "meal",
+  "experience",
+  "insurance",
   "other",
 ]
 
-/** Editable allocation row — whole-invoice mode (one target id per row). */
+const PAYMENT_METHODS = ["bank_transfer", "credit_card", "cash", "cheque", "other"] as const
+
 interface AllocationDraft {
   key: string
   targetType: TargetType
@@ -95,9 +126,25 @@ function targetIdFor(draft: AllocationDraft): Partial<SupplierCostAllocationInpu
   }
 }
 
+function lineToInput(line: SupplierInvoiceLineRecord): SupplierInvoiceLineInput {
+  return {
+    description: line.description,
+    serviceType: line.serviceType,
+    supplierServiceId: line.supplierServiceId,
+    quantity: line.quantity,
+    unitAmountCents: line.unitAmountCents,
+    taxRateBps: line.taxRateBps,
+    taxAmountCents: line.taxAmountCents,
+    totalAmountCents: line.totalAmountCents,
+    sortOrder: line.sortOrder,
+  }
+}
+
 export interface SupplierInvoiceDetailPageProps {
   id: string
   className?: string
+  /** Breadcrumb root link + post-delete navigation back to the list. */
+  onBack?: () => void
   /** Operator wires this to open the document download endpoint. */
   onDownloadDocument?: () => void
 }
@@ -105,6 +152,7 @@ export interface SupplierInvoiceDetailPageProps {
 export function SupplierInvoiceDetailPage({
   id,
   className,
+  onBack,
   onDownloadDocument,
 }: SupplierInvoiceDetailPageProps) {
   const messages = useFinanceUiMessagesOrDefault()
@@ -113,20 +161,22 @@ export function SupplierInvoiceDetailPage({
 
   const { data, isPending, isError } = useSupplierInvoice(id)
   const paymentsQuery = useSupplierInvoicePayments(id)
-  const { setAllocations, recordPayment } = useSupplierInvoiceMutation()
+  const { setAllocations, setLines, recordPayment, remove } = useSupplierInvoiceMutation()
 
   const invoice = data?.data ?? null
   const currency = invoice?.currency ?? ""
 
   const [drafts, setDrafts] = useState<AllocationDraft[] | null>(null)
-  const [payAmount, setPayAmount] = useState("")
-  const [payMethod, setPayMethod] = useState<string>("bank_transfer")
-  const [payDate, setPayDate] = useState("")
+  const [editOpen, setEditOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [lineDialog, setLineDialog] = useState<{ line: SupplierInvoiceLineRecord | null } | null>(
+    null,
+  )
+  const [paymentOpen, setPaymentOpen] = useState(false)
 
   if (isPending) return <div className="p-6 text-muted-foreground">{t.loading}</div>
   if (isError || !invoice) return <div className="p-6 text-destructive">{t.notFound}</div>
 
-  // Lazily seed the allocation editor from the persisted whole-invoice allocations.
   const rows: AllocationDraft[] =
     drafts ??
     invoice.allocations
@@ -158,27 +208,10 @@ export function SupplierInvoiceDetailPage({
     setAllocations.mutate({ id, allocations })
   }
 
-  const submitPayment = () => {
-    if (!payAmount) return
-    recordPayment.mutate(
-      {
-        id,
-        input: {
-          amountCents: toCents(payAmount),
-          currency,
-          paymentMethod: payMethod,
-          status: "completed",
-          paymentDate: payDate || new Date().toISOString().slice(0, 10),
-        },
-      },
-      {
-        onSuccess: () => {
-          setPayAmount("")
-          setPayDate("")
-        },
-      },
-    )
-  }
+  // Lines are edited via the full-replace setLines mutation.
+  const persistLines = (lines: SupplierInvoiceLineInput[]) => setLines.mutate({ id, lines })
+  const removeLine = (lineId: string) =>
+    persistLines(invoice.lines.filter((l) => l.id !== lineId).map(lineToInput))
 
   const methodLabel = (method: string) =>
     (t.payments.methodLabels as Record<string, string>)[method] ?? method
@@ -187,6 +220,37 @@ export function SupplierInvoiceDetailPage({
 
   return (
     <div className={cn("flex flex-col gap-6 p-6", className)}>
+      {/* Breadcrumb + actions */}
+      <div className="flex items-center justify-between gap-2">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              {onBack ? (
+                <BreadcrumbLink render={<button type="button" onClick={onBack} />}>
+                  {t.breadcrumbRoot}
+                </BreadcrumbLink>
+              ) : (
+                <span className="text-muted-foreground">{t.breadcrumbRoot}</span>
+              )}
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{invoice.supplierInvoiceNo}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            <Pencil className="size-4" />
+            {t.actions.edit}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setDeleteOpen(true)}>
+            <Trash2 className="size-4" />
+            {t.actions.delete}
+          </Button>
+        </div>
+      </div>
+
       {/* Header */}
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-2">
@@ -226,8 +290,12 @@ export function SupplierInvoiceDetailPage({
 
       {/* Lines */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">{t.lines.title}</CardTitle>
+          <Button variant="outline" size="sm" onClick={() => setLineDialog({ line: null })}>
+            <Plus className="size-4" />
+            {t.lines.add}
+          </Button>
         </CardHeader>
         <CardContent>
           <Table>
@@ -239,12 +307,13 @@ export function SupplierInvoiceDetailPage({
                 <TableHead className="text-right">{t.lines.unit}</TableHead>
                 <TableHead className="text-right">{t.lines.tax}</TableHead>
                 <TableHead className="text-right">{t.lines.total}</TableHead>
+                <TableHead className="w-20" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {invoice.lines.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
                     {t.lines.empty}
                   </TableCell>
                 </TableRow>
@@ -252,7 +321,9 @@ export function SupplierInvoiceDetailPage({
                 invoice.lines.map((line) => (
                   <TableRow key={line.id}>
                     <TableCell>{line.description}</TableCell>
-                    <TableCell className="text-muted-foreground">{line.serviceType}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {t.lineForm.serviceTypeLabels[line.serviceType]}
+                    </TableCell>
                     <TableCell className="text-right tabular-nums">{line.quantity}</TableCell>
                     <TableCell className="text-right tabular-nums">
                       {formatInvoiceAmount(line.unitAmountCents, currency)}
@@ -262,6 +333,24 @@ export function SupplierInvoiceDetailPage({
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {formatInvoiceAmount(line.totalAmountCents, currency)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setLineDialog({ line })}
+                        aria-label={t.lines.edit}
+                      >
+                        <Pencil className="size-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeLine(line.id)}
+                        aria-label={t.lines.remove}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
@@ -377,10 +466,14 @@ export function SupplierInvoiceDetailPage({
 
       {/* Payments */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">{t.payments.title}</CardTitle>
+          <Button variant="outline" size="sm" onClick={() => setPaymentOpen(true)}>
+            <Plus className="size-4" />
+            {t.payments.record}
+          </Button>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3">
+        <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
@@ -413,52 +506,257 @@ export function SupplierInvoiceDetailPage({
               )}
             </TableBody>
           </Table>
-
-          <div className="flex flex-wrap items-end gap-2 border-t pt-3">
-            <div className="w-32">
-              <Label className="text-xs">
-                {formatMessage(t.payments.amountLabel, { currency })}
-              </Label>
-              <Input
-                inputMode="decimal"
-                value={payAmount}
-                onChange={(event) => setPayAmount(event.target.value)}
-              />
-            </div>
-            <div className="w-40">
-              <Label className="text-xs">{t.payments.methodLabel}</Label>
-              <Select value={payMethod} onValueChange={(value) => setPayMethod(value ?? "other")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAYMENT_METHODS.map((value) => (
-                    <SelectItem key={value} value={value}>
-                      {t.payments.methodLabels[value]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="w-40">
-              <Label className="text-xs">{t.payments.dateLabel}</Label>
-              <Input
-                type="date"
-                value={payDate}
-                onChange={(event) => setPayDate(event.target.value)}
-              />
-            </div>
-            <Button
-              size="sm"
-              disabled={!payAmount || recordPayment.isPending}
-              onClick={submitPayment}
-            >
-              {recordPayment.isPending ? t.payments.recording : t.payments.record}
-            </Button>
-          </div>
         </CardContent>
       </Card>
+
+      {/* Dialogs */}
+      <SupplierInvoiceFormDialog open={editOpen} onOpenChange={setEditOpen} invoice={invoice} />
+
+      <LineDialog
+        open={lineDialog != null}
+        line={lineDialog?.line ?? null}
+        currency={currency}
+        pending={setLines.isPending}
+        onOpenChange={(open) => setLineDialog(open ? (lineDialog ?? { line: null }) : null)}
+        onSubmit={(input) => {
+          const existing = invoice.lines.map(lineToInput)
+          const editing = lineDialog?.line
+          const next = editing
+            ? invoice.lines.map((l) => (l.id === editing.id ? input : lineToInput(l)))
+            : [...existing, input]
+          persistLines(next)
+          setLineDialog(null)
+        }}
+      />
+
+      <PaymentDialog
+        open={paymentOpen}
+        currency={currency}
+        pending={recordPayment.isPending}
+        onOpenChange={setPaymentOpen}
+        onSubmit={(input) => {
+          recordPayment.mutate(
+            { id, input: { ...input, currency } },
+            { onSuccess: () => setPaymentOpen(false) },
+          )
+        }}
+      />
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.deleteDialog.title}</AlertDialogTitle>
+            <AlertDialogDescription>{t.deleteDialog.body}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t.deleteDialog.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => remove.mutate(id, { onSuccess: () => onBack?.() })}
+              disabled={remove.isPending}
+            >
+              {t.deleteDialog.confirm}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  )
+}
+
+// ---------- line dialog ----------
+
+function LineDialog({
+  open,
+  line,
+  currency,
+  pending,
+  onOpenChange,
+  onSubmit,
+}: {
+  open: boolean
+  line: SupplierInvoiceLineRecord | null
+  currency: string
+  pending: boolean
+  onOpenChange: (open: boolean) => void
+  onSubmit: (input: SupplierInvoiceLineInput) => void
+}) {
+  const t = useFinanceUiMessagesOrDefault().supplierInvoiceDetail.lineForm
+  const [description, setDescription] = useState("")
+  const [serviceType, setServiceType] = useState<ApServiceType>("other")
+  const [quantity, setQuantity] = useState("1")
+  const [unit, setUnit] = useState("")
+  const [tax, setTax] = useState("")
+  const [total, setTotal] = useState("")
+
+  // Seed when (re)opened for a specific line.
+  const seedKey = open ? (line?.id ?? "new") : "closed"
+  const [seeded, setSeeded] = useState<string>("closed")
+  if (seedKey !== seeded) {
+    setSeeded(seedKey)
+    setDescription(line?.description ?? "")
+    setServiceType(line?.serviceType ?? "other")
+    setQuantity(String(line?.quantity ?? 1))
+    setUnit(line ? (line.unitAmountCents / 100).toFixed(2) : "")
+    setTax(line ? (line.taxAmountCents / 100).toFixed(2) : "")
+    setTotal(line ? (line.totalAmountCents / 100).toFixed(2) : "")
+  }
+
+  const submit = () => {
+    if (!description.trim()) return
+    onSubmit({
+      description: description.trim(),
+      serviceType,
+      quantity: Math.max(1, Number.parseInt(quantity, 10) || 1),
+      unitAmountCents: toCents(unit),
+      taxAmountCents: toCents(tax),
+      totalAmountCents: toCents(total),
+    })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{line ? t.editTitle : t.addTitle}</DialogTitle>
+        </DialogHeader>
+        <DialogBody className="grid grid-cols-2 gap-3">
+          <div className="col-span-2">
+            <Label className="text-xs">{t.description}</Label>
+            <Input value={description} onChange={(e) => setDescription(e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-xs">{t.serviceType}</Label>
+            <Select
+              value={serviceType}
+              onValueChange={(v) => setServiceType((v as ApServiceType) ?? "other")}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SERVICE_TYPES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {t.serviceTypeLabels[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">{t.quantity}</Label>
+            <Input
+              inputMode="numeric"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label className="text-xs">{`${t.unitAmount} (${currency})`}</Label>
+            <Input inputMode="decimal" value={unit} onChange={(e) => setUnit(e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-xs">{`${t.taxAmount} (${currency})`}</Label>
+            <Input inputMode="decimal" value={tax} onChange={(e) => setTax(e.target.value)} />
+          </div>
+          <div className="col-span-2">
+            <Label className="text-xs">{`${t.total} (${currency})`}</Label>
+            <Input inputMode="decimal" value={total} onChange={(e) => setTotal(e.target.value)} />
+          </div>
+        </DialogBody>
+        <DialogFooter>
+          <Button type="button" disabled={!description.trim() || pending} onClick={submit}>
+            {t.save}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ---------- payment dialog ----------
+
+function PaymentDialog({
+  open,
+  currency,
+  pending,
+  onOpenChange,
+  onSubmit,
+}: {
+  open: boolean
+  currency: string
+  pending: boolean
+  onOpenChange: (open: boolean) => void
+  onSubmit: (input: {
+    amountCents: number
+    paymentMethod: string
+    status: "completed"
+    paymentDate: string
+  }) => void
+}) {
+  const t = useFinanceUiMessagesOrDefault().supplierInvoiceDetail.payments
+  const [amount, setAmount] = useState("")
+  const [method, setMethod] = useState<string>("bank_transfer")
+  const [date, setDate] = useState("")
+
+  const seedKey = open ? "open" : "closed"
+  const [seeded, setSeeded] = useState("closed")
+  if (seedKey !== seeded) {
+    setSeeded(seedKey)
+    if (open) {
+      setAmount("")
+      setMethod("bank_transfer")
+      setDate("")
+    }
+  }
+
+  const submit = () => {
+    if (!amount) return
+    onSubmit({
+      amountCents: toCents(amount),
+      paymentMethod: method,
+      status: "completed",
+      paymentDate: date || new Date().toISOString().slice(0, 10),
+    })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t.recordTitle}</DialogTitle>
+        </DialogHeader>
+        <DialogBody className="grid grid-cols-2 gap-3">
+          <div>
+            <Label className="text-xs">{formatMessage(t.amountLabel, { currency })}</Label>
+            <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-xs">{t.methodLabel}</Label>
+            <Select value={method} onValueChange={(v) => setMethod(v ?? "other")}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PAYMENT_METHODS.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {t.methodLabels[m]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="col-span-2">
+            <Label className="text-xs">{t.dateLabel}</Label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+        </DialogBody>
+        <DialogFooter>
+          <Button type="button" disabled={!amount || pending} onClick={submit}>
+            {pending ? t.recording : t.record}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 

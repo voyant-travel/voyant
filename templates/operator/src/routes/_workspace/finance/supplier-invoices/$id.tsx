@@ -16,10 +16,12 @@ export const Route = createFileRoute("/_workspace/finance/supplier-invoices/$id"
 
 function SupplierInvoiceDetailRoute() {
   const { id } = Route.useParams()
+  const navigate = Route.useNavigate()
 
   return (
     <SupplierInvoiceDetailPage
       id={id}
+      onBack={() => void navigate({ to: "/finance/supplier-invoices" })}
       onDownloadDocument={() => {
         window.open(
           `${getApiUrl()}/v1/admin/finance/supplier-invoices/${id}/document/download`,

@@ -107,6 +107,10 @@ export {
   type SupplierInvoiceDetailPageProps,
 } from "./components/supplier-invoice-detail-page.js"
 export {
+  SupplierInvoiceFormDialog,
+  type SupplierInvoiceFormDialogProps,
+} from "./components/supplier-invoice-form-dialog.js"
+export {
   SupplierInvoicesPage,
   type SupplierInvoicesPageProps,
 } from "./components/supplier-invoices-page.js"

@@ -33,6 +33,7 @@ import {
   PaginationBar,
   SortHeader,
 } from "./invoice-table-parts.js"
+import { SupplierInvoiceFormDialog } from "./supplier-invoice-form-dialog.js"
 
 const PAGE_SIZE = 25
 const STATUS_ALL = "__all__"
@@ -63,7 +64,6 @@ const STATUS_VARIANT: Record<
 export interface SupplierInvoicesPageProps {
   className?: string
   onOpenSupplierInvoice?: (id: string) => void
-  onRecordSupplierInvoice?: () => void
 }
 
 type SortableField = Exclude<FinanceSupplierInvoiceListSortField, "createdAt">
@@ -71,10 +71,10 @@ type SortableField = Exclude<FinanceSupplierInvoiceListSortField, "createdAt">
 export function SupplierInvoicesPage({
   className,
   onOpenSupplierInvoice,
-  onRecordSupplierInvoice,
 }: SupplierInvoicesPageProps = {}) {
   const t = useFinanceUiMessagesOrDefault().supplierInvoicesPage
 
+  const [createOpen, setCreateOpen] = useState(false)
   const [search, setSearch] = useState("")
   const [status, setStatus] = useState<string>(STATUS_ALL)
   const [sortBy, setSortBy] = useState<FinanceSupplierInvoiceListSortField>("createdAt")
@@ -113,13 +113,17 @@ export function SupplierInvoicesPage({
           <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
           <p className="text-sm text-muted-foreground">{t.description}</p>
         </div>
-        {onRecordSupplierInvoice ? (
-          <Button onClick={onRecordSupplierInvoice}>
-            <Plus className="size-4" />
-            {t.recordInvoice}
-          </Button>
-        ) : null}
+        <Button onClick={() => setCreateOpen(true)}>
+          <Plus className="size-4" />
+          {t.recordInvoice}
+        </Button>
       </div>
+
+      <SupplierInvoiceFormDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onSaved={(id) => onOpenSupplierInvoice?.(id)}
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative max-w-sm flex-1">

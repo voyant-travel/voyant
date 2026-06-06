@@ -1,4 +1,5 @@
 import type {
+  ApServiceType,
   CreditNoteRecord,
   InvoiceNumberResetStrategy,
   InvoiceNumberSeriesScope,
@@ -327,6 +328,30 @@ export type FinanceUiMessages = {
     loading: string
     notFound: string
     document: string
+    breadcrumbRoot: string
+    actions: {
+      edit: string
+      delete: string
+    }
+    deleteDialog: {
+      title: string
+      body: string
+      cancel: string
+      confirm: string
+    }
+    form: {
+      editTitle: string
+      supplierId: string
+      supplierInvoiceNo: string
+      status: string
+      currency: string
+      issueDate: string
+      dueDate: string
+      internalRef: string
+      notes: string
+      save: string
+      saving: string
+    }
     summary: {
       subtotal: string
       tax: string
@@ -346,6 +371,21 @@ export type FinanceUiMessages = {
       tax: string
       total: string
       empty: string
+      add: string
+      edit: string
+      remove: string
+    }
+    lineForm: {
+      addTitle: string
+      editTitle: string
+      description: string
+      serviceType: string
+      quantity: string
+      unitAmount: string
+      taxAmount: string
+      total: string
+      save: string
+      serviceTypeLabels: Record<ApServiceType, string>
     }
     allocation: {
       title: string
@@ -377,6 +417,7 @@ export type FinanceUiMessages = {
       methodLabel: string
       dateLabel: string
       record: string
+      recordTitle: string
       recording: string
       methodLabels: Record<SupplierInvoiceDetailPaymentMethod, string>
     }
