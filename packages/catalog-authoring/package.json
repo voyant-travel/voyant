@@ -18,8 +18,10 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
+    "@voyantjs/availability": "workspace:^",
     "@voyantjs/core": "workspace:^",
     "@voyantjs/db": "workspace:^",
+    "@voyantjs/extras": "workspace:^",
     "@voyantjs/hono": "workspace:^",
     "@voyantjs/pricing": "workspace:^",
     "@voyantjs/products": "workspace:^",

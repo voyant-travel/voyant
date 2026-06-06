@@ -29,9 +29,9 @@ describe("catalogAuthoringExtension mounting", () => {
     expect(res.status).not.toBe(404)
   })
 
-  it("does not register a /:id/duplicate route (the operator template owns that path)", async () => {
+  it("resolves POST /v1/admin/products/:id/duplicate (route matched, not 404)", async () => {
     const res = await app.request("/v1/admin/products/prod_123/duplicate", { method: "POST" })
-    expect(res.status).toBe(404)
+    expect(res.status).not.toBe(404)
   })
 
   it("does not swallow unrelated product paths", async () => {

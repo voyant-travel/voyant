@@ -69,9 +69,8 @@ async function withIdempotency(
  * caller can self-correct. Rules without a catalog fall back to the operator
  * default.
  *
- * Cloning an existing product is intentionally NOT handled here: the operator
- * template already ships a comprehensive deep-clone (`duplicateProductAsDraft`)
- * at `POST /v1/admin/products/{id}/duplicate`. See #1493.
+ * Cloning an existing product lives in `clone.ts` (`cloneProduct`); this module
+ * is the from-scratch path. See #1493 / #1495.
  */
 export async function composeProduct(
   db: PostgresJsDatabase,
