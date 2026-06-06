@@ -1,5 +1,12 @@
 # @voyantjs/admin-contracts
 
+## 0.104.3
+
+### Patch Changes
+
+- Updated dependencies [6949669]
+  - @voyantjs/crm-contracts@0.105.0
+
 ## 0.104.2
 
 ### Patch Changes

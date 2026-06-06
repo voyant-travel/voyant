@@ -1,5 +1,11 @@
 # @voyantjs/notifications-react
 
+## 0.104.4
+
+### Patch Changes
+
+- @voyantjs/notifications@0.104.4
+
 ## 0.104.3
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @voyantjs/customer-portal
 
+## 0.104.3
+
+### Patch Changes
+
+- Updated dependencies [6949669]
+  - @voyantjs/crm@0.106.0
+  - @voyantjs/legal@0.106.0
+  - @voyantjs/bookings@0.106.0
+  - @voyantjs/finance@0.106.0
+  - @voyantjs/identity@0.106.0
+
 ## 0.104.2
 
 ### Patch Changes

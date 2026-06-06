@@ -1,5 +1,15 @@
 # @voyantjs/legal
 
+## 0.106.0
+
+### Patch Changes
+
+- Updated dependencies [6949669]
+  - @voyantjs/crm@0.106.0
+  - @voyantjs/bookings@0.106.0
+  - @voyantjs/finance@0.106.0
+  - @voyantjs/suppliers@0.104.3
+
 ## 0.105.0
 
 ### Patch Changes
