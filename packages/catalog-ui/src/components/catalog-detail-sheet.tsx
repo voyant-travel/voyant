@@ -679,7 +679,7 @@ export function CatalogDetailSheet({
                     <TabsContent value="options">
                       <ul className="space-y-3">
                         {enrichment!.options!.map((o) => (
-                          <CabinCard key={o.id} cabin={o} />
+                          <CabinCard key={o.id} cabin={o} messages={messages} />
                         ))}
                       </ul>
                     </TabsContent>
@@ -1907,8 +1907,10 @@ function IdChip({ id }: { id: string }): ReactNode {
  */
 function CabinCard({
   cabin,
+  messages,
 }: {
   cabin: NonNullable<CatalogDetailEnrichment["options"]>[number]
+  messages: CatalogUiMessages["catalogPage"]["detail"]
 }): ReactNode {
   const desc = cabin.description?.trim() ?? ""
   const meta = [
@@ -1934,7 +1936,7 @@ function CabinCard({
           {meta && <span className="text-xs text-muted-foreground">{meta}</span>}
           {cabin.wheelchairAccessible && (
             <Badge variant="outline" className="text-[10px]">
-              Wheelchair accessible
+              {messages.wheelchairAccessible}
             </Badge>
           )}
         </div>
@@ -1942,7 +1944,7 @@ function CabinCard({
         {(cabin.floorplanImages?.length ?? 0) > 0 && (
           <div className="mt-3">
             <div className="mb-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-              Floor plan
+              {messages.floorPlan}
             </div>
             <MediaGallery
               images={cabin.floorplanImages ?? []}
@@ -1998,10 +2000,14 @@ function ShipCard({
     ship.yearBuilt ? { label: messages.shipSpecs.yearBuilt, value: String(ship.yearBuilt) } : null,
   ].filter((s): s is { label: string; value: string } => s != null)
   const images = ship.images ?? []
-  const deckPlanImages = [
+  const deckPlanUrls = [
     ...(ship.deckPlanUrl ? [ship.deckPlanUrl] : []),
     ...(ship.deckPlans ?? []).flatMap((deck) => (deck.imageUrl ? [deck.imageUrl] : [])),
   ]
+  const deckPlanImages = Array.from(new Set(deckPlanUrls.filter(isRenderableImageUrl)))
+  const deckPlanDocuments = Array.from(
+    new Set(deckPlanUrls.filter((url) => !isRenderableImageUrl(url))),
+  )
   return (
     <div className="flex flex-col gap-4">
       {images.length > 0 && (
@@ -2015,14 +2021,30 @@ function ShipCard({
       {deckPlanImages.length > 0 && (
         <div>
           <div className="mb-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Deck plan
+            {messages.deckPlan}
           </div>
           <MediaGallery
-            images={Array.from(new Set(deckPlanImages))}
+            images={deckPlanImages}
             alt={`${ship.name} deck plan`}
             className="w-full max-w-lg"
             imageClassName="h-56 w-full object-contain bg-muted"
           />
+        </div>
+      )}
+      {deckPlanDocuments.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {deckPlanDocuments.map((url) => (
+            <a
+              key={url}
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs text-foreground transition-colors hover:bg-muted"
+            >
+              <ExternalLink className="h-3 w-3" />
+              {messages.openDeckPlan}
+            </a>
+          ))}
         </div>
       )}
       <div>
@@ -2058,4 +2080,10 @@ function ShipCard({
       )}
     </div>
   )
+}
+
+function isRenderableImageUrl(url: string): boolean {
+  if (url.startsWith("data:image/")) return true
+  const path = url.split(/[?#]/, 1)[0]?.toLowerCase() ?? ""
+  return /\.(avif|gif|jpe?g|png|svg|webp)$/.test(path)
 }

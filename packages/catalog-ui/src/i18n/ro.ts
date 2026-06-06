@@ -137,6 +137,10 @@ export const catalogUiRo = {
       leftWithCapacity: "{remaining} / {capacity} ramase",
       left: "{remaining} ramase",
       capacity: "{capacity} capacitate",
+      wheelchairAccessible: "Accesibil pentru scaun rulant",
+      floorPlan: "Plan cabina",
+      deckPlan: "Plan punte",
+      openDeckPlan: "Deschide planul puntii",
       shipSpecs: {
         type: "Tip",
         capacity: "Capacitate",

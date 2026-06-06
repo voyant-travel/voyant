@@ -604,6 +604,10 @@ function CruiseShipDetails({ ship }: { ship: NonNullable<CruiseContent["ship"]> 
     ...(ship.deck_plan_url ? [ship.deck_plan_url] : []),
     ...(ship.deck_plans ?? []).flatMap((deck) => (deck.image_url ? [deck.image_url] : [])),
   ]
+  const deckPlanGalleryImages = Array.from(new Set(deckPlanImages.filter(isRenderableImageUrl)))
+  const deckPlanDocuments = Array.from(
+    new Set(deckPlanImages.filter((url) => !isRenderableImageUrl(url))),
+  )
   const specs = [
     ship.ship_type,
     ship.capacity ? `${ship.capacity} guests` : null,
@@ -630,13 +634,25 @@ function CruiseShipDetails({ ship }: { ship: NonNullable<CruiseContent["ship"]> 
         {ship.description ? (
           <p className="whitespace-pre-line text-muted-foreground text-sm">{ship.description}</p>
         ) : null}
-        {deckPlanImages.length > 0 ? (
+        {deckPlanGalleryImages.length > 0 ? (
           <div className="space-y-2">
             <div className="font-medium text-sm">Deck plan</div>
-            <ImageStrip
-              images={Array.from(new Set(deckPlanImages))}
-              alt={`${ship.name} deck plan`}
-            />
+            <ImageStrip images={deckPlanGalleryImages} alt={`${ship.name} deck plan`} />
+          </div>
+        ) : null}
+        {deckPlanDocuments.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {deckPlanDocuments.map((url) => (
+              <a
+                key={url}
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded border px-3 py-1.5 text-sm hover:bg-muted"
+              >
+                Open deck plan
+              </a>
+            ))}
           </div>
         ) : null}
         {ship.deck_plans.length > 0 ? (
@@ -762,6 +778,12 @@ function formatCabinName(category: CruiseContent["cabin_categories"][number]): s
   const code = category.code?.trim()
   if (!code || category.name.includes(code)) return category.name
   return `${category.name} (${code})`
+}
+
+function isRenderableImageUrl(url: string): boolean {
+  if (url.startsWith("data:image/")) return true
+  const path = url.split(/[?#]/, 1)[0]?.toLowerCase() ?? ""
+  return /\.(avif|gif|jpe?g|png|svg|webp)$/.test(path)
 }
 
 // ─────────────────────────────────────────────────────────────────

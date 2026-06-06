@@ -137,6 +137,10 @@ export const catalogUiEn = {
       leftWithCapacity: "{remaining} / {capacity} left",
       left: "{remaining} left",
       capacity: "{capacity} capacity",
+      wheelchairAccessible: "Wheelchair accessible",
+      floorPlan: "Floor plan",
+      deckPlan: "Deck plan",
+      openDeckPlan: "Open deck plan",
       shipSpecs: {
         type: "Type",
         capacity: "Capacity",
