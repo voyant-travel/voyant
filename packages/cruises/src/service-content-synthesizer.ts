@@ -132,6 +132,8 @@ function pickShip(projection: Record<string, unknown>): CruiseContent["ship"] {
   return {
     name: shipName,
     description: stringOr(projection.ship_description, null),
+    deck_plan_url: stringOr(projection.ship_deck_plan_url, null),
+    deck_plans: [],
     capacity: numberOr(projection.ship_capacity, null),
     decks: numberOr(projection.ship_decks, null),
     gallery: [],

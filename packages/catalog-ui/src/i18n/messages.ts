@@ -138,6 +138,10 @@ export type CatalogUiMessages = {
       leftWithCapacity: string
       left: string
       capacity: string
+      wheelchairAccessible: string
+      floorPlan: string
+      deckPlan: string
+      openDeckPlan: string
       shipSpecs: {
         type: string
         capacity: string

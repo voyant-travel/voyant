@@ -48,6 +48,16 @@ export const cruiseShipSchema = z.object({
   /** ocean / river / expedition / yacht / sailing / coastal. */
   ship_type: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
+  deck_plan_url: z.string().nullable().optional(),
+  deck_plans: z
+    .array(
+      z.object({
+        name: z.string(),
+        level: z.number().int().nullable().optional(),
+        image_url: z.string().nullable().optional(),
+      }),
+    )
+    .default([]),
   capacity: z.number().int().nonnegative().nullable().optional(),
   decks: z.number().int().nonnegative().nullable().optional(),
   year_built: z.number().int().nonnegative().nullable().optional(),
@@ -100,8 +110,12 @@ export const cruiseCabinCategorySchema = z.object({
   capacity_max: z.number().int().nonnegative().nullable().optional(),
   /** Cabin photo URLs (cover first). */
   images: z.array(z.string()).optional().default([]),
+  /** Floor-plan image URLs, kept distinct from the cabin photo gallery. */
+  floorplan_images: z.array(z.string()).optional().default([]),
   /** Cabin size, as the source reports it (e.g. "270" sqft). */
   square_feet: z.string().nullable().optional(),
+  grade_codes: z.array(z.string()).optional().default([]),
+  wheelchair_accessible: z.boolean().optional().default(false),
   inclusions: z.array(z.string()).optional().default([]),
   feature_codes: z.array(z.string()).default([]),
   bed_configurations: z.array(z.enum(CABIN_BED_CONFIGURATIONS)).default([]),
