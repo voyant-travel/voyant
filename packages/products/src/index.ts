@@ -4,6 +4,10 @@ import type { HonoModule } from "@voyantjs/hono/module"
 import { productRoutes } from "./routes.js"
 import { publicProductRoutes } from "./routes-public.js"
 
+export {
+  appendProductMutationLedgerEntry,
+  type ProductLedgerMutationAction,
+} from "./action-ledger.js"
 export { productsBookingExtension } from "./booking-extension.js"
 export {
   emitProductContentChanged,

@@ -1,7 +1,13 @@
-import type { Extension } from "@voyantjs/core"
+import type { EventBus, Extension } from "@voyantjs/core"
 import { parseJsonBody } from "@voyantjs/hono"
 import type { HonoExtension } from "@voyantjs/hono/module"
+import {
+  appendProductMutationLedgerEntry,
+  emitProductContentChanged,
+  type ProductLedgerMutationAction,
+} from "@voyantjs/products"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { Context } from "hono"
 import { Hono } from "hono"
 import { z } from "zod"
 import { cloneProduct, composeProduct } from "./service.js"
@@ -21,6 +27,7 @@ type Env = {
   Variables: {
     db: PostgresJsDatabase
     userId?: string
+    eventBus?: EventBus
   }
 }
 
@@ -44,6 +51,31 @@ function idempotencyKey(
   return c.req.header("Idempotency-Key") ?? bodyKey
 }
 
+type LedgerContext = Parameters<typeof appendProductMutationLedgerEntry>[0]
+
+/**
+ * Records the same action-ledger entry + `product.content.changed` event the
+ * granular product routes emit, so a cloned/composed product is indexed and
+ * audited like any other create. Only called for freshly built products (a
+ * reused idempotent response created nothing new).
+ */
+async function recordAuthoring(
+  // biome-ignore lint/suspicious/noExplicitAny: bridges this extension's Env to products' ledger context
+  c: Context<any>,
+  action: ProductLedgerMutationAction,
+  productId: string,
+) {
+  await appendProductMutationLedgerEntry(c as LedgerContext, {
+    action,
+    productId,
+    changedFields: [],
+    subject: "product",
+    actionName: `product.${action}`,
+    routeOrToolName: action === "duplicate" ? "products.duplicate" : "products.compose",
+  })
+  await emitProductContentChanged(c.get("eventBus"), { id: productId, axis: "product" })
+}
+
 export const catalogAuthoringRoutes = new Hono<Env>()
 
   .post("/compose", async (c) => {
@@ -55,6 +87,10 @@ export const catalogAuthoringRoutes = new Hono<Env>()
 
     if (outcome.status === "invalid") {
       return c.json({ error: "invalid_product_graph", issues: outcome.issues }, 422)
+    }
+
+    if (!outcome.reused) {
+      await recordAuthoring(c, "create", outcome.result.productId)
     }
 
     return c.json(
@@ -72,6 +108,10 @@ export const catalogAuthoringRoutes = new Hono<Env>()
 
     if (outcome.status === "not_found") {
       return c.json({ error: "Product not found" }, 404)
+    }
+
+    if (!outcome.reused) {
+      await recordAuthoring(c, "duplicate", outcome.result.productId)
     }
 
     return c.json(
