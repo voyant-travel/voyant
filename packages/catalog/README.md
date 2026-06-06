@@ -171,7 +171,7 @@ await fetch("/v1/public/catalog/search", {
 
 Supported sort values are `relevance`, `price-asc`, `price-desc`,
 `departure-asc`, and `newest`. Sorts are translated by the indexer adapter to
-safe indexed fields such as `priceFromAmountCents` and `nextDepartureAt`; they
+safe indexed fields such as `priceFromAmountCents` and `nextDepartureDate`; they
 are not applied after app-side hydration.
 
 When `projection: "storefront-card"` is present, the response keeps the raw

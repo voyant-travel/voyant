@@ -10,7 +10,7 @@
  *   - "departing in May" (filter: `departureMonths[]` includes "2026-05")
  *   - "available this weekend" (filter: `departureDates[]` overlap)
  *   - "available now" (filter: `hasUpcomingDeparture:true`)
- *   - sort by next departure (`nextDepartureAt` asc)
+ *   - sort by next departure (`nextDepartureDate` asc)
  *   - show capacity badge (`availableUnitsTotal`)
  *
  * Wire this policy into the products registry by composing with
@@ -46,9 +46,9 @@ import { defineFieldPolicy, type FieldPolicyInput } from "@voyantjs/catalog/cont
 
 const PRODUCT_DEPARTURES_FIELD_POLICY: FieldPolicyInput[] = [
   // ── Earliest open future departure ──────────────────────────────────────
-  // `nextDepartureAt` is the timestamptz for sort order (catalog sort by
-  // soonest available). `nextDepartureDate` is the same departure expressed
-  // as the slot's local calendar date — what the storefront card renders.
+  // `nextDepartureAt` is the timestamptz for storefront display metadata.
+  // `nextDepartureDate` is the slot's local calendar date and backs catalog
+  // sort by soonest available.
   {
     path: "nextDepartureAt",
     class: "structural",
