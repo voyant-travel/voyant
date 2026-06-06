@@ -1,3 +1,4 @@
+import { buildBookingRouteRuntime, createBookingPiiService } from "@voyantjs/bookings"
 import { bookings } from "@voyantjs/bookings/schema"
 import type { EventBus } from "@voyantjs/core"
 import type { ContractDocumentGenerator } from "@voyantjs/legal"
@@ -85,7 +86,17 @@ export async function generateContractPdfForBooking(
     db,
     { bookingId, bookingNumber: bookingRow.bookingNumber, actorId: null },
     AUTO_GENERATE_CONTRACT_OPTIONS,
-    { generator, eventBus, bindings: contractVariableBindings(env) },
+    {
+      generator,
+      eventBus,
+      bindings: contractVariableBindings(env),
+      bookingPiiService: await createContractBookingPiiService(env),
+      actionLedgerContext: {
+        actor: "system",
+        callerType: "internal",
+        isInternalRequest: true,
+      },
+    },
   )
 
   if (result.status === "ok") {
@@ -126,7 +137,16 @@ export async function previewContractForBooking(
     db,
     { bookingId, bookingNumber: bookingRow.bookingNumber, actorId: null },
     { ...AUTO_GENERATE_CONTRACT_OPTIONS, previewMode: true },
-    { generator: previewGenerator, bindings: contractVariableBindings(env) },
+    {
+      generator: previewGenerator,
+      bindings: contractVariableBindings(env),
+      bookingPiiService: await createContractBookingPiiService(env),
+      actionLedgerContext: {
+        actor: "system",
+        callerType: "internal",
+        isInternalRequest: true,
+      },
+    },
   )
 
   if (result.status === "preview") {
@@ -143,6 +163,15 @@ export async function previewContractForBooking(
 
   const reason = "reason" in result && typeof result.reason === "string" ? result.reason : "unknown"
   throw new Error(`Contract preview failed: ${result.status} (${reason})`)
+}
+
+async function createContractBookingPiiService(env: CloudflareBindings) {
+  const runtime = buildBookingRouteRuntime(env)
+  try {
+    return createBookingPiiService({ kms: await runtime.getKmsProvider() })
+  } catch {
+    return null
+  }
 }
 
 async function ensureDefaultContractSeries(db: PostgresJsDatabase): Promise<void> {

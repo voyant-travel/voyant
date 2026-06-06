@@ -1,3 +1,4 @@
+import type { BookingPiiService } from "@voyantjs/bookings"
 import type { EventBus } from "@voyantjs/core"
 import type { StorageProvider } from "@voyantjs/storage"
 
@@ -10,6 +11,8 @@ export type ContractsRouteRuntime = {
   resolveDocumentDownloadUrl?: ContractsRouteOptions["resolveDocumentDownloadUrl"]
   eventBus?: EventBus
   lifecycleHooks?: readonly ContractLifecycleHook[]
+  bookingPiiService?: BookingPiiService | null
+  resolveBookingPiiService?: ContractsRouteOptions["resolveBookingPiiService"]
 }
 
 export const CONTRACTS_ROUTE_RUNTIME_CONTAINER_KEY = "providers.legal.contracts.runtime"
@@ -24,5 +27,7 @@ export function buildContractsRouteRuntime(
     resolveDocumentDownloadUrl: options.resolveDocumentDownloadUrl,
     eventBus: options.resolveEventBus?.(bindings) ?? options.eventBus,
     lifecycleHooks: options.resolveLifecycleHooks?.(bindings) ?? options.lifecycleHooks,
+    bookingPiiService: options.bookingPiiService,
+    resolveBookingPiiService: options.resolveBookingPiiService,
   }
 }

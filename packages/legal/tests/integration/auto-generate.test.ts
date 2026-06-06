@@ -1,4 +1,5 @@
-import { bookings, bookingTravelers } from "@voyantjs/bookings/schema"
+import type { BookingPiiService } from "@voyantjs/bookings"
+import { bookingItems, bookings, bookingTravelers } from "@voyantjs/bookings/schema"
 import { createEventBus } from "@voyantjs/core"
 import { invoices, payments } from "@voyantjs/finance/schema"
 import { eq } from "drizzle-orm"
@@ -162,6 +163,133 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
     expect(body).toContain("Ana Primary")
     expect(body).toContain("Ana, Bob")
     expect(body).toContain("1,250.00") // 125000 cents → 1,250.00 EUR
+  })
+
+  it("populates product, departure, and traveler identity variables from the booking", async () => {
+    const { template, version } = await seedTemplate("cust-booking-bag-1")
+    await db
+      .update(contractTemplateVersions)
+      .set({
+        body: [
+          "{{ product.title }}",
+          "{{ booking.productName }}",
+          "{{ product.destination }}",
+          "{{ departureSlot.slotId }}",
+          "{{ departureSlot.departureCity }}",
+          "{{ customer.dateOfBirth }}",
+          "{{ customer.document.number }}",
+        ].join(" | "),
+      })
+      .where(eq(contractTemplateVersions.id, version.id))
+
+    const booking = await seedBooking()
+    await db.insert(bookingItems).values({
+      bookingId: booking.id,
+      title: "Fallback title",
+      itemType: "unit",
+      status: "confirmed",
+      quantity: 2,
+      sellCurrency: "EUR",
+      unitSellAmountCents: 62500,
+      totalSellAmountCents: 125000,
+      productId: "prod_romania_loop",
+      availabilitySlotId: "slot_bucharest_1",
+      productNameSnapshot: "Romania Heritage Loop",
+      optionNameSnapshot: "Standard cabin",
+      departureLabelSnapshot: "Jul 1, 2026 09:00 — Bucharest",
+      startsAt: new Date("2026-07-01T06:00:00.000Z"),
+      endsAt: new Date("2026-07-08T06:00:00.000Z"),
+      metadata: { destination: "Romania", vertical: "tour" },
+    })
+    const [lead] = await db
+      .insert(bookingTravelers)
+      .values({
+        bookingId: booking.id,
+        participantType: "traveler",
+        firstName: "Ana",
+        lastName: "Primary",
+        isPrimary: true,
+      })
+      .returning()
+
+    const pii: BookingPiiService = {
+      async getTravelerTravelDetails(_db, travelerId) {
+        if (travelerId !== lead!.id) return null
+        return {
+          travelerId,
+          nationality: "RO",
+          documentType: "passport",
+          documentNumber: "P1234567",
+          documentExpiry: "2031-01-02",
+          documentIssuingCountry: "RO",
+          documentIssuingAuthority: "DEPABD",
+          documentPersonDocumentId: "pdoc_1",
+          dateOfBirth: "1990-02-03",
+          dietaryRequirements: null,
+          accessibilityNeeds: null,
+          isLeadTraveler: true,
+          sharingGroupId: null,
+          roomTypeId: null,
+          bedPreference: null,
+          allocations: {},
+          createdAt: new Date("2026-01-01T00:00:00.000Z"),
+          updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+        }
+      },
+      async upsertTravelerTravelDetails() {
+        throw new Error("not used")
+      },
+      async deleteTravelerTravelDetails() {
+        throw new Error("not used")
+      },
+    }
+
+    const bodies: string[] = []
+    const outcome = await autoGenerateContractForBooking(
+      db,
+      { bookingId: booking.id, bookingNumber: booking.bookingNumber, actorId: "usrp_tester" },
+      { enabled: true, templateSlug: template.slug },
+      { generator: makeGenerator(bodies), bookingPiiService: pii },
+    )
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+
+    const contract = await contractRecordsService.getContractById(db, outcome.contractId)
+    const variables = contract?.variables as Record<string, unknown>
+    expect(variables.product).toMatchObject({
+      title: "Romania Heritage Loop",
+      subtitle: "Standard cabin",
+      destination: "Romania",
+      id: "prod_romania_loop",
+      module: "products",
+      vertical: "tour",
+    })
+    expect(variables.booking).toMatchObject({
+      productName: "Romania Heritage Loop",
+      productSubtitle: "Standard cabin",
+      destination: "Romania",
+      entityModule: "products",
+      entityId: "prod_romania_loop",
+      vertical: "tour",
+    })
+    expect(variables.departureSlot).toMatchObject({
+      slotId: "slot_bucharest_1",
+      departureCity: "Bucharest",
+    })
+    expect(variables.customer).toMatchObject({
+      dateOfBirth: "1990-02-03",
+      document: {
+        type: "passport",
+        number: "P1234567",
+        country: "RO",
+        issuingAuthority: "DEPABD",
+        issueDate: "",
+        expiryDate: "2031-01-02",
+      },
+    })
+    expect(bodies[0]).toContain(
+      "Romania Heritage Loop | Romania Heritage Loop | Romania | slot_bucharest_1 | Bucharest | 1990-02-03 | P1234567",
+    )
   })
 
   it("emits contract.document.generated event on the runtime bus", async () => {

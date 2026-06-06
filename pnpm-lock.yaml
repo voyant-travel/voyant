@@ -3728,6 +3728,9 @@ importers:
 
   packages/legal:
     dependencies:
+      '@voyantjs/action-ledger':
+        specifier: workspace:^
+        version: link:../action-ledger
       '@voyantjs/bookings':
         specifier: workspace:^
         version: link:../bookings
