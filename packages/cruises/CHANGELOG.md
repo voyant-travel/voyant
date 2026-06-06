@@ -1,5 +1,11 @@
 # @voyantjs/cruises
 
+## 0.105.1
+
+### Patch Changes
+
+- 60e3bb1: Map sourced cruise embark and disembark port facility ids into catalog projections.
+
 ## 0.105.0
 
 ### Minor Changes
