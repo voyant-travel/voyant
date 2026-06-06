@@ -14,11 +14,16 @@ const supplierConfirmationStatusSchema = z.enum(["pending", "confirmed", "reject
 
 const supplierStatusCoreSchema = z.object({
   supplierServiceId: z.string().optional().nullable(),
+  // Supplier snapshot — enables matching a received supplier invoice to this
+  // commitment without an unreliable join (AP design §5.5).
+  supplierId: z.string().optional().nullable(),
   serviceName: z.string().min(1).max(255),
   status: supplierConfirmationStatusSchema.default("pending"),
   supplierReference: z.string().max(255).optional().nullable(),
   costCurrency: z.string().min(3).max(3),
   costAmountCents: z.number().int().min(0),
+  // Set when the actual supplier invoice line arrives (commitment → invoice).
+  supplierInvoiceLineId: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
 })
 

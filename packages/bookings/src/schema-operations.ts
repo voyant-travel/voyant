@@ -16,11 +16,18 @@ export const bookingSupplierStatuses = pgTable(
       .notNull()
       .references(() => bookings.id, { onDelete: "cascade" }),
     supplierServiceId: text("supplier_service_id"),
+    // Supplier snapshot — the status has no FK to suppliers; this lets a
+    // received supplier invoice be matched to the commitment without an
+    // unreliable join through supplier_services. See AP design §5.5.
+    supplierId: text("supplier_id"),
     serviceName: text("service_name").notNull(),
     status: supplierConfirmationStatusEnum("status").notNull().default("pending"),
     supplierReference: text("supplier_reference"),
     costCurrency: text("cost_currency").notNull(),
     costAmountCents: integer("cost_amount_cents").notNull(),
+    // Link to the actual supplier invoice line once the bill arrives — gives
+    // the commitment → invoice (committed-vs-invoiced) variance. See §5.5 / §10.
+    supplierInvoiceLineId: text("supplier_invoice_line_id"),
     notes: text("notes"),
     confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -30,6 +37,8 @@ export const bookingSupplierStatuses = pgTable(
     index("idx_booking_supplier_statuses_booking").on(table.bookingId),
     index("idx_booking_supplier_statuses_booking_created").on(table.bookingId, table.createdAt),
     index("idx_booking_supplier_statuses_service").on(table.supplierServiceId),
+    index("idx_booking_supplier_statuses_supplier").on(table.supplierId),
+    index("idx_booking_supplier_statuses_invoice_line").on(table.supplierInvoiceLineId),
   ],
 )
 

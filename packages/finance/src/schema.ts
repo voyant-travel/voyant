@@ -1007,9 +1007,16 @@ export const supplierPayments = pgTable(
   {
     id: typeId("supplier_payments"),
 
-    bookingId: text("booking_id").notNull(),
+    // AP payments may settle a whole supplier invoice (no single booking) or a
+    // booking-scoped supplier service. At least one of bookingId /
+    // supplierInvoiceId must be set (check below). See §5.4.
+    bookingId: text("booking_id"),
     supplierId: text("supplier_id"),
     bookingSupplierStatusId: text("booking_supplier_status_id"),
+    // Finance-local → REAL FK. The supplier invoice this payment settles.
+    supplierInvoiceId: typeIdRef("supplier_invoice_id").references(() => supplierInvoices.id, {
+      onDelete: "set null",
+    }),
 
     amountCents: integer("amount_cents").notNull(),
     currency: text("currency").notNull(),
@@ -1041,6 +1048,12 @@ export const supplierPayments = pgTable(
     index("idx_supplier_payments_status").on(table.status),
     index("idx_supplier_payments_status_created").on(table.status, table.createdAt),
     index("idx_supplier_payments_date").on(table.paymentDate),
+    index("idx_supplier_payments_supplier_invoice").on(table.supplierInvoiceId),
+    // A payment must attach to a booking and/or a supplier invoice (§5.4).
+    check(
+      "ck_supplier_payments_target",
+      sql`${table.bookingId} IS NOT NULL OR ${table.supplierInvoiceId} IS NOT NULL`,
+    ),
   ],
 )
 

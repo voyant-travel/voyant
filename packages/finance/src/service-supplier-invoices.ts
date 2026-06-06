@@ -5,7 +5,12 @@ import {
 import { type AnyColumn, and, asc, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
-import { supplierCostAllocations, supplierInvoiceLines, supplierInvoices } from "./schema.js"
+import {
+  supplierCostAllocations,
+  supplierInvoiceLines,
+  supplierInvoices,
+  supplierPayments,
+} from "./schema.js"
 import {
   buildSupplierInvoiceAllocationsActionLedgerInput,
   buildSupplierInvoiceCreateActionLedgerInput,
@@ -159,6 +164,74 @@ export function validateAllocations(params: {
     }
   }
   return { ok: true }
+}
+
+type SupplierInvoiceStatus = (typeof supplierInvoices.$inferSelect)["status"]
+
+/**
+ * Next status given paid vs total. Manual/terminal states (draft, disputed,
+ * void) are never auto-changed. `paid` only flips automatically among the
+ * settlement states.
+ */
+export function nextStatusForBalance(
+  current: SupplierInvoiceStatus,
+  totalCents: number,
+  paidCents: number,
+): SupplierInvoiceStatus {
+  if (current === "draft" || current === "disputed" || current === "void") return current
+  if (totalCents > 0 && paidCents >= totalCents) return "paid"
+  if (paidCents > 0) return "partially_paid"
+  // Fully unpaid (e.g. a payment was reversed): drop back from a paid state.
+  return current === "paid" || current === "partially_paid" ? "approved" : current
+}
+
+/**
+ * Recompute `paidCents` / `balanceDueCents` / `status` for a supplier invoice
+ * from its completed payments. Currency-aware: a payment counts in the invoice
+ * currency directly, or via its base amount when the base currency matches
+ * (mirrors the AR settlement approach). §5.4 / §10.
+ */
+export async function recomputeSupplierInvoiceBalance(
+  db: PostgresJsDatabase,
+  supplierInvoiceId: string,
+) {
+  const [invoice] = await db
+    .select()
+    .from(supplierInvoices)
+    .where(eq(supplierInvoices.id, supplierInvoiceId))
+    .limit(1)
+  if (!invoice) return null
+
+  const [agg] = await db
+    .select({
+      paid: sql<number>`coalesce(sum(
+        case
+          when ${supplierPayments.currency} = ${invoice.currency} then ${supplierPayments.amountCents}
+          when ${supplierPayments.baseCurrency} = ${invoice.currency} then coalesce(${supplierPayments.baseAmountCents}, 0)
+          else 0
+        end
+      ), 0)::int`,
+    })
+    .from(supplierPayments)
+    .where(
+      and(
+        eq(supplierPayments.supplierInvoiceId, supplierInvoiceId),
+        eq(supplierPayments.status, "completed"),
+      ),
+    )
+
+  const paid = agg?.paid ?? 0
+  const [updated] = await db
+    .update(supplierInvoices)
+    .set({
+      paidCents: paid,
+      balanceDueCents: invoice.totalCents - paid,
+      status: nextStatusForBalance(invoice.status, invoice.totalCents, paid),
+      updatedAt: new Date(),
+    })
+    .where(eq(supplierInvoices.id, supplierInvoiceId))
+    .returning()
+  return updated ?? null
 }
 
 // ---------- internal mappers ----------

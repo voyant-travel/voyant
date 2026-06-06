@@ -19,6 +19,37 @@ type SupplierPaymentUpdateLedgerInput = {
   changes: UpdateSupplierPaymentInput
 }
 
+/**
+ * AP payments may settle a whole supplier invoice (no booking) or a
+ * booking-scoped supplier service. The ledger targets the booking when present,
+ * otherwise the supplier invoice (§5.4).
+ */
+function resolvePaymentTarget(payment: SupplierPaymentRecord): {
+  targetType: string
+  targetId: string
+  scopeRef: string
+} {
+  if (payment.bookingId) {
+    return {
+      targetType: "booking",
+      targetId: payment.bookingId,
+      scopeRef: `booking:${payment.bookingId}`,
+    }
+  }
+  if (payment.supplierInvoiceId) {
+    return {
+      targetType: "supplier_invoice",
+      targetId: payment.supplierInvoiceId,
+      scopeRef: `supplier_invoice:${payment.supplierInvoiceId}`,
+    }
+  }
+  return {
+    targetType: "supplier_payment",
+    targetId: payment.id,
+    scopeRef: `supplier_payment:${payment.id}`,
+  }
+}
+
 export async function buildSupplierPaymentCreateActionLedgerInput(
   context: ActionLedgerRequestContextValues,
   input: SupplierPaymentCreateLedgerInput,
@@ -27,6 +58,7 @@ export async function buildSupplierPaymentCreateActionLedgerInput(
   } = {},
 ): Promise<BuildActionLedgerMutationInput> {
   const idempotencyKey = input.payment.referenceNumber
+  const { targetType, targetId, scopeRef } = resolvePaymentTarget(input.payment)
 
   return {
     context,
@@ -35,23 +67,22 @@ export async function buildSupplierPaymentCreateActionLedgerInput(
     actionKind: "create",
     status: "succeeded",
     evaluatedRisk: "high",
-    targetType: "booking",
-    targetId: input.payment.bookingId,
+    targetType,
+    targetId,
     routeOrToolName: "finance.supplier_payment.create",
     authorizationSource: options.authorizationSource ?? "finance.supplier_payment.route",
-    idempotencyScope: idempotencyKey
-      ? `finance.booking:${input.payment.bookingId}:supplier_payment`
-      : null,
+    idempotencyScope: idempotencyKey ? `finance.${scopeRef}:supplier_payment` : null,
     idempotencyKey,
     idempotencyFingerprint: idempotencyKey
       ? await buildIdempotencyFingerprint({
           actionName: "finance.supplier_payment.create",
           actionVersion: "v1",
-          targetType: "booking",
-          targetId: input.payment.bookingId,
+          targetType,
+          targetId,
           commandInput: {
             supplierPaymentId: input.payment.id,
             bookingId: input.payment.bookingId,
+            supplierInvoiceId: input.payment.supplierInvoiceId,
             supplierId: input.payment.supplierId,
             amountCents: input.payment.amountCents,
             currency: input.payment.currency,
@@ -63,9 +94,9 @@ export async function buildSupplierPaymentCreateActionLedgerInput(
         })
       : null,
     mutationDetail: {
-      commandInputRef: `booking:${input.payment.bookingId}:supplier_payment`,
+      commandInputRef: `${scopeRef}:supplier_payment`,
       commandResultRef: `supplier_payment:${input.payment.id}`,
-      summary: `Supplier payment ${input.payment.id} recorded for booking ${input.payment.bookingId}`,
+      summary: `Supplier payment ${input.payment.id} recorded against ${scopeRef}`,
       reversalKind: "none",
     },
   }
@@ -80,6 +111,7 @@ export function buildSupplierPaymentUpdateActionLedgerInput(
 ): BuildActionLedgerMutationInput {
   const changedFields = Object.keys(input.changes).sort()
   const changeSummary = changedFields.length > 0 ? changedFields.join(", ") : "no fields"
+  const { targetType, targetId } = resolvePaymentTarget(input.payment)
 
   return {
     context,
@@ -88,8 +120,8 @@ export function buildSupplierPaymentUpdateActionLedgerInput(
     actionKind: "update",
     status: "succeeded",
     evaluatedRisk: "high",
-    targetType: "booking",
-    targetId: input.payment.bookingId,
+    targetType,
+    targetId,
     routeOrToolName: "finance.supplier_payment.update",
     authorizationSource: options.authorizationSource ?? "finance.supplier_payment.route",
     idempotencyScope: null,

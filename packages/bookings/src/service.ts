@@ -5441,11 +5441,13 @@ export const bookingsService = {
     bookingId: string,
     data: {
       supplierServiceId?: string | null
+      supplierId?: string | null
       serviceName: string
       status?: "pending" | "confirmed" | "rejected" | "cancelled"
       supplierReference?: string | null
       costCurrency: string
       costAmountCents: number
+      supplierInvoiceLineId?: string | null
       notes?: string | null
     },
     userId?: string,
@@ -5465,11 +5467,13 @@ export const bookingsService = {
       .values({
         bookingId,
         supplierServiceId: data.supplierServiceId ?? null,
+        supplierId: data.supplierId ?? null,
         serviceName: data.serviceName,
         status: data.status ?? "pending",
         supplierReference: data.supplierReference ?? null,
         costCurrency: data.costCurrency,
         costAmountCents: data.costAmountCents,
+        supplierInvoiceLineId: data.supplierInvoiceLineId ?? null,
         notes: data.notes ?? null,
         confirmedAt: data.status === "confirmed" ? new Date() : null,
       })
@@ -5491,11 +5495,13 @@ export const bookingsService = {
     statusId: string,
     data: {
       supplierServiceId?: string | null
+      supplierId?: string | null
       serviceName?: string
       status?: "pending" | "confirmed" | "rejected" | "cancelled"
       supplierReference?: string | null
       costCurrency?: string
       costAmountCents?: number
+      supplierInvoiceLineId?: string | null
       notes?: string | null
       confirmedAt?: string | null
     },

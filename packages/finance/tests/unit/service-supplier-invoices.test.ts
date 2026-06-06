@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  nextStatusForBalance,
   recomputeTotalsFromLines,
   validateAllocations,
 } from "../../src/service-supplier-invoices.js"
@@ -134,5 +135,31 @@ describe("validateAllocations (§6.1 invariants)", () => {
     })
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.code).toBe("unknown_allocation_line")
+  })
+})
+
+describe("nextStatusForBalance (§5.4 settlement flow)", () => {
+  it("flips approved → paid when fully settled", () => {
+    expect(nextStatusForBalance("approved", 1000, 1000)).toBe("paid")
+    expect(nextStatusForBalance("approved", 1000, 1200)).toBe("paid")
+  })
+
+  it("flips approved → partially_paid on a part payment", () => {
+    expect(nextStatusForBalance("approved", 1000, 400)).toBe("partially_paid")
+  })
+
+  it("reverts a paid/partial invoice to approved when payments are removed", () => {
+    expect(nextStatusForBalance("paid", 1000, 0)).toBe("approved")
+    expect(nextStatusForBalance("partially_paid", 1000, 0)).toBe("approved")
+  })
+
+  it("never auto-changes manual/terminal states (draft, disputed, void)", () => {
+    expect(nextStatusForBalance("draft", 1000, 1000)).toBe("draft")
+    expect(nextStatusForBalance("disputed", 1000, 1000)).toBe("disputed")
+    expect(nextStatusForBalance("void", 1000, 1000)).toBe("void")
+  })
+
+  it("leaves a zero-total invoice with no payments unchanged", () => {
+    expect(nextStatusForBalance("received", 0, 0)).toBe("received")
   })
 })

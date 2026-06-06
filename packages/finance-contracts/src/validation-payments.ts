@@ -315,7 +315,11 @@ export const insertPaymentSchema = paymentCoreSchema
 export const updatePaymentSchema = paymentCoreSchema.partial()
 
 const supplierPaymentCoreSchema = z.object({
-  bookingId: z.string().min(1),
+  // bookingId is now optional: an AP payment may settle a whole supplier
+  // invoice with no single booking. At least one of bookingId /
+  // supplierInvoiceId must be present (enforced on insert below). See §5.4.
+  bookingId: z.string().min(1).optional().nullable(),
+  supplierInvoiceId: z.string().optional().nullable(),
   supplierId: z.string().optional().nullable(),
   bookingSupplierStatusId: z.string().optional().nullable(),
   amountCents: z.number().int().min(1),
@@ -331,7 +335,10 @@ const supplierPaymentCoreSchema = z.object({
   notes: z.string().optional().nullable(),
 })
 
-export const insertSupplierPaymentSchema = supplierPaymentCoreSchema
+export const insertSupplierPaymentSchema = supplierPaymentCoreSchema.refine(
+  (v) => Boolean(v.bookingId) || Boolean(v.supplierInvoiceId),
+  { message: "a supplier payment must reference a bookingId and/or a supplierInvoiceId" },
+)
 export const updateSupplierPaymentSchema = supplierPaymentCoreSchema.partial()
 
 export const supplierPaymentListSortFieldSchema = z.enum([
@@ -345,6 +352,7 @@ export const supplierPaymentListSortDirSchema = z.enum(["asc", "desc"])
 
 export const supplierPaymentListQuerySchema = z.object({
   bookingId: z.string().optional(),
+  supplierInvoiceId: z.string().optional(),
   supplierId: z.string().optional(),
   status: paymentStatusSchema.optional(),
   paymentMethod: paymentMethodSchema.optional(),
