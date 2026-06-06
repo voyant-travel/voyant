@@ -1,5 +1,12 @@
 # @voyantjs/products-react
 
+## 0.104.3
+
+### Patch Changes
+
+- Updated dependencies [5c7a075]
+  - @voyantjs/products@0.104.3
+
 ## 0.104.2
 
 ### Patch Changes
