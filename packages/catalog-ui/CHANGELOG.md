@@ -1,5 +1,12 @@
 # @voyantjs/catalog-ui
 
+## 0.104.2
+
+### Patch Changes
+
+- 23a3dad: Thread rich cruise cabin and ship media through the sourced content contract and catalog detail UI.
+  - @voyantjs/catalog-react@0.104.2
+
 ## 0.104.1
 
 ### Patch Changes
