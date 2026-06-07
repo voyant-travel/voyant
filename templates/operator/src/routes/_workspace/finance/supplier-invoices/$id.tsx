@@ -13,6 +13,7 @@ import { getProductsQueryOptions } from "@voyantjs/products-react"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
+import { makeSupplierPicker } from "./supplier-picker"
 
 async function uploadSupplierInvoiceAttachment(
   file: File,
@@ -92,6 +93,8 @@ function SupplierInvoiceDetailRoute() {
     return []
   }
 
+  const { searchSuppliers, createSupplier } = makeSupplierPicker(queryClient)
+
   return (
     <SupplierInvoiceDetailPage
       id={id}
@@ -105,6 +108,8 @@ function SupplierInvoiceDetailRoute() {
       }}
       uploadFile={uploadSupplierInvoiceAttachment}
       searchTargets={searchTargets}
+      searchSuppliers={searchSuppliers}
+      createSupplier={createSupplier}
       onDownloadAttachment={(attachmentId) => {
         window.open(
           `${getApiUrl()}/v1/admin/finance/supplier-invoice-attachments/${attachmentId}/download`,

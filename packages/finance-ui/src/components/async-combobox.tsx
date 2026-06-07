@@ -9,6 +9,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@voyantjs/ui/components/combobox"
+import { Plus } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 export interface AsyncComboboxOption {
@@ -21,11 +22,21 @@ export interface AsyncComboboxProps {
   onChange: (value: string | null) => void
   /** Resolve options for a query (debounced). */
   search: (query: string) => Promise<AsyncComboboxOption[]>
+  /**
+   * When set, an inline "create" row appears for the current query (unless it
+   * exactly matches an existing option). Returns the new option to select, or
+   * null to cancel.
+   */
+  onCreate?: (query: string) => Promise<AsyncComboboxOption | null>
+  /** Label for the inline create row; receives the trimmed query. */
+  createLabel?: (query: string) => string
   placeholder?: string
   emptyText?: string
   disabled?: boolean
   className?: string
 }
+
+const CREATE_SENTINEL = "__async_combobox_create__"
 
 /**
  * A generic search-as-you-type combobox backed by an async resolver. Keeps a
@@ -37,6 +48,8 @@ export function AsyncCombobox({
   value,
   onChange,
   search,
+  onCreate,
+  createLabel,
   placeholder = "Search…",
   emptyText = "No results.",
   disabled,
@@ -46,6 +59,10 @@ export function AsyncCombobox({
   const [options, setOptions] = useState<AsyncComboboxOption[]>([])
   const [labels, setLabels] = useState<Record<string, string>>({})
   const [inputValue, setInputValue] = useState("")
+  const [creating, setCreating] = useState(false)
+
+  const onCreateRef = useRef(onCreate)
+  onCreateRef.current = onCreate
 
   // Latest search fn via ref so the debounce effect only re-runs on query.
   const searchRef = useRef(search)
@@ -80,14 +97,42 @@ export function AsyncCombobox({
     setInputValue(value ? (labels[value] ?? value) : "")
   }, [value, labels])
 
+  const trimmed = query.trim()
+  const hasExactMatch = options.some((o) => o.label.toLowerCase() === trimmed.toLowerCase())
+  const showCreate = Boolean(onCreate) && trimmed.length > 0 && !hasExactMatch && !creating
+  const createRowLabel = (createLabel ?? ((q) => `Create "${q}"`))(trimmed)
+
+  const items = showCreate
+    ? [...options.map((o) => o.value), CREATE_SENTINEL]
+    : options.map((o) => o.value)
+
+  const create = () => {
+    const fn = onCreateRef.current
+    if (!fn) return
+    const name = query.trim()
+    if (!name) return
+    setCreating(true)
+    fn(name)
+      .then((opt) => {
+        if (!opt) return
+        setLabels((prev) => ({ ...prev, [opt.value]: opt.label }))
+        onChange(opt.value)
+        setInputValue(opt.label)
+        setQuery("")
+      })
+      .finally(() => setCreating(false))
+  }
+
   return (
     <Combobox
-      items={options.map((o) => o.value)}
+      items={items}
       value={value ?? null}
       inputValue={inputValue}
       autoHighlight
-      disabled={disabled}
-      itemToStringValue={(v) => labels[v as string] ?? (v as string)}
+      disabled={disabled || creating}
+      itemToStringValue={(v) =>
+        v === CREATE_SENTINEL ? createRowLabel : (labels[v as string] ?? (v as string))
+      }
       onInputValueChange={(next) => {
         setInputValue(next)
         setQuery(next)
@@ -95,6 +140,10 @@ export function AsyncCombobox({
       }}
       onValueChange={(next) => {
         const v = (next as string | null) ?? null
+        if (v === CREATE_SENTINEL) {
+          create()
+          return
+        }
         onChange(v)
         setInputValue(v ? (labels[v] ?? v) : "")
       }}
@@ -102,21 +151,25 @@ export function AsyncCombobox({
       <ComboboxInput
         className={className ?? "w-full"}
         placeholder={placeholder}
-        disabled={disabled}
-        showClear={Boolean(value) && !disabled}
+        disabled={disabled || creating}
+        showClear={Boolean(value) && !disabled && !creating}
       />
       <ComboboxContent>
         <ComboboxEmpty>{emptyText}</ComboboxEmpty>
         <ComboboxList>
           <ComboboxCollection>
-            {(v) => {
-              const label = labels[v as string] ?? (v as string)
-              return (
+            {(v) =>
+              v === CREATE_SENTINEL ? (
+                <ComboboxItem key={CREATE_SENTINEL} value={CREATE_SENTINEL}>
+                  <Plus className="size-4 shrink-0" />
+                  <span className="truncate">{createRowLabel}</span>
+                </ComboboxItem>
+              ) : (
                 <ComboboxItem key={v as string} value={v as string}>
-                  <span className="truncate">{label}</span>
+                  <span className="truncate">{labels[v as string] ?? (v as string)}</span>
                 </ComboboxItem>
               )
-            }}
+            }
           </ComboboxCollection>
         </ComboboxList>
       </ComboboxContent>

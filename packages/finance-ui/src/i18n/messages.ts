@@ -354,6 +354,10 @@ export type FinanceUiMessages = {
       /** Optional AI/OCR extraction extension point (shown only when wired). */
       extractUpload: string
       extracting: string
+      /** Supplier picker (shown only when a search resolver is wired). */
+      supplierSearchPlaceholder: string
+      /** Inline "create supplier" row label; `{name}` = typed query. */
+      supplierCreate: string
     }
     summary: {
       subtotal: string

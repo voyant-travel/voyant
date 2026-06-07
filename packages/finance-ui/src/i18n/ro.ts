@@ -214,6 +214,8 @@ export const financeUiRo = {
       saving: "Se salveaza...",
       extractUpload: "Incarca factura pentru completare automata",
       extracting: "Se extrage…",
+      supplierSearchPlaceholder: "Cauta furnizori…",
+      supplierCreate: 'Creeaza furnizorul "{name}"',
     },
     summary: {
       subtotal: "Subtotal",

@@ -3,6 +3,7 @@ import {
   type SupplierInvoiceStatus,
   useSupplierInvoiceMutation,
 } from "@voyantjs/finance-react"
+import { formatMessage } from "@voyantjs/i18n"
 import {
   Button,
   Dialog,
@@ -27,6 +28,7 @@ import { Upload } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
+import { AsyncCombobox, type AsyncComboboxOption } from "./async-combobox.js"
 
 const STATUS_ORDER: SupplierInvoiceStatus[] = [
   "draft",
@@ -67,6 +69,18 @@ export interface SupplierInvoiceFormDialogProps {
    * default) and no extraction UI is shown.
    */
   extractFromFile?: (file: File) => Promise<SupplierInvoiceExtraction>
+  /**
+   * Search the suppliers module for the supplier picker. The selected option's
+   * value is stored as the invoice's `supplierId` (a loose text reference — no
+   * cross-module FK). When omitted, a plain text input is shown instead.
+   */
+  searchSuppliers?: (query: string) => Promise<AsyncComboboxOption[]>
+  /**
+   * Create a supplier inline from the picker. Receives the typed name, returns
+   * the new option (whose value becomes the stored `supplierId`). Only offered
+   * when both this and `searchSuppliers` are provided.
+   */
+  createSupplier?: (name: string) => Promise<AsyncComboboxOption | null>
 }
 
 interface FormState {
@@ -99,6 +113,8 @@ export function SupplierInvoiceFormDialog({
   invoice,
   onSaved,
   extractFromFile,
+  searchSuppliers,
+  createSupplier,
 }: SupplierInvoiceFormDialogProps) {
   const messages = useFinanceUiMessagesOrDefault()
   const t = messages.supplierInvoiceDetail.form
@@ -199,7 +215,21 @@ export function SupplierInvoiceFormDialog({
             />
           </Field>
           <Field label={t.supplierId}>
-            <Input value={form.supplierId} onChange={(e) => set({ supplierId: e.target.value })} />
+            {searchSuppliers ? (
+              <AsyncCombobox
+                value={form.supplierId || null}
+                onChange={(v) => set({ supplierId: v ?? "" })}
+                search={searchSuppliers}
+                onCreate={createSupplier}
+                createLabel={(name) => formatMessage(t.supplierCreate, { name })}
+                placeholder={t.supplierSearchPlaceholder}
+              />
+            ) : (
+              <Input
+                value={form.supplierId}
+                onChange={(e) => set({ supplierId: e.target.value })}
+              />
+            )}
           </Field>
           <Field label={t.status}>
             <Select

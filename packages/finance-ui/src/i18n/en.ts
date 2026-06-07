@@ -212,6 +212,8 @@ export const financeUiEn = {
       saving: "Saving...",
       extractUpload: "Upload invoice to autofill",
       extracting: "Extracting…",
+      supplierSearchPlaceholder: "Search suppliers…",
+      supplierCreate: 'Create supplier "{name}"',
     },
     summary: {
       subtotal: "Subtotal",

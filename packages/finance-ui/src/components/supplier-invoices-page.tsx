@@ -27,6 +27,7 @@ import { Plus, Search } from "lucide-react"
 import { useState } from "react"
 
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
+import type { AsyncComboboxOption } from "./async-combobox.js"
 import {
   formatInvoiceAmount,
   InvoiceRowSkeleton,
@@ -69,6 +70,10 @@ export interface SupplierInvoicesPageProps {
   onOpenSupplierInvoice?: (id: string) => void
   /** Optional invoice-extraction extension point for the create dialog. */
   extractFromFile?: (file: File) => Promise<SupplierInvoiceExtraction>
+  /** Search suppliers for the create dialog's supplier picker. */
+  searchSuppliers?: (query: string) => Promise<AsyncComboboxOption[]>
+  /** Create a supplier inline from the create dialog's supplier picker. */
+  createSupplier?: (name: string) => Promise<AsyncComboboxOption | null>
 }
 
 type SortableField = Exclude<FinanceSupplierInvoiceListSortField, "createdAt">
@@ -77,6 +82,8 @@ export function SupplierInvoicesPage({
   className,
   onOpenSupplierInvoice,
   extractFromFile,
+  searchSuppliers,
+  createSupplier,
 }: SupplierInvoicesPageProps = {}) {
   const t = useFinanceUiMessagesOrDefault().supplierInvoicesPage
 
@@ -130,6 +137,8 @@ export function SupplierInvoicesPage({
         onOpenChange={setCreateOpen}
         onSaved={(id) => onOpenSupplierInvoice?.(id)}
         extractFromFile={extractFromFile}
+        searchSuppliers={searchSuppliers}
+        createSupplier={createSupplier}
       />
 
       <div className="flex flex-wrap items-center gap-2">

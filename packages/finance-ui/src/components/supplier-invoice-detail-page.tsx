@@ -179,6 +179,10 @@ export interface SupplierInvoiceDetailPageProps {
   searchTargets?: SupplierInvoiceTargetSearch
   /** Optional invoice-extraction extension point for the edit dialog. */
   extractFromFile?: (file: File) => Promise<SupplierInvoiceExtraction>
+  /** Search suppliers for the edit dialog's supplier picker. */
+  searchSuppliers?: (query: string) => Promise<AsyncComboboxOption[]>
+  /** Create a supplier inline from the edit dialog's supplier picker. */
+  createSupplier?: (name: string) => Promise<AsyncComboboxOption | null>
 }
 
 function formatFileSize(bytes: number | null): string {
@@ -197,6 +201,8 @@ export function SupplierInvoiceDetailPage({
   onDownloadAttachment,
   searchTargets,
   extractFromFile,
+  searchSuppliers,
+  createSupplier,
 }: SupplierInvoiceDetailPageProps) {
   const messages = useFinanceUiMessagesOrDefault()
   const t = messages.supplierInvoiceDetail
@@ -597,6 +603,8 @@ export function SupplierInvoiceDetailPage({
         onOpenChange={setEditOpen}
         invoice={invoice}
         extractFromFile={extractFromFile}
+        searchSuppliers={searchSuppliers}
+        createSupplier={createSupplier}
       />
 
       <LineDialog
