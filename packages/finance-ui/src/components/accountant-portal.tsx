@@ -16,6 +16,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Checkbox,
   Label,
   Select,
   SelectContent,
@@ -31,7 +32,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@voyantjs/ui/components/chart"
-import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
 import {
   Table,
   TableBody,
@@ -121,17 +121,20 @@ function AccountantPortalBody({
   const t = messages.profitability
   const client = useMemo(() => ({ baseUrl: apiBaseUrl, fetcher: defaultFetcher }), [apiBaseUrl])
   const [currency, setCurrency] = useState<string>("")
-  const [base, setBase] = useState<string>("")
+  // Consolidated view = the operator accounting-base rollup (snapshotted FX).
+  // The base currency is fixed by the operator — no viewer-chosen base.
+  const [consolidate, setConsolidate] = useState(true)
   const [productId, setProductId] = useState<string>("")
   const [departureId, setDepartureId] = useState<string>("")
 
-  const summary = useQuery(getAccountantSummaryQueryOptions(client, token, base || undefined))
+  const summary = useQuery(getAccountantSummaryQueryOptions(client, token))
   const invoices = useQuery(getAccountantInvoicesQueryOptions(client, token))
 
   const data = summary.data?.data
   const departures = data?.departures
   const products = data?.products
-  const baseMode = Boolean(departures?.base)
+  const baseCurrencyCode = departures?.base?.currency ?? products?.base?.currency ?? ""
+  const baseMode = consolidate && Boolean(departures?.base)
 
   const currencies = useMemo(() => {
     const set = new Set<string>()
@@ -310,12 +313,17 @@ function AccountantPortalBody({
             </div>
           ) : null}
           <div className="flex flex-col gap-2">
-            <Label>{t.filters.baseCurrency}</Label>
-            <CurrencyCombobox
-              value={base || null}
-              onChange={(v) => setBase(v ?? "")}
-              className="w-40"
-            />
+            <Label htmlFor="accountant-consolidate">{t.filters.baseCurrency}</Label>
+            <div className="flex h-9 items-center gap-2">
+              <Checkbox
+                id="accountant-consolidate"
+                checked={consolidate}
+                onCheckedChange={(v) => setConsolidate(v === true)}
+              />
+              <Label htmlFor="accountant-consolidate" className="font-normal">
+                {baseCurrencyCode || t.filters.baseCurrency}
+              </Label>
+            </div>
           </div>
         </div>
       </div>

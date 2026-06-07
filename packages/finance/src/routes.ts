@@ -553,13 +553,25 @@ export const financeRoutes = new Hono<Env>()
   // GET /reports/profitability/departures — Per-departure P&L (RFC §8)
   .get("/reports/profitability/departures", async (c) => {
     const query = parseQuery(c, departureProfitabilityQuerySchema)
-    return c.json({ data: await financeService.getDepartureProfitability(c.get("db"), query) })
+    return c.json({
+      data: await financeService.getDepartureProfitability(
+        c.get("db"),
+        query,
+        getFinanceRouteRuntime(c),
+      ),
+    })
   })
 
   // GET /reports/profitability/products — Per-product P&L roll-up (RFC §8)
   .get("/reports/profitability/products", async (c) => {
     const query = parseQuery(c, productProfitabilityQuerySchema)
-    return c.json({ data: await financeService.getProductProfitability(c.get("db"), query) })
+    return c.json({
+      data: await financeService.getProductProfitability(
+        c.get("db"),
+        query,
+        getFinanceRouteRuntime(c),
+      ),
+    })
   })
 
   // GET /reports/profitability/travelers — Per-traveller P&L for one departure (RFC §6)
@@ -571,14 +583,22 @@ export const financeRoutes = new Hono<Env>()
   // GET /reports/profitability/departures/export — CSV for accountant sharing
   .get("/reports/profitability/departures/export", async (c) => {
     const query = parseQuery(c, departureProfitabilityQuerySchema)
-    const report = await financeService.getDepartureProfitability(c.get("db"), query)
+    const report = await financeService.getDepartureProfitability(
+      c.get("db"),
+      query,
+      getFinanceRouteRuntime(c),
+    )
     return csvDownload(buildDepartureProfitabilityCsv(report), "departure-profitability.csv")
   })
 
   // GET /reports/profitability/products/export — CSV for accountant sharing
   .get("/reports/profitability/products/export", async (c) => {
     const query = parseQuery(c, productProfitabilityQuerySchema)
-    const report = await financeService.getProductProfitability(c.get("db"), query)
+    const report = await financeService.getProductProfitability(
+      c.get("db"),
+      query,
+      getFinanceRouteRuntime(c),
+    )
     return csvDownload(buildProductProfitabilityCsv(report), "product-profitability.csv")
   })
 

@@ -1083,6 +1083,12 @@ export const supplierInvoices = pgTable(
     subtotalCents: integer("subtotal_cents").notNull().default(0),
     taxCents: integer("tax_cents").notNull().default(0),
     totalCents: integer("total_cents").notNull().default(0),
+    // Operator accounting-base amounts, snapshotted at the FX rate effective on
+    // `issueDate` (end-to-end FX §). Null for pre-feature rows (lazy/forward-only)
+    // and when the invoice currency has no resolvable rate.
+    baseSubtotalCents: integer("base_subtotal_cents"),
+    baseTaxCents: integer("base_tax_cents"),
+    baseTotalCents: integer("base_total_cents"),
     paidCents: integer("paid_cents").notNull().default(0),
     balanceDueCents: integer("balance_due_cents").notNull().default(0),
     // Reuses tax_regimes — supports reverse_charge for cross-border supply.

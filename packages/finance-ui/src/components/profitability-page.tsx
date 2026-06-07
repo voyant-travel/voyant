@@ -15,6 +15,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Checkbox,
   Dialog,
   DialogBody,
   DialogContent,
@@ -35,7 +36,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@voyantjs/ui/components/chart"
-import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import {
   Table,
@@ -94,7 +94,9 @@ export function ProfitabilityPage({
   const [from, setFrom] = useState<string>("")
   const [to, setTo] = useState<string>("")
   const [currency, setCurrency] = useState<string>("")
-  const [base, setBase] = useState<string>("")
+  // Consolidated view = the accounting-base rollup (snapshotted FX). Default on;
+  // the base currency itself is fixed by the operator, so there is no picker.
+  const [consolidate, setConsolidate] = useState(true)
   const [travelerDeparture, setTravelerDeparture] = useState<{ id: string; label: string } | null>(
     null,
   )
@@ -105,7 +107,6 @@ export function ProfitabilityPage({
   const filters = {
     from: from || undefined,
     to: to || undefined,
-    baseCurrency: base || undefined,
   }
   const departures = useDepartureProfitability(filters)
   const products = useProductProfitability(filters)
@@ -114,8 +115,11 @@ export function ProfitabilityPage({
   const productReport = products.data?.data
   const isError = departures.isError || products.isError
 
-  // Base-currency rollup view is active once the server returns a `base` block.
-  const baseMode = Boolean(base) && Boolean(departureReport?.base)
+  // The accounting base currency the server snapshots/rolls up into.
+  const baseCurrencyCode = departureReport?.base?.currency ?? productReport?.base?.currency ?? ""
+  // Consolidated rollup view is active when toggled on and the server returned a
+  // `base` block (always does now, but guard for loading/empty states).
+  const baseMode = consolidate && Boolean(departureReport?.base)
 
   // Currencies present across per-currency rows; default to the first.
   const currencies = useMemo(() => {
@@ -126,7 +130,7 @@ export function ProfitabilityPage({
   }, [departureReport, productReport])
 
   const activeCurrency = baseMode
-    ? (departureReport?.base?.currency ?? base)
+    ? (departureReport?.base?.currency ?? baseCurrencyCode)
     : currency && currencies.includes(currency)
       ? currency
       : (currencies[0] ?? "")
@@ -292,12 +296,17 @@ export function ProfitabilityPage({
             </div>
           ) : null}
           <div className="flex flex-col gap-2">
-            <Label>{t.filters.baseCurrency}</Label>
-            <CurrencyCombobox
-              value={base || null}
-              onChange={(v) => setBase(v ?? "")}
-              className="w-40"
-            />
+            <Label htmlFor="profitability-consolidate">{t.filters.baseCurrency}</Label>
+            <div className="flex h-9 items-center gap-2">
+              <Checkbox
+                id="profitability-consolidate"
+                checked={consolidate}
+                onCheckedChange={(v) => setConsolidate(v === true)}
+              />
+              <Label htmlFor="profitability-consolidate" className="font-normal">
+                {baseCurrencyCode || t.filters.baseCurrency}
+              </Label>
+            </div>
           </div>
           <div className="flex flex-col gap-2">
             <Label>{t.filters.product}</Label>

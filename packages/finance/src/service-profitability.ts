@@ -10,6 +10,7 @@ import { and, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { type FxMoneyInput, resolveFxMoneyBaseAmount } from "./fx-money.js"
+import { type InvoiceFxOptions, resolveInvoiceFxSettingsOrDefault } from "./invoice-fx.js"
 import {
   costCategories,
   invoices,
@@ -17,6 +18,14 @@ import {
   supplierInvoiceLines,
   supplierInvoices,
 } from "./schema.js"
+
+/**
+ * FX runtime for the profitability read model. Carries the operator FX settings
+ * (which name the accounting base currency, default "RON") and the exchange-rate
+ * resolver used to convert legacy, un-snapshotted rows. Threaded from the finance
+ * route runtime so the rollup matches how invoices were snapshotted at write time.
+ */
+export type ProfitabilityFxRuntime = InvoiceFxOptions
 
 /**
  * Profitability read model (RFC §8). Computed on read, never stored. Amounts are
@@ -114,6 +123,21 @@ interface DepartureAcc {
   departureLabel: string | null
   departureDate: string | null
   byCurrency: Map<string, CurrencyTotals>
+  /**
+   * Accounting-base accumulators (end-to-end FX §). `base` holds amounts that
+   * were snapshotted in the accounting base at the transaction-date rate; they
+   * are summed verbatim — no re-conversion. `residual` holds original-currency
+   * amounts from rows with no base snapshot (legacy/forward-only), converted once
+   * the per-currency fallback rates are known.
+   */
+  base: CurrencyTotals
+  residual: Map<string, CurrencyTotals>
+}
+
+/** Snapshot/residual split for the aggregate (non-departure) cost breakdowns. */
+interface BaseSplit {
+  snapshotBase: number
+  residual: Map<string, number>
 }
 
 const num = (value: unknown): number => Number(value ?? 0)
@@ -127,21 +151,71 @@ function bucket(map: Map<string, CurrencyTotals>, currency: string): CurrencyTot
   return entry
 }
 
+function newBaseSplit(): BaseSplit {
+  return { snapshotBase: 0, residual: new Map() }
+}
+
+function addResidual(map: Map<string, number>, currency: string, amount: number): void {
+  if (amount === 0) return
+  map.set(currency, (map.get(currency) ?? 0) + amount)
+}
+
+/** Resolve a base split to a single accounting-base figure via the rate map. */
+function resolveBaseSplit(
+  split: BaseSplit,
+  rates: Map<string, number>,
+  unconvertible: Set<string>,
+): number {
+  let total = split.snapshotBase
+  for (const [currency, amount] of split.residual) {
+    const rate = rates.get(currency)
+    if (rate == null) {
+      if (amount !== 0) unconvertible.add(currency)
+      continue
+    }
+    total += amount * rate
+  }
+  return total
+}
+
 function margin(profitCents: number, revenueCents: number): number | null {
   if (revenueCents <= 0) return null
   return Math.round((profitCents / revenueCents) * 1000) / 10
 }
 
+interface LoadedAccumulators {
+  baseCurrency: string
+  departures: Map<string, DepartureAcc>
+  productActualCost: Array<{ productId: string; currency: string; amountCents: number }>
+  productActualCostBase: Map<string, BaseSplit>
+  costByServiceType: ProfitabilityCostByServiceType[]
+  costByServiceTypeBase: Map<string, BaseSplit>
+  unattributed: ProfitabilityUnattributed[]
+  unattributedBase: BaseSplit
+}
+
 /**
  * Shared loader: runs the source queries once and assembles a per-departure
  * accumulator plus the cost-breakdown aggregates that both reports surface.
+ *
+ * Each money source carries TWO base figures: the sum of recorded base snapshots
+ * (already in `baseCurrency`, summed verbatim) and the original-currency residual
+ * from rows lacking a snapshot (converted later via fallback rates). This keeps
+ * the rollup faithful to the rate that was in effect when each invoice was
+ * issued, instead of re-valuing everything at the latest rate.
  */
-async function loadDepartureAccumulators(db: PostgresJsDatabase): Promise<{
-  departures: Map<string, DepartureAcc>
-  productActualCost: Array<{ productId: string; currency: string; amountCents: number }>
-  costByServiceType: ProfitabilityCostByServiceType[]
-  unattributed: ProfitabilityUnattributed[]
-}> {
+async function loadDepartureAccumulators(
+  db: PostgresJsDatabase,
+  baseCurrency: string,
+): Promise<LoadedAccumulators> {
+  const base = baseCurrency
+  // Net sign for AR (credit notes subtract). Reused for total + base + residual.
+  const arSign = sql`case when ${invoices.invoiceType} = 'credit_note' then -1 else 1 end`
+  // True when an invoice/allocation has a usable base snapshot in the accounting base.
+  const invSnapshotted = sql`${invoices.baseCurrency} = ${base} and ${invoices.baseTotalCents} is not null`
+  const allocSnapshotted = sql`${supplierInvoices.baseCurrency} = ${base} and ${supplierCostAllocations.baseAmountCents} is not null`
+  const lineSnapshotted = sql`${supplierInvoices.baseCurrency} = ${base} and ${supplierInvoices.baseTotalCents} is not null and ${supplierInvoices.totalCents} <> 0`
+
   const [
     itemRows,
     invoiceRows,
@@ -175,11 +249,15 @@ async function loadDepartureAccumulators(db: PostgresJsDatabase): Promise<{
         bookingItems.costCurrency,
       ),
     // Invoiced AR per (booking, currency). Credit notes net down; proforma/draft/void excluded.
+    // `baseTotalCents` sums recorded base snapshots; `residualTotalCents` is the
+    // original-currency remainder from invoices without one.
     db
       .select({
         bookingId: invoices.bookingId,
         currency: invoices.currency,
-        totalCents: sql<number>`coalesce(sum(case when ${invoices.invoiceType} = 'credit_note' then -${invoices.totalCents} else ${invoices.totalCents} end), 0)::bigint`,
+        totalCents: sql<number>`coalesce(sum(${arSign} * ${invoices.totalCents}), 0)::bigint`,
+        baseTotalCents: sql<number>`coalesce(sum(${arSign} * (case when ${invSnapshotted} then ${invoices.baseTotalCents} else 0 end)), 0)::bigint`,
+        residualTotalCents: sql<number>`coalesce(sum(${arSign} * (case when ${invSnapshotted} then 0 else ${invoices.totalCents} end)), 0)::bigint`,
       })
       .from(invoices)
       .where(
@@ -196,6 +274,8 @@ async function loadDepartureAccumulators(db: PostgresJsDatabase): Promise<{
         departureId: supplierCostAllocations.departureId,
         currency: supplierInvoices.currency,
         amountCents: sql<number>`coalesce(sum(${supplierCostAllocations.amountCents}), 0)::bigint`,
+        baseAmountCents: sql<number>`coalesce(sum(case when ${allocSnapshotted} then ${supplierCostAllocations.baseAmountCents} else 0 end), 0)::bigint`,
+        residualAmountCents: sql<number>`coalesce(sum(case when ${allocSnapshotted} then 0 else ${supplierCostAllocations.amountCents} end), 0)::bigint`,
       })
       .from(supplierCostAllocations)
       .innerJoin(
@@ -217,6 +297,8 @@ async function loadDepartureAccumulators(db: PostgresJsDatabase): Promise<{
         productId: supplierCostAllocations.productId,
         currency: supplierInvoices.currency,
         amountCents: sql<number>`coalesce(sum(${supplierCostAllocations.amountCents}), 0)::bigint`,
+        baseAmountCents: sql<number>`coalesce(sum(case when ${allocSnapshotted} then ${supplierCostAllocations.baseAmountCents} else 0 end), 0)::bigint`,
+        residualAmountCents: sql<number>`coalesce(sum(case when ${allocSnapshotted} then 0 else ${supplierCostAllocations.amountCents} end), 0)::bigint`,
       })
       .from(supplierCostAllocations)
       .innerJoin(
@@ -235,12 +317,15 @@ async function loadDepartureAccumulators(db: PostgresJsDatabase): Promise<{
     // Cost breakdown by configurable cost category. Summed from supplier-invoice
     // LINE totals (not allocations) so categorizing a line shows up immediately,
     // even before the cost is allocated to a departure. Lines without a category
-    // fall to "Uncategorized".
+    // fall to "Uncategorized". Base = line total pro-rated by the invoice's
+    // snapshotted base/total ratio.
     db
       .select({
         serviceType: sql<string>`coalesce(${costCategories.name}, 'Uncategorized')`,
         currency: supplierInvoices.currency,
         amountCents: sql<number>`coalesce(sum(${supplierInvoiceLines.totalAmountCents}), 0)::bigint`,
+        baseAmountCents: sql<number>`coalesce(sum(case when ${lineSnapshotted} then round(${supplierInvoiceLines.totalAmountCents}::numeric * ${supplierInvoices.baseTotalCents} / ${supplierInvoices.totalCents}) else 0 end), 0)::bigint`,
+        residualAmountCents: sql<number>`coalesce(sum(case when ${lineSnapshotted} then 0 else ${supplierInvoiceLines.totalAmountCents} end), 0)::bigint`,
       })
       .from(supplierInvoiceLines)
       .innerJoin(supplierInvoices, eq(supplierInvoiceLines.supplierInvoiceId, supplierInvoices.id))
@@ -252,6 +337,8 @@ async function loadDepartureAccumulators(db: PostgresJsDatabase): Promise<{
       .select({
         currency: supplierInvoices.currency,
         amountCents: sql<number>`coalesce(sum(${supplierCostAllocations.amountCents}), 0)::bigint`,
+        baseAmountCents: sql<number>`coalesce(sum(case when ${allocSnapshotted} then ${supplierCostAllocations.baseAmountCents} else 0 end), 0)::bigint`,
+        residualAmountCents: sql<number>`coalesce(sum(case when ${allocSnapshotted} then 0 else ${supplierCostAllocations.amountCents} end), 0)::bigint`,
       })
       .from(supplierCostAllocations)
       .innerJoin(
@@ -279,10 +366,20 @@ async function loadDepartureAccumulators(db: PostgresJsDatabase): Promise<{
         departureLabel: null,
         departureDate: null,
         byCurrency: new Map(),
+        base: { revenue: 0, actual: 0, planned: 0 },
+        residual: new Map(),
       }
       departures.set(departureId, acc)
     }
     return acc
+  }
+  const ensureResidual = (acc: DepartureAcc, currency: string): CurrencyTotals => {
+    let entry = acc.residual.get(currency)
+    if (!entry) {
+      entry = { revenue: 0, actual: 0, planned: 0 }
+      acc.residual.set(currency, entry)
+    }
+    return entry
   }
 
   // Booking totals + per-departure sell, for proportional revenue attribution.
@@ -302,6 +399,9 @@ async function loadDepartureAccumulators(db: PostgresJsDatabase): Promise<{
     const plannedCost = num(row.plannedCostCents)
     if (row.costCurrency && plannedCost !== 0) {
       bucket(acc.byCurrency, row.costCurrency).planned += plannedCost
+      // Planned cost is a budget snapshot with no recorded FX, so it always
+      // routes through the fallback conversion (latest rate for that currency).
+      ensureResidual(acc, row.costCurrency).planned += plannedCost
     }
 
     bookingTotalSell.set(row.bookingId, (bookingTotalSell.get(row.bookingId) ?? 0) + sellCents)
@@ -312,10 +412,21 @@ async function loadDepartureAccumulators(db: PostgresJsDatabase): Promise<{
 
   // Attribute invoiced AR to departures proportionally by sell amount. Bookings
   // with zero sell split equally across their distinct departures.
-  const invoicesByBooking = new Map<string, Array<{ currency: string; totalCents: number }>>()
+  interface InvoiceAcc {
+    currency: string
+    totalCents: number
+    baseTotalCents: number
+    residualTotalCents: number
+  }
+  const invoicesByBooking = new Map<string, InvoiceAcc[]>()
   for (const row of invoiceRows) {
     const list = invoicesByBooking.get(row.bookingId) ?? []
-    list.push({ currency: row.currency, totalCents: num(row.totalCents) })
+    list.push({
+      currency: row.currency,
+      totalCents: num(row.totalCents),
+      baseTotalCents: num(row.baseTotalCents),
+      residualTotalCents: num(row.residualTotalCents),
+    })
     invoicesByBooking.set(row.bookingId, list)
   }
 
@@ -328,13 +439,20 @@ async function loadDepartureAccumulators(db: PostgresJsDatabase): Promise<{
       const acc = ensure(slot.departureId)
       for (const inv of invoiceList) {
         bucket(acc.byCurrency, inv.currency).revenue += inv.totalCents * ratio
+        acc.base.revenue += inv.baseTotalCents * ratio
+        if (inv.residualTotalCents !== 0) {
+          ensureResidual(acc, inv.currency).revenue += inv.residualTotalCents * ratio
+        }
       }
     }
   }
 
   for (const row of departureCostRows) {
     if (!row.departureId) continue
-    bucket(ensure(row.departureId).byCurrency, row.currency).actual += num(row.amountCents)
+    const acc = ensure(row.departureId)
+    bucket(acc.byCurrency, row.currency).actual += num(row.amountCents)
+    acc.base.actual += num(row.baseAmountCents)
+    ensureResidual(acc, row.currency).actual += num(row.residualAmountCents)
   }
 
   // Resolve friendly labels from availability_slots (+ product name) for every
@@ -361,29 +479,59 @@ async function loadDepartureAccumulators(db: PostgresJsDatabase): Promise<{
     }
   }
 
-  const productActualCost = productCostRows
-    .filter((row): row is { productId: string; currency: string; amountCents: number } =>
-      Boolean(row.productId),
-    )
-    .map((row) => ({
+  const productActualCost: Array<{ productId: string; currency: string; amountCents: number }> = []
+  const productActualCostBase = new Map<string, BaseSplit>()
+  for (const row of productCostRows) {
+    if (!row.productId) continue
+    productActualCost.push({
       productId: row.productId,
       currency: row.currency,
       amountCents: num(row.amountCents),
-    }))
+    })
+    let split = productActualCostBase.get(row.productId)
+    if (!split) {
+      split = newBaseSplit()
+      productActualCostBase.set(row.productId, split)
+    }
+    split.snapshotBase += num(row.baseAmountCents)
+    addResidual(split.residual, row.currency, num(row.residualAmountCents))
+  }
 
-  const costByServiceType = serviceTypeRows
-    .map((row) => ({
-      serviceType: row.serviceType,
-      currency: row.currency,
-      amountCents: num(row.amountCents),
-    }))
-    .filter((row) => row.amountCents !== 0)
+  const costByServiceType: ProfitabilityCostByServiceType[] = []
+  const costByServiceTypeBase = new Map<string, BaseSplit>()
+  for (const row of serviceTypeRows) {
+    const amountCents = num(row.amountCents)
+    if (amountCents !== 0) {
+      costByServiceType.push({ serviceType: row.serviceType, currency: row.currency, amountCents })
+    }
+    let split = costByServiceTypeBase.get(row.serviceType)
+    if (!split) {
+      split = newBaseSplit()
+      costByServiceTypeBase.set(row.serviceType, split)
+    }
+    split.snapshotBase += num(row.baseAmountCents)
+    addResidual(split.residual, row.currency, num(row.residualAmountCents))
+  }
 
-  const unattributed = unattributedRows
-    .map((row) => ({ currency: row.currency, amountCents: num(row.amountCents) }))
-    .filter((row) => row.amountCents !== 0)
+  const unattributed: ProfitabilityUnattributed[] = []
+  const unattributedBase = newBaseSplit()
+  for (const row of unattributedRows) {
+    const amountCents = num(row.amountCents)
+    if (amountCents !== 0) unattributed.push({ currency: row.currency, amountCents })
+    unattributedBase.snapshotBase += num(row.baseAmountCents)
+    addResidual(unattributedBase.residual, row.currency, num(row.residualAmountCents))
+  }
 
-  return { departures, productActualCost, costByServiceType, unattributed }
+  return {
+    baseCurrency: base,
+    departures,
+    productActualCost,
+    productActualCostBase,
+    costByServiceType,
+    costByServiceTypeBase,
+    unattributed,
+    unattributedBase,
+  }
 }
 
 function withinDateRange(date: string | null, from?: string, to?: string): boolean {
@@ -397,14 +545,20 @@ function withinDateRange(date: string | null, from?: string, to?: string): boole
 export async function getDepartureProfitability(
   db: PostgresJsDatabase,
   query: DepartureProfitabilityQuery,
+  options: ProfitabilityFxRuntime = {},
 ): Promise<DepartureProfitabilityReport> {
-  const { departures, costByServiceType, unattributed } = await loadDepartureAccumulators(db)
+  const baseCurrency = (await resolveInvoiceFxSettingsOrDefault(db, options)).baseCurrency
+  const loaded = await loadDepartureAccumulators(db, baseCurrency)
+  const { departures, costByServiceType, costByServiceTypeBase, unattributed, unattributedBase } =
+    loaded
 
   const rows: DepartureProfitabilityRow[] = []
+  const filtered: DepartureAcc[] = []
   for (const acc of departures.values()) {
     if (query.departureId && acc.departureId !== query.departureId) continue
     if (query.productId && acc.productId !== query.productId) continue
     if (!withinDateRange(acc.departureDate, query.from, query.to)) continue
+    filtered.push(acc)
 
     for (const [currency, totals] of acc.byCurrency) {
       if (query.currency && currency !== query.currency) continue
@@ -436,46 +590,99 @@ export async function getDepartureProfitability(
       a.currency.localeCompare(b.currency),
   )
 
-  const report: DepartureProfitabilityReport = {
+  // Accounting-base rollup. Always present and computed in the operator base
+  // currency: snapshots are summed verbatim, only legacy residuals are converted.
+  const residualCurrencies = collectResidualCurrencies(
+    filtered.flatMap((acc) => [...acc.residual.keys()]),
+    costByServiceTypeBase,
+    unattributedBase,
+  )
+  const { rates, unconvertible } = await buildBaseRates(
+    db,
+    residualCurrencies,
+    baseCurrency,
+    options,
+  )
+
+  const baseRows: DepartureProfitabilityRow[] = filtered
+    .map((acc) => {
+      const totals = baseFromAcc(acc.base, acc.residual, rates)
+      const revenueCents = Math.round(totals.revenue)
+      const actualCostCents = Math.round(totals.actual)
+      const plannedCostCents = Math.round(totals.planned)
+      const profitCents = revenueCents - actualCostCents
+      return {
+        departureId: acc.departureId,
+        departureLabel: acc.departureLabel,
+        productId: acc.productId,
+        productName: acc.productName,
+        departureDate: acc.departureDate,
+        currency: baseCurrency,
+        revenueCents,
+        actualCostCents,
+        plannedCostCents,
+        profitCents,
+        marginPercent: margin(profitCents, revenueCents),
+        varianceCents: plannedCostCents - actualCostCents,
+      }
+    })
+    .sort(
+      (a, b) =>
+        (a.departureDate ?? "").localeCompare(b.departureDate ?? "") ||
+        a.departureId.localeCompare(b.departureId),
+    )
+
+  return {
     rows,
     costByServiceType: filterCostByCurrency(costByServiceType, query.currency),
     unattributed: filterCostByCurrency(unattributed, query.currency),
-  }
-  if (query.baseCurrency) {
-    const base = query.baseCurrency.toUpperCase()
-    const { rates, unconvertible } = await buildBaseRates(
-      db,
-      [...rows, ...costByServiceType, ...unattributed].map((r) => r.currency),
-      base,
-    )
-    report.base = {
-      currency: base,
-      rows: rollupDepartureRowsToBase(rows, rates, base),
-      costByServiceType: rollupCostByServiceTypeToBase(costByServiceType, rates, base),
-      unattributedCents: rollupAmountToBase(unattributed, rates),
+    base: {
+      currency: baseCurrency,
+      rows: baseRows,
+      costByServiceType: baseCostByServiceType(costByServiceTypeBase, rates, baseCurrency),
+      unattributedCents: Math.round(resolveBaseSplit(unattributedBase, rates, new Set())),
       unconvertibleCurrencies: unconvertible,
-    }
+    },
   }
-  return report
 }
 
 export async function getProductProfitability(
   db: PostgresJsDatabase,
   query: ProductProfitabilityQuery,
+  options: ProfitabilityFxRuntime = {},
 ): Promise<ProductProfitabilityReport> {
-  const { departures, productActualCost, costByServiceType, unattributed } =
-    await loadDepartureAccumulators(db)
+  const baseCurrency = (await resolveInvoiceFxSettingsOrDefault(db, options)).baseCurrency
+  const loaded = await loadDepartureAccumulators(db, baseCurrency)
+  const {
+    departures,
+    productActualCost,
+    productActualCostBase,
+    costByServiceType,
+    costByServiceTypeBase,
+    unattributed,
+    unattributedBase,
+  } = loaded
 
   interface ProductAcc {
     productId: string
     productName: string | null
     byCurrency: Map<string, CurrencyTotals & { departures: Set<string> }>
+    base: CurrencyTotals
+    residual: Map<string, CurrencyTotals>
+    baseDepartures: Set<string>
   }
   const products = new Map<string, ProductAcc>()
   const ensureProduct = (productId: string): ProductAcc => {
     let acc = products.get(productId)
     if (!acc) {
-      acc = { productId, productName: null, byCurrency: new Map() }
+      acc = {
+        productId,
+        productName: null,
+        byCurrency: new Map(),
+        base: { revenue: 0, actual: 0, planned: 0 },
+        residual: new Map(),
+        baseDepartures: new Set(),
+      }
       products.set(productId, acc)
     }
     return acc
@@ -485,6 +692,14 @@ export async function getProductProfitability(
     if (!entry) {
       entry = { revenue: 0, actual: 0, planned: 0, departures: new Set() }
       acc.byCurrency.set(currency, entry)
+    }
+    return entry
+  }
+  const productResidual = (acc: ProductAcc, currency: string) => {
+    let entry = acc.residual.get(currency)
+    if (!entry) {
+      entry = { revenue: 0, actual: 0, planned: 0 }
+      acc.residual.set(currency, entry)
     }
     return entry
   }
@@ -502,12 +717,30 @@ export async function getProductProfitability(
       entry.planned += totals.planned
       entry.departures.add(dep.departureId)
     }
+    // Base rollup aggregates across currencies (no currency filter).
+    acc.base.revenue += dep.base.revenue
+    acc.base.actual += dep.base.actual
+    acc.base.planned += dep.base.planned
+    acc.baseDepartures.add(dep.departureId)
+    for (const [currency, res] of dep.residual) {
+      const entry = productResidual(acc, currency)
+      entry.revenue += res.revenue
+      entry.actual += res.actual
+      entry.planned += res.planned
+    }
   }
 
   // Product-level allocations (cost attributed to a product, not a departure).
   for (const row of productActualCost) {
     if (query.currency && row.currency !== query.currency) continue
     productBucket(ensureProduct(row.productId), row.currency).actual += row.amountCents
+  }
+  for (const [productId, split] of productActualCostBase) {
+    const acc = ensureProduct(productId)
+    acc.base.actual += split.snapshotBase
+    for (const [currency, amount] of split.residual) {
+      productResidual(acc, currency).actual += amount
+    }
   }
 
   const rows: ProductProfitabilityRow[] = []
@@ -536,27 +769,52 @@ export async function getProductProfitability(
     (a, b) => a.productId.localeCompare(b.productId) || a.currency.localeCompare(b.currency),
   )
 
-  const report: ProductProfitabilityReport = {
+  const residualCurrencies = collectResidualCurrencies(
+    [...products.values()].flatMap((acc) => [...acc.residual.keys()]),
+    costByServiceTypeBase,
+    unattributedBase,
+  )
+  const { rates, unconvertible } = await buildBaseRates(
+    db,
+    residualCurrencies,
+    baseCurrency,
+    options,
+  )
+
+  const baseRows: ProductProfitabilityRow[] = [...products.values()]
+    .map((acc) => {
+      const totals = baseFromAcc(acc.base, acc.residual, rates)
+      const revenueCents = Math.round(totals.revenue)
+      const actualCostCents = Math.round(totals.actual)
+      const plannedCostCents = Math.round(totals.planned)
+      const profitCents = revenueCents - actualCostCents
+      return {
+        productId: acc.productId,
+        productName: acc.productName,
+        currency: baseCurrency,
+        departureCount: acc.baseDepartures.size,
+        revenueCents,
+        actualCostCents,
+        plannedCostCents,
+        profitCents,
+        marginPercent: margin(profitCents, revenueCents),
+        varianceCents: plannedCostCents - actualCostCents,
+      }
+    })
+    .sort((a, b) => a.productId.localeCompare(b.productId))
+
+  return {
     rows,
     costByServiceType: filterCostByCurrency(costByServiceType, query.currency),
     unattributed: filterCostByCurrency(unattributed, query.currency),
-  }
-  if (query.baseCurrency) {
-    const base = query.baseCurrency.toUpperCase()
-    const { rates, unconvertible } = await buildBaseRates(
-      db,
-      [...rows, ...costByServiceType, ...unattributed].map((r) => r.currency),
-      base,
-    )
-    report.base = {
-      currency: base,
-      rows: rollupProductRowsToBase(rows, rates, base),
-      costByServiceType: rollupCostByServiceTypeToBase(costByServiceType, rates, base),
-      unattributedCents: rollupAmountToBase(unattributed, rates),
+    base: {
+      currency: baseCurrency,
+      rows: baseRows,
+      costByServiceType: baseCostByServiceType(costByServiceTypeBase, rates, baseCurrency),
+      unattributedCents: Math.round(resolveBaseSplit(unattributedBase, rates, new Set())),
       unconvertibleCurrencies: unconvertible,
-    }
+    },
   }
-  return report
 }
 
 function filterCostByCurrency<T extends { currency: string }>(rows: T[], currency?: string): T[] {
@@ -728,15 +986,35 @@ export async function getTravelerProfitability(
 
 // ---------- base-currency rollup (FX) ----------
 
+/** Distinct residual currencies that need a fallback conversion rate. */
+function collectResidualCurrencies(
+  perRow: string[],
+  ...splits: Array<Map<string, BaseSplit> | BaseSplit>
+): Set<string> {
+  const set = new Set<string>(perRow)
+  for (const split of splits) {
+    if (split instanceof Map) {
+      for (const s of split.values()) for (const c of s.residual.keys()) set.add(c)
+    } else {
+      for (const c of split.residual.keys()) set.add(c)
+    }
+  }
+  return set
+}
+
 /**
- * Resolve a conversion rate for each source currency → base via persisted FX
- * rates (one probe per distinct currency, cached). Currencies with no rate are
- * reported as unconvertible and excluded from the rollup rather than guessed.
+ * Resolve a fallback conversion rate for each residual currency → base. Used ONLY
+ * for legacy rows that predate the base-amount snapshot (forward-only): persisted
+ * FX rate first (then the runtime resolver). No date is passed, so these use the
+ * latest available rate. Snapshotted rows never reach here — they are summed at
+ * their own issue-date rate. Currencies with no rate are reported as unconvertible
+ * and excluded from the rollup rather than guessed.
  */
 async function buildBaseRates(
   db: PostgresJsDatabase,
   currencies: Iterable<string>,
   base: string,
+  options: ProfitabilityFxRuntime = {},
 ): Promise<{ rates: Map<string, number>; unconvertible: string[] }> {
   const rates = new Map<string, number>()
   const unconvertible: string[] = []
@@ -746,7 +1024,10 @@ async function buildBaseRates(
       continue
     }
     const probeInput: FxMoneyInput = { amountCents: 1_000_000, currency }
-    const probe = await resolveFxMoneyBaseAmount(db, probeInput, { targetBaseCurrency: base })
+    const probe = await resolveFxMoneyBaseAmount(db, probeInput, {
+      ...options,
+      targetBaseCurrency: base,
+    })
     if (probe.baseAmountCents != null && probe.baseCurrency === base) {
       rates.set(currency, probe.baseAmountCents / 1_000_000)
     } else {
@@ -756,132 +1037,39 @@ async function buildBaseRates(
   return { rates, unconvertible }
 }
 
-function rollupDepartureRowsToBase(
-  rows: DepartureProfitabilityRow[],
+/** Snapshot base + converted residuals → a single accounting-base figure set. */
+function baseFromAcc(
+  snapshot: CurrencyTotals,
+  residual: Map<string, CurrencyTotals>,
   rates: Map<string, number>,
-  base: string,
-): DepartureProfitabilityRow[] {
-  const acc = new Map<
-    string,
-    { template: DepartureProfitabilityRow; revenue: number; actual: number; planned: number }
-  >()
-  for (const row of rows) {
-    const rate = rates.get(row.currency)
-    if (rate == null) continue
-    let entry = acc.get(row.departureId)
-    if (!entry) {
-      entry = { template: row, revenue: 0, actual: 0, planned: 0 }
-      acc.set(row.departureId, entry)
-    }
-    entry.revenue += row.revenueCents * rate
-    entry.actual += row.actualCostCents * rate
-    entry.planned += row.plannedCostCents * rate
+): CurrencyTotals {
+  const out: CurrencyTotals = {
+    revenue: snapshot.revenue,
+    actual: snapshot.actual,
+    planned: snapshot.planned,
   }
-  const out = [...acc.values()].map(({ template, revenue, actual, planned }) => {
-    const revenueCents = Math.round(revenue)
-    const actualCostCents = Math.round(actual)
-    const plannedCostCents = Math.round(planned)
-    const profitCents = revenueCents - actualCostCents
-    return {
-      ...template,
-      currency: base,
-      revenueCents,
-      actualCostCents,
-      plannedCostCents,
-      profitCents,
-      marginPercent: margin(profitCents, revenueCents),
-      varianceCents: plannedCostCents - actualCostCents,
-    }
-  })
-  out.sort(
-    (a, b) =>
-      (a.departureDate ?? "").localeCompare(b.departureDate ?? "") ||
-      a.departureId.localeCompare(b.departureId),
-  )
+  for (const [currency, res] of residual) {
+    const rate = rates.get(currency)
+    if (rate == null) continue
+    out.revenue += res.revenue * rate
+    out.actual += res.actual * rate
+    out.planned += res.planned * rate
+  }
   return out
 }
 
-function rollupProductRowsToBase(
-  rows: ProductProfitabilityRow[],
-  rates: Map<string, number>,
-  base: string,
-): ProductProfitabilityRow[] {
-  const acc = new Map<
-    string,
-    {
-      template: ProductProfitabilityRow
-      revenue: number
-      actual: number
-      planned: number
-      departureCount: number
-    }
-  >()
-  for (const row of rows) {
-    const rate = rates.get(row.currency)
-    if (rate == null) continue
-    let entry = acc.get(row.productId)
-    if (!entry) {
-      entry = { template: row, revenue: 0, actual: 0, planned: 0, departureCount: 0 }
-      acc.set(row.productId, entry)
-    }
-    entry.revenue += row.revenueCents * rate
-    entry.actual += row.actualCostCents * rate
-    entry.planned += row.plannedCostCents * rate
-    // Approximate: a departure usually trades in a single currency, so the
-    // largest per-currency count is the best distinct-count proxy.
-    entry.departureCount = Math.max(entry.departureCount, row.departureCount)
-  }
-  const out = [...acc.values()].map(({ template, revenue, actual, planned, departureCount }) => {
-    const revenueCents = Math.round(revenue)
-    const actualCostCents = Math.round(actual)
-    const plannedCostCents = Math.round(planned)
-    const profitCents = revenueCents - actualCostCents
-    return {
-      ...template,
-      currency: base,
-      departureCount,
-      revenueCents,
-      actualCostCents,
-      plannedCostCents,
-      profitCents,
-      marginPercent: margin(profitCents, revenueCents),
-      varianceCents: plannedCostCents - actualCostCents,
-    }
-  })
-  out.sort((a, b) => a.productId.localeCompare(b.productId))
-  return out
-}
-
-function rollupCostByServiceTypeToBase(
-  rows: ProfitabilityCostByServiceType[],
+/** Resolve the cost-by-category breakdown into the accounting base currency. */
+function baseCostByServiceType(
+  splits: Map<string, BaseSplit>,
   rates: Map<string, number>,
   base: string,
 ): ProfitabilityCostByServiceType[] {
-  const byType = new Map<string, number>()
-  for (const row of rows) {
-    const rate = rates.get(row.currency)
-    if (rate == null) continue
-    byType.set(
-      row.serviceType,
-      (byType.get(row.serviceType) ?? 0) + Math.round(row.amountCents * rate),
-    )
+  const out: ProfitabilityCostByServiceType[] = []
+  for (const [serviceType, split] of splits) {
+    const amountCents = Math.round(resolveBaseSplit(split, rates, new Set()))
+    if (amountCents !== 0) out.push({ serviceType, currency: base, amountCents })
   }
-  return [...byType.entries()]
-    .map(([serviceType, amountCents]) => ({ serviceType, currency: base, amountCents }))
-    .filter((row) => row.amountCents !== 0)
-}
-
-function rollupAmountToBase(
-  rows: Array<{ currency: string; amountCents: number }>,
-  rates: Map<string, number>,
-): number {
-  let total = 0
-  for (const row of rows) {
-    const rate = rates.get(row.currency)
-    if (rate == null) continue
-    total += Math.round(row.amountCents * rate)
-  }
-  return total
+  return out
 }
 
 // ---------- CSV export (accountant sharing) ----------

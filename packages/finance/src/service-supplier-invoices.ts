@@ -8,6 +8,8 @@ import { products } from "@voyantjs/products/schema"
 import { type AnyColumn, and, asc, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
+import { type FxMoneyInput, resolveFxMoneyBaseAmount } from "./fx-money.js"
+import { type InvoiceFxOptions, resolveInvoiceFxSettingsOrDefault } from "./invoice-fx.js"
 import {
   supplierCostAllocations,
   supplierInvoiceAttachments,
@@ -61,9 +63,91 @@ export class SupplierInvoiceServiceError extends Error {
   }
 }
 
-export interface SupplierInvoiceServiceRuntime {
+export interface SupplierInvoiceServiceRuntime extends InvoiceFxOptions {
   actionLedgerContext?: ActionLedgerRequestContextValues
   actionLedgerAuthorizationSource?: string | null
+}
+
+interface SupplierInvoiceFxSnapshot {
+  baseCurrency: string | null
+  fxRateSetId: string | null
+  baseSubtotalCents: number | null
+  baseTaxCents: number | null
+  baseTotalCents: number | null
+}
+
+const NO_FX_SNAPSHOT: SupplierInvoiceFxSnapshot = {
+  baseCurrency: null,
+  fxRateSetId: null,
+  baseSubtotalCents: null,
+  baseTaxCents: null,
+  baseTotalCents: null,
+}
+
+function toIssueDateString(value: string | Date | null | undefined): string | undefined {
+  if (value instanceof Date) return value.toISOString().slice(0, 10)
+  return typeof value === "string" && value.length > 0 ? value : undefined
+}
+
+/**
+ * Snapshot the operator accounting-base value of a supplier invoice using the FX
+ * rate effective on its issue date (end-to-end FX §). The total is converted via
+ * the shared {@link resolveFxMoneyBaseAmount} (persisted rate as-of the issue
+ * date, then runtime resolver); subtotal/tax are pro-rated from the resolved base
+ * total so the parts always sum to the whole. When no rate resolves, every base
+ * column stays null (lazy/forward-only) rather than guessing at the latest rate.
+ */
+async function snapshotSupplierInvoiceFx(
+  db: PostgresJsDatabase,
+  input: {
+    currency: string
+    subtotalCents: number
+    taxCents: number
+    totalCents: number
+    baseCurrency?: string | null
+    fxRateSetId?: string | null
+    issueDate: string | Date
+  },
+  runtime: SupplierInvoiceServiceRuntime,
+): Promise<SupplierInvoiceFxSnapshot> {
+  // Target the operator accounting base (declared on the invoice, else the
+  // configured/default base from FX settings — "RON" by default) so AP invoices
+  // snapshot into the same base the rest of finance reports in.
+  const settings = await resolveInvoiceFxSettingsOrDefault(db, runtime)
+  const targetBaseCurrency = input.baseCurrency ?? settings.baseCurrency
+  const fxInput: FxMoneyInput = {
+    amountCents: input.totalCents,
+    currency: input.currency,
+    baseCurrency: input.baseCurrency ?? null,
+    fxRateSetId: input.fxRateSetId ?? null,
+  }
+  const resolved = await resolveFxMoneyBaseAmount(db, fxInput, {
+    ...runtime,
+    ...(targetBaseCurrency ? { targetBaseCurrency } : {}),
+    fallbackFxRateSetId: input.fxRateSetId ?? null,
+    date: toIssueDateString(input.issueDate) ?? null,
+    setBaseCurrencyWhenUnresolved: false,
+  })
+
+  const baseCurrency = resolved.baseCurrency ?? null
+  const baseTotalCents = resolved.baseAmountCents ?? null
+  // The check constraint requires base_currency whenever any base amount is set;
+  // a bare currency with no amounts (or a stray fxRateSetId) is just noise.
+  if (!baseCurrency || baseTotalCents == null) return NO_FX_SNAPSHOT
+
+  const baseSubtotalCents =
+    input.totalCents > 0
+      ? Math.round((baseTotalCents * input.subtotalCents) / input.totalCents)
+      : baseTotalCents
+  const baseTaxCents = baseTotalCents - baseSubtotalCents
+
+  return {
+    baseCurrency,
+    fxRateSetId: resolved.fxRateSetId ?? null,
+    baseSubtotalCents,
+    baseTaxCents,
+    baseTotalCents,
+  }
 }
 
 // ---------- pure helpers (unit-testable, no DB) ----------
@@ -242,7 +326,19 @@ export async function recomputeSupplierInvoiceBalance(
 
 // ---------- internal mappers ----------
 
-function allocationValues(supplierInvoiceId: string, a: SupplierCostAllocationInput) {
+/**
+ * Map an allocation input to a DB row. `baseRate` (= invoice base total / invoice
+ * total, snapshotted at the issue-date rate) converts each allocation's amount to
+ * the accounting base so the per-departure rollup can sum recorded base amounts
+ * without re-running FX. Null `baseRate` leaves base null (no resolvable rate).
+ */
+function allocationValues(
+  supplierInvoiceId: string,
+  a: SupplierCostAllocationInput,
+  baseRate: number | null = null,
+) {
+  const baseAmountCents =
+    baseRate != null ? Math.round(a.amountCents * baseRate) : (a.baseAmountCents ?? null)
   return {
     supplierInvoiceId,
     supplierInvoiceLineId: a.supplierInvoiceLineId ?? null,
@@ -253,9 +349,18 @@ function allocationValues(supplierInvoiceId: string, a: SupplierCostAllocationIn
     bookingItemId: a.bookingItemId ?? null,
     travelerId: a.travelerId ?? null,
     amountCents: a.amountCents,
-    baseAmountCents: a.baseAmountCents ?? null,
+    baseAmountCents,
     splitMethod: a.splitMethod ?? "manual",
   }
+}
+
+/** Base-conversion rate snapshotted on an invoice: base total ÷ original total. */
+function invoiceBaseRate(invoice: {
+  totalCents: number
+  baseTotalCents: number | null
+}): number | null {
+  if (invoice.baseTotalCents == null || invoice.totalCents === 0) return null
+  return invoice.baseTotalCents / invoice.totalCents
 }
 
 function lineValues(supplierInvoiceId: string, line: SupplierInvoiceLineInput, index: number) {
@@ -457,6 +562,24 @@ export const supplierInvoicesService = {
     })
     if (!check.ok) throw new SupplierInvoiceServiceError(check.code, check.message)
 
+    const fx = await snapshotSupplierInvoiceFx(
+      db,
+      {
+        currency: input.currency,
+        subtotalCents: totals.subtotalCents,
+        taxCents: totals.taxCents,
+        totalCents: totals.totalCents,
+        baseCurrency: input.baseCurrency ?? null,
+        fxRateSetId: input.fxRateSetId ?? null,
+        issueDate: input.issueDate,
+      },
+      runtime,
+    )
+    const baseRate = invoiceBaseRate({
+      totalCents: totals.totalCents,
+      baseTotalCents: fx.baseTotalCents,
+    })
+
     const created = await db.transaction(async (tx) => {
       const [invoice] = await tx
         .insert(supplierInvoices)
@@ -466,11 +589,14 @@ export const supplierInvoicesService = {
           internalRef: input.internalRef ?? null,
           status: input.status ?? "draft",
           currency: input.currency,
-          baseCurrency: input.baseCurrency ?? null,
-          fxRateSetId: input.fxRateSetId ?? null,
+          baseCurrency: fx.baseCurrency,
+          fxRateSetId: fx.fxRateSetId,
           subtotalCents: totals.subtotalCents,
           taxCents: totals.taxCents,
           totalCents: totals.totalCents,
+          baseSubtotalCents: fx.baseSubtotalCents,
+          baseTaxCents: fx.baseTaxCents,
+          baseTotalCents: fx.baseTotalCents,
           paidCents: 0,
           balanceDueCents: totals.totalCents,
           taxRegimeId: input.taxRegimeId ?? null,
@@ -492,7 +618,7 @@ export const supplierInvoicesService = {
       if (allocations.length) {
         await tx
           .insert(supplierCostAllocations)
-          .values(allocations.map((a) => allocationValues(invoice.id, a)))
+          .values(allocations.map((a) => allocationValues(invoice.id, a, baseRate)))
       }
 
       if (runtime.actionLedgerContext) {
@@ -541,6 +667,46 @@ export const supplierInvoicesService = {
       set.totalCents = input.totalCents
       if (input.subtotalCents !== undefined) set.subtotalCents = input.subtotalCents
       if (input.taxCents !== undefined) set.taxCents = input.taxCents
+    }
+
+    // Re-snapshot base amounts when any FX-affecting field changes (currency,
+    // declared base/rate-set, issue date, or totals). Uses the merged row so a
+    // partial edit still resolves the correct issue-date rate.
+    const fxAffected =
+      input.currency !== undefined ||
+      input.baseCurrency !== undefined ||
+      input.fxRateSetId !== undefined ||
+      input.issueDate !== undefined ||
+      input.totalCents !== undefined ||
+      input.subtotalCents !== undefined ||
+      input.taxCents !== undefined
+    if (fxAffected) {
+      const [current] = await db
+        .select()
+        .from(supplierInvoices)
+        .where(eq(supplierInvoices.id, id))
+        .limit(1)
+      if (current) {
+        const totalCents = input.totalCents ?? current.totalCents
+        const fx = await snapshotSupplierInvoiceFx(
+          db,
+          {
+            currency: input.currency ?? current.currency,
+            subtotalCents: input.subtotalCents ?? current.subtotalCents,
+            taxCents: input.taxCents ?? current.taxCents,
+            totalCents,
+            baseCurrency: input.baseCurrency ?? current.baseCurrency,
+            fxRateSetId: input.fxRateSetId ?? current.fxRateSetId,
+            issueDate: input.issueDate ?? current.issueDate,
+          },
+          runtime,
+        )
+        set.baseCurrency = fx.baseCurrency
+        set.fxRateSetId = fx.fxRateSetId
+        set.baseSubtotalCents = fx.baseSubtotalCents
+        set.baseTaxCents = fx.baseTaxCents
+        set.baseTotalCents = fx.baseTotalCents
+      }
     }
 
     const runUpdate = (writer: PostgresJsDatabase) =>
@@ -606,12 +772,31 @@ export const supplierInvoicesService = {
           .insert(supplierInvoiceLines)
           .values(input.lines.map((line, index) => lineValues(id, line, index)))
       }
+      // Totals changed → re-snapshot the base value at the invoice's issue date.
+      const fx = await snapshotSupplierInvoiceFx(
+        db,
+        {
+          currency: invoice.currency,
+          subtotalCents: totals.subtotalCents,
+          taxCents: totals.taxCents,
+          totalCents: totals.totalCents,
+          baseCurrency: invoice.baseCurrency,
+          fxRateSetId: invoice.fxRateSetId,
+          issueDate: invoice.issueDate,
+        },
+        runtime,
+      )
       const [next] = await tx
         .update(supplierInvoices)
         .set({
           subtotalCents: totals.subtotalCents,
           taxCents: totals.taxCents,
           totalCents: totals.totalCents,
+          baseCurrency: fx.baseCurrency,
+          fxRateSetId: fx.fxRateSetId,
+          baseSubtotalCents: fx.baseSubtotalCents,
+          baseTaxCents: fx.baseTaxCents,
+          baseTotalCents: fx.baseTotalCents,
           balanceDueCents: totals.totalCents - invoice.paidCents,
           updatedAt: new Date(),
         })
@@ -670,9 +855,10 @@ export const supplierInvoicesService = {
         .delete(supplierCostAllocations)
         .where(eq(supplierCostAllocations.supplierInvoiceId, id))
       if (input.allocations.length) {
+        const baseRate = invoiceBaseRate(invoice)
         await tx
           .insert(supplierCostAllocations)
-          .values(input.allocations.map((a) => allocationValues(id, a)))
+          .values(input.allocations.map((a) => allocationValues(id, a, baseRate)))
       }
 
       if (runtime.actionLedgerContext) {

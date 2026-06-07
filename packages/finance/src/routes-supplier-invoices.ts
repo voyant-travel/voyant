@@ -33,11 +33,26 @@ function handleSupplierInvoiceError(c: Context<Env>, error: unknown) {
   throw error
 }
 
-/** Action-ledger runtime for the AP (supplier-invoice) service. */
+/**
+ * Action-ledger + FX runtime for the AP (supplier-invoice) service. The FX
+ * options (settings + exchange-rate resolver) let create/update/setLines snapshot
+ * each invoice's accounting-base value at the rate effective on its issue date.
+ */
 function apRuntime(c: Context<Env>) {
+  const fx = getFinanceRouteRuntime(c)
   return {
     actionLedgerContext: getActionLedgerRequestContext(c),
     actionLedgerAuthorizationSource: "finance.supplier_invoice.route" as const,
+    ...(fx?.invoiceFxSettings !== undefined ? { invoiceFxSettings: fx.invoiceFxSettings } : {}),
+    ...(fx?.resolveInvoiceFxSettings
+      ? { resolveInvoiceFxSettings: fx.resolveInvoiceFxSettings }
+      : {}),
+    ...(fx?.resolveInvoiceExchangeRate
+      ? { resolveInvoiceExchangeRate: fx.resolveInvoiceExchangeRate }
+      : {}),
+    ...(fx?.onInvoiceFxResolutionError
+      ? { onInvoiceFxResolutionError: fx.onInvoiceFxResolutionError }
+      : {}),
   }
 }
 

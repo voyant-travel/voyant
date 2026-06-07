@@ -383,9 +383,11 @@ describe.skipIf(!DB_AVAILABLE)("profitability read model", () => {
     expect(onlyRon.rows.length).toBeGreaterThan(0)
   })
 
-  it("rolls up to a base currency via persisted FX rates", async () => {
+  it("rolls up into the accounting base (RON), converting legacy residuals at the fallback rate", async () => {
     await seedBaseScenario()
-    // 1 RON = 0.2 EUR (fx_rate_sets lives in @voyantjs/markets; seed via raw SQL)
+    // 1 RON = 0.2 EUR, so EUR→RON = 5. fx_rate_sets lives in @voyantjs/markets
+    // (seed via raw SQL). The scenario's supplier costs were created BEFORE this
+    // rate existed, so EUR rows have no base snapshot → they take the fallback.
     await db.execute(
       sql`insert into fx_rate_sets (id, base_currency, effective_at) values ('fxrs_test', 'EUR', now())`,
     )
@@ -397,34 +399,94 @@ describe.skipIf(!DB_AVAILABLE)("profitability read model", () => {
       createdAt: new Date("2026-06-01T00:00:00Z"),
     })
 
-    const report = await financeService.getDepartureProfitability(db, { baseCurrency: "EUR" })
-    expect(report.base?.currency).toBe("EUR")
+    // No base currency is passed — the rollup is always the operator accounting
+    // base (default RON). RON costs were snapshotted at create (rate 1); EUR rows
+    // are residual and convert at EUR→RON = 5.
+    const report = await financeService.getDepartureProfitability(db, {})
+    expect(report.base?.currency).toBe("RON")
     expect(report.base?.unconvertibleCurrencies).toEqual([])
 
-    // D1 actual = 70000 EUR + (20000 RON × 0.2 = 4000 EUR) = 74000 EUR.
+    // D1 actual = 20000 RON (snapshot) + 70000 EUR × 5 = 370000 RON.
     const d1 = report.base?.rows.find((r) => r.departureId === "avsl_d1")
     expect(d1).toMatchObject({
-      currency: "EUR",
-      revenueCents: 150000,
-      actualCostCents: 74000,
-      plannedCostCents: 90000,
-      profitCents: 76000,
-      varianceCents: 16000,
+      currency: "RON",
+      revenueCents: 750000, // 150000 EUR × 5
+      actualCostCents: 370000, // 20000 RON + 70000 EUR × 5
+      plannedCostCents: 450000, // 90000 EUR × 5
+      profitCents: 380000,
+      varianceCents: 80000,
     })
 
     expect(report.base?.costByServiceType).toContainEqual({
       serviceType: "Transport",
-      currency: "EUR",
-      amountCents: 74000, // 70000 EUR + 4000 (RON→EUR)
+      currency: "RON",
+      amountCents: 370000, // 20000 RON snapshot + 70000 EUR × 5
     })
-    expect(report.base?.unattributedCents).toBe(5000)
+    expect(report.base?.unattributedCents).toBe(25000) // 5000 EUR × 5
   })
 
-  it("flags unconvertible currencies when no FX rate exists", async () => {
+  it("flags unconvertible currencies but still counts base snapshots", async () => {
     await seedBaseScenario()
-    const report = await financeService.getDepartureProfitability(db, { baseCurrency: "USD" })
-    expect(report.base?.unconvertibleCurrencies.sort()).toEqual(["EUR", "RON"])
-    expect(report.base?.rows).toHaveLength(0)
+    // No EUR→RON rate anywhere → EUR residuals are unconvertible and dropped, but
+    // the RON supplier cost was snapshotted at create and still counts.
+    const report = await financeService.getDepartureProfitability(db, {})
+    expect(report.base?.currency).toBe("RON")
+    expect(report.base?.unconvertibleCurrencies.sort()).toEqual(["EUR"])
+
+    const d1 = report.base?.rows.find((r) => r.departureId === "avsl_d1")
+    expect(d1?.actualCostCents).toBe(20000) // RON snapshot survives
+    expect(d1?.revenueCents).toBe(0) // EUR revenue dropped (no rate)
+  })
+
+  it("snapshots AP base at the issue-date rate, immune to later rate changes", async () => {
+    // Rate effective on the issue date: EUR→RON = 5.
+    await db.execute(
+      sql`insert into fx_rate_sets (id, base_currency, effective_at) values ('fxrs_issue', 'RON', now())`,
+    )
+    await db.insert(exchangeRatesRef).values({
+      fxRateSetId: "fxrs_issue",
+      baseCurrency: "EUR",
+      quoteCurrency: "RON",
+      rateDecimal: "5",
+      observedAt: new Date("2026-06-01T00:00:00Z"),
+      createdAt: new Date("2026-06-01T00:00:00Z"),
+    })
+
+    // Create a EUR supplier cost on the issue date → snapshots base at rate 5.
+    await seedSupplierCost(db, {
+      currency: "EUR",
+      serviceType: "transport",
+      amountCents: 100000,
+      target: { targetType: "departure", departureId: "avsl_fx" },
+    })
+
+    const created = await supplierInvoicesService.list(db, {
+      sortBy: "issueDate",
+      sortDir: "desc",
+      limit: 50,
+      offset: 0,
+    })
+    const invoice = created.data[0]
+    expect(invoice?.baseCurrency).toBe("RON")
+    expect(invoice?.baseTotalCents).toBe(500000) // 100000 EUR × 5
+
+    // A LATER, different rate must not change the recorded snapshot.
+    await db.execute(
+      sql`insert into fx_rate_sets (id, base_currency, effective_at) values ('fxrs_late', 'RON', now())`,
+    )
+    await db.insert(exchangeRatesRef).values({
+      fxRateSetId: "fxrs_late",
+      baseCurrency: "EUR",
+      quoteCurrency: "RON",
+      rateDecimal: "10",
+      observedAt: new Date("2026-09-01T00:00:00Z"),
+      createdAt: new Date("2026-09-01T00:00:00Z"),
+    })
+
+    const report = await financeService.getDepartureProfitability(db, {})
+    const row = report.base?.rows.find((r) => r.departureId === "avsl_fx")
+    // 500000 (issue-date snapshot), NOT 1,000,000 (latest rate).
+    expect(row?.actualCostCents).toBe(500000)
   })
 
   it("splits a departure's revenue and cost across its travellers (equal)", async () => {

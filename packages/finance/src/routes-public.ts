@@ -8,6 +8,7 @@ import type { Context, MiddlewareHandler } from "hono"
 import { Hono } from "hono"
 
 import { resolveStoredDocumentDownload } from "./document-download.js"
+import { getFinanceRouteRuntime } from "./routes.js"
 import { type Env, getRuntimeEnv, notFound } from "./routes-shared.js"
 import { financeService } from "./service.js"
 import { accountantSharesService, buildAccountantInvoicesCsv } from "./service-accountant-shares.js"
@@ -243,17 +244,17 @@ export function createPublicFinanceRoutes(options: PublicFinanceRouteOptions = {
           ip: getClientIp(c.req.raw.headers),
           userAgent: c.req.header("user-agent") ?? null,
         })
-        // The viewer may pick a base currency to aggregate across currencies via
-        // FX; falls back to the share's configured base. No extra data exposure —
-        // just converts already-in-scope figures.
+        // The base-currency rollup is always computed in the operator accounting
+        // base (snapshotted at each invoice's issue-date rate) — no viewer-chosen
+        // base, no re-valuation at the latest rate.
         const query = {
           from: scope.from ?? undefined,
           to: scope.to ?? undefined,
-          baseCurrency: c.req.query("baseCurrency") || scope.baseCurrency || undefined,
         }
+        const fx = getFinanceRouteRuntime(c)
         const [departures, products] = await Promise.all([
-          financeService.getDepartureProfitability(c.get("db"), query),
-          financeService.getProductProfitability(c.get("db"), query),
+          financeService.getDepartureProfitability(c.get("db"), query, fx),
+          financeService.getProductProfitability(c.get("db"), query, fx),
         ])
         return c.json({ data: { scope, departures, products } })
       })
@@ -344,14 +345,14 @@ export function createPublicFinanceRoutes(options: PublicFinanceRouteOptions = {
         const query = {
           from: resolution.scope.from ?? undefined,
           to: resolution.scope.to ?? undefined,
-          baseCurrency: resolution.scope.baseCurrency ?? undefined,
         }
+        const fx = getFinanceRouteRuntime(c)
         if (report === "departures") {
-          const data = await financeService.getDepartureProfitability(c.get("db"), query)
+          const data = await financeService.getDepartureProfitability(c.get("db"), query, fx)
           return csvResponse(buildDepartureProfitabilityCsv(data), "departure-profitability.csv")
         }
         if (report === "products") {
-          const data = await financeService.getProductProfitability(c.get("db"), query)
+          const data = await financeService.getProductProfitability(c.get("db"), query, fx)
           return csvResponse(buildProductProfitabilityCsv(data), "product-profitability.csv")
         }
         if (report === "invoices") {
