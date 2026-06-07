@@ -48,6 +48,7 @@ import {
   allPaymentsListResponse,
   bookingGuaranteesResponse,
   bookingPaymentSchedulesResponse,
+  costCategoriesResponse,
   departureProfitabilityResponse,
   invoiceAttachmentsResponse,
   invoiceCreditNotesResponse,
@@ -684,6 +685,21 @@ export function getTravelerProfitabilityQueryOptions(
         client,
       )
     },
+  })
+}
+
+export function getCostCategoriesQueryOptions(
+  client: FetchWithValidationOptions,
+  options: { includeArchived?: boolean } = {},
+) {
+  return queryOptions({
+    queryKey: financeQueryKeys.costCategories(),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/admin/finance/cost-categories${options.includeArchived ? "?includeArchived=true" : ""}`,
+        costCategoriesResponse,
+        client,
+      ),
   })
 }
 

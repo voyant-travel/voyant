@@ -160,6 +160,11 @@ export function createOperatorAdminNavigation({
           title: messages.profitability,
           url: "/finance/profitability",
         },
+        {
+          id: "cost-categories",
+          title: messages.costCategories,
+          url: "/finance/cost-categories",
+        },
       ],
     },
     {

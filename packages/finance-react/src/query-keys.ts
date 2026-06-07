@@ -216,6 +216,7 @@ export const financeQueryKeys = {
     [...financeQueryKeys.all, "profitability", "products", filters] as const,
   travelerProfitability: (filters: FinanceTravelerProfitabilityFilters) =>
     [...financeQueryKeys.all, "profitability", "travelers", filters] as const,
+  costCategories: () => [...financeQueryKeys.all, "cost-categories"] as const,
   accountantShares: () => [...financeQueryKeys.all, "accountant-shares"] as const,
   accountantSummary: (token: string) =>
     [...financeQueryKeys.all, "accountant-portal", token, "summary"] as const,

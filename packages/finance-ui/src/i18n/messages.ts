@@ -387,6 +387,8 @@ export type FinanceUiMessages = {
       editTitle: string
       description: string
       serviceType: string
+      costCategory: string
+      costCategoryNone: string
       quantity: string
       unitAmount: string
       taxAmount: string
@@ -987,5 +989,17 @@ export type FinanceUiMessages = {
         attachments: string
       }
     }
+  }
+  costCategories: {
+    title: string
+    description: string
+    add: string
+    adding: string
+    namePlaceholder: string
+    empty: string
+    archive: string
+    restore: string
+    archivedBadge: string
+    showArchived: string
   }
 }

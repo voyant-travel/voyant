@@ -245,6 +245,8 @@ export const financeUiRo = {
       editTitle: "Editeaza linia",
       description: "Descriere",
       serviceType: "Serviciu",
+      costCategory: "Categorie cost",
+      costCategoryNone: "Fara categorie",
       quantity: "Cantitate",
       unitAmount: "Suma unitara",
       taxAmount: "Suma TVA",
@@ -894,7 +896,7 @@ export const financeUiRo = {
     },
     charts: {
       departurePnl: "P&L pe plecare",
-      costByServiceType: "Cost pe tip de serviciu",
+      costByServiceType: "Cost pe categorie",
       revenue: "Venituri",
       actualCost: "Cost real",
       profit: "Profit",
@@ -996,5 +998,18 @@ export const financeUiRo = {
         attachments: "Documente",
       },
     },
+  },
+  costCategories: {
+    title: "Categorii de cost",
+    description:
+      "Clasifica costurile de la furnizori. Acestea genereaza defalcarea costurilor in profitabilitate.",
+    add: "Adauga categorie",
+    adding: "Se adauga…",
+    namePlaceholder: "Nume categorie",
+    empty: "Nicio categorie de cost inca.",
+    archive: "Arhiveaza",
+    restore: "Restaureaza",
+    archivedBadge: "Arhivata",
+    showArchived: "Arata arhivate",
   },
 } satisfies FinanceUiMessages

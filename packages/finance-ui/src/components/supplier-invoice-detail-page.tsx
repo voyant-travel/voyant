@@ -5,6 +5,7 @@ import {
   type SupplierInvoiceLineInput,
   type SupplierInvoiceLineRecord,
   type SupplierInvoiceStatus,
+  useCostCategories,
   useSupplierInvoice,
   useSupplierInvoiceAttachments,
   useSupplierInvoiceMutation,
@@ -91,16 +92,7 @@ type TargetType = (typeof TARGET_TYPES)[number]
  */
 const SEARCHABLE_TARGETS = new Set<TargetType>(["departure", "product", "booking"])
 
-const SERVICE_TYPES: ApServiceType[] = [
-  "transport",
-  "flight",
-  "accommodation",
-  "guide",
-  "meal",
-  "experience",
-  "insurance",
-  "other",
-]
+const LINE_CATEGORY_NONE = "__none__"
 
 const PAYMENT_METHODS = ["bank_transfer", "credit_card", "cash", "cheque", "other"] as const
 
@@ -211,6 +203,8 @@ export function SupplierInvoiceDetailPage({
   const { data, isPending, isError } = useSupplierInvoice(id)
   const paymentsQuery = useSupplierInvoicePayments(id)
   const attachmentsQuery = useSupplierInvoiceAttachments(id)
+  const costCategories = useCostCategories().data?.data ?? []
+  const categoryNameById = new Map(costCategories.map((c) => [c.id, c.name]))
   const { setAllocations, setLines, recordPayment, remove, addAttachment, removeAttachment } =
     useSupplierInvoiceMutation()
   const [uploading, setUploading] = useState(false)
@@ -362,7 +356,8 @@ export function SupplierInvoiceDetailPage({
                   <TableRow key={line.id}>
                     <TableCell>{line.description}</TableCell>
                     <TableCell className="text-muted-foreground">
-                      {t.lineForm.serviceTypeLabels[line.serviceType]}
+                      {(line.costCategoryId && categoryNameById.get(line.costCategoryId)) ??
+                        t.lineForm.serviceTypeLabels[line.serviceType]}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{line.quantity}</TableCell>
                     <TableCell className="text-right tabular-nums">
@@ -695,8 +690,10 @@ function LineDialog({
   onSubmit: (input: SupplierInvoiceLineInput) => void
 }) {
   const t = useFinanceUiMessagesOrDefault().supplierInvoiceDetail.lineForm
+  const categories = useCostCategories().data?.data ?? []
   const [description, setDescription] = useState("")
   const [serviceType, setServiceType] = useState<ApServiceType>("other")
+  const [costCategoryId, setCostCategoryId] = useState<string>("")
   const [quantity, setQuantity] = useState("1")
   const [unit, setUnit] = useState("")
   const [tax, setTax] = useState("")
@@ -709,6 +706,7 @@ function LineDialog({
     setSeeded(seedKey)
     setDescription(line?.description ?? "")
     setServiceType(line?.serviceType ?? "other")
+    setCostCategoryId(line?.costCategoryId ?? "")
     setQuantity(String(line?.quantity ?? 1))
     setUnit(line ? (line.unitAmountCents / 100).toFixed(2) : "")
     setTax(line ? (line.taxAmountCents / 100).toFixed(2) : "")
@@ -720,6 +718,7 @@ function LineDialog({
     onSubmit({
       description: description.trim(),
       serviceType,
+      costCategoryId: costCategoryId || null,
       quantity: Math.max(1, Number.parseInt(quantity, 10) || 1),
       unitAmountCents: toCents(unit),
       taxAmountCents: toCents(tax),
@@ -739,18 +738,19 @@ function LineDialog({
             <Input value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
           <div className="flex flex-col gap-2">
-            <Label>{t.serviceType}</Label>
+            <Label>{t.costCategory}</Label>
             <Select
-              value={serviceType}
-              onValueChange={(v) => setServiceType((v as ApServiceType) ?? "other")}
+              value={costCategoryId || LINE_CATEGORY_NONE}
+              onValueChange={(v) => setCostCategoryId(v === LINE_CATEGORY_NONE ? "" : (v ?? ""))}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {SERVICE_TYPES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {t.serviceTypeLabels[s]}
+                <SelectItem value={LINE_CATEGORY_NONE}>{t.costCategoryNone}</SelectItem>
+                {categories.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
                   </SelectItem>
                 ))}
               </SelectContent>

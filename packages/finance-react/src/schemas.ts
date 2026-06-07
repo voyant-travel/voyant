@@ -392,6 +392,7 @@ export const supplierInvoiceLineRecordSchema = z.object({
   supplierInvoiceId: z.string(),
   description: z.string(),
   serviceType: apServiceTypeSchema,
+  costCategoryId: z.string().nullable().optional(),
   supplierServiceId: z.string().nullable(),
   quantity: z.number().int(),
   unitAmountCents: z.number().int(),
@@ -629,6 +630,21 @@ export const accountantSummarySchema = z.object({
   products: productProfitabilityReportSchema,
 })
 export type AccountantSummary = z.infer<typeof accountantSummarySchema>
+
+// ---------- cost categories ----------
+
+export const costCategoryRecordSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  sortOrder: z.number().int(),
+  archived: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+export type CostCategoryRecord = z.infer<typeof costCategoryRecordSchema>
+
+export const costCategoriesResponse = arrayEnvelope(costCategoryRecordSchema)
+export const costCategorySingleResponse = singleEnvelope(costCategoryRecordSchema)
 
 export const accountantSharesResponse = arrayEnvelope(accountantShareRecordSchema)
 export const accountantShareCreatedResponse = singleEnvelope(accountantShareCreatedSchema)

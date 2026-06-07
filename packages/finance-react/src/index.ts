@@ -60,6 +60,7 @@ export {
   getAllPaymentsQueryOptions,
   getBookingGuaranteesQueryOptions,
   getBookingPaymentSchedulesQueryOptions,
+  getCostCategoriesQueryOptions,
   getDepartureProfitabilityQueryOptions,
   getInvoiceActionLedgerQueryOptions,
   getInvoiceAttachmentsQueryOptions,

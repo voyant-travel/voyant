@@ -15,6 +15,7 @@ import {
 export interface SupplierInvoiceLineInput {
   description: string
   serviceType?: ApServiceType
+  costCategoryId?: string | null
   supplierServiceId?: string | null
   quantity?: number
   unitAmountCents: number

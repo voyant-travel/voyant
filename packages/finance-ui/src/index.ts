@@ -16,6 +16,10 @@ export {
   type InvoiceTypeChoice,
 } from "./components/booking-invoice-dialog.js"
 export {
+  CostCategoriesPage,
+  type CostCategoriesPageProps,
+} from "./components/cost-categories-page.js"
+export {
   actionLedgerRiskVariant,
   actionLedgerStatusVariant,
   InvoiceActionLedgerCard,

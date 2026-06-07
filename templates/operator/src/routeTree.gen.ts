@@ -65,6 +65,7 @@ import { Route as WorkspaceNotificationsReminderRunsRouteImport } from './routes
 import { Route as WorkspaceNotificationsPreviewRouteImport } from './routes/_workspace/notifications/preview'
 import { Route as WorkspaceNotificationsDeliveriesRouteImport } from './routes/_workspace/notifications/deliveries'
 import { Route as WorkspaceFinanceProfitabilityRouteImport } from './routes/_workspace/finance/profitability'
+import { Route as WorkspaceFinanceCostCategoriesRouteImport } from './routes/_workspace/finance/cost-categories'
 import { Route as WorkspaceBookingsComposeRouteImport } from './routes/_workspace/bookings_.compose'
 import { Route as WorkspaceBookingsIdRouteImport } from './routes/_workspace/bookings/$id'
 import { Route as WorkspaceAvailabilityIdRouteImport } from './routes/_workspace/availability/$id'
@@ -395,6 +396,12 @@ const WorkspaceFinanceProfitabilityRoute =
     path: '/finance/profitability',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const WorkspaceFinanceCostCategoriesRoute =
+  WorkspaceFinanceCostCategoriesRouteImport.update({
+    id: '/finance/cost-categories',
+    path: '/finance/cost-categories',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 const WorkspaceBookingsComposeRoute =
   WorkspaceBookingsComposeRouteImport.update({
     id: '/bookings_/compose',
@@ -614,6 +621,7 @@ export interface FileRoutesByFullPath {
   '/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/bookings/compose': typeof WorkspaceBookingsComposeRoute
+  '/finance/cost-categories': typeof WorkspaceFinanceCostCategoriesRoute
   '/finance/profitability': typeof WorkspaceFinanceProfitabilityRoute
   '/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
   '/notifications/preview': typeof WorkspaceNotificationsPreviewRoute
@@ -701,6 +709,7 @@ export interface FileRoutesByTo {
   '/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/bookings/compose': typeof WorkspaceBookingsComposeRoute
+  '/finance/cost-categories': typeof WorkspaceFinanceCostCategoriesRoute
   '/finance/profitability': typeof WorkspaceFinanceProfitabilityRoute
   '/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
   '/notifications/preview': typeof WorkspaceNotificationsPreviewRoute
@@ -793,6 +802,7 @@ export interface FileRoutesById {
   '/_workspace/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/_workspace/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/_workspace/bookings_/compose': typeof WorkspaceBookingsComposeRoute
+  '/_workspace/finance/cost-categories': typeof WorkspaceFinanceCostCategoriesRoute
   '/_workspace/finance/profitability': typeof WorkspaceFinanceProfitabilityRoute
   '/_workspace/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
   '/_workspace/notifications/preview': typeof WorkspaceNotificationsPreviewRoute
@@ -883,6 +893,7 @@ export interface FileRouteTypes {
     | '/availability/$id'
     | '/bookings/$id'
     | '/bookings/compose'
+    | '/finance/cost-categories'
     | '/finance/profitability'
     | '/notifications/deliveries'
     | '/notifications/preview'
@@ -970,6 +981,7 @@ export interface FileRouteTypes {
     | '/availability/$id'
     | '/bookings/$id'
     | '/bookings/compose'
+    | '/finance/cost-categories'
     | '/finance/profitability'
     | '/notifications/deliveries'
     | '/notifications/preview'
@@ -1061,6 +1073,7 @@ export interface FileRouteTypes {
     | '/_workspace/availability/$id'
     | '/_workspace/bookings/$id'
     | '/_workspace/bookings_/compose'
+    | '/_workspace/finance/cost-categories'
     | '/_workspace/finance/profitability'
     | '/_workspace/notifications/deliveries'
     | '/_workspace/notifications/preview'
@@ -1530,6 +1543,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceFinanceProfitabilityRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/finance/cost-categories': {
+      id: '/_workspace/finance/cost-categories'
+      path: '/finance/cost-categories'
+      fullPath: '/finance/cost-categories'
+      preLoaderRoute: typeof WorkspaceFinanceCostCategoriesRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/_workspace/bookings_/compose': {
       id: '/_workspace/bookings_/compose'
       path: '/bookings/compose'
@@ -1856,6 +1876,7 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceAvailabilityIdRoute: typeof WorkspaceAvailabilityIdRoute
   WorkspaceBookingsIdRoute: typeof WorkspaceBookingsIdRoute
   WorkspaceBookingsComposeRoute: typeof WorkspaceBookingsComposeRoute
+  WorkspaceFinanceCostCategoriesRoute: typeof WorkspaceFinanceCostCategoriesRoute
   WorkspaceFinanceProfitabilityRoute: typeof WorkspaceFinanceProfitabilityRoute
   WorkspaceNotificationsDeliveriesRoute: typeof WorkspaceNotificationsDeliveriesRoute
   WorkspaceNotificationsPreviewRoute: typeof WorkspaceNotificationsPreviewRoute
@@ -1919,6 +1940,7 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceAvailabilityIdRoute: WorkspaceAvailabilityIdRoute,
   WorkspaceBookingsIdRoute: WorkspaceBookingsIdRoute,
   WorkspaceBookingsComposeRoute: WorkspaceBookingsComposeRoute,
+  WorkspaceFinanceCostCategoriesRoute: WorkspaceFinanceCostCategoriesRoute,
   WorkspaceFinanceProfitabilityRoute: WorkspaceFinanceProfitabilityRoute,
   WorkspaceNotificationsDeliveriesRoute: WorkspaceNotificationsDeliveriesRoute,
   WorkspaceNotificationsPreviewRoute: WorkspaceNotificationsPreviewRoute,
