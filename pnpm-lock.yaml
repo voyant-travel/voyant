@@ -3141,7 +3141,7 @@ importers:
         specifier: workspace:^
         version: link:../action-ledger
       '@voyantjs/availability':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../availability
       '@voyantjs/bookings':
         specifier: workspace:^
