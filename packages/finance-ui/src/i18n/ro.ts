@@ -265,7 +265,7 @@ export const financeUiRo = {
       title: "Alocare costuri",
       add: "Adauga alocare",
       target: "Tinta",
-      idLabel: "id {type}",
+      reference: "Referinta",
       amountLabel: "Suma ({currency})",
       none: "Nicio alocare — costul acestei facturi este neatribuit.",
       remainder: "Rest neatribuit: {amount}",

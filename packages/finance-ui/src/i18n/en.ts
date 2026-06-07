@@ -263,7 +263,7 @@ export const financeUiEn = {
       title: "Cost allocation",
       add: "Add allocation",
       target: "Target",
-      idLabel: "{type} id",
+      reference: "Reference",
       amountLabel: "Amount ({currency})",
       none: "No allocations — this invoice's cost is unattributed.",
       remainder: "Unattributed remainder: {amount}",

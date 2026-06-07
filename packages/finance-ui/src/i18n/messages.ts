@@ -398,8 +398,8 @@ export type FinanceUiMessages = {
       title: string
       add: string
       target: string
-      /** Templated with `{type}`. */
-      idLabel: string
+      /** Header for the allocation target reference column. */
+      reference: string
       /** Templated with `{currency}`. */
       amountLabel: string
       none: string

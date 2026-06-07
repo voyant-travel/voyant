@@ -418,7 +418,7 @@ export function SupplierInvoiceDetailPage({
             <TableHeader>
               <TableRow>
                 <TableHead>{t.allocation.target}</TableHead>
-                <TableHead>{formatMessage(t.allocation.idLabel, { type: "" }).trim()}</TableHead>
+                <TableHead>{t.allocation.reference}</TableHead>
                 <TableHead className="text-right">{t.payments.amount}</TableHead>
                 <TableHead className="w-20" />
               </TableRow>
@@ -872,7 +872,7 @@ function AllocationDialog({
           </div>
           {targetType !== "unattributed" ? (
             <div className="col-span-2 flex flex-col gap-2">
-              <Label>{formatMessage(t.idLabel, { type: t.targetTypeLabels[targetType] })}</Label>
+              <Label>{t.targetTypeLabels[targetType]}</Label>
               {searchTargets && SEARCHABLE_TARGETS.has(targetType) ? (
                 <AsyncCombobox
                   value={targetId || null}
