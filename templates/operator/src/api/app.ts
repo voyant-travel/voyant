@@ -286,6 +286,9 @@ export const app = createApp<CloudflareBindings>({
     // and the bank-transfer block from a config endpoint. Both must be
     // reachable without auth — the customer arrives from an emailed link.
     "/v1/public/finance/payment-sessions",
+    // Accountant share portal — the token in the path is the bearer credential,
+    // validated server-side per request; the accountant arrives via a shared link.
+    "/v1/public/finance/accountant",
     "/v1/public/payment-link-config",
     "/v1/public/payment-link",
     // Storefront booking journey — quote / book / drafts run
