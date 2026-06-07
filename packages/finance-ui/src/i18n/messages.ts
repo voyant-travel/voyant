@@ -1,10 +1,26 @@
 import type {
+  ApServiceType,
   CreditNoteRecord,
   InvoiceNumberResetStrategy,
   InvoiceNumberSeriesScope,
   InvoiceRecord,
+  SupplierInvoiceStatus,
   SupplierPaymentRecord,
 } from "@voyantjs/finance-react"
+
+export type CostAllocationTargetType =
+  | "departure"
+  | "product"
+  | "booking"
+  | "traveler"
+  | "unattributed"
+
+export type SupplierInvoiceDetailPaymentMethod =
+  | "bank_transfer"
+  | "credit_card"
+  | "cash"
+  | "cheque"
+  | "other"
 
 export const invoiceStatuses = [
   "draft",
@@ -287,6 +303,142 @@ export type FinanceUiMessages = {
       page: string
       previous: string
       next: string
+    }
+  }
+  supplierInvoicesPage: {
+    title: string
+    description: string
+    recordInvoice: string
+    searchPlaceholder: string
+    statusAll: string
+    statusLabels: Record<SupplierInvoiceStatus, string>
+    columns: {
+      invoiceNo: string
+      supplier: string
+      status: string
+      total: string
+      balanceDue: string
+      dueDate: string
+    }
+    empty: string
+    loadFailed: string
+    noDueDate: string
+  }
+  supplierInvoiceDetail: {
+    loading: string
+    notFound: string
+    document: string
+    breadcrumbRoot: string
+    actions: {
+      edit: string
+      delete: string
+    }
+    deleteDialog: {
+      title: string
+      body: string
+      cancel: string
+      confirm: string
+    }
+    form: {
+      editTitle: string
+      supplierId: string
+      supplierInvoiceNo: string
+      status: string
+      currency: string
+      issueDate: string
+      dueDate: string
+      internalRef: string
+      notes: string
+      save: string
+      saving: string
+      /** Optional AI/OCR extraction extension point (shown only when wired). */
+      extractUpload: string
+      extracting: string
+      /** Supplier picker (shown only when a search resolver is wired). */
+      supplierSearchPlaceholder: string
+      /** Inline "create supplier" row label; `{name}` = typed query. */
+      supplierCreate: string
+    }
+    summary: {
+      subtotal: string
+      tax: string
+      total: string
+      paid: string
+      balanceDue: string
+      issueDate: string
+      dueDate: string
+      noValue: string
+    }
+    lines: {
+      title: string
+      description: string
+      service: string
+      qty: string
+      unit: string
+      tax: string
+      total: string
+      empty: string
+      add: string
+      edit: string
+      remove: string
+    }
+    lineForm: {
+      addTitle: string
+      editTitle: string
+      description: string
+      serviceType: string
+      costCategory: string
+      costCategoryNone: string
+      quantity: string
+      unitAmount: string
+      taxAmount: string
+      total: string
+      save: string
+      serviceTypeLabels: Record<ApServiceType, string>
+    }
+    allocation: {
+      title: string
+      add: string
+      target: string
+      /** Header for the allocation target reference column. */
+      reference: string
+      /** Templated with `{currency}`. */
+      amountLabel: string
+      none: string
+      /** Templated with `{amount}`. */
+      remainder: string
+      /** Templated with `{amount}`. */
+      overAllocated: string
+      save: string
+      saving: string
+      saveFailed: string
+      targetTypeLabels: Record<CostAllocationTargetType, string>
+    }
+    payments: {
+      title: string
+      date: string
+      method: string
+      status: string
+      amount: string
+      empty: string
+      /** Templated with `{currency}`. */
+      amountLabel: string
+      methodLabel: string
+      dateLabel: string
+      record: string
+      recordTitle: string
+      recording: string
+      methodLabels: Record<SupplierInvoiceDetailPaymentMethod, string>
+    }
+    attachments: {
+      title: string
+      upload: string
+      uploading: string
+      empty: string
+      name: string
+      size: string
+      download: string
+      remove: string
     }
   }
   invoiceNumberSeriesPage: {
@@ -701,5 +853,155 @@ export type FinanceUiMessages = {
       baseAmountRequired: string
       recordFailed: string
     }
+  }
+  profitability: {
+    title: string
+    description: string
+    loadFailed: string
+    empty: string
+    noDate: string
+    noProduct: string
+    exportCsv: string
+    /** Note shown in base-currency mode; `{currencies}` = comma list. */
+    unconvertibleNote: string
+    filters: {
+      currency: string
+      from: string
+      to: string
+      baseCurrency: string
+      product: string
+      departure: string
+      allProducts: string
+      allDepartures: string
+    }
+    kpis: {
+      revenue: string
+      actualCost: string
+      profit: string
+      margin: string
+      plannedCost: string
+      variance: string
+      unattributed: string
+    }
+    charts: {
+      departurePnl: string
+      costByServiceType: string
+      revenue: string
+      actualCost: string
+      profit: string
+    }
+    serviceTypeLabels: {
+      transport: string
+      flight: string
+      accommodation: string
+      guide: string
+      meal: string
+      experience: string
+      insurance: string
+      other: string
+    }
+    departures: {
+      title: string
+      none: string
+      columns: {
+        departure: string
+        date: string
+        product: string
+        revenue: string
+        actualCost: string
+        plannedCost: string
+        profit: string
+        margin: string
+        variance: string
+      }
+    }
+    products: {
+      title: string
+      none: string
+      columns: {
+        product: string
+        departures: string
+        revenue: string
+        actualCost: string
+        plannedCost: string
+        profit: string
+        margin: string
+        variance: string
+      }
+    }
+    travelers: {
+      /** Templated with `{departure}`. */
+      title: string
+      none: string
+      loadFailed: string
+      columns: {
+        traveler: string
+        booking: string
+        revenue: string
+        actualCost: string
+        plannedCost: string
+        profit: string
+        margin: string
+        variance: string
+      }
+    }
+    share: {
+      button: string
+      title: string
+      description: string
+      from: string
+      to: string
+      baseCurrency: string
+      ttlDays: string
+      create: string
+      creating: string
+      active: string
+      none: string
+      copy: string
+      copied: string
+      revoke: string
+      allTime: string
+      /** Templated with `{date}`. */
+      expires: string
+      /** Templated with `{count}`. */
+      opened: string
+      neverOpened: string
+    }
+    portal: {
+      title: string
+      subtitle: string
+      language: string
+      allTime: string
+      loadFailed: string
+      gone: string
+      invoices: string
+      invoicesNone: string
+      download: string
+      downloadAll: string
+      noFile: string
+      kindClient: string
+      kindSupplier: string
+      columns: {
+        type: string
+        invoice: string
+        status: string
+        issueDate: string
+        total: string
+        balanceDue: string
+        attachments: string
+      }
+    }
+  }
+  costCategories: {
+    title: string
+    description: string
+    add: string
+    adding: string
+    namePlaceholder: string
+    empty: string
+    archive: string
+    restore: string
+    archivedBadge: string
+    showArchived: string
   }
 }

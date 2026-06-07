@@ -1,3 +1,24 @@
+export interface FinanceDepartureProfitabilityFilters {
+  from?: string | undefined
+  to?: string | undefined
+  productId?: string | undefined
+  departureId?: string | undefined
+  currency?: string | undefined
+  baseCurrency?: string | undefined
+}
+
+export interface FinanceProductProfitabilityFilters {
+  from?: string | undefined
+  to?: string | undefined
+  currency?: string | undefined
+  baseCurrency?: string | undefined
+}
+
+export interface FinanceTravelerProfitabilityFilters {
+  departureId: string
+  currency: string
+}
+
 export type FinanceInvoiceListSortField =
   | "invoiceNumber"
   | "status"
@@ -36,6 +57,32 @@ export type FinanceInvoiceNumberSeriesScope = "invoice" | "proforma" | "credit_n
 export interface FinanceInvoiceNumberSeriesListFilters {
   scope?: FinanceInvoiceNumberSeriesScope | undefined
   active?: boolean | undefined
+  limit?: number | undefined
+  offset?: number | undefined
+}
+
+export type FinanceSupplierInvoiceListSortField =
+  | "issueDate"
+  | "dueDate"
+  | "totalCents"
+  | "balanceDueCents"
+  | "status"
+  | "createdAt"
+
+export type FinanceSupplierInvoiceListSortDir = "asc" | "desc"
+
+export interface FinanceSupplierInvoiceListFilters {
+  supplierId?: string | undefined
+  status?: string | undefined
+  currency?: string | undefined
+  dueDateFrom?: string | undefined
+  dueDateTo?: string | undefined
+  departureId?: string | undefined
+  productId?: string | undefined
+  bookingId?: string | undefined
+  search?: string | undefined
+  sortBy?: FinanceSupplierInvoiceListSortField | undefined
+  sortDir?: FinanceSupplierInvoiceListSortDir | undefined
   limit?: number | undefined
   offset?: number | undefined
 }
@@ -153,6 +200,28 @@ export const financeQueryKeys = {
     [...financeQueryKeys.invoiceNumberSeries(), "list", filters] as const,
   invoiceNumberSeriesDetail: (id: string) =>
     [...financeQueryKeys.invoiceNumberSeries(), "detail", id] as const,
+
+  supplierInvoices: () => [...financeQueryKeys.all, "supplier-invoices"] as const,
+  supplierInvoicesList: (filters: FinanceSupplierInvoiceListFilters) =>
+    [...financeQueryKeys.supplierInvoices(), "list", filters] as const,
+  supplierInvoice: (id: string) => [...financeQueryKeys.supplierInvoices(), "detail", id] as const,
+  supplierInvoicePayments: (id: string) =>
+    [...financeQueryKeys.supplierInvoice(id), "payments"] as const,
+  supplierInvoiceAttachments: (id: string) =>
+    [...financeQueryKeys.supplierInvoice(id), "attachments"] as const,
+
+  departureProfitability: (filters: FinanceDepartureProfitabilityFilters) =>
+    [...financeQueryKeys.all, "profitability", "departures", filters] as const,
+  productProfitability: (filters: FinanceProductProfitabilityFilters) =>
+    [...financeQueryKeys.all, "profitability", "products", filters] as const,
+  travelerProfitability: (filters: FinanceTravelerProfitabilityFilters) =>
+    [...financeQueryKeys.all, "profitability", "travelers", filters] as const,
+  costCategories: () => [...financeQueryKeys.all, "cost-categories"] as const,
+  accountantShares: () => [...financeQueryKeys.all, "accountant-shares"] as const,
+  accountantSummary: (token: string, baseCurrency?: string) =>
+    [...financeQueryKeys.all, "accountant-portal", token, "summary", baseCurrency ?? ""] as const,
+  accountantInvoices: (token: string) =>
+    [...financeQueryKeys.all, "accountant-portal", token, "invoices"] as const,
 
   supplierPayments: () => [...financeQueryKeys.all, "supplier-payments"] as const,
   supplierPaymentsList: (filters: FinanceSupplierPaymentListFilters) =>

@@ -194,7 +194,9 @@ export type FinanceNoteRecord = z.infer<typeof financeNoteRecordSchema>
 
 export const supplierPaymentRecordSchema = z.object({
   id: z.string(),
-  bookingId: z.string(),
+  // AP payments may settle a whole invoice with no booking (§5.4).
+  bookingId: z.string().nullable(),
+  supplierInvoiceId: z.string().nullable().optional(),
   supplierId: z.string().nullable(),
   amountCents: z.number().int(),
   currency: z.string(),
@@ -350,6 +352,313 @@ export const invoiceAttachmentRecordSchema = z.object({
 })
 
 export type InvoiceAttachmentRecord = z.infer<typeof invoiceAttachmentRecordSchema>
+
+// ---------- supplier invoices (accounts payable) ----------
+
+export const supplierInvoiceStatusSchema = z.enum([
+  "draft",
+  "received",
+  "approved",
+  "partially_paid",
+  "paid",
+  "disputed",
+  "void",
+])
+export type SupplierInvoiceStatus = z.infer<typeof supplierInvoiceStatusSchema>
+
+export const apServiceTypeSchema = z.enum([
+  "transport",
+  "flight",
+  "accommodation",
+  "guide",
+  "meal",
+  "experience",
+  "insurance",
+  "other",
+])
+export type ApServiceType = z.infer<typeof apServiceTypeSchema>
+
+export const costAllocationTargetTypeSchema = z.enum([
+  "departure",
+  "product",
+  "booking",
+  "traveler",
+  "unattributed",
+])
+export const costAllocationSplitMethodSchema = z.enum(["manual", "per_pax", "equal", "weighted"])
+
+export const supplierInvoiceLineRecordSchema = z.object({
+  id: z.string(),
+  supplierInvoiceId: z.string(),
+  description: z.string(),
+  serviceType: apServiceTypeSchema,
+  costCategoryId: z.string().nullable().optional(),
+  supplierServiceId: z.string().nullable(),
+  quantity: z.number().int(),
+  unitAmountCents: z.number().int(),
+  taxRateBps: z.number().int().nullable(),
+  taxAmountCents: z.number().int(),
+  totalAmountCents: z.number().int(),
+  sortOrder: z.number().int(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+export type SupplierInvoiceLineRecord = z.infer<typeof supplierInvoiceLineRecordSchema>
+
+export const supplierCostAllocationRecordSchema = z.object({
+  id: z.string(),
+  supplierInvoiceId: z.string(),
+  supplierInvoiceLineId: z.string().nullable(),
+  targetType: costAllocationTargetTypeSchema,
+  departureId: z.string().nullable(),
+  productId: z.string().nullable(),
+  bookingId: z.string().nullable(),
+  bookingItemId: z.string().nullable(),
+  travelerId: z.string().nullable(),
+  amountCents: z.number().int(),
+  baseAmountCents: z.number().int().nullable(),
+  splitMethod: costAllocationSplitMethodSchema,
+  /** Resolved friendly label for the target (departure date+product, product, booking no). */
+  targetLabel: z.string().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+export type SupplierCostAllocationRecord = z.infer<typeof supplierCostAllocationRecordSchema>
+
+export const supplierInvoiceRecordSchema = z.object({
+  id: z.string(),
+  supplierId: z.string(),
+  supplierInvoiceNo: z.string(),
+  internalRef: z.string().nullable(),
+  status: supplierInvoiceStatusSchema,
+  currency: z.string(),
+  baseCurrency: z.string().nullable(),
+  fxRateSetId: z.string().nullable(),
+  subtotalCents: z.number().int(),
+  taxCents: z.number().int(),
+  totalCents: z.number().int(),
+  paidCents: z.number().int(),
+  balanceDueCents: z.number().int(),
+  taxRegimeId: z.string().nullable(),
+  issueDate: z.string(),
+  dueDate: z.string().nullable(),
+  receivedAt: z.string().nullable(),
+  approvedAt: z.string().nullable(),
+  approvedBy: z.string().nullable(),
+  storageKey: z.string().nullable(),
+  extractionId: z.string().nullable(),
+  notes: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+export type SupplierInvoiceRecord = z.infer<typeof supplierInvoiceRecordSchema>
+
+export const supplierInvoiceDetailRecordSchema = supplierInvoiceRecordSchema.extend({
+  lines: z.array(supplierInvoiceLineRecordSchema),
+  allocations: z.array(supplierCostAllocationRecordSchema),
+})
+export type SupplierInvoiceDetailRecord = z.infer<typeof supplierInvoiceDetailRecordSchema>
+
+export const supplierInvoiceAttachmentRecordSchema = z.object({
+  id: z.string(),
+  supplierInvoiceId: z.string(),
+  kind: z.string(),
+  name: z.string(),
+  mimeType: z.string().nullable(),
+  fileSize: z.number().int().nullable(),
+  storageKey: z.string().nullable(),
+  checksum: z.string().nullable(),
+  createdAt: z.string(),
+})
+export type SupplierInvoiceAttachmentRecord = z.infer<typeof supplierInvoiceAttachmentRecordSchema>
+
+// ---------- profitability read model (RFC §8) ----------
+
+export const profitabilityCostByServiceTypeSchema = z.object({
+  serviceType: z.string(),
+  currency: z.string(),
+  amountCents: z.number().int(),
+})
+export type ProfitabilityCostByServiceType = z.infer<typeof profitabilityCostByServiceTypeSchema>
+
+export const profitabilityUnattributedSchema = z.object({
+  currency: z.string(),
+  amountCents: z.number().int(),
+})
+export type ProfitabilityUnattributed = z.infer<typeof profitabilityUnattributedSchema>
+
+export const departureProfitabilityRowSchema = z.object({
+  departureId: z.string(),
+  departureLabel: z.string().nullable(),
+  productId: z.string().nullable(),
+  productName: z.string().nullable(),
+  departureDate: z.string().nullable(),
+  currency: z.string(),
+  revenueCents: z.number().int(),
+  actualCostCents: z.number().int(),
+  plannedCostCents: z.number().int(),
+  profitCents: z.number().int(),
+  marginPercent: z.number().nullable(),
+  varianceCents: z.number().int(),
+})
+export type DepartureProfitabilityRow = z.infer<typeof departureProfitabilityRowSchema>
+
+export const departureProfitabilityBaseRollupSchema = z.object({
+  currency: z.string(),
+  rows: z.array(departureProfitabilityRowSchema),
+  costByServiceType: z.array(profitabilityCostByServiceTypeSchema),
+  unattributedCents: z.number().int(),
+  unconvertibleCurrencies: z.array(z.string()),
+})
+export type DepartureProfitabilityBaseRollup = z.infer<
+  typeof departureProfitabilityBaseRollupSchema
+>
+
+export const departureProfitabilityReportSchema = z.object({
+  rows: z.array(departureProfitabilityRowSchema),
+  costByServiceType: z.array(profitabilityCostByServiceTypeSchema),
+  unattributed: z.array(profitabilityUnattributedSchema),
+  base: departureProfitabilityBaseRollupSchema.optional(),
+})
+export type DepartureProfitabilityReport = z.infer<typeof departureProfitabilityReportSchema>
+
+export const productProfitabilityRowSchema = z.object({
+  productId: z.string(),
+  productName: z.string().nullable(),
+  currency: z.string(),
+  departureCount: z.number().int(),
+  revenueCents: z.number().int(),
+  actualCostCents: z.number().int(),
+  plannedCostCents: z.number().int(),
+  profitCents: z.number().int(),
+  marginPercent: z.number().nullable(),
+  varianceCents: z.number().int(),
+})
+export type ProductProfitabilityRow = z.infer<typeof productProfitabilityRowSchema>
+
+export const productProfitabilityBaseRollupSchema = z.object({
+  currency: z.string(),
+  rows: z.array(productProfitabilityRowSchema),
+  costByServiceType: z.array(profitabilityCostByServiceTypeSchema),
+  unattributedCents: z.number().int(),
+  unconvertibleCurrencies: z.array(z.string()),
+})
+export type ProductProfitabilityBaseRollup = z.infer<typeof productProfitabilityBaseRollupSchema>
+
+export const productProfitabilityReportSchema = z.object({
+  rows: z.array(productProfitabilityRowSchema),
+  costByServiceType: z.array(profitabilityCostByServiceTypeSchema),
+  unattributed: z.array(profitabilityUnattributedSchema),
+  base: productProfitabilityBaseRollupSchema.optional(),
+})
+export type ProductProfitabilityReport = z.infer<typeof productProfitabilityReportSchema>
+
+export const travelerProfitabilityRowSchema = z.object({
+  travelerId: z.string(),
+  travelerName: z.string(),
+  bookingId: z.string(),
+  currency: z.string(),
+  revenueCents: z.number().int(),
+  actualCostCents: z.number().int(),
+  plannedCostCents: z.number().int(),
+  profitCents: z.number().int(),
+  marginPercent: z.number().nullable(),
+  varianceCents: z.number().int(),
+})
+export type TravelerProfitabilityRow = z.infer<typeof travelerProfitabilityRowSchema>
+
+export const travelerProfitabilityReportSchema = z.object({
+  departureId: z.string(),
+  currency: z.string(),
+  travelerCount: z.number().int(),
+  rows: z.array(travelerProfitabilityRowSchema),
+})
+export type TravelerProfitabilityReport = z.infer<typeof travelerProfitabilityReportSchema>
+
+export const departureProfitabilityResponse = singleEnvelope(departureProfitabilityReportSchema)
+export const productProfitabilityResponse = singleEnvelope(productProfitabilityReportSchema)
+export const travelerProfitabilityResponse = singleEnvelope(travelerProfitabilityReportSchema)
+
+// ---------- accountant shares + portal (RFC §13.2) ----------
+
+export const accountantShareScopeSchema = z.object({
+  from: z.string().nullable(),
+  to: z.string().nullable(),
+  baseCurrency: z.string().nullable(),
+})
+
+export const accountantShareRecordSchema = accountantShareScopeSchema.extend({
+  id: z.string(),
+  createdAt: z.string(),
+  expiresAt: z.string(),
+  lastAccessedAt: z.string().nullable(),
+  accessCount: z.number().int(),
+})
+export type AccountantShareRecord = z.infer<typeof accountantShareRecordSchema>
+
+export const accountantShareCreatedSchema = accountantShareScopeSchema.extend({
+  id: z.string(),
+  url: z.string(),
+  expiresAt: z.string(),
+})
+export type AccountantShareCreated = z.infer<typeof accountantShareCreatedSchema>
+
+export const accountantInvoiceAttachmentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  mimeType: z.string().nullable(),
+  fileSize: z.number().int().nullable(),
+  hasFile: z.boolean(),
+})
+
+export const accountantInvoiceRecordSchema = z.object({
+  id: z.string(),
+  kind: z.enum(["client", "supplier"]),
+  invoiceNumber: z.string(),
+  status: z.string(),
+  currency: z.string(),
+  totalCents: z.number().int(),
+  paidCents: z.number().int(),
+  balanceDueCents: z.number().int(),
+  issueDate: z.string(),
+  dueDate: z.string().nullable(),
+  attachments: z.array(accountantInvoiceAttachmentSchema),
+})
+export type AccountantInvoiceRecord = z.infer<typeof accountantInvoiceRecordSchema>
+
+export const accountantSummarySchema = z.object({
+  scope: accountantShareScopeSchema,
+  departures: departureProfitabilityReportSchema,
+  products: productProfitabilityReportSchema,
+})
+export type AccountantSummary = z.infer<typeof accountantSummarySchema>
+
+// ---------- cost categories ----------
+
+export const costCategoryRecordSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  sortOrder: z.number().int(),
+  archived: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+export type CostCategoryRecord = z.infer<typeof costCategoryRecordSchema>
+
+export const costCategoriesResponse = arrayEnvelope(costCategoryRecordSchema)
+export const costCategorySingleResponse = singleEnvelope(costCategoryRecordSchema)
+
+export const accountantSharesResponse = arrayEnvelope(accountantShareRecordSchema)
+export const accountantShareCreatedResponse = singleEnvelope(accountantShareCreatedSchema)
+export const accountantShareRevokedResponse = singleEnvelope(z.object({ id: z.string() }))
+export const accountantSummaryResponse = singleEnvelope(accountantSummarySchema)
+export const accountantInvoicesResponse = arrayEnvelope(accountantInvoiceRecordSchema)
+
+export const supplierInvoiceListResponse = paginatedEnvelope(supplierInvoiceRecordSchema)
+export const supplierInvoiceSingleResponse = singleEnvelope(supplierInvoiceDetailRecordSchema)
+export const supplierInvoiceAttachmentsResponse = arrayEnvelope(
+  supplierInvoiceAttachmentRecordSchema,
+)
 
 export const invoiceListResponse = paginatedEnvelope(invoiceRecordSchema)
 export const invoiceNumberSeriesListResponse = paginatedEnvelope(invoiceNumberSeriesRecordSchema)

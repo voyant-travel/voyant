@@ -13,6 +13,7 @@ import { financeActionLedgerRoutes } from "./routes-action-ledger.js"
 import { createFinanceAdminDocumentRoutes } from "./routes-documents.js"
 import { createPublicFinanceRoutes, type PublicFinanceRouteOptions } from "./routes-public.js"
 import { createFinanceAdminSettlementRoutes } from "./routes-settlement.js"
+import { supplierInvoiceRoutes } from "./routes-supplier-invoices.js"
 
 export {
   type BookingCheckoutUrlSettings,
@@ -28,6 +29,10 @@ export {
   type PublicFinanceRouteOptions,
   publicFinanceRoutes,
 } from "./routes-public.js"
+export {
+  type SupplierInvoiceRoutes,
+  supplierInvoiceRoutes,
+} from "./routes-supplier-invoices.js"
 export { type PublicFinanceRuntimeOptions, publicFinanceService } from "./service-public.js"
 
 export const invoiceLinkable: LinkableDefinition = {
@@ -51,10 +56,18 @@ export const creditNoteLinkable: LinkableDefinition = {
   idPrefix: "crn",
 }
 
+export const supplierInvoiceLinkable: LinkableDefinition = {
+  module: "finance",
+  entity: "supplierInvoice",
+  table: "supplier_invoices",
+  idPrefix: "sinv",
+}
+
 export const financeLinkable = {
   invoice: invoiceLinkable,
   invoiceTemplate: invoiceTemplateLinkable,
   creditNote: creditNoteLinkable,
+  supplierInvoice: supplierInvoiceLinkable,
 }
 
 export const financeModule: Module = {
@@ -71,6 +84,7 @@ export function createFinanceHonoModule(options: FinanceHonoModuleOptions = {}):
   const adminRoutes = new Hono()
     .route("/", financeRoutes)
     .route("/", financeActionLedgerRoutes)
+    .route("/", supplierInvoiceRoutes)
     .route("/", createInvoiceFxRoutes(options))
     .route("/", createFinanceAdminDocumentRoutes(options))
     .route("/", createFinanceAdminSettlementRoutes(options))
@@ -211,6 +225,10 @@ export type {
   NewPaymentCapture,
   NewPaymentInstrument,
   NewPaymentSession,
+  NewSupplierCostAllocation,
+  NewSupplierInvoice,
+  NewSupplierInvoiceAttachment,
+  NewSupplierInvoiceLine,
   NewSupplierPayment,
   NewTaxClass,
   NewTaxRegime,
@@ -221,6 +239,10 @@ export type {
   PaymentCapture,
   PaymentInstrument,
   PaymentSession,
+  SupplierCostAllocation,
+  SupplierInvoice,
+  SupplierInvoiceAttachment,
+  SupplierInvoiceLine,
   SupplierPayment,
   TaxClass,
   TaxRegime,
@@ -228,10 +250,13 @@ export type {
   VoucherRedemption,
 } from "./schema.js"
 export {
+  apServiceTypeEnum,
   bookingGuarantees,
   bookingItemCommissions,
   bookingItemTaxLines,
   bookingPaymentSchedules,
+  costAllocationSplitMethodEnum,
+  costAllocationTargetTypeEnum,
   creditNoteLineItems,
   creditNotes,
   financeNotes,
@@ -247,6 +272,11 @@ export {
   paymentInstruments,
   paymentSessions,
   payments,
+  supplierCostAllocations,
+  supplierInvoiceAttachments,
+  supplierInvoiceLines,
+  supplierInvoiceStatusEnum,
+  supplierInvoices,
   supplierPayments,
   taxClasses,
   taxPolicyProfiles,
@@ -348,6 +378,18 @@ export type {
   InvoiceSettlementPollerResult,
 } from "./service-settlement.js"
 export { financeSettlementService } from "./service-settlement.js"
+export {
+  type AllocationCheckEntry,
+  type AllocationCheckLine,
+  type AllocationCheckResult,
+  type InvoiceTotals,
+  recomputeTotalsFromLines,
+  type SupplierInvoiceErrorCode,
+  SupplierInvoiceServiceError,
+  type SupplierInvoiceServiceRuntime,
+  supplierInvoicesService,
+  validateAllocations,
+} from "./service-supplier-invoices.js"
 export { VoucherServiceError, vouchersService } from "./service-vouchers.js"
 export {
   migrateVouchersFromPaymentInstruments,
@@ -365,8 +407,11 @@ export {
   agingReportQuerySchema,
   allocateInvoiceNumberInputSchema,
   applyDefaultBookingPaymentPlanSchema,
+  apServiceTypeSchema,
   cancelPaymentSessionSchema,
   completePaymentSessionSchema,
+  costAllocationSplitMethodSchema,
+  costAllocationTargetTypeSchema,
   createPaymentSessionFromGuaranteeSchema,
   createPaymentSessionFromInvoiceSchema,
   createPaymentSessionFromScheduleSchema,
@@ -393,6 +438,8 @@ export {
   insertPaymentInstrumentSchema,
   insertPaymentSchema,
   insertPaymentSessionSchema,
+  insertSupplierInvoiceAttachmentSchema,
+  insertSupplierInvoiceSchema,
   insertSupplierPaymentSchema,
   insertTaxClassSchema,
   insertTaxPolicyProfileSchema,
@@ -417,6 +464,12 @@ export {
   profitabilityQuerySchema,
   renderInvoiceInputSchema,
   revenueReportQuerySchema,
+  setSupplierCostAllocationsSchema,
+  setSupplierInvoiceLinesSchema,
+  supplierCostAllocationInputSchema,
+  supplierInvoiceLineInputSchema,
+  supplierInvoiceListQuerySchema,
+  supplierInvoiceStatusSchema,
   supplierPaymentListQuerySchema,
   taxClassListQuerySchema,
   taxPolicyProfileListQuerySchema,
@@ -439,6 +492,7 @@ export {
   updatePaymentInstrumentSchema,
   updatePaymentSchema,
   updatePaymentSessionSchema,
+  updateSupplierInvoiceSchema,
   updateSupplierPaymentSchema,
   updateTaxClassSchema,
   updateTaxPolicyProfileSchema,

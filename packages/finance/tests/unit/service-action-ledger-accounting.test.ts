@@ -83,11 +83,42 @@ describe("finance accounting action ledger builders", () => {
       mutationDetail: {
         commandInputRef: "booking:book_123:supplier_payment",
         commandResultRef: "supplier_payment:spay_123",
-        summary: "Supplier payment spay_123 recorded for booking book_123",
+        summary: "Supplier payment spay_123 recorded against booking:book_123",
         reversalKind: "none",
       },
     })
     expect(ledgerInput.idempotencyFingerprint).toMatch(/^sha256:/)
+  })
+
+  it("targets the supplier invoice when an AP payment has no booking", async () => {
+    const ledgerInput = await ledger.buildSupplierPaymentCreateActionLedgerInput(
+      { userId: "user_123", callerType: "session" },
+      {
+        payment: {
+          id: "spay_456",
+          bookingId: null,
+          supplierInvoiceId: "sinv_789",
+          supplierId: "sup_123",
+          amountCents: 480000,
+          currency: "EUR",
+          paymentMethod: "bank_transfer",
+          paymentDate: "2026-06-10",
+          referenceNumber: "ap-ref-456",
+          status: "completed",
+        } as never,
+      },
+    )
+
+    expect(ledgerInput).toMatchObject({
+      targetType: "supplier_invoice",
+      targetId: "sinv_789",
+      idempotencyScope: "finance.supplier_invoice:sinv_789:supplier_payment",
+      mutationDetail: {
+        commandInputRef: "supplier_invoice:sinv_789:supplier_payment",
+        summary: "Supplier payment spay_456 recorded against supplier_invoice:sinv_789",
+        reversalKind: "none",
+      },
+    })
   })
 
   it("builds booking-targeted action ledger input for supplier payment updates", () => {

@@ -21,6 +21,8 @@ import type { UsePublicBookingPaymentOptionsOptions } from "./hooks/use-public-b
 import type { UsePublicBookingPaymentsOptions } from "./hooks/use-public-booking-payments.js"
 import type { UsePublicFinanceDocumentByReferenceOptions } from "./hooks/use-public-finance-document-by-reference.js"
 import type { UsePublicPaymentSessionOptions } from "./hooks/use-public-payment-session.js"
+import type { UseSupplierInvoiceOptions } from "./hooks/use-supplier-invoice.js"
+import type { UseSupplierInvoicesOptions } from "./hooks/use-supplier-invoices.js"
 import type { UseSupplierPaymentsOptions } from "./hooks/use-supplier-payments.js"
 import type { UseVoucherOptions } from "./hooks/use-voucher.js"
 import type { UseVouchersOptions } from "./hooks/use-vouchers.js"
@@ -33,11 +35,21 @@ import {
   getPublicFinanceDocumentByReference,
   getPublicPaymentSession,
 } from "./operations.js"
-import { financeQueryKeys } from "./query-keys.js"
 import {
+  type FinanceDepartureProfitabilityFilters,
+  type FinanceProductProfitabilityFilters,
+  type FinanceTravelerProfitabilityFilters,
+  financeQueryKeys,
+} from "./query-keys.js"
+import {
+  accountantInvoicesResponse,
+  accountantSharesResponse,
+  accountantSummaryResponse,
   allPaymentsListResponse,
   bookingGuaranteesResponse,
   bookingPaymentSchedulesResponse,
+  costCategoriesResponse,
+  departureProfitabilityResponse,
   invoiceAttachmentsResponse,
   invoiceCreditNotesResponse,
   invoiceLineItemsResponse,
@@ -47,7 +59,12 @@ import {
   invoicePaymentsResponse,
   invoiceSingleResponse,
   paymentSingleResponse,
+  productProfitabilityResponse,
+  supplierInvoiceAttachmentsResponse,
+  supplierInvoiceListResponse,
+  supplierInvoiceSingleResponse,
   supplierPaymentListResponse,
+  travelerProfitabilityResponse,
   voucherDetailResponse,
   voucherListResponse,
 } from "./schemas.js"
@@ -139,6 +156,88 @@ export function getInvoicesQueryOptions(
         client,
       )
     },
+  })
+}
+
+export function getSupplierInvoicesQueryOptions(
+  client: FetchWithValidationOptions,
+  options: UseSupplierInvoicesOptions = {},
+) {
+  const { enabled: _enabled = true, ...filters } = options
+
+  return queryOptions({
+    queryKey: financeQueryKeys.supplierInvoicesList(filters),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (filters.supplierId) params.set("supplierId", filters.supplierId)
+      if (filters.status) params.set("status", filters.status)
+      if (filters.currency) params.set("currency", filters.currency)
+      if (filters.dueDateFrom) params.set("dueDateFrom", filters.dueDateFrom)
+      if (filters.dueDateTo) params.set("dueDateTo", filters.dueDateTo)
+      if (filters.departureId) params.set("departureId", filters.departureId)
+      if (filters.productId) params.set("productId", filters.productId)
+      if (filters.bookingId) params.set("bookingId", filters.bookingId)
+      if (filters.search) params.set("search", filters.search)
+      if (filters.sortBy) params.set("sortBy", filters.sortBy)
+      if (filters.sortDir) params.set("sortDir", filters.sortDir)
+      if (filters.limit !== undefined) params.set("limit", String(filters.limit))
+      if (filters.offset !== undefined) params.set("offset", String(filters.offset))
+      const qs = params.toString()
+
+      return fetchWithValidation(
+        `/v1/admin/finance/supplier-invoices${qs ? `?${qs}` : ""}`,
+        supplierInvoiceListResponse,
+        client,
+      )
+    },
+  })
+}
+
+export function getSupplierInvoiceQueryOptions(
+  client: FetchWithValidationOptions,
+  id: string | null | undefined,
+  options: UseSupplierInvoiceOptions = {},
+) {
+  const { enabled: _enabled = true } = options
+
+  return queryOptions({
+    queryKey: financeQueryKeys.supplierInvoice(id ?? ""),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/admin/finance/supplier-invoices/${id}`,
+        supplierInvoiceSingleResponse,
+        client,
+      ),
+  })
+}
+
+export function getSupplierInvoicePaymentsQueryOptions(
+  client: FetchWithValidationOptions,
+  id: string | null | undefined,
+) {
+  return queryOptions({
+    queryKey: financeQueryKeys.supplierInvoicePayments(id ?? ""),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/admin/finance/supplier-invoices/${id}/payments`,
+        supplierPaymentListResponse,
+        client,
+      ),
+  })
+}
+
+export function getSupplierInvoiceAttachmentsQueryOptions(
+  client: FetchWithValidationOptions,
+  id: string | null | undefined,
+) {
+  return queryOptions({
+    queryKey: financeQueryKeys.supplierInvoiceAttachments(id ?? ""),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/admin/finance/supplier-invoices/${id}/attachments`,
+        supplierInvoiceAttachmentsResponse,
+        client,
+      ),
   })
 }
 
@@ -519,6 +618,130 @@ export function getVoucherQueryOptions(
       if (!id) throw new Error("getVoucherQueryOptions requires an id")
       return fetchWithValidation(`/v1/admin/finance/vouchers/${id}`, voucherDetailResponse, client)
     },
+  })
+}
+
+export function getDepartureProfitabilityQueryOptions(
+  client: FetchWithValidationOptions,
+  filters: FinanceDepartureProfitabilityFilters = {},
+) {
+  return queryOptions({
+    queryKey: financeQueryKeys.departureProfitability(filters),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (filters.from) params.set("from", filters.from)
+      if (filters.to) params.set("to", filters.to)
+      if (filters.productId) params.set("productId", filters.productId)
+      if (filters.departureId) params.set("departureId", filters.departureId)
+      if (filters.currency) params.set("currency", filters.currency)
+      if (filters.baseCurrency) params.set("baseCurrency", filters.baseCurrency)
+      const qs = params.toString()
+
+      return fetchWithValidation(
+        `/v1/admin/finance/reports/profitability/departures${qs ? `?${qs}` : ""}`,
+        departureProfitabilityResponse,
+        client,
+      )
+    },
+  })
+}
+
+export function getProductProfitabilityQueryOptions(
+  client: FetchWithValidationOptions,
+  filters: FinanceProductProfitabilityFilters = {},
+) {
+  return queryOptions({
+    queryKey: financeQueryKeys.productProfitability(filters),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (filters.from) params.set("from", filters.from)
+      if (filters.to) params.set("to", filters.to)
+      if (filters.currency) params.set("currency", filters.currency)
+      if (filters.baseCurrency) params.set("baseCurrency", filters.baseCurrency)
+      const qs = params.toString()
+
+      return fetchWithValidation(
+        `/v1/admin/finance/reports/profitability/products${qs ? `?${qs}` : ""}`,
+        productProfitabilityResponse,
+        client,
+      )
+    },
+  })
+}
+
+export function getTravelerProfitabilityQueryOptions(
+  client: FetchWithValidationOptions,
+  filters: FinanceTravelerProfitabilityFilters,
+) {
+  return queryOptions({
+    queryKey: financeQueryKeys.travelerProfitability(filters),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      params.set("departureId", filters.departureId)
+      params.set("currency", filters.currency)
+      return fetchWithValidation(
+        `/v1/admin/finance/reports/profitability/travelers?${params.toString()}`,
+        travelerProfitabilityResponse,
+        client,
+      )
+    },
+  })
+}
+
+export function getCostCategoriesQueryOptions(
+  client: FetchWithValidationOptions,
+  options: { includeArchived?: boolean } = {},
+) {
+  return queryOptions({
+    queryKey: financeQueryKeys.costCategories(),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/admin/finance/cost-categories${options.includeArchived ? "?includeArchived=true" : ""}`,
+        costCategoriesResponse,
+        client,
+      ),
+  })
+}
+
+export function getAccountantSharesQueryOptions(client: FetchWithValidationOptions) {
+  return queryOptions({
+    queryKey: financeQueryKeys.accountantShares(),
+    queryFn: () =>
+      fetchWithValidation("/v1/admin/finance/accountant-shares", accountantSharesResponse, client),
+  })
+}
+
+/** Public portal — `client` is an unauthenticated fetcher; `token` is the credential. */
+export function getAccountantSummaryQueryOptions(
+  client: FetchWithValidationOptions,
+  token: string,
+  baseCurrency?: string,
+) {
+  return queryOptions({
+    queryKey: financeQueryKeys.accountantSummary(token, baseCurrency),
+    queryFn: () => {
+      const qs = baseCurrency ? `?baseCurrency=${encodeURIComponent(baseCurrency)}` : ""
+      return fetchWithValidation(
+        `/v1/public/finance/accountant/${encodeURIComponent(token)}/summary${qs}`,
+        accountantSummaryResponse,
+        client,
+      )
+    },
+  })
+}
+
+export function getAccountantInvoicesQueryOptions(
+  client: FetchWithValidationOptions,
+  token: string,
+) {
+  return queryOptions({
+    queryKey: financeQueryKeys.accountantInvoices(token),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/public/finance/accountant/${encodeURIComponent(token)}/invoices`,
+        accountantInvoicesResponse,
+        client,
+      ),
   })
 }
 

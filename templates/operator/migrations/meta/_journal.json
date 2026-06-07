@@ -400,6 +400,13 @@
 			"when": 1780771200000,
 			"tag": "0057_enable_unaccent",
 			"breakpoints": true
+		},
+		{
+			"idx": 56,
+			"version": "7",
+			"when": 1780771300000,
+			"tag": "0058_supplier_invoices_ap",
+			"breakpoints": true
 		}
 	]
 }

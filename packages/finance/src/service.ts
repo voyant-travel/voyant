@@ -44,6 +44,7 @@ import {
   paymentInstruments,
   paymentSessions,
   payments,
+  supplierInvoices,
   supplierPayments,
   taxClasses,
   taxPolicyProfiles,
@@ -88,7 +89,14 @@ import {
   buildSupplierPaymentUpdateActionLedgerInput,
 } from "./service-action-ledger.js"
 import { getFinanceAggregates } from "./service-aggregates.js"
+import { costCategoriesService } from "./service-cost-categories.js"
+import {
+  getDepartureProfitability,
+  getProductProfitability,
+  getTravelerProfitability,
+} from "./service-profitability.js"
 import type { InvoiceSettledEvent } from "./service-settlement.js"
+import { recomputeSupplierInvoiceBalance } from "./service-supplier-invoices.js"
 import { vouchersService } from "./service-vouchers.js"
 
 export {
@@ -1376,7 +1384,22 @@ async function resolveSupplierPaymentUpdateData(
   if (!shouldNormalizeBaseAmount(data)) return data
 
   const bookingId = data.bookingId ?? existing.bookingId
-  const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)
+  const supplierInvoiceId = data.supplierInvoiceId ?? existing.supplierInvoiceId
+  let targetBaseCurrency: string | null = null
+  let fallbackFxRateSetId: string | null = null
+  if (bookingId) {
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)
+    targetBaseCurrency = booking?.baseCurrency ?? null
+    fallbackFxRateSetId = booking?.fxRateSetId ?? null
+  } else if (supplierInvoiceId) {
+    const [invoice] = await db
+      .select()
+      .from(supplierInvoices)
+      .where(eq(supplierInvoices.id, supplierInvoiceId))
+      .limit(1)
+    targetBaseCurrency = invoice?.baseCurrency ?? null
+    fallbackFxRateSetId = invoice?.fxRateSetId ?? null
+  }
   const normalized = await resolveFxMoneyBaseAmount(
     db,
     {
@@ -1388,8 +1411,8 @@ async function resolveSupplierPaymentUpdateData(
     },
     {
       ...runtime,
-      targetBaseCurrency: booking?.baseCurrency ?? null,
-      fallbackFxRateSetId: booking?.fxRateSetId ?? null,
+      targetBaseCurrency,
+      fallbackFxRateSetId,
       date: data.paymentDate ?? existing.paymentDate,
     },
   )
@@ -1553,6 +1576,10 @@ async function assertBookingPaymentScheduleHasPaymentCoverage(
 export const financeService = {
   vouchers: vouchersService,
   getFinanceAggregates,
+  getDepartureProfitability,
+  getProductProfitability,
+  getTravelerProfitability,
+  costCategories: costCategoriesService,
 
   async listPaymentInstruments(db: PostgresJsDatabase, query: PaymentInstrumentListQuery) {
     const conditions = []
@@ -3640,6 +3667,10 @@ export const financeService = {
       conditions.push(eq(supplierPayments.bookingId, query.bookingId))
     }
 
+    if (query.supplierInvoiceId) {
+      conditions.push(eq(supplierPayments.supplierInvoiceId, query.supplierInvoiceId))
+    }
+
     if (query.supplierId) {
       conditions.push(eq(supplierPayments.supplierId, query.supplierId))
     }
@@ -3704,46 +3735,59 @@ export const financeService = {
     data: CreateSupplierPaymentInput,
     runtime: FinanceServiceRuntime = {},
   ) {
-    const [booking] = await db
-      .select()
-      .from(bookings)
-      .where(eq(bookings.id, data.bookingId))
-      .limit(1)
+    // Derive the reporting base currency from the booking when present, else
+    // from the supplier invoice the payment settles (AP payments may have no
+    // booking). See §5.4.
+    let targetBaseCurrency: string | null = null
+    let fallbackFxRateSetId: string | null = null
+    if (data.bookingId) {
+      const [booking] = await db
+        .select()
+        .from(bookings)
+        .where(eq(bookings.id, data.bookingId))
+        .limit(1)
+      targetBaseCurrency = booking?.baseCurrency ?? null
+      fallbackFxRateSetId = booking?.fxRateSetId ?? null
+    } else if (data.supplierInvoiceId) {
+      const [invoice] = await db
+        .select()
+        .from(supplierInvoices)
+        .where(eq(supplierInvoices.id, data.supplierInvoiceId))
+        .limit(1)
+      targetBaseCurrency = invoice?.baseCurrency ?? null
+      fallbackFxRateSetId = invoice?.fxRateSetId ?? null
+    }
+
     const paymentData = await resolveFxMoneyBaseAmount(db, data, {
       ...runtime,
-      targetBaseCurrency: booking?.baseCurrency ?? null,
-      fallbackFxRateSetId: booking?.fxRateSetId ?? null,
+      targetBaseCurrency,
+      fallbackFxRateSetId,
       date: data.paymentDate,
     })
-    const createPayment = (writer: PostgresJsDatabase) =>
-      writer
+
+    const row = await db.transaction(async (tx) => {
+      const [created] = await tx
         .insert(supplierPayments)
         .values({ ...paymentData, paymentInstrumentId: paymentData.paymentInstrumentId ?? null })
         .returning()
 
-    const actionLedgerContext = runtime.actionLedgerContext
-    if (actionLedgerContext) {
-      const [row] = await db.transaction(async (tx) => {
-        const created = await createPayment(tx)
+      if (created && runtime.actionLedgerContext) {
+        await appendActionLedgerMutation(
+          tx,
+          await buildSupplierPaymentCreateActionLedgerInput(
+            runtime.actionLedgerContext,
+            { payment: created },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+      }
+      // Keep the settled invoice's paid/balance/status in sync (§10).
+      if (created?.supplierInvoiceId) {
+        await recomputeSupplierInvoiceBalance(tx, created.supplierInvoiceId)
+      }
+      return created ?? null
+    })
 
-        if (created[0]) {
-          await appendActionLedgerMutation(
-            tx,
-            await buildSupplierPaymentCreateActionLedgerInput(
-              actionLedgerContext,
-              { payment: created[0] },
-              { authorizationSource: runtime.actionLedgerAuthorizationSource },
-            ),
-          )
-        }
-
-        return created
-      })
-
-      return row
-    }
-
-    const [row] = await createPayment(db)
     return row
   },
 
@@ -3753,39 +3797,47 @@ export const financeService = {
     data: UpdateSupplierPaymentInput,
     runtime: FinanceServiceRuntime = {},
   ) {
+    const [existing] = await db
+      .select()
+      .from(supplierPayments)
+      .where(eq(supplierPayments.id, id))
+      .limit(1)
+    if (!existing) return null
+
     const updateData = await resolveSupplierPaymentUpdateData(db, id, data, runtime)
     if (!updateData) return null
 
-    const updatePayment = (writer: PostgresJsDatabase) =>
-      writer
+    const row = await db.transaction(async (tx) => {
+      const [updated] = await tx
         .update(supplierPayments)
         .set({ ...updateData, updatedAt: new Date() })
         .where(eq(supplierPayments.id, id))
         .returning()
 
-    const actionLedgerContext = runtime.actionLedgerContext
-    if (actionLedgerContext) {
-      const [row] = await db.transaction(async (tx) => {
-        const updated = await updatePayment(tx)
+      if (updated && runtime.actionLedgerContext) {
+        await appendActionLedgerMutation(
+          tx,
+          buildSupplierPaymentUpdateActionLedgerInput(
+            runtime.actionLedgerContext,
+            { payment: updated, changes: updateData },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+      }
 
-        if (updated[0]) {
-          await appendActionLedgerMutation(
-            tx,
-            buildSupplierPaymentUpdateActionLedgerInput(
-              actionLedgerContext,
-              { payment: updated[0], changes: updateData },
-              { authorizationSource: runtime.actionLedgerAuthorizationSource },
-            ),
-          )
-        }
+      // Recompute both the previously-linked and newly-linked invoices so a
+      // re-pointed or status-changed payment leaves balances consistent (§10).
+      const affected = new Set(
+        [existing.supplierInvoiceId, updated?.supplierInvoiceId].filter((value): value is string =>
+          Boolean(value),
+        ),
+      )
+      for (const invoiceId of affected) {
+        await recomputeSupplierInvoiceBalance(tx, invoiceId)
+      }
+      return updated ?? null
+    })
 
-        return updated
-      })
-
-      return row ?? null
-    }
-
-    const [row] = await updatePayment(db)
     return row ?? null
   },
 

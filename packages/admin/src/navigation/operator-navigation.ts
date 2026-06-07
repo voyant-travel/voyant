@@ -177,6 +177,16 @@ export function createOperatorAdminNavigation({
           url: "/finance/invoice-number-series",
         },
         { id: "payments", title: messages.payments, url: "/finance/payments" },
+        {
+          id: "supplier-invoices",
+          title: messages.supplierInvoices,
+          url: "/finance/supplier-invoices",
+        },
+        {
+          id: "profitability",
+          title: messages.profitability,
+          url: "/finance/profitability",
+        },
       ],
     },
     {

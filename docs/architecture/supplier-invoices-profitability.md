@@ -1,6 +1,6 @@
 # Supplier invoices & departure profitability — design
 
-Status: proposed (2026-06-06) · **rev 2** — corrected against repo after review (see Revision log §17)
+Status: proposed (2026-06-06) · **rev 3** — added accountant persona (§13); see Revision log §18
 Audience: anyone designing or implementing accounts-payable (supplier cost capture) and profitability reporting in Voyant — recording the invoices an operator *receives* from suppliers (transport, flights, guides, accommodation, …), attributing those costs to the departures / products / travellers they were incurred for, and surfacing expenses / revenue / profit per departure and per product.
 
 Related:
@@ -63,7 +63,7 @@ Three layers, kept distinct, are what make the charts meaningful:
 
 **The unit of profitability is the departure** (`availability_slot`). A product's P&L is the sum of its departures' P&Ls. Per-traveller is *derived* by splitting a departure-level allocation (per-pax or equal), not stored as a separate first-class allocation in v1 (see §6).
 
-This is **gross margin**, not net profit: costs not attributable to a single departure (overheads, marketing, salaries) are explicitly out of scope (§3, §14).
+This is **gross margin**, not net profit: costs not attributable to a single departure (overheads, marketing, salaries) are explicitly out of scope (§3, §15).
 
 ---
 
@@ -82,7 +82,7 @@ This is **gross margin**, not net profit: costs not attributable to a single dep
 
 ### Non-goals (v1)
 
-- **Overhead / non-departure costs.** Marketing spend, salaries, office rent, fixed costs not attributable to a departure. The model is designed so an `allocation target = "overhead"` *could* be added later, but v1 reports **gross margin** only. (See §14.)
+- **Overhead / non-departure costs.** Marketing spend, salaries, office rent, fixed costs not attributable to a departure. The model is designed so an `allocation target = "overhead"` *could* be added later, but v1 reports **gross margin** only. (See §15.)
 - **Self-billing / generating invoices *to* suppliers.** This is *inbound* AP — recording documents suppliers send the operator. Outbound supplier-facing invoicing (commission self-bills, RCTI) is out of scope.
 - **Full double-entry / GL.** No chart-of-accounts, no journals, no trial balance. This is operational AP + a profitability read model, not an accounting ledger. (Export to an external accounting system is a future hook.)
 - **Approval *routing* / multi-step sign-off chains.** v1 has a single `approved` state + who/when. Configurable approval workflows (thresholds, approver roles) are a future extension via the existing `createWorkflow` saga primitive.
@@ -278,7 +278,7 @@ Pin these down in PR1's validation + tests:
 3. **No over-allocation.** Σ(allocations of a line) ≤ line `totalAmountCents`; for whole-invoice mode, Σ ≤ invoice `totalCents`. Over-allocation rejected.
 4. **Under-allocation → explicit remainder.** The remainder is **not** silently dropped: the read model reports it as an `unattributed` figure per invoice (data-quality signal). Whether to also *materialise* a synthetic `unattributed` allocation row vs compute it on read is a PR1 call — recommendation: compute on read, don't store.
 5. **Currency.** An allocation inherits the invoice currency; `baseAmountCents` is computed via the invoice's `fxRateSetId` at record time (§9). Allocations never mix currencies within one invoice.
-6. **Supplier credit notes** (§5.6 / §14-Q5): a credit note (negative invoice in the lean v1) produces **negative** allocations against the same targets, so the read model nets them. Define the matching rule (credit references the original `supplier_invoices.id`) and forbid a credit's allocations from exceeding the original's per-target totals.
+6. **Supplier credit notes** (§5.6 / §15-Q5): a credit note (negative invoice in the lean v1) produces **negative** allocations against the same targets, so the read model nets them. Define the matching rule (credit references the original `supplier_invoices.id`) and forbid a credit's allocations from exceeding the original's per-target totals.
 
 ---
 
@@ -386,7 +386,11 @@ POST   /v1/admin/finance/supplier-invoices/:id/payments    record a supplier pay
 GET    /v1/admin/finance/reports/departure-profitability   read model (§8)
 GET    /v1/admin/finance/reports/product-profitability     read model (§8)
 GET    /v1/admin/finance/reports/ap-aging                  AP aging
+GET    /v1/admin/finance/reports/:report/export?format=csv|pdf   export a report (§13)
+POST   /v1/admin/finance/reports/:report/share             mint a shareable signed link for an accountant (§13)
 ```
+
+Report read/export routes carry the `finance`/`reports` resource tag so a **read-only scoped API key** (`finance:read`, `reports:read`) can reach them without a UI session — `require-actor.ts` already enforces per-resource API-key scopes (§13). Mutating AP routes (`approve`, `payments`, allocation edits) stay write-gated.
 
 Follow the `createInvoiceFromBooking` service pattern: caller supplies cross-module data (e.g. departure label, pax, booking item costs) via a typed `…Data` interface; finance stays decoupled. Mutations go through the action-ledger like the rest of finance.
 
@@ -397,14 +401,70 @@ Follow the `createInvoiceFromBooking` service pattern: caller supplies cross-mod
 - **Supplier invoices list** — status, supplier, amount, due date, attribution coverage (% allocated), payment status. Filter by departure/product/supplier.
 - **Supplier invoice detail** — header + lines + the **allocation editor** (pick departure/product/booking, split across travellers, see remainder). PDF preview pane (R2). "Extract from PDF" button when a provider is configured.
 - **Departure P&L view** — embedded on the departure (availability slot) detail: revenue / planned / actual / profit / margin / variance + cost breakdown.
-- **Product profitability dashboard** — the charts in §8.
+- **Product profitability dashboard** — the charts in §8, with **Export (PDF/CSV)** and **Share with accountant** actions (§13).
+- **Manage shares** — list active accountant share links (period, report set, access log, revoke) and issue read-only accountant API keys (§13.2).
 - New operator-nav entry under finance: **Accounts payable** (supplier invoices + AP aging) and **Profitability** (the dashboard).
 
 UI primitives that are reusable go in `packages/ui` / a `finance-ui` package (per the "new UI primitives live in packages/ui" convention), template wires them.
 
 ---
 
-## 13. Sequenced PRs
+## 13. Access, sharing & the accountant persona
+
+Operators routinely need to **hand financial data to their accountant** — sometimes a one-off ("email them this month's P&L"), sometimes ongoing ("let the accounting firm pull our invoices"). Today every authenticated session is `actor: "staff"` and sees *all* `/v1/admin/*` routes; there is no read-only or finance-only access. This resolves the old §15-Q6 (permissions).
+
+Decision (from scoping): **build it in two phases — external/lightweight first (reuses existing infra), then a first-class internal accountant role once a per-capability guard layer exists.**
+
+### 13.1 What already exists (reuse, don't reinvent)
+
+- **Scoped API keys** — `require-actor.ts` already honours per-resource API-key scopes (`finance:read`, `invoices:read`, …) on `/v1/admin/*` paths (`packages/types/src/api-keys.ts` defines the resource/action taxonomy). A read-only key is the cheapest ongoing-access mechanism today.
+- **Public document delivery** — `createPublicDocumentDeliveryGrant` (`packages/hono/src/public-document-delivery.ts`) mints TTL'd (default 24h, max 30d), **revocable, access-logged** signed URLs, and finance *already* uses it to share invoice-rendition PDFs (`packages/finance/src/routes-documents.ts`). This is the share-a-report mechanism — no account required.
+- **Better Auth roles** (`owner/admin/member`, `packages/auth/src/permissions.ts`) — but these govern the **control plane** (operators, API keys, settings) and are **not** wired to module data routes. Reusing them for data-route authorization is net-new work (see 13.3).
+- **Report routes** exist (`/reports/revenue|aging|profitability`, `/aggregates`) but have **no export** — CRM has CSV export (`packages/crm/.../accounts.ts`), finance does not.
+
+### 13.2 Phase A — external sharing + export (reuses infra, ships first)
+
+1. **Report export (PDF + CSV)** on every finance report (existing + new profitability/AP-aging). CSV for "import into my accounting software"; PDF for a formatted period pack (reuse the invoice-rendition/template machinery). Export routes are read-scoped (§11).
+2. **Share an accountant link** — `POST /reports/:report/share` mints a `createPublicDocumentDeliveryGrant` over a generated export artifact (stored by `storageKey`), returning a TTL'd, revocable, audited URL. Operator picks period + report set; the accountant opens the link, no login. A **manage-shares** view lists active grants with access logs and a revoke button (the grant store already records IP / user-agent / count / time).
+3. **Read-only scoped API key for the accounting firm** — surface a "Create accountant key" action that issues a key limited to `finance:read` + `reports:read` (+ `invoices:read`). Their software pulls invoices/reports directly; nothing else is reachable. This composes with the **accounting-export plugin hook** already noted in §16.
+
+Phase A needs **no new RBAC** — it's export + the existing grant/API-key primitives.
+
+> **Implemented (v1).** CSV export ships on the profitability reports —
+> `GET /v1/admin/finance/reports/profitability/{departures,products}/export`.
+>
+> **Accountant share portal (built).** The operator mints a revocable, TTL'd,
+> access-logged link scoped to a date range from the Profitability page
+> (`POST /v1/admin/finance/accountant-shares`; list + revoke). It's backed by the
+> generic `public_document_delivery_grants` token store (`sourceEntity =
+> accountant-share`, period in `metadata`) — no new table. The accountant opens
+> `/accountant/:token` (operator public route, no login): a read-only portal with
+> per-departure/product revenue-vs-cost charts + tables, the period's invoices
+> with their **uploaded PDF attachments** (downloaded via a token-scoped redirect
+> to a presigned URL — invoices already carry attachments, so nothing is
+> generated), and CSV export. Token routes live under
+> `/v1/public/finance/accountant/:token/*` and self-authenticate (the token is
+> the credential); the share's scope bounds every query.
+>
+> A `finance:read`-scoped API key also still works for programmatic pulls (see
+> §11). Still open: PDF *generation* (not needed — attachments cover it), and the
+> Phase B internal `accountant` login role (§13.3).
+
+### 13.3 Phase B — first-class internal accountant role (follow-up)
+
+For an **employee** who should see finance but not catalog/CRM/etc., introduce a real capability layer on `/v1/admin/*`:
+
+- Define an **`accountant` role** = read all finance + reports + export; **may** record/approve AP and reconcile payments (configurable); **no** access to non-finance admin modules; **no** destructive ops (void, delete).
+- Wire it by **extending the Better Auth access-control statements** (`packages/auth/src/permissions.ts`) with finance capabilities and applying the **`requirePermission`/capability middleware that exists but isn't mounted** to finance admin routes — a small per-module `requireCapability("finance:read"|"finance:write")` gate. This is **cross-cutting** (it establishes sub-`staff` authorization for the whole platform, not just finance), which is exactly why it's phased after A.
+- External accountants can then *alternatively* be invited as scoped members (the `user_invitations` table + org plugin already exist) instead of using an API key, if an operator prefers a named login over a key.
+
+### 13.4 Audit & safety
+
+Financial-data access is sensitive: Phase A grants are access-logged by the delivery store; API-key reads should be captured in the existing `auditLog` (read capability already modelled). Any `share`/key-issue action is itself an action-ledger event. Shared links expose a **point-in-time export**, not live data — revisiting a stale link never leaks newer data.
+
+---
+
+## 14. Sequenced PRs
 
 Each independently mergeable and useful.
 
@@ -413,25 +473,28 @@ Each independently mergeable and useful.
 2. **PR2 — Reconciliation + payment model fix.** `supplier_payments.supplierInvoiceId` (FK) **and** make `bookingId` nullable + require-one-of refine + invoice-level action-ledger target + update unified payment queries (§5.4); add `supplierId` snapshot to `booking_supplier_statuses` + `supplierInvoiceLineId`; commitment-matching service; payment → balance derivation.
 3. **PR3 — Admin API + list/detail UI + allocation editor + PDF attach (R2 via `storageKey`).** Manual capture end-to-end.
 4. **PR4 — Profitability read model + charts.** `getDepartureProfitability`/`getProductProfitability`/AP aging built on **explicit service SQL** (not `queryGraph`), implementing the §8.1 currency/attribution rules (incl. the planned-cost base-currency decision); departure P&L view; product dashboard.
-5. **PR5 — AI extraction provider.** `InvoiceExtractionProvider` + `voyant-cloud-gateway` + `byo-llm`; `invoice_extractions` audit; "extract from PDF" flow. Optional, behind config.
+5. **PR5 — Report export + accountant sharing (Phase A, §13.2).** PDF + CSV export on all finance reports; `POST /reports/:report/share` over `createPublicDocumentDeliveryGrant`; manage-shares view; read-only accountant API key issuance (`finance:read`/`reports:read`). No new RBAC — reuses existing grant/API-key infra.
+6. **PR6 — AI extraction provider.** `InvoiceExtractionProvider` + `voyant-cloud-gateway` + `byo-llm`; `invoice_extractions` audit; "extract from PDF" flow. Optional, behind config.
+- **PR-A (follow-up, cross-cutting) — internal accountant role (Phase B, §13.3).** Extend Better Auth access-control statements with finance capabilities; mount a `requireCapability` gate on `/v1/admin/*`; define the `accountant` role. Establishes sub-`staff` authorization platform-wide, so it's sequenced after the finance work lands.
 - **PR-X (separate, optional) — shared `serviceTypeEnum` sweep.** Unify the AP-local enum with the shared `serviceTypeEnum` (add `flight`/`insurance` across suppliers/products + their contracts/react/ui/i18n, ~17 files). Explicitly *not* bundled into PR1.
 
-PR0–PR4 deliver the full request with manual entry; PR5 is the typing-saver; PR-X is a cosmetic taxonomy unification.
+PR0–PR5 deliver the full request **plus accountant sharing/export** with manual entry; PR6 is the typing-saver; PR-A (internal accountant RBAC) and PR-X (taxonomy unification) are follow-ups.
 
 ---
 
-## 14. Open questions
+## 15. Open questions
 
 1. **Internal AP numbering:** do operators want their *own* series for received invoices (audit/filing), or is the supplier's number enough? (Schema supports both; default is supplier's number only.)
 2. **Revenue attribution to a departure:** confirmed via `booking_items.availabilitySlotId` → booking → customer invoice. Edge case: a customer invoice spanning items across *multiple* departures needs proportional split for per-departure revenue. Propose: split invoice revenue across its booking items by `totalSellAmountCents` weight. Confirm.
 3. **Currency of report:** per-tenant base currency assumed. Multi-base-currency tenants — out of scope?
 4. **Overhead (deferred):** the `unattributed`/future `overhead` target type leaves the door open; do we want even a simple "spread fixed monthly cost across departures" in a later phase, or keep strictly gross-margin?
 5. **Credit notes from suppliers:** a supplier issuing a credit (refund/adjustment) — model as a negative `supplier_invoice` or a dedicated `supplier_credit_note`? (Lean: negative invoice / `void` + reissue in v1; dedicated table later if needed.)
-6. **Permissions:** AP/approval is sensitive — does this need a finer-grained role than the generic `staff` actor (e.g. `finance` capability) before approve/pay?
+6. **Permissions / accountant access:** ~~does this need a finer-grained role than the generic `staff` actor?~~ **Resolved → §13.** Two-phase: external sharing + export + read-only API key (reuses existing infra, PR5), then a first-class internal `accountant` role via a per-capability guard layer (follow-up PR-A).
+7. **Accountant share TTL / scope policy:** default grant TTL for shared report links (24h default, 30d max), and whether shares are per-report or a bundled period pack — confirm operator-configurable defaults.
 
 ---
 
-## 15. Related features uncovered (worth flagging)
+## 16. Related features uncovered (worth flagging)
 
 The analysis surfaced adjacent gaps the same model naturally enables — not all in scope, but worth recording:
 
@@ -444,13 +507,18 @@ The analysis surfaced adjacent gaps the same model naturally enables — not all
 
 ---
 
-## 16. Summary
+## 17. Summary
 
-The request is coherent and fills a genuine, self-contained gap: Voyant models all money *in* and none *out*. The pieces to close it mostly exist — cost fields, FX, tax regimes (incl. reverse charge), media/storage, the `availability_slot` departure model, and the loose `booking_supplier_statuses` commitment ledger. What's missing is the **payable document** (`supplier_invoices` + lines), the **attribution** (`supplier_cost_allocations`, departure-level with derived per-traveller), the **reconciliation** wiring (payment → invoice, commitment → invoice), and the **profitability read model + charts**. Built in finance, with suppliers/availability exposing linkables, reusing the established provider pattern for optional AI extraction. Six sequenced PRs (PR0 prefixes → PR5 extraction) plus an optional enum-sweep; gross-margin scope (overhead deferred).
+The request is coherent and fills a genuine, self-contained gap: Voyant models all money *in* and none *out*. The pieces to close it mostly exist — cost fields, FX, tax regimes (incl. reverse charge), media/storage, the `availability_slot` departure model, and the loose `booking_supplier_statuses` commitment ledger. What's missing is the **payable document** (`supplier_invoices` + lines), the **attribution** (`supplier_cost_allocations`, departure-level with derived per-traveller), the **reconciliation** wiring (payment → invoice, commitment → invoice), the **profitability read model + charts**, and **accountant access** (report export + shareable signed links now, an internal `accountant` role later — §13). Built in finance, reusing the established provider pattern for optional AI extraction and the existing public-document-delivery / scoped-API-key infra for accountant sharing. Sequenced PR0 (prefixes) → PR6 (extraction), with the internal accountant RBAC role (PR-A) and the enum-sweep (PR-X) as follow-ups; gross-margin scope (overhead deferred).
 
 ---
 
-## 17. Revision log
+## 18. Revision log
+
+**rev 3 (2026-06-06)** — added the **accountant persona** (new §13) after a planning request:
+- Operators need to share financial reports with / give access to an accountant. Resolved old §15-Q6.
+- **Two-phase (decided):** Phase A (PR5) — report **export (PDF + CSV)** + **shareable signed links** via the existing `createPublicDocumentDeliveryGrant` + **read-only scoped API keys** (`finance:read`/`reports:read`), reusing infra with no new RBAC. Phase B (follow-up PR-A) — a first-class internal **`accountant` role** by extending Better Auth access-control statements and mounting a `requireCapability` gate on `/v1/admin/*` (cross-cutting, hence later).
+- §11 gained export/share routes; §12 gained export/share/manage-shares UI; §14 re-sequenced (PR5 = sharing/export, PR6 = extraction, PR-A = accountant RBAC). Sections 13–17 renumbered.
 
 **rev 2 (2026-06-06)** — corrected against the repo after review; design direction unchanged:
 
