@@ -42,14 +42,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@voyantjs/ui/components/alert-dialog"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@voyantjs/ui/components/breadcrumb"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import {
   Table,
@@ -275,35 +267,16 @@ export function SupplierInvoiceDetailPage({
 
   return (
     <div className={cn("flex flex-col gap-6 p-6", className)}>
-      {/* Breadcrumb + actions */}
-      <div className="flex items-center justify-between gap-2">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              {onBack ? (
-                <BreadcrumbLink render={<button type="button" onClick={onBack} />}>
-                  {t.breadcrumbRoot}
-                </BreadcrumbLink>
-              ) : (
-                <span className="text-muted-foreground">{t.breadcrumbRoot}</span>
-              )}
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{invoice.supplierInvoiceNo}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-            <Pencil className="size-4" />
-            {t.actions.edit}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setDeleteOpen(true)}>
-            <Trash2 className="size-4" />
-            {t.actions.delete}
-          </Button>
-        </div>
+      {/* Actions (breadcrumb lives in the app shell) */}
+      <div className="flex items-center justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+          <Pencil className="size-4" />
+          {t.actions.edit}
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => setDeleteOpen(true)}>
+          <Trash2 className="size-4" />
+          {t.actions.delete}
+        </Button>
       </div>
 
       {/* Header */}
@@ -752,7 +725,7 @@ function LineDialog({
               value={serviceType}
               onValueChange={(v) => setServiceType((v as ApServiceType) ?? "other")}
             >
-              <SelectTrigger className="h-9 w-full">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -862,7 +835,7 @@ function AllocationDialog({
                 setTargetId("")
               }}
             >
-              <SelectTrigger className="h-9 w-full">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -972,7 +945,7 @@ function PaymentDialog({
           <div className="flex flex-col gap-2">
             <Label>{t.methodLabel}</Label>
             <Select value={method} onValueChange={(v) => setMethod(v ?? "other")}>
-              <SelectTrigger className="h-9 w-full">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

@@ -143,7 +143,7 @@ export function SupplierInvoiceFormDialog({
               value={form.status}
               onValueChange={(v) => set({ status: (v as SupplierInvoiceStatus) ?? "received" })}
             >
-              <SelectTrigger className="h-9 w-full">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

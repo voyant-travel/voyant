@@ -1,8 +1,9 @@
 import { useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import { useAdminBreadcrumbs } from "@voyantjs/admin"
 import { getSlotsQueryOptions } from "@voyantjs/availability-react"
 import { getBookingsQueryOptions } from "@voyantjs/bookings-react"
-import { getSupplierInvoiceQueryOptions } from "@voyantjs/finance-react"
+import { getSupplierInvoiceQueryOptions, useSupplierInvoice } from "@voyantjs/finance-react"
 import {
   type SupplierInvoiceAttachmentUpload,
   SupplierInvoiceDetailPage,
@@ -47,6 +48,13 @@ function SupplierInvoiceDetailRoute() {
   const { id } = Route.useParams()
   const navigate = Route.useNavigate()
   const queryClient = useQueryClient()
+  const { data } = useSupplierInvoice(id)
+  const invoiceNo = data?.data?.supplierInvoiceNo
+
+  useAdminBreadcrumbs([
+    { label: "Supplier invoices", href: "/finance/supplier-invoices" },
+    ...(invoiceNo ? [{ label: invoiceNo }] : []),
+  ])
 
   const searchTargets: SupplierInvoiceTargetSearch = async (targetType, query) => {
     const client = { baseUrl: getApiUrl(), fetcher: operatorFetcher }
