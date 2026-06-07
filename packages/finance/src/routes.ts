@@ -19,6 +19,7 @@ import {
   InvoiceNumberConflictError,
   PaymentValidationError,
 } from "./service.js"
+import { accountantSharesService } from "./service-accountant-shares.js"
 import {
   buildDepartureProfitabilityCsv,
   buildProductProfitabilityCsv,
@@ -34,6 +35,7 @@ import {
   applyDefaultBookingPaymentPlanSchema,
   cancelPaymentSessionSchema,
   completePaymentSessionSchema,
+  createAccountantShareSchema,
   createPaymentSessionFromGuaranteeSchema,
   createPaymentSessionFromInvoiceSchema,
   createPaymentSessionFromScheduleSchema,
@@ -576,6 +578,28 @@ export const financeRoutes = new Hono<Env>()
     const query = parseQuery(c, productProfitabilityQuerySchema)
     const report = await financeService.getProductProfitability(c.get("db"), query)
     return csvDownload(buildProductProfitabilityCsv(report), "product-profitability.csv")
+  })
+
+  // ----- Accountant shares (revocable public finance-portal links, RFC §13.2) -----
+  .get("/accountant-shares", async (c) => {
+    return c.json({ data: await accountantSharesService.list(c.get("db")) })
+  })
+  .post("/accountant-shares", async (c) => {
+    const input = await parseJsonBody(c, createAccountantShareSchema)
+    const share = await accountantSharesService.create(c.get("db"), input, {
+      publicBaseUrl: new URL(c.req.url).origin,
+      userId: c.get("userId") ?? null,
+    })
+    return c.json({ data: share }, 201)
+  })
+  .post("/accountant-shares/:id/revoke", async (c) => {
+    const revoked = await accountantSharesService.revoke(
+      c.get("db"),
+      c.req.param("id"),
+      c.get("userId") ?? null,
+    )
+    if (!revoked) return c.json({ error: "Accountant share not found" }, 404)
+    return c.json({ data: { id: revoked.id } })
   })
 
   // ========================================================================

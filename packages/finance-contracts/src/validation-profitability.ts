@@ -36,6 +36,18 @@ export const travelerProfitabilityQuerySchema = z.object({
   currency: z.string().min(1),
 })
 
+/**
+ * Accountant share — a revocable public link scoped to a date range that opens
+ * the read-only finance portal (RFC §13.2).
+ */
+export const createAccountantShareSchema = z.object({
+  from: z.string().optional(),
+  to: z.string().optional(),
+  baseCurrency: z.string().optional(),
+  ttlDays: z.number().int().positive().max(365).optional(),
+})
+
 export type DepartureProfitabilityQuery = z.infer<typeof departureProfitabilityQuerySchema>
 export type ProductProfitabilityQuery = z.infer<typeof productProfitabilityQuerySchema>
 export type TravelerProfitabilityQuery = z.infer<typeof travelerProfitabilityQuerySchema>
+export type CreateAccountantShareInput = z.infer<typeof createAccountantShareSchema>
