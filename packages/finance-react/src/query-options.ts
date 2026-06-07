@@ -715,15 +715,18 @@ export function getAccountantSharesQueryOptions(client: FetchWithValidationOptio
 export function getAccountantSummaryQueryOptions(
   client: FetchWithValidationOptions,
   token: string,
+  baseCurrency?: string,
 ) {
   return queryOptions({
-    queryKey: financeQueryKeys.accountantSummary(token),
-    queryFn: () =>
-      fetchWithValidation(
-        `/v1/public/finance/accountant/${encodeURIComponent(token)}/summary`,
+    queryKey: financeQueryKeys.accountantSummary(token, baseCurrency),
+    queryFn: () => {
+      const qs = baseCurrency ? `?baseCurrency=${encodeURIComponent(baseCurrency)}` : ""
+      return fetchWithValidation(
+        `/v1/public/finance/accountant/${encodeURIComponent(token)}/summary${qs}`,
         accountantSummaryResponse,
         client,
-      ),
+      )
+    },
   })
 }
 

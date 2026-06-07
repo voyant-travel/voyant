@@ -7,6 +7,7 @@ import {
   getAccountantInvoicesQueryOptions,
   getAccountantSummaryQueryOptions,
 } from "@voyantjs/finance-react"
+import { formatMessage } from "@voyantjs/i18n"
 import {
   Badge,
   Button,
@@ -30,6 +31,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@voyantjs/ui/components/chart"
+import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
 import {
   Table,
   TableBody,
@@ -43,10 +45,11 @@ import { Download, Globe } from "lucide-react"
 import { useMemo, useState } from "react"
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from "recharts"
 
+import type { FinanceUiMessages } from "../i18n/index.js"
 import {
   FinanceUiMessagesProvider,
   financeUiMessageDefinitions,
-  useFinanceUiMessagesOrDefault,
+  getFinanceUiI18n,
 } from "../i18n/index.js"
 import { AsyncCombobox, localOptionSearch } from "./async-combobox.js"
 import { formatInvoiceAmount } from "./invoice-table-parts.js"
@@ -88,9 +91,17 @@ export interface AccountantPortalProps {
 
 export function AccountantPortal({ defaultLocale, ...props }: AccountantPortalProps) {
   const [locale, setLocale] = useState(() => initialLocale(defaultLocale))
+  // Resolve messages directly from the chosen locale and pass them down, so the
+  // portal localizes regardless of any ambient FinanceUiMessagesProvider locale.
+  const messages = useMemo(() => getFinanceUiI18n({ locale }).messages, [locale])
   return (
     <FinanceUiMessagesProvider locale={locale}>
-      <AccountantPortalBody {...props} locale={locale} onLocaleChange={setLocale} />
+      <AccountantPortalBody
+        {...props}
+        messages={messages}
+        locale={locale}
+        onLocaleChange={setLocale}
+      />
     </FinanceUiMessagesProvider>
   )
 }
@@ -99,19 +110,22 @@ function AccountantPortalBody({
   token,
   apiBaseUrl,
   className,
+  messages,
   locale,
   onLocaleChange,
 }: Omit<AccountantPortalProps, "defaultLocale"> & {
+  messages: FinanceUiMessages
   locale: string
   onLocaleChange: (locale: string) => void
 }) {
-  const t = useFinanceUiMessagesOrDefault().profitability
+  const t = messages.profitability
   const client = useMemo(() => ({ baseUrl: apiBaseUrl, fetcher: defaultFetcher }), [apiBaseUrl])
   const [currency, setCurrency] = useState<string>("")
+  const [base, setBase] = useState<string>("")
   const [productId, setProductId] = useState<string>("")
   const [departureId, setDepartureId] = useState<string>("")
 
-  const summary = useQuery(getAccountantSummaryQueryOptions(client, token))
+  const summary = useQuery(getAccountantSummaryQueryOptions(client, token, base || undefined))
   const invoices = useQuery(getAccountantInvoicesQueryOptions(client, token))
 
   const data = summary.data?.data
@@ -295,8 +309,24 @@ function AccountantPortalBody({
               </Select>
             </div>
           ) : null}
+          <div className="flex flex-col gap-2">
+            <Label>{t.filters.baseCurrency}</Label>
+            <CurrencyCombobox
+              value={base || null}
+              onChange={(v) => setBase(v ?? "")}
+              className="w-40"
+            />
+          </div>
         </div>
       </div>
+
+      {baseMode && (departures?.base?.unconvertibleCurrencies.length ?? 0) > 0 ? (
+        <p className="text-sm text-amber-600 dark:text-amber-500">
+          {formatMessage(t.unconvertibleNote, {
+            currencies: (departures?.base?.unconvertibleCurrencies ?? []).join(", "),
+          })}
+        </p>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label={t.kpis.revenue} value={money(totals.revenue)} />

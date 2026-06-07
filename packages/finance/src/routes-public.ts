@@ -243,10 +243,13 @@ export function createPublicFinanceRoutes(options: PublicFinanceRouteOptions = {
           ip: getClientIp(c.req.raw.headers),
           userAgent: c.req.header("user-agent") ?? null,
         })
+        // The viewer may pick a base currency to aggregate across currencies via
+        // FX; falls back to the share's configured base. No extra data exposure —
+        // just converts already-in-scope figures.
         const query = {
           from: scope.from ?? undefined,
           to: scope.to ?? undefined,
-          baseCurrency: scope.baseCurrency ?? undefined,
+          baseCurrency: c.req.query("baseCurrency") || scope.baseCurrency || undefined,
         }
         const [departures, products] = await Promise.all([
           financeService.getDepartureProfitability(c.get("db"), query),
