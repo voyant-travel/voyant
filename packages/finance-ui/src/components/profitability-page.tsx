@@ -52,10 +52,10 @@ import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 
 
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
 import { AccountantShareDialog } from "./accountant-share-dialog.js"
+import { AsyncCombobox, localOptionSearch } from "./async-combobox.js"
 import { formatInvoiceAmount } from "./invoice-table-parts.js"
 
 const CHART_DEPARTURE_LIMIT = 12
-const ALL_FILTER = "__all__"
 const PIE_COLORS = [
   "hsl(221 83% 53%)",
   "hsl(142 71% 45%)",
@@ -301,44 +301,30 @@ export function ProfitabilityPage({
           </div>
           <div className="flex flex-col gap-2">
             <Label>{t.filters.product}</Label>
-            <Select
-              value={productId || ALL_FILTER}
-              onValueChange={(v) => {
-                setProductId(v === ALL_FILTER ? "" : (v ?? ""))
+            <AsyncCombobox
+              className="w-56"
+              placeholder={t.filters.allProducts}
+              value={productId || null}
+              onChange={(v) => {
+                setProductId(v ?? "")
                 setDepartureId("")
               }}
-            >
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_FILTER}>{t.filters.allProducts}</SelectItem>
-                {productOptions.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              search={localOptionSearch(
+                productOptions.map((p) => ({ value: p.id, label: p.name })),
+              )}
+            />
           </div>
           <div className="flex flex-col gap-2">
             <Label>{t.filters.departure}</Label>
-            <Select
-              value={departureId || ALL_FILTER}
-              onValueChange={(v) => setDepartureId(v === ALL_FILTER ? "" : (v ?? ""))}
-            >
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_FILTER}>{t.filters.allDepartures}</SelectItem>
-                {departureOptions.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>
-                    {d.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <AsyncCombobox
+              className="w-56"
+              placeholder={t.filters.allDepartures}
+              value={departureId || null}
+              onChange={(v) => setDepartureId(v ?? "")}
+              search={localOptionSearch(
+                departureOptions.map((d) => ({ value: d.id, label: d.label })),
+              )}
+            />
           </div>
         </div>
       </div>

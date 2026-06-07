@@ -418,6 +418,8 @@ export const supplierCostAllocationRecordSchema = z.object({
   amountCents: z.number().int(),
   baseAmountCents: z.number().int().nullable(),
   splitMethod: costAllocationSplitMethodSchema,
+  /** Resolved friendly label for the target (departure date+product, product, booking no). */
+  targetLabel: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })

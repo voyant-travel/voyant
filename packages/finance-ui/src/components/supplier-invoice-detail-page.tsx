@@ -437,7 +437,7 @@ export function SupplierInvoiceDetailPage({
                   <TableRow key={allocation.id}>
                     <TableCell>{t.allocation.targetTypeLabels[allocation.targetType]}</TableCell>
                     <TableCell className="text-muted-foreground">
-                      {allocationTargetId(allocation) || "—"}
+                      {allocation.targetLabel ?? allocationTargetId(allocation) ?? "—"}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {formatInvoiceAmount(allocation.amountCents, currency)}

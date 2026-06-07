@@ -2,6 +2,9 @@ import {
   type ActionLedgerRequestContextValues,
   appendActionLedgerMutation,
 } from "@voyantjs/action-ledger"
+import { availabilitySlots } from "@voyantjs/availability/schema"
+import { bookings } from "@voyantjs/bookings/schema"
+import { products } from "@voyantjs/products/schema"
 import { type AnyColumn, and, asc, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
@@ -290,7 +293,63 @@ async function loadSupplierInvoice(db: PostgresJsDatabase, id: string) {
       .where(eq(supplierCostAllocations.supplierInvoiceId, id))
       .orderBy(asc(supplierCostAllocations.createdAt)),
   ])
-  return { ...invoice, lines, allocations }
+  const targetLabels = await resolveAllocationTargetLabels(db, allocations)
+  const allocationsWithLabels = allocations.map((a) => ({
+    ...a,
+    targetLabel:
+      targetLabels.get(a.departureId ?? a.productId ?? a.bookingId ?? a.travelerId ?? "") ?? null,
+  }))
+  return { ...invoice, lines, allocations: allocationsWithLabels }
+}
+
+/** Resolve friendly labels for allocation targets (departure date+product, product, booking no). */
+async function resolveAllocationTargetLabels(
+  db: PostgresJsDatabase,
+  allocations: Array<{
+    departureId: string | null
+    productId: string | null
+    bookingId: string | null
+  }>,
+): Promise<Map<string, string>> {
+  const labels = new Map<string, string>()
+  const departureIds = [
+    ...new Set(allocations.map((a) => a.departureId).filter(Boolean)),
+  ] as string[]
+  const productIds = [...new Set(allocations.map((a) => a.productId).filter(Boolean))] as string[]
+  const bookingIds = [...new Set(allocations.map((a) => a.bookingId).filter(Boolean))] as string[]
+
+  const [slotRows, productRows, bookingRows] = await Promise.all([
+    departureIds.length
+      ? db
+          .select({
+            id: availabilitySlots.id,
+            dateLocal: availabilitySlots.dateLocal,
+            productName: products.name,
+          })
+          .from(availabilitySlots)
+          .leftJoin(products, eq(availabilitySlots.productId, products.id))
+          .where(inArray(availabilitySlots.id, departureIds))
+      : Promise.resolve([]),
+    productIds.length
+      ? db
+          .select({ id: products.id, name: products.name })
+          .from(products)
+          .where(inArray(products.id, productIds))
+      : Promise.resolve([]),
+    bookingIds.length
+      ? db
+          .select({ id: bookings.id, bookingNumber: bookings.bookingNumber })
+          .from(bookings)
+          .where(inArray(bookings.id, bookingIds))
+      : Promise.resolve([]),
+  ])
+
+  for (const s of slotRows) {
+    labels.set(s.id, s.productName ? `${s.productName} · ${s.dateLocal}` : s.dateLocal)
+  }
+  for (const p of productRows) labels.set(p.id, p.name)
+  for (const b of bookingRows) labels.set(b.id, b.bookingNumber)
+  return labels
 }
 
 const SORT_COLUMNS = {

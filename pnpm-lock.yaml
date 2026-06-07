@@ -3082,6 +3082,9 @@ importers:
       '@voyantjs/action-ledger':
         specifier: workspace:*
         version: link:../action-ledger
+      '@voyantjs/availability':
+        specifier: workspace:*
+        version: link:../availability
       '@voyantjs/bookings':
         specifier: workspace:*
         version: link:../bookings

@@ -44,6 +44,7 @@ import { useMemo, useState } from "react"
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from "recharts"
 
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
+import { AsyncCombobox, localOptionSearch } from "./async-combobox.js"
 import { formatInvoiceAmount } from "./invoice-table-parts.js"
 
 const PIE_COLORS = [
@@ -57,7 +58,6 @@ const PIE_COLORS = [
   "hsl(28 80% 52%)",
 ]
 const CHART_DEPARTURE_LIMIT = 12
-const ALL = "__all__"
 
 const marginText = (value: number | null) => (value == null ? "—" : `${value.toFixed(1)}%`)
 
@@ -199,44 +199,30 @@ export function AccountantPortal({ token, apiBaseUrl, className }: AccountantPor
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-2">
             <Label>{t.filters.product}</Label>
-            <Select
-              value={productId || ALL}
-              onValueChange={(v) => {
-                setProductId(v === ALL ? "" : (v ?? ""))
+            <AsyncCombobox
+              className="w-56"
+              placeholder={t.filters.allProducts}
+              value={productId || null}
+              onChange={(v) => {
+                setProductId(v ?? "")
                 setDepartureId("")
               }}
-            >
-              <SelectTrigger className="w-52">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>{t.filters.allProducts}</SelectItem>
-                {productOptions.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              search={localOptionSearch(
+                productOptions.map((p) => ({ value: p.id, label: p.name })),
+              )}
+            />
           </div>
           <div className="flex flex-col gap-2">
             <Label>{t.filters.departure}</Label>
-            <Select
-              value={departureId || ALL}
-              onValueChange={(v) => setDepartureId(v === ALL ? "" : (v ?? ""))}
-            >
-              <SelectTrigger className="w-52">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>{t.filters.allDepartures}</SelectItem>
-                {departureOptions.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>
-                    {d.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <AsyncCombobox
+              className="w-56"
+              placeholder={t.filters.allDepartures}
+              value={departureId || null}
+              onChange={(v) => setDepartureId(v ?? "")}
+              search={localOptionSearch(
+                departureOptions.map((d) => ({ value: d.id, label: d.label })),
+              )}
+            />
           </div>
           {!baseMode && currencies.length > 1 ? (
             <div className="flex flex-col gap-2">

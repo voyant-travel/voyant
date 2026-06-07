@@ -17,6 +17,14 @@ export interface AsyncComboboxOption {
   label: string
 }
 
+/** Client-side typeahead over already-loaded options (no server round-trip). */
+export const localOptionSearch =
+  (options: AsyncComboboxOption[]) =>
+  (query: string): Promise<AsyncComboboxOption[]> => {
+    const q = query.trim().toLowerCase()
+    return Promise.resolve(q ? options.filter((o) => o.label.toLowerCase().includes(q)) : options)
+  }
+
 export interface AsyncComboboxProps {
   value: string | null | undefined
   onChange: (value: string | null) => void

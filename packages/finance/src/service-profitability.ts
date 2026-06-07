@@ -1,9 +1,11 @@
+import { availabilitySlots } from "@voyantjs/availability/schema"
 import { bookingItems, bookingTravelers } from "@voyantjs/bookings/schema"
 import type {
   DepartureProfitabilityQuery,
   ProductProfitabilityQuery,
   TravelerProfitabilityQuery,
 } from "@voyantjs/finance-contracts"
+import { products } from "@voyantjs/products/schema"
 import { and, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -333,6 +335,30 @@ async function loadDepartureAccumulators(db: PostgresJsDatabase): Promise<{
   for (const row of departureCostRows) {
     if (!row.departureId) continue
     bucket(ensure(row.departureId).byCurrency, row.currency).actual += num(row.amountCents)
+  }
+
+  // Resolve friendly labels from availability_slots (+ product name) for every
+  // departure — fills cost-only departures that have no booking-item snapshot.
+  const departureIds = [...departures.keys()]
+  if (departureIds.length > 0) {
+    const slotRows = await db
+      .select({
+        id: availabilitySlots.id,
+        dateLocal: availabilitySlots.dateLocal,
+        productId: availabilitySlots.productId,
+        productName: products.name,
+      })
+      .from(availabilitySlots)
+      .leftJoin(products, eq(availabilitySlots.productId, products.id))
+      .where(inArray(availabilitySlots.id, departureIds))
+    for (const slot of slotRows) {
+      const acc = departures.get(slot.id)
+      if (!acc) continue
+      acc.departureLabel ??= slot.dateLocal
+      acc.departureDate ??= slot.dateLocal
+      acc.productId ??= slot.productId
+      acc.productName ??= slot.productName
+    }
   }
 
   const productActualCost = productCostRows

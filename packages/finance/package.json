@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@voyantjs/action-ledger": "workspace:*",
+    "@voyantjs/availability": "workspace:*",
     "@voyantjs/bookings": "workspace:*",
     "@voyantjs/core": "workspace:*",
     "@voyantjs/data-sdk": "0.1.3",
