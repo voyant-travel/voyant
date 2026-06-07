@@ -1,5 +1,13 @@
 # @voyantjs/notifications
 
+## 0.104.5
+
+### Patch Changes
+
+- a0e117b: Stop payment-schedule reminders from sending for terminal bookings by closing open schedules during cancelled/expired booking transitions and by skipping payment reminders when the parent booking is not payable.
+- Updated dependencies [a0e117b]
+  - @voyantjs/bookings@0.106.1
+
 ## 0.104.4
 
 ### Patch Changes
