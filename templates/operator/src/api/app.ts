@@ -40,6 +40,7 @@ import authHandler, {
   resolveAuthRequest,
   validateApiTokenAccess,
 } from "./auth/handler"
+import { closeTerminalBookingPaymentSchedules } from "./booking-payment-cleanup"
 import {
   bookingScheduleBundle,
   mountBookingPaymentScheduleRoutes,
@@ -233,6 +234,7 @@ const bookingsHonoModule = createBookingsHonoModule({
     (await crmService.getPersonById(db, personId)) != null,
   resolveBillingOrganizationById: async (db, organizationId) =>
     (await crmService.getOrganizationById(db, organizationId)) != null,
+  closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
 })
 
 const financeModule = createFinanceHonoModule({

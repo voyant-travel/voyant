@@ -28,6 +28,7 @@ import { suppliersHonoModule } from "@voyantjs/suppliers"
 import { transactionsBookingExtension, transactionsHonoModule } from "@voyantjs/transactions"
 import { resolveNotificationProviders } from "../lib/notifications"
 import authHandler, { hasAuthPermission, resolveAuthRequest } from "./auth/handler"
+import { closeTerminalBookingPaymentSchedules } from "./booking-payment-cleanup"
 import { getDashboardSummary } from "./dashboard-summary"
 import { createInvitationsRoutes } from "./invitations"
 import { getDbFromHyperdrive } from "./lib/db"
@@ -109,6 +110,7 @@ const bookingsHonoModule = createBookingsHonoModule({
     })
     return person?.id ?? null
   },
+  closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
 })
 
 export const app = createApp<CloudflareBindings>({

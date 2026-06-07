@@ -342,6 +342,10 @@ export const publicBookingRoutes = new Hono<Env>()
         c.req.param("sessionId"),
         await parseJsonBody(c, publicBookingSessionMutationSchema),
         c.get("userId"),
+        {
+          eventBus: c.get("eventBus"),
+          closePaymentSchedulesForBooking: getRouteRuntime(c).closePaymentSchedulesForBooking,
+        },
       )
 
       if (result.status === "not_found") {

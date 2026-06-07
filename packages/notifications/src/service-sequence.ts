@@ -1,6 +1,6 @@
 import { bookings } from "@voyantjs/bookings/schema"
 import { bookingPaymentSchedules, invoices } from "@voyantjs/finance"
-import { and, asc, eq, gt, gte, lte, or, sql } from "drizzle-orm"
+import { and, asc, eq, gt, gte, inArray, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -449,12 +449,20 @@ export type DateEnvelopes = {
   invoiceIssueDate?: { from: string; to: string }
 }
 
+const PAYABLE_BOOKING_STATUSES = [
+  "on_hold",
+  "awaiting_payment",
+  "confirmed",
+  "in_progress",
+] as const
+
 export async function fetchOpenPaymentScheduleTargets(
   db: PostgresJsDatabase,
   envelopes: DateEnvelopes = {},
 ): Promise<ReminderTargetSnapshot[]> {
   const conditions = [
     or(eq(bookingPaymentSchedules.status, "pending"), eq(bookingPaymentSchedules.status, "due")),
+    inArray(bookings.status, PAYABLE_BOOKING_STATUSES),
   ]
   if (envelopes.paymentScheduleDueDate) {
     conditions.push(

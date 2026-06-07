@@ -838,6 +838,7 @@ function bookingStatusMutationRuntime(
 
   return {
     eventBus: c.get("eventBus"),
+    closePaymentSchedulesForBooking: getRouteRuntime(c).closePaymentSchedulesForBooking,
     actionLedgerContext: getActionLedgerRequestContext(c),
     actionLedgerAuthorizationSource: auth.access.authorizationSource,
     actionLedgerCausationActionId: approvedExecution?.causationActionId ?? null,
@@ -1764,7 +1765,10 @@ export const bookingRoutes = new Hono<Env>()
         c.get("db"),
         await parseJsonBody(c, expireStaleBookingsSchema),
         c.get("userId"),
-        { eventBus: c.get("eventBus") },
+        {
+          eventBus: c.get("eventBus"),
+          closePaymentSchedulesForBooking: getRouteRuntime(c).closePaymentSchedulesForBooking,
+        },
       ),
     )
   })

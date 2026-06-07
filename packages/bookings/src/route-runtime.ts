@@ -3,6 +3,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { BookingTravelerSnapshot } from "./pii.js"
 import type { KmsBindings } from "./routes-shared.js"
+import type { BookingStatus } from "./state-machine.js"
 
 export const BOOKING_ROUTE_RUNTIME_CONTAINER_KEY = "runtime.bookings.routes"
 
@@ -72,6 +73,12 @@ export type ResolveBookingBillingOrganizationById = (
   organizationId: string,
 ) => Promise<boolean>
 
+export type ClosePaymentSchedulesForBooking = (
+  db: PostgresJsDatabase,
+  bookingId: string,
+  status: Extract<BookingStatus, "cancelled" | "expired">,
+) => Promise<void> | void
+
 export interface BookingRouteRuntime {
   getKmsProvider(): Promise<KmsProvider>
   resolveTravelSnapshot?: ResolveBookingTravelSnapshot
@@ -79,6 +86,7 @@ export interface BookingRouteRuntime {
   resolveTravelerPerson?: ResolveBookingTravelerPerson
   resolveBillingPersonById?: ResolveBookingBillingPersonById
   resolveBillingOrganizationById?: ResolveBookingBillingOrganizationById
+  closePaymentSchedulesForBooking?: ClosePaymentSchedulesForBooking
 }
 
 /**
@@ -99,6 +107,7 @@ export interface BookingRouteRuntimeOptions {
   resolveTravelerPerson?: ResolveBookingTravelerPerson
   resolveBillingPersonById?: ResolveBookingBillingPersonById
   resolveBillingOrganizationById?: ResolveBookingBillingOrganizationById
+  closePaymentSchedulesForBooking?: ClosePaymentSchedulesForBooking
 }
 
 function buildRuntimeEnv(bindings: KmsBindings): Record<string, string | undefined> {
@@ -133,5 +142,6 @@ export function buildBookingRouteRuntime(
     resolveTravelerPerson: options.resolveTravelerPerson,
     resolveBillingPersonById: options.resolveBillingPersonById,
     resolveBillingOrganizationById: options.resolveBillingOrganizationById,
+    closePaymentSchedulesForBooking: options.closePaymentSchedulesForBooking,
   }
 }
