@@ -47,6 +47,7 @@ import {
   insertBookingItemCommissionSchema,
   insertBookingItemTaxLineSchema,
   insertBookingPaymentScheduleSchema,
+  insertCostCategorySchema,
   insertCreditNoteLineItemSchema,
   insertCreditNoteSchema,
   insertFinanceNoteSchema,
@@ -93,6 +94,7 @@ import {
   updateBookingItemCommissionSchema,
   updateBookingItemTaxLineSchema,
   updateBookingPaymentScheduleSchema,
+  updateCostCategorySchema,
   updateCreditNoteSchema,
   updateInvoiceAttachmentSchema,
   updateInvoiceLineItemSchema,
@@ -578,6 +580,24 @@ export const financeRoutes = new Hono<Env>()
     const query = parseQuery(c, productProfitabilityQuerySchema)
     const report = await financeService.getProductProfitability(c.get("db"), query)
     return csvDownload(buildProductProfitabilityCsv(report), "product-profitability.csv")
+  })
+
+  // ----- Cost categories (operator-configurable cost classification) -----
+  .get("/cost-categories", async (c) => {
+    const includeArchived = c.req.query("includeArchived") === "true"
+    return c.json({
+      data: await financeService.costCategories.list(c.get("db"), { includeArchived }),
+    })
+  })
+  .post("/cost-categories", async (c) => {
+    const input = await parseJsonBody(c, insertCostCategorySchema)
+    return c.json({ data: await financeService.costCategories.create(c.get("db"), input) }, 201)
+  })
+  .patch("/cost-categories/:id", async (c) => {
+    const input = await parseJsonBody(c, updateCostCategorySchema)
+    const row = await financeService.costCategories.update(c.get("db"), c.req.param("id"), input)
+    if (!row) return c.json({ error: "Cost category not found" }, 404)
+    return c.json({ data: row })
   })
 
   // ----- Accountant shares (revocable public finance-portal links, RFC §13.2) -----

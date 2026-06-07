@@ -140,6 +140,7 @@ export const PREFIXES = {
   supplier_invoice_lines: "sinl",
   supplier_cost_allocations: "sial",
   supplier_invoice_attachments: "sina",
+  cost_categories: "ccat",
   finance_notes: "fnot",
   resources: "res",
   resource_pools: "repl",

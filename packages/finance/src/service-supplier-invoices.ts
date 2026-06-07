@@ -260,6 +260,7 @@ function lineValues(supplierInvoiceId: string, line: SupplierInvoiceLineInput, i
     supplierInvoiceId,
     description: line.description,
     serviceType: line.serviceType ?? "other",
+    costCategoryId: line.costCategoryId ?? null,
     supplierServiceId: line.supplierServiceId ?? null,
     quantity: line.quantity ?? 1,
     unitAmountCents: line.unitAmountCents,

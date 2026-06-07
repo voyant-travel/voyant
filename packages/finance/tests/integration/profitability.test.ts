@@ -31,6 +31,7 @@ async function seedSupplierCost(
     currency: string
     serviceType: "transport" | "flight" | "guide" | "other"
     amountCents: number
+    costCategoryId?: string
     target: { targetType: "departure"; departureId: string } | { targetType: "unattributed" }
   },
 ) {
@@ -44,6 +45,7 @@ async function seedSupplierCost(
       {
         description: opts.serviceType,
         serviceType: opts.serviceType,
+        costCategoryId: opts.costCategoryId ?? null,
         quantity: 1,
         unitAmountCents: opts.amountCents,
         taxAmountCents: 0,
@@ -181,22 +183,28 @@ describe.skipIf(!DB_AVAILABLE)("profitability read model", () => {
         dueDate: "2026-06-30",
       },
     ])
+    // Cost categories drive the breakdown (configurable; replaces fixed service types).
+    const transportCat = await financeService.costCategories.create(db, { name: "Transport" })
+    const guideCat = await financeService.costCategories.create(db, { name: "Guides" })
     // Actual supplier costs: D1 70000 EUR, D2 40000 EUR, D1 20000 RON, plus 5000 EUR unattributed.
     await seedSupplierCost(db, {
       currency: "EUR",
       serviceType: "transport",
+      costCategoryId: transportCat.id,
       amountCents: 70000,
       target: { targetType: "departure", departureId: "avsl_d1" },
     })
     await seedSupplierCost(db, {
       currency: "EUR",
       serviceType: "guide",
+      costCategoryId: guideCat.id,
       amountCents: 40000,
       target: { targetType: "departure", departureId: "avsl_d2" },
     })
     await seedSupplierCost(db, {
       currency: "RON",
       serviceType: "transport",
+      costCategoryId: transportCat.id,
       amountCents: 20000,
       target: { targetType: "departure", departureId: "avsl_d1" },
     })
@@ -244,13 +252,14 @@ describe.skipIf(!DB_AVAILABLE)("profitability read model", () => {
     })
 
     expect(report.unattributed).toContainEqual({ currency: "EUR", amountCents: 5000 })
+    // Breakdown is by configurable cost category name.
     expect(report.costByServiceType).toContainEqual({
-      serviceType: "transport",
+      serviceType: "Transport",
       currency: "EUR",
       amountCents: 70000,
     })
     expect(report.costByServiceType).toContainEqual({
-      serviceType: "guide",
+      serviceType: "Guides",
       currency: "EUR",
       amountCents: 40000,
     })
@@ -404,7 +413,7 @@ describe.skipIf(!DB_AVAILABLE)("profitability read model", () => {
     })
 
     expect(report.base?.costByServiceType).toContainEqual({
-      serviceType: "transport",
+      serviceType: "Transport",
       currency: "EUR",
       amountCents: 74000, // 70000 EUR + 4000 (RON→EUR)
     })

@@ -39,6 +39,7 @@ const currency = z.string().min(3).max(3)
 export const supplierInvoiceLineInputSchema = z.object({
   description: z.string().min(1),
   serviceType: apServiceTypeSchema.default("other"),
+  costCategoryId: z.string().optional().nullable(),
   supplierServiceId: z.string().optional().nullable(),
   quantity: z.number().int().min(1).default(1),
   unitAmountCents: z.number().int(),
@@ -180,8 +181,21 @@ export const supplierInvoiceListQuerySchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
 })
 
+// Operator-configurable cost categories.
+export const insertCostCategorySchema = z.object({
+  name: z.string().min(1).max(120),
+  sortOrder: z.number().int().min(0).optional(),
+})
+export const updateCostCategorySchema = z.object({
+  name: z.string().min(1).max(120).optional(),
+  sortOrder: z.number().int().min(0).optional(),
+  archived: z.boolean().optional(),
+})
+
 export type SupplierInvoiceLineInput = z.infer<typeof supplierInvoiceLineInputSchema>
 export type SupplierCostAllocationInput = z.infer<typeof supplierCostAllocationInputSchema>
 export type InsertSupplierInvoiceInput = z.infer<typeof insertSupplierInvoiceSchema>
 export type UpdateSupplierInvoiceInput = z.infer<typeof updateSupplierInvoiceSchema>
 export type SupplierInvoiceListQuery = z.infer<typeof supplierInvoiceListQuerySchema>
+export type InsertCostCategoryInput = z.infer<typeof insertCostCategorySchema>
+export type UpdateCostCategoryInput = z.infer<typeof updateCostCategorySchema>

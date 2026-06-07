@@ -1143,6 +1143,11 @@ export const supplierInvoiceLines = pgTable(
 
     description: text("description").notNull(),
     serviceType: apServiceTypeEnum("service_type").notNull().default("other"),
+    // Operator-configurable cost category (finance-local → real FK). The
+    // user-facing classification; `serviceType` is kept for back-compat.
+    costCategoryId: typeIdRef("cost_category_id").references(() => costCategories.id, {
+      onDelete: "set null",
+    }),
     // Cross-module → plain text ref to supplier_services (no FK).
     supplierServiceId: text("supplier_service_id"),
 
@@ -1165,6 +1170,26 @@ export const supplierInvoiceLines = pgTable(
 
 export type SupplierInvoiceLine = typeof supplierInvoiceLines.$inferSelect
 export type NewSupplierInvoiceLine = typeof supplierInvoiceLines.$inferInsert
+
+// ---------- cost_categories ----------
+// Operator-configurable cost categories (transportation, accommodation,
+// guides/touristic services, …). Selected on supplier-invoice lines and used
+// for the per-category cost breakdown in profitability.
+export const costCategories = pgTable(
+  "cost_categories",
+  {
+    id: typeId("cost_categories"),
+    name: text("name").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("idx_cost_categories_sort").on(table.sortOrder)],
+)
+
+export type CostCategory = typeof costCategories.$inferSelect
+export type NewCostCategory = typeof costCategories.$inferInsert
 
 // ---------- supplier_cost_allocations ----------
 // Attributes a line (or whole invoice) to a departure / product / booking /

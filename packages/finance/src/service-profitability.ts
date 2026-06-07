@@ -9,6 +9,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { type FxMoneyInput, resolveFxMoneyBaseAmount } from "./fx-money.js"
 import {
+  costCategories,
   invoices,
   supplierCostAllocations,
   supplierInvoiceLines,
@@ -229,10 +230,11 @@ async function loadDepartureAccumulators(db: PostgresJsDatabase): Promise<{
         ),
       )
       .groupBy(supplierCostAllocations.productId, supplierInvoices.currency),
-    // Cost breakdown by supplier service type (attributed allocations only).
+    // Cost breakdown by configurable cost category (attributed allocations only).
+    // Lines without a category (or whole-invoice allocations) fall to "Uncategorized".
     db
       .select({
-        serviceType: sql<string>`coalesce(${supplierInvoiceLines.serviceType}, 'other')`,
+        serviceType: sql<string>`coalesce(${costCategories.name}, 'Uncategorized')`,
         currency: supplierInvoices.currency,
         amountCents: sql<number>`coalesce(sum(${supplierCostAllocations.amountCents}), 0)::bigint`,
       })
@@ -245,6 +247,7 @@ async function loadDepartureAccumulators(db: PostgresJsDatabase): Promise<{
         supplierInvoiceLines,
         eq(supplierCostAllocations.supplierInvoiceLineId, supplierInvoiceLines.id),
       )
+      .leftJoin(costCategories, eq(supplierInvoiceLines.costCategoryId, costCategories.id))
       .where(
         and(
           inArray(supplierCostAllocations.targetType, [
@@ -257,10 +260,7 @@ async function loadDepartureAccumulators(db: PostgresJsDatabase): Promise<{
           isNull(supplierInvoices.deletedAt),
         ),
       )
-      .groupBy(
-        sql`coalesce(${supplierInvoiceLines.serviceType}, 'other')`,
-        supplierInvoices.currency,
-      ),
+      .groupBy(sql`coalesce(${costCategories.name}, 'Uncategorized')`, supplierInvoices.currency),
     // Recorded-but-unattributed cost — appears in AP totals, excluded from P&L.
     db
       .select({

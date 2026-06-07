@@ -89,6 +89,7 @@ import {
   buildSupplierPaymentUpdateActionLedgerInput,
 } from "./service-action-ledger.js"
 import { getFinanceAggregates } from "./service-aggregates.js"
+import { costCategoriesService } from "./service-cost-categories.js"
 import {
   getDepartureProfitability,
   getProductProfitability,
@@ -1578,6 +1579,7 @@ export const financeService = {
   getDepartureProfitability,
   getProductProfitability,
   getTravelerProfitability,
+  costCategories: costCategoriesService,
 
   async listPaymentInstruments(db: PostgresJsDatabase, query: PaymentInstrumentListQuery) {
     const conditions = []
