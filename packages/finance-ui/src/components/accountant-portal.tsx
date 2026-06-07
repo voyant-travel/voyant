@@ -39,11 +39,15 @@ import {
   TableRow,
 } from "@voyantjs/ui/components/table"
 import { cn } from "@voyantjs/ui/lib/utils"
-import { Download } from "lucide-react"
+import { Download, Globe } from "lucide-react"
 import { useMemo, useState } from "react"
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from "recharts"
 
-import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
+import {
+  FinanceUiMessagesProvider,
+  financeUiMessageDefinitions,
+  useFinanceUiMessagesOrDefault,
+} from "../i18n/index.js"
 import { AsyncCombobox, localOptionSearch } from "./async-combobox.js"
 import { formatInvoiceAmount } from "./invoice-table-parts.js"
 
@@ -61,14 +65,46 @@ const CHART_DEPARTURE_LIMIT = 12
 
 const marginText = (value: number | null) => (value == null ? "—" : `${value.toFixed(1)}%`)
 
+const LOCALES = Object.keys(financeUiMessageDefinitions)
+const LOCALE_NAMES: Record<string, string> = { en: "English", ro: "Română" }
+
+function initialLocale(defaultLocale?: string): string {
+  const candidates = [defaultLocale, typeof navigator !== "undefined" ? navigator.language : null]
+  for (const c of candidates) {
+    const code = c?.toLowerCase().split("-")[0]
+    if (code && LOCALES.includes(code)) return code
+  }
+  return "en"
+}
+
 export interface AccountantPortalProps {
   token: string
   /** Absolute API origin used for the public portal endpoints + download links. */
   apiBaseUrl: string
   className?: string
+  /** Initial language (operator's configured locale); the accountant can switch. */
+  defaultLocale?: string
 }
 
-export function AccountantPortal({ token, apiBaseUrl, className }: AccountantPortalProps) {
+export function AccountantPortal({ defaultLocale, ...props }: AccountantPortalProps) {
+  const [locale, setLocale] = useState(() => initialLocale(defaultLocale))
+  return (
+    <FinanceUiMessagesProvider locale={locale}>
+      <AccountantPortalBody {...props} locale={locale} onLocaleChange={setLocale} />
+    </FinanceUiMessagesProvider>
+  )
+}
+
+function AccountantPortalBody({
+  token,
+  apiBaseUrl,
+  className,
+  locale,
+  onLocaleChange,
+}: Omit<AccountantPortalProps, "defaultLocale"> & {
+  locale: string
+  onLocaleChange: (locale: string) => void
+}) {
   const t = useFinanceUiMessagesOrDefault().profitability
   const client = useMemo(() => ({ baseUrl: apiBaseUrl, fetcher: defaultFetcher }), [apiBaseUrl])
   const [currency, setCurrency] = useState<string>("")
@@ -197,6 +233,24 @@ export function AccountantPortal({ token, apiBaseUrl, className }: AccountantPor
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-2">
+            <Label className="flex items-center gap-1.5">
+              <Globe className="size-3.5" />
+              {t.portal.language}
+            </Label>
+            <Select value={locale} onValueChange={(v) => onLocaleChange(v ?? "en")}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LOCALES.map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {LOCALE_NAMES[code] ?? code.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex flex-col gap-2">
             <Label>{t.filters.product}</Label>
             <AsyncCombobox

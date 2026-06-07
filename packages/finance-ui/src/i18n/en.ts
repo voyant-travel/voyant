@@ -973,6 +973,7 @@ export const financeUiEn = {
     portal: {
       title: "Financial summary",
       subtitle: "Revenue, cost and margin per departure and product.",
+      language: "Language",
       allTime: "All time",
       loadFailed: "Failed to load the financial summary.",
       gone: "This link has expired or been revoked.",

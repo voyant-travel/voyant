@@ -970,6 +970,7 @@ export type FinanceUiMessages = {
     portal: {
       title: string
       subtitle: string
+      language: string
       allTime: string
       loadFailed: string
       gone: string

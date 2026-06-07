@@ -979,6 +979,7 @@ export const financeUiRo = {
     portal: {
       title: "Situatie financiara",
       subtitle: "Venituri, costuri si marja pe plecare si produs.",
+      language: "Limba",
       allTime: "Tot timpul",
       loadFailed: "Incarcarea situatiei financiare a esuat.",
       gone: "Acest link a expirat sau a fost revocat.",
