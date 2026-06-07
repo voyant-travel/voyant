@@ -1,7 +1,7 @@
 "use client"
 
 import { useCostCategories, useCostCategoryMutation } from "@voyantjs/finance-react"
-import { Badge, Button, Input } from "@voyantjs/ui/components"
+import { Badge, Button, Checkbox, Input, Label } from "@voyantjs/ui/components"
 import {
   Table,
   TableBody,
@@ -57,14 +57,13 @@ export function CostCategoriesPage({ className }: CostCategoriesPageProps = {}) 
         </Button>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-muted-foreground">
-        <input
-          type="checkbox"
+      <Label className="flex items-center gap-2 text-sm font-normal text-muted-foreground">
+        <Checkbox
           checked={showArchived}
-          onChange={(e) => setShowArchived(e.target.checked)}
+          onCheckedChange={(checked) => setShowArchived(checked === true)}
         />
         {t.showArchived}
-      </label>
+      </Label>
 
       <div className="max-w-2xl rounded-md border">
         <Table>
