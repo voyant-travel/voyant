@@ -431,16 +431,24 @@ Decision (from scoping): **build it in two phases — external/lightweight first
 Phase A needs **no new RBAC** — it's export + the existing grant/API-key primitives.
 
 > **Implemented (v1).** CSV export ships on the profitability reports —
-> `GET /v1/admin/finance/reports/profitability/{departures,products}/export`
-> (text/csv attachments; `Export CSV` buttons on the dashboard). The
-> **read-only accountant API key is supported today with no new code**: issue a
-> key scoped `finance:read` (Better Auth API-key plugin). `require-actor.ts`
-> derives the resource from the path (`/v1/admin/finance/*` → `finance`) and
-> requires `read` for GET, so such a key can pull every finance read route +
-> the CSV exports and **nothing mutating** (write/delete actions are absent).
-> A scoped key is the chosen v1 accountant path. Still open as follow-ups: PDF
-> export, the `POST /reports/:report/share` signed-link flow + manage-shares
-> UI, and a "Create accountant key" UI affordance.
+> `GET /v1/admin/finance/reports/profitability/{departures,products}/export`.
+>
+> **Accountant share portal (built).** The operator mints a revocable, TTL'd,
+> access-logged link scoped to a date range from the Profitability page
+> (`POST /v1/admin/finance/accountant-shares`; list + revoke). It's backed by the
+> generic `public_document_delivery_grants` token store (`sourceEntity =
+> accountant-share`, period in `metadata`) — no new table. The accountant opens
+> `/accountant/:token` (operator public route, no login): a read-only portal with
+> per-departure/product revenue-vs-cost charts + tables, the period's invoices
+> with their **uploaded PDF attachments** (downloaded via a token-scoped redirect
+> to a presigned URL — invoices already carry attachments, so nothing is
+> generated), and CSV export. Token routes live under
+> `/v1/public/finance/accountant/:token/*` and self-authenticate (the token is
+> the credential); the share's scope bounds every query.
+>
+> A `finance:read`-scoped API key also still works for programmatic pulls (see
+> §11). Still open: PDF *generation* (not needed — attachments cover it), and the
+> Phase B internal `accountant` login role (§13.3).
 
 ### 13.3 Phase B — first-class internal accountant role (follow-up)
 
