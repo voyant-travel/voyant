@@ -55,6 +55,7 @@ import { AccountantShareDialog } from "./accountant-share-dialog.js"
 import { formatInvoiceAmount } from "./invoice-table-parts.js"
 
 const CHART_DEPARTURE_LIMIT = 12
+const ALL_FILTER = "__all__"
 const PIE_COLORS = [
   "hsl(221 83% 53%)",
   "hsl(142 71% 45%)",
@@ -98,6 +99,8 @@ export function ProfitabilityPage({
     null,
   )
   const [shareOpen, setShareOpen] = useState(false)
+  const [productId, setProductId] = useState<string>("")
+  const [departureId, setDepartureId] = useState<string>("")
 
   const filters = {
     from: from || undefined,
@@ -128,19 +131,51 @@ export function ProfitabilityPage({
       ? currency
       : (currencies[0] ?? "")
 
-  const departureRows = useMemo(
+  const currencyDepartureRows = useMemo(
     () =>
       baseMode
         ? (departureReport?.base?.rows ?? [])
         : (departureReport?.rows ?? []).filter((r) => r.currency === activeCurrency),
     [departureReport, baseMode, activeCurrency],
   )
-  const productRows = useMemo(
+  const currencyProductRows = useMemo(
     () =>
       baseMode
         ? (productReport?.base?.rows ?? [])
         : (productReport?.rows ?? []).filter((r) => r.currency === activeCurrency),
     [productReport, baseMode, activeCurrency],
+  )
+
+  // Product/departure filters (client-side over the loaded report).
+  const productOptions = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const r of currencyDepartureRows) {
+      if (r.productId) map.set(r.productId, r.productName ?? r.productId)
+    }
+    return [...map.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [currencyDepartureRows])
+  const departureOptions = useMemo(
+    () =>
+      currencyDepartureRows
+        .filter((r) => !productId || r.productId === productId)
+        .map((r) => ({ id: r.departureId, label: r.departureLabel ?? r.departureId })),
+    [currencyDepartureRows, productId],
+  )
+
+  const departureRows = useMemo(
+    () =>
+      currencyDepartureRows.filter(
+        (r) =>
+          (!productId || r.productId === productId) &&
+          (!departureId || r.departureId === departureId),
+      ),
+    [currencyDepartureRows, productId, departureId],
+  )
+  const productRows = useMemo(
+    () => currencyProductRows.filter((r) => !productId || r.productId === productId),
+    [currencyProductRows, productId],
   )
 
   const unconvertibleCurrencies = baseMode
@@ -263,6 +298,47 @@ export function ProfitabilityPage({
               onChange={(v) => setBase(v ?? "")}
               className="w-40"
             />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label>{t.filters.product}</Label>
+            <Select
+              value={productId || ALL_FILTER}
+              onValueChange={(v) => {
+                setProductId(v === ALL_FILTER ? "" : (v ?? ""))
+                setDepartureId("")
+              }}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_FILTER}>{t.filters.allProducts}</SelectItem>
+                {productOptions.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label>{t.filters.departure}</Label>
+            <Select
+              value={departureId || ALL_FILTER}
+              onValueChange={(v) => setDepartureId(v === ALL_FILTER ? "" : (v ?? ""))}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_FILTER}>{t.filters.allDepartures}</SelectItem>
+                {departureOptions.map((d) => (
+                  <SelectItem key={d.id} value={d.id}>
+                    {d.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>

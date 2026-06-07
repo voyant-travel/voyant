@@ -867,6 +867,10 @@ export type FinanceUiMessages = {
       from: string
       to: string
       baseCurrency: string
+      product: string
+      departure: string
+      allProducts: string
+      allDepartures: string
     }
     kpis: {
       revenue: string

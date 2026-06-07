@@ -872,6 +872,10 @@ export const financeUiEn = {
       from: "From",
       to: "To",
       baseCurrency: "Base currency",
+      product: "Product",
+      departure: "Departure",
+      allProducts: "All products",
+      allDepartures: "All departures",
     },
     kpis: {
       revenue: "Revenue",

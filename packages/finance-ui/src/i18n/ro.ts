@@ -878,6 +878,10 @@ export const financeUiRo = {
       from: "De la",
       to: "Pana la",
       baseCurrency: "Moneda de baza",
+      product: "Produs",
+      departure: "Plecare",
+      allProducts: "Toate produsele",
+      allDepartures: "Toate plecarile",
     },
     kpis: {
       revenue: "Venituri",

@@ -57,6 +57,7 @@ const PIE_COLORS = [
   "hsl(28 80% 52%)",
 ]
 const CHART_DEPARTURE_LIMIT = 12
+const ALL = "__all__"
 
 const marginText = (value: number | null) => (value == null ? "—" : `${value.toFixed(1)}%`)
 
@@ -71,6 +72,8 @@ export function AccountantPortal({ token, apiBaseUrl, className }: AccountantPor
   const t = useFinanceUiMessagesOrDefault().profitability
   const client = useMemo(() => ({ baseUrl: apiBaseUrl, fetcher: defaultFetcher }), [apiBaseUrl])
   const [currency, setCurrency] = useState<string>("")
+  const [productId, setProductId] = useState<string>("")
+  const [departureId, setDepartureId] = useState<string>("")
 
   const summary = useQuery(getAccountantSummaryQueryOptions(client, token))
   const invoices = useQuery(getAccountantInvoicesQueryOptions(client, token))
@@ -93,12 +96,36 @@ export function AccountantPortal({ token, apiBaseUrl, className }: AccountantPor
       ? currency
       : (currencies[0] ?? "")
 
-  const departureRows = baseMode
+  const currencyDepartureRows = baseMode
     ? (departures?.base?.rows ?? [])
     : (departures?.rows ?? []).filter((r) => r.currency === activeCurrency)
-  const productRows = baseMode
+  const currencyProductRows = baseMode
     ? (products?.base?.rows ?? [])
     : (products?.rows ?? []).filter((r) => r.currency === activeCurrency)
+
+  // Product/departure filters (client-side over the loaded scope).
+  const productOptions = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const r of currencyDepartureRows) {
+      if (r.productId) map.set(r.productId, r.productName ?? r.productId)
+    }
+    return [...map.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [currencyDepartureRows])
+  const departureOptions = useMemo(
+    () =>
+      currencyDepartureRows
+        .filter((r) => !productId || r.productId === productId)
+        .map((r) => ({ id: r.departureId, label: r.departureLabel ?? r.departureId })),
+    [currencyDepartureRows, productId],
+  )
+
+  const departureRows = currencyDepartureRows.filter(
+    (r) =>
+      (!productId || r.productId === productId) && (!departureId || r.departureId === departureId),
+  )
+  const productRows = currencyProductRows.filter((r) => !productId || r.productId === productId)
 
   const totals = useMemo(() => {
     let revenue = 0
@@ -169,23 +196,66 @@ export function AccountantPortal({ token, apiBaseUrl, className }: AccountantPor
             {periodLabel} · {t.portal.subtitle}
           </p>
         </div>
-        {!baseMode && currencies.length > 1 ? (
+        <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-2">
-            <Label>{t.filters.currency}</Label>
-            <Select value={activeCurrency} onValueChange={(v) => setCurrency(v ?? "")}>
-              <SelectTrigger className="w-32">
+            <Label>{t.filters.product}</Label>
+            <Select
+              value={productId || ALL}
+              onValueChange={(v) => {
+                setProductId(v === ALL ? "" : (v ?? ""))
+                setDepartureId("")
+              }}
+            >
+              <SelectTrigger className="w-52">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {currencies.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
+                <SelectItem value={ALL}>{t.filters.allProducts}</SelectItem>
+                {productOptions.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-        ) : null}
+          <div className="flex flex-col gap-2">
+            <Label>{t.filters.departure}</Label>
+            <Select
+              value={departureId || ALL}
+              onValueChange={(v) => setDepartureId(v === ALL ? "" : (v ?? ""))}
+            >
+              <SelectTrigger className="w-52">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>{t.filters.allDepartures}</SelectItem>
+                {departureOptions.map((d) => (
+                  <SelectItem key={d.id} value={d.id}>
+                    {d.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {!baseMode && currencies.length > 1 ? (
+            <div className="flex flex-col gap-2">
+              <Label>{t.filters.currency}</Label>
+              <Select value={activeCurrency} onValueChange={(v) => setCurrency(v ?? "")}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {currencies.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
