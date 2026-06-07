@@ -5,7 +5,7 @@ import { SupplierInvoicesPage } from "@voyantjs/finance-ui"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
-import { makeSupplierPicker } from "./supplier-picker"
+import { makeSupplierPicker } from "./-supplier-picker"
 
 export const Route = createFileRoute("/_workspace/finance/supplier-invoices/")({
   ssr: "data-only",

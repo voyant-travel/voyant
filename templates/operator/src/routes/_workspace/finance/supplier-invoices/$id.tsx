@@ -13,7 +13,7 @@ import { getProductsQueryOptions } from "@voyantjs/products-react"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
-import { makeSupplierPicker } from "./supplier-picker"
+import { makeSupplierPicker } from "./-supplier-picker"
 
 async function uploadSupplierInvoiceAttachment(
   file: File,
