@@ -93,6 +93,16 @@ function SupplierInvoiceDetailRoute() {
     return []
   }
 
+  // Two-step departure picker: list a chosen product's departures (slots).
+  const listDeparturesForProduct = async (productId: string, query: string) => {
+    const client = { baseUrl: getApiUrl(), fetcher: operatorFetcher }
+    const res = await queryClient.fetchQuery(getSlotsQueryOptions(client, { productId, limit: 50 }))
+    const q = query.trim().toLowerCase()
+    return res.data
+      .filter((s) => !q || s.dateLocal.toLowerCase().includes(q))
+      .map((s) => ({ value: s.id, label: s.dateLocal }))
+  }
+
   const { searchSuppliers, createSupplier } = makeSupplierPicker(queryClient)
 
   return (
@@ -108,6 +118,7 @@ function SupplierInvoiceDetailRoute() {
       }}
       uploadFile={uploadSupplierInvoiceAttachment}
       searchTargets={searchTargets}
+      listDeparturesForProduct={listDeparturesForProduct}
       searchSuppliers={searchSuppliers}
       createSupplier={createSupplier}
       onDownloadAttachment={(attachmentId) => {

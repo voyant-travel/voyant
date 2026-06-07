@@ -169,6 +169,12 @@ export interface SupplierInvoiceDetailPageProps {
    * the allocation dialog instead of a raw id field.
    */
   searchTargets?: SupplierInvoiceTargetSearch
+  /**
+   * List a product's departures for the two-step departure picker (pick product,
+   * then departure). When provided alongside `searchTargets`, departure
+   * allocation uses product → departure selects instead of a flat list.
+   */
+  listDeparturesForProduct?: (productId: string, query: string) => Promise<AsyncComboboxOption[]>
   /** Optional invoice-extraction extension point for the edit dialog. */
   extractFromFile?: (file: File) => Promise<SupplierInvoiceExtraction>
   /** Search suppliers for the edit dialog's supplier picker. */
@@ -192,6 +198,7 @@ export function SupplierInvoiceDetailPage({
   uploadFile,
   onDownloadAttachment,
   searchTargets,
+  listDeparturesForProduct,
   extractFromFile,
   searchSuppliers,
   createSupplier,
@@ -625,6 +632,7 @@ export function SupplierInvoiceDetailPage({
         currency={currency}
         pending={setAllocations.isPending}
         searchTargets={searchTargets}
+        listDeparturesForProduct={listDeparturesForProduct}
         onOpenChange={(open) =>
           setAllocationDialog(open ? (allocationDialog ?? { allocation: null }) : null)
         }
@@ -795,6 +803,7 @@ function AllocationDialog({
   currency,
   pending,
   searchTargets,
+  listDeparturesForProduct,
   onOpenChange,
   onSubmit,
 }: {
@@ -803,12 +812,14 @@ function AllocationDialog({
   currency: string
   pending: boolean
   searchTargets?: SupplierInvoiceTargetSearch
+  listDeparturesForProduct?: (productId: string, query: string) => Promise<AsyncComboboxOption[]>
   onOpenChange: (open: boolean) => void
   onSubmit: (input: SupplierCostAllocationInput) => void
 }) {
   const t = useFinanceUiMessagesOrDefault().supplierInvoiceDetail.allocation
   const [targetType, setTargetType] = useState<TargetType>("departure")
   const [targetId, setTargetId] = useState("")
+  const [productId, setProductId] = useState("")
   const [amount, setAmount] = useState("")
 
   const seedKey = open ? (allocation?.id ?? "new") : "closed"
@@ -825,8 +836,13 @@ function AllocationDialog({
             "")
         : "",
     )
+    setProductId(allocation?.productId ?? "")
     setAmount(allocation ? (allocation.amountCents / 100).toFixed(2) : "")
   }
+
+  // Two-step departure picker (pick product → departure) when wired.
+  const twoStepDeparture =
+    targetType === "departure" && Boolean(searchTargets) && Boolean(listDeparturesForProduct)
 
   const submit = () => {
     if (!amount) return
@@ -870,7 +886,34 @@ function AllocationDialog({
             <Label>{formatMessage(t.amountLabel, { currency })}</Label>
             <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
-          {targetType !== "unattributed" ? (
+          {targetType === "unattributed" ? null : twoStepDeparture ? (
+            <>
+              <div className="col-span-2 flex flex-col gap-2">
+                <Label>{t.targetTypeLabels.product}</Label>
+                <AsyncCombobox
+                  value={productId || null}
+                  onChange={(v) => {
+                    setProductId(v ?? "")
+                    setTargetId("")
+                  }}
+                  search={(query) => searchTargets?.("product", query) ?? Promise.resolve([])}
+                />
+              </div>
+              <div className="col-span-2 flex flex-col gap-2">
+                <Label>{t.targetTypeLabels.departure}</Label>
+                <AsyncCombobox
+                  value={targetId || null}
+                  onChange={(v) => setTargetId(v ?? "")}
+                  disabled={!productId}
+                  search={(query) =>
+                    productId
+                      ? (listDeparturesForProduct?.(productId, query) ?? Promise.resolve([]))
+                      : Promise.resolve([])
+                  }
+                />
+              </div>
+            </>
+          ) : (
             <div className="col-span-2 flex flex-col gap-2">
               <Label>{t.targetTypeLabels[targetType]}</Label>
               {searchTargets && SEARCHABLE_TARGETS.has(targetType) ? (
@@ -888,7 +931,7 @@ function AllocationDialog({
                 <Input value={targetId} onChange={(e) => setTargetId(e.target.value)} />
               )}
             </div>
-          ) : null}
+          )}
         </DialogBody>
         <DialogFooter>
           <Button
