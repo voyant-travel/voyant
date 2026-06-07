@@ -114,6 +114,53 @@ describe.skipIf(!DB_AVAILABLE)("supplier invoices (accounts payable)", () => {
     expect(ok?.allocations).toHaveLength(2)
   })
 
+  it("rejects line edits that would over-allocate surviving whole-invoice allocations", async () => {
+    const created = await supplierInvoicesService.create(db, {
+      supplierId: "supp_test",
+      supplierInvoiceNo: nextSupplierInvoiceNo(),
+      currency: "EUR",
+      issueDate: "2026-06-01",
+      lines: [
+        {
+          description: "Transport",
+          quantity: 1,
+          unitAmountCents: 100000,
+          taxAmountCents: 0,
+          totalAmountCents: 100000,
+          sortOrder: 0,
+        },
+      ],
+    })
+    const id = created?.id as string
+
+    // Whole-invoice allocation that fills the current 100000 total.
+    await supplierInvoicesService.setAllocations(db, id, {
+      allocations: [{ targetType: "departure", departureId: "avsl_a", amountCents: 100000 }],
+    })
+
+    // Shrinking the lines below the allocated amount must be rejected, not silently
+    // leave the invoice over-allocated.
+    await expect(
+      supplierInvoicesService.setLines(db, id, {
+        lines: [
+          {
+            description: "Transport (reduced)",
+            quantity: 1,
+            unitAmountCents: 40000,
+            taxAmountCents: 0,
+            totalAmountCents: 40000,
+            sortOrder: 0,
+          },
+        ],
+      }),
+    ).rejects.toBeInstanceOf(SupplierInvoiceServiceError)
+
+    // The original total + allocation are untouched (the failed edit rolled back).
+    const after = await supplierInvoicesService.getById(db, id)
+    expect(after?.totalCents).toBe(100000)
+    expect(after?.allocations).toHaveLength(1)
+  })
+
   it("settles the invoice when a completed supplier payment is recorded", async () => {
     const created = await supplierInvoicesService.create(db, {
       supplierId: "supp_test",

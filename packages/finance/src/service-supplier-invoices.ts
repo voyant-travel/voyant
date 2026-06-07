@@ -772,6 +772,27 @@ export const supplierInvoicesService = {
           .insert(supplierInvoiceLines)
           .values(input.lines.map((line, index) => lineValues(id, line, index)))
       }
+
+      // Per-line allocations cascade out with their lines, but whole-invoice
+      // (line-less) allocations survive — and a shrunk line total could leave
+      // them over-allocated. Re-validate against the NEW total and reject rather
+      // than silently corrupt the P&L (mirrors setAllocations' invariant).
+      const survivingAllocations = await tx
+        .select({
+          supplierInvoiceLineId: supplierCostAllocations.supplierInvoiceLineId,
+          amountCents: supplierCostAllocations.amountCents,
+        })
+        .from(supplierCostAllocations)
+        .where(eq(supplierCostAllocations.supplierInvoiceId, id))
+      if (survivingAllocations.length) {
+        const check = validateAllocations({
+          invoiceTotalCents: totals.totalCents,
+          lines: [],
+          allocations: survivingAllocations,
+        })
+        if (!check.ok) throw new SupplierInvoiceServiceError(check.code, check.message)
+      }
+
       // Totals changed → re-snapshot the base value at the invoice's issue date.
       const fx = await snapshotSupplierInvoiceFx(
         db,

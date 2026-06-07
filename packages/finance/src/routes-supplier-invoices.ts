@@ -103,14 +103,20 @@ export const supplierInvoiceRoutes = new Hono<Env>()
   })
 
   .put("/supplier-invoices/:id/lines", async (c) => {
-    const row = await supplierInvoicesService.setLines(
-      c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, setSupplierInvoiceLinesSchema),
-      apRuntime(c),
-    )
-    if (!row) return c.json({ error: "Supplier invoice not found" }, 404)
-    return c.json({ data: row })
+    try {
+      const row = await supplierInvoicesService.setLines(
+        c.get("db"),
+        c.req.param("id"),
+        await parseJsonBody(c, setSupplierInvoiceLinesSchema),
+        apRuntime(c),
+      )
+      if (!row) return c.json({ error: "Supplier invoice not found" }, 404)
+      return c.json({ data: row })
+    } catch (error) {
+      // setLines now rejects edits that would over-allocate surviving
+      // whole-invoice allocations (§6.1) → 422 via the shared mapper.
+      return handleSupplierInvoiceError(c, error)
+    }
   })
 
   .put("/supplier-invoices/:id/allocations", async (c) => {
