@@ -100,6 +100,10 @@ export {
   PaymentsTableSkeleton,
 } from "./components/payments-page-skeleton.js"
 export {
+  ProfitabilityPage,
+  type ProfitabilityPageProps,
+} from "./components/profitability-page.js"
+export {
   RecordBookingPaymentDialog,
   type RecordBookingPaymentDialogProps,
 } from "./components/record-booking-payment-dialog.js"

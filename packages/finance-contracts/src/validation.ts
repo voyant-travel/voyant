@@ -1,5 +1,6 @@
 export * from "./validation-billing.js"
 export * from "./validation-payments.js"
+export * from "./validation-profitability.js"
 export * from "./validation-public.js"
 export * from "./validation-shared.js"
 export * from "./validation-supplier-invoices.js"

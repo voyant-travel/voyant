@@ -155,6 +155,11 @@ export function createOperatorAdminNavigation({
           title: messages.supplierInvoices,
           url: "/finance/supplier-invoices",
         },
+        {
+          id: "profitability",
+          title: messages.profitability,
+          url: "/finance/profitability",
+        },
       ],
     },
     {

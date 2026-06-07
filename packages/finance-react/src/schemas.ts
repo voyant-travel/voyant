@@ -469,6 +469,68 @@ export const supplierInvoiceAttachmentRecordSchema = z.object({
 })
 export type SupplierInvoiceAttachmentRecord = z.infer<typeof supplierInvoiceAttachmentRecordSchema>
 
+// ---------- profitability read model (RFC §8) ----------
+
+export const profitabilityCostByServiceTypeSchema = z.object({
+  serviceType: z.string(),
+  currency: z.string(),
+  amountCents: z.number().int(),
+})
+export type ProfitabilityCostByServiceType = z.infer<typeof profitabilityCostByServiceTypeSchema>
+
+export const profitabilityUnattributedSchema = z.object({
+  currency: z.string(),
+  amountCents: z.number().int(),
+})
+export type ProfitabilityUnattributed = z.infer<typeof profitabilityUnattributedSchema>
+
+export const departureProfitabilityRowSchema = z.object({
+  departureId: z.string(),
+  departureLabel: z.string().nullable(),
+  productId: z.string().nullable(),
+  productName: z.string().nullable(),
+  departureDate: z.string().nullable(),
+  currency: z.string(),
+  revenueCents: z.number().int(),
+  actualCostCents: z.number().int(),
+  plannedCostCents: z.number().int(),
+  profitCents: z.number().int(),
+  marginPercent: z.number().nullable(),
+  varianceCents: z.number().int(),
+})
+export type DepartureProfitabilityRow = z.infer<typeof departureProfitabilityRowSchema>
+
+export const departureProfitabilityReportSchema = z.object({
+  rows: z.array(departureProfitabilityRowSchema),
+  costByServiceType: z.array(profitabilityCostByServiceTypeSchema),
+  unattributed: z.array(profitabilityUnattributedSchema),
+})
+export type DepartureProfitabilityReport = z.infer<typeof departureProfitabilityReportSchema>
+
+export const productProfitabilityRowSchema = z.object({
+  productId: z.string(),
+  productName: z.string().nullable(),
+  currency: z.string(),
+  departureCount: z.number().int(),
+  revenueCents: z.number().int(),
+  actualCostCents: z.number().int(),
+  plannedCostCents: z.number().int(),
+  profitCents: z.number().int(),
+  marginPercent: z.number().nullable(),
+  varianceCents: z.number().int(),
+})
+export type ProductProfitabilityRow = z.infer<typeof productProfitabilityRowSchema>
+
+export const productProfitabilityReportSchema = z.object({
+  rows: z.array(productProfitabilityRowSchema),
+  costByServiceType: z.array(profitabilityCostByServiceTypeSchema),
+  unattributed: z.array(profitabilityUnattributedSchema),
+})
+export type ProductProfitabilityReport = z.infer<typeof productProfitabilityReportSchema>
+
+export const departureProfitabilityResponse = singleEnvelope(departureProfitabilityReportSchema)
+export const productProfitabilityResponse = singleEnvelope(productProfitabilityReportSchema)
+
 export const supplierInvoiceListResponse = paginatedEnvelope(supplierInvoiceRecordSchema)
 export const supplierInvoiceSingleResponse = singleEnvelope(supplierInvoiceDetailRecordSchema)
 export const supplierInvoiceAttachmentsResponse = arrayEnvelope(

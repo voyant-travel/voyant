@@ -1,3 +1,17 @@
+export interface FinanceDepartureProfitabilityFilters {
+  from?: string | undefined
+  to?: string | undefined
+  productId?: string | undefined
+  departureId?: string | undefined
+  currency?: string | undefined
+}
+
+export interface FinanceProductProfitabilityFilters {
+  from?: string | undefined
+  to?: string | undefined
+  currency?: string | undefined
+}
+
 export type FinanceInvoiceListSortField =
   | "invoiceNumber"
   | "status"
@@ -188,6 +202,11 @@ export const financeQueryKeys = {
     [...financeQueryKeys.supplierInvoice(id), "payments"] as const,
   supplierInvoiceAttachments: (id: string) =>
     [...financeQueryKeys.supplierInvoice(id), "attachments"] as const,
+
+  departureProfitability: (filters: FinanceDepartureProfitabilityFilters) =>
+    [...financeQueryKeys.all, "profitability", "departures", filters] as const,
+  productProfitability: (filters: FinanceProductProfitabilityFilters) =>
+    [...financeQueryKeys.all, "profitability", "products", filters] as const,
 
   supplierPayments: () => [...financeQueryKeys.all, "supplier-payments"] as const,
   supplierPaymentsList: (filters: FinanceSupplierPaymentListFilters) =>

@@ -33,6 +33,7 @@ import {
   createPaymentSessionFromGuaranteeSchema,
   createPaymentSessionFromInvoiceSchema,
   createPaymentSessionFromScheduleSchema,
+  departureProfitabilityQuerySchema,
   expirePaymentSessionSchema,
   failPaymentSessionSchema,
   financeAggregatesQuerySchema,
@@ -71,6 +72,7 @@ import {
   paymentInstrumentListQuerySchema,
   paymentListQuerySchema,
   paymentSessionListQuerySchema,
+  productProfitabilityQuerySchema,
   profitabilityQuerySchema,
   redeemVoucherSchema,
   renderInvoiceInputSchema,
@@ -528,6 +530,18 @@ export const financeRoutes = new Hono<Env>()
   .get("/reports/profitability", async (c) => {
     const query = parseQuery(c, profitabilityQuerySchema)
     return c.json({ data: await financeService.getProfitabilityReport(c.get("db"), query) })
+  })
+
+  // GET /reports/profitability/departures — Per-departure P&L (RFC §8)
+  .get("/reports/profitability/departures", async (c) => {
+    const query = parseQuery(c, departureProfitabilityQuerySchema)
+    return c.json({ data: await financeService.getDepartureProfitability(c.get("db"), query) })
+  })
+
+  // GET /reports/profitability/products — Per-product P&L roll-up (RFC §8)
+  .get("/reports/profitability/products", async (c) => {
+    const query = parseQuery(c, productProfitabilityQuerySchema)
+    return c.json({ data: await financeService.getProductProfitability(c.get("db"), query) })
   })
 
   // ========================================================================

@@ -35,11 +35,16 @@ import {
   getPublicFinanceDocumentByReference,
   getPublicPaymentSession,
 } from "./operations.js"
-import { financeQueryKeys } from "./query-keys.js"
+import {
+  type FinanceDepartureProfitabilityFilters,
+  type FinanceProductProfitabilityFilters,
+  financeQueryKeys,
+} from "./query-keys.js"
 import {
   allPaymentsListResponse,
   bookingGuaranteesResponse,
   bookingPaymentSchedulesResponse,
+  departureProfitabilityResponse,
   invoiceAttachmentsResponse,
   invoiceCreditNotesResponse,
   invoiceLineItemsResponse,
@@ -49,6 +54,7 @@ import {
   invoicePaymentsResponse,
   invoiceSingleResponse,
   paymentSingleResponse,
+  productProfitabilityResponse,
   supplierInvoiceAttachmentsResponse,
   supplierInvoiceListResponse,
   supplierInvoiceSingleResponse,
@@ -605,6 +611,52 @@ export function getVoucherQueryOptions(
     queryFn: async () => {
       if (!id) throw new Error("getVoucherQueryOptions requires an id")
       return fetchWithValidation(`/v1/admin/finance/vouchers/${id}`, voucherDetailResponse, client)
+    },
+  })
+}
+
+export function getDepartureProfitabilityQueryOptions(
+  client: FetchWithValidationOptions,
+  filters: FinanceDepartureProfitabilityFilters = {},
+) {
+  return queryOptions({
+    queryKey: financeQueryKeys.departureProfitability(filters),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (filters.from) params.set("from", filters.from)
+      if (filters.to) params.set("to", filters.to)
+      if (filters.productId) params.set("productId", filters.productId)
+      if (filters.departureId) params.set("departureId", filters.departureId)
+      if (filters.currency) params.set("currency", filters.currency)
+      const qs = params.toString()
+
+      return fetchWithValidation(
+        `/v1/admin/finance/reports/profitability/departures${qs ? `?${qs}` : ""}`,
+        departureProfitabilityResponse,
+        client,
+      )
+    },
+  })
+}
+
+export function getProductProfitabilityQueryOptions(
+  client: FetchWithValidationOptions,
+  filters: FinanceProductProfitabilityFilters = {},
+) {
+  return queryOptions({
+    queryKey: financeQueryKeys.productProfitability(filters),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (filters.from) params.set("from", filters.from)
+      if (filters.to) params.set("to", filters.to)
+      if (filters.currency) params.set("currency", filters.currency)
+      const qs = params.toString()
+
+      return fetchWithValidation(
+        `/v1/admin/finance/reports/profitability/products${qs ? `?${qs}` : ""}`,
+        productProfitabilityResponse,
+        client,
+      )
     },
   })
 }

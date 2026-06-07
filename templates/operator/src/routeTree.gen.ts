@@ -63,6 +63,7 @@ import { Route as WorkspaceNotificationsSettingsRouteImport } from './routes/_wo
 import { Route as WorkspaceNotificationsReminderRunsRouteImport } from './routes/_workspace/notifications/reminder-runs'
 import { Route as WorkspaceNotificationsPreviewRouteImport } from './routes/_workspace/notifications/preview'
 import { Route as WorkspaceNotificationsDeliveriesRouteImport } from './routes/_workspace/notifications/deliveries'
+import { Route as WorkspaceFinanceProfitabilityRouteImport } from './routes/_workspace/finance/profitability'
 import { Route as WorkspaceBookingsComposeRouteImport } from './routes/_workspace/bookings_.compose'
 import { Route as WorkspaceBookingsIdRouteImport } from './routes/_workspace/bookings/$id'
 import { Route as WorkspaceAvailabilityIdRouteImport } from './routes/_workspace/availability/$id'
@@ -382,6 +383,12 @@ const WorkspaceNotificationsDeliveriesRoute =
     path: '/notifications/deliveries',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const WorkspaceFinanceProfitabilityRoute =
+  WorkspaceFinanceProfitabilityRouteImport.update({
+    id: '/finance/profitability',
+    path: '/finance/profitability',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 const WorkspaceBookingsComposeRoute =
   WorkspaceBookingsComposeRouteImport.update({
     id: '/bookings_/compose',
@@ -600,6 +607,7 @@ export interface FileRoutesByFullPath {
   '/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/bookings/compose': typeof WorkspaceBookingsComposeRoute
+  '/finance/profitability': typeof WorkspaceFinanceProfitabilityRoute
   '/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
   '/notifications/preview': typeof WorkspaceNotificationsPreviewRoute
   '/notifications/reminder-runs': typeof WorkspaceNotificationsReminderRunsRoute
@@ -685,6 +693,7 @@ export interface FileRoutesByTo {
   '/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/bookings/compose': typeof WorkspaceBookingsComposeRoute
+  '/finance/profitability': typeof WorkspaceFinanceProfitabilityRoute
   '/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
   '/notifications/preview': typeof WorkspaceNotificationsPreviewRoute
   '/notifications/reminder-runs': typeof WorkspaceNotificationsReminderRunsRoute
@@ -775,6 +784,7 @@ export interface FileRoutesById {
   '/_workspace/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/_workspace/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/_workspace/bookings_/compose': typeof WorkspaceBookingsComposeRoute
+  '/_workspace/finance/profitability': typeof WorkspaceFinanceProfitabilityRoute
   '/_workspace/notifications/deliveries': typeof WorkspaceNotificationsDeliveriesRoute
   '/_workspace/notifications/preview': typeof WorkspaceNotificationsPreviewRoute
   '/_workspace/notifications/reminder-runs': typeof WorkspaceNotificationsReminderRunsRoute
@@ -863,6 +873,7 @@ export interface FileRouteTypes {
     | '/availability/$id'
     | '/bookings/$id'
     | '/bookings/compose'
+    | '/finance/profitability'
     | '/notifications/deliveries'
     | '/notifications/preview'
     | '/notifications/reminder-runs'
@@ -948,6 +959,7 @@ export interface FileRouteTypes {
     | '/availability/$id'
     | '/bookings/$id'
     | '/bookings/compose'
+    | '/finance/profitability'
     | '/notifications/deliveries'
     | '/notifications/preview'
     | '/notifications/reminder-runs'
@@ -1037,6 +1049,7 @@ export interface FileRouteTypes {
     | '/_workspace/availability/$id'
     | '/_workspace/bookings/$id'
     | '/_workspace/bookings_/compose'
+    | '/_workspace/finance/profitability'
     | '/_workspace/notifications/deliveries'
     | '/_workspace/notifications/preview'
     | '/_workspace/notifications/reminder-runs'
@@ -1490,6 +1503,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceNotificationsDeliveriesRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/finance/profitability': {
+      id: '/_workspace/finance/profitability'
+      path: '/finance/profitability'
+      fullPath: '/finance/profitability'
+      preLoaderRoute: typeof WorkspaceFinanceProfitabilityRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/_workspace/bookings_/compose': {
       id: '/_workspace/bookings_/compose'
       path: '/bookings/compose'
@@ -1816,6 +1836,7 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceAvailabilityIdRoute: typeof WorkspaceAvailabilityIdRoute
   WorkspaceBookingsIdRoute: typeof WorkspaceBookingsIdRoute
   WorkspaceBookingsComposeRoute: typeof WorkspaceBookingsComposeRoute
+  WorkspaceFinanceProfitabilityRoute: typeof WorkspaceFinanceProfitabilityRoute
   WorkspaceNotificationsDeliveriesRoute: typeof WorkspaceNotificationsDeliveriesRoute
   WorkspaceNotificationsPreviewRoute: typeof WorkspaceNotificationsPreviewRoute
   WorkspaceNotificationsReminderRunsRoute: typeof WorkspaceNotificationsReminderRunsRoute
@@ -1878,6 +1899,7 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceAvailabilityIdRoute: WorkspaceAvailabilityIdRoute,
   WorkspaceBookingsIdRoute: WorkspaceBookingsIdRoute,
   WorkspaceBookingsComposeRoute: WorkspaceBookingsComposeRoute,
+  WorkspaceFinanceProfitabilityRoute: WorkspaceFinanceProfitabilityRoute,
   WorkspaceNotificationsDeliveriesRoute: WorkspaceNotificationsDeliveriesRoute,
   WorkspaceNotificationsPreviewRoute: WorkspaceNotificationsPreviewRoute,
   WorkspaceNotificationsReminderRunsRoute:

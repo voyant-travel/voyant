@@ -852,4 +852,72 @@ export type FinanceUiMessages = {
       recordFailed: string
     }
   }
+  profitability: {
+    title: string
+    description: string
+    loadFailed: string
+    empty: string
+    noDate: string
+    noProduct: string
+    filters: {
+      currency: string
+      from: string
+      to: string
+    }
+    kpis: {
+      revenue: string
+      actualCost: string
+      profit: string
+      margin: string
+      plannedCost: string
+      variance: string
+      unattributed: string
+    }
+    charts: {
+      departurePnl: string
+      costByServiceType: string
+      revenue: string
+      actualCost: string
+      profit: string
+    }
+    serviceTypeLabels: {
+      transport: string
+      flight: string
+      accommodation: string
+      guide: string
+      meal: string
+      experience: string
+      insurance: string
+      other: string
+    }
+    departures: {
+      title: string
+      none: string
+      columns: {
+        departure: string
+        date: string
+        product: string
+        revenue: string
+        actualCost: string
+        plannedCost: string
+        profit: string
+        margin: string
+        variance: string
+      }
+    }
+    products: {
+      title: string
+      none: string
+      columns: {
+        product: string
+        departures: string
+        revenue: string
+        actualCost: string
+        plannedCost: string
+        profit: string
+        margin: string
+        variance: string
+      }
+    }
+  }
 }
