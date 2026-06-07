@@ -110,6 +110,7 @@ export {
   type SupplierInvoiceTargetSearch,
 } from "./components/supplier-invoice-detail-page.js"
 export {
+  type SupplierInvoiceExtraction,
   SupplierInvoiceFormDialog,
   type SupplierInvoiceFormDialogProps,
 } from "./components/supplier-invoice-form-dialog.js"

@@ -58,7 +58,10 @@ import { useState } from "react"
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
 import { AsyncCombobox, type AsyncComboboxOption } from "./async-combobox.js"
 import { formatInvoiceAmount } from "./invoice-table-parts.js"
-import { SupplierInvoiceFormDialog } from "./supplier-invoice-form-dialog.js"
+import {
+  type SupplierInvoiceExtraction,
+  SupplierInvoiceFormDialog,
+} from "./supplier-invoice-form-dialog.js"
 
 export type SupplierInvoiceTargetSearch = (
   targetType: "departure" | "product" | "booking" | "traveler",
@@ -174,6 +177,8 @@ export interface SupplierInvoiceDetailPageProps {
    * the allocation dialog instead of a raw id field.
    */
   searchTargets?: SupplierInvoiceTargetSearch
+  /** Optional invoice-extraction extension point for the edit dialog. */
+  extractFromFile?: (file: File) => Promise<SupplierInvoiceExtraction>
 }
 
 function formatFileSize(bytes: number | null): string {
@@ -191,6 +196,7 @@ export function SupplierInvoiceDetailPage({
   uploadFile,
   onDownloadAttachment,
   searchTargets,
+  extractFromFile,
 }: SupplierInvoiceDetailPageProps) {
   const messages = useFinanceUiMessagesOrDefault()
   const t = messages.supplierInvoiceDetail
@@ -586,7 +592,12 @@ export function SupplierInvoiceDetailPage({
       </Card>
 
       {/* Dialogs */}
-      <SupplierInvoiceFormDialog open={editOpen} onOpenChange={setEditOpen} invoice={invoice} />
+      <SupplierInvoiceFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        invoice={invoice}
+        extractFromFile={extractFromFile}
+      />
 
       <LineDialog
         open={lineDialog != null}

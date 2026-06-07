@@ -33,7 +33,10 @@ import {
   PaginationBar,
   SortHeader,
 } from "./invoice-table-parts.js"
-import { SupplierInvoiceFormDialog } from "./supplier-invoice-form-dialog.js"
+import {
+  type SupplierInvoiceExtraction,
+  SupplierInvoiceFormDialog,
+} from "./supplier-invoice-form-dialog.js"
 
 const PAGE_SIZE = 25
 const STATUS_ALL = "__all__"
@@ -64,6 +67,8 @@ const STATUS_VARIANT: Record<
 export interface SupplierInvoicesPageProps {
   className?: string
   onOpenSupplierInvoice?: (id: string) => void
+  /** Optional invoice-extraction extension point for the create dialog. */
+  extractFromFile?: (file: File) => Promise<SupplierInvoiceExtraction>
 }
 
 type SortableField = Exclude<FinanceSupplierInvoiceListSortField, "createdAt">
@@ -71,6 +76,7 @@ type SortableField = Exclude<FinanceSupplierInvoiceListSortField, "createdAt">
 export function SupplierInvoicesPage({
   className,
   onOpenSupplierInvoice,
+  extractFromFile,
 }: SupplierInvoicesPageProps = {}) {
   const t = useFinanceUiMessagesOrDefault().supplierInvoicesPage
 
@@ -123,6 +129,7 @@ export function SupplierInvoicesPage({
         open={createOpen}
         onOpenChange={setCreateOpen}
         onSaved={(id) => onOpenSupplierInvoice?.(id)}
+        extractFromFile={extractFromFile}
       />
 
       <div className="flex flex-wrap items-center gap-2">

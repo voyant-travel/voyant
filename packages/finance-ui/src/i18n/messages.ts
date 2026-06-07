@@ -351,6 +351,9 @@ export type FinanceUiMessages = {
       notes: string
       save: string
       saving: string
+      /** Optional AI/OCR extraction extension point (shown only when wired). */
+      extractUpload: string
+      extracting: string
     }
     summary: {
       subtotal: string

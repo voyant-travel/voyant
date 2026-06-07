@@ -23,6 +23,7 @@ import {
 import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { cn } from "@voyantjs/ui/lib/utils"
+import { Upload } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
@@ -37,12 +38,35 @@ const STATUS_ORDER: SupplierInvoiceStatus[] = [
   "void",
 ]
 
+/**
+ * Header fields an extractor may return to prefill the form. All optional —
+ * the operator only overrides the fields it could resolve; the user confirms
+ * before saving.
+ */
+export interface SupplierInvoiceExtraction {
+  supplierInvoiceNo?: string | null
+  supplierId?: string | null
+  status?: SupplierInvoiceStatus | null
+  currency?: string | null
+  issueDate?: string | null
+  dueDate?: string | null
+  internalRef?: string | null
+  notes?: string | null
+}
+
 export interface SupplierInvoiceFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   /** Present → edit mode; absent → create mode. */
   invoice?: SupplierInvoiceRecord
   onSaved?: (id: string) => void
+  /**
+   * Extension point: extract header fields from an uploaded invoice file
+   * (AI/OCR/whatever the deployment wires). When provided, an upload control
+   * appears that prefills the form for the user to confirm. Omit it (the
+   * default) and no extraction UI is shown.
+   */
+  extractFromFile?: (file: File) => Promise<SupplierInvoiceExtraction>
 }
 
 interface FormState {
@@ -74,6 +98,7 @@ export function SupplierInvoiceFormDialog({
   onOpenChange,
   invoice,
   onSaved,
+  extractFromFile,
 }: SupplierInvoiceFormDialogProps) {
   const messages = useFinanceUiMessagesOrDefault()
   const t = messages.supplierInvoiceDetail.form
@@ -83,6 +108,27 @@ export function SupplierInvoiceFormDialog({
   const pending = create.isPending || update.isPending
 
   const [form, setForm] = useState<FormState>(() => seed(invoice))
+  const [extracting, setExtracting] = useState(false)
+
+  const handleExtract = async (file: File | undefined) => {
+    if (!file || !extractFromFile) return
+    setExtracting(true)
+    try {
+      const x = await extractFromFile(file)
+      setForm((prev) => ({
+        supplierInvoiceNo: x.supplierInvoiceNo ?? prev.supplierInvoiceNo,
+        supplierId: x.supplierId ?? prev.supplierId,
+        status: x.status ?? prev.status,
+        currency: x.currency ?? prev.currency,
+        issueDate: x.issueDate ?? prev.issueDate,
+        dueDate: x.dueDate ?? prev.dueDate,
+        internalRef: x.internalRef ?? prev.internalRef,
+        notes: x.notes ?? prev.notes,
+      }))
+    } finally {
+      setExtracting(false)
+    }
+  }
 
   // Re-seed when the dialog opens or the target invoice changes.
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-seed on open/target change only
@@ -129,6 +175,23 @@ export function SupplierInvoiceFormDialog({
           </DialogTitle>
         </DialogHeader>
         <DialogBody className="grid grid-cols-2 gap-3">
+          {extractFromFile ? (
+            <label className="col-span-2 cursor-pointer">
+              <span className="inline-flex h-9 items-center gap-2 rounded-md border border-dashed px-3 text-sm font-medium hover:bg-muted">
+                <Upload className="size-4" />
+                {extracting ? t.extracting : t.extractUpload}
+              </span>
+              <input
+                type="file"
+                className="sr-only"
+                disabled={extracting}
+                onChange={(e) => {
+                  void handleExtract(e.target.files?.[0])
+                  e.target.value = ""
+                }}
+              />
+            </label>
+          ) : null}
           <Field label={t.supplierInvoiceNo}>
             <Input
               value={form.supplierInvoiceNo}

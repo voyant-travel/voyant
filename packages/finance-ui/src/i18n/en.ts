@@ -210,6 +210,8 @@ export const financeUiEn = {
       notes: "Notes",
       save: "Save",
       saving: "Saving...",
+      extractUpload: "Upload invoice to autofill",
+      extracting: "Extracting…",
     },
     summary: {
       subtotal: "Subtotal",

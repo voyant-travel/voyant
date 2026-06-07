@@ -212,6 +212,8 @@ export const financeUiRo = {
       notes: "Note",
       save: "Salveaza",
       saving: "Se salveaza...",
+      extractUpload: "Incarca factura pentru completare automata",
+      extracting: "Se extrage…",
     },
     summary: {
       subtotal: "Subtotal",
