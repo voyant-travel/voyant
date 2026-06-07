@@ -1,5 +1,18 @@
 # @voyantjs/bookings-ui
 
+## 0.106.2
+
+### Patch Changes
+
+- Updated dependencies [cfa6af8]
+  - @voyantjs/finance-react@0.106.1
+  - @voyantjs/bookings@0.106.2
+  - @voyantjs/i18n@0.104.2
+  - @voyantjs/ui@0.104.4
+  - @voyantjs/availability-react@0.104.2
+  - @voyantjs/bookings-react@0.106.2
+  - @voyantjs/suppliers-react@0.104.4
+
 ## 0.106.1
 
 ### Patch Changes
