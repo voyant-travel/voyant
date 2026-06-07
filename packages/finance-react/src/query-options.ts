@@ -628,6 +628,7 @@ export function getDepartureProfitabilityQueryOptions(
       if (filters.productId) params.set("productId", filters.productId)
       if (filters.departureId) params.set("departureId", filters.departureId)
       if (filters.currency) params.set("currency", filters.currency)
+      if (filters.baseCurrency) params.set("baseCurrency", filters.baseCurrency)
       const qs = params.toString()
 
       return fetchWithValidation(
@@ -650,6 +651,7 @@ export function getProductProfitabilityQueryOptions(
       if (filters.from) params.set("from", filters.from)
       if (filters.to) params.set("to", filters.to)
       if (filters.currency) params.set("currency", filters.currency)
+      if (filters.baseCurrency) params.set("baseCurrency", filters.baseCurrency)
       const qs = params.toString()
 
       return fetchWithValidation(

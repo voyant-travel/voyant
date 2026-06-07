@@ -866,10 +866,12 @@ export const financeUiEn = {
     noDate: "No date",
     noProduct: "No product",
     exportCsv: "Export CSV",
+    unconvertibleNote: "No FX rate for {currencies} — excluded from the rollup.",
     filters: {
       currency: "Currency",
       from: "From",
       to: "To",
+      baseCurrency: "Base currency",
     },
     kpis: {
       revenue: "Revenue",

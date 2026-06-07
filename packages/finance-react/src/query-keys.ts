@@ -4,12 +4,14 @@ export interface FinanceDepartureProfitabilityFilters {
   productId?: string | undefined
   departureId?: string | undefined
   currency?: string | undefined
+  baseCurrency?: string | undefined
 }
 
 export interface FinanceProductProfitabilityFilters {
   from?: string | undefined
   to?: string | undefined
   currency?: string | undefined
+  baseCurrency?: string | undefined
 }
 
 export type FinanceInvoiceListSortField =

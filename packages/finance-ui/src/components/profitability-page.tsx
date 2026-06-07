@@ -6,6 +6,7 @@ import {
   useDepartureProfitability,
   useProductProfitability,
 } from "@voyantjs/finance-react"
+import { formatMessage } from "@voyantjs/i18n"
 import {
   Button,
   Card,
@@ -28,6 +29,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@voyantjs/ui/components/chart"
+import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import {
   Table,
@@ -84,8 +86,13 @@ export function ProfitabilityPage({
   const [from, setFrom] = useState<string>("")
   const [to, setTo] = useState<string>("")
   const [currency, setCurrency] = useState<string>("")
+  const [base, setBase] = useState<string>("")
 
-  const filters = { from: from || undefined, to: to || undefined }
+  const filters = {
+    from: from || undefined,
+    to: to || undefined,
+    baseCurrency: base || undefined,
+  }
   const departures = useDepartureProfitability(filters)
   const products = useProductProfitability(filters)
 
@@ -93,7 +100,10 @@ export function ProfitabilityPage({
   const productReport = products.data?.data
   const isError = departures.isError || products.isError
 
-  // Currencies present across departure rows; default to the first.
+  // Base-currency rollup view is active once the server returns a `base` block.
+  const baseMode = Boolean(base) && Boolean(departureReport?.base)
+
+  // Currencies present across per-currency rows; default to the first.
   const currencies = useMemo(() => {
     const set = new Set<string>()
     for (const row of departureReport?.rows ?? []) set.add(row.currency)
@@ -101,17 +111,30 @@ export function ProfitabilityPage({
     return [...set].sort()
   }, [departureReport, productReport])
 
-  const activeCurrency =
-    currency && currencies.includes(currency) ? currency : (currencies[0] ?? "")
+  const activeCurrency = baseMode
+    ? (departureReport?.base?.currency ?? base)
+    : currency && currencies.includes(currency)
+      ? currency
+      : (currencies[0] ?? "")
 
   const departureRows = useMemo(
-    () => (departureReport?.rows ?? []).filter((r) => r.currency === activeCurrency),
-    [departureReport, activeCurrency],
+    () =>
+      baseMode
+        ? (departureReport?.base?.rows ?? [])
+        : (departureReport?.rows ?? []).filter((r) => r.currency === activeCurrency),
+    [departureReport, baseMode, activeCurrency],
   )
   const productRows = useMemo(
-    () => (productReport?.rows ?? []).filter((r) => r.currency === activeCurrency),
-    [productReport, activeCurrency],
+    () =>
+      baseMode
+        ? (productReport?.base?.rows ?? [])
+        : (productReport?.rows ?? []).filter((r) => r.currency === activeCurrency),
+    [productReport, baseMode, activeCurrency],
   )
+
+  const unconvertibleCurrencies = baseMode
+    ? (departureReport?.base?.unconvertibleCurrencies ?? [])
+    : []
 
   const totals = useMemo(() => {
     let revenue = 0
@@ -133,12 +156,13 @@ export function ProfitabilityPage({
     }
   }, [departureRows])
 
-  const unattributed = useMemo(
-    () =>
+  const unattributed = useMemo(() => {
+    if (baseMode) return departureReport?.base?.unattributedCents ?? 0
+    return (
       (departureReport?.unattributed ?? []).find((u) => u.currency === activeCurrency)
-        ?.amountCents ?? 0,
-    [departureReport, activeCurrency],
-  )
+        ?.amountCents ?? 0
+    )
+  }, [departureReport, baseMode, activeCurrency])
 
   const chartData = useMemo(
     () =>
@@ -156,16 +180,17 @@ export function ProfitabilityPage({
 
   const serviceTypeData = useMemo(
     () =>
-      (departureReport?.costByServiceType ?? [])
-        .filter((c) => c.currency === activeCurrency)
-        .map((c, index) => ({
-          serviceType: c.serviceType,
-          label:
-            t.serviceTypeLabels[c.serviceType as keyof typeof t.serviceTypeLabels] ?? c.serviceType,
-          amount: c.amountCents / 100,
-          fill: PIE_COLORS[index % PIE_COLORS.length],
-        })),
-    [departureReport, activeCurrency, t.serviceTypeLabels],
+      (baseMode
+        ? (departureReport?.base?.costByServiceType ?? [])
+        : (departureReport?.costByServiceType ?? []).filter((c) => c.currency === activeCurrency)
+      ).map((c, index) => ({
+        serviceType: c.serviceType,
+        label:
+          t.serviceTypeLabels[c.serviceType as keyof typeof t.serviceTypeLabels] ?? c.serviceType,
+        amount: c.amountCents / 100,
+        fill: PIE_COLORS[index % PIE_COLORS.length],
+      })),
+    [departureReport, baseMode, activeCurrency, t.serviceTypeLabels],
   )
 
   const barConfig: ChartConfig = {
@@ -195,27 +220,43 @@ export function ProfitabilityPage({
             <Label>{t.filters.to}</Label>
             <DatePicker value={to || null} onChange={(v) => setTo(v ?? "")} className="w-40" />
           </div>
+          {!baseMode ? (
+            <div className="flex flex-col gap-2">
+              <Label>{t.filters.currency}</Label>
+              <Select
+                value={activeCurrency}
+                onValueChange={(v) => setCurrency(v ?? "")}
+                disabled={!currencies.length}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {currencies.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
           <div className="flex flex-col gap-2">
-            <Label>{t.filters.currency}</Label>
-            <Select
-              value={activeCurrency}
-              onValueChange={(v) => setCurrency(v ?? "")}
-              disabled={!currencies.length}
-            >
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {currencies.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>{t.filters.baseCurrency}</Label>
+            <CurrencyCombobox
+              value={base || null}
+              onChange={(v) => setBase(v ?? "")}
+              className="w-40"
+            />
           </div>
         </div>
       </div>
+
+      {baseMode && unconvertibleCurrencies.length ? (
+        <p className="text-sm text-amber-600 dark:text-amber-500">
+          {formatMessage(t.unconvertibleNote, { currencies: unconvertibleCurrencies.join(", ") })}
+        </p>
+      ) : null}
 
       {isError ? (
         <Card>

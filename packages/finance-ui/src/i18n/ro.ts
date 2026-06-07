@@ -872,10 +872,12 @@ export const financeUiRo = {
     noDate: "Fara data",
     noProduct: "Fara produs",
     exportCsv: "Exporta CSV",
+    unconvertibleNote: "Fara curs valutar pentru {currencies} — excluse din total.",
     filters: {
       currency: "Moneda",
       from: "De la",
       to: "Pana la",
+      baseCurrency: "Moneda de baza",
     },
     kpis: {
       revenue: "Venituri",

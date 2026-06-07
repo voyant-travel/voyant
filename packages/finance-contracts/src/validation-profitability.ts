@@ -14,12 +14,16 @@ export const departureProfitabilityQuerySchema = z.object({
   productId: z.string().optional(),
   departureId: z.string().optional(),
   currency: z.string().optional(),
+  /** When set, also return a single-currency rollup converted via persisted FX rates. */
+  baseCurrency: z.string().optional(),
 })
 
 export const productProfitabilityQuerySchema = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
   currency: z.string().optional(),
+  /** When set, also return a single-currency rollup converted via persisted FX rates. */
+  baseCurrency: z.string().optional(),
 })
 
 export type DepartureProfitabilityQuery = z.infer<typeof departureProfitabilityQuerySchema>

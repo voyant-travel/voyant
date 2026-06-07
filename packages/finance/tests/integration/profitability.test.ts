@@ -8,8 +8,10 @@
  */
 
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
+import { sql } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
+import { exchangeRatesRef } from "../../src/markets-ref.js"
 import { invoices } from "../../src/schema.js"
 import { financeService } from "../../src/service.js"
 import { supplierInvoicesService } from "../../src/service-supplier-invoices.js"
@@ -370,5 +372,49 @@ describe.skipIf(!DB_AVAILABLE)("profitability read model", () => {
     const onlyRon = await financeService.getDepartureProfitability(db, { currency: "RON" })
     expect(onlyRon.rows.every((r) => r.currency === "RON")).toBe(true)
     expect(onlyRon.rows.length).toBeGreaterThan(0)
+  })
+
+  it("rolls up to a base currency via persisted FX rates", async () => {
+    await seedBaseScenario()
+    // 1 RON = 0.2 EUR (fx_rate_sets lives in @voyantjs/markets; seed via raw SQL)
+    await db.execute(
+      sql`insert into fx_rate_sets (id, base_currency, effective_at) values ('fxrs_test', 'EUR', now())`,
+    )
+    await db.insert(exchangeRatesRef).values({
+      fxRateSetId: "fxrs_test",
+      baseCurrency: "RON",
+      quoteCurrency: "EUR",
+      rateDecimal: "0.2",
+      createdAt: new Date("2026-06-01T00:00:00Z"),
+    })
+
+    const report = await financeService.getDepartureProfitability(db, { baseCurrency: "EUR" })
+    expect(report.base?.currency).toBe("EUR")
+    expect(report.base?.unconvertibleCurrencies).toEqual([])
+
+    // D1 actual = 70000 EUR + (20000 RON × 0.2 = 4000 EUR) = 74000 EUR.
+    const d1 = report.base?.rows.find((r) => r.departureId === "avsl_d1")
+    expect(d1).toMatchObject({
+      currency: "EUR",
+      revenueCents: 150000,
+      actualCostCents: 74000,
+      plannedCostCents: 90000,
+      profitCents: 76000,
+      varianceCents: 16000,
+    })
+
+    expect(report.base?.costByServiceType).toContainEqual({
+      serviceType: "transport",
+      currency: "EUR",
+      amountCents: 74000, // 70000 EUR + 4000 (RON→EUR)
+    })
+    expect(report.base?.unattributedCents).toBe(5000)
+  })
+
+  it("flags unconvertible currencies when no FX rate exists", async () => {
+    await seedBaseScenario()
+    const report = await financeService.getDepartureProfitability(db, { baseCurrency: "USD" })
+    expect(report.base?.unconvertibleCurrencies.sort()).toEqual(["EUR", "RON"])
+    expect(report.base?.rows).toHaveLength(0)
   })
 })

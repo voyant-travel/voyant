@@ -860,10 +860,13 @@ export type FinanceUiMessages = {
     noDate: string
     noProduct: string
     exportCsv: string
+    /** Note shown in base-currency mode; `{currencies}` = comma list. */
+    unconvertibleNote: string
     filters: {
       currency: string
       from: string
       to: string
+      baseCurrency: string
     }
     kpis: {
       revenue: string

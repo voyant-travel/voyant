@@ -6,6 +6,7 @@ import type {
 import { and, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { type FxMoneyInput, resolveFxMoneyBaseAmount } from "./fx-money.js"
 import {
   invoices,
   supplierCostAllocations,
@@ -52,10 +53,20 @@ export interface DepartureProfitabilityRow {
   varianceCents: number
 }
 
+export interface DepartureProfitabilityBaseRollup {
+  currency: string
+  rows: DepartureProfitabilityRow[]
+  costByServiceType: ProfitabilityCostByServiceType[]
+  unattributedCents: number
+  /** Source currencies with no resolvable FX rate — excluded from the rollup. */
+  unconvertibleCurrencies: string[]
+}
+
 export interface DepartureProfitabilityReport {
   rows: DepartureProfitabilityRow[]
   costByServiceType: ProfitabilityCostByServiceType[]
   unattributed: ProfitabilityUnattributed[]
+  base?: DepartureProfitabilityBaseRollup
 }
 
 export interface ProductProfitabilityRow {
@@ -71,10 +82,19 @@ export interface ProductProfitabilityRow {
   varianceCents: number
 }
 
+export interface ProductProfitabilityBaseRollup {
+  currency: string
+  rows: ProductProfitabilityRow[]
+  costByServiceType: ProfitabilityCostByServiceType[]
+  unattributedCents: number
+  unconvertibleCurrencies: string[]
+}
+
 export interface ProductProfitabilityReport {
   rows: ProductProfitabilityRow[]
   costByServiceType: ProfitabilityCostByServiceType[]
   unattributed: ProfitabilityUnattributed[]
+  base?: ProductProfitabilityBaseRollup
 }
 
 interface CurrencyTotals {
@@ -405,11 +425,27 @@ export async function getDepartureProfitability(
       a.currency.localeCompare(b.currency),
   )
 
-  return {
+  const report: DepartureProfitabilityReport = {
     rows,
     costByServiceType: filterCostByCurrency(costByServiceType, query.currency),
     unattributed: filterCostByCurrency(unattributed, query.currency),
   }
+  if (query.baseCurrency) {
+    const base = query.baseCurrency.toUpperCase()
+    const { rates, unconvertible } = await buildBaseRates(
+      db,
+      [...rows, ...costByServiceType, ...unattributed].map((r) => r.currency),
+      base,
+    )
+    report.base = {
+      currency: base,
+      rows: rollupDepartureRowsToBase(rows, rates, base),
+      costByServiceType: rollupCostByServiceTypeToBase(costByServiceType, rates, base),
+      unattributedCents: rollupAmountToBase(unattributed, rates),
+      unconvertibleCurrencies: unconvertible,
+    }
+  }
+  return report
 }
 
 export async function getProductProfitability(
@@ -489,15 +525,189 @@ export async function getProductProfitability(
     (a, b) => a.productId.localeCompare(b.productId) || a.currency.localeCompare(b.currency),
   )
 
-  return {
+  const report: ProductProfitabilityReport = {
     rows,
     costByServiceType: filterCostByCurrency(costByServiceType, query.currency),
     unattributed: filterCostByCurrency(unattributed, query.currency),
   }
+  if (query.baseCurrency) {
+    const base = query.baseCurrency.toUpperCase()
+    const { rates, unconvertible } = await buildBaseRates(
+      db,
+      [...rows, ...costByServiceType, ...unattributed].map((r) => r.currency),
+      base,
+    )
+    report.base = {
+      currency: base,
+      rows: rollupProductRowsToBase(rows, rates, base),
+      costByServiceType: rollupCostByServiceTypeToBase(costByServiceType, rates, base),
+      unattributedCents: rollupAmountToBase(unattributed, rates),
+      unconvertibleCurrencies: unconvertible,
+    }
+  }
+  return report
 }
 
 function filterCostByCurrency<T extends { currency: string }>(rows: T[], currency?: string): T[] {
   return currency ? rows.filter((row) => row.currency === currency) : rows
+}
+
+// ---------- base-currency rollup (FX) ----------
+
+/**
+ * Resolve a conversion rate for each source currency → base via persisted FX
+ * rates (one probe per distinct currency, cached). Currencies with no rate are
+ * reported as unconvertible and excluded from the rollup rather than guessed.
+ */
+async function buildBaseRates(
+  db: PostgresJsDatabase,
+  currencies: Iterable<string>,
+  base: string,
+): Promise<{ rates: Map<string, number>; unconvertible: string[] }> {
+  const rates = new Map<string, number>()
+  const unconvertible: string[] = []
+  for (const currency of new Set(currencies)) {
+    if (currency === base) {
+      rates.set(currency, 1)
+      continue
+    }
+    const probeInput: FxMoneyInput = { amountCents: 1_000_000, currency }
+    const probe = await resolveFxMoneyBaseAmount(db, probeInput, { targetBaseCurrency: base })
+    if (probe.baseAmountCents != null && probe.baseCurrency === base) {
+      rates.set(currency, probe.baseAmountCents / 1_000_000)
+    } else {
+      unconvertible.push(currency)
+    }
+  }
+  return { rates, unconvertible }
+}
+
+function rollupDepartureRowsToBase(
+  rows: DepartureProfitabilityRow[],
+  rates: Map<string, number>,
+  base: string,
+): DepartureProfitabilityRow[] {
+  const acc = new Map<
+    string,
+    { template: DepartureProfitabilityRow; revenue: number; actual: number; planned: number }
+  >()
+  for (const row of rows) {
+    const rate = rates.get(row.currency)
+    if (rate == null) continue
+    let entry = acc.get(row.departureId)
+    if (!entry) {
+      entry = { template: row, revenue: 0, actual: 0, planned: 0 }
+      acc.set(row.departureId, entry)
+    }
+    entry.revenue += row.revenueCents * rate
+    entry.actual += row.actualCostCents * rate
+    entry.planned += row.plannedCostCents * rate
+  }
+  const out = [...acc.values()].map(({ template, revenue, actual, planned }) => {
+    const revenueCents = Math.round(revenue)
+    const actualCostCents = Math.round(actual)
+    const plannedCostCents = Math.round(planned)
+    const profitCents = revenueCents - actualCostCents
+    return {
+      ...template,
+      currency: base,
+      revenueCents,
+      actualCostCents,
+      plannedCostCents,
+      profitCents,
+      marginPercent: margin(profitCents, revenueCents),
+      varianceCents: plannedCostCents - actualCostCents,
+    }
+  })
+  out.sort(
+    (a, b) =>
+      (a.departureDate ?? "").localeCompare(b.departureDate ?? "") ||
+      a.departureId.localeCompare(b.departureId),
+  )
+  return out
+}
+
+function rollupProductRowsToBase(
+  rows: ProductProfitabilityRow[],
+  rates: Map<string, number>,
+  base: string,
+): ProductProfitabilityRow[] {
+  const acc = new Map<
+    string,
+    {
+      template: ProductProfitabilityRow
+      revenue: number
+      actual: number
+      planned: number
+      departureCount: number
+    }
+  >()
+  for (const row of rows) {
+    const rate = rates.get(row.currency)
+    if (rate == null) continue
+    let entry = acc.get(row.productId)
+    if (!entry) {
+      entry = { template: row, revenue: 0, actual: 0, planned: 0, departureCount: 0 }
+      acc.set(row.productId, entry)
+    }
+    entry.revenue += row.revenueCents * rate
+    entry.actual += row.actualCostCents * rate
+    entry.planned += row.plannedCostCents * rate
+    // Approximate: a departure usually trades in a single currency, so the
+    // largest per-currency count is the best distinct-count proxy.
+    entry.departureCount = Math.max(entry.departureCount, row.departureCount)
+  }
+  const out = [...acc.values()].map(({ template, revenue, actual, planned, departureCount }) => {
+    const revenueCents = Math.round(revenue)
+    const actualCostCents = Math.round(actual)
+    const plannedCostCents = Math.round(planned)
+    const profitCents = revenueCents - actualCostCents
+    return {
+      ...template,
+      currency: base,
+      departureCount,
+      revenueCents,
+      actualCostCents,
+      plannedCostCents,
+      profitCents,
+      marginPercent: margin(profitCents, revenueCents),
+      varianceCents: plannedCostCents - actualCostCents,
+    }
+  })
+  out.sort((a, b) => a.productId.localeCompare(b.productId))
+  return out
+}
+
+function rollupCostByServiceTypeToBase(
+  rows: ProfitabilityCostByServiceType[],
+  rates: Map<string, number>,
+  base: string,
+): ProfitabilityCostByServiceType[] {
+  const byType = new Map<string, number>()
+  for (const row of rows) {
+    const rate = rates.get(row.currency)
+    if (rate == null) continue
+    byType.set(
+      row.serviceType,
+      (byType.get(row.serviceType) ?? 0) + Math.round(row.amountCents * rate),
+    )
+  }
+  return [...byType.entries()]
+    .map(([serviceType, amountCents]) => ({ serviceType, currency: base, amountCents }))
+    .filter((row) => row.amountCents !== 0)
+}
+
+function rollupAmountToBase(
+  rows: Array<{ currency: string; amountCents: number }>,
+  rates: Map<string, number>,
+): number {
+  let total = 0
+  for (const row of rows) {
+    const rate = rates.get(row.currency)
+    if (rate == null) continue
+    total += Math.round(row.amountCents * rate)
+  }
+  return total
 }
 
 // ---------- CSV export (accountant sharing) ----------
