@@ -430,6 +430,18 @@ Decision (from scoping): **build it in two phases — external/lightweight first
 
 Phase A needs **no new RBAC** — it's export + the existing grant/API-key primitives.
 
+> **Implemented (v1).** CSV export ships on the profitability reports —
+> `GET /v1/admin/finance/reports/profitability/{departures,products}/export`
+> (text/csv attachments; `Export CSV` buttons on the dashboard). The
+> **read-only accountant API key is supported today with no new code**: issue a
+> key scoped `finance:read` (Better Auth API-key plugin). `require-actor.ts`
+> derives the resource from the path (`/v1/admin/finance/*` → `finance`) and
+> requires `read` for GET, so such a key can pull every finance read route +
+> the CSV exports and **nothing mutating** (write/delete actions are absent).
+> A scoped key is the chosen v1 accountant path. Still open as follow-ups: PDF
+> export, the `POST /reports/:report/share` signed-link flow + manage-shares
+> UI, and a "Create accountant key" UI affordance.
+
 ### 13.3 Phase B — first-class internal accountant role (follow-up)
 
 For an **employee** who should see finance but not catalog/CRM/etc., introduce a real capability layer on `/v1/admin/*`:
