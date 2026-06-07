@@ -244,9 +244,9 @@ export function ProfitabilityPage({
   )
 
   const barConfig: ChartConfig = {
-    revenue: { label: t.charts.revenue, color: "hsl(221 83% 53%)" },
-    actualCost: { label: t.charts.actualCost, color: "hsl(0 72% 51%)" },
-    profit: { label: t.charts.profit, color: "hsl(142 71% 45%)" },
+    revenue: { label: t.charts.revenue, color: "hsl(221 83% 53%)" }, // i18n-literal-ok (chart color)
+    actualCost: { label: t.charts.actualCost, color: "hsl(0 72% 51%)" }, // i18n-literal-ok (chart color)
+    profit: { label: t.charts.profit, color: "hsl(142 71% 45%)" }, // i18n-literal-ok (chart color)
   }
   const pieConfig: ChartConfig = Object.fromEntries(
     serviceTypeData.map((d) => [d.serviceType, { label: d.label, color: d.fill }]),

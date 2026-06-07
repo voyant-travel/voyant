@@ -58,7 +58,7 @@ export function AsyncCombobox({
   search,
   onCreate,
   createLabel,
-  placeholder = "Search…",
+  placeholder = "Search…", // i18n-literal-ok (generic fallback; callers pass localized copy)
   emptyText = "No results.",
   disabled,
   className,
