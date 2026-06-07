@@ -985,6 +985,7 @@ export const financeUiRo = {
       invoices: "Facturi",
       invoicesNone: "Nicio factura in aceasta perioada.",
       download: "Descarca",
+      downloadAll: "Descarca toate (ZIP)",
       noFile: "Fara fisier",
       kindClient: "Client",
       kindSupplier: "Furnizor",

@@ -460,12 +460,24 @@ export function AccountantPortal({ token, apiBaseUrl, className }: AccountantPor
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">{t.portal.invoices}</CardTitle>
-          <a href={exportUrl("invoices")} target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" size="sm">
-              <Download className="size-4" />
-              {t.exportCsv}
-            </Button>
-          </a>
+          <div className="flex items-center gap-2">
+            <a
+              href={`${apiBaseUrl}/v1/public/finance/accountant/${encodeURIComponent(token)}/invoices/download-all`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="outline" size="sm">
+                <Download className="size-4" />
+                {t.portal.downloadAll}
+              </Button>
+            </a>
+            <a href={exportUrl("invoices")} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="sm">
+                <Download className="size-4" />
+                {t.exportCsv}
+              </Button>
+            </a>
+          </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <Table>

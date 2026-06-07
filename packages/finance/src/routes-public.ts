@@ -3,6 +3,7 @@ import {
   requireCheckoutCapability,
 } from "@voyantjs/bookings/checkout-capability"
 import { idempotencyKey, parseJsonBody, parseQuery, UnauthorizedApiError } from "@voyantjs/hono"
+import { zipSync } from "fflate"
 import type { Context, MiddlewareHandler } from "hono"
 import { Hono } from "hono"
 
@@ -290,6 +291,48 @@ export function createPublicFinanceRoutes(options: PublicFinanceRouteOptions = {
           return c.redirect(download.download.url, 302)
         },
       )
+      .get("/accountant/:token/invoices/download-all", async (c) => {
+        const resolution = await accountantSharesService.resolve(c.get("db"), c.req.param("token"))
+        if (resolution.status === "not_found") return notFound(c, "Share not found")
+        if (resolution.status === "gone") return c.json({ error: "Share expired or revoked" }, 410)
+        const attachments = await accountantSharesService.listAttachmentsForZip(
+          c.get("db"),
+          resolution.scope,
+        )
+        if (attachments.length === 0) return notFound(c, "No invoice documents to download")
+
+        const files: Record<string, Uint8Array> = {}
+        const used = new Set<string>()
+        for (const att of attachments) {
+          const download = await resolveStoredDocumentDownload(
+            { storageKey: att.storageKey },
+            { bindings: c.env, resolveDocumentDownloadUrl },
+          )
+          if (download.status !== "ready") continue
+          const res = await fetch(download.download.url)
+          if (!res.ok) continue
+          const bytes = new Uint8Array(await res.arrayBuffer())
+          // Group by client/supplier folder; dedupe collisions.
+          let path = `${att.kind}/${sanitizeZipName(att.invoiceNumber)}-${sanitizeZipName(att.name)}`
+          let n = 1
+          while (used.has(path)) {
+            path = `${att.kind}/${sanitizeZipName(att.invoiceNumber)}-${n}-${sanitizeZipName(att.name)}`
+            n += 1
+          }
+          used.add(path)
+          files[path] = bytes
+        }
+        if (Object.keys(files).length === 0) {
+          return notFound(c, "No invoice documents are available")
+        }
+        const zipped = zipSync(files)
+        return new Response(zipped, {
+          headers: {
+            "Content-Type": "application/zip",
+            "Content-Disposition": 'attachment; filename="invoices.zip"',
+          },
+        })
+      })
       .get("/accountant/:token/export/:report", async (c) => {
         const resolution = await accountantSharesService.resolve(c.get("db"), c.req.param("token"))
         if (resolution.status === "not_found") return notFound(c, "Share not found")
@@ -327,6 +370,14 @@ function getClientIp(headers: Headers) {
     headers.get("x-real-ip") ??
     null
   )
+}
+
+function sanitizeZipName(value: string): string {
+  return (value || "file")
+    .replace(/[/\\\r\n"]+/g, "-")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 120)
 }
 
 function csvResponse(csv: string, filename: string): Response {

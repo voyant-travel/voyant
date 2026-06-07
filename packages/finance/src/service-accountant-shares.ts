@@ -5,7 +5,7 @@ import {
   resolvePublicDocumentDeliveryGrant,
   revokePublicDocumentDeliveryGrant,
 } from "@voyantjs/hono"
-import { and, desc, eq, gte, inArray, isNull, lte, ne } from "drizzle-orm"
+import { and, desc, eq, gte, inArray, isNotNull, isNull, lte, ne } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -357,6 +357,64 @@ export const accountantSharesService = {
 
     if (!row?.storageKey) return null
     return { storageKey: row.storageKey, name: row.name, mimeType: row.mimeType }
+  },
+
+  /** Every in-scope invoice attachment that has a stored file, for bulk ZIP. */
+  async listAttachmentsForZip(
+    db: PostgresJsDatabase,
+    scope: AccountantShareScope,
+  ): Promise<
+    Array<{ kind: AccountantInvoiceKind; invoiceNumber: string; name: string; storageKey: string }>
+  > {
+    const clientConditions = [ne(invoices.status, "void"), ne(invoices.invoiceType, "proforma")]
+    if (scope.from) clientConditions.push(gte(invoices.issueDate, scope.from))
+    if (scope.to) clientConditions.push(lte(invoices.issueDate, scope.to))
+
+    const supplierConditions = [
+      ne(supplierInvoices.status, "void"),
+      isNull(supplierInvoices.deletedAt),
+    ]
+    if (scope.from) supplierConditions.push(gte(supplierInvoices.issueDate, scope.from))
+    if (scope.to) supplierConditions.push(lte(supplierInvoices.issueDate, scope.to))
+
+    const [clientRows, supplierRows] = await Promise.all([
+      db
+        .select({
+          invoiceNumber: invoices.invoiceNumber,
+          name: invoiceAttachments.name,
+          storageKey: invoiceAttachments.storageKey,
+        })
+        .from(invoiceAttachments)
+        .innerJoin(invoices, eq(invoiceAttachments.invoiceId, invoices.id))
+        .where(and(...clientConditions, isNotNull(invoiceAttachments.storageKey))),
+      db
+        .select({
+          invoiceNumber: supplierInvoices.supplierInvoiceNo,
+          name: supplierInvoiceAttachments.name,
+          storageKey: supplierInvoiceAttachments.storageKey,
+        })
+        .from(supplierInvoiceAttachments)
+        .innerJoin(
+          supplierInvoices,
+          eq(supplierInvoiceAttachments.supplierInvoiceId, supplierInvoices.id),
+        )
+        .where(and(...supplierConditions, isNotNull(supplierInvoiceAttachments.storageKey))),
+    ])
+
+    return [
+      ...clientRows.map((r) => ({
+        kind: "client" as const,
+        invoiceNumber: r.invoiceNumber,
+        name: r.name,
+        storageKey: r.storageKey as string,
+      })),
+      ...supplierRows.map((r) => ({
+        kind: "supplier" as const,
+        invoiceNumber: r.invoiceNumber,
+        name: r.name,
+        storageKey: r.storageKey as string,
+      })),
+    ]
   },
 }
 
