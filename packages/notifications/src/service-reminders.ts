@@ -58,8 +58,43 @@ type BookingEventReminderTargetType = Extract<
   "booking_confirmed" | "payment_complete" | "booking_cancelled_non_payment"
 >
 
+const PAYABLE_BOOKING_STATUSES = new Set([
+  "on_hold",
+  "awaiting_payment",
+  "confirmed",
+  "in_progress",
+])
+const OPEN_PAYMENT_SCHEDULE_STATUSES = new Set(["pending", "due"])
+
 export interface BookingEventReminderRuntimeOptions {
   documentAttachmentResolver?: BookingDocumentAttachmentResolver
+}
+
+function paymentScheduleStatusSkipReason(status: string) {
+  return `payment_schedule_status_${status}`
+}
+
+function bookingStatusSkipReason(status: string) {
+  return `booking_status_${status}`
+}
+
+async function getPaymentReminderBookingStatusSkipReason(
+  db: PostgresJsDatabase,
+  bookingId: string,
+) {
+  const [booking] = await db
+    .select({ status: bookings.status })
+    .from(bookings)
+    .where(eq(bookings.id, bookingId))
+    .limit(1)
+
+  if (!booking) {
+    return "booking_not_found"
+  }
+
+  return PAYABLE_BOOKING_STATUSES.has(booking.status)
+    ? null
+    : bookingStatusSkipReason(booking.status)
 }
 
 async function getBookingPaymentNotificationContext(db: PostgresJsDatabase, bookingId: string) {
@@ -405,6 +440,9 @@ async function sendQueuedBookingPaymentScheduleReminder(
       "Booking payment schedule not found for reminder run",
     )
   }
+  if (!OPEN_PAYMENT_SCHEDULE_STATUSES.has(schedule.status)) {
+    return markReminderRunSkipped(db, run.id, now, paymentScheduleStatusSkipReason(schedule.status))
+  }
 
   const [booking] = await db
     .select({
@@ -429,6 +467,9 @@ async function sendQueuedBookingPaymentScheduleReminder(
 
   if (!booking) {
     return markReminderRunSkipped(db, run.id, now, "Booking not found for payment schedule")
+  }
+  if (!PAYABLE_BOOKING_STATUSES.has(booking.status)) {
+    return markReminderRunSkipped(db, run.id, now, bookingStatusSkipReason(booking.status))
   }
 
   const [participants, items, paymentContext] = await Promise.all([
@@ -996,6 +1037,32 @@ async function emitStageChannelRun(
           status: "skipped",
           runId:
             (await markReminderRunSkipped(db, processingRun.id, new Date(), "schedule_not_found"))
+              ?.id ?? null,
+        }
+      }
+      if (!OPEN_PAYMENT_SCHEDULE_STATUSES.has(schedule.status)) {
+        return {
+          status: "skipped",
+          runId:
+            (
+              await markReminderRunSkipped(
+                db,
+                processingRun.id,
+                new Date(),
+                paymentScheduleStatusSkipReason(schedule.status),
+              )
+            )?.id ?? null,
+        }
+      }
+      const bookingSkipReason = await getPaymentReminderBookingStatusSkipReason(
+        db,
+        schedule.bookingId,
+      )
+      if (bookingSkipReason) {
+        return {
+          status: "skipped",
+          runId:
+            (await markReminderRunSkipped(db, processingRun.id, new Date(), bookingSkipReason))
               ?.id ?? null,
         }
       }

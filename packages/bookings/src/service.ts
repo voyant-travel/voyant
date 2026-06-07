@@ -333,6 +333,11 @@ export interface BookingServiceRuntime {
     db: PostgresJsDatabase,
     bookingId: string,
   ) => Promise<void> | void
+  closePaymentSchedulesForBooking?: (
+    db: PostgresJsDatabase,
+    bookingId: string,
+    status: Extract<BookingStatus, "cancelled" | "expired">,
+  ) => Promise<void> | void
 }
 
 type BookingStatusActionName =
@@ -4050,6 +4055,7 @@ export const bookingsService = {
           .returning()
 
         await syncTransactionOnBookingExpired(tx as PostgresJsDatabase, id)
+        await runtime.closePaymentSchedulesForBooking?.(tx as PostgresJsDatabase, id, "expired")
 
         await tx.insert(bookingActivityLog).values({
           bookingId: id,
@@ -4219,6 +4225,7 @@ export const bookingsService = {
           .returning()
 
         await syncTransactionOnBookingCancelled(tx as PostgresJsDatabase, id)
+        await runtime.closePaymentSchedulesForBooking?.(tx as PostgresJsDatabase, id, "cancelled")
 
         await tx.insert(bookingActivityLog).values({
           bookingId: id,
@@ -4569,6 +4576,9 @@ export const bookingsService = {
         }
 
         const [row] = await tx.update(bookings).set(updates).where(eq(bookings.id, id)).returning()
+        if (data.status === "cancelled" || data.status === "expired") {
+          await runtime.closePaymentSchedulesForBooking?.(tx as PostgresJsDatabase, id, data.status)
+        }
 
         await tx.insert(bookingActivityLog).values({
           bookingId: id,

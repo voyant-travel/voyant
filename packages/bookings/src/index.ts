@@ -113,6 +113,7 @@ export type {
   BookingPersonResolverContact,
   BookingRouteRuntime,
   BookingRouteRuntimeOptions,
+  ClosePaymentSchedulesForBooking,
   ResolveBookingBillingOrganizationById,
   ResolveBookingBillingPerson,
   ResolveBookingBillingPersonById,

@@ -9,6 +9,7 @@ import { generateProductPdf } from "@voyantjs/products/tasks"
 import { workflow } from "@voyantjs/workflows"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { closeTerminalBookingPaymentSchedules } from "./api/booking-payment-cleanup.js"
 import { getNotificationTaskRuntime } from "./lib/notifications.js"
 
 function getDb() {
@@ -50,7 +51,9 @@ workflow<
   defaultRuntime: "node",
   schedule: { cron: "*/5 * * * *" },
   async run(input) {
-    return expireStaleBookingHolds(getDb(), input, "system")
+    return expireStaleBookingHolds(getDb(), input, "system", {
+      closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
+    })
   },
 })
 

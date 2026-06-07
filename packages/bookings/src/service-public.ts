@@ -25,7 +25,7 @@ import {
   bookings,
   bookingTravelers,
 } from "./schema.js"
-import { bookingsService } from "./service.js"
+import { type BookingServiceRuntime, bookingsService } from "./service.js"
 import type {
   InternalBookingOverviewLookupQuery,
   PublicBookingOverviewAccessQuery,
@@ -1740,8 +1740,9 @@ export const publicBookingsService = {
     bookingId: string,
     input: PublicBookingSessionMutationInput,
     userId?: string,
+    runtime: BookingServiceRuntime = {},
   ) {
-    const result = await bookingsService.expireBooking(db, bookingId, input, userId)
+    const result = await bookingsService.expireBooking(db, bookingId, input, userId, runtime)
     if (result.status !== "ok") {
       return result
     }

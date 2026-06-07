@@ -15,6 +15,7 @@ import { workflow } from "@voyantjs/workflows"
 import { and, eq, inArray } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { closeTerminalBookingPaymentSchedules } from "./api/booking-payment-cleanup.js"
 import { createProductBrochurePrinter } from "./lib/brochure-printer.js"
 import { getNotificationTaskRuntime } from "./lib/notifications.js"
 
@@ -68,6 +69,7 @@ workflow<
           })
         }
       },
+      closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
     })
   },
 })
