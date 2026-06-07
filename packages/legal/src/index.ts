@@ -102,6 +102,16 @@ export function createLegalHonoModule(options: CreateLegalHonoModuleOptions = {}
                 eventBus,
                 lifecycleHooks: contractsRuntime.lifecycleHooks,
                 bindings: bindingsRecord,
+                bookingPiiService:
+                  contractsRuntime.bookingPiiService ??
+                  (await contractsRuntime.resolveBookingPiiService?.(bindingsRecord)) ??
+                  null,
+                actionLedgerContext: {
+                  userId: event.data.actorId,
+                  actor: event.data.actorId ? "staff" : "system",
+                  callerType: "internal",
+                  isInternalRequest: true,
+                },
               })
               if (result.status !== "ok") {
                 console.error(

@@ -6,8 +6,10 @@ import {
   updateContactPointSchema,
 } from "@voyantjs/identity/validation"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { Context } from "hono"
 import { Hono } from "hono"
 
+import { CrmMergeError } from "../service/accounts-merge.js"
 import { crmService } from "../service/index.js"
 import {
   communicationListQuerySchema,
@@ -18,6 +20,8 @@ import {
   insertPersonPaymentMethodSchema,
   insertPersonSchema,
   insertSegmentSchema,
+  mergeOrganizationSchema,
+  mergePersonSchema,
   organizationListQuerySchema,
   personListQuerySchema,
   updateOrganizationNoteSchema,
@@ -36,6 +40,13 @@ type Env = {
 
 const organizationEntity = "organization" as const
 const personEntity = "person" as const
+
+function mergeErrorResponse(c: Context<Env>, error: unknown) {
+  if (error instanceof CrmMergeError) {
+    return c.json({ error: error.message }, error.status)
+  }
+  throw error
+}
 
 export const accountRoutes = new Hono<Env>()
   // Organizations
@@ -71,6 +82,15 @@ export const accountRoutes = new Hono<Env>()
     )
     if (!row) return c.json({ error: "Organization not found" }, 404)
     return c.json({ data: row })
+  })
+  .post("/organizations/:id/merge", async (c) => {
+    try {
+      const body = await parseJsonBody(c, mergeOrganizationSchema)
+      const row = await crmService.mergeOrganization(c.get("db"), c.req.param("id"), body.mergeId)
+      return c.json({ data: row })
+    } catch (error) {
+      return mergeErrorResponse(c, error)
+    }
   })
   .delete("/organizations/:id", async (c) => {
     const row = await crmService.deleteOrganization(c.get("db"), c.req.param("id"))
@@ -174,6 +194,15 @@ export const accountRoutes = new Hono<Env>()
     )
     if (!row) return c.json({ error: "Person not found" }, 404)
     return c.json({ data: row })
+  })
+  .post("/people/:id/merge", async (c) => {
+    try {
+      const body = await parseJsonBody(c, mergePersonSchema)
+      const row = await crmService.mergePerson(c.get("db"), c.req.param("id"), body.mergeId)
+      return c.json({ data: row })
+    } catch (error) {
+      return mergeErrorResponse(c, error)
+    }
   })
   .delete("/people/:id", async (c) => {
     const row = await crmService.deletePerson(c.get("db"), c.req.param("id"))

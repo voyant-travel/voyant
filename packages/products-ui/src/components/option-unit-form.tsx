@@ -106,6 +106,10 @@ function toOptionalNumber(value: string) {
 }
 
 function toPayload(state: FormState): Omit<CreateOptionUnitInput, "optionId"> {
+  const canHaveAge = state.unitType === "person"
+  const canHaveOccupancy =
+    state.unitType === "group" || state.unitType === "room" || state.unitType === "vehicle"
+
   return {
     name: state.name.trim(),
     code: toOptionalString(state.code),
@@ -113,10 +117,10 @@ function toPayload(state: FormState): Omit<CreateOptionUnitInput, "optionId"> {
     unitType: state.unitType,
     minQuantity: toOptionalNumber(state.minQuantity),
     maxQuantity: toOptionalNumber(state.maxQuantity),
-    minAge: toOptionalNumber(state.minAge),
-    maxAge: toOptionalNumber(state.maxAge),
-    occupancyMin: toOptionalNumber(state.occupancyMin),
-    occupancyMax: toOptionalNumber(state.occupancyMax),
+    minAge: canHaveAge ? toOptionalNumber(state.minAge) : null,
+    maxAge: canHaveAge ? toOptionalNumber(state.maxAge) : null,
+    occupancyMin: canHaveOccupancy ? toOptionalNumber(state.occupancyMin) : null,
+    occupancyMax: canHaveOccupancy ? toOptionalNumber(state.occupancyMax) : null,
     isRequired: state.isRequired,
     isHidden: state.isHidden,
     sortOrder: Number.parseInt(state.sortOrder || "0", 10) || 0,

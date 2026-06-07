@@ -201,6 +201,22 @@ describe("buildOwnedAccommodationContent", () => {
               createdAt: new Date("2026-01-01"),
               updatedAt: new Date("2026-01-01"),
             },
+            {
+              id: "meal_ai",
+              propertyId: "prop_mitsis",
+              code: "AI",
+              name: "All Inclusive",
+              description: null,
+              includesBreakfast: true,
+              includesLunch: true,
+              includesDinner: true,
+              includesDrinks: true,
+              active: true,
+              sortOrder: 2,
+              metadata: null,
+              createdAt: new Date("2026-01-01"),
+              updatedAt: new Date("2026-01-01"),
+            },
           ],
         ],
         [
@@ -271,6 +287,11 @@ describe("buildOwnedAccommodationContent", () => {
     expect(result?.content.meal_plans[0]).toMatchObject({
       id: "meal_bb",
       basis: "bed_breakfast",
+    })
+    expect(result?.content.meal_plans[1]).toMatchObject({
+      id: "meal_ai",
+      basis: "all_inclusive",
+      inclusions: ["Breakfast", "Lunch", "Dinner", "Drinks"],
     })
     expect(result?.content.amenities[0]).toMatchObject({ id: "wifi", name: "Wi-Fi" })
   })

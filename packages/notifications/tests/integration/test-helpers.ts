@@ -20,6 +20,7 @@ async function cleanupNotificationsTestData(
   await db.execute(sql`
     TRUNCATE
       notification_reminder_runs,
+      notification_reminder_rule_authoring_requests,
       notification_reminder_stage_channels,
       notification_reminder_rule_stages,
       notification_reminder_rules,
@@ -431,6 +432,18 @@ export function createNotificationsTestContext(options?: { eventBus?: EventBus }
         created_at timestamp with time zone DEFAULT now() NOT NULL,
         updated_at timestamp with time zone DEFAULT now() NOT NULL
       )
+    `)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS notification_reminder_rule_authoring_requests (
+        idempotency_key text PRIMARY KEY NOT NULL,
+        reminder_rule_id text NOT NULL,
+        operation text NOT NULL,
+        created_at timestamp with time zone DEFAULT now() NOT NULL
+      )
+    `)
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS idx_notification_reminder_rule_authoring_rule
+        ON notification_reminder_rule_authoring_requests (reminder_rule_id)
     `)
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS notification_settings (

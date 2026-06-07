@@ -729,14 +729,20 @@ export type ProductsUiMessages = {
     titles: {
       default: string
       units: string
+      personUnits: string
+      roomUnits: string
     }
     descriptions: {
       default: string
       units: string
+      personUnits: string
+      roomUnits: string
     }
     actions: {
       addOption: string
       addUnit: string
+      addPersonUnit: string
+      addRoomUnit: string
       duplicate: string
       edit: string
       delete: string
@@ -749,6 +755,10 @@ export type ProductsUiMessages = {
       options: string
       units: string
     }
+    configurationWarnings: {
+      roomOptionsTitle: string
+      roomOptionsDescription: string
+    }
     deleteConfirm: {
       option: string
       unit: string
@@ -757,9 +767,20 @@ export type ProductsUiMessages = {
       unitType: string
       unitName: string
       quantity: string
+      personQuantity: string
+      roomQuantity: string
       age: string
       occupancy: string
       actions: string
+    }
+    unitSummaries: {
+      range: string
+      rooms: string
+      roomsWithCount: string
+      vehicles: string
+      vehiclesWithCount: string
+      sleeps: string
+      sleepsRange: string
     }
     badges: {
       defaultOption: string

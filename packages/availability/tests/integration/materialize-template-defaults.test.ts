@@ -1,7 +1,7 @@
 import { newId } from "@voyantjs/db/lib/typeid"
 import { cleanupTestDb, createTestDb } from "@voyantjs/db/test-utils"
 import { productOptions, products } from "@voyantjs/products/schema"
-import { sql } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import { generateAvailabilitySlots } from "../../src/generate-slots.js"
@@ -141,5 +141,34 @@ describe.skipIf(!DB_AVAILABLE)("materialize template defaults (integration)", ()
     })
     expect(result.slotsCreated).toBeGreaterThan(0)
     expect(result.resourcesMaterialized).toBeGreaterThanOrEqual(3)
+  })
+
+  it("generates startsAt as a true UTC instant in the rule timezone", async () => {
+    const ruleId = newId("availability_rules")
+    await db.insert(availabilityRules).values({
+      id: ruleId,
+      productId,
+      optionId,
+      timezone: "Europe/Bucharest",
+      recurrenceRule: "FREQ=DAILY;COUNT=1",
+      maxCapacity: 6,
+      active: true,
+    })
+
+    await generateAvailabilitySlots(db, {
+      horizonDays: 2,
+      defaultStartTime: "09:00",
+      now: new Date("2026-09-26T00:00:00Z"),
+      materializeResources: false,
+    })
+
+    const [slot] = await db
+      .select()
+      .from(availabilitySlots)
+      .where(eq(availabilitySlots.availabilityRuleId, ruleId))
+      .limit(1)
+
+    expect(slot?.dateLocal).toBe("2026-09-26")
+    expect(slot?.startsAt.toISOString()).toBe("2026-09-26T06:00:00.000Z")
   })
 })

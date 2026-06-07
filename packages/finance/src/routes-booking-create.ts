@@ -57,6 +57,17 @@ const createBookingRoutes = new Hono<{
           },
           400,
         )
+      case "duplicate_booking":
+        return c.json(
+          {
+            error: "Duplicate booking",
+            code: "duplicate_booking",
+            existingBookingId: outcome.existingBooking.id,
+            existingBookingNumber: outcome.existingBooking.bookingNumber,
+            existingBookingStatus: outcome.existingBooking.status,
+          },
+          409,
+        )
       case "product_not_found":
         return c.json({ error: "Product not found or unavailable" }, 404)
       case "voucher_not_found":
@@ -119,6 +130,18 @@ const createBookingRoutes = new Hono<{
             mismatches: reason.mismatches,
           },
           400,
+        )
+      case "duplicate_booking":
+        return c.json(
+          {
+            ...body,
+            error: `${which}: duplicate booking`,
+            code: "duplicate_booking",
+            existingBookingId: reason.existingBooking.id,
+            existingBookingNumber: reason.existingBooking.bookingNumber,
+            existingBookingStatus: reason.existingBooking.status,
+          },
+          409,
         )
       case "product_not_found":
         return c.json({ ...body, error: `${which}: product not found or unavailable` }, 404)

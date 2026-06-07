@@ -1,6 +1,12 @@
-import { bookingsService } from "@voyantjs/bookings"
+import { type ActionLedgerRequestContextValues, ledgerSensitiveRead } from "@voyantjs/action-ledger"
+import {
+  BOOKING_PII_READ_CAPABILITY,
+  type BookingPiiService,
+  bookingsService,
+} from "@voyantjs/bookings"
+import { bookingPiiAccessLog } from "@voyantjs/bookings/schema"
 import { invoices, payments } from "@voyantjs/finance/schema"
-import { and, desc, eq, ne } from "drizzle-orm"
+import { and, desc, eq, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { ContractLifecycleHook } from "./lifecycle.js"
@@ -401,6 +407,13 @@ export interface AutoGenerateContractRuntime {
   eventBus?: import("@voyantjs/core").EventBus
   lifecycleHooks?: readonly ContractLifecycleHook[]
   /**
+   * Optional sensitive booking-traveler reader. When supplied, the default
+   * resolver can include traveler DOB/document snapshots in the template bag.
+   * When absent, those fields keep their empty-string fallbacks.
+   */
+  bookingPiiService?: BookingPiiService | null
+  actionLedgerContext?: ActionLedgerRequestContextValues | null
+  /**
    * Runtime bindings forwarded into `resolveVariables` so consumers
    * can read deploy-specific env vars (e.g. `DOCUMENTS_BASE_URL`)
    * without restructuring every auto-generate call site to know
@@ -581,11 +594,22 @@ export async function autoGenerateContractForBooking(
   }
 
   const travelers = await bookingsService.listTravelers(db, event.bookingId)
+  const travelerTravelDetails = await resolveTravelerTravelDetails(
+    db,
+    booking.id,
+    travelers,
+    runtime.bookingPiiService,
+    event.actorId,
+    runtime.actionLedgerContext,
+  )
   const leadTraveler =
+    travelers.find((t) => travelerTravelDetails.get(t.id)?.isLeadTraveler) ??
     travelers.find((t) => t.isPrimary) ??
     travelers.find((t) => t.participantType === "traveler") ??
     travelers[0] ??
     null
+  const leadTravelerDetails = leadTraveler ? travelerTravelDetails.get(leadTraveler.id) : null
+  const bookingItemContext = await resolveBookingItemContext(db, booking.id)
 
   const now = new Date()
   const todayIso = now.toISOString().slice(0, 10)
@@ -601,6 +625,7 @@ export async function autoGenerateContractForBooking(
 
   const mappedTravelers: ContractTravelerVariable[] = travelers.map((t, i) => {
     const fullName = [t.firstName, t.lastName].filter(Boolean).join(" ").trim()
+    const travelDetails = travelerTravelDetails.get(t.id)
     return {
       id: t.id,
       index: i + 1,
@@ -613,14 +638,14 @@ export async function autoGenerateContractForBooking(
       fullName,
       email: t.email ?? "",
       phone: t.phone ?? "",
-      dateOfBirth: "",
+      dateOfBirth: travelDetails?.dateOfBirth ?? "",
       document: {
-        type: "",
-        number: "",
-        country: "",
-        issuingAuthority: "",
+        type: travelDetails?.documentType ?? "",
+        number: travelDetails?.documentNumber ?? "",
+        country: travelDetails?.documentIssuingCountry ?? "",
+        issuingAuthority: travelDetails?.documentIssuingAuthority ?? "",
         issueDate: "",
-        expiryDate: "",
+        expiryDate: travelDetails?.documentExpiry ?? "",
       },
     }
   })
@@ -656,12 +681,12 @@ export async function autoGenerateContractForBooking(
       id: booking.id,
       status: booking.status,
 
-      entityModule: "",
-      entityId: "",
-      vertical: "",
-      productName: "",
-      productSubtitle: "",
-      destination: "",
+      entityModule: bookingItemContext.entityModule,
+      entityId: bookingItemContext.entityId,
+      vertical: bookingItemContext.vertical,
+      productName: bookingItemContext.productTitle,
+      productSubtitle: bookingItemContext.productSubtitle,
+      destination: bookingItemContext.destination,
 
       pax: booking.pax,
       paxTotal: booking.pax ?? 0,
@@ -728,7 +753,7 @@ export async function autoGenerateContractForBooking(
       fullName: customerFullName,
       email: booking.contactEmail ?? "",
       phone: booking.contactPhone ?? "",
-      dateOfBirth: "",
+      dateOfBirth: leadTravelerDetails?.dateOfBirth ?? "",
       companyName: "",
       vatId: "",
       registrationNumber: "",
@@ -741,12 +766,12 @@ export async function autoGenerateContractForBooking(
         country: booking.contactCountry ?? "",
       },
       document: {
-        type: "",
-        number: "",
-        country: "",
-        issuingAuthority: "",
+        type: leadTravelerDetails?.documentType ?? "",
+        number: leadTravelerDetails?.documentNumber ?? "",
+        country: leadTravelerDetails?.documentIssuingCountry ?? "",
+        issuingAuthority: leadTravelerDetails?.documentIssuingAuthority ?? "",
         issueDate: "",
-        expiryDate: "",
+        expiryDate: leadTravelerDetails?.documentExpiry ?? "",
       },
     },
 
@@ -767,25 +792,25 @@ export async function autoGenerateContractForBooking(
     travelers: mappedTravelers,
     passengers: mappedTravelers,
 
-    items: [],
+    items: bookingItemContext.items,
     addons: [],
 
     product: {
-      title: "",
-      subtitle: "",
-      destination: "",
-      module: "",
-      id: "",
-      vertical: "",
+      title: bookingItemContext.productTitle,
+      subtitle: bookingItemContext.productSubtitle,
+      destination: bookingItemContext.destination,
+      module: bookingItemContext.entityModule,
+      id: bookingItemContext.entityId,
+      vertical: bookingItemContext.vertical,
       heroImageUrl: "",
     },
 
     departureSlot: {
-      slotId: "",
-      startAt: startDate,
-      endAt: endDate,
-      durationDays: durationNights,
-      departureCity: "",
+      slotId: bookingItemContext.departureSlot.slotId,
+      startAt: bookingItemContext.departureSlot.startAt || startDate,
+      endAt: bookingItemContext.departureSlot.endAt || endDate,
+      durationDays: bookingItemContext.departureSlot.durationDays ?? durationNights,
+      departureCity: bookingItemContext.departureSlot.departureCity,
     },
     sailing: {
       sailingId: "",
@@ -970,6 +995,366 @@ export async function autoGenerateContractForBooking(
 
 function defaultVariablesToRecord(defaults: DefaultContractVariables): Record<string, unknown> {
   return { ...defaults }
+}
+
+type BookingItemRow = Awaited<ReturnType<typeof bookingsService.listItems>>[number]
+type BookingTravelerRow = Awaited<ReturnType<typeof bookingsService.listTravelers>>[number]
+type BookingTravelerTravelDetails = NonNullable<
+  Awaited<ReturnType<BookingPiiService["getTravelerTravelDetails"]>>
+>
+
+interface BookingItemContext {
+  entityModule: string
+  entityId: string
+  vertical: string
+  productTitle: string
+  productSubtitle: string
+  destination: string
+  departureSlot: {
+    slotId: string
+    startAt: string
+    endAt: string
+    durationDays: number | null
+    departureCity: string
+  }
+  items: ContractItemVariable[]
+}
+
+async function resolveTravelerTravelDetails(
+  db: PostgresJsDatabase,
+  bookingId: string,
+  travelers: BookingTravelerRow[],
+  pii: BookingPiiService | null | undefined,
+  actorId: string | null,
+  actionLedgerContext: ActionLedgerRequestContextValues | null | undefined,
+): Promise<Map<string, BookingTravelerTravelDetails>> {
+  const detailsByTraveler = new Map<string, BookingTravelerTravelDetails>()
+  if (!pii || travelers.length === 0) return detailsByTraveler
+
+  await Promise.all(
+    travelers.map(async (traveler) => {
+      const details = await ledgerSensitiveRead(
+        db,
+        {
+          context: actionLedgerContext ?? {
+            userId: actorId,
+            actor: actorId ? "staff" : "system",
+            callerType: actorId ? "staff" : "internal",
+            isInternalRequest: actorId == null,
+          },
+          actionName: "booking.pii.read",
+          actionVersion: "v1",
+          targetType: "booking_traveler",
+          targetId: traveler.id,
+          routeOrToolName: "legal.contracts.bookings.generate-document",
+          capabilityId: BOOKING_PII_READ_CAPABILITY.id,
+          capabilityVersion: BOOKING_PII_READ_CAPABILITY.version,
+          authorizationSource: "legal.contract.auto_generate",
+          reasonCode: "contract_variable_resolution",
+          disclosedFieldSet: ["dateOfBirth", "document"],
+          disclosureSummary: "Contract variable traveler identity snapshot",
+          decisionPolicy: "bookings-pii-scope-or-staff-v1",
+          fallbackPrincipalId: actorId ?? "legal_contract_auto_generate",
+        },
+        () => pii.getTravelerTravelDetails(db, traveler.id, actorId),
+      )
+      await logBookingPiiContractRead(db, {
+        bookingId,
+        travelerId: traveler.id,
+        actorId,
+        actionLedgerContext,
+      })
+      if (details) {
+        detailsByTraveler.set(traveler.id, details)
+      }
+    }),
+  )
+
+  return detailsByTraveler
+}
+
+async function logBookingPiiContractRead(
+  db: PostgresJsDatabase,
+  input: {
+    bookingId: string
+    travelerId: string
+    actorId: string | null
+    actionLedgerContext: ActionLedgerRequestContextValues | null | undefined
+  },
+) {
+  await db.insert(bookingPiiAccessLog).values({
+    bookingId: input.bookingId,
+    travelerId: input.travelerId,
+    actorId: input.actionLedgerContext?.userId ?? input.actorId,
+    actorType: input.actionLedgerContext?.actor ?? (input.actorId ? "staff" : "system"),
+    callerType: input.actionLedgerContext?.callerType ?? (input.actorId ? "staff" : "internal"),
+    action: "read",
+    outcome: "allowed",
+    reason: "contract_variable_resolution",
+    metadata: {
+      routeOrToolName: "legal.contracts.bookings.generate-document",
+      capabilityId: BOOKING_PII_READ_CAPABILITY.id,
+      capabilityVersion: BOOKING_PII_READ_CAPABILITY.version,
+    },
+  })
+}
+
+async function resolveBookingItemContext(
+  db: PostgresJsDatabase,
+  bookingId: string,
+): Promise<BookingItemContext> {
+  const items = await bookingsService.listItems(db, bookingId)
+  const primaryItem =
+    items.find((item) => item.productNameSnapshot || item.productId || item.availabilitySlotId) ??
+    items[0] ??
+    null
+
+  if (!primaryItem) {
+    return emptyBookingItemContext()
+  }
+
+  const metadata = recordValue(primaryItem.metadata)
+  const productId = primaryItem.productId ?? ""
+  const linkedProductTitle =
+    productId && !primaryItem.productNameSnapshot
+      ? await resolveLinkedProductTitle(db, productId)
+      : ""
+  const destination = firstString(
+    pickString(metadata, [
+      "destination",
+      "destinationName",
+      "destination_name",
+      "productDestination",
+      "product_destination",
+    ]),
+    productId ? await resolveLinkedProductDestination(db, productId) : "",
+  )
+
+  const entityModule = firstString(
+    pickString(metadata, ["entityModule", "entity_module", "module"]),
+    productId ? "products" : "",
+  )
+  const entityId = firstString(pickString(metadata, ["entityId", "entity_id"]), productId)
+  const vertical = firstString(
+    pickString(metadata, ["vertical", "entityVertical", "entity_vertical", "productType"]),
+    entityModule,
+  )
+  const productTitle = firstString(
+    primaryItem.productNameSnapshot,
+    linkedProductTitle,
+    primaryItem.title,
+  )
+  const productSubtitle = firstString(
+    primaryItem.optionNameSnapshot,
+    primaryItem.unitNameSnapshot,
+    primaryItem.description,
+  )
+  const departureSlot = await resolveDepartureSlotContext(db, primaryItem)
+
+  return {
+    entityModule,
+    entityId,
+    vertical,
+    productTitle,
+    productSubtitle,
+    destination,
+    departureSlot,
+    items: items.map(mapBookingItemToContractItem),
+  }
+}
+
+function emptyBookingItemContext(): BookingItemContext {
+  return {
+    entityModule: "",
+    entityId: "",
+    vertical: "",
+    productTitle: "",
+    productSubtitle: "",
+    destination: "",
+    departureSlot: {
+      slotId: "",
+      startAt: "",
+      endAt: "",
+      durationDays: null,
+      departureCity: "",
+    },
+    items: [],
+  }
+}
+
+function mapBookingItemToContractItem(item: BookingItemRow, index: number): ContractItemVariable {
+  const quantity = item.quantity ?? 1
+  const unitAmountCents =
+    item.unitSellAmountCents ??
+    (item.totalSellAmountCents != null && quantity > 0
+      ? Math.round(item.totalSellAmountCents / quantity)
+      : 0)
+
+  return {
+    index: index + 1,
+    kind: item.itemType,
+    description: firstString(item.productNameSnapshot, item.title, item.description),
+    quantity,
+    unitAmountCents,
+    totalAmountCents: item.totalSellAmountCents ?? unitAmountCents * quantity,
+    currency: item.sellCurrency,
+    taxIncluded: false,
+  }
+}
+
+async function resolveDepartureSlotContext(
+  db: PostgresJsDatabase,
+  item: BookingItemRow,
+): Promise<BookingItemContext["departureSlot"]> {
+  const slotId = item.availabilitySlotId ?? ""
+  const linkedSlot = slotId ? await resolveLinkedAvailabilitySlot(db, slotId) : null
+  const startAt = normalizeDateTime(linkedSlot?.starts_at ?? item.startsAt)
+  const endAt = normalizeDateTime(linkedSlot?.ends_at ?? item.endsAt)
+  const durationDays =
+    numberValue(linkedSlot?.days) ??
+    (startAt && endAt
+      ? Math.max(1, computeNights(startAt.slice(0, 10), endAt.slice(0, 10)) + 1)
+      : null)
+
+  return {
+    slotId,
+    startAt,
+    endAt,
+    durationDays,
+    departureCity: extractDepartureCity(item.departureLabelSnapshot),
+  }
+}
+
+async function resolveLinkedProductTitle(
+  db: PostgresJsDatabase,
+  productId: string,
+): Promise<string> {
+  try {
+    const result = await db.execute<{ name: string | null }>(
+      sql`select name from products where id = ${productId} limit 1`,
+    )
+    return toRows<{ name: string | null }>(result)[0]?.name ?? ""
+  } catch (error) {
+    if (isUndefinedTableError(error)) return ""
+    throw error
+  }
+}
+
+async function resolveLinkedProductDestination(
+  db: PostgresJsDatabase,
+  productId: string,
+): Promise<string> {
+  try {
+    const result = await db.execute<{ destination: string | null }>(sql`
+      select coalesce(dt.name, d.slug) as destination
+      from product_destinations pd
+      inner join destinations d on d.id = pd.destination_id
+      left join destination_translations dt on dt.destination_id = d.id
+      where pd.product_id = ${productId}
+      order by
+        pd.sort_order asc,
+        case when dt.language_tag = 'en' then 0 else 1 end,
+        dt.language_tag asc nulls last,
+        d.slug asc
+      limit 1
+    `)
+    return toRows<{ destination: string | null }>(result)[0]?.destination ?? ""
+  } catch (error) {
+    if (isUndefinedTableError(error)) return ""
+    throw error
+  }
+}
+
+async function resolveLinkedAvailabilitySlot(
+  db: PostgresJsDatabase,
+  slotId: string,
+): Promise<{
+  starts_at: Date | string | null
+  ends_at: Date | string | null
+  days: number | null
+} | null> {
+  try {
+    const result = await db.execute<{
+      starts_at: Date | string | null
+      ends_at: Date | string | null
+      days: number | null
+    }>(sql`
+      select starts_at, ends_at, days
+      from availability_slots
+      where id = ${slotId}
+      limit 1
+    `)
+    return (
+      toRows<{
+        starts_at: Date | string | null
+        ends_at: Date | string | null
+        days: number | null
+      }>(result)[0] ?? null
+    )
+  } catch (error) {
+    if (isUndefinedTableError(error)) return null
+    throw error
+  }
+}
+
+function recordValue(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {}
+}
+
+function pickString(record: Record<string, unknown>, keys: readonly string[]): string {
+  for (const key of keys) {
+    const value = record[key]
+    if (typeof value === "string" && value.trim()) return value.trim()
+  }
+  return ""
+}
+
+function firstString(...values: Array<string | null | undefined>): string {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim()
+  }
+  return ""
+}
+
+function normalizeDateTime(value: Date | string | null | undefined): string {
+  if (!value) return ""
+  return value instanceof Date ? value.toISOString() : value
+}
+
+function numberValue(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null
+}
+
+function extractDepartureCity(label: string | null | undefined): string {
+  const normalized = firstString(label)
+  if (!normalized) return ""
+  const separator = normalized.includes("—") ? "—" : normalized.includes("-") ? "-" : ""
+  if (!separator) return ""
+  const parts = normalized
+    .split(separator)
+    .map((part) => part.trim())
+    .filter(Boolean)
+  return parts.length > 1 ? (parts[parts.length - 1] ?? "") : ""
+}
+
+function toRows<T>(result: unknown): T[] {
+  if (Array.isArray(result)) return result as T[]
+  if (result && typeof result === "object" && "rows" in result) {
+    const rows = (result as { rows: unknown }).rows
+    return Array.isArray(rows) ? (rows as T[]) : []
+  }
+  return []
+}
+
+function isUndefinedTableError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "42P01"
+  )
 }
 
 type SettlementInvoiceRow = Pick<

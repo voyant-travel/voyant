@@ -1,3 +1,4 @@
+import { accountMergeService } from "./accounts-merge.js"
 import { organizationAccountsService } from "./accounts-organizations.js"
 import { peopleAccountsService } from "./accounts-people.js"
 import {
@@ -9,10 +10,12 @@ import {
 export const accountsService = {
   ...organizationAccountsService,
   ...peopleAccountsService,
+  ...accountMergeService,
   findPersonByContactPoint,
   upsertPersonFromContact,
 }
 
+export { accountMergeService, CrmMergeError } from "./accounts-merge.js"
 export type {
   PersonContactInput,
   UpsertPersonFromContactOptions,

@@ -272,6 +272,22 @@ const CRUISE_FIELD_POLICY: FieldPolicyInput[] = [
     sourceFreshness: "sync",
   },
   {
+    // Supply mechanic — cruises are always `scheduled` (fixed dated sailings
+    // with cabin allotment). See docs/architecture/catalog-supply-models.md.
+    path: "supplyModel",
+    class: "structural",
+    merge: "source-only",
+    drift: "low",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
     path: "status",
     class: "structural",
     merge: "source-only",
@@ -517,9 +533,10 @@ const CRUISE_FIELD_POLICY: FieldPolicyInput[] = [
   },
 
   // ── Volatile-indexed (browse-time approximations) ──────────────────────
-  // The cached lowest-price + departure window are explicit Tier 1 indexed
-  // price summaries (architecture §5.4.3). Refreshed on source freshness
-  // sync; quote-time price comes through volatile-live elsewhere.
+  // The cached lowest-price (integer minor units) + departure window are
+  // explicit Tier 1 indexed price summaries (architecture §5.4.3). Refreshed
+  // on source freshness sync; quote-time price comes through volatile-live
+  // elsewhere.
   {
     path: "lowestPriceCached",
     class: "volatile-indexed",
@@ -536,6 +553,20 @@ const CRUISE_FIELD_POLICY: FieldPolicyInput[] = [
   },
   {
     path: "lowestPriceCurrencyCached",
+    class: "volatile-indexed",
+    merge: "source-only",
+    drift: "low",
+    reindex: "entry",
+    snapshot: "on-quote-and-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    path: "lowestPriceUnit",
     class: "volatile-indexed",
     merge: "source-only",
     drift: "low",
@@ -568,6 +599,41 @@ const CRUISE_FIELD_POLICY: FieldPolicyInput[] = [
     merge: "source-only",
     drift: "low",
     reindex: "facet-affecting",
+    snapshot: "never",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    // Distinct departure months (`YYYY-MM`) across the cruise's sailings.
+    // Facet-affecting (string[]) so browse surfaces can filter by departure
+    // month/year. Populated from the per-cruise sailing list at sync time —
+    // the upstream search projection only carries the [earliest, latest]
+    // window, not the per-month breakdown.
+    path: "departureMonths[]",
+    class: "volatile-indexed",
+    merge: "source-only",
+    drift: "low",
+    reindex: "facet-affecting",
+    snapshot: "never",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
+    // Total sailing (departure) count — typed `int64` via the `Count` suffix.
+    // Rendered on browse cards alongside the next departure date.
+    path: "departureCount",
+    class: "volatile-indexed",
+    merge: "source-only",
+    drift: "low",
+    reindex: "entry",
     snapshot: "never",
     query: "indexed-column",
     localized: false,

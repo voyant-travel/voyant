@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/core",
-  "version": "0.101.0",
+  "version": "0.104.1",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -29,7 +29,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2"
   },
   "files": [

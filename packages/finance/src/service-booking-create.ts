@@ -366,6 +366,13 @@ const bookingCreateBaseSchema = z.object({
    * bundles. Operators can confirm a booking silently this way.
    */
   suppressNotifications: z.boolean().optional(),
+  /**
+   * Explicit operator override for same billing party + departure creates.
+   * Defaults to guarded behavior so retries and concurrent double-submit
+   * attempts return a structured duplicate signal instead of minting another
+   * active booking.
+   */
+  allowDuplicate: z.boolean().optional(),
   // Billing-contact snapshot — captured at create time. Caller (the
   // dialog) reads the linked CRM person/org and supplies what it
   // knows; the convertProductToBooking helper writes everything
@@ -482,6 +489,7 @@ export type BookingCreateOutcome =
   | { status: "ok"; result: BookingCreateResult }
   | { status: "invalid_payment_schedules"; issues: BookingCreateValidationIssue[] }
   | { status: "payload_resolver_mismatch"; mismatches: BookingDraftMismatch[] }
+  | { status: "duplicate_booking"; existingBooking: DuplicateBookingMatch }
   | { status: "product_not_found" }
   | { status: "voucher_not_found" }
   | { status: "voucher_inactive" }
@@ -532,6 +540,12 @@ class BookingCreateValidationError extends Error {
   }
 }
 
+export interface DuplicateBookingMatch {
+  id: string
+  bookingNumber: string
+  status: string
+}
+
 interface AlreadyPaidScheduleMetadata {
   alreadyPaid?: boolean
   paymentDate?: string | null
@@ -552,6 +566,49 @@ function parseAlreadyPaidScheduleMetadata(notes: string | null | undefined) {
 function isAlreadyPaidSchedule(schedule: BookingCreatePaymentScheduleInput) {
   const metadata = parseAlreadyPaidScheduleMetadata(schedule.notes)
   return schedule.status === "paid" || metadata?.alreadyPaid === true
+}
+
+function duplicateBookingGuardKey(input: BookingCreateInput) {
+  if (!input.slotId) return null
+  if (input.personId) return `booking-create:person:${input.personId}:slot:${input.slotId}`
+  if (input.organizationId) {
+    return `booking-create:organization:${input.organizationId}:slot:${input.slotId}`
+  }
+  return null
+}
+
+async function findDuplicateBookingForCreate(
+  tx: PostgresJsDatabase,
+  input: BookingCreateInput,
+): Promise<DuplicateBookingMatch | null> {
+  const guardKey = duplicateBookingGuardKey(input)
+  if (!guardKey || input.allowDuplicate) return null
+
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${guardKey}, 0))`)
+
+  const partyCondition = input.personId
+    ? sql`b.person_id = ${input.personId}`
+    : sql`b.organization_id = ${input.organizationId}`
+
+  const rows = await tx.execute(sql`
+    SELECT
+      b.id AS "id",
+      b.booking_number AS "bookingNumber",
+      b.status AS "status"
+    FROM bookings b
+    WHERE b.status NOT IN ('cancelled', 'expired')
+      AND ${partyCondition}
+      AND EXISTS (
+        SELECT 1
+        FROM booking_items bi
+        WHERE bi.booking_id = b.id
+          AND bi.availability_slot_id = ${input.slotId}
+      )
+    ORDER BY b.created_at ASC
+    LIMIT 1
+  `)
+
+  return toRows<DuplicateBookingMatch>(rows)[0] ?? null
 }
 
 /**
@@ -936,6 +993,14 @@ export async function createBooking(
   let result: BookingCreateResult
   try {
     result = await db.transaction(async (tx) => {
+      const duplicateBooking = await findDuplicateBookingForCreate(tx, input)
+      if (duplicateBooking) {
+        throw new BookingCreateAbort({
+          status: "duplicate_booking",
+          existingBooking: duplicateBooking,
+        })
+      }
+
       const productOptionUnits = input.itemLines?.length
         ? await loadProductOptionUnits(tx, input.productId)
         : []

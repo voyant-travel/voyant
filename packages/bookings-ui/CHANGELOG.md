@@ -1,5 +1,198 @@
 # @voyantjs/bookings-ui
 
+## 0.106.1
+
+### Patch Changes
+
+- Updated dependencies [a0e117b]
+  - @voyantjs/bookings@0.106.1
+  - @voyantjs/bookings-react@0.106.1
+
+## 0.106.0
+
+### Patch Changes
+
+- Updated dependencies [6949669]
+  - @voyantjs/crm-react@0.106.0
+  - @voyantjs/crm-ui@0.106.0
+  - @voyantjs/bookings@0.106.0
+  - @voyantjs/bookings-react@0.106.0
+  - @voyantjs/finance-react@0.106.0
+  - @voyantjs/identity-react@0.106.0
+  - @voyantjs/legal-react@0.106.0
+  - @voyantjs/products-react@0.106.0
+  - @voyantjs/extras-react@0.106.0
+  - @voyantjs/pricing-react@0.106.0
+  - @voyantjs/suppliers-react@0.104.3
+
+## 0.105.0
+
+### Patch Changes
+
+- @voyantjs/catalog@0.104.4
+- @voyantjs/bookings@0.105.0
+- @voyantjs/products-react@0.105.0
+- @voyantjs/bookings-react@0.105.0
+- @voyantjs/catalog-react@0.104.4
+- @voyantjs/extras-react@0.105.0
+- @voyantjs/finance-react@0.105.0
+- @voyantjs/identity-react@0.105.0
+- @voyantjs/pricing-react@0.105.0
+- @voyantjs/crm-ui@0.105.0
+- @voyantjs/crm-react@0.105.0
+- @voyantjs/legal-react@0.105.0
+- @voyantjs/suppliers-react@0.104.2
+
+## 0.104.2
+
+### Patch Changes
+
+- Updated dependencies [75a6336]
+  - @voyantjs/bookings-react@0.104.2
+  - @voyantjs/bookings@0.104.2
+  - @voyantjs/finance-react@0.104.2
+
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/availability-react@0.104.1
+- @voyantjs/bookings@0.104.1
+- @voyantjs/bookings-react@0.104.1
+- @voyantjs/catalog@0.104.1
+- @voyantjs/catalog-react@0.104.1
+- @voyantjs/crm-react@0.104.1
+- @voyantjs/crm-ui@0.104.1
+- @voyantjs/extras-react@0.104.1
+- @voyantjs/finance-react@0.104.1
+- @voyantjs/i18n@0.104.1
+- @voyantjs/identity-react@0.104.1
+- @voyantjs/legal-react@0.104.1
+- @voyantjs/pricing-react@0.104.1
+- @voyantjs/products-react@0.104.1
+- @voyantjs/suppliers-react@0.104.1
+- @voyantjs/ui@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- Updated dependencies [e2ae9ff]
+  - @voyantjs/availability-react@0.104.0
+  - @voyantjs/bookings@0.104.0
+  - @voyantjs/bookings-react@0.104.0
+  - @voyantjs/catalog@0.104.0
+  - @voyantjs/catalog-react@0.104.0
+  - @voyantjs/crm-react@0.104.0
+  - @voyantjs/crm-ui@0.104.0
+  - @voyantjs/extras-react@0.104.0
+  - @voyantjs/finance-react@0.104.0
+  - @voyantjs/i18n@0.104.0
+  - @voyantjs/identity-react@0.104.0
+  - @voyantjs/legal-react@0.104.0
+  - @voyantjs/pricing-react@0.104.0
+  - @voyantjs/products-react@0.104.0
+  - @voyantjs/suppliers-react@0.104.0
+  - @voyantjs/ui@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- Updated dependencies [a02f2f3]
+  - @voyantjs/availability-react@0.103.0
+  - @voyantjs/bookings@0.103.0
+  - @voyantjs/bookings-react@0.103.0
+  - @voyantjs/catalog@0.103.0
+  - @voyantjs/catalog-react@0.103.0
+  - @voyantjs/crm-react@0.103.0
+  - @voyantjs/crm-ui@0.103.0
+  - @voyantjs/extras-react@0.103.0
+  - @voyantjs/finance-react@0.103.0
+  - @voyantjs/i18n@0.103.0
+  - @voyantjs/identity-react@0.103.0
+  - @voyantjs/legal-react@0.103.0
+  - @voyantjs/pricing-react@0.103.0
+  - @voyantjs/products-react@0.103.0
+  - @voyantjs/suppliers-react@0.103.0
+  - @voyantjs/ui@0.103.0
+
+## 0.102.0
+
+### Patch Changes
+
+- Updated dependencies [b6d0673]
+  - @voyantjs/availability-react@0.102.0
+  - @voyantjs/bookings@0.102.0
+  - @voyantjs/bookings-react@0.102.0
+  - @voyantjs/catalog@0.102.0
+  - @voyantjs/catalog-react@0.102.0
+  - @voyantjs/crm-react@0.102.0
+  - @voyantjs/crm-ui@0.102.0
+  - @voyantjs/extras-react@0.102.0
+  - @voyantjs/finance-react@0.102.0
+  - @voyantjs/i18n@0.102.0
+  - @voyantjs/identity-react@0.102.0
+  - @voyantjs/legal-react@0.102.0
+  - @voyantjs/pricing-react@0.102.0
+  - @voyantjs/products-react@0.102.0
+  - @voyantjs/suppliers-react@0.102.0
+  - @voyantjs/ui@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- Updated dependencies [577eaf5]
+- Updated dependencies [577eaf5]
+  - @voyantjs/availability-react@0.101.2
+  - @voyantjs/bookings@0.101.2
+  - @voyantjs/bookings-react@0.101.2
+  - @voyantjs/catalog@0.101.2
+  - @voyantjs/catalog-react@0.101.2
+  - @voyantjs/crm-react@0.101.2
+  - @voyantjs/crm-ui@0.101.2
+  - @voyantjs/extras-react@0.101.2
+  - @voyantjs/finance-react@0.101.2
+  - @voyantjs/i18n@0.101.2
+  - @voyantjs/identity-react@0.101.2
+  - @voyantjs/legal-react@0.101.2
+  - @voyantjs/pricing-react@0.101.2
+  - @voyantjs/products-react@0.101.2
+  - @voyantjs/suppliers-react@0.101.2
+  - @voyantjs/ui@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- f736ba5: Improve product booking configuration for room-based travel products.
+
+  - `@voyantjs/products-ui`: rename the product setup UI around booking options, room inventory, traveler prices, and departure room inventory; hide traveler-age controls for room inventory units; add setup guardrails so room-based products cannot mix the legacy one-option-per-room shape with the canonical single-option/multiple-room-units shape.
+  - `@voyantjs/bookings` and `@voyantjs/bookings-react`: preserve selected room/category refs through booking creation and quote travelers against the selected room plus traveler pricing category instead of falling back to unrelated rates.
+  - `@voyantjs/bookings-ui`: let agents select both the room and the traveler pricing category for each traveler when the selected room exposes category-specific prices, enforce room occupancy in the booking flow, and keep the booking summary aligned with the selected room.
+  - `@voyantjs/availability-react`: expose the additional resource template fields needed by room inventory setup.
+  - `@voyantjs/i18n`: add Romanian product-management labels for the renamed booking option and inventory concepts.
+  - `@voyantjs/catalog-ui`: localize ship-spec labels used by the catalog detail sheet.
+
+- Updated dependencies [f736ba5]
+  - @voyantjs/availability-react@0.101.1
+  - @voyantjs/bookings@0.101.1
+  - @voyantjs/bookings-react@0.101.1
+  - @voyantjs/catalog@0.101.1
+  - @voyantjs/catalog-react@0.101.1
+  - @voyantjs/crm-react@0.101.1
+  - @voyantjs/crm-ui@0.101.1
+  - @voyantjs/extras-react@0.101.1
+  - @voyantjs/finance-react@0.101.1
+  - @voyantjs/i18n@0.101.1
+  - @voyantjs/identity-react@0.101.1
+  - @voyantjs/legal-react@0.101.1
+  - @voyantjs/pricing-react@0.101.1
+  - @voyantjs/products-react@0.101.1
+  - @voyantjs/suppliers-react@0.101.1
+  - @voyantjs/ui@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes

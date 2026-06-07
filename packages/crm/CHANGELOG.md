@@ -1,5 +1,105 @@
 # @voyantjs/crm
 
+## 0.106.0
+
+### Minor Changes
+
+- 6949669: Add CRM people and organization merge contracts, routes, React mutations, and detail-page UI actions.
+
+### Patch Changes
+
+- Updated dependencies [6949669]
+  - @voyantjs/crm-contracts@0.105.0
+  - @voyantjs/identity@0.106.0
+
+## 0.105.1
+
+### Patch Changes
+
+- e096b99: Make CRM people search tokenize whitespace-separated names and compare unaccented person fields so family-first names and diacritic variants match.
+- Updated dependencies [e096b99]
+  - @voyantjs/db@0.104.2
+
+## 0.105.0
+
+### Patch Changes
+
+- @voyantjs/identity@0.105.0
+
+## 0.104.2
+
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.104.1
+- @voyantjs/core@0.104.1
+- @voyantjs/crm-contracts@0.104.1
+- @voyantjs/db@0.104.1
+- @voyantjs/hono@0.104.1
+- @voyantjs/identity@0.104.1
+- @voyantjs/utils@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.104.0
+- @voyantjs/core@0.104.0
+- @voyantjs/crm-contracts@0.104.0
+- @voyantjs/db@0.104.0
+- @voyantjs/hono@0.104.0
+- @voyantjs/identity@0.104.0
+- @voyantjs/utils@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.103.0
+- @voyantjs/core@0.103.0
+- @voyantjs/crm-contracts@0.103.0
+- @voyantjs/db@0.103.0
+- @voyantjs/hono@0.103.0
+- @voyantjs/identity@0.103.0
+- @voyantjs/utils@0.103.0
+
+## 0.102.0
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.102.0
+- @voyantjs/core@0.102.0
+- @voyantjs/crm-contracts@0.102.0
+- @voyantjs/db@0.102.0
+- @voyantjs/hono@0.102.0
+- @voyantjs/identity@0.102.0
+- @voyantjs/utils@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.101.2
+- @voyantjs/core@0.101.2
+- @voyantjs/crm-contracts@0.101.2
+- @voyantjs/db@0.101.2
+- @voyantjs/hono@0.101.2
+- @voyantjs/identity@0.101.2
+- @voyantjs/utils@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.101.1
+- @voyantjs/core@0.101.1
+- @voyantjs/crm-contracts@0.101.1
+- @voyantjs/db@0.101.1
+- @voyantjs/hono@0.101.1
+- @voyantjs/identity@0.101.1
+- @voyantjs/utils@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes

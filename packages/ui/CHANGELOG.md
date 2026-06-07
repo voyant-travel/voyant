@@ -1,5 +1,81 @@
 # @voyantjs/ui
 
+## 0.104.3
+
+### Patch Changes
+
+- 72d4c0d: Normalize cruise search/catalog from-prices to integer cents, add explicit catalog price-unit metadata for legacy-safe rendering, add departure counts to cruise search rows, and expose `GET /sailings/:key/pricing` for reading sailing pricing directly.
+
+## 0.104.2
+
+### Patch Changes
+
+- 22ff914: Consolidate the richer DatePicker and DateRangePicker API in the shared UI package and use it for product departure and CRM document dates.
+
+## 0.104.1
+
+### Patch Changes
+
+- Updated dependencies [ba5daa6]
+  - @voyantjs/i18n@0.104.1
+  - @voyantjs/notifications@0.104.1
+  - @voyantjs/notifications-react@0.104.1
+  - @voyantjs/utils@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- @voyantjs/i18n@0.104.0
+- @voyantjs/notifications@0.104.0
+- @voyantjs/notifications-react@0.104.0
+- @voyantjs/utils@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- Updated dependencies [a02f2f3]
+  - @voyantjs/i18n@0.103.0
+  - @voyantjs/notifications@0.103.0
+  - @voyantjs/notifications-react@0.103.0
+  - @voyantjs/utils@0.103.0
+
+## 0.102.0
+
+### Patch Changes
+
+- Updated dependencies [b6d0673]
+  - @voyantjs/i18n@0.102.0
+  - @voyantjs/notifications@0.102.0
+  - @voyantjs/notifications-react@0.102.0
+  - @voyantjs/utils@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- 577eaf5: Consolidate the operator's forked product-detail page into `@voyantjs/products-ui` as the canonical, app-agnostic `ProductDetailPage`.
+
+  - `@voyantjs/products-ui`: new `components/product-detail` module — the full product-detail page (details, in-context translations, itinerary + day sheet, options/pricing, media, departures, schedules, channels, organize, brochure, market rules, payment policy, extras, activity) plus a `ProductDetailHostProvider` that injects everything app-specific (messages, REST client, locale, navigation callbacks, media upload, breadcrumbs, an option-extras slot). Templates mount the page by supplying the host instead of forking it.
+  - `@voyantjs/ui`: `DatePicker`/`DateRangePicker` triggers now forward base-ui's `PopoverTrigger` props so the calendar popover opens on click (fixes a regression where clicking the trigger did nothing).
+
+- Updated dependencies [577eaf5]
+  - @voyantjs/i18n@0.101.2
+  - @voyantjs/notifications@0.101.2
+  - @voyantjs/notifications-react@0.101.2
+  - @voyantjs/utils@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- Updated dependencies [f736ba5]
+  - @voyantjs/i18n@0.101.1
+  - @voyantjs/notifications@0.101.1
+  - @voyantjs/notifications-react@0.101.1
+  - @voyantjs/utils@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes

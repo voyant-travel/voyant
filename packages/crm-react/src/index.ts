@@ -54,6 +54,7 @@ export {
 } from "./hooks/use-organization.js"
 export {
   type CreateOrganizationInput,
+  type MergeOrganizationInput,
   type UpdateOrganizationInput,
   useOrganizationMutation,
 } from "./hooks/use-organization-mutation.js"
@@ -76,6 +77,7 @@ export {
 } from "./hooks/use-person-documents.js"
 export {
   type CreatePersonInput,
+  type MergePersonInput,
   type UpdatePersonInput,
   type UpdatePersonProfilePiiInput,
   usePersonMutation,

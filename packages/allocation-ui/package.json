@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/allocation-ui",
-  "version": "0.101.0",
+  "version": "0.104.1",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -25,9 +25,9 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.90.12",
-    "@voyantjs/availability-react": "workspace:*",
-    "@voyantjs/i18n": "workspace:*",
-    "@voyantjs/ui": "workspace:*",
+    "@voyantjs/availability-react": "workspace:^",
+    "@voyantjs/i18n": "workspace:^",
+    "@voyantjs/ui": "workspace:^",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -36,10 +36,10 @@
     "@tanstack/react-query": "^5.100.11",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@voyantjs/availability-react": "workspace:*",
-    "@voyantjs/i18n": "workspace:*",
-    "@voyantjs/ui": "workspace:*",
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/availability-react": "workspace:^",
+    "@voyantjs/i18n": "workspace:^",
+    "@voyantjs/ui": "workspace:^",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "lucide-react": "^1.7.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

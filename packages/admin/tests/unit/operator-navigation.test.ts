@@ -7,7 +7,16 @@ const navMessages: OperatorAdminMessages["nav"] = {
   availability: "Availability",
   bookings: "Bookings",
   catalog: "Catalog",
+  catalogAccommodations: "Accommodations",
+  catalogCharters: "Charters",
+  catalogCruises: "Cruises",
   catalogOrders: "Orders",
+  catalogProducts: "Products",
+  catalogProductsTagline: "Packages tagline",
+  catalogExcursions: "Excursions",
+  catalogExcursionsTagline: "Excursions tagline",
+  catalogTours: "Tours",
+  catalogToursTagline: "Tours tagline",
   categories: "Categories",
   actionLedger: "Logs",
   allTrips: "All trips",
@@ -62,6 +71,36 @@ describe("createOperatorAdminNavigation", () => {
   it("keeps expected nested routes stable", () => {
     const items = createOperatorAdminNavigation({ messages: navMessages })
 
+    expect(items.find((item) => item.id === "catalog")).toMatchObject({
+      url: "/catalog/products",
+      items: [
+        {
+          id: "catalog-products",
+          title: "Products",
+          url: "/catalog/products",
+        },
+        {
+          id: "catalog-excursions",
+          title: "Excursions",
+          url: "/catalog/excursions",
+        },
+        {
+          id: "catalog-tours",
+          title: "Tours",
+          url: "/catalog/tours",
+        },
+        {
+          id: "catalog-cruises",
+          title: "Cruises",
+          url: "/catalog/cruises",
+        },
+        {
+          id: "catalog-accommodations",
+          title: "Accommodations",
+          url: "/catalog/accommodations",
+        },
+      ],
+    })
     expect(items.find((item) => item.id === "products")?.items).toEqual([
       {
         id: "product-categories",

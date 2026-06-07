@@ -1,5 +1,47 @@
 # @voyantjs/auth
 
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/db@0.104.1
+- @voyantjs/utils@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- @voyantjs/db@0.104.0
+- @voyantjs/utils@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/db@0.103.0
+- @voyantjs/utils@0.103.0
+
+## 0.102.0
+
+### Patch Changes
+
+- @voyantjs/db@0.102.0
+- @voyantjs/utils@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- @voyantjs/db@0.101.2
+- @voyantjs/utils@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- @voyantjs/db@0.101.1
+- @voyantjs/utils@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes

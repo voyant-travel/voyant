@@ -34,6 +34,7 @@ export default defineConfig({
     "../../packages/distribution/src/schema.ts",
     "../../packages/suppliers/src/schema.ts",
     "../../packages/products/src/schema.ts",
+    "../../packages/catalog-authoring/src/schema.ts",
     "../../packages/bookings/src/schema.ts",
     "../../packages/finance/src/schema.ts",
     "../../packages/legal/src/schema.ts",

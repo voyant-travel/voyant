@@ -79,11 +79,11 @@ export function CruiseCard({ cruise, onSelect, className, ...props }: CruiseCard
           </div>
         ) : null}
         <div className="pt-2 text-base font-semibold">
-          {formatCruisePrice(cruise.lowestPrice, cruise.lowestPriceCurrency, {
+          {formatCruisePrice(cruise.lowestPriceCents, cruise.lowestPriceCurrency, {
             pricingOnRequest: m.pricingOnRequest,
             formatCurrency: i18n.formatCurrency,
           })}
-          {cruise.lowestPrice ? (
+          {cruise.lowestPriceCents != null ? (
             <span className="text-xs font-normal text-muted-foreground"> {m.priceFromSuffix}</span>
           ) : null}
         </div>
@@ -93,7 +93,7 @@ export function CruiseCard({ cruise, onSelect, className, ...props }: CruiseCard
 }
 
 function formatCruisePrice(
-  amount: string | null,
+  amountCents: number | null,
   currency: string | null,
   options: {
     pricingOnRequest: string
@@ -104,8 +104,6 @@ function formatCruisePrice(
     ) => string
   },
 ) {
-  if (!amount || !currency) return options.pricingOnRequest
-  const n = Number(amount)
-  if (!Number.isFinite(n)) return `${currency} ${amount}`
-  return options.formatCurrency(n, currency, { maximumFractionDigits: 0 })
+  if (amountCents == null || !currency) return options.pricingOnRequest
+  return options.formatCurrency(amountCents / 100, currency, { maximumFractionDigits: 0 })
 }

@@ -299,6 +299,13 @@ function cruiseShipFrom(s: ExternalShip): NonNullable<CruiseContent["ship"]> {
     name: s.name,
     ship_type: s.shipType ?? null,
     description: s.description ?? null,
+    deck_plan_url: s.deckPlanUrl ?? null,
+    deck_plans:
+      s.decks?.map((deck) => ({
+        name: deck.name,
+        level: deck.level ?? null,
+        image_url: deck.planImageUrl ?? null,
+      })) ?? [],
     capacity: s.capacityGuests ?? null,
     decks: s.deckCount ?? null,
     year_built: s.yearBuilt ?? null,
@@ -353,8 +360,11 @@ function cruiseCabinCategoryFrom(
     type: cat.roomType,
     capacity_min: cat.minOccupancy,
     capacity_max: cat.maxOccupancy,
-    images: [...(cat.images ?? []), ...(cat.floorplanImages ?? [])],
+    images: cat.images ?? [],
+    floorplan_images: cat.floorplanImages ?? [],
     square_feet: cat.squareFeet ?? null,
+    grade_codes: cat.gradeCodes ?? [],
+    wheelchair_accessible: cat.wheelchairAccessible ?? false,
     inclusions: cat.amenities ?? [],
     feature_codes: cat.featureCodes ?? [],
     bed_configurations: cat.bedConfigurations ?? [],
@@ -446,7 +456,9 @@ function toCatalogProjection(
       defaultShipId: entry.shipExternalId ?? null,
       heroImageUrl: entry.heroImageUrl ?? null,
       thumbnailUrl: entry.heroImageUrl ?? null,
+      embarkPortFacilityId: entry.embarkPortFacilityId ?? null,
       embarkPortCanonicalPlaceId: entry.embarkPortCanonicalPlaceId ?? null,
+      disembarkPortFacilityId: entry.disembarkPortFacilityId ?? null,
       disembarkPortCanonicalPlaceId: entry.disembarkPortCanonicalPlaceId ?? null,
       // Canonical geography — the policy paths for these arrays are snake_case
       // (`region_ids[]` …), so the keys stay snake_case here (issue #1466).
@@ -461,10 +473,16 @@ function toCatalogProjection(
       themes: entry.themes ?? [],
       // Browse-time price + departure-window hints (Tier-1 indexed summaries;
       // quote-time price is volatile-live and resolved elsewhere).
-      lowestPriceCached: entry.lowestPrice ?? null,
+      lowestPriceCached: entry.lowestPriceCents ?? null,
       lowestPriceCurrencyCached: entry.lowestPriceCurrency ?? null,
+      lowestPriceUnit: "minor",
       earliestDepartureCached: entry.earliestDeparture ?? null,
       latestDepartureCached: entry.latestDeparture ?? null,
+      // Departure month facet + count — populated by the source enrichment
+      // (per-cruise sailing rollup). Default empty/null on adapters that
+      // don't supply them so the field is simply absent from the index doc.
+      departureMonths: entry.departureMonths ?? [],
+      departureCount: entry.departureCount ?? null,
     },
   }
 }

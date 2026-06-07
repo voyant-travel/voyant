@@ -1,5 +1,128 @@
 # @voyantjs/storefront
 
+## 0.106.0
+
+### Patch Changes
+
+- Updated dependencies [6949669]
+  - @voyantjs/crm@0.106.0
+  - @voyantjs/bookings@0.106.0
+  - @voyantjs/finance@0.106.0
+  - @voyantjs/products@0.106.0
+  - @voyantjs/extras@0.106.0
+  - @voyantjs/availability@0.104.1
+  - @voyantjs/pricing@0.106.0
+  - @voyantjs/sellability@0.106.0
+
+## 0.105.0
+
+### Patch Changes
+
+- Updated dependencies [921f4fc]
+  - @voyantjs/products@0.105.0
+  - @voyantjs/availability@0.104.1
+  - @voyantjs/bookings@0.105.0
+  - @voyantjs/extras@0.105.0
+  - @voyantjs/finance@0.105.0
+  - @voyantjs/pricing@0.105.0
+  - @voyantjs/sellability@0.105.0
+  - @voyantjs/crm@0.105.0
+
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/availability@0.104.1
+- @voyantjs/bookings@0.104.1
+- @voyantjs/core@0.104.1
+- @voyantjs/crm@0.104.1
+- @voyantjs/extras@0.104.1
+- @voyantjs/finance@0.104.1
+- @voyantjs/hono@0.104.1
+- @voyantjs/pricing@0.104.1
+- @voyantjs/products@0.104.1
+- @voyantjs/sellability@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- Updated dependencies [e2ae9ff]
+  - @voyantjs/availability@0.104.0
+  - @voyantjs/bookings@0.104.0
+  - @voyantjs/core@0.104.0
+  - @voyantjs/crm@0.104.0
+  - @voyantjs/extras@0.104.0
+  - @voyantjs/finance@0.104.0
+  - @voyantjs/hono@0.104.0
+  - @voyantjs/pricing@0.104.0
+  - @voyantjs/products@0.104.0
+  - @voyantjs/sellability@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/availability@0.103.0
+- @voyantjs/bookings@0.103.0
+- @voyantjs/core@0.103.0
+- @voyantjs/crm@0.103.0
+- @voyantjs/extras@0.103.0
+- @voyantjs/finance@0.103.0
+- @voyantjs/hono@0.103.0
+- @voyantjs/pricing@0.103.0
+- @voyantjs/products@0.103.0
+- @voyantjs/sellability@0.103.0
+
+## 0.102.0
+
+### Patch Changes
+
+- Updated dependencies [b6d0673]
+  - @voyantjs/availability@0.102.0
+  - @voyantjs/bookings@0.102.0
+  - @voyantjs/core@0.102.0
+  - @voyantjs/crm@0.102.0
+  - @voyantjs/extras@0.102.0
+  - @voyantjs/finance@0.102.0
+  - @voyantjs/hono@0.102.0
+  - @voyantjs/pricing@0.102.0
+  - @voyantjs/products@0.102.0
+  - @voyantjs/sellability@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- Updated dependencies [577eaf5]
+- Updated dependencies [577eaf5]
+  - @voyantjs/availability@0.101.2
+  - @voyantjs/bookings@0.101.2
+  - @voyantjs/core@0.101.2
+  - @voyantjs/crm@0.101.2
+  - @voyantjs/extras@0.101.2
+  - @voyantjs/finance@0.101.2
+  - @voyantjs/hono@0.101.2
+  - @voyantjs/pricing@0.101.2
+  - @voyantjs/products@0.101.2
+  - @voyantjs/sellability@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- Updated dependencies [f736ba5]
+  - @voyantjs/availability@0.101.1
+  - @voyantjs/bookings@0.101.1
+  - @voyantjs/core@0.101.1
+  - @voyantjs/crm@0.101.1
+  - @voyantjs/extras@0.101.1
+  - @voyantjs/finance@0.101.1
+  - @voyantjs/hono@0.101.1
+  - @voyantjs/pricing@0.101.1
+  - @voyantjs/products@0.101.1
+  - @voyantjs/sellability@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes

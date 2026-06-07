@@ -227,6 +227,44 @@ describe("evaluateStage", () => {
     expect(decision.fire).toBe(false)
     expect(decision.fire ? "" : decision.reason).toBe("cadence_not_elapsed")
   })
+
+  it("counts failed attempts against once cadence", () => {
+    const stage = {
+      ...baseStage,
+      windowStartDays: -10,
+      windowEndDays: 0,
+      cadenceKind: "once" as const,
+    }
+    const attemptedAt = new Date("2026-05-09T00:00:00Z")
+    const decision = evaluateStage(
+      baseRule,
+      [stage],
+      baseTarget,
+      [{ scheduledFor: attemptedAt, sentAt: null, status: "failed" }],
+      today,
+    )
+    expect(decision.fire).toBe(false)
+    expect(decision.fire ? "" : decision.reason).toBe("cadence_not_elapsed")
+  })
+
+  it("counts queued attempts against stage caps", () => {
+    const stage = {
+      ...baseStage,
+      windowStartDays: -10,
+      windowEndDays: 0,
+      maxSendsInStage: 1,
+    }
+    const attemptedAt = new Date("2026-05-09T00:00:00Z")
+    const decision = evaluateStage(
+      baseRule,
+      [stage],
+      baseTarget,
+      [{ scheduledFor: attemptedAt, sentAt: null, status: "queued" }],
+      today,
+    )
+    expect(decision.fire).toBe(false)
+    expect(decision.fire ? "" : decision.reason).toBe("no_active_stage")
+  })
 })
 
 describe("applyQuietHours", () => {

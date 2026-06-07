@@ -1,5 +1,113 @@
 # @voyantjs/sellability
 
+## 0.106.0
+
+### Patch Changes
+
+- @voyantjs/products@0.106.0
+- @voyantjs/distribution@0.104.3
+- @voyantjs/availability@0.104.1
+- @voyantjs/markets@0.104.1
+- @voyantjs/pricing@0.106.0
+
+## 0.105.0
+
+### Patch Changes
+
+- Updated dependencies [921f4fc]
+  - @voyantjs/products@0.105.0
+  - @voyantjs/availability@0.104.1
+  - @voyantjs/distribution@0.104.2
+  - @voyantjs/markets@0.104.1
+  - @voyantjs/pricing@0.105.0
+
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/availability@0.104.1
+- @voyantjs/core@0.104.1
+- @voyantjs/db@0.104.1
+- @voyantjs/distribution@0.104.1
+- @voyantjs/hono@0.104.1
+- @voyantjs/markets@0.104.1
+- @voyantjs/pricing@0.104.1
+- @voyantjs/products@0.104.1
+- @voyantjs/transactions@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- Updated dependencies [e2ae9ff]
+  - @voyantjs/availability@0.104.0
+  - @voyantjs/core@0.104.0
+  - @voyantjs/db@0.104.0
+  - @voyantjs/distribution@0.104.0
+  - @voyantjs/hono@0.104.0
+  - @voyantjs/markets@0.104.0
+  - @voyantjs/pricing@0.104.0
+  - @voyantjs/products@0.104.0
+  - @voyantjs/transactions@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/availability@0.103.0
+- @voyantjs/core@0.103.0
+- @voyantjs/db@0.103.0
+- @voyantjs/distribution@0.103.0
+- @voyantjs/hono@0.103.0
+- @voyantjs/markets@0.103.0
+- @voyantjs/pricing@0.103.0
+- @voyantjs/products@0.103.0
+- @voyantjs/transactions@0.103.0
+
+## 0.102.0
+
+### Patch Changes
+
+- Updated dependencies [b6d0673]
+  - @voyantjs/availability@0.102.0
+  - @voyantjs/core@0.102.0
+  - @voyantjs/db@0.102.0
+  - @voyantjs/distribution@0.102.0
+  - @voyantjs/hono@0.102.0
+  - @voyantjs/markets@0.102.0
+  - @voyantjs/pricing@0.102.0
+  - @voyantjs/products@0.102.0
+  - @voyantjs/transactions@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- Updated dependencies [577eaf5]
+  - @voyantjs/availability@0.101.2
+  - @voyantjs/core@0.101.2
+  - @voyantjs/db@0.101.2
+  - @voyantjs/distribution@0.101.2
+  - @voyantjs/hono@0.101.2
+  - @voyantjs/markets@0.101.2
+  - @voyantjs/pricing@0.101.2
+  - @voyantjs/products@0.101.2
+  - @voyantjs/transactions@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- @voyantjs/availability@0.101.1
+- @voyantjs/core@0.101.1
+- @voyantjs/db@0.101.1
+- @voyantjs/distribution@0.101.1
+- @voyantjs/hono@0.101.1
+- @voyantjs/markets@0.101.1
+- @voyantjs/pricing@0.101.1
+- @voyantjs/products@0.101.1
+- @voyantjs/transactions@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes

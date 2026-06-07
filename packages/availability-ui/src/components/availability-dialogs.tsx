@@ -10,13 +10,13 @@ import type {
 } from "@voyantjs/availability-react"
 import {
   booleanOptions,
-  formatDateTime,
+  instantToSlotLocal,
+  localToInstant,
   NONE_VALUE,
   nullableNumber,
   nullableString,
+  slotLocalStart,
   slotStatusOptions,
-  toIsoDateTime,
-  toLocalDateTimeInput,
 } from "@voyantjs/availability-react"
 import {
   Button,
@@ -562,6 +562,23 @@ type SlotFormSchema = ReturnType<typeof getSlotFormSchema>
 type SlotFormValues = z.input<SlotFormSchema>
 type SlotFormOutput = z.output<SlotFormSchema>
 
+function toLocalDateTimeInput(instant: string, timezone: string) {
+  const local = instantToSlotLocal(instant, timezone)
+  return `${local.date}T${local.time}`
+}
+
+function localDateTimeInputToInstant(value: string, timezone: string) {
+  const [date, time] = value.split("T")
+  if (!date || !time) {
+    throw new RangeError("Local date-time input must use YYYY-MM-DDTHH:mm")
+  }
+  return localToInstant({ date, time, timezone })
+}
+
+function formatSlotLocalDateTime(value: { date: string; time: string }) {
+  return `${value.date} ${value.time}`
+}
+
 export function AvailabilitySlotDialog(props: {
   messages: AvailabilityDialogMessages
   open: boolean
@@ -605,8 +622,10 @@ export function AvailabilitySlotDialog(props: {
         availabilityRuleId: props.slot.availabilityRuleId ?? NONE_VALUE,
         startTimeId: props.slot.startTimeId ?? NONE_VALUE,
         dateLocal: props.slot.dateLocal,
-        startsAt: toLocalDateTimeInput(props.slot.startsAt),
-        endsAt: toLocalDateTimeInput(props.slot.endsAt),
+        startsAt: toLocalDateTimeInput(props.slot.startsAt, props.slot.timezone),
+        endsAt: props.slot.endsAt
+          ? toLocalDateTimeInput(props.slot.endsAt, props.slot.timezone)
+          : "",
         timezone: props.slot.timezone,
         status: props.slot.status,
         unlimited: props.slot.unlimited,
@@ -639,8 +658,8 @@ export function AvailabilitySlotDialog(props: {
           values.availabilityRuleId === NONE_VALUE ? null : (values.availabilityRuleId ?? null),
         startTimeId: values.startTimeId === NONE_VALUE ? null : (values.startTimeId ?? null),
         dateLocal: values.dateLocal,
-        startsAt: new Date(values.startsAt).toISOString(),
-        endsAt: toIsoDateTime(values.endsAt),
+        startsAt: localDateTimeInputToInstant(values.startsAt, values.timezone),
+        endsAt: values.endsAt ? localDateTimeInputToInstant(values.endsAt, values.timezone) : null,
         timezone: values.timezone,
         status: values.status,
         unlimited: values.unlimited,
@@ -965,7 +984,7 @@ export function AvailabilityCloseoutDialog(props: {
                   <SelectItem value={NONE_VALUE}>{closeoutMessages.productLevelOption}</SelectItem>
                   {filteredSlots.map((slot) => (
                     <SelectItem key={slot.id} value={slot.id}>
-                      {slot.dateLocal} · {formatDateTime(slot.startsAt)}
+                      {formatSlotLocalDateTime(slotLocalStart(slot))}
                     </SelectItem>
                   ))}
                 </SelectContent>

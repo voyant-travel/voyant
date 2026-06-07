@@ -22,11 +22,11 @@
     "test": "vitest run --passWithNoTests"
   },
   "peerDependencies": {
-    "@voyantjs/flights": "workspace:*"
+    "@voyantjs/flights": "workspace:^"
   },
   "devDependencies": {
-    "@voyantjs/flights": "workspace:*",
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/flights": "workspace:^",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },

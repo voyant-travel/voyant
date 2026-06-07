@@ -4,6 +4,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { expandRRule } from "./rrule.js"
 import { availabilityRules, availabilitySlots } from "./schema.js"
 import { materializeSlotResourcesFromTemplateDefaults } from "./service-allocation-automation.js"
+import { localToInstant } from "./slot-timezone.js"
 
 export type GenerateAvailabilitySlotsOptions = {
   /** If provided, only generate slots for this rule. Otherwise, process all active rules. */
@@ -35,9 +36,8 @@ export type GenerateAvailabilitySlotsResult = {
 /**
  * Materialize availability slots from active availability rules.
  *
- * Wall-clock convention: `startsAt` is stored as if UTC for the wall-clock
- * time on `dateLocal` in the rule's `timezone`. Callers that need true
- * UTC-instant semantics should post-process with their own timezone library.
+ * `startsAt` is stored as a true UTC instant for the wall-clock time on
+ * `dateLocal` in the rule's `timezone`.
  */
 export async function generateAvailabilitySlots(
   db: PostgresJsDatabase,
@@ -92,18 +92,17 @@ export async function generateAvailabilitySlots(
     const hour = Number.parseInt(hh ?? "9", 10) || 0
     const minute = Number.parseInt(mm ?? "0", 10) || 0
 
+    const startTime = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`
     const rows = toInsert.map((dateLocal) => {
-      const [y, m, d] = dateLocal.split("-").map((s) => Number.parseInt(s, 10))
-      // Wall-clock-as-UTC: interpret the local date/time as if it were UTC.
-      const startsAt = new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1, hour, minute, 0, 0))
-
       return {
         productId: rule.productId,
         optionId: rule.optionId,
         facilityId: rule.facilityId,
         availabilityRuleId: rule.id,
         dateLocal,
-        startsAt,
+        startsAt: new Date(
+          localToInstant({ date: dateLocal, time: startTime, timezone: rule.timezone }),
+        ),
         timezone: rule.timezone,
         status: "open" as const,
         unlimited: false,

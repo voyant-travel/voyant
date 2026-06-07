@@ -1,6 +1,6 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
 
 import { fetchWithValidation } from "../client.js"
 import { useVoyantCatalogContext } from "../provider.js"
@@ -118,5 +118,9 @@ export function useCatalogSearch(options: UseCatalogSearchOptions) {
       ),
     enabled: enabled && !!vertical,
     staleTime,
+    // Keep the previous page/filter's results on screen while the next query
+    // loads, so paging/filtering doesn't flash a skeleton or shift layout.
+    // `isFetching` + `isPlaceholderData` let the UI show a subtle busy state.
+    placeholderData: keepPreviousData,
   })
 }

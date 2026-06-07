@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/auth",
-  "version": "0.101.0",
+  "version": "0.104.1",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -105,13 +105,13 @@
   },
   "dependencies": {
     "@better-auth/api-key": "1.6.11",
-    "@voyantjs/db": "workspace:*",
-    "@voyantjs/utils": "workspace:*",
+    "@voyantjs/db": "workspace:^",
+    "@voyantjs/utils": "workspace:^",
     "better-auth": "1.6.11",
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "@types/node": "25.5.2",
     "typescript": "^6.0.2"
   }

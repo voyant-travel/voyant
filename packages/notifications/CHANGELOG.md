@@ -1,5 +1,106 @@
 # @voyantjs/notifications
 
+## 0.104.5
+
+### Patch Changes
+
+- a0e117b: Stop payment-schedule reminders from sending for terminal bookings by closing open schedules during cancelled/expired booking transitions and by skipping payment reminders when the parent booking is not payable.
+- Updated dependencies [a0e117b]
+  - @voyantjs/bookings@0.106.1
+
+## 0.104.4
+
+### Patch Changes
+
+- @voyantjs/legal@0.106.0
+- @voyantjs/bookings@0.106.0
+- @voyantjs/finance@0.106.0
+
+## 0.104.3
+
+### Patch Changes
+
+- 28c5eb3: Add composite reminder-rule authoring with recoverable validation issues, idempotent replay, and hard-delete routes for notification templates and reminder rules.
+
+## 0.104.2
+
+### Patch Changes
+
+- @voyantjs/bookings@0.105.0
+- @voyantjs/finance@0.105.0
+- @voyantjs/legal@0.105.0
+
+## 0.104.1
+
+### Patch Changes
+
+- ba5daa6: Stop stage-based notification reminder sweeps from automatically retrying failed
+  one-shot reminder runs, and treat queued/skipped/failed reminder runs as attempts
+  for stage cadence and caps.
+  - @voyantjs/bookings@0.104.1
+  - @voyantjs/core@0.104.1
+  - @voyantjs/db@0.104.1
+  - @voyantjs/finance@0.104.1
+  - @voyantjs/hono@0.104.1
+  - @voyantjs/legal@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.104.0
+- @voyantjs/core@0.104.0
+- @voyantjs/db@0.104.0
+- @voyantjs/finance@0.104.0
+- @voyantjs/hono@0.104.0
+- @voyantjs/legal@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.103.0
+- @voyantjs/core@0.103.0
+- @voyantjs/db@0.103.0
+- @voyantjs/finance@0.103.0
+- @voyantjs/hono@0.103.0
+- @voyantjs/legal@0.103.0
+
+## 0.102.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.102.0
+- @voyantjs/core@0.102.0
+- @voyantjs/db@0.102.0
+- @voyantjs/finance@0.102.0
+- @voyantjs/hono@0.102.0
+- @voyantjs/legal@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- Updated dependencies [577eaf5]
+  - @voyantjs/bookings@0.101.2
+  - @voyantjs/core@0.101.2
+  - @voyantjs/db@0.101.2
+  - @voyantjs/finance@0.101.2
+  - @voyantjs/hono@0.101.2
+  - @voyantjs/legal@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- Updated dependencies [f736ba5]
+  - @voyantjs/bookings@0.101.1
+  - @voyantjs/core@0.101.1
+  - @voyantjs/db@0.101.1
+  - @voyantjs/finance@0.101.1
+  - @voyantjs/hono@0.101.1
+  - @voyantjs/legal@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes

@@ -21,6 +21,7 @@ interface PackageJson {
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const uiStylesExport = "./styles.css"
 const uiStylesSource = "./src/styles.css"
+const packageFilters = getPackageFilters(process.argv.slice(2))
 
 const checks: ExportCheck[] = [
   {
@@ -411,6 +412,30 @@ function readPackageJson(packageDir: string): PackageJson {
   return JSON.parse(readFileSync(path.join(packageDir, "package.json"), "utf8")) as PackageJson
 }
 
+function getPackageFilters(argv: string[]): Set<string> {
+  const packageNames = new Set<string>()
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index]
+
+    if (arg === "--package") {
+      packageNames.add(argv[index + 1])
+      index += 1
+      continue
+    }
+
+    if (arg.startsWith("--package=")) {
+      packageNames.add(arg.slice("--package=".length))
+    }
+  }
+
+  return packageNames
+}
+
+function shouldCheckPackage(packageName: string): boolean {
+  return packageFilters.size === 0 || packageFilters.has(packageName)
+}
+
 function hasStylesExport(exportsMap: Record<string, unknown> | undefined): boolean {
   const value = exportsMap?.[uiStylesExport]
 
@@ -446,11 +471,15 @@ function getCssHelperPackageDirs(): string[] {
         return false
       }
 
-      return (
+      if (
         packageName === "@voyantjs/admin" ||
         packageName === "@voyantjs/ui" ||
         packageName.endsWith("-ui")
-      )
+      ) {
+        return shouldCheckPackage(packageName)
+      }
+
+      return false
     })
 }
 
@@ -492,7 +521,9 @@ async function main() {
 
   verifyCssHelperExports(failures)
 
-  for (const check of checks) {
+  const filteredChecks = checks.filter((check) => shouldCheckPackage(check.packageName))
+
+  for (const check of filteredChecks) {
     const entryPath = path.join(repoRoot, check.entry)
     if (!existsSync(entryPath)) {
       failures.push(
@@ -522,7 +553,7 @@ async function main() {
     process.exit(1)
   }
 
-  console.log(`Verified runtime package exports for ${checks.length} package entrypoints.`)
+  console.log(`Verified runtime package exports for ${filteredChecks.length} package entrypoints.`)
 }
 
 void main()

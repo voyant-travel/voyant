@@ -8,7 +8,7 @@ Workflow run recording, admin routes, and rerun/resume dispatch primitives for V
 pnpm add @voyantjs/workflow-runs
 ```
 
-The package is published with the same release-train version as the other installable Voyant packages.
+The package is independently published with the rest of the workflows release cohort.
 
 For the matching importable React admin surface, install
 `@voyantjs/workflows-ui` and point its API client at the routes mounted by

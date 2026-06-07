@@ -1,5 +1,83 @@
 # @voyantjs/bookings-react
 
+## 0.106.1
+
+### Patch Changes
+
+- Updated dependencies [a0e117b]
+  - @voyantjs/bookings@0.106.1
+
+## 0.106.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.106.0
+
+## 0.105.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.105.0
+
+## 0.104.2
+
+### Patch Changes
+
+- 75a6336: Add an overridable duplicate guard for booking create requests.
+  - @voyantjs/bookings@0.104.2
+
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/bookings@0.104.1
+- @voyantjs/react@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.104.0
+- @voyantjs/react@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.103.0
+- @voyantjs/react@0.103.0
+
+## 0.102.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.102.0
+- @voyantjs/react@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- @voyantjs/bookings@0.101.2
+- @voyantjs/react@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- f736ba5: Improve product booking configuration for room-based travel products.
+
+  - `@voyantjs/products-ui`: rename the product setup UI around booking options, room inventory, traveler prices, and departure room inventory; hide traveler-age controls for room inventory units; add setup guardrails so room-based products cannot mix the legacy one-option-per-room shape with the canonical single-option/multiple-room-units shape.
+  - `@voyantjs/bookings` and `@voyantjs/bookings-react`: preserve selected room/category refs through booking creation and quote travelers against the selected room plus traveler pricing category instead of falling back to unrelated rates.
+  - `@voyantjs/bookings-ui`: let agents select both the room and the traveler pricing category for each traveler when the selected room exposes category-specific prices, enforce room occupancy in the booking flow, and keep the booking summary aligned with the selected room.
+  - `@voyantjs/availability-react`: expose the additional resource template fields needed by room inventory setup.
+  - `@voyantjs/i18n`: add Romanian product-management labels for the renamed booking option and inventory concepts.
+  - `@voyantjs/catalog-ui`: localize ship-spec labels used by the catalog detail sheet.
+
+- Updated dependencies [f736ba5]
+  - @voyantjs/bookings@0.101.1
+  - @voyantjs/react@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes

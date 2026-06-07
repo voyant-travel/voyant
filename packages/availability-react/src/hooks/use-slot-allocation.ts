@@ -166,9 +166,21 @@ export function useResourceTemplateMutation(productId: string) {
   })
 
   const remove = useMutation({
-    mutationFn: async ({ optionId, kind }: { optionId: string; kind: string }) =>
+    // refId targets a single template when an option holds several of the same
+    // kind (e.g. one "room" per option_unit); omit it for ref-less templates.
+    mutationFn: async ({
+      optionId,
+      kind,
+      refId,
+    }: {
+      optionId: string
+      kind: string
+      refId?: string | null
+    }) =>
       fetchWithValidation(
-        `/v1/admin/availability/products/${productId}/options/${optionId}/allocation/resource-templates/${kind}`,
+        `/v1/admin/availability/products/${productId}/options/${optionId}/allocation/resource-templates/${kind}${
+          refId ? `?refId=${encodeURIComponent(refId)}` : ""
+        }`,
         singleEnvelope(z.object({ productOptionId: z.string(), kind: z.string() })),
         { baseUrl, fetcher },
         { method: "DELETE" },
@@ -177,6 +189,32 @@ export function useResourceTemplateMutation(productId: string) {
   })
 
   return { upsert, remove }
+}
+
+/**
+ * Back-fill resources across a product's open future departures from the
+ * option's templates (idempotent — slots that already have a kind are skipped).
+ * Lets an operator apply newly-configured departure inventory to slots that
+ * already exist, not just future ones.
+ */
+export function useMaterializeOpenSlotsMutation(productId: string) {
+  const { baseUrl, fetcher } = useVoyantAvailabilityContext()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (input: { optionId?: string }) => {
+      const result = await fetchWithValidation(
+        `/v1/admin/availability/products/${productId}/allocation/materialize-open-slots`,
+        singleEnvelope(z.object({ slots: z.number(), created: z.number() })),
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify(input) },
+      )
+      return result.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: availabilityQueryKeys.slots() })
+    },
+  })
 }
 
 export function useAllocationAutomationMutation(slotId: string) {
@@ -215,7 +253,22 @@ export function useAllocationAutomationMutation(slotId: string) {
     onSuccess: invalidate,
   })
 
-  return { autoMaterialize, autoAllocate }
+  // Materialize the slot's full configured inventory (all kinds, from template
+  // default_count) in one call — distinct from the pax-derived autoMaterialize.
+  const materializeTemplates = useMutation({
+    mutationFn: async () => {
+      const result = await fetchWithValidation(
+        `/v1/admin/availability/slots/${slotId}/allocation/materialize-templates`,
+        singleEnvelope(z.object({ created: z.number() })),
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify({}) },
+      )
+      return result.data
+    },
+    onSuccess: invalidate,
+  })
+
+  return { autoMaterialize, autoAllocate, materializeTemplates }
 }
 
 export function useAssignTravelerAllocationMutation(slotId: string) {

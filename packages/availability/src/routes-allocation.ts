@@ -21,6 +21,8 @@ import {
   autoMaterializeAllocationResources,
   deleteProductOptionResourceTemplate,
   listProductOptionResourceTemplates,
+  materializeOpenSlotsFromTemplateDefaults,
+  materializeSlotResourcesFromTemplateDefaults,
   upsertProductOptionResourceTemplate,
 } from "./service-allocation-automation.js"
 import {
@@ -33,6 +35,7 @@ import {
   allocationAutomationSchema,
   assignTravelerAllocationSchema,
   insertAllocationResourceSchema,
+  materializeOpenSlotsSchema,
   pairSharingGroupSchema,
   updateAllocationResourceSchema,
   updateSharingGroupLabelSchema,
@@ -147,6 +150,7 @@ export const availabilityAllocationRoutes = new Hono<Env>()
           c.req.param("productId"),
           c.req.param("optionId"),
           c.req.param("kind"),
+          c.req.query("refId") ?? null,
         )
         return data ? c.json({ data }) : c.json({ error: "Resource template not found" }, 404)
       } catch (error) {
@@ -163,6 +167,32 @@ export const availabilityAllocationRoutes = new Hono<Env>()
         { actorId: c.get("userId") ?? null },
       )
       return c.json({ data })
+    } catch (error) {
+      return handleAllocationRouteError(c, error)
+    }
+  })
+  .post("/products/:id/allocation/materialize-open-slots", async (c) => {
+    try {
+      const body = await parseJsonBody(c, materializeOpenSlotsSchema)
+      const data = await materializeOpenSlotsFromTemplateDefaults(c.get("db"), {
+        productId: c.req.param("id"),
+        optionId: body.optionId,
+      })
+      return c.json({ data })
+    } catch (error) {
+      return handleAllocationRouteError(c, error)
+    }
+  })
+  // Materialize the slot's FULL configured inventory (every template's
+  // default_count across all kinds), distinct from the pax-derived
+  // auto-materialize. Used by the slot UI's "Generate resources".
+  .post("/slots/:id/allocation/materialize-templates", async (c) => {
+    try {
+      const result = await materializeSlotResourcesFromTemplateDefaults(
+        c.get("db"),
+        c.req.param("id"),
+      )
+      return c.json({ data: { created: result.created } })
     } catch (error) {
       return handleAllocationRouteError(c, error)
     }

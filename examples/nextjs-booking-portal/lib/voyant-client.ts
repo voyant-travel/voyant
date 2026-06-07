@@ -112,7 +112,7 @@ export type CruiseListFilters = {
   theme?: string
   dateFrom?: string
   dateTo?: string
-  priceMax?: number
+  priceMaxCents?: number
   search?: string
   limit?: number
   offset?: number
@@ -125,7 +125,9 @@ function buildCruiseQuery(filters: CruiseListFilters): string {
   if (filters.theme) params.set("theme", filters.theme)
   if (filters.dateFrom) params.set("dateFrom", filters.dateFrom)
   if (filters.dateTo) params.set("dateTo", filters.dateTo)
-  if (filters.priceMax !== undefined) params.set("priceMax", String(filters.priceMax))
+  if (filters.priceMaxCents !== undefined) {
+    params.set("priceMaxCents", String(filters.priceMaxCents))
+  }
   if (filters.search) params.set("search", filters.search)
   if (filters.limit !== undefined) params.set("limit", String(filters.limit))
   if (filters.offset !== undefined) params.set("offset", String(filters.offset))

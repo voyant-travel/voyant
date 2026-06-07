@@ -1,5 +1,74 @@
 # @voyantjs/notifications-react
 
+## 0.104.5
+
+### Patch Changes
+
+- Updated dependencies [a0e117b]
+  - @voyantjs/notifications@0.104.5
+
+## 0.104.4
+
+### Patch Changes
+
+- @voyantjs/notifications@0.104.4
+
+## 0.104.3
+
+### Patch Changes
+
+- Updated dependencies [28c5eb3]
+  - @voyantjs/notifications@0.104.3
+
+## 0.104.2
+
+### Patch Changes
+
+- @voyantjs/notifications@0.104.2
+
+## 0.104.1
+
+### Patch Changes
+
+- Updated dependencies [ba5daa6]
+  - @voyantjs/notifications@0.104.1
+  - @voyantjs/react@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- @voyantjs/notifications@0.104.0
+- @voyantjs/react@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/notifications@0.103.0
+- @voyantjs/react@0.103.0
+
+## 0.102.0
+
+### Patch Changes
+
+- @voyantjs/notifications@0.102.0
+- @voyantjs/react@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- @voyantjs/notifications@0.101.2
+- @voyantjs/react@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- @voyantjs/notifications@0.101.1
+- @voyantjs/react@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes

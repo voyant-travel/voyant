@@ -182,6 +182,14 @@ export async function updateTemplate(
   return row ?? null
 }
 
+export async function deleteTemplate(db: PostgresJsDatabase, id: string): Promise<boolean> {
+  const rows = await db
+    .delete(notificationTemplates)
+    .where(eq(notificationTemplates.id, id))
+    .returning({ id: notificationTemplates.id })
+  return rows.length > 0
+}
+
 export async function listReminderRules(
   db: PostgresJsDatabase,
   query: NotificationReminderRuleListQuery,
@@ -240,6 +248,14 @@ export async function updateReminderRule(
     .where(eq(notificationReminderRules.id, id))
     .returning()
   return row ?? null
+}
+
+export async function deleteReminderRule(db: PostgresJsDatabase, id: string): Promise<boolean> {
+  const rows = await db
+    .delete(notificationReminderRules)
+    .where(eq(notificationReminderRules.id, id))
+    .returning({ id: notificationReminderRules.id })
+  return rows.length > 0
 }
 
 export async function listReminderRuns(

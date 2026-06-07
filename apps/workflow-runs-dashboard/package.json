@@ -12,8 +12,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@voyantjs/ui": "workspace:*",
-    "@voyantjs/workflows-ui": "workspace:*",
+    "@voyantjs/ui": "workspace:^",
+    "@voyantjs/workflows-ui": "workspace:^",
     "lucide-react": "^0.475.0"
   },
   "devDependencies": {
@@ -21,7 +21,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tailwindcss": "^4.1.11",

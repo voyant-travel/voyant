@@ -200,7 +200,14 @@ describe("createCatalogEnrichmentFetchers", () => {
               hero_image_url: "https://example.com/cruise.jpg",
               cruise_line: "Sample Line",
             },
-            ship: { name: "MS Sample" },
+            ship: {
+              name: "MS Sample",
+              deck_plan_url: "https://example.com/deck-plan.pdf",
+              deck_plans: [
+                { name: "Upper Deck", level: 3, image_url: "https://example.com/d3.jpg" },
+              ],
+              gallery: ["https://example.com/ship.jpg"],
+            },
             sailings: [
               {
                 id: "sail_1",
@@ -230,7 +237,19 @@ describe("createCatalogEnrichmentFetchers", () => {
                 currency: "EUR",
               },
             ],
-            cabin_categories: [{ id: "cab_1", code: "BA", name: "Balcony", type: "balcony" }],
+            cabin_categories: [
+              {
+                id: "cab_1",
+                code: "BA",
+                name: "Balcony",
+                type: "balcony",
+                images: ["https://example.com/cabin.jpg"],
+                floorplan_images: ["https://example.com/cabin-plan.jpg"],
+                square_feet: "270",
+                grade_codes: ["BA", "BB"],
+                wheelchair_accessible: true,
+              },
+            ],
             policies: [{ kind: "cancellation", body: "Free up to 60 days." }],
           },
           served_locale: "en-GB",
@@ -251,13 +270,31 @@ describe("createCatalogEnrichmentFetchers", () => {
       highlights: ["Aegean"],
       heroImageUrl: "https://example.com/cruise.jpg",
       supplier: "Sample Line",
+      ship: {
+        name: "MS Sample",
+        deckPlanUrl: "https://example.com/deck-plan.pdf",
+        deckPlans: [{ name: "Upper Deck", level: 3, imageUrl: "https://example.com/d3.jpg" }],
+        images: ["https://example.com/ship.jpg"],
+      },
       // Cruise-level itinerary is empty for sourced cruises, so the Itinerary
       // tab falls back to the first sailing's stops.
       itinerary: [
         { dayNumber: 1, title: "Athens", location: "Athens", date: "2026-06-01" },
         { dayNumber: 2, title: "Mykonos", location: "Mykonos", date: "2026-06-02" },
       ],
-      options: [{ id: "cab_1", name: "BA - Balcony", code: "BA", type: "balcony" }],
+      options: [
+        {
+          id: "cab_1",
+          name: "BA - Balcony",
+          code: "BA",
+          type: "balcony",
+          images: ["https://example.com/cabin.jpg"],
+          floorplanImages: ["https://example.com/cabin-plan.jpg"],
+          squareFeet: "270",
+          gradeCodes: ["BA", "BB"],
+          wheelchairAccessible: true,
+        },
+      ],
       policies: [{ kind: "cancellation", body: "Free up to 60 days." }],
       source: "sourced-fresh",
     })
@@ -329,7 +366,10 @@ describe("createCatalogEnrichmentFetchers", () => {
         code: "DV1",
         type: "balcony",
         images: [],
+        floorplanImages: [],
         squareFeet: null,
+        gradeCodes: [],
+        wheelchairAccessible: false,
         capacityMax: null,
         amenities: [],
       },
@@ -340,7 +380,10 @@ describe("createCatalogEnrichmentFetchers", () => {
         code: "DV2",
         type: "balcony",
         images: [],
+        floorplanImages: [],
         squareFeet: null,
+        gradeCodes: [],
+        wheelchairAccessible: false,
         capacityMax: null,
         amenities: [],
       },

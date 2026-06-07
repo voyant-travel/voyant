@@ -1,5 +1,81 @@
 # @voyantjs/admin-contracts
 
+## 0.104.3
+
+### Patch Changes
+
+- Updated dependencies [6949669]
+  - @voyantjs/crm-contracts@0.105.0
+
+## 0.104.2
+
+### Patch Changes
+
+- Updated dependencies [921f4fc]
+  - @voyantjs/products-contracts@0.105.0
+
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/bookings-contracts@0.104.1
+- @voyantjs/crm-contracts@0.104.1
+- @voyantjs/finance-contracts@0.104.1
+- @voyantjs/legal-contracts@0.104.1
+- @voyantjs/products-contracts@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- @voyantjs/bookings-contracts@0.104.0
+- @voyantjs/crm-contracts@0.104.0
+- @voyantjs/finance-contracts@0.104.0
+- @voyantjs/legal-contracts@0.104.0
+- @voyantjs/products-contracts@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/bookings-contracts@0.103.0
+- @voyantjs/crm-contracts@0.103.0
+- @voyantjs/finance-contracts@0.103.0
+- @voyantjs/legal-contracts@0.103.0
+- @voyantjs/products-contracts@0.103.0
+
+## 0.102.0
+
+### Patch Changes
+
+- @voyantjs/bookings-contracts@0.102.0
+- @voyantjs/crm-contracts@0.102.0
+- @voyantjs/finance-contracts@0.102.0
+- @voyantjs/legal-contracts@0.102.0
+- @voyantjs/products-contracts@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- Updated dependencies [577eaf5]
+- Updated dependencies [577eaf5]
+  - @voyantjs/bookings-contracts@0.101.2
+  - @voyantjs/crm-contracts@0.101.2
+  - @voyantjs/finance-contracts@0.101.2
+  - @voyantjs/legal-contracts@0.101.2
+  - @voyantjs/products-contracts@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- @voyantjs/bookings-contracts@0.101.1
+- @voyantjs/crm-contracts@0.101.1
+- @voyantjs/finance-contracts@0.101.1
+- @voyantjs/legal-contracts@0.101.1
+- @voyantjs/products-contracts@0.101.1
+
 ## 0.101.0
 
 ### Minor Changes

@@ -1,5 +1,95 @@
 # @voyantjs/promotions
 
+## 0.104.3
+
+### Patch Changes
+
+- @voyantjs/storefront@0.106.0
+- @voyantjs/products@0.106.0
+
+## 0.104.2
+
+### Patch Changes
+
+- Updated dependencies [921f4fc]
+  - @voyantjs/products@0.105.0
+  - @voyantjs/catalog@0.104.4
+  - @voyantjs/storefront@0.105.0
+
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/catalog@0.104.1
+- @voyantjs/core@0.104.1
+- @voyantjs/db@0.104.1
+- @voyantjs/hono@0.104.1
+- @voyantjs/products@0.104.1
+- @voyantjs/storefront@0.104.1
+- @voyantjs/workflows@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- @voyantjs/catalog@0.104.0
+- @voyantjs/core@0.104.0
+- @voyantjs/db@0.104.0
+- @voyantjs/hono@0.104.0
+- @voyantjs/products@0.104.0
+- @voyantjs/storefront@0.104.0
+- @voyantjs/workflows@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/catalog@0.103.0
+- @voyantjs/core@0.103.0
+- @voyantjs/db@0.103.0
+- @voyantjs/hono@0.103.0
+- @voyantjs/products@0.103.0
+- @voyantjs/storefront@0.103.0
+- @voyantjs/workflows@0.103.0
+
+## 0.102.0
+
+### Patch Changes
+
+- Updated dependencies [b6d0673]
+  - @voyantjs/catalog@0.102.0
+  - @voyantjs/core@0.102.0
+  - @voyantjs/db@0.102.0
+  - @voyantjs/hono@0.102.0
+  - @voyantjs/products@0.102.0
+  - @voyantjs/storefront@0.102.0
+  - @voyantjs/workflows@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- Updated dependencies [577eaf5]
+  - @voyantjs/catalog@0.101.2
+  - @voyantjs/core@0.101.2
+  - @voyantjs/db@0.101.2
+  - @voyantjs/hono@0.101.2
+  - @voyantjs/products@0.101.2
+  - @voyantjs/storefront@0.101.2
+  - @voyantjs/workflows@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- @voyantjs/catalog@0.101.1
+- @voyantjs/core@0.101.1
+- @voyantjs/db@0.101.1
+- @voyantjs/hono@0.101.1
+- @voyantjs/products@0.101.1
+- @voyantjs/storefront@0.101.1
+- @voyantjs/workflows@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes

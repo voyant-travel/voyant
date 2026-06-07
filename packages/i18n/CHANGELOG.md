@@ -1,5 +1,55 @@
 # @voyantjs/i18n
 
+## 0.104.1
+
+## 0.104.0
+
+## 0.103.0
+
+### Minor Changes
+
+- a02f2f3: Follow-up polish for the operator product detail, from client review:
+
+  - **Inclusions / exclusions / terms are now editable in the product sheet — and localizable.** The whole stack already carried `inclusionsHtml`/`exclusionsHtml`/`termsHtml` (product + `product_translations` columns, validation, react schemas, services); the form just never exposed them, so clients forked their own UI. They're now three rich-text `TranslatableField`s that switch with the language switcher and persist to the base columns + per-language translation rows.
+  - **Traveler-type columns are editable/removable.** Hovering an Adult / Child column header reveals edit (opens the category dialog pre-filled) and remove (deletes a product/option-owned category, or just drops its prices for a shared global one). `TravelerCategoryDialog` is now edit-capable.
+  - **Extras define + price in one place.** The standalone product-level "Extra" card is removed; each booking option's pricing has a single Extras section that both defines (new reusable `ProductExtraDialog`) and prices each add-on (per the option's rate plan), with edit/delete.
+
+## 0.102.0
+
+### Minor Changes
+
+- b6d0673: Redesign the operator's **Booking options & prices** for low-tech travel agents and close the inventory/allocation gaps it exposed.
+
+  - `@voyantjs/products-ui`: each option now renders **one adaptive table** — a rooms grid (rooms × traveler types) or a per-person seats list — derived from the product's inventory (rooms always win over booking mode). The rate-plan layer is hidden behind an **Advanced** disclosure (a single default plan is auto-managed); the default plan's matrix is no longer duplicated there. Single-option products show the table directly with no chrome. The unit form pins its type in the contextual add ("Add room" can't create a vehicle) and uses type-aware quantity/occupancy labels; the price dialog uses the design-system currency input and pricing-mode-aware quantity labels. New departures pre-fill **Capacity (pax)** from the configured inventory (overridable).
+  - `@voyantjs/products`: `createProduct` seeds a default `Standard` option so new products open straight into the pricing table; the day-translation create route now verifies the day belongs to the product.
+  - `@voyantjs/availability` + `@voyantjs/availability-react`: departure inventory templates can be **generated from the option's rooms** and **applied to existing open departures** (new bulk endpoint + hook). The full-inventory materializer now works for product-level departures (no `optionId`), so auto-seed on publish and bulk apply create the full room set. New per-slot `materialize-templates` endpoint.
+  - `@voyantjs/allocation-ui`: a slot's **Generate resources** now materializes the full configured inventory across all kinds in one click, instead of the pax-derived single-kind path.
+
+## 0.101.2
+
+### Patch Changes
+
+- 577eaf5: Add in-context translations for products and itinerary days.
+
+  - `@voyantjs/products`: add a `products.default_language_tag` column (the language the base name/description columns are written in) and a new `product_day_translations` table (per-language title/description/location) with CRUD service methods and routes under `/v1/products/:id/days/:dayId/translations`.
+  - `@voyantjs/products-contracts`: validation schemas for the product default language and itinerary-day translations.
+  - `@voyantjs/products-react`: `useProductDayTranslations` / `useProductDayTranslationMutation` hooks, record/response schemas, and query keys; the product record now exposes `defaultLanguageTag`.
+  - `@voyantjs/schema-kit`: `product_day_translations` TypeID prefix (`pdtr`).
+  - `@voyantjs/i18n`: operator labels for the content-language switcher, default language, itinerary-day sheet, and market-rule columns.
+
+## 0.101.1
+
+### Patch Changes
+
+- f736ba5: Improve product booking configuration for room-based travel products.
+
+  - `@voyantjs/products-ui`: rename the product setup UI around booking options, room inventory, traveler prices, and departure room inventory; hide traveler-age controls for room inventory units; add setup guardrails so room-based products cannot mix the legacy one-option-per-room shape with the canonical single-option/multiple-room-units shape.
+  - `@voyantjs/bookings` and `@voyantjs/bookings-react`: preserve selected room/category refs through booking creation and quote travelers against the selected room plus traveler pricing category instead of falling back to unrelated rates.
+  - `@voyantjs/bookings-ui`: let agents select both the room and the traveler pricing category for each traveler when the selected room exposes category-specific prices, enforce room occupancy in the booking flow, and keep the booking summary aligned with the selected room.
+  - `@voyantjs/availability-react`: expose the additional resource template fields needed by room inventory setup.
+  - `@voyantjs/i18n`: add Romanian product-management labels for the renamed booking option and inventory concepts.
+  - `@voyantjs/catalog-ui`: localize ship-spec labels used by the catalog detail sheet.
+
 ## 0.101.0
 
 ## 0.100.0

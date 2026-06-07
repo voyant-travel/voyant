@@ -63,3 +63,84 @@ export function createGeoNameResolver(options: GeoNameResolverOptions): GeoNameR
     },
   }
 }
+
+/**
+ * Resolves raw destination tokens from sourced packages to readable city
+ * names. Upstream package destinations are a mix of IATA airport codes
+ * (`AYT`, `PMI`, `CHQ`) and plain area names (`Belek`, `Rethymno`). Airport
+ * codes are resolved to their city via Voyant Data static airports;
+ * everything else passes through unchanged. Memoized per token.
+ */
+export interface DestinationNameResolver {
+  resolve(token: string): Promise<string>
+}
+
+type AirportLookup = (iata: string) => Promise<unknown>
+
+type AirportLookupClient = {
+  static?: {
+    airports?: {
+      get?: AirportLookup
+    }
+  }
+  air?: {
+    airports?: {
+      get?: AirportLookup
+    }
+  }
+}
+
+function resolveAirportLookup(client: unknown): AirportLookup | null {
+  const candidate = client as AirportLookupClient
+  const staticAirports = candidate.static?.airports
+  if (typeof staticAirports?.get === "function") {
+    return (iata) => staticAirports.get?.(iata) ?? Promise.resolve(null)
+  }
+  const airAirports = candidate.air?.airports
+  if (typeof airAirports?.get === "function") {
+    return (iata) => airAirports.get?.(iata) ?? Promise.resolve(null)
+  }
+  return null
+}
+
+export function createDestinationNameResolver(
+  options: GeoNameResolverOptions,
+): DestinationNameResolver {
+  const client = createVoyantDataClient({
+    apiKey: options.apiKey,
+    ...(options.baseUrl ? { baseUrl: options.baseUrl } : {}),
+    lang: options.lang ?? "en",
+  })
+  const cache = new Map<string, Promise<string>>()
+  const isIataCode = (value: string) => /^[A-Z]{3}$/.test(value)
+
+  const resolve = (token: string): Promise<string> => {
+    const cached = cache.get(token)
+    if (cached) return cached
+    if (!isIataCode(token)) {
+      const passthrough = Promise.resolve(token)
+      cache.set(token, passthrough)
+      return passthrough
+    }
+    const airportLookup = resolveAirportLookup(client)
+    if (!airportLookup) {
+      const passthrough = Promise.resolve(token)
+      cache.set(token, passthrough)
+      return passthrough
+    }
+    const pending = airportLookup(token)
+      .then((res: unknown) => {
+        const airport = (res as { data?: unknown })?.data ?? res
+        const city = (airport as { city?: unknown })?.city
+        const name = (airport as { name?: unknown })?.name
+        if (typeof city === "string" && city.length > 0) return city
+        if (typeof name === "string" && name.length > 0) return name
+        return token
+      })
+      .catch(() => token)
+    cache.set(token, pending)
+    return pending
+  }
+
+  return { resolve }
+}

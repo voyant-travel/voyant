@@ -18,7 +18,6 @@ import { Route as PaySessionIdRouteImport } from './routes/pay_.$sessionId'
 import { Route as AccountantTokenRouteImport } from './routes/accountant.$token'
 import { Route as WorkspaceFlightsRouteImport } from './routes/_workspace/flights'
 import { Route as WorkspaceChannelSyncRouteImport } from './routes/_workspace/channel-sync'
-import { Route as WorkspaceCatalogRouteImport } from './routes/_workspace/catalog'
 import { Route as WorkspaceAccountRouteImport } from './routes/_workspace/account'
 import { Route as storefrontShopRouteImport } from './routes/(storefront)/shop'
 import { Route as authVerifyEmailRouteImport } from './routes/(auth)/verify-email'
@@ -30,6 +29,7 @@ import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-p
 import { Route as authAcceptInviteRouteImport } from './routes/(auth)/accept-invite'
 import { Route as authAcceptInvitationRouteImport } from './routes/(auth)/accept-invitation'
 import { Route as WorkspaceSettingsRouteRouteImport } from './routes/_workspace/settings/route'
+import { Route as WorkspaceCatalogRouteRouteImport } from './routes/_workspace/catalog/route'
 import { Route as WorkspaceTripsIndexRouteImport } from './routes/_workspace/trips/index'
 import { Route as WorkspaceSuppliersIndexRouteImport } from './routes/_workspace/suppliers/index'
 import { Route as WorkspaceSettingsIndexRouteImport } from './routes/_workspace/settings/index'
@@ -41,6 +41,7 @@ import { Route as WorkspaceOrganizationsIndexRouteImport } from './routes/_works
 import { Route as WorkspaceNotificationsIndexRouteImport } from './routes/_workspace/notifications/index'
 import { Route as WorkspaceLegalIndexRouteImport } from './routes/_workspace/legal/index'
 import { Route as WorkspaceFinanceIndexRouteImport } from './routes/_workspace/finance/index'
+import { Route as WorkspaceCatalogIndexRouteImport } from './routes/_workspace/catalog/index'
 import { Route as WorkspaceBookingsIndexRouteImport } from './routes/_workspace/bookings/index'
 import { Route as WorkspaceAvailabilityIndexRouteImport } from './routes/_workspace/availability/index'
 import { Route as WorkspaceActionLedgerIndexRouteImport } from './routes/_workspace/action-ledger/index'
@@ -80,6 +81,11 @@ import { Route as WorkspaceFinanceSupplierInvoicesIndexRouteImport } from './rou
 import { Route as WorkspaceFinancePaymentsIndexRouteImport } from './routes/_workspace/finance/payments/index'
 import { Route as WorkspaceFinanceInvoicesIndexRouteImport } from './routes/_workspace/finance/invoices/index'
 import { Route as WorkspaceFinanceInvoiceNumberSeriesIndexRouteImport } from './routes/_workspace/finance/invoice-number-series/index'
+import { Route as WorkspaceCatalogToursIndexRouteImport } from './routes/_workspace/catalog/tours/index'
+import { Route as WorkspaceCatalogProductsIndexRouteImport } from './routes/_workspace/catalog/products/index'
+import { Route as WorkspaceCatalogExcursionsIndexRouteImport } from './routes/_workspace/catalog/excursions/index'
+import { Route as WorkspaceCatalogCruisesIndexRouteImport } from './routes/_workspace/catalog/cruises/index'
+import { Route as WorkspaceCatalogAccommodationsIndexRouteImport } from './routes/_workspace/catalog/accommodations/index'
 import { Route as WorkspaceResourcesPoolsIdRouteImport } from './routes/_workspace/resources/pools/$id'
 import { Route as WorkspaceResourcesAssignmentsIdRouteImport } from './routes/_workspace/resources/assignments/$id'
 import { Route as WorkspaceResourcesAllocationsIdRouteImport } from './routes/_workspace/resources/allocations/$id'
@@ -92,6 +98,11 @@ import { Route as WorkspaceFlightsBookOfferIdRouteImport } from './routes/_works
 import { Route as WorkspaceFinanceSupplierInvoicesIdRouteImport } from './routes/_workspace/finance/supplier-invoices/$id'
 import { Route as WorkspaceFinancePaymentsIdRouteImport } from './routes/_workspace/finance/payments/$id'
 import { Route as WorkspaceFinanceInvoicesIdRouteImport } from './routes/_workspace/finance/invoices/$id'
+import { Route as WorkspaceCatalogToursIdRouteImport } from './routes/_workspace/catalog/tours/$id'
+import { Route as WorkspaceCatalogProductsProductIdRouteImport } from './routes/_workspace/catalog/products/$productId'
+import { Route as WorkspaceCatalogExcursionsIdRouteImport } from './routes/_workspace/catalog/excursions/$id'
+import { Route as WorkspaceCatalogCruisesIdRouteImport } from './routes/_workspace/catalog/cruises/$id'
+import { Route as WorkspaceCatalogAccommodationsIdRouteImport } from './routes/_workspace/catalog/accommodations/$id'
 import { Route as WorkspaceAvailabilityStartTimesIdRouteImport } from './routes/_workspace/availability/start-times/$id'
 import { Route as WorkspaceAvailabilityRulesIdRouteImport } from './routes/_workspace/availability/rules/$id'
 import { Route as storefrontShopConfirmationBookingIdRouteImport } from './routes/(storefront)/shop_.confirmation.$bookingId'
@@ -140,11 +151,6 @@ const WorkspaceFlightsRoute = WorkspaceFlightsRouteImport.update({
 const WorkspaceChannelSyncRoute = WorkspaceChannelSyncRouteImport.update({
   id: '/channel-sync',
   path: '/channel-sync',
-  getParentRoute: () => WorkspaceRouteRoute,
-} as any)
-const WorkspaceCatalogRoute = WorkspaceCatalogRouteImport.update({
-  id: '/catalog',
-  path: '/catalog',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
 const WorkspaceAccountRoute = WorkspaceAccountRouteImport.update({
@@ -200,6 +206,11 @@ const authAcceptInvitationRoute = authAcceptInvitationRouteImport.update({
 const WorkspaceSettingsRouteRoute = WorkspaceSettingsRouteRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => WorkspaceRouteRoute,
+} as any)
+const WorkspaceCatalogRouteRoute = WorkspaceCatalogRouteRouteImport.update({
+  id: '/catalog',
+  path: '/catalog',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
 const WorkspaceTripsIndexRoute = WorkspaceTripsIndexRouteImport.update({
@@ -259,6 +270,11 @@ const WorkspaceFinanceIndexRoute = WorkspaceFinanceIndexRouteImport.update({
   id: '/finance/',
   path: '/finance/',
   getParentRoute: () => WorkspaceRouteRoute,
+} as any)
+const WorkspaceCatalogIndexRoute = WorkspaceCatalogIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => WorkspaceCatalogRouteRoute,
 } as any)
 const WorkspaceBookingsIndexRoute = WorkspaceBookingsIndexRouteImport.update({
   id: '/bookings/',
@@ -483,6 +499,36 @@ const WorkspaceFinanceInvoiceNumberSeriesIndexRoute =
     path: '/finance/invoice-number-series/',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const WorkspaceCatalogToursIndexRoute =
+  WorkspaceCatalogToursIndexRouteImport.update({
+    id: '/tours/',
+    path: '/tours/',
+    getParentRoute: () => WorkspaceCatalogRouteRoute,
+  } as any)
+const WorkspaceCatalogProductsIndexRoute =
+  WorkspaceCatalogProductsIndexRouteImport.update({
+    id: '/products/',
+    path: '/products/',
+    getParentRoute: () => WorkspaceCatalogRouteRoute,
+  } as any)
+const WorkspaceCatalogExcursionsIndexRoute =
+  WorkspaceCatalogExcursionsIndexRouteImport.update({
+    id: '/excursions/',
+    path: '/excursions/',
+    getParentRoute: () => WorkspaceCatalogRouteRoute,
+  } as any)
+const WorkspaceCatalogCruisesIndexRoute =
+  WorkspaceCatalogCruisesIndexRouteImport.update({
+    id: '/cruises/',
+    path: '/cruises/',
+    getParentRoute: () => WorkspaceCatalogRouteRoute,
+  } as any)
+const WorkspaceCatalogAccommodationsIndexRoute =
+  WorkspaceCatalogAccommodationsIndexRouteImport.update({
+    id: '/accommodations/',
+    path: '/accommodations/',
+    getParentRoute: () => WorkspaceCatalogRouteRoute,
+  } as any)
 const WorkspaceResourcesPoolsIdRoute =
   WorkspaceResourcesPoolsIdRouteImport.update({
     id: '/resources/pools/$id',
@@ -555,6 +601,35 @@ const WorkspaceFinanceInvoicesIdRoute =
     path: '/finance/invoices/$id',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
+const WorkspaceCatalogToursIdRoute = WorkspaceCatalogToursIdRouteImport.update({
+  id: '/tours/$id',
+  path: '/tours/$id',
+  getParentRoute: () => WorkspaceCatalogRouteRoute,
+} as any)
+const WorkspaceCatalogProductsProductIdRoute =
+  WorkspaceCatalogProductsProductIdRouteImport.update({
+    id: '/products/$productId',
+    path: '/products/$productId',
+    getParentRoute: () => WorkspaceCatalogRouteRoute,
+  } as any)
+const WorkspaceCatalogExcursionsIdRoute =
+  WorkspaceCatalogExcursionsIdRouteImport.update({
+    id: '/excursions/$id',
+    path: '/excursions/$id',
+    getParentRoute: () => WorkspaceCatalogRouteRoute,
+  } as any)
+const WorkspaceCatalogCruisesIdRoute =
+  WorkspaceCatalogCruisesIdRouteImport.update({
+    id: '/cruises/$id',
+    path: '/cruises/$id',
+    getParentRoute: () => WorkspaceCatalogRouteRoute,
+  } as any)
+const WorkspaceCatalogAccommodationsIdRoute =
+  WorkspaceCatalogAccommodationsIdRouteImport.update({
+    id: '/accommodations/$id',
+    path: '/accommodations/$id',
+    getParentRoute: () => WorkspaceCatalogRouteRoute,
+  } as any)
 const WorkspaceAvailabilityStartTimesIdRoute =
   WorkspaceAvailabilityStartTimesIdRouteImport.update({
     id: '/availability/start-times/$id',
@@ -601,6 +676,7 @@ const storefrontShopBookEntityModuleEntityIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof WorkspaceIndexRoute
   '/pay': typeof PayRoute
+  '/catalog': typeof WorkspaceCatalogRouteRouteWithChildren
   '/settings': typeof WorkspaceSettingsRouteRouteWithChildren
   '/accept-invitation': typeof authAcceptInvitationRoute
   '/accept-invite': typeof authAcceptInviteRoute
@@ -612,7 +688,6 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof authVerifyEmailRoute
   '/shop': typeof storefrontShopRoute
   '/account': typeof WorkspaceAccountRoute
-  '/catalog': typeof WorkspaceCatalogRoute
   '/channel-sync': typeof WorkspaceChannelSyncRoute
   '/flights': typeof WorkspaceFlightsRoute
   '/accountant/$token': typeof AccountantTokenRoute
@@ -646,6 +721,7 @@ export interface FileRoutesByFullPath {
   '/action-ledger/': typeof WorkspaceActionLedgerIndexRoute
   '/availability/': typeof WorkspaceAvailabilityIndexRoute
   '/bookings/': typeof WorkspaceBookingsIndexRoute
+  '/catalog/': typeof WorkspaceCatalogIndexRoute
   '/finance/': typeof WorkspaceFinanceIndexRoute
   '/legal/': typeof WorkspaceLegalIndexRoute
   '/notifications/': typeof WorkspaceNotificationsIndexRoute
@@ -660,6 +736,11 @@ export interface FileRoutesByFullPath {
   '/shop/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/availability/rules/$id': typeof WorkspaceAvailabilityRulesIdRoute
   '/availability/start-times/$id': typeof WorkspaceAvailabilityStartTimesIdRoute
+  '/catalog/accommodations/$id': typeof WorkspaceCatalogAccommodationsIdRoute
+  '/catalog/cruises/$id': typeof WorkspaceCatalogCruisesIdRoute
+  '/catalog/excursions/$id': typeof WorkspaceCatalogExcursionsIdRoute
+  '/catalog/products/$productId': typeof WorkspaceCatalogProductsProductIdRoute
+  '/catalog/tours/$id': typeof WorkspaceCatalogToursIdRoute
   '/finance/invoices/$id': typeof WorkspaceFinanceInvoicesIdRoute
   '/finance/payments/$id': typeof WorkspaceFinancePaymentsIdRoute
   '/finance/supplier-invoices/$id': typeof WorkspaceFinanceSupplierInvoicesIdRoute
@@ -672,6 +753,11 @@ export interface FileRoutesByFullPath {
   '/resources/allocations/$id': typeof WorkspaceResourcesAllocationsIdRoute
   '/resources/assignments/$id': typeof WorkspaceResourcesAssignmentsIdRoute
   '/resources/pools/$id': typeof WorkspaceResourcesPoolsIdRoute
+  '/catalog/accommodations/': typeof WorkspaceCatalogAccommodationsIndexRoute
+  '/catalog/cruises/': typeof WorkspaceCatalogCruisesIndexRoute
+  '/catalog/excursions/': typeof WorkspaceCatalogExcursionsIndexRoute
+  '/catalog/products/': typeof WorkspaceCatalogProductsIndexRoute
+  '/catalog/tours/': typeof WorkspaceCatalogToursIndexRoute
   '/finance/invoice-number-series/': typeof WorkspaceFinanceInvoiceNumberSeriesIndexRoute
   '/finance/invoices/': typeof WorkspaceFinanceInvoicesIndexRoute
   '/finance/payments/': typeof WorkspaceFinancePaymentsIndexRoute
@@ -699,7 +785,6 @@ export interface FileRoutesByTo {
   '/verify-email': typeof authVerifyEmailRoute
   '/shop': typeof storefrontShopRoute
   '/account': typeof WorkspaceAccountRoute
-  '/catalog': typeof WorkspaceCatalogRoute
   '/channel-sync': typeof WorkspaceChannelSyncRoute
   '/flights': typeof WorkspaceFlightsRoute
   '/accountant/$token': typeof AccountantTokenRoute
@@ -734,6 +819,7 @@ export interface FileRoutesByTo {
   '/action-ledger': typeof WorkspaceActionLedgerIndexRoute
   '/availability': typeof WorkspaceAvailabilityIndexRoute
   '/bookings': typeof WorkspaceBookingsIndexRoute
+  '/catalog': typeof WorkspaceCatalogIndexRoute
   '/finance': typeof WorkspaceFinanceIndexRoute
   '/legal': typeof WorkspaceLegalIndexRoute
   '/notifications': typeof WorkspaceNotificationsIndexRoute
@@ -748,6 +834,11 @@ export interface FileRoutesByTo {
   '/shop/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/availability/rules/$id': typeof WorkspaceAvailabilityRulesIdRoute
   '/availability/start-times/$id': typeof WorkspaceAvailabilityStartTimesIdRoute
+  '/catalog/accommodations/$id': typeof WorkspaceCatalogAccommodationsIdRoute
+  '/catalog/cruises/$id': typeof WorkspaceCatalogCruisesIdRoute
+  '/catalog/excursions/$id': typeof WorkspaceCatalogExcursionsIdRoute
+  '/catalog/products/$productId': typeof WorkspaceCatalogProductsProductIdRoute
+  '/catalog/tours/$id': typeof WorkspaceCatalogToursIdRoute
   '/finance/invoices/$id': typeof WorkspaceFinanceInvoicesIdRoute
   '/finance/payments/$id': typeof WorkspaceFinancePaymentsIdRoute
   '/finance/supplier-invoices/$id': typeof WorkspaceFinanceSupplierInvoicesIdRoute
@@ -760,6 +851,11 @@ export interface FileRoutesByTo {
   '/resources/allocations/$id': typeof WorkspaceResourcesAllocationsIdRoute
   '/resources/assignments/$id': typeof WorkspaceResourcesAssignmentsIdRoute
   '/resources/pools/$id': typeof WorkspaceResourcesPoolsIdRoute
+  '/catalog/accommodations': typeof WorkspaceCatalogAccommodationsIndexRoute
+  '/catalog/cruises': typeof WorkspaceCatalogCruisesIndexRoute
+  '/catalog/excursions': typeof WorkspaceCatalogExcursionsIndexRoute
+  '/catalog/products': typeof WorkspaceCatalogProductsIndexRoute
+  '/catalog/tours': typeof WorkspaceCatalogToursIndexRoute
   '/finance/invoice-number-series': typeof WorkspaceFinanceInvoiceNumberSeriesIndexRoute
   '/finance/invoices': typeof WorkspaceFinanceInvoicesIndexRoute
   '/finance/payments': typeof WorkspaceFinancePaymentsIndexRoute
@@ -781,6 +877,7 @@ export interface FileRoutesById {
   '/(storefront)': typeof storefrontRouteRouteWithChildren
   '/_workspace': typeof WorkspaceRouteRouteWithChildren
   '/pay': typeof PayRoute
+  '/_workspace/catalog': typeof WorkspaceCatalogRouteRouteWithChildren
   '/_workspace/settings': typeof WorkspaceSettingsRouteRouteWithChildren
   '/(auth)/accept-invitation': typeof authAcceptInvitationRoute
   '/(auth)/accept-invite': typeof authAcceptInviteRoute
@@ -792,7 +889,6 @@ export interface FileRoutesById {
   '/(auth)/verify-email': typeof authVerifyEmailRoute
   '/(storefront)/shop': typeof storefrontShopRoute
   '/_workspace/account': typeof WorkspaceAccountRoute
-  '/_workspace/catalog': typeof WorkspaceCatalogRoute
   '/_workspace/channel-sync': typeof WorkspaceChannelSyncRoute
   '/_workspace/flights': typeof WorkspaceFlightsRoute
   '/accountant/$token': typeof AccountantTokenRoute
@@ -827,6 +923,7 @@ export interface FileRoutesById {
   '/_workspace/action-ledger/': typeof WorkspaceActionLedgerIndexRoute
   '/_workspace/availability/': typeof WorkspaceAvailabilityIndexRoute
   '/_workspace/bookings/': typeof WorkspaceBookingsIndexRoute
+  '/_workspace/catalog/': typeof WorkspaceCatalogIndexRoute
   '/_workspace/finance/': typeof WorkspaceFinanceIndexRoute
   '/_workspace/legal/': typeof WorkspaceLegalIndexRoute
   '/_workspace/notifications/': typeof WorkspaceNotificationsIndexRoute
@@ -841,6 +938,11 @@ export interface FileRoutesById {
   '/(storefront)/shop_/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/_workspace/availability/rules/$id': typeof WorkspaceAvailabilityRulesIdRoute
   '/_workspace/availability/start-times/$id': typeof WorkspaceAvailabilityStartTimesIdRoute
+  '/_workspace/catalog/accommodations/$id': typeof WorkspaceCatalogAccommodationsIdRoute
+  '/_workspace/catalog/cruises/$id': typeof WorkspaceCatalogCruisesIdRoute
+  '/_workspace/catalog/excursions/$id': typeof WorkspaceCatalogExcursionsIdRoute
+  '/_workspace/catalog/products/$productId': typeof WorkspaceCatalogProductsProductIdRoute
+  '/_workspace/catalog/tours/$id': typeof WorkspaceCatalogToursIdRoute
   '/_workspace/finance/invoices/$id': typeof WorkspaceFinanceInvoicesIdRoute
   '/_workspace/finance/payments/$id': typeof WorkspaceFinancePaymentsIdRoute
   '/_workspace/finance/supplier-invoices/$id': typeof WorkspaceFinanceSupplierInvoicesIdRoute
@@ -853,6 +955,11 @@ export interface FileRoutesById {
   '/_workspace/resources/allocations/$id': typeof WorkspaceResourcesAllocationsIdRoute
   '/_workspace/resources/assignments/$id': typeof WorkspaceResourcesAssignmentsIdRoute
   '/_workspace/resources/pools/$id': typeof WorkspaceResourcesPoolsIdRoute
+  '/_workspace/catalog/accommodations/': typeof WorkspaceCatalogAccommodationsIndexRoute
+  '/_workspace/catalog/cruises/': typeof WorkspaceCatalogCruisesIndexRoute
+  '/_workspace/catalog/excursions/': typeof WorkspaceCatalogExcursionsIndexRoute
+  '/_workspace/catalog/products/': typeof WorkspaceCatalogProductsIndexRoute
+  '/_workspace/catalog/tours/': typeof WorkspaceCatalogToursIndexRoute
   '/_workspace/finance/invoice-number-series/': typeof WorkspaceFinanceInvoiceNumberSeriesIndexRoute
   '/_workspace/finance/invoices/': typeof WorkspaceFinanceInvoicesIndexRoute
   '/_workspace/finance/payments/': typeof WorkspaceFinancePaymentsIndexRoute
@@ -873,6 +980,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/pay'
+    | '/catalog'
     | '/settings'
     | '/accept-invitation'
     | '/accept-invite'
@@ -884,7 +992,6 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/shop'
     | '/account'
-    | '/catalog'
     | '/channel-sync'
     | '/flights'
     | '/accountant/$token'
@@ -918,6 +1025,7 @@ export interface FileRouteTypes {
     | '/action-ledger/'
     | '/availability/'
     | '/bookings/'
+    | '/catalog/'
     | '/finance/'
     | '/legal/'
     | '/notifications/'
@@ -932,6 +1040,11 @@ export interface FileRouteTypes {
     | '/shop/confirmation/$bookingId'
     | '/availability/rules/$id'
     | '/availability/start-times/$id'
+    | '/catalog/accommodations/$id'
+    | '/catalog/cruises/$id'
+    | '/catalog/excursions/$id'
+    | '/catalog/products/$productId'
+    | '/catalog/tours/$id'
     | '/finance/invoices/$id'
     | '/finance/payments/$id'
     | '/finance/supplier-invoices/$id'
@@ -944,6 +1057,11 @@ export interface FileRouteTypes {
     | '/resources/allocations/$id'
     | '/resources/assignments/$id'
     | '/resources/pools/$id'
+    | '/catalog/accommodations/'
+    | '/catalog/cruises/'
+    | '/catalog/excursions/'
+    | '/catalog/products/'
+    | '/catalog/tours/'
     | '/finance/invoice-number-series/'
     | '/finance/invoices/'
     | '/finance/payments/'
@@ -971,7 +1089,6 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/shop'
     | '/account'
-    | '/catalog'
     | '/channel-sync'
     | '/flights'
     | '/accountant/$token'
@@ -1006,6 +1123,7 @@ export interface FileRouteTypes {
     | '/action-ledger'
     | '/availability'
     | '/bookings'
+    | '/catalog'
     | '/finance'
     | '/legal'
     | '/notifications'
@@ -1020,6 +1138,11 @@ export interface FileRouteTypes {
     | '/shop/confirmation/$bookingId'
     | '/availability/rules/$id'
     | '/availability/start-times/$id'
+    | '/catalog/accommodations/$id'
+    | '/catalog/cruises/$id'
+    | '/catalog/excursions/$id'
+    | '/catalog/products/$productId'
+    | '/catalog/tours/$id'
     | '/finance/invoices/$id'
     | '/finance/payments/$id'
     | '/finance/supplier-invoices/$id'
@@ -1032,6 +1155,11 @@ export interface FileRouteTypes {
     | '/resources/allocations/$id'
     | '/resources/assignments/$id'
     | '/resources/pools/$id'
+    | '/catalog/accommodations'
+    | '/catalog/cruises'
+    | '/catalog/excursions'
+    | '/catalog/products'
+    | '/catalog/tours'
     | '/finance/invoice-number-series'
     | '/finance/invoices'
     | '/finance/payments'
@@ -1052,6 +1180,7 @@ export interface FileRouteTypes {
     | '/(storefront)'
     | '/_workspace'
     | '/pay'
+    | '/_workspace/catalog'
     | '/_workspace/settings'
     | '/(auth)/accept-invitation'
     | '/(auth)/accept-invite'
@@ -1063,7 +1192,6 @@ export interface FileRouteTypes {
     | '/(auth)/verify-email'
     | '/(storefront)/shop'
     | '/_workspace/account'
-    | '/_workspace/catalog'
     | '/_workspace/channel-sync'
     | '/_workspace/flights'
     | '/accountant/$token'
@@ -1098,6 +1226,7 @@ export interface FileRouteTypes {
     | '/_workspace/action-ledger/'
     | '/_workspace/availability/'
     | '/_workspace/bookings/'
+    | '/_workspace/catalog/'
     | '/_workspace/finance/'
     | '/_workspace/legal/'
     | '/_workspace/notifications/'
@@ -1112,6 +1241,11 @@ export interface FileRouteTypes {
     | '/(storefront)/shop_/confirmation/$bookingId'
     | '/_workspace/availability/rules/$id'
     | '/_workspace/availability/start-times/$id'
+    | '/_workspace/catalog/accommodations/$id'
+    | '/_workspace/catalog/cruises/$id'
+    | '/_workspace/catalog/excursions/$id'
+    | '/_workspace/catalog/products/$productId'
+    | '/_workspace/catalog/tours/$id'
     | '/_workspace/finance/invoices/$id'
     | '/_workspace/finance/payments/$id'
     | '/_workspace/finance/supplier-invoices/$id'
@@ -1124,6 +1258,11 @@ export interface FileRouteTypes {
     | '/_workspace/resources/allocations/$id'
     | '/_workspace/resources/assignments/$id'
     | '/_workspace/resources/pools/$id'
+    | '/_workspace/catalog/accommodations/'
+    | '/_workspace/catalog/cruises/'
+    | '/_workspace/catalog/excursions/'
+    | '/_workspace/catalog/products/'
+    | '/_workspace/catalog/tours/'
     | '/_workspace/finance/invoice-number-series/'
     | '/_workspace/finance/invoices/'
     | '/_workspace/finance/payments/'
@@ -1214,13 +1353,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceChannelSyncRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
-    '/_workspace/catalog': {
-      id: '/_workspace/catalog'
-      path: '/catalog'
-      fullPath: '/catalog'
-      preLoaderRoute: typeof WorkspaceCatalogRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
     '/_workspace/account': {
       id: '/_workspace/account'
       path: '/account'
@@ -1296,6 +1428,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof WorkspaceSettingsRouteRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/_workspace/catalog': {
+      id: '/_workspace/catalog'
+      path: '/catalog'
+      fullPath: '/catalog'
+      preLoaderRoute: typeof WorkspaceCatalogRouteRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/trips/': {
@@ -1374,6 +1513,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/finance/'
       preLoaderRoute: typeof WorkspaceFinanceIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/_workspace/catalog/': {
+      id: '/_workspace/catalog/'
+      path: '/'
+      fullPath: '/catalog/'
+      preLoaderRoute: typeof WorkspaceCatalogIndexRouteImport
+      parentRoute: typeof WorkspaceCatalogRouteRoute
     }
     '/_workspace/bookings/': {
       id: '/_workspace/bookings/'
@@ -1648,6 +1794,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceFinanceInvoiceNumberSeriesIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/catalog/tours/': {
+      id: '/_workspace/catalog/tours/'
+      path: '/tours'
+      fullPath: '/catalog/tours/'
+      preLoaderRoute: typeof WorkspaceCatalogToursIndexRouteImport
+      parentRoute: typeof WorkspaceCatalogRouteRoute
+    }
+    '/_workspace/catalog/products/': {
+      id: '/_workspace/catalog/products/'
+      path: '/products'
+      fullPath: '/catalog/products/'
+      preLoaderRoute: typeof WorkspaceCatalogProductsIndexRouteImport
+      parentRoute: typeof WorkspaceCatalogRouteRoute
+    }
+    '/_workspace/catalog/excursions/': {
+      id: '/_workspace/catalog/excursions/'
+      path: '/excursions'
+      fullPath: '/catalog/excursions/'
+      preLoaderRoute: typeof WorkspaceCatalogExcursionsIndexRouteImport
+      parentRoute: typeof WorkspaceCatalogRouteRoute
+    }
+    '/_workspace/catalog/cruises/': {
+      id: '/_workspace/catalog/cruises/'
+      path: '/cruises'
+      fullPath: '/catalog/cruises/'
+      preLoaderRoute: typeof WorkspaceCatalogCruisesIndexRouteImport
+      parentRoute: typeof WorkspaceCatalogRouteRoute
+    }
+    '/_workspace/catalog/accommodations/': {
+      id: '/_workspace/catalog/accommodations/'
+      path: '/accommodations'
+      fullPath: '/catalog/accommodations/'
+      preLoaderRoute: typeof WorkspaceCatalogAccommodationsIndexRouteImport
+      parentRoute: typeof WorkspaceCatalogRouteRoute
+    }
     '/_workspace/resources/pools/$id': {
       id: '/_workspace/resources/pools/$id'
       path: '/resources/pools/$id'
@@ -1731,6 +1912,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/finance/invoices/$id'
       preLoaderRoute: typeof WorkspaceFinanceInvoicesIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/_workspace/catalog/tours/$id': {
+      id: '/_workspace/catalog/tours/$id'
+      path: '/tours/$id'
+      fullPath: '/catalog/tours/$id'
+      preLoaderRoute: typeof WorkspaceCatalogToursIdRouteImport
+      parentRoute: typeof WorkspaceCatalogRouteRoute
+    }
+    '/_workspace/catalog/products/$productId': {
+      id: '/_workspace/catalog/products/$productId'
+      path: '/products/$productId'
+      fullPath: '/catalog/products/$productId'
+      preLoaderRoute: typeof WorkspaceCatalogProductsProductIdRouteImport
+      parentRoute: typeof WorkspaceCatalogRouteRoute
+    }
+    '/_workspace/catalog/excursions/$id': {
+      id: '/_workspace/catalog/excursions/$id'
+      path: '/excursions/$id'
+      fullPath: '/catalog/excursions/$id'
+      preLoaderRoute: typeof WorkspaceCatalogExcursionsIdRouteImport
+      parentRoute: typeof WorkspaceCatalogRouteRoute
+    }
+    '/_workspace/catalog/cruises/$id': {
+      id: '/_workspace/catalog/cruises/$id'
+      path: '/cruises/$id'
+      fullPath: '/catalog/cruises/$id'
+      preLoaderRoute: typeof WorkspaceCatalogCruisesIdRouteImport
+      parentRoute: typeof WorkspaceCatalogRouteRoute
+    }
+    '/_workspace/catalog/accommodations/$id': {
+      id: '/_workspace/catalog/accommodations/$id'
+      path: '/accommodations/$id'
+      fullPath: '/catalog/accommodations/$id'
+      preLoaderRoute: typeof WorkspaceCatalogAccommodationsIdRouteImport
+      parentRoute: typeof WorkspaceCatalogRouteRoute
     }
     '/_workspace/availability/start-times/$id': {
       id: '/_workspace/availability/start-times/$id'
@@ -1833,6 +2049,41 @@ const storefrontRouteRouteWithChildren = storefrontRouteRoute._addFileChildren(
   storefrontRouteRouteChildren,
 )
 
+interface WorkspaceCatalogRouteRouteChildren {
+  WorkspaceCatalogIndexRoute: typeof WorkspaceCatalogIndexRoute
+  WorkspaceCatalogAccommodationsIdRoute: typeof WorkspaceCatalogAccommodationsIdRoute
+  WorkspaceCatalogCruisesIdRoute: typeof WorkspaceCatalogCruisesIdRoute
+  WorkspaceCatalogExcursionsIdRoute: typeof WorkspaceCatalogExcursionsIdRoute
+  WorkspaceCatalogProductsProductIdRoute: typeof WorkspaceCatalogProductsProductIdRoute
+  WorkspaceCatalogToursIdRoute: typeof WorkspaceCatalogToursIdRoute
+  WorkspaceCatalogAccommodationsIndexRoute: typeof WorkspaceCatalogAccommodationsIndexRoute
+  WorkspaceCatalogCruisesIndexRoute: typeof WorkspaceCatalogCruisesIndexRoute
+  WorkspaceCatalogExcursionsIndexRoute: typeof WorkspaceCatalogExcursionsIndexRoute
+  WorkspaceCatalogProductsIndexRoute: typeof WorkspaceCatalogProductsIndexRoute
+  WorkspaceCatalogToursIndexRoute: typeof WorkspaceCatalogToursIndexRoute
+}
+
+const WorkspaceCatalogRouteRouteChildren: WorkspaceCatalogRouteRouteChildren = {
+  WorkspaceCatalogIndexRoute: WorkspaceCatalogIndexRoute,
+  WorkspaceCatalogAccommodationsIdRoute: WorkspaceCatalogAccommodationsIdRoute,
+  WorkspaceCatalogCruisesIdRoute: WorkspaceCatalogCruisesIdRoute,
+  WorkspaceCatalogExcursionsIdRoute: WorkspaceCatalogExcursionsIdRoute,
+  WorkspaceCatalogProductsProductIdRoute:
+    WorkspaceCatalogProductsProductIdRoute,
+  WorkspaceCatalogToursIdRoute: WorkspaceCatalogToursIdRoute,
+  WorkspaceCatalogAccommodationsIndexRoute:
+    WorkspaceCatalogAccommodationsIndexRoute,
+  WorkspaceCatalogCruisesIndexRoute: WorkspaceCatalogCruisesIndexRoute,
+  WorkspaceCatalogExcursionsIndexRoute: WorkspaceCatalogExcursionsIndexRoute,
+  WorkspaceCatalogProductsIndexRoute: WorkspaceCatalogProductsIndexRoute,
+  WorkspaceCatalogToursIndexRoute: WorkspaceCatalogToursIndexRoute,
+}
+
+const WorkspaceCatalogRouteRouteWithChildren =
+  WorkspaceCatalogRouteRoute._addFileChildren(
+    WorkspaceCatalogRouteRouteChildren,
+  )
+
 interface WorkspaceSettingsRouteRouteChildren {
   WorkspaceSettingsApiTokensRoute: typeof WorkspaceSettingsApiTokensRoute
   WorkspaceSettingsChannelsRoute: typeof WorkspaceSettingsChannelsRoute
@@ -1869,9 +2120,9 @@ const WorkspaceSettingsRouteRouteWithChildren =
   )
 
 interface WorkspaceRouteRouteChildren {
+  WorkspaceCatalogRouteRoute: typeof WorkspaceCatalogRouteRouteWithChildren
   WorkspaceSettingsRouteRoute: typeof WorkspaceSettingsRouteRouteWithChildren
   WorkspaceAccountRoute: typeof WorkspaceAccountRoute
-  WorkspaceCatalogRoute: typeof WorkspaceCatalogRoute
   WorkspaceChannelSyncRoute: typeof WorkspaceChannelSyncRoute
   WorkspaceFlightsRoute: typeof WorkspaceFlightsRoute
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
@@ -1932,9 +2183,9 @@ interface WorkspaceRouteRouteChildren {
 }
 
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
+  WorkspaceCatalogRouteRoute: WorkspaceCatalogRouteRouteWithChildren,
   WorkspaceSettingsRouteRoute: WorkspaceSettingsRouteRouteWithChildren,
   WorkspaceAccountRoute: WorkspaceAccountRoute,
-  WorkspaceCatalogRoute: WorkspaceCatalogRoute,
   WorkspaceChannelSyncRoute: WorkspaceChannelSyncRoute,
   WorkspaceFlightsRoute: WorkspaceFlightsRoute,
   WorkspaceIndexRoute: WorkspaceIndexRoute,

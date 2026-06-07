@@ -3,6 +3,15 @@ import type { LocaleMessageDefinitions } from "../runtime.js"
 export type OperatorAdminNavMessages = {
   dashboard: string
   catalog: string
+  catalogProducts: string
+  catalogProductsTagline: string
+  catalogExcursions: string
+  catalogExcursionsTagline: string
+  catalogTours: string
+  catalogToursTagline: string
+  catalogCruises: string
+  catalogCharters: string
+  catalogAccommodations: string
   catalogOrders: string
   flights: string
   flightOrders: string
@@ -46,6 +55,15 @@ export const operatorAdminNavMessages = {
     nav: {
       dashboard: "Dashboard",
       catalog: "Catalog",
+      catalogProducts: "Packages",
+      catalogProductsTagline: "Search flight + hotel packages and book live offers.",
+      catalogExcursions: "Excursions",
+      catalogExcursionsTagline: "Single-day trips with fixed departures.",
+      catalogTours: "Tours",
+      catalogToursTagline: "Multi-day circuits with fixed departures.",
+      catalogCruises: "Cruises",
+      catalogCharters: "Charters",
+      catalogAccommodations: "Accommodations",
       catalogOrders: "Orders",
       flights: "Flights",
       flightOrders: "Orders",
@@ -88,6 +106,15 @@ export const operatorAdminNavMessages = {
     nav: {
       dashboard: "Panou",
       catalog: "Catalog",
+      catalogProducts: "Pachete",
+      catalogProductsTagline: "Caută pachete zbor + cazare și rezervă oferte live.",
+      catalogExcursions: "Excursii",
+      catalogExcursionsTagline: "Excursii de o zi cu plecări fixe.",
+      catalogTours: "Circuite",
+      catalogToursTagline: "Circuite de mai multe zile cu plecări fixe.",
+      catalogCruises: "Croaziere",
+      catalogCharters: "Chartere",
+      catalogAccommodations: "Cazari",
       catalogOrders: "Comenzi",
       flights: "Zboruri",
       flightOrders: "Comenzi",

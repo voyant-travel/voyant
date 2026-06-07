@@ -1,5 +1,80 @@
 # @voyantjs/bookings
 
+## 0.106.1
+
+### Patch Changes
+
+- a0e117b: Stop payment-schedule reminders from sending for terminal bookings by closing open schedules during cancelled/expired booking transitions and by skipping payment reminders when the parent booking is not payable.
+
+## 0.106.0
+
+## 0.105.0
+
+## 0.104.2
+
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.104.1
+- @voyantjs/bookings-contracts@0.104.1
+- @voyantjs/core@0.104.1
+- @voyantjs/db@0.104.1
+- @voyantjs/hono@0.104.1
+- @voyantjs/utils@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.104.0
+- @voyantjs/bookings-contracts@0.104.0
+- @voyantjs/core@0.104.0
+- @voyantjs/db@0.104.0
+- @voyantjs/hono@0.104.0
+- @voyantjs/utils@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.103.0
+- @voyantjs/bookings-contracts@0.103.0
+- @voyantjs/core@0.103.0
+- @voyantjs/db@0.103.0
+- @voyantjs/hono@0.103.0
+- @voyantjs/utils@0.103.0
+
+## 0.101.2
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.101.2
+- @voyantjs/bookings-contracts@0.101.2
+- @voyantjs/core@0.101.2
+- @voyantjs/db@0.101.2
+- @voyantjs/hono@0.101.2
+- @voyantjs/utils@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- f736ba5: Improve product booking configuration for room-based travel products.
+
+  - `@voyantjs/products-ui`: rename the product setup UI around booking options, room inventory, traveler prices, and departure room inventory; hide traveler-age controls for room inventory units; add setup guardrails so room-based products cannot mix the legacy one-option-per-room shape with the canonical single-option/multiple-room-units shape.
+  - `@voyantjs/bookings` and `@voyantjs/bookings-react`: preserve selected room/category refs through booking creation and quote travelers against the selected room plus traveler pricing category instead of falling back to unrelated rates.
+  - `@voyantjs/bookings-ui`: let agents select both the room and the traveler pricing category for each traveler when the selected room exposes category-specific prices, enforce room occupancy in the booking flow, and keep the booking summary aligned with the selected room.
+  - `@voyantjs/availability-react`: expose the additional resource template fields needed by room inventory setup.
+  - `@voyantjs/i18n`: add Romanian product-management labels for the renamed booking option and inventory concepts.
+  - `@voyantjs/catalog-ui`: localize ship-spec labels used by the catalog detail sheet.
+  - @voyantjs/action-ledger@0.101.1
+  - @voyantjs/bookings-contracts@0.101.1
+  - @voyantjs/core@0.101.1
+  - @voyantjs/db@0.101.1
+  - @voyantjs/hono@0.101.1
+  - @voyantjs/utils@0.101.1
+
 ## 0.100.0
 
 ### Patch Changes

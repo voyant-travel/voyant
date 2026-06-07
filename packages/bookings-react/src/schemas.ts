@@ -436,9 +436,11 @@ const pricingPreviewUnitTierSchema = z.object({
 const pricingPreviewUnitPriceSchema = z.object({
   id: z.string(),
   optionPriceRuleId: z.string(),
+  optionId: z.string().nullable().optional().default(null),
   unitId: z.string(),
-  unitName: z.string(),
-  unitType: z.string(),
+  unitName: z.string().nullable(),
+  unitType: z.string().nullable(),
+  occupancyMax: z.number().int().nullable().optional().default(null),
   pricingCategoryId: z.string().nullable(),
   pricingMode: z.string(),
   sellAmountCents: z.number().int().nullable(),
@@ -446,10 +448,21 @@ const pricingPreviewUnitPriceSchema = z.object({
   maxQuantity: z.number().int().nullable(),
   tiers: z.array(pricingPreviewUnitTierSchema),
 })
+const pricingPreviewCategorySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  code: z.string().nullable(),
+  categoryType: z.string(),
+  minAge: z.number().int().nullable(),
+  maxAge: z.number().int().nullable(),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
+  sortOrder: z.number().int(),
+})
 export const pricingPreviewSnapshotSchema = z.object({
   catalog: pricingPreviewCatalogSchema,
   options: z.array(pricingPreviewOptionSchema),
   rules: z.array(pricingPreviewRuleSchema),
+  pricingCategories: z.array(pricingPreviewCategorySchema).optional().default([]),
   unitPrices: z.array(pricingPreviewUnitPriceSchema),
 })
 export type PricingPreviewSnapshot = z.infer<typeof pricingPreviewSnapshotSchema>

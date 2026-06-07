@@ -32,7 +32,8 @@ export interface SearchIndexBulkEntry {
   themes?: string[]
   earliestDeparture?: string | null
   latestDeparture?: string | null
-  lowestPrice?: string | null
+  departureCount?: number | null
+  lowestPriceCents?: number | null
   lowestPriceCurrency?: string | null
   salesStatus?: string | null
   heroImageUrl?: string | null

@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/admin-react",
-  "version": "0.101.0",
+  "version": "0.104.1",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -28,14 +28,14 @@
     "react": "^19.0.0"
   },
   "dependencies": {
-    "@voyantjs/admin-client": "workspace:*"
+    "@voyantjs/admin-client": "workspace:^"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.100.11",
     "@testing-library/react": "^16.0.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "jsdom": "^25.0.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

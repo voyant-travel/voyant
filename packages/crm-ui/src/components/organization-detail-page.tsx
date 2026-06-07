@@ -13,6 +13,7 @@ import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
+import { OrganizationMergeDialog } from "./merge-dialogs.js"
 import {
   type OrganizationDetailPageSlots,
   type OrganizationDetailTab,
@@ -40,6 +41,7 @@ export function OrganizationDetailPage({
 }: OrganizationDetailPageProps) {
   const messages = useCrmUiMessagesOrDefault()
   const [activeTab, setActiveTab] = useState<OrganizationDetailTab>("overview")
+  const [mergeOpen, setMergeOpen] = useState(false)
   const orgQuery = useOrganization(id)
   const { remove, update } = useOrganizationMutation()
 
@@ -115,6 +117,7 @@ export function OrganizationDetailPage({
       <OrganizationTopBar
         orgName={org.name}
         onBack={() => onBack?.()}
+        onMerge={() => setMergeOpen(true)}
         deletePending={remove.isPending}
         onDelete={async () => {
           await remove.mutateAsync(id)
@@ -145,6 +148,11 @@ export function OrganizationDetailPage({
           slots={slots}
         />
       </div>
+      <OrganizationMergeDialog
+        open={mergeOpen}
+        onOpenChange={setMergeOpen}
+        keepOrganization={org}
+      />
     </div>
   )
 }

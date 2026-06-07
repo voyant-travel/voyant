@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/plugin-netopia",
-  "version": "0.101.0",
+  "version": "0.104.3",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -20,17 +20,17 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/checkout": "workspace:*",
-    "@voyantjs/core": "workspace:*",
-    "@voyantjs/finance": "workspace:*",
-    "@voyantjs/hono": "workspace:*",
-    "@voyantjs/notifications": "workspace:*",
+    "@voyantjs/checkout": "workspace:^",
+    "@voyantjs/core": "workspace:^",
+    "@voyantjs/finance": "workspace:^",
+    "@voyantjs/hono": "workspace:^",
+    "@voyantjs/notifications": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },

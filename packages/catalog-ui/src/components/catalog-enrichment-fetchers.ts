@@ -119,7 +119,10 @@ interface ContentResponseEnvelope {
   }
 }
 
-type SourcedContentPayload = ProductContentPayload | CruiseContentPayload
+type SourcedContentPayload =
+  | ProductContentPayload
+  | CruiseContentPayload
+  | AccommodationContentPayload
 
 interface ProductContentPayload {
   product: {
@@ -170,6 +173,12 @@ interface CruiseContentPayload {
     name: string
     ship_type?: string | null
     description?: string | null
+    deck_plan_url?: string | null
+    deck_plans?: Array<{
+      name: string
+      level?: number | null
+      image_url?: string | null
+    }>
     capacity?: number | null
     decks?: number | null
     year_built?: number | null
@@ -195,12 +204,43 @@ interface CruiseContentPayload {
     description?: string | null
     type?: string | null
     images?: string[]
+    floorplan_images?: string[]
     square_feet?: string | null
+    grade_codes?: string[]
+    wheelchair_accessible?: boolean
     capacity_max?: number | null
     inclusions?: string[]
   }>
   itinerary_stops?: CruiseItineraryStopPayload[]
   policies: Array<{ kind: string; body: string }>
+}
+
+interface AccommodationContentPayload {
+  hotel: {
+    id: string
+    name: string
+    description?: string | null
+    star_rating?: number | null
+    hero_image_url?: string | null
+    highlights?: string[]
+    brand?: string | null
+    city?: string | null
+    country?: string | null
+  }
+  room_types?: Array<{
+    id: string
+    code?: string | null
+    name: string
+    description?: string | null
+    room_class?: string | null
+    view?: string | null
+    size_sqm?: number | null
+    max_occupancy?: number | null
+    amenities?: string[]
+    images?: string[]
+  }>
+  amenities?: Array<{ id: string; category?: string | null; name: string }>
+  policies?: Array<{ kind: string; body: string }>
 }
 
 interface CruiseItineraryStopPayload {
@@ -349,7 +389,9 @@ function mapContentToEnrichment(
   } = payload.data
   const base = isCruiseContent(content)
     ? mapCruiseContentToEnrichment(content)
-    : mapProductContentToEnrichment(content, availability, formatSupplier)
+    : isAccommodationContent(content)
+      ? mapAccommodationContentToEnrichment(content)
+      : mapProductContentToEnrichment(content, availability, formatSupplier)
 
   return {
     ...base,
@@ -366,6 +408,38 @@ function isCruiseContent(content: SourcedContentPayload): content is CruiseConte
   return "cruise" in content
 }
 
+function isAccommodationContent(
+  content: SourcedContentPayload,
+): content is AccommodationContentPayload {
+  return "hotel" in content
+}
+
+function mapAccommodationContentToEnrichment(
+  content: AccommodationContentPayload,
+): CatalogDetailEnrichment {
+  const rooms = content.room_types ?? []
+  return {
+    name: content.hotel.name ?? null,
+    description: content.hotel.description ?? null,
+    highlights: content.hotel.highlights ?? [],
+    heroImageUrl: content.hotel.hero_image_url ?? null,
+    supplier: content.hotel.brand ?? null,
+    options: rooms.map((r) => ({
+      id: r.id,
+      name: r.name,
+      description: r.description ?? null,
+      images: r.images ?? [],
+      squareFeet: r.size_sqm != null ? String(r.size_sqm) : null,
+      capacityMax: r.max_occupancy ?? null,
+      amenities: r.amenities ?? [],
+    })),
+    media: rooms.flatMap((r) =>
+      (r.images ?? []).map((url) => ({ url, type: "image", caption: r.name })),
+    ),
+    policies: (content.policies ?? []).map((p) => ({ kind: p.kind, body: p.body })),
+  }
+}
+
 function mapProductContentToEnrichment(
   content: ProductContentPayload,
   availability: Map<string, CatalogSlotAvailability>,
@@ -379,6 +453,7 @@ function mapProductContentToEnrichment(
       : (content.product.supplier ?? null)
 
   return {
+    name: content.product.name ?? null,
     description: content.product.description ?? null,
     highlights: content.product.highlights ?? [],
     heroImageUrl: content.product.hero_image_url ?? null,
@@ -421,6 +496,7 @@ function mapProductContentToEnrichment(
 
 function mapCruiseContentToEnrichment(content: CruiseContentPayload): CatalogDetailEnrichment {
   return {
+    name: content.cruise.name ?? null,
     description: content.cruise.description ?? null,
     highlights: content.cruise.highlights ?? [],
     heroImageUrl: content.cruise.hero_image_url ?? null,
@@ -431,6 +507,12 @@ function mapCruiseContentToEnrichment(content: CruiseContentPayload): CatalogDet
           name: content.ship.name,
           shipType: content.ship.ship_type ?? null,
           description: content.ship.description ?? null,
+          deckPlanUrl: content.ship.deck_plan_url ?? null,
+          deckPlans: (content.ship.deck_plans ?? []).map((deck) => ({
+            name: deck.name,
+            level: deck.level ?? null,
+            imageUrl: deck.image_url ?? null,
+          })),
           capacity: content.ship.capacity ?? null,
           decks: content.ship.decks ?? null,
           yearBuilt: content.ship.year_built ?? null,
@@ -453,7 +535,10 @@ function mapCruiseContentToEnrichment(content: CruiseContentPayload): CatalogDet
       code: c.code ?? null,
       type: c.type ?? null,
       images: c.images ?? [],
+      floorplanImages: c.floorplan_images ?? [],
       squareFeet: c.square_feet ?? null,
+      gradeCodes: c.grade_codes ?? [],
+      wheelchairAccessible: c.wheelchair_accessible ?? false,
       capacityMax: c.capacity_max ?? null,
       amenities: c.inclusions ?? [],
     })),

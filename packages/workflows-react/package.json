@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/workflows-react",
-  "version": "0.101.0",
+  "version": "0.104.1",
   "description": "React hooks for Voyant Workflows — trigger, subscribe, and stream runs.",
   "license": "Apache-2.0",
   "repository": {
@@ -34,8 +34,8 @@
     "dev": "tsc -w -p tsconfig.json"
   },
   "dependencies": {
-    "@voyantjs/react": "workspace:*",
-    "@voyantjs/workflows": "workspace:*"
+    "@voyantjs/react": "workspace:^",
+    "@voyantjs/workflows": "workspace:^"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
@@ -46,8 +46,8 @@
     "@tanstack/react-query": "^5.100.11",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.2.3",
-    "@voyantjs/react": "workspace:*",
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/react": "workspace:^",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "react": "^19.1.0",
     "react-dom": "^19.2.4",
     "typescript": "^5.9.2",

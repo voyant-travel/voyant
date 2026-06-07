@@ -212,6 +212,25 @@ const ACCOMMODATION_FIELD_POLICY: FieldPolicyInput[] = [
 
   // ── Structural / facet-affecting ───────────────────────────────────────
   {
+    // Supply mechanic — durable, product-agnostic split that drives the
+    // search + booking surface: "dynamic" (live-composed, any date, calendar
+    // pricing) vs "scheduled" (fixed dated departures with seat allotment).
+    // See docs/architecture/catalog-supply-models.md. Accommodation stays are
+    // dynamic; the value is shipped by Connect on the search document.
+    path: "supplyModel",
+    class: "structural",
+    merge: "source-only",
+    drift: "low",
+    reindex: "facet-affecting",
+    snapshot: "on-book",
+    query: "indexed-column",
+    localized: false,
+    visibility: ["staff", "customer", "partner"],
+    editRole: "none",
+    overrideFriction: "none",
+    sourceFreshness: "sync",
+  },
+  {
     path: "inventoryMode",
     class: "structural",
     merge: "source-only",

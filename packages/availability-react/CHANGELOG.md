@@ -1,5 +1,71 @@
 # @voyantjs/availability-react
 
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/availability@0.104.1
+- @voyantjs/react@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- e2ae9ff: Fix room-typed pricing categories leaking into the pricing grid, and make room allocation respect the booked room type (#1476).
+
+  - **Pricing grid no longer shows a bogus price column per room type.** The rooms/seats grid built one traveler-type column from every in-scope pricing category, so a tenant whose data carries `room`/`vehicle`/`service`-typed categories — e.g. a global default set or legacy-migrated "Double room" categories — got a phantom price column for each room alongside the real Adult/Child split. Columns are now restricted to per-traveler categories via a new `isTravelerCategory` guard, with an escape hatch that still surfaces any category that actually has a price cell (no data loss). Applies to both the merged grid and the Advanced view.
+  - **"Generate from rooms" now creates `room`-kind resource templates keyed by `option_unit`.** Previously each room type became its own distinct template `kind`, which the allocator couldn't use to constrain a traveler to their booked room type. Templates now share `kind: "room"` and carry `refType: "option_unit"` / `refId`, so the auto-allocator's unit match keeps a Double-booked traveler in a Double room. The `(product_option_id, kind)` unique index is widened to `(product_option_id, kind, coalesce(ref_id, ''))` to allow one room template per unit, and the per-slot materializer's skip-existing check is refined to `(kind, ref_id)`. Template upsert and delete now resolve a row by `(option, kind, ref_id)` so editing or removing one room type no longer affects its siblings, and the panel labels each room template by its unit name.
+
+- Updated dependencies [e2ae9ff]
+  - @voyantjs/availability@0.104.0
+  - @voyantjs/react@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/availability@0.103.0
+- @voyantjs/react@0.103.0
+
+## 0.102.0
+
+### Minor Changes
+
+- b6d0673: Redesign the operator's **Booking options & prices** for low-tech travel agents and close the inventory/allocation gaps it exposed.
+
+  - `@voyantjs/products-ui`: each option now renders **one adaptive table** — a rooms grid (rooms × traveler types) or a per-person seats list — derived from the product's inventory (rooms always win over booking mode). The rate-plan layer is hidden behind an **Advanced** disclosure (a single default plan is auto-managed); the default plan's matrix is no longer duplicated there. Single-option products show the table directly with no chrome. The unit form pins its type in the contextual add ("Add room" can't create a vehicle) and uses type-aware quantity/occupancy labels; the price dialog uses the design-system currency input and pricing-mode-aware quantity labels. New departures pre-fill **Capacity (pax)** from the configured inventory (overridable).
+  - `@voyantjs/products`: `createProduct` seeds a default `Standard` option so new products open straight into the pricing table; the day-translation create route now verifies the day belongs to the product.
+  - `@voyantjs/availability` + `@voyantjs/availability-react`: departure inventory templates can be **generated from the option's rooms** and **applied to existing open departures** (new bulk endpoint + hook). The full-inventory materializer now works for product-level departures (no `optionId`), so auto-seed on publish and bulk apply create the full room set. New per-slot `materialize-templates` endpoint.
+  - `@voyantjs/allocation-ui`: a slot's **Generate resources** now materializes the full configured inventory across all kinds in one click, instead of the pax-derived single-kind path.
+
+### Patch Changes
+
+- Updated dependencies [b6d0673]
+  - @voyantjs/availability@0.102.0
+  - @voyantjs/react@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- @voyantjs/availability@0.101.2
+- @voyantjs/react@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- f736ba5: Improve product booking configuration for room-based travel products.
+
+  - `@voyantjs/products-ui`: rename the product setup UI around booking options, room inventory, traveler prices, and departure room inventory; hide traveler-age controls for room inventory units; add setup guardrails so room-based products cannot mix the legacy one-option-per-room shape with the canonical single-option/multiple-room-units shape.
+  - `@voyantjs/bookings` and `@voyantjs/bookings-react`: preserve selected room/category refs through booking creation and quote travelers against the selected room plus traveler pricing category instead of falling back to unrelated rates.
+  - `@voyantjs/bookings-ui`: let agents select both the room and the traveler pricing category for each traveler when the selected room exposes category-specific prices, enforce room occupancy in the booking flow, and keep the booking summary aligned with the selected room.
+  - `@voyantjs/availability-react`: expose the additional resource template fields needed by room inventory setup.
+  - `@voyantjs/i18n`: add Romanian product-management labels for the renamed booking option and inventory concepts.
+  - `@voyantjs/catalog-ui`: localize ship-spec labels used by the catalog detail sheet.
+  - @voyantjs/availability@0.101.1
+  - @voyantjs/react@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes

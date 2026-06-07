@@ -1,5 +1,116 @@
 # @voyantjs/finance
 
+## 0.106.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.106.0
+- @voyantjs/products@0.106.0
+
+## 0.105.0
+
+### Patch Changes
+
+- Updated dependencies [921f4fc]
+  - @voyantjs/products@0.105.0
+  - @voyantjs/bookings@0.105.0
+
+## 0.104.2
+
+### Patch Changes
+
+- 75a6336: Add an overridable duplicate guard for booking create requests.
+  - @voyantjs/bookings@0.104.2
+
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.104.1
+- @voyantjs/bookings@0.104.1
+- @voyantjs/core@0.104.1
+- @voyantjs/db@0.104.1
+- @voyantjs/finance-contracts@0.104.1
+- @voyantjs/hono@0.104.1
+- @voyantjs/products@0.104.1
+- @voyantjs/storage@0.104.1
+- @voyantjs/utils@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.104.0
+- @voyantjs/bookings@0.104.0
+- @voyantjs/core@0.104.0
+- @voyantjs/db@0.104.0
+- @voyantjs/finance-contracts@0.104.0
+- @voyantjs/hono@0.104.0
+- @voyantjs/products@0.104.0
+- @voyantjs/storage@0.104.0
+- @voyantjs/utils@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.103.0
+- @voyantjs/bookings@0.103.0
+- @voyantjs/core@0.103.0
+- @voyantjs/db@0.103.0
+- @voyantjs/finance-contracts@0.103.0
+- @voyantjs/hono@0.103.0
+- @voyantjs/products@0.103.0
+- @voyantjs/storage@0.103.0
+- @voyantjs/utils@0.103.0
+
+## 0.102.0
+
+### Patch Changes
+
+- Updated dependencies [b6d0673]
+  - @voyantjs/action-ledger@0.102.0
+  - @voyantjs/bookings@0.102.0
+  - @voyantjs/core@0.102.0
+  - @voyantjs/db@0.102.0
+  - @voyantjs/finance-contracts@0.102.0
+  - @voyantjs/hono@0.102.0
+  - @voyantjs/products@0.102.0
+  - @voyantjs/storage@0.102.0
+  - @voyantjs/utils@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- 577eaf5: Republish finance and legal contract packages with the next release so exact internal package dependencies resolve from the public registry.
+- Updated dependencies [577eaf5]
+- Updated dependencies [577eaf5]
+  - @voyantjs/action-ledger@0.101.2
+  - @voyantjs/bookings@0.101.2
+  - @voyantjs/core@0.101.2
+  - @voyantjs/db@0.101.2
+  - @voyantjs/finance-contracts@0.101.2
+  - @voyantjs/hono@0.101.2
+  - @voyantjs/products@0.101.2
+  - @voyantjs/storage@0.101.2
+  - @voyantjs/utils@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- Updated dependencies [f736ba5]
+  - @voyantjs/action-ledger@0.101.1
+  - @voyantjs/bookings@0.101.1
+  - @voyantjs/core@0.101.1
+  - @voyantjs/db@0.101.1
+  - @voyantjs/finance-contracts@0.101.1
+  - @voyantjs/hono@0.101.1
+  - @voyantjs/products@0.101.1
+  - @voyantjs/storage@0.101.1
+  - @voyantjs/utils@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/transactions",
-  "version": "0.101.0",
+  "version": "0.104.1",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -19,17 +19,17 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyantjs/core": "workspace:*",
-    "@voyantjs/db": "workspace:*",
-    "@voyantjs/hono": "workspace:*",
-    "@voyantjs/transactions-contracts": "workspace:*",
-    "@voyantjs/utils": "workspace:*",
+    "@voyantjs/core": "workspace:^",
+    "@voyantjs/db": "workspace:^",
+    "@voyantjs/hono": "workspace:^",
+    "@voyantjs/transactions-contracts": "workspace:^",
+    "@voyantjs/utils": "workspace:^",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.10",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "typescript": "^6.0.2"
   },
   "files": [

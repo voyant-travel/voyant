@@ -65,6 +65,7 @@ export const PREFIXES = {
   product_itineraries: "piti",
   product_days: "pday",
   product_day_services: "pdse",
+  product_day_translations: "pdtr",
   product_versions: "pver",
   product_notes: "prnt",
   bookings: "book",

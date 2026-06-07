@@ -1,5 +1,67 @@
 # @voyantjs/legal-react
 
+## 0.106.1
+
+### Patch Changes
+
+- Updated dependencies [8f2a93c]
+  - @voyantjs/legal@0.106.1
+
+## 0.106.0
+
+### Patch Changes
+
+- @voyantjs/legal@0.106.0
+
+## 0.105.0
+
+### Patch Changes
+
+- @voyantjs/legal@0.105.0
+
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/legal@0.104.1
+- @voyantjs/react@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- @voyantjs/legal@0.104.0
+- @voyantjs/react@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/legal@0.103.0
+- @voyantjs/react@0.103.0
+
+## 0.102.0
+
+### Patch Changes
+
+- @voyantjs/legal@0.102.0
+- @voyantjs/react@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- Updated dependencies [577eaf5]
+  - @voyantjs/legal@0.101.2
+  - @voyantjs/react@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- @voyantjs/legal@0.101.1
+- @voyantjs/react@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes

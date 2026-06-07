@@ -79,11 +79,11 @@ export default async function CruiseDetailPage({ params }: { params: Promise<Par
 
       <section>
         <h2>Pricing</h2>
-        {cruise.lowestPrice ? (
+        {cruise.lowestPriceCents != null ? (
           <p>
             From{" "}
             <span className="price">
-              {cruise.lowestPriceCurrency} {Number(cruise.lowestPrice).toLocaleString()}
+              {cruise.lowestPriceCurrency} {(cruise.lowestPriceCents / 100).toLocaleString()}
             </span>{" "}
             per person, double occupancy. Single supplement and other rates available — contact us
             for a full quote.

@@ -1296,6 +1296,8 @@ export const bookingsUiEn = {
       billingEmailInvalid: "Billing person email address is invalid",
       travelerRequired: "Add at least one traveler",
       firstAndLastNameRequired: "First and last name are required",
+      roomCapacityExceeded:
+        "{room} can fit {capacity} travelers, but {assigned} travelers are assigned.",
       selectSharedRoomGroup: "Select a shared room to join",
       confirmFailedPrefix: "Booking created but confirm failed: {message}",
       confirmFailed: "Booking created but confirm failed",

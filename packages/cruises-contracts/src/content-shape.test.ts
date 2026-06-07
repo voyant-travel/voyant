@@ -19,6 +19,7 @@ describe("@voyantjs/cruises-contracts content shape", () => {
           id: "crsl_123",
           start_date: "2026-07-01",
           end_date: "2026-07-08",
+          board_basis: "full_board",
           lowest_price_cents: 120000,
           currency: "EUR",
         },
@@ -28,6 +29,7 @@ describe("@voyantjs/cruises-contracts content shape", () => {
     expect(CRUISES_CONTENT_SCHEMA_VERSION).toBe("cruises/v1")
     expect(validateCruiseContent(content)).toMatchObject({ valid: true })
     expect(content.sailings[0]?.itinerary_stops).toEqual([])
+    expect(content.sailings[0]?.board_basis).toBe("full_board")
   })
 
   it("carries structured cabin feature facets", () => {
@@ -91,5 +93,21 @@ describe("@voyantjs/cruises-contracts content shape", () => {
     })
 
     expect(result).toMatchObject({ valid: false })
+  })
+
+  it("rejects unknown sailing board basis values", () => {
+    expect(
+      validateCruiseContent({
+        cruise: { id: "cru_123", name: "Danube Highlights" },
+        sailings: [
+          {
+            id: "crsl_123",
+            start_date: "2026-07-01",
+            end_date: "2026-07-08",
+            board_basis: "brunch_only",
+          },
+        ],
+      }),
+    ).toMatchObject({ valid: false })
   })
 })

@@ -1,5 +1,104 @@
 # @voyantjs/finance-ui
 
+## 0.106.0
+
+### Patch Changes
+
+- @voyantjs/bookings-ui@0.106.0
+- @voyantjs/finance@0.106.0
+- @voyantjs/finance-react@0.106.0
+- @voyantjs/suppliers-ui@0.104.3
+
+## 0.105.0
+
+### Patch Changes
+
+- @voyantjs/finance@0.105.0
+- @voyantjs/bookings-ui@0.105.0
+- @voyantjs/finance-react@0.105.0
+- @voyantjs/suppliers-ui@0.104.2
+
+## 0.104.2
+
+### Patch Changes
+
+- Updated dependencies [75a6336]
+  - @voyantjs/finance@0.104.2
+  - @voyantjs/bookings-ui@0.104.2
+  - @voyantjs/finance-react@0.104.2
+
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/bookings-ui@0.104.1
+- @voyantjs/finance@0.104.1
+- @voyantjs/finance-react@0.104.1
+- @voyantjs/i18n@0.104.1
+- @voyantjs/suppliers-ui@0.104.1
+- @voyantjs/ui@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- @voyantjs/bookings-ui@0.104.0
+- @voyantjs/finance@0.104.0
+- @voyantjs/finance-react@0.104.0
+- @voyantjs/i18n@0.104.0
+- @voyantjs/suppliers-ui@0.104.0
+- @voyantjs/ui@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- Updated dependencies [a02f2f3]
+  - @voyantjs/bookings-ui@0.103.0
+  - @voyantjs/finance@0.103.0
+  - @voyantjs/finance-react@0.103.0
+  - @voyantjs/i18n@0.103.0
+  - @voyantjs/suppliers-ui@0.103.0
+  - @voyantjs/ui@0.103.0
+
+## 0.102.0
+
+### Patch Changes
+
+- Updated dependencies [b6d0673]
+  - @voyantjs/bookings-ui@0.102.0
+  - @voyantjs/finance@0.102.0
+  - @voyantjs/finance-react@0.102.0
+  - @voyantjs/i18n@0.102.0
+  - @voyantjs/suppliers-ui@0.102.0
+  - @voyantjs/ui@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- Updated dependencies [577eaf5]
+- Updated dependencies [577eaf5]
+- Updated dependencies [577eaf5]
+  - @voyantjs/bookings-ui@0.101.2
+  - @voyantjs/finance@0.101.2
+  - @voyantjs/finance-react@0.101.2
+  - @voyantjs/i18n@0.101.2
+  - @voyantjs/suppliers-ui@0.101.2
+  - @voyantjs/ui@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- Updated dependencies [f736ba5]
+  - @voyantjs/bookings-ui@0.101.1
+  - @voyantjs/finance@0.101.1
+  - @voyantjs/finance-react@0.101.1
+  - @voyantjs/i18n@0.101.1
+  - @voyantjs/suppliers-ui@0.101.1
+  - @voyantjs/ui@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes

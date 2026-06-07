@@ -1,4 +1,5 @@
 import { useProductItineraries } from "@voyantjs/products-react"
+import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
@@ -30,7 +31,6 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox"
-import { DatePicker } from "@/components/ui/date-picker"
 import { api } from "@/lib/api-client"
 import { getTimezoneLabel, TIMEZONE_IDS, TIMEZONE_OPTIONS } from "@/lib/timezone-options"
 import { zodResolver } from "@/lib/zod-resolver"

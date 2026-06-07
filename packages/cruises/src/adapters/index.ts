@@ -222,8 +222,10 @@ export type CruiseSearchProjectionEntry = {
   shipExternalId?: string
   nights: number
   embarkPortName?: string | null
+  embarkPortFacilityId?: string | null
   embarkPortCanonicalPlaceId?: string | null
   disembarkPortName?: string | null
+  disembarkPortFacilityId?: string | null
   disembarkPortCanonicalPlaceId?: string | null
   regionIds?: string[]
   waterwayIds?: string[]
@@ -236,7 +238,16 @@ export type CruiseSearchProjectionEntry = {
   themes?: string[]
   earliestDeparture?: string | null
   latestDeparture?: string | null
-  lowestPrice?: string | null
+  /**
+   * Distinct departure months across the cruise's sailings as `YYYY-MM`
+   * strings (e.g. `["2027-03", "2027-04"]`). Facetable so browse surfaces can
+   * filter by departure month/year. Populated from the per-cruise sailing list
+   * at sync time (the upstream search projection only carries the window).
+   */
+  departureMonths?: string[] | null
+  /** Total number of sailings (departures) the cruise has. */
+  departureCount?: number | null
+  lowestPriceCents?: number | null
   lowestPriceCurrency?: string | null
   salesStatus?: string | null
   heroImageUrl?: string | null
@@ -253,7 +264,8 @@ export type ExternalCruiseSummary = {
   shipName?: string
   nights: number
   earliestDeparture?: string | null
-  lowestPrice?: string | null
+  departureCount?: number | null
+  lowestPriceCents?: number | null
   lowestPriceCurrency?: string | null
   heroImageUrl?: string | null
 }

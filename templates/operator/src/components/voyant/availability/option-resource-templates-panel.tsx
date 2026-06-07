@@ -4,18 +4,18 @@ import { SeatMapBuilder } from "@voyantjs/allocation-ui"
 import {
   type SeatLayoutSpec,
   seatLayoutSpecSchema,
+  useMaterializeOpenSlotsMutation,
   useProductResourceTemplates,
   useResourceTemplateMutation,
 } from "@voyantjs/availability-react"
 import { formatMessage } from "@voyantjs/i18n"
+import { useOptionUnits } from "@voyantjs/products-react"
 import {
   Badge,
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
   Dialog,
   DialogBody,
   DialogContent,
@@ -30,7 +30,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@voyantjs/ui/components"
-import { Armchair, Bed, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
+import {
+  Armchair,
+  Bed,
+  CalendarCheck,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  Pencil,
+  Plus,
+  Sparkles,
+  Trash2,
+} from "lucide-react"
 import { useMemo, useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
@@ -40,7 +51,9 @@ import { useAdminMessages } from "@/lib/admin-i18n"
  * for an option, no rooms/seats/etc. are materialized when bookings hit
  * a slot.
  *
- * Each template is identified by `(optionId, kind)`. Common kinds:
+ * Each template is identified by `(optionId, kind, refId)` — an option can
+ * hold several templates of the same kind, one per `option_unit` (e.g. a
+ * "room" template per room type), distinguished by `refId`. Common kinds:
  *   - `room` — accommodation rooms (default capacity 2)
  *   - `vehicle_seat` — coach/van seats (capacity 1)
  *   - `cabin` — cruise cabins
@@ -76,28 +89,52 @@ export function OptionResourceTemplatesPanel({
   const t = adminMessages.availability.details.resourceTemplates
   const { data, isPending, isError } = useProductResourceTemplates({ productId })
   const { upsert, remove } = useResourceTemplateMutation(productId)
+  const materializeOpenSlots = useMaterializeOpenSlotsMutation(productId)
 
   const templates = useMemo(() => {
     const option = (data?.data ?? []).find((entry) => entry.id === optionId)
     return option?.templates ?? []
   }, [data?.data, optionId])
+  const totalPerDeparture = useMemo(
+    () => templates.reduce((sum, template) => sum + (template.defaultCount ?? 0), 0),
+    [templates],
+  )
 
+  // The option's room units already carry quantity (maxQuantity) and occupancy
+  // — generate departure inventory straight from them instead of re-typing it.
+  const { data: unitsData } = useOptionUnits({ optionId, limit: 100 })
+  const roomUnits = useMemo(
+    () => (unitsData?.data ?? []).filter((unit) => unit.unitType === "room"),
+    [unitsData?.data],
+  )
+
+  const [open, setOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [seatMapOpen, setSeatMapOpen] = useState(false)
   const [editingKind, setEditingKind] = useState<string | null>(null)
+  // The ref of the template being edited, so submit updates that exact
+  // (option, kind, refId) row rather than colliding with siblings of the same
+  // kind. Null for ref-less templates (the manual "Add" path).
+  const [editingRefType, setEditingRefType] = useState<string | null>(null)
+  const [editingRefId, setEditingRefId] = useState<string | null>(null)
   const [kindValue, setKindValue] = useState<string>("room")
   const [capacityValue, setCapacityValue] = useState<number>(2)
+  const [defaultCountValue, setDefaultCountValue] = useState<number>(1)
   const [namePatternValue, setNamePatternValue] = useState<string>("Room {sequence}")
   const [layoutSpec, setLayoutSpec] = useState<SeatLayoutSpec | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [applyResult, setApplyResult] = useState<string | null>(null)
 
   const derivedSeatCount = useMemo(() => countSeats(layoutSpec), [layoutSpec])
   const usingSeatMap = kindValue === "vehicle_seat" && layoutSpec !== null
 
   function openCreate() {
     setEditingKind(null)
+    setEditingRefType(null)
+    setEditingRefId(null)
     setKindValue("room")
     setCapacityValue(2)
+    setDefaultCountValue(1)
     setNamePatternValue("Room {sequence}")
     setLayoutSpec(null)
     setError(null)
@@ -106,13 +143,19 @@ export function OptionResourceTemplatesPanel({
 
   function openEdit(template: {
     kind: string
+    refType: string | null
+    refId: string | null
     capacity: number
+    defaultCount: number | null
     namePattern: string
     flags: Record<string, unknown>
   }) {
     setEditingKind(template.kind)
+    setEditingRefType(template.refType)
+    setEditingRefId(template.refId)
     setKindValue(template.kind)
     setCapacityValue(template.capacity)
+    setDefaultCountValue(template.defaultCount ?? 0)
     setNamePatternValue(template.namePattern)
     setLayoutSpec(extractLayoutSpec(template.flags))
     setError(null)
@@ -139,7 +182,12 @@ export function OptionResourceTemplatesPanel({
         kind: trimmedKind,
         input: {
           capacity: effectiveCapacity,
+          defaultCount: defaultCountValue > 0 ? defaultCountValue : null,
           namePattern: trimmedPattern,
+          // Preserve the edited template's ref so the upsert targets its exact
+          // (option, kind, refId) row instead of clobbering a sibling.
+          refType: editingRefType,
+          refId: editingRefId,
           flags,
         },
       })
@@ -149,12 +197,61 @@ export function OptionResourceTemplatesPanel({
     }
   }
 
-  async function handleRemove(kind: string) {
-    if (!globalThis.confirm?.(formatMessage(t.deleteConfirm, { kind }))) return
+  async function handleRemove(kind: string, refId: string | null, label: string) {
+    if (!globalThis.confirm?.(formatMessage(t.deleteConfirm, { kind: label }))) return
     try {
-      await remove.mutateAsync({ optionId, kind })
+      await remove.mutateAsync({ optionId, kind, refId })
     } catch (err) {
       setError(err instanceof Error ? err.message : t.deleteFailed)
+    }
+  }
+
+  async function generateFromRooms() {
+    setError(null)
+    try {
+      for (const unit of roomUnits) {
+        await upsert.mutateAsync({
+          optionId,
+          // All room types share kind "room"; they're distinguished — and
+          // travelers are constrained to their booked type — by the option_unit
+          // ref (allocator's groupUnitMatchScore: refType "option_unit" + refId
+          // === bookedOptionUnitId). The widened (option, kind, ref) unique
+          // index lets one option carry a "room" template per unit.
+          kind: "room",
+          input: {
+            capacity: unit.occupancyMax ?? unit.occupancyMin ?? 1,
+            defaultCount: unit.maxQuantity ?? null,
+            // {index} numbers each room type from 1 (Double 1…20), not the
+            // global {sequence}, so the shared "room" pool reads cleanly.
+            namePattern: `${unit.name} {index}`,
+            refType: "option_unit",
+            refId: unit.id,
+            flags: {},
+          },
+        })
+      }
+      setOpen(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.saveFailed)
+    }
+  }
+
+  async function applyToOpenDepartures() {
+    if (!globalThis.confirm?.(t.applyToOpenConfirm)) return
+    setError(null)
+    setApplyResult(null)
+    try {
+      const result = await materializeOpenSlots.mutateAsync({ optionId })
+      setApplyResult(
+        result.slots === 0
+          ? t.applyToOpenEmpty
+          : formatMessage(t.applyToOpenResult, {
+              created: result.created,
+              slots: result.slots,
+            }),
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.applyToOpenFailed)
     }
   }
 
@@ -162,80 +259,148 @@ export function OptionResourceTemplatesPanel({
   const isExtendedKind = !matchingCommon && kindValue.trim().length > 0
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-        <div className="space-y-1">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Bed className="size-4 text-muted-foreground" aria-hidden="true" />
-            {t.title}
-          </CardTitle>
-          <CardDescription>{t.description}</CardDescription>
-        </div>
-        <Button size="sm" onClick={openCreate}>
-          <Plus className="mr-1 size-4" aria-hidden="true" />
-          {t.addButton}
-        </Button>
-      </CardHeader>
-      <CardContent className="p-0">
-        {isPending ? (
-          <p className="flex items-center justify-center gap-2 px-6 py-6 text-muted-foreground text-sm">
-            <Loader2 className="size-3.5 animate-spin" />
-          </p>
-        ) : isError ? (
-          <p className="px-6 py-6 text-center text-destructive text-sm">{t.loadFailed}</p>
-        ) : templates.length === 0 ? (
-          <p className="px-6 py-6 text-center text-muted-foreground text-sm">{t.emptyMessage}</p>
-        ) : (
-          <ul className="divide-y">
-            {templates.map((template) => (
-              <li key={template.kind} className="flex items-center justify-between gap-3 px-6 py-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-[10px] uppercase">
-                      {template.kind}
-                    </Badge>
-                    <span className="text-sm">
-                      {formatMessage(t.capacitySummary, {
-                        capacity: template.capacity,
-                        pattern: template.namePattern,
-                      })}
-                    </span>
-                    {template.kind === "vehicle_seat" ? (
-                      <SeatMapSummaryBadge flags={template.flags} messages={t} />
-                    ) : null}
-                  </div>
-                </div>
-                <div className="flex items-center gap-1">
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <div className="rounded-md border bg-background/60">
+        <CollapsibleTrigger className="flex w-full items-center gap-2 px-3 py-2.5 text-left">
+          <Bed className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <span className="font-medium text-sm">{t.title}</span>
+          <Badge variant="secondary" className="font-normal">
+            {templates.length === 0
+              ? t.collapsedEmpty
+              : formatMessage(t.collapsedSummary, {
+                  count: templates.length,
+                  total: totalPerDeparture,
+                })}
+          </Badge>
+          <span className="flex-1" />
+          {open ? (
+            <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          ) : (
+            <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          )}
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="flex flex-col gap-3 border-t p-3">
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-muted-foreground text-xs">{t.description}</p>
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                {templates.length > 0 ? (
                   <Button
                     size="sm"
-                    variant="ghost"
-                    className="h-7 px-2"
-                    onClick={() =>
-                      openEdit({
-                        kind: template.kind,
-                        capacity: template.capacity,
-                        namePattern: template.namePattern,
-                        flags: template.flags,
-                      })
-                    }
+                    variant="outline"
+                    onClick={() => void applyToOpenDepartures()}
+                    disabled={materializeOpenSlots.isPending}
                   >
-                    <Pencil className="size-3.5" aria-hidden="true" />
+                    <CalendarCheck className="mr-1 size-4" aria-hidden="true" />
+                    {t.applyToOpenButton}
                   </Button>
+                ) : null}
+                {roomUnits.length > 0 ? (
                   <Button
                     size="sm"
-                    variant="ghost"
-                    className="h-7 px-2 text-destructive hover:text-destructive"
-                    onClick={() => void handleRemove(template.kind)}
-                    disabled={remove.isPending}
+                    variant="outline"
+                    onClick={() => void generateFromRooms()}
+                    disabled={upsert.isPending}
                   >
-                    <Trash2 className="size-3.5" aria-hidden="true" />
+                    <Sparkles className="mr-1 size-4" aria-hidden="true" />
+                    {t.generateFromRooms}
                   </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
+                ) : null}
+                <Button size="sm" variant="outline" onClick={openCreate}>
+                  <Plus className="mr-1 size-4" aria-hidden="true" />
+                  {t.addButton}
+                </Button>
+              </div>
+            </div>
+            {applyResult ? (
+              <p className="rounded-md bg-muted/50 px-3 py-2 text-muted-foreground text-xs">
+                {applyResult}
+              </p>
+            ) : null}
+            {error ? <p className="text-destructive text-xs">{error}</p> : null}
+            {isPending ? (
+              <p className="flex items-center justify-center gap-2 py-4 text-muted-foreground text-sm">
+                <Loader2 className="size-3.5 animate-spin" />
+              </p>
+            ) : isError ? (
+              <p className="py-4 text-center text-destructive text-sm">{t.loadFailed}</p>
+            ) : templates.length === 0 ? (
+              <p className="rounded-md border border-dashed px-3 py-4 text-center text-muted-foreground text-xs">
+                {roomUnits.length > 0 ? t.generateFromRoomsHint : t.emptyMessage}
+              </p>
+            ) : (
+              <ul className="divide-y overflow-hidden rounded-md border">
+                {templates.map((template) => {
+                  const kindLabel =
+                    (t.kinds as Record<string, string>)[template.kind] ?? template.kind
+                  // Several "room" templates share a kind but map to different
+                  // option_units — surface the unit name so the operator can
+                  // tell Single / Double / Triple rows apart.
+                  const unit = template.refId
+                    ? roomUnits.find((entry) => entry.id === template.refId)
+                    : undefined
+                  const displayLabel = unit?.name ?? kindLabel
+                  return (
+                    <li
+                      key={template.id}
+                      className="flex items-center justify-between gap-3 px-3 py-2.5"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-[10px]">
+                            {displayLabel}
+                          </Badge>
+                          <span className="text-sm">
+                            {formatMessage(t.capacitySummary, {
+                              capacity: template.capacity,
+                              count: template.defaultCount ?? 0,
+                              pattern: template.namePattern,
+                            })}
+                          </span>
+                          {template.kind === "vehicle_seat" ? (
+                            <SeatMapSummaryBadge flags={template.flags} messages={t} />
+                          ) : null}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2"
+                          onClick={() =>
+                            openEdit({
+                              kind: template.kind,
+                              refType: template.refType,
+                              refId: template.refId,
+                              capacity: template.capacity,
+                              defaultCount: template.defaultCount,
+                              namePattern: template.namePattern,
+                              flags: template.flags,
+                            })
+                          }
+                        >
+                          <Pencil className="size-3.5" aria-hidden="true" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-destructive hover:text-destructive"
+                          onClick={() =>
+                            void handleRemove(template.kind, template.refId, displayLabel)
+                          }
+                          disabled={remove.isPending}
+                        >
+                          <Trash2 className="size-3.5" aria-hidden="true" />
+                        </Button>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
+        </CollapsibleContent>
+      </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
@@ -339,6 +504,17 @@ export function OptionResourceTemplatesPanel({
                 ) : null}
               </div>
               <div className="grid gap-1.5">
+                <Label htmlFor="resource-template-count">{t.defaultCountLabel}</Label>
+                <Input
+                  id="resource-template-count"
+                  type="number"
+                  min={0}
+                  value={defaultCountValue}
+                  onChange={(event) => setDefaultCountValue(Number(event.target.value) || 0)}
+                />
+                <p className="text-muted-foreground text-xs">{t.defaultCountHint}</p>
+              </div>
+              <div className="grid gap-1.5">
                 <Label htmlFor="resource-template-pattern">{t.namePatternLabel}</Label>
                 <Input
                   id="resource-template-pattern"
@@ -391,7 +567,7 @@ export function OptionResourceTemplatesPanel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </Collapsible>
   )
 }
 

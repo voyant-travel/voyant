@@ -26,7 +26,9 @@ function makeProjectionEntries(count: number): CruiseSearchProjectionEntry[] {
       shipExternalId: "ms-sample",
       nights: 7,
       embarkPortName: "Athens",
+      embarkPortFacilityId: "port-facility:GRATH",
       disembarkPortName: "Athens",
+      disembarkPortFacilityId: "port-facility:GRATH",
       regionIds: ["region:mediterranean"],
       waterwayIds: ["sea:aegean"],
       portIds: ["port:GRATH"],
@@ -36,6 +38,9 @@ function makeProjectionEntries(count: number): CruiseSearchProjectionEntry[] {
       ports: ["Athens"],
       countries: ["Greece"],
       themes: ["Cultural"],
+      departureCount: 1,
+      lowestPriceCents: 349900,
+      lowestPriceCurrency: "EUR",
       heroImageUrl: `https://cdn/c${i}.jpg`,
       salesStatus: "open",
     })
@@ -69,6 +74,9 @@ function makeStubAdapter(overrides: Partial<CruiseAdapter> = {}): CruiseAdapter 
     deckCount: 12,
     yearBuilt: 2020,
     description: "A sample ship.",
+    deckPlanUrl: "https://cdn/ship-deck-plan.pdf",
+    gallery: ["https://cdn/ship.jpg"],
+    decks: [{ name: "Upper Deck", level: 3, planImageUrl: "https://cdn/deck-3.jpg" }],
     categories: [
       {
         sourceRef: { externalId: "cab-inside", connectionId: "conn-x" },
@@ -77,7 +85,12 @@ function makeStubAdapter(overrides: Partial<CruiseAdapter> = {}): CruiseAdapter 
         roomType: "inside",
         minOccupancy: 1,
         maxOccupancy: 2,
+        squareFeet: "170",
+        wheelchairAccessible: true,
         amenities: ["Wi-Fi"],
+        images: ["https://cdn/cabin.jpg"],
+        floorplanImages: ["https://cdn/cabin-plan.jpg"],
+        gradeCodes: ["IN1", "IN2"],
       },
     ],
   }
@@ -200,9 +213,15 @@ describe("cruiseAdapterToSourceAdapter.discover", () => {
     expect(page.projections[0]?.fields.nights).toBe(7)
     expect(page.projections[0]?.fields.lineSupplierId).toBe("sample-line")
     expect(page.projections[0]?.fields.defaultShipId).toBe("ms-sample")
+    expect(page.projections[0]?.fields.embarkPortFacilityId).toBe("port-facility:GRATH")
+    expect(page.projections[0]?.fields.disembarkPortFacilityId).toBe("port-facility:GRATH")
     expect(page.projections[0]?.fields.heroImageUrl).toBe("https://cdn/c0.jpg")
     expect(page.projections[0]?.fields.thumbnailUrl).toBe("https://cdn/c0.jpg")
     expect(page.projections[0]?.fields.status).toBe("open")
+    expect(page.projections[0]?.fields.lowestPriceCached).toBe(349900)
+    expect(page.projections[0]?.fields.lowestPriceCurrencyCached).toBe("EUR")
+    expect(page.projections[0]?.fields.lowestPriceUnit).toBe("minor")
+    expect(page.projections[0]?.fields.departureCount).toBe(1)
     expect(page.projections[0]?.fields["source.kind"]).toBe("cruise:stub")
     expect(page.projections[0]?.fields.region_ids).toEqual(["region:mediterranean"])
     expect(page.projections[0]?.fields.waterway_ids).toEqual(["sea:aegean"])
@@ -243,6 +262,8 @@ describe("cruiseAdapterToSourceAdapter.discover", () => {
     expect(doc.fields.thumbnailUrl).toBe("https://cdn/c0.jpg")
     expect(doc.fields.lineSupplierId).toBe("sample-line")
     expect(doc.fields.defaultShipId).toBe("ms-sample")
+    expect(doc.fields.embarkPortFacilityId).toBe("port-facility:GRATH")
+    expect(doc.fields.disembarkPortFacilityId).toBe("port-facility:GRATH")
   })
 
   it("emits a cursor when more pages exist", async () => {
@@ -320,6 +341,11 @@ describe("cruiseAdapterToSourceAdapter.getContent", () => {
     expect(content.cruise.duration_nights).toBe(7)
     expect(content.ship?.name).toBe("MS Sample")
     expect(content.ship?.capacity).toBe(1200)
+    expect(content.ship?.deck_plan_url).toBe("https://cdn/ship-deck-plan.pdf")
+    expect(content.ship?.deck_plans).toEqual([
+      { name: "Upper Deck", level: 3, image_url: "https://cdn/deck-3.jpg" },
+    ])
+    expect(content.ship?.gallery).toEqual(["https://cdn/ship.jpg"])
     expect(content.sailings).toHaveLength(1)
     expect(content.sailings[0].duration_nights).toBe(7)
     expect(content.sailings[0].lowest_price_cents).toBe(349900)
@@ -330,6 +356,11 @@ describe("cruiseAdapterToSourceAdapter.getContent", () => {
     ])
     expect(content.cabin_categories).toHaveLength(1)
     expect(content.cabin_categories[0].type).toBe("inside")
+    expect(content.cabin_categories[0].images).toEqual(["https://cdn/cabin.jpg"])
+    expect(content.cabin_categories[0].floorplan_images).toEqual(["https://cdn/cabin-plan.jpg"])
+    expect(content.cabin_categories[0].square_feet).toBe("170")
+    expect(content.cabin_categories[0].grade_codes).toEqual(["IN1", "IN2"])
+    expect(content.cabin_categories[0].wheelchair_accessible).toBe(true)
     expect(content.itinerary_stops).toEqual([])
     // Inclusions / exclusions HTML lands in supplier_notes.
     expect(

@@ -5,10 +5,19 @@ import { type CatalogSearchHit, useCatalogSearch } from "@voyantjs/catalog-react
 import { Button } from "@voyantjs/ui/components/button"
 import { DataTable } from "@voyantjs/ui/components/data-table"
 import { Input } from "@voyantjs/ui/components/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@voyantjs/ui/components/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@voyantjs/ui/components/tabs"
-import { ChevronLeft, ChevronRight, Search, X } from "lucide-react"
+import { ToggleGroup, ToggleGroupItem } from "@voyantjs/ui/components/toggle-group"
+import { ChevronLeft, ChevronRight, LayoutGrid, List, Search } from "lucide-react"
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
+import { CatalogCard, type CatalogCardConfig } from "./catalog-card.js"
 import {
   type CatalogDetailAction,
   type CatalogDetailEnrichment,
@@ -16,8 +25,20 @@ import {
   CatalogDetailSheet,
   type CatalogDetailSheetProps,
 } from "./catalog-detail-sheet.js"
-import { CatalogFacetedFilter } from "./catalog-faceted-filter.js"
-import { CatalogRangeFilter, type CatalogRangeFilterValue } from "./catalog-range-filter.js"
+import { CatalogFilterRail } from "./catalog-filter-rail.js"
+import type { CatalogRangeFilterValue } from "./catalog-range-filter.js"
+
+/**
+ * Result sort options. Mirrors `CatalogSearchSort` from `@voyantjs/catalog-react`
+ * (not re-exported there, so kept as a literal union here). The shell maps the
+ * selection straight onto the search request's `sort`.
+ */
+export type CatalogSortOption =
+  | "relevance"
+  | "price-asc"
+  | "price-desc"
+  | "departure-asc"
+  | "newest"
 
 /**
  * Declares a filter on a tab. Two kinds:
@@ -43,6 +64,13 @@ export interface CatalogFacetFilterField {
    * value as a string by default.
    */
   formatValue?: (value: string | number) => string
+  /**
+   * How to order the facet buckets. Default `"count"` keeps the index's
+   * descending-by-count order. `"value-desc"`/`"value-asc"` sort by the bucket
+   * value numerically when possible (e.g. star ratings 5 → 0), else
+   * lexicographically.
+   */
+  sortValues?: "count" | "value-desc" | "value-asc"
 }
 
 export interface CatalogRangeFilterField {
@@ -70,6 +98,13 @@ export interface CatalogSearchTab {
   /** The catalog vertical to query — mapped to the slice's `vertical`. */
   vertical: string
   /**
+   * Optional row/card open override. When set, clicking a result calls this
+   * instead of opening the in-page detail sheet — use it to route to a
+   * full, URL-addressable detail page (e.g. open in a new tab). Verticals
+   * without a dedicated detail page omit it and keep the sheet.
+   */
+  onOpenDetail?: (hit: CatalogSearchHit) => void
+  /**
    * Per-tab column definitions for the results data table. Each column
    * receives the full `CatalogSearchHit` and projects whatever fields the
    * vertical's indexer document carries.
@@ -92,6 +127,18 @@ export interface CatalogSearchTab {
    * to `thumbnailUrl`. Cruises / charters use `heroImageUrl`.
    */
   imageField?: string
+  /**
+   * Optional merchandising-card mapping. When set, the tab gains a grid
+   * (card) view alongside the table, and the grid/list toggle appears. The
+   * card projects indexed fields only (no extra fetch) — see `CatalogCard`.
+   */
+  card?: CatalogCardConfig
+  /**
+   * Non-relevance sort options to offer for this tab. `relevance` is always
+   * first. Defaults to `["price-asc","price-desc","newest"]` when the card
+   * declares a price field, else `["newest"]`.
+   */
+  sorts?: CatalogSortOption[]
   /**
    * Optional per-field formatters used by the detail sheet to render
    * human-readable values (e.g. resolve `lineSupplierId` → supplier name).
@@ -150,11 +197,15 @@ export interface CatalogSearchTab {
   ) => void
 }
 
+// Grid cards are bigger, so show fewer per page; the dense list view shows more
+// (the `pageSize` prop is the list size).
+const GRID_PAGE_SIZE = 15
+
 export interface CatalogSearchPageProps {
   tabs: CatalogSearchTab[]
   /** Default tab id; falls back to the first tab. */
   defaultTab?: string
-  /** Items per page, mapped to `pagination.limit`. Default `20`. */
+  /** Items per page in the list view (grid view uses a smaller fixed size). Default `40`. */
   pageSize?: number
   /**
    * Optional title above the search bar. Templates that use TanStack
@@ -164,6 +215,11 @@ export interface CatalogSearchPageProps {
   title?: ReactNode
   /** Placeholder text for the search input. */
   searchPlaceholder?: string
+  /**
+   * Hide the built-in search input. Use when an embedding surface provides its
+   * own unified search box and drives `query`/`onQueryChange` externally.
+   */
+  hideSearchInput?: boolean
   /** Debounce on keystrokes, milliseconds. Default 200. */
   queryDebounceMs?: number
   /**
@@ -173,12 +229,23 @@ export interface CatalogSearchPageProps {
    */
   activeTab?: string
   onActiveTabChange?: (tabId: string) => void
+  /** Hide the tab switcher when the parent route already selects one vertical. */
+  showTabs?: boolean
   /** Controlled query string (already debounced if you want to skip the debounce here). */
   query?: string
   onQueryChange?: (q: string) => void
   /** Controlled current page (1-indexed) for the active tab. */
   page?: number
   onPageChange?: (page: number) => void
+  /** Controlled grid/list view mode (e.g. URL-persisted). Uncontrolled when omitted. */
+  view?: "grid" | "list"
+  onViewChange?: (view: "grid" | "list") => void
+  /** Controlled sort option (e.g. URL-persisted). Uncontrolled when omitted. */
+  sort?: CatalogSortOption
+  onSortChange?: (sort: CatalogSortOption) => void
+  /** Controlled filter selections (e.g. URL-persisted). Uncontrolled when omitted. */
+  filters?: CatalogFilterSelections
+  onFiltersChange?: (filters: CatalogFilterSelections) => void
   /** Catalog slice market override. */
   market?: string
   /** Catalog slice locale override. */
@@ -216,16 +283,24 @@ export interface CatalogSearchPageProps {
 export function CatalogSearchPage({
   tabs,
   defaultTab,
-  pageSize = 20,
+  pageSize = 40,
   title,
   searchPlaceholder,
+  hideSearchInput = false,
   queryDebounceMs = 200,
   activeTab: activeTabProp,
   onActiveTabChange,
+  showTabs = true,
   query: queryProp,
   onQueryChange,
   page: pageProp,
   onPageChange,
+  view,
+  onViewChange,
+  sort,
+  onSortChange,
+  filters,
+  onFiltersChange,
   market,
   locale,
   toolbarEnd,
@@ -287,55 +362,76 @@ export function CatalogSearchPage({
     )
   }
 
+  const activeTabConfig = tabs.find((tab) => tab.id === activeTab) ?? (tabs[0] as CatalogSearchTab)
+  const shouldRenderTabs = showTabs && tabs.length > 1
+  const renderTabBody = (tab: CatalogSearchTab) => (
+    <>
+      {/* The search box lives inside each vertical body — it queries that
+          vertical index, so it belongs with the vertical, not the page. An
+          embedding surface can hide it and drive `query` externally. */}
+      {!hideSearchInput && (
+        <div className="relative max-w-xl">
+          <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            value={rawQuery}
+            onChange={(e) => setInternalRawQuery(e.target.value)}
+            placeholder={resolvedSearchPlaceholder}
+            className="pl-9"
+          />
+        </div>
+      )}
+      <CatalogTabPanel
+        tab={tab}
+        query={debouncedQuery}
+        market={market}
+        locale={locale}
+        pageSize={pageSize}
+        page={tab.id === activeTab ? pageProp : undefined}
+        onPageChange={tab.id === activeTab ? onPageChange : undefined}
+        view={view}
+        onViewChange={onViewChange}
+        sort={sort}
+        onSortChange={onSortChange}
+        filters={filters}
+        onFiltersChange={onFiltersChange}
+        detailSheetWidth={detailSheetWidth}
+        detailHeaderExtras={detailHeaderExtras}
+        renderDetailBrochure={renderDetailBrochure}
+        renderDetailMedia={renderDetailMedia}
+        renderDetailItineraryDay={renderDetailItineraryDay}
+        renderDetailExtraSections={renderDetailExtraSections}
+        renderSupplierLink={renderSupplierLink}
+        onTagsChange={onTagsChange}
+        messages={messages}
+      />
+    </>
+  )
+
   return (
     <div className="flex flex-col gap-4">
       {title}
       {toolbarEnd ? (
         <div className="flex flex-wrap items-center justify-end gap-2">{toolbarEnd}</div>
       ) : null}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+      {shouldRenderTabs ? (
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            {tabs.map((tab) => (
+              <TabsTrigger key={tab.id} value={tab.id}>
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
           {tabs.map((tab) => (
-            <TabsTrigger key={tab.id} value={tab.id}>
-              {tab.label}
-            </TabsTrigger>
+            <TabsContent key={tab.id} value={tab.id} className="mt-4 flex flex-col gap-4">
+              {renderTabBody(tab)}
+            </TabsContent>
           ))}
-        </TabsList>
-        {tabs.map((tab) => (
-          <TabsContent key={tab.id} value={tab.id} className="mt-4 flex flex-col gap-4">
-            {/* The search box lives inside each tab — it queries that tab's
-                vertical index, so it belongs with the vertical, not the page. */}
-            <div className="relative max-w-xl">
-              <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                value={rawQuery}
-                onChange={(e) => setInternalRawQuery(e.target.value)}
-                placeholder={resolvedSearchPlaceholder}
-                className="pl-9"
-              />
-            </div>
-            <CatalogTabPanel
-              tab={tab}
-              query={debouncedQuery}
-              market={market}
-              locale={locale}
-              pageSize={pageSize}
-              page={tab.id === activeTab ? pageProp : undefined}
-              onPageChange={tab.id === activeTab ? onPageChange : undefined}
-              detailSheetWidth={detailSheetWidth}
-              detailHeaderExtras={detailHeaderExtras}
-              renderDetailBrochure={renderDetailBrochure}
-              renderDetailMedia={renderDetailMedia}
-              renderDetailItineraryDay={renderDetailItineraryDay}
-              renderDetailExtraSections={renderDetailExtraSections}
-              renderSupplierLink={renderSupplierLink}
-              onTagsChange={onTagsChange}
-              messages={messages}
-            />
-          </TabsContent>
-        ))}
-      </Tabs>
+        </Tabs>
+      ) : (
+        <div className="flex flex-col gap-4">{renderTabBody(activeTabConfig)}</div>
+      )}
     </div>
   )
 }
@@ -349,6 +445,13 @@ interface CatalogTabPanelProps {
   /** Controlled page (1-indexed). Falls back to internal state when omitted. */
   page?: number
   onPageChange?: (page: number) => void
+  /** Controlled view mode / sort / filters. Fall back to internal state when omitted. */
+  view?: "grid" | "list"
+  onViewChange?: (view: "grid" | "list") => void
+  sort?: CatalogSortOption
+  onSortChange?: (sort: CatalogSortOption) => void
+  filters?: CatalogFilterSelections
+  onFiltersChange?: (filters: CatalogFilterSelections) => void
   detailSheetWidth?: CatalogDetailSheetProps["width"]
   detailHeaderExtras?: CatalogDetailSheetProps["headerExtras"]
   renderDetailBrochure?: CatalogDetailRenderSlot
@@ -372,6 +475,16 @@ interface FilterSelections {
 
 const EMPTY_SELECTIONS: FilterSelections = { facets: {}, ranges: {} }
 
+/**
+ * Public (controlled) filter-selection shape. Both maps are optional so
+ * callers persisting to URL state can omit empties; the panel normalizes to
+ * `FilterSelections` internally.
+ */
+export interface CatalogFilterSelections {
+  facets?: Record<string, Array<string | number>>
+  ranges?: Record<string, CatalogRangeFilterValue>
+}
+
 function CatalogTabPanel({
   tab,
   query,
@@ -380,6 +493,12 @@ function CatalogTabPanel({
   pageSize,
   page: pageProp,
   onPageChange,
+  view: viewProp,
+  onViewChange,
+  sort: sortProp,
+  onSortChange,
+  filters: filtersProp,
+  onFiltersChange,
   detailSheetWidth,
   detailHeaderExtras,
   renderDetailBrochure,
@@ -390,7 +509,24 @@ function CatalogTabPanel({
   onTagsChange,
   messages,
 }: CatalogTabPanelProps) {
-  const [selections, setSelections] = useState<FilterSelections>(EMPTY_SELECTIONS)
+  // Filter selections can be controlled (URL-persisted) by the page, else
+  // internal. `setSelections` keeps the value-or-updater signature so the
+  // existing call sites work for both modes.
+  const [internalSelections, setInternalSelections] = useState<FilterSelections>(EMPTY_SELECTIONS)
+  const selections = useMemo<FilterSelections>(
+    () =>
+      filtersProp
+        ? { facets: filtersProp.facets ?? {}, ranges: filtersProp.ranges ?? {} }
+        : internalSelections,
+    [filtersProp, internalSelections],
+  )
+  const setSelections = (
+    next: FilterSelections | ((prev: FilterSelections) => FilterSelections),
+  ) => {
+    const resolved = typeof next === "function" ? next(selections) : next
+    onFiltersChange?.(resolved)
+    if (filtersProp == null) setInternalSelections(resolved)
+  }
   const [internalPage, setInternalPage] = useState(1)
   const page = pageProp ?? internalPage
   const setPage = (next: number) => {
@@ -398,12 +534,27 @@ function CatalogTabPanel({
     if (pageProp == null) setInternalPage(next)
   }
   const [openHit, setOpenHit] = useState<CatalogSearchHit | null>(null)
+  // View + sort can be controlled (URL-persisted) by the page, else internal.
+  const [internalView, setInternalView] = useState<"grid" | "list">(tab.card ? "grid" : "list")
+  const viewMode = viewProp ?? internalView
+  const setViewMode = (next: "grid" | "list") => {
+    onViewChange?.(next)
+    if (viewProp == null) setInternalView(next)
+  }
+  // Grid shows fewer (bigger cards), list shows more (dense rows).
+  const effectivePageSize = viewMode === "grid" ? GRID_PAGE_SIZE : pageSize
+  const [internalSort, setInternalSort] = useState<CatalogSortOption>("relevance")
+  const sort = sortProp ?? internalSort
+  const setSort = (next: CatalogSortOption) => {
+    onSortChange?.(next)
+    if (sortProp == null) setInternalSort(next)
+  }
 
-  // Reset page when query / filters change. Keeps "Next" honest.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: tab.id / query / selections / scope all reset page intentionally
+  // Reset page when query / filters / sort change. Keeps "Next" honest.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: tab.id / query / selections / sort / scope all reset page intentionally
   useEffect(() => {
     setPage(1)
-  }, [tab.id, query, selections, market, locale])
+  }, [tab.id, query, selections, sort, market, locale, viewMode])
 
   const filters = useMemo(() => buildFilters(selections), [selections])
   const facetRequests = useMemo(
@@ -418,7 +569,7 @@ function CatalogTabPanel({
   // "use the best mode this deployment supports." Operators with embeddings
   // configured get vector + keyword fusion; those without silently get pure
   // keyword. The end user shouldn't have to think about it.
-  const { data, isLoading, error } = useCatalogSearch({
+  const { data, isLoading, isFetching, isPlaceholderData, error } = useCatalogSearch({
     vertical: tab.vertical,
     query,
     mode: "hybrid",
@@ -426,13 +577,27 @@ function CatalogTabPanel({
     locale,
     filters,
     facets: facetRequests,
-    pagination: { limit: pageSize, cursor: page > 1 ? String(page) : undefined },
+    sort,
+    pagination: { limit: effectivePageSize, cursor: page > 1 ? String(page) : undefined },
   })
 
   const total = data?.total ?? 0
-  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const totalPages = Math.max(1, Math.ceil(total / effectivePageSize))
   const facetGroups = data?.facets ?? {}
   const hits = data?.hits ?? []
+
+  const sortOptions = useMemo<CatalogSortOption[]>(() => {
+    const opts: CatalogSortOption[] = ["relevance"]
+    if (tab.sorts) {
+      opts.push(...tab.sorts)
+    } else {
+      if (tab.card?.priceAmountField) opts.push("price-asc", "price-desc")
+      opts.push("newest")
+    }
+    return opts
+  }, [tab.sorts, tab.card])
+  const sortItems = sortOptions.map((value) => ({ value, label: sortLabel(value, messages) }))
+  const cardConfig = tab.card
 
   if (error) {
     const message = error instanceof Error ? error.message : String(error)
@@ -456,118 +621,156 @@ function CatalogTabPanel({
 
   return (
     <div className="flex flex-col gap-3">
-      {visibleFilterFields.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          {visibleFilterFields.map((f) => {
-            if ((f.kind ?? "facet") === "range") {
-              const range = f as CatalogRangeFilterField
-              return (
-                <CatalogRangeFilter
-                  key={range.field}
-                  field={range.field}
-                  label={range.label}
-                  value={selections.ranges[range.field]}
-                  onChange={(next) => setSelections((prev) => setRange(prev, range.field, next))}
-                  step={range.step}
-                  minPlaceholder={range.minPlaceholder}
-                  maxPlaceholder={range.maxPlaceholder}
-                  format={range.format}
-                  currency={range.currency}
-                />
-              )
-            }
-            const facet = f as CatalogFacetFilterField
-            return (
-              <CatalogFacetedFilter
-                key={facet.field}
-                field={facet.field}
-                label={facet.label}
-                buckets={facetGroups[facet.field] ?? []}
-                selected={selections.facets[facet.field] ?? []}
-                formatValue={facet.formatValue}
-                onToggle={(value) => setSelections((prev) => toggleFacet(prev, facet.field, value))}
-                onClear={() => setSelections((prev) => clearFacet(prev, facet.field))}
-              />
-            )
-          })}
-          {hasSelections && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSelections(EMPTY_SELECTIONS)}
-              className="h-8 px-2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="mr-1 h-3.5 w-3.5" />
-              {messages.search.clearAll}
-            </Button>
-          )}
-        </div>
-      )}
-
-      {isLoading ? (
-        <div className="rounded-md border">
-          <div className="h-12 animate-pulse border-b bg-muted/40" />
-          {Array.from({ length: 5 }).map((_, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholder
-            <div key={i} className="h-12 animate-pulse border-b bg-muted/20 last:border-b-0" />
-          ))}
-        </div>
-      ) : hits.length === 0 ? (
-        (tab.emptyState ?? (
-          <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-            {formatTemplate(messages.search.noResults, {
-              query: query ? `"${query}"` : messages.search.yourFilters,
-              tab: tab.label.toLowerCase(),
-            })}
-          </div>
-        ))
-      ) : (
-        <>
-          <div className="text-muted-foreground text-sm">
-            {total} {total === 1 ? messages.search.resultSingular : messages.search.resultPlural}
-          </div>
-          <DataTable
-            columns={tab.columns}
-            data={hits}
-            getRowId={(row) => row.id}
-            onRowClick={(row) => setOpenHit(row.original)}
-            showPagination={false}
-            pageSize={pageSize}
-          />
-          {totalPages > 1 && (
-            <div className="mt-1 flex items-center justify-between gap-2">
-              <span className="text-muted-foreground text-sm">
-                {formatTemplate(messages.search.showing, {
-                  from: (page - 1) * pageSize + 1,
-                  to: Math.min(page * pageSize, total),
-                  total,
-                })}
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(Math.max(1, page - 1))}
-                  disabled={page <= 1}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+        {visibleFilterFields.length > 0 && (
+          <aside className="lg:w-60 lg:shrink-0">
+            <CatalogFilterRail
+              fields={visibleFilterFields}
+              facetGroups={facetGroups}
+              selectedFacets={selections.facets}
+              selectedRanges={selections.ranges}
+              onToggleFacet={(field, value) =>
+                setSelections((prev) => toggleFacet(prev, field, value))
+              }
+              onClearFacet={(field) => setSelections((prev) => clearFacet(prev, field))}
+              onSetRange={(field, next) => setSelections((prev) => setRange(prev, field, next))}
+              onClearAll={() => setSelections(EMPTY_SELECTIONS)}
+              hasSelections={hasSelections}
+            />
+          </aside>
+        )}
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-muted-foreground text-sm">
+              {isLoading
+                ? null
+                : `${total} ${total === 1 ? messages.search.resultSingular : messages.search.resultPlural}`}
+            </span>
+            <div className="flex items-center gap-2">
+              <Select
+                items={sortItems}
+                value={sort}
+                onValueChange={(value) => setSort(value as CatalogSortOption)}
+              >
+                <SelectTrigger
+                  className="h-9 w-[190px] rounded-md data-[size=default]:h-9"
+                  aria-label={messages.view.sort}
                 >
-                  <ChevronLeft className="mr-1 h-4 w-4" /> {messages.search.previous}
-                </Button>
-                <span className="text-muted-foreground text-sm">
-                  {formatTemplate(messages.search.page, { page, totalPages })}
-                </span>
-                <Button
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortItems.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {cardConfig && (
+                <ToggleGroup
+                  value={[viewMode]}
+                  onValueChange={(values) => {
+                    const next = values[values.length - 1]
+                    if (next === "grid" || next === "list") setViewMode(next)
+                  }}
                   variant="outline"
-                  size="sm"
-                  onClick={() => setPage(Math.min(totalPages, page + 1))}
-                  disabled={page >= totalPages}
+                  aria-label={messages.view.filters}
                 >
-                  {messages.search.next} <ChevronRight className="ml-1 h-4 w-4" />
-                </Button>
-              </div>
+                  <ToggleGroupItem value="grid" aria-label={messages.view.grid}>
+                    <LayoutGrid className="size-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="list" aria-label={messages.view.list}>
+                    <List className="size-4" />
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              )}
             </div>
+          </div>
+
+          {isLoading ? (
+            <ResultsSkeleton
+              grid={viewMode === "grid" && Boolean(cardConfig)}
+              count={effectivePageSize}
+            />
+          ) : (
+            <>
+              {/* Keep results mounted while a new query loads (paging/filtering)
+                  and just dim them — no skeleton flash, no layout shift. */}
+              <div
+                aria-busy={isFetching}
+                className={`transition-opacity duration-150 ${
+                  isFetching && isPlaceholderData ? "pointer-events-none opacity-60" : ""
+                }`}
+              >
+                {hits.length === 0 ? (
+                  (tab.emptyState ?? (
+                    <div className="rounded-md border border-dashed p-6 text-center text-muted-foreground text-sm">
+                      {formatTemplate(messages.search.noResults, {
+                        query: query ? `"${query}"` : messages.search.yourFilters,
+                        tab: tab.label.toLowerCase(),
+                      })}
+                    </div>
+                  ))
+                ) : viewMode === "grid" && cardConfig ? (
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {hits.map((hit) => (
+                      <CatalogCard
+                        key={hit.id}
+                        hit={hit}
+                        config={cardConfig}
+                        imageFallbackField={tab.imageField}
+                        fallbackTitle={messages.fallbacks.detailName}
+                        onOpen={tab.onOpenDetail ?? setOpenHit}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <DataTable
+                    columns={tab.columns}
+                    data={hits}
+                    getRowId={(row) => row.id}
+                    onRowClick={(row) => (tab.onOpenDetail ?? setOpenHit)(row.original)}
+                    showPagination={false}
+                    pageSize={effectivePageSize}
+                  />
+                )}
+              </div>
+              {totalPages > 1 && (
+                <div className="mt-1 flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground text-sm">
+                    {formatTemplate(messages.search.showing, {
+                      from: (page - 1) * effectivePageSize + 1,
+                      to: Math.min(page * effectivePageSize, total),
+                      total,
+                    })}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(Math.max(1, page - 1))}
+                      disabled={page <= 1}
+                    >
+                      <ChevronLeft className="mr-1 h-4 w-4" /> {messages.search.previous}
+                    </Button>
+                    <span className="text-muted-foreground text-sm">
+                      {formatTemplate(messages.search.page, { page, totalPages })}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(Math.min(totalPages, page + 1))}
+                      disabled={page >= totalPages}
+                    >
+                      {messages.search.next} <ChevronRight className="ml-1 h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
-        </>
-      )}
+        </div>
+      </div>
       <CatalogDetailSheet
         hit={openHit}
         onOpenChange={(open) => {
@@ -651,4 +854,50 @@ function formatTemplate(template: string, values: Record<string, string | number
     const value = values[key]
     return value === undefined ? "" : String(value)
   })
+}
+
+function sortLabel(option: CatalogSortOption, messages: CatalogTabPanelProps["messages"]): string {
+  switch (option) {
+    case "price-asc":
+      return messages.view.sortPriceAsc
+    case "price-desc":
+      return messages.view.sortPriceDesc
+    case "departure-asc":
+      return messages.view.sortSoonest
+    case "newest":
+      return messages.view.sortNewest
+    default:
+      return messages.view.sortRelevance
+  }
+}
+
+function ResultsSkeleton({ grid, count = 12 }: { grid: boolean; count?: number }) {
+  // Match the real layout + roughly the page size so the first load doesn't
+  // jump when results arrive. Cap grid cards so the skeleton isn't absurdly tall.
+  if (grid) {
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: Math.min(count, 15) }).map((_, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholder
+          <div key={i} className="overflow-hidden rounded-lg border">
+            <div className="aspect-[4/3] w-full animate-pulse bg-muted/40" />
+            <div className="flex flex-col gap-2 p-3">
+              <div className="h-4 w-3/4 animate-pulse rounded bg-muted/40" />
+              <div className="h-3 w-1/2 animate-pulse rounded bg-muted/20" />
+              <div className="h-3 w-1/3 animate-pulse rounded bg-muted/20" />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+  return (
+    <div className="overflow-hidden rounded-md border">
+      <div className="h-12 animate-pulse border-b bg-muted/40" />
+      {Array.from({ length: Math.min(count, 40) }).map((_, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholder
+        <div key={i} className="h-14 animate-pulse border-b bg-muted/20 last:border-b-0" />
+      ))}
+    </div>
+  )
 }

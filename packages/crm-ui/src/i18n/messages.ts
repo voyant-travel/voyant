@@ -310,9 +310,20 @@ export type CrmUiMessages = {
   organizationDetail: {
     topBar: {
       organizations: string
+      merge: string
       delete: string
       deleteTitle: string
       deleteDescription: string
+    }
+    mergeDialog: {
+      title: string
+      description: string
+      keepLabel: string
+      mergeLabel: string
+      placeholder: string
+      empty: string
+      selfError: string
+      action: string
     }
     sidebar: {
       about: string
@@ -367,9 +378,20 @@ export type CrmUiMessages = {
     topBar: {
       people: string
       edit: string
+      merge: string
       delete: string
       deleteTitle: string
       deleteDescription: string
+    }
+    mergeDialog: {
+      title: string
+      description: string
+      keepLabel: string
+      mergeLabel: string
+      placeholder: string
+      empty: string
+      selfError: string
+      action: string
     }
     sidebar: {
       about: string

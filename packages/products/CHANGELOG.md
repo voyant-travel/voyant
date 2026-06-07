@@ -1,5 +1,125 @@
 # @voyantjs/products
 
+## 0.106.0
+
+## 0.105.0
+
+### Minor Changes
+
+- 921f4fc: Add a canonical board-basis contract enum and reuse it across accommodation meal plans, product options, and cruise sailings.
+
+### Patch Changes
+
+- Updated dependencies [921f4fc]
+  - @voyantjs/products-contracts@0.105.0
+  - @voyantjs/catalog@0.104.4
+
+## 0.104.3
+
+### Patch Changes
+
+- 5c7a075: New `@voyantjs/catalog-authoring` package: atomic product-graph **compose** for agent-driven catalog authoring (Max AI). Ships a `HonoExtension` that mounts `POST /v1/admin/products/compose` — build a new bookable product (options/units, option+unit price rules + tiers, pax tiers, itinerary/days/services) from a `ProductGraphSpec` in one transaction, resolving the operator's default price catalog. This covers the cold-start / never-authored-before case that cloning can't. A category-aware validator rejects wrong-shape specs (e.g. a multi-day excursion) with agent-recoverable errors `{code, field, message, fix}`, and the endpoint honors an `Idempotency-Key`. Composed products emit the same `product.content.changed` event and action-ledger entry as the granular routes.
+
+  `@voyantjs/products` additionally exports `appendProductMutationLedgerEntry` (and `ProductLedgerMutationAction`) so the extension can record ledger entries.
+
+## 0.104.2
+
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.104.1
+- @voyantjs/catalog@0.104.1
+- @voyantjs/core@0.104.1
+- @voyantjs/db@0.104.1
+- @voyantjs/hono@0.104.1
+- @voyantjs/products-contracts@0.104.1
+- @voyantjs/storage@0.104.1
+- @voyantjs/utils@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.104.0
+- @voyantjs/catalog@0.104.0
+- @voyantjs/core@0.104.0
+- @voyantjs/db@0.104.0
+- @voyantjs/hono@0.104.0
+- @voyantjs/products-contracts@0.104.0
+- @voyantjs/storage@0.104.0
+- @voyantjs/utils@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.103.0
+- @voyantjs/catalog@0.103.0
+- @voyantjs/core@0.103.0
+- @voyantjs/db@0.103.0
+- @voyantjs/hono@0.103.0
+- @voyantjs/products-contracts@0.103.0
+- @voyantjs/storage@0.103.0
+- @voyantjs/utils@0.103.0
+
+## 0.102.0
+
+### Minor Changes
+
+- b6d0673: Redesign the operator's **Booking options & prices** for low-tech travel agents and close the inventory/allocation gaps it exposed.
+
+  - `@voyantjs/products-ui`: each option now renders **one adaptive table** — a rooms grid (rooms × traveler types) or a per-person seats list — derived from the product's inventory (rooms always win over booking mode). The rate-plan layer is hidden behind an **Advanced** disclosure (a single default plan is auto-managed); the default plan's matrix is no longer duplicated there. Single-option products show the table directly with no chrome. The unit form pins its type in the contextual add ("Add room" can't create a vehicle) and uses type-aware quantity/occupancy labels; the price dialog uses the design-system currency input and pricing-mode-aware quantity labels. New departures pre-fill **Capacity (pax)** from the configured inventory (overridable).
+  - `@voyantjs/products`: `createProduct` seeds a default `Standard` option so new products open straight into the pricing table; the day-translation create route now verifies the day belongs to the product.
+  - `@voyantjs/availability` + `@voyantjs/availability-react`: departure inventory templates can be **generated from the option's rooms** and **applied to existing open departures** (new bulk endpoint + hook). The full-inventory materializer now works for product-level departures (no `optionId`), so auto-seed on publish and bulk apply create the full room set. New per-slot `materialize-templates` endpoint.
+  - `@voyantjs/allocation-ui`: a slot's **Generate resources** now materializes the full configured inventory across all kinds in one click, instead of the pax-derived single-kind path.
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.102.0
+- @voyantjs/catalog@0.102.0
+- @voyantjs/core@0.102.0
+- @voyantjs/db@0.102.0
+- @voyantjs/hono@0.102.0
+- @voyantjs/products-contracts@0.102.0
+- @voyantjs/storage@0.102.0
+- @voyantjs/utils@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- 577eaf5: Add in-context translations for products and itinerary days.
+
+  - `@voyantjs/products`: add a `products.default_language_tag` column (the language the base name/description columns are written in) and a new `product_day_translations` table (per-language title/description/location) with CRUD service methods and routes under `/v1/products/:id/days/:dayId/translations`.
+  - `@voyantjs/products-contracts`: validation schemas for the product default language and itinerary-day translations.
+  - `@voyantjs/products-react`: `useProductDayTranslations` / `useProductDayTranslationMutation` hooks, record/response schemas, and query keys; the product record now exposes `defaultLanguageTag`.
+  - `@voyantjs/schema-kit`: `product_day_translations` TypeID prefix (`pdtr`).
+  - `@voyantjs/i18n`: operator labels for the content-language switcher, default language, itinerary-day sheet, and market-rule columns.
+
+- Updated dependencies [577eaf5]
+  - @voyantjs/action-ledger@0.101.2
+  - @voyantjs/catalog@0.101.2
+  - @voyantjs/core@0.101.2
+  - @voyantjs/db@0.101.2
+  - @voyantjs/hono@0.101.2
+  - @voyantjs/products-contracts@0.101.2
+  - @voyantjs/storage@0.101.2
+  - @voyantjs/utils@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- @voyantjs/action-ledger@0.101.1
+- @voyantjs/catalog@0.101.1
+- @voyantjs/core@0.101.1
+- @voyantjs/db@0.101.1
+- @voyantjs/hono@0.101.1
+- @voyantjs/products-contracts@0.101.1
+- @voyantjs/storage@0.101.1
+- @voyantjs/utils@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes

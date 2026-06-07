@@ -4,6 +4,10 @@ import type { HonoModule } from "@voyantjs/hono/module"
 import { productRoutes } from "./routes.js"
 import { publicProductRoutes } from "./routes-public.js"
 
+export {
+  appendProductMutationLedgerEntry,
+  type ProductLedgerMutationAction,
+} from "./action-ledger.js"
 export { productsBookingExtension } from "./booking-extension.js"
 export {
   emitProductContentChanged,
@@ -59,6 +63,7 @@ export type {
   NewProductCategory,
   NewProductDay,
   NewProductDayService,
+  NewProductDayTranslation,
   NewProductDeliveryFormat,
   NewProductFaq,
   NewProductFeature,
@@ -82,6 +87,7 @@ export type {
   ProductCategory,
   ProductDay,
   ProductDayService,
+  ProductDayTranslation,
   ProductDeliveryFormat,
   ProductFaq,
   ProductFeature,
@@ -109,6 +115,7 @@ export {
   productCategoryProducts,
   productDayServices,
   productDays,
+  productDayTranslations,
   productDeliveryFormats,
   productDestinations,
   productFaqs,
@@ -139,6 +146,7 @@ export {
   insertProductActivationSettingSchema,
   insertProductCapabilitySchema,
   insertProductCategorySchema,
+  insertProductDayTranslationSchema,
   insertProductDeliveryFormatSchema,
   insertProductFaqSchema,
   insertProductFeatureSchema,
@@ -182,6 +190,7 @@ export {
   updateProductActivationSettingSchema,
   updateProductCapabilitySchema,
   updateProductCategorySchema,
+  updateProductDayTranslationSchema,
   updateProductDeliveryFormatSchema,
   updateProductFaqSchema,
   updateProductFeatureSchema,

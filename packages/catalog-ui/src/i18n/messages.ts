@@ -42,6 +42,12 @@ export type CatalogUiMessages = {
       | "source"
       | "supplier"
       | "bookingMode"
+      | "departureMonth"
+      | "destination"
+      | "country"
+      | "board"
+      | "stars"
+      | "transport"
       | "type"
       | "capacity"
       | "visibility"
@@ -113,6 +119,31 @@ export type CatalogUiMessages = {
       noResults: string
       clearFilter: string
     }
+    view: {
+      grid: string
+      list: string
+      filters: string
+      sort: string
+      sortRelevance: string
+      sortPriceAsc: string
+      sortPriceDesc: string
+      sortSoonest: string
+      sortNewest: string
+      showAll: string
+      showLess: string
+    }
+    card: {
+      from: string
+      viewDetails: string
+      nextDeparture: string
+      departures: string
+      oneDeparture: string
+      daysNights: string
+      nights: string
+      flightIncluded: string
+    }
+    /** Meal/board basis labels keyed by code (RO/BB/HB/FB/AI). */
+    boards: Record<"RO" | "BB" | "HB" | "FB" | "AI", string>
     detail: {
       loadingFullContent: string
       matchPrefix: string
@@ -138,6 +169,17 @@ export type CatalogUiMessages = {
       leftWithCapacity: string
       left: string
       capacity: string
+      wheelchairAccessible: string
+      floorPlan: string
+      deckPlan: string
+      openDeckPlan: string
+      shipSpecs: {
+        type: string
+        capacity: string
+        capacityGuests: string
+        decks: string
+        yearBuilt: string
+      }
       tabs: {
         overview: string
       }

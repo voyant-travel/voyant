@@ -90,6 +90,7 @@ export interface NotificationService {
   send(payload: NotificationPayload): Promise<NotificationResult>
   sendWith(providerName: string, payload: NotificationPayload): Promise<NotificationResult>
   getProvider(channel: NotificationChannel): NotificationProvider | undefined
+  getProviderByName?(providerName: string): NotificationProvider | undefined
 }
 
 export function createNotificationService(
@@ -126,6 +127,9 @@ export function createNotificationService(
     },
     getProvider(channel) {
       return byChannel.get(channel)
+    },
+    getProviderByName(providerName) {
+      return byName.get(providerName)
     },
   }
 }

@@ -20,15 +20,18 @@ Runs the main repository checks for pull requests and pushes to `main` and `deve
 Handles package releases:
 
 - normal Changesets release flow on pushes to `main`
-- manual GitHub release + starter asset refresh for the current checked-in version
+- scoped npm publication for packages whose checked-in versions are not yet on npm
+- manual GitHub release + starter asset refresh for an explicit starter release version
 - npm Trusted Publishing via GitHub Actions OIDC
 - versioned starter tarballs attached to each GitHub Release for CLI scaffolding
 
 Notes:
 
-- the push flow publishes packages, ensures a repo tag like `v0.1.1` exists, then creates the GitHub Release and uploads starter tarballs
-- the manual dispatch path is for release asset recovery or refresh when npm packages already exist but the GitHub Release/tag/assets need to be created or repaired
-- package publishing may still create package tags, but GitHub Releases are intended to exist only for repo-level tags like `v0.1.1`
+- the push flow publishes packages whose local version is ahead of npm, then creates Changesets release PRs without building the package graph
+- the publish path builds and verifies only the pending package set and their build dependencies
+- pending package publication and release PR creation can happen in the same run, so unpublished versions are not blocked by newly landed changesets
+- starter GitHub Releases are separate from npm package publication; run the manual dispatch with `release_assets=true` and an explicit `release_version` to create or refresh starter archives
+- package publishing may still create package tags, but GitHub Releases are intended for starter assets rather than every npm package release
 
 ## Required GitHub Secrets
 

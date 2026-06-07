@@ -1,5 +1,6 @@
 import { identityContactPoints } from "@voyantjs/identity/schema"
 import { identityService } from "@voyantjs/identity/service"
+import type { AnyColumn } from "drizzle-orm"
 import { and, asc, desc, eq, exists, gte, ilike, lte, or, type SQL, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -38,9 +39,23 @@ import {
 } from "./accounts-shared.js"
 import { paginate } from "./helpers.js"
 
+function unaccentedIlike(column: AnyColumn, term: string): SQL {
+  return sql`unaccent(coalesce(${column}, '')) ILIKE unaccent(${term})`
+}
+
 function buildPersonSearchCondition(db: PostgresJsDatabase, search: string): SQL | undefined {
-  const term = `%${search}%`
-  const digits = search.replace(/\D/g, "")
+  const trimmedSearch = search.trim()
+  if (!trimmedSearch) return undefined
+
+  const term = `%${trimmedSearch}%`
+  const tokens = trimmedSearch.split(/\s+/).filter(Boolean)
+  const digits = trimmedSearch.replace(/\D/g, "")
+  const searchablePersonColumns = [
+    people.firstName,
+    people.middleName,
+    people.lastName,
+    people.jobTitle,
+  ]
   const contactPointConditions: SQL[] = [
     ilike(identityContactPoints.value, term),
     ilike(identityContactPoints.normalizedValue, term),
@@ -54,10 +69,16 @@ function buildPersonSearchCondition(db: PostgresJsDatabase, search: string): SQL
     )
   }
 
+  const tokenizedPersonCondition = tokens.length
+    ? and(
+        ...tokens.map((token) =>
+          or(...searchablePersonColumns.map((column) => unaccentedIlike(column, `%${token}%`))),
+        ),
+      )
+    : undefined
+
   return or(
-    ilike(people.firstName, term),
-    ilike(people.lastName, term),
-    ilike(people.jobTitle, term),
+    tokenizedPersonCondition,
     exists(
       db
         .select({ one: sql`1` })

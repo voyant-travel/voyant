@@ -1,5 +1,43 @@
 # @voyantjs/extras
 
+## 0.106.0
+
+## 0.105.0
+
+### Patch Changes
+
+- @voyantjs/catalog@0.104.4
+
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/catalog@0.104.1
+- @voyantjs/core@0.104.1
+- @voyantjs/db@0.104.1
+- @voyantjs/extras-contracts@0.104.1
+- @voyantjs/hono@0.104.1
+
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/catalog@0.103.0
+- @voyantjs/core@0.103.0
+- @voyantjs/db@0.103.0
+- @voyantjs/extras-contracts@0.103.0
+- @voyantjs/hono@0.103.0
+
+## 0.101.2
+
+### Patch Changes
+
+- @voyantjs/catalog@0.101.2
+- @voyantjs/core@0.101.2
+- @voyantjs/db@0.101.2
+- @voyantjs/extras-contracts@0.101.2
+- @voyantjs/hono@0.101.2
+
 ## 0.100.0
 
 ### Patch Changes

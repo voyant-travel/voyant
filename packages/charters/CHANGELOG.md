@@ -1,5 +1,85 @@
 # @voyantjs/charters
 
+## 0.104.3
+
+### Patch Changes
+
+- @voyantjs/bookings@0.106.0
+
+## 0.104.2
+
+### Patch Changes
+
+- @voyantjs/catalog@0.104.4
+- @voyantjs/bookings@0.105.0
+
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/bookings@0.104.1
+- @voyantjs/catalog@0.104.1
+- @voyantjs/charters-contracts@0.104.1
+- @voyantjs/core@0.104.1
+- @voyantjs/db@0.104.1
+- @voyantjs/hono@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.104.0
+- @voyantjs/catalog@0.104.0
+- @voyantjs/charters-contracts@0.104.0
+- @voyantjs/core@0.104.0
+- @voyantjs/db@0.104.0
+- @voyantjs/hono@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.103.0
+- @voyantjs/catalog@0.103.0
+- @voyantjs/charters-contracts@0.103.0
+- @voyantjs/core@0.103.0
+- @voyantjs/db@0.103.0
+- @voyantjs/hono@0.103.0
+
+## 0.102.0
+
+### Patch Changes
+
+- @voyantjs/bookings@0.102.0
+- @voyantjs/catalog@0.102.0
+- @voyantjs/charters-contracts@0.102.0
+- @voyantjs/core@0.102.0
+- @voyantjs/db@0.102.0
+- @voyantjs/hono@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- @voyantjs/bookings@0.101.2
+- @voyantjs/catalog@0.101.2
+- @voyantjs/charters-contracts@0.101.2
+- @voyantjs/core@0.101.2
+- @voyantjs/db@0.101.2
+- @voyantjs/hono@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- Updated dependencies [f736ba5]
+  - @voyantjs/bookings@0.101.1
+  - @voyantjs/catalog@0.101.1
+  - @voyantjs/charters-contracts@0.101.1
+  - @voyantjs/core@0.101.1
+  - @voyantjs/db@0.101.1
+  - @voyantjs/hono@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes

@@ -58,8 +58,43 @@ type BookingEventReminderTargetType = Extract<
   "booking_confirmed" | "payment_complete" | "booking_cancelled_non_payment"
 >
 
+const PAYABLE_BOOKING_STATUSES = new Set([
+  "on_hold",
+  "awaiting_payment",
+  "confirmed",
+  "in_progress",
+])
+const OPEN_PAYMENT_SCHEDULE_STATUSES = new Set(["pending", "due"])
+
 export interface BookingEventReminderRuntimeOptions {
   documentAttachmentResolver?: BookingDocumentAttachmentResolver
+}
+
+function paymentScheduleStatusSkipReason(status: string) {
+  return `payment_schedule_status_${status}`
+}
+
+function bookingStatusSkipReason(status: string) {
+  return `booking_status_${status}`
+}
+
+async function getPaymentReminderBookingStatusSkipReason(
+  db: PostgresJsDatabase,
+  bookingId: string,
+) {
+  const [booking] = await db
+    .select({ status: bookings.status })
+    .from(bookings)
+    .where(eq(bookings.id, bookingId))
+    .limit(1)
+
+  if (!booking) {
+    return "booking_not_found"
+  }
+
+  return PAYABLE_BOOKING_STATUSES.has(booking.status)
+    ? null
+    : bookingStatusSkipReason(booking.status)
 }
 
 async function getBookingPaymentNotificationContext(db: PostgresJsDatabase, bookingId: string) {
@@ -405,6 +440,9 @@ async function sendQueuedBookingPaymentScheduleReminder(
       "Booking payment schedule not found for reminder run",
     )
   }
+  if (!OPEN_PAYMENT_SCHEDULE_STATUSES.has(schedule.status)) {
+    return markReminderRunSkipped(db, run.id, now, paymentScheduleStatusSkipReason(schedule.status))
+  }
 
   const [booking] = await db
     .select({
@@ -429,6 +467,9 @@ async function sendQueuedBookingPaymentScheduleReminder(
 
   if (!booking) {
     return markReminderRunSkipped(db, run.id, now, "Booking not found for payment schedule")
+  }
+  if (!PAYABLE_BOOKING_STATUSES.has(booking.status)) {
+    return markReminderRunSkipped(db, run.id, now, bookingStatusSkipReason(booking.status))
   }
 
   const [participants, items, paymentContext] = await Promise.all([
@@ -791,10 +832,7 @@ export async function deliverReminderRun(
     .where(
       and(
         eq(notificationReminderRuns.id, input.reminderRunId),
-        or(
-          eq(notificationReminderRuns.status, "queued"),
-          eq(notificationReminderRuns.status, "failed"),
-        ),
+        eq(notificationReminderRuns.status, "queued"),
       ),
     )
     .returning()
@@ -894,7 +932,7 @@ async function emitStageChannelRun(
     .from(notificationReminderRuns)
     .where(eq(notificationReminderRuns.dedupeKey, dedupeKey))
     .limit(1)
-  if (existingRun && existingRun.status !== "failed") {
+  if (existingRun) {
     return { status: "skipped", runId: existingRun.id }
   }
 
@@ -924,32 +962,20 @@ async function emitStageChannelRun(
   }
 
   if (!recipient?.email) {
-    const [run] = existingRun
-      ? await db
-          .update(notificationReminderRuns)
-          .set({ ...baseValues, status: "skipped", errorMessage: "no_recipient" })
-          .where(eq(notificationReminderRuns.id, existingRun.id))
-          .returning()
-      : await db
-          .insert(notificationReminderRuns)
-          .values({ ...baseValues, status: "skipped", errorMessage: "no_recipient" })
-          .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
-          .returning()
+    const [run] = await db
+      .insert(notificationReminderRuns)
+      .values({ ...baseValues, status: "skipped", errorMessage: "no_recipient" })
+      .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
+      .returning()
     return { status: "skipped", runId: run?.id ?? null }
   }
 
   if (enqueueDelivery && !dispatcher) {
-    const [queuedRun] = existingRun
-      ? await db
-          .update(notificationReminderRuns)
-          .set({ ...baseValues, status: "queued" })
-          .where(eq(notificationReminderRuns.id, existingRun.id))
-          .returning()
-      : await db
-          .insert(notificationReminderRuns)
-          .values({ ...baseValues, status: "queued" })
-          .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
-          .returning()
+    const [queuedRun] = await db
+      .insert(notificationReminderRuns)
+      .values({ ...baseValues, status: "queued" })
+      .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
+      .returning()
     if (!queuedRun) return { status: "skipped", runId: null }
     try {
       await enqueueDelivery({ reminderRunId: queuedRun.id })
@@ -965,17 +991,11 @@ async function emitStageChannelRun(
     return { status: "skipped", runId: null }
   }
 
-  const [processingRun] = existingRun
-    ? await db
-        .update(notificationReminderRuns)
-        .set({ ...baseValues, status: "processing" })
-        .where(eq(notificationReminderRuns.id, existingRun.id))
-        .returning()
-    : await db
-        .insert(notificationReminderRuns)
-        .values({ ...baseValues, status: "processing" })
-        .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
-        .returning()
+  const [processingRun] = await db
+    .insert(notificationReminderRuns)
+    .values({ ...baseValues, status: "processing" })
+    .onConflictDoNothing({ target: notificationReminderRuns.dedupeKey })
+    .returning()
 
   if (!processingRun) {
     return { status: "skipped", runId: null }
@@ -1017,6 +1037,32 @@ async function emitStageChannelRun(
           status: "skipped",
           runId:
             (await markReminderRunSkipped(db, processingRun.id, new Date(), "schedule_not_found"))
+              ?.id ?? null,
+        }
+      }
+      if (!OPEN_PAYMENT_SCHEDULE_STATUSES.has(schedule.status)) {
+        return {
+          status: "skipped",
+          runId:
+            (
+              await markReminderRunSkipped(
+                db,
+                processingRun.id,
+                new Date(),
+                paymentScheduleStatusSkipReason(schedule.status),
+              )
+            )?.id ?? null,
+        }
+      }
+      const bookingSkipReason = await getPaymentReminderBookingStatusSkipReason(
+        db,
+        schedule.bookingId,
+      )
+      if (bookingSkipReason) {
+        return {
+          status: "skipped",
+          runId:
+            (await markReminderRunSkipped(db, processingRun.id, new Date(), bookingSkipReason))
               ?.id ?? null,
         }
       }

@@ -1,5 +1,87 @@
 # @voyantjs/accommodations
 
+## 0.105.1
+
+### Patch Changes
+
+- @voyantjs/bookings@0.106.0
+- @voyantjs/facilities@0.104.3
+
+## 0.105.0
+
+### Minor Changes
+
+- 921f4fc: Add a canonical board-basis contract enum and reuse it across accommodation meal plans, product options, and cruise sailings.
+
+### Patch Changes
+
+- Updated dependencies [921f4fc]
+  - @voyantjs/accommodations-contracts@0.105.0
+  - @voyantjs/catalog@0.104.4
+  - @voyantjs/bookings@0.105.0
+  - @voyantjs/facilities@0.104.2
+
+## 0.104.1
+
+### Patch Changes
+
+- @voyantjs/accommodations-contracts@0.104.1
+- @voyantjs/bookings@0.104.1
+- @voyantjs/catalog@0.104.1
+- @voyantjs/db@0.104.1
+- @voyantjs/facilities@0.104.1
+
+## 0.104.0
+
+### Patch Changes
+
+- @voyantjs/accommodations-contracts@0.104.0
+- @voyantjs/bookings@0.104.0
+- @voyantjs/catalog@0.104.0
+- @voyantjs/db@0.104.0
+- @voyantjs/facilities@0.104.0
+
+## 0.103.0
+
+### Patch Changes
+
+- @voyantjs/accommodations-contracts@0.103.0
+- @voyantjs/bookings@0.103.0
+- @voyantjs/catalog@0.103.0
+- @voyantjs/db@0.103.0
+- @voyantjs/facilities@0.103.0
+
+## 0.102.0
+
+### Patch Changes
+
+- @voyantjs/accommodations-contracts@0.102.0
+- @voyantjs/bookings@0.102.0
+- @voyantjs/catalog@0.102.0
+- @voyantjs/db@0.102.0
+- @voyantjs/facilities@0.102.0
+
+## 0.101.2
+
+### Patch Changes
+
+- @voyantjs/accommodations-contracts@0.101.2
+- @voyantjs/bookings@0.101.2
+- @voyantjs/catalog@0.101.2
+- @voyantjs/db@0.101.2
+- @voyantjs/facilities@0.101.2
+
+## 0.101.1
+
+### Patch Changes
+
+- Updated dependencies [f736ba5]
+  - @voyantjs/accommodations-contracts@0.101.1
+  - @voyantjs/bookings@0.101.1
+  - @voyantjs/catalog@0.101.1
+  - @voyantjs/db@0.101.1
+  - @voyantjs/facilities@0.101.1
+
 ## 0.101.0
 
 ### Patch Changes

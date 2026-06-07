@@ -8,6 +8,21 @@ const barrelPath = path.join(componentsDir, "index.tsx")
 
 const excludedFiles = new Set([
   "index.tsx",
+  // These modules are intentionally direct-subpath imports only; see the
+  // heavy-passthrough comments in packages/ui/src/components/index.tsx.
+  "chart.tsx",
+  "dashboard-widgets.tsx",
+  "notification-deliveries-page.tsx",
+  "notification-delivery-detail-dialog.tsx",
+  "notification-reminder-rule-dialog.tsx",
+  "notification-reminder-rules-page.tsx",
+  "notification-reminder-runs-page.tsx",
+  "notification-template-authoring-help.tsx",
+  "notification-template-detail-page.tsx",
+  "notification-template-dialog.tsx",
+  "notification-templates-page.tsx",
+  "phone-input.tsx",
+  "rich-text-editor.tsx",
   // These are implementation splits re-exported through sidebar.tsx.
   "sidebar-core.tsx",
   "sidebar-menu.tsx",

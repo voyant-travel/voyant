@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/i18n",
-  "version": "0.101.0",
+  "version": "0.104.1",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -19,7 +19,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@voyantjs/voyant-typescript-config": "workspace:*",
+    "@voyantjs/voyant-typescript-config": "workspace:^",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "react": "^19.2.4",

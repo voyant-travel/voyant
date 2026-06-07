@@ -1,5 +1,6 @@
 import {
   booleanQueryParam,
+  languageTagSchema,
   optionUnitTypeSchema,
   productBookingModeSchema,
   productCapacityModeSchema,
@@ -34,6 +35,7 @@ const productCoreSchema = z.object({
   bookingMode: productBookingModeSchema.default("date"),
   capacityMode: productCapacityModeSchema.default("limited"),
   timezone: z.string().max(100).optional().nullable(),
+  defaultLanguageTag: languageTagSchema.optional().nullable(),
   visibility: productVisibilitySchema.default("private"),
   activated: z.boolean().default(false),
   reservationTimeoutMinutes: z.number().int().min(0).optional().nullable(),

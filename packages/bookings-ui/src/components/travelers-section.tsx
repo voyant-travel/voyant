@@ -36,7 +36,9 @@ import * as React from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 import {
   getDynamicTravelerCategoryButtonState,
+  getSelectableTravelerCategoryUnits,
   getStaticTravelerCategoryButtonState,
+  shouldUseStaticTravelerCategoryFallback,
 } from "./traveler-category-buttons.js"
 
 export type TravelerRole = "lead" | "adult" | "child" | "infant"
@@ -58,6 +60,8 @@ export interface TravelerEntry {
   dateOfBirth: string | null
   /** option_unit_id of the person pricing tier this traveler is billed as. */
   pricingUnitId: string | null
+  /** pricing_category_id selected from the product's traveler price matrix, when applicable. */
+  pricingCategoryId: string | null
   /** option_unit_id of the room/vehicle this traveler occupies, when applicable. */
   inventoryUnitId: string | null
   /** Operator intent for `pricingUnitId`; defaults to `auto` when omitted. */
@@ -93,6 +97,7 @@ export function createBlankTraveler(role: TravelerRole = "adult"): TravelerEntry
     role,
     dateOfBirth: null,
     pricingUnitId: null,
+    pricingCategoryId: null,
     inventoryUnitId: null,
     pricingUnitSource: "auto",
     inventoryUnitSource: "auto",
@@ -128,6 +133,54 @@ export function deriveTravelerRoleFromDob(dob: string | null): TravelerRole {
   return "adult"
 }
 
+function roleFromPricingCategoryType(categoryType: string | null | undefined): TravelerRole {
+  if (categoryType === "child") return "child"
+  if (categoryType === "infant") return "infant"
+  return "adult"
+}
+
+export function categoryMatchesDob(
+  category: TravelerPricingCategoryOption,
+  dob: string | null,
+): boolean {
+  if (category.minAge == null && category.maxAge == null) return false
+  const age = _computeAgeYears(dob)
+  if (age == null) return false
+  return (
+    (category.minAge == null || age >= category.minAge) &&
+    (category.maxAge == null || age <= category.maxAge)
+  )
+}
+
+function categoryMatchesRole(
+  category: TravelerPricingCategoryOption,
+  role: TravelerRole | null,
+): boolean {
+  if (role === "lead" || role === "adult") return category.categoryType === "adult"
+  if (role === "child") return category.categoryType === "child"
+  if (role === "infant") return category.categoryType === "infant"
+  return false
+}
+
+export function matchPricingCategoryForTraveler(
+  categories: ReadonlyArray<TravelerPricingCategoryOption> | undefined,
+  dob: string | null,
+  role: TravelerRole | null,
+  inventoryUnitId: string | null,
+): string | null {
+  if (!categories || categories.length === 0) return null
+  const pool = inventoryUnitId
+    ? categories.filter((category) => category.unitIds.includes(inventoryUnitId))
+    : categories
+  if (pool.length === 0) return null
+  return (
+    pool.find((category) => categoryMatchesDob(category, dob))?.categoryId ??
+    pool.find((category) => categoryMatchesRole(category, role))?.categoryId ??
+    pool[0]?.categoryId ??
+    null
+  )
+}
+
 /**
  * Adapter from this file's `RoomGroupUnit` shape (UI-side, uses
  * `unitId`) to the canonical `PricingAssignmentUnit` shape (uses
@@ -157,23 +210,6 @@ function matchUnitByRoleHint(
   role: TravelerRole | null,
 ): string | null {
   return matchAssignmentUnitByRoleHint(roomGroupUnitsAsAssignmentUnits(units), role)
-}
-
-/**
- * The Room dropdown lists one item per inventory option. Map any unit
- * from the same option back to that option's inventory key so the
- * Select value matches an existing item.
- */
-function mapUnitIdToGroupPrimary(
-  unitId: string | null,
-  roomGroups: ReadonlyArray<RoomGroup> | undefined,
-): string | null {
-  if (!unitId) return null
-  if (!roomGroups) return unitId
-  const group = roomGroups.find(
-    (g) => g.primaryUnitId === unitId || g.units.some((u) => u.unitId === unitId),
-  )
-  return group?.primaryUnitId ?? unitId
 }
 
 export interface RoomUnitOption {
@@ -214,6 +250,16 @@ export interface RoomGroup {
   units: RoomGroupUnit[]
 }
 
+export interface TravelerPricingCategoryOption {
+  categoryId: string
+  name: string
+  code: string | null
+  categoryType: string
+  minAge: number | null
+  maxAge: number | null
+  unitIds: string[]
+}
+
 export interface TravelersSectionProps {
   value: TravelerListValue
   onChange: (value: TravelerListValue) => void
@@ -229,6 +275,11 @@ export interface TravelersSectionProps {
    * Required for category buttons to render.
    */
   roomGroups?: RoomGroup[]
+  /**
+   * Product pricing categories surfaced by the room x traveler price matrix.
+   * Room-only accommodation products use these as the traveler category select.
+   */
+  pricingCategories?: TravelerPricingCategoryOption[]
   billingPersonId?: string | null
   labels?: {
     heading?: string
@@ -284,6 +335,7 @@ export function TravelersSection({
   onChange,
   roomUnits,
   roomGroups,
+  pricingCategories,
   billingPersonId,
   labels,
 }: TravelersSectionProps) {
@@ -337,19 +389,45 @@ export function TravelersSection({
     (
       dateOfBirth: string | null = null,
       role: TravelerRole | null = null,
-    ): Pick<TravelerEntry, "pricingUnitId" | "inventoryUnitId"> => {
+    ): Pick<TravelerEntry, "pricingUnitId" | "pricingCategoryId" | "inventoryUnitId"> => {
       if (!roomUnits || roomUnits.length === 0) {
-        return { pricingUnitId: null, inventoryUnitId: null }
+        return {
+          pricingUnitId: null,
+          pricingCategoryId: matchPricingCategoryForTraveler(
+            pricingCategories,
+            dateOfBirth,
+            role,
+            null,
+          ),
+          inventoryUnitId: null,
+        }
       }
-      const pickedRoom =
-        roomUnits.find((unit) => unit.remainingCapacity > 0)?.unitId ?? roomUnits[0]?.unitId ?? null
+      const pickedRoom = roomUnits.find((unit) => unit.remainingCapacity > 0)?.unitId ?? null
       if (!pickedRoom || !roomGroups || roomGroups.length === 0) {
-        return { pricingUnitId: null, inventoryUnitId: pickedRoom }
+        return {
+          pricingUnitId: null,
+          pricingCategoryId: matchPricingCategoryForTraveler(
+            pricingCategories,
+            dateOfBirth,
+            role,
+            pickedRoom,
+          ),
+          inventoryUnitId: pickedRoom,
+        }
       }
       const pricingUnitId = pickPricingUnitIdForTraveler(dateOfBirth, role, pickedRoom)
-      return { pricingUnitId, inventoryUnitId: pickedRoom }
+      return {
+        pricingUnitId,
+        pricingCategoryId: matchPricingCategoryForTraveler(
+          pricingCategories,
+          dateOfBirth,
+          role,
+          pickedRoom,
+        ),
+        inventoryUnitId: pickedRoom,
+      }
     },
-    [roomUnits, roomGroups, pickPricingUnitIdForTraveler],
+    [roomUnits, roomGroups, pricingCategories, pickPricingUnitIdForTraveler],
   )
 
   // Note: there is no hydration effect any more. Travelers attached
@@ -528,6 +606,12 @@ export function TravelersSection({
                           ),
                           pricingUnitSource: "auto" as const,
                         }),
+                    pricingCategoryId: matchPricingCategoryForTraveler(
+                      pricingCategories,
+                      person.dateOfBirth ?? null,
+                      traveler.role,
+                      traveler.inventoryUnitId,
+                    ),
                     ...(traveler.inventoryUnitSource === "manual" ||
                     traveler.inventoryUnitSource === "none"
                       ? {}
@@ -560,6 +644,12 @@ export function TravelersSection({
                           ),
                           pricingUnitSource: "auto" as const,
                         }),
+                    pricingCategoryId: matchPricingCategoryForTraveler(
+                      pricingCategories,
+                      null,
+                      traveler.role,
+                      traveler.inventoryUnitId,
+                    ),
                     ...(traveler.inventoryUnitSource === "manual" ||
                     traveler.inventoryUnitSource === "none"
                       ? {}
@@ -573,40 +663,62 @@ export function TravelersSection({
               />
 
               <div className="grid grid-cols-2 gap-2">
-                <TravelerCategoryButtons
-                  traveler={traveler}
-                  roomGroups={roomGroups}
-                  fallbackLabels={{
-                    category: merged.category,
-                    adult: merged.roleAdult,
-                    child: merged.roleChild,
-                    infant: merged.roleInfant,
-                  }}
-                  onPickUnit={(unitId, nextRole, source) =>
-                    updateAt(index, {
-                      pricingUnitId: unitId,
-                      role: nextRole,
-                      // Only freeze as manual when the dynamic button
-                      // actually picked a unit. Role-only clicks via
-                      // the static fallback stay `auto` so the
-                      // resolver can re-derive once real units load.
-                      pricingUnitSource: source,
-                    })
-                  }
-                />
+                {pricingCategories ? (
+                  <TravelerPricingCategorySelect
+                    traveler={traveler}
+                    categories={pricingCategories}
+                    label={merged.category}
+                    onPickCategory={(category) =>
+                      updateAt(index, {
+                        pricingCategoryId: category.categoryId,
+                        role:
+                          traveler.role === "lead" &&
+                          roleFromPricingCategoryType(category.categoryType) === "adult"
+                            ? "lead"
+                            : roleFromPricingCategoryType(category.categoryType),
+                      })
+                    }
+                  />
+                ) : (
+                  <TravelerCategoryButtons
+                    traveler={traveler}
+                    roomGroups={roomGroups}
+                    fallbackLabels={{
+                      category: merged.category,
+                      adult: merged.roleAdult,
+                      child: merged.roleChild,
+                      infant: merged.roleInfant,
+                    }}
+                    onPickUnit={(unitId, nextRole, source) =>
+                      updateAt(index, {
+                        pricingUnitId: unitId,
+                        role: nextRole,
+                        // Only freeze as manual when the dynamic button
+                        // actually picked a unit. Role-only clicks via
+                        // the static fallback stay `auto` so the
+                        // resolver can re-derive once real units load.
+                        pricingUnitSource: source,
+                      })
+                    }
+                  />
+                )}
 
                 {roomUnits && roomUnits.length > 0 ? (
                   <div className="flex flex-col gap-1">
                     <Label className="text-xs">{merged.room}</Label>
                     <Select
                       items={roomSelectItems}
-                      value={
-                        mapUnitIdToGroupPrimary(traveler.inventoryUnitId, roomGroups) ?? NO_ROOM
-                      }
+                      value={traveler.inventoryUnitId ?? NO_ROOM}
                       onValueChange={(v) =>
                         updateAt(index, {
                           inventoryUnitId: v === NO_ROOM || !v ? null : v,
                           inventoryUnitSource: v === NO_ROOM || !v ? "none" : "manual",
+                          pricingCategoryId: matchPricingCategoryForTraveler(
+                            pricingCategories,
+                            traveler.dateOfBirth,
+                            traveler.role,
+                            v === NO_ROOM || !v ? null : v,
+                          ),
                         })
                       }
                     >
@@ -616,7 +728,14 @@ export function TravelersSection({
                       <SelectContent>
                         <SelectItem value={NO_ROOM}>{merged.noRoom}</SelectItem>
                         {roomUnits.map((unit) => (
-                          <SelectItem key={unit.unitId} value={unit.unitId}>
+                          <SelectItem
+                            key={unit.unitId}
+                            value={unit.unitId}
+                            disabled={
+                              unit.remainingCapacity <= 0 &&
+                              traveler.inventoryUnitId !== unit.unitId
+                            }
+                          >
                             {unit.unitName}
                           </SelectItem>
                         ))}
@@ -815,6 +934,7 @@ function createTravelerFromPerson(person: PersonRecord, role: TravelerRole): Tra
     role: effectiveRole,
     dateOfBirth,
     pricingUnitId: null,
+    pricingCategoryId: null,
     inventoryUnitId: null,
     pricingUnitSource: "auto",
     inventoryUnitSource: "auto",
@@ -872,24 +992,21 @@ function TravelerCategoryButtons({
 
   // Surface only person-typed units (Adult, Child, Senior, Infant,
   // …). Vehicles / rooms / services aren't categories the operator
-  // toggles on a per-traveler basis. If the option has only one
-  // person-typed unit (e.g. a "per-person" tour with no age bands),
-  // there's nothing to choose, so the buttons collapse.
+  // toggles on a per-traveler basis.
   const categoryUnits = React.useMemo(() => {
     if (!group) return []
-    return group.units.filter((u) => u.unitType == null || u.unitType === "person")
+    return getSelectableTravelerCategoryUnits(group.units)
   }, [group])
 
-  if (group && categoryUnits.length <= 1) {
+  if (group && categoryUnits.length === 1) {
     // Single person-typed unit — no category choice to make.
     return null
   }
 
-  if (!group || categoryUnits.length === 0) {
-    // Fallback to the static set so the row still renders before a
-    // product/option is selected. Editing here writes the legacy
-    // `role` field only; once roomGroups arrive the buttons re-render
-    // and bind to actual unit ids.
+  if (shouldUseStaticTravelerCategoryFallback(Boolean(group), categoryUnits.length)) {
+    // Fallback to traveler roles before a product/option is selected
+    // or when the selected option is room-only. Room inventory remains
+    // a separate dropdown; these buttons only set the traveler's role.
     return (
       <div className="flex flex-col gap-1">
         <Label className="text-xs">{fallbackLabels.category}</Label>
@@ -963,6 +1080,65 @@ function TravelerCategoryButtons({
           )
         })}
       </div>
+    </div>
+  )
+}
+
+function TravelerPricingCategorySelect({
+  traveler,
+  categories,
+  label,
+  onPickCategory,
+}: {
+  traveler: TravelerEntry
+  categories: TravelerPricingCategoryOption[]
+  label: string
+  onPickCategory: (category: TravelerPricingCategoryOption) => void
+}) {
+  const selectableCategories = React.useMemo(() => {
+    if (!traveler.inventoryUnitId) return categories
+    const filtered = categories.filter((category) =>
+      category.unitIds.includes(traveler.inventoryUnitId ?? ""),
+    )
+    return filtered.length > 0 ? filtered : categories
+  }, [categories, traveler.inventoryUnitId])
+  const selectedCategory =
+    selectableCategories.find((category) => category.categoryId === traveler.pricingCategoryId) ??
+    selectableCategories[0] ??
+    null
+  const selectItems = React.useMemo(
+    () =>
+      selectableCategories.map((category) => ({
+        label: category.name,
+        value: category.categoryId,
+      })),
+    [selectableCategories],
+  )
+
+  if (!selectedCategory) return null
+
+  return (
+    <div className="flex flex-col gap-1">
+      <Label className="text-xs">{label}</Label>
+      <Select
+        items={selectItems}
+        value={selectedCategory.categoryId}
+        onValueChange={(value) => {
+          const category = selectableCategories.find((candidate) => candidate.categoryId === value)
+          if (category) onPickCategory(category)
+        }}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {selectableCategories.map((category) => (
+            <SelectItem key={category.categoryId} value={category.categoryId}>
+              {category.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   )
 }

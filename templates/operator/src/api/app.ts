@@ -3,6 +3,7 @@ import { availabilityHonoModule } from "@voyantjs/availability"
 import { bookingRequirementsHonoModule } from "@voyantjs/booking-requirements"
 import { bookingsSupplierExtension, createBookingsHonoModule } from "@voyantjs/bookings"
 import { createCatalogSearchHonoModule } from "@voyantjs/catalog"
+import { catalogAuthoringExtension } from "@voyantjs/catalog-authoring"
 import { type EmbeddingProvider, executeSemanticSearch } from "@voyantjs/catalog-rag"
 import { type CheckoutPaymentStarter, createCheckoutHonoModule } from "@voyantjs/checkout"
 import { createCrmHonoModule, crmBookingExtension, crmService } from "@voyantjs/crm"
@@ -39,6 +40,7 @@ import authHandler, {
   resolveAuthRequest,
   validateApiTokenAccess,
 } from "./auth/handler"
+import { closeTerminalBookingPaymentSchedules } from "./booking-payment-cleanup"
 import {
   bookingScheduleBundle,
   mountBookingPaymentScheduleRoutes,
@@ -51,6 +53,7 @@ import { mountCatalogCheckoutRoutes } from "./catalog-checkout"
 import { createCatalogCheckoutBundle } from "./catalog-checkout-finalize-runtime"
 import { rebuildBookingItemTaxLines } from "./catalog-checkout-materialization"
 import { mountCatalogContentRoutes } from "./catalog-content"
+import { mountCatalogOffersRoutes } from "./catalog-offers"
 import { channelPushBundle, mountChannelPushAdminRoutes } from "./channel-push"
 import { mountOperatorContractDocumentRoutes } from "./contract-document-routes"
 import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./contract-document-runtime"
@@ -63,6 +66,7 @@ import { createDocumentStorage } from "./lib/storage"
 import { mountCatalogMcpRoutes } from "./mcp"
 import { mountOperatorMediaUploadRoutes } from "./media-upload-routes"
 import {
+  createOperatorBookingPiiService,
   createOperatorDocumentStorage,
   createOperatorInvoiceExchangeRateResolver,
   createOperatorInvoiceSettlementPollers,
@@ -230,6 +234,7 @@ const bookingsHonoModule = createBookingsHonoModule({
     (await crmService.getPersonById(db, personId)) != null,
   resolveBillingOrganizationById: async (db, organizationId) =>
     (await crmService.getOrganizationById(db, organizationId)) != null,
+  closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
 })
 
 const financeModule = createFinanceHonoModule({
@@ -249,6 +254,7 @@ const legalModule = createLegalHonoModule({
     resolveOperatorDocumentDownloadUrl(bindings, storageKey),
   resolveDocumentStorage: createOperatorDocumentStorage,
   resolveDocumentGenerator: resolveOperatorContractDocumentGenerator,
+  resolveBookingPiiService: createOperatorBookingPiiService,
   autoGenerateContractOnConfirmed: AUTO_GENERATE_CONTRACT_OPTIONS,
 })
 
@@ -369,6 +375,10 @@ export const app = createApp<CloudflareBindings>({
     bookingsSupplierExtension,
     bookingsCreateExtension,
     productsBookingExtension,
+    // Mounts POST /v1/admin/products/{id}/duplicate (deep-clone) + /compose
+    // (new-from-spec) for catalog authoring. Replaces the former local
+    // product-duplicate route.
+    catalogAuthoringExtension,
     crmBookingExtension,
     transactionsBookingExtension,
     distributionBookingExtension,
@@ -452,6 +462,7 @@ export const app = createApp<CloudflareBindings>({
     mountCatalogBookingRoutes(hono)
     mountCatalogCheckoutRoutes(hono)
     mountCatalogContentRoutes(hono)
+    mountCatalogOffersRoutes(hono)
     mountChannelPushAdminRoutes(hono)
     mountFlightRoutes(hono)
 
