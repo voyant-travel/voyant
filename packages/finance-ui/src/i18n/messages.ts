@@ -939,5 +939,46 @@ export type FinanceUiMessages = {
         variance: string
       }
     }
+    share: {
+      button: string
+      title: string
+      description: string
+      from: string
+      to: string
+      baseCurrency: string
+      ttlDays: string
+      create: string
+      creating: string
+      active: string
+      none: string
+      copy: string
+      copied: string
+      revoke: string
+      allTime: string
+      /** Templated with `{date}`. */
+      expires: string
+      /** Templated with `{count}`. */
+      opened: string
+      neverOpened: string
+    }
+    portal: {
+      title: string
+      subtitle: string
+      allTime: string
+      loadFailed: string
+      gone: string
+      invoices: string
+      invoicesNone: string
+      download: string
+      noFile: string
+      columns: {
+        invoice: string
+        status: string
+        issueDate: string
+        total: string
+        balanceDue: string
+        attachments: string
+      }
+    }
   }
 }

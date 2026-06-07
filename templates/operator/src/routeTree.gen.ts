@@ -15,6 +15,7 @@ import { Route as storefrontRouteRouteImport } from './routes/(storefront)/route
 import { Route as authRouteRouteImport } from './routes/(auth)/route'
 import { Route as WorkspaceIndexRouteImport } from './routes/_workspace/index'
 import { Route as PaySessionIdRouteImport } from './routes/pay_.$sessionId'
+import { Route as AccountantTokenRouteImport } from './routes/accountant.$token'
 import { Route as WorkspaceFlightsRouteImport } from './routes/_workspace/flights'
 import { Route as WorkspaceChannelSyncRouteImport } from './routes/_workspace/channel-sync'
 import { Route as WorkspaceCatalogRouteImport } from './routes/_workspace/catalog'
@@ -123,6 +124,11 @@ const WorkspaceIndexRoute = WorkspaceIndexRouteImport.update({
 const PaySessionIdRoute = PaySessionIdRouteImport.update({
   id: '/pay_/$sessionId',
   path: '/pay/$sessionId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountantTokenRoute = AccountantTokenRouteImport.update({
+  id: '/accountant/$token',
+  path: '/accountant/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkspaceFlightsRoute = WorkspaceFlightsRouteImport.update({
@@ -602,6 +608,7 @@ export interface FileRoutesByFullPath {
   '/catalog': typeof WorkspaceCatalogRoute
   '/channel-sync': typeof WorkspaceChannelSyncRoute
   '/flights': typeof WorkspaceFlightsRoute
+  '/accountant/$token': typeof AccountantTokenRoute
   '/pay/$sessionId': typeof PaySessionIdRoute
   '/shop/composer': typeof storefrontShopComposerRoute
   '/availability/$id': typeof WorkspaceAvailabilityIdRoute
@@ -687,6 +694,7 @@ export interface FileRoutesByTo {
   '/catalog': typeof WorkspaceCatalogRoute
   '/channel-sync': typeof WorkspaceChannelSyncRoute
   '/flights': typeof WorkspaceFlightsRoute
+  '/accountant/$token': typeof AccountantTokenRoute
   '/pay/$sessionId': typeof PaySessionIdRoute
   '/': typeof WorkspaceIndexRoute
   '/shop/composer': typeof storefrontShopComposerRoute
@@ -778,6 +786,7 @@ export interface FileRoutesById {
   '/_workspace/catalog': typeof WorkspaceCatalogRoute
   '/_workspace/channel-sync': typeof WorkspaceChannelSyncRoute
   '/_workspace/flights': typeof WorkspaceFlightsRoute
+  '/accountant/$token': typeof AccountantTokenRoute
   '/pay_/$sessionId': typeof PaySessionIdRoute
   '/_workspace/': typeof WorkspaceIndexRoute
   '/(storefront)/shop_/composer': typeof storefrontShopComposerRoute
@@ -868,6 +877,7 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/channel-sync'
     | '/flights'
+    | '/accountant/$token'
     | '/pay/$sessionId'
     | '/shop/composer'
     | '/availability/$id'
@@ -953,6 +963,7 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/channel-sync'
     | '/flights'
+    | '/accountant/$token'
     | '/pay/$sessionId'
     | '/'
     | '/shop/composer'
@@ -1043,6 +1054,7 @@ export interface FileRouteTypes {
     | '/_workspace/catalog'
     | '/_workspace/channel-sync'
     | '/_workspace/flights'
+    | '/accountant/$token'
     | '/pay_/$sessionId'
     | '/_workspace/'
     | '/(storefront)/shop_/composer'
@@ -1120,6 +1132,7 @@ export interface RootRouteChildren {
   storefrontRouteRoute: typeof storefrontRouteRouteWithChildren
   WorkspaceRouteRoute: typeof WorkspaceRouteRouteWithChildren
   PayRoute: typeof PayRoute
+  AccountantTokenRoute: typeof AccountantTokenRoute
   PaySessionIdRoute: typeof PaySessionIdRoute
 }
 
@@ -1165,6 +1178,13 @@ declare module '@tanstack/react-router' {
       path: '/pay/$sessionId'
       fullPath: '/pay/$sessionId'
       preLoaderRoute: typeof PaySessionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accountant/$token': {
+      id: '/accountant/$token'
+      path: '/accountant/$token'
+      fullPath: '/accountant/$token'
+      preLoaderRoute: typeof AccountantTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_workspace/flights': {
@@ -1972,6 +1992,7 @@ const rootRouteChildren: RootRouteChildren = {
   storefrontRouteRoute: storefrontRouteRouteWithChildren,
   WorkspaceRouteRoute: WorkspaceRouteRouteWithChildren,
   PayRoute: PayRoute,
+  AccountantTokenRoute: AccountantTokenRoute,
   PaySessionIdRoute: PaySessionIdRoute,
 }
 export const routeTree = rootRouteImport

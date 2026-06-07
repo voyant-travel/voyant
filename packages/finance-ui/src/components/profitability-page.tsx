@@ -46,11 +46,12 @@ import {
   TableRow,
 } from "@voyantjs/ui/components/table"
 import { cn } from "@voyantjs/ui/lib/utils"
-import { Download } from "lucide-react"
+import { Download, Share2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from "recharts"
 
 import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
+import { AccountantShareDialog } from "./accountant-share-dialog.js"
 import { formatInvoiceAmount } from "./invoice-table-parts.js"
 
 const CHART_DEPARTURE_LIMIT = 12
@@ -96,6 +97,7 @@ export function ProfitabilityPage({
   const [travelerDeparture, setTravelerDeparture] = useState<{ id: string; label: string } | null>(
     null,
   )
+  const [shareOpen, setShareOpen] = useState(false)
 
   const filters = {
     from: from || undefined,
@@ -221,6 +223,10 @@ export function ProfitabilityPage({
           <p className="text-sm text-muted-foreground">{t.description}</p>
         </div>
         <div className="flex flex-wrap items-end gap-3">
+          <Button variant="outline" onClick={() => setShareOpen(true)}>
+            <Share2 className="size-4" />
+            {t.share.button}
+          </Button>
           <div className="flex flex-col gap-2">
             <Label>{t.filters.from}</Label>
             <DatePicker value={from || null} onChange={(v) => setFrom(v ?? "")} className="w-40" />
@@ -422,6 +428,7 @@ export function ProfitabilityPage({
         currency={activeCurrency}
         onClose={() => setTravelerDeparture(null)}
       />
+      <AccountantShareDialog open={shareOpen} onOpenChange={setShareOpen} />
     </div>
   )
 }

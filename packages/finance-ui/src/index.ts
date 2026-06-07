@@ -1,3 +1,11 @@
+export {
+  AccountantPortal,
+  type AccountantPortalProps,
+} from "./components/accountant-portal.js"
+export {
+  AccountantShareDialog,
+  type AccountantShareDialogProps,
+} from "./components/accountant-share-dialog.js"
 export { AsyncCombobox, type AsyncComboboxOption } from "./components/async-combobox.js"
 export {
   BookingInvoiceDialog,

@@ -42,6 +42,9 @@ import {
   financeQueryKeys,
 } from "./query-keys.js"
 import {
+  accountantInvoicesResponse,
+  accountantSharesResponse,
+  accountantSummaryResponse,
   allPaymentsListResponse,
   bookingGuaranteesResponse,
   bookingPaymentSchedulesResponse,
@@ -681,6 +684,45 @@ export function getTravelerProfitabilityQueryOptions(
         client,
       )
     },
+  })
+}
+
+export function getAccountantSharesQueryOptions(client: FetchWithValidationOptions) {
+  return queryOptions({
+    queryKey: financeQueryKeys.accountantShares(),
+    queryFn: () =>
+      fetchWithValidation("/v1/admin/finance/accountant-shares", accountantSharesResponse, client),
+  })
+}
+
+/** Public portal — `client` is an unauthenticated fetcher; `token` is the credential. */
+export function getAccountantSummaryQueryOptions(
+  client: FetchWithValidationOptions,
+  token: string,
+) {
+  return queryOptions({
+    queryKey: financeQueryKeys.accountantSummary(token),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/public/finance/accountant/${encodeURIComponent(token)}/summary`,
+        accountantSummaryResponse,
+        client,
+      ),
+  })
+}
+
+export function getAccountantInvoicesQueryOptions(
+  client: FetchWithValidationOptions,
+  token: string,
+) {
+  return queryOptions({
+    queryKey: financeQueryKeys.accountantInvoices(token),
+    queryFn: () =>
+      fetchWithValidation(
+        `/v1/public/finance/accountant/${encodeURIComponent(token)}/invoices`,
+        accountantInvoicesResponse,
+        client,
+      ),
   })
 }
 
