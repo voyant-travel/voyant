@@ -100,6 +100,7 @@ export {
   PaymentsTableSkeleton,
 } from "./components/payments-page-skeleton.js"
 export {
+  type ProfitabilityExportFilters,
   ProfitabilityPage,
   type ProfitabilityPageProps,
 } from "./components/profitability-page.js"

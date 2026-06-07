@@ -865,6 +865,7 @@ export const financeUiEn = {
     empty: "No profitability data for this period.",
     noDate: "No date",
     noProduct: "No product",
+    exportCsv: "Export CSV",
     filters: {
       currency: "Currency",
       from: "From",

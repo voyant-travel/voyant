@@ -859,6 +859,7 @@ export type FinanceUiMessages = {
     empty: string
     noDate: string
     noProduct: string
+    exportCsv: string
     filters: {
       currency: string
       from: string

@@ -7,6 +7,7 @@ import {
   useProductProfitability,
 } from "@voyantjs/finance-react"
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -37,6 +38,7 @@ import {
   TableRow,
 } from "@voyantjs/ui/components/table"
 import { cn } from "@voyantjs/ui/lib/utils"
+import { Download } from "lucide-react"
 import { useMemo, useState } from "react"
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from "recharts"
 
@@ -55,15 +57,28 @@ const PIE_COLORS = [
   "hsl(28 80% 52%)",
 ]
 
+export interface ProfitabilityExportFilters {
+  from?: string
+  to?: string
+}
+
 export interface ProfitabilityPageProps {
   className?: string
+  /** Wire to download the departure CSV for the active date range (accountant sharing). */
+  onExportDepartures?: (filters: ProfitabilityExportFilters) => void
+  /** Wire to download the product CSV for the active date range. */
+  onExportProducts?: (filters: ProfitabilityExportFilters) => void
 }
 
 function marginText(value: number | null): string {
   return value == null ? "—" : `${value.toFixed(1)}%`
 }
 
-export function ProfitabilityPage({ className }: ProfitabilityPageProps = {}) {
+export function ProfitabilityPage({
+  className,
+  onExportDepartures,
+  onExportProducts,
+}: ProfitabilityPageProps = {}) {
   const t = useFinanceUiMessagesOrDefault().profitability
 
   const [from, setFrom] = useState<string>("")
@@ -299,8 +314,20 @@ export function ProfitabilityPage({ className }: ProfitabilityPageProps = {}) {
           </div>
 
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base">{t.departures.title}</CardTitle>
+              {onExportDepartures ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    onExportDepartures({ from: from || undefined, to: to || undefined })
+                  }
+                >
+                  <Download className="size-4" />
+                  {t.exportCsv}
+                </Button>
+              ) : null}
             </CardHeader>
             <CardContent>
               <DepartureTable rows={departureRows} currency={activeCurrency} />
@@ -308,8 +335,18 @@ export function ProfitabilityPage({ className }: ProfitabilityPageProps = {}) {
           </Card>
 
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base">{t.products.title}</CardTitle>
+              {onExportProducts ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onExportProducts({ from: from || undefined, to: to || undefined })}
+                >
+                  <Download className="size-4" />
+                  {t.exportCsv}
+                </Button>
+              ) : null}
             </CardHeader>
             <CardContent>
               <ProductTable rows={productRows} currency={activeCurrency} />

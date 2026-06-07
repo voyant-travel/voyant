@@ -871,6 +871,7 @@ export const financeUiRo = {
     empty: "Nu exista date de profitabilitate pentru aceasta perioada.",
     noDate: "Fara data",
     noProduct: "Fara produs",
+    exportCsv: "Exporta CSV",
     filters: {
       currency: "Moneda",
       from: "De la",

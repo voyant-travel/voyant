@@ -499,3 +499,80 @@ export async function getProductProfitability(
 function filterCostByCurrency<T extends { currency: string }>(rows: T[], currency?: string): T[] {
   return currency ? rows.filter((row) => row.currency === currency) : rows
 }
+
+// ---------- CSV export (accountant sharing) ----------
+
+const csvField = (value: string | number | null | undefined): string => {
+  const str = value == null ? "" : String(value)
+  return /[",\n\r]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
+}
+const csvRow = (cells: Array<string | number | null | undefined>): string =>
+  cells.map(csvField).join(",")
+// BOM + CRLF so Excel opens UTF-8 correctly (mirrors availability exports).
+const csvDocument = (rows: string[]): string => `﻿${rows.join("\r\n")}\r\n`
+const major = (cents: number): string => (cents / 100).toFixed(2)
+const marginCell = (value: number | null): string => (value == null ? "" : value.toFixed(1))
+
+export function buildDepartureProfitabilityCsv(report: DepartureProfitabilityReport): string {
+  const header = [
+    "departure_id",
+    "departure",
+    "product_id",
+    "product",
+    "date",
+    "currency",
+    "revenue",
+    "actual_cost",
+    "planned_cost",
+    "profit",
+    "margin_percent",
+    "variance",
+  ]
+  const rows = report.rows.map((r) =>
+    csvRow([
+      r.departureId,
+      r.departureLabel,
+      r.productId,
+      r.productName,
+      r.departureDate,
+      r.currency,
+      major(r.revenueCents),
+      major(r.actualCostCents),
+      major(r.plannedCostCents),
+      major(r.profitCents),
+      marginCell(r.marginPercent),
+      major(r.varianceCents),
+    ]),
+  )
+  return csvDocument([csvRow(header), ...rows])
+}
+
+export function buildProductProfitabilityCsv(report: ProductProfitabilityReport): string {
+  const header = [
+    "product_id",
+    "product",
+    "currency",
+    "departures",
+    "revenue",
+    "actual_cost",
+    "planned_cost",
+    "profit",
+    "margin_percent",
+    "variance",
+  ]
+  const rows = report.rows.map((r) =>
+    csvRow([
+      r.productId,
+      r.productName,
+      r.currency,
+      r.departureCount,
+      major(r.revenueCents),
+      major(r.actualCostCents),
+      major(r.plannedCostCents),
+      major(r.profitCents),
+      marginCell(r.marginPercent),
+      major(r.varianceCents),
+    ]),
+  )
+  return csvDocument([csvRow(header), ...rows])
+}

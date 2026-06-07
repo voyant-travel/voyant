@@ -20,6 +20,10 @@ import {
   PaymentValidationError,
 } from "./service.js"
 import {
+  buildDepartureProfitabilityCsv,
+  buildProductProfitabilityCsv,
+} from "./service-profitability.js"
+import {
   type InvoiceRenditionWaitMode,
   waitForInvoiceRendition,
   waitFormatForMode,
@@ -112,6 +116,15 @@ import {
 // ==========================================================================
 
 const DEFAULT_RENDITION_WAIT_TIMEOUT_MS = 30_000
+
+function csvDownload(csv: string, filename: string): Response {
+  return new Response(csv, {
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+    },
+  })
+}
 
 const routeIdempotencyKey = (
   scope: string,
@@ -542,6 +555,20 @@ export const financeRoutes = new Hono<Env>()
   .get("/reports/profitability/products", async (c) => {
     const query = parseQuery(c, productProfitabilityQuerySchema)
     return c.json({ data: await financeService.getProductProfitability(c.get("db"), query) })
+  })
+
+  // GET /reports/profitability/departures/export — CSV for accountant sharing
+  .get("/reports/profitability/departures/export", async (c) => {
+    const query = parseQuery(c, departureProfitabilityQuerySchema)
+    const report = await financeService.getDepartureProfitability(c.get("db"), query)
+    return csvDownload(buildDepartureProfitabilityCsv(report), "departure-profitability.csv")
+  })
+
+  // GET /reports/profitability/products/export — CSV for accountant sharing
+  .get("/reports/profitability/products/export", async (c) => {
+    const query = parseQuery(c, productProfitabilityQuerySchema)
+    const report = await financeService.getProductProfitability(c.get("db"), query)
+    return csvDownload(buildProductProfitabilityCsv(report), "product-profitability.csv")
   })
 
   // ========================================================================
