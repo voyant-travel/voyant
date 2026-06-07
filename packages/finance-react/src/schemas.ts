@@ -610,6 +610,7 @@ export const accountantInvoiceAttachmentSchema = z.object({
 
 export const accountantInvoiceRecordSchema = z.object({
   id: z.string(),
+  kind: z.enum(["client", "supplier"]),
   invoiceNumber: z.string(),
   status: z.string(),
   currency: z.string(),
@@ -617,7 +618,7 @@ export const accountantInvoiceRecordSchema = z.object({
   paidCents: z.number().int(),
   balanceDueCents: z.number().int(),
   issueDate: z.string(),
-  dueDate: z.string(),
+  dueDate: z.string().nullable(),
   attachments: z.array(accountantInvoiceAttachmentSchema),
 })
 export type AccountantInvoiceRecord = z.infer<typeof accountantInvoiceRecordSchema>

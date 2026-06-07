@@ -9,7 +9,7 @@ import { Hono } from "hono"
 import { resolveStoredDocumentDownload } from "./document-download.js"
 import { type Env, getRuntimeEnv, notFound } from "./routes-shared.js"
 import { financeService } from "./service.js"
-import { accountantSharesService } from "./service-accountant-shares.js"
+import { accountantSharesService, buildAccountantInvoicesCsv } from "./service-accountant-shares.js"
 import {
   buildDepartureProfitabilityCsv,
   buildProductProfitabilityCsv,
@@ -273,9 +273,11 @@ export function createPublicFinanceRoutes(options: PublicFinanceRouteOptions = {
           if (resolution.status === "not_found") return notFound(c, "Share not found")
           if (resolution.status === "gone")
             return c.json({ error: "Share expired or revoked" }, 410)
+          const kind = c.req.query("kind") === "supplier" ? "supplier" : "client"
           const attachment = await accountantSharesService.getAttachmentForDownload(
             c.get("db"),
             resolution.scope,
+            kind,
             c.req.param("invoiceId"),
             c.req.param("attachmentId"),
           )
@@ -305,6 +307,13 @@ export function createPublicFinanceRoutes(options: PublicFinanceRouteOptions = {
         if (report === "products") {
           const data = await financeService.getProductProfitability(c.get("db"), query)
           return csvResponse(buildProductProfitabilityCsv(data), "product-profitability.csv")
+        }
+        if (report === "invoices") {
+          const data = await accountantSharesService.getInvoicesWithAttachments(
+            c.get("db"),
+            resolution.scope,
+          )
+          return csvResponse(buildAccountantInvoicesCsv(data), "invoices.csv")
         }
         return notFound(c, "Unknown report")
       })

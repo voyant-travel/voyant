@@ -8,7 +8,12 @@ import {
 import { and, desc, eq, gte, inArray, isNull, lte, ne } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import { invoiceAttachments, invoices } from "./schema.js"
+import {
+  invoiceAttachments,
+  invoices,
+  supplierInvoiceAttachments,
+  supplierInvoices,
+} from "./schema.js"
 
 /**
  * Accountant shares — a revocable, TTL'd, audited public link that opens a
@@ -46,8 +51,11 @@ export interface AccountantInvoiceAttachment {
   hasFile: boolean
 }
 
+export type AccountantInvoiceKind = "client" | "supplier"
+
 export interface AccountantInvoiceRecord {
   id: string
+  kind: AccountantInvoiceKind
   invoiceNumber: string
   status: string
   currency: string
@@ -55,7 +63,7 @@ export interface AccountantInvoiceRecord {
   paidCents: number
   balanceDueCents: number
   issueDate: string
-  dueDate: string
+  dueDate: string | null
   attachments: AccountantInvoiceAttachment[]
 }
 
@@ -162,72 +170,172 @@ export const accountantSharesService = {
     })
   },
 
+  /** Customer (AR) + supplier (AP) invoices in the scope window, with attachments. */
   async getInvoicesWithAttachments(
     db: PostgresJsDatabase,
     scope: AccountantShareScope,
   ): Promise<AccountantInvoiceRecord[]> {
-    const conditions = [ne(invoices.status, "void"), ne(invoices.invoiceType, "proforma")]
-    if (scope.from) conditions.push(gte(invoices.issueDate, scope.from))
-    if (scope.to) conditions.push(lte(invoices.issueDate, scope.to))
+    const clientConditions = [ne(invoices.status, "void"), ne(invoices.invoiceType, "proforma")]
+    if (scope.from) clientConditions.push(gte(invoices.issueDate, scope.from))
+    if (scope.to) clientConditions.push(lte(invoices.issueDate, scope.to))
 
-    const invoiceRows = await db
-      .select({
-        id: invoices.id,
-        invoiceNumber: invoices.invoiceNumber,
-        status: invoices.status,
-        currency: invoices.currency,
-        totalCents: invoices.totalCents,
-        paidCents: invoices.paidCents,
-        balanceDueCents: invoices.balanceDueCents,
-        issueDate: invoices.issueDate,
-        dueDate: invoices.dueDate,
-      })
-      .from(invoices)
-      .where(and(...conditions))
-      .orderBy(desc(invoices.issueDate), desc(invoices.invoiceNumber))
+    const supplierConditions = [
+      ne(supplierInvoices.status, "void"),
+      isNull(supplierInvoices.deletedAt),
+    ]
+    if (scope.from) supplierConditions.push(gte(supplierInvoices.issueDate, scope.from))
+    if (scope.to) supplierConditions.push(lte(supplierInvoices.issueDate, scope.to))
 
-    if (invoiceRows.length === 0) return []
+    const [clientRows, supplierRows] = await Promise.all([
+      db
+        .select({
+          id: invoices.id,
+          invoiceNumber: invoices.invoiceNumber,
+          status: invoices.status,
+          currency: invoices.currency,
+          totalCents: invoices.totalCents,
+          paidCents: invoices.paidCents,
+          balanceDueCents: invoices.balanceDueCents,
+          issueDate: invoices.issueDate,
+          dueDate: invoices.dueDate,
+        })
+        .from(invoices)
+        .where(and(...clientConditions)),
+      db
+        .select({
+          id: supplierInvoices.id,
+          invoiceNumber: supplierInvoices.supplierInvoiceNo,
+          status: supplierInvoices.status,
+          currency: supplierInvoices.currency,
+          totalCents: supplierInvoices.totalCents,
+          paidCents: supplierInvoices.paidCents,
+          balanceDueCents: supplierInvoices.balanceDueCents,
+          issueDate: supplierInvoices.issueDate,
+          dueDate: supplierInvoices.dueDate,
+        })
+        .from(supplierInvoices)
+        .where(and(...supplierConditions)),
+    ])
 
-    const attachmentRows = await db
-      .select({
-        id: invoiceAttachments.id,
-        invoiceId: invoiceAttachments.invoiceId,
-        name: invoiceAttachments.name,
-        mimeType: invoiceAttachments.mimeType,
-        fileSize: invoiceAttachments.fileSize,
-        storageKey: invoiceAttachments.storageKey,
-      })
-      .from(invoiceAttachments)
-      .where(
-        inArray(
-          invoiceAttachments.invoiceId,
-          invoiceRows.map((row) => row.id),
-        ),
-      )
+    const [clientAttachments, supplierAttachments] = await Promise.all([
+      clientRows.length
+        ? db
+            .select({
+              id: invoiceAttachments.id,
+              parentId: invoiceAttachments.invoiceId,
+              name: invoiceAttachments.name,
+              mimeType: invoiceAttachments.mimeType,
+              fileSize: invoiceAttachments.fileSize,
+              storageKey: invoiceAttachments.storageKey,
+            })
+            .from(invoiceAttachments)
+            .where(
+              inArray(
+                invoiceAttachments.invoiceId,
+                clientRows.map((row) => row.id),
+              ),
+            )
+        : Promise.resolve([]),
+      supplierRows.length
+        ? db
+            .select({
+              id: supplierInvoiceAttachments.id,
+              parentId: supplierInvoiceAttachments.supplierInvoiceId,
+              name: supplierInvoiceAttachments.name,
+              mimeType: supplierInvoiceAttachments.mimeType,
+              fileSize: supplierInvoiceAttachments.fileSize,
+              storageKey: supplierInvoiceAttachments.storageKey,
+            })
+            .from(supplierInvoiceAttachments)
+            .where(
+              inArray(
+                supplierInvoiceAttachments.supplierInvoiceId,
+                supplierRows.map((row) => row.id),
+              ),
+            )
+        : Promise.resolve([]),
+    ])
 
-    const byInvoice = new Map<string, AccountantInvoiceAttachment[]>()
-    for (const att of attachmentRows) {
-      const list = byInvoice.get(att.invoiceId) ?? []
-      list.push({
-        id: att.id,
-        name: att.name,
-        mimeType: att.mimeType,
-        fileSize: att.fileSize,
-        hasFile: Boolean(att.storageKey),
-      })
-      byInvoice.set(att.invoiceId, list)
+    const groupAttachments = (
+      rows: Array<{
+        id: string
+        parentId: string
+        name: string
+        mimeType: string | null
+        fileSize: number | null
+        storageKey: string | null
+      }>,
+    ) => {
+      const map = new Map<string, AccountantInvoiceAttachment[]>()
+      for (const att of rows) {
+        const list = map.get(att.parentId) ?? []
+        list.push({
+          id: att.id,
+          name: att.name,
+          mimeType: att.mimeType,
+          fileSize: att.fileSize,
+          hasFile: Boolean(att.storageKey),
+        })
+        map.set(att.parentId, list)
+      }
+      return map
     }
+    const clientByInvoice = groupAttachments(clientAttachments)
+    const supplierByInvoice = groupAttachments(supplierAttachments)
 
-    return invoiceRows.map((row) => ({ ...row, attachments: byInvoice.get(row.id) ?? [] }))
+    const records: AccountantInvoiceRecord[] = [
+      ...clientRows.map((row) => ({
+        ...row,
+        kind: "client" as const,
+        attachments: clientByInvoice.get(row.id) ?? [],
+      })),
+      ...supplierRows.map((row) => ({
+        ...row,
+        kind: "supplier" as const,
+        attachments: supplierByInvoice.get(row.id) ?? [],
+      })),
+    ]
+    records.sort(
+      (a, b) =>
+        b.issueDate.localeCompare(a.issueDate) || a.invoiceNumber.localeCompare(b.invoiceNumber),
+    )
+    return records
   },
 
   /** Resolve a single attachment for download, enforcing it sits within scope. */
   async getAttachmentForDownload(
     db: PostgresJsDatabase,
     scope: AccountantShareScope,
+    kind: AccountantInvoiceKind,
     invoiceId: string,
     attachmentId: string,
   ): Promise<{ storageKey: string; name: string; mimeType: string | null } | null> {
+    if (kind === "supplier") {
+      const conditions = [
+        eq(supplierInvoiceAttachments.id, attachmentId),
+        eq(supplierInvoiceAttachments.supplierInvoiceId, invoiceId),
+        ne(supplierInvoices.status, "void"),
+        isNull(supplierInvoices.deletedAt),
+      ]
+      if (scope.from) conditions.push(gte(supplierInvoices.issueDate, scope.from))
+      if (scope.to) conditions.push(lte(supplierInvoices.issueDate, scope.to))
+      const [row] = await db
+        .select({
+          storageKey: supplierInvoiceAttachments.storageKey,
+          name: supplierInvoiceAttachments.name,
+          mimeType: supplierInvoiceAttachments.mimeType,
+        })
+        .from(supplierInvoiceAttachments)
+        .innerJoin(
+          supplierInvoices,
+          eq(supplierInvoiceAttachments.supplierInvoiceId, supplierInvoices.id),
+        )
+        .where(and(...conditions))
+        .limit(1)
+      if (!row?.storageKey) return null
+      return { storageKey: row.storageKey, name: row.name, mimeType: row.mimeType }
+    }
+
     const conditions = [
       eq(invoiceAttachments.id, attachmentId),
       eq(invoiceAttachments.invoiceId, invoiceId),
@@ -250,4 +358,41 @@ export const accountantSharesService = {
     if (!row?.storageKey) return null
     return { storageKey: row.storageKey, name: row.name, mimeType: row.mimeType }
   },
+}
+
+// ---------- invoices CSV (accountant export) ----------
+
+const invCsvField = (value: string | number | null | undefined): string => {
+  const str = value == null ? "" : String(value)
+  return /[",\n\r]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
+}
+
+export function buildAccountantInvoicesCsv(rows: AccountantInvoiceRecord[]): string {
+  const header = [
+    "type",
+    "invoice_number",
+    "status",
+    "currency",
+    "total",
+    "paid",
+    "balance_due",
+    "issue_date",
+    "due_date",
+  ]
+  const body = rows.map((r) =>
+    [
+      r.kind,
+      r.invoiceNumber,
+      r.status,
+      r.currency,
+      (r.totalCents / 100).toFixed(2),
+      (r.paidCents / 100).toFixed(2),
+      (r.balanceDueCents / 100).toFixed(2),
+      r.issueDate,
+      r.dueDate ?? "",
+    ]
+      .map(invCsvField)
+      .join(","),
+  )
+  return `﻿${[header.join(","), ...body].join("\r\n")}\r\n`
 }

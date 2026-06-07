@@ -7,7 +7,12 @@
 import { bookings } from "@voyantjs/bookings/schema"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
-import { invoiceAttachments, invoices } from "../../src/schema.js"
+import {
+  invoiceAttachments,
+  invoices,
+  supplierInvoiceAttachments,
+  supplierInvoices,
+} from "../../src/schema.js"
 import { accountantSharesService } from "../../src/service-accountant-shares.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
@@ -104,11 +109,33 @@ describe.skipIf(!DB_AVAILABLE)("accountant shares", () => {
       fileSize: 1234,
       storageKey: "invoices/inv_in/invoice.pdf",
     })
+    // A supplier (AP) invoice in the same window — should appear with kind=supplier.
+    await db.insert(supplierInvoices).values({
+      id: "sinv_in",
+      supplierId: "supp_x",
+      supplierInvoiceNo: "SUP-IN",
+      status: "approved",
+      currency: "EUR",
+      issueDate: "2026-07-12",
+      totalCents: 40000,
+      paidCents: 0,
+      balanceDueCents: 40000,
+    })
+    await db.insert(supplierInvoiceAttachments).values({
+      id: "siatt_1",
+      supplierInvoiceId: "sinv_in",
+      name: "supplier.pdf",
+      storageKey: "supplier-invoices/sinv_in/supplier.pdf",
+    })
 
     const scope = { from: "2026-07-01", to: "2026-07-31", baseCurrency: null }
     const list = await accountantSharesService.getInvoicesWithAttachments(db, scope)
-    expect(list.map((i) => i.id)).toEqual(["inv_in"]) // inv_out is outside the window
-    expect(list[0]?.attachments).toEqual([
+    // inv_out is outside the window; client + supplier both inside it appear.
+    expect(new Set(list.map((i) => `${i.kind}:${i.id}`))).toEqual(
+      new Set(["client:inv_in", "supplier:sinv_in"]),
+    )
+    const client = list.find((i) => i.id === "inv_in")
+    expect(client?.attachments).toEqual([
       {
         id: "iatt_1",
         name: "invoice.pdf",
@@ -118,8 +145,22 @@ describe.skipIf(!DB_AVAILABLE)("accountant shares", () => {
       },
     ])
 
-    const dl = await accountantSharesService.getAttachmentForDownload(db, scope, "inv_in", "iatt_1")
-    expect(dl?.storageKey).toBe("invoices/inv_in/invoice.pdf")
+    const clientDl = await accountantSharesService.getAttachmentForDownload(
+      db,
+      scope,
+      "client",
+      "inv_in",
+      "iatt_1",
+    )
+    expect(clientDl?.storageKey).toBe("invoices/inv_in/invoice.pdf")
+    const supplierDl = await accountantSharesService.getAttachmentForDownload(
+      db,
+      scope,
+      "supplier",
+      "sinv_in",
+      "siatt_1",
+    )
+    expect(supplierDl?.storageKey).toBe("supplier-invoices/sinv_in/supplier.pdf")
 
     // Out-of-scope invoice's attachment is not downloadable through this share.
     await db.insert(invoiceAttachments).values({
@@ -129,7 +170,13 @@ describe.skipIf(!DB_AVAILABLE)("accountant shares", () => {
       storageKey: "invoices/inv_out/x.pdf",
     })
     expect(
-      await accountantSharesService.getAttachmentForDownload(db, scope, "inv_out", "iatt_out"),
+      await accountantSharesService.getAttachmentForDownload(
+        db,
+        scope,
+        "client",
+        "inv_out",
+        "iatt_out",
+      ),
     ).toBeNull()
   })
 })

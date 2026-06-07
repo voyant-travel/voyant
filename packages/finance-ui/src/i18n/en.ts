@@ -978,7 +978,10 @@ export const financeUiEn = {
       invoicesNone: "No invoices in this period.",
       download: "Download",
       noFile: "No file",
+      kindClient: "Client",
+      kindSupplier: "Supplier",
       columns: {
+        type: "Type",
         invoice: "Invoice",
         status: "Status",
         issueDate: "Issue date",

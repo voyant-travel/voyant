@@ -168,10 +168,10 @@ export function AccountantPortal({ token, apiBaseUrl, className }: AccountantPor
     data?.scope.from || data?.scope.to
       ? `${data?.scope.from ?? "…"} – ${data?.scope.to ?? "…"}`
       : t.portal.allTime
-  const exportUrl = (report: "departures" | "products") =>
+  const exportUrl = (report: "departures" | "products" | "invoices") =>
     `${apiBaseUrl}/v1/public/finance/accountant/${encodeURIComponent(token)}/export/${report}`
-  const downloadUrl = (invoiceId: string, attachmentId: string) =>
-    `${apiBaseUrl}/v1/public/finance/accountant/${encodeURIComponent(token)}/invoices/${invoiceId}/attachments/${attachmentId}/download`
+  const downloadUrl = (kind: "client" | "supplier", invoiceId: string, attachmentId: string) =>
+    `${apiBaseUrl}/v1/public/finance/accountant/${encodeURIComponent(token)}/invoices/${invoiceId}/attachments/${attachmentId}/download?kind=${kind}`
 
   if (summary.isError) {
     return (
@@ -458,13 +458,20 @@ export function AccountantPortal({ token, apiBaseUrl, className }: AccountantPor
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">{t.portal.invoices}</CardTitle>
+          <a href={exportUrl("invoices")} target="_blank" rel="noopener noreferrer">
+            <Button variant="outline" size="sm">
+              <Download className="size-4" />
+              {t.exportCsv}
+            </Button>
+          </a>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>{t.portal.columns.type}</TableHead>
                 <TableHead>{t.portal.columns.invoice}</TableHead>
                 <TableHead>{t.portal.columns.status}</TableHead>
                 <TableHead>{t.portal.columns.issueDate}</TableHead>
@@ -476,13 +483,18 @@ export function AccountantPortal({ token, apiBaseUrl, className }: AccountantPor
             <TableBody>
               {invoiceRows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
                     {t.portal.invoicesNone}
                   </TableCell>
                 </TableRow>
               ) : (
                 invoiceRows.map((inv) => (
-                  <TableRow key={inv.id}>
+                  <TableRow key={`${inv.kind}:${inv.id}`}>
+                    <TableCell>
+                      <Badge variant={inv.kind === "supplier" ? "secondary" : "outline"}>
+                        {inv.kind === "supplier" ? t.portal.kindSupplier : t.portal.kindClient}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="font-medium">{inv.invoiceNumber}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{inv.status}</Badge>
@@ -503,7 +515,7 @@ export function AccountantPortal({ token, apiBaseUrl, className }: AccountantPor
                             att.hasFile ? (
                               <a
                                 key={att.id}
-                                href={downloadUrl(inv.id, att.id)}
+                                href={downloadUrl(inv.kind, inv.id, att.id)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-sm text-primary underline-offset-2 hover:underline"

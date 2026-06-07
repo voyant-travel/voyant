@@ -984,7 +984,10 @@ export const financeUiRo = {
       invoicesNone: "Nicio factura in aceasta perioada.",
       download: "Descarca",
       noFile: "Fara fisier",
+      kindClient: "Client",
+      kindSupplier: "Furnizor",
       columns: {
+        type: "Tip",
         invoice: "Factura",
         status: "Status",
         issueDate: "Data emiterii",

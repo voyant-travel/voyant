@@ -975,7 +975,10 @@ export type FinanceUiMessages = {
       invoicesNone: string
       download: string
       noFile: string
+      kindClient: string
+      kindSupplier: string
       columns: {
+        type: string
         invoice: string
         status: string
         issueDate: string
