@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import { getSlotsQueryOptions } from "@voyantjs/availability-react"
 import { getBookingsQueryOptions } from "@voyantjs/bookings-react"
 import { getSupplierInvoiceQueryOptions } from "@voyantjs/finance-react"
 import {
@@ -60,6 +61,25 @@ function SupplierInvoiceDetailRoute() {
         getBookingsQueryOptions(client, { search: query || undefined, limit: 20 }),
       )
       return res.data.map((b) => ({ value: b.id, label: `${b.bookingNumber} (${b.id})` }))
+    }
+    if (targetType === "departure") {
+      // Product-centric: search products by name, then list each product's
+      // departures (slots). Label "<product> · <date>".
+      const products = await queryClient.fetchQuery(
+        getProductsQueryOptions(client, { search: query || undefined, limit: 6 }),
+      )
+      const nameById = new Map(products.data.map((p) => [p.id, p.name]))
+      const slotLists = await Promise.all(
+        products.data.map((p) =>
+          queryClient.fetchQuery(getSlotsQueryOptions(client, { productId: p.id, limit: 10 })),
+        ),
+      )
+      return slotLists.flatMap((res) =>
+        res.data.map((s) => ({
+          value: s.id,
+          label: `${nameById.get(s.productId) ?? s.productId} · ${s.dateLocal}`,
+        })),
+      )
     }
     return []
   }

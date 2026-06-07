@@ -91,10 +91,10 @@ type TargetType = (typeof TARGET_TYPES)[number]
 
 /**
  * Target types that support search-and-select; others fall back to a text id.
- * Departures (availability slots) and travelers have no global free-text search
- * endpoint, so they stay as raw-id inputs.
+ * Departure search is product-centric (search a product → pick its dated slot),
+ * wired by the host. Travelers have no global search, so they stay raw-id.
  */
-const SEARCHABLE_TARGETS = new Set<TargetType>(["product", "booking"])
+const SEARCHABLE_TARGETS = new Set<TargetType>(["departure", "product", "booking"])
 
 const SERVICE_TYPES: ApServiceType[] = [
   "transport",
