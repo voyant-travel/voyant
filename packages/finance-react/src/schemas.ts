@@ -550,8 +550,31 @@ export const productProfitabilityReportSchema = z.object({
 })
 export type ProductProfitabilityReport = z.infer<typeof productProfitabilityReportSchema>
 
+export const travelerProfitabilityRowSchema = z.object({
+  travelerId: z.string(),
+  travelerName: z.string(),
+  bookingId: z.string(),
+  currency: z.string(),
+  revenueCents: z.number().int(),
+  actualCostCents: z.number().int(),
+  plannedCostCents: z.number().int(),
+  profitCents: z.number().int(),
+  marginPercent: z.number().nullable(),
+  varianceCents: z.number().int(),
+})
+export type TravelerProfitabilityRow = z.infer<typeof travelerProfitabilityRowSchema>
+
+export const travelerProfitabilityReportSchema = z.object({
+  departureId: z.string(),
+  currency: z.string(),
+  travelerCount: z.number().int(),
+  rows: z.array(travelerProfitabilityRowSchema),
+})
+export type TravelerProfitabilityReport = z.infer<typeof travelerProfitabilityReportSchema>
+
 export const departureProfitabilityResponse = singleEnvelope(departureProfitabilityReportSchema)
 export const productProfitabilityResponse = singleEnvelope(productProfitabilityReportSchema)
+export const travelerProfitabilityResponse = singleEnvelope(travelerProfitabilityReportSchema)
 
 export const supplierInvoiceListResponse = paginatedEnvelope(supplierInvoiceRecordSchema)
 export const supplierInvoiceSingleResponse = singleEnvelope(supplierInvoiceDetailRecordSchema)

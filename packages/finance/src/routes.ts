@@ -86,6 +86,7 @@ import {
   taxPolicyProfileListQuerySchema,
   taxPolicyRuleListQuerySchema,
   taxRegimeListQuerySchema,
+  travelerProfitabilityQuerySchema,
   updateBookingGuaranteeSchema,
   updateBookingItemCommissionSchema,
   updateBookingItemTaxLineSchema,
@@ -555,6 +556,12 @@ export const financeRoutes = new Hono<Env>()
   .get("/reports/profitability/products", async (c) => {
     const query = parseQuery(c, productProfitabilityQuerySchema)
     return c.json({ data: await financeService.getProductProfitability(c.get("db"), query) })
+  })
+
+  // GET /reports/profitability/travelers — Per-traveller P&L for one departure (RFC §6)
+  .get("/reports/profitability/travelers", async (c) => {
+    const query = parseQuery(c, travelerProfitabilityQuerySchema)
+    return c.json({ data: await financeService.getTravelerProfitability(c.get("db"), query) })
   })
 
   // GET /reports/profitability/departures/export — CSV for accountant sharing

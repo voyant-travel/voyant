@@ -934,5 +934,20 @@ export const financeUiRo = {
         variance: "Diferenta",
       },
     },
+    travelers: {
+      title: "Pasageri — {departure}",
+      none: "Niciun pasager pe aceasta plecare.",
+      loadFailed: "Incarcarea pasagerilor a esuat.",
+      columns: {
+        traveler: "Pasager",
+        booking: "Rezervare",
+        revenue: "Venituri",
+        actualCost: "Cost real",
+        plannedCost: "Cost planificat",
+        profit: "Profit",
+        margin: "Marja",
+        variance: "Diferenta",
+      },
+    },
   },
 } satisfies FinanceUiMessages

@@ -14,6 +14,11 @@ export interface FinanceProductProfitabilityFilters {
   baseCurrency?: string | undefined
 }
 
+export interface FinanceTravelerProfitabilityFilters {
+  departureId: string
+  currency: string
+}
+
 export type FinanceInvoiceListSortField =
   | "invoiceNumber"
   | "status"
@@ -209,6 +214,8 @@ export const financeQueryKeys = {
     [...financeQueryKeys.all, "profitability", "departures", filters] as const,
   productProfitability: (filters: FinanceProductProfitabilityFilters) =>
     [...financeQueryKeys.all, "profitability", "products", filters] as const,
+  travelerProfitability: (filters: FinanceTravelerProfitabilityFilters) =>
+    [...financeQueryKeys.all, "profitability", "travelers", filters] as const,
 
   supplierPayments: () => [...financeQueryKeys.all, "supplier-payments"] as const,
   supplierPaymentsList: (filters: FinanceSupplierPaymentListFilters) =>

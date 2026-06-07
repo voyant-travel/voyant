@@ -928,5 +928,20 @@ export const financeUiEn = {
         variance: "Variance",
       },
     },
+    travelers: {
+      title: "Travellers — {departure}",
+      none: "No travellers on this departure.",
+      loadFailed: "Failed to load travellers.",
+      columns: {
+        traveler: "Traveller",
+        booking: "Booking",
+        revenue: "Revenue",
+        actualCost: "Actual cost",
+        plannedCost: "Planned cost",
+        profit: "Profit",
+        margin: "Margin",
+        variance: "Variance",
+      },
+    },
   },
 } satisfies FinanceUiMessages

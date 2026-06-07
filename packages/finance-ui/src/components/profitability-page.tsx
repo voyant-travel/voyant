@@ -5,6 +5,7 @@ import {
   type ProductProfitabilityRow,
   useDepartureProfitability,
   useProductProfitability,
+  useTravelerProfitability,
 } from "@voyantjs/finance-react"
 import { formatMessage } from "@voyantjs/i18n"
 import {
@@ -14,6 +15,11 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   Label,
   Select,
   SelectContent,
@@ -87,6 +93,9 @@ export function ProfitabilityPage({
   const [to, setTo] = useState<string>("")
   const [currency, setCurrency] = useState<string>("")
   const [base, setBase] = useState<string>("")
+  const [travelerDeparture, setTravelerDeparture] = useState<{ id: string; label: string } | null>(
+    null,
+  )
 
   const filters = {
     from: from || undefined,
@@ -371,7 +380,19 @@ export function ProfitabilityPage({
               ) : null}
             </CardHeader>
             <CardContent>
-              <DepartureTable rows={departureRows} currency={activeCurrency} />
+              <DepartureTable
+                rows={departureRows}
+                currency={activeCurrency}
+                onSelect={
+                  baseMode
+                    ? undefined
+                    : (row) =>
+                        setTravelerDeparture({
+                          id: row.departureId,
+                          label: row.departureLabel ?? row.departureId,
+                        })
+                }
+              />
             </CardContent>
           </Card>
 
@@ -395,7 +416,102 @@ export function ProfitabilityPage({
           </Card>
         </>
       )}
+
+      <TravelerBreakdownDialog
+        departure={travelerDeparture}
+        currency={activeCurrency}
+        onClose={() => setTravelerDeparture(null)}
+      />
     </div>
+  )
+}
+
+function TravelerBreakdownDialog({
+  departure,
+  currency,
+  onClose,
+}: {
+  departure: { id: string; label: string } | null
+  currency: string
+  onClose: () => void
+}) {
+  const t = useFinanceUiMessagesOrDefault().profitability
+  const { data, isError, isPending } = useTravelerProfitability({
+    departureId: departure?.id ?? "",
+    currency,
+    enabled: Boolean(departure),
+  })
+  const rows = data?.data?.rows ?? []
+  const money = (cents: number) => formatInvoiceAmount(cents, currency)
+
+  return (
+    <Dialog
+      open={Boolean(departure)}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+    >
+      <DialogContent className="sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>
+            {formatMessage(t.travelers.title, { departure: departure?.label ?? "" })}
+          </DialogTitle>
+        </DialogHeader>
+        <DialogBody>
+          {isError ? (
+            <p className="py-6 text-center text-sm text-destructive">{t.travelers.loadFailed}</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t.travelers.columns.traveler}</TableHead>
+                  <TableHead className="text-right">{t.travelers.columns.revenue}</TableHead>
+                  <TableHead className="text-right">{t.travelers.columns.actualCost}</TableHead>
+                  <TableHead className="text-right">{t.travelers.columns.plannedCost}</TableHead>
+                  <TableHead className="text-right">{t.travelers.columns.profit}</TableHead>
+                  <TableHead className="text-right">{t.travelers.columns.margin}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isPending && departure ? null : rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      {t.travelers.none}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  rows.map((row) => (
+                    <TableRow key={row.travelerId}>
+                      <TableCell className="font-medium">{row.travelerName}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {money(row.revenueCents)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {money(row.actualCostCents)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {money(row.plannedCostCents)}
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          "text-right tabular-nums",
+                          row.profitCents < 0 && "text-destructive",
+                        )}
+                      >
+                        {money(row.profitCents)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {marginText(row.marginPercent)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -429,9 +545,11 @@ function KpiCard({
 function DepartureTable({
   rows,
   currency,
+  onSelect,
 }: {
   rows: DepartureProfitabilityRow[]
   currency: string
+  onSelect?: (row: DepartureProfitabilityRow) => void
 }) {
   const t = useFinanceUiMessagesOrDefault().profitability
   const money = (cents: number) => formatInvoiceAmount(cents, currency)
@@ -459,7 +577,11 @@ function DepartureTable({
           </TableRow>
         ) : (
           rows.map((row) => (
-            <TableRow key={`${row.departureId}:${row.currency}`}>
+            <TableRow
+              key={`${row.departureId}:${row.currency}`}
+              className={onSelect ? "cursor-pointer" : undefined}
+              onClick={onSelect ? () => onSelect(row) : undefined}
+            >
               <TableCell className="font-medium">{row.departureLabel ?? row.departureId}</TableCell>
               <TableCell className="text-muted-foreground">
                 {row.departureDate ?? t.noDate}

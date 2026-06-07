@@ -923,5 +923,21 @@ export type FinanceUiMessages = {
         variance: string
       }
     }
+    travelers: {
+      /** Templated with `{departure}`. */
+      title: string
+      none: string
+      loadFailed: string
+      columns: {
+        traveler: string
+        booking: string
+        revenue: string
+        actualCost: string
+        plannedCost: string
+        profit: string
+        margin: string
+        variance: string
+      }
+    }
   }
 }

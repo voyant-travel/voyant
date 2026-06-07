@@ -1,7 +1,8 @@
-import { bookingItems } from "@voyantjs/bookings/schema"
+import { bookingItems, bookingTravelers } from "@voyantjs/bookings/schema"
 import type {
   DepartureProfitabilityQuery,
   ProductProfitabilityQuery,
+  TravelerProfitabilityQuery,
 } from "@voyantjs/finance-contracts"
 import { and, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -550,6 +551,169 @@ export async function getProductProfitability(
 
 function filterCostByCurrency<T extends { currency: string }>(rows: T[], currency?: string): T[] {
   return currency ? rows.filter((row) => row.currency === currency) : rows
+}
+
+// ---------- per-traveller P&L (RFC §6) ----------
+
+export interface TravelerProfitabilityRow {
+  travelerId: string
+  travelerName: string
+  bookingId: string
+  currency: string
+  revenueCents: number
+  actualCostCents: number
+  plannedCostCents: number
+  profitCents: number
+  marginPercent: number | null
+  varianceCents: number
+}
+
+export interface TravelerProfitabilityReport {
+  departureId: string
+  currency: string
+  travelerCount: number
+  rows: TravelerProfitabilityRow[]
+}
+
+/**
+ * Derive per-traveller P&L for one departure in a single currency. Revenue is a
+ * booking's departure-attributed invoiced AR split equally across that booking's
+ * travellers; planned cost likewise; actual departure cost is split equally
+ * across all the departure's travellers (`equal` method — `per_pax` parity).
+ */
+export async function getTravelerProfitability(
+  db: PostgresJsDatabase,
+  query: TravelerProfitabilityQuery,
+): Promise<TravelerProfitabilityReport> {
+  const departureId = query.departureId
+  const currency = query.currency.toUpperCase()
+  const empty: TravelerProfitabilityReport = { departureId, currency, travelerCount: 0, rows: [] }
+
+  const depItemRows = await db
+    .select({
+      bookingId: bookingItems.bookingId,
+      depSell: sql<number>`coalesce(sum(${bookingItems.totalSellAmountCents}), 0)::bigint`,
+      depPlanned: sql<number>`coalesce(sum(case when ${bookingItems.costCurrency} = ${currency} then ${bookingItems.totalCostAmountCents} else 0 end), 0)::bigint`,
+    })
+    .from(bookingItems)
+    .where(eq(bookingItems.availabilitySlotId, departureId))
+    .groupBy(bookingItems.bookingId)
+
+  const bookingIds = depItemRows.map((r) => r.bookingId)
+  if (bookingIds.length === 0) return empty
+
+  const [totalSellRows, invoiceRows, actualRows, travelerRows] = await Promise.all([
+    db
+      .select({
+        bookingId: bookingItems.bookingId,
+        totalSell: sql<number>`coalesce(sum(${bookingItems.totalSellAmountCents}), 0)::bigint`,
+      })
+      .from(bookingItems)
+      .where(inArray(bookingItems.bookingId, bookingIds))
+      .groupBy(bookingItems.bookingId),
+    db
+      .select({
+        bookingId: invoices.bookingId,
+        total: sql<number>`coalesce(sum(case when ${invoices.invoiceType} = 'credit_note' then -${invoices.totalCents} else ${invoices.totalCents} end), 0)::bigint`,
+      })
+      .from(invoices)
+      .where(
+        and(
+          inArray(invoices.bookingId, bookingIds),
+          eq(invoices.currency, currency),
+          ne(invoices.status, "void"),
+          ne(invoices.status, "draft"),
+          ne(invoices.invoiceType, "proforma"),
+        ),
+      )
+      .groupBy(invoices.bookingId),
+    db
+      .select({
+        amount: sql<number>`coalesce(sum(${supplierCostAllocations.amountCents}), 0)::bigint`,
+      })
+      .from(supplierCostAllocations)
+      .innerJoin(
+        supplierInvoices,
+        eq(supplierCostAllocations.supplierInvoiceId, supplierInvoices.id),
+      )
+      .where(
+        and(
+          eq(supplierCostAllocations.targetType, "departure"),
+          eq(supplierCostAllocations.departureId, departureId),
+          eq(supplierInvoices.currency, currency),
+          ne(supplierInvoices.status, "void"),
+          isNull(supplierInvoices.deletedAt),
+        ),
+      ),
+    db
+      .select({
+        id: bookingTravelers.id,
+        bookingId: bookingTravelers.bookingId,
+        firstName: bookingTravelers.firstName,
+        lastName: bookingTravelers.lastName,
+      })
+      .from(bookingTravelers)
+      .where(
+        and(
+          inArray(bookingTravelers.bookingId, bookingIds),
+          eq(bookingTravelers.participantType, "traveler"),
+        ),
+      ),
+  ])
+
+  const totalSellByBooking = new Map(totalSellRows.map((r) => [r.bookingId, num(r.totalSell)]))
+  const invoicedByBooking = new Map(invoiceRows.map((r) => [r.bookingId, num(r.total)]))
+  const depByBooking = new Map(
+    depItemRows.map((r) => [
+      r.bookingId,
+      { depSell: num(r.depSell), depPlanned: num(r.depPlanned) },
+    ]),
+  )
+
+  const travelersByBooking = new Map<string, Array<{ id: string; name: string }>>()
+  for (const t of travelerRows) {
+    const list = travelersByBooking.get(t.bookingId) ?? []
+    list.push({ id: t.id, name: `${t.firstName} ${t.lastName}`.trim() })
+    travelersByBooking.set(t.bookingId, list)
+  }
+
+  const travelerCount = travelerRows.length
+  if (travelerCount === 0) return empty
+  const actualPerTraveler = num(actualRows[0]?.amount) / travelerCount
+
+  const rows: TravelerProfitabilityRow[] = []
+  for (const bookingId of bookingIds) {
+    const travelers = travelersByBooking.get(bookingId)
+    if (!travelers || travelers.length === 0) continue
+    const dep = depByBooking.get(bookingId) ?? { depSell: 0, depPlanned: 0 }
+    const totalSell = totalSellByBooking.get(bookingId) ?? 0
+    const ratio = totalSell > 0 ? dep.depSell / totalSell : 1
+    const revenuePerTraveler = ((invoicedByBooking.get(bookingId) ?? 0) * ratio) / travelers.length
+    const plannedPerTraveler = dep.depPlanned / travelers.length
+    for (const traveler of travelers) {
+      const revenueCents = Math.round(revenuePerTraveler)
+      const actualCostCents = Math.round(actualPerTraveler)
+      const plannedCostCents = Math.round(plannedPerTraveler)
+      const profitCents = revenueCents - actualCostCents
+      rows.push({
+        travelerId: traveler.id,
+        travelerName: traveler.name,
+        bookingId,
+        currency,
+        revenueCents,
+        actualCostCents,
+        plannedCostCents,
+        profitCents,
+        marginPercent: margin(profitCents, revenueCents),
+        varianceCents: plannedCostCents - actualCostCents,
+      })
+    }
+  }
+  rows.sort(
+    (a, b) =>
+      a.bookingId.localeCompare(b.bookingId) || a.travelerName.localeCompare(b.travelerName),
+  )
+  return { departureId, currency, travelerCount, rows }
 }
 
 // ---------- base-currency rollup (FX) ----------

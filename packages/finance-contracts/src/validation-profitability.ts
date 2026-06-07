@@ -26,5 +26,16 @@ export const productProfitabilityQuerySchema = z.object({
   baseCurrency: z.string().optional(),
 })
 
+/**
+ * Per-traveller P&L for a single departure (RFC §6) — derived on read by
+ * splitting the departure's revenue/cost across its travellers (equal split).
+ * Scoped to one currency (the view's active currency).
+ */
+export const travelerProfitabilityQuerySchema = z.object({
+  departureId: z.string().min(1),
+  currency: z.string().min(1),
+})
+
 export type DepartureProfitabilityQuery = z.infer<typeof departureProfitabilityQuerySchema>
 export type ProductProfitabilityQuery = z.infer<typeof productProfitabilityQuerySchema>
+export type TravelerProfitabilityQuery = z.infer<typeof travelerProfitabilityQuerySchema>

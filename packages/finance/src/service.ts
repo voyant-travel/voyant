@@ -89,7 +89,11 @@ import {
   buildSupplierPaymentUpdateActionLedgerInput,
 } from "./service-action-ledger.js"
 import { getFinanceAggregates } from "./service-aggregates.js"
-import { getDepartureProfitability, getProductProfitability } from "./service-profitability.js"
+import {
+  getDepartureProfitability,
+  getProductProfitability,
+  getTravelerProfitability,
+} from "./service-profitability.js"
 import type { InvoiceSettledEvent } from "./service-settlement.js"
 import { recomputeSupplierInvoiceBalance } from "./service-supplier-invoices.js"
 import { vouchersService } from "./service-vouchers.js"
@@ -1573,6 +1577,7 @@ export const financeService = {
   getFinanceAggregates,
   getDepartureProfitability,
   getProductProfitability,
+  getTravelerProfitability,
 
   async listPaymentInstruments(db: PostgresJsDatabase, query: PaymentInstrumentListQuery) {
     const conditions = []

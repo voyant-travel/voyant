@@ -7,7 +7,7 @@
  *  - rows are emitted per currency and never summed across currencies
  */
 
-import { bookingItems, bookings } from "@voyantjs/bookings/schema"
+import { bookingItems, bookings, bookingTravelers } from "@voyantjs/bookings/schema"
 import { sql } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -416,5 +416,70 @@ describe.skipIf(!DB_AVAILABLE)("profitability read model", () => {
     const report = await financeService.getDepartureProfitability(db, { baseCurrency: "USD" })
     expect(report.base?.unconvertibleCurrencies.sort()).toEqual(["EUR", "RON"])
     expect(report.base?.rows).toHaveLength(0)
+  })
+
+  it("splits a departure's revenue and cost across its travellers (equal)", async () => {
+    await db.insert(bookings).values({
+      id: "book_t1",
+      bookingNumber: "BKG-T1",
+      status: "confirmed",
+      sellCurrency: "EUR",
+      startDate: "2026-07-01",
+    })
+    await db.insert(bookingItems).values({
+      bookingId: "book_t1",
+      title: "Tour T",
+      availabilitySlotId: "avsl_t",
+      productId: "prod_t",
+      startsAt: new Date("2026-07-01T09:00:00Z"),
+      quantity: 3,
+      sellCurrency: "EUR",
+      totalSellAmountCents: 120000,
+      costCurrency: "EUR",
+      totalCostAmountCents: 60000,
+    })
+    await db.insert(invoices).values({
+      invoiceNumber: "INV-T1",
+      invoiceType: "invoice",
+      status: "issued",
+      bookingId: "book_t1",
+      currency: "EUR",
+      totalCents: 120000,
+      paidCents: 0,
+      balanceDueCents: 120000,
+      issueDate: "2026-06-15",
+      dueDate: "2026-06-30",
+    })
+    await db.insert(bookingTravelers).values([
+      { bookingId: "book_t1", firstName: "Alice", lastName: "A", participantType: "traveler" },
+      { bookingId: "book_t1", firstName: "Bob", lastName: "B", participantType: "traveler" },
+      { bookingId: "book_t1", firstName: "Cara", lastName: "C", participantType: "traveler" },
+      // Non-traveller participant — excluded from the split.
+      { bookingId: "book_t1", firstName: "Dan", lastName: "D", participantType: "other" },
+    ])
+    await seedSupplierCost(db, {
+      currency: "EUR",
+      serviceType: "transport",
+      amountCents: 90000,
+      target: { targetType: "departure", departureId: "avsl_t" },
+    })
+
+    const report = await financeService.getTravelerProfitability(db, {
+      departureId: "avsl_t",
+      currency: "EUR",
+    })
+    expect(report.travelerCount).toBe(3)
+    expect(report.rows).toHaveLength(3)
+    // 120000 revenue / 3 = 40000; 90000 actual / 3 = 30000; 60000 planned / 3 = 20000.
+    for (const row of report.rows) {
+      expect(row).toMatchObject({
+        revenueCents: 40000,
+        actualCostCents: 30000,
+        plannedCostCents: 20000,
+        profitCents: 10000,
+        varianceCents: -10000,
+      })
+      expect(row.marginPercent).toBeCloseTo(25, 1)
+    }
   })
 })

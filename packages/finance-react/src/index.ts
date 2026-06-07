@@ -49,6 +49,7 @@ export {
   type FinanceSupplierPaymentListFilters,
   type FinanceSupplierPaymentListSortDir,
   type FinanceSupplierPaymentListSortField,
+  type FinanceTravelerProfitabilityFilters,
   financeQueryKeys,
 } from "./query-keys.js"
 export {
@@ -80,6 +81,7 @@ export {
   getSupplierInvoiceQueryOptions,
   getSupplierInvoicesQueryOptions,
   getSupplierPaymentsQueryOptions,
+  getTravelerProfitabilityQueryOptions,
   getVoucherQueryOptions,
   getVouchersQueryOptions,
 } from "./query-options.js"

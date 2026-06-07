@@ -38,6 +38,7 @@ import {
 import {
   type FinanceDepartureProfitabilityFilters,
   type FinanceProductProfitabilityFilters,
+  type FinanceTravelerProfitabilityFilters,
   financeQueryKeys,
 } from "./query-keys.js"
 import {
@@ -59,6 +60,7 @@ import {
   supplierInvoiceListResponse,
   supplierInvoiceSingleResponse,
   supplierPaymentListResponse,
+  travelerProfitabilityResponse,
   voucherDetailResponse,
   voucherListResponse,
 } from "./schemas.js"
@@ -657,6 +659,25 @@ export function getProductProfitabilityQueryOptions(
       return fetchWithValidation(
         `/v1/admin/finance/reports/profitability/products${qs ? `?${qs}` : ""}`,
         productProfitabilityResponse,
+        client,
+      )
+    },
+  })
+}
+
+export function getTravelerProfitabilityQueryOptions(
+  client: FetchWithValidationOptions,
+  filters: FinanceTravelerProfitabilityFilters,
+) {
+  return queryOptions({
+    queryKey: financeQueryKeys.travelerProfitability(filters),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      params.set("departureId", filters.departureId)
+      params.set("currency", filters.currency)
+      return fetchWithValidation(
+        `/v1/admin/finance/reports/profitability/travelers?${params.toString()}`,
+        travelerProfitabilityResponse,
         client,
       )
     },
