@@ -230,36 +230,20 @@ async function loadDepartureAccumulators(db: PostgresJsDatabase): Promise<{
         ),
       )
       .groupBy(supplierCostAllocations.productId, supplierInvoices.currency),
-    // Cost breakdown by configurable cost category (attributed allocations only).
-    // Lines without a category (or whole-invoice allocations) fall to "Uncategorized".
+    // Cost breakdown by configurable cost category. Summed from supplier-invoice
+    // LINE totals (not allocations) so categorizing a line shows up immediately,
+    // even before the cost is allocated to a departure. Lines without a category
+    // fall to "Uncategorized".
     db
       .select({
         serviceType: sql<string>`coalesce(${costCategories.name}, 'Uncategorized')`,
         currency: supplierInvoices.currency,
-        amountCents: sql<number>`coalesce(sum(${supplierCostAllocations.amountCents}), 0)::bigint`,
+        amountCents: sql<number>`coalesce(sum(${supplierInvoiceLines.totalAmountCents}), 0)::bigint`,
       })
-      .from(supplierCostAllocations)
-      .innerJoin(
-        supplierInvoices,
-        eq(supplierCostAllocations.supplierInvoiceId, supplierInvoices.id),
-      )
-      .leftJoin(
-        supplierInvoiceLines,
-        eq(supplierCostAllocations.supplierInvoiceLineId, supplierInvoiceLines.id),
-      )
+      .from(supplierInvoiceLines)
+      .innerJoin(supplierInvoices, eq(supplierInvoiceLines.supplierInvoiceId, supplierInvoices.id))
       .leftJoin(costCategories, eq(supplierInvoiceLines.costCategoryId, costCategories.id))
-      .where(
-        and(
-          inArray(supplierCostAllocations.targetType, [
-            "departure",
-            "product",
-            "booking",
-            "traveler",
-          ]),
-          ne(supplierInvoices.status, "void"),
-          isNull(supplierInvoices.deletedAt),
-        ),
-      )
+      .where(and(ne(supplierInvoices.status, "void"), isNull(supplierInvoices.deletedAt)))
       .groupBy(sql`coalesce(${costCategories.name}, 'Uncategorized')`, supplierInvoices.currency),
     // Recorded-but-unattributed cost — appears in AP totals, excluded from P&L.
     db
