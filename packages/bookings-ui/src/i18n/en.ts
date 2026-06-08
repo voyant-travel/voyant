@@ -917,6 +917,7 @@ export const bookingsUiEn = {
       internalNotes: "Internal notes (operator-only)",
       confirmBooking: "Confirm booking",
       confirming: "Confirming...",
+      completeToConfirm: "Complete the highlighted sections above to confirm.",
       priceOverrideToggle: "Override total price",
       priceOverrideAmount: "Total price",
       priceOverrideReason: "Override reason",

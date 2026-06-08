@@ -215,6 +215,17 @@ export interface BookingJourneyProps {
   /** Surface — drives audience defaults and slot wiring. */
   surface?: "admin" | "public"
 
+  /**
+   * Layout of the booking flow.
+   *  - `"wizard"` — one step at a time with Back/Next (the guided
+   *    storefront flow).
+   *  - `"stacked"` — every section rendered as a block on a single
+   *    scrollable page, nothing hidden (the operator flow — an admin
+   *    can see travelers while editing options, and jump around freely).
+   * Defaults to `"stacked"` on the admin surface and `"wizard"` on
+   * public, keeping the two processes deliberately separate. */
+  layout?: "wizard" | "stacked"
+
   /** Stable draft id — caller persists in URL or session storage so
    *  the journey survives page refresh. */
   draftId: string

@@ -1955,6 +1955,7 @@ export function ReviewStep({
   setDraft,
   isCommitting,
   onConfirm,
+  canConfirm,
   renderExtras,
   surface,
   pricing,
@@ -1963,6 +1964,11 @@ export function ReviewStep({
   setDraft: (next: Draft) => void
   isCommitting: boolean
   onConfirm: () => void
+  /** Gate the confirm button — when `false`, it's disabled with a hint
+   *  (stacked layout, where there are no per-step advance gates). The
+   *  wizard reaches Review only after passing every gate, so it omits
+   *  this (defaults to enabled). */
+  canConfirm?: boolean
   renderExtras?: () => React.ReactNode
   /**
    * Drives the notes field. Public storefronts collect
@@ -2107,16 +2113,23 @@ export function ReviewStep({
           </div>
         ) : null}
         {renderExtras ? <div>{renderExtras()}</div> : null}
-        <Button onClick={onConfirm} disabled={isCommitting}>
-          {isCommitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {messages.bookingJourney.review.confirming}
-            </>
-          ) : (
-            messages.bookingJourney.review.confirmBooking
-          )}
-        </Button>
+        <div className="space-y-2">
+          <Button onClick={onConfirm} disabled={isCommitting || canConfirm === false}>
+            {isCommitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {messages.bookingJourney.review.confirming}
+              </>
+            ) : (
+              messages.bookingJourney.review.confirmBooking
+            )}
+          </Button>
+          {canConfirm === false ? (
+            <p className="text-muted-foreground text-sm">
+              {messages.bookingJourney.review.completeToConfirm}
+            </p>
+          ) : null}
+        </div>
       </CardContent>
     </Card>
   )

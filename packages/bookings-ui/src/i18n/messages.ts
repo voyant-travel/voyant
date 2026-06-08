@@ -735,6 +735,7 @@ export type BookingsUiMessages = {
       internalNotes: string
       confirmBooking: string
       confirming: string
+      completeToConfirm: string
       priceOverrideToggle: string
       priceOverrideAmount: string
       priceOverrideReason: string

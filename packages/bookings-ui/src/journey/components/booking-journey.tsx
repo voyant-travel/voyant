@@ -61,6 +61,10 @@ import { StepHeader } from "./step-header.js"
 export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   const surface = props.surface ?? "admin"
+  // Admin books on a single stacked page (nothing hidden); the storefront
+  // keeps the guided one-step-at-a-time wizard. Two deliberately separate
+  // flows — see BookingJourneyProps.layout.
+  const layout = props.layout ?? (surface === "admin" ? "stacked" : "wizard")
 
   const [draft, setDraft] = useState<Draft>(() => {
     const base = emptyDraft(
@@ -147,19 +151,20 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     }
   }, [steps, currentStep])
 
-  // PUT the draft to the server every time the user transitions
-  // steps. Keeps the recovery surface fresh without saving on every
-  // keystroke. The mutation reads the latest draft + quote from the
-  // closure on each fire — adding them to the deps array would defeat
-  // the "save on step change only" semantics.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional — fires on step transition only
+  // PUT the draft to the server to keep the recovery surface fresh
+  // without saving on every keystroke. Wizard saves on each step
+  // transition; the stacked admin page has no steps, so it saves on
+  // each settled quote (a natural, debounced cadence). The mutation
+  // reads the latest draft + quote from the closure on each fire.
+  const saveTrigger = layout === "wizard" ? currentStep : (quote.data?.quoteId ?? "")
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional — fires on save trigger only
   useEffect(() => {
     draftSync.save.mutate({
       draft: { ...draft, quoteId: quote.data?.quoteId },
       currentStep,
       currentQuoteId: quote.data?.quoteId,
     })
-  }, [currentStep])
+  }, [saveTrigger])
 
   // Commit
   const commit = useBookingCommit({
@@ -179,7 +184,11 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: signature change is the only trigger; refs + closure read latest values
   useEffect(() => {
-    if (currentStep === "departure" || currentStep === "options" || !holdSignature) return
+    // Wizard: don't hold while still on the configure steps. Stacked:
+    // everything's on one page, so the signature (slot + pax present)
+    // is the trigger.
+    if (layout === "wizard" && (currentStep === "departure" || currentStep === "options")) return
+    if (!holdSignature) return
     if (holdState.current.signature === holdSignature) return
     // Inquiry mode is the lead-form path — capture the lead without
     // burning capacity. The operator follows up before any inventory
@@ -211,8 +220,25 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     }
   }, [holdSignature, currentStep])
 
-  const canAdvance = canAdvanceFromStep(currentStep, draft, shape, quote.data?.available !== false)
+  const available = quote.data?.available !== false
+  const canAdvance = canAdvanceFromStep(currentStep, draft, shape, available)
   const warnings = warningsForStep(currentStep, draft, shape, messages)
+
+  // Stacked layout: there's no "current" step, but the section nav still
+  // nudges toward the first thing that isn't done yet, and the final
+  // Confirm is gated until every section passes its check.
+  const firstIncomplete = useMemo<JourneyStep>(
+    () =>
+      steps.find((s) => !canAdvanceFromStep(s, draft, shape, available)) ??
+      steps[steps.length - 1] ??
+      steps[0] ??
+      "departure",
+    [steps, draft, shape, available],
+  )
+  const canCommit = useMemo(
+    () => steps.every((s) => canAdvanceFromStep(s, draft, shape, available)),
+    [steps, draft, shape, available],
+  )
   const [isAdvanceGuardPending, setIsAdvanceGuardPending] = useState(false)
   const [advanceGuardError, setAdvanceGuardError] = useState<string | null>(null)
 
@@ -345,6 +371,137 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   const onContractAccept = async (acceptance: ContractAcceptanceEvent) => {
     setContractDialogOpen(false)
     await handleAccepted(acceptance)
+  }
+
+  // Renders one step's content. Shared by both layouts — the wizard shows
+  // exactly one at a time; the stacked page renders them all in sections.
+  const renderStep = (step: JourneyStep): React.ReactNode => {
+    switch (step) {
+      case "departure":
+        // First load: the descriptor arrives with the first quote. Show a
+        // skeleton rather than the generic fallback, which would flash and
+        // then shift into the real layout.
+        return !quote.data && quote.isQuoting ? (
+          <ConfigureStepSkeleton />
+        ) : (
+          <DepartureStep
+            draft={draft}
+            setDraft={setDraft}
+            shape={shape}
+            productId={props.entityId}
+            renderDeparturePicker={props.renderDeparturePicker}
+          />
+        )
+      case "options":
+        return (
+          <OptionsStep
+            draft={draft}
+            setDraft={setDraft}
+            shape={shape}
+            productId={props.entityId}
+            renderUnitsPicker={props.renderUnitsPicker}
+          />
+        )
+      case "billing":
+        return (
+          <BillingStep
+            draft={draft}
+            setDraft={setDraft}
+            shape={shape}
+            renderLeadContactPicker={props.renderLeadContactPicker}
+            renderExtras={props.renderBillingExtras}
+          />
+        )
+      case "travelers":
+        return (
+          <TravelersStep
+            draft={draft}
+            setDraft={setDraft}
+            shape={shape}
+            renderTravelerContactPicker={props.renderTravelerContactPicker}
+          />
+        )
+      case "accommodation":
+        return <AccommodationStep draft={draft} setDraft={setDraft} shape={shape} />
+      case "addons":
+        return <AddonsStep draft={draft} setDraft={setDraft} shape={shape} />
+      case "payment":
+        return (
+          <PaymentStep
+            draft={draft}
+            setDraft={setDraft}
+            shape={shape}
+            capabilities={
+              props.paymentCapabilities ?? {
+                acceptsCard: false,
+                acceptsHold: true,
+                acceptsTicketOnCredit: false,
+              }
+            }
+            renderProviderStep={props.renderPaymentProviderStep}
+            surface={surface}
+            pricing={quote.data?.pricing ?? null}
+          />
+        )
+      case "review":
+        return (
+          <ReviewStep
+            draft={draft}
+            setDraft={setDraft}
+            isCommitting={commit.isPending || isHandlingCheckout}
+            onConfirm={onConfirm}
+            // Stacked has no per-step gates, so the Confirm button enforces
+            // the whole-booking validity itself.
+            canConfirm={layout === "stacked" ? canCommit : undefined}
+            renderExtras={props.renderReviewExtras}
+            surface={surface}
+            pricing={quote.data?.pricing ?? null}
+          />
+        )
+    }
+  }
+
+  if (layout === "stacked") {
+    return (
+      <StackedJourney
+        className={props.className}
+        steps={steps}
+        shape={shape}
+        firstIncomplete={firstIncomplete}
+        renderStep={renderStep}
+        warningsForStep={(s) => warningsForStep(s, draft, shape, messages)}
+        commitError={commit.error}
+        onCancel={props.onCancelled}
+        cancelLabel={messages.bookingJourney.navigation.back}
+        sidePanel={
+          <PriceSidePanel
+            pricing={quote.data?.pricing ?? null}
+            isQuoting={quote.isQuoting}
+            invalidReason={quote.data?.invalidReason}
+            entitySummary={props.entitySummary}
+            currentStep={firstIncomplete}
+            steps={steps}
+            shape={shape}
+            draft={draft}
+            className={props.sidePanelClassName}
+          />
+        }
+        contractDialog={
+          contractConfig ? (
+            <ContractPreviewDialog
+              open={contractDialogOpen}
+              onOpenChange={setContractDialogOpen}
+              previewUrl={contractConfig.previewUrl}
+              acceptLanguage={contractConfig.acceptLanguage}
+              variables={contractVariables}
+              marketingLabel={contractConfig.marketingLabel as string | undefined}
+              termsLabel={contractConfig.termsLabel}
+              onAccept={onContractAccept}
+            />
+          ) : null
+        }
+      />
+    )
   }
 
   return (
@@ -515,6 +672,95 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
           onAccept={onContractAccept}
         />
       ) : null}
+    </div>
+  )
+}
+
+const sectionId = (step: JourneyStep): string => `bj-section-${step}`
+
+/**
+ * The admin's single-page booking layout — every section stacked as its
+ * own block so nothing is hidden. A sticky section nav (the same numbered
+ * stepper) scroll-jumps between blocks and highlights the first section
+ * that still needs attention. Each block carries its own inline warnings;
+ * the Review block's Confirm is gated on the whole booking being valid.
+ */
+function StackedJourney({
+  className,
+  steps,
+  shape,
+  firstIncomplete,
+  renderStep,
+  warningsForStep,
+  commitError,
+  onCancel,
+  cancelLabel,
+  sidePanel,
+  contractDialog,
+}: {
+  className?: string
+  steps: ReadonlyArray<JourneyStep>
+  shape: BookingDraftShape
+  firstIncomplete: JourneyStep
+  renderStep: (step: JourneyStep) => React.ReactNode
+  warningsForStep: (step: JourneyStep) => ReadonlyArray<string>
+  commitError: unknown
+  onCancel?: () => void
+  cancelLabel: string
+  sidePanel: React.ReactNode
+  contractDialog: React.ReactNode
+}): React.ReactElement {
+  const scrollToStep = (step: JourneyStep) => {
+    if (typeof document === "undefined") return
+    document.getElementById(sectionId(step))?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
+  return (
+    <div className={className}>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-8 md:items-start">
+        <div className="space-y-6 md:col-span-5">
+          {/* Sticky section nav — jump to any block, see what's still open. */}
+          <div className="-mx-1 sticky top-0 z-10 bg-background/85 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+            <StepHeader
+              current={firstIncomplete}
+              visited={[...steps]}
+              steps={steps}
+              shape={shape}
+              onJumpTo={scrollToStep}
+            />
+          </div>
+
+          {steps.map((step) => {
+            const stepWarnings = warningsForStep(step)
+            return (
+              <section key={step} id={sectionId(step)} className="scroll-mt-24 space-y-2">
+                {renderStep(step)}
+                {stepWarnings.length > 0 ? (
+                  <ul className="space-y-1 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900 text-sm dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+                    {stepWarnings.map((w) => (
+                      <li key={w}>⚠ {w}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </section>
+            )
+          })}
+
+          {commitError ? (
+            <p className="text-destructive text-sm">
+              {commitError instanceof Error ? commitError.message : String(commitError)}
+            </p>
+          ) : null}
+
+          <div>
+            <Button type="button" variant="outline" onClick={() => onCancel?.()}>
+              {cancelLabel}
+            </Button>
+          </div>
+        </div>
+
+        <aside className="md:sticky md:top-4 md:col-span-3">{sidePanel}</aside>
+      </div>
+      {contractDialog}
     </div>
   )
 }
