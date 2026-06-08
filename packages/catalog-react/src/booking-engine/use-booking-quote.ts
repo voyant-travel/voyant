@@ -137,6 +137,9 @@ function signDraft(draft: BookingDraftV1): string {
     departureDate: draft.configure?.departureDate,
     departureTime: draft.configure?.departureTime,
     variantId: draft.configure?.variantId,
+    // Room/unit picks drive per-room pricing — without this the quote never
+    // re-runs when the operator changes rooms, leaving a stale base price.
+    optionSelections: draft.configure?.optionSelections,
     cabinCategoryId: draft.configure?.cabinCategoryId,
     cabinNumberId: draft.configure?.cabinNumberId,
     dateRange: draft.configure?.dateRange,

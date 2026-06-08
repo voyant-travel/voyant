@@ -658,6 +658,10 @@ export function createProductsBookingHandler(
               surcharges: 0,
               currency: product.sellCurrency,
               breakdown: {
+                // `currency` is required for the API serializer to use this
+                // itemized breakdown instead of synthesizing a single "Base"
+                // line from base_amount.
+                currency: product.sellCurrency,
                 lines: pricedWithAddons.lines.map((line) => ({
                   ...line,
                   taxIncluded: taxIsInclusive,
@@ -923,6 +927,8 @@ interface PricedQuote {
 interface NormalizedOptionSelection {
   optionId: string
   optionUnitId?: string
+  optionName?: string
+  optionUnitName?: string
   quantity: number
 }
 
@@ -953,6 +959,10 @@ function normalizeOptionSelections(
         optionId: selection.optionId,
         ...(typeof selection.optionUnitId === "string" && selection.optionUnitId.length > 0
           ? { optionUnitId: selection.optionUnitId }
+          : {}),
+        ...(typeof selection.optionName === "string" ? { optionName: selection.optionName } : {}),
+        ...(typeof selection.optionUnitName === "string"
+          ? { optionUnitName: selection.optionUnitName }
           : {}),
         quantity,
       },
@@ -993,7 +1003,10 @@ async function priceOptionSelections(input: {
     totalCents += totalAmount
     lines.push({
       kind: "base",
-      label: optionsById.get(selection.optionId)?.name ?? input.product.name,
+      // Prefer the specific room/unit name ("Standard - Single"); fall back to
+      // the option name, then the product name.
+      label:
+        selection.optionUnitName ?? optionsById.get(selection.optionId)?.name ?? input.product.name,
       quantity: selection.quantity,
       unitAmount,
       totalAmount,
