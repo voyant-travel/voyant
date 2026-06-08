@@ -62,6 +62,16 @@ export const paxBandSpecV1 = z.object({
 })
 export type PaxBandSpecV1 = z.infer<typeof paxBandSpecV1>
 
+/** Cross-band occupancy rule (e.g. "Child under 6 requires an Adult"). */
+export const paxBandDependencyV1 = z.object({
+  dependentCode: z.string(),
+  masterCode: z.string(),
+  type: z.enum(["requires", "limits_per_master", "limits_sum", "excludes"]),
+  maxPerMaster: z.number().int().nonnegative().optional(),
+  maxDependentSum: z.number().int().nonnegative().optional(),
+})
+export type PaxBandDependencyV1 = z.infer<typeof paxBandDependencyV1>
+
 export const cabinCategoryOptionV1 = z.object({
   id: z.string(),
   code: z.string().optional(),
@@ -148,6 +158,9 @@ export const addonOfferV1 = z.object({
 export const configureSubStepV1 = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("departure"), required: z.literal(true) }),
   z.object({ kind: z.literal("product-option"), options: z.array(productVariantOptionV1) }),
+  // Inventory-unit (room/vehicle) quantity selection — payload-less; the
+  // journey loads the units via an injected picker.
+  z.object({ kind: z.literal("option-units") }),
   z.object({ kind: z.literal("cabin-category"), categories: z.array(cabinCategoryOptionV1) }),
   z.object({
     kind: z.literal("cabin-number"),
@@ -215,6 +228,7 @@ export const bookingDraftShapeV1 = z.object({
   configureSubSteps: z.array(configureSubStepV1).optional(),
   paxBands: z.array(paxBandSpecV1),
   paxBandsAllowedTotal: z.object({ min: z.number().int(), max: z.number().int() }),
+  paxBandDependencies: z.array(paxBandDependencyV1).optional(),
   travelerFields: z.array(travelerFieldRequirementV1),
   bookingFields: z.array(bookingFieldRequirementV1),
   accommodation: z
