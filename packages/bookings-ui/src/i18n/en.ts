@@ -889,6 +889,11 @@ export const bookingsUiEn = {
       empty: "No payment methods are available for this booking.",
       redirectedAfterConfirm:
         "You'll be redirected to our secure payment page after confirming the booking.",
+      linkSentAfterConfirm:
+        "A secure payment link is generated for the customer after you confirm — they choose how to pay. Nothing is charged now.",
+      cardOperatorLabel: "Online payment link",
+      cardOperatorDescription:
+        "The customer pays online via a secure link after you confirm. Nothing is charged instantly; inventory is reserved on confirmation.",
       inquiryNotice:
         "We'll send your details to the operator without locking inventory or taking payment. They'll get back to you with availability and a quote — typically within one business day.",
       bankTransferInstructions: "Bank transfer instructions",

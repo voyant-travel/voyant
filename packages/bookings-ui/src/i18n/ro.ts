@@ -890,6 +890,11 @@ export const bookingsUiRo = {
       empty: "Nu exista metode de plata disponibile pentru aceasta rezervare.",
       redirectedAfterConfirm:
         "Vei fi redirectionat catre pagina noastra securizata de plata dupa confirmarea rezervarii.",
+      linkSentAfterConfirm:
+        "Dupa confirmare se genereaza un link securizat de plata pentru client, care alege cum plateste. Nu se incaseaza nimic acum.",
+      cardOperatorLabel: "Link de plata online",
+      cardOperatorDescription:
+        "Clientul plateste online printr-un link securizat dupa confirmare. Nu se incaseaza instant; inventarul este rezervat la confirmare.",
       inquiryNotice:
         "Vom trimite detaliile tale catre operator fara a bloca inventar sau a incasa plata. Operatorul va reveni cu disponibilitate si oferta - de obicei intr-o zi lucratoare.",
       bankTransferInstructions: "Instructiuni transfer bancar",

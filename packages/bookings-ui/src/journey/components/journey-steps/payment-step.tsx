@@ -77,7 +77,7 @@ export function PaymentStep({
             className="grid grid-cols-1 gap-2"
           >
             {allowed.map((i) => {
-              const meta = intentMeta(i, messages)
+              const meta = intentMeta(i, messages, surface)
               const selected = i === intent
               return (
                 // biome-ignore lint/a11y/noLabelWithoutControl: RadioGroupItem provides the control
@@ -121,7 +121,9 @@ export function PaymentStep({
             // payment page after the customer accepts the contract. Inline
             // card collection is opt-in via `renderPaymentProviderStep`.
             <p className="text-muted-foreground text-sm">
-              {messages.bookingJourney.payment.redirectedAfterConfirm}
+              {surface === "admin"
+                ? messages.bookingJourney.payment.linkSentAfterConfirm
+                : messages.bookingJourney.payment.redirectedAfterConfirm}
             </p>
           )
         ) : null}
@@ -377,10 +379,21 @@ function isCapabilityEnabled(
 function intentMeta(
   intent: "hold" | "card" | "bank_transfer" | "ticket_on_credit" | "inquiry",
   messages: ReturnType<typeof useBookingsUiMessagesOrDefault>,
+  surface?: "admin" | "public",
 ): {
   label: string
   description: string
 } {
+  // On the operator surface "card" isn't an instant charge — the operator
+  // generates a hosted payment link the customer pays later (Netopia, Stripe
+  // Checkout, etc). Use operator-framed copy so it doesn't read as "charged
+  // immediately".
+  if (intent === "card" && surface === "admin") {
+    return {
+      label: messages.bookingJourney.payment.cardOperatorLabel,
+      description: messages.bookingJourney.payment.cardOperatorDescription,
+    }
+  }
   return {
     label: messages.bookingJourney.payment.intentLabels[intent],
     description: messages.bookingJourney.payment.intentDescriptions[intent],

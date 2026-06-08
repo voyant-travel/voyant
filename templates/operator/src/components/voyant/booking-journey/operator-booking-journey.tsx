@@ -126,9 +126,13 @@ export function OperatorBookingJourney({
         ...(optionId ? { variantId: optionId } : {}),
       }}
       defaultBuyerType="B2B"
+      // Operator payment options: hold (reserve, collect later), online payment
+      // link (the customer pays via the hosted PSP page — we never charge a card
+      // instantly here), bank transfer, and agency credit.
       paymentCapabilities={{
         acceptsCard: true,
         acceptsHold: true,
+        acceptsBankTransfer: true,
         acceptsTicketOnCredit: true,
       }}
       entitySummary={entitySummary}

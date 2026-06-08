@@ -718,6 +718,9 @@ export type BookingsUiMessages = {
       title: string
       empty: string
       redirectedAfterConfirm: string
+      linkSentAfterConfirm: string
+      cardOperatorLabel: string
+      cardOperatorDescription: string
       inquiryNotice: string
       bankTransferInstructions: string
       bankTransferDefaultNote: string
