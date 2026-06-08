@@ -49,7 +49,8 @@ import {
   AccommodationStep,
   AddonsStep,
   BillingStep,
-  ConfigureStep,
+  DepartureStep,
+  OptionsStep,
   PaymentStep,
   ReviewStep,
   TravelersStep,
@@ -126,21 +127,23 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   const steps = useMemo<ReadonlyArray<JourneyStep>>(
     () =>
       JOURNEY_STEP_ORDER.filter((s) => {
-        if (hideConfigure && s === "configure") return false
+        // `hideConfigure` skips the configure phase — now split across the
+        // Departure + Options steps.
+        if (hideConfigure && (s === "departure" || s === "options")) return false
         return isStepVisible(s, shape)
       }),
     [shape, hideConfigure],
   )
 
-  const [currentStep, setCurrentStep] = useState<JourneyStep>(() => steps[0] ?? "configure")
-  const [visited, setVisited] = useState<Set<JourneyStep>>(() => new Set([steps[0] ?? "configure"]))
+  const [currentStep, setCurrentStep] = useState<JourneyStep>(() => steps[0] ?? "departure")
+  const [visited, setVisited] = useState<Set<JourneyStep>>(() => new Set([steps[0] ?? "departure"]))
 
   // If the descriptor changes and removes the current step, reset to
   // the first available step. (Edge case: shape goes from
   // owned→sourced and the relevant step set narrows.)
   useEffect(() => {
     if (!steps.includes(currentStep)) {
-      setCurrentStep(steps[0] ?? "configure")
+      setCurrentStep(steps[0] ?? "departure")
     }
   }, [steps, currentStep])
 
@@ -176,7 +179,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: signature change is the only trigger; refs + closure read latest values
   useEffect(() => {
-    if (currentStep === "configure" || !holdSignature) return
+    if (currentStep === "departure" || currentStep === "options" || !holdSignature) return
     if (holdState.current.signature === holdSignature) return
     // Inquiry mode is the lead-form path — capture the lead without
     // burning capacity. The operator follows up before any inventory
@@ -356,23 +359,30 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             onJumpTo={jumpTo}
           />
 
-          {currentStep === "configure" ? (
-            // First load: the descriptor (bands/options/rooms) arrives with
-            // the first quote. Show a skeleton rather than the generic
-            // fallback shape, which would otherwise flash and then shift
-            // into the real layout.
+          {currentStep === "departure" ? (
+            // First load: the descriptor arrives with the first quote. Show a
+            // skeleton rather than the generic fallback, which would flash
+            // and then shift into the real layout.
             !quote.data && quote.isQuoting ? (
               <ConfigureStepSkeleton />
             ) : (
-              <ConfigureStep
+              <DepartureStep
                 draft={draft}
                 setDraft={setDraft}
                 shape={shape}
                 productId={props.entityId}
                 renderDeparturePicker={props.renderDeparturePicker}
-                renderUnitsPicker={props.renderUnitsPicker}
               />
             )
+          ) : null}
+          {currentStep === "options" ? (
+            <OptionsStep
+              draft={draft}
+              setDraft={setDraft}
+              shape={shape}
+              productId={props.entityId}
+              renderUnitsPicker={props.renderUnitsPicker}
+            />
           ) : null}
           {currentStep === "billing" ? (
             <BillingStep
@@ -510,9 +520,20 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
 }
 
 function isStepVisible(step: JourneyStep, shape: BookingDraftShape): boolean {
+  const subSteps = shape.configureSubSteps ?? []
   switch (step) {
-    case "configure":
+    case "departure":
+      // The departure step shows whenever the journey has a configure phase
+      // (owned products always pick a departure; storefront free-date too).
       return shape.showsConfigure
+    case "options":
+      // The options step shows only when there's something to choose —
+      // a product option, room/unit selection, or another configure
+      // sub-step (cabin, date-range, air). Simple per-person tours skip it.
+      return (
+        shape.showsConfigure &&
+        subSteps.some((s) => s.kind !== "departure" && s.kind !== "occupancy")
+      )
     case "billing":
       return shape.showsBilling
     case "travelers":
@@ -569,9 +590,17 @@ function canAdvanceFromStep(
 ): boolean {
   if (!available) return false
   switch (step) {
-    case "configure":
-      // Traveler counts + occupancy rules moved to the Travelers step, so
-      // Configure only needs the entity to be available (checked above).
+    case "departure": {
+      // Require a departure when the descriptor marks it required.
+      const requiresDeparture = (shape.configureSubSteps ?? []).some(
+        (s) => s.kind === "departure" && s.required,
+      )
+      if (!requiresDeparture) return true
+      return Boolean(draft.configure.departureSlotId || draft.configure.departureDate)
+    }
+    case "options":
+      // Rooms/options aren't hard-required here (availability is checked
+      // above); the operator can proceed and refine.
       return true
     case "billing": {
       const c = draft.billing.contact

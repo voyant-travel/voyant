@@ -604,7 +604,14 @@ export type BookingsUiMessages = {
   }
   bookingJourney: {
     steps: Record<
-      "configure" | "billing" | "travelers" | "accommodation" | "addons" | "payment" | "review",
+      | "departure"
+      | "billing"
+      | "travelers"
+      | "options"
+      | "accommodation"
+      | "addons"
+      | "payment"
+      | "review",
       string
     > & {
       billingAndContact: string

@@ -764,9 +764,10 @@ export const bookingsUiRo = {
   },
   bookingJourney: {
     steps: {
-      configure: "Configurare",
+      departure: "Plecare",
       billing: "Facturare",
       travelers: "Calatori",
+      options: "Optiuni",
       accommodation: "Cazare",
       addons: "Extra",
       payment: "Plata",

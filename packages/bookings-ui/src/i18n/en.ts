@@ -765,11 +765,12 @@ export const bookingsUiEn = {
   },
   bookingJourney: {
     steps: {
-      configure: "Configure",
+      departure: "Departure",
       billing: "Billing",
       travelers: "Travelers",
+      options: "Options",
       accommodation: "Accommodation",
-      addons: "Add-ons",
+      addons: "Extras",
       payment: "Payment",
       review: "Review",
       billingAndContact: "Billing & contact",

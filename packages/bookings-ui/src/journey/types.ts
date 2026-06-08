@@ -16,18 +16,20 @@ import type {
 import type { ReactNode } from "react"
 
 export type JourneyStep =
-  | "configure"
+  | "departure"
   | "billing"
   | "travelers"
+  | "options"
   | "accommodation"
   | "addons"
   | "payment"
   | "review"
 
 export const JOURNEY_STEP_ORDER: ReadonlyArray<JourneyStep> = [
-  "configure",
+  "departure",
   "billing",
   "travelers",
+  "options",
   "accommodation",
   "addons",
   "payment",

@@ -72,35 +72,22 @@ interface StepCommonProps {
 // Configure
 // ─────────────────────────────────────────────────────────────────
 
-export function ConfigureStep({
+export function DepartureStep({
   draft,
   setDraft,
   shape,
   productId,
   renderDeparturePicker,
-  renderUnitsPicker,
 }: StepCommonProps & {
-  renderExtras?: () => React.ReactNode
-  /** Owned product id — passed to the injected pickers. */
+  /** Owned product id — passed to the injected departure picker. */
   productId?: string
   renderDeparturePicker?: RenderDeparturePicker
-  renderUnitsPicker?: RenderUnitsPicker
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   const subSteps = shape.configureSubSteps ?? []
   // With no descriptor sub-steps, still offer a departure (storefront
   // free-date fallback).
   const showsDeparture = subSteps.length === 0 || subSteps.some((s) => s.kind === "departure")
-  const optionList = subSteps.flatMap((s) => (s.kind === "product-option" ? s.options : []))
-  const multipleOptions = optionList.length > 1
-  const showsUnits = subSteps.some((s) => s.kind === "option-units")
-  const otherSteps = subSteps.filter(
-    (s) =>
-      s.kind !== "departure" &&
-      s.kind !== "product-option" &&
-      s.kind !== "option-units" &&
-      s.kind !== "occupancy",
-  )
 
   const departureNode = showsDeparture ? (
     renderDeparturePicker && productId ? (
@@ -128,6 +115,40 @@ export function ConfigureStep({
     )
   ) : null
 
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{messages.bookingJourney.steps.departure}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">{departureNode}</CardContent>
+    </Card>
+  )
+}
+
+export function OptionsStep({
+  draft,
+  setDraft,
+  shape,
+  productId,
+  renderUnitsPicker,
+}: StepCommonProps & {
+  /** Owned product id — passed to the injected units picker. */
+  productId?: string
+  renderUnitsPicker?: RenderUnitsPicker
+}): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
+  const subSteps = shape.configureSubSteps ?? []
+  const optionList = subSteps.flatMap((s) => (s.kind === "product-option" ? s.options : []))
+  const multipleOptions = optionList.length > 1
+  const showsUnits = subSteps.some((s) => s.kind === "option-units")
+  const otherSteps = subSteps.filter(
+    (s) =>
+      s.kind !== "departure" &&
+      s.kind !== "product-option" &&
+      s.kind !== "option-units" &&
+      s.kind !== "occupancy",
+  )
+
   const unitsNode =
     showsUnits && renderUnitsPicker && productId
       ? renderUnitsPicker({
@@ -149,7 +170,7 @@ export function ConfigureStep({
         // With a real choice between options, nest the rooms under the
         // SELECTED option so switching reveals that option's inventory in
         // place. With a single/no option there's nothing to switch, so the
-        // caller renders the rooms directly below instead.
+        // rooms render directly below instead.
         renderSelectedUnits={multipleOptions && unitsNode ? () => unitsNode : undefined}
       />
     ) : null
@@ -157,22 +178,19 @@ export function ConfigureStep({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{messages.bookingJourney.steps.configure}</CardTitle>
+        <CardTitle>{messages.bookingJourney.steps.options}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* 1. Departure first — it scopes availability for everything below. */}
-        {departureNode}
-        {/* 2. Option + its rooms. Multiple options → rooms nested under the
+        {/* Option + its rooms. Multiple options → rooms nested under the
             selected option (handled inside ProductOptionFields). Single/no
-            option → rooms rendered directly here. Traveler counts live on
-            the Travelers step, not here. */}
+            option → rooms rendered directly here. */}
         {optionNode || unitsNode ? (
           <div className="space-y-3">
             {optionNode}
             {unitsNode && !multipleOptions ? unitsNode : null}
           </div>
         ) : null}
-        {/* 4. Vertical-specific sub-steps (cruise cabins, date ranges, air). */}
+        {/* Vertical-specific sub-steps (cruise cabins, date ranges, air). */}
         {otherSteps.length > 0 ? (
           <div className="space-y-4">
             {otherSteps.map((sub) => renderOtherConfigureSubStep(sub, draft, setDraft))}

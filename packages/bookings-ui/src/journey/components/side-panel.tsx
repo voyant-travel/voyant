@@ -188,19 +188,25 @@ function stepHeadline(
   messages: ReturnType<typeof useBookingsUiMessagesOrDefault>,
 ): string {
   switch (step) {
-    case "configure": {
-      const total = paxTotal(draft)
-      // Never surface the raw slot id — show the departure date instead.
-      const slot = draft.configure?.departureDate
-        ? formatConfigureDate(draft.configure.departureDate)
-        : undefined
+    case "departure": {
       const range = draft.configure?.dateRange
-      const when = range?.checkIn && range?.checkOut ? `${range.checkIn} → ${range.checkOut}` : slot
-      const guestLabel =
-        total === 1
-          ? messages.bookingJourney.sidePanel.guestSingular
-          : messages.bookingJourney.sidePanel.guestPlural
-      return when ? `${total} ${guestLabel} · ${when}` : `${total} ${guestLabel}`
+      if (range?.checkIn && range?.checkOut) return `${range.checkIn} → ${range.checkOut}`
+      // Never surface the raw slot id — show the departure date.
+      return draft.configure?.departureDate
+        ? formatConfigureDate(draft.configure.departureDate)
+        : ""
+    }
+    case "options": {
+      const rooms = (draft.configure?.optionSelections ?? []).reduce(
+        (sum, s) => sum + (s.quantity ?? 0),
+        0,
+      )
+      if (rooms <= 0) return ""
+      return `${rooms} ${
+        rooms === 1
+          ? messages.bookingJourney.sidePanel.roomSingular
+          : messages.bookingJourney.sidePanel.roomPlural
+      }`
     }
     case "billing": {
       const c = draft.billing.contact
@@ -255,8 +261,10 @@ function StepDetails({
 }): React.ReactElement | null {
   const messages = useBookingsUiMessagesOrDefault()
   switch (step) {
-    case "configure":
-      return <ConfigureDetails draft={draft} />
+    case "departure":
+      return <DepartureDetails draft={draft} />
+    case "options":
+      return <OptionsDetails draft={draft} />
     case "billing":
       return <BillingDetails draft={draft} />
     case "travelers":
@@ -278,7 +286,7 @@ function StepDetails({
   }
 }
 
-function ConfigureDetails({
+function DepartureDetails({
   draft,
 }: {
   draft: NonNullable<SidePanelState["draft"]>
@@ -288,13 +296,6 @@ function ConfigureDetails({
   const range = cfg.dateRange
   return (
     <dl className="space-y-1 text-xs">
-      <Row label={messages.bookingJourney.sidePanel.adults} value={String(cfg.pax?.adult ?? 0)} />
-      {(cfg.pax?.child ?? 0) > 0 ? (
-        <Row label={messages.bookingJourney.sidePanel.children} value={String(cfg.pax.child)} />
-      ) : null}
-      {(cfg.pax?.infant ?? 0) > 0 ? (
-        <Row label={messages.bookingJourney.sidePanel.infants} value={String(cfg.pax.infant)} />
-      ) : null}
       {/* Show the departure DATE, never the raw slot id. */}
       {cfg.departureDate ? (
         <Row
@@ -308,6 +309,27 @@ function ConfigureDetails({
       {range?.checkOut ? (
         <Row label={messages.bookingJourney.sidePanel.checkOut} value={range.checkOut} />
       ) : null}
+    </dl>
+  )
+}
+
+function OptionsDetails({
+  draft,
+}: {
+  draft: NonNullable<SidePanelState["draft"]>
+}): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
+  const cfg = draft.configure ?? {}
+  const selections = (cfg.optionSelections ?? []).filter((s) => (s.quantity ?? 0) > 0)
+  return (
+    <dl className="space-y-1 text-xs">
+      {selections.map((selection) => (
+        <Row
+          key={selection.optionUnitId ?? selection.optionId}
+          label={selection.optionUnitName ?? selection.optionName ?? selection.optionId}
+          value={`× ${selection.quantity}`}
+        />
+      ))}
       {cfg.cabinCategoryId ? (
         <Row label={messages.bookingJourney.sidePanel.cabin} value={cfg.cabinCategoryId} />
       ) : null}
@@ -509,11 +531,6 @@ function stepLabel(
 ): string {
   if (step === "billing") return messages.bookingJourney.steps.billingAndContact
   return messages.bookingJourney.steps[step]
-}
-
-function paxTotal(draft: NonNullable<SidePanelState["draft"]>): number {
-  const pax = draft.configure?.pax ?? {}
-  return (pax.adult ?? 0) + (pax.child ?? 0) + (pax.infant ?? 0)
 }
 
 function formatMoney(cents: number, currency: string): string {
