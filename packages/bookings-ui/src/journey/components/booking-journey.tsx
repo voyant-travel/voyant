@@ -411,6 +411,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             shape={shape}
             renderLeadContactPicker={props.renderLeadContactPicker}
             renderExtras={props.renderBillingExtras}
+            warnings={warningsForStep("billing", draft, shape, messages)}
           />
         )
       case "travelers":
@@ -420,6 +421,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             setDraft={setDraft}
             shape={shape}
             renderTravelerContactPicker={props.renderTravelerContactPicker}
+            warnings={warningsForStep("travelers", draft, shape, messages)}
           />
         )
       case "accommodation":
@@ -457,6 +459,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             renderExtras={props.renderReviewExtras}
             surface={surface}
             pricing={quote.data?.pricing ?? null}
+            warnings={warningsForStep("review", draft, shape, messages)}
           />
         )
     }
@@ -469,7 +472,6 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
         steps={steps}
         renderStep={renderStep}
         isStepComplete={(s) => stackedStepComplete(s, draft, shape, available)}
-        warningsForStep={(s) => warningsForStep(s, draft, shape, messages)}
         commitError={commit.error}
         onCancel={props.onCancelled}
         sidePanel={
@@ -696,7 +698,6 @@ function StackedJourney({
   steps,
   renderStep,
   isStepComplete,
-  warningsForStep,
   commitError,
   onCancel,
   sidePanel,
@@ -706,7 +707,6 @@ function StackedJourney({
   steps: ReadonlyArray<JourneyStep>
   renderStep: (step: JourneyStep) => React.ReactNode
   isStepComplete: (step: JourneyStep) => boolean
-  warningsForStep: (step: JourneyStep) => ReadonlyArray<string>
   commitError: unknown
   onCancel?: () => void
   sidePanel: React.ReactNode
@@ -747,18 +747,11 @@ function StackedJourney({
               )
             }
 
-            // Unlocked: full section content, stays open once reached.
-            const stepWarnings = warningsForStep(step)
+            // Unlocked: full section content, stays open once reached. Its
+            // warnings render inside the step's own card (scoped to the block).
             return (
-              <section key={step} id={sectionId(step)} className="scroll-mt-4 space-y-2">
+              <section key={step} id={sectionId(step)} className="scroll-mt-4">
                 {renderStep(step)}
-                {stepWarnings.length > 0 ? (
-                  <ul className="space-y-1 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900 text-sm dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
-                    {stepWarnings.map((w) => (
-                      <li key={w}>⚠ {w}</li>
-                    ))}
-                  </ul>
-                ) : null}
               </section>
             )
           })}

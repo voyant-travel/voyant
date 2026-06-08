@@ -677,6 +677,25 @@ function CabinNumberFields({
   )
 }
 
+/**
+ * Soft validation warnings for a step, rendered INSIDE its card (below the
+ * content) so they're visibly scoped to the block they belong to.
+ */
+export function JourneyWarnings({
+  warnings,
+}: {
+  warnings?: ReadonlyArray<string>
+}): React.ReactElement | null {
+  if (!warnings || warnings.length === 0) return null
+  return (
+    <ul className="space-y-1 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900 text-sm dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+      {warnings.map((w) => (
+        <li key={w}>⚠ {w}</li>
+      ))}
+    </ul>
+  )
+}
+
 // ─────────────────────────────────────────────────────────────────
 // Billing
 // ─────────────────────────────────────────────────────────────────
@@ -686,9 +705,11 @@ export function BillingStep({
   setDraft,
   renderLeadContactPicker,
   renderExtras,
+  warnings,
 }: StepCommonProps & {
   renderLeadContactPicker?: (props: LeadContactPickerProps) => React.ReactNode
   renderExtras?: () => React.ReactNode
+  warnings?: ReadonlyArray<string>
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   const billing = draft.billing
@@ -753,12 +774,10 @@ export function BillingStep({
         ) : null}
 
         {/* Operator (CRM picker present): identity, address, and company all
-            come from the picked person/org — created/edited via the picker —
-            so show a read-only summary; the warnings below flag any gaps.
-            Storefront / no CRM: enter everything directly. */}
-        {renderLeadContactPicker ? (
-          <BillingContactSummary billing={billing} />
-        ) : (
+            come from the picked person/org — created/edited via the picker,
+            which already shows the selection — so nothing else to render here;
+            the warnings flag any gaps. Storefront / no CRM: enter directly. */}
+        {renderLeadContactPicker ? null : (
           <>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field
@@ -878,54 +897,9 @@ export function BillingStep({
         )}
 
         {renderExtras ? <div>{renderExtras()}</div> : null}
+        <JourneyWarnings warnings={warnings} />
       </CardContent>
     </Card>
-  )
-}
-
-/**
- * Read-only summary of the billing lead, shown on the operator surface where
- * the data comes from the picked CRM person/org (no editable form). Anything
- * missing here surfaces in the step's warnings; fix it by editing the
- * person/org in the picker above.
- */
-function BillingContactSummary({ billing }: { billing: Draft["billing"] }): React.ReactElement {
-  const messages = useBookingsUiMessagesOrDefault()
-  const contact = billing.contact
-  const address = billing.address
-  const name = [contact.firstName, contact.lastName].filter(Boolean).join(" ").trim()
-  const addressLine = [address.line1, address.line2, address.city, address.postal, address.country]
-    .filter(Boolean)
-    .join(", ")
-  const isCompany = billing.buyerType === "B2B"
-  const companyName = isCompany ? billing.company?.name : undefined
-  const taxId = isCompany ? billing.company?.vatId : undefined
-  const hasAnything = Boolean(name || contact.email || contact.phone || companyName || addressLine)
-
-  return (
-    <div className="rounded-md border p-3 text-sm">
-      {hasAnything ? (
-        <div className="space-y-0.5">
-          {companyName ? <div className="font-medium">{companyName}</div> : null}
-          {name ? (
-            <div className={companyName ? "text-muted-foreground" : "font-medium"}>{name}</div>
-          ) : null}
-          {contact.email ? <div className="text-muted-foreground">{contact.email}</div> : null}
-          {contact.phone ? <div className="text-muted-foreground">{contact.phone}</div> : null}
-          {taxId ? <div className="text-muted-foreground">{taxId}</div> : null}
-          {addressLine ? <div className="text-muted-foreground">{addressLine}</div> : null}
-        </div>
-      ) : (
-        <p className="text-muted-foreground">
-          {messages.bookingJourney.billing.leadContactSummaryEmpty}
-        </p>
-      )}
-      {hasAnything ? (
-        <p className="mt-2 text-muted-foreground text-xs">
-          {messages.bookingJourney.billing.leadContactSummaryNote}
-        </p>
-      ) : null}
-    </div>
   )
 }
 
@@ -938,8 +912,10 @@ export function TravelersStep({
   setDraft,
   shape,
   renderTravelerContactPicker,
+  warnings,
 }: StepCommonProps & {
   renderTravelerContactPicker?: (props: TravelerContactPickerProps) => React.ReactNode
+  warnings?: ReadonlyArray<string>
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   const total = totalPax(draft)
@@ -992,6 +968,7 @@ export function TravelersStep({
             })}
           </div>
         ) : null}
+        <JourneyWarnings warnings={warnings} />
       </CardContent>
     </Card>
   )
@@ -1959,11 +1936,13 @@ export function ReviewStep({
   renderExtras,
   surface,
   pricing,
+  warnings,
 }: {
   draft: Draft
   setDraft: (next: Draft) => void
   isCommitting: boolean
   onConfirm: () => void
+  warnings?: ReadonlyArray<string>
   /** Gate the confirm button — when `false`, it's disabled with a hint
    *  (stacked layout, where there are no per-step advance gates). The
    *  wizard reaches Review only after passing every gate, so it omits
@@ -2113,6 +2092,7 @@ export function ReviewStep({
           </div>
         ) : null}
         {renderExtras ? <div>{renderExtras()}</div> : null}
+        <JourneyWarnings warnings={warnings} />
         <div className="space-y-2">
           <Button onClick={onConfirm} disabled={isCommitting || canConfirm === false}>
             {isCommitting ? (
