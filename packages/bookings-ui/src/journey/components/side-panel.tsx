@@ -6,8 +6,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@voyantjs/ui/components/accordion"
+import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent } from "@voyantjs/ui/components/card"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import { Loader2 } from "lucide-react"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import type { BookingEntitySummary, JourneyStep, SidePanelState } from "../types.js"
 
@@ -28,7 +30,19 @@ export function PriceSidePanel({
   shape,
   draft,
   className,
-}: SidePanelState & { className?: string }): React.ReactElement {
+  onConfirm,
+  isCommitting,
+  canConfirm,
+  commitError,
+}: SidePanelState & {
+  className?: string
+  /** When provided (stacked admin layout), the side panel becomes the
+   *  always-visible commit surface — there's no Review block. */
+  onConfirm?: () => void
+  isCommitting?: boolean
+  canConfirm?: boolean
+  commitError?: unknown
+}): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   // Only surface pricing once the user has configured what actually drives
   // the price — otherwise the quote's baseline shows a misleading total
@@ -94,6 +108,35 @@ export function PriceSidePanel({
               <span>{messages.bookingJourney.sidePanel.total}</span>
               <span>{formatMoney(pricing.total, pricing.currency)}</span>
             </div>
+          </div>
+        ) : null}
+
+        {onConfirm ? (
+          <div className="space-y-2 border-t pt-4">
+            <Button
+              className="w-full"
+              onClick={onConfirm}
+              disabled={isCommitting === true || canConfirm === false}
+            >
+              {isCommitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {messages.bookingJourney.review.confirming}
+                </>
+              ) : (
+                messages.bookingJourney.review.confirmBooking
+              )}
+            </Button>
+            {canConfirm === false ? (
+              <p className="text-muted-foreground text-xs">
+                {messages.bookingJourney.review.completeToConfirm}
+              </p>
+            ) : null}
+            {commitError ? (
+              <p className="text-destructive text-xs">
+                {commitError instanceof Error ? commitError.message : String(commitError)}
+              </p>
+            ) : null}
           </div>
         ) : null}
       </CardContent>

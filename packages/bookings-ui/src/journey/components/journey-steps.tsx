@@ -1759,6 +1759,16 @@ export function PaymentStep({
             {messages.bookingJourney.payment.inquiryNotice}
           </p>
         ) : null}
+
+        {/* Operator-only finalization (notes, price override, voucher, document
+            generation) — lives here on the admin surface since the stacked
+            layout has no Review block. */}
+        {surface !== "public" ? (
+          <>
+            <Separator />
+            <FinalizeControls draft={draft} setDraft={setDraft} pricing={pricing} />
+          </>
+        ) : null}
       </CardContent>
     </Card>
   )
@@ -2003,6 +2013,113 @@ function intentMeta(
   }
 }
 
+/**
+ * Operator-only finalize controls — internal notes, manual price override,
+ * voucher redemption, and document-generation settings. Previously lived in
+ * the Review step; on the stacked admin layout (which drops the Review block
+ * in favour of the always-visible side-panel summary + Confirm) these render
+ * at the bottom of the Payment block instead.
+ */
+export function FinalizeControls({
+  draft,
+  setDraft,
+  pricing,
+}: {
+  draft: Draft
+  setDraft: (next: Draft) => void
+  pricing?: { total: number; currency: string } | null
+}): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
+  return (
+    <div className="space-y-4">
+      <div className="space-y-1">
+        <Label htmlFor="bj-internal-notes">{messages.bookingJourney.review.internalNotes}</Label>
+        <Textarea
+          id="bj-internal-notes"
+          value={draft.internalNotes ?? ""}
+          onChange={(e) => setDraft({ ...draft, internalNotes: e.target.value })}
+        />
+      </div>
+      {/* Manual price override — wins over the quote price on commit; a reason
+          is required when it differs. */}
+      <PriceOverrideEditor draft={draft} setDraft={setDraft} pricing={pricing} />
+      {/* Voucher (gift / refund credit) — redeemed atomically on commit. */}
+      <VoucherEditor draft={draft} setDraft={setDraft} pricing={pricing} />
+      {/* Document generation — proforma vs invoice+contract are mutually
+          exclusive; both off = no documents generated on commit. */}
+      <div className="flex flex-col gap-3 rounded-md border p-3">
+        <Label>{messages.bookingCreateDialog.labels.documentGenerationHeading}</Label>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 text-sm">
+            <Checkbox
+              id="bj-doc-proforma"
+              checked={draft.documentGeneration?.invoiceType === "proforma"}
+              onCheckedChange={(v) =>
+                setDraft({
+                  ...draft,
+                  documentGeneration:
+                    v === true
+                      ? {
+                          contractDocument: false,
+                          invoiceDocument: true,
+                          invoiceType: "proforma",
+                        }
+                      : undefined,
+                })
+              }
+            />
+            <Label htmlFor="bj-doc-proforma" className="cursor-pointer">
+              {messages.bookingCreateDialog.labels.generateProforma}
+            </Label>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <Checkbox
+              id="bj-doc-invoice-contract"
+              checked={
+                draft.documentGeneration?.contractDocument === true &&
+                draft.documentGeneration?.invoiceType !== "proforma"
+              }
+              onCheckedChange={(v) =>
+                setDraft({
+                  ...draft,
+                  documentGeneration:
+                    v === true
+                      ? {
+                          contractDocument: true,
+                          invoiceDocument: true,
+                          invoiceType: "invoice",
+                        }
+                      : undefined,
+                })
+              }
+            />
+            <Label htmlFor="bj-doc-invoice-contract" className="cursor-pointer">
+              {messages.bookingCreateDialog.labels.generateInvoiceAndContract}
+            </Label>
+          </div>
+          {/* Notification suppression — uncheck to skip the post-commit
+              confirmation email. */}
+          <div className="flex items-start gap-2 border-t pt-2 text-sm">
+            <Checkbox
+              id="bj-notify-traveler"
+              checked={draft.suppressNotifications !== true}
+              onCheckedChange={(v) => setDraft({ ...draft, suppressNotifications: v !== true })}
+            />
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="bj-notify-traveler" className="cursor-pointer">
+                {messages.bookingCreateDialog.fields.notifyTraveler}
+              </Label>
+              <p className="text-muted-foreground text-xs">
+                {messages.bookingCreateDialog.fields.notifyTravelerHint}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─────────────────────────────────────────────────────────────────
 // Review
 // ─────────────────────────────────────────────────────────────────
@@ -2015,7 +2132,6 @@ export function ReviewStep({
   canConfirm,
   renderExtras,
   surface,
-  pricing,
   warnings,
 }: {
   draft: Draft
@@ -2065,6 +2181,9 @@ export function ReviewStep({
             ))}
           </ul>
         </div>
+        {/* Public storefront collects a customer-facing note. Operator
+            finalize controls (internal notes, price override, voucher, document
+            generation) live on the Payment block, not here. */}
         {isPublic ? (
           <div className="space-y-1">
             <Label htmlFor="bj-customer-notes">
@@ -2076,100 +2195,6 @@ export function ReviewStep({
               value={draft.customerNotes ?? ""}
               onChange={(e) => setDraft({ ...draft, customerNotes: e.target.value })}
             />
-          </div>
-        ) : (
-          <div className="space-y-1">
-            <Label htmlFor="bj-internal-notes">
-              {messages.bookingJourney.review.internalNotes}
-            </Label>
-            <Textarea
-              id="bj-internal-notes"
-              value={draft.internalNotes ?? ""}
-              onChange={(e) => setDraft({ ...draft, internalNotes: e.target.value })}
-            />
-          </div>
-        )}
-        {/* Manual price override — operator-only. Wins over the quote price
-            on commit; a reason is required when it differs. */}
-        {!isPublic ? (
-          <PriceOverrideEditor draft={draft} setDraft={setDraft} pricing={pricing} />
-        ) : null}
-        {/* Voucher (gift / refund credit) — operator-only. Redeemed atomically
-            on commit; the storefront never applies internal vouchers. */}
-        {!isPublic ? <VoucherEditor draft={draft} setDraft={setDraft} pricing={pricing} /> : null}
-        {/* Document generation — operator-only; storefront never chooses this.
-            Proforma vs invoice+contract are mutually exclusive; both off = no
-            documents generated on commit. The owned handler forwards
-            `draft.documentGeneration` to the booking-create endpoint. */}
-        {!isPublic ? (
-          <div className="flex flex-col gap-3 rounded-md border p-3">
-            <Label>{messages.bookingCreateDialog.labels.documentGenerationHeading}</Label>
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-sm">
-                <Checkbox
-                  id="bj-doc-proforma"
-                  checked={draft.documentGeneration?.invoiceType === "proforma"}
-                  onCheckedChange={(v) =>
-                    setDraft({
-                      ...draft,
-                      documentGeneration:
-                        v === true
-                          ? {
-                              contractDocument: false,
-                              invoiceDocument: true,
-                              invoiceType: "proforma",
-                            }
-                          : undefined,
-                    })
-                  }
-                />
-                <Label htmlFor="bj-doc-proforma" className="cursor-pointer">
-                  {messages.bookingCreateDialog.labels.generateProforma}
-                </Label>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Checkbox
-                  id="bj-doc-invoice-contract"
-                  checked={
-                    draft.documentGeneration?.contractDocument === true &&
-                    draft.documentGeneration?.invoiceType !== "proforma"
-                  }
-                  onCheckedChange={(v) =>
-                    setDraft({
-                      ...draft,
-                      documentGeneration:
-                        v === true
-                          ? {
-                              contractDocument: true,
-                              invoiceDocument: true,
-                              invoiceType: "invoice",
-                            }
-                          : undefined,
-                    })
-                  }
-                />
-                <Label htmlFor="bj-doc-invoice-contract" className="cursor-pointer">
-                  {messages.bookingCreateDialog.labels.generateInvoiceAndContract}
-                </Label>
-              </div>
-              {/* Notification suppression — uncheck to skip the post-commit
-                  confirmation email. Stored as `draft.suppressNotifications`. */}
-              <div className="flex items-start gap-2 border-t pt-2 text-sm">
-                <Checkbox
-                  id="bj-notify-traveler"
-                  checked={draft.suppressNotifications !== true}
-                  onCheckedChange={(v) => setDraft({ ...draft, suppressNotifications: v !== true })}
-                />
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="bj-notify-traveler" className="cursor-pointer">
-                    {messages.bookingCreateDialog.fields.notifyTraveler}
-                  </Label>
-                  <p className="text-muted-foreground text-xs">
-                    {messages.bookingCreateDialog.fields.notifyTravelerHint}
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         ) : null}
         {renderExtras ? <div>{renderExtras()}</div> : null}

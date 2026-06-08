@@ -140,6 +140,14 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     [shape, hideConfigure],
   )
 
+  // The stacked admin layout drops the Review block — the side panel shows the
+  // live summary + Confirm at all times, so a separate review section is
+  // redundant.
+  const stackedSteps = useMemo<ReadonlyArray<JourneyStep>>(
+    () => steps.filter((s) => s !== "review"),
+    [steps],
+  )
+
   const [currentStep, setCurrentStep] = useState<JourneyStep>(() => steps[0] ?? "departure")
   const [visited, setVisited] = useState<Set<JourneyStep>>(() => new Set([steps[0] ?? "departure"]))
 
@@ -230,15 +238,15 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   // Confirm is gated until every section passes its check.
   const firstIncomplete = useMemo<JourneyStep>(
     () =>
-      steps.find((s) => !stackedStepComplete(s, draft, shape, available)) ??
-      steps[steps.length - 1] ??
-      steps[0] ??
+      stackedSteps.find((s) => !stackedStepComplete(s, draft, shape, available)) ??
+      stackedSteps[stackedSteps.length - 1] ??
+      stackedSteps[0] ??
       "departure",
-    [steps, draft, shape, available],
+    [stackedSteps, draft, shape, available],
   )
   const canCommit = useMemo(
-    () => steps.every((s) => canAdvanceFromStep(s, draft, shape, available)),
-    [steps, draft, shape, available],
+    () => stackedSteps.every((s) => canAdvanceFromStep(s, draft, shape, available)),
+    [stackedSteps, draft, shape, available],
   )
   const [isAdvanceGuardPending, setIsAdvanceGuardPending] = useState(false)
   const [advanceGuardError, setAdvanceGuardError] = useState<string | null>(null)
@@ -469,7 +477,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     return (
       <StackedJourney
         className={props.className}
-        steps={steps}
+        steps={stackedSteps}
         renderStep={renderStep}
         isStepComplete={(s) => stackedStepComplete(s, draft, shape, available)}
         commitError={commit.error}
@@ -481,10 +489,15 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             invalidReason={quote.data?.invalidReason}
             entitySummary={props.entitySummary}
             currentStep={firstIncomplete}
-            steps={steps}
+            steps={stackedSteps}
             shape={shape}
             draft={draft}
             className={props.sidePanelClassName}
+            // The side panel IS the commit surface in the stacked layout.
+            onConfirm={onConfirm}
+            isCommitting={commit.isPending || isHandlingCheckout}
+            canConfirm={canCommit}
+            commitError={commit.error}
           />
         }
         contractDialog={
@@ -680,6 +693,13 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
 const sectionId = (step: JourneyStep): string => `bj-section-${step}`
 
 /**
+ * The sequential gates in the stacked layout: each must be filled before the
+ * next sections unlock. Once all three are done, the remaining sections
+ * (options, extras, payment) all open together.
+ */
+const GATE_STEPS = new Set<JourneyStep>(["departure", "billing", "travelers"])
+
+/**
  * The admin's guided single-page layout — every section is a block on one
  * page, but content stays collapsed until the previous section is complete,
  * so the operator fills them in sequence and focuses on one at a time.
@@ -714,22 +734,24 @@ function StackedJourney({
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   const nav = messages.bookingJourney.navigation
-  // Progressive unlock: a section is open once everything above it is
-  // complete, and STAYS open thereafter (so the operator keeps full context
-  // of everything they've filled). Only sections past the first incomplete
-  // one are still locked.
-  const activeStep =
-    steps.find((s) => !isStepComplete(s)) ?? steps[steps.length - 1] ?? steps[0] ?? "departure"
-  const activeIndex = steps.indexOf(activeStep)
+  // Progressive unlock gated only on the SEQUENTIAL gates (departure →
+  // billing → travelers). Once those are filled, the remaining sections
+  // (options, extras, payment) all unlock together — they're independent
+  // refinements, not a strict sequence. Unlocked sections stay open so the
+  // operator keeps full context of everything they've filled.
+  const firstIncompleteGate = steps.find((s) => GATE_STEPS.has(s) && !isStepComplete(s))
+  const unlockThroughIndex = firstIncompleteGate
+    ? steps.indexOf(firstIncompleteGate)
+    : steps.length - 1
 
   return (
     <div className={className}>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-8 md:items-start">
         <div className="space-y-3 md:col-span-5">
           {steps.map((step, i) => {
-            // Locked: a section beyond the first incomplete one — a muted,
-            // disabled row until the operator gets there.
-            if (i > activeIndex) {
+            // Locked: a section beyond the active gate — a muted, disabled row
+            // until the operator clears the gates above it.
+            if (i > unlockThroughIndex) {
               return (
                 <div
                   key={step}
