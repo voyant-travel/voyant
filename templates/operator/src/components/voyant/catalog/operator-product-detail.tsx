@@ -41,7 +41,7 @@ export function OperatorProductDetail({
       onBreadcrumbs={setCrumbs}
       onBook={(id, source) =>
         void navigate({
-          to: "/catalog/journey/$entityModule/$entityId",
+          to: "/bookings/journey/$entityModule/$entityId",
           params: { entityModule: "products", entityId: id },
           search: {
             sourceKind: "voyant-connect",

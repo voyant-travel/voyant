@@ -40,7 +40,7 @@ export const Route = createFileRoute("/_workspace/bookings/$id")({
   beforeLoad: ({ params, search }) => {
     if (params.id === "new" && search.productId) {
       throw redirect({
-        to: "/catalog/journey/$entityModule/$entityId",
+        to: "/bookings/journey/$entityModule/$entityId",
         params: { entityModule: "products", entityId: search.productId },
         search: {
           sourceKind: "owned",
@@ -112,7 +112,7 @@ function NewBookingPicker() {
     sourceConnectionId?: string
   }) =>
     void navigate({
-      to: "/catalog/journey/$entityModule/$entityId",
+      to: "/bookings/journey/$entityModule/$entityId",
       params: { entityModule: sel.entityModule, entityId: sel.entityId },
       search: {
         sourceKind: sel.sourceKind,

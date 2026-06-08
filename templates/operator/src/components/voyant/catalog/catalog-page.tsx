@@ -330,7 +330,7 @@ function goToBookingPage(
   const sourceRef = stringField(hit, "source.ref", null) ?? undefined
   const sourceConnectionId = stringField(hit, "source.connectionId", null) ?? undefined
   navigate({
-    to: "/catalog/journey/$entityModule/$entityId",
+    to: "/bookings/journey/$entityModule/$entityId",
     params: { entityModule, entityId: hit.id },
     search: {
       sourceKind,

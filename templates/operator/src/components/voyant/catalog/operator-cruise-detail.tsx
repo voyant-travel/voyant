@@ -28,7 +28,7 @@ export function OperatorCruiseDetail({ id, locale }: { id: string; locale?: stri
       onBreadcrumbs={setCrumbs}
       onBook={(cruiseId, opts) =>
         void navigate({
-          to: "/catalog/journey/$entityModule/$entityId",
+          to: "/bookings/journey/$entityModule/$entityId",
           params: { entityModule: "cruises", entityId: cruiseId },
           search: {
             sourceKind: "voyant-connect",

@@ -54,7 +54,7 @@ export function OperatorVerticalDetail({
       onBreadcrumbs={setCrumbs}
       onBook={(entityModule, entityId, opts) =>
         void navigate({
-          to: "/catalog/journey/$entityModule/$entityId",
+          to: "/bookings/journey/$entityModule/$entityId",
           params: { entityModule, entityId },
           search: {
             sourceKind: "voyant-connect",

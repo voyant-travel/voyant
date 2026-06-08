@@ -1,4 +1,4 @@
-import { createFileRoute, useParams, useSearch } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 import { useMemo } from "react"
 import { z } from "zod"
 
@@ -11,12 +11,13 @@ import { OperatorBookingJourney } from "@/components/voyant/booking-journey/oper
  *
  * Per booking-journey-architecture §10 Phase B.
  *
- * This is the single operator booking path: catalog detail/browse pages,
- * the trips composer, and "New booking" (`/bookings/new`) all route here
- * for owned AND supplier-sourced products — they differ only by the
- * `sourceKind` provenance. The legacy `/catalog/book` single-page flow was
- * removed; the owned-only `/bookings/new` create-sheet was retired in favour
- * of this journey.
+ * This is THE booking page — it lives under `/bookings/journey/...` (not
+ * `/catalog/...`) precisely so it reads as the single booking flow, not a
+ * catalog-specific feature. Catalog detail/browse pages, the trips composer,
+ * and "New booking" (`/bookings/new`) all route here for owned AND
+ * supplier-sourced products — they differ only by the `sourceKind`
+ * provenance. The legacy `/catalog/book` single-page flow was removed; the
+ * owned-only create-sheet is no longer wired into the operator route.
  */
 const journeySearchSchema = z.object({
   sourceKind: z.string().min(1),
@@ -31,16 +32,14 @@ const journeySearchSchema = z.object({
 
 export type JourneySearchParams = z.infer<typeof journeySearchSchema>
 
-export const Route = createFileRoute("/_workspace/catalog_/journey/$entityModule/$entityId")({
+export const Route = createFileRoute("/_workspace/bookings_/journey/$entityModule/$entityId")({
   component: JourneyRouteComponent,
   validateSearch: journeySearchSchema,
 })
 
 function JourneyRouteComponent(): React.ReactElement {
-  const { entityModule, entityId } = useParams({
-    from: "/_workspace/catalog_/journey/$entityModule/$entityId",
-  })
-  const search = useSearch({ from: "/_workspace/catalog_/journey/$entityModule/$entityId" })
+  const { entityModule, entityId } = Route.useParams()
+  const search = Route.useSearch()
   const draftId = useMemo(() => search.draftId ?? generateDraftId(), [search.draftId])
 
   return (
