@@ -182,10 +182,14 @@ export interface DefaultContractVariables {
 
     // Settlement
     paidAmountCents: number
+    /** Current remaining amount owed after completed payments / invoice balance. */
+    amountDueCents: number
     balanceDueCents: number
+    isPaidInFull: boolean
 
-    // Payment-schedule-derived (deposit + balance from
-    // booking_payment_schedules). Empty when no schedule exists.
+    // Gross scheduled installments from booking_payment_schedules. These are
+    // payment-plan amounts, not net remaining balances; use amountDueCents /
+    // balanceDueCents / isPaidInFull for current settlement state.
     depositAmountCents: number
     depositDueDate: string
     balanceAmountCents: number
@@ -622,6 +626,12 @@ export async function autoGenerateContractForBooking(
   const endDate = booking.endDate ?? ""
   const durationNights = computeNights(startDate, endDate)
   const settlement = await resolveBookingSettlementVariables(db, booking.id, sellCurrency)
+  const amountDueCents = computeAmountDueCents(settlement, totalCents)
+  const isPaidInFull =
+    amountDueCents <= 0 ||
+    (settlement.balanceDueCents == null &&
+      totalCents > 0 &&
+      settlement.paidAmountCents >= totalCents)
   const paymentSchedule = await resolveBookingPaymentScheduleVariables(db, booking.id)
   const roomsSummary = deriveRoomsSummary(
     bookingItemContext.rawItems,
@@ -726,7 +736,9 @@ export async function autoGenerateContractForBooking(
       discountAmountCents: 0,
 
       paidAmountCents: settlement.paidAmountCents,
-      balanceDueCents: settlement.balanceDueCents ?? totalCents,
+      amountDueCents,
+      balanceDueCents: amountDueCents,
+      isPaidInFull,
 
       depositAmountCents: paymentSchedule.depositAmountCents,
       depositDueDate: paymentSchedule.depositDueDate,
@@ -1542,6 +1554,14 @@ async function resolveBookingSettlementVariables(
         }
       : undefined,
   }
+}
+
+function computeAmountDueCents(
+  settlement: { paidAmountCents: number; balanceDueCents: number | null },
+  totalCents: number,
+): number {
+  if (settlement.balanceDueCents != null) return Math.max(0, settlement.balanceDueCents)
+  return Math.max(0, totalCents - settlement.paidAmountCents)
 }
 
 function amountInCurrency(payment: SettlementPaymentRow, currency: string): number {
