@@ -45,11 +45,15 @@ import {
 } from "../lib/draft-state.js"
 import { paymentScheduleValueToRows, rowsToPaymentScheduleValue } from "../lib/payment-schedule.js"
 import type {
+  DeparturePickerProps,
   LeadContactPickerProps,
   PaymentProviderCapabilities,
   PaymentProviderStepRenderProps,
   TravelerContactPickerProps,
 } from "../types.js"
+
+/** Injectable departure-picker render slot, threaded from BookingJourneyProps. */
+type RenderDeparturePicker = (props: DeparturePickerProps) => React.ReactNode
 
 interface StepCommonProps {
   draft: Draft
@@ -65,8 +69,13 @@ export function ConfigureStep({
   draft,
   setDraft,
   shape,
+  productId,
+  renderDeparturePicker,
 }: StepCommonProps & {
   renderExtras?: () => React.ReactNode
+  /** Owned product id — passed to the injected departure picker. */
+  productId?: string
+  renderDeparturePicker?: RenderDeparturePicker
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   return (
@@ -76,7 +85,13 @@ export function ConfigureStep({
       </CardHeader>
       <CardContent className="space-y-6">
         <PaxBands draft={draft} setDraft={setDraft} shape={shape} />
-        <DepartureFields draft={draft} setDraft={setDraft} shape={shape} />
+        <DepartureFields
+          draft={draft}
+          setDraft={setDraft}
+          shape={shape}
+          productId={productId}
+          renderDeparturePicker={renderDeparturePicker}
+        />
       </CardContent>
     </Card>
   )
@@ -162,12 +177,49 @@ function PaxValidation({
   return null
 }
 
-function DepartureFields({ draft, setDraft, shape }: StepCommonProps): React.ReactNode {
+function DepartureFields({
+  draft,
+  setDraft,
+  shape,
+  productId,
+  renderDeparturePicker,
+}: StepCommonProps & {
+  productId?: string
+  renderDeparturePicker?: RenderDeparturePicker
+}): React.ReactNode {
   const subSteps = shape.configureSubSteps ?? []
+  // The injected picker (operator availability) renders a real
+  // scheduled-departure selector for a `departure` sub-step; it owns
+  // its own free-date fallback. When no slot is injected (storefront),
+  // the journey renders the free date/time fields directly.
+  const renderDeparture = (): React.ReactNode =>
+    renderDeparturePicker && productId ? (
+      renderDeparturePicker({
+        productId,
+        optionId: draft.configure.variantId ?? null,
+        slotId: draft.configure.departureSlotId ?? null,
+        departureDate: draft.configure.departureDate ?? null,
+        departureTime: draft.configure.departureTime ?? null,
+        onChange: (next) =>
+          setDraft(
+            patchConfigure(draft, {
+              ...(next.slotId !== undefined ? { departureSlotId: next.slotId ?? undefined } : {}),
+              ...(next.departureDate !== undefined
+                ? { departureDate: next.departureDate ?? undefined }
+                : {}),
+              ...(next.departureTime !== undefined
+                ? { departureTime: next.departureTime ?? undefined }
+                : {}),
+            }),
+          ),
+      })
+    ) : (
+      <DepartureBasic draft={draft} setDraft={setDraft} />
+    )
   // Render every sub-step kind the descriptor declares. Cruise
   // (cabin-category, cabin-number) lands here in Phase F.
   if (subSteps.length === 0) {
-    return <DepartureBasic draft={draft} setDraft={setDraft} />
+    return renderDeparture()
   }
   return (
     <div className="space-y-4">
@@ -175,7 +227,7 @@ function DepartureFields({ draft, setDraft, shape }: StepCommonProps): React.Rea
         // Sub-step kinds are unique per descriptor — kind serves as
         // a stable key.
         if (sub.kind === "departure") {
-          return <DepartureBasic key="departure" draft={draft} setDraft={setDraft} />
+          return <div key="departure">{renderDeparture()}</div>
         }
         if (sub.kind === "product-option") {
           return (

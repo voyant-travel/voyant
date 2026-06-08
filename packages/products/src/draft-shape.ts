@@ -72,6 +72,10 @@ export function buildProductDraftShape(
       ...(productOptions.length > 0
         ? [{ kind: "product-option" as const, options: productOptions }]
         : []),
+      // Owned products are scheduled — the operator picks a real departure.
+      // The journey renders an injected slot picker for this kind, falling
+      // back to a free date when the product has no scheduled departures.
+      { kind: "departure" as const, required: true },
       { kind: "occupancy", bands: paxBands },
     ],
   }

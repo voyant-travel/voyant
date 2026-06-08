@@ -22,6 +22,10 @@ export {
   type ProductPickerRenderProps,
 } from "./components/booking-create-sheet.js"
 export {
+  type DepartureSlotSearchRecord,
+  getBookableDepartureSlots,
+} from "./components/booking-create-utils.js"
+export {
   BookingBillingContextCard,
   BookingDetailPage,
   type BookingDetailPageProps,

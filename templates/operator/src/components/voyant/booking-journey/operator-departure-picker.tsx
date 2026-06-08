@@ -1,0 +1,172 @@
+"use client"
+
+import { useSlots } from "@voyantjs/availability-react"
+import { getBookableDepartureSlots } from "@voyantjs/bookings-ui"
+import { useBookingsUiMessagesOrDefault } from "@voyantjs/bookings-ui/i18n"
+import type { DeparturePickerProps } from "@voyantjs/bookings-ui/journey"
+import {
+  Combobox,
+  ComboboxCollection,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@voyantjs/ui/components/combobox"
+import { Input } from "@voyantjs/ui/components/input"
+import { Label } from "@voyantjs/ui/components/label"
+import { useMemo, useState } from "react"
+
+/**
+ * Operator departure picker for the booking journey's `"departure"`
+ * sub-step. Loads the owned product's scheduled departures from
+ * availability and lets the operator pick a real one (filtered by the
+ * chosen product option). When the product has no scheduled
+ * departures, it falls back to a free date/time so non-scheduled
+ * products can still be booked.
+ *
+ * Wired into `<OperatorBookingJourney />` via the journey's
+ * `renderDeparturePicker` slot.
+ */
+const dateFormatter = new Intl.DateTimeFormat(undefined, {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+})
+
+type LoadedSlot = {
+  id: string
+  optionId: string | null
+  startsAt: string
+  status?: string
+  remainingPax?: number | null
+  unlimited?: boolean | null
+}
+
+export function OperatorDeparturePicker({
+  productId,
+  optionId,
+  slotId,
+  departureDate,
+  departureTime,
+  onChange,
+}: DeparturePickerProps): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault().bookingCreateDialog
+  // Stable "now" so the slot query + future filter don't churn every render.
+  const [nowIso] = useState(() => new Date().toISOString())
+
+  const query = useSlots({
+    productId: productId || undefined,
+    status: "open",
+    startsAtFrom: nowIso,
+    limit: 100,
+    enabled: Boolean(productId),
+  })
+
+  const slots = useMemo<LoadedSlot[]>(
+    () =>
+      getBookableDepartureSlots((query.data?.data ?? []) as LoadedSlot[], {
+        nowIso,
+        optionId,
+      }),
+    [query.data?.data, nowIso, optionId],
+  )
+  const slotMap = useMemo(() => new Map(slots.map((s) => [s.id, s])), [slots])
+
+  const formatLabel = (slot: LoadedSlot): string => {
+    const date = dateFormatter.format(new Date(slot.startsAt))
+    const remaining =
+      !slot.unlimited && typeof slot.remainingPax === "number"
+        ? ` · ${slot.remainingPax} ${messages.labels.remainingCapacity}`
+        : ""
+    return `${date}${remaining}`
+  }
+
+  const [inputValue, setInputValue] = useState(() => {
+    const current = slotId ? slotMap.get(slotId) : undefined
+    return current ? formatLabel(current) : ""
+  })
+
+  // No scheduled departures for this product → free date/time so the
+  // operator can still set a departure for non-scheduled products.
+  if (!query.isLoading && slots.length === 0) {
+    return (
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="space-y-1">
+          <Label htmlFor="bj-departure-date">{messages.fields.departure}</Label>
+          <Input
+            id="bj-departure-date"
+            type="date"
+            value={departureDate ?? ""}
+            onChange={(e) => onChange({ departureDate: e.target.value || null })}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="bj-departure-time">{messages.placeholders.departure}</Label>
+          <Input
+            id="bj-departure-time"
+            type="time"
+            value={departureTime ?? ""}
+            onChange={(e) => onChange({ departureTime: e.target.value || null })}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <Label>
+        {messages.fields.departure} <span className="text-destructive">*</span>
+      </Label>
+      <Combobox
+        items={slots.map((s) => s.id)}
+        value={slotId || null}
+        inputValue={inputValue}
+        autoHighlight
+        disabled={query.isLoading}
+        filter={() => true}
+        itemToStringLabel={(id) => {
+          const slot = slotMap.get(id as string)
+          return slot ? formatLabel(slot) : (id as string)
+        }}
+        itemToStringValue={(id) => id as string}
+        onInputValueChange={(next) => setInputValue(next)}
+        onValueChange={(next) => {
+          const id = (next as string | null) ?? ""
+          const slot = id ? slotMap.get(id) : undefined
+          if (!slot) {
+            onChange({ slotId: null, departureDate: null })
+            setInputValue("")
+            return
+          }
+          onChange({
+            slotId: slot.id,
+            // Anchor the free-date field on the slot's date so downstream
+            // (payment schedules, hold) has a concrete departure date.
+            departureDate: slot.startsAt.slice(0, 10),
+          })
+          setInputValue(formatLabel(slot))
+        }}
+      >
+        <ComboboxInput placeholder={messages.placeholders.departure} showClear={Boolean(slotId)} />
+        <ComboboxContent>
+          <ComboboxEmpty>{messages.placeholders.departureEmpty}</ComboboxEmpty>
+          <ComboboxList>
+            <ComboboxCollection>
+              {(id) => {
+                const slot = slotMap.get(id as string)
+                if (!slot) return null
+                return (
+                  <ComboboxItem key={slot.id} value={slot.id}>
+                    {formatLabel(slot)}
+                  </ComboboxItem>
+                )
+              }}
+            </ComboboxCollection>
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+    </div>
+  )
+}

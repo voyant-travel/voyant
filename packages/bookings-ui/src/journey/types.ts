@@ -66,6 +66,35 @@ export interface TravelerContactPickerProps {
 }
 
 /**
+ * Props for the injectable departure picker rendered in the Configure
+ * step for a `"departure"` sub-step. The template wires this with a
+ * scheduled-departures source (e.g. operator availability) so the
+ * operator picks a real departure rather than typing a free date.
+ *
+ * The picker owns its own data-loading and should fall back to a free
+ * date when the product has no scheduled departures — the journey just
+ * stores whatever it reports via `onChange`.
+ */
+export interface DeparturePickerProps {
+  /** The owned product whose departures to load. */
+  productId: string
+  /** Selected product option, used to filter departures (null = any). */
+  optionId: string | null
+  /** Currently-picked scheduled departure id, or null. */
+  slotId: string | null
+  /** Currently-entered departure date (free-date fallback), or null. */
+  departureDate: string | null
+  /** Currently-entered departure time (free-date fallback), or null. */
+  departureTime: string | null
+  /** Report a change — any omitted field is left unchanged on the draft. */
+  onChange: (next: {
+    slotId?: string | null
+    departureDate?: string | null
+    departureTime?: string | null
+  }) => void
+}
+
+/**
  * Capabilities supplied by the template — checkout-ui's PaymentStep
  * consumes these to render the right provider widget. Each flag is
  * an independent on/off switch the operator configures per
@@ -174,6 +203,13 @@ export interface BookingJourneyProps {
   /** Operator: pulls from CRM. Storefront: bare inline form. */
   renderLeadContactPicker?: (props: LeadContactPickerProps) => ReactNode
   renderTravelerContactPicker?: (props: TravelerContactPickerProps) => ReactNode
+
+  /**
+   * Renders the Configure step's `"departure"` sub-step. Operator
+   * surfaces wire this to a scheduled-departure picker (availability);
+   * when omitted, the journey renders a free date/time fallback.
+   */
+  renderDeparturePicker?: (props: DeparturePickerProps) => ReactNode
 
   /** Hook for the actual payment-provider widget — checkout-ui's
    *  PaymentStep is the canonical implementation. When omitted, the

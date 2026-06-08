@@ -46,6 +46,7 @@ export {
   type BookingJourneyTransitionGuardContext,
   type BookingJourneyTransitionGuardResult,
   type ContractAcceptanceEvent,
+  type DeparturePickerProps,
   JOURNEY_STEP_ORDER,
   type JourneyHeaderState,
   type JourneyStep,

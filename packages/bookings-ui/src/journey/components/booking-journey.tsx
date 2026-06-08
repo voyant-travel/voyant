@@ -354,7 +354,13 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
           />
 
           {currentStep === "configure" ? (
-            <ConfigureStep draft={draft} setDraft={setDraft} shape={shape} />
+            <ConfigureStep
+              draft={draft}
+              setDraft={setDraft}
+              shape={shape}
+              productId={props.entityId}
+              renderDeparturePicker={props.renderDeparturePicker}
+            />
           ) : null}
           {currentStep === "billing" ? (
             <BillingStep

@@ -1,8 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useAdminBreadcrumbs } from "@voyantjs/admin"
+import { useBookingsUiMessagesOrDefault } from "@voyantjs/bookings-ui/i18n"
 import { useMemo } from "react"
 import { z } from "zod"
 
 import { OperatorBookingJourney } from "@/components/voyant/booking-journey/operator-booking-journey"
+import { useAdminMessages } from "@/lib/admin-i18n"
 
 /**
  * Unified booking journey route. The shareable wizard from
@@ -42,8 +45,23 @@ function JourneyRouteComponent(): React.ReactElement {
   const search = Route.useSearch()
   const draftId = useMemo(() => search.draftId ?? generateDraftId(), [search.draftId])
 
+  const adminMessages = useAdminMessages()
+  const bookingsUiMessages = useBookingsUiMessagesOrDefault()
+  useAdminBreadcrumbs([
+    { label: adminMessages.bookings.list.pageTitle, href: "/bookings" },
+    { label: bookingsUiMessages.bookingCreatePage.title },
+  ])
+
   return (
-    <div className="container mx-auto py-6">
+    <main className="mx-auto flex w-full max-w-screen-2xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+      <header className="flex flex-col gap-1">
+        <h1 className="font-semibold text-2xl tracking-normal">
+          {bookingsUiMessages.bookingCreatePage.title}
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          {bookingsUiMessages.bookingCreatePage.description}
+        </p>
+      </header>
       <OperatorBookingJourney
         entityModule={entityModule}
         entityId={entityId}
@@ -54,7 +72,7 @@ function JourneyRouteComponent(): React.ReactElement {
         optionId={search.optionId}
         draftId={draftId}
       />
-    </div>
+    </main>
   )
 }
 
