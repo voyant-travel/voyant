@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import { CruiseDetailPage } from "@/components/voyant/catalog/cruise-detail-page"
+import { OperatorCruiseDetail } from "@/components/voyant/catalog/operator-cruise-detail"
 
 export const Route = createFileRoute("/_workspace/catalog/cruises/$id")({
   component: CruiseDetailRoute,
@@ -8,5 +8,5 @@ export const Route = createFileRoute("/_workspace/catalog/cruises/$id")({
 
 function CruiseDetailRoute() {
   const { id } = Route.useParams()
-  return <CruiseDetailPage id={id} />
+  return <OperatorCruiseDetail id={id} />
 }

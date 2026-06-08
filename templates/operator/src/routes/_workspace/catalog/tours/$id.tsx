@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import { CatalogVerticalDetailPage } from "@/components/voyant/catalog/catalog-vertical-detail-page"
+import { OperatorVerticalDetail } from "@/components/voyant/catalog/operator-vertical-detail"
 
 export const Route = createFileRoute("/_workspace/catalog/tours/$id")({
   component: TourDetailRoute,
@@ -8,5 +8,5 @@ export const Route = createFileRoute("/_workspace/catalog/tours/$id")({
 
 function TourDetailRoute() {
   const { id } = Route.useParams()
-  return <CatalogVerticalDetailPage surface="tours" id={id} />
+  return <OperatorVerticalDetail surface="tours" id={id} />
 }

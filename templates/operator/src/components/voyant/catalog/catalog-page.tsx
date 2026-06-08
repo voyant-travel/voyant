@@ -3,7 +3,7 @@
 import { Link, useNavigate } from "@tanstack/react-router"
 import type { CatalogSearchHit } from "@voyantjs/catalog-react"
 import {
-  CatalogPage as CatalogUiPage,
+  CatalogBrowsePage,
   createCatalogEnrichmentFetchers,
   type CatalogSlotAvailability as UiCatalogSlotAvailability,
   useCatalogUiMessagesOrDefault,
@@ -66,6 +66,13 @@ interface CatalogVerticalPageProps {
   onOpenDetail?: (hit: CatalogSearchHit) => void
 }
 
+/**
+ * Operator host for the packaged `CatalogBrowsePage` — resolves the operator's
+ * markets/locales + supplier directory, builds the detail-enrichment fetchers,
+ * renders the market/locale scope controls, and wires booking/editor/tag
+ * actions to the router + product mutations. The reusable grid + locked-facet
+ * merge live in `@voyantjs/catalog-ui`.
+ */
 export function CatalogVerticalPage({
   vertical,
   search,
@@ -131,127 +138,59 @@ export function CatalogVerticalPage({
     [supplierMap, selectedLocale, selectedMarketId],
   )
 
-  // Merge the always-on locked facets/ranges with the user's URL-driven filters.
-  // Memoized so locked surfaces hand a STABLE `filters` object to the tab panel:
-  // a fresh object every render reads as "selections changed" and resets back to
-  // page 1, breaking pagination. Key on the locked values' content (callers pass
-  // inline literals), not their identity. `search` is already stable (router).
-  const lockedFacetsKey = JSON.stringify(lockedFacets ?? null)
-  const lockedRangesKey = JSON.stringify(lockedRanges ?? null)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on serialized locked filters, not their object identity
-  const effectiveSearch = useMemo<CatalogSearchParams>(
-    () =>
-      lockedFacets || lockedRanges
-        ? {
-            ...search,
-            locale: selectedLocale,
-            filters: {
-              ...search.filters,
-              facets: { ...(search.filters?.facets ?? {}), ...(lockedFacets ?? {}) },
-              ranges: { ...(search.filters?.ranges ?? {}), ...(lockedRanges ?? {}) },
-            },
-          }
-        : { ...search, locale: selectedLocale },
-    [search, selectedLocale, lockedFacetsKey, lockedRangesKey],
-  )
-
   return (
-    <CatalogUiPage
+    <CatalogBrowsePage
       vertical={vertical}
-      search={effectiveSearch}
+      search={search}
+      onSearchChange={onSearchChange}
+      locale={selectedLocale}
+      embedded={embedded}
+      lockedFacets={lockedFacets}
+      lockedRanges={lockedRanges}
       formatSupplier={formatSupplier}
-      hideSearchInput={embedded}
-      className={embedded ? "px-0 py-0 lg:px-0" : undefined}
+      enrichmentFetchers={enrichmentFetchers}
       title={
-        // `false` (not `undefined`) so catalog-ui's `title ?? default` does NOT
-        // fall back to its generic "Catalog" header — the embedding surface
-        // (Dynamic/Scheduled page) renders its own header on top instead.
-        embedded ? (
-          false
-        ) : (
-          <div>
-            <h1 className="font-semibold text-2xl">{catalogMessages.tabs[vertical]}</h1>
-          </div>
-        )
+        <div>
+          <h1 className="font-semibold text-2xl">{catalogMessages.tabs[vertical]}</h1>
+        </div>
       }
-      toolbarEnd={
-        embedded ? undefined : (
-          <CatalogScopeControls
-            messages={browserMessages}
-            markets={marketsQuery.data?.data ?? []}
-            localeOptions={localeOptions}
-            market={selectedMarketId}
-            locale={selectedLocale}
-            onMarketChange={(marketId) => {
-              const nextMarket = (marketsQuery.data?.data ?? []).find(
-                (market) => market.id === marketId,
-              )
-              onSearchChange(
-                (prev): CatalogSearchParams => ({
-                  ...prev,
-                  market: marketId,
-                  locale: nextMarket?.defaultLanguageTag,
-                  page: 1,
-                }),
-                true,
-              )
-            }}
-            onDefaultMarket={() => {
-              onSearchChange(
-                (prev): CatalogSearchParams => ({
-                  ...prev,
-                  market: undefined,
-                  locale: undefined,
-                  page: 1,
-                }),
-                true,
-              )
-            }}
-            onLocaleChange={(locale) => {
-              onSearchChange((prev): CatalogSearchParams => ({ ...prev, locale, page: 1 }), true)
-            }}
-          />
-        )
+      scopeControls={
+        <CatalogScopeControls
+          messages={browserMessages}
+          markets={marketsQuery.data?.data ?? []}
+          localeOptions={localeOptions}
+          market={selectedMarketId}
+          locale={selectedLocale}
+          onMarketChange={(marketId) => {
+            const nextMarket = (marketsQuery.data?.data ?? []).find(
+              (market) => market.id === marketId,
+            )
+            onSearchChange(
+              (prev): CatalogSearchParams => ({
+                ...prev,
+                market: marketId,
+                locale: nextMarket?.defaultLanguageTag,
+                page: 1,
+              }),
+              true,
+            )
+          }}
+          onDefaultMarket={() => {
+            onSearchChange(
+              (prev): CatalogSearchParams => ({
+                ...prev,
+                market: undefined,
+                locale: undefined,
+                page: 1,
+              }),
+              true,
+            )
+          }}
+          onLocaleChange={(locale) => {
+            onSearchChange((prev): CatalogSearchParams => ({ ...prev, locale, page: 1 }), true)
+          }}
+        />
       }
-      onQueryChange={(q) =>
-        onSearchChange(
-          (prev): CatalogSearchParams => ({
-            ...prev,
-            q: q.length > 0 ? q : undefined,
-            page: 1,
-          }),
-          true,
-        )
-      }
-      onPageChange={(p) =>
-        onSearchChange((prev): CatalogSearchParams => ({ ...prev, page: p }), true)
-      }
-      onViewChange={(view) =>
-        onSearchChange((prev): CatalogSearchParams => ({ ...prev, view }), true)
-      }
-      onSortChange={(sort) =>
-        onSearchChange((prev): CatalogSearchParams => ({ ...prev, sort }), true)
-      }
-      onFiltersChange={(next) => {
-        // Prune empty selections so the URL stays clean; reset to page 1.
-        const facets: Record<string, Array<string | number>> = {}
-        for (const [field, values] of Object.entries(next.facets ?? {})) {
-          if (values.length > 0) facets[field] = values
-        }
-        const ranges: Record<string, { gte?: number; lte?: number }> = {}
-        for (const [field, range] of Object.entries(next.ranges ?? {})) {
-          if (range && (range.gte != null || range.lte != null)) ranges[field] = range
-        }
-        const hasAny = Object.keys(facets).length > 0 || Object.keys(ranges).length > 0
-        onSearchChange(
-          (prev): CatalogSearchParams => ({
-            ...prev,
-            filters: hasAny ? { facets, ranges } : undefined,
-            page: 1,
-          }),
-          true,
-        )
-      }}
       onBookHit={(hit, entityModule) =>
         goToBookingPage(hit, entityModule, navigate, browserMessages)
       }
@@ -266,7 +205,6 @@ export function CatalogVerticalPage({
       // tab) instead of the in-page sheet. Surface-specific so each vertical
       // routes to the right detail page.
       onOpenProductDetail={onOpenDetail ? (hit) => onOpenDetail(hit) : undefined}
-      enrichmentFetchers={enrichmentFetchers}
       renderSupplierLink={(supplierId, displayName) => (
         <Link
           to="/suppliers/$id"

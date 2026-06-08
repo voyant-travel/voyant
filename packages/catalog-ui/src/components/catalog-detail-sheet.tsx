@@ -1,6 +1,10 @@
 "use client"
 
-import type { CatalogSearchHit } from "@voyantjs/catalog-react"
+import type {
+  CatalogDeparturePricingRow,
+  CatalogDetailEnrichment,
+  CatalogSearchHit,
+} from "@voyantjs/catalog-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Input } from "@voyantjs/ui/components/input"
@@ -45,7 +49,6 @@ import {
 } from "react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 import type { CatalogUiMessages } from "../i18n/messages.js"
-import type { CatalogDeparturePricingRow } from "./catalog-enrichment-fetchers.js"
 import { MediaGallery } from "./media-gallery.js"
 
 export interface CatalogDetailAction {
@@ -60,100 +63,10 @@ export interface CatalogDetailAction {
   visible?: (hit: CatalogSearchHit) => boolean
 }
 
-/**
- * Rich detail enrichment loaded on-demand when the sheet opens.
- * Fetched separately from the search index — the index keeps a lean
- * facetable projection; the enrichment carries everything else via the
- * catalog content service (description, itinerary, media, options,
- * policies, supplier).
- */
-export interface CatalogDetailEnrichment {
-  /** Entity display name from the content source (header on the full-page view). */
-  name?: string | null
-  description?: string | null
-  shortDescription?: string | null
-  highlights?: ReadonlyArray<string>
-  heroImageUrl?: string | null
-  supplier?: string | null
-  /** The vessel a cruise sails on (Ship tab). */
-  ship?: {
-    id?: string | null
-    name: string
-    shipType?: string | null
-    description?: string | null
-    deckPlanUrl?: string | null
-    deckPlans?: Array<{
-      name: string
-      level?: number | null
-      imageUrl?: string | null
-    }>
-    capacity?: number | null
-    decks?: number | null
-    yearBuilt?: number | null
-    images?: string[]
-  } | null
-  itinerary?: ReadonlyArray<{
-    dayNumber: number
-    title?: string | null
-    description?: string | null
-    location?: string | null
-    date?: string | null
-    arrivalTime?: string | null
-    departureTime?: string | null
-    isAtSea?: boolean | null
-    /** Optional hero image rendered alongside the day card. */
-    heroImageUrl?: string | null
-  }>
-  media?: ReadonlyArray<{ url: string; type?: string; caption?: string | null }>
-  options?: ReadonlyArray<{
-    id: string
-    name: string
-    description?: string | null
-    code?: string | null
-    type?: string | null
-    images?: string[]
-    floorplanImages?: string[]
-    squareFeet?: string | null
-    gradeCodes?: string[]
-    wheelchairAccessible?: boolean
-    capacityMax?: number | null
-    amenities?: string[]
-  }>
-  policies?: ReadonlyArray<{ kind: string; body: string }>
-  departures?: ReadonlyArray<{
-    id: string
-    sourceRef?: string | null
-    startsAt: string
-    endsAt?: string | null
-    durationNights?: number | null
-    status?: string | null
-    embarkationPort?: string | null
-    disembarkationPort?: string | null
-    unlimited?: boolean | null
-    capacity?: number | null
-    remaining?: number | null
-    lowestPriceCents?: number | null
-    currency?: string | null
-    note?: string | null
-    itinerary?: ReadonlyArray<{
-      dayNumber: number
-      title?: string | null
-      description?: string | null
-      location?: string | null
-      date?: string | null
-      arrivalTime?: string | null
-      departureTime?: string | null
-      isAtSea?: boolean | null
-    }>
-  }>
-  /** Resolution metadata — drives the chips at the top. */
-  servedLocale?: string
-  matchKind?: string
-  source?: string
-  servedStale?: boolean
-  synthesized?: boolean
-  machineTranslated?: boolean
-}
+// `CatalogDetailEnrichment` (the on-demand detail view-model) now lives in the
+// data layer (`@voyantjs/catalog-react`) alongside the content client that
+// produces it; re-exported here for back-compat with the catalog-ui surface.
+export type { CatalogDetailEnrichment }
 
 export type CatalogDetailSheetWidth =
   | "md"

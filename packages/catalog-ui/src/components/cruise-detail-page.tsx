@@ -1,14 +1,19 @@
 "use client"
 
-import { useNavigate } from "@tanstack/react-router"
-import { useAdminBreadcrumbs, useLocale } from "@voyantjs/admin"
+import type { CatalogSurface } from "@voyantjs/catalog-react"
+import {
+  fetchCruiseContent,
+  fetchCruisePrice,
+  fetchCruiseSailingPricing,
+  useVoyantCatalogContext,
+} from "@voyantjs/catalog-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Anchor, Check, Ship, Users } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { getApiUrl } from "@/lib/env"
+import { useCatalogUiI18nOrDefault, useCatalogUiMessagesOrDefault } from "../i18n/index.js"
+import type { CatalogUiMessages } from "../i18n/messages.js"
 import {
   AvailabilityCalendar,
   compareMonth,
@@ -16,15 +21,18 @@ import {
   type MonthCursor,
   monthOfIso,
   shiftMonth,
-} from "./availability-calendar"
-import { Gallery, type GalleryImage, GalleryLightbox } from "./catalog-gallery"
+} from "./availability-calendar.js"
+import { Gallery, type GalleryImage, GalleryLightbox } from "./catalog-gallery.js"
 
 /**
- * Individual cruise page — full-page, URL-addressable at
- * `/catalog/cruises/$id`, styled like the package detail page. Reads the rich
- * cruise content from the SOURCE (Connect via `/v1/admin/cruises/:id/content`,
- * NOT the search index): gallery, sailings (a from-price departure calendar),
- * cabins, itinerary, ship, description.
+ * Individual cruise page — full-page, URL-addressable at `/catalog/cruises/$id`,
+ * styled like the package detail page. Reads the rich cruise content from the
+ * SOURCE (Connect via `/v1/{surface}/cruises/:id/content`, NOT the search
+ * index): gallery, sailings (a from-price departure calendar), cabins,
+ * itinerary, ship, description.
+ *
+ * Presentational: navigation (`onBook`) and breadcrumbs (`onBreadcrumbs`) are
+ * injected by the host; the base URL + fetcher come from `VoyantCatalogProvider`.
  */
 
 interface CruiseSailing {
@@ -94,13 +102,37 @@ interface CruiseDetail {
   itinerary: CruiseStop[]
 }
 
-export function CruiseDetailPage({ id, locale = "ro" }: { id: string; locale?: string }) {
-  const messages = useAdminMessages()
-  const nav = messages.nav
-  const t = messages.catalog.detail
-  const s = messages.catalog.search
-  const navigate = useNavigate()
-  const { resolvedLocale } = useLocale()
+type SearchMessages = CatalogUiMessages["catalogBrowser"]["search"]
+
+export interface CruiseDetailPageProps {
+  id: string
+  locale?: string
+  /** `/v1/admin/...` (default) vs `/v1/public/...`. */
+  surface?: CatalogSurface
+  /** Localized "Cruises" label — breadcrumb root + header fallback. */
+  cruisesLabel: string
+  /** Href of the cruises browse page, e.g. `/catalog/cruises`. */
+  cruisesHref: string
+  /** Route to the booking journey for a sailing/cabin. */
+  onBook: (cruiseId: string, opts: { departureId?: string; optionId?: string }) => void
+  /** Publish breadcrumbs as the resolved name changes. */
+  onBreadcrumbs?: (crumbs: Array<{ label: string; href?: string }>) => void
+}
+
+export function CruiseDetailPage({
+  id,
+  locale = "ro",
+  surface = "admin",
+  cruisesLabel,
+  cruisesHref,
+  onBook,
+  onBreadcrumbs,
+}: CruiseDetailPageProps) {
+  const { baseUrl, fetcher } = useVoyantCatalogContext()
+  const browser = useCatalogUiMessagesOrDefault().catalogBrowser
+  const t = browser.detail
+  const s = browser.search
+  const { locale: resolvedLocale } = useCatalogUiI18nOrDefault()
 
   const [detail, setDetail] = useState<CruiseDetail | null>(null)
   // Cruise-level "from" price (from Connect; the content route carries none).
@@ -126,41 +158,26 @@ export function CruiseDetailPage({ id, locale = "ro" }: { id: string; locale?: s
     setCruisePrice(null)
     void (async () => {
       try {
-        const [contentRes, priceRes] = await Promise.all([
-          fetch(
-            `${getApiUrl()}/v1/admin/cruises/${encodeURIComponent(id)}/content?locale=${encodeURIComponent(locale)}`,
-            { credentials: "include" },
-          ),
-          fetch(`${getApiUrl()}/v1/admin/catalog/cruise-price`, {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ cruiseId: id }),
-          }).catch(() => null),
+        const [contentJson, priceJson] = await Promise.all([
+          fetchCruiseContent({ baseUrl, fetcher, surface }, { cruiseId: id, locale }),
+          fetchCruisePrice({ baseUrl, fetcher, surface }, { cruiseId: id }).catch(() => null),
         ])
-        const json = (await contentRes.json()) as { data?: { content?: unknown } }
         if (cancelled) return
-        const mapped = mapCruiseContent(json.data?.content)
+        const mapped = mapCruiseContent(contentJson.data?.content)
         if (!mapped) {
           setStatus("error")
           return
         }
         setDetail(mapped)
         setStatus("ready")
-        if (priceRes) {
-          const pj = (await priceRes.json().catch(() => null)) as {
-            fromAmountMinor?: number | null
-            currency?: string | null
-          } | null
-          if (!cancelled && pj) {
-            setCruisePrice({
-              fromAmountMinor: pj.fromAmountMinor ?? null,
-              currency: pj.currency ?? null,
-            })
-          }
+        if (priceJson) {
+          setCruisePrice({
+            fromAmountMinor: priceJson.fromAmountMinor ?? null,
+            currency: priceJson.currency ?? null,
+          })
         }
         const first = mapped.sailings
-          .map((s) => s.startDate)
+          .map((sail) => sail.startDate)
           .filter((d): d is string => Boolean(d))
           .sort()[0]
         if (first) {
@@ -174,13 +191,16 @@ export function CruiseDetailPage({ id, locale = "ro" }: { id: string; locale?: s
     return () => {
       cancelled = true
     }
-  }, [id, locale])
+  }, [id, locale, baseUrl, fetcher, surface])
 
-  useAdminBreadcrumbs(
-    detail?.name
-      ? [{ label: nav.catalogCruises, href: "/catalog/cruises" }, { label: detail.name }]
-      : [{ label: nav.catalogCruises, href: "/catalog/cruises" }],
-  )
+  useEffect(() => {
+    if (!onBreadcrumbs) return
+    onBreadcrumbs(
+      detail?.name
+        ? [{ label: cruisesLabel, href: cruisesHref }, { label: detail.name }]
+        : [{ label: cruisesLabel, href: cruisesHref }],
+    )
+  }, [detail?.name, cruisesLabel, cruisesHref, onBreadcrumbs])
 
   const gallery = useMemo<GalleryImage[]>(() => {
     if (!detail) return []
@@ -251,17 +271,14 @@ export function CruiseDetailPage({ id, locale = "ro" }: { id: string; locale?: s
     setCabinPricing(null)
     void (async () => {
       try {
-        const res = await fetch(`${getApiUrl()}/v1/admin/catalog/cruise-sailing-pricing`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ cruiseId: id, sailingRef: activeRef }),
-        })
-        const json = (await res.json()) as { cabins?: CabinPrice[]; currency?: string | null }
+        const json = await fetchCruiseSailingPricing(
+          { baseUrl, fetcher, surface },
+          { cruiseId: id, sailingRef: activeRef },
+        )
         if (!cancelled) {
           setCabinPricing({
             sailingRef: activeRef,
-            cabins: Array.isArray(json.cabins) ? json.cabins : [],
+            cabins: json.cabins ?? [],
             currency: json.currency ?? null,
           })
         }
@@ -274,17 +291,12 @@ export function CruiseDetailPage({ id, locale = "ro" }: { id: string; locale?: s
     return () => {
       cancelled = true
     }
-  }, [activeRef, id])
+  }, [activeRef, id, baseUrl, fetcher, surface])
 
   const book = (sail: CruiseSailing, cabinCode?: string) =>
-    navigate({
-      to: "/catalog/journey/$entityModule/$entityId",
-      params: { entityModule: "cruises", entityId: id },
-      search: {
-        sourceKind: "voyant-connect",
-        ...(sail.sourceRef || sail.id ? { departureId: sail.sourceRef ?? sail.id ?? "" } : {}),
-        ...(cabinCode ? { optionId: cabinCode } : {}),
-      },
+    onBook(id, {
+      ...(sail.sourceRef || sail.id ? { departureId: sail.sourceRef ?? sail.id ?? "" } : {}),
+      ...(cabinCode ? { optionId: cabinCode } : {}),
     })
 
   if (status === "loading") {
@@ -341,7 +353,7 @@ export function CruiseDetailPage({ id, locale = "ro" }: { id: string; locale?: s
       {/* Header */}
       <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="font-semibold text-2xl">{detail.name ?? nav.catalogCruises}</h1>
+          <h1 className="font-semibold text-2xl">{detail.name ?? cruisesLabel}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground text-sm">
             {subtitle && <span>{subtitle}</span>}
             {route && (
@@ -723,10 +735,7 @@ function mapCruiseContent(content: unknown): CruiseDetail | null {
   }
 }
 
-function formatCruiseType(
-  type: string | null,
-  s: ReturnType<typeof useAdminMessages>["catalog"]["search"],
-): string | null {
+function formatCruiseType(type: string | null, s: SearchMessages): string | null {
   if (type === "river") return s.typeRiver
   if (type === "ocean") return s.typeOcean
   return type

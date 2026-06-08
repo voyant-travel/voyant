@@ -19,10 +19,6 @@ export {
   adminBookingsMessages,
 } from "./admin/bookings.js"
 export {
-  type OperatorAdminCatalogMessages,
-  operatorAdminCatalogMessages,
-} from "./admin/catalog-operator.js"
-export {
   type AdminChromeMessages,
   adminChromeMessages,
 } from "./admin/chrome.js"
