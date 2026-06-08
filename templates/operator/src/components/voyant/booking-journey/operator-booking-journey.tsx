@@ -8,13 +8,21 @@
  * Per booking-journey-architecture §8.1 + §10 Phase B.
  */
 
+import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { PersonPickerSection, type PersonPickerValue } from "@voyantjs/bookings-ui"
-import { BookingJourney, type BookingJourneyProps } from "@voyantjs/bookings-ui/journey"
-import { useState } from "react"
+import {
+  type BookingEntitySummary,
+  BookingJourney,
+  type BookingJourneyProps,
+} from "@voyantjs/bookings-ui/journey"
+import { getProductMediaQueryOptions, getProductQueryOptions } from "@voyantjs/products-react"
+import { useMemo, useState } from "react"
 
 import { catalogVerticalPath } from "@/components/voyant/catalog/catalog-route-state"
 import { useAdminMessages } from "@/lib/admin-i18n"
+import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 import { OperatorDeparturePicker } from "./operator-departure-picker"
 import { OperatorUnitsPicker } from "./operator-units-picker"
 
@@ -49,6 +57,7 @@ export function OperatorBookingJourney({
   className,
 }: OperatorBookingJourneyProps): React.ReactElement {
   const navigate = useNavigate()
+  const entitySummary = useEntitySummary(entityModule, entityId, sourceKind)
 
   const slots: Pick<
     BookingJourneyProps,
@@ -104,10 +113,49 @@ export function OperatorBookingJourney({
         acceptsHold: true,
         acceptsTicketOnCredit: true,
       }}
+      entitySummary={entitySummary}
       className={className}
       {...slots}
     />
   )
+}
+
+/**
+ * Builds the "what you're booking" preview shown atop the journey side
+ * panel — the product's name + first image. Owned products only; sourced
+ * rows resolve their summary server-side and aren't fetched here.
+ */
+function useEntitySummary(
+  entityModule: string,
+  entityId: string,
+  sourceKind: string,
+): BookingEntitySummary | undefined {
+  const isOwnedProduct = sourceKind === "owned" && entityModule === "products"
+  const client = useMemo(() => ({ baseUrl: getApiUrl(), fetcher: operatorFetcher }), [])
+
+  const productQuery = useQuery({
+    ...getProductQueryOptions(client, entityId),
+    enabled: isOwnedProduct && Boolean(entityId),
+  })
+  const mediaQuery = useQuery({
+    ...getProductMediaQueryOptions(client, entityId, { mediaType: "image" }),
+    enabled: isOwnedProduct && Boolean(entityId),
+  })
+
+  return useMemo<BookingEntitySummary | undefined>(() => {
+    const product = productQuery.data
+    if (!product) return undefined
+    // First product-level (not day-scoped) image, if any.
+    const heroImageUrl = (mediaQuery.data?.data ?? [])
+      .filter((media) => media.mediaType === "image" && media.dayId == null)
+      .map((media) => media.url)
+      .find(Boolean)
+    return {
+      name: product.name,
+      vertical: "products",
+      ...(heroImageUrl ? { heroImageUrl } : {}),
+    }
+  }, [productQuery.data, mediaQuery.data])
 }
 
 /**

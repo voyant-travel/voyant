@@ -356,162 +356,180 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           // pricing categories scoped to the product, its options, or its
           // option units (operators add traveler types at any of these
           // levels; "Adult" is often a per-room/base type).
-          const db = ctx.db as unknown as PostgresJsDatabase
-          const optionRows = await db
-            .select({ id: productOptions.id })
-            .from(productOptions)
-            .where(
-              and(eq(productOptions.productId, productId), eq(productOptions.status, "active")),
-            )
-          const optionIds = optionRows.map((row) => row.id)
-          const unitRows =
-            optionIds.length > 0
-              ? await db
-                  .select({ id: optionUnits.id })
-                  .from(optionUnits)
-                  .where(inArray(optionUnits.optionId, optionIds))
-              : []
-          const unitIds = unitRows.map((row) => row.id)
+          //
+          // Enrichment must never break the quote: on any failure (e.g. a
+          // missing migration) we return undefined so the engine falls back
+          // to the generic default bands instead of collapsing the shape.
+          try {
+            const db = ctx.db as unknown as PostgresJsDatabase
+            const optionRows = await db
+              .select({ id: productOptions.id })
+              .from(productOptions)
+              .where(
+                and(eq(productOptions.productId, productId), eq(productOptions.status, "active")),
+              )
+            const optionIds = optionRows.map((row) => row.id)
+            const unitRows =
+              optionIds.length > 0
+                ? await db
+                    .select({ id: optionUnits.id })
+                    .from(optionUnits)
+                    .where(inArray(optionUnits.optionId, optionIds))
+                : []
+            const unitIds = unitRows.map((row) => row.id)
 
-          const scopeClauses = [eq(pricingCategories.productId, productId)]
-          if (optionIds.length > 0)
-            scopeClauses.push(inArray(pricingCategories.optionId, optionIds))
-          if (unitIds.length > 0) scopeClauses.push(inArray(pricingCategories.unitId, unitIds))
-          const rows = await db
-            .select({
-              name: pricingCategories.name,
-              categoryType: pricingCategories.categoryType,
-              minAge: pricingCategories.minAge,
-              maxAge: pricingCategories.maxAge,
-            })
-            .from(pricingCategories)
-            .where(
-              and(
-                or(...scopeClauses),
-                eq(pricingCategories.active, true),
-                eq(pricingCategories.internalUseOnly, false),
-              ),
-            )
-            .orderBy(asc(pricingCategories.sortOrder), asc(pricingCategories.name))
+            const scopeClauses = [eq(pricingCategories.productId, productId)]
+            if (optionIds.length > 0)
+              scopeClauses.push(inArray(pricingCategories.optionId, optionIds))
+            if (unitIds.length > 0) scopeClauses.push(inArray(pricingCategories.unitId, unitIds))
+            const rows = await db
+              .select({
+                name: pricingCategories.name,
+                categoryType: pricingCategories.categoryType,
+                minAge: pricingCategories.minAge,
+                maxAge: pricingCategories.maxAge,
+              })
+              .from(pricingCategories)
+              .where(
+                and(
+                  or(...scopeClauses),
+                  eq(pricingCategories.active, true),
+                  eq(pricingCategories.internalUseOnly, false),
+                ),
+              )
+              .orderBy(asc(pricingCategories.sortOrder), asc(pricingCategories.name))
 
-          // Only traveler bands — room/vehicle/service/group/other are
-          // inventory units, not people.
-          const travelerTypes = new Set(["adult", "child", "infant", "senior"])
-          const maxByType: Record<string, number> = { adult: 8, child: 6, infant: 4, senior: 8 }
-          const orderByType: Record<string, number> = { adult: 0, child: 1, infant: 2, senior: 3 }
-          const seen = new Set<string>()
-          const bands: PaxBandSpec[] = []
-          for (const row of rows) {
-            if (!travelerTypes.has(row.categoryType)) continue
-            // Pricing matches per-band prices by the traveler-category code,
-            // so keep code = categoryType. Dedupe by type (first/lowest
-            // sort) while preserving the product's own label.
-            if (seen.has(row.categoryType)) continue
-            seen.add(row.categoryType)
-            bands.push({
-              code: row.categoryType,
-              label: row.name,
-              ...(row.minAge != null ? { minAge: row.minAge } : {}),
-              ...(row.maxAge != null ? { maxAge: row.maxAge } : {}),
-              minCount: row.categoryType === "adult" ? 1 : 0,
-              maxCount: maxByType[row.categoryType] ?? 8,
-            })
+            // Only traveler bands — room/vehicle/service/group/other are
+            // inventory units, not people.
+            const travelerTypes = new Set(["adult", "child", "infant", "senior"])
+            const maxByType: Record<string, number> = { adult: 8, child: 6, infant: 4, senior: 8 }
+            const orderByType: Record<string, number> = { adult: 0, child: 1, infant: 2, senior: 3 }
+            const seen = new Set<string>()
+            const bands: PaxBandSpec[] = []
+            for (const row of rows) {
+              if (!travelerTypes.has(row.categoryType)) continue
+              // Pricing matches per-band prices by the traveler-category code,
+              // so keep code = categoryType. Dedupe by type (first/lowest
+              // sort) while preserving the product's own label.
+              if (seen.has(row.categoryType)) continue
+              seen.add(row.categoryType)
+              bands.push({
+                code: row.categoryType,
+                label: row.name,
+                ...(row.minAge != null ? { minAge: row.minAge } : {}),
+                ...(row.maxAge != null ? { maxAge: row.maxAge } : {}),
+                minCount: row.categoryType === "adult" ? 1 : 0,
+                maxCount: maxByType[row.categoryType] ?? 8,
+              })
+            }
+            // No traveler types configured at all → undefined so the engine
+            // keeps the generic adult/child/infant defaults.
+            if (bands.length === 0) return undefined
+            // Adults are the universal base traveler — a product can define
+            // only child/infant add-on types ("Adult" is the room base price,
+            // not a category). Guarantee an Adult band so the operator can
+            // always add the primary travelers. Its age floor sits just above
+            // the highest child band when one is configured.
+            if (!seen.has("adult")) {
+              const childMaxAge = bands.reduce<number | null>(
+                (max, b) => (b.maxAge != null && (max == null || b.maxAge > max) ? b.maxAge : max),
+                null,
+              )
+              bands.push({
+                code: "adult",
+                label: "Adult",
+                ...(childMaxAge != null ? { minAge: childMaxAge + 1 } : {}),
+                minCount: 1,
+                maxCount: 8,
+              })
+            }
+            bands.sort((a, b) => (orderByType[a.code] ?? 9) - (orderByType[b.code] ?? 9))
+            return bands
+          } catch (error) {
+            console.warn("[booking-engine] loadPaxBands failed; using default bands", error)
+            return undefined
           }
-          // No traveler types configured at all → undefined so the engine
-          // keeps the generic adult/child/infant defaults.
-          if (bands.length === 0) return undefined
-          // Adults are the universal base traveler — a product can define
-          // only child/infant add-on types ("Adult" is the room base price,
-          // not a category). Guarantee an Adult band so the operator can
-          // always add the primary travelers. Its age floor sits just above
-          // the highest child band when one is configured.
-          if (!seen.has("adult")) {
-            const childMaxAge = bands.reduce<number | null>(
-              (max, b) => (b.maxAge != null && (max == null || b.maxAge > max) ? b.maxAge : max),
-              null,
-            )
-            bands.push({
-              code: "adult",
-              label: "Adult",
-              ...(childMaxAge != null ? { minAge: childMaxAge + 1 } : {}),
-              minCount: 1,
-              maxCount: 8,
-            })
-          }
-          bands.sort((a, b) => (orderByType[a.code] ?? 9) - (orderByType[b.code] ?? 9))
-          return bands
         },
         async loadPaxBandDependencies(ctx, productId) {
           // Cross-band occupancy rules ("Child under 6 requires an Adult")
           // are pricing-category dependencies. Resolve the product's
           // traveler categories, then map each dependency's category ids
           // to the pax-band codes the journey validates against.
-          const db = ctx.db as unknown as PostgresJsDatabase
-          const optionRows = await db
-            .select({ id: productOptions.id })
-            .from(productOptions)
-            .where(
-              and(eq(productOptions.productId, productId), eq(productOptions.status, "active")),
-            )
-          const optionIds = optionRows.map((row) => row.id)
-          const unitRows =
-            optionIds.length > 0
-              ? await db
-                  .select({ id: optionUnits.id })
-                  .from(optionUnits)
-                  .where(inArray(optionUnits.optionId, optionIds))
-              : []
-          const unitIds = unitRows.map((row) => row.id)
+          //
+          // Enrichment must never break the quote — degrade to "no rules"
+          // on any failure (e.g. a missing `pricing_category_dependencies`
+          // migration) rather than failing the whole booking shape.
+          try {
+            const db = ctx.db as unknown as PostgresJsDatabase
+            const optionRows = await db
+              .select({ id: productOptions.id })
+              .from(productOptions)
+              .where(
+                and(eq(productOptions.productId, productId), eq(productOptions.status, "active")),
+              )
+            const optionIds = optionRows.map((row) => row.id)
+            const unitRows =
+              optionIds.length > 0
+                ? await db
+                    .select({ id: optionUnits.id })
+                    .from(optionUnits)
+                    .where(inArray(optionUnits.optionId, optionIds))
+                : []
+            const unitIds = unitRows.map((row) => row.id)
 
-          const scopeClauses = [eq(pricingCategories.productId, productId)]
-          if (optionIds.length > 0)
-            scopeClauses.push(inArray(pricingCategories.optionId, optionIds))
-          if (unitIds.length > 0) scopeClauses.push(inArray(pricingCategories.unitId, unitIds))
-          const cats = await db
-            .select({ id: pricingCategories.id, categoryType: pricingCategories.categoryType })
-            .from(pricingCategories)
-            .where(and(or(...scopeClauses), eq(pricingCategories.active, true)))
-          if (cats.length === 0) return undefined
-          const typeById = new Map(cats.map((c) => [c.id, c.categoryType]))
+            const scopeClauses = [eq(pricingCategories.productId, productId)]
+            if (optionIds.length > 0)
+              scopeClauses.push(inArray(pricingCategories.optionId, optionIds))
+            if (unitIds.length > 0) scopeClauses.push(inArray(pricingCategories.unitId, unitIds))
+            const cats = await db
+              .select({ id: pricingCategories.id, categoryType: pricingCategories.categoryType })
+              .from(pricingCategories)
+              .where(and(or(...scopeClauses), eq(pricingCategories.active, true)))
+            if (cats.length === 0) return undefined
+            const typeById = new Map(cats.map((c) => [c.id, c.categoryType]))
 
-          const deps = await db
-            .select({
-              dependentId: pricingCategoryDependencies.pricingCategoryId,
-              masterId: pricingCategoryDependencies.masterPricingCategoryId,
-              dependencyType: pricingCategoryDependencies.dependencyType,
-              maxPerMaster: pricingCategoryDependencies.maxPerMaster,
-              maxDependentSum: pricingCategoryDependencies.maxDependentSum,
-            })
-            .from(pricingCategoryDependencies)
-            .where(
-              and(
-                inArray(
-                  pricingCategoryDependencies.pricingCategoryId,
-                  cats.map((c) => c.id),
+            const deps = await db
+              .select({
+                dependentId: pricingCategoryDependencies.pricingCategoryId,
+                masterId: pricingCategoryDependencies.masterPricingCategoryId,
+                dependencyType: pricingCategoryDependencies.dependencyType,
+                maxPerMaster: pricingCategoryDependencies.maxPerMaster,
+                maxDependentSum: pricingCategoryDependencies.maxDependentSum,
+              })
+              .from(pricingCategoryDependencies)
+              .where(
+                and(
+                  inArray(
+                    pricingCategoryDependencies.pricingCategoryId,
+                    cats.map((c) => c.id),
+                  ),
+                  eq(pricingCategoryDependencies.active, true),
                 ),
-                eq(pricingCategoryDependencies.active, true),
-              ),
-            )
+              )
 
-          const travelerTypes = new Set(["adult", "child", "infant", "senior"])
-          const out: PaxBandDependency[] = []
-          for (const dep of deps) {
-            const dependentCode = typeById.get(dep.dependentId)
-            const masterCode = typeById.get(dep.masterId)
-            // Both ends must be traveler bands the journey renders, and a
-            // band can't depend on itself.
-            if (!dependentCode || !masterCode) continue
-            if (!travelerTypes.has(dependentCode) || !travelerTypes.has(masterCode)) continue
-            if (dependentCode === masterCode) continue
-            out.push({
-              dependentCode,
-              masterCode,
-              type: dep.dependencyType,
-              ...(dep.maxPerMaster != null ? { maxPerMaster: dep.maxPerMaster } : {}),
-              ...(dep.maxDependentSum != null ? { maxDependentSum: dep.maxDependentSum } : {}),
-            })
+            const travelerTypes = new Set(["adult", "child", "infant", "senior"])
+            const out: PaxBandDependency[] = []
+            for (const dep of deps) {
+              const dependentCode = typeById.get(dep.dependentId)
+              const masterCode = typeById.get(dep.masterId)
+              // Both ends must be traveler bands the journey renders, and a
+              // band can't depend on itself.
+              if (!dependentCode || !masterCode) continue
+              if (!travelerTypes.has(dependentCode) || !travelerTypes.has(masterCode)) continue
+              if (dependentCode === masterCode) continue
+              out.push({
+                dependentCode,
+                masterCode,
+                type: dep.dependencyType,
+                ...(dep.maxPerMaster != null ? { maxPerMaster: dep.maxPerMaster } : {}),
+                ...(dep.maxDependentSum != null ? { maxDependentSum: dep.maxDependentSum } : {}),
+              })
+            }
+            return out.length > 0 ? out : undefined
+          } catch (error) {
+            console.warn("[booking-engine] loadPaxBandDependencies failed; skipping rules", error)
+            return undefined
           }
-          return out.length > 0 ? out : undefined
         },
         async loadSlotDate(ctx, slotId) {
           const db = ctx.db as unknown as PostgresJsDatabase
