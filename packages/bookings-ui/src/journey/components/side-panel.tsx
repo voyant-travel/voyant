@@ -98,7 +98,10 @@ export function PriceSidePanel({
               <ul className="space-y-1 border-t pt-2 text-sm text-muted-foreground">
                 {pricing.taxes.map((tax) => (
                   <li key={tax.code} className="flex justify-between">
-                    <span>{tax.label}</span>
+                    <span>
+                      {tax.label}
+                      {tax.rate > 0 ? ` (${formatTaxRate(tax.rate)})` : ""}
+                    </span>
                     <span>{formatMoney(tax.amount, pricing.currency)}</span>
                   </li>
                 ))}
@@ -582,6 +585,11 @@ function formatMoney(cents: number, currency: string): string {
   } catch {
     return `${(cents / 100).toFixed(2)} ${currency}`
   }
+}
+
+/** Tax rate is stored as a fraction (0.19 → "19%"). Trim trailing zeros. */
+function formatTaxRate(rate: number): string {
+  return `${Number((rate * 100).toFixed(2))}%`
 }
 
 /** Format an ISO date (YYYY-MM-DD or full ISO) for the recap, falling back

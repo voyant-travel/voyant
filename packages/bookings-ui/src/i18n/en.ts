@@ -898,7 +898,7 @@ export const bookingsUiEn = {
         "The customer pays online via a secure link after you confirm. Nothing is charged instantly; inventory is reserved on confirmation.",
       generateLinkLabel: "Generate an online payment link",
       generateLinkHint:
-        "The customer gets a secure link to pay online after you confirm. Leave unchecked to just reserve the booking and collect payment later.",
+        "Creates a secure online payment link for this booking after you confirm. Leave unchecked to just reserve and collect payment later.",
       inquiryNotice:
         "We'll send your details to the operator without locking inventory or taking payment. They'll get back to you with availability and a quote — typically within one business day.",
       bankTransferInstructions: "Bank transfer instructions",
