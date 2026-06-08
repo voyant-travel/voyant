@@ -38,6 +38,7 @@ import {
   defaultTravelerFields,
   type OwnedBookingHandler,
   type OwnedHandlerContext,
+  type PaxBandSpec,
   type ProductVariantOption,
   paxBandsAllowedTotalFrom,
   type TravelerFieldRequirement,
@@ -241,12 +242,23 @@ export interface BuildOwnedProductDraftShapeOptions {
    * booking configuration, while extras add optional line items.
    */
   productOptions?: ReadonlyArray<ProductVariantOption>
+  /**
+   * Traveler bands derived from the product's configured traveler types
+   * (e.g. pricing categories like "Adult" / "Child under 6"). When
+   * omitted or empty, falls back to the generic adult/child/infant
+   * defaults. `code` must stay aligned with the pricing resolver's
+   * traveler-category codes so per-band pricing keeps matching.
+   */
+  paxBands?: ReadonlyArray<PaxBandSpec>
 }
 
 export function buildOwnedProductDraftShape(
   options: BuildOwnedProductDraftShapeOptions = {},
 ): BookingDraftShape {
-  const paxBands = DEFAULT_PAX_BANDS
+  // Use the product's configured traveler types when supplied; otherwise
+  // the generic adult/child/infant defaults.
+  const paxBands =
+    options.paxBands && options.paxBands.length > 0 ? options.paxBands : DEFAULT_PAX_BANDS
   const fields = options.travelerFields ?? defaultTravelerFields()
   const addons = options.addonCatalog ?? []
   const variants = options.productOptions ?? []
@@ -261,6 +273,10 @@ export function buildOwnedProductDraftShape(
     paymentIntents: ["hold", "card"],
     configureSubSteps: [
       ...(variants.length > 0 ? [{ kind: "product-option" as const, options: variants }] : []),
+      // Owned products are scheduled — the operator picks a real departure.
+      // The journey renders an injected slot picker for this kind, falling
+      // back to a free date when the product has no scheduled departures.
+      { kind: "departure" as const, required: true },
       { kind: "occupancy", bands: paxBands },
     ],
     addons: addons.length > 0 ? { catalog: addons } : undefined,
@@ -339,6 +355,19 @@ export interface OwnedProductsShapeLoaders {
     ctx: OwnedHandlerContext,
     productId: string,
   ) => Promise<ReadonlyArray<ProductVariantOption>>
+
+  /**
+   * Resolve the product's configured traveler types as pax bands
+   * (e.g. from `@voyantjs/pricing` pricing categories). Caller-supplied
+   * so the journey's Configure step offers exactly the traveler types
+   * the product is priced for ("Adult", "Child under 6", …) instead of
+   * the generic adult/child/infant defaults. Returns undefined/empty to
+   * fall back to the defaults.
+   */
+  loadPaxBands?: (
+    ctx: OwnedHandlerContext,
+    productId: string,
+  ) => Promise<ReadonlyArray<PaxBandSpec> | undefined>
 
   /**
    * Resolve the tax rate for a given (product, buyer country) pair.
@@ -472,11 +501,12 @@ export function createProductsBookingHandler(
       // Concurrent enrichment + slot-date lookup. The slot date is
       // needed before we can call loadResolvedOptionPrice, so it
       // joins this batch.
-      const [travelerFields, addonCatalog, productOptionCatalog, taxRate, slotDate] =
+      const [travelerFields, addonCatalog, productOptionCatalog, paxBands, taxRate, slotDate] =
         await Promise.all([
           options.loadTravelerFields?.(ctx, request.entityId) ?? Promise.resolve(undefined),
           options.loadAddonCatalog?.(ctx, request.entityId) ?? Promise.resolve(undefined),
           options.loadProductOptions?.(ctx, request.entityId) ?? Promise.resolve(undefined),
+          options.loadPaxBands?.(ctx, request.entityId) ?? Promise.resolve(undefined),
           options.loadTaxRate?.(ctx, {
             productId: request.entityId,
             buyerCountry: draft.billing?.address?.country,
@@ -583,6 +613,7 @@ export function createProductsBookingHandler(
           travelerFields,
           addonCatalog,
           productOptions: productOptionCatalog,
+          paxBands,
         }),
       }
     },

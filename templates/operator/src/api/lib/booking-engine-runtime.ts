@@ -33,6 +33,7 @@ import {
   createOwnedBookingHandlerRegistry,
   createSourceAdapterRegistry,
   type OwnedBookingHandlerRegistry,
+  type PaxBandSpec,
   type SourceAdapterRegistry,
   type TravelerFieldRequirement,
 } from "@voyantjs/catalog/booking-engine"
@@ -54,11 +55,12 @@ import {
   optionPriceRules,
   optionUnitPriceRules,
   priceCatalogs,
+  pricingCategories,
   resolveOptionPriceRulesForDate,
 } from "@voyantjs/pricing"
 import { createProductsBookingHandler } from "@voyantjs/products/booking-engine"
 import { optionUnits, productOptions } from "@voyantjs/products/schema"
-import { and, asc, eq, inArray } from "drizzle-orm"
+import { and, asc, eq, inArray, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
@@ -345,6 +347,73 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
               maxQuantity: unit.maxQuantity,
             })),
           }))
+        },
+        async loadPaxBands(ctx, productId) {
+          // The journey's traveler bands should be the product's own
+          // traveler types ("Adult", "Child under 6") — these live as
+          // pricing categories scoped to the product or its options.
+          const db = ctx.db as unknown as PostgresJsDatabase
+          const optionRows = await db
+            .select({ id: productOptions.id })
+            .from(productOptions)
+            .where(
+              and(eq(productOptions.productId, productId), eq(productOptions.status, "active")),
+            )
+          const optionIds = optionRows.map((row) => row.id)
+          // Pull product-level AND option-scoped traveler types (operators
+          // usually add traveler types per option).
+          const scope =
+            optionIds.length > 0
+              ? or(
+                  eq(pricingCategories.productId, productId),
+                  inArray(pricingCategories.optionId, optionIds),
+                )
+              : eq(pricingCategories.productId, productId)
+          const rows = await db
+            .select({
+              name: pricingCategories.name,
+              categoryType: pricingCategories.categoryType,
+              minAge: pricingCategories.minAge,
+              maxAge: pricingCategories.maxAge,
+            })
+            .from(pricingCategories)
+            .where(
+              and(
+                scope,
+                eq(pricingCategories.active, true),
+                eq(pricingCategories.internalUseOnly, false),
+              ),
+            )
+            .orderBy(asc(pricingCategories.sortOrder), asc(pricingCategories.name))
+
+          // Only traveler bands — room/vehicle/service/group/other are
+          // inventory units, not people.
+          const travelerTypes = new Set(["adult", "child", "infant", "senior"])
+          const maxByType: Record<string, number> = { adult: 8, child: 6, infant: 4, senior: 8 }
+          const orderByType: Record<string, number> = { adult: 0, child: 1, infant: 2, senior: 3 }
+          const seen = new Set<string>()
+          const bands: PaxBandSpec[] = []
+          for (const row of rows) {
+            if (!travelerTypes.has(row.categoryType)) continue
+            // Pricing matches per-band prices by the traveler-category code,
+            // so keep code = categoryType. Dedupe by type (first/lowest
+            // sort) while preserving the product's own label.
+            if (seen.has(row.categoryType)) continue
+            seen.add(row.categoryType)
+            bands.push({
+              code: row.categoryType,
+              label: row.name,
+              ...(row.minAge != null ? { minAge: row.minAge } : {}),
+              ...(row.maxAge != null ? { maxAge: row.maxAge } : {}),
+              minCount: row.categoryType === "adult" ? 1 : 0,
+              maxCount: maxByType[row.categoryType] ?? 8,
+            })
+          }
+          // No traveler types configured → undefined so the engine keeps
+          // the generic adult/child/infant defaults.
+          if (bands.length === 0) return undefined
+          bands.sort((a, b) => (orderByType[a.code] ?? 9) - (orderByType[b.code] ?? 9))
+          return bands
         },
         async loadSlotDate(ctx, slotId) {
           const db = ctx.db as unknown as PostgresJsDatabase
