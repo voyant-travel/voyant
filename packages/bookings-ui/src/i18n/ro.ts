@@ -454,6 +454,8 @@ export const bookingsUiRo = {
       productEmpty: "Niciun produs gasit.",
       option: "Optiune",
       optionNone: "Fara optiune specifica",
+      owned: "Propriu",
+      supplier: "Furnizor",
     },
   },
   personPickerSection: {

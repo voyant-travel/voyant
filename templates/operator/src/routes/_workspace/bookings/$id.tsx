@@ -10,6 +10,7 @@ import { BookingCreatePage } from "@voyantjs/bookings-ui"
 import { z } from "zod"
 import { BookingDetailPage } from "@/components/voyant/bookings/booking-detail-page"
 import { BookingDetailSkeleton } from "@/components/voyant/bookings/booking-detail-skeleton"
+import { CatalogProductPicker } from "@/components/voyant/catalog/catalog-product-picker"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
 
@@ -63,6 +64,25 @@ function BookingDetailRoute() {
         defaultSlotId={search.slotId}
         onCancel={() => void navigate({ to: "/bookings" })}
         onCreated={(booking) => void navigate({ to: "/bookings/$id", params: { id: booking.id } })}
+        // Unified picker: search spans owned + supplier-sourced. Owned picks
+        // stay in the create-sheet; a supplier pick hands off to the booking
+        // journey (the engine that does live quote/lock for sourced offers).
+        renderProductPicker={(pickerProps) => (
+          <CatalogProductPicker
+            {...pickerProps}
+            onSourcedSelected={(sel) =>
+              void navigate({
+                to: "/catalog/journey/$entityModule/$entityId",
+                params: { entityModule: sel.entityModule, entityId: sel.entityId },
+                search: {
+                  sourceKind: sel.sourceKind,
+                  ...(sel.sourceConnectionId ? { sourceConnectionId: sel.sourceConnectionId } : {}),
+                  ...(sel.sourceRef ? { sourceRef: sel.sourceRef } : {}),
+                },
+              })
+            }
+          />
+        )}
       />
     )
   }

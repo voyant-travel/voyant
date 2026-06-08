@@ -19,6 +19,7 @@ export {
   type BookingCreateFormProps,
   BookingCreateSheet,
   type BookingCreateSheetProps,
+  type ProductPickerRenderProps,
 } from "./components/booking-create-sheet.js"
 export {
   BookingBillingContextCard,

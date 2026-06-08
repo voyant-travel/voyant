@@ -405,6 +405,10 @@ export type BookingsUiMessages = {
       productEmpty: string
       option: string
       optionNone: string
+      /** Badge for an owned-inventory product in a catalog-aware picker. */
+      owned: string
+      /** Badge for a supplier-sourced product in a catalog-aware picker. */
+      supplier: string
     }
   }
   personPickerSection: {

@@ -455,6 +455,8 @@ export const bookingsUiEn = {
       productEmpty: "No products found.",
       option: "Option",
       optionNone: "No specific option",
+      owned: "Owned",
+      supplier: "Supplier",
     },
   },
   personPickerSection: {

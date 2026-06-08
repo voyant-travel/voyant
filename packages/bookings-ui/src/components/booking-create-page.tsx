@@ -1,8 +1,9 @@
 "use client"
 
 import type { BookingRecord } from "@voyantjs/bookings-react"
+import type { ReactNode } from "react"
 import { useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
-import { BookingCreateForm } from "./booking-create-sheet.js"
+import { BookingCreateForm, type ProductPickerRenderProps } from "./booking-create-sheet.js"
 
 export interface BookingCreatePageProps {
   onCreated?: (booking: BookingRecord) => void
@@ -11,6 +12,11 @@ export interface BookingCreatePageProps {
   defaultProductId?: string
   /** When provided, pre-selects and locks the departure slot. */
   defaultSlotId?: string
+  /**
+   * Replace the built-in owned-products picker (e.g. a catalog typeahead
+   * spanning owned + supplier-sourced products). See {@link ProductPickerRenderProps}.
+   */
+  renderProductPicker?: (props: ProductPickerRenderProps) => ReactNode
 }
 
 /**
@@ -21,6 +27,7 @@ export function BookingCreatePage({
   onCancel,
   defaultProductId,
   defaultSlotId,
+  renderProductPicker,
 }: BookingCreatePageProps) {
   const messages = useBookingsUiMessagesOrDefault()
 
@@ -38,6 +45,7 @@ export function BookingCreatePage({
           onCancel={onCancel}
           defaultProductId={defaultProductId}
           defaultSlotId={defaultSlotId}
+          renderProductPicker={renderProductPicker}
         />
       </section>
     </main>

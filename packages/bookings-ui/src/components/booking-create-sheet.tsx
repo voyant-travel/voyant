@@ -393,6 +393,14 @@ export interface BookingCreateSheetProps {
   defaultSlotId?: string
 }
 
+/** Controlled props handed to a custom product picker via `renderProductPicker`. */
+export interface ProductPickerRenderProps {
+  value: ProductPickerValue
+  onChange: (value: ProductPickerValue) => void
+  enabled: boolean
+  lockProduct: boolean
+}
+
 export interface BookingCreateFormProps {
   onCreated?: (booking: BookingRecord) => void
   /** When provided, pre-selects this product and hides the product picker. */
@@ -402,6 +410,14 @@ export interface BookingCreateFormProps {
   /** Gates data fetching and resets transient form state when false. */
   enabled?: boolean
   onCancel?: () => void
+  /**
+   * Replace the built-in owned-products picker with a custom one (e.g. a
+   * catalog typeahead spanning owned + supplier-sourced products). Receives the
+   * same controlled value/onChange the default picker uses; owned selections
+   * flow through `onChange`. Sourced selections are the host's concern (e.g.
+   * hand off to the booking journey). Falls back to the owned picker when omitted.
+   */
+  renderProductPicker?: (props: ProductPickerRenderProps) => React.ReactNode
 }
 
 /**
@@ -459,6 +475,7 @@ export function BookingCreateForm({
   defaultSlotId,
   enabled = true,
   onCancel,
+  renderProductPicker,
 }: BookingCreateFormProps) {
   const [product, setProduct] = React.useState<ProductPickerValue>({
     productId: defaultProductId ?? "",
@@ -1270,19 +1287,31 @@ export function BookingCreateForm({
       {/* Form column — form sections scroll above the inline footer buttons. */}
       <div className="flex min-h-0 min-w-0 flex-col lg:col-span-8">
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-1 pb-2">
-          <ProductPickerSection
-            value={product}
-            onChange={(next) => {
-              setPayloadMismatchUnitIds([])
-              setProduct(next)
-            }}
-            enabled={enabled}
-            lockProduct={Boolean(defaultProductId || defaultSlotId)}
-            labels={{
-              optionNone: messages.bookingCreateDialog.labels.noSpecificOption,
-            }}
-            showOptionPicker={false}
-          />
+          {renderProductPicker ? (
+            renderProductPicker({
+              value: product,
+              onChange: (next) => {
+                setPayloadMismatchUnitIds([])
+                setProduct(next)
+              },
+              enabled,
+              lockProduct: Boolean(defaultProductId || defaultSlotId),
+            })
+          ) : (
+            <ProductPickerSection
+              value={product}
+              onChange={(next) => {
+                setPayloadMismatchUnitIds([])
+                setProduct(next)
+              }}
+              enabled={enabled}
+              lockProduct={Boolean(defaultProductId || defaultSlotId)}
+              labels={{
+                optionNone: messages.bookingCreateDialog.labels.noSpecificOption,
+              }}
+              showOptionPicker={false}
+            />
+          )}
 
           {product.productId ? (
             <div className="flex flex-col gap-1">
