@@ -33,6 +33,7 @@ import {
   createOwnedBookingHandlerRegistry,
   createSourceAdapterRegistry,
   type OwnedBookingHandlerRegistry,
+  type PaxBandDependency,
   type PaxBandSpec,
   type SourceAdapterRegistry,
   type TravelerFieldRequirement,
@@ -56,6 +57,7 @@ import {
   optionUnitPriceRules,
   priceCatalogs,
   pricingCategories,
+  pricingCategoryDependencies,
   resolveOptionPriceRulesForDate,
 } from "@voyantjs/pricing"
 import { createProductsBookingHandler } from "@voyantjs/products/booking-engine"
@@ -438,6 +440,78 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
           }
           bands.sort((a, b) => (orderByType[a.code] ?? 9) - (orderByType[b.code] ?? 9))
           return bands
+        },
+        async loadPaxBandDependencies(ctx, productId) {
+          // Cross-band occupancy rules ("Child under 6 requires an Adult")
+          // are pricing-category dependencies. Resolve the product's
+          // traveler categories, then map each dependency's category ids
+          // to the pax-band codes the journey validates against.
+          const db = ctx.db as unknown as PostgresJsDatabase
+          const optionRows = await db
+            .select({ id: productOptions.id })
+            .from(productOptions)
+            .where(
+              and(eq(productOptions.productId, productId), eq(productOptions.status, "active")),
+            )
+          const optionIds = optionRows.map((row) => row.id)
+          const unitRows =
+            optionIds.length > 0
+              ? await db
+                  .select({ id: optionUnits.id })
+                  .from(optionUnits)
+                  .where(inArray(optionUnits.optionId, optionIds))
+              : []
+          const unitIds = unitRows.map((row) => row.id)
+
+          const scopeClauses = [eq(pricingCategories.productId, productId)]
+          if (optionIds.length > 0)
+            scopeClauses.push(inArray(pricingCategories.optionId, optionIds))
+          if (unitIds.length > 0) scopeClauses.push(inArray(pricingCategories.unitId, unitIds))
+          const cats = await db
+            .select({ id: pricingCategories.id, categoryType: pricingCategories.categoryType })
+            .from(pricingCategories)
+            .where(and(or(...scopeClauses), eq(pricingCategories.active, true)))
+          if (cats.length === 0) return undefined
+          const typeById = new Map(cats.map((c) => [c.id, c.categoryType]))
+
+          const deps = await db
+            .select({
+              dependentId: pricingCategoryDependencies.pricingCategoryId,
+              masterId: pricingCategoryDependencies.masterPricingCategoryId,
+              dependencyType: pricingCategoryDependencies.dependencyType,
+              maxPerMaster: pricingCategoryDependencies.maxPerMaster,
+              maxDependentSum: pricingCategoryDependencies.maxDependentSum,
+            })
+            .from(pricingCategoryDependencies)
+            .where(
+              and(
+                inArray(
+                  pricingCategoryDependencies.pricingCategoryId,
+                  cats.map((c) => c.id),
+                ),
+                eq(pricingCategoryDependencies.active, true),
+              ),
+            )
+
+          const travelerTypes = new Set(["adult", "child", "infant", "senior"])
+          const out: PaxBandDependency[] = []
+          for (const dep of deps) {
+            const dependentCode = typeById.get(dep.dependentId)
+            const masterCode = typeById.get(dep.masterId)
+            // Both ends must be traveler bands the journey renders, and a
+            // band can't depend on itself.
+            if (!dependentCode || !masterCode) continue
+            if (!travelerTypes.has(dependentCode) || !travelerTypes.has(masterCode)) continue
+            if (dependentCode === masterCode) continue
+            out.push({
+              dependentCode,
+              masterCode,
+              type: dep.dependencyType,
+              ...(dep.maxPerMaster != null ? { maxPerMaster: dep.maxPerMaster } : {}),
+              ...(dep.maxDependentSum != null ? { maxDependentSum: dep.maxDependentSum } : {}),
+            })
+          }
+          return out.length > 0 ? out : undefined
         },
         async loadSlotDate(ctx, slotId) {
           const db = ctx.db as unknown as PostgresJsDatabase

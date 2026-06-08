@@ -35,6 +35,7 @@ import { Button } from "@voyantjs/ui/components/button"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import { type Draft, emptyDraft, totalPax } from "../lib/draft-state.js"
+import { evaluatePaxBandDependencies } from "../lib/pax-band-dependencies.js"
 import {
   type BookingJourneyProps,
   type ContractAcceptanceEvent,
@@ -526,7 +527,14 @@ function canAdvanceFromStep(
   switch (step) {
     case "configure": {
       const total = totalPax(draft)
-      return total >= shape.paxBandsAllowedTotal.min && total <= shape.paxBandsAllowedTotal.max
+      if (total < shape.paxBandsAllowedTotal.min || total > shape.paxBandsAllowedTotal.max) {
+        return false
+      }
+      // Occupancy rules (e.g. "Child under 6 requires an Adult") must hold.
+      return (
+        evaluatePaxBandDependencies(draft.configure.pax, shape.paxBandDependencies, shape.paxBands)
+          .length === 0
+      )
     }
     case "billing": {
       const c = draft.billing.contact

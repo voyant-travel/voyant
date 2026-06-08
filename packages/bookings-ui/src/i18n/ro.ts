@@ -791,6 +791,10 @@ export const bookingsUiRo = {
       addAtLeastTravelers: "Adauga cel putin {count} calator{plural} pentru a continua.",
       maxTravelersPerBooking: "Maximum {count} calatori per rezervare.",
       ageOutOfRange: "Varsta {age} este in afara intervalului acceptat pentru acest produs.",
+      dependencyRequires: "{dependent} necesita cel putin un {master}.",
+      dependencyExcludes: "{dependent} nu poate fi combinat cu {master}.",
+      dependencyLimitPerMaster: "Maximum {limit} {dependent} per {master}.",
+      dependencyLimitSum: "Maximum {limit} {dependent} permis.",
     },
     warnings: {
       phoneMissing: "Numarul de telefon lipseste - util pentru contact furnizor in ultimul moment.",

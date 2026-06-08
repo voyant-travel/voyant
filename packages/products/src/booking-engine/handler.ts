@@ -38,6 +38,7 @@ import {
   defaultTravelerFields,
   type OwnedBookingHandler,
   type OwnedHandlerContext,
+  type PaxBandDependency,
   type PaxBandSpec,
   type ProductVariantOption,
   paxBandsAllowedTotalFrom,
@@ -250,6 +251,12 @@ export interface BuildOwnedProductDraftShapeOptions {
    * traveler-category codes so per-band pricing keeps matching.
    */
   paxBands?: ReadonlyArray<PaxBandSpec>
+  /**
+   * Cross-band occupancy rules (e.g. "Child under 6 requires an Adult"),
+   * derived from the product's pricing-category dependencies. Codes must
+   * match the `paxBands` codes.
+   */
+  paxBandDependencies?: ReadonlyArray<PaxBandDependency>
 }
 
 export function buildOwnedProductDraftShape(
@@ -268,6 +275,9 @@ export function buildOwnedProductDraftShape(
     showsAddons: addons.length > 0,
     paxBands,
     paxBandsAllowedTotal: paxBandsAllowedTotalFrom(paxBands),
+    ...(options.paxBandDependencies && options.paxBandDependencies.length > 0
+      ? { paxBandDependencies: options.paxBandDependencies }
+      : {}),
     travelerFields: fields,
     bookingFields: defaultBookingFields(),
     paymentIntents: ["hold", "card"],
@@ -368,6 +378,17 @@ export interface OwnedProductsShapeLoaders {
     ctx: OwnedHandlerContext,
     productId: string,
   ) => Promise<ReadonlyArray<PaxBandSpec> | undefined>
+
+  /**
+   * Resolve cross-band occupancy rules (e.g. "Child requires an Adult")
+   * from the product's pricing-category dependencies. Caller-supplied;
+   * codes must match `loadPaxBands`. Returns undefined/empty when the
+   * product has no dependency rules.
+   */
+  loadPaxBandDependencies?: (
+    ctx: OwnedHandlerContext,
+    productId: string,
+  ) => Promise<ReadonlyArray<PaxBandDependency> | undefined>
 
   /**
    * Resolve the tax rate for a given (product, buyer country) pair.
@@ -501,21 +522,29 @@ export function createProductsBookingHandler(
       // Concurrent enrichment + slot-date lookup. The slot date is
       // needed before we can call loadResolvedOptionPrice, so it
       // joins this batch.
-      const [travelerFields, addonCatalog, productOptionCatalog, paxBands, taxRate, slotDate] =
-        await Promise.all([
-          options.loadTravelerFields?.(ctx, request.entityId) ?? Promise.resolve(undefined),
-          options.loadAddonCatalog?.(ctx, request.entityId) ?? Promise.resolve(undefined),
-          options.loadProductOptions?.(ctx, request.entityId) ?? Promise.resolve(undefined),
-          options.loadPaxBands?.(ctx, request.entityId) ?? Promise.resolve(undefined),
-          options.loadTaxRate?.(ctx, {
-            productId: request.entityId,
-            buyerCountry: draft.billing?.address?.country,
-            buyerType: draft.billing?.buyerType,
-          }) ?? Promise.resolve(null),
-          slotId && options.loadSlotDate
-            ? options.loadSlotDate(ctx, slotId)
-            : Promise.resolve(draft.configure?.departureDate ?? null),
-        ])
+      const [
+        travelerFields,
+        addonCatalog,
+        productOptionCatalog,
+        paxBands,
+        paxBandDependencies,
+        taxRate,
+        slotDate,
+      ] = await Promise.all([
+        options.loadTravelerFields?.(ctx, request.entityId) ?? Promise.resolve(undefined),
+        options.loadAddonCatalog?.(ctx, request.entityId) ?? Promise.resolve(undefined),
+        options.loadProductOptions?.(ctx, request.entityId) ?? Promise.resolve(undefined),
+        options.loadPaxBands?.(ctx, request.entityId) ?? Promise.resolve(undefined),
+        options.loadPaxBandDependencies?.(ctx, request.entityId) ?? Promise.resolve(undefined),
+        options.loadTaxRate?.(ctx, {
+          productId: request.entityId,
+          buyerCountry: draft.billing?.address?.country,
+          buyerType: draft.billing?.buyerType,
+        }) ?? Promise.resolve(null),
+        slotId && options.loadSlotDate
+          ? options.loadSlotDate(ctx, slotId)
+          : Promise.resolve(draft.configure?.departureDate ?? null),
+      ])
 
       const resolvedPrice =
         optionSelections.length === 0 && optionId && slotDate && options.loadResolvedOptionPrice
@@ -614,6 +643,7 @@ export function createProductsBookingHandler(
           addonCatalog,
           productOptions: productOptionCatalog,
           paxBands,
+          paxBandDependencies,
         }),
       }
     },

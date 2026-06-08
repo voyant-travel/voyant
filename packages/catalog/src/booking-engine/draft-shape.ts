@@ -46,6 +46,26 @@ export interface PaxBandSpec {
   maxCount: number
 }
 
+/**
+ * A cross-band occupancy rule, derived from the product's pricing-
+ * category dependencies. Both `dependentCode` and `masterCode` are pax
+ * band codes (e.g. "child" depends on "adult").
+ *
+ * - `requires` — at least one `master` must be present when any
+ *   `dependent` is added.
+ * - `limits_per_master` — `dependent` count ≤ `master` count ×
+ *   `maxPerMaster`.
+ * - `limits_sum` — `dependent` count ≤ `maxDependentSum`.
+ * - `excludes` — `dependent` and `master` cannot both be present.
+ */
+export interface PaxBandDependency {
+  dependentCode: string
+  masterCode: string
+  type: "requires" | "limits_per_master" | "limits_sum" | "excludes"
+  maxPerMaster?: number
+  maxDependentSum?: number
+}
+
 /** A cabin category sub-step option (cruises). */
 export interface CabinCategoryOption {
   id: string
@@ -245,6 +265,12 @@ export interface BookingDraftShape {
   paxBands: ReadonlyArray<PaxBandSpec>
   /** Aggregate min/max across all bands combined. */
   paxBandsAllowedTotal: { min: number; max: number }
+  /**
+   * Cross-band occupancy rules between pax bands — e.g. "Child under 6
+   * only with at least one Adult". Evaluated by the Configure step
+   * against the picked counts; empty/omitted means no constraints.
+   */
+  paxBandDependencies?: ReadonlyArray<PaxBandDependency>
 
   // ── Field requirements ────────────────────────────────────────────
   travelerFields: ReadonlyArray<TravelerFieldRequirement>

@@ -43,6 +43,10 @@ import {
   setTravelers,
   totalPax,
 } from "../lib/draft-state.js"
+import {
+  evaluatePaxBandDependencies,
+  type PaxBandDependencyViolation,
+} from "../lib/pax-band-dependencies.js"
 import { paymentScheduleValueToRows, rowsToPaymentScheduleValue } from "../lib/payment-schedule.js"
 import type {
   DeparturePickerProps,
@@ -85,6 +89,7 @@ export function ConfigureStep({
       </CardHeader>
       <CardContent className="space-y-6">
         <PaxBands draft={draft} setDraft={setDraft} shape={shape} />
+        <PaxDependencyWarnings draft={draft} shape={shape} />
         <DepartureFields
           draft={draft}
           setDraft={setDraft}
@@ -175,6 +180,69 @@ function PaxValidation({
     )
   }
   return null
+}
+
+/** Formats one occupancy-rule violation into a localized message. */
+function formatPaxDependencyViolation(
+  violation: PaxBandDependencyViolation,
+  messages: ReturnType<typeof useBookingsUiMessagesOrDefault>["bookingJourney"]["validation"],
+): string {
+  switch (violation.type) {
+    case "requires":
+      return formatMessage(messages.dependencyRequires, {
+        dependent: violation.dependentLabel,
+        master: violation.masterLabel,
+      })
+    case "excludes":
+      return formatMessage(messages.dependencyExcludes, {
+        dependent: violation.dependentLabel,
+        master: violation.masterLabel,
+      })
+    case "limits_per_master":
+      return formatMessage(messages.dependencyLimitPerMaster, {
+        limit: violation.limit ?? 0,
+        dependent: violation.dependentLabel,
+        master: violation.masterLabel,
+      })
+    case "limits_sum":
+      return formatMessage(messages.dependencyLimitSum, {
+        limit: violation.limit ?? 0,
+        dependent: violation.dependentLabel,
+      })
+  }
+}
+
+/**
+ * Surfaces broken cross-band occupancy rules (e.g. "Child under 6
+ * requires an Adult") as hard validation errors under the pax steppers.
+ * These also block step advancement via `canAdvanceFromStep`.
+ */
+function PaxDependencyWarnings({
+  draft,
+  shape,
+}: {
+  draft: Draft
+  shape: BookingDraftShape
+}): React.ReactNode {
+  const messages = useBookingsUiMessagesOrDefault()
+  const violations = evaluatePaxBandDependencies(
+    draft.configure.pax,
+    shape.paxBandDependencies,
+    shape.paxBands,
+  )
+  if (violations.length === 0) return null
+  return (
+    <div className="space-y-1">
+      {violations.map((violation) => (
+        <p
+          key={`${violation.type}-${violation.dependentCode}-${violation.masterCode}`}
+          className="text-destructive text-sm"
+        >
+          {formatPaxDependencyViolation(violation, messages.bookingJourney.validation)}
+        </p>
+      ))}
+    </div>
+  )
 }
 
 function DepartureFields({

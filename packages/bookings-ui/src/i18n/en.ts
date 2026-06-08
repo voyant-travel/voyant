@@ -792,6 +792,10 @@ export const bookingsUiEn = {
       addAtLeastTravelers: "Add at least {count} traveler{plural} to continue.",
       maxTravelersPerBooking: "Max {count} travelers per booking.",
       ageOutOfRange: "Age {age} is outside the accepted range for this product.",
+      dependencyRequires: "{dependent} requires at least one {master}.",
+      dependencyExcludes: "{dependent} can't be combined with {master}.",
+      dependencyLimitPerMaster: "At most {limit} {dependent} per {master}.",
+      dependencyLimitSum: "At most {limit} {dependent} allowed.",
     },
     warnings: {
       phoneMissing: "Phone number not set — useful for last-minute supplier contact.",

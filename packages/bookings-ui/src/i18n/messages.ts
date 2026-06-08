@@ -627,6 +627,10 @@ export type BookingsUiMessages = {
       addAtLeastTravelers: string
       maxTravelersPerBooking: string
       ageOutOfRange: string
+      dependencyRequires: string
+      dependencyExcludes: string
+      dependencyLimitPerMaster: string
+      dependencyLimitSum: string
     }
     warnings: {
       phoneMissing: string
