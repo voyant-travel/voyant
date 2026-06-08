@@ -7,7 +7,7 @@ import {
   type OptionUnitsStepperValue,
 } from "@voyantjs/bookings-ui"
 import type { JourneyOptionSelection, UnitsPickerProps } from "@voyantjs/bookings-ui/journey"
-import { useState } from "react"
+import { useRef, useState } from "react"
 
 /**
  * Operator rooms/units picker for the booking journey's `"option-units"`
@@ -35,14 +35,15 @@ export function OperatorUnitsPicker({
   })
   // The loaded unit metadata (optionId + name per unit) needed to rebuild
   // `optionSelections` from the quantity map.
-  const [units, setUnits] = useState<OptionUnitsStepperUnit[]>([])
+  // Loaded unit metadata is kept in a ref, NOT state: it's only read when
+  // the operator changes a quantity, never rendered. Using state here would
+  // make `onUnitsChange` (which fires as units load) re-render → the stepper
+  // re-emits → setDraft → re-quote → re-render … an infinite loop.
+  const unitsRef = useRef<ReadonlyArray<OptionUnitsStepperUnit>>([])
 
-  const emit = (
-    quantities: Record<string, number>,
-    unitList: ReadonlyArray<OptionUnitsStepperUnit>,
-  ): void => {
+  const emit = (quantities: Record<string, number>): void => {
     const next: JourneyOptionSelection[] = []
-    for (const unit of unitList) {
+    for (const unit of unitsRef.current) {
       const quantity = quantities[unit.optionUnitId] ?? 0
       if (quantity <= 0) continue
       const unitOptionId = unit.optionId ?? optionId
@@ -62,17 +63,15 @@ export function OperatorUnitsPicker({
       value={value}
       onChange={(nextValue) => {
         setValue(nextValue)
-        emit(nextValue.quantities, units)
+        emit(nextValue.quantities)
       }}
       productId={productId}
       slotId={slotId ?? undefined}
       optionId={optionId}
       enabled
+      // Record loaded units without triggering a render (see unitsRef note).
       onUnitsChange={(loadedUnits) => {
-        setUnits(loadedUnits)
-        // Backfill option/name metadata once units load (quantities may
-        // have been seeded from the draft before the list arrived).
-        emit(value.quantities, loadedUnits)
+        unitsRef.current = loadedUnits
       }}
     />
   )
