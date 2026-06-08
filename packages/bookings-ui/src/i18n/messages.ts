@@ -686,6 +686,10 @@ export type BookingsUiMessages = {
     }
     travelers: {
       title: string
+      partySize: string
+      details: string
+      decrease: string
+      increase: string
       empty: string
       addTraveler: string
       travelerNumber: string

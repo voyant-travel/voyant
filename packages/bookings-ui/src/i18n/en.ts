@@ -856,6 +856,10 @@ export const bookingsUiEn = {
     },
     travelers: {
       title: "Travelers",
+      partySize: "Party size",
+      details: "Traveler details",
+      decrease: "Decrease {label}",
+      increase: "Increase {label}",
       empty: "Pick traveler counts in the Configure step to start adding details.",
       addTraveler: "Add traveler",
       travelerNumber: "Traveler {number}",

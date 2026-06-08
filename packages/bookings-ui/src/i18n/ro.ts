@@ -857,6 +857,10 @@ export const bookingsUiRo = {
     },
     travelers: {
       title: "Calatori",
+      partySize: "Componenta grupului",
+      details: "Detalii calatori",
+      decrease: "Scade {label}",
+      increase: "Adauga {label}",
       empty: "Alege numarul de calatori in pasul Configurare pentru a adauga detalii.",
       addTraveler: "Adauga calator",
       travelerNumber: "Calator {number}",

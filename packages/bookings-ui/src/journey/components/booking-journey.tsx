@@ -437,7 +437,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
           ) : null}
 
           {warnings.length > 0 ? (
-            <ul className="space-y-1 rounded border border-amber-300 bg-amber-50 p-3 text-amber-900 text-sm dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+            <ul className="space-y-1 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900 text-sm dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
               {warnings.map((w) => (
                 <li key={w}>⚠ {w}</li>
               ))}

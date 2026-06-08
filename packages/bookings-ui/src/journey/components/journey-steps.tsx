@@ -19,7 +19,7 @@ import { Label } from "@voyantjs/ui/components/label"
 import { PhoneInput } from "@voyantjs/ui/components/phone-input"
 import { RadioGroup, RadioGroupItem } from "@voyantjs/ui/components/radio-group"
 import { Textarea } from "@voyantjs/ui/components/textarea"
-import { Loader2 } from "lucide-react"
+import { Loader2, Minus, Plus } from "lucide-react"
 import { useState } from "react"
 import {
   PaymentScheduleSection,
@@ -204,15 +204,15 @@ export function OptionsStep({
 function PaxBands({ draft, setDraft, shape }: StepCommonProps): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   return (
-    <div className="space-y-3">
-      <Label>{messages.bookingJourney.configure.travelers}</Label>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div className="flex flex-col gap-2 rounded-md border p-3">
+      <Label>{messages.bookingJourney.travelers.partySize}</Label>
+      <div className="flex flex-col gap-2">
         {shape.paxBands.map((band) => {
           const value = draft.configure.pax?.[band.code] ?? 0
           return (
-            <div key={band.code} className="flex items-center justify-between rounded border p-3">
-              <div>
-                <div className="font-medium">{band.label}</div>
+            <div key={band.code} className="flex items-center gap-3 rounded-md border px-3 py-2">
+              <div className="flex-1">
+                <div className="text-sm font-medium">{band.label}</div>
                 {band.minAge != null || band.maxAge != null ? (
                   <div className="text-muted-foreground text-xs">
                     {ageHint(band.minAge, band.maxAge, messages)}
@@ -221,23 +221,31 @@ function PaxBands({ draft, setDraft, shape }: StepCommonProps): React.ReactEleme
               </div>
               <div className="flex items-center gap-2">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   type="button"
+                  className="h-7 w-7 p-0"
                   disabled={value <= band.minCount}
                   onClick={() => setDraft(patchPaxCount(draft, band.code, value - 1))}
+                  aria-label={formatMessage(messages.bookingJourney.travelers.decrease, {
+                    label: band.label,
+                  })}
                 >
-                  −
+                  <Minus className="h-3.5 w-3.5" />
                 </Button>
-                <span className="min-w-6 text-center">{value}</span>
+                <span className="min-w-[1.5rem] text-center text-sm tabular-nums">{value}</span>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   type="button"
+                  className="h-7 w-7 p-0"
                   disabled={value >= band.maxCount}
                   onClick={() => setDraft(patchPaxCount(draft, band.code, value + 1))}
+                  aria-label={formatMessage(messages.bookingJourney.travelers.increase, {
+                    label: band.label,
+                  })}
                 >
-                  +
+                  <Plus className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>
@@ -429,7 +437,7 @@ function ProductOptionFields({
               <button
                 type="button"
                 onClick={() => setDraft(patchConfigure(draft, { variantId: option.id }))}
-                className={`w-full rounded border p-3 text-left text-sm ${
+                className={`w-full rounded-md border p-3 text-left text-sm ${
                   selected ? "border-primary ring-2 ring-primary" : ""
                 }`}
               >
@@ -556,7 +564,7 @@ function CabinCategoryFields({
             <button
               key={cat.id}
               type="button"
-              className={`rounded border p-3 text-left ${
+              className={`rounded-md border p-3 text-left ${
                 selected ? "border-primary ring-2 ring-primary" : ""
               }`}
               onClick={() =>
@@ -617,7 +625,7 @@ function AirArrangementFields({
             <button
               key={opt.value}
               type="button"
-              className={`rounded border p-3 text-left text-sm ${
+              className={`rounded-md border p-3 text-left text-sm ${
                 selected ? "border-primary ring-2 ring-primary" : ""
               }`}
               onClick={() => setDraft(patchConfigure(draft, { airArrangement: opt.value }))}
@@ -655,7 +663,7 @@ function CabinNumberFields({
             <button
               key={cabin.id}
               type="button"
-              className={`rounded border p-2 text-sm ${
+              className={`rounded-md border p-2 text-sm ${
                 selected ? "border-primary ring-2 ring-primary" : ""
               }`}
               onClick={() => setDraft(patchConfigure(draft, { cabinNumberId: cabin.id }))}
@@ -953,31 +961,36 @@ export function TravelersStep({
             re-quotes as the counts change. */}
         <PaxBands draft={draft} setDraft={setDraft} shape={shape} />
         <PaxDependencyWarnings draft={draft} shape={shape} />
-        {ensured.map((traveler, idx) => {
-          const apply: TravelerContactPickerProps["apply"] = (contact) => {
-            const next = [...ensured]
-            next[idx] = {
-              ...next[idx]!,
-              firstName: contact.firstName,
-              lastName: contact.lastName,
-              email: contact.email,
-              phone: contact.phone,
-            }
-            setDraft(setTravelers(draft, next))
-          }
-          return (
-            <TravelerCard
-              key={traveler.rowId ?? idx}
-              idx={idx}
-              traveler={traveler}
-              shape={shape}
-              draft={draft}
-              setDraft={setDraft}
-              renderTravelerContactPicker={renderTravelerContactPicker}
-              apply={apply}
-            />
-          )
-        })}
+        {ensured.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            <Label>{messages.bookingJourney.travelers.details}</Label>
+            {ensured.map((traveler, idx) => {
+              const apply: TravelerContactPickerProps["apply"] = (contact) => {
+                const next = [...ensured]
+                next[idx] = {
+                  ...next[idx]!,
+                  firstName: contact.firstName,
+                  lastName: contact.lastName,
+                  email: contact.email,
+                  phone: contact.phone,
+                }
+                setDraft(setTravelers(draft, next))
+              }
+              return (
+                <TravelerCard
+                  key={traveler.rowId ?? idx}
+                  idx={idx}
+                  traveler={traveler}
+                  shape={shape}
+                  draft={draft}
+                  setDraft={setDraft}
+                  renderTravelerContactPicker={renderTravelerContactPicker}
+                  apply={apply}
+                />
+              )
+            })}
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   )
@@ -1079,10 +1092,10 @@ function TravelerCard({
   }
 
   return (
-    <div className="rounded border p-4 space-y-3">
+    <div className="space-y-3 rounded-md border p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="space-y-0.5">
-          <div className="font-medium">
+          <div className="text-sm font-medium">
             {formatMessage(messages.bookingJourney.travelers.travelerNumber, {
               number: idx + 1,
             })}
@@ -1325,7 +1338,7 @@ export function AccommodationStep({ draft, setDraft, shape }: StepCommonProps): 
               const current = accommodation.rooms.find((r) => r.optionUnitId === room.id)
               const ratePlans = room.ratePlans ?? []
               return (
-                <div key={room.id} className="space-y-3 rounded border p-3">
+                <div key={room.id} className="space-y-3 rounded-md border p-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="font-medium">{room.name}</div>
@@ -1392,7 +1405,10 @@ export function AccommodationStep({ draft, setDraft, shape }: StepCommonProps): 
             })}
             {subSteps.map((sub) =>
               sub.kind === "extensions" ? (
-                <div key="extensions" className="rounded border p-3 text-muted-foreground text-sm">
+                <div
+                  key="extensions"
+                  className="rounded-md border p-3 text-muted-foreground text-sm"
+                >
                   {formatMessage(messages.bookingJourney.accommodation.extensionsAvailable, {
                     count: sub.options.length,
                     plural: sub.options.length === 1 ? "" : "s",
@@ -1439,7 +1455,7 @@ function RatePlanPicker({
               key={plan.id}
               type="button"
               onClick={() => onSelect(plan.id)}
-              className={`w-full rounded border p-2 text-left text-sm ${
+              className={`w-full rounded-md border p-2 text-left text-sm ${
                 isSelected ? "border-primary ring-2 ring-primary" : ""
               }`}
             >
@@ -1534,7 +1550,7 @@ function AddonRow({
 }): React.ReactElement {
   const current = draft.addons.find((a) => a.extraId === item.id)
   return (
-    <div className="flex items-center justify-between rounded border p-3">
+    <div className="flex items-center justify-between rounded-md border p-3">
       <div>
         <div className="font-medium">{item.name}</div>
         {item.description ? (
@@ -1631,7 +1647,7 @@ export function PaymentStep({
                 <label
                   key={i}
                   className={
-                    "flex cursor-pointer items-start gap-3 rounded border p-3 text-sm transition-colors " +
+                    "flex cursor-pointer items-start gap-3 rounded-md border p-3 text-sm transition-colors " +
                     (selected ? "border-primary bg-primary/5" : "border-input hover:bg-muted/50")
                   }
                 >
@@ -1676,7 +1692,7 @@ export function PaymentStep({
         {intent === "bank_transfer" ? <BankTransferDetails capabilities={capabilities} /> : null}
 
         {intent === "inquiry" ? (
-          <p className="rounded border border-amber-300 bg-amber-50 p-3 text-amber-900 text-xs dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+          <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900 text-xs dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
             {messages.bookingJourney.payment.inquiryNotice}
           </p>
         ) : null}
@@ -1873,7 +1889,7 @@ function BankTransferDetails({
   const messages = useBookingsUiMessagesOrDefault()
   const note = capabilities.config?.bankTransferNote
   return (
-    <div className="rounded border bg-muted/30 p-3 text-sm">
+    <div className="rounded-md border bg-muted/30 p-3 text-sm">
       <p className="font-medium">{messages.bookingJourney.payment.bankTransferInstructions}</p>
       <p className="text-muted-foreground text-xs">
         {typeof note === "string" && note.length > 0
