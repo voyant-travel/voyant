@@ -211,6 +211,12 @@ function TravelerCard({
     (f) => !["firstName", "lastName", "email", "phone", "dateOfBirth"].includes(f.key),
   )
 
+  // When a CRM contact is linked, their name/email/phone come from the record
+  // (shown in the picker) — no need to re-type them. Only the travel-specific
+  // fields (DOB, documents) remain. Manual entry shows the identity fields.
+  const showIdentity = !traveler.personId
+  const gridHasContent = showIdentity || Boolean(dobField) || dynamicFields.length > 0
+
   // Live age from DOB — surfaces in the header so the user gets feedback as
   // they pick a date.
   const computedAge = traveler.dateOfBirth ? computeAge(traveler.dateOfBirth) : null
@@ -325,99 +331,105 @@ function TravelerCard({
           })}
         </div>
       ) : null}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field
-          id={`bj-trav-${idx}-first`}
-          label={messages.bookingJourney.billing.firstName}
-          value={traveler.firstName}
-          onChange={(v) => patchRow({ firstName: v })}
-        />
-        <Field
-          id={`bj-trav-${idx}-last`}
-          label={messages.bookingJourney.billing.lastName}
-          value={traveler.lastName}
-          onChange={(v) => patchRow({ lastName: v })}
-        />
-        {applicableFields.some((f) => f.key === "email") ? (
-          <Field
-            id={`bj-trav-${idx}-email`}
-            label={messages.bookingJourney.billing.email}
-            type="email"
-            value={traveler.email ?? ""}
-            onChange={(v) => patchRow({ email: v })}
-          />
-        ) : null}
-        {phoneField ? (
-          <PhoneField
-            id={`bj-trav-${idx}-phone`}
-            // i18n-literal-ok Required marker appended to a descriptor-supplied field label.
-            label={phoneField.label + (phoneField.required ? " *" : "")}
-            value={traveler.phone ?? ""}
-            onChange={(v) => patchRow({ phone: v })}
-          />
-        ) : null}
-        {dobField ? (
-          <div className="space-y-1">
-            <DateField
-              id={`bj-trav-${idx}-dob`}
-              // i18n-literal-ok Required marker appended to a descriptor-supplied field label.
-              label={dobField.label + (dobField.required ? " *" : "")}
-              value={traveler.dateOfBirth ?? ""}
-              onChange={onDobChange}
-              range="past"
-            />
-            {ageOutOfBounds ? (
-              <p className="text-amber-600 text-xs dark:text-amber-400">
-                ⚠{" "}
-                {formatMessage(messages.bookingJourney.validation.ageOutOfRange, {
-                  age: computedAge,
-                })}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
-        {dynamicFields.map((field) => {
-          const value = (traveler.documents?.[field.key] as string | undefined) ?? ""
-          const onFieldChange = (v: string) =>
-            patchRow({ documents: { ...traveler.documents, [field.key]: v } })
-          // i18n-literal-ok Required marker appended to a descriptor-supplied field label.
-          const labelText = field.label + (field.required ? " *" : "")
-          if (field.type === "select" && field.options) {
-            return (
-              <SelectField
-                key={field.key}
-                id={`bj-trav-${idx}-${field.key}`}
-                label={labelText}
-                value={value}
-                options={field.options}
-                onChange={onFieldChange}
+      {gridHasContent ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {showIdentity ? (
+            <>
+              <Field
+                id={`bj-trav-${idx}-first`}
+                label={messages.bookingJourney.billing.firstName}
+                value={traveler.firstName}
+                onChange={(v) => patchRow({ firstName: v })}
               />
-            )
-          }
-          if (field.type === "date") {
-            return (
+              <Field
+                id={`bj-trav-${idx}-last`}
+                label={messages.bookingJourney.billing.lastName}
+                value={traveler.lastName}
+                onChange={(v) => patchRow({ lastName: v })}
+              />
+              {applicableFields.some((f) => f.key === "email") ? (
+                <Field
+                  id={`bj-trav-${idx}-email`}
+                  label={messages.bookingJourney.billing.email}
+                  type="email"
+                  value={traveler.email ?? ""}
+                  onChange={(v) => patchRow({ email: v })}
+                />
+              ) : null}
+              {phoneField ? (
+                <PhoneField
+                  id={`bj-trav-${idx}-phone`}
+                  // i18n-literal-ok Required marker appended to a descriptor-supplied field label.
+                  label={phoneField.label + (phoneField.required ? " *" : "")}
+                  value={traveler.phone ?? ""}
+                  onChange={(v) => patchRow({ phone: v })}
+                />
+              ) : null}
+            </>
+          ) : null}
+          {dobField ? (
+            <div className="space-y-1">
               <DateField
+                id={`bj-trav-${idx}-dob`}
+                // i18n-literal-ok Required marker appended to a descriptor-supplied field label.
+                label={dobField.label + (dobField.required ? " *" : "")}
+                value={traveler.dateOfBirth ?? ""}
+                onChange={onDobChange}
+                range="past"
+              />
+              {ageOutOfBounds ? (
+                <p className="text-amber-600 text-xs dark:text-amber-400">
+                  ⚠{" "}
+                  {formatMessage(messages.bookingJourney.validation.ageOutOfRange, {
+                    age: computedAge,
+                  })}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          {dynamicFields.map((field) => {
+            const value = (traveler.documents?.[field.key] as string | undefined) ?? ""
+            const onFieldChange = (v: string) =>
+              patchRow({ documents: { ...traveler.documents, [field.key]: v } })
+            // i18n-literal-ok Required marker appended to a descriptor-supplied field label.
+            const labelText = field.label + (field.required ? " *" : "")
+            if (field.type === "select" && field.options) {
+              return (
+                <SelectField
+                  key={field.key}
+                  id={`bj-trav-${idx}-${field.key}`}
+                  label={labelText}
+                  value={value}
+                  options={field.options}
+                  onChange={onFieldChange}
+                />
+              )
+            }
+            if (field.type === "date") {
+              return (
+                <DateField
+                  key={field.key}
+                  id={`bj-trav-${idx}-${field.key}`}
+                  label={labelText}
+                  value={value}
+                  onChange={onFieldChange}
+                  range={field.key === "documentExpiry" ? "document" : "future"}
+                />
+              )
+            }
+            return (
+              <Field
                 key={field.key}
                 id={`bj-trav-${idx}-${field.key}`}
                 label={labelText}
+                type="text"
                 value={value}
                 onChange={onFieldChange}
-                range={field.key === "documentExpiry" ? "document" : "future"}
               />
             )
-          }
-          return (
-            <Field
-              key={field.key}
-              id={`bj-trav-${idx}-${field.key}`}
-              label={labelText}
-              type="text"
-              value={value}
-              onChange={onFieldChange}
-            />
-          )
-        })}
-      </div>
+          })}
+        </div>
+      ) : null}
     </div>
   )
 }
