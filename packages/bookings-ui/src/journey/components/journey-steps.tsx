@@ -87,22 +87,95 @@ export function ConfigureStep({
   renderUnitsPicker?: RenderUnitsPicker
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
+  const subSteps = shape.configureSubSteps ?? []
+  // With no descriptor sub-steps, still offer a departure (storefront
+  // free-date fallback).
+  const showsDeparture = subSteps.length === 0 || subSteps.some((s) => s.kind === "departure")
+  const optionList = subSteps.flatMap((s) => (s.kind === "product-option" ? s.options : []))
+  const multipleOptions = optionList.length > 1
+  const showsUnits = subSteps.some((s) => s.kind === "option-units")
+  const otherSteps = subSteps.filter(
+    (s) =>
+      s.kind !== "departure" &&
+      s.kind !== "product-option" &&
+      s.kind !== "option-units" &&
+      s.kind !== "occupancy",
+  )
+
+  const departureNode = showsDeparture ? (
+    renderDeparturePicker && productId ? (
+      renderDeparturePicker({
+        productId,
+        optionId: draft.configure.variantId ?? null,
+        slotId: draft.configure.departureSlotId ?? null,
+        departureDate: draft.configure.departureDate ?? null,
+        departureTime: draft.configure.departureTime ?? null,
+        onChange: (next) =>
+          setDraft(
+            patchConfigure(draft, {
+              ...(next.slotId !== undefined ? { departureSlotId: next.slotId ?? undefined } : {}),
+              ...(next.departureDate !== undefined
+                ? { departureDate: next.departureDate ?? undefined }
+                : {}),
+              ...(next.departureTime !== undefined
+                ? { departureTime: next.departureTime ?? undefined }
+                : {}),
+            }),
+          ),
+      })
+    ) : (
+      <DepartureBasic draft={draft} setDraft={setDraft} />
+    )
+  ) : null
+
+  const unitsNode =
+    showsUnits && renderUnitsPicker && productId
+      ? renderUnitsPicker({
+          productId,
+          optionId: draft.configure.variantId ?? null,
+          slotId: draft.configure.departureSlotId ?? null,
+          selections: draft.configure.optionSelections ?? [],
+          onChange: (selections) =>
+            setDraft(patchConfigure(draft, { optionSelections: selections })),
+        })
+      : null
+
+  const optionNode =
+    optionList.length > 0 ? (
+      <ProductOptionFields draft={draft} setDraft={setDraft} options={optionList} />
+    ) : null
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>{messages.bookingJourney.steps.configure}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* 1. Departure first — it scopes availability for everything below. */}
+        {departureNode}
+        {/* 2. Travelers. */}
         <PaxBands draft={draft} setDraft={setDraft} shape={shape} />
         <PaxDependencyWarnings draft={draft} shape={shape} />
-        <DepartureFields
-          draft={draft}
-          setDraft={setDraft}
-          shape={shape}
-          productId={productId}
-          renderDeparturePicker={renderDeparturePicker}
-          renderUnitsPicker={renderUnitsPicker}
-        />
+        {/* 3. Option + its rooms. With multiple options the rooms belong to
+            the chosen option, so nest them under it; otherwise show directly. */}
+        {optionNode || unitsNode ? (
+          <div className="space-y-3">
+            {optionNode}
+            {unitsNode ? (
+              multipleOptions ? (
+                <div className="space-y-2 border-muted border-l-2 pl-4">{unitsNode}</div>
+              ) : (
+                unitsNode
+              )
+            ) : null}
+          </div>
+        ) : null}
+        {/* 4. Vertical-specific sub-steps (cruise cabins, date ranges, air). */}
+        {otherSteps.length > 0 ? (
+          <div className="space-y-4">
+            {otherSteps.map((sub) => renderOtherConfigureSubStep(sub, draft, setDraft))}
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   )
@@ -251,126 +324,52 @@ function PaxDependencyWarnings({
   )
 }
 
-function DepartureFields({
-  draft,
-  setDraft,
-  shape,
-  productId,
-  renderDeparturePicker,
-  renderUnitsPicker,
-}: StepCommonProps & {
-  productId?: string
-  renderDeparturePicker?: RenderDeparturePicker
-  renderUnitsPicker?: RenderUnitsPicker
-}): React.ReactNode {
-  const subSteps = shape.configureSubSteps ?? []
-  // Injected rooms/units picker (operator availability) for the picked
-  // option + departure; writes `configure.optionSelections`. Renders
-  // nothing when no picker is injected (storefront).
-  const renderUnits = (): React.ReactNode =>
-    renderUnitsPicker && productId
-      ? renderUnitsPicker({
-          productId,
-          optionId: draft.configure.variantId ?? null,
-          slotId: draft.configure.departureSlotId ?? null,
-          selections: draft.configure.optionSelections ?? [],
-          onChange: (selections) =>
-            setDraft(patchConfigure(draft, { optionSelections: selections })),
-        })
-      : null
-  // The injected picker (operator availability) renders a real
-  // scheduled-departure selector for a `departure` sub-step; it owns
-  // its own free-date fallback. When no slot is injected (storefront),
-  // the journey renders the free date/time fields directly.
-  const renderDeparture = (): React.ReactNode =>
-    renderDeparturePicker && productId ? (
-      renderDeparturePicker({
-        productId,
-        optionId: draft.configure.variantId ?? null,
-        slotId: draft.configure.departureSlotId ?? null,
-        departureDate: draft.configure.departureDate ?? null,
-        departureTime: draft.configure.departureTime ?? null,
-        onChange: (next) =>
-          setDraft(
-            patchConfigure(draft, {
-              ...(next.slotId !== undefined ? { departureSlotId: next.slotId ?? undefined } : {}),
-              ...(next.departureDate !== undefined
-                ? { departureDate: next.departureDate ?? undefined }
-                : {}),
-              ...(next.departureTime !== undefined
-                ? { departureTime: next.departureTime ?? undefined }
-                : {}),
-            }),
-          ),
-      })
-    ) : (
-      <DepartureBasic draft={draft} setDraft={setDraft} />
+/**
+ * Renders the vertical-specific Configure sub-steps that aren't part of the
+ * fixed products layout (departure / option / rooms / occupancy are handled
+ * explicitly in `ConfigureStep`). Cruise cabins, date ranges, and air
+ * arrangement land here, in descriptor order.
+ */
+function renderOtherConfigureSubStep(
+  sub: NonNullable<BookingDraftShape["configureSubSteps"]>[number],
+  draft: Draft,
+  setDraft: (next: Draft) => void,
+): React.ReactNode {
+  if (sub.kind === "date-range") {
+    return (
+      <DateRangeFields
+        key="date-range"
+        draft={draft}
+        setDraft={setDraft}
+        minNights={sub.minNights}
+        maxNights={sub.maxNights}
+      />
     )
-  // Render every sub-step kind the descriptor declares. Cruise
-  // (cabin-category, cabin-number) lands here in Phase F.
-  if (subSteps.length === 0) {
-    return renderDeparture()
   }
-  return (
-    <div className="space-y-4">
-      {subSteps.map((sub) => {
-        // Sub-step kinds are unique per descriptor — kind serves as
-        // a stable key.
-        if (sub.kind === "departure") {
-          return <div key="departure">{renderDeparture()}</div>
-        }
-        if (sub.kind === "option-units") {
-          return <div key="option-units">{renderUnits()}</div>
-        }
-        if (sub.kind === "product-option") {
-          return (
-            <ProductOptionFields
-              key="product-option"
-              draft={draft}
-              setDraft={setDraft}
-              options={sub.options}
-            />
-          )
-        }
-        if (sub.kind === "date-range") {
-          return (
-            <DateRangeFields
-              key="date-range"
-              draft={draft}
-              setDraft={setDraft}
-              minNights={sub.minNights}
-              maxNights={sub.maxNights}
-            />
-          )
-        }
-        if (sub.kind === "cabin-category") {
-          return (
-            <CabinCategoryFields
-              key="cabin-category"
-              draft={draft}
-              setDraft={setDraft}
-              categories={sub.categories}
-            />
-          )
-        }
-        if (sub.kind === "cabin-number") {
-          return (
-            <CabinNumberFields
-              key="cabin-number"
-              draft={draft}
-              setDraft={setDraft}
-              perCategory={sub.perCategory}
-            />
-          )
-        }
-        if (sub.kind === "air-arrangement") {
-          return <AirArrangementFields key="air-arrangement" draft={draft} setDraft={setDraft} />
-        }
-        // "occupancy" — already rendered as PaxBands above; no sub-row.
-        return null
-      })}
-    </div>
-  )
+  if (sub.kind === "cabin-category") {
+    return (
+      <CabinCategoryFields
+        key="cabin-category"
+        draft={draft}
+        setDraft={setDraft}
+        categories={sub.categories}
+      />
+    )
+  }
+  if (sub.kind === "cabin-number") {
+    return (
+      <CabinNumberFields
+        key="cabin-number"
+        draft={draft}
+        setDraft={setDraft}
+        perCategory={sub.perCategory}
+      />
+    )
+  }
+  if (sub.kind === "air-arrangement") {
+    return <AirArrangementFields key="air-arrangement" draft={draft} setDraft={setDraft} />
+  }
+  return null
 }
 
 function ProductOptionFields({
