@@ -402,6 +402,8 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
         body: [
           "Paid {{ booking.paidAmountCents }}",
           "Balance {{ booking.balanceDueCents }}",
+          "Due {{ booking.amountDueCents }}",
+          "Full {{ booking.isPaidInFull }}",
           "Latest {{ payment.latestCompleted.methodLabel }}",
           "Date {{ payment.latestCompleted.date }}",
         ].join(" | "),
@@ -455,6 +457,8 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
 
     expect(bookingVariables.paidAmountCents).toBe(32000)
     expect(bookingVariables.balanceDueCents).toBe(0)
+    expect(bookingVariables.amountDueCents).toBe(0)
+    expect(bookingVariables.isPaidInFull).toBe(true)
     expect(latestCompleted).toMatchObject({
       method: "bank_transfer",
       methodLabel: "Bank Transfer",
@@ -462,7 +466,150 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
     })
     expect(paymentVariables.method).toBe("Bank Transfer")
     expect(paymentVariables.capturedAt).toBe("2026-05-04")
-    expect(bodies[0]).toContain("Paid 32000 | Balance 0 | Latest Bank Transfer")
+    expect(bodies[0]).toContain("Paid 32000 | Balance 0 | Due 0 | Full true")
+  })
+
+  it("separates scheduled balance from current amount due for paid-in-full bookings", async () => {
+    const { template, version } = await seedTemplate("cust-paid-full-balance-1")
+    await db
+      .update(contractTemplateVersions)
+      .set({
+        body: [
+          "PaidFull {{ booking.isPaidInFull }}",
+          "Due {{ booking.amountDueCents }}",
+          "BalanceDue {{ booking.balanceDueCents }}",
+          "ScheduledBalance {{ booking.balanceAmountCents }}",
+        ].join(" | "),
+      })
+      .where(eq(contractTemplateVersions.id, version.id))
+
+    const booking = await seedBooking({
+      sellCurrency: "RON",
+      sellAmountCents: 32000,
+    })
+    await db.insert(bookingPaymentSchedules).values({
+      bookingId: booking.id,
+      scheduleType: "balance",
+      status: "paid",
+      dueDate: "2026-05-10",
+      currency: "RON",
+      amountCents: 32000,
+    })
+    const [invoice] = await db
+      .insert(invoices)
+      .values({
+        invoiceNumber: `INV-${booking.bookingNumber}`,
+        bookingId: booking.id,
+        status: "paid",
+        currency: "RON",
+        subtotalCents: 32000,
+        taxCents: 0,
+        totalCents: 32000,
+        paidCents: 32000,
+        balanceDueCents: 0,
+        issueDate: "2026-05-01",
+        dueDate: "2026-05-10",
+      })
+      .returning()
+    await db.insert(payments).values({
+      invoiceId: invoice!.id,
+      amountCents: 32000,
+      currency: "RON",
+      paymentMethod: "bank_transfer",
+      status: "completed",
+      paymentDate: "2026-05-04",
+    })
+
+    const bodies: string[] = []
+    const outcome = await autoGenerateContractForBooking(
+      db,
+      { bookingId: booking.id, bookingNumber: booking.bookingNumber, actorId: null },
+      { enabled: true, templateSlug: template.slug },
+      { generator: makeGenerator(bodies) },
+    )
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+
+    const contract = await contractRecordsService.getContractById(db, outcome.contractId)
+    const variables = contract?.variables as Record<string, unknown>
+    const bookingVariables = variables.booking as Record<string, unknown>
+
+    expect(bookingVariables).toMatchObject({
+      paidAmountCents: 32000,
+      amountDueCents: 0,
+      balanceDueCents: 0,
+      isPaidInFull: true,
+      depositAmountCents: 0,
+      balanceAmountCents: 32000,
+      balanceDueDate: "2026-05-10",
+    })
+    expect(bodies[0]).toContain("PaidFull true | Due 0 | BalanceDue 0 | ScheduledBalance 32000")
+  })
+
+  it("does not mark paid in full when invoices still have a positive balance", async () => {
+    const { template, version } = await seedTemplate("cust-adjusted-invoice-balance-1")
+    await db
+      .update(contractTemplateVersions)
+      .set({
+        body: [
+          "PaidFull {{ booking.isPaidInFull }}",
+          "Due {{ booking.amountDueCents }}",
+          "BalanceDue {{ booking.balanceDueCents }}",
+          "Paid {{ booking.paidAmountCents }}",
+        ].join(" | "),
+      })
+      .where(eq(contractTemplateVersions.id, version.id))
+
+    const booking = await seedBooking({
+      sellCurrency: "RON",
+      sellAmountCents: 32000,
+    })
+    const [invoice] = await db
+      .insert(invoices)
+      .values({
+        invoiceNumber: `INV-${booking.bookingNumber}`,
+        bookingId: booking.id,
+        status: "issued",
+        currency: "RON",
+        subtotalCents: 37000,
+        taxCents: 0,
+        totalCents: 37000,
+        paidCents: 32000,
+        balanceDueCents: 5000,
+        issueDate: "2026-05-01",
+        dueDate: "2026-05-10",
+      })
+      .returning()
+    await db.insert(payments).values({
+      invoiceId: invoice!.id,
+      amountCents: 32000,
+      currency: "RON",
+      paymentMethod: "bank_transfer",
+      status: "completed",
+      paymentDate: "2026-05-04",
+    })
+
+    const bodies: string[] = []
+    const outcome = await autoGenerateContractForBooking(
+      db,
+      { bookingId: booking.id, bookingNumber: booking.bookingNumber, actorId: null },
+      { enabled: true, templateSlug: template.slug },
+      { generator: makeGenerator(bodies) },
+    )
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+
+    const contract = await contractRecordsService.getContractById(db, outcome.contractId)
+    const variables = contract?.variables as Record<string, unknown>
+    const bookingVariables = variables.booking as Record<string, unknown>
+
+    expect(bookingVariables).toMatchObject({
+      paidAmountCents: 32000,
+      amountDueCents: 5000,
+      balanceDueCents: 5000,
+      isPaidInFull: false,
+    })
+    expect(bodies[0]).toContain("PaidFull false | Due 5000 | BalanceDue 5000 | Paid 32000")
   })
 
   it("derives payment schedule aliases and rooms summary from the booking", async () => {

@@ -220,7 +220,24 @@ export const contractTemplateVariableCatalog: ContractTemplateVariableCategory[]
         label: "Balance due",
         example: "199900",
         type: "cents",
-        description: "Current customer balance from non-void invoice balances.",
+        description:
+          "Current remaining amount owed after completed payments / invoice balances. Use this, `amountDueCents`, or `isPaidInFull` for settlement state.",
+      },
+      {
+        key: "booking.amountDueCents",
+        label: "Amount still due",
+        example: "199900",
+        type: "cents",
+        description:
+          "Alias for the current remaining amount owed. This is payment-aware; unlike scheduled installment amounts, it drops to 0 once settled.",
+      },
+      {
+        key: "booking.isPaidInFull",
+        label: "Paid in full",
+        example: "false",
+        type: "boolean",
+        description:
+          "True when the current amount due is 0 or completed payments cover the booking total.",
       },
       // Payment-schedule-derived (deposit / balance from
       // booking_payment_schedules)
@@ -230,7 +247,7 @@ export const contractTemplateVariableCatalog: ContractTemplateVariableCategory[]
         example: "50000",
         type: "cents",
         description:
-          "Pulled from the `deposit` row in booking_payment_schedules. 0 when no schedule is set.",
+          "Gross scheduled deposit installment from booking_payment_schedules. Not reduced by payments; use paidAmountCents / amountDueCents / isPaidInFull for current settlement state.",
       },
       {
         key: "booking.depositDueDate",
@@ -243,7 +260,8 @@ export const contractTemplateVariableCatalog: ContractTemplateVariableCategory[]
         label: "Balance amount",
         example: "199900",
         type: "cents",
-        description: "Pulled from the `balance` row in booking_payment_schedules.",
+        description:
+          "Gross scheduled balance installment from booking_payment_schedules. Not the remaining amount owed; use balanceDueCents or amountDueCents for that.",
       },
       {
         key: "booking.balanceDueDate",
@@ -837,10 +855,19 @@ Diferență de plată: {{ booking.balanceDueCents | cents: booking.currency, "ro
     id: "deposit-balance",
     label: "Deposit + balance line",
     description:
-      "Render the scheduled advance + remainder policy. Use the settlement snippet for current paid/remaining state.",
-    code: `{% if booking.depositAmountCents > 0 %}
-Avansul este: {{ booking.depositAmountCents | cents: booking.currency, "ro-RO" }}, achitat cu {{ payment.method }} în data de {{ payment.capturedAt | format_date: "long", "ro-RO" }}.
-Diferență plată {{ booking.balanceAmountCents | cents: booking.currency, "ro-RO" }} până la data de {{ booking.balanceDueDate | format_date: "long", "ro-RO" }}.
+      "Render the scheduled advance + balance policy without mistaking scheduled installments for the current amount still owed.",
+    code: `{% if booking.isPaidInFull %}
+Achitat integral: {{ booking.paidAmountCents | cents: booking.currency, "ro-RO" }}{% if payment.latestCompleted %} prin {{ payment.latestCompleted.methodLabel }} în data de {{ payment.latestCompleted.date | format_date: "long", "ro-RO" }}{% endif %}.
+{% else %}
+{% if booking.depositAmountCents > 0 %}
+Avans programat: {{ booking.depositAmountCents | cents: booking.currency, "ro-RO" }}{% if booking.depositDueDate %}, scadent la {{ booking.depositDueDate | format_date: "long", "ro-RO" }}{% endif %}.
+{% endif %}
+{% if booking.balanceAmountCents > 0 %}
+Diferență programată: {{ booking.balanceAmountCents | cents: booking.currency, "ro-RO" }}{% if booking.balanceDueDate %}, scadentă la {{ booking.balanceDueDate | format_date: "long", "ro-RO" }}{% endif %}.
+{% endif %}
+{% if booking.amountDueCents > 0 %}
+Suma rămasă de plată: {{ booking.amountDueCents | cents: booking.currency, "ro-RO" }}.
+{% endif %}
 {% endif %}`,
   },
   {
