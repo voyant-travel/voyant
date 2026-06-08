@@ -305,6 +305,56 @@ describe("financeService.createInvoiceFromBooking number allocation", () => {
     } satisfies Partial<InvoiceNumberConflictError>)
   })
 
+  it("normalizes message-only serverless duplicate invoice number errors into a typed conflict", async () => {
+    const { db } = makeDb({
+      invoiceInsertError: new Error(
+        'NeonDbError: duplicate key value violates unique index "invoices_invoice_number_type_active_idx" (SQLSTATE 23505)',
+      ),
+    })
+
+    await expect(
+      financeService.createInvoiceFromBooking(
+        db,
+        {
+          bookingId: "book_123",
+          invoiceNumber: "MANUAL-1",
+          issueDate: "2026-05-23",
+          dueDate: "2026-06-23",
+        },
+        bookingData,
+      ),
+    ).rejects.toMatchObject({
+      name: "InvoiceNumberConflictError",
+      code: "invoice_number_conflict",
+      invoiceNumber: "MANUAL-1",
+    } satisfies Partial<InvoiceNumberConflictError>)
+  })
+
+  it("does not normalize unrelated unique violations into invoice number conflicts", async () => {
+    const { db } = makeDb({
+      invoiceInsertError: {
+        code: "23505",
+        constraint: "invoice_external_refs_provider_external_id_unique",
+      },
+    })
+
+    await expect(
+      financeService.createInvoiceFromBooking(
+        db,
+        {
+          bookingId: "book_123",
+          invoiceNumber: "MANUAL-1",
+          issueDate: "2026-05-23",
+          dueDate: "2026-06-23",
+        },
+        bookingData,
+      ),
+    ).rejects.toMatchObject({
+      code: "23505",
+      constraint: "invoice_external_refs_provider_external_id_unique",
+    })
+  })
+
   it("uses override line items and computes cross-currency base totals", async () => {
     const { db, insertedInvoices, insertedInvoiceLineItems } = makeDb({})
 
@@ -1059,8 +1109,10 @@ describe("financeService.updateInvoice number writeback", () => {
 
   it("normalizes duplicate writeback numbers into a typed conflict", async () => {
     const db = makeUpdateInvoiceDb({
-      code: "23505",
-      constraint: "invoices_invoice_number_type_active_idx",
+      cause: {
+        code: "23505",
+        detail: "Key (invoice_number, invoice_type)=(B-0133, invoice) already exists.",
+      },
     })
 
     await expect(
