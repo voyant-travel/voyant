@@ -1,6 +1,6 @@
 "use client"
 
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query"
 import {
   type BookingDraftV1,
   type QuoteResponseV1,
@@ -64,6 +64,12 @@ export function useBookingQuote(options: UseBookingQuoteOptions) {
       return runQuote(api, draft, options.scope)
     },
     enabled,
+    // Each meaningful draft edit changes the query key. Keep the previous
+    // quote's data visible while the new one fetches so the journey updates
+    // in place (price swaps when ready) instead of blanking → falling back
+    // to the minimal shape → flashing the whole Configure step on every
+    // traveler/room change.
+    placeholderData: keepPreviousData,
   })
 
   const requote = useMutation<QuoteResponseV1, Error, void>({
