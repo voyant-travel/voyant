@@ -142,7 +142,16 @@ export function ConfigureStep({
 
   const optionNode =
     optionList.length > 0 ? (
-      <ProductOptionFields draft={draft} setDraft={setDraft} options={optionList} />
+      <ProductOptionFields
+        draft={draft}
+        setDraft={setDraft}
+        options={optionList}
+        // With a real choice between options, nest the rooms under the
+        // SELECTED option so switching reveals that option's inventory in
+        // place. With a single/no option there's nothing to switch, so the
+        // caller renders the rooms directly below instead.
+        renderSelectedUnits={multipleOptions && unitsNode ? () => unitsNode : undefined}
+      />
     ) : null
 
   return (
@@ -156,18 +165,13 @@ export function ConfigureStep({
         {/* 2. Travelers. */}
         <PaxBands draft={draft} setDraft={setDraft} shape={shape} />
         <PaxDependencyWarnings draft={draft} shape={shape} />
-        {/* 3. Option + its rooms. With multiple options the rooms belong to
-            the chosen option, so nest them under it; otherwise show directly. */}
+        {/* 3. Option + its rooms. Multiple options → rooms nested under the
+            selected option (handled inside ProductOptionFields). Single/no
+            option → rooms rendered directly here. */}
         {optionNode || unitsNode ? (
           <div className="space-y-3">
             {optionNode}
-            {unitsNode ? (
-              multipleOptions ? (
-                <div className="space-y-2 border-muted border-l-2 pl-4">{unitsNode}</div>
-              ) : (
-                unitsNode
-              )
-            ) : null}
+            {unitsNode && !multipleOptions ? unitsNode : null}
           </div>
         ) : null}
         {/* 4. Vertical-specific sub-steps (cruise cabins, date ranges, air). */}
@@ -376,6 +380,7 @@ function ProductOptionFields({
   draft,
   setDraft,
   options,
+  renderSelectedUnits,
 }: {
   draft: Draft
   setDraft: (next: Draft) => void
@@ -386,6 +391,13 @@ function ProductOptionFields({
     description?: string | null
     isDefault?: boolean
   }>
+  /**
+   * Renders the rooms/units nested directly under the SELECTED option, so
+   * switching options reveals that option's inventory in place. Omitted
+   * when there's no nesting (single/no option) — the caller renders units
+   * separately then.
+   */
+  renderSelectedUnits?: () => React.ReactNode
 }): React.ReactElement | null {
   const messages = useBookingsUiMessagesOrDefault()
   const selectedId = draft.configure.variantId
@@ -397,24 +409,32 @@ function ProductOptionFields({
         {options.map((option) => {
           const selected = option.id === selectedId
           return (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => setDraft(patchConfigure(draft, { variantId: option.id }))}
-              className={`w-full rounded border p-3 text-left text-sm ${
-                selected ? "border-primary ring-2 ring-primary" : ""
-              }`}
-            >
-              <span className="font-medium">{option.name}</span>
-              {option.code ? (
-                <span className="ml-2 text-muted-foreground text-xs uppercase">{option.code}</span>
+            <div key={option.id} className="space-y-2">
+              <button
+                type="button"
+                onClick={() => setDraft(patchConfigure(draft, { variantId: option.id }))}
+                className={`w-full rounded border p-3 text-left text-sm ${
+                  selected ? "border-primary ring-2 ring-primary" : ""
+                }`}
+              >
+                <span className="font-medium">{option.name}</span>
+                {option.code ? (
+                  <span className="ml-2 text-muted-foreground text-xs uppercase">
+                    {option.code}
+                  </span>
+                ) : null}
+                {option.description ? (
+                  <span className="mt-1 block text-muted-foreground text-xs">
+                    {option.description}
+                  </span>
+                ) : null}
+              </button>
+              {selected && renderSelectedUnits ? (
+                <div className="ml-2 space-y-2 border-muted border-l-2 pl-4">
+                  {renderSelectedUnits()}
+                </div>
               ) : null}
-              {option.description ? (
-                <span className="mt-1 block text-muted-foreground text-xs">
-                  {option.description}
-                </span>
-              ) : null}
-            </button>
+            </div>
           )
         })}
       </div>
