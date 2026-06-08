@@ -9,6 +9,7 @@
  */
 
 import type { BookingDraftShape } from "@voyantjs/catalog/booking-engine"
+import { Separator } from "@voyantjs/ui/components"
 import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
 import { Checkbox } from "@voyantjs/ui/components/checkbox"
@@ -120,6 +121,7 @@ export function DepartureStep({
       <CardHeader>
         <CardTitle>{messages.bookingJourney.steps.departure}</CardTitle>
       </CardHeader>
+      <Separator />
       <CardContent className="space-y-6">{departureNode}</CardContent>
     </Card>
   )
@@ -180,6 +182,7 @@ export function OptionsStep({
       <CardHeader>
         <CardTitle>{messages.bookingJourney.steps.options}</CardTitle>
       </CardHeader>
+      <Separator />
       <CardContent className="space-y-6">
         {/* Option + its rooms. Multiple options → rooms nested under the
             selected option (handled inside ProductOptionFields). Single/no
@@ -569,7 +572,10 @@ function CabinCategoryFields({
               }`}
               onClick={() =>
                 setDraft(
-                  patchConfigure(draft, { cabinCategoryId: cat.id, cabinNumberId: undefined }),
+                  patchConfigure(draft, {
+                    cabinCategoryId: cat.id,
+                    cabinNumberId: undefined,
+                  }),
                 )
               }
             >
@@ -749,6 +755,7 @@ export function BillingStep({
       <CardHeader>
         <CardTitle>{messages.bookingJourney.billing.title}</CardTitle>
       </CardHeader>
+      <Separator />
       <CardContent className="space-y-6">
         <div className="space-y-2">
           <Label>{messages.bookingJourney.billing.buyerType}</Label>
@@ -785,7 +792,11 @@ export function BillingStep({
                 label={messages.bookingJourney.billing.firstName}
                 value={billing.contact.firstName}
                 onChange={(v) =>
-                  setDraft(patchBilling(draft, { contact: { ...billing.contact, firstName: v } }))
+                  setDraft(
+                    patchBilling(draft, {
+                      contact: { ...billing.contact, firstName: v },
+                    }),
+                  )
                 }
               />
               <Field
@@ -793,7 +804,11 @@ export function BillingStep({
                 label={messages.bookingJourney.billing.lastName}
                 value={billing.contact.lastName}
                 onChange={(v) =>
-                  setDraft(patchBilling(draft, { contact: { ...billing.contact, lastName: v } }))
+                  setDraft(
+                    patchBilling(draft, {
+                      contact: { ...billing.contact, lastName: v },
+                    }),
+                  )
                 }
               />
               <Field
@@ -802,7 +817,11 @@ export function BillingStep({
                 type="email"
                 value={billing.contact.email}
                 onChange={(v) =>
-                  setDraft(patchBilling(draft, { contact: { ...billing.contact, email: v } }))
+                  setDraft(
+                    patchBilling(draft, {
+                      contact: { ...billing.contact, email: v },
+                    }),
+                  )
                 }
               />
               <PhoneField
@@ -810,7 +829,11 @@ export function BillingStep({
                 label={messages.bookingJourney.billing.phone}
                 value={billing.contact.phone ?? ""}
                 onChange={(v) =>
-                  setDraft(patchBilling(draft, { contact: { ...billing.contact, phone: v } }))
+                  setDraft(
+                    patchBilling(draft, {
+                      contact: { ...billing.contact, phone: v },
+                    }),
+                  )
                 }
               />
             </div>
@@ -821,7 +844,11 @@ export function BillingStep({
                 label={messages.bookingJourney.billing.addressLine1}
                 value={billing.address.line1 ?? ""}
                 onChange={(v) =>
-                  setDraft(patchBilling(draft, { address: { ...billing.address, line1: v } }))
+                  setDraft(
+                    patchBilling(draft, {
+                      address: { ...billing.address, line1: v },
+                    }),
+                  )
                 }
               />
               <Field
@@ -829,7 +856,11 @@ export function BillingStep({
                 label={messages.bookingJourney.billing.addressLine2Optional}
                 value={billing.address.line2 ?? ""}
                 onChange={(v) =>
-                  setDraft(patchBilling(draft, { address: { ...billing.address, line2: v } }))
+                  setDraft(
+                    patchBilling(draft, {
+                      address: { ...billing.address, line2: v },
+                    }),
+                  )
                 }
               />
               <Field
@@ -837,7 +868,11 @@ export function BillingStep({
                 label={messages.bookingJourney.billing.city}
                 value={billing.address.city ?? ""}
                 onChange={(v) =>
-                  setDraft(patchBilling(draft, { address: { ...billing.address, city: v } }))
+                  setDraft(
+                    patchBilling(draft, {
+                      address: { ...billing.address, city: v },
+                    }),
+                  )
                 }
               />
               <Field
@@ -845,7 +880,11 @@ export function BillingStep({
                 label={messages.bookingJourney.billing.postalCode}
                 value={billing.address.postal ?? ""}
                 onChange={(v) =>
-                  setDraft(patchBilling(draft, { address: { ...billing.address, postal: v } }))
+                  setDraft(
+                    patchBilling(draft, {
+                      address: { ...billing.address, postal: v },
+                    }),
+                  )
                 }
               />
               <div className="space-y-1 sm:col-span-2">
@@ -874,7 +913,10 @@ export function BillingStep({
                   onChange={(v) =>
                     setDraft(
                       patchBilling(draft, {
-                        company: { ...(billing.company ?? { name: "" }), name: v },
+                        company: {
+                          ...(billing.company ?? { name: "" }),
+                          name: v,
+                        },
                       }),
                     )
                   }
@@ -886,7 +928,10 @@ export function BillingStep({
                   onChange={(v) =>
                     setDraft(
                       patchBilling(draft, {
-                        company: { ...(billing.company ?? { name: "" }), vatId: v },
+                        company: {
+                          ...(billing.company ?? { name: "" }),
+                          vatId: v,
+                        },
                       }),
                     )
                   }
@@ -931,6 +976,7 @@ export function TravelersStep({
       <CardHeader>
         <CardTitle>{messages.bookingJourney.travelers.title}</CardTitle>
       </CardHeader>
+      <Separator />
       <CardContent className="space-y-4">
         {/* The traveler counts live here (not in Configure): set how many of
             each type, and the rows below fill in who they are. The price
@@ -1312,13 +1358,17 @@ export function AccommodationStep({ draft, setDraft, shape }: StepCommonProps): 
   const messages = useBookingsUiMessagesOrDefault()
   const subSteps = shape.accommodation?.subSteps ?? []
   const rooms = shape.accommodation?.roomOptions ?? []
-  const accommodation = draft.accommodation ?? { rooms: [], travelerAssignments: {} }
+  const accommodation = draft.accommodation ?? {
+    rooms: [],
+    travelerAssignments: {},
+  }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>{messages.bookingJourney.accommodation.title}</CardTitle>
       </CardHeader>
+      <Separator />
       <CardContent className="space-y-4">
         {rooms.length === 0 && subSteps.length === 0 ? (
           <p className="text-muted-foreground text-sm">
@@ -1353,7 +1403,12 @@ export function AccommodationStep({ draft, setDraft, shape }: StepCommonProps): 
                               ratePlanId: current?.ratePlanId,
                             })
                           }
-                          setDraft(setAccommodation(draft, { ...accommodation, rooms: list }))
+                          setDraft(
+                            setAccommodation(draft, {
+                              ...accommodation,
+                              rooms: list,
+                            }),
+                          )
                         }}
                       >
                         −
@@ -1371,8 +1426,17 @@ export function AccommodationStep({ draft, setDraft, shape }: StepCommonProps): 
                           const ratePlanId =
                             current?.ratePlanId ??
                             (ratePlans.length === 1 ? ratePlans[0]?.id : undefined)
-                          list.push({ optionUnitId: room.id, quantity: qty, ratePlanId })
-                          setDraft(setAccommodation(draft, { ...accommodation, rooms: list }))
+                          list.push({
+                            optionUnitId: room.id,
+                            quantity: qty,
+                            ratePlanId,
+                          })
+                          setDraft(
+                            setAccommodation(draft, {
+                              ...accommodation,
+                              rooms: list,
+                            }),
+                          )
                         }}
                       >
                         +
@@ -1388,7 +1452,12 @@ export function AccommodationStep({ draft, setDraft, shape }: StepCommonProps): 
                         const list = accommodation.rooms.map((r) =>
                           r.optionUnitId === room.id ? { ...r, ratePlanId: planId } : r,
                         )
-                        setDraft(setAccommodation(draft, { ...accommodation, rooms: list }))
+                        setDraft(
+                          setAccommodation(draft, {
+                            ...accommodation,
+                            rooms: list,
+                          }),
+                        )
                       }}
                     />
                   ) : null}
@@ -1489,6 +1558,7 @@ export function AddonsStep({ draft, setDraft, shape }: StepCommonProps): React.R
       <CardHeader>
         <CardTitle>{messages.bookingJourney.addons.title}</CardTitle>
       </CardHeader>
+      <Separator />
       <CardContent className="space-y-4">
         {all.length === 0 ? (
           <p className="text-muted-foreground text-sm">{messages.bookingJourney.addons.empty}</p>
@@ -1620,6 +1690,7 @@ export function PaymentStep({
       <CardHeader>
         <CardTitle>{messages.bookingJourney.payment.title}</CardTitle>
       </CardHeader>
+      <Separator />
       <CardContent className="space-y-4">
         {allowed.length === 0 ? (
           <p className="text-muted-foreground text-sm">{messages.bookingJourney.payment.empty}</p>
@@ -1723,7 +1794,10 @@ function PaymentScheduleEditor({
       value={value}
       onChange={(next) => {
         setValue(next)
-        setDraft({ ...draft, paymentSchedules: paymentScheduleValueToRows(next, currency, total) })
+        setDraft({
+          ...draft,
+          paymentSchedules: paymentScheduleValueToRows(next, currency, total),
+        })
       }}
       totalAmountCents={total ?? undefined}
       departureDate={departureDate}
@@ -1816,7 +1890,10 @@ function PriceOverrideEditor({
               placeholder={messages.priceOverrideReasonPlaceholder}
               value={override.reason}
               onChange={(e) =>
-                setOverride({ amountCents: override.amountCents, reason: e.target.value })
+                setOverride({
+                  amountCents: override.amountCents,
+                  reason: e.target.value,
+                })
               }
             />
             {reasonNeeded ? (
@@ -1855,7 +1932,10 @@ function VoucherEditor({
         setVoucher(next)
         const redemption =
           next.picked && next.picked.remainingAmountCents != null
-            ? { voucherId: next.picked.id, amountCents: next.picked.remainingAmountCents }
+            ? {
+                voucherId: next.picked.id,
+                amountCents: next.picked.remainingAmountCents,
+              }
             : undefined
         setDraft({ ...draft, voucherRedemption: redemption })
       }}
@@ -1966,6 +2046,7 @@ export function ReviewStep({
       <CardHeader>
         <CardTitle>{messages.bookingJourney.review.title}</CardTitle>
       </CardHeader>
+      <Separator />
       <CardContent className="space-y-4">
         <div>
           <div className="font-medium">{messages.bookingJourney.review.leadContact}</div>
@@ -2284,13 +2365,20 @@ function ageHint(
   messages: ReturnType<typeof useBookingsUiMessagesOrDefault>,
 ): string {
   if (min != null && max != null) {
-    return formatMessage(messages.bookingJourney.configure.ageHintRange, { min, max })
+    return formatMessage(messages.bookingJourney.configure.ageHintRange, {
+      min,
+      max,
+    })
   }
   if (min != null) {
-    return formatMessage(messages.bookingJourney.configure.ageHintMinimum, { min })
+    return formatMessage(messages.bookingJourney.configure.ageHintMinimum, {
+      min,
+    })
   }
   if (max != null) {
-    return formatMessage(messages.bookingJourney.configure.ageHintMaximum, { max })
+    return formatMessage(messages.bookingJourney.configure.ageHintMaximum, {
+      max,
+    })
   }
   return ""
 }
