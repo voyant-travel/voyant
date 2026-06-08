@@ -190,7 +190,10 @@ function stepHeadline(
   switch (step) {
     case "configure": {
       const total = paxTotal(draft)
-      const slot = draft.configure?.departureSlotId ?? draft.configure?.departureDate ?? undefined
+      // Never surface the raw slot id — show the departure date instead.
+      const slot = draft.configure?.departureDate
+        ? formatConfigureDate(draft.configure.departureDate)
+        : undefined
       const range = draft.configure?.dateRange
       const when = range?.checkIn && range?.checkOut ? `${range.checkIn} → ${range.checkOut}` : slot
       const guestLabel =
@@ -292,11 +295,12 @@ function ConfigureDetails({
       {(cfg.pax?.infant ?? 0) > 0 ? (
         <Row label={messages.bookingJourney.sidePanel.infants} value={String(cfg.pax.infant)} />
       ) : null}
-      {cfg.departureSlotId ? (
-        <Row label={messages.bookingJourney.sidePanel.departure} value={cfg.departureSlotId} />
-      ) : null}
+      {/* Show the departure DATE, never the raw slot id. */}
       {cfg.departureDate ? (
-        <Row label={messages.bookingJourney.sidePanel.date} value={cfg.departureDate} />
+        <Row
+          label={messages.bookingJourney.sidePanel.departure}
+          value={formatConfigureDate(cfg.departureDate)}
+        />
       ) : null}
       {range?.checkIn ? (
         <Row label={messages.bookingJourney.sidePanel.checkIn} value={range.checkIn} />
@@ -518,4 +522,16 @@ function formatMoney(cents: number, currency: string): string {
   } catch {
     return `${(cents / 100).toFixed(2)} ${currency}`
   }
+}
+
+/** Format an ISO date (YYYY-MM-DD or full ISO) for the recap, falling back
+ *  to the raw value when unparseable. Never surfaces a raw slot id. */
+function formatConfigureDate(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return new Intl.DateTimeFormat(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(date)
 }
