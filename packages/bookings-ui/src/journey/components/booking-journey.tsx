@@ -34,7 +34,7 @@ import {
 import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
-import { Check, Lock } from "lucide-react"
+import { Lock } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import { type Draft, emptyDraft, totalPax } from "../lib/draft-state.js"
@@ -56,7 +56,7 @@ import {
   ReviewStep,
   TravelersStep,
 } from "./journey-steps.js"
-import { PriceSidePanel, stepHeadline } from "./side-panel.js"
+import { PriceSidePanel } from "./side-panel.js"
 import { StepHeader } from "./step-header.js"
 
 export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
@@ -469,7 +469,6 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
         steps={steps}
         renderStep={renderStep}
         isStepComplete={(s) => stackedStepComplete(s, draft, shape, available)}
-        summaryFor={(s) => stepHeadline(s, draft, messages)}
         warningsForStep={(s) => warningsForStep(s, draft, shape, messages)}
         commitError={commit.error}
         onCancel={props.onCancelled}
@@ -697,7 +696,6 @@ function StackedJourney({
   steps,
   renderStep,
   isStepComplete,
-  summaryFor,
   warningsForStep,
   commitError,
   onCancel,
@@ -708,7 +706,6 @@ function StackedJourney({
   steps: ReadonlyArray<JourneyStep>
   renderStep: (step: JourneyStep) => React.ReactNode
   isStepComplete: (step: JourneyStep) => boolean
-  summaryFor: (step: JourneyStep) => string
   warningsForStep: (step: JourneyStep) => ReadonlyArray<string>
   commitError: unknown
   onCancel?: () => void
@@ -717,89 +714,41 @@ function StackedJourney({
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   const nav = messages.bookingJourney.navigation
-  // The active section is DERIVED — the first one not yet complete. As the
-  // operator fills it, completeness flips and the next section opens on its
-  // own (no Continue button). `editing` lets them pop a done section back
-  // open to change it.
-  const [editing, setEditing] = useState<JourneyStep | null>(null)
-
-  // First not-yet-complete section; everything before is done, after is
-  // locked. Falls back to the last step once everything's filled.
+  // Progressive unlock: a section is open once everything above it is
+  // complete, and STAYS open thereafter (so the operator keeps full context
+  // of everything they've filled). Only sections past the first incomplete
+  // one are still locked.
   const activeStep =
     steps.find((s) => !isStepComplete(s)) ?? steps[steps.length - 1] ?? steps[0] ?? "departure"
   const activeIndex = steps.indexOf(activeStep)
-  const openStep = editing ?? activeStep
-
-  // Drop a stale edit target when the section set changes or that section is
-  // no longer reachable (e.g. it became locked again).
-  useEffect(() => {
-    if (editing && !steps.includes(editing)) setEditing(null)
-  }, [steps, editing])
-
-  const scrollTo = (step: JourneyStep) => {
-    if (typeof document === "undefined") return
-    document.getElementById(sectionId(step))?.scrollIntoView({ behavior: "smooth", block: "start" })
-  }
-  const openForEdit = (step: JourneyStep) => {
-    setEditing(step)
-    scrollTo(step)
-  }
-  const backToCurrent = () => {
-    setEditing(null)
-    scrollTo(activeStep)
-  }
 
   return (
     <div className={className}>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-8 md:items-start">
         <div className="space-y-3 md:col-span-5">
           {steps.map((step, i) => {
-            const status: "done" | "active" | "locked" =
-              i < activeIndex ? "done" : i === activeIndex ? "active" : "locked"
-            const isOpen = step === openStep
-
-            // Collapsed: a done/active summary row (click to open) or a
-            // locked row. The active step only appears here when the operator
-            // has popped open an earlier section to edit it.
-            if (!isOpen) {
-              const openable = status !== "locked"
-              const summary = openable ? summaryFor(step) : ""
+            // Locked: a section beyond the first incomplete one — a muted,
+            // disabled row until the operator gets there.
+            if (i > activeIndex) {
               return (
-                <button
+                <div
                   key={step}
-                  type="button"
                   id={sectionId(step)}
-                  disabled={!openable}
-                  onClick={
-                    openable
-                      ? () => (status === "active" ? backToCurrent() : openForEdit(step))
-                      : undefined
-                  }
-                  className={`flex w-full scroll-mt-4 items-center gap-3 rounded-md border p-4 text-left transition-colors ${
-                    openable ? "hover:bg-muted/50" : "opacity-60"
-                  }`}
+                  className="flex w-full scroll-mt-4 items-center gap-3 rounded-md border p-4 opacity-60"
                 >
-                  <StepBadge n={i + 1} status={status} />
-                  <div className="min-w-0 flex-1">
-                    <div className="font-medium text-sm">{messages.bookingJourney.steps[step]}</div>
-                    {summary ? (
-                      <div className="truncate text-muted-foreground text-xs">{summary}</div>
-                    ) : null}
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs">
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0 flex-1 font-medium text-sm">
+                    {messages.bookingJourney.steps[step]}
                   </div>
-                  {status === "locked" ? (
-                    <Lock className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <span className="text-muted-foreground text-xs">{nav.edit}</span>
-                  )}
-                </button>
+                  <Lock className="h-4 w-4 text-muted-foreground" />
+                </div>
               )
             }
 
-            // Open: full section content. No Continue button — the next
-            // section opens itself once this one is complete. The only footer
-            // action is "Done" when re-editing an already-completed section.
+            // Unlocked: full section content, stays open once reached.
             const stepWarnings = warningsForStep(step)
-            const isEditingDone = editing === step && step !== activeStep
             return (
               <section key={step} id={sectionId(step)} className="scroll-mt-4 space-y-2">
                 {renderStep(step)}
@@ -809,11 +758,6 @@ function StackedJourney({
                       <li key={w}>⚠ {w}</li>
                     ))}
                   </ul>
-                ) : null}
-                {isEditingDone ? (
-                  <Button type="button" variant="outline" onClick={backToCurrent}>
-                    {nav.done}
-                  </Button>
                 ) : null}
               </section>
             )
@@ -836,29 +780,6 @@ function StackedJourney({
       </div>
       {contractDialog}
     </div>
-  )
-}
-
-/** Step status pip — a check when done, the number when active/locked. */
-function StepBadge({
-  n,
-  status,
-}: {
-  n: number
-  status: "done" | "active" | "locked"
-}): React.ReactElement {
-  return (
-    <span
-      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs ${
-        status === "active"
-          ? "bg-primary text-primary-foreground"
-          : status === "done"
-            ? "bg-primary/15 text-primary"
-            : "bg-muted text-muted-foreground"
-      }`}
-    >
-      {status === "done" ? <Check className="h-3.5 w-3.5" /> : n}
-    </span>
   )
 }
 
