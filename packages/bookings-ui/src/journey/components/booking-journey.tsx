@@ -569,27 +569,29 @@ function canAdvanceFromStep(
 ): boolean {
   if (!available) return false
   switch (step) {
-    case "configure": {
-      const total = totalPax(draft)
-      if (total < shape.paxBandsAllowedTotal.min || total > shape.paxBandsAllowedTotal.max) {
-        return false
-      }
-      // Occupancy rules (e.g. "Child under 6 requires an Adult") must hold.
-      return (
-        evaluatePaxBandDependencies(draft.configure.pax, shape.paxBandDependencies, shape.paxBands)
-          .length === 0
-      )
-    }
+    case "configure":
+      // Traveler counts + occupancy rules moved to the Travelers step, so
+      // Configure only needs the entity to be available (checked above).
+      return true
     case "billing": {
       const c = draft.billing.contact
       return c.firstName.length > 0 && c.lastName.length > 0 && c.email.length > 0
     }
     case "travelers": {
-      // Hard-reject only on canonical traveler fields (firstName,
-      // lastName) — those are always required regardless of
-      // descriptor configuration. All other required fields surface
-      // as warnings so operators can complete the journey and fill
-      // them in later from the booking detail page.
+      // Pax counts are set on this step now: require the allowed total and
+      // that occupancy rules (e.g. "Child under 6 requires an Adult") hold.
+      const total = totalPax(draft)
+      if (total < shape.paxBandsAllowedTotal.min || total > shape.paxBandsAllowedTotal.max) {
+        return false
+      }
+      if (
+        evaluatePaxBandDependencies(draft.configure.pax, shape.paxBandDependencies, shape.paxBands)
+          .length > 0
+      ) {
+        return false
+      }
+      // Hard-reject only on canonical traveler fields (firstName, lastName);
+      // other required fields surface as warnings, fillable later.
       return draft.travelers.every((t) => t.firstName && t.lastName)
     }
     default:

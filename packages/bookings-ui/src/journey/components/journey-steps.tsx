@@ -162,12 +162,10 @@ export function ConfigureStep({
       <CardContent className="space-y-6">
         {/* 1. Departure first — it scopes availability for everything below. */}
         {departureNode}
-        {/* 2. Travelers. */}
-        <PaxBands draft={draft} setDraft={setDraft} shape={shape} />
-        <PaxDependencyWarnings draft={draft} shape={shape} />
-        {/* 3. Option + its rooms. Multiple options → rooms nested under the
+        {/* 2. Option + its rooms. Multiple options → rooms nested under the
             selected option (handled inside ProductOptionFields). Single/no
-            option → rooms rendered directly here. */}
+            option → rooms rendered directly here. Traveler counts live on
+            the Travelers step, not here. */}
         {optionNode || unitsNode ? (
           <div className="space-y-3">
             {optionNode}
@@ -870,37 +868,17 @@ export function TravelersStep({
   if (ensured !== draft.travelers) {
     setDraft(setTravelers(draft, ensured))
   }
-  // Bands are bookkeeping for the pricing engine — the user only
-  // sees a flat list of travelers. Adding a traveler bumps the
-  // adult-band counter by default; the row's band is reassigned
-  // automatically once a DOB is entered (see TravelerCard's onDob).
-  const defaultAddBand = shape.paxBands.find((b) => b.code === "adult") ?? shape.paxBands[0]
-  const totalCap = shape.paxBandsAllowedTotal.max
-  const canAddMore = ensured.length < totalCap && Boolean(defaultAddBand)
-  const removeTraveler = (rowIdx: number) => {
-    const band = ensured[rowIdx]?.band
-    if (!band) return
-    const current = draft.configure.pax?.[band] ?? 0
-    const spec = shape.paxBands.find((b) => b.code === band)
-    if (spec && current <= spec.minCount) return
-    setDraft(patchPaxCount(draft, band, current - 1))
-  }
-  const addTraveler = () => {
-    if (!defaultAddBand) return
-    const current = draft.configure.pax?.[defaultAddBand.code] ?? 0
-    if (current >= defaultAddBand.maxCount) return
-    setDraft(patchPaxCount(draft, defaultAddBand.code, current + 1))
-  }
-
   return (
     <Card>
       <CardHeader>
         <CardTitle>{messages.bookingJourney.travelers.title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {ensured.length === 0 ? (
-          <p className="text-muted-foreground text-sm">{messages.bookingJourney.travelers.empty}</p>
-        ) : null}
+        {/* The traveler counts live here (not in Configure): set how many of
+            each type, and the rows below fill in who they are. The price
+            re-quotes as the counts change. */}
+        <PaxBands draft={draft} setDraft={setDraft} shape={shape} />
+        <PaxDependencyWarnings draft={draft} shape={shape} />
         {ensured.map((traveler, idx) => {
           const apply: TravelerContactPickerProps["apply"] = (contact) => {
             const next = [...ensured]
@@ -913,9 +891,6 @@ export function TravelersStep({
             }
             setDraft(setTravelers(draft, next))
           }
-          const bandSpec = shape.paxBands.find((b) => b.code === traveler.band)
-          const currentBandCount = draft.configure.pax?.[traveler.band] ?? 0
-          const canRemove = !bandSpec || currentBandCount > bandSpec.minCount
           return (
             <TravelerCard
               key={traveler.rowId ?? idx}
@@ -926,17 +901,9 @@ export function TravelersStep({
               setDraft={setDraft}
               renderTravelerContactPicker={renderTravelerContactPicker}
               apply={apply}
-              onRemove={canRemove ? () => removeTraveler(idx) : undefined}
             />
           )
         })}
-        {canAddMore ? (
-          <div className="border-t pt-3">
-            <Button type="button" variant="outline" size="sm" onClick={addTraveler}>
-              {messages.bookingJourney.travelers.addTraveler}
-            </Button>
-          </div>
-        ) : null}
       </CardContent>
     </Card>
   )
