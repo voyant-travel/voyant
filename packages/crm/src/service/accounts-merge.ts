@@ -12,8 +12,6 @@ import {
   communicationLog,
   customerSignals,
   customFieldValues,
-  opportunities,
-  opportunityParticipants,
   organizationNotes,
   organizations,
   people,
@@ -21,6 +19,8 @@ import {
   personNotes,
   personPaymentMethods,
   personRelationships,
+  quoteParticipants,
+  quotes,
   segmentMembers,
 } from "../schema.js"
 import { hydratePeople, organizationEntityType, personEntityType } from "./accounts-shared.js"
@@ -277,13 +277,13 @@ async function mergeEntityLinks(
 }
 
 async function dedupePersonJoinTables(db: PostgresJsDatabase, keepId: string, mergeId: string) {
-  await db.delete(opportunityParticipants).where(
+  await db.delete(quoteParticipants).where(
     and(
-      eq(opportunityParticipants.personId, mergeId),
+      eq(quoteParticipants.personId, mergeId),
       sql`EXISTS (
           SELECT 1
-          FROM opportunity_participants keep_participant
-          WHERE keep_participant.opportunity_id = ${opportunityParticipants.opportunityId}
+          FROM quote_participants keep_participant
+          WHERE keep_participant.quote_id = ${quoteParticipants.quoteId}
             AND keep_participant.person_id = ${keepId}
         )`,
     ),
@@ -431,13 +431,13 @@ export const accountMergeService = {
         .set({ personId: keepId })
         .where(eq(communicationLog.personId, mergeId))
       await tx
-        .update(opportunities)
+        .update(quotes)
         .set({ personId: keepId, updatedAt: new Date() })
-        .where(eq(opportunities.personId, mergeId))
+        .where(eq(quotes.personId, mergeId))
       await tx
-        .update(opportunityParticipants)
+        .update(quoteParticipants)
         .set({ personId: keepId })
-        .where(eq(opportunityParticipants.personId, mergeId))
+        .where(eq(quoteParticipants.personId, mergeId))
       await tx
         .update(activityParticipants)
         .set({ personId: keepId })
@@ -537,9 +537,9 @@ export const accountMergeService = {
         .set({ organizationId: keepId })
         .where(eq(communicationLog.organizationId, mergeId))
       await tx
-        .update(opportunities)
+        .update(quotes)
         .set({ organizationId: keepId, updatedAt: new Date() })
-        .where(eq(opportunities.organizationId, mergeId))
+        .where(eq(quotes.organizationId, mergeId))
 
       await updateOptionalReferences(
         tx as PostgresJsDatabase,

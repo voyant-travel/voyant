@@ -41,7 +41,7 @@ describe.skipIf(!DB_AVAILABLE)("Pipeline routes", () => {
       expect(res.status).toBe(201)
       const body = await res.json()
       expect(body.data.name).toBe("Sales Pipeline")
-      expect(body.data.entityType).toBe("opportunity")
+      expect(body.data.entityType).toBe("quote")
       expect(body.data.id).toBeTruthy()
     })
 

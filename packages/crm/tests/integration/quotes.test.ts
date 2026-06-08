@@ -31,7 +31,7 @@ describe.skipIf(!DB_AVAILABLE)("Quote routes", () => {
     await cleanupTestDb(createTestDb())
   })
 
-  async function seedOpportunity() {
+  async function seedPipelineAndStage() {
     const pipRes = await app.request("/pipelines", {
       method: "POST",
       ...json({ name: `Pipeline-${Date.now()}` }),
@@ -44,91 +44,71 @@ describe.skipIf(!DB_AVAILABLE)("Quote routes", () => {
     })
     const { data: stage } = await stgRes.json()
 
-    const oppRes = await app.request("/opportunities", {
-      method: "POST",
-      ...json({ title: "Test Opp", pipelineId: pipeline.id, stageId: stage.id }),
-    })
-    const { data: opportunity } = await oppRes.json()
+    return { pipeline, stage }
+  }
 
-    return { pipeline, stage, opportunity }
+  async function seedQuote() {
+    const { pipeline, stage } = await seedPipelineAndStage()
+    const res = await app.request("/quotes", {
+      method: "POST",
+      ...json({ title: "Test Quote", pipelineId: pipeline.id, stageId: stage.id }),
+    })
+    const { data: quote } = await res.json()
+    return { pipeline, stage, quote }
   }
 
   describe("Quotes CRUD", () => {
     it("creates a quote", async () => {
-      const { opportunity } = await seedOpportunity()
+      const { pipeline, stage } = await seedPipelineAndStage()
 
       const res = await app.request("/quotes", {
         method: "POST",
-        ...json({ opportunityId: opportunity.id, currency: "USD" }),
+        ...json({ title: "Big Deal", pipelineId: pipeline.id, stageId: stage.id }),
       })
 
       expect(res.status).toBe(201)
       const body = await res.json()
-      expect(body.data.opportunityId).toBe(opportunity.id)
-      expect(body.data.currency).toBe("USD")
-      expect(body.data.status).toBe("draft")
-      expect(body.data.totalAmountCents).toBe(0)
+      expect(body.data.title).toBe("Big Deal")
+      expect(body.data.status).toBe("open")
+      expect(body.data.id).toBeTruthy()
     })
 
-    it("lists quotes filtered by opportunityId", async () => {
-      const { opportunity } = await seedOpportunity()
-      await app.request("/quotes", {
-        method: "POST",
-        ...json({ opportunityId: opportunity.id, currency: "USD" }),
-      })
-      await app.request("/quotes", {
-        method: "POST",
-        ...json({ opportunityId: opportunity.id, currency: "EUR" }),
-      })
+    it("lists quotes", async () => {
+      await seedQuote()
 
-      const res = await app.request(`/quotes?opportunityId=${opportunity.id}`, { method: "GET" })
+      const res = await app.request("/quotes", { method: "GET" })
 
       expect(res.status).toBe(200)
       const body = await res.json()
-      expect(body.data.length).toBe(2)
+      expect(body.data).toBeInstanceOf(Array)
+      expect(body.total).toBeTypeOf("number")
     })
 
     it("gets a quote by id", async () => {
-      const { opportunity } = await seedOpportunity()
-      const createRes = await app.request("/quotes", {
-        method: "POST",
-        ...json({ opportunityId: opportunity.id, currency: "GBP" }),
-      })
-      const { data: quote } = await createRes.json()
+      const { quote } = await seedQuote()
 
       const res = await app.request(`/quotes/${quote.id}`, { method: "GET" })
 
       expect(res.status).toBe(200)
       const body = await res.json()
-      expect(body.data.currency).toBe("GBP")
+      expect(body.data.title).toBe("Test Quote")
     })
 
     it("updates a quote", async () => {
-      const { opportunity } = await seedOpportunity()
-      const createRes = await app.request("/quotes", {
-        method: "POST",
-        ...json({ opportunityId: opportunity.id, currency: "USD" }),
-      })
-      const { data: quote } = await createRes.json()
+      const { quote } = await seedQuote()
 
       const res = await app.request(`/quotes/${quote.id}`, {
         method: "PATCH",
-        ...json({ status: "sent", totalAmountCents: 50000 }),
+        ...json({ title: "Updated Deal" }),
       })
 
       expect(res.status).toBe(200)
       const body = await res.json()
-      expect(body.data.status).toBe("sent")
-      expect(body.data.totalAmountCents).toBe(50000)
+      expect(body.data.title).toBe("Updated Deal")
     })
 
     it("deletes a quote", async () => {
-      const { opportunity } = await seedOpportunity()
-      const createRes = await app.request("/quotes", {
-        method: "POST",
-        ...json({ opportunityId: opportunity.id, currency: "USD" }),
-      })
-      const { data: quote } = await createRes.json()
+      const { quote } = await seedQuote()
 
       const res = await app.request(`/quotes/${quote.id}`, { method: "DELETE" })
 
@@ -138,84 +118,174 @@ describe.skipIf(!DB_AVAILABLE)("Quote routes", () => {
     })
 
     it("returns 404 for non-existent quote", async () => {
-      const res = await app.request("/quotes/crm_quo_00000000000000000000000000", {
+      const res = await app.request("/quotes/crm_quot_00000000000000000000000000", {
         method: "GET",
       })
       expect(res.status).toBe(404)
     })
+
+    it("updates stageChangedAt when stageId changes", async () => {
+      const { pipeline, quote } = await seedQuote()
+
+      const stg2Res = await app.request("/stages", {
+        method: "POST",
+        ...json({ pipelineId: pipeline.id, name: `Stage2-${Date.now()}` }),
+      })
+      const { data: stage2 } = await stg2Res.json()
+
+      const res = await app.request(`/quotes/${quote.id}`, {
+        method: "PATCH",
+        ...json({ stageId: stage2.id }),
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.data.stageId).toBe(stage2.id)
+      expect(new Date(body.data.stageChangedAt).getTime()).toBeGreaterThan(
+        new Date(quote.stageChangedAt).getTime(),
+      )
+    })
+
+    it("sets closedAt when status changes to won", async () => {
+      const { quote } = await seedQuote()
+
+      const res = await app.request(`/quotes/${quote.id}`, {
+        method: "PATCH",
+        ...json({ status: "won" }),
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.data.status).toBe("won")
+      expect(body.data.closedAt).toBeTruthy()
+    })
+
+    it("clears closedAt when status changes back to open", async () => {
+      const { quote } = await seedQuote()
+
+      await app.request(`/quotes/${quote.id}`, {
+        method: "PATCH",
+        ...json({ status: "won" }),
+      })
+
+      const res = await app.request(`/quotes/${quote.id}`, {
+        method: "PATCH",
+        ...json({ status: "open" }),
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.data.status).toBe("open")
+      expect(body.data.closedAt).toBeNull()
+    })
   })
 
-  describe("Quote Lines", () => {
-    async function seedQuote() {
-      const { opportunity } = await seedOpportunity()
-      const quoteRes = await app.request("/quotes", {
-        method: "POST",
-        ...json({ opportunityId: opportunity.id, currency: "USD" }),
-      })
-      const { data: quote } = await quoteRes.json()
-      return { opportunity, quote }
-    }
-
-    it("creates a quote line", async () => {
+  describe("Quote Participants", () => {
+    it("creates and lists participants", async () => {
       const { quote } = await seedQuote()
 
-      const res = await app.request(`/quotes/${quote.id}/lines`, {
+      const personRes = await app.request("/people", {
         method: "POST",
-        ...json({ description: "Hotel Transfer", quantity: 1, currency: "USD" }),
+        ...json({ firstName: "Jane", lastName: "Doe" }),
+      })
+      const { data: person } = await personRes.json()
+
+      const createRes = await app.request(`/quotes/${quote.id}/participants`, {
+        method: "POST",
+        ...json({ personId: person.id, role: "decision_maker" }),
       })
 
-      expect(res.status).toBe(201)
-      const body = await res.json()
-      expect(body.data.description).toBe("Hotel Transfer")
-      expect(body.data.quoteId).toBe(quote.id)
+      expect(createRes.status).toBe(201)
+      const createBody = await createRes.json()
+      expect(createBody.data.personId).toBe(person.id)
+      expect(createBody.data.role).toBe("decision_maker")
+
+      const listRes = await app.request(`/quotes/${quote.id}/participants`, {
+        method: "GET",
+      })
+
+      expect(listRes.status).toBe(200)
+      const listBody = await listRes.json()
+      expect(listBody.data.length).toBe(1)
     })
 
-    it("lists quote lines", async () => {
+    it("deletes a participant", async () => {
       const { quote } = await seedQuote()
-      await app.request(`/quotes/${quote.id}/lines`, {
-        method: "POST",
-        ...json({ description: "Line A", currency: "USD" }),
-      })
-      await app.request(`/quotes/${quote.id}/lines`, {
-        method: "POST",
-        ...json({ description: "Line B", currency: "USD" }),
-      })
 
-      const res = await app.request(`/quotes/${quote.id}/lines`, { method: "GET" })
+      const personRes = await app.request("/people", {
+        method: "POST",
+        ...json({ firstName: "Del", lastName: "Part" }),
+      })
+      const { data: person } = await personRes.json()
+
+      const createRes = await app.request(`/quotes/${quote.id}/participants`, {
+        method: "POST",
+        ...json({ personId: person.id }),
+      })
+      const { data: participant } = await createRes.json()
+
+      const res = await app.request(`/quote-participants/${participant.id}`, {
+        method: "DELETE",
+      })
 
       expect(res.status).toBe(200)
       const body = await res.json()
-      expect(body.data.length).toBe(2)
+      expect(body.success).toBe(true)
+    })
+  })
+
+  describe("Quote Products", () => {
+    it("creates and lists products", async () => {
+      const { quote } = await seedQuote()
+
+      const createRes = await app.request(`/quotes/${quote.id}/products`, {
+        method: "POST",
+        ...json({ nameSnapshot: "Hotel Room", quantity: 2, unitPriceAmountCents: 15000 }),
+      })
+
+      expect(createRes.status).toBe(201)
+      const createBody = await createRes.json()
+      expect(createBody.data.nameSnapshot).toBe("Hotel Room")
+      expect(createBody.data.quantity).toBe(2)
+
+      const listRes = await app.request(`/quotes/${quote.id}/products`, {
+        method: "GET",
+      })
+
+      expect(listRes.status).toBe(200)
+      const listBody = await listRes.json()
+      expect(listBody.data.length).toBe(1)
     })
 
-    it("updates a quote line", async () => {
+    it("updates a product", async () => {
       const { quote } = await seedQuote()
-      const createRes = await app.request(`/quotes/${quote.id}/lines`, {
-        method: "POST",
-        ...json({ description: "Old", currency: "USD" }),
-      })
-      const { data: line } = await createRes.json()
 
-      const res = await app.request(`/quote-lines/${line.id}`, {
+      const createRes = await app.request(`/quotes/${quote.id}/products`, {
+        method: "POST",
+        ...json({ nameSnapshot: "Old Name" }),
+      })
+      const { data: product } = await createRes.json()
+
+      const res = await app.request(`/quote-products/${product.id}`, {
         method: "PATCH",
-        ...json({ description: "Updated", quantity: 5 }),
+        ...json({ nameSnapshot: "New Name" }),
       })
 
       expect(res.status).toBe(200)
       const body = await res.json()
-      expect(body.data.description).toBe("Updated")
-      expect(body.data.quantity).toBe(5)
+      expect(body.data.nameSnapshot).toBe("New Name")
     })
 
-    it("deletes a quote line", async () => {
+    it("deletes a product", async () => {
       const { quote } = await seedQuote()
-      const createRes = await app.request(`/quotes/${quote.id}/lines`, {
-        method: "POST",
-        ...json({ description: "ToDelete", currency: "USD" }),
-      })
-      const { data: line } = await createRes.json()
 
-      const res = await app.request(`/quote-lines/${line.id}`, { method: "DELETE" })
+      const createRes = await app.request(`/quotes/${quote.id}/products`, {
+        method: "POST",
+        ...json({ nameSnapshot: "ToDelete" }),
+      })
+      const { data: product } = await createRes.json()
+
+      const res = await app.request(`/quote-products/${product.id}`, { method: "DELETE" })
 
       expect(res.status).toBe(200)
       const body = await res.json()
