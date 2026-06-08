@@ -1668,6 +1668,23 @@ export function ReviewStep({
                   {messages.bookingCreateDialog.labels.generateInvoiceAndContract}
                 </Label>
               </div>
+              {/* Notification suppression — uncheck to skip the post-commit
+                  confirmation email. Stored as `draft.suppressNotifications`. */}
+              <div className="flex items-start gap-2 border-t pt-2 text-sm">
+                <Checkbox
+                  id="bj-notify-traveler"
+                  checked={draft.suppressNotifications !== true}
+                  onCheckedChange={(v) => setDraft({ ...draft, suppressNotifications: v !== true })}
+                />
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="bj-notify-traveler" className="cursor-pointer">
+                    {messages.bookingCreateDialog.fields.notifyTraveler}
+                  </Label>
+                  <p className="text-muted-foreground text-xs">
+                    {messages.bookingCreateDialog.fields.notifyTravelerHint}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         ) : null}

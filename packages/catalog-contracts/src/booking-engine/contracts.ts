@@ -411,6 +411,13 @@ export const bookingDraftV1 = z.object({
     .optional(),
 
   /**
+   * Operator-only: when true, the booking-create commit suppresses
+   * post-commit notifications (e.g. the confirmation email). Set on the
+   * admin review step; the owned handler forwards it to booking-create.
+   */
+  suppressNotifications: z.boolean().optional(),
+
+  /**
    * Customer-typed promotion code. Validated case-insensitively against
    * `promotional_offers.code` at quote time when the operator template
    * wires `evaluatePromotions` on `QuoteEntityDeps`. Surfaces as a

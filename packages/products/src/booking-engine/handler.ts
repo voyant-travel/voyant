@@ -118,6 +118,8 @@ export interface BookingCreateBridgeInput {
     invoiceDocument: boolean
     invoiceType: "invoice" | "proforma"
   }
+  /** Suppress post-commit notifications (operator-only). */
+  suppressNotifications?: boolean
   taxLines?: Array<{
     code?: string | null
     name: string
@@ -200,6 +202,7 @@ interface DraftLike {
   }>
   paymentSchedules?: BookingCreateBridgeInput["paymentSchedules"]
   documentGeneration?: BookingCreateBridgeInput["documentGeneration"]
+  suppressNotifications?: boolean
   addons?: Array<{
     extraId: string
     quantity: number
@@ -708,6 +711,7 @@ export function createProductsBookingHandler(
                 draft.documentGeneration.invoiceType === "proforma" ? "proforma" : "invoice",
             }
           : undefined,
+        suppressNotifications: draft.suppressNotifications,
         sellAmountCentsOverride,
         taxLines: extractTaxLines(request.pricing),
         itemLines: bookingItemLinesFromOptionSelections(optionSelections),
