@@ -23,6 +23,7 @@ export type JourneyStep =
   | "accommodation"
   | "addons"
   | "payment"
+  | "documents"
   | "review"
 
 export const JOURNEY_STEP_ORDER: ReadonlyArray<JourneyStep> = [
@@ -33,6 +34,7 @@ export const JOURNEY_STEP_ORDER: ReadonlyArray<JourneyStep> = [
   "accommodation",
   "addons",
   "payment",
+  "documents",
   "review",
 ]
 

@@ -772,6 +772,7 @@ export const bookingsUiEn = {
       accommodation: "Accommodation",
       addons: "Extras",
       payment: "Payment",
+      documents: "Documents & notes",
       review: "Review",
       billingAndContact: "Billing & contact",
       reviewAndConfirm: "Review & confirm",

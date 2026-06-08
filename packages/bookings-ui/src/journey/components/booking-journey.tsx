@@ -51,6 +51,7 @@ import {
   AddonsStep,
   BillingStep,
   DepartureStep,
+  DocumentsStep,
   OptionsStep,
   PaymentStep,
   ReviewStep,
@@ -135,9 +136,11 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
         // `hideConfigure` skips the configure phase — now split across the
         // Departure + Options steps.
         if (hideConfigure && (s === "departure" || s === "options")) return false
+        // Internal notes + document generation are operator-only.
+        if (s === "documents" && surface !== "admin") return false
         return isStepVisible(s, shape)
       }),
-    [shape, hideConfigure],
+    [shape, hideConfigure, surface],
   )
 
   // The stacked admin layout drops the Review block — the side panel shows the
@@ -454,6 +457,8 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             pricing={quote.data?.pricing ?? null}
           />
         )
+      case "documents":
+        return <DocumentsStep draft={draft} setDraft={setDraft} />
       case "review":
         return (
           <ReviewStep
@@ -823,6 +828,10 @@ function isStepVisible(step: JourneyStep, shape: BookingDraftShape): boolean {
       return shape.showsAddons
     case "payment":
       return shape.showsPayment
+    case "documents":
+      // Operator-only block; shown whenever a real booking is being finalized
+      // (gated to the admin surface in the step list above).
+      return shape.showsReview
     case "review":
       return shape.showsReview
   }

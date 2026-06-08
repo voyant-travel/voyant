@@ -611,6 +611,7 @@ export type BookingsUiMessages = {
       | "accommodation"
       | "addons"
       | "payment"
+      | "documents"
       | "review",
       string
     > & {

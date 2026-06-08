@@ -771,6 +771,7 @@ export const bookingsUiRo = {
       accommodation: "Cazare",
       addons: "Extra",
       payment: "Plata",
+      documents: "Documente si note",
       review: "Revizuire",
       billingAndContact: "Facturare si contact",
       reviewAndConfirm: "Revizuire si confirmare",
