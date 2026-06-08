@@ -1,5 +1,11 @@
 # @voyantjs/crm
 
+## 0.106.1
+
+### Patch Changes
+
+- a0ddf5e: Keep CRM people list responses available when identity hydration fails by returning base people rows with empty inline identity fields.
+
 ## 0.106.0
 
 ### Minor Changes
