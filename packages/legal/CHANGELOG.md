@@ -1,5 +1,11 @@
 # @voyantjs/legal
 
+## 0.106.2
+
+### Patch Changes
+
+- b743087: Populate auto-generated contract booking payment schedule aliases and room summaries from persisted booking data.
+
 ## 0.106.1
 
 ### Patch Changes
