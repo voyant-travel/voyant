@@ -424,7 +424,7 @@ Current caveats:
 
 ADR-0004 makes the travel-native bespoke sales ladder:
 
-**Quote -> Quote Version -> reserve workflow -> Order / Booking -> Fulfillment**
+**Quote -> accepted Quote Version -> reserve workflow -> Order / Booking -> Fulfillment**
 
 The composer sits before and around that ladder:
 
