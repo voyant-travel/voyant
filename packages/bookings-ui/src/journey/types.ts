@@ -71,6 +71,10 @@ export interface LeadContactPickerProps {
 
 export interface TravelerContactPickerProps {
   rowIndex: number
+  /** The CRM person currently linked to this traveler row, if any. The
+   *  picker should reflect it in its combobox — so e.g. "Copy from billing"
+   *  (which links the billing person) shows that person as selected. */
+  selectedPersonId?: string
   /** Apply a picked contact to the traveler at `rowIndex`. */
   apply: (contact: {
     firstName: string

@@ -84,12 +84,14 @@ export function OperatorBookingJourney({
       // Rooms/units for the picked option + departure (operator inventory).
       return <OperatorUnitsPicker {...pickerProps} />
     },
-    renderTravelerContactPicker({ apply }) {
+    renderTravelerContactPicker({ apply, selectedPersonId }) {
       // Travelers reuse the same picker (person-only). Adapt the picker's
-      // partial lead-apply to the traveler apply (always a person).
+      // partial lead-apply to the traveler apply (always a person), and
+      // reflect the row's linked person so "Copy from billing" selects it.
       return (
         <CrmLeadPicker
           variant="traveler"
+          linkedPersonId={selectedPersonId}
           apply={(contact) =>
             apply({
               firstName: contact.firstName ?? "",
@@ -185,15 +187,31 @@ function CrmLeadPicker({
   apply,
   buyerType,
   variant = "lead",
+  linkedPersonId,
 }: {
   apply: LeadContactPickerProps["apply"]
   buyerType?: "B2C" | "B2B"
   variant?: "lead" | "traveler"
+  /** Externally-linked person to reflect in the combobox (e.g. a traveler
+   *  whose contact was copied from billing). */
+  linkedPersonId?: string
 }): React.ReactElement {
   const t = useAdminMessages().bookings.detail.bookingJourney
   // The lead picker bills an organization on B2B; everything else is a person.
   const orgMode = variant === "lead" && buyerType === "B2B"
   const [value, setValue] = useState<PersonPickerValue>(emptyPersonPickerValue)
+
+  // Reflect an externally-set person (copy-from-billing, or a re-opened
+  // draft) in the combobox. The hydrate effect below then fills the names;
+  // the `appliedPersonId` ref keeps that idempotent.
+  useEffect(() => {
+    if (!linkedPersonId) return
+    setValue((cur) =>
+      cur.personId === linkedPersonId
+        ? cur
+        : { ...cur, mode: "existing", personId: linkedPersonId },
+    )
+  }, [linkedPersonId])
 
   // Keep the picker's target aligned with the Buyer type radio.
   useEffect(() => {

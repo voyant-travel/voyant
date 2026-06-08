@@ -32,6 +32,10 @@ export const travelerEntryV1 = z.object({
   lastName: z.string().min(1).max(255),
   email: z.string().email().optional(),
   phone: z.string().max(50).optional(),
+  /** Linked CRM person, when the traveler was picked from (or copied as)
+   *  an existing contact. Lets the picker reflect the selection and the
+   *  commit path attach the traveler to a known person. */
+  personId: z.string().optional(),
   band: paxBandCodeSchema.default("adult"),
   dateOfBirth: z.string().optional(), // ISO yyyy-mm-dd
   /**

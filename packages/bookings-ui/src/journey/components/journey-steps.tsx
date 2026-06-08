@@ -973,6 +973,7 @@ export function TravelersStep({
                   lastName: contact.lastName,
                   email: contact.email,
                   phone: contact.phone,
+                  personId: contact.personId,
                 }
                 setDraft(setTravelers(draft, next))
               }
@@ -1088,6 +1089,8 @@ function TravelerCard({
       lastName: billingContact.lastName,
       email: billingContact.email || undefined,
       phone: billingContact.phone || undefined,
+      // Carry the linked CRM person so the picker shows it as selected.
+      personId: billingContact.personId || undefined,
     })
   }
 
@@ -1136,7 +1139,13 @@ function TravelerCard({
       {/* Link an existing CRM contact (or create one) — full-width, the
           primary action; it auto-fills the name fields below. */}
       {renderTravelerContactPicker ? (
-        <div>{renderTravelerContactPicker({ rowIndex: idx, apply })}</div>
+        <div>
+          {renderTravelerContactPicker({
+            rowIndex: idx,
+            apply,
+            selectedPersonId: traveler.personId,
+          })}
+        </div>
       ) : null}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field
