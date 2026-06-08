@@ -16,8 +16,9 @@ import {
   BookingJourney,
   type BookingJourneyProps,
 } from "@voyantjs/bookings-ui/journey"
+import { usePerson } from "@voyantjs/crm-react"
 import { getProductMediaQueryOptions, getProductQueryOptions } from "@voyantjs/products-react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { catalogVerticalPath } from "@/components/voyant/catalog/catalog-route-state"
 import { useAdminMessages } from "@/lib/admin-i18n"
@@ -180,21 +181,37 @@ function CrmLeadPicker({
   const t = useAdminMessages().bookings.detail.bookingJourney
   const [value, setValue] = useState<PersonPickerValue>(emptyPersonPickerValue)
 
+  // Hydrate the journey's form from the picked CRM person. The picker only
+  // yields a personId on selection; we fetch the record and apply the real
+  // name / email / phone so the operator doesn't retype them.
+  const selectedPersonId = value.mode === "existing" && value.personId ? value.personId : undefined
+  const personQuery = usePerson(selectedPersonId, { enabled: Boolean(selectedPersonId) })
+  const appliedPersonId = useRef<string | null>(null)
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: applies once per resolved person; the ref guards re-entry from apply()->setDraft re-renders
+  useEffect(() => {
+    const person = personQuery.data
+    if (!person || appliedPersonId.current === person.id) return
+    appliedPersonId.current = person.id
+    apply({
+      firstName: person.firstName,
+      lastName: person.lastName,
+      email: person.email ?? undefined,
+      phone: person.phone ?? undefined,
+      personId: person.id,
+    })
+  }, [personQuery.data])
+
   function commit(next: PersonPickerValue): void {
     setValue(next)
     if (next.mode === "existing" && next.personId) {
-      // Caller looks up the person by id from CRM; the picker
-      // section also exposes the picked person via the search
-      // dropdown, so we propagate the id here. Names default to
-      // empty — the journey's billing form gets populated from the
-      // CRM hydration on the next render.
-      apply({
-        firstName: "",
-        lastName: "",
-        personId: next.personId,
-      })
+      // Real fields are applied by the usePerson effect once the record
+      // resolves. Reset the guard so re-picking a different person (or the
+      // same one after a clear) re-hydrates.
+      if (next.personId !== appliedPersonId.current) appliedPersonId.current = null
       return
     }
+    appliedPersonId.current = null
     if (next.mode === "new") {
       apply({
         firstName: next.newPerson.firstName,

@@ -193,29 +193,36 @@ export function PersonPickerSection({
 
   return (
     <>
-      <div className="flex flex-col gap-2">
-        <Label>{merged.billTo}</Label>
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            type="button"
-            variant={billingTarget === "person" ? "default" : "outline"}
-            onClick={() => setPerson({ billTo: "person", organizationId: null })}
-            disabled={!enabled}
-          >
-            <User className="mr-2 h-4 w-4" />
-            {merged.billToPerson}
-          </Button>
-          <Button
-            type="button"
-            variant={billingTarget === "organization" ? "default" : "outline"}
-            onClick={() => setPerson({ billTo: "organization", personId: "" })}
-            disabled={!enabled || !showOrganization}
-          >
-            <Building2 className="mr-2 h-4 w-4" />
-            {merged.billToOrganization}
-          </Button>
+      {/* Bill-to (person vs organization) only makes sense when an
+          organization target is allowed — i.e. the billing lead on a B2B
+          booking. When organizations aren't offered (e.g. a per-traveler
+          picker), skip the toggle entirely and render a plain person
+          picker, rather than showing a disabled "Organization" choice. */}
+      {showOrganization ? (
+        <div className="flex flex-col gap-2">
+          <Label>{merged.billTo}</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant={billingTarget === "person" ? "default" : "outline"}
+              onClick={() => setPerson({ billTo: "person", organizationId: null })}
+              disabled={!enabled}
+            >
+              <User className="mr-2 h-4 w-4" />
+              {merged.billToPerson}
+            </Button>
+            <Button
+              type="button"
+              variant={billingTarget === "organization" ? "default" : "outline"}
+              onClick={() => setPerson({ billTo: "organization", personId: "" })}
+              disabled={!enabled}
+            >
+              <Building2 className="mr-2 h-4 w-4" />
+              {merged.billToOrganization}
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {billingTarget === "person" ? (
         <div className="flex flex-col gap-2">
