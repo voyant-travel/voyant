@@ -11,6 +11,7 @@
 import type { BookingDraftShape } from "@voyantjs/catalog/booking-engine"
 import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
+import { Checkbox } from "@voyantjs/ui/components/checkbox"
 import { CountryCombobox } from "@voyantjs/ui/components/country-combobox"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { Input } from "@voyantjs/ui/components/input"
@@ -19,6 +20,11 @@ import { PhoneInput } from "@voyantjs/ui/components/phone-input"
 import { RadioGroup, RadioGroupItem } from "@voyantjs/ui/components/radio-group"
 import { Textarea } from "@voyantjs/ui/components/textarea"
 import { Loader2 } from "lucide-react"
+import { useState } from "react"
+import {
+  PaymentScheduleSection,
+  type PaymentScheduleValue,
+} from "../../components/payment-schedule-section.js"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import {
   canCopyBillingContactToTraveler,
@@ -32,6 +38,7 @@ import {
   setTravelers,
   totalPax,
 } from "../lib/draft-state.js"
+import { paymentScheduleValueToRows, rowsToPaymentScheduleValue } from "../lib/payment-schedule.js"
 import type {
   LeadContactPickerProps,
   PaymentProviderCapabilities,
@@ -1344,9 +1351,14 @@ export function PaymentStep({
   shape,
   capabilities,
   renderProviderStep,
+  surface,
+  pricing,
 }: StepCommonProps & {
   capabilities: PaymentProviderCapabilities
   renderProviderStep?: (props: PaymentProviderStepRenderProps) => React.ReactNode
+  surface?: "admin" | "public"
+  /** Live quote total + currency — drives the payment-schedule editor defaults. */
+  pricing?: { total: number; currency: string } | null
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   // The descriptor lists what the *engine* supports; capabilities
@@ -1401,6 +1413,13 @@ export function PaymentStep({
           </RadioGroup>
         )}
 
+        {/* Payment schedule (installments) — operator-only; storefront collects
+            a single payment. Persisted on `draft.paymentSchedules`, which the
+            owned handler forwards to the booking-create endpoint. */}
+        {surface !== "public" ? (
+          <PaymentScheduleEditor draft={draft} setDraft={setDraft} pricing={pricing} />
+        ) : null}
+
         {intent === "card" ? (
           renderProviderStep ? (
             <div>
@@ -1430,6 +1449,43 @@ export function PaymentStep({
         ) : null}
       </CardContent>
     </Card>
+  )
+}
+
+/**
+ * Operator-only payment-schedule editor for the journey. Holds the editor
+ * value (`{ mode, installments }`) in local state — stable installment ids
+ * survive re-quotes — and syncs it to `draft.paymentSchedules` on every change.
+ * Re-initialised from the draft when the step remounts (navigation), preserving
+ * any paid-installment metadata via the `notes` round-trip.
+ */
+function PaymentScheduleEditor({
+  draft,
+  setDraft,
+  pricing,
+}: {
+  draft: Draft
+  setDraft: (next: Draft) => void
+  pricing?: { total: number; currency: string } | null
+}): React.ReactElement {
+  const departureDate = draft.configure.departureDate ?? null
+  const [value, setValue] = useState<PaymentScheduleValue>(() =>
+    rowsToPaymentScheduleValue(draft.paymentSchedules, departureDate),
+  )
+  const currency = pricing?.currency ?? ""
+  const total = pricing?.total ?? null
+
+  return (
+    <PaymentScheduleSection
+      value={value}
+      onChange={(next) => {
+        setValue(next)
+        setDraft({ ...draft, paymentSchedules: paymentScheduleValueToRows(next, currency, total) })
+      }}
+      totalAmountCents={total ?? undefined}
+      departureDate={departureDate}
+      currency={currency}
+    />
   )
 }
 
@@ -1557,6 +1613,64 @@ export function ReviewStep({
             />
           </div>
         )}
+        {/* Document generation — operator-only; storefront never chooses this.
+            Proforma vs invoice+contract are mutually exclusive; both off = no
+            documents generated on commit. The owned handler forwards
+            `draft.documentGeneration` to the booking-create endpoint. */}
+        {!isPublic ? (
+          <div className="flex flex-col gap-3 rounded-md border p-3">
+            <Label>{messages.bookingCreateDialog.labels.documentGenerationHeading}</Label>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  id="bj-doc-proforma"
+                  checked={draft.documentGeneration?.invoiceType === "proforma"}
+                  onCheckedChange={(v) =>
+                    setDraft({
+                      ...draft,
+                      documentGeneration:
+                        v === true
+                          ? {
+                              contractDocument: false,
+                              invoiceDocument: true,
+                              invoiceType: "proforma",
+                            }
+                          : undefined,
+                    })
+                  }
+                />
+                <Label htmlFor="bj-doc-proforma" className="cursor-pointer">
+                  {messages.bookingCreateDialog.labels.generateProforma}
+                </Label>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  id="bj-doc-invoice-contract"
+                  checked={
+                    draft.documentGeneration?.contractDocument === true &&
+                    draft.documentGeneration?.invoiceType !== "proforma"
+                  }
+                  onCheckedChange={(v) =>
+                    setDraft({
+                      ...draft,
+                      documentGeneration:
+                        v === true
+                          ? {
+                              contractDocument: true,
+                              invoiceDocument: true,
+                              invoiceType: "invoice",
+                            }
+                          : undefined,
+                    })
+                  }
+                />
+                <Label htmlFor="bj-doc-invoice-contract" className="cursor-pointer">
+                  {messages.bookingCreateDialog.labels.generateInvoiceAndContract}
+                </Label>
+              </div>
+            </div>
+          </div>
+        ) : null}
         {renderExtras ? <div>{renderExtras()}</div> : null}
         <Button onClick={onConfirm} disabled={isCommitting}>
           {isCommitting ? (

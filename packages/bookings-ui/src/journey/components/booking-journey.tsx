@@ -392,6 +392,8 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
                 }
               }
               renderProviderStep={props.renderPaymentProviderStep}
+              surface={surface}
+              pricing={quote.data?.pricing ?? null}
             />
           ) : null}
           {currentStep === "review" ? (
