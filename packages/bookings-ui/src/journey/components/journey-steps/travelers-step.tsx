@@ -4,17 +4,18 @@ import type { BookingDraftShape } from "@voyantjs/catalog/booking-engine"
 import { Separator } from "@voyantjs/ui/components"
 import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
-import { Label } from "@voyantjs/ui/components/label"
+import { Plus } from "lucide-react"
+import { useEffect, useRef } from "react"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../../../i18n/index.js"
 import {
   canCopyBillingContactToTraveler,
   type Draft,
-  patchPaxCount,
+  patchConfigure,
   setTravelers,
   totalPax,
 } from "../../lib/draft-state.js"
 import type { TravelerContactPickerProps } from "../../types.js"
-import { PaxBands, PaxDependencyWarnings } from "./configure-steps.js"
+import { PaxDependencyWarnings, PaxValidation } from "./configure-steps.js"
 import {
   computeAge,
   cryptoRowId,
@@ -30,6 +31,31 @@ import {
 // Travelers
 // ─────────────────────────────────────────────────────────────────
 
+type TravelerBand = Draft["travelers"][number]["band"]
+
+/** Pax counts are DERIVED from the traveler rows — each row's band is the
+ *  source of truth, so the quote always matches who's actually in the list. */
+function paxFromTravelers(
+  travelers: Draft["travelers"],
+  bands: BookingDraftShape["paxBands"],
+): Record<string, number> {
+  const counts: Record<string, number> = {}
+  for (const band of bands) counts[band.code] = 0
+  for (const traveler of travelers) {
+    counts[traveler.band] = (counts[traveler.band] ?? 0) + 1
+  }
+  return counts
+}
+
+/** Commit a new traveler list AND re-derive the band counts in one update. */
+function applyTravelers(
+  draft: Draft,
+  next: Draft["travelers"],
+  bands: BookingDraftShape["paxBands"],
+): Draft {
+  return patchConfigure(setTravelers(draft, next), { pax: paxFromTravelers(next, bands) })
+}
+
 export function TravelersStep({
   draft,
   setDraft,
@@ -41,14 +67,54 @@ export function TravelersStep({
   warnings?: ReadonlyArray<string>
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
-  const total = totalPax(draft)
-  // Auto-resize the travelers list to match pax counts. Newly-added
-  // rows pick a band based on the lowest-count band that's not yet
-  // saturated — naive but predictable.
-  const ensured = ensureTravelerRows(draft, total, shape)
-  if (ensured !== draft.travelers) {
-    setDraft(setTravelers(draft, ensured))
+  const travelers = draft.travelers
+  const bands = shape.paxBands
+  const hasBandChoice = bands.length > 1
+  const { min, max } = shape.paxBandsAllowedTotal
+
+  // Seed the initial rows ONCE: from any pre-set band counts (detail-page
+  // hand-off) or up to the minimum party size, then keep the derived pax in
+  // sync. After this, the rows are authoritative.
+  const seeded = useRef(false)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot seed guarded by the ref
+  useEffect(() => {
+    if (seeded.current) return
+    seeded.current = true
+    const target = Math.max(min, totalPax(draft), travelers.length)
+    if (travelers.length >= target) {
+      // Rows already exist — just make sure the counts reflect them.
+      if (travelers.length > 0) setDraft(applyTravelers(draft, travelers, bands))
+      return
+    }
+    const rows = [...travelers]
+    while (rows.length < target) {
+      rows.push({
+        rowId: cryptoRowId(),
+        firstName: "",
+        lastName: "",
+        band: bandForSeedIndex(draft, rows.length, shape),
+      })
+    }
+    setDraft(applyTravelers(draft, rows, bands))
+  }, [])
+
+  const addTraveler = () => {
+    const band = (bands[0]?.code ?? "adult") as TravelerBand
+    const next = [...travelers, { rowId: cryptoRowId(), firstName: "", lastName: "", band }]
+    setDraft(applyTravelers(draft, next, bands))
   }
+  const removeTraveler = (idx: number) => {
+    setDraft(
+      applyTravelers(
+        draft,
+        travelers.filter((_, i) => i !== idx),
+        bands,
+      ),
+    )
+  }
+
+  const atMax = max != null && travelers.length >= max
+
   return (
     <Card>
       <CardHeader>
@@ -56,42 +122,49 @@ export function TravelersStep({
       </CardHeader>
       <Separator />
       <CardContent className="space-y-4">
-        {/* The traveler counts live here (not in Configure): set how many of
-            each type, and the rows below fill in who they are. The price
-            re-quotes as the counts change. */}
-        <PaxBands draft={draft} setDraft={setDraft} shape={shape} />
+        {travelers.map((traveler, idx) => {
+          const apply: TravelerContactPickerProps["apply"] = (contact) => {
+            const next = [...travelers]
+            next[idx] = {
+              ...next[idx]!,
+              firstName: contact.firstName,
+              lastName: contact.lastName,
+              email: contact.email,
+              phone: contact.phone,
+              personId: contact.personId,
+            }
+            setDraft(applyTravelers(draft, next, bands))
+          }
+          return (
+            <TravelerCard
+              key={traveler.rowId ?? idx}
+              idx={idx}
+              traveler={traveler}
+              shape={shape}
+              draft={draft}
+              setDraft={setDraft}
+              renderTravelerContactPicker={renderTravelerContactPicker}
+              apply={apply}
+              showBandSelect={hasBandChoice}
+              onRemove={travelers.length > 1 ? () => removeTraveler(idx) : undefined}
+            />
+          )
+        })}
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={addTraveler}
+          disabled={atMax}
+          className="w-full"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          {messages.bookingJourney.travelers.addTraveler}
+        </Button>
+
+        <PaxValidation draft={draft} shape={shape} />
         <PaxDependencyWarnings draft={draft} shape={shape} />
-        {ensured.length > 0 ? (
-          <div className="flex flex-col gap-3">
-            <Label>{messages.bookingJourney.travelers.details}</Label>
-            {ensured.map((traveler, idx) => {
-              const apply: TravelerContactPickerProps["apply"] = (contact) => {
-                const next = [...ensured]
-                next[idx] = {
-                  ...next[idx]!,
-                  firstName: contact.firstName,
-                  lastName: contact.lastName,
-                  email: contact.email,
-                  phone: contact.phone,
-                  personId: contact.personId,
-                }
-                setDraft(setTravelers(draft, next))
-              }
-              return (
-                <TravelerCard
-                  key={traveler.rowId ?? idx}
-                  idx={idx}
-                  traveler={traveler}
-                  shape={shape}
-                  draft={draft}
-                  setDraft={setDraft}
-                  renderTravelerContactPicker={renderTravelerContactPicker}
-                  apply={apply}
-                />
-              )
-            })}
-          </div>
-        ) : null}
         <JourneyWarnings warnings={warnings} />
       </CardContent>
     </Card>
@@ -99,15 +172,10 @@ export function TravelersStep({
 }
 
 /**
- * One traveler block — name, optional contact, age, and any
- * descriptor-driven document fields. Honors `appliesToBands` so DOB
- * is required for child / infant bands and adult-only fields like
- * passport drop off the form for non-adult travelers.
- *
- * The first three canonical keys (firstName/lastName/email) are
- * rendered inline as fixed widgets; the rest comes off
- * `shape.travelerFields` so verticals can extend the set without
- * touching the wizard.
+ * One traveler block — type (band) selector, name, optional contact, age, and
+ * any descriptor-driven document fields. Honors `appliesToBands` so DOB is
+ * required for child / infant bands and adult-only fields like passport drop
+ * off the form for non-adult travelers.
  */
 function TravelerCard({
   idx,
@@ -117,6 +185,7 @@ function TravelerCard({
   setDraft,
   renderTravelerContactPicker,
   apply,
+  showBandSelect,
   onRemove,
 }: {
   idx: number
@@ -126,12 +195,11 @@ function TravelerCard({
   setDraft: (next: Draft) => void
   renderTravelerContactPicker?: (props: TravelerContactPickerProps) => React.ReactNode
   apply: TravelerContactPickerProps["apply"]
+  showBandSelect?: boolean
   onRemove?: () => void
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
-  // The band is bookkeeping — only show fields that apply to this
-  // band per the descriptor, but never expose the band tag in the UI.
-  // The user just sees a flat traveler list.
+  const bands = shape.paxBands
   const applicableFields = shape.travelerFields.filter((f) => {
     if (!f.appliesToBands || f.appliesToBands.length === 0) return true
     return f.appliesToBands.includes(traveler.band)
@@ -143,54 +211,53 @@ function TravelerCard({
     (f) => !["firstName", "lastName", "email", "phone", "dateOfBirth"].includes(f.key),
   )
 
-  // Live age from DOB — surfaces in the header so the user gets
-  // feedback as they pick a date.
+  // Live age from DOB — surfaces in the header so the user gets feedback as
+  // they pick a date.
   const computedAge = traveler.dateOfBirth ? computeAge(traveler.dateOfBirth) : null
 
-  // The DOB drives band assignment. When the user picks a date that
-  // would land in a different band, we silently reband the row and
-  // shift the pax counters so the engine quotes the right price.
-  // No "Move to X" prompts — the system just does the right thing.
+  // All row mutations go through here so the derived band counts stay in sync.
+  const patchRow = (patch: Partial<Draft["travelers"][number]>) => {
+    const next = [...draft.travelers]
+    if (!next[idx]) return
+    next[idx] = { ...next[idx], ...patch }
+    setDraft(applyTravelers(draft, next, bands))
+  }
+
+  // Picking a DOB that lands in a different band snaps the type selector to
+  // match, so pricing stays correct.
   const onDobChange = (v: string) => {
     const age = v ? computeAge(v) : null
-    let next = updateTravelerImmutable(draft, idx, { dateOfBirth: v })
+    let band = traveler.band
     if (age != null) {
-      const targetBand = shape.paxBands.find((b) => {
+      const target = bands.find((b) => {
         if (b.minAge != null && age < b.minAge) return false
         if (b.maxAge != null && age > b.maxAge) return false
         return true
       })
-      if (targetBand && targetBand.code !== traveler.band) {
-        next = rebandTraveler(next, idx, traveler.band, targetBand.code)
-      }
+      if (target) band = target.code as TravelerBand
     }
-    setDraft(next)
+    patchRow({ dateOfBirth: v, band })
   }
 
-  // Out-of-range warning — only fires when the entered DOB doesn't
-  // fit ANY of the descriptor's bands (e.g. older than the supplier
-  // accepts). We can't auto-fix that one — the booking would be
-  // rejected and the user needs to know.
+  // Out-of-range warning — only when the DOB fits NO band (e.g. older than the
+  // supplier accepts); we can't auto-fix that, the booking would be rejected.
   const ageOutOfBounds =
     computedAge != null &&
-    !shape.paxBands.some((b) => {
+    !bands.some((b) => {
       if (b.minAge != null && computedAge < b.minAge) return false
       if (b.maxAge != null && computedAge > b.maxAge) return false
       return true
     })
 
-  // Quick-fill from billing — useful when the lead booker is also a
-  // traveler (the common B2C case). Doesn't touch travel-document
-  // fields since those are personal to each traveler.
+  // Quick-fill from billing — useful when the lead booker is also a traveler.
   const billingContact = draft.billing.contact
   const canCopyFromBilling = canCopyBillingContactToTraveler(billingContact)
   const copyFromBilling = () => {
-    updateTraveler(draft, setDraft, idx, {
+    patchRow({
       firstName: billingContact.firstName,
       lastName: billingContact.lastName,
       email: billingContact.email || undefined,
       phone: billingContact.phone || undefined,
-      // Carry the linked CRM person so the picker shows it as selected.
       personId: billingContact.personId || undefined,
     })
   }
@@ -237,6 +304,16 @@ function TravelerCard({
           ) : null}
         </div>
       </div>
+      {/* Traveler type — only when the product distinguishes bands. */}
+      {showBandSelect ? (
+        <SelectField
+          id={`bj-trav-${idx}-band`}
+          label={messages.bookingJourney.travelers.travelerType}
+          value={traveler.band}
+          options={bands.map((b) => ({ value: b.code, label: b.label }))}
+          onChange={(code) => patchRow({ band: code as TravelerBand })}
+        />
+      ) : null}
       {/* Link an existing CRM contact (or create one) — full-width, the
           primary action; it auto-fills the name fields below. */}
       {renderTravelerContactPicker ? (
@@ -253,13 +330,13 @@ function TravelerCard({
           id={`bj-trav-${idx}-first`}
           label={messages.bookingJourney.billing.firstName}
           value={traveler.firstName}
-          onChange={(v) => updateTraveler(draft, setDraft, idx, { firstName: v })}
+          onChange={(v) => patchRow({ firstName: v })}
         />
         <Field
           id={`bj-trav-${idx}-last`}
           label={messages.bookingJourney.billing.lastName}
           value={traveler.lastName}
-          onChange={(v) => updateTraveler(draft, setDraft, idx, { lastName: v })}
+          onChange={(v) => patchRow({ lastName: v })}
         />
         {applicableFields.some((f) => f.key === "email") ? (
           <Field
@@ -267,7 +344,7 @@ function TravelerCard({
             label={messages.bookingJourney.billing.email}
             type="email"
             value={traveler.email ?? ""}
-            onChange={(v) => updateTraveler(draft, setDraft, idx, { email: v })}
+            onChange={(v) => patchRow({ email: v })}
           />
         ) : null}
         {phoneField ? (
@@ -276,7 +353,7 @@ function TravelerCard({
             // i18n-literal-ok Required marker appended to a descriptor-supplied field label.
             label={phoneField.label + (phoneField.required ? " *" : "")}
             value={traveler.phone ?? ""}
-            onChange={(v) => updateTraveler(draft, setDraft, idx, { phone: v })}
+            onChange={(v) => patchRow({ phone: v })}
           />
         ) : null}
         {dobField ? (
@@ -302,9 +379,7 @@ function TravelerCard({
         {dynamicFields.map((field) => {
           const value = (traveler.documents?.[field.key] as string | undefined) ?? ""
           const onFieldChange = (v: string) =>
-            updateTraveler(draft, setDraft, idx, {
-              documents: { ...traveler.documents, [field.key]: v },
-            })
+            patchRow({ documents: { ...traveler.documents, [field.key]: v } })
           // i18n-literal-ok Required marker appended to a descriptor-supplied field label.
           const labelText = field.label + (field.required ? " *" : "")
           if (field.type === "select" && field.options) {
@@ -347,83 +422,15 @@ function TravelerCard({
   )
 }
 
-function ensureTravelerRows(
-  draft: Draft,
-  total: number,
-  shape: BookingDraftShape,
-): Draft["travelers"] {
-  // Return the same reference when no resize is needed — the caller
-  // uses identity equality to decide whether to call setDraft, and a
-  // fresh array on every render would loop infinitely (set during
-  // render → re-render → set again).
-  if (draft.travelers.length === total) return draft.travelers
-  const list = [...draft.travelers]
-  while (list.length > total) list.pop()
-  while (list.length < total) {
-    const idx = list.length
-    const band = pickBandForIndex(draft, idx, shape)
-    list.push({
-      rowId: cryptoRowId(),
-      firstName: "",
-      lastName: "",
-      band,
-    })
-  }
-  return list
-}
-
-function pickBandForIndex(
-  draft: Draft,
-  idx: number,
-  shape: BookingDraftShape,
-): "adult" | "child" | "infant" | "senior" | "student" | "other" {
-  // Pick by remaining quota: distribute travelers in band order based
-  // on counts in `configure.pax`.
+/** Band for a freshly-seeded row at `idx`, distributing across any pre-set
+ *  band counts in order (so a detail-page hand-off of 1 adult + 1 child seeds
+ *  the right two rows). Falls back to the first band. */
+function bandForSeedIndex(draft: Draft, idx: number, shape: BookingDraftShape): TravelerBand {
   let cursor = 0
   for (const band of shape.paxBands) {
     const count = draft.configure.pax?.[band.code] ?? 0
-    if (idx < cursor + count) {
-      return (band.code as "adult" | "child" | "infant" | "senior" | "student" | "other") ?? "adult"
-    }
+    if (idx < cursor + count) return band.code as TravelerBand
     cursor += count
   }
-  return "adult"
-}
-
-function updateTraveler(
-  draft: Draft,
-  setDraft: (next: Draft) => void,
-  idx: number,
-  patch: Partial<Draft["travelers"][number]>,
-): void {
-  setDraft(updateTravelerImmutable(draft, idx, patch))
-}
-
-/**
- * Patch one traveler row and return a new draft. Useful when the
- * caller wants to chain multiple draft updates (e.g. setting DOB +
- * rebanding) into a single setDraft call.
- */
-function updateTravelerImmutable(
-  draft: Draft,
-  idx: number,
-  patch: Partial<Draft["travelers"][number]>,
-): Draft {
-  const next = [...draft.travelers]
-  if (!next[idx]) return draft
-  next[idx] = { ...next[idx], ...patch }
-  return setTravelers(draft, next)
-}
-
-/**
- * Move one traveler row from one band to another, keeping the pax
- * counters consistent. Used by the auto-reband path on DOB change.
- */
-function rebandTraveler(draft: Draft, idx: number, fromBand: string, toBand: string): Draft {
-  const fromCount = draft.configure.pax?.[fromBand] ?? 0
-  const toCount = draft.configure.pax?.[toBand] ?? 0
-  let next = updateTravelerImmutable(draft, idx, { band: toBand as never })
-  next = patchPaxCount(next, fromBand, Math.max(0, fromCount - 1))
-  next = patchPaxCount(next, toBand, toCount + 1)
-  return next
+  return (shape.paxBands[0]?.code ?? "adult") as TravelerBand
 }

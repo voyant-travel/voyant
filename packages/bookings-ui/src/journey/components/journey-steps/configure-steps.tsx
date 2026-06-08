@@ -212,7 +212,7 @@ export function PaxBands({ draft, setDraft, shape }: StepCommonProps): React.Rea
   )
 }
 
-function PaxValidation({
+export function PaxValidation({
   draft,
   shape,
 }: {

@@ -696,6 +696,7 @@ export type BookingsUiMessages = {
       increase: string
       empty: string
       addTraveler: string
+      travelerType: string
       travelerNumber: string
       ageLabel: string
       copyFromBilling: string

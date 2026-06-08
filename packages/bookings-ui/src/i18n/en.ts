@@ -866,6 +866,7 @@ export const bookingsUiEn = {
       increase: "Increase {label}",
       empty: "Pick traveler counts in the Configure step to start adding details.",
       addTraveler: "Add traveler",
+      travelerType: "Traveler type",
       travelerNumber: "Traveler {number}",
       ageLabel: "age {age}",
       copyFromBilling: "Copy from billing",
