@@ -1,8 +1,8 @@
 import type { BookingPiiService } from "@voyantjs/bookings"
 import { bookingItems, bookings, bookingTravelers } from "@voyantjs/bookings/schema"
 import { createEventBus } from "@voyantjs/core"
-import { invoices, payments } from "@voyantjs/finance/schema"
-import { eq } from "drizzle-orm"
+import { bookingPaymentSchedules, invoices, payments } from "@voyantjs/finance/schema"
+import { eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 
@@ -463,6 +463,132 @@ describe.skipIf(!DB_AVAILABLE)("autoGenerateContractForBooking", () => {
     expect(paymentVariables.method).toBe("Bank Transfer")
     expect(paymentVariables.capturedAt).toBe("2026-05-04")
     expect(bodies[0]).toContain("Paid 32000 | Balance 0 | Latest Bank Transfer")
+  })
+
+  it("derives payment schedule aliases and rooms summary from the booking", async () => {
+    const { template, version } = await seedTemplate("cust-schedule-rooms-1")
+    await db
+      .update(contractTemplateVersions)
+      .set({
+        body: [
+          "Deposit {{ booking.depositAmountCents }} due {{ booking.depositDueDate }}",
+          "Balance {{ booking.balanceAmountCents }} due {{ booking.balanceDueDate }}",
+          "Rooms {{ booking.roomsSummary }}",
+          "Schedule {% for line in payment.schedule %}{{ line.type }}:{{ line.amountCents }}{% unless forloop.last %}, {% endunless %}{% endfor %}",
+        ].join(" | "),
+      })
+      .where(eq(contractTemplateVersions.id, version.id))
+
+    const booking = await seedBooking({
+      sellCurrency: "RON",
+      sellAmountCents: 120000,
+    })
+    await db.execute(sql`
+      INSERT INTO products (id, name, sell_currency)
+      VALUES ('prod_contract_room_units', 'Moldova Circuit', 'RON')
+    `)
+    await db.execute(sql`
+      INSERT INTO product_options (id, product_id, name)
+      VALUES ('opto_contract_room_units', 'prod_contract_room_units', 'Standard package')
+    `)
+    await db.execute(sql`
+      INSERT INTO option_units (id, option_id, name, unit_type)
+      VALUES
+        ('unit_contract_adult', 'opto_contract_room_units', 'Adult', 'person'),
+        ('unit_contract_dbl_room', 'opto_contract_room_units', 'DBL room', 'room')
+    `)
+    await db.insert(bookingItems).values([
+      {
+        bookingId: booking.id,
+        title: "Tour package",
+        itemType: "unit",
+        status: "confirmed",
+        quantity: 2,
+        sellCurrency: "RON",
+        unitSellAmountCents: 30000,
+        totalSellAmountCents: 60000,
+        productNameSnapshot: "Moldova Circuit",
+        optionNameSnapshot: "Standard package",
+        optionUnitId: "unit_contract_adult",
+        unitNameSnapshot: "Adult",
+      },
+      {
+        bookingId: booking.id,
+        title: "DBL room",
+        itemType: "unit",
+        status: "confirmed",
+        quantity: 1,
+        sellCurrency: "RON",
+        unitSellAmountCents: 60000,
+        totalSellAmountCents: 60000,
+        productNameSnapshot: "Moldova Circuit",
+        optionNameSnapshot: "DBL",
+        optionUnitId: "unit_contract_dbl_room",
+        unitNameSnapshot: "DBL room",
+      },
+    ])
+    await db.insert(bookingPaymentSchedules).values([
+      {
+        bookingId: booking.id,
+        scheduleType: "deposit",
+        status: "paid",
+        dueDate: "2026-05-01",
+        currency: "RON",
+        amountCents: 30000,
+      },
+      {
+        bookingId: booking.id,
+        scheduleType: "balance",
+        status: "pending",
+        dueDate: "2026-06-01",
+        currency: "RON",
+        amountCents: 90000,
+      },
+    ])
+
+    const bodies: string[] = []
+    const outcome = await autoGenerateContractForBooking(
+      db,
+      { bookingId: booking.id, bookingNumber: booking.bookingNumber, actorId: null },
+      { enabled: true, templateSlug: template.slug },
+      { generator: makeGenerator(bodies) },
+    )
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+
+    const contract = await contractRecordsService.getContractById(db, outcome.contractId)
+    const variables = contract?.variables as Record<string, unknown>
+    const bookingVariables = variables.booking as Record<string, unknown>
+    const paymentVariables = variables.payment as Record<string, unknown>
+
+    expect(bookingVariables).toMatchObject({
+      depositAmountCents: 30000,
+      depositDueDate: "2026-05-01",
+      balanceAmountCents: 90000,
+      balanceDueDate: "2026-06-01",
+      roomsSummary: "1× DBL room",
+    })
+    expect(paymentVariables.schedule).toMatchObject([
+      {
+        index: 1,
+        type: "deposit",
+        amountCents: 30000,
+        currency: "RON",
+        dueDate: "2026-05-01",
+        status: "paid",
+      },
+      {
+        index: 2,
+        type: "balance",
+        amountCents: 90000,
+        currency: "RON",
+        dueDate: "2026-06-01",
+        status: "pending",
+      },
+    ])
+    expect(bodies[0]).toContain(
+      "Deposit 30000 due 2026-05-01 | Balance 90000 due 2026-06-01 | Rooms 1× DBL room | Schedule deposit:30000, balance:90000",
+    )
   })
 
   it("resolves a series by name and writes seriesId onto the contract", async () => {
