@@ -897,6 +897,9 @@ export const bookingsUiRo = {
       cardOperatorLabel: "Link de plata online",
       cardOperatorDescription:
         "Clientul plateste online printr-un link securizat dupa confirmare. Nu se incaseaza instant; inventarul este rezervat la confirmare.",
+      generateLinkLabel: "Genereaza un link de plata online",
+      generateLinkHint:
+        "Clientul primeste un link securizat pentru a plati online dupa confirmare. Lasa nebifat pentru a doar rezerva si a incasa mai tarziu.",
       inquiryNotice:
         "Vom trimite detaliile tale catre operator fara a bloca inventar sau a incasa plata. Operatorul va reveni cu disponibilitate si oferta - de obicei intr-o zi lucratoare.",
       bankTransferInstructions: "Instructiuni transfer bancar",

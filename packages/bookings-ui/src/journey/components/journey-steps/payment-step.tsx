@@ -52,11 +52,26 @@ export function PaymentStep({
   const allowed = shape.paymentIntents.filter((i) => isCapabilityEnabled(i, capabilities))
   const intent = draft.payment.intent
 
-  // Snap the draft's intent to the first allowed value when the
-  // current pick isn't on the list — covers descriptor changes
-  // mid-flow (e.g. owned→sourced switch narrows the list).
+  // Admin simplification: when the only choices are reserve-now (hold) and an
+  // online payment link (card), don't make it a radio — the booking is always
+  // reserved; a single checkbox decides whether to ALSO send a payment link.
+  const simpleHoldCard =
+    surface === "admin" &&
+    allowed.length > 0 &&
+    allowed.includes("hold") &&
+    allowed.includes("card") &&
+    allowed.every((i) => i === "hold" || i === "card")
+
+  // Snap the draft's intent to a sensible value when the current pick isn't on
+  // the list — covers descriptor changes mid-flow (e.g. owned→sourced narrows
+  // the list). In checkbox mode the baseline is always "hold".
   if (allowed.length > 0 && !allowed.includes(intent)) {
-    setDraft(setPayment(draft, { ...draft.payment, intent: allowed[0] as never }))
+    setDraft(
+      setPayment(draft, {
+        ...draft.payment,
+        intent: (simpleHoldCard ? "hold" : allowed[0]) as never,
+      }),
+    )
   }
 
   return (
@@ -68,6 +83,29 @@ export function PaymentStep({
       <CardContent className="space-y-4">
         {allowed.length === 0 ? (
           <p className="text-muted-foreground text-sm">{messages.bookingJourney.payment.empty}</p>
+        ) : simpleHoldCard ? (
+          // biome-ignore lint/a11y/noLabelWithoutControl: Checkbox renders the control
+          <label className="flex cursor-pointer items-start gap-3 rounded-md border border-input p-3 text-sm transition-colors hover:bg-muted/50">
+            <Checkbox
+              id="bj-generate-link"
+              checked={intent === "card"}
+              onCheckedChange={(v) =>
+                setDraft(
+                  setPayment(draft, {
+                    ...draft.payment,
+                    intent: (v === true ? "card" : "hold") as never,
+                  }),
+                )
+              }
+              className="mt-0.5"
+            />
+            <div className="space-y-0.5">
+              <div className="font-medium">{messages.bookingJourney.payment.generateLinkLabel}</div>
+              <div className="text-muted-foreground text-xs">
+                {messages.bookingJourney.payment.generateLinkHint}
+              </div>
+            </div>
+          </label>
         ) : (
           <RadioGroup
             value={intent}
@@ -115,11 +153,12 @@ export function PaymentStep({
                 capabilities,
               })}
             </div>
-          ) : (
+          ) : simpleHoldCard ? null : (
             // Most deployments use a redirect-style PSP (Netopia / Stripe
             // Checkout / etc) where the journey hands off to a hosted
             // payment page after the customer accepts the contract. Inline
             // card collection is opt-in via `renderPaymentProviderStep`.
+            // In checkbox mode the checkbox hint already explains this.
             <p className="text-muted-foreground text-sm">
               {surface === "admin"
                 ? messages.bookingJourney.payment.linkSentAfterConfirm
@@ -136,9 +175,9 @@ export function PaymentStep({
           </p>
         ) : null}
 
-        {/* Operator-only finalization (notes, price override, voucher, document
-            generation) — lives here on the admin surface since the stacked
-            layout has no Review block. */}
+        {/* Operator-only, payment-related finalize controls: manual price
+            override + voucher (they change the amount due). Internal notes and
+            document generation live in the separate Documents step. */}
         {surface !== "public" ? (
           <>
             <Separator />
