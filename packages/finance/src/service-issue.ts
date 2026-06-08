@@ -5,6 +5,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { resolveBookingSellTaxRate } from "./booking-tax.js"
 import { resolveInvoiceFxContext } from "./invoice-fx.js"
+import { isInvoiceNumberUniqueConstraintError } from "./invoice-number-errors.js"
 import {
   bookingItemTaxLines,
   bookingPaymentSchedules,
@@ -623,21 +624,6 @@ function deriveInvoiceNumberFromProforma(proformaNumber: string): string {
     return proformaNumber.replace(/^PRO-/i, "INV-")
   }
   return `${proformaNumber}-INV`
-}
-
-function isInvoiceNumberUniqueConstraintError(error: unknown) {
-  if (!error || typeof error !== "object") return false
-  const candidate = error as { code?: unknown; constraint?: unknown; detail?: unknown }
-  if (candidate.code !== "23505") return false
-  const constraint = typeof candidate.constraint === "string" ? candidate.constraint : ""
-  const detail = typeof candidate.detail === "string" ? candidate.detail : ""
-  return (
-    constraint === "invoices_invoice_number_type_active_idx" ||
-    constraint === "invoices_invoice_number_type_unique" ||
-    constraint === "invoices_invoice_number_unique" ||
-    constraint === "invoices_invoice_number_key" ||
-    detail.includes("invoice_number")
-  )
 }
 
 function buildClientName(booking: typeof bookings.$inferSelect | undefined): string {

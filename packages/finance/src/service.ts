@@ -24,6 +24,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 import { resolveFxMoneyBaseAmount } from "./fx-money.js"
 import type { InvoiceFxOptions } from "./invoice-fx.js"
+import { isInvoiceNumberUniqueConstraintError } from "./invoice-number-errors.js"
 import {
   bookingGuarantees,
   bookingItemCommissions,
@@ -851,21 +852,6 @@ function resolveBookingInvoiceBaseAmount(
   if (invoiceCurrency !== booking.sellCurrency || booking.baseSellAmountCents == null) return null
   if (!booking.sellAmountCents || booking.sellAmountCents <= 0) return booking.baseSellAmountCents
   return Math.round((amountCents / booking.sellAmountCents) * booking.baseSellAmountCents)
-}
-
-function isInvoiceNumberUniqueConstraintError(error: unknown) {
-  if (!error || typeof error !== "object") return false
-  const candidate = error as { code?: unknown; constraint?: unknown; detail?: unknown }
-  if (candidate.code !== "23505") return false
-  const constraint = typeof candidate.constraint === "string" ? candidate.constraint : ""
-  const detail = typeof candidate.detail === "string" ? candidate.detail : ""
-  return (
-    constraint === "invoices_invoice_number_type_active_idx" ||
-    constraint === "invoices_invoice_number_type_unique" ||
-    constraint === "invoices_invoice_number_unique" ||
-    constraint === "invoices_invoice_number_key" ||
-    detail.includes("invoice_number")
-  )
 }
 
 function toTimestamp(value?: string | null) {
