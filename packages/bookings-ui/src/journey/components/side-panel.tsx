@@ -34,6 +34,7 @@ export function PriceSidePanel({
   isCommitting,
   canConfirm,
   commitError,
+  pricingExtras,
 }: SidePanelState & {
   className?: string
   /** When provided (stacked admin layout), the side panel becomes the
@@ -42,6 +43,9 @@ export function PriceSidePanel({
   isCommitting?: boolean
   canConfirm?: boolean
   commitError?: unknown
+  /** Operator-only price controls (override + voucher) rendered with the
+   *  pricing, where they're most in context. */
+  pricingExtras?: React.ReactNode
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   // Only surface pricing once the user has configured what actually drives
@@ -113,6 +117,8 @@ export function PriceSidePanel({
             </div>
           </div>
         ) : null}
+
+        {pricingExtras ? <div className="border-t pt-4">{pricingExtras}</div> : null}
 
         {onConfirm ? (
           <div className="space-y-2 border-t pt-4">

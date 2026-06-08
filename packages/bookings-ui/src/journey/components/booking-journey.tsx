@@ -52,6 +52,7 @@ import {
   BillingStep,
   DepartureStep,
   DocumentsStep,
+  FinalizeControls,
   OptionsStep,
   PaymentStep,
   ReviewStep,
@@ -503,6 +504,14 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             isCommitting={commit.isPending || isHandlingCheckout}
             canConfirm={canCommit}
             commitError={commit.error}
+            // Price override + voucher live with the pricing, not in Payment.
+            pricingExtras={
+              <FinalizeControls
+                draft={draft}
+                setDraft={setDraft}
+                pricing={quote.data?.pricing ?? null}
+              />
+            }
           />
         }
         contractDialog={

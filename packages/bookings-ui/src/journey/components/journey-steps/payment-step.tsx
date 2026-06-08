@@ -174,16 +174,6 @@ export function PaymentStep({
             {messages.bookingJourney.payment.inquiryNotice}
           </p>
         ) : null}
-
-        {/* Operator-only, payment-related finalize controls: manual price
-            override + voucher (they change the amount due). Internal notes and
-            document generation live in the separate Documents step. */}
-        {surface !== "public" ? (
-          <>
-            <Separator />
-            <FinalizeControls draft={draft} setDraft={setDraft} pricing={pricing} />
-          </>
-        ) : null}
       </CardContent>
     </Card>
   )
