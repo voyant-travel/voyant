@@ -779,6 +779,10 @@ export const bookingsUiRo = {
       back: "Inapoi",
       next: "Urmatorul",
       checking: "Se verifica...",
+      continue: "Continua",
+      edit: "Editeaza",
+      done: "Gata",
+      cancel: "Anuleaza",
     },
     values: {
       noValue: "—",

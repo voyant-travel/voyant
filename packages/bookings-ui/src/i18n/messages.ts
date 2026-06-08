@@ -621,6 +621,10 @@ export type BookingsUiMessages = {
       back: string
       next: string
       checking: string
+      continue: string
+      edit: string
+      done: string
+      cancel: string
     }
     values: {
       noValue: string

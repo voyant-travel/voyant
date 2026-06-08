@@ -780,6 +780,10 @@ export const bookingsUiEn = {
       back: "Back",
       next: "Next",
       checking: "Checking...",
+      continue: "Continue",
+      edit: "Edit",
+      done: "Done",
+      cancel: "Cancel",
     },
     values: {
       noValue: "—",

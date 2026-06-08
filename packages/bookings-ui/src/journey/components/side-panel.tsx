@@ -182,7 +182,7 @@ function StepSummaryLine({
   return <span className="text-muted-foreground text-xs">{text}</span>
 }
 
-function stepHeadline(
+export function stepHeadline(
   step: JourneyStep,
   draft: NonNullable<SidePanelState["draft"]>,
   messages: ReturnType<typeof useBookingsUiMessagesOrDefault>,

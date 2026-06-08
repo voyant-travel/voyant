@@ -34,6 +34,7 @@ import {
 import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import { Check, Lock } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import { type Draft, emptyDraft, totalPax } from "../lib/draft-state.js"
@@ -55,7 +56,7 @@ import {
   ReviewStep,
   TravelersStep,
 } from "./journey-steps.js"
-import { PriceSidePanel } from "./side-panel.js"
+import { PriceSidePanel, stepHeadline } from "./side-panel.js"
 import { StepHeader } from "./step-header.js"
 
 export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
@@ -466,13 +467,12 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
       <StackedJourney
         className={props.className}
         steps={steps}
-        shape={shape}
-        firstIncomplete={firstIncomplete}
         renderStep={renderStep}
+        isStepComplete={(s) => canAdvanceFromStep(s, draft, shape, available)}
+        summaryFor={(s) => stepHeadline(s, draft, messages)}
         warningsForStep={(s) => warningsForStep(s, draft, shape, messages)}
         commitError={commit.error}
         onCancel={props.onCancelled}
-        cancelLabel={messages.bookingJourney.navigation.back}
         sidePanel={
           <PriceSidePanel
             pricing={quote.data?.pricing ?? null}
@@ -679,60 +679,132 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
 const sectionId = (step: JourneyStep): string => `bj-section-${step}`
 
 /**
- * The admin's single-page booking layout — every section stacked as its
- * own block so nothing is hidden. A sticky section nav (the same numbered
- * stepper) scroll-jumps between blocks and highlights the first section
- * that still needs attention. Each block carries its own inline warnings;
- * the Review block's Confirm is gated on the whole booking being valid.
+ * The admin's guided single-page layout — every section is a block on one
+ * page, but content stays collapsed until the previous section is complete,
+ * so the operator fills them in sequence and focuses on one at a time.
+ *
+ *  - LOCKED (a prior section isn't done): a muted, disabled summary row.
+ *  - ACTIVE (the first not-yet-done section): expanded with its full
+ *    content + a "Continue" button (enabled once the section is valid).
+ *  - DONE (passed via Continue): collapses to a one-line summary row with a
+ *    check — click to re-open and edit, so nothing entered is ever lost.
+ *
+ * Completeness derives from the same per-step gate the wizard uses; the
+ * final Review section's Confirm is gated on the whole booking.
  */
 function StackedJourney({
   className,
   steps,
-  shape,
-  firstIncomplete,
   renderStep,
+  isStepComplete,
+  summaryFor,
   warningsForStep,
   commitError,
   onCancel,
-  cancelLabel,
   sidePanel,
   contractDialog,
 }: {
   className?: string
   steps: ReadonlyArray<JourneyStep>
-  shape: BookingDraftShape
-  firstIncomplete: JourneyStep
   renderStep: (step: JourneyStep) => React.ReactNode
+  isStepComplete: (step: JourneyStep) => boolean
+  summaryFor: (step: JourneyStep) => string
   warningsForStep: (step: JourneyStep) => ReadonlyArray<string>
   commitError: unknown
   onCancel?: () => void
-  cancelLabel: string
   sidePanel: React.ReactNode
   contractDialog: React.ReactNode
 }): React.ReactElement {
-  const scrollToStep = (step: JourneyStep) => {
+  const messages = useBookingsUiMessagesOrDefault()
+  const nav = messages.bookingJourney.navigation
+  // How far the operator has advanced (via Continue), plus an optional
+  // "re-open a done section to edit" override.
+  const [activeStep, setActiveStep] = useState<JourneyStep>(() => steps[0] ?? "departure")
+  const [editing, setEditing] = useState<JourneyStep | null>(null)
+
+  // Keep the active pointer valid as the visible step set changes.
+  useEffect(() => {
+    if (!steps.includes(activeStep)) {
+      setActiveStep(steps[0] ?? "departure")
+      setEditing(null)
+    }
+  }, [steps, activeStep])
+
+  const activeIndex = steps.indexOf(activeStep)
+  const lastStep = steps[steps.length - 1]
+  const openStep = editing ?? activeStep
+
+  const scrollTo = (step: JourneyStep) => {
     if (typeof document === "undefined") return
     document.getElementById(sectionId(step))?.scrollIntoView({ behavior: "smooth", block: "start" })
   }
+  const goNext = () => {
+    const nextStep = steps[activeIndex + 1]
+    if (!nextStep) return
+    setActiveStep(nextStep)
+    setEditing(null)
+    scrollTo(nextStep)
+  }
+  const openForEdit = (step: JourneyStep) => {
+    setEditing(step)
+    scrollTo(step)
+  }
+  const backToCurrent = () => {
+    setEditing(null)
+    scrollTo(activeStep)
+  }
+
   return (
     <div className={className}>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-8 md:items-start">
-        <div className="space-y-6 md:col-span-5">
-          {/* Sticky section nav — jump to any block, see what's still open. */}
-          <div className="-mx-1 sticky top-0 z-10 bg-background/85 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-            <StepHeader
-              current={firstIncomplete}
-              visited={[...steps]}
-              steps={steps}
-              shape={shape}
-              onJumpTo={scrollToStep}
-            />
-          </div>
+        <div className="space-y-3 md:col-span-5">
+          {steps.map((step, i) => {
+            const status: "done" | "active" | "locked" =
+              i < activeIndex ? "done" : i === activeIndex ? "active" : "locked"
+            const isOpen = step === openStep
 
-          {steps.map((step) => {
+            // Collapsed: a done/active summary row (click to open) or a
+            // locked row. The active step only appears here when the operator
+            // has popped open an earlier section to edit it.
+            if (!isOpen) {
+              const openable = status !== "locked"
+              const summary = openable ? summaryFor(step) : ""
+              return (
+                <button
+                  key={step}
+                  type="button"
+                  id={sectionId(step)}
+                  disabled={!openable}
+                  onClick={
+                    openable
+                      ? () => (status === "active" ? backToCurrent() : openForEdit(step))
+                      : undefined
+                  }
+                  className={`flex w-full scroll-mt-4 items-center gap-3 rounded-md border p-4 text-left transition-colors ${
+                    openable ? "hover:bg-muted/50" : "opacity-60"
+                  }`}
+                >
+                  <StepBadge n={i + 1} status={status} />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium text-sm">{messages.bookingJourney.steps[step]}</div>
+                    {summary ? (
+                      <div className="truncate text-muted-foreground text-xs">{summary}</div>
+                    ) : null}
+                  </div>
+                  {status === "locked" ? (
+                    <Lock className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <span className="text-muted-foreground text-xs">{nav.edit}</span>
+                  )}
+                </button>
+              )
+            }
+
+            // Open: full section content + a footer action.
             const stepWarnings = warningsForStep(step)
+            const isEditingDone = editing === step && step !== activeStep
             return (
-              <section key={step} id={sectionId(step)} className="scroll-mt-24 space-y-2">
+              <section key={step} id={sectionId(step)} className="scroll-mt-4 space-y-2">
                 {renderStep(step)}
                 {stepWarnings.length > 0 ? (
                   <ul className="space-y-1 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900 text-sm dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
@@ -740,6 +812,22 @@ function StackedJourney({
                       <li key={w}>⚠ {w}</li>
                     ))}
                   </ul>
+                ) : null}
+                {isEditingDone ? (
+                  <Button type="button" variant="outline" onClick={backToCurrent}>
+                    {nav.done}
+                  </Button>
+                ) : step !== lastStep ? (
+                  <div className="flex">
+                    <Button
+                      type="button"
+                      className="ml-auto"
+                      onClick={goNext}
+                      disabled={!isStepComplete(step)}
+                    >
+                      {nav.continue}
+                    </Button>
+                  </div>
                 ) : null}
               </section>
             )
@@ -751,9 +839,9 @@ function StackedJourney({
             </p>
           ) : null}
 
-          <div>
-            <Button type="button" variant="outline" onClick={() => onCancel?.()}>
-              {cancelLabel}
+          <div className="pt-1">
+            <Button type="button" variant="ghost" size="sm" onClick={() => onCancel?.()}>
+              {nav.cancel}
             </Button>
           </div>
         </div>
@@ -762,6 +850,29 @@ function StackedJourney({
       </div>
       {contractDialog}
     </div>
+  )
+}
+
+/** Step status pip — a check when done, the number when active/locked. */
+function StepBadge({
+  n,
+  status,
+}: {
+  n: number
+  status: "done" | "active" | "locked"
+}): React.ReactElement {
+  return (
+    <span
+      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs ${
+        status === "active"
+          ? "bg-primary text-primary-foreground"
+          : status === "done"
+            ? "bg-primary/15 text-primary"
+            : "bg-muted text-muted-foreground"
+      }`}
+    >
+      {status === "done" ? <Check className="h-3.5 w-3.5" /> : n}
+    </span>
   )
 }
 
