@@ -47,13 +47,12 @@ import {
 } from "@voyantjs/ui/components/table"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Download, Share2 } from "lucide-react"
-import { useMemo, useState } from "react"
+import { type ReactNode, useMemo, useState } from "react"
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from "recharts"
 
-import { useFinanceUiMessagesOrDefault } from "../i18n/index.js"
+import { useFinanceUiI18nOrDefault } from "../i18n/index.js"
 import { AccountantShareDialog } from "./accountant-share-dialog.js"
 import { AsyncCombobox, localOptionSearch } from "./async-combobox.js"
-import { formatInvoiceAmount } from "./invoice-table-parts.js"
 
 const CHART_DEPARTURE_LIMIT = 12
 const PIE_COLORS = [
@@ -66,6 +65,8 @@ const PIE_COLORS = [
   "hsl(160 60% 45%)",
   "hsl(28 80% 52%)",
 ]
+
+type CurrencyFormatOptions = Omit<Intl.NumberFormatOptions, "currency" | "style">
 
 export interface ProfitabilityExportFilters {
   from?: string
@@ -84,12 +85,50 @@ function marginText(value: number | null): string {
   return value == null ? "—" : `${value.toFixed(1)}%`
 }
 
+function formatMoneyCents(
+  cents: number,
+  currency: string,
+  formatCurrency: (value: number, currency: string, options?: CurrencyFormatOptions) => string,
+): string {
+  if (!currency) return "—"
+  return formatCurrency(cents / 100, currency)
+}
+
+function chartTooltipLabel(name: unknown, config: ChartConfig): ReactNode {
+  const key = String(name)
+  return config[key]?.label ?? key
+}
+
+function ChartTooltipAmountRow({
+  color,
+  label,
+  value,
+}: {
+  color: string | undefined
+  label: ReactNode
+  value: string
+}) {
+  return (
+    <>
+      <div
+        className="size-2.5 shrink-0 rounded-[2px] border"
+        style={{ backgroundColor: color, borderColor: color }}
+      />
+      <div className="flex flex-1 items-center justify-between gap-4 leading-none">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-mono font-medium text-foreground tabular-nums">{value}</span>
+      </div>
+    </>
+  )
+}
+
 export function ProfitabilityPage({
   className,
   onExportDepartures,
   onExportProducts,
 }: ProfitabilityPageProps = {}) {
-  const t = useFinanceUiMessagesOrDefault().profitability
+  const i18n = useFinanceUiI18nOrDefault()
+  const t = i18n.messages.profitability
 
   const [from, setFrom] = useState<string>("")
   const [to, setTo] = useState<string>("")
@@ -252,16 +291,25 @@ export function ProfitabilityPage({
     serviceTypeData.map((d) => [d.serviceType, { label: d.label, color: d.fill }]),
   )
 
-  const money = (cents: number) => formatInvoiceAmount(cents, activeCurrency)
+  const money = (cents: number) => formatMoneyCents(cents, activeCurrency, i18n.formatCurrency)
+  const moneyAmount = (amount: number) =>
+    activeCurrency ? i18n.formatCurrency(amount, activeCurrency) : String(amount)
+  const compactMoneyAmount = (amount: number) =>
+    activeCurrency
+      ? i18n.formatCurrency(amount, activeCurrency, {
+          maximumFractionDigits: 1,
+          notation: "compact",
+        })
+      : String(amount)
 
   return (
-    <div className={cn("flex flex-col gap-6 p-6", className)}>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
+    <div className={cn("flex min-w-0 flex-col gap-6 overflow-hidden p-6", className)}>
+      <div className="flex min-w-0 flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
           <p className="text-sm text-muted-foreground">{t.description}</p>
         </div>
-        <div className="flex flex-wrap items-end gap-3">
+        <div className="flex min-w-0 flex-1 flex-wrap items-end justify-end gap-3">
           <Button variant="outline" onClick={() => setShareOpen(true)}>
             <Share2 className="size-4" />
             {t.share.button}
@@ -282,7 +330,7 @@ export function ProfitabilityPage({
                 onValueChange={(v) => setCurrency(v ?? "")}
                 disabled={!currencies.length}
               >
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-32 max-w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -311,7 +359,7 @@ export function ProfitabilityPage({
           <div className="flex flex-col gap-2">
             <Label>{t.filters.product}</Label>
             <AsyncCombobox
-              className="w-56"
+              className="w-56 max-w-full"
               placeholder={t.filters.allProducts}
               value={productId || null}
               onChange={(v) => {
@@ -326,7 +374,7 @@ export function ProfitabilityPage({
           <div className="flex flex-col gap-2">
             <Label>{t.filters.departure}</Label>
             <AsyncCombobox
-              className="w-56"
+              className="w-56 max-w-full"
               placeholder={t.filters.allDepartures}
               value={departureId || null}
               onChange={(v) => setDepartureId(v ?? "")}
@@ -354,7 +402,7 @@ export function ProfitabilityPage({
         </Card>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <KpiCard label={t.kpis.revenue} value={money(totals.revenue)} />
             <KpiCard label={t.kpis.actualCost} value={money(totals.actual)} />
             <KpiCard
@@ -372,8 +420,8 @@ export function ProfitabilityPage({
             <KpiCard label={t.kpis.unattributed} value={money(unattributed)} />
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card>
+          <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+            <Card className="min-w-0">
               <CardHeader>
                 <CardTitle className="text-base">{t.charts.departurePnl}</CardTitle>
               </CardHeader>
@@ -391,8 +439,26 @@ export function ProfitabilityPage({
                           value.length > 14 ? `${value.slice(0, 13)}…` : value
                         }
                       />
-                      <YAxis tickLine={false} axisLine={false} tickMargin={8} width={56} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        tickFormatter={(value: number) => compactMoneyAmount(value)}
+                        width={72}
+                      />
+                      <ChartTooltip
+                        content={
+                          <ChartTooltipContent
+                            formatter={(value, name, item) => (
+                              <ChartTooltipAmountRow
+                                color={item.color}
+                                label={chartTooltipLabel(name, barConfig)}
+                                value={moneyAmount(Number(value))}
+                              />
+                            )}
+                          />
+                        }
+                      />
                       <ChartLegend content={<ChartLegendContent />} />
                       <Bar dataKey="revenue" fill="var(--color-revenue)" radius={2} />
                       <Bar dataKey="actualCost" fill="var(--color-actualCost)" radius={2} />
@@ -407,7 +473,7 @@ export function ProfitabilityPage({
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="min-w-0">
               <CardHeader>
                 <CardTitle className="text-base">{t.charts.costByServiceType}</CardTitle>
               </CardHeader>
@@ -415,7 +481,21 @@ export function ProfitabilityPage({
                 {serviceTypeData.length ? (
                   <ChartContainer config={pieConfig} className="mx-auto h-[300px] w-full">
                     <PieChart>
-                      <ChartTooltip content={<ChartTooltipContent nameKey="label" hideLabel />} />
+                      <ChartTooltip
+                        content={
+                          <ChartTooltipContent
+                            nameKey="label"
+                            hideLabel
+                            formatter={(value, name, item) => (
+                              <ChartTooltipAmountRow
+                                color={item.payload?.fill ?? item.color}
+                                label={name}
+                                value={moneyAmount(Number(value))}
+                              />
+                            )}
+                          />
+                        }
+                      />
                       <Pie
                         data={serviceTypeData}
                         dataKey="amount"
@@ -440,7 +520,7 @@ export function ProfitabilityPage({
             </Card>
           </div>
 
-          <Card>
+          <Card className="min-w-0">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base">{t.departures.title}</CardTitle>
               {onExportDepartures ? (
@@ -456,7 +536,7 @@ export function ProfitabilityPage({
                 </Button>
               ) : null}
             </CardHeader>
-            <CardContent>
+            <CardContent className="min-w-0">
               <DepartureTable
                 rows={departureRows}
                 currency={activeCurrency}
@@ -473,7 +553,7 @@ export function ProfitabilityPage({
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="min-w-0">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base">{t.products.title}</CardTitle>
               {onExportProducts ? (
@@ -487,7 +567,7 @@ export function ProfitabilityPage({
                 </Button>
               ) : null}
             </CardHeader>
-            <CardContent>
+            <CardContent className="min-w-0">
               <ProductTable rows={productRows} currency={activeCurrency} />
             </CardContent>
           </Card>
@@ -513,14 +593,15 @@ function TravelerBreakdownDialog({
   currency: string
   onClose: () => void
 }) {
-  const t = useFinanceUiMessagesOrDefault().profitability
+  const i18n = useFinanceUiI18nOrDefault()
+  const t = i18n.messages.profitability
   const { data, isError, isPending } = useTravelerProfitability({
     departureId: departure?.id ?? "",
     currency,
     enabled: Boolean(departure),
   })
   const rows = data?.data?.rows ?? []
-  const money = (cents: number) => formatInvoiceAmount(cents, currency)
+  const money = (cents: number) => formatMoneyCents(cents, currency, i18n.formatCurrency)
 
   return (
     <Dialog
@@ -603,12 +684,12 @@ function KpiCard({
   accent?: "positive" | "negative"
 }) {
   return (
-    <Card>
+    <Card className="min-w-0">
       <CardHeader className="pb-2">
         <CardDescription>{label}</CardDescription>
         <CardTitle
           className={cn(
-            "text-2xl tabular-nums",
+            "break-words text-2xl tabular-nums",
             accent === "positive" && "text-emerald-600 dark:text-emerald-500",
             accent === "negative" && "text-destructive",
           )}
@@ -629,8 +710,9 @@ function DepartureTable({
   currency: string
   onSelect?: (row: DepartureProfitabilityRow) => void
 }) {
-  const t = useFinanceUiMessagesOrDefault().profitability
-  const money = (cents: number) => formatInvoiceAmount(cents, currency)
+  const i18n = useFinanceUiI18nOrDefault()
+  const t = i18n.messages.profitability
+  const money = (cents: number) => formatMoneyCents(cents, currency, i18n.formatCurrency)
   return (
     <Table>
       <TableHeader>
@@ -699,8 +781,9 @@ function DepartureTable({
 }
 
 function ProductTable({ rows, currency }: { rows: ProductProfitabilityRow[]; currency: string }) {
-  const t = useFinanceUiMessagesOrDefault().profitability
-  const money = (cents: number) => formatInvoiceAmount(cents, currency)
+  const i18n = useFinanceUiI18nOrDefault()
+  const t = i18n.messages.profitability
+  const money = (cents: number) => formatMoneyCents(cents, currency, i18n.formatCurrency)
   return (
     <Table>
       <TableHeader>
