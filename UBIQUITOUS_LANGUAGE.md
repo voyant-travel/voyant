@@ -13,7 +13,7 @@ platform. Terms are grouped by subdomain. Use the **bold** term; treat
 | **Person**        | An individual contact known to the operator — the canonical CRM identity record.                      | *customer, client, contact*     |
 | **Organization** | A company or legal entity — represents a buyer, supplier, agency, or other counterparty.             | *account, company, client*      |
 | **Traveler**      | A person who actually travels on a booking; carries category (adult/child/infant/senior) and PII.     | *guest, pax, passenger*         |
-| **Participant**   | A role-bearer on an opportunity, offer, order, or booking item (traveler, booker, decision-maker, finance). | *contact-on-deal*          |
+| **Participant**   | A role-bearer on a Quote, Quote Version, offer, order, or booking item (traveler, booker, decision-maker, finance). | *contact-on-deal*          |
 | **User**          | An authentication identity in the system; orthogonal to Person — staff and customers can both be Users. | *login, account*              |
 | **Supplier**      | An operational vendor we contract directly for delivery of owned or assembled products.                | *vendor, provider, source*      |
 | **Channel**       | A distribution counterparty selling our inventory (direct, OTA, affiliate, reseller, marketplace, API partner). | *partner, distributor*    |
@@ -35,14 +35,14 @@ platform. Terms are grouped by subdomain. Use the **bold** term; treat
 
 ## Sales pipeline (pre-commitment)
 
-| Term            | Definition                                                                                       | Aliases to avoid       |
-| --------------- | ------------------------------------------------------------------------------------------------ | ---------------------- |
-| **Opportunity** | A tracked sales deal with a Person/Organization — moves through Stages, may close won/lost.       | *lead, deal*           |
-| **Pipeline**    | An ordered set of Stages a deal moves through.                                                   | *funnel, board*        |
-| **Stage**       | A step within a Pipeline (e.g. Qualified → Proposal → Negotiation), with win/lost flags.         | *step, status*         |
-| **Quote**       | A pre-sales pricing proposal attached to an Opportunity; informational, not transactable.        | *proposal, estimate*   |
-| **Activity**    | A logged interaction (call, email, meeting, task, follow-up) on an Opportunity or Person.        | *event, log entry*     |
-| **Segment**     | A named list of People or Organizations grouped by criteria, used for targeting or bulk action.  | *list, group*          |
+| Term              | Definition                                                                                       | Aliases to avoid       |
+| ----------------- | ------------------------------------------------------------------------------------------------ | ---------------------- |
+| **Quote**         | A tracked travel sales pursuit with a Person/Organization; moves through Stages, owns value, participants, activities, and one or more Quote Versions, and may close won/lost. | *opportunity, deal* |
+| **Quote Version** | An immutable proposal revision or alternative sent to the client; freezes a Trip / Package Envelope snapshot, pricing, validity, and decision state. | *proposal, estimate, package offer* |
+| **Pipeline**      | An ordered set of Stages a Quote moves through.                                                  | *funnel, board*        |
+| **Stage**         | A step within a Pipeline (e.g. Qualified -> Proposal -> Negotiation), with win/lost flags.       | *step, status*         |
+| **Activity**      | A logged interaction (call, email, meeting, task, follow-up) on a Quote or Person.               | *event, log entry*     |
+| **Segment**       | A named list of People or Organizations grouped by criteria, used for targeting or bulk action.  | *list, group*          |
 
 ## Catalog (what we sell)
 
@@ -57,7 +57,7 @@ platform. Terms are grouped by subdomain. Use the **bold** term; treat
 | **Room Option**       | A bookable accommodation option for resale or trip composition, usually with occupancy and board/rate choices. | *room unit (unless physical ops)* |
 | **Rate Plan**         | A resale/commercial accommodation price and policy choice, usually from a Supplier or Inventory Source. | *tariff*                      |
 | **Board Basis**       | The included-meals tier for an accommodation component (breakfast, half-board, full-board, all-inclusive). | *meal plan (when ambiguous)* |
-| **Stay Component**    | A date-range accommodation line within a Product, Offer, Booking, or sourced Catalog Item.        | *hotel reservation*            |
+| **Stay Component**    | A date-range accommodation line within a Product, Quote Version, Offer, Booking, or sourced Catalog Item. | *hotel reservation*            |
 | **Product Version**   | An immutable snapshot of a Product's structure at a point in time.                               | *revision, snapshot*           |
 | **Product Media**     | An image, video, or document attached to a Product or one of its Days.                           | *asset, attachment*            |
 | **Operated Group Departure** | A fixed Product instance/departure with capacity and product-internal components such as bus transport, stays, included excursions, guide assignment, rooming list, and dependent Extras. | *package when used for the aggregate* |
@@ -95,12 +95,12 @@ platform. Terms are grouped by subdomain. Use the **bold** term; treat
 
 ## Transaction chain (the commitment ladder)
 
-The five-step ladder is **Quote → Offer → Order → Booking → Fulfillment**. Each step hardens the commitment.
+For travel-native bespoke sales, the ladder is **Quote -> accepted Quote Version -> reserve workflow -> Order / Booking -> Fulfillment**. Each step hardens the commitment, but accepting a Quote Version is not the same as supplier confirmation.
 
 | Term                    | Definition                                                                                       | Aliases to avoid         |
 | ----------------------- | ------------------------------------------------------------------------------------------------ | ------------------------ |
-| **Offer**               | A priced, dated, sellability-resolved proposal — sendable, acceptable, convertible to an Order.  | *quote (overloaded)*     |
-| **Order**               | A confirmed commitment to deliver — created from an accepted Offer or directly; hosts Order Terms. | *purchase order*       |
+| **Offer**               | The transactions-package priced proposal primitive for existing offer-to-order flows; not the bespoke travel sales artifact staff agents call a Quote. | *quote, package offer* |
+| **Order**               | A confirmed commitment to deliver — created from an accepted Quote Version reserve workflow, an accepted Offer, or directly; hosts Order Terms. | *purchase order* |
 | **Booking**             | The fulfillment-side record of an Order: Travelers, Allocations, Fulfillments, redemptions.      | *reservation, booking-record* |
 | **Offer Item / Order Item / Booking Item** | A line-item on its parent (unit, service, extra, fee, tax, discount, accommodation, transport). | *line, row*  |
 | **Allocation**          | A capacity hold against a Slot, Pickup, or Resource — `held` → `confirmed` → `fulfilled`.        | *reservation-line, hold-record* |
@@ -181,11 +181,12 @@ The five-step ladder is **Quote → Offer → Order → Booking → Fulfillment*
 | **Issue**      | Produce a deliverable artifact (voucher, invoice, contract, policy version).                     | Fulfillment, Invoice, Contract, Policy Version |
 | **Fulfill**    | Mark operational delivery complete.                                                              | Booking Item, Allocation                 |
 | **Deliver**    | Push an issued artifact to the recipient over a channel (email, download, wallet, API).          | Fulfillment, Notification                |
+| **Accept**     | Record that the client chose a Quote Version or accepted required commercial terms; does not by itself mean every supplier component is confirmed. | Quote Version, Offer                     |
 | **Redeem**     | Consume a Fulfillment at point of service.                                                       | Fulfillment                              |
 | **Cancel**     | Operationally reverse a commitment.                                                              | Booking, Order, Allocation, Supplier status |
 | **Void**       | Financially reverse a document — distinct from Cancel.                                           | Invoice, Payment                         |
-| **Close**      | End an Opportunity with an outcome (won/lost/archived).                                          | Opportunity                              |
-| **Convert**    | Promote one entity to the next on the commitment ladder.                                         | Offer → Order, Product → Booking         |
+| **Close**      | End a Quote with an outcome (won/lost/archived).                                                 | Quote                                    |
+| **Convert**    | Promote one entity to the next on the commitment ladder.                                         | Quote Version -> reserve workflow, Offer -> Order, Product -> Booking |
 | **Reconcile**  | Compare expected vs. actual and emit Issues.                                                     | Channel Settlement                       |
 | **Settle**     | Post the financial outcome of Reconciliation.                                                    | Channel Settlement                       |
 | **Override**   | Manually set a Booking's status, bypassing the transition graph. Admin-only; always audit-logged with a required reason. | Booking |
@@ -193,9 +194,11 @@ The five-step ladder is **Quote → Offer → Order → Booking → Fulfillment*
 ## Relationships (the domain laws)
 
 - A **Person** may belong to zero or more **Organizations**; both can appear on Bookings and Orders.
-- An **Opportunity** belongs to one Person and/or Organization; produces zero or more **Quotes**.
-- A **Quote** is informational; an **Offer** is the transactable equivalent — a Quote does not become an Offer automatically.
-- An **Offer** converts to exactly one **Order**; an Order may be created without a prior Offer (direct booking).
+- A **Quote** belongs to one Person and/or Organization, moves through a Pipeline, and produces zero or more **Quote Versions**.
+- A **Quote Version** freezes a Trip / Package Envelope snapshot; editing a sent Version creates another Version.
+- Accepting a **Quote Version** marks that Version accepted, closes the Quote won, and seeds the reserve workflow; it does not mean every live or manual component is supplier-confirmed.
+- A transactions **Offer** may still convert to exactly one **Order** in existing offer-to-order flows; it is not the bespoke travel sales artifact called Quote.
+- An **Order** may be created from an accepted Quote Version reserve workflow, an accepted Offer, or directly.
 - An **Order** produces one or more **Bookings**; a Booking is the fulfillment side of one Order.
 - A **Booking** holds **Allocations** against **Slots** (or Pickups, or Resources); each Allocation belongs to exactly one Booking Item.
 - Accommodation may be sold as **Sourced Inventory** or as a component of a **Product**, but hotel/property operations are not a first-party implementation scenario.
@@ -214,13 +217,13 @@ The five-step ladder is **Quote → Offer → Order → Booking → Fulfillment*
 
 ## Example dialogue
 
-> **Sales agent:** "I've got a hot **Opportunity** with the Henderson family — eight **Travelers**, two weeks in Egypt. I sent them a **Quote** last week."
+> **Sales agent:** "I've got a hot **Quote** with the Henderson family — eight **Travelers**, two weeks in Egypt. I sent them a **Quote Version** last week."
 
-> **Operations manager:** "Good. If they're ready to commit, build them an **Offer** — that pulls live **Sellability** for the dates and locks the **Cost** from our Cairo **Suppliers**. Once they accept, it converts to an **Order**."
+> **Operations manager:** "Good. If they accept that Version, run reserve. Live lines must recheck **Sellability** and **Cost** from our Cairo **Suppliers**; manual lines move into supplier confirmation."
 
-> **Sales agent:** "And the **Booking** is created from the **Order**?"
+> **Sales agent:** "And the **Booking** is created immediately?"
 
-> **Operations manager:** "Yes - the Order is the commercial commitment with the **Order Terms** they have to accept. The **Booking** is operational: it holds **Allocations** against the **Slots** for each guided day, includes a **Stay Component** in Aswan, and sets up **Dispatches** with **Vehicles** and **Drivers** for the transfers."
+> **Operations manager:** "Only after reserve can secure the component commitments. The **Booking** is operational: it holds **Allocations** against the **Slots** for each guided day, includes a **Stay Component** in Aswan, and sets up **Dispatches** with **Vehicles** and **Drivers** for the transfers."
 
 > **Sales agent:** "What about the cancellation thing they asked about?"
 
@@ -243,10 +246,11 @@ These terms are used loosely in conversation. Pick the canonical form below; tre
 - **Customer / client / buyer** — none are first-class entities. The canonical CRM record is **Person** (with optional **Organization**). On a Booking, the buyer is captured as `personId` + `organizationId` snapshot fields. Avoid "customer" / "client" except in UI copy facing the operator's own staff.
 - **Tour / experience** — usually collapse to **Product**. **Trip** and **package** are overloaded: use **Product** for an operator-sold offering, **Operated Group Departure** for a fixed-capacity product instance, and **Trip / Package Envelope** for a customer-facing aggregate of multiple component commitments.
 - **Accommodation vs. hotel operations** — accommodation is valid as catalog inventory, sourced resale, or trip composition. Hotel/property operations are not a first-party Voyant implementation scenario.
-- **Quote vs. Offer** — both look like "a price proposal". **Quote** is a CRM artifact attached to an Opportunity (informational, pre-sales). **Offer** is the transactional, sellability-resolved, sendable, acceptable document on the commitment ladder. They are not synonyms.
+- **Quote vs. Opportunity** — the canonical sales pursuit is **Quote**. Opportunity is the old generic CRM name and should not appear in new public package surfaces.
+- **Quote Version vs. Offer** — both look like "a price proposal". **Quote Version** is the travel-native proposal candidate that freezes a Trip / Package Envelope snapshot and can be accepted into reserve. **Offer** is the transactions-package primitive for existing offer-to-order flows. They are not synonyms.
 - **Order vs. Booking** — both are post-sale. **Order** is the commercial commitment (with Order Terms, links to Invoices); **Booking** is the operational record (Travelers, Allocations, Fulfillments). One Order produces one Booking in normal flows; do not use them interchangeably.
 - **Reservation** — overloaded between "Hold" (a temporary inventory claim) and "Booking" (the persistent record). Use **Hold** or **Booking** — never "Reservation".
-- **Cancel vs. Void vs. Close** — different verbs for different domains. **Cancel** = operational reversal (Booking, Order, Allocation). **Void** = financial reversal (Invoice, Payment). **Close** = end an Opportunity with an outcome. Don't blend them.
+- **Cancel vs. Void vs. Close** — different verbs for different domains. **Cancel** = operational reversal (Booking, Order, Allocation). **Void** = financial reversal (Invoice, Payment). **Close** = end a Quote with an outcome. Don't blend them.
 - **Hold vs. Allocation vs. Reservation** — **Hold** is the temporal status of a Booking before confirmation (`hold_expires_at`). **Allocation** is the inventory-line entity (`held` → `confirmed` → `fulfilled`). Avoid "Reservation".
 - **Supplier vs. Partner vs. Provider** — **Supplier** is the entity that sells us services. **Partner** is a relationship type on Organizations. **Provider** is for tech integrations (notification provider, storage provider) — do not call a hotel a "provider".
 - **Channel vs. Distribution vs. Partner** — **Channel** is the entity (the OTA, the affiliate, the marketplace). **Distribution** is the subdomain. Don't say "Partner" when you mean Channel.
