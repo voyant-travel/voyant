@@ -188,7 +188,7 @@ export const adminBookingsMessages = {
           },
         },
         bookingJourney: {
-          travelerPickerLabel: "Traveler",
+          travelerPickerLabel: "Find a contact",
           leadContactPickerLabel: "Lead contact",
         },
         catalogSource: {
@@ -508,7 +508,7 @@ export const adminBookingsMessages = {
           },
         },
         bookingJourney: {
-          travelerPickerLabel: "Calator",
+          travelerPickerLabel: "Cauta un contact",
           leadContactPickerLabel: "Contact principal",
         },
         catalogSource: {

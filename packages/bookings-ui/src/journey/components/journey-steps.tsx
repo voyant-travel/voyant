@@ -1092,39 +1092,40 @@ function TravelerCard({
   }
 
   return (
-    <div className="space-y-3 rounded-md border p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="space-y-0.5">
-          <div className="text-sm font-medium">
-            {formatMessage(messages.bookingJourney.travelers.travelerNumber, {
-              number: idx + 1,
-            })}
-            {computedAge != null ? (
-              <span className="text-muted-foreground font-normal">
-                {" "}
-                ·{" "}
-                {formatMessage(messages.bookingJourney.travelers.ageLabel, {
-                  age: computedAge,
-                })}
-              </span>
-            ) : null}
-          </div>
+    <div className="space-y-4 rounded-md border p-4">
+      {/* Header: who this traveler is, with subtle row-level actions. */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-sm font-medium">
+          {formatMessage(messages.bookingJourney.travelers.travelerNumber, {
+            number: idx + 1,
+          })}
+          {computedAge != null ? (
+            <span className="text-muted-foreground font-normal">
+              {" · "}
+              {formatMessage(messages.bookingJourney.travelers.ageLabel, {
+                age: computedAge,
+              })}
+            </span>
+          ) : null}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {canCopyFromBilling ? (
-            <Button type="button" variant="outline" size="sm" onClick={copyFromBilling}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 text-muted-foreground"
+              onClick={copyFromBilling}
+            >
               {messages.bookingJourney.travelers.copyFromBilling}
             </Button>
           ) : null}
-          {renderTravelerContactPicker
-            ? renderTravelerContactPicker({ rowIndex: idx, apply })
-            : null}
           {onRemove ? (
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="text-destructive hover:text-destructive"
+              className="h-7 text-destructive hover:text-destructive"
               onClick={onRemove}
             >
               {messages.bookingJourney.travelers.remove}
@@ -1132,6 +1133,11 @@ function TravelerCard({
           ) : null}
         </div>
       </div>
+      {/* Link an existing CRM contact (or create one) — full-width, the
+          primary action; it auto-fills the name fields below. */}
+      {renderTravelerContactPicker ? (
+        <div>{renderTravelerContactPicker({ rowIndex: idx, apply })}</div>
+      ) : null}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field
           id={`bj-trav-${idx}-first`}
