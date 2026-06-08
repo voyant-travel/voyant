@@ -849,7 +849,8 @@ export const bookingsUiEn = {
       postalCode: "Postal code",
       country: "Country",
       companyName: "Company name",
-      vatId: "VAT id",
+      vatId: "Tax ID",
+      leadContactSummaryNote: "Details come from the selected contact — edit them above.",
     },
     travelers: {
       title: "Travelers",

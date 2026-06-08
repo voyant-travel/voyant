@@ -850,7 +850,8 @@ export const bookingsUiRo = {
       postalCode: "Cod postal",
       country: "Tara",
       companyName: "Nume companie",
-      vatId: "Cod TVA",
+      vatId: "Cod fiscal",
+      leadContactSummaryNote: "Datele provin din contactul selectat — editeaza-le mai sus.",
     },
     travelers: {
       title: "Calatori",

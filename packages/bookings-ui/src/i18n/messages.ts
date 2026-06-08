@@ -674,6 +674,7 @@ export type BookingsUiMessages = {
       country: string
       companyName: string
       vatId: string
+      leadContactSummaryNote: string
     }
     travelers: {
       title: string

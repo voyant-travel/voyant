@@ -348,6 +348,8 @@ export const bookingDraftV1 = z.object({
         lastName: z.string().default(""),
         email: z.string().default(""),
         phone: z.string().optional(),
+        /** CRM person id when the lead was picked from CRM (vs typed). */
+        personId: z.string().optional(),
       }),
       address: z
         .object({

@@ -676,6 +676,9 @@ export function BillingStep({
           lastName: contact.lastName,
           email: contact.email ?? "",
           phone: contact.phone,
+          // Track the CRM person id so the step can show a read-only summary
+          // (the lead's data) instead of a duplicate editable form.
+          personId: contact.personId,
         },
       }),
     )
@@ -707,41 +710,61 @@ export function BillingStep({
 
         {renderLeadContactPicker ? <div>{renderLeadContactPicker({ apply })}</div> : null}
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field
-            id="bj-billing-firstName"
-            label={messages.bookingJourney.billing.firstName}
-            value={billing.contact.firstName}
-            onChange={(v) =>
-              setDraft(patchBilling(draft, { contact: { ...billing.contact, firstName: v } }))
-            }
-          />
-          <Field
-            id="bj-billing-lastName"
-            label={messages.bookingJourney.billing.lastName}
-            value={billing.contact.lastName}
-            onChange={(v) =>
-              setDraft(patchBilling(draft, { contact: { ...billing.contact, lastName: v } }))
-            }
-          />
-          <Field
-            id="bj-billing-email"
-            label={messages.bookingJourney.billing.email}
-            type="email"
-            value={billing.contact.email}
-            onChange={(v) =>
-              setDraft(patchBilling(draft, { contact: { ...billing.contact, email: v } }))
-            }
-          />
-          <PhoneField
-            id="bj-billing-phone"
-            label={messages.bookingJourney.billing.phone}
-            value={billing.contact.phone ?? ""}
-            onChange={(v) =>
-              setDraft(patchBilling(draft, { contact: { ...billing.contact, phone: v } }))
-            }
-          />
-        </div>
+        {/* When a CRM lead is selected, its name/email/phone come from the
+            contact — show a read-only summary instead of a duplicate editable
+            form. Missing data is fixed by editing the contact in the picker
+            above. Without a lead (storefront, or "create new"), show the
+            inline form to enter the details directly. */}
+        {billing.contact.personId ? (
+          <div className="rounded-md border p-3 text-sm">
+            <div className="font-medium">
+              {[billing.contact.firstName, billing.contact.lastName].filter(Boolean).join(" ") ||
+                billing.contact.email}
+            </div>
+            <div className="text-muted-foreground">
+              {[billing.contact.email, billing.contact.phone].filter(Boolean).join(" · ")}
+            </div>
+            <p className="mt-1 text-muted-foreground text-xs">
+              {messages.bookingJourney.billing.leadContactSummaryNote}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field
+              id="bj-billing-firstName"
+              label={messages.bookingJourney.billing.firstName}
+              value={billing.contact.firstName}
+              onChange={(v) =>
+                setDraft(patchBilling(draft, { contact: { ...billing.contact, firstName: v } }))
+              }
+            />
+            <Field
+              id="bj-billing-lastName"
+              label={messages.bookingJourney.billing.lastName}
+              value={billing.contact.lastName}
+              onChange={(v) =>
+                setDraft(patchBilling(draft, { contact: { ...billing.contact, lastName: v } }))
+              }
+            />
+            <Field
+              id="bj-billing-email"
+              label={messages.bookingJourney.billing.email}
+              type="email"
+              value={billing.contact.email}
+              onChange={(v) =>
+                setDraft(patchBilling(draft, { contact: { ...billing.contact, email: v } }))
+              }
+            />
+            <PhoneField
+              id="bj-billing-phone"
+              label={messages.bookingJourney.billing.phone}
+              value={billing.contact.phone ?? ""}
+              onChange={(v) =>
+                setDraft(patchBilling(draft, { contact: { ...billing.contact, phone: v } }))
+              }
+            />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field
