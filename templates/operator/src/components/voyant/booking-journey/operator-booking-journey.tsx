@@ -226,7 +226,12 @@ function CrmLeadPicker({
     <PersonPickerSection
       value={value}
       onChange={commit}
-      showOrganization={variant === "lead"}
+      // No "Bill to: Person / Organization" toggle — it duplicated the
+      // Billing step's Buyer type (Individual/Company) radio. Buyer type is
+      // the single individual-vs-company control; the lead picker is always
+      // a person (the lead contact / billed individual), and B2B company
+      // identity is captured by the Company name + VAT fields.
+      showOrganization={false}
       labels={{
         person: variant === "traveler" ? t.travelerPickerLabel : t.leadContactPickerLabel,
       }}
