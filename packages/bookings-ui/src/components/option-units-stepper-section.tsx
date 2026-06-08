@@ -54,6 +54,14 @@ export interface OptionUnitsStepperSectionProps {
    * Departure-specific availability wins when `slotId` is present.
    */
   optionId?: string | null
+  /**
+   * When true, only the SELECTED option's units are shown (no cross-option
+   * fallback). Use when the option is already chosen and other options'
+   * rooms aren't bookable — e.g. the booking journey, where rooms are
+   * nested under the picked option. Defaults to false (show all options'
+   * units, the create-sheet's cross-option behavior).
+   */
+  restrictToOption?: boolean
   enabled?: boolean
   onUnitsChange?: (units: OptionUnitsStepperUnit[]) => void
   labels?: {
@@ -96,6 +104,7 @@ export function OptionUnitsStepperSection({
   productId,
   slotId,
   optionId,
+  restrictToOption = false,
   enabled = true,
   onUnitsChange,
   labels,
@@ -184,10 +193,19 @@ export function OptionUnitsStepperSection({
   // slot is option-scoped to SGL. Product-level slots (no option_id) hit
   // the no-slot-rows branch and use the product fallback for everything.
   // See issue #960.
-  const units = React.useMemo(
-    () => mergeStepperUnits(availabilityUnitRows, optionUnitRows, slotOptionId, Boolean(slotId)),
-    [availabilityUnitRows, optionUnitRows, slotOptionId, slotId],
-  )
+  const units = React.useMemo(() => {
+    const merged = mergeStepperUnits(
+      availabilityUnitRows,
+      optionUnitRows,
+      slotOptionId,
+      Boolean(slotId),
+    )
+    // Journey: the option is already chosen, so show ONLY its units. Other
+    // options' rooms aren't bookable under the selected option (an option
+    // with no rooms of its own correctly shows none).
+    if (restrictToOption && optionId) return merged.filter((unit) => unit.optionId === optionId)
+    return merged
+  }, [availabilityUnitRows, optionUnitRows, slotOptionId, slotId, restrictToOption, optionId])
   const invalidOptionUnitIdSet = React.useMemo(
     () => new Set(invalidOptionUnitIds),
     [invalidOptionUnitIds],

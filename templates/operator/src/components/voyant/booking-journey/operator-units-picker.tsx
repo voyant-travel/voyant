@@ -68,6 +68,9 @@ export function OperatorUnitsPicker({
       productId={productId}
       slotId={slotId ?? undefined}
       optionId={optionId}
+      // The journey nests rooms under the chosen option — show only that
+      // option's units (New having no rooms correctly shows none).
+      restrictToOption
       enabled
       // Record loaded units without triggering a render (see unitsRef note).
       onUnitsChange={(loadedUnits) => {
