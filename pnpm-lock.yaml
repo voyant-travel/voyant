@@ -6721,6 +6721,9 @@ importers:
       '@voyantjs/identity':
         specifier: workspace:^
         version: link:../../packages/identity
+      '@voyantjs/identity-react':
+        specifier: workspace:^
+        version: link:../../packages/identity-react
       '@voyantjs/legal':
         specifier: workspace:^
         version: link:../../packages/legal

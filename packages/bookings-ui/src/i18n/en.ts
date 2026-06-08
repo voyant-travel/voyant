@@ -852,6 +852,7 @@ export const bookingsUiEn = {
       companyName: "Company name",
       vatId: "Tax ID",
       leadContactSummaryNote: "Details come from the selected contact — edit them above.",
+      leadContactSummaryEmpty: "Search and select a contact above, or create a new one.",
     },
     travelers: {
       title: "Travelers",

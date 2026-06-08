@@ -15,8 +15,10 @@ import {
   type BookingEntitySummary,
   BookingJourney,
   type BookingJourneyProps,
+  type LeadContactPickerProps,
 } from "@voyantjs/bookings-ui/journey"
 import { useOrganization, usePerson } from "@voyantjs/crm-react"
+import { useAddresses } from "@voyantjs/identity-react"
 import { getProductMediaQueryOptions, getProductQueryOptions } from "@voyantjs/products-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 
@@ -83,9 +85,22 @@ export function OperatorBookingJourney({
       return <OperatorUnitsPicker {...pickerProps} />
     },
     renderTravelerContactPicker({ apply }) {
-      // Travelers reuse the same picker; the operator picks an
-      // existing CRM person or fills the inline-create form.
-      return <CrmLeadPicker apply={apply} variant="traveler" />
+      // Travelers reuse the same picker (person-only). Adapt the picker's
+      // partial lead-apply to the traveler apply (always a person).
+      return (
+        <CrmLeadPicker
+          variant="traveler"
+          apply={(contact) =>
+            apply({
+              firstName: contact.firstName ?? "",
+              lastName: contact.lastName ?? "",
+              email: contact.email,
+              phone: contact.phone,
+              personId: contact.personId,
+            })
+          }
+        />
+      )
     },
     onCommitted(result) {
       navigate({ to: "/bookings", search: { highlight: result.bookingId } as never })
@@ -171,16 +186,7 @@ function CrmLeadPicker({
   buyerType,
   variant = "lead",
 }: {
-  apply: (contact: {
-    firstName: string
-    lastName: string
-    email?: string
-    phone?: string
-    personId?: string
-    organizationId?: string
-    companyName?: string
-    taxId?: string
-  }) => void
+  apply: LeadContactPickerProps["apply"]
   buyerType?: "B2C" | "B2B"
   variant?: "lead" | "traveler"
 }): React.ReactElement {
@@ -229,13 +235,45 @@ function CrmLeadPicker({
     if (!org || appliedOrgId.current === org.id) return
     appliedOrgId.current = org.id
     apply({
-      firstName: "",
-      lastName: "",
       organizationId: org.id,
       companyName: org.legalName ?? org.name,
       taxId: org.taxId ?? undefined,
     })
   }, [orgQuery.data])
+
+  // Hydrate the billing address from the picked person (B2C) or org (B2B)
+  // primary CRM address — so the operator never re-types it and the tax
+  // country is set. Missing → surfaced as a warning to fix in the picker.
+  const addressEntityType = orgMode ? "organization" : "person"
+  // Only the billing lead pulls an address; travelers don't carry one.
+  const addressEntityId =
+    variant === "lead" ? (orgMode ? selectedOrgId : selectedPersonId) : undefined
+  const addressQuery = useAddresses({
+    entityType: addressEntityType,
+    entityId: addressEntityId,
+    isPrimary: true,
+    limit: 1,
+    enabled: Boolean(addressEntityId),
+  })
+  const appliedAddressKey = useRef<string | null>(null)
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: applies once per resolved address; the ref guards re-entry
+  useEffect(() => {
+    const addr = addressQuery.data?.data?.[0]
+    if (!addressEntityId || !addr) return
+    const key = `${addressEntityType}:${addressEntityId}`
+    if (appliedAddressKey.current === key) return
+    appliedAddressKey.current = key
+    apply({
+      address: {
+        line1: addr.line1 ?? undefined,
+        line2: addr.line2 ?? undefined,
+        city: addr.city ?? undefined,
+        postal: addr.postalCode ?? undefined,
+        country: addr.country ?? undefined,
+      },
+    })
+  }, [addressQuery.data, addressEntityId])
 
   function commit(next: PersonPickerValue): void {
     setValue(next)

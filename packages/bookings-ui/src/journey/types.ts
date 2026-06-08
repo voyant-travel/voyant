@@ -45,19 +45,27 @@ export interface LeadContactPickerProps {
   /** Current buyer type — the picker should search PEOPLE for B2C and
    *  ORGANIZATIONS for B2B. */
   buyerType: "B2C" | "B2B"
-  /** Apply a picked lead to the draft's billing fields. For B2C this is a
-   *  person (name/email/phone/personId); for B2B it's an organization
-   *  (organizationId + companyName/taxId, with the person fields empty).
-   *  Email is optional because CRM records may not have one stored. */
+  /** Apply a picked lead to the draft's billing fields. A PARTIAL — only
+   *  the provided fields are merged, so separate CRM lookups (person/org
+   *  record, then its address) can each fill their slice without clobbering
+   *  the others. B2C fills the person; B2B fills companyName/taxId; both
+   *  fill the billing address from the CRM record. */
   apply: (contact: {
-    firstName: string
-    lastName: string
+    firstName?: string
+    lastName?: string
     email?: string
     phone?: string
     personId?: string
     organizationId?: string
     companyName?: string
     taxId?: string
+    address?: {
+      line1?: string
+      line2?: string
+      city?: string
+      postal?: string
+      country?: string
+    }
   }) => void
 }
 

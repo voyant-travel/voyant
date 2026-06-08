@@ -684,33 +684,36 @@ export function BillingStep({
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   const billing = draft.billing
-  const apply: LeadContactPickerProps["apply"] = (contact) => {
-    // B2B: an organization was picked — fill the company fields and leave
-    // the contact person (entered separately) untouched.
-    if (contact.organizationId || contact.companyName || contact.taxId) {
-      setDraft(
-        patchBilling(draft, {
-          company: {
-            name: contact.companyName ?? billing.company?.name ?? "",
-            vatId: contact.taxId ?? billing.company?.vatId,
-          },
-        }),
-      )
-      return
+  // Merge each partial from the picker (person record, org record, address
+  // lookup) into the billing draft without clobbering the other slices.
+  const apply: LeadContactPickerProps["apply"] = (next) => {
+    const patch: Partial<typeof billing> = {}
+    if (
+      next.firstName !== undefined ||
+      next.lastName !== undefined ||
+      next.email !== undefined ||
+      next.phone !== undefined ||
+      next.personId !== undefined
+    ) {
+      patch.contact = {
+        ...billing.contact,
+        ...(next.firstName !== undefined ? { firstName: next.firstName } : {}),
+        ...(next.lastName !== undefined ? { lastName: next.lastName } : {}),
+        ...(next.email !== undefined ? { email: next.email } : {}),
+        ...(next.phone !== undefined ? { phone: next.phone } : {}),
+        ...(next.personId !== undefined ? { personId: next.personId } : {}),
+      }
     }
-    setDraft(
-      patchBilling(draft, {
-        contact: {
-          firstName: contact.firstName,
-          lastName: contact.lastName,
-          email: contact.email ?? "",
-          phone: contact.phone,
-          // Track the CRM person id so the step can show a read-only summary
-          // (the lead's data) instead of a duplicate editable form.
-          personId: contact.personId,
-        },
-      }),
-    )
+    if (next.companyName !== undefined || next.taxId !== undefined) {
+      patch.company = {
+        name: next.companyName ?? billing.company?.name ?? "",
+        vatId: next.taxId ?? billing.company?.vatId,
+      }
+    }
+    if (next.address) {
+      patch.address = { ...billing.address, ...next.address }
+    }
+    setDraft(patchBilling(draft, patch))
   }
   return (
     <Card>
@@ -741,142 +744,180 @@ export function BillingStep({
           <div>{renderLeadContactPicker({ apply, buyerType: billing.buyerType })}</div>
         ) : null}
 
-        {/* When a CRM lead is selected, its name/email/phone come from the
-            contact — show a read-only summary instead of a duplicate editable
-            form. Missing data is fixed by editing the contact in the picker
-            above. Without a lead (storefront, or "create new"), show the
-            inline form to enter the details directly. */}
-        {billing.contact.personId ? (
-          <div className="rounded-md border p-3 text-sm">
-            <div className="font-medium">
-              {[billing.contact.firstName, billing.contact.lastName].filter(Boolean).join(" ") ||
-                billing.contact.email}
-            </div>
-            <div className="text-muted-foreground">
-              {[billing.contact.email, billing.contact.phone].filter(Boolean).join(" · ")}
-            </div>
-            <p className="mt-1 text-muted-foreground text-xs">
-              {messages.bookingJourney.billing.leadContactSummaryNote}
-            </p>
-          </div>
+        {/* Operator (CRM picker present): identity, address, and company all
+            come from the picked person/org — created/edited via the picker —
+            so show a read-only summary; the warnings below flag any gaps.
+            Storefront / no CRM: enter everything directly. */}
+        {renderLeadContactPicker ? (
+          <BillingContactSummary billing={billing} />
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field
-              id="bj-billing-firstName"
-              label={messages.bookingJourney.billing.firstName}
-              value={billing.contact.firstName}
-              onChange={(v) =>
-                setDraft(patchBilling(draft, { contact: { ...billing.contact, firstName: v } }))
-              }
-            />
-            <Field
-              id="bj-billing-lastName"
-              label={messages.bookingJourney.billing.lastName}
-              value={billing.contact.lastName}
-              onChange={(v) =>
-                setDraft(patchBilling(draft, { contact: { ...billing.contact, lastName: v } }))
-              }
-            />
-            <Field
-              id="bj-billing-email"
-              label={messages.bookingJourney.billing.email}
-              type="email"
-              value={billing.contact.email}
-              onChange={(v) =>
-                setDraft(patchBilling(draft, { contact: { ...billing.contact, email: v } }))
-              }
-            />
-            <PhoneField
-              id="bj-billing-phone"
-              label={messages.bookingJourney.billing.phone}
-              value={billing.contact.phone ?? ""}
-              onChange={(v) =>
-                setDraft(patchBilling(draft, { contact: { ...billing.contact, phone: v } }))
-              }
-            />
-          </div>
+          <>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Field
+                id="bj-billing-firstName"
+                label={messages.bookingJourney.billing.firstName}
+                value={billing.contact.firstName}
+                onChange={(v) =>
+                  setDraft(patchBilling(draft, { contact: { ...billing.contact, firstName: v } }))
+                }
+              />
+              <Field
+                id="bj-billing-lastName"
+                label={messages.bookingJourney.billing.lastName}
+                value={billing.contact.lastName}
+                onChange={(v) =>
+                  setDraft(patchBilling(draft, { contact: { ...billing.contact, lastName: v } }))
+                }
+              />
+              <Field
+                id="bj-billing-email"
+                label={messages.bookingJourney.billing.email}
+                type="email"
+                value={billing.contact.email}
+                onChange={(v) =>
+                  setDraft(patchBilling(draft, { contact: { ...billing.contact, email: v } }))
+                }
+              />
+              <PhoneField
+                id="bj-billing-phone"
+                label={messages.bookingJourney.billing.phone}
+                value={billing.contact.phone ?? ""}
+                onChange={(v) =>
+                  setDraft(patchBilling(draft, { contact: { ...billing.contact, phone: v } }))
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Field
+                id="bj-billing-line1"
+                label={messages.bookingJourney.billing.addressLine1}
+                value={billing.address.line1 ?? ""}
+                onChange={(v) =>
+                  setDraft(patchBilling(draft, { address: { ...billing.address, line1: v } }))
+                }
+              />
+              <Field
+                id="bj-billing-line2"
+                label={messages.bookingJourney.billing.addressLine2Optional}
+                value={billing.address.line2 ?? ""}
+                onChange={(v) =>
+                  setDraft(patchBilling(draft, { address: { ...billing.address, line2: v } }))
+                }
+              />
+              <Field
+                id="bj-billing-city"
+                label={messages.bookingJourney.billing.city}
+                value={billing.address.city ?? ""}
+                onChange={(v) =>
+                  setDraft(patchBilling(draft, { address: { ...billing.address, city: v } }))
+                }
+              />
+              <Field
+                id="bj-billing-postal"
+                label={messages.bookingJourney.billing.postalCode}
+                value={billing.address.postal ?? ""}
+                onChange={(v) =>
+                  setDraft(patchBilling(draft, { address: { ...billing.address, postal: v } }))
+                }
+              />
+              <div className="space-y-1 sm:col-span-2">
+                <Label htmlFor="bj-billing-country">
+                  {messages.bookingJourney.billing.country}
+                </Label>
+                <CountryCombobox
+                  value={billing.address.country ?? null}
+                  onChange={(code) =>
+                    setDraft(
+                      patchBilling(draft, {
+                        address: { ...billing.address, country: code ?? "" },
+                      }),
+                    )
+                  }
+                />
+              </div>
+            </div>
+
+            {billing.buyerType === "B2B" ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field
+                  id="bj-billing-companyName"
+                  label={messages.bookingJourney.billing.companyName}
+                  value={billing.company?.name ?? ""}
+                  onChange={(v) =>
+                    setDraft(
+                      patchBilling(draft, {
+                        company: { ...(billing.company ?? { name: "" }), name: v },
+                      }),
+                    )
+                  }
+                />
+                <Field
+                  id="bj-billing-vatId"
+                  label={messages.bookingJourney.billing.vatId}
+                  value={billing.company?.vatId ?? ""}
+                  onChange={(v) =>
+                    setDraft(
+                      patchBilling(draft, {
+                        company: { ...(billing.company ?? { name: "" }), vatId: v },
+                      }),
+                    )
+                  }
+                />
+              </div>
+            ) : null}
+          </>
         )}
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field
-            id="bj-billing-line1"
-            label={messages.bookingJourney.billing.addressLine1}
-            value={billing.address.line1 ?? ""}
-            onChange={(v) =>
-              setDraft(patchBilling(draft, { address: { ...billing.address, line1: v } }))
-            }
-          />
-          <Field
-            id="bj-billing-line2"
-            label={messages.bookingJourney.billing.addressLine2Optional}
-            value={billing.address.line2 ?? ""}
-            onChange={(v) =>
-              setDraft(patchBilling(draft, { address: { ...billing.address, line2: v } }))
-            }
-          />
-          <Field
-            id="bj-billing-city"
-            label={messages.bookingJourney.billing.city}
-            value={billing.address.city ?? ""}
-            onChange={(v) =>
-              setDraft(patchBilling(draft, { address: { ...billing.address, city: v } }))
-            }
-          />
-          <Field
-            id="bj-billing-postal"
-            label={messages.bookingJourney.billing.postalCode}
-            value={billing.address.postal ?? ""}
-            onChange={(v) =>
-              setDraft(patchBilling(draft, { address: { ...billing.address, postal: v } }))
-            }
-          />
-          <div className="space-y-1 sm:col-span-2">
-            <Label htmlFor="bj-billing-country">{messages.bookingJourney.billing.country}</Label>
-            <CountryCombobox
-              value={billing.address.country ?? null}
-              onChange={(code) =>
-                setDraft(
-                  patchBilling(draft, {
-                    address: { ...billing.address, country: code ?? "" },
-                  }),
-                )
-              }
-            />
-          </div>
-        </div>
-
-        {billing.buyerType === "B2B" ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field
-              id="bj-billing-companyName"
-              label={messages.bookingJourney.billing.companyName}
-              value={billing.company?.name ?? ""}
-              onChange={(v) =>
-                setDraft(
-                  patchBilling(draft, {
-                    company: { ...(billing.company ?? { name: "" }), name: v },
-                  }),
-                )
-              }
-            />
-            <Field
-              id="bj-billing-vatId"
-              label={messages.bookingJourney.billing.vatId}
-              value={billing.company?.vatId ?? ""}
-              onChange={(v) =>
-                setDraft(
-                  patchBilling(draft, {
-                    company: { ...(billing.company ?? { name: "" }), vatId: v },
-                  }),
-                )
-              }
-            />
-          </div>
-        ) : null}
 
         {renderExtras ? <div>{renderExtras()}</div> : null}
       </CardContent>
     </Card>
+  )
+}
+
+/**
+ * Read-only summary of the billing lead, shown on the operator surface where
+ * the data comes from the picked CRM person/org (no editable form). Anything
+ * missing here surfaces in the step's warnings; fix it by editing the
+ * person/org in the picker above.
+ */
+function BillingContactSummary({ billing }: { billing: Draft["billing"] }): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
+  const contact = billing.contact
+  const address = billing.address
+  const name = [contact.firstName, contact.lastName].filter(Boolean).join(" ").trim()
+  const addressLine = [address.line1, address.line2, address.city, address.postal, address.country]
+    .filter(Boolean)
+    .join(", ")
+  const isCompany = billing.buyerType === "B2B"
+  const companyName = isCompany ? billing.company?.name : undefined
+  const taxId = isCompany ? billing.company?.vatId : undefined
+  const hasAnything = Boolean(name || contact.email || contact.phone || companyName || addressLine)
+
+  return (
+    <div className="rounded-md border p-3 text-sm">
+      {hasAnything ? (
+        <div className="space-y-0.5">
+          {companyName ? <div className="font-medium">{companyName}</div> : null}
+          {name ? (
+            <div className={companyName ? "text-muted-foreground" : "font-medium"}>{name}</div>
+          ) : null}
+          {contact.email ? <div className="text-muted-foreground">{contact.email}</div> : null}
+          {contact.phone ? <div className="text-muted-foreground">{contact.phone}</div> : null}
+          {taxId ? <div className="text-muted-foreground">{taxId}</div> : null}
+          {addressLine ? <div className="text-muted-foreground">{addressLine}</div> : null}
+        </div>
+      ) : (
+        <p className="text-muted-foreground">
+          {messages.bookingJourney.billing.leadContactSummaryEmpty}
+        </p>
+      )}
+      {hasAnything ? (
+        <p className="mt-2 text-muted-foreground text-xs">
+          {messages.bookingJourney.billing.leadContactSummaryNote}
+        </p>
+      ) : null}
+    </div>
   )
 }
 

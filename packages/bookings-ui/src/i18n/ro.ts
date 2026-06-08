@@ -853,6 +853,7 @@ export const bookingsUiRo = {
       companyName: "Nume companie",
       vatId: "Cod fiscal",
       leadContactSummaryNote: "Datele provin din contactul selectat — editeaza-le mai sus.",
+      leadContactSummaryEmpty: "Cauta si selecteaza un contact mai sus, sau creeaza unul nou.",
     },
     travelers: {
       title: "Calatori",
