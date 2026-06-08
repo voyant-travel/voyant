@@ -15,7 +15,7 @@ import {
 } from "@voyantjs/ui/components/combobox"
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 /**
  * Operator departure picker for the booking journey's `"departure"`
@@ -86,6 +86,17 @@ export function OperatorDeparturePicker({
     const current = slotId ? slotMap.get(slotId) : undefined
     return current ? formatLabel(current) : ""
   })
+
+  // The draft keeps the picked slotId across step navigation, but this
+  // component's input is local state and re-seeds to "" on remount (before
+  // slots load). Reflect the selected slot's label once it resolves so a
+  // revisited departure shows as selected rather than empty.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: formatLabel is render-stable; slotId/slotMap are the real triggers
+  useEffect(() => {
+    if (!slotId) return
+    const slot = slotMap.get(slotId)
+    if (slot) setInputValue((prev) => (prev ? prev : formatLabel(slot)))
+  }, [slotId, slotMap])
 
   // No scheduled departures for this product → free date/time so the
   // operator can still set a departure for non-scheduled products.

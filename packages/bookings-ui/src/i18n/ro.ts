@@ -801,7 +801,7 @@ export const bookingsUiRo = {
       phoneMissing: "Numarul de telefon lipseste - util pentru contact furnizor in ultimul moment.",
       billingCountryMissing:
         "Tara de facturare lipseste - taxele nu se calculeaza pana la completare.",
-      vatMissing: "Codul TVA lipseste - obligatoriu pentru facturarea B2B cu taxare inversa.",
+      vatMissing: "Codul fiscal lipseste - necesar pentru facturarea catre companie (B2B).",
       travelerFieldRequired: "{traveler}: {field} este obligatoriu.",
       paymentIntentMissing:
         "Intentia de plata lipseste - rezervarea va ramane implicit in asteptare.",

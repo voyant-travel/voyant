@@ -801,7 +801,7 @@ export const bookingsUiEn = {
     warnings: {
       phoneMissing: "Phone number not set — useful for last-minute supplier contact.",
       billingCountryMissing: "Billing country not set — taxes won't compute until it's filled in.",
-      vatMissing: "VAT id missing — required for B2B reverse-charge invoicing.",
+      vatMissing: "Tax ID not set — needed for company (B2B) invoicing.",
       travelerFieldRequired: "{traveler}: {field} is required.",
       paymentIntentMissing: "Payment intent not set — booking will default to hold.",
       noTravelers: "No travelers added — at least one is recommended for ops handoff.",
