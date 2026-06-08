@@ -25,6 +25,11 @@ import {
   PaymentScheduleSection,
   type PaymentScheduleValue,
 } from "../../components/payment-schedule-section.js"
+import {
+  emptyVoucherPickerValue,
+  VoucherPickerSection,
+  type VoucherPickerValue,
+} from "../../components/voucher-picker-section.js"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import {
   canCopyBillingContactToTraveler,
@@ -1588,6 +1593,50 @@ function PriceOverrideEditor({
   )
 }
 
+/**
+ * Operator-only voucher editor for the review step. Wraps the shared
+ * `VoucherPickerSection` (which validates the code against
+ * `/v1/public/vouchers/validate`) and mirrors the picked voucher into
+ * `draft.voucherRedemption` so the owned handler redeems it atomically at
+ * commit — matching the standalone create-sheet's behaviour. Redeems the
+ * full remaining balance, same as the create-sheet.
+ */
+function VoucherEditor({
+  draft,
+  setDraft,
+  pricing,
+}: {
+  draft: Draft
+  setDraft: (next: Draft) => void
+  pricing?: { total: number; currency: string } | null
+}): React.ReactElement {
+  const labels = useBookingsUiMessagesOrDefault().bookingCreateDialog.labels
+  const [voucher, setVoucher] = useState<VoucherPickerValue>(emptyVoucherPickerValue)
+  return (
+    <VoucherPickerSection
+      value={voucher}
+      onChange={(next) => {
+        setVoucher(next)
+        const redemption =
+          next.picked && next.picked.remainingAmountCents != null
+            ? { voucherId: next.picked.id, amountCents: next.picked.remainingAmountCents }
+            : undefined
+        setDraft({ ...draft, voucherRedemption: redemption })
+      }}
+      currency={pricing?.currency}
+      amountCents={pricing?.total ?? undefined}
+      labels={{
+        heading: labels.voucherHeading,
+        codePlaceholder: labels.voucherCodePlaceholder,
+        apply: labels.voucherApply,
+        clear: labels.voucherClear,
+        remainingLabel: labels.voucherRemainingLabel,
+        invalidLabel: labels.voucherInvalidLabel,
+      }}
+    />
+  )
+}
+
 function BankTransferDetails({
   capabilities,
 }: {
@@ -1720,6 +1769,9 @@ export function ReviewStep({
         {!isPublic ? (
           <PriceOverrideEditor draft={draft} setDraft={setDraft} pricing={pricing} />
         ) : null}
+        {/* Voucher (gift / refund credit) — operator-only. Redeemed atomically
+            on commit; the storefront never applies internal vouchers. */}
+        {!isPublic ? <VoucherEditor draft={draft} setDraft={setDraft} pricing={pricing} /> : null}
         {/* Document generation — operator-only; storefront never chooses this.
             Proforma vs invoice+contract are mutually exclusive; both off = no
             documents generated on commit. The owned handler forwards

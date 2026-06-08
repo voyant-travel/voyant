@@ -432,6 +432,22 @@ export const bookingDraftV1 = z.object({
     .optional(),
 
   /**
+   * Operator-applied gift / refund-credit voucher (admin review step).
+   * `voucherId` + `amountCents` mirror finance's `voucherRedemptionInput`
+   * exactly; the owned handler forwards them to booking-create, which
+   * atomically redeems the voucher inside the create transaction after
+   * re-checking status / expiry / balance. The UI validates the code via
+   * `/v1/public/vouchers/validate` before writing this. Distinct from
+   * `promotionCode` (a customer discount code) — see the note there.
+   */
+  voucherRedemption: z
+    .object({
+      voucherId: z.string().min(1),
+      amountCents: z.number().int().min(1),
+    })
+    .optional(),
+
+  /**
    * Customer-typed promotion code. Validated case-insensitively against
    * `promotional_offers.code` at quote time when the operator template
    * wires `evaluatePromotions` on `QuoteEntityDeps`. Surfaces as a

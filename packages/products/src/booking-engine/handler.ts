@@ -126,6 +126,11 @@ export interface BookingCreateBridgeInput {
   confirmedSellAmountCents?: number | null
   /** Required by booking-create when confirmed != catalog. */
   priceOverrideReason?: string | null
+  /**
+   * Gift / refund-credit voucher to redeem atomically inside the create
+   * transaction. booking-create re-validates status / expiry / balance.
+   */
+  voucherRedemption?: { voucherId: string; amountCents: number }
   taxLines?: Array<{
     code?: string | null
     name: string
@@ -210,6 +215,7 @@ interface DraftLike {
   documentGeneration?: BookingCreateBridgeInput["documentGeneration"]
   suppressNotifications?: boolean
   priceOverride?: { amountCents: number; reason: string }
+  voucherRedemption?: { voucherId: string; amountCents: number }
   addons?: Array<{
     extraId: string
     quantity: number
@@ -730,6 +736,9 @@ export function createProductsBookingHandler(
               priceOverrideReason: draft.priceOverride.reason.trim() || null,
             }
           : {}),
+        // Operator-applied gift / refund-credit voucher. booking-create
+        // redeems it atomically and re-checks status / expiry / balance.
+        voucherRedemption: draft.voucherRedemption,
         taxLines: extractTaxLines(request.pricing),
         itemLines: bookingItemLinesFromOptionSelections(optionSelections),
         extraLines: bookingExtraLinesFromAddonSelections({
