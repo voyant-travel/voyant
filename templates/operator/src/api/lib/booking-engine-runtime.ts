@@ -351,7 +351,9 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
         async loadPaxBands(ctx, productId) {
           // The journey's traveler bands should be the product's own
           // traveler types ("Adult", "Child under 6") — these live as
-          // pricing categories scoped to the product or its options.
+          // pricing categories scoped to the product, its options, or its
+          // option units (operators add traveler types at any of these
+          // levels; "Adult" is often a per-room/base type).
           const db = ctx.db as unknown as PostgresJsDatabase
           const optionRows = await db
             .select({ id: productOptions.id })
@@ -360,15 +362,19 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
               and(eq(productOptions.productId, productId), eq(productOptions.status, "active")),
             )
           const optionIds = optionRows.map((row) => row.id)
-          // Pull product-level AND option-scoped traveler types (operators
-          // usually add traveler types per option).
-          const scope =
+          const unitRows =
             optionIds.length > 0
-              ? or(
-                  eq(pricingCategories.productId, productId),
-                  inArray(pricingCategories.optionId, optionIds),
-                )
-              : eq(pricingCategories.productId, productId)
+              ? await db
+                  .select({ id: optionUnits.id })
+                  .from(optionUnits)
+                  .where(inArray(optionUnits.optionId, optionIds))
+              : []
+          const unitIds = unitRows.map((row) => row.id)
+
+          const scopeClauses = [eq(pricingCategories.productId, productId)]
+          if (optionIds.length > 0)
+            scopeClauses.push(inArray(pricingCategories.optionId, optionIds))
+          if (unitIds.length > 0) scopeClauses.push(inArray(pricingCategories.unitId, unitIds))
           const rows = await db
             .select({
               name: pricingCategories.name,
@@ -379,7 +385,7 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
             .from(pricingCategories)
             .where(
               and(
-                scope,
+                or(...scopeClauses),
                 eq(pricingCategories.active, true),
                 eq(pricingCategories.internalUseOnly, false),
               ),
@@ -409,9 +415,27 @@ export function getOwnedBookingHandlerRegistry(env: BookingEngineEnv): OwnedBook
               maxCount: maxByType[row.categoryType] ?? 8,
             })
           }
-          // No traveler types configured → undefined so the engine keeps
-          // the generic adult/child/infant defaults.
+          // No traveler types configured at all → undefined so the engine
+          // keeps the generic adult/child/infant defaults.
           if (bands.length === 0) return undefined
+          // Adults are the universal base traveler — a product can define
+          // only child/infant add-on types ("Adult" is the room base price,
+          // not a category). Guarantee an Adult band so the operator can
+          // always add the primary travelers. Its age floor sits just above
+          // the highest child band when one is configured.
+          if (!seen.has("adult")) {
+            const childMaxAge = bands.reduce<number | null>(
+              (max, b) => (b.maxAge != null && (max == null || b.maxAge > max) ? b.maxAge : max),
+              null,
+            )
+            bands.push({
+              code: "adult",
+              label: "Adult",
+              ...(childMaxAge != null ? { minAge: childMaxAge + 1 } : {}),
+              minCount: 1,
+              maxCount: 8,
+            })
+          }
           bands.sort((a, b) => (orderByType[a.code] ?? 9) - (orderByType[b.code] ?? 9))
           return bands
         },
