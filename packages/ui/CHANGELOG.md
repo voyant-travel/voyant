@@ -1,5 +1,11 @@
 # @voyantjs/ui
 
+## 0.104.5
+
+### Patch Changes
+
+- 318f65d: Format profitability money values with locale-aware currency formatters and allow sidebar workspace content to shrink without body-level overflow.
+
 ## 0.104.4
 
 ### Patch Changes
