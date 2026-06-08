@@ -744,6 +744,7 @@ export type BookingsUiMessages = {
       youAreBooking: string
       total: string
       pricingHint: string
+      pricingHintRooms: string
       guestSingular: string
       guestPlural: string
       filledOf: string

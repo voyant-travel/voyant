@@ -25,17 +25,25 @@ export function PriceSidePanel({
   entitySummary,
   currentStep,
   steps,
+  shape,
   draft,
   className,
 }: SidePanelState & { className?: string }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
-  // Only surface pricing once the user has actually configured travelers —
-  // otherwise the quote's single-occupant baseline shows a misleading total
-  // (e.g. "Total" at "0 guests"). No travelers → a hint instead of a price.
+  // Only surface pricing once the user has configured what actually drives
+  // the price — otherwise the quote's baseline shows a misleading total
+  // (e.g. a per-pax "from" price before any room is picked). Room products
+  // (an `option-units` sub-step) require a room selection; everything else
+  // requires at least one traveler.
   const configuredPax = draft?.configure?.pax
     ? Object.values(draft.configure.pax).reduce<number>((sum, n) => sum + (n ?? 0), 0)
     : 0
-  const showPricing = configuredPax > 0
+  const isRoomProduct = (shape?.configureSubSteps ?? []).some((s) => s.kind === "option-units")
+  const roomsPicked = (draft?.configure?.optionSelections?.length ?? 0) > 0
+  const showPricing = isRoomProduct ? roomsPicked : configuredPax > 0
+  const pricingHint = isRoomProduct
+    ? messages.bookingJourney.sidePanel.pricingHintRooms
+    : messages.bookingJourney.sidePanel.pricingHint
   return (
     <Card className={className}>
       {entitySummary ? <EntityHeader summary={entitySummary} /> : null}
@@ -46,9 +54,7 @@ export function PriceSidePanel({
 
         {invalidReason ? <p className="text-destructive text-sm">{invalidReason}</p> : null}
         {!showPricing ? (
-          <p className="border-t pt-4 text-muted-foreground text-sm">
-            {messages.bookingJourney.sidePanel.pricingHint}
-          </p>
+          <p className="border-t pt-4 text-muted-foreground text-sm">{pricingHint}</p>
         ) : isQuoting && !pricing ? (
           <div className="space-y-2 border-t pt-4">
             <Skeleton className="h-4 w-24" />

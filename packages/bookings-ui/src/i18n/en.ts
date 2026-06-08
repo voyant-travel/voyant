@@ -935,6 +935,7 @@ export const bookingsUiEn = {
       youAreBooking: "You're booking",
       total: "Total",
       pricingHint: "Add travelers to see pricing.",
+      pricingHintRooms: "Select rooms to see pricing.",
       guestSingular: "guest",
       guestPlural: "guests",
       filledOf: "{filled} of {total} filled",
