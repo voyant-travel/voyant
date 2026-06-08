@@ -29,6 +29,13 @@ export function PriceSidePanel({
   className,
 }: SidePanelState & { className?: string }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
+  // Only surface pricing once the user has actually configured travelers —
+  // otherwise the quote's single-occupant baseline shows a misleading total
+  // (e.g. "Total" at "0 guests"). No travelers → a hint instead of a price.
+  const configuredPax = draft?.configure?.pax
+    ? Object.values(draft.configure.pax).reduce<number>((sum, n) => sum + (n ?? 0), 0)
+    : 0
+  const showPricing = configuredPax > 0
   return (
     <Card className={className}>
       {entitySummary ? <EntityHeader summary={entitySummary} /> : null}
@@ -37,15 +44,19 @@ export function PriceSidePanel({
           <StepRecap steps={steps} currentStep={currentStep} draft={draft} />
         ) : null}
 
-        {isQuoting && !pricing ? (
-          <div className="space-y-2">
+        {invalidReason ? <p className="text-destructive text-sm">{invalidReason}</p> : null}
+        {!showPricing ? (
+          <p className="border-t pt-4 text-muted-foreground text-sm">
+            {messages.bookingJourney.sidePanel.pricingHint}
+          </p>
+        ) : isQuoting && !pricing ? (
+          <div className="space-y-2 border-t pt-4">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-4 w-32" />
             <Skeleton className="h-4 w-20" />
           </div>
         ) : null}
-        {invalidReason ? <p className="text-destructive text-sm">{invalidReason}</p> : null}
-        {pricing ? (
+        {showPricing && pricing ? (
           <div className="space-y-2 border-t pt-4">
             <ul className="space-y-1 text-sm">
               {pricing.lines.map((line) => (

@@ -32,6 +32,8 @@ import {
   useBookingQuote,
 } from "@voyantjs/catalog-react/booking-engine"
 import { Button } from "@voyantjs/ui/components/button"
+import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
+import { Skeleton } from "@voyantjs/ui/components/skeleton"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import { type Draft, emptyDraft, totalPax } from "../lib/draft-state.js"
@@ -355,14 +357,22 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
           />
 
           {currentStep === "configure" ? (
-            <ConfigureStep
-              draft={draft}
-              setDraft={setDraft}
-              shape={shape}
-              productId={props.entityId}
-              renderDeparturePicker={props.renderDeparturePicker}
-              renderUnitsPicker={props.renderUnitsPicker}
-            />
+            // First load: the descriptor (bands/options/rooms) arrives with
+            // the first quote. Show a skeleton rather than the generic
+            // fallback shape, which would otherwise flash and then shift
+            // into the real layout.
+            !quote.data && quote.isQuoting ? (
+              <ConfigureStepSkeleton />
+            ) : (
+              <ConfigureStep
+                draft={draft}
+                setDraft={setDraft}
+                shape={shape}
+                productId={props.entityId}
+                renderDeparturePicker={props.renderDeparturePicker}
+                renderUnitsPicker={props.renderUnitsPicker}
+              />
+            )
           ) : null}
           {currentStep === "billing" ? (
             <BillingStep
@@ -516,6 +526,39 @@ function isStepVisible(step: JourneyStep, shape: BookingDraftShape): boolean {
     case "review":
       return shape.showsReview
   }
+}
+
+/**
+ * First-load placeholder for the Configure step. Mirrors the real layout
+ * (departure, travelers, option) closely enough that swapping to the live
+ * descriptor causes minimal layout shift.
+ */
+function ConfigureStepSkeleton(): React.ReactElement {
+  return (
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-5 w-28" />
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-20" />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
 function canAdvanceFromStep(

@@ -936,6 +936,7 @@ export const bookingsUiRo = {
     sidePanel: {
       youAreBooking: "Rezervi",
       total: "Total",
+      pricingHint: "Adauga calatori pentru a vedea pretul.",
       guestSingular: "oaspete",
       guestPlural: "oaspeti",
       filledOf: "{filled} din {total} completati",

@@ -743,6 +743,7 @@ export type BookingsUiMessages = {
     sidePanel: {
       youAreBooking: string
       total: string
+      pricingHint: string
       guestSingular: string
       guestPlural: string
       filledOf: string
