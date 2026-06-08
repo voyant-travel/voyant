@@ -5,8 +5,8 @@ import {
   bookingsService,
 } from "@voyantjs/bookings"
 import { bookingPiiAccessLog } from "@voyantjs/bookings/schema"
-import { invoices, payments } from "@voyantjs/finance/schema"
-import { and, desc, eq, ne, sql } from "drizzle-orm"
+import { bookingPaymentSchedules, invoices, payments } from "@voyantjs/finance/schema"
+import { and, asc, desc, eq, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { ContractLifecycleHook } from "./lifecycle.js"
@@ -622,6 +622,11 @@ export async function autoGenerateContractForBooking(
   const endDate = booking.endDate ?? ""
   const durationNights = computeNights(startDate, endDate)
   const settlement = await resolveBookingSettlementVariables(db, booking.id, sellCurrency)
+  const paymentSchedule = await resolveBookingPaymentScheduleVariables(db, booking.id)
+  const roomsSummary = deriveRoomsSummary(
+    bookingItemContext.rawItems,
+    bookingItemContext.roomOptionUnitIds,
+  )
 
   const mappedTravelers: ContractTravelerVariable[] = travelers.map((t, i) => {
     const fullName = [t.firstName, t.lastName].filter(Boolean).join(" ").trim()
@@ -723,15 +728,15 @@ export async function autoGenerateContractForBooking(
       paidAmountCents: settlement.paidAmountCents,
       balanceDueCents: settlement.balanceDueCents ?? totalCents,
 
-      depositAmountCents: 0,
-      depositDueDate: "",
-      balanceAmountCents: 0,
-      balanceDueDate: "",
+      depositAmountCents: paymentSchedule.depositAmountCents,
+      depositDueDate: paymentSchedule.depositDueDate,
+      balanceAmountCents: paymentSchedule.balanceAmountCents,
+      balanceDueDate: paymentSchedule.balanceDueDate,
       paymentPolicy: {
         source: "operator_default",
       },
 
-      roomsSummary: "",
+      roomsSummary,
 
       source: {
         kind: booking.sourceType ?? "",
@@ -836,7 +841,7 @@ export async function autoGenerateContractForBooking(
       method: settlement.latestCompleted?.methodLabel ?? "",
       amountCents: totalCents,
       currency: sellCurrency,
-      schedule: [],
+      schedule: paymentSchedule.entries,
       capturedAt: settlement.latestCompleted?.date ?? "",
       createdAt: settlement.latestCompleted?.date ?? "",
       latestCompleted: settlement.latestCompleted,
@@ -1018,6 +1023,16 @@ interface BookingItemContext {
     departureCity: string
   }
   items: ContractItemVariable[]
+  rawItems: BookingItemRow[]
+  roomOptionUnitIds: ReadonlySet<string>
+}
+
+interface PaymentScheduleSummary {
+  entries: DefaultContractVariables["payment"]["schedule"]
+  depositAmountCents: number
+  depositDueDate: string
+  balanceAmountCents: number
+  balanceDueDate: string
 }
 
 async function resolveTravelerTravelDetails(
@@ -1150,6 +1165,7 @@ async function resolveBookingItemContext(
     primaryItem.description,
   )
   const departureSlot = await resolveDepartureSlotContext(db, primaryItem)
+  const roomOptionUnitIds = await resolveRoomOptionUnitIds(db, items)
 
   return {
     entityModule,
@@ -1160,6 +1176,8 @@ async function resolveBookingItemContext(
     destination,
     departureSlot,
     items: items.map(mapBookingItemToContractItem),
+    rawItems: items,
+    roomOptionUnitIds,
   }
 }
 
@@ -1179,6 +1197,101 @@ function emptyBookingItemContext(): BookingItemContext {
       departureCity: "",
     },
     items: [],
+    rawItems: [],
+    roomOptionUnitIds: new Set(),
+  }
+}
+
+async function resolveBookingPaymentScheduleVariables(
+  db: PostgresJsDatabase,
+  bookingId: string,
+): Promise<PaymentScheduleSummary> {
+  const rows = await db
+    .select()
+    .from(bookingPaymentSchedules)
+    .where(eq(bookingPaymentSchedules.bookingId, bookingId))
+    .orderBy(asc(bookingPaymentSchedules.dueDate), asc(bookingPaymentSchedules.createdAt))
+
+  const deposit = rows.find((row) => row.scheduleType === "deposit")
+  const balance = rows.find((row) => row.scheduleType === "balance")
+
+  return {
+    entries: rows.map((row, index) => ({
+      index: index + 1,
+      type: row.scheduleType,
+      amountCents: row.amountCents,
+      currency: row.currency,
+      dueDate: row.dueDate,
+      status: row.status,
+    })),
+    depositAmountCents: deposit?.amountCents ?? 0,
+    depositDueDate: deposit?.dueDate ?? "",
+    balanceAmountCents: balance?.amountCents ?? 0,
+    balanceDueDate: balance?.dueDate ?? "",
+  }
+}
+
+function deriveRoomsSummary(
+  items: BookingItemRow[],
+  roomOptionUnitIds: ReadonlySet<string>,
+): string {
+  const lines = items
+    .filter((item) => isAccommodationLikeItem(item, roomOptionUnitIds))
+    .map((item) => {
+      const label = firstString(item.unitNameSnapshot, item.optionNameSnapshot, item.title)
+      if (!label) return ""
+      return `${item.quantity ?? 1}× ${label}`
+    })
+    .filter(Boolean)
+
+  return lines.join(", ")
+}
+
+function isAccommodationLikeItem(
+  item: BookingItemRow,
+  roomOptionUnitIds: ReadonlySet<string>,
+): boolean {
+  if (item.itemType === "accommodation") return true
+  if (item.optionUnitId && roomOptionUnitIds.has(item.optionUnitId)) return true
+
+  const metadata = recordValue(item.metadata)
+  const unitType = pickString(metadata, [
+    "unitType",
+    "unit_type",
+    "optionUnitType",
+    "option_unit_type",
+  ]).toLowerCase()
+
+  return unitType === "room" || unitType === "accommodation"
+}
+
+async function resolveRoomOptionUnitIds(
+  db: PostgresJsDatabase,
+  items: BookingItemRow[],
+): Promise<Set<string>> {
+  const optionUnitIds = [
+    ...new Set(
+      items
+        .map((item) => item.optionUnitId)
+        .filter((id): id is string => typeof id === "string" && id.trim().length > 0),
+    ),
+  ]
+  if (optionUnitIds.length === 0) return new Set()
+
+  try {
+    const result = await db.execute(sql`
+      SELECT id
+      FROM option_units
+      WHERE id IN (${sql.join(
+        optionUnitIds.map((id) => sql`${id}`),
+        sql`, `,
+      )})
+        AND unit_type IN ('room', 'accommodation')
+    `)
+    return new Set(toRows<{ id: string }>(result).map((row) => row.id))
+  } catch (error) {
+    if (isUndefinedTableError(error)) return new Set()
+    throw error
   }
 }
 
