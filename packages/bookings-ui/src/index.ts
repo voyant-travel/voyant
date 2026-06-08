@@ -102,8 +102,10 @@ export {
   type IconActionButtonProps,
 } from "./components/icon-action-button.js"
 export {
+  emptyOptionUnitsStepperValue,
   OptionUnitsStepperSection,
   type OptionUnitsStepperSectionProps,
+  type OptionUnitsStepperUnit,
   type OptionUnitsStepperValue,
 } from "./components/option-units-stepper-section.js"
 export {

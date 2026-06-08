@@ -270,6 +270,11 @@ export function buildOwnedProductDraftShape(
   const addons = options.addonCatalog ?? []
   const variants = options.productOptions ?? []
   const flags = defaultDraftShapeFlags()
+  // Room/vehicle-style products sell inventory units (rooms) the operator
+  // must pick a quantity of; person-only products price by pax band alone.
+  const hasInventoryUnits = variants.some((variant) =>
+    variant.units?.some((unit) => unit.unitType === "room" || unit.unitType === "vehicle"),
+  )
   return {
     ...flags,
     showsAddons: addons.length > 0,
@@ -287,6 +292,10 @@ export function buildOwnedProductDraftShape(
       // The journey renders an injected slot picker for this kind, falling
       // back to a free date when the product has no scheduled departures.
       { kind: "departure" as const, required: true },
+      // Inventory products: the operator picks room/unit quantities for the
+      // chosen option + departure. The journey renders an injected units
+      // picker that writes `configure.optionSelections`.
+      ...(hasInventoryUnits ? [{ kind: "option-units" as const }] : []),
       { kind: "occupancy", bands: paxBands },
     ],
     addons: addons.length > 0 ? { catalog: addons } : undefined,

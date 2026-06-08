@@ -94,6 +94,35 @@ export interface DeparturePickerProps {
   }) => void
 }
 
+/** A picked inventory unit (room) selection on the draft's configure. */
+export interface JourneyOptionSelection {
+  optionId: string
+  optionName?: string
+  optionUnitId?: string
+  optionUnitName?: string
+  quantity: number
+}
+
+/**
+ * Props for the injectable units (rooms) picker rendered in the Configure
+ * step for an `"option-units"` sub-step. The template wires it to an
+ * inventory source (operator availability) so the operator picks room
+ * quantities for the chosen option + departure; the journey stores the
+ * result on `configure.optionSelections`.
+ */
+export interface UnitsPickerProps {
+  /** The owned product whose units to load. */
+  productId: string
+  /** Currently-selected product option (drives which units show), or null. */
+  optionId: string | null
+  /** Currently-picked departure slot (drives per-slot availability), or null. */
+  slotId: string | null
+  /** Current unit selections on the draft. */
+  selections: ReadonlyArray<JourneyOptionSelection>
+  /** Report the new full set of unit selections. */
+  onChange: (selections: JourneyOptionSelection[]) => void
+}
+
 /**
  * Capabilities supplied by the template — checkout-ui's PaymentStep
  * consumes these to render the right provider widget. Each flag is
@@ -210,6 +239,13 @@ export interface BookingJourneyProps {
    * when omitted, the journey renders a free date/time fallback.
    */
   renderDeparturePicker?: (props: DeparturePickerProps) => ReactNode
+
+  /**
+   * Renders the Configure step's `"option-units"` sub-step (room/unit
+   * quantity selection). Operator surfaces wire this to an inventory
+   * units picker; when omitted, the sub-step renders nothing.
+   */
+  renderUnitsPicker?: (props: UnitsPickerProps) => ReactNode
 
   /** Hook for the actual payment-provider widget — checkout-ui's
    *  PaymentStep is the canonical implementation. When omitted, the

@@ -16,6 +16,7 @@ import { useState } from "react"
 import { catalogVerticalPath } from "@/components/voyant/catalog/catalog-route-state"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { OperatorDeparturePicker } from "./operator-departure-picker"
+import { OperatorUnitsPicker } from "./operator-units-picker"
 
 const emptyPersonPickerValue: PersonPickerValue = {
   mode: "existing",
@@ -54,6 +55,7 @@ export function OperatorBookingJourney({
     | "renderLeadContactPicker"
     | "renderTravelerContactPicker"
     | "renderDeparturePicker"
+    | "renderUnitsPicker"
     | "renderPaymentProviderStep"
     | "onCommitted"
     | "onCancelled"
@@ -65,6 +67,10 @@ export function OperatorBookingJourney({
       // Owned: real scheduled departures from availability. Sourced
       // products have none, so the picker falls back to a free date.
       return <OperatorDeparturePicker {...pickerProps} />
+    },
+    renderUnitsPicker(pickerProps) {
+      // Rooms/units for the picked option + departure (operator inventory).
+      return <OperatorUnitsPicker {...pickerProps} />
     },
     renderTravelerContactPicker({ apply }) {
       // Travelers reuse the same picker; the operator picks an

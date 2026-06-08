@@ -54,10 +54,13 @@ import type {
   PaymentProviderCapabilities,
   PaymentProviderStepRenderProps,
   TravelerContactPickerProps,
+  UnitsPickerProps,
 } from "../types.js"
 
 /** Injectable departure-picker render slot, threaded from BookingJourneyProps. */
 type RenderDeparturePicker = (props: DeparturePickerProps) => React.ReactNode
+/** Injectable units (rooms) render slot, threaded from BookingJourneyProps. */
+type RenderUnitsPicker = (props: UnitsPickerProps) => React.ReactNode
 
 interface StepCommonProps {
   draft: Draft
@@ -75,11 +78,13 @@ export function ConfigureStep({
   shape,
   productId,
   renderDeparturePicker,
+  renderUnitsPicker,
 }: StepCommonProps & {
   renderExtras?: () => React.ReactNode
-  /** Owned product id — passed to the injected departure picker. */
+  /** Owned product id — passed to the injected pickers. */
   productId?: string
   renderDeparturePicker?: RenderDeparturePicker
+  renderUnitsPicker?: RenderUnitsPicker
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   return (
@@ -96,6 +101,7 @@ export function ConfigureStep({
           shape={shape}
           productId={productId}
           renderDeparturePicker={renderDeparturePicker}
+          renderUnitsPicker={renderUnitsPicker}
         />
       </CardContent>
     </Card>
@@ -251,11 +257,27 @@ function DepartureFields({
   shape,
   productId,
   renderDeparturePicker,
+  renderUnitsPicker,
 }: StepCommonProps & {
   productId?: string
   renderDeparturePicker?: RenderDeparturePicker
+  renderUnitsPicker?: RenderUnitsPicker
 }): React.ReactNode {
   const subSteps = shape.configureSubSteps ?? []
+  // Injected rooms/units picker (operator availability) for the picked
+  // option + departure; writes `configure.optionSelections`. Renders
+  // nothing when no picker is injected (storefront).
+  const renderUnits = (): React.ReactNode =>
+    renderUnitsPicker && productId
+      ? renderUnitsPicker({
+          productId,
+          optionId: draft.configure.variantId ?? null,
+          slotId: draft.configure.departureSlotId ?? null,
+          selections: draft.configure.optionSelections ?? [],
+          onChange: (selections) =>
+            setDraft(patchConfigure(draft, { optionSelections: selections })),
+        })
+      : null
   // The injected picker (operator availability) renders a real
   // scheduled-departure selector for a `departure` sub-step; it owns
   // its own free-date fallback. When no slot is injected (storefront),
@@ -296,6 +318,9 @@ function DepartureFields({
         // a stable key.
         if (sub.kind === "departure") {
           return <div key="departure">{renderDeparture()}</div>
+        }
+        if (sub.kind === "option-units") {
+          return <div key="option-units">{renderUnits()}</div>
         }
         if (sub.kind === "product-option") {
           return (

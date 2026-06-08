@@ -361,6 +361,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
               shape={shape}
               productId={props.entityId}
               renderDeparturePicker={props.renderDeparturePicker}
+              renderUnitsPicker={props.renderUnitsPicker}
             />
           ) : null}
           {currentStep === "billing" ? (

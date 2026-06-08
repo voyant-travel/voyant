@@ -49,6 +49,7 @@ export {
   type DeparturePickerProps,
   JOURNEY_STEP_ORDER,
   type JourneyHeaderState,
+  type JourneyOptionSelection,
   type JourneyStep,
   type JourneySurface,
   type LeadContactPickerProps,
@@ -56,4 +57,5 @@ export {
   type PaymentProviderStepRenderProps,
   type SidePanelState,
   type TravelerContactPickerProps,
+  type UnitsPickerProps,
 } from "./types.js"

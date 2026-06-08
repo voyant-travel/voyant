@@ -176,6 +176,12 @@ export interface AddonOffer {
 export type ConfigureSubStep =
   | { kind: "departure"; required: true }
   | { kind: "product-option"; options: ReadonlyArray<ProductVariantOption> }
+  | {
+      /** Inventory-unit (room / vehicle) quantity selection for the
+       *  picked option + departure. The journey renders an injected
+       *  units picker that writes `configure.optionSelections`. */
+      kind: "option-units"
+    }
   | { kind: "cabin-category"; categories: ReadonlyArray<CabinCategoryOption> }
   | { kind: "cabin-number"; perCategory: Record<string, ReadonlyArray<CabinNumberOption>> }
   | { kind: "date-range"; minNights: number; maxNights: number }
