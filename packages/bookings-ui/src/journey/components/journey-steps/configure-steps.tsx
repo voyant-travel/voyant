@@ -6,6 +6,7 @@ import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
+import { RadioGroup, RadioGroupItem } from "@voyantjs/ui/components/radio-group"
 import { Minus, Plus } from "lucide-react"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../../../i18n/index.js"
 import { type Draft, patchConfigure, patchPaxCount, totalPax } from "../../lib/draft-state.js"
@@ -384,39 +385,46 @@ function ProductOptionFields({
   return (
     <div className="space-y-2">
       <Label>{messages.bookingJourney.configure.option}</Label>
-      <div className="grid grid-cols-1 gap-2">
+      <RadioGroup
+        value={selectedId ?? ""}
+        onValueChange={(v) => setDraft(patchConfigure(draft, { variantId: v }))}
+        className="grid grid-cols-1 gap-2"
+      >
         {options.map((option) => {
           const selected = option.id === selectedId
           return (
             <div key={option.id} className="space-y-2">
-              <button
-                type="button"
-                onClick={() => setDraft(patchConfigure(draft, { variantId: option.id }))}
-                className={`w-full rounded-md border p-3 text-left text-sm ${
-                  selected ? "border-primary ring-2 ring-primary" : ""
-                }`}
+              {/* biome-ignore lint/a11y/noLabelWithoutControl: radix RadioGroupItem provides the control */}
+              <label
+                className={
+                  "flex cursor-pointer items-start gap-3 rounded-md border p-3 text-sm transition-colors " +
+                  (selected ? "border-primary bg-primary/5" : "border-input hover:bg-muted/50")
+                }
               >
-                <span className="font-medium">{option.name}</span>
-                {option.code ? (
-                  <span className="ml-2 text-muted-foreground text-xs uppercase">
-                    {option.code}
-                  </span>
-                ) : null}
-                {option.description ? (
-                  <span className="mt-1 block text-muted-foreground text-xs">
-                    {option.description}
-                  </span>
-                ) : null}
-              </button>
+                <RadioGroupItem value={option.id} className="mt-0.5" />
+                <div className="min-w-0">
+                  <div className="font-medium">
+                    {option.name}
+                    {option.code ? (
+                      <span className="ml-2 text-muted-foreground text-xs uppercase">
+                        {option.code}
+                      </span>
+                    ) : null}
+                  </div>
+                  {option.description ? (
+                    <div className="mt-1 text-muted-foreground text-xs">{option.description}</div>
+                  ) : null}
+                </div>
+              </label>
               {selected && renderSelectedUnits ? (
-                <div className="ml-2 space-y-2 border-muted border-l-2 pl-4">
+                <div className="ml-7 space-y-2 border-muted border-l-2 pl-4">
                   {renderSelectedUnits()}
                 </div>
               ) : null}
             </div>
           )
         })}
-      </div>
+      </RadioGroup>
     </div>
   )
 }
