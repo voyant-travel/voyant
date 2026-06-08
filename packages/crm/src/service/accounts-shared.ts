@@ -52,6 +52,10 @@ export type PersonHydratedFields = {
   website: string | null
 }
 
+type HydratePeopleOptions = {
+  fallbackOnError?: boolean
+}
+
 function emptyPersonHydratedFields(): PersonHydratedFields {
   return {
     email: null,
@@ -197,16 +201,32 @@ export async function deletePersonIdentity(db: PostgresJsDatabase, personId: str
 export async function hydratePeople<T extends { id: string }>(
   db: PostgresJsDatabase,
   rows: T[],
+  options: HydratePeopleOptions = {},
 ): Promise<Array<T & PersonHydratedFields>> {
-  if (rows.length === 0) {
-    return rows.map((row) => ({
+  const emptyHydratedRows = () =>
+    rows.map((row) => ({
       ...row,
       ...emptyPersonHydratedFields(),
     }))
+
+  if (rows.length === 0) {
+    return emptyHydratedRows()
   }
 
   const ids = rows.map((row) => row.id)
-  const directoryMap = await loadPersonDirectoryMap(db, ids)
+  let directoryMap: Map<string, PersonHydratedFields>
+  try {
+    directoryMap = await loadPersonDirectoryMap(db, ids)
+  } catch (error) {
+    if (!options.fallbackOnError) {
+      throw error
+    }
+    console.warn("[crm] person identity hydration failed; returning base people rows", {
+      error,
+      personCount: rows.length,
+    })
+    return emptyHydratedRows()
+  }
 
   return rows.map((row) => {
     return {

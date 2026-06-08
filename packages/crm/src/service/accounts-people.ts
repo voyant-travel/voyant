@@ -142,7 +142,7 @@ export const peopleAccountsService = {
 
     return {
       ...result,
-      data: await hydratePeople(db, result.data),
+      data: await hydratePeople(db, result.data, { fallbackOnError: true }),
     }
   },
 
