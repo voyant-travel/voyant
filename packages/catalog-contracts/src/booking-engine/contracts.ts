@@ -418,6 +418,20 @@ export const bookingDraftV1 = z.object({
   suppressNotifications: z.boolean().optional(),
 
   /**
+   * Operator-only manual price override (admin review step). The owned
+   * handler sends `amountCents` as `confirmedSellAmountCents` (which wins
+   * over the quote/promotion price), the quote total as
+   * `catalogSellAmountCents`, and the reason — booking-create requires a
+   * reason when the two differ.
+   */
+  priceOverride: z
+    .object({
+      amountCents: z.number().int().min(0),
+      reason: z.string(),
+    })
+    .optional(),
+
+  /**
    * Customer-typed promotion code. Validated case-insensitively against
    * `promotional_offers.code` at quote time when the operator template
    * wires `evaluatePromotions` on `QuoteEntityDeps`. Surfaces as a

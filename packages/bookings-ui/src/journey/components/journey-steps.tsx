@@ -1473,7 +1473,9 @@ function PaymentScheduleEditor({
     rowsToPaymentScheduleValue(draft.paymentSchedules, departureDate),
   )
   const currency = pricing?.currency ?? ""
-  const total = pricing?.total ?? null
+  // A manual price override is the booking's real total — schedules must sum
+  // to it (booking-create enforces this), so the editor anchors on it.
+  const total = draft.priceOverride?.amountCents ?? pricing?.total ?? null
 
   return (
     <PaymentScheduleSection
@@ -1486,6 +1488,103 @@ function PaymentScheduleEditor({
       departureDate={departureDate}
       currency={currency}
     />
+  )
+}
+
+/**
+ * Operator-only manual price override for the journey. Local string state for
+ * the amount field keeps decimal entry smooth; syncs cents to `draft.priceOverride`.
+ * The owned handler sends it as `confirmedSellAmountCents` (wins over the quote)
+ * with a required reason when it differs from the quoted total.
+ */
+function PriceOverrideEditor({
+  draft,
+  setDraft,
+  pricing,
+}: {
+  draft: Draft
+  setDraft: (next: Draft) => void
+  pricing?: { total: number; currency: string } | null
+}): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault().bookingJourney.review
+  const quoteTotal = pricing?.total ?? null
+  const currency = pricing?.currency ?? ""
+  const override = draft.priceOverride
+  const [amount, setAmount] = useState(() =>
+    override ? (override.amountCents / 100).toString() : "",
+  )
+
+  const setOverride = (next: { amountCents: number; reason: string } | undefined) =>
+    setDraft({ ...draft, priceOverride: next })
+
+  const reasonNeeded =
+    override != null &&
+    quoteTotal != null &&
+    override.amountCents !== quoteTotal &&
+    override.reason.trim().length === 0
+
+  return (
+    <div className="flex flex-col gap-3 rounded-md border p-3">
+      <div className="flex items-center gap-2 text-sm">
+        <Checkbox
+          id="bj-price-override"
+          checked={override != null}
+          onCheckedChange={(v) => {
+            if (v === true) {
+              const cents = quoteTotal ?? 0
+              setAmount((cents / 100).toString())
+              setOverride({ amountCents: cents, reason: "" })
+            } else {
+              setOverride(undefined)
+            }
+          }}
+        />
+        <Label htmlFor="bj-price-override" className="cursor-pointer">
+          {messages.priceOverrideToggle}
+        </Label>
+      </div>
+      {override ? (
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="bj-price-override-amount" className="text-xs">
+              {messages.priceOverrideAmount}
+              {currency ? ` (${currency})` : ""}
+            </Label>
+            <Input
+              id="bj-price-override-amount"
+              type="number"
+              min={0}
+              step="0.01"
+              value={amount}
+              onChange={(e) => {
+                setAmount(e.target.value)
+                const parsed = Number(e.target.value)
+                setOverride({
+                  amountCents: Number.isFinite(parsed) ? Math.round(parsed * 100) : 0,
+                  reason: override.reason,
+                })
+              }}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="bj-price-override-reason" className="text-xs">
+              {messages.priceOverrideReason}
+            </Label>
+            <Textarea
+              id="bj-price-override-reason"
+              placeholder={messages.priceOverrideReasonPlaceholder}
+              value={override.reason}
+              onChange={(e) =>
+                setOverride({ amountCents: override.amountCents, reason: e.target.value })
+              }
+            />
+            {reasonNeeded ? (
+              <p className="text-destructive text-xs">{messages.priceOverrideReasonRequired}</p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+    </div>
   )
 }
 
@@ -1550,6 +1649,7 @@ export function ReviewStep({
   onConfirm,
   renderExtras,
   surface,
+  pricing,
 }: {
   draft: Draft
   setDraft: (next: Draft) => void
@@ -1563,6 +1663,8 @@ export function ReviewStep({
    * `admin` so existing operator usage stays unchanged.
    */
   surface?: "admin" | "public"
+  /** Live quote total + currency — drives the price-override default. */
+  pricing?: { total: number; currency: string } | null
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   const isPublic = surface === "public"
@@ -1613,6 +1715,11 @@ export function ReviewStep({
             />
           </div>
         )}
+        {/* Manual price override — operator-only. Wins over the quote price
+            on commit; a reason is required when it differs. */}
+        {!isPublic ? (
+          <PriceOverrideEditor draft={draft} setDraft={setDraft} pricing={pricing} />
+        ) : null}
         {/* Document generation — operator-only; storefront never chooses this.
             Proforma vs invoice+contract are mutually exclusive; both off = no
             documents generated on commit. The owned handler forwards

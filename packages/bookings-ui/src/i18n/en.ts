@@ -906,6 +906,11 @@ export const bookingsUiEn = {
       internalNotes: "Internal notes (operator-only)",
       confirmBooking: "Confirm booking",
       confirming: "Confirming...",
+      priceOverrideToggle: "Override total price",
+      priceOverrideAmount: "Total price",
+      priceOverrideReason: "Override reason",
+      priceOverrideReasonPlaceholder: "Why is the price being changed?",
+      priceOverrideReasonRequired: "A reason is required when the price is changed.",
     },
     contract: {
       defaultTitle: "Booking contract",

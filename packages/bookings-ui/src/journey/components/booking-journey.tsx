@@ -404,6 +404,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
               onConfirm={onConfirm}
               renderExtras={props.renderReviewExtras}
               surface={surface}
+              pricing={quote.data?.pricing ?? null}
             />
           ) : null}
 

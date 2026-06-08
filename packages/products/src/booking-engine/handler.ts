@@ -120,6 +120,12 @@ export interface BookingCreateBridgeInput {
   }
   /** Suppress post-commit notifications (operator-only). */
   suppressNotifications?: boolean
+  /** List/quote price before a manual override (drives the override audit + reason check). */
+  catalogSellAmountCents?: number | null
+  /** Manual operator price override — wins over the quote/promotion price. */
+  confirmedSellAmountCents?: number | null
+  /** Required by booking-create when confirmed != catalog. */
+  priceOverrideReason?: string | null
   taxLines?: Array<{
     code?: string | null
     name: string
@@ -203,6 +209,7 @@ interface DraftLike {
   paymentSchedules?: BookingCreateBridgeInput["paymentSchedules"]
   documentGeneration?: BookingCreateBridgeInput["documentGeneration"]
   suppressNotifications?: boolean
+  priceOverride?: { amountCents: number; reason: string }
   addons?: Array<{
     extraId: string
     quantity: number
@@ -713,6 +720,16 @@ export function createProductsBookingHandler(
           : undefined,
         suppressNotifications: draft.suppressNotifications,
         sellAmountCentsOverride,
+        // Manual operator override: `confirmedSellAmountCents` wins over the
+        // quote/promotion price; the quote total is the `catalog` baseline so
+        // booking-create's override audit + required-reason check fire correctly.
+        ...(draft.priceOverride
+          ? {
+              catalogSellAmountCents: sellAmountCentsOverride ?? null,
+              confirmedSellAmountCents: draft.priceOverride.amountCents,
+              priceOverrideReason: draft.priceOverride.reason.trim() || null,
+            }
+          : {}),
         taxLines: extractTaxLines(request.pricing),
         itemLines: bookingItemLinesFromOptionSelections(optionSelections),
         extraLines: bookingExtraLinesFromAddonSelections({

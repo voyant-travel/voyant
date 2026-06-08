@@ -718,6 +718,11 @@ export type BookingsUiMessages = {
       internalNotes: string
       confirmBooking: string
       confirming: string
+      priceOverrideToggle: string
+      priceOverrideAmount: string
+      priceOverrideReason: string
+      priceOverrideReasonPlaceholder: string
+      priceOverrideReasonRequired: string
     }
     contract: {
       defaultTitle: string

@@ -907,6 +907,11 @@ export const bookingsUiRo = {
       internalNotes: "Note interne (doar operator)",
       confirmBooking: "Confirma rezervarea",
       confirming: "Se confirma...",
+      priceOverrideToggle: "Modifica pretul total",
+      priceOverrideAmount: "Pret total",
+      priceOverrideReason: "Motivul modificarii",
+      priceOverrideReasonPlaceholder: "De ce se modifica pretul?",
+      priceOverrideReasonRequired: "Este necesar un motiv cand pretul este modificat.",
     },
     contract: {
       defaultTitle: "Contract rezervare",
