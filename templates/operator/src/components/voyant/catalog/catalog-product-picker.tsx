@@ -17,13 +17,17 @@ import { Label } from "@voyantjs/ui/components/label"
 import { useMemo, useState } from "react"
 
 /**
- * Catalog-aware product picker for the "New booking" create-sheet — a single
- * typeahead spanning OWNED + supplier-SOURCED products (catalog search index).
- * Owned picks flow through the create-sheet's `onChange` (inline owned flow);
- * sourced picks hand off to the unified booking journey via `onSourcedSelected`
- * (the create-sheet is owned-only, so a sourced id can't enter it).
+ * Catalog-aware product picker for "New booking" — a single typeahead
+ * spanning OWNED + supplier-SOURCED products (catalog search index), so
+ * operators never learn an owned-vs-sourced split. Owned picks report via
+ * `onChange`; sourced picks report via `onSourcedSelected` (they carry
+ * supplier provenance). The host decides where each goes.
  *
- * Plugged into `BookingCreatePage` via its `renderProductPicker` slot.
+ * The operator route uses this standalone and routes BOTH owned and sourced
+ * selections into the unified booking journey. It also satisfies
+ * `ProductPickerRenderProps`, so it can still drop into the create-sheet's
+ * `renderProductPicker` slot (where owned stays inline and only sourced
+ * hands off to the journey).
  */
 
 export interface SourcedProductSelection {

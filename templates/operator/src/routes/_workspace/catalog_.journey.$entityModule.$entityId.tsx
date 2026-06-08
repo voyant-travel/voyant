@@ -11,9 +11,12 @@ import { OperatorBookingJourney } from "@/components/voyant/booking-journey/oper
  *
  * Per booking-journey-architecture §10 Phase B.
  *
- * The legacy single-page booking flow at `/catalog/book/...` stays
- * available during Phase D's deprecation window — both routes hit
- * the same engine.
+ * This is the single operator booking path: catalog detail/browse pages,
+ * the trips composer, and "New booking" (`/bookings/new`) all route here
+ * for owned AND supplier-sourced products — they differ only by the
+ * `sourceKind` provenance. The legacy `/catalog/book` single-page flow was
+ * removed; the owned-only `/bookings/new` create-sheet was retired in favour
+ * of this journey.
  */
 const journeySearchSchema = z.object({
   sourceKind: z.string().min(1),
