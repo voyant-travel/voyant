@@ -1,5 +1,11 @@
 # @voyantjs/finance
 
+## 0.106.2
+
+### Patch Changes
+
+- 83ff6fd: Detect duplicate invoice number errors across nested Neon/serverless driver error shapes so invoice-from-booking returns a typed invoice number conflict.
+
 ## 0.106.1
 
 ### Patch Changes
