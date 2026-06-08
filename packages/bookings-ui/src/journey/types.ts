@@ -42,16 +42,22 @@ export interface JourneySurface {
 }
 
 export interface LeadContactPickerProps {
-  /** Apply a picked contact to the draft's billing fields. Email is
-   *  optional because CRM-backed people may not have one stored —
-   *  the billing form will surface it as empty for the operator to
-   *  fill in. */
+  /** Current buyer type — the picker should search PEOPLE for B2C and
+   *  ORGANIZATIONS for B2B. */
+  buyerType: "B2C" | "B2B"
+  /** Apply a picked lead to the draft's billing fields. For B2C this is a
+   *  person (name/email/phone/personId); for B2B it's an organization
+   *  (organizationId + companyName/taxId, with the person fields empty).
+   *  Email is optional because CRM records may not have one stored. */
   apply: (contact: {
     firstName: string
     lastName: string
     email?: string
     phone?: string
     personId?: string
+    organizationId?: string
+    companyName?: string
+    taxId?: string
   }) => void
 }
 

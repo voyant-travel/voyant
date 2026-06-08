@@ -16,7 +16,7 @@ import {
   BookingJourney,
   type BookingJourneyProps,
 } from "@voyantjs/bookings-ui/journey"
-import { usePerson } from "@voyantjs/crm-react"
+import { useOrganization, usePerson } from "@voyantjs/crm-react"
 import { getProductMediaQueryOptions, getProductQueryOptions } from "@voyantjs/products-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 
@@ -70,8 +70,8 @@ export function OperatorBookingJourney({
     | "onCommitted"
     | "onCancelled"
   > = {
-    renderLeadContactPicker({ apply }) {
-      return <CrmLeadPicker apply={apply} />
+    renderLeadContactPicker({ apply, buyerType }) {
+      return <CrmLeadPicker apply={apply} buyerType={buyerType} />
     },
     renderDeparturePicker(pickerProps) {
       // Owned: real scheduled departures from availability. Sourced
@@ -160,13 +160,15 @@ function useEntitySummary(
 }
 
 /**
- * CRM-backed picker that owns its own PersonPickerSection state and
- * notifies the journey via `apply` once the operator picks (or
- * inline-creates) a person. Used for both the lead-contact slot and
- * the per-traveler slot — the variant prop only changes the label.
+ * CRM-backed picker for the journey's contact slots. Buyer type drives the
+ * mode (there's no bill-to toggle): for the LEAD slot it searches PEOPLE on
+ * B2C and ORGANIZATIONS on B2B — picking either hydrates the journey from the
+ * CRM record (person → name/email/phone; org → company name/tax id). The
+ * per-traveler slot is always a person picker.
  */
 function CrmLeadPicker({
   apply,
+  buyerType,
   variant = "lead",
 }: {
   apply: (contact: {
@@ -175,20 +177,34 @@ function CrmLeadPicker({
     email?: string
     phone?: string
     personId?: string
+    organizationId?: string
+    companyName?: string
+    taxId?: string
   }) => void
+  buyerType?: "B2C" | "B2B"
   variant?: "lead" | "traveler"
 }): React.ReactElement {
   const t = useAdminMessages().bookings.detail.bookingJourney
+  // The lead picker bills an organization on B2B; everything else is a person.
+  const orgMode = variant === "lead" && buyerType === "B2B"
   const [value, setValue] = useState<PersonPickerValue>(emptyPersonPickerValue)
 
-  // Hydrate the journey's form from the picked CRM person. The picker only
-  // yields a personId on selection; we fetch the record and apply the real
-  // name / email / phone so the operator doesn't retype them.
-  const selectedPersonId = value.mode === "existing" && value.personId ? value.personId : undefined
+  // Keep the picker's target aligned with the Buyer type radio.
+  useEffect(() => {
+    setValue((current) => {
+      const desired = orgMode ? "organization" : "person"
+      return (current.billTo ?? "person") === desired ? current : { ...current, billTo: desired }
+    })
+  }, [orgMode])
+
+  // Hydrate from the picked CRM person (B2C). The picker yields just an id;
+  // we fetch the record and apply the real name/email/phone.
+  const selectedPersonId =
+    !orgMode && value.mode === "existing" && value.personId ? value.personId : undefined
   const personQuery = usePerson(selectedPersonId, { enabled: Boolean(selectedPersonId) })
   const appliedPersonId = useRef<string | null>(null)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: applies once per resolved person; the ref guards re-entry from apply()->setDraft re-renders
+  // biome-ignore lint/correctness/useExhaustiveDependencies: applies once per resolved record; the ref guards re-entry from apply()->setDraft re-renders
   useEffect(() => {
     const person = personQuery.data
     if (!person || appliedPersonId.current === person.id) return
@@ -202,12 +218,32 @@ function CrmLeadPicker({
     })
   }, [personQuery.data])
 
+  // Hydrate the company fields from the picked CRM organization (B2B).
+  const selectedOrgId = orgMode && value.organizationId ? value.organizationId : undefined
+  const orgQuery = useOrganization(selectedOrgId, { enabled: Boolean(selectedOrgId) })
+  const appliedOrgId = useRef<string | null>(null)
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: applies once per resolved record; the ref guards re-entry
+  useEffect(() => {
+    const org = orgQuery.data
+    if (!org || appliedOrgId.current === org.id) return
+    appliedOrgId.current = org.id
+    apply({
+      firstName: "",
+      lastName: "",
+      organizationId: org.id,
+      companyName: org.legalName ?? org.name,
+      taxId: org.taxId ?? undefined,
+    })
+  }, [orgQuery.data])
+
   function commit(next: PersonPickerValue): void {
     setValue(next)
+    if ((next.billTo ?? "person") === "organization") {
+      if (next.organizationId !== appliedOrgId.current) appliedOrgId.current = null
+      return
+    }
     if (next.mode === "existing" && next.personId) {
-      // Real fields are applied by the usePerson effect once the record
-      // resolves. Reset the guard so re-picking a different person (or the
-      // same one after a clear) re-hydrates.
       if (next.personId !== appliedPersonId.current) appliedPersonId.current = null
       return
     }
@@ -226,12 +262,10 @@ function CrmLeadPicker({
     <PersonPickerSection
       value={value}
       onChange={commit}
-      // No "Bill to: Person / Organization" toggle — it duplicated the
-      // Billing step's Buyer type (Individual/Company) radio. Buyer type is
-      // the single individual-vs-company control; the lead picker is always
-      // a person (the lead contact / billed individual), and B2B company
-      // identity is captured by the Company name + VAT fields.
-      showOrganization={false}
+      // Org is an allowed target for the lead (so its CRM org search runs),
+      // but the toggle is hidden — Buyer type is the single control.
+      showOrganization={variant === "lead"}
+      hideTargetToggle
       labels={{
         person: variant === "traveler" ? t.travelerPickerLabel : t.leadContactPickerLabel,
       }}

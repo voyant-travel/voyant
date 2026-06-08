@@ -72,6 +72,12 @@ export interface PersonPickerSectionProps {
   onChange: (value: PersonPickerValue) => void
   enabled?: boolean
   showOrganization?: boolean
+  /**
+   * Hide the person-vs-organization toggle while still allowing org mode
+   * (driven by `value.billTo`). Use when an outer control already chooses
+   * the target — e.g. the journey's Buyer type radio.
+   */
+  hideTargetToggle?: boolean
   labels?: {
     person?: string
     organization?: string
@@ -116,6 +122,7 @@ export function PersonPickerSection({
   onChange,
   enabled = true,
   showOrganization = true,
+  hideTargetToggle = false,
   labels,
 }: PersonPickerSectionProps) {
   const [personSearch, setPersonSearch] = React.useState("")
@@ -193,12 +200,11 @@ export function PersonPickerSection({
 
   return (
     <>
-      {/* Bill-to (person vs organization) only makes sense when an
-          organization target is allowed — i.e. the billing lead on a B2B
-          booking. When organizations aren't offered (e.g. a per-traveler
-          picker), skip the toggle entirely and render a plain person
-          picker, rather than showing a disabled "Organization" choice. */}
-      {showOrganization ? (
+      {/* Bill-to (person vs organization) toggle. Hidden when orgs aren't
+          offered at all (a per-traveler picker), OR when the consumer drives
+          the target externally (e.g. the journey's Buyer type radio) via
+          `hideTargetToggle` — org mode still works, just without the toggle. */}
+      {showOrganization && !hideTargetToggle ? (
         <div className="flex flex-col gap-2">
           <Label>{merged.billTo}</Label>
           <div className="grid grid-cols-2 gap-2">

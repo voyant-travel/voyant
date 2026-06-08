@@ -685,6 +685,19 @@ export function BillingStep({
   const messages = useBookingsUiMessagesOrDefault()
   const billing = draft.billing
   const apply: LeadContactPickerProps["apply"] = (contact) => {
+    // B2B: an organization was picked — fill the company fields and leave
+    // the contact person (entered separately) untouched.
+    if (contact.organizationId || contact.companyName || contact.taxId) {
+      setDraft(
+        patchBilling(draft, {
+          company: {
+            name: contact.companyName ?? billing.company?.name ?? "",
+            vatId: contact.taxId ?? billing.company?.vatId,
+          },
+        }),
+      )
+      return
+    }
     setDraft(
       patchBilling(draft, {
         contact: {
@@ -724,7 +737,9 @@ export function BillingStep({
           </RadioGroup>
         </div>
 
-        {renderLeadContactPicker ? <div>{renderLeadContactPicker({ apply })}</div> : null}
+        {renderLeadContactPicker ? (
+          <div>{renderLeadContactPicker({ apply, buyerType: billing.buyerType })}</div>
+        ) : null}
 
         {/* When a CRM lead is selected, its name/email/phone come from the
             contact — show a read-only summary instead of a duplicate editable
