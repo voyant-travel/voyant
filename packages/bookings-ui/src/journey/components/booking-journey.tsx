@@ -34,7 +34,8 @@ import {
 import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
-import { Lock } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@voyantjs/ui/components/tooltip"
+import { Loader2, Lock } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import { type Draft, emptyDraft, totalPax } from "../lib/draft-state.js"
@@ -341,6 +342,9 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     await commit.mutateAsync({
       draft: { ...draft, quoteId: quote.data.quoteId },
       quoteId: quote.data.quoteId,
+      // The owned commit reads the buyer + travelers off `party`, not the
+      // draft — without this the create rejects with "no billing person/org".
+      party: buildCommitParty(draft),
       paymentIntent: { type: draft.payment.intent === "card" ? "card" : "hold" } as never,
     })
   }
@@ -488,6 +492,9 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
         isStepComplete={(s) => stackedStepComplete(s, draft, shape, available)}
         commitError={commit.error}
         onCancel={props.onCancelled}
+        onConfirm={onConfirm}
+        isCommitting={commit.isPending || isHandlingCheckout}
+        canConfirm={canCommit}
         sidePanel={
           <PriceSidePanel
             pricing={quote.data?.pricing ?? null}
@@ -499,17 +506,13 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             shape={shape}
             draft={draft}
             className={props.sidePanelClassName}
-            // The side panel IS the commit surface in the stacked layout.
-            onConfirm={onConfirm}
-            isCommitting={commit.isPending || isHandlingCheckout}
-            canConfirm={canCommit}
-            commitError={commit.error}
             // Price override + voucher live with the pricing, not in Payment.
             pricingExtras={
               <FinalizeControls
                 draft={draft}
                 setDraft={setDraft}
                 pricing={quote.data?.pricing ?? null}
+                renderVoucherPicker={props.renderVoucherPicker}
               />
             }
           />
@@ -704,6 +707,33 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   )
 }
 
+/**
+ * The buyer + travelers the owned commit reads off `request.party` (the draft
+ * carries them but `extractBillingParty` only inspects `party`). B2C supplies
+ * `personId`; B2B supplies `organizationId`; traveler person links thread
+ * through so the booking attaches to the right CRM records.
+ */
+function buildCommitParty(draft: Draft): Record<string, unknown> {
+  const c = draft.billing.contact
+  return {
+    personId: c.personId,
+    organizationId: draft.billing.organizationId,
+    billing: {
+      personId: c.personId,
+      organizationId: draft.billing.organizationId,
+      contact: {
+        firstName: c.firstName,
+        lastName: c.lastName,
+        email: c.email,
+        phone: c.phone,
+      },
+    },
+    travelerParty: {
+      travelers: draft.travelers.map((t) => ({ personId: t.personId })),
+    },
+  }
+}
+
 const sectionId = (step: JourneyStep): string => `bj-section-${step}`
 
 /**
@@ -734,6 +764,9 @@ function StackedJourney({
   isStepComplete,
   commitError,
   onCancel,
+  onConfirm,
+  isCommitting,
+  canConfirm,
   sidePanel,
   contractDialog,
 }: {
@@ -743,6 +776,9 @@ function StackedJourney({
   isStepComplete: (step: JourneyStep) => boolean
   commitError: unknown
   onCancel?: () => void
+  onConfirm?: () => void
+  isCommitting?: boolean
+  canConfirm?: boolean
   sidePanel: React.ReactNode
   contractDialog: React.ReactNode
 }): React.ReactElement {
@@ -798,10 +834,42 @@ function StackedJourney({
             </p>
           ) : null}
 
-          <div className="pt-1">
+          <div className="flex items-center gap-2 pt-1">
             <Button type="button" variant="ghost" size="sm" onClick={() => onCancel?.()}>
               {nav.cancel}
             </Button>
+            {onConfirm ? (
+              canConfirm === false ? (
+                // Disabled — explain why via a tooltip (the button can't be
+                // clicked, so the span wrapper captures hover).
+                <Tooltip>
+                  <TooltipTrigger render={<span className="ml-auto inline-flex" />}>
+                    <Button type="button" disabled>
+                      {messages.bookingJourney.review.confirmBooking}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {messages.bookingJourney.review.completeToConfirm}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <Button
+                  type="button"
+                  className="ml-auto"
+                  onClick={onConfirm}
+                  disabled={isCommitting === true}
+                >
+                  {isCommitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {messages.bookingJourney.review.confirming}
+                    </>
+                  ) : (
+                    messages.bookingJourney.review.confirmBooking
+                  )}
+                </Button>
+              )
+            ) : null}
           </div>
         </div>
 
@@ -895,10 +963,18 @@ function canAdvanceFromStep(
       if (!requiresDeparture) return true
       return Boolean(draft.configure.departureSlotId || draft.configure.departureDate)
     }
-    case "options":
-      // Rooms/options aren't hard-required here (availability is checked
-      // above); the operator can proceed and refine.
-      return true
+    case "options": {
+      // Room products (an `option-units` sub-step) can't be booked — or
+      // priced — without at least one room, so block confirm until one is
+      // picked. Per-person products have nothing to require here.
+      const isRoomProduct = (shape.configureSubSteps ?? []).some((s) => s.kind === "option-units")
+      if (!isRoomProduct) return true
+      const rooms = (draft.configure.optionSelections ?? []).reduce(
+        (sum, s) => sum + (s.quantity ?? 0),
+        0,
+      )
+      return rooms > 0
+    }
     case "billing": {
       const c = draft.billing.contact
       return c.firstName.length > 0 && c.lastName.length > 0 && c.email.length > 0

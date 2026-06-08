@@ -190,6 +190,10 @@ export const adminBookingsMessages = {
         bookingJourney: {
           travelerPickerLabel: "Find a contact",
           leadContactPickerLabel: "Lead contact",
+          voucherPickerLabel: "Voucher",
+          voucherSearchPlaceholder: "Search vouchers by code…",
+          voucherEmpty: "No vouchers with balance found.",
+          voucherRemaining: "{amount} left",
         },
         catalogSource: {
           openProduct: "Open",
@@ -510,6 +514,10 @@ export const adminBookingsMessages = {
         bookingJourney: {
           travelerPickerLabel: "Cauta un contact",
           leadContactPickerLabel: "Contact principal",
+          voucherPickerLabel: "Voucher",
+          voucherSearchPlaceholder: "Cauta vouchere dupa cod…",
+          voucherEmpty: "Niciun voucher cu sold disponibil.",
+          voucherRemaining: "{amount} ramas",
         },
         catalogSource: {
           openProduct: "Deschide",

@@ -59,4 +59,5 @@ export {
   type SidePanelState,
   type TravelerContactPickerProps,
   type UnitsPickerProps,
+  type VoucherPickerProps,
 } from "./types.js"

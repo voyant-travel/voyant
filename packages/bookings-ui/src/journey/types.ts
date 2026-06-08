@@ -88,6 +88,21 @@ export interface TravelerContactPickerProps {
 }
 
 /**
+ * Props for the injectable voucher picker. The operator surface wires an async
+ * combobox (search the admin vouchers list) so staff pick a voucher without
+ * knowing the exact code; the storefront keeps the customer code-entry form.
+ */
+export interface VoucherPickerProps {
+  /** Currently-linked voucher redemption on the draft, if any. */
+  value: { voucherId?: string; amountCents?: number }
+  /** Apply a picked voucher's full remaining balance — or clear with `null`. */
+  onApply: (picked: { voucherId: string; amountCents: number } | null) => void
+  /** Booking currency + payable total, to display/cap the redemption. */
+  currency?: string
+  amountCents?: number
+}
+
+/**
  * Props for the injectable departure picker rendered in the Configure
  * step for a `"departure"` sub-step. The template wires this with a
  * scheduled-departures source (e.g. operator availability) so the
@@ -265,6 +280,9 @@ export interface BookingJourneyProps {
   /** Operator: pulls from CRM. Storefront: bare inline form. */
   renderLeadContactPicker?: (props: LeadContactPickerProps) => ReactNode
   renderTravelerContactPicker?: (props: TravelerContactPickerProps) => ReactNode
+  /** Operator-only voucher picker (async search). When omitted, the voucher
+   *  control falls back to the customer code-entry form. */
+  renderVoucherPicker?: (props: VoucherPickerProps) => ReactNode
 
   /**
    * Renders the Configure step's `"departure"` sub-step. Operator

@@ -6,10 +6,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@voyantjs/ui/components/accordion"
-import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent } from "@voyantjs/ui/components/card"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
-import { Loader2 } from "lucide-react"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import type { BookingEntitySummary, JourneyStep, SidePanelState } from "../types.js"
 
@@ -30,19 +28,9 @@ export function PriceSidePanel({
   shape,
   draft,
   className,
-  onConfirm,
-  isCommitting,
-  canConfirm,
-  commitError,
   pricingExtras,
 }: SidePanelState & {
   className?: string
-  /** When provided (stacked admin layout), the side panel becomes the
-   *  always-visible commit surface — there's no Review block. */
-  onConfirm?: () => void
-  isCommitting?: boolean
-  canConfirm?: boolean
-  commitError?: unknown
   /** Operator-only price controls (override + voucher) rendered with the
    *  pricing, where they're most in context. */
   pricingExtras?: React.ReactNode
@@ -62,9 +50,24 @@ export function PriceSidePanel({
   const pricingHint = isRoomProduct
     ? messages.bookingJourney.sidePanel.pricingHintRooms
     : messages.bookingJourney.sidePanel.pricingHint
+  // Departure shows directly under the product title — it's the most-glanced
+  // fact, so it doesn't belong buried in the recap accordion.
+  const departureText = draft ? stepHeadline("departure", draft, messages) : ""
+
   return (
     <Card className={className}>
-      {entitySummary ? <EntityHeader summary={entitySummary} /> : null}
+      {/* Image is a DIRECT Card child so the card's `has-[>img:first-child]`
+          rule drops the top padding and rounds the top corners flush. */}
+      {entitySummary?.heroImageUrl ? (
+        <img
+          src={entitySummary.heroImageUrl}
+          alt={entitySummary.name}
+          className="aspect-video w-full object-cover"
+        />
+      ) : null}
+      {entitySummary ? (
+        <EntityHeader summary={entitySummary} departureText={departureText} />
+      ) : null}
       <CardContent className="space-y-4">
         {steps && steps.length > 0 && currentStep && draft ? (
           <StepRecap steps={steps} currentStep={currentStep} draft={draft} />
@@ -119,65 +122,31 @@ export function PriceSidePanel({
         ) : null}
 
         {pricingExtras ? <div className="border-t pt-4">{pricingExtras}</div> : null}
-
-        {onConfirm ? (
-          <div className="space-y-2 border-t pt-4">
-            <Button
-              className="w-full"
-              onClick={onConfirm}
-              disabled={isCommitting === true || canConfirm === false}
-            >
-              {isCommitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {messages.bookingJourney.review.confirming}
-                </>
-              ) : (
-                messages.bookingJourney.review.confirmBooking
-              )}
-            </Button>
-            {canConfirm === false ? (
-              <p className="text-muted-foreground text-xs">
-                {messages.bookingJourney.review.completeToConfirm}
-              </p>
-            ) : null}
-            {commitError ? (
-              <p className="text-destructive text-xs">
-                {commitError instanceof Error ? commitError.message : String(commitError)}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
       </CardContent>
     </Card>
   )
 }
 
-function EntityHeader({ summary }: { summary: BookingEntitySummary }): React.ReactElement {
-  const messages = useBookingsUiMessagesOrDefault()
+function EntityHeader({
+  summary,
+  departureText,
+}: {
+  summary: BookingEntitySummary
+  departureText?: string
+}): React.ReactElement {
+  // Text block only — the hero image is rendered as a direct Card child above.
   return (
-    <div className="overflow-hidden rounded-t-xl">
-      {summary.heroImageUrl ? (
-        <img
-          src={summary.heroImageUrl}
-          alt={summary.name}
-          className="aspect-video w-full object-cover"
-        />
+    <div className="space-y-1 px-6 pt-4 pb-2">
+      <div className="font-semibold leading-tight">{summary.name}</div>
+      {departureText ? <div className="text-muted-foreground text-sm">{departureText}</div> : null}
+      {summary.subtitle ? (
+        <div className="text-muted-foreground text-sm">{summary.subtitle}</div>
       ) : null}
-      <div className="space-y-1 px-6 pt-4 pb-2">
-        <div className="text-muted-foreground text-xs uppercase tracking-wide">
-          {messages.bookingJourney.sidePanel.youAreBooking}
+      {summary.whenLabel || summary.locationLabel ? (
+        <div className="text-muted-foreground text-xs">
+          {[summary.whenLabel, summary.locationLabel].filter(Boolean).join(" · ")}
         </div>
-        <div className="font-semibold leading-tight">{summary.name}</div>
-        {summary.subtitle ? (
-          <div className="text-muted-foreground text-sm">{summary.subtitle}</div>
-        ) : null}
-        {summary.whenLabel || summary.locationLabel ? (
-          <div className="text-muted-foreground text-xs">
-            {[summary.whenLabel, summary.locationLabel].filter(Boolean).join(" · ")}
-          </div>
-        ) : null}
-      </div>
+      ) : null}
     </div>
   )
 }
@@ -193,12 +162,18 @@ function StepRecap({
 }): React.ReactElement | null {
   const messages = useBookingsUiMessagesOrDefault()
   if (!draft) return null
+  // Departure shows in the header; payment + documents aren't worth a recap
+  // row — so the accordion covers the substantive in-between steps only.
+  const recapSteps = steps.filter(
+    (step) => step !== "departure" && step !== "payment" && step !== "documents",
+  )
+  if (recapSteps.length === 0) return null
   // Default-open the current step. Uncontrolled — users can toggle
   // freely. Re-mounts when currentStep changes (key) so the
   // newly-active step opens automatically as the user advances.
   return (
     <Accordion key={currentStep} defaultValue={[currentStep]} multiple>
-      {steps.map((step) => (
+      {recapSteps.map((step) => (
         <AccordionItem key={step} value={step}>
           <AccordionTrigger className="py-3">
             <div className="flex flex-1 flex-col text-left">

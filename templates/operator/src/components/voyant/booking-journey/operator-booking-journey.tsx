@@ -28,6 +28,7 @@ import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
 import { OperatorDeparturePicker } from "./operator-departure-picker"
 import { OperatorUnitsPicker } from "./operator-units-picker"
+import { OperatorVoucherPicker } from "./operator-voucher-picker"
 
 const emptyPersonPickerValue: PersonPickerValue = {
   mode: "existing",
@@ -68,6 +69,7 @@ export function OperatorBookingJourney({
     | "renderTravelerContactPicker"
     | "renderDeparturePicker"
     | "renderUnitsPicker"
+    | "renderVoucherPicker"
     | "renderPaymentProviderStep"
     | "onCommitted"
     | "onCancelled"
@@ -83,6 +85,10 @@ export function OperatorBookingJourney({
     renderUnitsPicker(pickerProps) {
       // Rooms/units for the picked option + departure (operator inventory).
       return <OperatorUnitsPicker {...pickerProps} />
+    },
+    renderVoucherPicker(pickerProps) {
+      // Admin searches + selects a voucher (no need to know the code).
+      return <OperatorVoucherPicker {...pickerProps} />
     },
     renderTravelerContactPicker({ apply, selectedPersonId }) {
       // Travelers reuse the same picker (person-only). Adapt the picker's
@@ -105,7 +111,8 @@ export function OperatorBookingJourney({
       )
     },
     onCommitted(result) {
-      navigate({ to: "/bookings", search: { highlight: result.bookingId } as never })
+      // Land on the new booking's detail page.
+      navigate({ to: "/bookings/$id", params: { id: result.bookingId } })
     },
     onCancelled() {
       navigate({ to: catalogVerticalPath(entityModule) })

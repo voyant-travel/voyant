@@ -23,7 +23,11 @@ import {
   paymentScheduleValueToRows,
   rowsToPaymentScheduleValue,
 } from "../../lib/payment-schedule.js"
-import type { PaymentProviderCapabilities, PaymentProviderStepRenderProps } from "../../types.js"
+import type {
+  PaymentProviderCapabilities,
+  PaymentProviderStepRenderProps,
+  VoucherPickerProps,
+} from "../../types.js"
 import type { StepCommonProps } from "./shared.js"
 
 // ─────────────────────────────────────────────────────────────────
@@ -333,13 +337,31 @@ function VoucherEditor({
   draft,
   setDraft,
   pricing,
+  renderVoucherPicker,
 }: {
   draft: Draft
   setDraft: (next: Draft) => void
   pricing?: { total: number; currency: string } | null
+  renderVoucherPicker?: (props: VoucherPickerProps) => React.ReactNode
 }): React.ReactElement {
   const labels = useBookingsUiMessagesOrDefault().bookingCreateDialog.labels
   const [voucher, setVoucher] = useState<VoucherPickerValue>(emptyVoucherPickerValue)
+  // Operator surface: an async search combobox (no need to know the code).
+  if (renderVoucherPicker) {
+    return (
+      <>
+        {renderVoucherPicker({
+          value: {
+            voucherId: draft.voucherRedemption?.voucherId,
+            amountCents: draft.voucherRedemption?.amountCents,
+          },
+          onApply: (picked) => setDraft({ ...draft, voucherRedemption: picked ?? undefined }),
+          currency: pricing?.currency,
+          amountCents: pricing?.total ?? undefined,
+        })}
+      </>
+    )
+  }
   return (
     <VoucherPickerSection
       value={voucher}
@@ -439,10 +461,12 @@ export function FinalizeControls({
   draft,
   setDraft,
   pricing,
+  renderVoucherPicker,
 }: {
   draft: Draft
   setDraft: (next: Draft) => void
   pricing?: { total: number; currency: string } | null
+  renderVoucherPicker?: (props: VoucherPickerProps) => React.ReactNode
 }): React.ReactElement {
   return (
     <div className="space-y-4">
@@ -450,7 +474,12 @@ export function FinalizeControls({
           is required when it differs. */}
       <PriceOverrideEditor draft={draft} setDraft={setDraft} pricing={pricing} />
       {/* Voucher (gift / refund credit) — redeemed atomically on commit. */}
-      <VoucherEditor draft={draft} setDraft={setDraft} pricing={pricing} />
+      <VoucherEditor
+        draft={draft}
+        setDraft={setDraft}
+        pricing={pricing}
+        renderVoucherPicker={renderVoucherPicker}
+      />
     </div>
   )
 }

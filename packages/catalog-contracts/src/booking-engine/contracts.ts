@@ -347,6 +347,8 @@ export const bookingDraftV1 = z.object({
   billing: z
     .object({
       buyerType: z.enum(["B2C", "B2B"]).default("B2C"),
+      /** CRM organization id when a company (B2B) lead was picked. */
+      organizationId: z.string().optional(),
       contact: z.object({
         firstName: z.string().default(""),
         lastName: z.string().default(""),

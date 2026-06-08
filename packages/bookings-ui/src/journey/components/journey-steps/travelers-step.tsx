@@ -211,10 +211,12 @@ function TravelerCard({
     (f) => !["firstName", "lastName", "email", "phone", "dateOfBirth"].includes(f.key),
   )
 
-  // When a CRM contact is linked, their name/email/phone come from the record
-  // (shown in the picker) — no need to re-type them. Only the travel-specific
-  // fields (DOB, documents) remain. Manual entry shows the identity fields.
-  const showIdentity = !traveler.personId
+  // When a contact picker is wired (operator), identity comes from the picked
+  // CRM contact — the manual name/email/phone inputs are never shown (pick an
+  // existing contact or Create new). Only surfaces (e.g. storefront) WITHOUT a
+  // picker show the manual identity fields. Travel-specific fields (DOB,
+  // documents) always show.
+  const showIdentity = !renderTravelerContactPicker
   const gridHasContent = showIdentity || Boolean(dobField) || dynamicFields.length > 0
 
   // Live age from DOB — surfaces in the header so the user gets feedback as

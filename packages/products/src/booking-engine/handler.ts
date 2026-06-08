@@ -877,6 +877,7 @@ export function createProductsBookingHandler(
 
       return {
         status: "held",
+        bookingId: bridge.bookingId,
         orderRef: bridge.bookingNumber ?? bridge.bookingId,
         pricing: request.pricing,
         upstreamPayload: { bridgeBookingId: bridge.bookingId },

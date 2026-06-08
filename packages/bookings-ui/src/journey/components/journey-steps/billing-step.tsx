@@ -47,6 +47,9 @@ export function BillingStep({
         ...(next.personId !== undefined ? { personId: next.personId } : {}),
       }
     }
+    if (next.organizationId !== undefined) {
+      patch.organizationId = next.organizationId
+    }
     if (next.companyName !== undefined || next.taxId !== undefined) {
       patch.company = {
         name: next.companyName ?? billing.company?.name ?? "",
