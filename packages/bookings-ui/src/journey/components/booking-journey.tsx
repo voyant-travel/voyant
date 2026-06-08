@@ -230,7 +230,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   // Confirm is gated until every section passes its check.
   const firstIncomplete = useMemo<JourneyStep>(
     () =>
-      steps.find((s) => !canAdvanceFromStep(s, draft, shape, available)) ??
+      steps.find((s) => !stackedStepComplete(s, draft, shape, available)) ??
       steps[steps.length - 1] ??
       steps[0] ??
       "departure",
@@ -468,7 +468,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
         className={props.className}
         steps={steps}
         renderStep={renderStep}
-        isStepComplete={(s) => canAdvanceFromStep(s, draft, shape, available)}
+        isStepComplete={(s) => stackedStepComplete(s, draft, shape, available)}
         summaryFor={(s) => stepHeadline(s, draft, messages)}
         warningsForStep={(s) => warningsForStep(s, draft, shape, messages)}
         commitError={commit.error}
@@ -717,33 +717,28 @@ function StackedJourney({
 }): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   const nav = messages.bookingJourney.navigation
-  // How far the operator has advanced (via Continue), plus an optional
-  // "re-open a done section to edit" override.
-  const [activeStep, setActiveStep] = useState<JourneyStep>(() => steps[0] ?? "departure")
+  // The active section is DERIVED — the first one not yet complete. As the
+  // operator fills it, completeness flips and the next section opens on its
+  // own (no Continue button). `editing` lets them pop a done section back
+  // open to change it.
   const [editing, setEditing] = useState<JourneyStep | null>(null)
 
-  // Keep the active pointer valid as the visible step set changes.
-  useEffect(() => {
-    if (!steps.includes(activeStep)) {
-      setActiveStep(steps[0] ?? "departure")
-      setEditing(null)
-    }
-  }, [steps, activeStep])
-
+  // First not-yet-complete section; everything before is done, after is
+  // locked. Falls back to the last step once everything's filled.
+  const activeStep =
+    steps.find((s) => !isStepComplete(s)) ?? steps[steps.length - 1] ?? steps[0] ?? "departure"
   const activeIndex = steps.indexOf(activeStep)
-  const lastStep = steps[steps.length - 1]
   const openStep = editing ?? activeStep
+
+  // Drop a stale edit target when the section set changes or that section is
+  // no longer reachable (e.g. it became locked again).
+  useEffect(() => {
+    if (editing && !steps.includes(editing)) setEditing(null)
+  }, [steps, editing])
 
   const scrollTo = (step: JourneyStep) => {
     if (typeof document === "undefined") return
     document.getElementById(sectionId(step))?.scrollIntoView({ behavior: "smooth", block: "start" })
-  }
-  const goNext = () => {
-    const nextStep = steps[activeIndex + 1]
-    if (!nextStep) return
-    setActiveStep(nextStep)
-    setEditing(null)
-    scrollTo(nextStep)
   }
   const openForEdit = (step: JourneyStep) => {
     setEditing(step)
@@ -800,7 +795,9 @@ function StackedJourney({
               )
             }
 
-            // Open: full section content + a footer action.
+            // Open: full section content. No Continue button — the next
+            // section opens itself once this one is complete. The only footer
+            // action is "Done" when re-editing an already-completed section.
             const stepWarnings = warningsForStep(step)
             const isEditingDone = editing === step && step !== activeStep
             return (
@@ -817,17 +814,6 @@ function StackedJourney({
                   <Button type="button" variant="outline" onClick={backToCurrent}>
                     {nav.done}
                   </Button>
-                ) : step !== lastStep ? (
-                  <div className="flex">
-                    <Button
-                      type="button"
-                      className="ml-auto"
-                      onClick={goNext}
-                      disabled={!isStepComplete(step)}
-                    >
-                      {nav.continue}
-                    </Button>
-                  </div>
                 ) : null}
               </section>
             )
@@ -982,6 +968,34 @@ function canAdvanceFromStep(
     }
     default:
       return true
+  }
+}
+
+/**
+ * Completeness for the stacked admin accordion's AUTO-advance — stricter
+ * than `canAdvanceFromStep` so the flow pauses on sections that need a
+ * deliberate choice even though they're not hard-required to commit:
+ *  - options: a product option must be picked (when the product has them);
+ *  - payment: an intent must be chosen.
+ * Everything else defers to the shared gate. Kept separate so the wizard's
+ * Next gating (which uses `canAdvanceFromStep`) is unchanged.
+ */
+function stackedStepComplete(
+  step: JourneyStep,
+  draft: Draft,
+  shape: BookingDraftShape,
+  available: boolean,
+): boolean {
+  switch (step) {
+    case "options": {
+      const hasOptions = (shape.configureSubSteps ?? []).some((s) => s.kind === "product-option")
+      // No options to choose → nothing to wait for. Otherwise require a pick.
+      return hasOptions ? Boolean(draft.configure.variantId) : true
+    }
+    case "payment":
+      return Boolean(draft.payment.intent)
+    default:
+      return canAdvanceFromStep(step, draft, shape, available)
   }
 }
 
