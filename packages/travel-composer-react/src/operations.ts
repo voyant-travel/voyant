@@ -4,6 +4,7 @@ import type {
   CancelTripComponentsInput,
   CreateTripComponentBodyInput,
   CreateTripEnvelopeInput,
+  CreateTripSnapshotInput,
   PreviewTripCancellationInput,
   PriceTripInput,
   ReserveTripInput,
@@ -23,6 +24,8 @@ import {
   tripComponentResponseSchema,
   tripListResponseSchema,
   tripResponseSchema,
+  tripSnapshotResponseSchema,
+  tripSnapshotsResponseSchema,
 } from "./schemas.js"
 
 export type ListTripsParams = {
@@ -63,6 +66,7 @@ export type PreviewTripCancellationBody = Omit<
   Partial<Pick<PreviewTripCancellationInput, "request">>
 export type CancelTripComponentsBody = Omit<CancelTripComponentsInput, "envelopeId" | "request"> &
   Partial<Pick<CancelTripComponentsInput, "request">>
+export type CreateTripSnapshotBody = Omit<CreateTripSnapshotInput, "envelopeId">
 
 function composerPath(client: FetchWithValidationOptions, path: string): string {
   return `/v1/${client.surface ?? "admin"}/travel-composer${path}`
@@ -112,6 +116,35 @@ export function getTrip(client: FetchWithValidationOptions, envelopeId: string) 
     composerPath(client, `/trips/${encodeURIComponent(envelopeId)}`),
     tripResponseSchema,
     client,
+  ).then((response) => response.data)
+}
+
+export function listTripSnapshots(client: FetchWithValidationOptions, envelopeId: string) {
+  return fetchWithValidation(
+    composerPath(client, `/trips/${encodeURIComponent(envelopeId)}/snapshots`),
+    tripSnapshotsResponseSchema,
+    client,
+  ).then((response) => response.data)
+}
+
+export function getTripSnapshot(client: FetchWithValidationOptions, snapshotId: string) {
+  return fetchWithValidation(
+    composerPath(client, `/trip-snapshots/${encodeURIComponent(snapshotId)}`),
+    tripSnapshotResponseSchema,
+    client,
+  ).then((response) => response.data)
+}
+
+export function freezeTripSnapshot(
+  client: FetchWithValidationOptions,
+  envelopeId: string,
+  input: CreateTripSnapshotBody = {},
+) {
+  return fetchWithValidation(
+    composerPath(client, `/trips/${encodeURIComponent(envelopeId)}/snapshots`),
+    tripSnapshotResponseSchema,
+    client,
+    { method: "POST", body: JSON.stringify(input) },
   ).then((response) => response.data)
 }
 

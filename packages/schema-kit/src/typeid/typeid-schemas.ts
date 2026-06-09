@@ -183,6 +183,7 @@ export const typeIdSchemas = {
   offerRefreshRun: typeIdSchema("offer_refresh_runs"),
   offerExpirationEvent: typeIdSchema("offer_expiration_events"),
   sellabilityExplanation: typeIdSchema("sellability_explanations"),
+  tripSnapshot: typeIdSchema("trip_snapshots"),
   productMedia: typeIdSchema("product_media"),
   productFeature: typeIdSchema("product_features"),
   productFaq: typeIdSchema("product_faqs"),

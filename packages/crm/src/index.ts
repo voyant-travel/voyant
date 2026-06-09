@@ -174,6 +174,8 @@ export type {
 export { personRelationshipsService } from "./service/person-relationships.js"
 export {
   activityListQuerySchema,
+  applyTripSnapshotQuoteVersionLineSchema,
+  applyTripSnapshotToQuoteVersionSchema,
   communicationChannelSchema,
   communicationDirectionSchema,
   communicationListQuerySchema,

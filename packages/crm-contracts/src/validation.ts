@@ -296,6 +296,19 @@ export const quoteVersionLineCoreSchema = z.object({
 export const insertQuoteVersionLineSchema = quoteVersionLineCoreSchema
 export const updateQuoteVersionLineSchema = quoteVersionLineCoreSchema.partial()
 
+export const applyTripSnapshotQuoteVersionLineSchema = quoteVersionLineCoreSchema.extend({
+  componentId: z.string().nullable().optional(),
+})
+
+export const applyTripSnapshotToQuoteVersionSchema = z.object({
+  tripSnapshotId: z.string().min(1),
+  currency: z.string().min(1),
+  subtotalAmountCents: z.number().int().default(0),
+  taxAmountCents: z.number().int().default(0),
+  totalAmountCents: z.number().int().default(0),
+  lines: z.array(applyTripSnapshotQuoteVersionLineSchema).default([]),
+})
+
 export const activityCoreSchema = z.object({
   subject: z.string().min(1),
   type: activityTypeSchema,

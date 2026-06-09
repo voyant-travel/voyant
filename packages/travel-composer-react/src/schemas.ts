@@ -8,6 +8,7 @@ import type {
   TripComponent,
   TripEnvelope,
   TripListResult,
+  TripSnapshot,
 } from "@voyantjs/travel-composer"
 import { z } from "zod"
 
@@ -27,6 +28,12 @@ export const tripComponentResponseSchema = singleEnvelope(unknownData) as z.ZodT
 }>
 export const tripComponentsResponseSchema = singleEnvelope(unknownData) as z.ZodType<{
   data: Trip["components"]
+}>
+export const tripSnapshotResponseSchema = singleEnvelope(unknownData) as z.ZodType<{
+  data: TripSnapshot
+}>
+export const tripSnapshotsResponseSchema = singleEnvelope(unknownData) as z.ZodType<{
+  data: TripSnapshot[]
 }>
 export const priceTripResponseSchema = singleEnvelope(unknownData) as z.ZodType<{
   data: PriceTripResult

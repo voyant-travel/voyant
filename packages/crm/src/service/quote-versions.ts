@@ -4,6 +4,7 @@ import type { z } from "zod"
 
 import { quoteVersionLines, quoteVersions } from "../schema.js"
 import type {
+  applyTripSnapshotToQuoteVersionSchema,
   insertQuoteVersionLineSchema,
   insertQuoteVersionSchema,
   quoteVersionListQuerySchema,
@@ -17,6 +18,7 @@ type CreateQuoteVersionInput = z.infer<typeof insertQuoteVersionSchema>
 type UpdateQuoteVersionInput = z.infer<typeof updateQuoteVersionSchema>
 type CreateQuoteVersionLineInput = z.infer<typeof insertQuoteVersionLineSchema>
 type UpdateQuoteVersionLineInput = z.infer<typeof updateQuoteVersionLineSchema>
+type ApplyTripSnapshotToQuoteVersionInput = z.infer<typeof applyTripSnapshotToQuoteVersionSchema>
 
 function normalizeTimestamp(value: string | null | undefined) {
   return value == null ? value : new Date(value)
@@ -81,6 +83,42 @@ export const quoteVersionsService = {
       .where(eq(quoteVersions.id, id))
       .returning({ id: quoteVersions.id })
     return row ?? null
+  },
+
+  async applyTripSnapshotToQuoteVersion(
+    db: PostgresJsDatabase,
+    id: string,
+    data: ApplyTripSnapshotToQuoteVersionInput,
+  ) {
+    return db.transaction(async (tx) => {
+      const [quoteVersion] = await tx
+        .update(quoteVersions)
+        .set({
+          tripSnapshotId: data.tripSnapshotId,
+          currency: data.currency,
+          subtotalAmountCents: data.subtotalAmountCents,
+          taxAmountCents: data.taxAmountCents,
+          totalAmountCents: data.totalAmountCents,
+          updatedAt: new Date(),
+        })
+        .where(eq(quoteVersions.id, id))
+        .returning()
+
+      if (!quoteVersion) return null
+
+      await tx.delete(quoteVersionLines).where(eq(quoteVersionLines.quoteVersionId, id))
+
+      const lineValues = data.lines.map(({ componentId: _componentId, ...line }) => ({
+        ...line,
+        quoteVersionId: id,
+      }))
+      const lines =
+        lineValues.length > 0
+          ? await tx.insert(quoteVersionLines).values(lineValues).returning()
+          : []
+
+      return { quoteVersion, lines }
+    })
   },
 
   listQuoteVersionLines(db: PostgresJsDatabase, quoteVersionId: string) {

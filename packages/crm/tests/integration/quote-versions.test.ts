@@ -156,6 +156,38 @@ describe.skipIf(!DB_AVAILABLE)("Quote Version routes", () => {
       return { quote, quoteVersion }
     }
 
+    it("applies a trip snapshot read model to a quote version", async () => {
+      const { quoteVersion } = await seedQuoteVersion()
+
+      const res = await app.request(`/quote-versions/${quoteVersion.id}/trip-snapshot`, {
+        method: "POST",
+        ...json({
+          tripSnapshotId: "trsn_snapshot_1",
+          currency: "EUR",
+          subtotalAmountCents: 10000,
+          taxAmountCents: 900,
+          totalAmountCents: 10900,
+          lines: [
+            {
+              componentId: "trcp_123",
+              description: "Airport transfer",
+              quantity: 1,
+              unitPriceAmountCents: 10000,
+              totalAmountCents: 10900,
+              currency: "EUR",
+            },
+          ],
+        }),
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.data.quoteVersion.tripSnapshotId).toBe("trsn_snapshot_1")
+      expect(body.data.quoteVersion.totalAmountCents).toBe(10900)
+      expect(body.data.lines).toHaveLength(1)
+      expect(body.data.lines[0].description).toBe("Airport transfer")
+    })
+
     it("creates a quote version line", async () => {
       const { quoteVersion } = await seedQuoteVersion()
 

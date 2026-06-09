@@ -363,6 +363,7 @@ export const PREFIXES = {
   trip_envelopes: "trip",
   trip_components: "trcp",
   trip_component_events: "trce",
+  trip_snapshots: "trsn",
 
   // --- FINANCE (extensions for journey tax computation) ---
   // Per booking-journey-architecture §9. The classes are the per-

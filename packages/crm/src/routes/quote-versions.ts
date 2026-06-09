@@ -4,6 +4,7 @@ import { Hono } from "hono"
 
 import { crmService } from "../service/index.js"
 import {
+  applyTripSnapshotToQuoteVersionSchema,
   insertQuoteVersionLineSchema,
   insertQuoteVersionSchema,
   quoteVersionListQuerySchema,
@@ -53,6 +54,15 @@ export const quoteVersionRoutes = new Hono<Env>()
     const row = await crmService.deleteQuoteVersion(c.get("db"), c.req.param("id"))
     if (!row) return c.json({ error: "Quote version not found" }, 404)
     return c.json({ success: true })
+  })
+  .post("/quote-versions/:id/trip-snapshot", async (c) => {
+    const row = await crmService.applyTripSnapshotToQuoteVersion(
+      c.get("db"),
+      c.req.param("id"),
+      await parseJsonBody(c, applyTripSnapshotToQuoteVersionSchema),
+    )
+    if (!row) return c.json({ error: "Quote version not found" }, 404)
+    return c.json({ data: row })
   })
   .get("/quote-versions/:id/lines", async (c) => {
     return c.json({
