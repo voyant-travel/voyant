@@ -11,28 +11,25 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core"
-import type {
-  OpportunityRecord as OpportunityData,
-  StageRecord as StageData,
-} from "@voyantjs/crm-react"
+import type { QuoteRecord as QuoteData, StageRecord as StageData } from "@voyantjs/crm-react"
 import { Card } from "@voyantjs/ui/components"
 import { ScrollArea, ScrollBar } from "@voyantjs/ui/components/scroll-area"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { TrendingUp } from "lucide-react"
 import { formatDate, formatMoney } from "@/components/voyant/crm/crm-constants"
 
-export function OpportunitiesBoard({
+export function QuotesBoard({
   stages,
-  opportunitiesByStage,
+  quotesByStage,
   activeId,
-  activeOpportunity,
+  activeQuote,
   onDragStart,
   onDragEnd,
 }: {
   stages: StageData[]
-  opportunitiesByStage: Map<string, OpportunityData[]>
+  quotesByStage: Map<string, QuoteData[]>
   activeId: string | null
-  activeOpportunity: OpportunityData | null
+  activeQuote: QuoteData | null
   onDragStart: (event: DragStartEvent) => void
   onDragEnd: (event: DragEndEvent) => void
 }) {
@@ -54,35 +51,30 @@ export function OpportunitiesBoard({
             <KanbanColumn
               key={stage.id}
               stage={stage}
-              opportunities={opportunitiesByStage.get(stage.id) ?? []}
+              quotes={quotesByStage.get(stage.id) ?? []}
               activeId={activeId}
             />
           ))}
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
-      <DragOverlay>
-        {activeOpportunity ? <OpportunityCard opp={activeOpportunity} isDragging /> : null}
-      </DragOverlay>
+      <DragOverlay>{activeQuote ? <QuoteCard opp={activeQuote} isDragging /> : null}</DragOverlay>
     </DndContext>
   )
 }
 
 function KanbanColumn({
   stage,
-  opportunities,
+  quotes,
   activeId,
 }: {
   stage: StageData
-  opportunities: OpportunityData[]
+  quotes: QuoteData[]
   activeId: string | null
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id })
-  const total = opportunities.reduce(
-    (sum, opportunity) => sum + (opportunity.valueAmountCents ?? 0),
-    0,
-  )
-  const primaryCurrency = opportunities[0]?.valueCurrency ?? null
+  const total = quotes.reduce((sum, quote) => sum + (quote.valueAmountCents ?? 0), 0)
+  const primaryCurrency = quotes[0]?.valueCurrency ?? null
 
   return (
     <div
@@ -96,7 +88,7 @@ function KanbanColumn({
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{stage.name}</p>
           <p className="text-xs text-muted-foreground">
-            {opportunities.length} · {formatMoney(total, primaryCurrency)}
+            {quotes.length} · {formatMoney(total, primaryCurrency)}
           </p>
         </div>
         {stage.probability != null ? (
@@ -104,19 +96,15 @@ function KanbanColumn({
         ) : null}
       </div>
       <div className="flex flex-col gap-2">
-        {opportunities.map((opportunity) => (
-          <DraggableOpportunity
-            key={opportunity.id}
-            opp={opportunity}
-            isActive={activeId === opportunity.id}
-          />
+        {quotes.map((quote) => (
+          <DraggableQuote key={quote.id} opp={quote} isActive={activeId === quote.id} />
         ))}
       </div>
     </div>
   )
 }
 
-function DraggableOpportunity({ opp, isActive }: { opp: OpportunityData; isActive: boolean }) {
+function DraggableQuote({ opp, isActive }: { opp: QuoteData; isActive: boolean }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: opp.id })
   const style = transform
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
@@ -130,18 +118,12 @@ function DraggableOpportunity({ opp, isActive }: { opp: OpportunityData; isActiv
       {...attributes}
       className={cn("cursor-grab active:cursor-grabbing", isActive && "opacity-40")}
     >
-      <OpportunityCard opp={opp} />
+      <QuoteCard opp={opp} />
     </div>
   )
 }
 
-export function OpportunityCard({
-  opp,
-  isDragging,
-}: {
-  opp: OpportunityData
-  isDragging?: boolean
-}) {
+export function QuoteCard({ opp, isDragging }: { opp: QuoteData; isDragging?: boolean }) {
   return (
     <Card className={cn("p-3 text-sm", isDragging && "rotate-2 shadow-lg")}>
       <p className="line-clamp-2 font-medium">{opp.title}</p>

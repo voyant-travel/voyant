@@ -1,16 +1,12 @@
-import type { QuoteLineRecord } from "@voyantjs/crm-react"
+import type { QuoteVersionLineRecord } from "@voyantjs/crm-react"
+import { Button, Card, CardContent, CardHeader, CardTitle, Input } from "@voyantjs/ui/components"
 import { Loader2, Plus, Trash2 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { formatMoney } from "@/components/voyant/crm/crm-constants"
 
-import { Button, Card, CardContent, CardHeader, CardTitle, Input } from "@/components/ui"
-import { CurrencyInput } from "@/components/ui/currency-input"
-
-import { useRegistryCrmI18nOrDefault, useRegistryCrmMessagesOrDefault } from "./i18n"
-import { formatRegistryCrmMoney } from "./i18n/utils"
-
-export interface QuoteLinesCardProps {
+export interface QuoteVersionLinesCardProps {
   currency: string
-  lines: QuoteLineRecord[]
+  lines: QuoteVersionLineRecord[]
   isLoading: boolean
   onCreate: (input: {
     description: string
@@ -18,7 +14,7 @@ export interface QuoteLinesCardProps {
     quantity: number
     unitPriceAmountCents: number
     totalAmountCents: number
-  }) => Promise<void> // i18n-literal-ok local callback type alias
+  }) => Promise<void>
   onUpdate: (
     lineId: string,
     input: Partial<{
@@ -27,34 +23,32 @@ export interface QuoteLinesCardProps {
       unitPriceAmountCents: number
       totalAmountCents: number
     }>,
-  ) => Promise<void> // i18n-literal-ok local callback type alias
-  onRemove: (lineId: string) => Promise<void> // i18n-literal-ok local callback type alias
+  ) => Promise<void>
+  onRemove: (lineId: string) => Promise<void>
 }
 
-export function QuoteLinesCard({
+export function QuoteVersionLinesCard({
   currency,
   lines,
   isLoading,
   onCreate,
   onUpdate,
   onRemove,
-}: QuoteLinesCardProps) {
-  const i18n = useRegistryCrmI18nOrDefault()
-  const m = useRegistryCrmMessagesOrDefault()
+}: QuoteVersionLinesCardProps) {
   const [newDescription, setNewDescription] = useState("")
   const [newQuantity, setNewQuantity] = useState("1")
-  const [newPriceCents, setNewPriceCents] = useState<number | null>(0)
+  const [newPrice, setNewPrice] = useState("0")
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function handleAdd() {
     const desc = newDescription.trim()
     if (!desc) {
-      setError(m.quoteLinesCard.validation.descriptionRequired)
+      setError("Description is required")
       return
     }
     const qty = Number.parseInt(newQuantity, 10) || 1
-    const price = newPriceCents ?? 0
+    const price = Number.parseInt(newPrice, 10) || 0
     setAdding(true)
     setError(null)
     try {
@@ -67,9 +61,9 @@ export function QuoteLinesCard({
       })
       setNewDescription("")
       setNewQuantity("1")
-      setNewPriceCents(0)
+      setNewPrice("0")
     } catch (err) {
-      setError(err instanceof Error ? err.message : m.quoteLinesCard.validation.addFailed)
+      setError(err instanceof Error ? err.message : "Failed to add line")
     } finally {
       setAdding(false)
     }
@@ -80,7 +74,7 @@ export function QuoteLinesCard({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-semibold">{m.quoteLinesCard.title}</CardTitle>
+        <CardTitle className="text-sm font-semibold">Line items</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -88,13 +82,12 @@ export function QuoteLinesCard({
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : lines.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">{m.quoteLinesCard.empty}</p>
+          <p className="py-4 text-center text-sm text-muted-foreground">No line items yet.</p>
         ) : (
           <ul className="divide-y">
             {lines.map((line) => (
-              <QuoteLineRow
+              <QuoteVersionLineRow
                 key={line.id}
-                currency={currency}
                 line={line}
                 onUpdate={(input) => onUpdate(line.id, input)}
                 onRemove={() => onRemove(line.id)}
@@ -109,7 +102,7 @@ export function QuoteLinesCard({
               className="col-span-6 h-8 text-sm"
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
-              placeholder={m.quoteLinesCard.fields.description}
+              placeholder="Description"
             />
             <Input
               className="col-span-2 h-8 text-sm"
@@ -117,15 +110,15 @@ export function QuoteLinesCard({
               min={1}
               value={newQuantity}
               onChange={(e) => setNewQuantity(e.target.value)}
-              placeholder={m.quoteLinesCard.fields.quantity}
+              placeholder="Qty"
             />
-            <CurrencyInput
+            <Input
               className="col-span-3 h-8 text-sm"
-              inputClassName="h-8 text-sm"
-              value={newPriceCents}
-              onChange={setNewPriceCents}
-              currency={currency}
-              placeholder={m.quoteLinesCard.fields.priceCents}
+              type="number"
+              min={0}
+              value={newPrice}
+              onChange={(e) => setNewPrice(e.target.value)}
+              placeholder="Price (cents)"
             />
             <Button
               size="sm"
@@ -144,37 +137,29 @@ export function QuoteLinesCard({
         </div>
 
         <div className="mt-3 flex items-center justify-between border-t pt-3 text-sm">
-          <span className="text-muted-foreground">{m.quoteLinesCard.subtotal}</span>
-          <span className="font-semibold">{formatRegistryCrmMoney(i18n, subtotal, currency)}</span>
+          <span className="text-muted-foreground">Subtotal</span>
+          <span className="font-semibold">{formatMoney(subtotal, currency)}</span>
         </div>
       </CardContent>
     </Card>
   )
 }
 
-function QuoteLineRow({
-  currency,
+function QuoteVersionLineRow({
   line,
   onUpdate,
   onRemove,
 }: {
-  currency: string
-  line: QuoteLineRecord
+  line: QuoteVersionLineRecord
   onUpdate: (input: {
     description?: string
     quantity?: number
     unitPriceAmountCents?: number
     totalAmountCents?: number
-  }) => Promise<void> // i18n-literal-ok local callback type alias
-  onRemove: () => Promise<void> // i18n-literal-ok local callback type alias
+  }) => Promise<void>
+  onRemove: () => Promise<void>
 }) {
-  const i18n = useRegistryCrmI18nOrDefault()
   const [removing, setRemoving] = useState(false)
-  const [draftPriceCents, setDraftPriceCents] = useState<number | null>(line.unitPriceAmountCents)
-
-  useEffect(() => {
-    setDraftPriceCents(line.unitPriceAmountCents)
-  }, [line.unitPriceAmountCents])
 
   async function handleRemove() {
     setRemoving(true)
@@ -187,22 +172,19 @@ function QuoteLineRow({
 
   async function handleQuantity(value: string) {
     const qty = Number.parseInt(value, 10)
-    if (!Number.isFinite(qty) || qty < 1) {
-      return
-    }
+    if (!Number.isFinite(qty) || qty < 1) return
     await onUpdate({
       quantity: qty,
       totalAmountCents: qty * line.unitPriceAmountCents,
     })
   }
 
-  async function handlePrice(value: number | null) {
-    if (value == null || value < 0 || value === line.unitPriceAmountCents) {
-      return
-    }
+  async function handlePrice(value: string) {
+    const price = Number.parseInt(value, 10)
+    if (!Number.isFinite(price) || price < 0) return
     await onUpdate({
-      unitPriceAmountCents: value,
-      totalAmountCents: line.quantity * value,
+      unitPriceAmountCents: price,
+      totalAmountCents: line.quantity * price,
     })
   }
 
@@ -214,9 +196,7 @@ function QuoteLineRow({
           defaultValue={line.description}
           onBlur={(e) => {
             const value = e.target.value.trim()
-            if (value && value !== line.description) {
-              void onUpdate({ description: value })
-            }
+            if (value && value !== line.description) void onUpdate({ description: value })
           }}
         />
         <Input
@@ -226,16 +206,15 @@ function QuoteLineRow({
           defaultValue={line.quantity}
           onBlur={(e) => void handleQuantity(e.target.value)}
         />
-        <CurrencyInput
+        <Input
           className="col-span-2 h-8 text-sm"
-          inputClassName="h-8 text-sm"
-          value={draftPriceCents}
-          onChange={setDraftPriceCents}
-          onBlur={() => void handlePrice(draftPriceCents)}
-          currency={currency}
+          type="number"
+          min={0}
+          defaultValue={line.unitPriceAmountCents}
+          onBlur={(e) => void handlePrice(e.target.value)}
         />
         <span className="col-span-1 text-right text-sm font-medium">
-          {formatRegistryCrmMoney(i18n, line.totalAmountCents, currency)}
+          {formatMoney(line.totalAmountCents, line.currency)}
         </span>
         <Button
           size="sm"

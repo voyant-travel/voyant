@@ -43,22 +43,22 @@ export const crmUiRo = {
       none: "Niciunul",
       person: "Persoana",
       organization: "Organizatie",
-      opportunity: "Oportunitate",
       quote: "Oferta",
+      activity: "Activitate",
     },
-    opportunityStatusLabels: {
+    quoteStatusLabels: {
       open: "Deschisa",
       won: "Castigata",
       lost: "Pierduta",
       archived: "Arhivata",
     },
-    quoteStatusLabels: {
+    quoteVersionStatusLabels: {
       draft: "Draft",
       sent: "Trimisa",
       accepted: "Acceptata",
+      declined: "Refuzata",
+      superseded: "Inlocuita",
       expired: "Expirata",
-      rejected: "Respinsa",
-      archived: "Arhivata",
     },
     relativeTime: {
       daysAgo: "acum {count}z",
@@ -279,26 +279,26 @@ export const crmUiRo = {
       createFailed: "Crearea activitatii a esuat",
     },
   },
-  createOpportunityDialog: {
-    title: "Oportunitate noua",
+  createQuoteDialog: {
+    title: "Oferta noua",
     fields: {
       title: "Titlu",
       stage: "Etapa",
     },
     placeholders: {
-      title: "Oportunitate noua",
+      title: "Oferta noua",
       stage: "Selecteaza etapa...",
     },
     validation: {
       titleRequired: "Titlul este obligatoriu",
       stageRequired: "Etapa este obligatorie",
-      createFailed: "Crearea oportunitatii a esuat",
+      createFailed: "Crearea ofertei a esuat",
     },
   },
-  opportunitiesBoard: {
+  quotesBoard: {
     fallbackName: "Etapa fara nume",
   },
-  opportunitySummaryCard: {
+  quoteSummaryCard: {
     unknown: "Necunoscut",
     expectedClose: "Inchidere estimata",
   },
@@ -362,14 +362,14 @@ export const crmUiRo = {
     },
     metrics: {
       people: "Persoane",
-      openOpportunities: "Oportunitati deschise",
+      openQuotes: "Oferte deschise",
       pipelineValue: "Valoare pipeline",
       won: "Castigate",
     },
     tabs: {
       overview: "Prezentare",
       people: "Persoane",
-      opportunities: "Oportunitati",
+      quotes: "Oferte",
       activities: "Activitati",
       bookings: "Rezervari",
       invoices: "Facturi",
@@ -384,7 +384,7 @@ export const crmUiRo = {
     empty: {
       noPeople: "Nu exista persoane asociate acestei organizatii.",
       unnamed: "Fara nume",
-      noOpportunities: "Nu exista oportunitati.",
+      noQuotes: "Nu exista oferte.",
       noActivities: "Nu exista activitati.",
     },
     hint: "Campurile se actualizeaza din panoul din stanga. Treci cu mouse-ul pentru a vedea iconita de editare.",
@@ -434,14 +434,14 @@ export const crmUiRo = {
       },
     },
     metrics: {
-      openOpportunities: "Oportunitati deschise",
+      openQuotes: "Oferte deschise",
       pipelineValue: "Valoare pipeline",
       documents: "Documente",
       activities: "Activitati",
     },
     tabs: {
       overview: "Prezentare",
-      opportunities: "Oportunitati",
+      quotes: "Oferte",
       activities: "Activitati",
       relationships: "Relatii",
       documents: "Documente",
@@ -486,7 +486,7 @@ export const crmUiRo = {
       other: "Altul",
     },
     empty: {
-      noOpportunities: "Nu exista oportunitati.",
+      noQuotes: "Nu exista oferte.",
       noActivities: "Nu exista activitati.",
       noRelationships: "Nu exista relatii asociate acestei persoane.",
       noDocuments: "Nu exista documente.",
@@ -533,33 +533,33 @@ export const crmUiRo = {
       saving: "Se salveaza…",
     },
   },
-  createQuoteDialog: {
-    title: "Oferta noua",
+  createQuoteVersionDialog: {
+    title: "Versiune de oferta noua",
     fields: {
-      opportunity: "Oportunitate",
+      quote: "Oferta",
       currency: "Moneda",
       validUntil: "Valabila pana la",
     },
     placeholders: {
-      searchOpportunities: "Cauta oportunitati...",
+      searchQuotes: "Cauta oferte...",
       selectCurrency: "Selecteaza moneda...",
       pickDate: "Alege o data",
     },
     empty: {
       loading: "Se incarca...",
-      noOpportunities: "Nu au fost gasite oportunitati.",
+      noQuotes: "Nu au fost gasite oferte.",
     },
     validation: {
-      selectOpportunity: "Selecteaza o oportunitate",
+      selectQuote: "Selecteaza o oferta",
       selectCurrency: "Selecteaza o moneda",
-      createFailed: "Crearea ofertei a esuat",
+      createFailed: "Crearea versiunii de oferta a esuat",
     },
     actions: {
       create: "Creeaza",
     },
   },
-  quoteLinesCard: {
-    title: "Linii oferta",
+  quoteVersionLinesCard: {
+    title: "Linii versiune oferta",
     empty: "Nu exista inca linii.",
     fields: {
       description: "Descriere",
@@ -584,16 +584,16 @@ export const crmUiRo = {
     },
     empty: "Nicio activitate nu corespunde filtrelor.",
   },
-  quotesPage: {
-    title: "Oferte",
-    description: "Oferte emise pentru oportunitatile din pipeline.",
-    create: "Oferta noua",
+  quoteVersionsPage: {
+    title: "Versiuni oferta",
+    description: "Versiuni emise pentru ofertele din pipeline.",
+    create: "Versiune oferta noua",
     filters: {
       status: "Status",
       allStatuses: "Toate statusurile",
     },
     columns: {
-      quote: "Oferta",
+      quoteVersion: "Versiune",
       status: "Status",
       total: "Total",
       validUntil: "Valabila pana la",

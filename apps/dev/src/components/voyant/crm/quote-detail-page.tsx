@@ -1,50 +1,76 @@
 import { useNavigate } from "@tanstack/react-router"
 import {
   type UpdateQuoteInput,
-  useOpportunity,
+  useActivities,
+  useOrganization,
+  usePerson,
+  usePipeline,
   useQuote,
-  useQuoteLines,
   useQuoteMutation,
+  useQuoteVersionMutation,
+  useQuoteVersions,
+  useStages,
 } from "@voyantjs/crm-react"
+import { Button, Card, CardTitle, ConfirmActionButton } from "@voyantjs/ui/components"
+import { ArrowLeft, Ban, CheckCircle2, Loader2, Plus } from "lucide-react"
+import { useMemo, useState } from "react"
 import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  ConfirmActionButton,
-} from "@voyantjs/ui/components"
-import { ArrowLeft, Loader2 } from "lucide-react"
-import {
-  formatDate,
-  formatMoney,
-  formatRelative,
-  QUOTE_STATUS_OPTIONS,
-} from "@/components/voyant/crm/crm-constants"
-import { InlineCurrencyField } from "@/components/voyant/crm/inline-currency-field"
-import { InlineField } from "@/components/voyant/crm/inline-field"
-import { InlineSelectField } from "@/components/voyant/crm/inline-select-field"
-import { QuoteLinesCard } from "./quote-detail-sections"
+  QuoteActivitiesCard,
+  QuoteDetailsCard,
+  QuoteParticipantsCard,
+  QuoteSummaryCard,
+  QuoteTagsCard,
+  QuoteVersionsCard,
+} from "./quote-detail-sections"
 
 export function QuoteDetailPage({ id }: { id: string }) {
   const navigate = useNavigate()
+  const [lostReasonDraft, setLostReasonDraft] = useState("")
+  const [showLostDialog, setShowLostDialog] = useState(false)
 
   const quoteQuery = useQuote(id)
-  const linesQuery = useQuoteLines(id)
-  const { remove, update, createLine, updateLine, removeLine } = useQuoteMutation()
+  const { remove, update } = useQuoteMutation()
+  const { create: createQuoteVersion } = useQuoteVersionMutation()
 
   const updateField = async (patch: UpdateQuoteInput) => {
     await update.mutateAsync({ id, input: patch })
   }
 
   const quote = quoteQuery.data
-  const lines = linesQuery.data ?? []
-
-  const opportunityQuery = useOpportunity(quote?.opportunityId ?? undefined, {
-    enabled: Boolean(quote?.opportunityId),
+  const personQuery = usePerson(quote?.personId ?? undefined, {
+    enabled: Boolean(quote?.personId),
   })
-  const opportunity = opportunityQuery.data
+  const organizationQuery = useOrganization(quote?.organizationId ?? undefined, {
+    enabled: Boolean(quote?.organizationId),
+  })
+  const pipelineQuery = usePipeline(quote?.pipelineId, {
+    enabled: Boolean(quote?.pipelineId),
+  })
+  const stagesQuery = useStages({
+    pipelineId: quote?.pipelineId,
+    limit: 100,
+    enabled: Boolean(quote?.pipelineId),
+  })
+  const activitiesQuery = useActivities({
+    entityType: "quote",
+    entityId: id,
+    limit: 50,
+    enabled: Boolean(quote),
+  })
+  const quoteVersionsQuery = useQuoteVersions({
+    quoteId: id,
+    limit: 50,
+    enabled: Boolean(quote),
+  })
+
+  const stages = useMemo(
+    () => [...(stagesQuery.data?.data ?? [])].sort((a, b) => a.sortOrder - b.sortOrder),
+    [stagesQuery.data],
+  )
+  const activities = activitiesQuery.data?.data ?? []
+  const currentStage = stages.find((stage) => stage.id === quote?.stageId)
+  const person = personQuery.data
+  const organization = organizationQuery.data
 
   if (quoteQuery.isPending) {
     return (
@@ -63,6 +89,45 @@ export function QuoteDetailPage({ id }: { id: string }) {
         </Button>
       </div>
     )
+  }
+
+  const currentQuote = quote
+
+  const personName = person
+    ? [person.firstName, person.lastName].filter(Boolean).join(" ") || "Unnamed person"
+    : null
+
+  async function markWon() {
+    const wonStage = stages.find((stage) => stage.isWon)
+    await updateField({
+      status: "won",
+      ...(wonStage ? { stageId: wonStage.id } : {}),
+    })
+  }
+
+  async function submitLost() {
+    const lostStage = stages.find((stage) => stage.isLost)
+    await updateField({
+      status: "lost",
+      lostReason: lostReasonDraft.trim() || null,
+      ...(lostStage ? { stageId: lostStage.id } : {}),
+    })
+    setShowLostDialog(false)
+    setLostReasonDraft("")
+  }
+
+  async function reopen() {
+    await updateField({ status: "open", lostReason: null })
+  }
+
+  async function createQuoteVersionForQuote() {
+    const quoteVersion = await createQuoteVersion.mutateAsync({
+      quoteId: id,
+      input: {
+        currency: currentQuote.valueCurrency ?? "USD",
+      },
+    })
+    void navigate({ to: "/quote-versions/$id", params: { id: quoteVersion.id } })
   }
 
   return (
@@ -85,44 +150,58 @@ export function QuoteDetailPage({ id }: { id: string }) {
             Quotes
           </button>
           <span>/</span>
-          <span className="font-mono text-foreground">{quote.id.slice(-8)}</span>
+          <span className="truncate text-foreground">{currentQuote.title}</span>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          {quote.status === "draft" ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => void updateField({ status: "sent" })}
-              disabled={update.isPending}
-            >
-              Mark sent
-            </Button>
-          ) : null}
-          {quote.status === "sent" ? (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => void createQuoteVersionForQuote()}
+            disabled={createQuoteVersion.isPending}
+          >
+            {createQuoteVersion.isPending ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="mr-1.5 h-4 w-4" />
+            )}
+            New quote version
+          </Button>
+          {currentQuote.status === "open" ? (
             <>
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => void updateField({ status: "accepted" })}
+                onClick={() => void markWon()}
                 disabled={update.isPending}
               >
-                Accept
+                <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                Mark won
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => void updateField({ status: "rejected" })}
+                onClick={() => setShowLostDialog(true)}
                 disabled={update.isPending}
               >
-                Reject
+                <Ban className="mr-1.5 h-4 w-4" />
+                Mark lost
               </Button>
             </>
-          ) : null}
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void reopen()}
+              disabled={update.isPending}
+            >
+              Reopen
+            </Button>
+          )}
           <ConfirmActionButton
             buttonLabel="Delete"
             confirmLabel="Delete"
             title="Delete this quote?"
-            description="This will permanently remove the quote and all its lines."
+            description="This will permanently remove the quote. This action cannot be undone."
             variant="destructive"
             confirmVariant="destructive"
             disabled={remove.isPending}
@@ -134,109 +213,75 @@ export function QuoteDetailPage({ id }: { id: string }) {
         </div>
       </div>
 
+      {showLostDialog ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-md p-4">
+            <CardTitle className="mb-2">Mark quote as lost</CardTitle>
+            <p className="mb-3 text-sm text-muted-foreground">Optionally add a lost reason.</p>
+            <textarea
+              value={lostReasonDraft}
+              onChange={(e) => setLostReasonDraft(e.target.value)}
+              placeholder="Reason (optional)…"
+              className="w-full rounded border px-2 py-1.5 text-sm"
+              rows={3}
+            />
+            <div className="mt-3 flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowLostDialog(false)}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={() => void submitLost()} disabled={update.isPending}>
+                Mark lost
+              </Button>
+            </div>
+          </Card>
+        </div>
+      ) : null}
+
       <div className="grid flex-1 grid-cols-12 gap-4 p-4 lg:p-6">
         <aside className="col-span-12 flex flex-col gap-4 lg:col-span-4">
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-xs font-medium uppercase text-muted-foreground">Total</p>
-              <p className="mt-1 text-2xl font-semibold">
-                {formatMoney(quote.totalAmountCents, quote.currency)}
-              </p>
-              <div className="mt-3 flex items-center gap-2">
-                <Badge variant="secondary" className="capitalize">
-                  {quote.status}
-                </Badge>
-                {quote.validUntil ? (
-                  <span className="text-xs text-muted-foreground">
-                    Valid until {formatDate(quote.validUntil)}
-                  </span>
-                ) : null}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold">Quote details</CardTitle>
-            </CardHeader>
-            <CardContent className="divide-y text-sm">
-              <InlineSelectField
-                label="Status"
-                value={quote.status}
-                options={QUOTE_STATUS_OPTIONS}
-                allowClear={false}
-                onSave={(next) => updateField({ status: next ?? quote.status })}
-              />
-              <InlineCurrencyField
-                label="Currency"
-                value={quote.currency}
-                onSave={(next) => updateField({ currency: next ?? quote.currency })}
-              />
-              <InlineField
-                label="Valid until"
-                placeholder="YYYY-MM-DD"
-                value={quote.validUntil}
-                onSave={(next) => updateField({ validUntil: next })}
-              />
-              <InlineField
-                label="Notes"
-                kind="textarea"
-                value={quote.notes}
-                onSave={(next) => updateField({ notes: next })}
-              />
-            </CardContent>
-          </Card>
-
-          {opportunity ? (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold">Linked opportunity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <button
-                  type="button"
-                  onClick={() =>
-                    void navigate({
-                      to: "/opportunities/$id",
-                      params: { id: opportunity.id },
-                    })
-                  }
-                  className="w-full rounded border p-2 text-left text-sm hover:bg-muted/40"
-                >
-                  <p className="truncate font-medium">{opportunity.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatMoney(opportunity.valueAmountCents, opportunity.valueCurrency)}
-                    {" · "}
-                    {opportunity.status}
-                  </p>
-                </button>
-              </CardContent>
-            </Card>
-          ) : null}
-
-          <Card>
-            <CardContent className="flex flex-col gap-1 pt-6 text-xs text-muted-foreground">
-              <span>Created {formatRelative(quote.createdAt)}</span>
-              <span>Updated {formatRelative(quote.updatedAt)}</span>
-            </CardContent>
-          </Card>
+          <QuoteSummaryCard
+            title={quote.title}
+            pipelineName={pipelineQuery.data?.name}
+            stageName={currentStage?.name}
+            status={currentQuote.status}
+            valueAmountCents={currentQuote.valueAmountCents}
+            valueCurrency={currentQuote.valueCurrency}
+            expectedCloseDate={currentQuote.expectedCloseDate}
+          />
+          <QuoteDetailsCard
+            quote={currentQuote}
+            stages={stages}
+            onUpdateField={(patch) => updateField(patch as UpdateQuoteInput)}
+          />
+          <QuoteTagsCard tags={currentQuote.tags} onChange={(tags) => updateField({ tags })} />
         </aside>
 
         <main className="col-span-12 flex flex-col gap-4 lg:col-span-8">
-          <QuoteLinesCard
-            currency={quote.currency}
-            lines={lines}
-            isLoading={linesQuery.isPending}
-            onCreate={async (input) => {
-              await createLine.mutateAsync({ quoteId: id, input })
+          <QuoteParticipantsCard
+            person={person}
+            personName={personName}
+            organization={organization}
+            onOpenPerson={() => {
+              if (person) void navigate({ to: "/people/$id", params: { id: person.id } })
             }}
-            onUpdate={async (lineId, input) => {
-              await updateLine.mutateAsync({ quoteId: id, lineId, input })
-            }}
-            onRemove={async (lineId) => {
-              await removeLine.mutateAsync({ quoteId: id, lineId })
+            onOpenOrganization={() => {
+              if (organization) {
+                void navigate({ to: "/organizations/$id", params: { id: organization.id } })
+              }
             }}
           />
+          <QuoteVersionsCard
+            isPending={quoteVersionsQuery.isPending}
+            quoteVersions={quoteVersionsQuery.data?.data ?? []}
+            isCreating={createQuoteVersion.isPending}
+            onCreateQuoteVersion={() => {
+              void createQuoteVersionForQuote()
+            }}
+            onOpenQuoteVersion={(quoteVersionId) => {
+              void navigate({ to: "/quote-versions/$id", params: { id: quoteVersionId } })
+            }}
+          />
+          <QuoteActivitiesCard isPending={activitiesQuery.isPending} activities={activities} />
         </main>
       </div>
     </div>

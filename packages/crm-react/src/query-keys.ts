@@ -39,7 +39,7 @@ export interface OrganizationsListFilters {
   offset?: number | undefined
 }
 
-export interface OpportunitiesListFilters {
+export interface QuotesListFilters {
   search?: string | undefined
   personId?: string | undefined
   organizationId?: string | undefined
@@ -74,8 +74,8 @@ export interface ActivitiesListFilters {
   offset?: number | undefined
 }
 
-export interface QuotesListFilters {
-  opportunityId?: string | undefined
+export interface QuoteVersionsListFilters {
+  quoteId?: string | undefined
   status?: string | undefined
   limit?: number | undefined
   offset?: number | undefined
@@ -133,10 +133,9 @@ export const crmQueryKeys = {
     [...crmQueryKeys.organizations(), "list", filters] as const,
   organization: (id: string) => [...crmQueryKeys.organizations(), "detail", id] as const,
 
-  opportunities: () => [...crmQueryKeys.all, "opportunities"] as const,
-  opportunitiesList: (filters: OpportunitiesListFilters) =>
-    [...crmQueryKeys.opportunities(), "list", filters] as const,
-  opportunity: (id: string) => [...crmQueryKeys.opportunities(), "detail", id] as const,
+  quotes: () => [...crmQueryKeys.all, "quotes"] as const,
+  quotesList: (filters: QuotesListFilters) => [...crmQueryKeys.quotes(), "list", filters] as const,
+  quote: (id: string) => [...crmQueryKeys.quotes(), "detail", id] as const,
 
   pipelines: () => [...crmQueryKeys.all, "pipelines"] as const,
   pipelinesList: (filters: PipelinesListFilters) =>
@@ -153,8 +152,10 @@ export const crmQueryKeys = {
   activity: (id: string) => [...crmQueryKeys.activities(), "detail", id] as const,
   activityLinks: (activityId: string) => [...crmQueryKeys.activity(activityId), "links"] as const,
 
-  quotes: () => [...crmQueryKeys.all, "quotes"] as const,
-  quotesList: (filters: QuotesListFilters) => [...crmQueryKeys.quotes(), "list", filters] as const,
-  quote: (id: string) => [...crmQueryKeys.quotes(), "detail", id] as const,
-  quoteLines: (quoteId: string) => [...crmQueryKeys.quote(quoteId), "lines"] as const,
+  quoteVersions: () => [...crmQueryKeys.all, "quote-versions"] as const,
+  quoteVersionsList: (filters: QuoteVersionsListFilters) =>
+    [...crmQueryKeys.quoteVersions(), "list", filters] as const,
+  quoteVersion: (id: string) => [...crmQueryKeys.quoteVersions(), "detail", id] as const,
+  quoteVersionLines: (quoteVersionId: string) =>
+    [...crmQueryKeys.quoteVersion(quoteVersionId), "lines"] as const,
 } as const

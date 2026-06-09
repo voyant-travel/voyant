@@ -25,12 +25,12 @@ import { Route as WorkspaceSuppliersIndexRouteImport } from './routes/_workspace
 import { Route as WorkspaceSellabilityIndexRouteImport } from './routes/_workspace/sellability/index'
 import { Route as WorkspaceResourcesIndexRouteImport } from './routes/_workspace/resources/index'
 import { Route as WorkspaceQuotesIndexRouteImport } from './routes/_workspace/quotes/index'
+import { Route as WorkspaceQuoteVersionsIndexRouteImport } from './routes/_workspace/quote-versions/index'
 import { Route as WorkspacePropertyGroupsIndexRouteImport } from './routes/_workspace/property-groups/index'
 import { Route as WorkspacePropertiesIndexRouteImport } from './routes/_workspace/properties/index'
 import { Route as WorkspaceProductsIndexRouteImport } from './routes/_workspace/products/index'
 import { Route as WorkspacePeopleIndexRouteImport } from './routes/_workspace/people/index'
 import { Route as WorkspaceOrganizationsIndexRouteImport } from './routes/_workspace/organizations/index'
-import { Route as WorkspaceOpportunitiesIndexRouteImport } from './routes/_workspace/opportunities/index'
 import { Route as WorkspaceMarketsIndexRouteImport } from './routes/_workspace/markets/index'
 import { Route as WorkspaceIdentityIndexRouteImport } from './routes/_workspace/identity/index'
 import { Route as WorkspaceGroundIndexRouteImport } from './routes/_workspace/ground/index'
@@ -47,12 +47,12 @@ import { Route as WorkspaceSuppliersIdRouteImport } from './routes/_workspace/su
 import { Route as WorkspaceSettingsTeamRouteImport } from './routes/_workspace/settings/team'
 import { Route as WorkspaceResourcesIdRouteImport } from './routes/_workspace/resources/$id'
 import { Route as WorkspaceQuotesIdRouteImport } from './routes/_workspace/quotes/$id'
+import { Route as WorkspaceQuoteVersionsIdRouteImport } from './routes/_workspace/quote-versions/$id'
 import { Route as WorkspacePropertyGroupsIdRouteImport } from './routes/_workspace/property-groups/$id'
 import { Route as WorkspacePropertiesIdRouteImport } from './routes/_workspace/properties/$id'
 import { Route as WorkspaceProductsIdRouteImport } from './routes/_workspace/products/$id'
 import { Route as WorkspacePeopleIdRouteImport } from './routes/_workspace/people/$id'
 import { Route as WorkspaceOrganizationsIdRouteImport } from './routes/_workspace/organizations/$id'
-import { Route as WorkspaceOpportunitiesIdRouteImport } from './routes/_workspace/opportunities/$id'
 import { Route as WorkspaceFacilitiesIdRouteImport } from './routes/_workspace/facilities/$id'
 import { Route as WorkspaceDistributionIdRouteImport } from './routes/_workspace/distribution/$id'
 import { Route as WorkspaceBookingsIdRouteImport } from './routes/_workspace/bookings/$id'
@@ -167,6 +167,12 @@ const WorkspaceQuotesIndexRoute = WorkspaceQuotesIndexRouteImport.update({
   path: '/quotes/',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
+const WorkspaceQuoteVersionsIndexRoute =
+  WorkspaceQuoteVersionsIndexRouteImport.update({
+    id: '/quote-versions/',
+    path: '/quote-versions/',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 const WorkspacePropertyGroupsIndexRoute =
   WorkspacePropertyGroupsIndexRouteImport.update({
     id: '/property-groups/',
@@ -193,12 +199,6 @@ const WorkspaceOrganizationsIndexRoute =
   WorkspaceOrganizationsIndexRouteImport.update({
     id: '/organizations/',
     path: '/organizations/',
-    getParentRoute: () => WorkspaceRouteRoute,
-  } as any)
-const WorkspaceOpportunitiesIndexRoute =
-  WorkspaceOpportunitiesIndexRouteImport.update({
-    id: '/opportunities/',
-    path: '/opportunities/',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
 const WorkspaceMarketsIndexRoute = WorkspaceMarketsIndexRouteImport.update({
@@ -287,6 +287,12 @@ const WorkspaceQuotesIdRoute = WorkspaceQuotesIdRouteImport.update({
   path: '/quotes/$id',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
+const WorkspaceQuoteVersionsIdRoute =
+  WorkspaceQuoteVersionsIdRouteImport.update({
+    id: '/quote-versions/$id',
+    path: '/quote-versions/$id',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 const WorkspacePropertyGroupsIdRoute =
   WorkspacePropertyGroupsIdRouteImport.update({
     id: '/property-groups/$id',
@@ -312,12 +318,6 @@ const WorkspaceOrganizationsIdRoute =
   WorkspaceOrganizationsIdRouteImport.update({
     id: '/organizations/$id',
     path: '/organizations/$id',
-    getParentRoute: () => WorkspaceRouteRoute,
-  } as any)
-const WorkspaceOpportunitiesIdRoute =
-  WorkspaceOpportunitiesIdRouteImport.update({
-    id: '/opportunities/$id',
-    path: '/opportunities/$id',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
 const WorkspaceFacilitiesIdRoute = WorkspaceFacilitiesIdRouteImport.update({
@@ -529,12 +529,12 @@ export interface FileRoutesByFullPath {
   '/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/distribution/$id': typeof WorkspaceDistributionIdRoute
   '/facilities/$id': typeof WorkspaceFacilitiesIdRoute
-  '/opportunities/$id': typeof WorkspaceOpportunitiesIdRoute
   '/organizations/$id': typeof WorkspaceOrganizationsIdRoute
   '/people/$id': typeof WorkspacePeopleIdRoute
   '/products/$id': typeof WorkspaceProductsIdRoute
   '/properties/$id': typeof WorkspacePropertiesIdRoute
   '/property-groups/$id': typeof WorkspacePropertyGroupsIdRoute
+  '/quote-versions/$id': typeof WorkspaceQuoteVersionsIdRoute
   '/quotes/$id': typeof WorkspaceQuotesIdRoute
   '/resources/$id': typeof WorkspaceResourcesIdRoute
   '/settings/team': typeof WorkspaceSettingsTeamRoute
@@ -551,12 +551,12 @@ export interface FileRoutesByFullPath {
   '/ground/': typeof WorkspaceGroundIndexRoute
   '/identity/': typeof WorkspaceIdentityIndexRoute
   '/markets/': typeof WorkspaceMarketsIndexRoute
-  '/opportunities/': typeof WorkspaceOpportunitiesIndexRoute
   '/organizations/': typeof WorkspaceOrganizationsIndexRoute
   '/people/': typeof WorkspacePeopleIndexRoute
   '/products/': typeof WorkspaceProductsIndexRoute
   '/properties/': typeof WorkspacePropertiesIndexRoute
   '/property-groups/': typeof WorkspacePropertyGroupsIndexRoute
+  '/quote-versions/': typeof WorkspaceQuoteVersionsIndexRoute
   '/quotes/': typeof WorkspaceQuotesIndexRoute
   '/resources/': typeof WorkspaceResourcesIndexRoute
   '/sellability/': typeof WorkspaceSellabilityIndexRoute
@@ -606,12 +606,12 @@ export interface FileRoutesByTo {
   '/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/distribution/$id': typeof WorkspaceDistributionIdRoute
   '/facilities/$id': typeof WorkspaceFacilitiesIdRoute
-  '/opportunities/$id': typeof WorkspaceOpportunitiesIdRoute
   '/organizations/$id': typeof WorkspaceOrganizationsIdRoute
   '/people/$id': typeof WorkspacePeopleIdRoute
   '/products/$id': typeof WorkspaceProductsIdRoute
   '/properties/$id': typeof WorkspacePropertiesIdRoute
   '/property-groups/$id': typeof WorkspacePropertyGroupsIdRoute
+  '/quote-versions/$id': typeof WorkspaceQuoteVersionsIdRoute
   '/quotes/$id': typeof WorkspaceQuotesIdRoute
   '/resources/$id': typeof WorkspaceResourcesIdRoute
   '/settings/team': typeof WorkspaceSettingsTeamRoute
@@ -628,12 +628,12 @@ export interface FileRoutesByTo {
   '/ground': typeof WorkspaceGroundIndexRoute
   '/identity': typeof WorkspaceIdentityIndexRoute
   '/markets': typeof WorkspaceMarketsIndexRoute
-  '/opportunities': typeof WorkspaceOpportunitiesIndexRoute
   '/organizations': typeof WorkspaceOrganizationsIndexRoute
   '/people': typeof WorkspacePeopleIndexRoute
   '/products': typeof WorkspaceProductsIndexRoute
   '/properties': typeof WorkspacePropertiesIndexRoute
   '/property-groups': typeof WorkspacePropertyGroupsIndexRoute
+  '/quote-versions': typeof WorkspaceQuoteVersionsIndexRoute
   '/quotes': typeof WorkspaceQuotesIndexRoute
   '/resources': typeof WorkspaceResourcesIndexRoute
   '/sellability': typeof WorkspaceSellabilityIndexRoute
@@ -686,12 +686,12 @@ export interface FileRoutesById {
   '/_workspace/bookings/$id': typeof WorkspaceBookingsIdRoute
   '/_workspace/distribution/$id': typeof WorkspaceDistributionIdRoute
   '/_workspace/facilities/$id': typeof WorkspaceFacilitiesIdRoute
-  '/_workspace/opportunities/$id': typeof WorkspaceOpportunitiesIdRoute
   '/_workspace/organizations/$id': typeof WorkspaceOrganizationsIdRoute
   '/_workspace/people/$id': typeof WorkspacePeopleIdRoute
   '/_workspace/products/$id': typeof WorkspaceProductsIdRoute
   '/_workspace/properties/$id': typeof WorkspacePropertiesIdRoute
   '/_workspace/property-groups/$id': typeof WorkspacePropertyGroupsIdRoute
+  '/_workspace/quote-versions/$id': typeof WorkspaceQuoteVersionsIdRoute
   '/_workspace/quotes/$id': typeof WorkspaceQuotesIdRoute
   '/_workspace/resources/$id': typeof WorkspaceResourcesIdRoute
   '/_workspace/settings/team': typeof WorkspaceSettingsTeamRoute
@@ -708,12 +708,12 @@ export interface FileRoutesById {
   '/_workspace/ground/': typeof WorkspaceGroundIndexRoute
   '/_workspace/identity/': typeof WorkspaceIdentityIndexRoute
   '/_workspace/markets/': typeof WorkspaceMarketsIndexRoute
-  '/_workspace/opportunities/': typeof WorkspaceOpportunitiesIndexRoute
   '/_workspace/organizations/': typeof WorkspaceOrganizationsIndexRoute
   '/_workspace/people/': typeof WorkspacePeopleIndexRoute
   '/_workspace/products/': typeof WorkspaceProductsIndexRoute
   '/_workspace/properties/': typeof WorkspacePropertiesIndexRoute
   '/_workspace/property-groups/': typeof WorkspacePropertyGroupsIndexRoute
+  '/_workspace/quote-versions/': typeof WorkspaceQuoteVersionsIndexRoute
   '/_workspace/quotes/': typeof WorkspaceQuotesIndexRoute
   '/_workspace/resources/': typeof WorkspaceResourcesIndexRoute
   '/_workspace/sellability/': typeof WorkspaceSellabilityIndexRoute
@@ -765,12 +765,12 @@ export interface FileRouteTypes {
     | '/bookings/$id'
     | '/distribution/$id'
     | '/facilities/$id'
-    | '/opportunities/$id'
     | '/organizations/$id'
     | '/people/$id'
     | '/products/$id'
     | '/properties/$id'
     | '/property-groups/$id'
+    | '/quote-versions/$id'
     | '/quotes/$id'
     | '/resources/$id'
     | '/settings/team'
@@ -787,12 +787,12 @@ export interface FileRouteTypes {
     | '/ground/'
     | '/identity/'
     | '/markets/'
-    | '/opportunities/'
     | '/organizations/'
     | '/people/'
     | '/products/'
     | '/properties/'
     | '/property-groups/'
+    | '/quote-versions/'
     | '/quotes/'
     | '/resources/'
     | '/sellability/'
@@ -842,12 +842,12 @@ export interface FileRouteTypes {
     | '/bookings/$id'
     | '/distribution/$id'
     | '/facilities/$id'
-    | '/opportunities/$id'
     | '/organizations/$id'
     | '/people/$id'
     | '/products/$id'
     | '/properties/$id'
     | '/property-groups/$id'
+    | '/quote-versions/$id'
     | '/quotes/$id'
     | '/resources/$id'
     | '/settings/team'
@@ -864,12 +864,12 @@ export interface FileRouteTypes {
     | '/ground'
     | '/identity'
     | '/markets'
-    | '/opportunities'
     | '/organizations'
     | '/people'
     | '/products'
     | '/properties'
     | '/property-groups'
+    | '/quote-versions'
     | '/quotes'
     | '/resources'
     | '/sellability'
@@ -921,12 +921,12 @@ export interface FileRouteTypes {
     | '/_workspace/bookings/$id'
     | '/_workspace/distribution/$id'
     | '/_workspace/facilities/$id'
-    | '/_workspace/opportunities/$id'
     | '/_workspace/organizations/$id'
     | '/_workspace/people/$id'
     | '/_workspace/products/$id'
     | '/_workspace/properties/$id'
     | '/_workspace/property-groups/$id'
+    | '/_workspace/quote-versions/$id'
     | '/_workspace/quotes/$id'
     | '/_workspace/resources/$id'
     | '/_workspace/settings/team'
@@ -943,12 +943,12 @@ export interface FileRouteTypes {
     | '/_workspace/ground/'
     | '/_workspace/identity/'
     | '/_workspace/markets/'
-    | '/_workspace/opportunities/'
     | '/_workspace/organizations/'
     | '/_workspace/people/'
     | '/_workspace/products/'
     | '/_workspace/properties/'
     | '/_workspace/property-groups/'
+    | '/_workspace/quote-versions/'
     | '/_workspace/quotes/'
     | '/_workspace/resources/'
     | '/_workspace/sellability/'
@@ -1104,6 +1104,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceQuotesIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/quote-versions/': {
+      id: '/_workspace/quote-versions/'
+      path: '/quote-versions'
+      fullPath: '/quote-versions/'
+      preLoaderRoute: typeof WorkspaceQuoteVersionsIndexRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/_workspace/property-groups/': {
       id: '/_workspace/property-groups/'
       path: '/property-groups'
@@ -1137,13 +1144,6 @@ declare module '@tanstack/react-router' {
       path: '/organizations'
       fullPath: '/organizations/'
       preLoaderRoute: typeof WorkspaceOrganizationsIndexRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
-    '/_workspace/opportunities/': {
-      id: '/_workspace/opportunities/'
-      path: '/opportunities'
-      fullPath: '/opportunities/'
-      preLoaderRoute: typeof WorkspaceOpportunitiesIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/markets/': {
@@ -1258,6 +1258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceQuotesIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/_workspace/quote-versions/$id': {
+      id: '/_workspace/quote-versions/$id'
+      path: '/quote-versions/$id'
+      fullPath: '/quote-versions/$id'
+      preLoaderRoute: typeof WorkspaceQuoteVersionsIdRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/_workspace/property-groups/$id': {
       id: '/_workspace/property-groups/$id'
       path: '/property-groups/$id'
@@ -1291,13 +1298,6 @@ declare module '@tanstack/react-router' {
       path: '/organizations/$id'
       fullPath: '/organizations/$id'
       preLoaderRoute: typeof WorkspaceOrganizationsIdRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
-    '/_workspace/opportunities/$id': {
-      id: '/_workspace/opportunities/$id'
-      path: '/opportunities/$id'
-      fullPath: '/opportunities/$id'
-      preLoaderRoute: typeof WorkspaceOpportunitiesIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/facilities/$id': {
@@ -1615,12 +1615,12 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceBookingsIdRoute: typeof WorkspaceBookingsIdRoute
   WorkspaceDistributionIdRoute: typeof WorkspaceDistributionIdRoute
   WorkspaceFacilitiesIdRoute: typeof WorkspaceFacilitiesIdRoute
-  WorkspaceOpportunitiesIdRoute: typeof WorkspaceOpportunitiesIdRoute
   WorkspaceOrganizationsIdRoute: typeof WorkspaceOrganizationsIdRoute
   WorkspacePeopleIdRoute: typeof WorkspacePeopleIdRoute
   WorkspaceProductsIdRoute: typeof WorkspaceProductsIdRoute
   WorkspacePropertiesIdRoute: typeof WorkspacePropertiesIdRoute
   WorkspacePropertyGroupsIdRoute: typeof WorkspacePropertyGroupsIdRoute
+  WorkspaceQuoteVersionsIdRoute: typeof WorkspaceQuoteVersionsIdRoute
   WorkspaceQuotesIdRoute: typeof WorkspaceQuotesIdRoute
   WorkspaceResourcesIdRoute: typeof WorkspaceResourcesIdRoute
   WorkspaceSuppliersIdRoute: typeof WorkspaceSuppliersIdRoute
@@ -1636,12 +1636,12 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceGroundIndexRoute: typeof WorkspaceGroundIndexRoute
   WorkspaceIdentityIndexRoute: typeof WorkspaceIdentityIndexRoute
   WorkspaceMarketsIndexRoute: typeof WorkspaceMarketsIndexRoute
-  WorkspaceOpportunitiesIndexRoute: typeof WorkspaceOpportunitiesIndexRoute
   WorkspaceOrganizationsIndexRoute: typeof WorkspaceOrganizationsIndexRoute
   WorkspacePeopleIndexRoute: typeof WorkspacePeopleIndexRoute
   WorkspaceProductsIndexRoute: typeof WorkspaceProductsIndexRoute
   WorkspacePropertiesIndexRoute: typeof WorkspacePropertiesIndexRoute
   WorkspacePropertyGroupsIndexRoute: typeof WorkspacePropertyGroupsIndexRoute
+  WorkspaceQuoteVersionsIndexRoute: typeof WorkspaceQuoteVersionsIndexRoute
   WorkspaceQuotesIndexRoute: typeof WorkspaceQuotesIndexRoute
   WorkspaceResourcesIndexRoute: typeof WorkspaceResourcesIndexRoute
   WorkspaceSellabilityIndexRoute: typeof WorkspaceSellabilityIndexRoute
@@ -1673,12 +1673,12 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceBookingsIdRoute: WorkspaceBookingsIdRoute,
   WorkspaceDistributionIdRoute: WorkspaceDistributionIdRoute,
   WorkspaceFacilitiesIdRoute: WorkspaceFacilitiesIdRoute,
-  WorkspaceOpportunitiesIdRoute: WorkspaceOpportunitiesIdRoute,
   WorkspaceOrganizationsIdRoute: WorkspaceOrganizationsIdRoute,
   WorkspacePeopleIdRoute: WorkspacePeopleIdRoute,
   WorkspaceProductsIdRoute: WorkspaceProductsIdRoute,
   WorkspacePropertiesIdRoute: WorkspacePropertiesIdRoute,
   WorkspacePropertyGroupsIdRoute: WorkspacePropertyGroupsIdRoute,
+  WorkspaceQuoteVersionsIdRoute: WorkspaceQuoteVersionsIdRoute,
   WorkspaceQuotesIdRoute: WorkspaceQuotesIdRoute,
   WorkspaceResourcesIdRoute: WorkspaceResourcesIdRoute,
   WorkspaceSuppliersIdRoute: WorkspaceSuppliersIdRoute,
@@ -1695,12 +1695,12 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceGroundIndexRoute: WorkspaceGroundIndexRoute,
   WorkspaceIdentityIndexRoute: WorkspaceIdentityIndexRoute,
   WorkspaceMarketsIndexRoute: WorkspaceMarketsIndexRoute,
-  WorkspaceOpportunitiesIndexRoute: WorkspaceOpportunitiesIndexRoute,
   WorkspaceOrganizationsIndexRoute: WorkspaceOrganizationsIndexRoute,
   WorkspacePeopleIndexRoute: WorkspacePeopleIndexRoute,
   WorkspaceProductsIndexRoute: WorkspaceProductsIndexRoute,
   WorkspacePropertiesIndexRoute: WorkspacePropertiesIndexRoute,
   WorkspacePropertyGroupsIndexRoute: WorkspacePropertyGroupsIndexRoute,
+  WorkspaceQuoteVersionsIndexRoute: WorkspaceQuoteVersionsIndexRoute,
   WorkspaceQuotesIndexRoute: WorkspaceQuotesIndexRoute,
   WorkspaceResourcesIndexRoute: WorkspaceResourcesIndexRoute,
   WorkspaceSellabilityIndexRoute: WorkspaceSellabilityIndexRoute,

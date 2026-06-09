@@ -1,4 +1,4 @@
-import { type QuoteRecord, useQuotes } from "@voyantjs/crm-react"
+import { type QuoteVersionRecord, useQuoteVersions } from "@voyantjs/crm-react"
 import {
   Badge,
   Button,
@@ -21,58 +21,62 @@ import { Loader2, Plus } from "lucide-react"
 import { useState } from "react"
 
 import { useCrmUiI18nOrDefault } from "../i18n/index.js"
-import type { CrmQuoteStatus } from "../i18n/messages.js"
-import { CreateQuoteDialog } from "./create-quote-dialog.js"
+import type { CrmQuoteVersionStatus } from "../i18n/messages.js"
+import { CreateQuoteVersionDialog } from "./create-quote-version-dialog.js"
 import { formatCrmDate, formatCrmMoney, formatCrmRelative } from "./crm-format.js"
 
-export interface QuotesPageProps {
-  onQuoteOpen?: (quote: QuoteRecord) => void
-  onQuoteCreated?: (quote: QuoteRecord) => void
+export interface QuoteVersionsPageProps {
+  onQuoteVersionOpen?: (quoteVersion: QuoteVersionRecord) => void
+  onQuoteVersionCreated?: (quoteVersion: QuoteVersionRecord) => void
   className?: string
 }
 
-export function QuotesPage({ onQuoteOpen, onQuoteCreated, className }: QuotesPageProps = {}) {
+export function QuoteVersionsPage({
+  onQuoteVersionOpen,
+  onQuoteVersionCreated,
+  className,
+}: QuoteVersionsPageProps = {}) {
   const i18n = useCrmUiI18nOrDefault()
   const { messages } = i18n
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  const { data, isPending, isError } = useQuotes({
+  const { data, isPending, isError } = useQuoteVersions({
     status: statusFilter === "all" ? undefined : statusFilter,
     limit: 100,
   })
 
-  const quotes = data?.data ?? []
-  const quoteStatusOptions = Object.entries(messages.common.quoteStatusLabels).map(
+  const quoteVersions = data?.data ?? []
+  const quoteVersionStatusOptions = Object.entries(messages.common.quoteVersionStatusLabels).map(
     ([value, label]) => ({ value, label }),
   )
 
-  const handleCreated = (quote: QuoteRecord) => {
-    onQuoteCreated?.(quote)
-    onQuoteOpen?.(quote)
+  const handleCreated = (quoteVersion: QuoteVersionRecord) => {
+    onQuoteVersionCreated?.(quoteVersion)
+    onQuoteVersionOpen?.(quoteVersion)
   }
 
   return (
-    <div data-slot="quotes-page" className={cn("flex flex-col gap-6 p-6", className)}>
+    <div data-slot="quote-versions-page" className={cn("flex flex-col gap-6 p-6", className)}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{messages.quotesPage.title}</h1>
-          <p className="text-sm text-muted-foreground">{messages.quotesPage.description}</p>
+          <h1 className="text-2xl font-bold tracking-tight">{messages.quoteVersionsPage.title}</h1>
+          <p className="text-sm text-muted-foreground">{messages.quoteVersionsPage.description}</p>
         </div>
         <Button onClick={() => setDialogOpen(true)}>
           <Plus className="mr-2 size-4" aria-hidden="true" />
-          {messages.quotesPage.create}
+          {messages.quoteVersionsPage.create}
         </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value ?? "all")}>
           <SelectTrigger className="w-[180px] text-sm">
-            <SelectValue placeholder={messages.quotesPage.filters.status} />
+            <SelectValue placeholder={messages.quoteVersionsPage.filters.status} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{messages.quotesPage.filters.allStatuses}</SelectItem>
-            {quoteStatusOptions.map((option) => (
+            <SelectItem value="all">{messages.quoteVersionsPage.filters.allStatuses}</SelectItem>
+            {quoteVersionStatusOptions.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
@@ -85,11 +89,11 @@ export function QuotesPage({ onQuoteOpen, onQuoteCreated, className }: QuotesPag
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{messages.quotesPage.columns.quote}</TableHead>
-              <TableHead>{messages.quotesPage.columns.status}</TableHead>
-              <TableHead>{messages.quotesPage.columns.total}</TableHead>
-              <TableHead>{messages.quotesPage.columns.validUntil}</TableHead>
-              <TableHead>{messages.quotesPage.columns.updated}</TableHead>
+              <TableHead>{messages.quoteVersionsPage.columns.quoteVersion}</TableHead>
+              <TableHead>{messages.quoteVersionsPage.columns.status}</TableHead>
+              <TableHead>{messages.quoteVersionsPage.columns.total}</TableHead>
+              <TableHead>{messages.quoteVersionsPage.columns.validUntil}</TableHead>
+              <TableHead>{messages.quoteVersionsPage.columns.updated}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -102,35 +106,39 @@ export function QuotesPage({ onQuoteOpen, onQuoteCreated, className }: QuotesPag
             ) : isError ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-sm text-destructive">
-                  {messages.quotesPage.loadFailed}
+                  {messages.quoteVersionsPage.loadFailed}
                 </TableCell>
               </TableRow>
-            ) : quotes.length === 0 ? (
+            ) : quoteVersions.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-sm text-muted-foreground">
-                  {messages.quotesPage.empty}
+                  {messages.quoteVersionsPage.empty}
                 </TableCell>
               </TableRow>
             ) : (
-              quotes.map((quote) => {
+              quoteVersions.map((quoteVersion) => {
                 const statusLabel =
-                  messages.common.quoteStatusLabels[quote.status as CrmQuoteStatus] ?? quote.status
+                  messages.common.quoteVersionStatusLabels[
+                    quoteVersion.status as CrmQuoteVersionStatus
+                  ] ?? quoteVersion.status
                 return (
                   <TableRow
-                    key={quote.id}
-                    onClick={() => onQuoteOpen?.(quote)}
-                    className={cn(onQuoteOpen && "cursor-pointer")}
+                    key={quoteVersion.id}
+                    onClick={() => onQuoteVersionOpen?.(quoteVersion)}
+                    className={cn(onQuoteVersionOpen && "cursor-pointer")}
                   >
-                    <TableCell className="font-mono text-xs">{quote.id.slice(-8)}</TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {quoteVersion.label ?? quoteVersion.id.slice(-8)}
+                    </TableCell>
                     <TableCell>
                       <Badge variant="secondary">{statusLabel}</Badge>
                     </TableCell>
                     <TableCell className="font-medium">
-                      {formatCrmMoney(i18n, quote.totalAmountCents, quote.currency)}
+                      {formatCrmMoney(i18n, quoteVersion.totalAmountCents, quoteVersion.currency)}
                     </TableCell>
-                    <TableCell>{formatCrmDate(i18n, quote.validUntil)}</TableCell>
+                    <TableCell>{formatCrmDate(i18n, quoteVersion.validUntil)}</TableCell>
                     <TableCell className="text-muted-foreground">
-                      {formatCrmRelative(i18n, quote.updatedAt)}
+                      {formatCrmRelative(i18n, quoteVersion.updatedAt)}
                     </TableCell>
                   </TableRow>
                 )
@@ -140,7 +148,11 @@ export function QuotesPage({ onQuoteOpen, onQuoteCreated, className }: QuotesPag
         </Table>
       </div>
 
-      <CreateQuoteDialog open={dialogOpen} onOpenChange={setDialogOpen} onCreated={handleCreated} />
+      <CreateQuoteVersionDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onCreated={handleCreated}
+      />
     </div>
   )
 }

@@ -67,7 +67,7 @@ type OrganizationPerson = {
   status?: string | null
 }
 
-type OrganizationOpportunity = {
+type OrganizationQuote = {
   id: string
   title: string
   status: string
@@ -283,24 +283,24 @@ export function OrganizationMain({
   setActiveTab,
   org,
   people,
-  opportunities,
+  quotes,
   activities,
   peoplePending,
-  opportunitiesPending,
+  quotesPending,
   activitiesPending,
   totalOpenValue,
   primaryCurrency,
   onOpenPerson,
   onUpdateField,
 }: {
-  activeTab: "overview" | "people" | "opportunities" | "activities"
-  setActiveTab: (value: "overview" | "people" | "opportunities" | "activities") => void
+  activeTab: "overview" | "people" | "quotes" | "activities"
+  setActiveTab: (value: "overview" | "people" | "quotes" | "activities") => void
   org: OrganizationData
   people: OrganizationPerson[]
-  opportunities: OrganizationOpportunity[]
+  quotes: OrganizationQuote[]
   activities: OrganizationActivity[]
   peoplePending: boolean
-  opportunitiesPending: boolean
+  quotesPending: boolean
   activitiesPending: boolean
   totalOpenValue: number
   primaryCurrency: string | null
@@ -309,8 +309,8 @@ export function OrganizationMain({
 }) {
   const i18n = useRegistryCrmI18nOrDefault()
   const m = useRegistryCrmMessagesOrDefault()
-  const openOpportunities = opportunities.filter((opportunity) => opportunity.status === "open")
-  const wonOpportunities = opportunities.filter((opportunity) => opportunity.status === "won")
+  const openQuotes = quotes.filter((quote) => quote.status === "open")
+  const wonQuotes = quotes.filter((quote) => quote.status === "won")
 
   return (
     <main className="col-span-12 flex flex-col gap-4 lg:col-span-9">
@@ -326,9 +326,9 @@ export function OrganizationMain({
         <Card>
           <CardContent className="pt-6">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {m.organizationDetail.metrics.openOpportunities}
+              {m.organizationDetail.metrics.openQuotes}
             </p>
-            <p className="mt-1 text-2xl font-semibold">{openOpportunities.length}</p>
+            <p className="mt-1 text-2xl font-semibold">{openQuotes.length}</p>
           </CardContent>
         </Card>
         <Card>
@@ -346,7 +346,7 @@ export function OrganizationMain({
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {m.organizationDetail.metrics.won}
             </p>
-            <p className="mt-1 text-2xl font-semibold">{wonOpportunities.length}</p>
+            <p className="mt-1 text-2xl font-semibold">{wonQuotes.length}</p>
           </CardContent>
         </Card>
       </div>
@@ -355,7 +355,7 @@ export function OrganizationMain({
         <Tabs
           value={activeTab}
           onValueChange={(value) =>
-            setActiveTab(value as "overview" | "people" | "opportunities" | "activities")
+            setActiveTab(value as "overview" | "people" | "quotes" | "activities")
           }
         >
           <CardHeader className="pb-0">
@@ -364,8 +364,8 @@ export function OrganizationMain({
               <TabsTrigger value="people">
                 {m.organizationDetail.tabs.people} ({people.length})
               </TabsTrigger>
-              <TabsTrigger value="opportunities">
-                {m.organizationDetail.tabs.opportunities} ({opportunities.length})
+              <TabsTrigger value="quotes">
+                {m.organizationDetail.tabs.quotes} ({quotes.length})
               </TabsTrigger>
               <TabsTrigger value="activities">
                 {m.organizationDetail.tabs.activities} ({activities.length})
@@ -453,32 +453,28 @@ export function OrganizationMain({
               )}
             </TabsContent>
 
-            <TabsContent value="opportunities" className="m-0">
-              {opportunitiesPending ? (
+            <TabsContent value="quotes" className="m-0">
+              {quotesPending ? (
                 <div className="flex justify-center py-6">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
-              ) : opportunities.length === 0 ? (
+              ) : quotes.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">
-                  {m.organizationDetail.empty.noOpportunities}
+                  {m.organizationDetail.empty.noQuotes}
                 </p>
               ) : (
                 <ul className="divide-y">
-                  {opportunities.map((opportunity) => {
+                  {quotes.map((quote) => {
                     const statusLabel =
-                      m.common.opportunityStatusLabels[
-                        opportunity.status as keyof typeof m.common.opportunityStatusLabels
-                      ] ?? opportunity.status
+                      m.common.quoteStatusLabels[
+                        quote.status as keyof typeof m.common.quoteStatusLabels
+                      ] ?? quote.status
                     return (
-                      <li
-                        key={opportunity.id}
-                        className="flex items-center justify-between gap-3 py-3"
-                      >
+                      <li key={quote.id} className="flex items-center justify-between gap-3 py-3">
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{opportunity.title}</p>
+                          <p className="truncate text-sm font-medium">{quote.title}</p>
                           <p className="text-xs text-muted-foreground">
-                            {statusLabel} -{" "}
-                            {formatRegistryCrmDate(i18n, opportunity.expectedCloseDate)}
+                            {statusLabel} - {formatRegistryCrmDate(i18n, quote.expectedCloseDate)}
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -486,8 +482,8 @@ export function OrganizationMain({
                             <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
                             {formatRegistryCrmMoney(
                               i18n,
-                              opportunity.valueAmountCents,
-                              opportunity.valueCurrency,
+                              quote.valueAmountCents,
+                              quote.valueCurrency,
                             )}
                           </span>
                           <Badge variant="outline">{statusLabel}</Badge>

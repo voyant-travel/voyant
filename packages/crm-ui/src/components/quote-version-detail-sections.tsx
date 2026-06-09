@@ -1,4 +1,4 @@
-import type { QuoteLineRecord } from "@voyantjs/crm-react"
+import type { QuoteVersionLineRecord } from "@voyantjs/crm-react"
 import { Button, Card, CardContent, CardHeader, CardTitle, Input } from "@voyantjs/ui/components"
 import { CurrencyInput } from "@voyantjs/ui/components/currency-input"
 import { Loader2, Plus, Trash2 } from "lucide-react"
@@ -7,9 +7,9 @@ import { useEffect, useState } from "react"
 import { useCrmUiI18nOrDefault } from "../i18n/index.js"
 import { formatCrmMoney } from "./crm-format.js"
 
-export interface QuoteLinesCardProps {
+export interface QuoteVersionLinesCardProps {
   currency: string
-  lines: QuoteLineRecord[]
+  lines: QuoteVersionLineRecord[]
   isLoading: boolean
   onCreate: (input: {
     description: string
@@ -30,14 +30,14 @@ export interface QuoteLinesCardProps {
   onRemove: (lineId: string) => Promise<void>
 }
 
-export function QuoteLinesCard({
+export function QuoteVersionLinesCard({
   currency,
   lines,
   isLoading,
   onCreate,
   onUpdate,
   onRemove,
-}: QuoteLinesCardProps) {
+}: QuoteVersionLinesCardProps) {
   const i18n = useCrmUiI18nOrDefault()
   const { messages } = i18n
   const [newDescription, setNewDescription] = useState("")
@@ -49,7 +49,7 @@ export function QuoteLinesCard({
   async function handleAdd() {
     const description = newDescription.trim()
     if (!description) {
-      setError(messages.quoteLinesCard.validation.descriptionRequired)
+      setError(messages.quoteVersionLinesCard.validation.descriptionRequired)
       return
     }
     const quantity = Number.parseInt(newQuantity, 10) || 1
@@ -68,7 +68,9 @@ export function QuoteLinesCard({
       setNewQuantity("1")
       setNewPriceCents(0)
     } catch (err) {
-      setError(err instanceof Error ? err.message : messages.quoteLinesCard.validation.addFailed)
+      setError(
+        err instanceof Error ? err.message : messages.quoteVersionLinesCard.validation.addFailed,
+      )
     } finally {
       setAdding(false)
     }
@@ -79,7 +81,9 @@ export function QuoteLinesCard({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-semibold">{messages.quoteLinesCard.title}</CardTitle>
+        <CardTitle className="text-sm font-semibold">
+          {messages.quoteVersionLinesCard.title}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -88,12 +92,12 @@ export function QuoteLinesCard({
           </div>
         ) : lines.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">
-            {messages.quoteLinesCard.empty}
+            {messages.quoteVersionLinesCard.empty}
           </p>
         ) : (
           <ul className="divide-y">
             {lines.map((line) => (
-              <QuoteLineRow
+              <QuoteVersionLineRow
                 key={line.id}
                 currency={currency}
                 line={line}
@@ -110,7 +114,7 @@ export function QuoteLinesCard({
               className="col-span-6 h-8 text-sm"
               value={newDescription}
               onChange={(event) => setNewDescription(event.target.value)}
-              placeholder={messages.quoteLinesCard.fields.description}
+              placeholder={messages.quoteVersionLinesCard.fields.description}
             />
             <Input
               className="col-span-2 h-8 text-sm"
@@ -118,7 +122,7 @@ export function QuoteLinesCard({
               min={1}
               value={newQuantity}
               onChange={(event) => setNewQuantity(event.target.value)}
-              placeholder={messages.quoteLinesCard.fields.quantity}
+              placeholder={messages.quoteVersionLinesCard.fields.quantity}
             />
             <CurrencyInput
               className="col-span-3 h-8 text-sm"
@@ -126,7 +130,7 @@ export function QuoteLinesCard({
               value={newPriceCents}
               onChange={setNewPriceCents}
               currency={currency}
-              placeholder={messages.quoteLinesCard.fields.priceCents}
+              placeholder={messages.quoteVersionLinesCard.fields.priceCents}
             />
             <Button
               size="sm"
@@ -146,7 +150,7 @@ export function QuoteLinesCard({
         </div>
 
         <div className="mt-3 flex items-center justify-between border-t pt-3 text-sm">
-          <span className="text-muted-foreground">{messages.quoteLinesCard.subtotal}</span>
+          <span className="text-muted-foreground">{messages.quoteVersionLinesCard.subtotal}</span>
           <span className="font-semibold">{formatCrmMoney(i18n, subtotal, currency)}</span>
         </div>
       </CardContent>
@@ -154,14 +158,14 @@ export function QuoteLinesCard({
   )
 }
 
-function QuoteLineRow({
+function QuoteVersionLineRow({
   currency,
   line,
   onUpdate,
   onRemove,
 }: {
   currency: string
-  line: QuoteLineRecord
+  line: QuoteVersionLineRecord
   onUpdate: (input: {
     description?: string
     quantity?: number

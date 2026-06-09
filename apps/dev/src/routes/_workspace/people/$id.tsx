@@ -4,8 +4,8 @@ import {
   getOrganizationQueryOptions,
   getPersonActivitiesQueryOptions,
   getPersonNotesQueryOptions,
-  getPersonOpportunitiesQueryOptions,
   getPersonQueryOptions,
+  getPersonQuotesQueryOptions,
 } from "@voyantjs/crm-react"
 import { PersonDetailPage } from "@/components/voyant/crm/person-detail-page"
 import { getApiUrl } from "@/lib/env"
@@ -26,9 +26,7 @@ export const Route = createFileRoute("/_workspace/people/$id")({
         : Promise.resolve(),
       context.queryClient.ensureQueryData(getPersonNotesQueryOptions(routeClient, params.id)),
       context.queryClient.ensureQueryData(getPersonActivitiesQueryOptions(routeClient, params.id)),
-      context.queryClient.ensureQueryData(
-        getPersonOpportunitiesQueryOptions(routeClient, params.id),
-      ),
+      context.queryClient.ensureQueryData(getPersonQuotesQueryOptions(routeClient, params.id)),
     ])
   },
   component: PersonDetailRoute,

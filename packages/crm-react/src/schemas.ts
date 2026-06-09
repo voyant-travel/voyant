@@ -98,12 +98,12 @@ export const organizationListResponse = paginatedEnvelope(organizationRecordSche
 export const organizationSingleResponse = singleEnvelope(organizationRecordSchema)
 
 /**
- * Opportunity, pipeline, stage, activity, quote schemas — mirror the Drizzle
- * tables in `packages/crm/src/schema.ts`. Timestamps surface as ISO strings
- * after JSON serialization.
+ * Quote, pipeline, stage, activity, and quote version schemas — mirror the
+ * Drizzle tables in `packages/crm/src/schema.ts`. Timestamps surface as ISO
+ * strings after JSON serialization.
  */
 
-export const opportunityRecordSchema = z.object({
+export const quoteRecordSchema = z.object({
   id: z.string(),
   title: z.string(),
   personId: z.string().nullable(),
@@ -112,6 +112,7 @@ export const opportunityRecordSchema = z.object({
   stageId: z.string(),
   ownerId: z.string().nullable(),
   status: z.string(),
+  acceptedVersionId: z.string().nullable(),
   valueAmountCents: z.number().int().nullable(),
   valueCurrency: z.string().nullable(),
   expectedCloseDate: z.string().nullable(),
@@ -125,10 +126,10 @@ export const opportunityRecordSchema = z.object({
   closedAt: z.string().nullable(),
 })
 
-export type OpportunityRecord = z.infer<typeof opportunityRecordSchema>
+export type QuoteRecord = z.infer<typeof quoteRecordSchema>
 
-export const opportunityListResponse = paginatedEnvelope(opportunityRecordSchema)
-export const opportunitySingleResponse = singleEnvelope(opportunityRecordSchema)
+export const quoteListResponse = paginatedEnvelope(quoteRecordSchema)
+export const quoteSingleResponse = singleEnvelope(quoteRecordSchema)
 
 export const pipelineRecordSchema = z.object({
   id: z.string(),
@@ -354,29 +355,35 @@ export const personTravelSnapshotSchema = z.object({
 export type PersonTravelSnapshotRecord = z.infer<typeof personTravelSnapshotSchema>
 export const personTravelSnapshotResponse = z.object({ data: personTravelSnapshotSchema })
 
-export const quoteRecordSchema = z.object({
+export const quoteVersionRecordSchema = z.object({
   id: z.string(),
-  opportunityId: z.string(),
+  quoteId: z.string(),
+  label: z.string().nullable(),
   status: z.string(),
+  supersedesId: z.string().nullable(),
+  tripSnapshotId: z.string().nullable(),
   validUntil: z.string().nullable(),
   currency: z.string(),
   subtotalAmountCents: z.number().int(),
   taxAmountCents: z.number().int(),
   totalAmountCents: z.number().int(),
   notes: z.string().nullable(),
+  sentAt: z.string().nullable(),
+  viewedAt: z.string().nullable(),
+  decidedAt: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
   archivedAt: z.string().nullable(),
 })
 
-export type QuoteRecord = z.infer<typeof quoteRecordSchema>
+export type QuoteVersionRecord = z.infer<typeof quoteVersionRecordSchema>
 
-export const quoteListResponse = paginatedEnvelope(quoteRecordSchema)
-export const quoteSingleResponse = singleEnvelope(quoteRecordSchema)
+export const quoteVersionListResponse = paginatedEnvelope(quoteVersionRecordSchema)
+export const quoteVersionSingleResponse = singleEnvelope(quoteVersionRecordSchema)
 
-export const quoteLineRecordSchema = z.object({
+export const quoteVersionLineRecordSchema = z.object({
   id: z.string(),
-  quoteId: z.string(),
+  quoteVersionId: z.string(),
   productId: z.string().nullable(),
   supplierServiceId: z.string().nullable(),
   description: z.string(),
@@ -388,7 +395,7 @@ export const quoteLineRecordSchema = z.object({
   updatedAt: z.string(),
 })
 
-export type QuoteLineRecord = z.infer<typeof quoteLineRecordSchema>
+export type QuoteVersionLineRecord = z.infer<typeof quoteVersionLineRecordSchema>
 
-export const quoteLineListResponse = listEnvelope(quoteLineRecordSchema)
-export const quoteLineSingleResponse = singleEnvelope(quoteLineRecordSchema)
+export const quoteVersionLineListResponse = listEnvelope(quoteVersionLineRecordSchema)
+export const quoteVersionLineSingleResponse = singleEnvelope(quoteVersionLineRecordSchema)
