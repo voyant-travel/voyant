@@ -313,6 +313,11 @@ export const bookingDraftV1 = z.object({
         .optional(),
       cabinCategoryId: z.string().optional(),
       cabinNumberId: z.string().optional(),
+      // Sourced stays/package rate pin. Pin by stable room/rate keys instead
+      // of the short-lived offer id so adapters can re-resolve the exact rate.
+      roomTypeId: z.string().optional(),
+      ratePlanId: z.string().optional(),
+      board: z.string().optional(),
       dateRange: z
         .object({
           checkIn: z.string(),

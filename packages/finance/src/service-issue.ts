@@ -1,6 +1,6 @@
 import { appendActionLedgerMutation } from "@voyantjs/action-ledger"
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
-import { asc, eq, inArray } from "drizzle-orm"
+import { and, asc, eq, inArray, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { resolveBookingSellTaxRate } from "./booking-tax.js"
@@ -34,6 +34,11 @@ import {
  */
 
 export interface InvoiceIssueRuntime extends FinanceServiceRuntime {}
+
+interface ExistingConvertedInvoicePointer {
+  id: string
+  invoiceNumber: string
+}
 
 export interface InvoiceIssuedEvent {
   invoiceId: string
@@ -493,25 +498,12 @@ export async function convertProformaToInvoice(
   | { status: "ok"; invoice: typeof invoices.$inferSelect }
   | { status: "not_found" }
   | { status: "not_proforma" }
-  | { status: "already_converted" }
+  | { status: "already_converted"; invoice: ExistingConvertedInvoicePointer | null }
+  | { status: "duplicate_fiscal_invoice"; invoice: ExistingConvertedInvoicePointer }
 > {
   const [proforma] = await db.select().from(invoices).where(eq(invoices.id, proformaId)).limit(1)
   if (!proforma) return { status: "not_found" }
   if (proforma.invoiceType !== "proforma") return { status: "not_proforma" }
-  if (proforma.status === "void") return { status: "already_converted" }
-
-  const [existing] = await db
-    .select({ id: invoices.id })
-    .from(invoices)
-    .where(eq(invoices.convertedFromInvoiceId, proformaId))
-    .limit(1)
-  if (existing) return { status: "already_converted" }
-
-  const lineItems = await db
-    .select()
-    .from(invoiceLineItems)
-    .where(eq(invoiceLineItems.invoiceId, proformaId))
-    .orderBy(asc(invoiceLineItems.sortOrder))
 
   const newInvoiceNumber =
     options.invoiceNumber ?? deriveInvoiceNumberFromProforma(proforma.invoiceNumber)
@@ -520,52 +512,96 @@ export async function convertProformaToInvoice(
   const dueDate = options.dueDate ?? toDateString(proforma.dueDate)
 
   const now = new Date()
-  const created = await db
+  const result = await db
     .transaction(async (tx) => {
+      const guardKey = `finance:invoice:convert:${proforma.bookingId}`
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${guardKey}, 0))`)
+
+      const [lockedProforma] = await tx
+        .select()
+        .from(invoices)
+        .where(eq(invoices.id, proformaId))
+        .limit(1)
+      if (!lockedProforma) return { status: "not_found" as const }
+      if (lockedProforma.invoiceType !== "proforma") return { status: "not_proforma" as const }
+
+      const [existing] = await tx
+        .select({ id: invoices.id, invoiceNumber: invoices.invoiceNumber })
+        .from(invoices)
+        .where(eq(invoices.convertedFromInvoiceId, proformaId))
+        .limit(1)
+      if (existing) return { status: "already_converted" as const, invoice: existing }
+      if (lockedProforma.status === "void") {
+        return { status: "already_converted" as const, invoice: null }
+      }
+
+      const [duplicateFiscalInvoice] = await tx
+        .select({ id: invoices.id, invoiceNumber: invoices.invoiceNumber })
+        .from(invoices)
+        .where(
+          and(
+            eq(invoices.bookingId, lockedProforma.bookingId),
+            eq(invoices.invoiceType, "invoice"),
+            ne(invoices.status, "void"),
+            eq(invoices.totalCents, lockedProforma.totalCents),
+            eq(invoices.currency, lockedProforma.currency),
+          ),
+        )
+        .limit(1)
+      if (duplicateFiscalInvoice) {
+        return { status: "duplicate_fiscal_invoice" as const, invoice: duplicateFiscalInvoice }
+      }
+
+      const lineItems = await tx
+        .select()
+        .from(invoiceLineItems)
+        .where(eq(invoiceLineItems.invoiceId, proformaId))
+        .orderBy(asc(invoiceLineItems.sortOrder))
+
       const [inserted] = await tx
         .insert(invoices)
         .values({
           invoiceNumber: newInvoiceNumber,
           invoiceType: "invoice",
-          convertedFromInvoiceId: proforma.id,
-          seriesId: proforma.seriesId,
-          templateId: proforma.templateId,
-          taxRegimeId: proforma.taxRegimeId,
-          language: proforma.language,
-          bookingId: proforma.bookingId,
-          personId: proforma.personId,
-          organizationId: proforma.organizationId,
+          convertedFromInvoiceId: lockedProforma.id,
+          seriesId: lockedProforma.seriesId,
+          templateId: lockedProforma.templateId,
+          taxRegimeId: lockedProforma.taxRegimeId,
+          language: lockedProforma.language,
+          bookingId: lockedProforma.bookingId,
+          personId: lockedProforma.personId,
+          organizationId: lockedProforma.organizationId,
           status: "issued",
-          currency: proforma.currency,
-          baseCurrency: proforma.baseCurrency,
-          fxRateSetId: proforma.fxRateSetId,
-          subtotalCents: proforma.subtotalCents,
-          baseSubtotalCents: proforma.baseSubtotalCents,
-          taxCents: proforma.taxCents,
-          baseTaxCents: proforma.baseTaxCents,
-          totalCents: proforma.totalCents,
-          baseTotalCents: proforma.baseTotalCents,
+          currency: lockedProforma.currency,
+          baseCurrency: lockedProforma.baseCurrency,
+          fxRateSetId: lockedProforma.fxRateSetId,
+          subtotalCents: lockedProforma.subtotalCents,
+          baseSubtotalCents: lockedProforma.baseSubtotalCents,
+          taxCents: lockedProforma.taxCents,
+          baseTaxCents: lockedProforma.baseTaxCents,
+          totalCents: lockedProforma.totalCents,
+          baseTotalCents: lockedProforma.baseTotalCents,
           // Carry the proforma's settled amounts forward — a partially
           // (or fully) paid proforma must convert to an invoice that
           // reflects those payments, otherwise the new invoice shows the
           // full total as outstanding and the payment rows reassigned
           // below would orphan the balance.
-          paidCents: proforma.paidCents,
-          basePaidCents: proforma.basePaidCents,
-          balanceDueCents: proforma.totalCents - proforma.paidCents,
+          paidCents: lockedProforma.paidCents,
+          basePaidCents: lockedProforma.basePaidCents,
+          balanceDueCents: lockedProforma.totalCents - lockedProforma.paidCents,
           baseBalanceDueCents:
-            proforma.baseTotalCents !== null && proforma.basePaidCents !== null
-              ? proforma.baseTotalCents - proforma.basePaidCents
-              : proforma.baseTotalCents,
-          commissionPercent: proforma.commissionPercent,
-          commissionAmountCents: proforma.commissionAmountCents,
+            lockedProforma.baseTotalCents !== null && lockedProforma.basePaidCents !== null
+              ? lockedProforma.baseTotalCents - lockedProforma.basePaidCents
+              : lockedProforma.baseTotalCents,
+          commissionPercent: lockedProforma.commissionPercent,
+          commissionAmountCents: lockedProforma.commissionAmountCents,
           issueDate,
           dueDate,
-          notes: proforma.notes,
+          notes: null,
         })
         .returning()
 
-      if (!inserted) return null
+      if (!inserted) return { status: "not_found" as const }
 
       if (lineItems.length > 0) {
         await tx.insert(invoiceLineItems).values(
@@ -588,23 +624,23 @@ export async function convertProformaToInvoice(
       await tx
         .update(payments)
         .set({ invoiceId: inserted.id, updatedAt: now })
-        .where(eq(payments.invoiceId, proforma.id))
+        .where(eq(payments.invoiceId, lockedProforma.id))
 
       await tx
         .update(invoices)
         .set({
           status: "void",
           paidCents: 0,
-          basePaidCents: proforma.basePaidCents == null ? null : 0,
+          basePaidCents: lockedProforma.basePaidCents == null ? null : 0,
           balanceDueCents: 0,
-          baseBalanceDueCents: proforma.baseBalanceDueCents == null ? null : 0,
+          baseBalanceDueCents: lockedProforma.baseBalanceDueCents == null ? null : 0,
           voidedAt: now,
           voidReason: `Converted to invoice ${inserted.invoiceNumber}`,
           updatedAt: now,
         })
-        .where(eq(invoices.id, proforma.id))
+        .where(eq(invoices.id, lockedProforma.id))
 
-      return inserted
+      return { status: "ok" as const, invoice: inserted, proforma: lockedProforma }
     })
     .catch((error: unknown) => {
       if (isInvoiceNumberUniqueConstraintError(error)) {
@@ -613,10 +649,10 @@ export async function convertProformaToInvoice(
       throw error
     })
 
-  if (!created) return { status: "not_found" }
+  if (result.status !== "ok") return result
 
-  await emitProformaConverted(db, runtime, created, proforma)
-  return { status: "ok", invoice: created }
+  await emitProformaConverted(db, runtime, result.invoice, result.proforma)
+  return { status: "ok", invoice: result.invoice }
 }
 
 function deriveInvoiceNumberFromProforma(proformaNumber: string): string {

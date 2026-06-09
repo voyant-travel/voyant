@@ -30,7 +30,7 @@ const shopBookSearchSchema = z.object({
    *               `cabinCategoryId`, optionally `cabinNumberId` +
    *               `airArrangement`
    *   - accommodations → `checkIn` + `checkOut` + `roomTypeId` +
-   *               `ratePlanId`
+   *               `ratePlanId`, optionally `board`
    * The detail page fills the right subset before navigating.
    */
   departureSlotId: z.string().optional(),
@@ -41,6 +41,7 @@ const shopBookSearchSchema = z.object({
   checkOut: z.string().optional(),
   roomTypeId: z.string().optional(),
   ratePlanId: z.string().optional(),
+  board: z.string().optional(),
   /** Pax counts per band. Adults default to 1 if absent so the
    *  validation passes; children + infants default to 0. */
   adult: z.coerce.number().int().min(0).optional(),
@@ -75,6 +76,9 @@ function ShopBookRouteComponent(): React.ReactElement {
   if (search.checkIn && search.checkOut) {
     initialConfigure.dateRange = { checkIn: search.checkIn, checkOut: search.checkOut }
   }
+  if (search.roomTypeId) initialConfigure.roomTypeId = search.roomTypeId
+  if (search.ratePlanId) initialConfigure.ratePlanId = search.ratePlanId
+  if (search.board) initialConfigure.board = search.board
 
   const initialAccommodation = search.roomTypeId
     ? {

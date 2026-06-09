@@ -1,3 +1,4 @@
+import { actionLedgerEntries } from "@voyantjs/action-ledger/schema"
 import {
   bookingGroups,
   bookingItems,
@@ -27,6 +28,7 @@ async function resetTables(
   db: any,
 ) {
   const tableNames = [
+    "action_ledger_entries",
     "payments",
     "invoice_renditions",
     "invoice_line_items",
@@ -215,6 +217,67 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
     `)
 
     return { productId, optionId, roomUnitId, adultUnitId }
+  }
+
+  async function seedSingleFirstAccommodationProduct({
+    singleRoomOccupancyMax = 1,
+  }: {
+    singleRoomOccupancyMax?: number | null
+  } = {}) {
+    productSeq += 1
+    const productId = `prod_bc_accom_sgl_${productSeq}`
+    const optionId = `popt_bc_accom_sgl_${productSeq}`
+    const singleRoomUnitId = `opun_bc_accom_sgl_${productSeq}`
+    const doubleRoomUnitId = `opun_bc_accom_dbl_${productSeq}`
+    const adultUnitId = `opun_bc_accom_adult_${productSeq}`
+    const itineraryId = `piti_bc_accom_sgl_${productSeq}`
+    await db.execute(sql`
+      INSERT INTO products (id, name, sell_currency, sell_amount_cents, cost_amount_cents, margin_percent, start_date, end_date, pax)
+      VALUES (
+        ${productId},
+        ${`SGL-first Accommodation Product ${productSeq}`},
+        'EUR',
+        50000,
+        30000,
+        40,
+        '2026-07-01',
+        '2026-07-03',
+        2
+      )
+    `)
+    await db.execute(sql`
+      INSERT INTO product_options (id, product_id, name, status, is_default, sort_order)
+      VALUES (${optionId}, ${productId}, 'Standard', 'active', true, 0)
+    `)
+    await db.execute(sql`
+      INSERT INTO option_units (
+        id,
+        option_id,
+        name,
+        code,
+        unit_type,
+        min_age,
+        occupancy_min,
+        occupancy_max,
+        is_required,
+        min_quantity,
+        sort_order
+      )
+      VALUES
+        (${singleRoomUnitId}, ${optionId}, 'SGL room', 'sgl_room', 'room', null, 1, ${singleRoomOccupancyMax}, true, 1, 0),
+        (${doubleRoomUnitId}, ${optionId}, 'DBL room', 'dbl_room', 'room', null, 1, 2, false, 0, 1),
+        (${adultUnitId}, ${optionId}, 'Adult', 'adult', 'person', 18, null, null, true, 1, 2)
+    `)
+    await db.execute(sql`
+      INSERT INTO product_itineraries (id, product_id, name, is_default, sort_order)
+      VALUES (${itineraryId}, ${productId}, 'Default', true, 0)
+    `)
+    await db.execute(sql`
+      INSERT INTO product_ticket_settings (id, product_id, fulfillment_mode, default_delivery_format, ticket_per_unit)
+      VALUES (${`ptix_bc_accom_sgl_${productSeq}`}, ${productId}, 'per_item', 'qr_code', false)
+    `)
+
+    return { productId, optionId, singleRoomUnitId, doubleRoomUnitId, adultUnitId }
   }
 
   async function seedVoucher(
@@ -477,6 +540,75 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
 
     const bookingRows = await db.select().from(bookings)
     expect(bookingRows).toHaveLength(1)
+  })
+
+  it("writes action ledger entries for successful creates and duplicate rejections", async () => {
+    const { productId, optionId } = await seedProduct()
+    const slot = await seedSlot({ productId, optionId })
+    const runtime = {
+      actionLedgerContext: {
+        userId: "user_booking_create_ledger",
+        callerType: "session" as const,
+        actor: "staff",
+      },
+      actionLedgerAuthorizationSource: "booking.create.route",
+    }
+
+    const first = await createBooking(
+      db,
+      {
+        productId,
+        optionId,
+        slotId: slot.id,
+        bookingNumber: nextBookingNumber(),
+        ...bookingParty(),
+      },
+      { userId: "user_booking_create_ledger", runtime },
+    )
+
+    expect(first.status).toBe("ok")
+    if (first.status !== "ok") return
+
+    const duplicate = await createBooking(
+      db,
+      {
+        productId,
+        optionId,
+        slotId: slot.id,
+        bookingNumber: nextBookingNumber(),
+        ...bookingParty(),
+      },
+      { userId: "user_booking_create_ledger", runtime },
+    )
+
+    expect(duplicate.status).toBe("duplicate_booking")
+
+    const ledgerRows = await db
+      .select()
+      .from(actionLedgerEntries)
+      .where(eq(actionLedgerEntries.actionName, "booking.create"))
+
+    expect(ledgerRows).toHaveLength(2)
+    expect(ledgerRows.find((row) => row.status === "succeeded")).toMatchObject({
+      actionKind: "create",
+      targetType: "booking",
+      targetId: first.result.booking.id,
+      principalType: "user",
+      principalId: "user_booking_create_ledger",
+      actorType: "staff",
+      routeOrToolName: "booking.create",
+      authorizationSource: "booking.create.route",
+    })
+    expect(ledgerRows.find((row) => row.status === "failed")).toMatchObject({
+      actionKind: "create",
+      targetType: "booking",
+      targetId: first.result.booking.id,
+      principalType: "user",
+      principalId: "user_booking_create_ledger",
+      actorType: "staff",
+      routeOrToolName: "booking.create",
+      authorizationSource: "booking.create.route",
+    })
   })
 
   it("allows duplicate active bookings when explicitly overridden", async () => {
@@ -1049,6 +1181,131 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       .from(bookingItemTravelers)
       .where(eq(bookingItemTravelers.bookingItemId, itemRows[0]!.id))
     expect(links).toHaveLength(2)
+  })
+
+  it("rejects selected room units that cannot seat the booking pax", async () => {
+    const { productId, singleRoomUnitId } = await seedSingleFirstAccommodationProduct()
+
+    const outcome = await createBooking(db, {
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      travelers: [
+        {
+          firstName: "Alice",
+          lastName: "Lead",
+          email: "alice@example.com",
+          participantType: "traveler",
+          travelerCategory: "adult",
+          isPrimary: true,
+        },
+        {
+          firstName: "Bob",
+          lastName: "Companion",
+          participantType: "traveler",
+          travelerCategory: "adult",
+        },
+      ],
+      itemLines: [
+        {
+          optionUnitId: singleRoomUnitId,
+          quantity: 1,
+          title: "SGL room",
+        },
+      ],
+    })
+
+    expect(outcome).toEqual({
+      status: "room_occupancy_insufficient",
+      pax: 2,
+      occupancyMax: 1,
+      shortfall: 1,
+    })
+    expect(await db.select().from(bookings)).toHaveLength(0)
+    expect(await db.select().from(bookingItems)).toHaveLength(0)
+  })
+
+  it("defaults missing room occupancy max to one seat per selected room", async () => {
+    const { productId, singleRoomUnitId } = await seedSingleFirstAccommodationProduct({
+      singleRoomOccupancyMax: null,
+    })
+
+    const outcome = await createBooking(db, {
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      travelers: [
+        {
+          firstName: "Alice",
+          lastName: "Lead",
+          email: "alice@example.com",
+          participantType: "traveler",
+          travelerCategory: "adult",
+          isPrimary: true,
+        },
+        {
+          firstName: "Bob",
+          lastName: "Companion",
+          participantType: "traveler",
+          travelerCategory: "adult",
+        },
+      ],
+      itemLines: [
+        {
+          optionUnitId: singleRoomUnitId,
+          quantity: 2,
+          title: "SGL room",
+        },
+      ],
+    })
+
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+
+    const itemRows = await db
+      .select()
+      .from(bookingItems)
+      .where(eq(bookingItems.bookingId, outcome.result.booking.id))
+    expect(itemRows).toHaveLength(1)
+    expect(itemRows[0]).toMatchObject({
+      optionUnitId: singleRoomUnitId,
+      quantity: 2,
+    })
+  })
+
+  it("rejects omitted accommodation item lines when the seeded room cannot seat pax", async () => {
+    const { productId } = await seedSingleFirstAccommodationProduct()
+
+    const outcome = await createBooking(db, {
+      productId,
+      bookingNumber: nextBookingNumber(),
+      ...bookingParty(),
+      travelers: [
+        {
+          firstName: "Alice",
+          lastName: "Lead",
+          email: "alice@example.com",
+          participantType: "traveler",
+          travelerCategory: "adult",
+          isPrimary: true,
+        },
+        {
+          firstName: "Bob",
+          lastName: "Companion",
+          participantType: "traveler",
+          travelerCategory: "adult",
+        },
+      ],
+    })
+
+    expect(outcome).toEqual({
+      status: "room_occupancy_insufficient",
+      pax: 2,
+      occupancyMax: 1,
+      shortfall: 1,
+    })
+    expect(await db.select().from(bookings)).toHaveLength(0)
+    expect(await db.select().from(bookingItems)).toHaveLength(0)
   })
 
   it("rejects duplicate stable traveler keys", async () => {

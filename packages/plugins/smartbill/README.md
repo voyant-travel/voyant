@@ -161,6 +161,8 @@ import {
 const pollProformas = createSmartbillProformaConversionPoller({
   db,
   client: smartbillClient,
+  source: "invoices",
+  requestSpacingMs: 350,
   onConverted: async (proformaRef, conversion) => {
     // Record a Voyant payment or emit a domain event in the host app.
     // The plugin reports the SmartBill invoice series/number and source
@@ -171,9 +173,15 @@ const pollProformas = createSmartbillProformaConversionPoller({
 const reconcileSmartbill = createSmartbillDriftReconciler({
   db,
   client: smartbillClient,
-  listRemoteDocuments: async () => remoteSmartbillInventory,
+  source: "invoices",
+  discoverRemote: true,
+  requestSpacingMs: 350,
   onFinding: async (finding) => {
     // Log, alert, or open an operator ticket.
+  },
+  onMissingLocal: async (finding) => {
+    const pdf = await finding.remote.accessors?.viewPdf()
+    // Create a local invoice or attach SmartBill evidence in the host app.
   },
 })
 ```
@@ -181,9 +189,20 @@ const reconcileSmartbill = createSmartbillDriftReconciler({
 `createSmartbillProformaConversionPoller` scans SmartBill proforma external refs
 and calls `client.listEstimateInvoices(...)` to detect SmartBill-created final
 invoices. `createSmartbillDriftReconciler` verifies known SmartBill refs by
-default and can compare a caller-provided remote inventory for `missing_local`
-findings. The reconciler only reports drift; it does not delete, void, or create
-finance records.
+default. Pass `discoverRemote: true` to walk SmartBill invoice/proforma series
+with `client.listSeries()` and report documents that exist remotely without a
+local external ref as `missing_local`; those findings include lazy PDF and
+payment-status/conversion lookup accessors on `finding.remote.accessors`.
+Both workflow factories use `invoice_external_refs` by default. Pass
+`source: "invoices"` to derive candidates from finance invoice rows instead, or
+pass `listCandidateInvoices` for a custom invoice-table/source query. Candidate
+refs are materialized as SmartBill external refs when `db` is available; custom
+sources can override that writeback with `recordCandidateExternalRef`. Consumers
+can still pass `listRemoteDocuments` to provide their own remote inventory. The
+reconciler only reports drift; it does not delete, void, or create finance
+records. Pass `requestSpacingMs` to either factory to enforce a minimum interval
+between SmartBill requests made by the workflow, including remote discovery and
+lazy remote-document accessors returned by discovery.
 
 ## Exports
 
@@ -235,6 +254,10 @@ try {
   }
 }
 ```
+
+Workflow factories also stop the current run after `SmartbillRateLimitError` or
+`SmartbillRateLimitCircuitOpenError`, returning results processed before the
+limit was reached and recording the rate-limit failure through `onError`.
 
 ## Local SmartBill Mock
 

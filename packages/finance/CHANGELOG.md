@@ -1,5 +1,33 @@
 # @voyantjs/finance
 
+## 0.106.7
+
+### Patch Changes
+
+- 9c22b6b: Cancel SmartBill invoices when Voyant invoices are voided and persist the external reference cancellation state.
+
+## 0.106.6
+
+### Patch Changes
+
+- b19888a: Make invoice payment recording idempotent with optional request keys and stable server-derived replay keys.
+- Updated dependencies [b19888a]
+  - @voyantjs/finance-contracts@0.104.3
+
+## 0.106.5
+
+### Patch Changes
+
+- 3198c8e: Record `booking.create` action-ledger entries for successful booking creation and duplicate-create rejections.
+
+## 0.106.4
+
+### Patch Changes
+
+- ee93be5: Reject booking-create requests when selected or implicitly seeded room units cannot seat the booking pax.
+
+## 0.106.3
+
 ## 0.106.2
 
 ### Patch Changes

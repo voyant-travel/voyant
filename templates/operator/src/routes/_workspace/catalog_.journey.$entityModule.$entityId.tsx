@@ -20,7 +20,13 @@ const journeySearchSchema = z.object({
   sourceConnectionId: z.string().optional(),
   sourceRef: z.string().optional(),
   departureId: z.string().optional(),
+  departureDate: z.string().optional(),
   optionId: z.string().optional(),
+  roomTypeId: z.string().optional(),
+  ratePlanId: z.string().optional(),
+  board: z.string().optional(),
+  entityName: z.string().optional(),
+  entityImageUrl: z.string().optional(),
   /** Stable draft id — refresh-safe. When absent, the component
    *  generates a fresh id on mount. */
   draftId: z.string().optional(),
@@ -49,7 +55,13 @@ function JourneyRouteComponent(): React.ReactElement {
         sourceConnectionId={search.sourceConnectionId}
         sourceRef={search.sourceRef}
         departureId={search.departureId}
+        departureDate={search.departureDate}
         optionId={search.optionId}
+        roomTypeId={search.roomTypeId}
+        ratePlanId={search.ratePlanId}
+        board={search.board}
+        entityName={search.entityName}
+        entityImageUrl={search.entityImageUrl}
         draftId={draftId}
       />
     </div>

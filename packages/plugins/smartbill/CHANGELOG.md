@@ -1,5 +1,27 @@
 # @voyantjs/plugin-smartbill
 
+## 0.106.3
+
+### Patch Changes
+
+- ed8ac1c: Add request spacing and rate-limit early stop behavior to SmartBill workflow factories.
+
+## 0.106.2
+
+### Patch Changes
+
+- Add opt-in SmartBill series discovery to the drift reconciler so `missing_local` findings can be reported without caller-supplied remote inventory.
+- Add invoice-candidate sources to SmartBill workflow factories so deployments can reconcile or poll invoices before external refs are materialized.
+
+## 0.106.1
+
+### Patch Changes
+
+- 9c22b6b: Cancel SmartBill invoices when Voyant invoices are voided and persist the external reference cancellation state.
+- Updated dependencies [9c22b6b]
+  - @voyantjs/finance@0.106.7
+  - @voyantjs/finance-react@0.106.7
+
 ## 0.106.0
 
 ### Patch Changes

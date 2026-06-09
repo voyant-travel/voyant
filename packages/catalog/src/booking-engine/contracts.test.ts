@@ -24,7 +24,12 @@ describe("V1 contracts", () => {
     it("preserves explicit field values", () => {
       const result = bookingDraftV1.parse({
         entity: { module: "products", id: "prod_1", sourceKind: "owned" },
-        configure: { pax: { adult: 2 } },
+        configure: {
+          pax: { adult: 2 },
+          roomTypeId: "HOTEL:DZL1",
+          ratePlanId: "HOTEL:DZL1:BB",
+          board: "BB",
+        },
         billing: {
           buyerType: "B2B",
           contact: { firstName: "Mihai", lastName: "U", email: "a@b.com" },
@@ -33,6 +38,9 @@ describe("V1 contracts", () => {
         },
       })
       expect(result.configure.pax.adult).toBe(2)
+      expect(result.configure.roomTypeId).toBe("HOTEL:DZL1")
+      expect(result.configure.ratePlanId).toBe("HOTEL:DZL1:BB")
+      expect(result.configure.board).toBe("BB")
       expect(result.billing.buyerType).toBe("B2B")
       expect(result.billing.address.country).toBe("RO")
       expect(result.billing.company?.name).toBe("Voyant")

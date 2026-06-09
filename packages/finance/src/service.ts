@@ -2,8 +2,11 @@ import {
   type ActionLedgerRequestContextValues,
   appendActionLedgerMutation,
 } from "@voyantjs/action-ledger"
+import { actionMutationDetails } from "@voyantjs/action-ledger/schema"
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
 import type { EventBus } from "@voyantjs/core"
+import type { AnyDrizzleDb } from "@voyantjs/db"
+import { newId } from "@voyantjs/db/lib/typeid"
 import { renderStructuredTemplate } from "@voyantjs/utils/template-renderer"
 import {
   and,
@@ -101,6 +104,8 @@ import { recomputeSupplierInvoiceBalance } from "./service-supplier-invoices.js"
 import { vouchersService } from "./service-vouchers.js"
 
 export {
+  buildBookingCreateRejectedActionLedgerInput,
+  buildBookingCreateSucceededActionLedgerInput,
   buildBookingGuaranteeCreateActionLedgerInput,
   buildBookingGuaranteeDeleteActionLedgerInput,
   buildBookingGuaranteeUpdateActionLedgerInput,
@@ -1335,6 +1340,35 @@ function assertPaymentCanSettleInvoice(invoiceCurrency: string, data: CreatePaym
       fields: ["baseCurrency", "baseAmountCents"],
     },
   )
+}
+
+async function getPaymentFromReplayedLedgerEntry(db: AnyDrizzleDb, actionId: string) {
+  const [detail] = await db
+    .select({ commandResultRef: actionMutationDetails.commandResultRef })
+    .from(actionMutationDetails)
+    .where(eq(actionMutationDetails.actionId, actionId))
+    .limit(1)
+  const paymentId = parsePaymentCommandResultRef(detail?.commandResultRef ?? null)
+
+  if (!paymentId) {
+    throw new Error(`Replayed payment ledger entry ${actionId} did not reference a payment`)
+  }
+
+  const [payment] = await db.select().from(payments).where(eq(payments.id, paymentId)).limit(1)
+  if (!payment) {
+    throw new Error(
+      `Replayed payment ledger entry ${actionId} referenced missing payment ${paymentId}`,
+    )
+  }
+
+  return payment
+}
+
+function parsePaymentCommandResultRef(commandResultRef: string | null): string | null {
+  const prefix = "payment:"
+  if (!commandResultRef?.startsWith(prefix)) return null
+  const paymentId = commandResultRef.slice(prefix.length).trim()
+  return paymentId ? paymentId : null
 }
 
 function shouldNormalizeBaseAmount(data: {
@@ -4445,7 +4479,10 @@ export const financeService = {
         externalProvider: externalRef?.provider ?? null,
         externalNumber: externalRef?.externalNumber ?? null,
         externalSeriesName:
-          readStringMetadata(externalRef?.metadata, "seriesName") ?? series?.name ?? null,
+          readStringMetadata(externalRef?.metadata, "seriesName") ??
+          readStringMetadata(externalRef?.metadata, "series") ??
+          series?.name ??
+          null,
       }
       await runtime.eventBus.emit("invoice.voided", event)
     }
@@ -4854,7 +4891,8 @@ export const financeService = {
 
     await assertInvoiceAcceptsNewPayment(db, invoice)
 
-    const paymentData = await resolveFxMoneyBaseAmount(db, data, {
+    const { idempotencyKey: requestedIdempotencyKey, ...paymentInput } = data
+    const paymentData = await resolveFxMoneyBaseAmount(db, paymentInput, {
       ...runtime,
       targetBaseCurrency: invoice.currency,
       fallbackFxRateSetId: invoice.fxRateSetId ?? null,
@@ -4863,10 +4901,38 @@ export const financeService = {
 
     assertPaymentCanSettleInvoice(invoice.currency, paymentData)
 
+    const paymentId = newId("payments")
+
     return db.transaction(async (tx) => {
+      if (runtime.actionLedgerContext) {
+        const ledgerResult = await appendActionLedgerMutation(
+          tx,
+          await buildRecordPaymentActionLedgerInput(
+            runtime.actionLedgerContext,
+            {
+              invoice,
+              payment: {
+                ...paymentData,
+                id: paymentId,
+                invoiceId,
+              } as typeof payments.$inferSelect,
+            },
+            {
+              authorizationSource: runtime.actionLedgerAuthorizationSource,
+              idempotencyKey: requestedIdempotencyKey,
+            },
+          ),
+        )
+
+        if (ledgerResult.replayed) {
+          return getPaymentFromReplayedLedgerEntry(tx, ledgerResult.entry.id)
+        }
+      }
+
       const [payment] = await tx
         .insert(payments)
         .values({
+          id: paymentId,
           ...paymentData,
           invoiceId,
           paymentInstrumentId: paymentData.paymentInstrumentId ?? null,
@@ -4894,22 +4960,6 @@ export const financeService = {
         .update(invoices)
         .set({ paidCents, balanceDueCents, status: newStatus, updatedAt: new Date() })
         .where(eq(invoices.id, invoiceId))
-
-      if (payment && runtime.actionLedgerContext) {
-        await appendActionLedgerMutation(
-          tx,
-          await buildRecordPaymentActionLedgerInput(
-            runtime.actionLedgerContext,
-            {
-              invoice,
-              payment,
-            },
-            {
-              authorizationSource: runtime.actionLedgerAuthorizationSource,
-            },
-          ),
-        )
-      }
 
       return payment
     })

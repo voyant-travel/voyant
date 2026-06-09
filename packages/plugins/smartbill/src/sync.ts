@@ -50,6 +50,12 @@ export interface SyncSmartbillProformaConversionInput {
   pluginOptions: Pick<SmartbillPluginOptions, "companyVatCode" | "seriesName">
 }
 
+export interface SyncSmartbillInvoiceVoidEventInput {
+  event: VoyantInvoiceEvent
+  runtime: SmartbillSyncRuntime
+  pluginOptions: Pick<SmartbillPluginOptions, "companyVatCode" | "seriesName">
+}
+
 export type SyncSmartbillInvoiceResult =
   | {
       status: "not_found"
@@ -79,6 +85,24 @@ export type SyncSmartbillInvoiceEventResult =
     }
 
 export type SyncSmartbillProformaConversionResult = SyncSmartbillInvoiceEventResult
+
+export type SyncSmartbillInvoiceVoidEventResult =
+  | {
+      status: "cancelled"
+      invoiceId: string
+      seriesName: string
+      number: string
+      externalRef: SmartbillExternalRef | null
+    }
+  | {
+      status: "already_cancelled"
+      invoiceId: string
+      externalRef: SmartbillExternalRef
+    }
+  | {
+      status: "missing_number"
+      invoiceId: string
+    }
 
 export async function syncSmartbillInvoice({
   db,
@@ -200,6 +224,58 @@ export async function syncSmartbillProformaConversion({
   }
 }
 
+export async function syncSmartbillInvoiceVoidEvent({
+  event,
+  runtime,
+  pluginOptions,
+}: SyncSmartbillInvoiceVoidEventInput): Promise<SyncSmartbillInvoiceVoidEventResult> {
+  const documentType: SmartbillDocumentType = "invoice"
+  const db = await resolveArtifactDb(
+    event,
+    documentType,
+    undefined,
+    undefined,
+    runtime,
+    pluginOptions,
+  )
+  const externalRef = db ? await findSmartbillRefForCancellation(db, event.id) : null
+
+  if (externalRef?.status === "cancelled") {
+    runtime.logger.info?.(`[smartbill] invoice already cancelled for ${event.id}`, externalRef)
+    return { status: "already_cancelled", invoiceId: event.id, externalRef }
+  }
+
+  const target = await resolveSmartbillCancellationTarget(event, externalRef, pluginOptions)
+  if (!target) {
+    runtime.logger.error(`[smartbill] cannot cancel invoice ${event.id}: missing external number`)
+    return { status: "missing_number", invoiceId: event.id }
+  }
+
+  try {
+    const result = await runtime.client.cancelInvoice(
+      pluginOptions.companyVatCode,
+      target.seriesName,
+      target.number,
+    )
+    runtime.logger.info?.(
+      `[smartbill] invoice cancelled: ${target.seriesName}-${target.number} for ${event.id}`,
+      result,
+    )
+    await recordSmartbillCancellation(event, target, result, externalRef, runtime, pluginOptions)
+    return {
+      status: "cancelled",
+      invoiceId: event.id,
+      seriesName: target.seriesName,
+      number: target.number,
+      externalRef,
+    }
+  } catch (err) {
+    runtime.logger.error(`[smartbill] cancelInvoice failed for ${event.id}`, err)
+    await recordSyncError(event, documentType, err, runtime, pluginOptions)
+    throw err
+  }
+}
+
 function fallbackToSmartbillInvoiceCreate(
   event: VoyantInvoiceEvent,
   runtime: SmartbillSyncRuntime,
@@ -245,6 +321,76 @@ async function findExistingSmartbillRef(
 
   const refs = await financeService.listInvoiceExternalRefs(db, event.id)
   return refs.find((ref) => isMatchingSmartbillRef(ref, documentType)) ?? null
+}
+
+async function findSmartbillRefForCancellation(db: PostgresJsDatabase, invoiceId: string) {
+  const refs = await financeService.listInvoiceExternalRefs(db, invoiceId)
+  return (
+    refs.find((ref) => {
+      if (ref.provider !== "smartbill") return false
+      const metadataDocumentType = metadataString(coerceMetadata(ref.metadata), "documentType")
+      return !metadataDocumentType || metadataDocumentType === "invoice"
+    }) ??
+    refs.find((ref) => ref.provider === "smartbill") ??
+    null
+  )
+}
+
+async function resolveSmartbillCancellationTarget(
+  event: VoyantInvoiceEvent,
+  externalRef: Awaited<ReturnType<typeof findSmartbillRefForCancellation>>,
+  pluginOptions: Pick<SmartbillPluginOptions, "seriesName">,
+) {
+  const metadata = coerceMetadata(externalRef?.metadata)
+  const number =
+    eventString(event, "externalNumber") ??
+    externalRef?.externalNumber ??
+    externalRef?.externalId ??
+    metadataString(metadata, "number") ??
+    event.invoiceNumber
+  if (!number) return null
+
+  const seriesName =
+    eventString(event, "externalSeriesName") ??
+    metadataString(metadata, "seriesName") ??
+    metadataString(metadata, "series") ??
+    (await resolveSeriesName(pluginOptions.seriesName, event))
+
+  return { seriesName, number }
+}
+
+async function recordSmartbillCancellation(
+  event: VoyantInvoiceEvent,
+  target: { seriesName: string; number: string },
+  result: Awaited<ReturnType<SmartbillClientApi["cancelInvoice"]>>,
+  externalRef: Awaited<ReturnType<typeof findSmartbillRefForCancellation>>,
+  runtime: SmartbillSyncRuntime,
+  pluginOptions: Pick<SmartbillPluginOptions, "companyVatCode" | "seriesName">,
+) {
+  const db = await resolveArtifactDb(event, "invoice", undefined, undefined, runtime, pluginOptions)
+  if (!db) return
+
+  const metadata = coerceMetadata(externalRef?.metadata)
+  await financeService.registerInvoiceExternalRef(db, event.id, {
+    provider: "smartbill",
+    externalId: externalRef?.externalId ?? target.number,
+    externalNumber: externalRef?.externalNumber ?? target.number,
+    externalUrl: externalRef?.externalUrl ?? null,
+    status: "cancelled",
+    syncedAt: new Date().toISOString(),
+    syncError: null,
+    metadata: {
+      ...(metadata ?? {}),
+      companyVatCode: pluginOptions.companyVatCode,
+      seriesName: target.seriesName,
+      series: target.seriesName,
+      number: target.number,
+      documentType: "invoice",
+      cancelledAt: new Date().toISOString(),
+      cancelStatus: result.status ?? null,
+      cancelMessage: result.message ?? null,
+    },
+  })
 }
 
 async function handleExistingSmartbillRef(
@@ -635,6 +781,11 @@ function coerceMetadata(value: unknown): Record<string, unknown> | null {
 
 function metadataString(metadata: Record<string, unknown> | null, key: string) {
   const value = metadata?.[key]
+  return typeof value === "string" && value.length > 0 ? value : null
+}
+
+function eventString(event: VoyantInvoiceEvent, key: string) {
+  const value = event[key]
   return typeof value === "string" && value.length > 0 ? value : null
 }
 

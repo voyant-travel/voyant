@@ -1,5 +1,17 @@
 # @voyantjs/pricing
 
+## 0.106.2
+
+### Patch Changes
+
+- 3013fef: Treat adult age floors and zero quantity bounds as standard catalog price-from candidates.
+
+## 0.106.1
+
+### Patch Changes
+
+- b02a701: Fix catalog price-from projection to prefer unrestricted standard pricing over cheaper child, age-qualified, or quantity-restricted unit prices, falling back to restricted prices only when no standard price exists.
+
 ## 0.106.0
 
 ### Patch Changes

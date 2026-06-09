@@ -1,4 +1,8 @@
 import {
+  type ActionLedgerRequestContextValues,
+  appendActionLedgerMutation,
+} from "@voyantjs/action-ledger"
+import {
   type BookingConfirmedEvent,
   bookingGroupsService,
   bookingsService,
@@ -24,6 +28,10 @@ import type {
 } from "./schema.js"
 import { bookingPaymentSchedules, vouchers } from "./schema.js"
 import { type FinanceServiceRuntime, financeService, toRows } from "./service.js"
+import {
+  buildBookingCreateRejectedActionLedgerInput,
+  buildBookingCreateSucceededActionLedgerInput,
+} from "./service-action-ledger.js"
 import { financeDocumentsService, type InvoiceDocumentGenerator } from "./service-documents.js"
 import { VoucherServiceError, vouchersService } from "./service-vouchers.js"
 import {
@@ -489,6 +497,12 @@ export type BookingCreateOutcome =
   | { status: "ok"; result: BookingCreateResult }
   | { status: "invalid_payment_schedules"; issues: BookingCreateValidationIssue[] }
   | { status: "payload_resolver_mismatch"; mismatches: BookingDraftMismatch[] }
+  | {
+      status: "room_occupancy_insufficient"
+      pax: number
+      occupancyMax: number
+      shortfall: number
+    }
   | { status: "duplicate_booking"; existingBooking: DuplicateBookingMatch }
   | { status: "product_not_found" }
   | { status: "voucher_not_found" }
@@ -544,6 +558,16 @@ export interface DuplicateBookingMatch {
   id: string
   bookingNumber: string
   status: string
+}
+
+type BookingCreateProductOptionUnit = PricingAssignmentUnit & {
+  occupancyMax?: number | null
+  isRequired?: boolean | null
+  minQuantity?: number | null
+  sortOrder?: number | null
+  optionIsDefault?: boolean | null
+  optionSortOrder?: number | null
+  optionCreatedAt?: Date | string | null
 }
 
 interface AlreadyPaidScheduleMetadata {
@@ -621,7 +645,7 @@ async function findDuplicateBookingForCreate(
 async function loadProductOptionUnits(
   tx: PostgresJsDatabase,
   productId: string,
-): Promise<PricingAssignmentUnit[]> {
+): Promise<BookingCreateProductOptionUnit[]> {
   const result = await tx.execute(sql`
     SELECT
       ou.id          AS "optionUnitId",
@@ -630,12 +654,19 @@ async function loadProductOptionUnits(
       ou.code        AS "unitCode",
       ou.min_age     AS "minAge",
       ou.max_age     AS "maxAge",
-      ou.unit_type   AS "unitType"
+      ou.unit_type   AS "unitType",
+      ou.occupancy_max AS "occupancyMax",
+      ou.is_required AS "isRequired",
+      ou.min_quantity AS "minQuantity",
+      ou.sort_order AS "sortOrder",
+      po.is_default AS "optionIsDefault",
+      po.sort_order AS "optionSortOrder",
+      po.created_at AS "optionCreatedAt"
     FROM option_units ou
     JOIN product_options po ON po.id = ou.option_id
     WHERE po.product_id = ${productId}
   `)
-  return toRows<PricingAssignmentUnit>(result).map((row) => ({
+  return toRows<BookingCreateProductOptionUnit>(result).map((row) => ({
     optionId: row.optionId ?? null,
     optionUnitId: row.optionUnitId,
     unitName: row.unitName,
@@ -643,6 +674,13 @@ async function loadProductOptionUnits(
     minAge: row.minAge ?? null,
     maxAge: row.maxAge ?? null,
     unitType: row.unitType ?? null,
+    occupancyMax: row.occupancyMax ?? null,
+    isRequired: row.isRequired ?? null,
+    minQuantity: row.minQuantity ?? null,
+    sortOrder: row.sortOrder ?? null,
+    optionIsDefault: row.optionIsDefault ?? null,
+    optionSortOrder: row.optionSortOrder ?? null,
+    optionCreatedAt: row.optionCreatedAt ?? null,
   }))
 }
 
@@ -656,7 +694,7 @@ function isPersonOptionUnit(unit: PricingAssignmentUnit): boolean {
 
 function normalizeAccommodationItemLinesToInventoryUnits(options: {
   itemLines: NonNullable<BookingCreateInput["itemLines"]> | undefined
-  units: readonly PricingAssignmentUnit[]
+  units: readonly BookingCreateProductOptionUnit[]
 }): NonNullable<BookingCreateInput["itemLines"]> | undefined {
   if (!options.itemLines?.length || options.units.length === 0) return options.itemLines
 
@@ -689,6 +727,104 @@ function normalizeAccommodationItemLinesToInventoryUnits(options: {
       optionUnitId: targetInventory.optionUnitId,
     }
   })
+}
+
+function resolveDefaultOptionId(units: readonly BookingCreateProductOptionUnit[]): string | null {
+  const optionIds = [...new Set(units.map((unit) => unit.optionId).filter(Boolean))]
+  if (optionIds.length === 0) return null
+
+  const optionRows = optionIds.map((optionId) => {
+    const firstUnit = units.find((unit) => unit.optionId === optionId)
+    return {
+      optionId,
+      isDefault: firstUnit?.optionIsDefault === true,
+      sortOrder: firstUnit?.optionSortOrder ?? 0,
+      createdAt: firstUnit?.optionCreatedAt ? new Date(firstUnit.optionCreatedAt).getTime() : 0,
+    }
+  })
+
+  optionRows.sort((a, b) => {
+    if (a.isDefault !== b.isDefault) return a.isDefault ? -1 : 1
+    if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder
+    return a.createdAt - b.createdAt
+  })
+
+  return optionRows[0]?.optionId ?? null
+}
+
+function defaultSeedItemQuantity(unit: BookingCreateProductOptionUnit, pax: number | null): number {
+  if (unit.unitType === "person" && pax) return pax
+  return unit.minQuantity && unit.minQuantity > 0 ? unit.minQuantity : 1
+}
+
+function roomOccupancyMaxForCreate(unit: BookingCreateProductOptionUnit): number {
+  return Math.max(1, unit.occupancyMax ?? 1)
+}
+
+function selectedRoomOccupancyMaxForCreate(options: {
+  itemLines: NonNullable<BookingCreateInput["itemLines"]> | undefined
+  units: readonly BookingCreateProductOptionUnit[]
+  optionId?: string | null
+  pax: number | null
+}): number | null {
+  const roomUnits = options.units.filter((unit) => unit.unitType === "room")
+  if (roomUnits.length === 0) return null
+
+  const unitById = new Map(options.units.map((unit) => [unit.optionUnitId, unit]))
+  if (options.itemLines?.length) {
+    const referencedOptionIds = new Set(
+      options.itemLines
+        .map((line) => unitById.get(line.optionUnitId)?.optionId ?? null)
+        .filter((optionId): optionId is string => Boolean(optionId)),
+    )
+    const relevantRoomUnits = roomUnits.filter(
+      (unit) => unit.optionId && referencedOptionIds.has(unit.optionId),
+    )
+    if (relevantRoomUnits.length === 0) return null
+
+    return options.itemLines.reduce((total, line) => {
+      const unit = unitById.get(line.optionUnitId)
+      if (unit?.unitType !== "room") return total
+      return total + roomOccupancyMaxForCreate(unit) * line.quantity
+    }, 0)
+  }
+
+  const selectedOptionId = options.optionId ?? resolveDefaultOptionId(options.units)
+  const selectedUnits =
+    selectedOptionId === null
+      ? []
+      : options.units.filter((unit) => unit.optionId === selectedOptionId)
+  if (!selectedUnits.some((unit) => unit.unitType === "room")) return null
+
+  const unitsToSeed = selectedUnits.some((unit) => unit.isRequired)
+    ? selectedUnits.filter((unit) => unit.isRequired)
+    : selectedUnits.length === 1
+      ? selectedUnits
+      : []
+
+  return unitsToSeed.reduce((total, unit) => {
+    if (unit.unitType !== "room") return total
+    return total + roomOccupancyMaxForCreate(unit) * defaultSeedItemQuantity(unit, options.pax)
+  }, 0)
+}
+
+function validateRoomOccupancyForCreate(options: {
+  itemLines: NonNullable<BookingCreateInput["itemLines"]> | undefined
+  units: readonly BookingCreateProductOptionUnit[]
+  optionId?: string | null
+  pax: number | null
+}): Exclude<BookingCreateOutcome, { status: "ok" }> | null {
+  if (!options.pax || options.pax <= 0) return null
+
+  const occupancyMax = selectedRoomOccupancyMaxForCreate(options)
+  if (occupancyMax === null || occupancyMax >= options.pax) return null
+
+  return {
+    status: "room_occupancy_insufficient",
+    pax: options.pax,
+    occupancyMax,
+    shortfall: options.pax - occupancyMax,
+  }
 }
 
 function hasResolverRejectionSignals(input: {
@@ -947,6 +1083,67 @@ export function deriveBookingCreatePax(input: {
   return pax > 0 ? pax : null
 }
 
+function buildBookingCreateLedgerCommand(
+  input: BookingCreateInput,
+  options: {
+    pax: number | null
+    documentGeneration: {
+      contractDocument: boolean
+      invoiceDocument: boolean
+      invoiceType: "invoice" | "proforma"
+    }
+  },
+) {
+  return {
+    productId: input.productId,
+    optionId: input.optionId ?? null,
+    slotId: input.slotId ?? null,
+    bookingNumber: input.bookingNumber,
+    personId: input.personId ?? null,
+    organizationId: input.organizationId ?? null,
+    pax: options.pax,
+    itemLineCount: input.itemLines?.length ?? 0,
+    extraLineCount: input.extraLines?.length ?? 0,
+    travelerCount: input.travelers?.length ?? 0,
+    paymentScheduleCount: input.paymentSchedules?.length ?? 0,
+    voucherRedemptionRequested: Boolean(input.voucherRedemption),
+    groupMembershipAction: input.groupMembership?.action ?? null,
+    initialStatus: input.initialStatus ?? null,
+    documentGeneration: options.documentGeneration,
+  }
+}
+
+async function appendBookingCreateRejectedActionLedger(
+  db: PostgresJsDatabase,
+  context: ActionLedgerRequestContextValues | undefined,
+  outcome: Extract<BookingCreateOutcome, { status: "duplicate_booking" }>,
+  input: BookingCreateInput,
+  options: {
+    pax: number | null
+    documentGeneration: {
+      contractDocument: boolean
+      invoiceDocument: boolean
+      invoiceType: "invoice" | "proforma"
+    }
+    authorizationSource?: string | null
+  },
+) {
+  if (!context) return
+
+  await appendActionLedgerMutation(
+    db,
+    await buildBookingCreateRejectedActionLedgerInput(
+      context,
+      {
+        existingBooking: outcome.existingBooking,
+        command: buildBookingCreateLedgerCommand(input, options),
+        reason: "duplicate_booking",
+      },
+      { authorizationSource: options.authorizationSource },
+    ),
+  )
+}
+
 export async function createBooking(
   db: PostgresJsDatabase,
   rawInput: BookingCreateInput,
@@ -1001,13 +1198,20 @@ export async function createBooking(
         })
       }
 
-      const productOptionUnits = input.itemLines?.length
-        ? await loadProductOptionUnits(tx, input.productId)
-        : []
+      const productOptionUnits = await loadProductOptionUnits(tx, input.productId)
       const normalizedItemLines = normalizeAccommodationItemLinesToInventoryUnits({
         itemLines: input.itemLines,
         units: productOptionUnits,
       })
+      const roomOccupancyIssue = validateRoomOccupancyForCreate({
+        itemLines: normalizedItemLines,
+        units: productOptionUnits,
+        optionId: input.optionId ?? null,
+        pax,
+      })
+      if (roomOccupancyIssue) {
+        throw new BookingCreateAbort(roomOccupancyIssue)
+      }
       // 1. Booking from product
       const booking = await bookingsService.createBookingFromProduct(tx, {
         productId: input.productId,
@@ -1224,6 +1428,20 @@ export async function createBooking(
         }
       }
 
+      if (runtime?.actionLedgerContext) {
+        await appendActionLedgerMutation(
+          tx,
+          await buildBookingCreateSucceededActionLedgerInput(
+            runtime.actionLedgerContext,
+            {
+              booking,
+              command: buildBookingCreateLedgerCommand(input, { pax, documentGeneration }),
+            },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+      }
+
       return {
         booking,
         travelers,
@@ -1237,6 +1455,19 @@ export async function createBooking(
     })
   } catch (error) {
     if (error instanceof BookingCreateAbort) {
+      if (error.outcome.status === "duplicate_booking") {
+        await appendBookingCreateRejectedActionLedger(
+          db,
+          runtime?.actionLedgerContext,
+          error.outcome,
+          input,
+          {
+            pax,
+            documentGeneration,
+            authorizationSource: runtime?.actionLedgerAuthorizationSource,
+          },
+        )
+      }
       return error.outcome
     }
     if (error instanceof BookingCreateValidationError) {

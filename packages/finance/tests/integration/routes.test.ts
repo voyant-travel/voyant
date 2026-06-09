@@ -13,6 +13,7 @@ import {
   invoiceLineItems,
   invoiceNumberSeries,
   invoiceRenditions,
+  invoices,
   paymentAuthorizations,
   paymentCaptures,
   paymentSessions,
@@ -1332,6 +1333,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         totalCents: 50000,
         paidCents: 10000,
         balanceDueCents: 40000,
+        notes: "Proforma pentru Ana Popescu / City tour, 2 persoane.",
       })
       const payment = await app.request(`/invoices/${proforma.id}/payments`, {
         method: "POST",
@@ -1359,6 +1361,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         convertedFromInvoiceId: proforma.id,
         paidCents: 10000,
         balanceDueCents: 40000,
+        notes: null,
       })
       const refreshedProforma = await financeService.getInvoiceById(db, proforma.id)
       expect(refreshedProforma).toMatchObject({
@@ -1387,6 +1390,140 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         proformaInvoiceNumber: "PRO-1269-A",
         convertedFromInvoiceId: proforma.id,
       })
+    })
+
+    it("returns the existing invoice when converting an already converted proforma", async () => {
+      const booking = await seedBooking()
+      const proforma = await seedInvoice(booking.id, {
+        invoiceNumber: "PRO-CONVERT-IDEMPOTENT",
+        invoiceType: "proforma",
+        status: "issued",
+        totalCents: 75000,
+        balanceDueCents: 75000,
+      })
+      const first = await app.request(`/invoices/${proforma.id}/convert-to-invoice`, {
+        method: "POST",
+        ...json({ invoiceNumber: "INV-CONVERT-IDEMPOTENT" }),
+      })
+      expect(first.status).toBe(201)
+      const { data: invoice } = await first.json()
+      invoiceIssuedEvents.length = 0
+      proformaConvertedEvents.length = 0
+
+      const second = await app.request(`/invoices/${proforma.id}/convert-to-invoice`, {
+        method: "POST",
+        ...json({ invoiceNumber: "INV-CONVERT-IDEMPOTENT-RETRY" }),
+      })
+
+      expect(second.status).toBe(409)
+      await expect(second.json()).resolves.toMatchObject({
+        code: "proforma_already_converted",
+        existingInvoiceId: invoice.id,
+        existingInvoiceNumber: "INV-CONVERT-IDEMPOTENT",
+      })
+      const converted = await db
+        .select({ id: invoices.id })
+        .from(invoices)
+        .where(eq(invoices.convertedFromInvoiceId, proforma.id))
+      expect(converted).toHaveLength(1)
+      expect(invoiceIssuedEvents).toHaveLength(0)
+      expect(proformaConvertedEvents).toHaveLength(0)
+    })
+
+    it("rejects converting a sibling duplicate proforma when a fiscal invoice already exists", async () => {
+      const booking = await seedBooking()
+      const proformaA = await seedInvoice(booking.id, {
+        invoiceNumber: "PRO-SIBLING-DUP-A",
+        invoiceType: "proforma",
+        status: "issued",
+        totalCents: 88000,
+        balanceDueCents: 88000,
+      })
+      const proformaB = await seedInvoice(booking.id, {
+        invoiceNumber: "PRO-SIBLING-DUP-B",
+        invoiceType: "proforma",
+        status: "issued",
+        totalCents: 88000,
+        balanceDueCents: 88000,
+      })
+      const first = await app.request(`/invoices/${proformaA.id}/convert-to-invoice`, {
+        method: "POST",
+        ...json({ invoiceNumber: "INV-SIBLING-DUP-A" }),
+      })
+      expect(first.status).toBe(201)
+      const { data: existingInvoice } = await first.json()
+      invoiceIssuedEvents.length = 0
+      proformaConvertedEvents.length = 0
+
+      const second = await app.request(`/invoices/${proformaB.id}/convert-to-invoice`, {
+        method: "POST",
+        ...json({ invoiceNumber: "INV-SIBLING-DUP-B" }),
+      })
+
+      expect(second.status).toBe(409)
+      await expect(second.json()).resolves.toMatchObject({
+        code: "duplicate_fiscal_invoice",
+        existingInvoiceId: existingInvoice.id,
+        existingInvoiceNumber: "INV-SIBLING-DUP-A",
+      })
+      const refreshedProforma = await financeService.getInvoiceById(db, proformaB.id)
+      expect(refreshedProforma).toMatchObject({
+        status: "issued",
+        voidedAt: null,
+        voidReason: null,
+      })
+      const converted = await db
+        .select({ id: invoices.id })
+        .from(invoices)
+        .where(eq(invoices.convertedFromInvoiceId, proformaB.id))
+      expect(converted).toHaveLength(0)
+      expect(invoiceIssuedEvents).toHaveLength(0)
+      expect(proformaConvertedEvents).toHaveLength(0)
+    })
+
+    it("rejects converting a proforma when a regular fiscal invoice already exists", async () => {
+      const booking = await seedBooking()
+      const existingInvoice = await seedInvoice(booking.id, {
+        invoiceNumber: "INV-REGULAR-DUP",
+        invoiceType: "invoice",
+        status: "issued",
+        totalCents: 66000,
+        balanceDueCents: 66000,
+      })
+      const proforma = await seedInvoice(booking.id, {
+        invoiceNumber: "PRO-REGULAR-DUP",
+        invoiceType: "proforma",
+        status: "issued",
+        totalCents: 66000,
+        balanceDueCents: 66000,
+      })
+      invoiceIssuedEvents.length = 0
+      proformaConvertedEvents.length = 0
+
+      const res = await app.request(`/invoices/${proforma.id}/convert-to-invoice`, {
+        method: "POST",
+        ...json({ invoiceNumber: "INV-REGULAR-DUP-CONVERTED" }),
+      })
+
+      expect(res.status).toBe(409)
+      await expect(res.json()).resolves.toMatchObject({
+        code: "duplicate_fiscal_invoice",
+        existingInvoiceId: existingInvoice.id,
+        existingInvoiceNumber: "INV-REGULAR-DUP",
+      })
+      const refreshedProforma = await financeService.getInvoiceById(db, proforma.id)
+      expect(refreshedProforma).toMatchObject({
+        status: "issued",
+        voidedAt: null,
+        voidReason: null,
+      })
+      const converted = await db
+        .select({ id: invoices.id })
+        .from(invoices)
+        .where(eq(invoices.convertedFromInvoiceId, proforma.id))
+      expect(converted).toHaveLength(0)
+      expect(invoiceIssuedEvents).toHaveLength(0)
+      expect(proformaConvertedEvents).toHaveLength(0)
     })
 
     it("returns a conflict when conversion would reuse an active invoice number", async () => {
@@ -2135,6 +2272,71 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(data.id).toMatch(/^pay_/)
       expect(data.amountCents).toBe(20000)
       expect(data.invoiceId).toBe(inv.id)
+    })
+
+    it("replays duplicate payment records with derived idempotency", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id, { totalCents: 10000, balanceDueCents: 10000 })
+      const body = {
+        amountCents: 5000,
+        currency: "USD",
+        paymentMethod: "bank_transfer",
+        paymentDate: "2025-06-15",
+        status: "completed",
+        idempotencyKey: "",
+      }
+
+      const firstRes = await app.request(`/invoices/${inv.id}/payments`, {
+        method: "POST",
+        ...json(body),
+      })
+      expect(firstRes.status).toBe(201)
+      const { data: firstPayment } = await firstRes.json()
+
+      const retryRes = await app.request(`/invoices/${inv.id}/payments`, {
+        method: "POST",
+        ...json(body),
+      })
+      expect(retryRes.status).toBe(201)
+      const { data: replayedPayment } = await retryRes.json()
+      expect(replayedPayment.id).toBe(firstPayment.id)
+
+      const paymentRows = await db.select().from(payments).where(eq(payments.invoiceId, inv.id))
+      expect(paymentRows).toHaveLength(1)
+
+      const check = await app.request(`/invoices/${inv.id}`, { method: "GET" })
+      const { data: invoiceAfterRetry } = await check.json()
+      expect(invoiceAfterRetry.paidCents).toBe(5000)
+      expect(invoiceAfterRetry.balanceDueCents).toBe(5000)
+      expect(invoiceAfterRetry.status).toBe("partially_paid")
+    })
+
+    it("rejects changed payment payloads with the same explicit idempotency key", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id, { totalCents: 10000, balanceDueCents: 10000 })
+      const firstBody = {
+        amountCents: 5000,
+        currency: "USD",
+        paymentMethod: "bank_transfer",
+        paymentDate: "2025-06-15",
+        status: "completed",
+        idempotencyKey: "payment-record-1",
+      }
+
+      const firstRes = await app.request(`/invoices/${inv.id}/payments`, {
+        method: "POST",
+        ...json(firstBody),
+      })
+      expect(firstRes.status).toBe(201)
+
+      const conflictRes = await app.request(`/invoices/${inv.id}/payments`, {
+        method: "POST",
+        ...json({ ...firstBody, amountCents: 6000 }),
+      })
+      expect(conflictRes.status).toBe(409)
+
+      const paymentRows = await db.select().from(payments).where(eq(payments.invoiceId, inv.id))
+      expect(paymentRows).toHaveLength(1)
     })
 
     it("updates invoice paidCents and status after completed payment", async () => {

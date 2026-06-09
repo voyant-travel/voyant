@@ -229,19 +229,65 @@ async function fetchBookableRoomPrice(
         )
     ),
     candidates AS (
-      SELECT COALESCE(tier.sell_amount_cents, unit_rule.sell_amount_cents) AS price
+      SELECT
+        unit_rule.sell_amount_cents AS price,
+        (
+          (
+            category.id IS NULL
+            OR category.category_type = 'adult'
+            OR (
+              category.category_type NOT IN ('child', 'infant', 'senior')
+              AND category.min_age IS NULL
+              AND category.max_age IS NULL
+            )
+          )
+          AND COALESCE(unit_rule.min_quantity, 0) <= 1
+          AND COALESCE(unit_rule.max_quantity, 0) = 0
+        ) AS standard_price
       FROM active_rules rule
       INNER JOIN option_unit_price_rules unit_rule
         ON unit_rule.option_price_rule_id = rule.id
       INNER JOIN option_units unit
         ON unit.id = unit_rule.unit_id
-      LEFT JOIN option_unit_tiers tier
+      LEFT JOIN pricing_categories category
+        ON category.id = unit_rule.pricing_category_id
+      WHERE unit_rule.active = true
+        AND unit.unit_type = 'room'
+      UNION ALL
+      SELECT
+        tier.sell_amount_cents AS price,
+        (
+          (
+            category.id IS NULL
+            OR category.category_type = 'adult'
+            OR (
+              category.category_type NOT IN ('child', 'infant', 'senior')
+              AND category.min_age IS NULL
+              AND category.max_age IS NULL
+            )
+          )
+          AND COALESCE(unit_rule.min_quantity, 0) <= 1
+          AND COALESCE(unit_rule.max_quantity, 0) = 0
+          AND tier.min_quantity <= 1
+          AND COALESCE(tier.max_quantity, 0) = 0
+        ) AS standard_price
+      FROM active_rules rule
+      INNER JOIN option_unit_price_rules unit_rule
+        ON unit_rule.option_price_rule_id = rule.id
+      INNER JOIN option_units unit
+        ON unit.id = unit_rule.unit_id
+      LEFT JOIN pricing_categories category
+        ON category.id = unit_rule.pricing_category_id
+      INNER JOIN option_unit_tiers tier
         ON tier.option_unit_price_rule_id = unit_rule.id
        AND tier.active = true
       WHERE unit_rule.active = true
         AND unit.unit_type = 'room'
     )
-    SELECT MIN(price)::int AS price
+    SELECT COALESCE(
+      MIN(price) FILTER (WHERE standard_price),
+      MIN(price) FILTER (WHERE NOT standard_price)
+    )::int AS price
     FROM candidates
     WHERE price > 0
   `,
@@ -284,22 +330,68 @@ async function fetchBookableBasePrice(
         )
     ),
     candidates AS (
-      SELECT base_sell_amount_cents AS price
+      SELECT base_sell_amount_cents AS price, true AS standard_price
       FROM active_rules
       UNION ALL
-      SELECT COALESCE(tier.sell_amount_cents, unit_rule.sell_amount_cents) AS price
+      SELECT
+        unit_rule.sell_amount_cents AS price,
+        (
+          (
+            category.id IS NULL
+            OR category.category_type = 'adult'
+            OR (
+              category.category_type NOT IN ('child', 'infant', 'senior')
+              AND category.min_age IS NULL
+              AND category.max_age IS NULL
+            )
+          )
+          AND COALESCE(unit_rule.min_quantity, 0) <= 1
+          AND COALESCE(unit_rule.max_quantity, 0) = 0
+        ) AS standard_price
       FROM active_rules rule
       INNER JOIN option_unit_price_rules unit_rule
         ON unit_rule.option_price_rule_id = rule.id
       INNER JOIN option_units unit
         ON unit.id = unit_rule.unit_id
-      LEFT JOIN option_unit_tiers tier
+      LEFT JOIN pricing_categories category
+        ON category.id = unit_rule.pricing_category_id
+      WHERE unit_rule.active = true
+        AND unit.unit_type <> 'room'
+      UNION ALL
+      SELECT
+        tier.sell_amount_cents AS price,
+        (
+          (
+            category.id IS NULL
+            OR category.category_type = 'adult'
+            OR (
+              category.category_type NOT IN ('child', 'infant', 'senior')
+              AND category.min_age IS NULL
+              AND category.max_age IS NULL
+            )
+          )
+          AND COALESCE(unit_rule.min_quantity, 0) <= 1
+          AND COALESCE(unit_rule.max_quantity, 0) = 0
+          AND tier.min_quantity <= 1
+          AND COALESCE(tier.max_quantity, 0) = 0
+        ) AS standard_price
+      FROM active_rules rule
+      INNER JOIN option_unit_price_rules unit_rule
+        ON unit_rule.option_price_rule_id = rule.id
+      INNER JOIN option_units unit
+        ON unit.id = unit_rule.unit_id
+      LEFT JOIN pricing_categories category
+        ON category.id = unit_rule.pricing_category_id
+      INNER JOIN option_unit_tiers tier
         ON tier.option_unit_price_rule_id = unit_rule.id
        AND tier.active = true
       WHERE unit_rule.active = true
         AND unit.unit_type <> 'room'
     )
-    SELECT MIN(price)::int AS price
+    SELECT COALESCE(
+      MIN(price) FILTER (WHERE standard_price),
+      MIN(price) FILTER (WHERE NOT standard_price)
+    )::int AS price
     FROM candidates
     WHERE price > 0
   `,
