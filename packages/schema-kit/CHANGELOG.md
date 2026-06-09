@@ -1,5 +1,12 @@
 # @voyantjs/schema-kit
 
+## 0.105.0
+
+### Minor Changes
+
+- d1ad572: Rename CRM sales artifacts from Opportunities to Quotes, split Quote Versions into their own schema/API surface, and update the corresponding TypeID prefixes.
+- d1ad572: Add composer-owned Trip snapshot freezing and read APIs for Quote Version proposal snapshots.
+
 ## 0.104.2
 
 ### Patch Changes

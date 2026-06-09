@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/finance-contracts",
-  "version": "0.104.3",
+  "version": "0.104.4",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {

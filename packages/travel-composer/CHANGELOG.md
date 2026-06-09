@@ -1,5 +1,18 @@
 # @voyantjs/travel-composer
 
+## 0.105.0
+
+### Minor Changes
+
+- d1ad572: Add composer-owned Trip snapshot freezing and read APIs for Quote Version proposal snapshots.
+
+### Patch Changes
+
+- @voyantjs/db@0.104.3
+- @voyantjs/catalog@0.105.0
+- @voyantjs/catalog-mcp@0.105.0
+- @voyantjs/hono@0.104.2
+
 ## 0.104.1
 
 ### Patch Changes

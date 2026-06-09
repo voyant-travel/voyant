@@ -1,5 +1,23 @@
 # @voyantjs/sellability
 
+## 0.107.0
+
+### Minor Changes
+
+- d1ad572: Rename cross-package Quote reference fields so `quoteId` points at the CRM deal and `quoteVersionId` points at the versioned proposal snapshot.
+
+### Patch Changes
+
+- Updated dependencies [d1ad572]
+  - @voyantjs/transactions@0.105.0
+  - @voyantjs/db@0.104.3
+  - @voyantjs/availability@0.105.0
+  - @voyantjs/distribution@0.105.0
+  - @voyantjs/markets@0.105.0
+  - @voyantjs/pricing@0.107.0
+  - @voyantjs/products@0.107.0
+  - @voyantjs/hono@0.104.2
+
 ## 0.106.0
 
 ### Patch Changes

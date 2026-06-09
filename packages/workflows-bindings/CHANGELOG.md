@@ -1,5 +1,11 @@
 # @voyantjs/workflows-bindings
 
+## 0.37.2
+
+### Patch Changes
+
+- @voyantjs/workflows@0.105.0
+
 ## 0.37.1
 
 ## 0.37.0

@@ -1,5 +1,11 @@
 # @voyantjs/transactions-contracts
 
+## 0.105.0
+
+### Minor Changes
+
+- d1ad572: Rename cross-package Quote reference fields so `quoteId` points at the CRM deal and `quoteVersionId` points at the versioned proposal snapshot.
+
 ## 0.104.1
 
 ## 0.104.0

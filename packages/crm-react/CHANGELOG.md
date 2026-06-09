@@ -1,5 +1,22 @@
 # @voyantjs/crm-react
 
+## 0.107.0
+
+### Minor Changes
+
+- d1ad572: Add Quote Version send, view, decline, and expiry lifecycle APIs with a public proposal read model.
+- d1ad572: Rename CRM React hooks, UI components, and registry entries from Opportunity to Quote, with Quote Version surfaces split out for proposal/version workflows.
+- d1ad572: Add composer-owned Trip snapshot freezing and read APIs for Quote Version proposal snapshots.
+
+### Patch Changes
+
+- Updated dependencies [d1ad572]
+- Updated dependencies [d1ad572]
+- Updated dependencies [d1ad572]
+- Updated dependencies [d1ad572]
+- Updated dependencies [d1ad572]
+  - @voyantjs/crm@0.107.0
+
 ## 0.106.1
 
 ### Patch Changes

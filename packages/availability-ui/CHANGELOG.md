@@ -1,5 +1,14 @@
 # @voyantjs/availability-ui
 
+## 0.105.0
+
+### Patch Changes
+
+- Updated dependencies [d1ad572]
+  - @voyantjs/i18n@0.105.0
+  - @voyantjs/ui@0.105.0
+  - @voyantjs/availability-react@0.105.0
+
 ## 0.104.2
 
 ### Patch Changes

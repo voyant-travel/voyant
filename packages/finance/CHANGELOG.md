@@ -1,5 +1,16 @@
 # @voyantjs/finance
 
+## 0.107.0
+
+### Patch Changes
+
+- @voyantjs/db@0.104.3
+- @voyantjs/finance-contracts@0.104.4
+- @voyantjs/availability@0.105.0
+- @voyantjs/bookings@0.107.0
+- @voyantjs/products@0.107.0
+- @voyantjs/hono@0.104.2
+
 ## 0.106.7
 
 ### Patch Changes

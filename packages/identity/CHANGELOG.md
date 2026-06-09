@@ -1,5 +1,13 @@
 # @voyantjs/identity
 
+## 0.107.0
+
+### Patch Changes
+
+- @voyantjs/db@0.104.3
+- @voyantjs/identity-contracts@0.104.2
+- @voyantjs/hono@0.104.2
+
 ## 0.106.0
 
 ## 0.105.0
