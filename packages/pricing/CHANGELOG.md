@@ -1,5 +1,11 @@
 # @voyantjs/pricing
 
+## 0.106.1
+
+### Patch Changes
+
+- b02a701: Fix catalog price-from projection to prefer unrestricted standard pricing over cheaper child, age-qualified, or quantity-restricted unit prices, falling back to restricted prices only when no standard price exists.
+
 ## 0.106.0
 
 ### Patch Changes
