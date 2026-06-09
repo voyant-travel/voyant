@@ -162,6 +162,7 @@ const pollProformas = createSmartbillProformaConversionPoller({
   db,
   client: smartbillClient,
   source: "invoices",
+  requestSpacingMs: 350,
   onConverted: async (proformaRef, conversion) => {
     // Record a Voyant payment or emit a domain event in the host app.
     // The plugin reports the SmartBill invoice series/number and source
@@ -174,6 +175,7 @@ const reconcileSmartbill = createSmartbillDriftReconciler({
   client: smartbillClient,
   source: "invoices",
   discoverRemote: true,
+  requestSpacingMs: 350,
   onFinding: async (finding) => {
     // Log, alert, or open an operator ticket.
   },
@@ -198,7 +200,9 @@ refs are materialized as SmartBill external refs when `db` is available; custom
 sources can override that writeback with `recordCandidateExternalRef`. Consumers
 can still pass `listRemoteDocuments` to provide their own remote inventory. The
 reconciler only reports drift; it does not delete, void, or create finance
-records.
+records. Pass `requestSpacingMs` to either factory to enforce a minimum interval
+between SmartBill requests made by the workflow, including remote discovery and
+lazy remote-document accessors returned by discovery.
 
 ## Exports
 
@@ -250,6 +254,10 @@ try {
   }
 }
 ```
+
+Workflow factories also stop the current run after `SmartbillRateLimitError` or
+`SmartbillRateLimitCircuitOpenError`, returning results processed before the
+limit was reached and recording the rate-limit failure through `onError`.
 
 ## Local SmartBill Mock
 

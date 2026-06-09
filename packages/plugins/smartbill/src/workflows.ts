@@ -7,7 +7,11 @@ import {
 import { desc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
-import type { SmartbillClientApi } from "./client.js"
+import {
+  type SmartbillClientApi,
+  SmartbillRateLimitCircuitOpenError,
+  SmartbillRateLimitError,
+} from "./client.js"
 import type {
   SmartbillEstimateInvoicesResponse,
   SmartbillInvoiceResponse,
@@ -89,6 +93,7 @@ export interface SmartbillProformaConversionPollerOptions {
   db?: PostgresJsDatabase
   client: SmartbillClientApi
   limit?: number
+  requestSpacingMs?: number
   companyVatCode?: string
   source?: SmartbillWorkflowCandidateSource
   logger?: SmartbillWorkflowLogger
@@ -165,6 +170,7 @@ export interface SmartbillDriftReconcilerOptions {
   db?: PostgresJsDatabase
   client: SmartbillClientApi
   limit?: number
+  requestSpacingMs?: number
   companyVatCode?: string
   logger?: SmartbillWorkflowLogger
   discoverRemote?: boolean
@@ -206,6 +212,7 @@ export function createSmartbillProformaConversionPoller(
       skipped: [],
       errors: [],
     }
+    const client = createSpacedSmartbillClient(options.client, options.requestSpacingMs)
     const refs = await loadSmartbillWorkflowRefs(options)
 
     for (const ref of refs) {
@@ -214,7 +221,7 @@ export function createSmartbillProformaConversionPoller(
       result.checked += 1
 
       try {
-        const response = await options.client.listEstimateInvoices(
+        const response = await client.listEstimateInvoices(
           document.companyVatCode,
           document.seriesName,
           document.number,
@@ -249,6 +256,7 @@ export function createSmartbillProformaConversionPoller(
         }
       } catch (error) {
         await recordWorkflowError(options, result.errors, { ref, error })
+        if (isSmartbillRateLimitError(error)) break
       }
     }
 
@@ -266,8 +274,19 @@ export function createSmartbillDriftReconciler(
       skipped: [],
       errors: [],
     }
+    const workflowOptions = {
+      ...options,
+      client: createSpacedSmartbillClient(options.client, options.requestSpacingMs),
+    }
     const refs = await loadSmartbillWorkflowRefs(options)
-    const remoteDocuments = await loadRemoteDocuments(options, refs)
+    let remoteDocuments: SmartbillRemoteDocument[] | undefined
+    try {
+      remoteDocuments = await loadRemoteDocuments(workflowOptions, refs)
+    } catch (error) {
+      if (!isSmartbillRateLimitError(error)) throw error
+      await recordWorkflowError(options, result.errors, { error })
+      return result
+    }
     const remoteDocumentMap = new Map(
       (remoteDocuments ?? []).map((remote) => [documentKey(remote), remote]),
     )
@@ -287,7 +306,7 @@ export function createSmartbillDriftReconciler(
       try {
         const remote = hasTrustedRemoteInventory
           ? (remoteDocumentMap.get(key) ?? { ...document, status: "missing" as const })
-          : await verifyRemoteDocument(options, ref, document)
+          : await verifyRemoteDocument(workflowOptions, ref, document)
         if (remote.status === "missing" || remote.status === "deleted") {
           await recordFinding(options, result.findings, {
             type: "missing_remote",
@@ -307,6 +326,7 @@ export function createSmartbillDriftReconciler(
         }
       } catch (error) {
         await recordWorkflowError(options, result.errors, { ref, error })
+        if (isSmartbillRateLimitError(error)) break
         await recordFinding(options, result.findings, {
           type: "missing_remote",
           document,
@@ -458,6 +478,74 @@ async function defaultVerifyRemoteDocument(
     document.number,
   )
   return paymentStatusToRemoteStatus(status)
+}
+
+function createSpacedSmartbillClient(
+  client: SmartbillClientApi,
+  requestSpacingMs: number | undefined,
+): SmartbillClientApi {
+  const minIntervalMs =
+    typeof requestSpacingMs === "number" && Number.isFinite(requestSpacingMs)
+      ? Math.max(0, requestSpacingMs)
+      : 0
+  if (minIntervalMs === 0) return client
+
+  let lastRequestStartedAt: number | null = null
+  let pendingRequest = Promise.resolve()
+
+  const spaceRequest = async <Result>(request: () => Promise<Result>) => {
+    const run = pendingRequest.then(async () => {
+      if (lastRequestStartedAt !== null) {
+        const elapsedMs = Date.now() - lastRequestStartedAt
+        const delayMs = minIntervalMs - elapsedMs
+        if (delayMs > 0) {
+          await new Promise((resolve) => setTimeout(resolve, delayMs))
+        }
+      }
+      lastRequestStartedAt = Date.now()
+      return request()
+    })
+    pendingRequest = run.then(
+      () => undefined,
+      () => undefined,
+    )
+    return run
+  }
+
+  return {
+    createInvoice: (body) => spaceRequest(() => client.createInvoice(body)),
+    createProforma: (body) => spaceRequest(() => client.createProforma(body)),
+    convertEstimateToInvoice: (companyVatCode, estimateSeriesName, estimateNumber, body) =>
+      spaceRequest(() =>
+        client.convertEstimateToInvoice(companyVatCode, estimateSeriesName, estimateNumber, body),
+      ),
+    cancelInvoice: (companyVatCode, seriesName, number) =>
+      spaceRequest(() => client.cancelInvoice(companyVatCode, seriesName, number)),
+    restoreInvoice: (companyVatCode, seriesName, number) =>
+      spaceRequest(() => client.restoreInvoice(companyVatCode, seriesName, number)),
+    deleteInvoice: (companyVatCode, seriesName, number) =>
+      spaceRequest(() => client.deleteInvoice(companyVatCode, seriesName, number)),
+    reverseInvoice: (companyVatCode, seriesName, number) =>
+      spaceRequest(() => client.reverseInvoice(companyVatCode, seriesName, number)),
+    viewInvoicePdf: (companyVatCode, seriesName, number) =>
+      spaceRequest(() => client.viewInvoicePdf(companyVatCode, seriesName, number)),
+    viewPdf: (companyVatCode, seriesName, number) =>
+      spaceRequest(() => client.viewPdf(companyVatCode, seriesName, number)),
+    viewEstimatePdf: (companyVatCode, seriesName, number) =>
+      spaceRequest(() => client.viewEstimatePdf(companyVatCode, seriesName, number)),
+    getPaymentStatus: (companyVatCode, seriesName, number) =>
+      spaceRequest(() => client.getPaymentStatus(companyVatCode, seriesName, number)),
+    listTaxes: () => spaceRequest(() => client.listTaxes()),
+    listSeries: () => spaceRequest(() => client.listSeries()),
+    listEstimateInvoices: (companyVatCode, seriesName, number) =>
+      spaceRequest(() => client.listEstimateInvoices(companyVatCode, seriesName, number)),
+  }
+}
+
+function isSmartbillRateLimitError(error: unknown) {
+  return (
+    error instanceof SmartbillRateLimitError || error instanceof SmartbillRateLimitCircuitOpenError
+  )
 }
 
 function resolveReferenceParts(
