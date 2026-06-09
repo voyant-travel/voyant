@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 
-import type { SmartbillClientApi } from "../../src/client.js"
+import { SmartbillApiError, type SmartbillClientApi } from "../../src/client.js"
 import {
   createSmartbillDriftReconciler,
   createSmartbillProformaConversionPoller,
@@ -147,6 +147,181 @@ describe("createSmartbillDriftReconciler", () => {
       document: { seriesName: "INV", number: "99" },
     })
     expect(onFinding).toHaveBeenCalledWith(result.findings[0])
+  })
+
+  it("discovers missing local documents from SmartBill series when opted in", async () => {
+    const onMissingLocal = vi.fn()
+    const client = makeClient({
+      listSeries: vi.fn(async () => ({
+        status: "Ok",
+        list: [
+          { name: "INV", nextNumber: 3, type: "f" },
+          { name: "PF", nextNumber: 2, type: "p" },
+        ],
+      })),
+      getPaymentStatus: vi.fn(async (_companyVatCode, _seriesName, number) => ({
+        status: "Ok",
+        message: "",
+        errorText: "",
+        paid: number === "2",
+        invoiceTotalAmount: 100,
+        paidAmount: number === "2" ? 100 : 0,
+        unpaidAmount: number === "2" ? 0 : 100,
+        payments: [],
+      })),
+      listEstimateInvoices: vi.fn(async () => ({
+        status: "Ok",
+        areInvoicesCreated: false,
+        invoices: [],
+      })),
+      viewInvoicePdf: vi.fn(async () => ({
+        bytes: new Uint8Array([1]),
+        contentType: "application/pdf",
+      })),
+    })
+
+    const result = await createSmartbillDriftReconciler({
+      client,
+      companyVatCode: "RO12345678",
+      discoverRemote: true,
+      listExternalRefs: async () => [
+        smartbillRef({
+          metadata: {
+            companyVatCode: "RO12345678",
+            seriesName: "INV",
+            number: "1",
+            documentType: "invoice",
+          },
+        }),
+      ],
+      onMissingLocal,
+    })()
+
+    expect(client.listSeries).toHaveBeenCalledOnce()
+    expect(client.getPaymentStatus).toHaveBeenCalledWith("RO12345678", "INV", "1")
+    expect(client.getPaymentStatus).toHaveBeenCalledWith("RO12345678", "INV", "2")
+    expect(client.listEstimateInvoices).toHaveBeenCalledWith("RO12345678", "PF", "1")
+    expect(result.findings).toHaveLength(2)
+    expect(result.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: "missing_local",
+          document: expect.objectContaining({ seriesName: "INV", number: "2" }),
+          remote: expect.objectContaining({ status: "paid" }),
+        }),
+        expect.objectContaining({
+          type: "missing_local",
+          document: expect.objectContaining({ seriesName: "PF", number: "1" }),
+          remote: expect.objectContaining({ status: "present" }),
+        }),
+      ]),
+    )
+    expect(onMissingLocal).toHaveBeenCalledTimes(2)
+
+    const invoiceFinding = result.findings.find(
+      (finding) => finding.type === "missing_local" && finding.document.seriesName === "INV",
+    )
+    if (!invoiceFinding || invoiceFinding.type !== "missing_local") {
+      throw new Error("Expected discovered invoice finding")
+    }
+
+    await invoiceFinding.remote.accessors?.viewPdf()
+    expect(client.viewInvoicePdf).toHaveBeenCalledWith("RO12345678", "INV", "2")
+  })
+
+  it("skips missing numbers while walking SmartBill series", async () => {
+    const client = makeClient({
+      listSeries: vi.fn(async () => ({
+        status: "Ok",
+        list: [{ name: "INV", nextNumber: 3, type: "f" }],
+      })),
+      getPaymentStatus: vi.fn(async (_companyVatCode, _seriesName, number) => {
+        if (number === "1") {
+          throw new SmartbillApiError("not found", {
+            operation: "getPaymentStatus",
+            status: 404,
+          })
+        }
+        return {
+          status: "Ok",
+          message: "",
+          errorText: "",
+          paid: false,
+          invoiceTotalAmount: 100,
+          paidAmount: 0,
+          unpaidAmount: 100,
+          payments: [],
+        }
+      }),
+    })
+
+    const result = await createSmartbillDriftReconciler({
+      client,
+      companyVatCode: "RO12345678",
+      discoverRemote: true,
+      listExternalRefs: async () => [],
+    })()
+
+    expect(result.findings).toHaveLength(1)
+    expect(result.findings[0]).toMatchObject({
+      type: "missing_local",
+      document: { seriesName: "INV", number: "2" },
+    })
+  })
+
+  it("verifies local refs by exact persisted number when remote discovery is enabled", async () => {
+    const ref = smartbillRef({
+      metadata: {
+        companyVatCode: "RO12345678",
+        seriesName: "INV",
+        number: "0001",
+        documentType: "invoice",
+      },
+    })
+    const client = makeClient({
+      listSeries: vi.fn(async () => ({
+        status: "Ok",
+        list: [{ name: "INV", nextNumber: 2, type: "f" }],
+      })),
+      getPaymentStatus: vi.fn(async (_companyVatCode, _seriesName, number) => {
+        if (number === "1") {
+          throw new SmartbillApiError("not found", {
+            operation: "getPaymentStatus",
+            status: 404,
+          })
+        }
+        return {
+          status: "Ok",
+          message: "",
+          errorText: "",
+          paid: false,
+          invoiceTotalAmount: 100,
+          paidAmount: 0,
+          unpaidAmount: 100,
+          payments: [],
+        }
+      }),
+    })
+
+    const result = await createSmartbillDriftReconciler({
+      client,
+      discoverRemote: true,
+      listExternalRefs: async () => [ref],
+    })()
+
+    expect(client.getPaymentStatus).toHaveBeenCalledWith("RO12345678", "INV", "1")
+    expect(client.getPaymentStatus).toHaveBeenCalledWith("RO12345678", "INV", "0001")
+    expect(result.findings).toEqual([])
+  })
+
+  it("requires a company VAT code for remote discovery when refs cannot provide one", async () => {
+    await expect(
+      createSmartbillDriftReconciler({
+        client: makeClient(),
+        discoverRemote: true,
+        listExternalRefs: async () => [],
+      })(),
+    ).rejects.toThrow("SmartBill remote discovery requires companyVatCode")
   })
 
   it("reports missing remote documents when provider verification fails", async () => {

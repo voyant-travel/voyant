@@ -11,8 +11,13 @@ import type { SmartbillClientApi } from "./client.js"
 import type {
   SmartbillEstimateInvoicesResponse,
   SmartbillInvoiceResponse,
+  SmartbillPdfResponse,
   SmartbillStatusResponse,
 } from "./types.js"
+import {
+  discoverRemoteDocuments,
+  paymentStatusToRemoteStatus,
+} from "./workflow-remote-discovery.js"
 
 export type SmartbillWorkflowDocumentType = "invoice" | "proforma"
 
@@ -108,18 +113,37 @@ export type SmartbillRemoteDocumentStatus =
 export interface SmartbillRemoteDocument extends SmartbillReferenceParts {
   status?: SmartbillRemoteDocumentStatus
   metadata?: Record<string, unknown>
+  accessors?: SmartbillRemoteDocumentAccessors
+}
+
+export interface SmartbillRemoteDocumentAccessors {
+  viewPdf: () => Promise<SmartbillPdfResponse>
+  getPaymentStatus?: () => Promise<SmartbillStatusResponse>
+  listEstimateInvoices?: () => Promise<SmartbillEstimateInvoicesResponse>
 }
 
 export type SmartbillDriftFindingType = "missing_local" | "missing_remote" | "voided_remote"
 
-export interface SmartbillDriftFinding {
-  type: SmartbillDriftFindingType
+interface SmartbillDriftFindingBase {
   document: SmartbillReferenceParts
+  error?: unknown
+}
+
+export interface SmartbillMissingLocalDriftFinding extends SmartbillDriftFindingBase {
+  type: "missing_local"
+  remote: SmartbillRemoteDocument
+}
+
+export interface SmartbillKnownLocalDriftFinding extends SmartbillDriftFindingBase {
+  type: "missing_remote" | "voided_remote"
   ref?: SmartbillWorkflowExternalRef
   invoice?: SmartbillWorkflowInvoice | null
   remote?: SmartbillRemoteDocument | null
-  error?: unknown
 }
+
+export type SmartbillDriftFinding =
+  | SmartbillMissingLocalDriftFinding
+  | SmartbillKnownLocalDriftFinding
 
 export interface SmartbillDriftReconcilerOptions {
   db?: PostgresJsDatabase
@@ -127,6 +151,7 @@ export interface SmartbillDriftReconcilerOptions {
   limit?: number
   companyVatCode?: string
   logger?: SmartbillWorkflowLogger
+  discoverRemote?: boolean
   listExternalRefs?: () => Promise<SmartbillWorkflowExternalRef[]>
   listRemoteDocuments?: (context: {
     refs: SmartbillWorkflowExternalRef[]
@@ -136,6 +161,7 @@ export interface SmartbillDriftReconcilerOptions {
     document: SmartbillReferenceParts
   }) => Promise<SmartbillRemoteDocumentStatus | SmartbillRemoteDocument>
   onFinding?: (finding: SmartbillDriftFinding) => void | Promise<void>
+  onMissingLocal?: (finding: SmartbillMissingLocalDriftFinding) => void | Promise<void>
   onError?: (error: SmartbillWorkflowError) => void | Promise<void>
 }
 
@@ -222,11 +248,11 @@ export function createSmartbillDriftReconciler(
       errors: [],
     }
     const refs = await loadSmartbillExternalRefs(options)
-    const remoteDocuments = await options.listRemoteDocuments?.({ refs })
+    const remoteDocuments = await loadRemoteDocuments(options, refs)
     const remoteDocumentMap = new Map(
       (remoteDocuments ?? []).map((remote) => [documentKey(remote), remote]),
     )
-    const hasRemoteInventory = remoteDocuments !== undefined
+    const hasTrustedRemoteInventory = options.listRemoteDocuments !== undefined
     const localDocuments = new Map<string, SmartbillReferenceParts>()
 
     for (const ref of refs) {
@@ -240,7 +266,7 @@ export function createSmartbillDriftReconciler(
       result.checked += 1
 
       try {
-        const remote = hasRemoteInventory
+        const remote = hasTrustedRemoteInventory
           ? (remoteDocumentMap.get(key) ?? { ...document, status: "missing" as const })
           : await verifyRemoteDocument(options, ref, document)
         if (remote.status === "missing" || remote.status === "deleted") {
@@ -275,7 +301,7 @@ export function createSmartbillDriftReconciler(
 
     for (const remote of remoteDocuments ?? []) {
       if (!localDocuments.has(documentKey(remote))) {
-        await recordFinding(options, result.findings, {
+        await recordMissingLocalFinding(options, result.findings, {
           type: "missing_local",
           document: remote,
           remote,
@@ -285,6 +311,31 @@ export function createSmartbillDriftReconciler(
 
     return result
   }
+}
+
+async function loadRemoteDocuments(
+  options: SmartbillDriftReconcilerOptions,
+  refs: SmartbillWorkflowExternalRef[],
+) {
+  if (options.listRemoteDocuments) return options.listRemoteDocuments({ refs })
+  if (!options.discoverRemote) return undefined
+  return discoverRemoteDocuments(options.client, resolveDiscoveryCompanyVatCode(options, refs))
+}
+
+function resolveDiscoveryCompanyVatCode(
+  options: SmartbillDriftReconcilerOptions,
+  refs: SmartbillWorkflowExternalRef[],
+) {
+  if (options.companyVatCode) return options.companyVatCode
+
+  const companyVatCodes = new Set(
+    refs
+      .map((ref) => resolveReferenceParts(ref, options.companyVatCode)?.companyVatCode)
+      .filter((value): value is string => typeof value === "string" && value.length > 0),
+  )
+  if (companyVatCodes.size === 1) return [...companyVatCodes][0]!
+
+  throw new Error("SmartBill remote discovery requires companyVatCode")
 }
 
 async function loadSmartbillExternalRefs(options: {
@@ -375,19 +426,6 @@ async function defaultVerifyRemoteDocument(
   return paymentStatusToRemoteStatus(status)
 }
 
-function paymentStatusToRemoteStatus(
-  status: SmartbillStatusResponse,
-): SmartbillRemoteDocumentStatus {
-  const providerStatus = `${status.message ?? ""} ${status.errorText ?? ""}`.toLowerCase()
-  if (providerStatus.includes("cancel")) return "cancelled"
-  if (providerStatus.includes("reverse")) return "reversed"
-  if (providerStatus.includes("void")) return "voided"
-  if (providerStatus.includes("delete")) return "deleted"
-  if (status.paid) return "paid"
-  if ((status.paidAmount ?? 0) > 0) return "partially_paid"
-  return "unpaid"
-}
-
 function resolveReferenceParts(
   ref: SmartbillWorkflowExternalRef,
   fallbackCompanyVatCode?: string,
@@ -441,6 +479,15 @@ async function recordFinding(
   findings.push(finding)
   options.logger?.info?.("[smartbill] drift finding", finding)
   await options.onFinding?.(finding)
+}
+
+async function recordMissingLocalFinding(
+  options: SmartbillDriftReconcilerOptions,
+  findings: SmartbillDriftFinding[],
+  finding: SmartbillMissingLocalDriftFinding,
+) {
+  await recordFinding(options, findings, finding)
+  await options.onMissingLocal?.(finding)
 }
 
 async function recordWorkflowError(

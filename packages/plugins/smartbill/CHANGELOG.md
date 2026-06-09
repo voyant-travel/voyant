@@ -5,6 +5,7 @@
 ### Patch Changes
 
 - 9c22b6b: Cancel SmartBill invoices when Voyant invoices are voided and persist the external reference cancellation state.
+- Add opt-in SmartBill series discovery to the drift reconciler so `missing_local` findings can be reported without caller-supplied remote inventory.
 - Updated dependencies [9c22b6b]
   - @voyantjs/finance@0.106.7
   - @voyantjs/finance-react@0.106.7

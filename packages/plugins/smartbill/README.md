@@ -171,9 +171,13 @@ const pollProformas = createSmartbillProformaConversionPoller({
 const reconcileSmartbill = createSmartbillDriftReconciler({
   db,
   client: smartbillClient,
-  listRemoteDocuments: async () => remoteSmartbillInventory,
+  discoverRemote: true,
   onFinding: async (finding) => {
     // Log, alert, or open an operator ticket.
+  },
+  onMissingLocal: async (finding) => {
+    const pdf = await finding.remote.accessors?.viewPdf()
+    // Create a local invoice or attach SmartBill evidence in the host app.
   },
 })
 ```
@@ -181,9 +185,13 @@ const reconcileSmartbill = createSmartbillDriftReconciler({
 `createSmartbillProformaConversionPoller` scans SmartBill proforma external refs
 and calls `client.listEstimateInvoices(...)` to detect SmartBill-created final
 invoices. `createSmartbillDriftReconciler` verifies known SmartBill refs by
-default and can compare a caller-provided remote inventory for `missing_local`
-findings. The reconciler only reports drift; it does not delete, void, or create
-finance records.
+default. Pass `discoverRemote: true` to walk SmartBill invoice/proforma series
+with `client.listSeries()` and report documents that exist remotely without a
+local external ref as `missing_local`; those findings include lazy PDF and
+payment-status/conversion lookup accessors on `finding.remote.accessors`.
+Consumers can still pass `listRemoteDocuments` to provide their own inventory.
+The reconciler only reports drift; it does not delete, void, or create finance
+records.
 
 ## Exports
 
