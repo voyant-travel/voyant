@@ -1,5 +1,11 @@
 # @voyantjs/finance
 
+## 0.106.4
+
+### Patch Changes
+
+- ee93be5: Reject booking-create requests when selected or implicitly seeded room units cannot seat the booking pax.
+
 ## 0.106.3
 
 ## 0.106.2
