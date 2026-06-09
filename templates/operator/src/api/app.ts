@@ -299,8 +299,8 @@ export const app = createApp<CloudflareBindings>({
     "/v1/public/finance/accountant",
     "/v1/public/payment-link-config",
     "/v1/public/payment-link",
-    // Customer-facing sent Quote Version proposal. The Quote Version TypeID
-    // in the URL is the bearer credential, matching payment-link posture.
+    // Customer-facing sent Quote Version proposal. This public route must
+    // return only customer-safe DTO fields, never internal CRM rows.
     "/v1/public/proposals",
     // Storefront booking journey — quote / book / drafts run
     // unauthenticated against the customer surface. Per

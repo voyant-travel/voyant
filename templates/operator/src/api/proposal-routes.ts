@@ -1,9 +1,7 @@
 import {
   crmService,
-  type Quote,
   type QuoteVersion,
   QuoteVersionConflictError,
-  type QuoteVersionLine,
   sendQuoteVersionSchema,
 } from "@voyantjs/crm"
 import { parseOptionalJsonBody, type VoyantDb } from "@voyantjs/hono"
@@ -25,17 +23,38 @@ type OperatorProposalRouteEnv = {
 }
 
 export interface PublicQuoteVersionProposal {
-  quote: Quote
-  quoteVersion: QuoteVersion
-  lines: QuoteVersionLine[]
+  title: string
+  status: QuoteVersion["status"]
+  currency: string
+  subtotalAmountCents: number
+  taxAmountCents: number
+  totalAmountCents: number
+  validUntil: string | null
+  lines: PublicQuoteVersionProposalLine[]
   operator: PublicOperatorProfile | null
   proposalUrl: string
+}
+
+export interface PublicQuoteVersionProposalLine {
+  description: string
+  quantity: number
+  unitPriceAmountCents: number
+  totalAmountCents: number
+  currency: string
 }
 
 export interface SendQuoteVersionResult {
   quoteVersion: QuoteVersion
   proposalUrl: string
 }
+
+export interface DeclinePublicProposalResult {
+  status: QuoteVersion["status"]
+}
+
+type QuoteVersionProposalReadModel = NonNullable<
+  Awaited<ReturnType<typeof crmService.getQuoteVersionProposal>>
+>
 
 export function buildQuoteVersionProposalUrl(
   quoteVersionId: string,
@@ -44,6 +63,36 @@ export function buildQuoteVersionProposalUrl(
   const path = `/proposal/${encodeURIComponent(quoteVersionId)}`
   const baseUrl = options.baseUrl?.trim().replace(/\/+$/, "")
   return baseUrl ? `${baseUrl}${path}` : path
+}
+
+function toPublicQuoteVersionProposal(
+  proposal: QuoteVersionProposalReadModel,
+  options: {
+    quoteVersion?: QuoteVersion | null
+    operator: PublicOperatorProfile | null
+    proposalUrl: string
+  },
+): PublicQuoteVersionProposal {
+  const quoteVersion = options.quoteVersion ?? proposal.quoteVersion
+
+  return {
+    title: proposal.quote.title,
+    status: quoteVersion.status,
+    currency: quoteVersion.currency,
+    subtotalAmountCents: quoteVersion.subtotalAmountCents,
+    taxAmountCents: quoteVersion.taxAmountCents,
+    totalAmountCents: quoteVersion.totalAmountCents,
+    validUntil: quoteVersion.validUntil,
+    lines: proposal.lines.map((line) => ({
+      description: line.description,
+      quantity: line.quantity,
+      unitPriceAmountCents: line.unitPriceAmountCents,
+      totalAmountCents: line.totalAmountCents,
+      currency: line.currency,
+    })),
+    operator: options.operator,
+    proposalUrl: options.proposalUrl,
+  }
 }
 
 export function mountOperatorProposalRoutes(hono: Hono<OperatorProposalRouteEnv>): void {
@@ -101,15 +150,13 @@ export async function handleGetPublicProposal(c: Context<OperatorProposalRouteEn
   const operatorSettings = await getOperatorSettings(db)
 
   return c.json({
-    data: {
-      quote: proposal.quote,
-      quoteVersion: viewedQuoteVersion ?? proposal.quoteVersion,
-      lines: proposal.lines,
+    data: toPublicQuoteVersionProposal(proposal, {
+      quoteVersion: viewedQuoteVersion,
       operator: operatorSettings ? toPublicOperatorSettings(operatorSettings) : null,
       proposalUrl: buildQuoteVersionProposalUrl(quoteVersionId, {
         baseUrl: resolvePublicCheckoutBaseUrlFromBindings(c.env ?? {}),
       }),
-    } satisfies PublicQuoteVersionProposal,
+    }),
   })
 }
 
@@ -130,7 +177,9 @@ export async function handleDeclinePublicProposal(c: Context<OperatorProposalRou
   try {
     const quoteVersion = await crmService.declineQuoteVersion(db, quoteVersionId)
     if (!quoteVersion) return c.json({ error: "Proposal not found" }, 404)
-    return c.json({ data: quoteVersion })
+    return c.json({
+      data: { status: quoteVersion.status } satisfies DeclinePublicProposalResult,
+    })
   } catch (error) {
     if (error instanceof QuoteVersionConflictError) {
       return c.json({ error: error.message }, 409)

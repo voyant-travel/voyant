@@ -51,24 +51,42 @@ const fakeDb = { name: "db" }
 const quoteVersion = {
   id: "qver_123",
   quoteId: "quot_123",
+  label: "Internal working proposal",
   status: "sent",
+  tripSnapshotId: "trsn_123",
   validUntil: "2099-01-01",
   currency: "EUR",
   subtotalAmountCents: 10000,
   taxAmountCents: 900,
   totalAmountCents: 10900,
+  notes: "Internal proposal notes",
   sentAt: "2026-06-09T10:00:00.000Z",
   viewedAt: null,
   decidedAt: null,
 }
 
 const proposal = {
-  quote: { id: "quot_123", title: "Romania private tour" },
+  quote: {
+    id: "quot_123",
+    ownerId: "usr_internal_owner",
+    title: "Romania private tour",
+    pipelineId: "pipe_internal",
+    stageId: "stg_internal",
+    status: "open",
+    valueAmountCents: 250000,
+    valueCurrency: "EUR",
+    expectedCloseDate: "2026-07-01",
+    source: "inquiry",
+    sourceRef: "inq_123",
+    lostReason: "Internal loss reason",
+  },
   quoteVersion,
   lines: [
     {
       id: "qtln_123",
       quoteVersionId: "qver_123",
+      productId: "qprd_internal",
+      supplierServiceId: "srv_internal",
       description: "Airport transfer",
       quantity: 1,
       unitPriceAmountCents: 10000,
@@ -152,13 +170,52 @@ describe("operator proposal routes", () => {
     expect(response.status).toBe(200)
     expect(mocks.expireQuoteVersionIfPastValidUntil).toHaveBeenCalledWith(fakeDb, "qver_123")
     expect(mocks.markQuoteVersionViewed).toHaveBeenCalledWith(fakeDb, "qver_123")
-    await expect(response.json()).resolves.toMatchObject({
+    const body = (await response.json()) as {
+      data: Record<string, unknown> & { lines: Array<Record<string, unknown>> }
+    }
+    expect(body).toMatchObject({
       data: {
-        quote: { title: "Romania private tour" },
-        quoteVersion: { viewedAt: "2026-06-09T10:05:00.000Z" },
+        title: "Romania private tour",
+        status: "sent",
+        currency: "EUR",
+        subtotalAmountCents: 10000,
+        taxAmountCents: 900,
+        totalAmountCents: 10900,
+        validUntil: "2099-01-01",
+        lines: [
+          {
+            description: "Airport transfer",
+            quantity: 1,
+            unitPriceAmountCents: 10000,
+            totalAmountCents: 10900,
+            currency: "EUR",
+          },
+        ],
         operator: { name: "Voyant Travel" },
+        proposalUrl: "/proposal/qver_123",
       },
     })
+    expect(body.data.quote).toBeUndefined()
+    expect(body.data.quoteVersion).toBeUndefined()
+    expect(body.data.label).toBeUndefined()
+    expect(body.data.ownerId).toBeUndefined()
+    expect(body.data.pipelineId).toBeUndefined()
+    expect(body.data.stageId).toBeUndefined()
+    expect(body.data.valueAmountCents).toBeUndefined()
+    expect(body.data.valueCurrency).toBeUndefined()
+    expect(body.data.expectedCloseDate).toBeUndefined()
+    expect(body.data.source).toBeUndefined()
+    expect(body.data.sourceRef).toBeUndefined()
+    expect(body.data.lostReason).toBeUndefined()
+    expect(body.data.tripSnapshotId).toBeUndefined()
+    expect(body.data.notes).toBeUndefined()
+    expect(body.data.sentAt).toBeUndefined()
+    expect(body.data.viewedAt).toBeUndefined()
+    expect(body.data.decidedAt).toBeUndefined()
+    expect(body.data.lines[0].id).toBeUndefined()
+    expect(body.data.lines[0].quoteVersionId).toBeUndefined()
+    expect(body.data.lines[0].productId).toBeUndefined()
+    expect(body.data.lines[0].supplierServiceId).toBeUndefined()
   })
 
   it("hides draft proposals from public reads", async () => {
@@ -190,8 +247,7 @@ describe("operator proposal routes", () => {
 
     expect(response.status).toBe(200)
     expect(mocks.declineQuoteVersion).toHaveBeenCalledWith(fakeDb, "qver_123")
-    await expect(response.json()).resolves.toMatchObject({
-      data: { id: "qver_123", status: "declined" },
-    })
+    const body = await response.json()
+    expect(body).toEqual({ data: { status: "declined" } })
   })
 })
