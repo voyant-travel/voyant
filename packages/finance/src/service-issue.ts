@@ -597,7 +597,7 @@ export async function convertProformaToInvoice(
           commissionAmountCents: lockedProforma.commissionAmountCents,
           issueDate,
           dueDate,
-          notes: lockedProforma.notes,
+          notes: null,
         })
         .returning()
 
