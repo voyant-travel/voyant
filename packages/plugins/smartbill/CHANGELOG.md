@@ -1,5 +1,11 @@
 # @voyantjs/plugin-smartbill
 
+## 0.106.3
+
+### Patch Changes
+
+- ed8ac1c: Add request spacing and rate-limit early stop behavior to SmartBill workflow factories.
+
 ## 0.106.2
 
 ### Patch Changes
