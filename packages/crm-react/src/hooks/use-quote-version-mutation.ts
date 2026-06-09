@@ -7,6 +7,7 @@ import { fetchWithValidation } from "../client.js"
 import { useVoyantContext } from "../provider.js"
 import { crmQueryKeys } from "../query-keys.js"
 import {
+  acceptQuoteVersionResponse,
   listEnvelope,
   quoteVersionLineSingleResponse,
   quoteVersionRecordSchema,
@@ -17,7 +18,6 @@ export interface CreateQuoteVersionInput {
   currency: string
   quoteId?: string
   label?: string | null
-  status?: string
   supersedesId?: string | null
   tripSnapshotId?: string | null
   validUntil?: string | null
@@ -162,6 +162,29 @@ export function useQuoteVersionMutation() {
     },
   })
 
+  const accept = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await fetchWithValidation(
+        `/v1/crm/quote-versions/${id}/accept`,
+        acceptQuoteVersionResponse,
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify({}) },
+      )
+      return data
+    },
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: crmQueryKeys.quoteVersions() })
+      queryClient.setQueryData(crmQueryKeys.quote(data.quote.id), data.quote)
+      queryClient.setQueryData(crmQueryKeys.quoteVersion(data.quoteVersion.id), data.quoteVersion)
+      for (const quoteVersion of data.closedQuoteVersions) {
+        queryClient.setQueryData(crmQueryKeys.quoteVersion(quoteVersion.id), quoteVersion)
+      }
+      void queryClient.invalidateQueries({
+        queryKey: crmQueryKeys.quoteVersionsList({ quoteId: data.quote.id }),
+      })
+    },
+  })
+
   const expire = useMutation({
     mutationFn: async (input?: ExpireQuoteVersionsInput) => {
       const { data } = await fetchWithValidation(
@@ -260,5 +283,17 @@ export function useQuoteVersionMutation() {
     },
   })
 
-  return { create, update, remove, send, view, decline, expire, createLine, updateLine, removeLine }
+  return {
+    create,
+    update,
+    remove,
+    send,
+    view,
+    decline,
+    accept,
+    expire,
+    createLine,
+    updateLine,
+    removeLine,
+  }
 }

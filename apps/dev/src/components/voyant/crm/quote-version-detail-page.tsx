@@ -16,15 +16,9 @@ import {
   ConfirmActionButton,
 } from "@voyantjs/ui/components"
 import { ArrowLeft, Loader2 } from "lucide-react"
-import {
-  formatDate,
-  formatMoney,
-  formatRelative,
-  QUOTE_VERSION_STATUS_OPTIONS,
-} from "@/components/voyant/crm/crm-constants"
+import { formatDate, formatMoney, formatRelative } from "@/components/voyant/crm/crm-constants"
 import { InlineCurrencyField } from "@/components/voyant/crm/inline-currency-field"
 import { InlineField } from "@/components/voyant/crm/inline-field"
-import { InlineSelectField } from "@/components/voyant/crm/inline-select-field"
 import { QuoteVersionLinesCard } from "./quote-version-detail-sections"
 
 export function QuoteVersionDetailPage({ id }: { id: string }) {
@@ -32,7 +26,8 @@ export function QuoteVersionDetailPage({ id }: { id: string }) {
 
   const quoteVersionQuery = useQuoteVersion(id)
   const quoteVersionLinesQuery = useQuoteVersionLines(id)
-  const { remove, update, createLine, updateLine, removeLine } = useQuoteVersionMutation()
+  const { remove, update, send, accept, decline, createLine, updateLine, removeLine } =
+    useQuoteVersionMutation()
 
   const updateField = async (patch: UpdateQuoteVersionInput) => {
     await update.mutateAsync({ id, input: patch })
@@ -65,6 +60,8 @@ export function QuoteVersionDetailPage({ id }: { id: string }) {
     )
   }
 
+  const canEdit = quoteVersion.status === "draft"
+
   return (
     <div className="flex min-h-screen flex-col">
       <div className="sticky top-0 z-10 flex items-center gap-3 border-b bg-background px-6 py-3">
@@ -92,8 +89,8 @@ export function QuoteVersionDetailPage({ id }: { id: string }) {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => void updateField({ status: "sent" })}
-              disabled={update.isPending}
+              onClick={() => void send.mutateAsync({ id })}
+              disabled={send.isPending}
             >
               Mark sent
             </Button>
@@ -103,16 +100,16 @@ export function QuoteVersionDetailPage({ id }: { id: string }) {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => void updateField({ status: "accepted" })}
-                disabled={update.isPending}
+                onClick={() => void accept.mutateAsync(id)}
+                disabled={accept.isPending}
               >
                 Accept
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => void updateField({ status: "declined" })}
-                disabled={update.isPending}
+                onClick={() => void decline.mutateAsync(id)}
+                disabled={decline.isPending}
               >
                 Decline
               </Button>
@@ -125,7 +122,7 @@ export function QuoteVersionDetailPage({ id }: { id: string }) {
             description="This will permanently remove the quote version and all its lines."
             variant="destructive"
             confirmVariant="destructive"
-            disabled={remove.isPending}
+            disabled={!canEdit || remove.isPending}
             onConfirm={async () => {
               await remove.mutateAsync(id)
               void navigate({ to: "/quote-versions" })
@@ -160,28 +157,24 @@ export function QuoteVersionDetailPage({ id }: { id: string }) {
               <CardTitle className="text-sm font-semibold">Quote version details</CardTitle>
             </CardHeader>
             <CardContent className="divide-y text-sm">
-              <InlineSelectField
-                label="Status"
-                value={quoteVersion.status}
-                options={QUOTE_VERSION_STATUS_OPTIONS}
-                allowClear={false}
-                onSave={(next) => updateField({ status: next ?? quoteVersion.status })}
-              />
               <InlineCurrencyField
                 label="Currency"
                 value={quoteVersion.currency}
+                disabled={!canEdit}
                 onSave={(next) => updateField({ currency: next ?? quoteVersion.currency })}
               />
               <InlineField
                 label="Valid until"
                 placeholder="YYYY-MM-DD"
                 value={quoteVersion.validUntil}
+                disabled={!canEdit}
                 onSave={(next) => updateField({ validUntil: next })}
               />
               <InlineField
                 label="Notes"
                 kind="textarea"
                 value={quoteVersion.notes}
+                disabled={!canEdit}
                 onSave={(next) => updateField({ notes: next })}
               />
             </CardContent>
@@ -227,6 +220,7 @@ export function QuoteVersionDetailPage({ id }: { id: string }) {
             currency={quoteVersion.currency}
             lines={lines}
             isLoading={quoteVersionLinesQuery.isPending}
+            editable={canEdit}
             onCreate={async (input) => {
               await createLine.mutateAsync({ quoteVersionId: id, input })
             }}

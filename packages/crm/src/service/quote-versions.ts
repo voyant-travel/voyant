@@ -120,6 +120,12 @@ export const quoteVersionsService = {
   },
 
   async createQuoteVersion(db: PostgresJsDatabase, data: CreateQuoteVersionInput) {
+    if (data.status && data.status !== "draft") {
+      throw new QuoteVersionConflictError(
+        "Quote Versions must be created as draft; use lifecycle routes for status changes",
+      )
+    }
+
     const values = {
       ...data,
       sentAt: normalizeTimestamp(data.sentAt),
@@ -131,6 +137,10 @@ export const quoteVersionsService = {
   },
 
   async updateQuoteVersion(db: PostgresJsDatabase, id: string, data: UpdateQuoteVersionInput) {
+    if (data.status !== undefined) {
+      throw new QuoteVersionConflictError("Quote Version status changes must use lifecycle routes")
+    }
+
     const values = {
       ...data,
       sentAt: normalizeTimestamp(data.sentAt),
@@ -141,17 +151,33 @@ export const quoteVersionsService = {
     const [row] = await db
       .update(quoteVersions)
       .set(values)
-      .where(eq(quoteVersions.id, id))
+      .where(and(eq(quoteVersions.id, id), eq(quoteVersions.status, "draft")))
       .returning()
-    return row ?? null
+    if (row) return row
+
+    const [existing] = await db
+      .select({ status: quoteVersions.status })
+      .from(quoteVersions)
+      .where(eq(quoteVersions.id, id))
+      .limit(1)
+    if (!existing) return null
+    throw new QuoteVersionConflictError("Quote Versions can only be edited while draft")
   },
 
   async deleteQuoteVersion(db: PostgresJsDatabase, id: string) {
     const [row] = await db
       .delete(quoteVersions)
-      .where(eq(quoteVersions.id, id))
+      .where(and(eq(quoteVersions.id, id), eq(quoteVersions.status, "draft")))
       .returning({ id: quoteVersions.id })
-    return row ?? null
+    if (row) return row
+
+    const [existing] = await db
+      .select({ status: quoteVersions.status })
+      .from(quoteVersions)
+      .where(eq(quoteVersions.id, id))
+      .limit(1)
+    if (!existing) return null
+    throw new QuoteVersionConflictError("Quote Versions can only be deleted while draft")
   },
 
   async applyTripSnapshotToQuoteVersion(
@@ -473,6 +499,17 @@ export const quoteVersionsService = {
     quoteVersionId: string,
     data: CreateQuoteVersionLineInput,
   ) {
+    const [quoteVersion] = await db
+      .select({ status: quoteVersions.status })
+      .from(quoteVersions)
+      .where(eq(quoteVersions.id, quoteVersionId))
+      .limit(1)
+
+    if (!quoteVersion) return null
+    if (quoteVersion.status !== "draft") {
+      throw new QuoteVersionConflictError("Quote Version lines can only be edited while draft")
+    }
+
     const [row] = await db
       .insert(quoteVersionLines)
       .values({ ...data, quoteVersionId })
@@ -485,6 +522,20 @@ export const quoteVersionsService = {
     id: string,
     data: UpdateQuoteVersionLineInput,
   ) {
+    const [existing] = await db
+      .select({
+        status: quoteVersions.status,
+      })
+      .from(quoteVersionLines)
+      .innerJoin(quoteVersions, eq(quoteVersionLines.quoteVersionId, quoteVersions.id))
+      .where(eq(quoteVersionLines.id, id))
+      .limit(1)
+
+    if (!existing) return null
+    if (existing.status !== "draft") {
+      throw new QuoteVersionConflictError("Quote Version lines can only be edited while draft")
+    }
+
     const [row] = await db
       .update(quoteVersionLines)
       .set({ ...data, updatedAt: new Date() })
@@ -494,6 +545,20 @@ export const quoteVersionsService = {
   },
 
   async deleteQuoteVersionLine(db: PostgresJsDatabase, id: string) {
+    const [existing] = await db
+      .select({
+        status: quoteVersions.status,
+      })
+      .from(quoteVersionLines)
+      .innerJoin(quoteVersions, eq(quoteVersionLines.quoteVersionId, quoteVersions.id))
+      .where(eq(quoteVersionLines.id, id))
+      .limit(1)
+
+    if (!existing) return null
+    if (existing.status !== "draft") {
+      throw new QuoteVersionConflictError("Quote Version lines can only be edited while draft")
+    }
+
     const [row] = await db
       .delete(quoteVersionLines)
       .where(eq(quoteVersionLines.id, id))

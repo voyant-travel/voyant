@@ -8,6 +8,7 @@ export interface QuoteVersionLinesCardProps {
   currency: string
   lines: QuoteVersionLineRecord[]
   isLoading: boolean
+  editable?: boolean
   onCreate: (input: {
     description: string
     currency: string
@@ -31,6 +32,7 @@ export function QuoteVersionLinesCard({
   currency,
   lines,
   isLoading,
+  editable = true,
   onCreate,
   onUpdate,
   onRemove,
@@ -89,6 +91,7 @@ export function QuoteVersionLinesCard({
               <QuoteVersionLineRow
                 key={line.id}
                 line={line}
+                editable={editable}
                 onUpdate={(input) => onUpdate(line.id, input)}
                 onRemove={() => onRemove(line.id)}
               />
@@ -96,45 +99,47 @@ export function QuoteVersionLinesCard({
           </ul>
         )}
 
-        <div className="mt-3 flex flex-col gap-2 border-t pt-3">
-          <div className="grid grid-cols-12 gap-2">
-            <Input
-              className="col-span-6 h-8 text-sm"
-              value={newDescription}
-              onChange={(e) => setNewDescription(e.target.value)}
-              placeholder="Description"
-            />
-            <Input
-              className="col-span-2 h-8 text-sm"
-              type="number"
-              min={1}
-              value={newQuantity}
-              onChange={(e) => setNewQuantity(e.target.value)}
-              placeholder="Qty"
-            />
-            <Input
-              className="col-span-3 h-8 text-sm"
-              type="number"
-              min={0}
-              value={newPrice}
-              onChange={(e) => setNewPrice(e.target.value)}
-              placeholder="Price (cents)"
-            />
-            <Button
-              size="sm"
-              className="col-span-1 h-8"
-              onClick={() => void handleAdd()}
-              disabled={adding}
-            >
-              {adding ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <Plus className="size-3.5" />
-              )}
-            </Button>
+        {editable ? (
+          <div className="mt-3 flex flex-col gap-2 border-t pt-3">
+            <div className="grid grid-cols-12 gap-2">
+              <Input
+                className="col-span-6 h-8 text-sm"
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+                placeholder="Description"
+              />
+              <Input
+                className="col-span-2 h-8 text-sm"
+                type="number"
+                min={1}
+                value={newQuantity}
+                onChange={(e) => setNewQuantity(e.target.value)}
+                placeholder="Qty"
+              />
+              <Input
+                className="col-span-3 h-8 text-sm"
+                type="number"
+                min={0}
+                value={newPrice}
+                onChange={(e) => setNewPrice(e.target.value)}
+                placeholder="Price (cents)"
+              />
+              <Button
+                size="sm"
+                className="col-span-1 h-8"
+                onClick={() => void handleAdd()}
+                disabled={adding}
+              >
+                {adding ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Plus className="size-3.5" />
+                )}
+              </Button>
+            </div>
+            {error ? <p className="text-xs text-destructive">{error}</p> : null}
           </div>
-          {error ? <p className="text-xs text-destructive">{error}</p> : null}
-        </div>
+        ) : null}
 
         <div className="mt-3 flex items-center justify-between border-t pt-3 text-sm">
           <span className="text-muted-foreground">Subtotal</span>
@@ -147,10 +152,12 @@ export function QuoteVersionLinesCard({
 
 function QuoteVersionLineRow({
   line,
+  editable,
   onUpdate,
   onRemove,
 }: {
   line: QuoteVersionLineRecord
+  editable: boolean
   onUpdate: (input: {
     description?: string
     quantity?: number
@@ -194,6 +201,7 @@ function QuoteVersionLineRow({
         <Input
           className="col-span-6 h-8 text-sm"
           defaultValue={line.description}
+          disabled={!editable}
           onBlur={(e) => {
             const value = e.target.value.trim()
             if (value && value !== line.description) void onUpdate({ description: value })
@@ -204,6 +212,7 @@ function QuoteVersionLineRow({
           type="number"
           min={1}
           defaultValue={line.quantity}
+          disabled={!editable}
           onBlur={(e) => void handleQuantity(e.target.value)}
         />
         <Input
@@ -211,24 +220,27 @@ function QuoteVersionLineRow({
           type="number"
           min={0}
           defaultValue={line.unitPriceAmountCents}
+          disabled={!editable}
           onBlur={(e) => void handlePrice(e.target.value)}
         />
         <span className="col-span-1 text-right text-sm font-medium">
           {formatMoney(line.totalAmountCents, line.currency)}
         </span>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="col-span-1 h-8 w-8 p-0"
-          onClick={() => void handleRemove()}
-          disabled={removing}
-        >
-          {removing ? (
-            <Loader2 className="size-3.5 animate-spin" />
-          ) : (
-            <Trash2 className="size-3.5" />
-          )}
-        </Button>
+        {editable ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="col-span-1 h-8 w-8 p-0"
+            onClick={() => void handleRemove()}
+            disabled={removing}
+          >
+            {removing ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Trash2 className="size-3.5" />
+            )}
+          </Button>
+        ) : null}
       </div>
     </li>
   )

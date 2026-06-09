@@ -53,6 +53,40 @@ describe.skipIf(!DB_AVAILABLE)("Quote Version routes", () => {
     return { pipeline, stage, quote }
   }
 
+  async function seedQuoteVersion() {
+    const { quote } = await seedQuote()
+    const quoteVersionRes = await app.request(`/quotes/${quote.id}/versions`, {
+      method: "POST",
+      ...json({ currency: "USD" }),
+    })
+    const { data: quoteVersion } = await quoteVersionRes.json()
+    return { quote, quoteVersion }
+  }
+
+  async function applySnapshot(quoteVersionId: string, overrides: Record<string, unknown> = {}) {
+    return app.request(`/quote-versions/${quoteVersionId}/trip-snapshot`, {
+      method: "POST",
+      ...json({
+        tripSnapshotId: `trsn_${Date.now()}`,
+        currency: "EUR",
+        subtotalAmountCents: 10000,
+        taxAmountCents: 900,
+        totalAmountCents: 10900,
+        lines: [
+          {
+            componentId: "trcp_123",
+            description: "Airport transfer",
+            quantity: 1,
+            unitPriceAmountCents: 10000,
+            totalAmountCents: 10900,
+            currency: "EUR",
+          },
+        ],
+        ...overrides,
+      }),
+    })
+  }
+
   describe("Quote Versions CRUD", () => {
     it("creates a quote version", async () => {
       const { quote } = await seedQuote()
@@ -113,13 +147,44 @@ describe.skipIf(!DB_AVAILABLE)("Quote Version routes", () => {
 
       const res = await app.request(`/quote-versions/${quoteVersion.id}`, {
         method: "PATCH",
-        ...json({ status: "sent", totalAmountCents: 50000 }),
+        ...json({ totalAmountCents: 50000 }),
       })
 
       expect(res.status).toBe(200)
       const body = await res.json()
-      expect(body.data.status).toBe("sent")
+      expect(body.data.status).toBe("draft")
       expect(body.data.totalAmountCents).toBe(50000)
+    })
+
+    it("rejects generic quote version status updates", async () => {
+      const { quote } = await seedQuote()
+      const createRes = await app.request(`/quotes/${quote.id}/versions`, {
+        method: "POST",
+        ...json({ currency: "USD" }),
+      })
+      const { data: quoteVersion } = await createRes.json()
+
+      const res = await app.request(`/quote-versions/${quoteVersion.id}`, {
+        method: "PATCH",
+        ...json({ status: "sent" }),
+      })
+
+      expect(res.status).toBe(409)
+      const body = await res.json()
+      expect(body.error).toContain("lifecycle")
+    })
+
+    it("rejects creating non-draft quote versions through the CRUD route", async () => {
+      const { quote } = await seedQuote()
+
+      const res = await app.request(`/quotes/${quote.id}/versions`, {
+        method: "POST",
+        ...json({ currency: "USD", status: "accepted" }),
+      })
+
+      expect(res.status).toBe(409)
+      const body = await res.json()
+      expect(body.error).toContain("draft")
     })
 
     it("deletes a quote version", async () => {
@@ -137,6 +202,26 @@ describe.skipIf(!DB_AVAILABLE)("Quote Version routes", () => {
       expect(body.success).toBe(true)
     })
 
+    it("rejects deleting non-draft quote versions", async () => {
+      const { quote } = await seedQuote()
+      const createRes = await app.request(`/quotes/${quote.id}/versions`, {
+        method: "POST",
+        ...json({ currency: "USD" }),
+      })
+      const { data: quoteVersion } = await createRes.json()
+      await applySnapshot(quoteVersion.id)
+      await app.request(`/quote-versions/${quoteVersion.id}/send`, {
+        method: "POST",
+        ...json({ validUntil: "2099-01-01" }),
+      })
+
+      const res = await app.request(`/quote-versions/${quoteVersion.id}`, { method: "DELETE" })
+
+      expect(res.status).toBe(409)
+      const body = await res.json()
+      expect(body.error).toContain("draft")
+    })
+
     it("returns 404 for non-existent quote version", async () => {
       const res = await app.request("/quote-versions/crm_qver_00000000000000000000000000", {
         method: "GET",
@@ -146,40 +231,6 @@ describe.skipIf(!DB_AVAILABLE)("Quote Version routes", () => {
   })
 
   describe("Quote Version Lines", () => {
-    async function seedQuoteVersion() {
-      const { quote } = await seedQuote()
-      const quoteVersionRes = await app.request(`/quotes/${quote.id}/versions`, {
-        method: "POST",
-        ...json({ currency: "USD" }),
-      })
-      const { data: quoteVersion } = await quoteVersionRes.json()
-      return { quote, quoteVersion }
-    }
-
-    async function applySnapshot(quoteVersionId: string, overrides: Record<string, unknown> = {}) {
-      return app.request(`/quote-versions/${quoteVersionId}/trip-snapshot`, {
-        method: "POST",
-        ...json({
-          tripSnapshotId: `trsn_${Date.now()}`,
-          currency: "EUR",
-          subtotalAmountCents: 10000,
-          taxAmountCents: 900,
-          totalAmountCents: 10900,
-          lines: [
-            {
-              componentId: "trcp_123",
-              description: "Airport transfer",
-              quantity: 1,
-              unitPriceAmountCents: 10000,
-              totalAmountCents: 10900,
-              currency: "EUR",
-            },
-          ],
-          ...overrides,
-        }),
-      })
-    }
-
     it("applies a trip snapshot read model to a quote version", async () => {
       const { quoteVersion } = await seedQuoteVersion()
 
@@ -214,9 +265,10 @@ describe.skipIf(!DB_AVAILABLE)("Quote Version routes", () => {
 
     it("rejects applying a trip snapshot to a non-draft quote version", async () => {
       const { quoteVersion } = await seedQuoteVersion()
-      await app.request(`/quote-versions/${quoteVersion.id}`, {
-        method: "PATCH",
-        ...json({ status: "sent" }),
+      await applySnapshot(quoteVersion.id)
+      await app.request(`/quote-versions/${quoteVersion.id}/send`, {
+        method: "POST",
+        ...json({ validUntil: "2099-01-01" }),
       })
 
       const res = await app.request(`/quote-versions/${quoteVersion.id}/trip-snapshot`, {
@@ -352,19 +404,18 @@ describe.skipIf(!DB_AVAILABLE)("Quote Version routes", () => {
       const { quote } = await seedQuote()
       const quoteVersionRes = await app.request(`/quotes/${quote.id}/versions`, {
         method: "POST",
-        ...json({
-          currency: "USD",
-          status: "sent",
-          tripSnapshotId: "trsn_expiring",
-          validUntil: "2026-01-01",
-          sentAt: "2026-01-01T10:00:00.000Z",
-        }),
+        ...json({ currency: "USD" }),
       })
       const { data: quoteVersion } = await quoteVersionRes.json()
+      await applySnapshot(quoteVersion.id, { tripSnapshotId: "trsn_expiring" })
+      await app.request(`/quote-versions/${quoteVersion.id}/send`, {
+        method: "POST",
+        ...json({ validUntil: "2099-01-01" }),
+      })
 
       const res = await app.request("/quote-versions/expire", {
         method: "POST",
-        ...json({ now: "2026-06-09T00:00:00.000Z" }),
+        ...json({ now: "2100-01-02T00:00:00.000Z" }),
       })
 
       expect(res.status).toBe(200)
@@ -440,6 +491,38 @@ describe.skipIf(!DB_AVAILABLE)("Quote Version routes", () => {
       expect(res.status).toBe(200)
       const body = await res.json()
       expect(body.success).toBe(true)
+    })
+
+    it("rejects mutating quote version lines after send", async () => {
+      const { quoteVersion } = await seedQuoteVersion()
+      await applySnapshot(quoteVersion.id)
+      await app.request(`/quote-versions/${quoteVersion.id}/send`, {
+        method: "POST",
+        ...json({ validUntil: "2099-01-01" }),
+      })
+
+      const linesRes = await app.request(`/quote-versions/${quoteVersion.id}/lines`, {
+        method: "GET",
+      })
+      const linesBody = await linesRes.json()
+      const line = linesBody.data[0]
+
+      const createRes = await app.request(`/quote-versions/${quoteVersion.id}/lines`, {
+        method: "POST",
+        ...json({ description: "Late add", currency: "USD" }),
+      })
+      expect(createRes.status).toBe(409)
+
+      const updateRes = await app.request(`/quote-version-lines/${line.id}`, {
+        method: "PATCH",
+        ...json({ description: "Late edit" }),
+      })
+      expect(updateRes.status).toBe(409)
+
+      const deleteRes = await app.request(`/quote-version-lines/${line.id}`, {
+        method: "DELETE",
+      })
+      expect(deleteRes.status).toBe(409)
     })
   })
 })

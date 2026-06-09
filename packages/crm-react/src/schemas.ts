@@ -380,6 +380,13 @@ export type QuoteVersionRecord = z.infer<typeof quoteVersionRecordSchema>
 
 export const quoteVersionListResponse = paginatedEnvelope(quoteVersionRecordSchema)
 export const quoteVersionSingleResponse = singleEnvelope(quoteVersionRecordSchema)
+export const acceptQuoteVersionResponse = singleEnvelope(
+  z.object({
+    quote: quoteRecordSchema,
+    quoteVersion: quoteVersionRecordSchema,
+    closedQuoteVersions: z.array(quoteVersionRecordSchema),
+  }),
+)
 
 export const quoteVersionLineRecordSchema = z.object({
   id: z.string(),
