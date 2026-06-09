@@ -1337,7 +1337,26 @@ export const financeRoutes = new Hono<Env>()
       return c.json({ error: "Only proforma invoices can be converted" }, 409)
     }
     if (result.status === "already_converted") {
-      return c.json({ error: "This proforma has already been converted" }, 409)
+      return c.json(
+        {
+          error: "This proforma has already been converted",
+          code: "proforma_already_converted",
+          existingInvoiceId: result.invoice?.id ?? null,
+          existingInvoiceNumber: result.invoice?.invoiceNumber ?? null,
+        },
+        409,
+      )
+    }
+    if (result.status === "duplicate_fiscal_invoice") {
+      return c.json(
+        {
+          error: "A fiscal invoice already exists for this booking amount",
+          code: "duplicate_fiscal_invoice",
+          existingInvoiceId: result.invoice.id,
+          existingInvoiceNumber: result.invoice.invoiceNumber,
+        },
+        409,
+      )
     }
 
     return c.json({ data: result.invoice }, 201)
