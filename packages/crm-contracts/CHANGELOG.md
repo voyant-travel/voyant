@@ -1,5 +1,20 @@
 # @voyantjs/crm-contracts
 
+## 0.106.0
+
+### Minor Changes
+
+- d1ad572: Rename CRM sales artifacts from Opportunities to Quotes, split Quote Versions into their own schema/API surface, and update the corresponding TypeID prefixes.
+- d1ad572: Add Quote Version send, view, decline, and expiry lifecycle APIs with a public proposal read model.
+- d1ad572: Add Quote Version accept lifecycle contracts and CRM state transition for accepted proposal versions.
+- d1ad572: Add composer-owned Trip snapshot freezing and read APIs for Quote Version proposal snapshots.
+
+### Patch Changes
+
+- Updated dependencies [d1ad572]
+- Updated dependencies [d1ad572]
+  - @voyantjs/schema-kit@0.105.0
+
 ## 0.105.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # @voyantjs/finance-contracts
 
+## 0.104.4
+
+### Patch Changes
+
+- Updated dependencies [d1ad572]
+- Updated dependencies [d1ad572]
+  - @voyantjs/schema-kit@0.105.0
+
 ## 0.104.3
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @voyantjs/suppliers-contracts
 
+## 0.104.2
+
+### Patch Changes
+
+- Updated dependencies [d1ad572]
+- Updated dependencies [d1ad572]
+  - @voyantjs/schema-kit@0.105.0
+
 ## 0.104.1
 
 ### Patch Changes

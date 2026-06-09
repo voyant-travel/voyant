@@ -1,5 +1,11 @@
 # @voyantjs/admin-client
 
+## 0.105.0
+
+### Patch Changes
+
+- @voyantjs/admin-contracts@0.104.4
+
 ## 0.104.2
 
 ## 0.104.1

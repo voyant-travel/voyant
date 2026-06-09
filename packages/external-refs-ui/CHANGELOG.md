@@ -1,5 +1,18 @@
 # @voyantjs/external-refs-ui
 
+## 0.107.0
+
+### Patch Changes
+
+- Updated dependencies [d1ad572]
+  - @voyantjs/crm-ui@0.107.0
+  - @voyantjs/i18n@0.105.0
+  - @voyantjs/ui@0.105.0
+  - @voyantjs/bookings-ui@0.107.0
+  - @voyantjs/products-ui@0.107.0
+  - @voyantjs/suppliers-ui@0.105.0
+  - @voyantjs/external-refs-react@0.107.0
+
 ## 0.106.0
 
 ### Patch Changes

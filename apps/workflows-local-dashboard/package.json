@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/workflows-local-dashboard",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Local dev dashboard served by `voyant workflows serve` / `voyant dev`. Embeds @voyantjs/workflows-ui against the local run store API.",
   "license": "Apache-2.0",
   "private": true,
