@@ -411,7 +411,7 @@ The HTTP route accepts a `draftId` instead of (or alongside) a `quoteId`. When `
 3. Capture the snapshot graph.
 4. Mark the draft `consumed_booking_id`.
 
-Drafts older than `expires_at` are reaped by the operator template's hourly scheduled job (`templates/operator/src/api/draft-reaper-scheduled.ts`); their owned holds are released first. Orphaned drafts (where the hold expired but the draft didn't) remain a recovery-surface opportunity rather than a shipped operator view.
+Drafts older than `expires_at` are reaped by the operator template's hourly scheduled job (`templates/operator/src/api/draft-reaper-scheduled.ts`); their owned holds are released first. Orphaned drafts (where the hold expired but the draft didn't) remain a recovery-surface gap rather than a shipped operator view.
 
 This split — **`catalog_quotes` for the live-pricing snapshot, `booking_drafts` for the session-bound hold** — is implemented. Quotes are short-lived and engine-internal; drafts are user-facing and resumable.
 
@@ -786,7 +786,7 @@ section as the current execution map.
 - Move reusable parts of `POST /v1/public/catalog/checkout/start` out of the
   operator template into framework-owned checkout/catalog services.
 - Keep deployment-specific payment provider configuration, contract template
-  choice, CRM opportunity creation, and bank-transfer details in templates.
+  choice, CRM Quote creation, and bank-transfer details in templates.
 - Expose a callable service the future composer can use without importing
   template code.
 

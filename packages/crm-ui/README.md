@@ -1,6 +1,6 @@
 # @voyantjs/crm-ui
 
-Importable React UI components for Voyant CRM — person/organization cards, dialogs, lists, forms, and activity/opportunity dialogs. Bundler-consumed (Vite, Next.js, webpack, etc.).
+Importable React UI components for Voyant CRM — person/organization cards, dialogs, lists, forms, and activity/quote dialogs. Bundler-consumed (Vite, Next.js, webpack, etc.).
 
 ## Install
 
@@ -78,10 +78,10 @@ read-only default.
 />
 ```
 
-`PersonDetailPage` supports `overviewContent`, `opportunitiesContent`,
+`PersonDetailPage` supports `overviewContent`, `quotesContent`,
 `activitiesContent`, `relationshipsContent`, and `documentsContent`.
 `OrganizationDetailPage` supports `overviewContent`, `peopleContent`,
-`opportunitiesContent`, and `activitiesContent`.
+`quotesContent`, and `activitiesContent`.
 
 ## I18n
 
@@ -103,6 +103,6 @@ English-only apps should import only `./i18n/en`. Bilingual apps can import
 - `PersonDetailPage`, `PersonTopBar`, `PersonSidebar`, `PersonMain`
 - `OrganizationCard`, `OrganizationDialog`, `OrganizationForm`, `OrganizationList`
 - `OrganizationDetailPage`, `OrganizationTopBar`, `OrganizationSidebar`, `OrganizationMain`
-- `ActivitiesPage`, `CreateActivityDialog`, `CreateOpportunityDialog`
-- `OpportunitiesBoard`, `OpportunitySummaryCard`
-- `QuotesPage`, `CreateQuoteDialog`, `QuoteLinesCard`
+- `ActivitiesPage`, `CreateActivityDialog`, `CreateQuoteDialog`
+- `QuotesBoard`, `QuoteSummaryCard`
+- `QuoteVersionsPage`, `CreateQuoteVersionDialog`, `QuoteVersionLinesCard`
