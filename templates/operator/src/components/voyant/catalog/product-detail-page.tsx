@@ -59,6 +59,7 @@ interface Offer {
   nights: number | null
   board: string | null
   roomTypeId: string | null
+  ratePlanId: string | null
   perPerson: { amountMinor: number; currency: string } | null
   total: { amountMinor: number; currency: string } | null
   flights: Array<{
@@ -300,6 +301,9 @@ export function ProductDetailPage({
         ...(state.source?.connectionId ? { sourceConnectionId: state.source.connectionId } : {}),
         ...(state.source?.ref ? { sourceRef: state.source.ref } : {}),
         ...(offer.checkIn ? { departureDate: offer.checkIn.slice(0, 10) } : {}),
+        ...(offer.roomTypeId ? { roomTypeId: offer.roomTypeId } : {}),
+        ...(offer.ratePlanId ? { ratePlanId: offer.ratePlanId } : {}),
+        ...(offer.board ? { board: offer.board } : {}),
         ...(product?.name ? { entityName: product.name } : {}),
         ...(product?.media.find((media) => media.src)?.src
           ? { entityImageUrl: product.media.find((media) => media.src)?.src }

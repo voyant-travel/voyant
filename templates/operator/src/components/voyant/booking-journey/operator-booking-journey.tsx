@@ -40,6 +40,9 @@ export interface OperatorBookingJourneyProps {
   departureId?: string
   departureDate?: string
   optionId?: string
+  roomTypeId?: string
+  ratePlanId?: string
+  board?: string
   entityName?: string
   entityImageUrl?: string
   draftId: string
@@ -55,6 +58,9 @@ export function OperatorBookingJourney({
   departureId,
   departureDate,
   optionId,
+  roomTypeId,
+  ratePlanId,
+  board,
   entityName,
   entityImageUrl,
   draftId,
@@ -103,6 +109,9 @@ export function OperatorBookingJourney({
         ...(departureId ? { departureSlotId: departureId } : {}),
         ...(departureDate ? { departureDate } : {}),
         ...(optionId ? { variantId: optionId } : {}),
+        ...(roomTypeId ? { roomTypeId } : {}),
+        ...(ratePlanId ? { ratePlanId } : {}),
+        ...(board ? { board } : {}),
       }}
       defaultBuyerType="B2B"
       paymentCapabilities={{

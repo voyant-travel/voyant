@@ -8,6 +8,12 @@ export interface SourceAdapterRequestScope {
 export interface ReserveRequest {
   entity_module: string
   entity_id: string
+  /**
+   * Vertical-specific selection. Free-form, but adapters recognize well-known
+   * keys such as departure/date/pax fields and, for sourced stays/packages,
+   * `roomTypeId` / `ratePlanId` / `board` to re-resolve the exact room + rate
+   * the operator picked. The per-search offer id is not replay-safe.
+   */
   parameters: Record<string, unknown>
   /** Customer / passenger identity, vertical-shaped. */
   party?: Record<string, unknown>
