@@ -212,6 +212,46 @@ describe("Typesense catalog indexer", () => {
     expect(query.sort_by).toBeUndefined()
   })
 
+  it("patches default search metadata onto existing collections without field diffs", async () => {
+    const updatePayloads: Partial<ReturnType<typeof buildCollectionSchema>>[] = []
+    const existingSchema = buildCollectionSchema(slice, registry)
+    const client: TypesenseClient = {
+      collections: () => ({
+        create: async () => {
+          throw new Error("already exists")
+        },
+        update: async (schema) => {
+          updatePayloads.push(schema)
+        },
+        delete: async () => undefined,
+        retrieve: async () => ({
+          name: existingSchema.name,
+          fields: existingSchema.fields,
+          enable_nested_fields: true,
+        }),
+        documents: () => ({
+          import: async () => ({}),
+          delete: async () => undefined,
+          search: async () => ({ hits: [], found: 0 }),
+        }),
+      }),
+    }
+    const indexer = createTypesenseIndexer({ client })
+
+    await indexer.ensureCollection(slice, registry)
+
+    expect(updatePayloads).toEqual([
+      {
+        metadata: {
+          voyant: {
+            defaultQueryBy: "name,categorySlugs",
+            defaultSearchFields: ["name", "categorySlugs"],
+          },
+        },
+      },
+    ])
+  })
+
   it("upserts storefront card values without stringifying typed fields", async () => {
     const imported: unknown[][] = []
     const client: TypesenseClient = {

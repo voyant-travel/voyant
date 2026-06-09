@@ -334,8 +334,13 @@ export function createTypesenseIndexer(options: TypesenseIndexerOptions): Indexe
           updates.push(desired)
         }
       }
-      if (updates.length === 0) return
-      await client.collections(schema.name).update({ fields: updates as TypesenseFieldSchema[] })
+      const updatePayload: Partial<TypesenseCollectionSchema> = {
+        metadata: schema.metadata,
+      }
+      if (updates.length > 0) {
+        updatePayload.fields = updates as TypesenseFieldSchema[]
+      }
+      await client.collections(schema.name).update(updatePayload)
     },
 
     async upsert(slice, documents) {
