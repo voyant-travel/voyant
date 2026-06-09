@@ -1,5 +1,11 @@
 # @voyantjs/catalog
 
+## 0.104.6
+
+### Patch Changes
+
+- 372295b: Expose policy-derived default Typesense `query_by` helpers and collection metadata so hosted search can apply curated searchable fields when callers omit `query_by`.
+
 ## 0.104.5
 
 ## 0.104.4
