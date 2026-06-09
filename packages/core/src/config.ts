@@ -63,6 +63,13 @@ export type ModuleEntry =
     }
 
 /**
+ * An extension declaration. Schema tooling consumes the `resolve` identifier;
+ * runtime derivation from this manifest is a later phase because extensions may
+ * still need template-owned factory options.
+ */
+export type ExtensionEntry = ModuleEntry
+
+/**
  * A plugin declaration — mirrors {@link ModuleEntry} but references
  * distributable plugin bundles (see `@voyantjs/core/plugin`).
  */
@@ -90,6 +97,10 @@ export interface VoyantConfig {
   admin?: AdminConfig
   /** Modules composed into the application. */
   modules?: ModuleEntry[]
+  /** Extensions composed into existing modules. */
+  extensions?: ExtensionEntry[]
+  /** Template/app-local Drizzle schema entrypoints appended after package schemas. */
+  schemas?: string[]
   /** Plugins registered alongside core modules. */
   plugins?: PluginEntry[]
   /** Feature flags for gradual rollout. */
@@ -188,6 +199,56 @@ export function validateVoyantConfig(config: unknown): ConfigValidationResult {
           })
         }
         seen.add(name)
+      })
+    }
+  }
+
+  if (cfg.extensions !== undefined) {
+    if (!Array.isArray(cfg.extensions)) {
+      issues.push({ path: "extensions", message: "Expected an array." })
+    } else {
+      const seen = new Set<string>()
+      cfg.extensions.forEach((entry, index) => {
+        const name = extractEntryName(entry)
+        if (!name) {
+          issues.push({
+            path: `extensions[${index}]`,
+            message:
+              "Extension entry must be a non-empty string or an object with a `resolve` string.",
+          })
+          return
+        }
+        if (seen.has(name)) {
+          issues.push({
+            path: `extensions[${index}]`,
+            message: `Duplicate extension "${name}".`,
+          })
+        }
+        seen.add(name)
+      })
+    }
+  }
+
+  if (cfg.schemas !== undefined) {
+    if (!Array.isArray(cfg.schemas)) {
+      issues.push({ path: "schemas", message: "Expected an array." })
+    } else {
+      const seen = new Set<string>()
+      cfg.schemas.forEach((entry, index) => {
+        if (typeof entry !== "string" || entry.trim().length === 0) {
+          issues.push({
+            path: `schemas[${index}]`,
+            message: "Schema entry must be a non-empty string.",
+          })
+          return
+        }
+        if (seen.has(entry)) {
+          issues.push({
+            path: `schemas[${index}]`,
+            message: `Duplicate schema "${entry}".`,
+          })
+        }
+        seen.add(entry)
       })
     }
   }

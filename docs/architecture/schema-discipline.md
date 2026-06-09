@@ -29,8 +29,48 @@ Links keep the wiring explicit at the template (deployment) layer:
   `personLinkable`, `productLinkable`).
 - The template declares `defineLink(personLinkable, productLinkable)` in
   `templates/<name>/src/links/`.
-- `voyant db sync-links` materialises a pivot table whose lifecycle is
-  owned by the template, not either feature module.
+- `voyant db schemas --emit` generates `drizzle.links.generated.ts` from
+  those definitions and includes it from `drizzle.schemas.generated.ts`.
+  `voyant db sync-links` remains a transitional escape hatch until each
+  template's Drizzle snapshots include the generated link tables.
+
+## Migration schema manifests
+
+Deployment roots that compose modules (`templates/*`, `apps/*`) derive their
+Drizzle schema list from `voyant.config.ts`. Do not hand-maintain package schema
+paths in `drizzle.config.ts`; import `schema` from
+`./drizzle.schemas.generated.ts` and refresh that file with
+`voyant db schemas --emit` or `voyant db generate`.
+
+Package-owned tables are declared in that package's `package.json#voyant.schema`
+and `requiresSchemas`. Deployment-owned tables that do not belong to a package
+go in `voyant.config.ts` as `schemas: ["./src/db/schema.ts"]`; they are appended
+after the package-derived schema closure.
+
+Extensions that are mounted at runtime also belong in `voyant.config.ts` under
+`extensions`. For schema generation, an extension subpath such as
+`@voyantjs/products/booking-extension` seeds the owning package's schema closure
+(`@voyantjs/products/schema`). Runtime derivation from `extensions` is a later
+phase; for now this is a migration-safety signal.
+
+Link tables are not listed manually in `voyant.config.ts`. They are derived from
+the template's `src/links` definitions and emitted to
+`drizzle.links.generated.ts`.
+
+## Migration generation and ordering
+
+For composed deployment roots, generate migrations through `voyant db generate`
+rather than invoking `drizzle-kit generate` directly. The CLI refreshes
+`drizzle.links.generated.ts` and `drizzle.schemas.generated.ts` before Drizzle
+diffs the schema, and it defaults `generate` to `--prefix timestamp` unless the
+caller supplies an explicit `--prefix`.
+
+Raw `drizzle-kit generate` is only acceptable for package-owned standalone
+schema work or when the caller also refreshes the generated manifests and passes
+`--prefix timestamp`. `voyant db doctor` continues to report duplicate migration
+prefixes. Historical collisions that cannot be safely renamed are recorded in
+`migrations/duplicate-prefixes.baseline.json`; new duplicate prefixes must not be
+added to that baseline.
 
 ### When you're adding a column
 

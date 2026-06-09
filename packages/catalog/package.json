@@ -199,5 +199,11 @@
     "type": "git",
     "url": "https://github.com/voyantjs/voyant.git",
     "directory": "packages/catalog"
+  },
+  "voyant": {
+    "schema": "./schema",
+    "requiresSchemas": [
+      "@voyantjs/db"
+    ]
   }
 }

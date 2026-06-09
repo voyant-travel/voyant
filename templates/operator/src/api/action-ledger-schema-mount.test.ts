@@ -6,8 +6,11 @@ import { describe, expect, it } from "vitest"
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..")
 
 describe("operator action ledger schema mounting", () => {
-  it("keeps the action ledger schema mounted in drizzle config", () => {
-    const config = readFileSync(resolve(repoRoot, "templates/operator/drizzle.config.ts"), "utf8")
+  it("keeps the action ledger schema mounted in the generated schema manifest", () => {
+    const config = readFileSync(
+      resolve(repoRoot, "templates/operator/drizzle.schemas.generated.ts"),
+      "utf8",
+    )
 
     expect(config).toContain("../../packages/action-ledger/src/schema.ts")
   })

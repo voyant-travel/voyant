@@ -84,5 +84,11 @@
     "type": "git",
     "url": "https://github.com/voyantjs/voyant.git",
     "directory": "packages/travel-composer"
+  },
+  "voyant": {
+    "schema": "./schema",
+    "requiresSchemas": [
+      "@voyantjs/db"
+    ]
   }
 }

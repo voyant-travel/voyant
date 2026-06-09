@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "duplicates": [
+    {
+      "prefix": "0011",
+      "files": [
+        "0011_allocation_resource_templates.sql",
+        "0011_storefront_verification_challenges.sql"
+      ],
+      "reason": "Legacy concurrent migrations; keep applied migration names immutable."
+    },
+    {
+      "prefix": "0017",
+      "files": [
+        "0017_action_ledger.sql",
+        "0017_cloud_auth_links.sql"
+      ],
+      "reason": "Legacy concurrent migrations; keep applied migration names immutable."
+    },
+    {
+      "prefix": "0046",
+      "files": [
+        "0046_cruise_price_fare_variants.sql",
+        "0046_organization_tax_id.sql"
+      ],
+      "reason": "Legacy concurrent migrations; keep applied migration names immutable."
+    }
+  ]
+}

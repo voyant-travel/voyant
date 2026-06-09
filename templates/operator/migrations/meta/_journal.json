@@ -421,6 +421,13 @@
 			"when": 1781006188988,
 			"tag": "0060_trip_snapshots",
 			"breakpoints": true
+		},
+		{
+			"idx": 59,
+			"version": "7",
+			"when": 1781030487258,
+			"tag": "202606092141_link_tables",
+			"breakpoints": true
 		}
 	]
 }

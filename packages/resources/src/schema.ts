@@ -193,10 +193,6 @@ export type NewResourceSlotAssignment = typeof resourceSlotAssignments.$inferIns
 export type ResourceCloseout = typeof resourceCloseouts.$inferSelect
 export type NewResourceCloseout = typeof resourceCloseouts.$inferInsert
 
-export const resourceAllocations = resourceRequirements
-export type ResourceAllocation = ResourceRequirement
-export type NewResourceAllocation = NewResourceRequirement
-
 export const resourcesRelations = relations(resources, ({ many }) => ({
   poolMembers: many(resourcePoolMembers),
   slotAssignments: many(resourceSlotAssignments),
@@ -227,8 +223,6 @@ export const resourceRequirementsRelations = relations(resourceRequirements, ({ 
     references: [resourcePools.id],
   }),
 }))
-
-export const resourceAllocationsRelations = resourceRequirementsRelations
 
 export const resourceSlotAssignmentsRelations = relations(resourceSlotAssignments, ({ one }) => ({
   pool: one(resourcePools, {

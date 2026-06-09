@@ -17,25 +17,25 @@ export const resourcesHonoModule: HonoModule = {
 
 export type {
   NewResource,
-  NewResourceAllocation,
   NewResourceCloseout,
   NewResourcePool,
   NewResourcePoolMember,
   NewResourceRequirement,
+  NewResourceRequirement as NewResourceAllocation,
   NewResourceSlotAssignment,
   Resource,
-  ResourceAllocation,
   ResourceCloseout,
   ResourcePool,
   ResourcePoolMember,
   ResourceRequirement,
+  ResourceRequirement as ResourceAllocation,
   ResourceSlotAssignment,
 } from "./schema.js"
 export {
-  resourceAllocations,
   resourceCloseouts,
   resourcePoolMembers,
   resourcePools,
+  resourceRequirements as resourceAllocations,
   resourceRequirements,
   resourceSlotAssignments,
   resources,

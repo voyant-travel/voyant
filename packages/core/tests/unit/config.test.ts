@@ -66,6 +66,8 @@ describe("validateVoyantConfig", () => {
       },
       admin: { enabled: true, path: "/app", backendUrl: "https://api.example.com" },
       modules: ["crm", { resolve: "custom", options: {} }],
+      extensions: ["@voyantjs/products/booking-extension", { resolve: "custom-extension" }],
+      schemas: ["./src/db/schema.ts"],
       plugins: ["payload-cms", { resolve: "bokun" }],
       featureFlags: { links_enabled: true, query_graph: false },
       deployment: "cloudflare-worker",
@@ -91,6 +93,44 @@ describe("validateVoyantConfig", () => {
     const result = validateVoyantConfig({ plugins: {} })
     expect(result.ok).toBe(false)
     expect(result.issues).toContainEqual({ path: "plugins", message: "Expected an array." })
+  })
+
+  it("rejects invalid extension entries", () => {
+    const result = validateVoyantConfig({
+      extensions: ["@voyantjs/products/booking-extension", "", { options: {} }],
+    })
+    expect(result.ok).toBe(false)
+    expect(result.issues.some((i) => i.path === "extensions[1]")).toBe(true)
+    expect(result.issues.some((i) => i.path === "extensions[2]")).toBe(true)
+  })
+
+  it("rejects duplicate extension names", () => {
+    const result = validateVoyantConfig({
+      extensions: [
+        "@voyantjs/products/booking-extension",
+        { resolve: "@voyantjs/products/booking-extension" },
+      ],
+    })
+    expect(result.ok).toBe(false)
+    expect(result.issues).toContainEqual({
+      path: "extensions[1]",
+      message: 'Duplicate extension "@voyantjs/products/booking-extension".',
+    })
+  })
+
+  it("rejects invalid schema entries", () => {
+    const result = validateVoyantConfig({
+      schemas: ["./src/db/schema.ts", "", "./src/db/schema.ts"],
+    })
+    expect(result.ok).toBe(false)
+    expect(result.issues).toContainEqual({
+      path: "schemas[1]",
+      message: "Schema entry must be a non-empty string.",
+    })
+    expect(result.issues).toContainEqual({
+      path: "schemas[2]",
+      message: 'Duplicate schema "./src/db/schema.ts".',
+    })
   })
 
   it("rejects empty-string module entries", () => {
