@@ -2,10 +2,10 @@ import { useNavigate } from "@tanstack/react-router"
 import {
   type UpdateOrganizationInput,
   useActivities,
-  useOpportunities,
   useOrganization,
   useOrganizationMutation,
   usePeople,
+  useQuotes,
 } from "@voyantjs/crm-react"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
@@ -22,9 +22,9 @@ import {
 export function OrganizationDetailPage({ id }: { id: string }) {
   const navigate = useNavigate()
   const m = useRegistryCrmMessagesOrDefault()
-  const [activeTab, setActiveTab] = useState<
-    "overview" | "people" | "opportunities" | "activities"
-  >("overview")
+  const [activeTab, setActiveTab] = useState<"overview" | "people" | "quotes" | "activities">(
+    "overview",
+  )
   const orgQuery = useOrganization(id)
   const { remove, update } = useOrganizationMutation()
 
@@ -34,7 +34,7 @@ export function OrganizationDetailPage({ id }: { id: string }) {
 
   const org = orgQuery.data
   const peopleQuery = usePeople({ organizationId: id, limit: 50, enabled: Boolean(org) })
-  const opportunitiesQuery = useOpportunities({
+  const quotesQuery = useQuotes({
     organizationId: id,
     limit: 50,
     enabled: Boolean(org),
@@ -66,12 +66,12 @@ export function OrganizationDetailPage({ id }: { id: string }) {
   }
 
   const people = peopleQuery.data?.data ?? []
-  const opportunities = opportunitiesQuery.data?.data ?? []
+  const quotes = quotesQuery.data?.data ?? []
   const activities = activitiesQuery.data?.data ?? []
-  const totalOpenValue = opportunities
-    .filter((opportunity) => opportunity.status === "open")
-    .reduce((sum, opportunity) => sum + (opportunity.valueAmountCents ?? 0), 0)
-  const primaryCurrency = opportunities[0]?.valueCurrency ?? org.defaultCurrency ?? null
+  const totalOpenValue = quotes
+    .filter((quote) => quote.status === "open")
+    .reduce((sum, quote) => sum + (quote.valueAmountCents ?? 0), 0)
+  const primaryCurrency = quotes[0]?.valueCurrency ?? org.defaultCurrency ?? null
   const websiteHref = org.website
     ? org.website.startsWith("http")
       ? org.website
@@ -97,10 +97,10 @@ export function OrganizationDetailPage({ id }: { id: string }) {
           setActiveTab={setActiveTab}
           org={org}
           people={people}
-          opportunities={opportunities}
+          quotes={quotes}
           activities={activities}
           peoplePending={peopleQuery.isPending}
-          opportunitiesPending={opportunitiesQuery.isPending}
+          quotesPending={quotesQuery.isPending}
           activitiesPending={activitiesQuery.isPending}
           totalOpenValue={totalOpenValue}
           primaryCurrency={primaryCurrency}

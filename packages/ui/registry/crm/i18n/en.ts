@@ -6,50 +6,36 @@ export const registryCrmEn = {
   ...crmUiEn,
   common: {
     ...crmUiEn.common,
-    opportunityStatusLabels: {
-      open: "Open",
-      won: "Won",
-      lost: "Lost",
-      archived: "Archived",
-    },
-    quoteStatusLabels: {
-      draft: "Draft",
-      sent: "Sent",
-      accepted: "Accepted",
-      expired: "Expired",
-      rejected: "Rejected",
-      archived: "Archived",
-    },
   },
-  createQuoteDialog: {
-    title: "New quote",
+  createQuoteVersionDialog: {
+    title: "New quote version",
     fields: {
-      opportunity: "Opportunity",
+      quote: "Quote",
       currency: "Currency",
       validUntil: "Valid until",
     },
     placeholders: {
-      searchOpportunities: "Search opportunities...",
+      searchQuotes: "Search quotes...",
       pickDate: "Pick a date",
     },
     empty: {
       loading: "Loading...",
-      noOpportunities: "No opportunities found.",
+      noQuotes: "No quotes found.",
       noCurrencies: "No currency found.",
     },
     validation: {
-      selectOpportunity: "Please select an opportunity",
+      selectQuote: "Please select a quote",
       selectCurrency: "Please select a currency",
-      createFailed: "Failed to create quote",
+      createFailed: "Failed to create quote version",
     },
     actions: {
       create: "Create",
     },
   },
-  opportunitiesBoard: {
+  quotesBoard: {
     fallbackName: "Unnamed stage",
   },
-  opportunitySummaryCard: {
+  quoteSummaryCard: {
     unknown: "Unknown",
     expectedClose: "Expected close",
   },
@@ -83,14 +69,14 @@ export const registryCrmEn = {
     },
     metrics: {
       people: "People",
-      openOpportunities: "Open opportunities",
+      openQuotes: "Open quotes",
       pipelineValue: "Pipeline value",
       won: "Won",
     },
     tabs: {
       overview: "Overview",
       people: "People",
-      opportunities: "Opportunities",
+      quotes: "Quotes",
       activities: "Activities",
     },
     sections: {
@@ -101,13 +87,13 @@ export const registryCrmEn = {
     empty: {
       noPeople: "No people linked to this organization.",
       unnamed: "Unnamed",
-      noOpportunities: "No opportunities.",
+      noQuotes: "No quotes.",
       noActivities: "No activities yet.",
     },
     hint: "Fields update on the left panel. Hover to reveal the edit icon.",
   },
-  quoteLinesCard: {
-    title: "Line items",
+  quoteVersionLinesCard: {
+    title: "Version line items",
     empty: "No line items yet.",
     fields: {
       description: "Description",
@@ -120,16 +106,16 @@ export const registryCrmEn = {
     },
     subtotal: "Subtotal",
   },
-  quotesPage: {
-    title: "Quotes",
-    description: "Quotes issued for opportunities in your pipeline.",
-    create: "New quote",
+  quoteVersionsPage: {
+    title: "Quote versions",
+    description: "Quote versions issued for quotes in your pipeline.",
+    create: "New quote version",
     filters: {
       status: "Status",
       allStatuses: "All statuses",
     },
     columns: {
-      quote: "Quote",
+      quoteVersion: "Version",
       status: "Status",
       total: "Total",
       validUntil: "Valid until",

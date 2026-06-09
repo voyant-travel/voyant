@@ -47,7 +47,7 @@ export function CreatePipelineDialog({
     try {
       const created = await createPipeline.mutateAsync({
         name: trimmed,
-        entityType: "opportunity",
+        entityType: "quote",
         isDefault,
       })
       onCreated(created.id)

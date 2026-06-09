@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router"
-import { type OpportunityRecord, useOpportunities, useQuoteMutation } from "@voyantjs/crm-react"
+import { type QuoteRecord, useQuotes, useQuoteVersionMutation } from "@voyantjs/crm-react"
 import {
   Button,
   Dialog,
@@ -26,7 +26,7 @@ import { formatMoney } from "@/components/voyant/crm/crm-constants"
 
 const CURRENCY_CODES = Object.keys(currencies).sort()
 
-export function CreateQuoteDialog({
+export function CreateQuoteVersionDialog({
   open,
   onOpenChange,
 }: {
@@ -34,41 +34,35 @@ export function CreateQuoteDialog({
   onOpenChange: (next: boolean) => void
 }) {
   const navigate = useNavigate()
-  const { create } = useQuoteMutation()
+  const { create } = useQuoteVersionMutation()
 
-  const [opportunityId, setOpportunityId] = useState<string | null>(null)
-  const [opportunityLabel, setOpportunityLabel] = useState("")
-  const [opportunitySearch, setOpportunitySearch] = useState("")
+  const [quoteId, setQuoteId] = useState<string | null>(null)
+  const [quoteLabel, setQuoteLabel] = useState("")
+  const [quoteSearch, setQuoteSearch] = useState("")
   const [currency, setCurrency] = useState("USD")
   const [validUntil, setValidUntil] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const opportunitiesQuery = useOpportunities({
-    search: opportunitySearch || undefined,
+  const quotesQuery = useQuotes({
+    search: quoteSearch || undefined,
     limit: 20,
     enabled: open,
   })
-  const opportunityResults = useMemo(
-    () => opportunitiesQuery.data?.data ?? [],
-    [opportunitiesQuery.data],
-  )
-  const opportunityIds = useMemo(
-    () => opportunityResults.map((opportunity) => opportunity.id),
-    [opportunityResults],
-  )
+  const quoteResults = useMemo(() => quotesQuery.data?.data ?? [], [quotesQuery.data])
+  const quoteIds = useMemo(() => quoteResults.map((quote) => quote.id), [quoteResults])
 
   function reset() {
-    setOpportunityId(null)
-    setOpportunityLabel("")
-    setOpportunitySearch("")
+    setQuoteId(null)
+    setQuoteLabel("")
+    setQuoteSearch("")
     setCurrency("USD")
     setValidUntil(null)
     setError(null)
   }
 
   async function handleCreate() {
-    if (!opportunityId) {
-      setError("Please select an opportunity")
+    if (!quoteId) {
+      setError("Please select a quote")
       return
     }
     if (!currency) {
@@ -77,22 +71,24 @@ export function CreateQuoteDialog({
     }
     setError(null)
     try {
-      const quote = await create.mutateAsync({
-        opportunityId,
-        currency,
-        validUntil: validUntil ?? null,
+      const quoteVersion = await create.mutateAsync({
+        quoteId,
+        input: {
+          currency,
+          validUntil: validUntil ?? null,
+        },
       })
       reset()
       onOpenChange(false)
-      void navigate({ to: "/quotes/$id", params: { id: quote.id } })
+      void navigate({ to: "/quote-versions/$id", params: { id: quoteVersion.id } })
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create quote")
+      setError(err instanceof Error ? err.message : "Failed to create quote version")
     }
   }
 
-  function describeOpportunity(opportunity: OpportunityRecord): string {
-    const money = formatMoney(opportunity.valueAmountCents, opportunity.valueCurrency)
-    return `${opportunity.title} · ${money}`
+  function describeQuote(quote: QuoteRecord): string {
+    const money = formatMoney(quote.valueAmountCents, quote.valueCurrency)
+    return `${quote.title} · ${money}`
   }
 
   return (
@@ -105,63 +101,61 @@ export function CreateQuoteDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New quote</DialogTitle>
+          <DialogTitle>New quote version</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label>Opportunity</Label>
+            <Label>Quote</Label>
             <Combobox
-              items={opportunityIds}
-              value={opportunityId}
-              inputValue={opportunityLabel}
+              items={quoteIds}
+              value={quoteId}
+              inputValue={quoteLabel}
               autoHighlight
               filter={() => true}
               itemToStringValue={(id) => {
-                const opportunity = opportunityResults.find((item) => item.id === (id as string))
-                return opportunity ? describeOpportunity(opportunity) : ""
+                const quote = quoteResults.find((item) => item.id === (id as string))
+                return quote ? describeQuote(quote) : ""
               }}
               onInputValueChange={(next) => {
-                const match = opportunityResults.find((opportunity) => opportunity.id === next)
+                const match = quoteResults.find((quote) => quote.id === next)
                 if (match) {
-                  setOpportunityLabel(describeOpportunity(match))
+                  setQuoteLabel(describeQuote(match))
                   return
                 }
-                setOpportunityLabel(next)
-                setOpportunitySearch(next)
-                if (!next) setOpportunityId(null)
+                setQuoteLabel(next)
+                setQuoteSearch(next)
+                if (!next) setQuoteId(null)
               }}
               onValueChange={(next) => {
                 const id = (next as string | null) ?? null
-                setOpportunityId(id)
-                const opportunity = id ? opportunityResults.find((item) => item.id === id) : null
-                if (opportunity) {
-                  setOpportunityLabel(describeOpportunity(opportunity))
-                  if (opportunity.valueCurrency) setCurrency(opportunity.valueCurrency)
+                setQuoteId(id)
+                const quote = id ? quoteResults.find((item) => item.id === id) : null
+                if (quote) {
+                  setQuoteLabel(describeQuote(quote))
+                  if (quote.valueCurrency) setCurrency(quote.valueCurrency)
                 } else {
-                  setOpportunityLabel("")
+                  setQuoteLabel("")
                 }
-                setOpportunitySearch("")
+                setQuoteSearch("")
               }}
             >
-              <ComboboxInput placeholder="Search opportunities…" />
+              <ComboboxInput placeholder="Search quotes..." />
               <ComboboxContent>
                 <ComboboxEmpty>
-                  {opportunitiesQuery.isPending ? "Loading…" : "No opportunities found."}
+                  {quotesQuery.isPending ? "Loading…" : "No quotes found."}
                 </ComboboxEmpty>
                 <ComboboxList>
                   <ComboboxCollection>
                     {(id) => {
-                      const opportunity = opportunityResults.find(
-                        (item) => item.id === (id as string),
-                      )
-                      if (!opportunity) return null
+                      const quote = quoteResults.find((item) => item.id === (id as string))
+                      if (!quote) return null
                       return (
-                        <ComboboxItem key={opportunity.id} value={opportunity.id}>
+                        <ComboboxItem key={quote.id} value={quote.id}>
                           <div className="flex min-w-0 flex-col">
-                            <span className="truncate font-medium">{opportunity.title}</span>
+                            <span className="truncate font-medium">{quote.title}</span>
                             <span className="truncate text-xs text-muted-foreground">
-                              {formatMoney(opportunity.valueAmountCents, opportunity.valueCurrency)}{" "}
-                              · {opportunity.status}
+                              {formatMoney(quote.valueAmountCents, quote.valueCurrency)} ·{" "}
+                              {quote.status}
                             </span>
                           </div>
                         </ComboboxItem>

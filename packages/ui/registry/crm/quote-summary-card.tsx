@@ -5,7 +5,7 @@ import { Badge, Card, CardContent } from "@/components/ui"
 import { useRegistryCrmI18nOrDefault, useRegistryCrmMessagesOrDefault } from "./i18n"
 import { formatRegistryCrmDate, formatRegistryCrmMoney } from "./i18n/utils"
 
-export function OpportunitySummaryCard({
+export function QuoteSummaryCard({
   title,
   pipelineName,
   stageName,
@@ -25,8 +25,7 @@ export function OpportunitySummaryCard({
   const i18n = useRegistryCrmI18nOrDefault()
   const m = useRegistryCrmMessagesOrDefault()
   const statusLabel =
-    m.common.opportunityStatusLabels[status as keyof typeof m.common.opportunityStatusLabels] ??
-    status
+    m.common.quoteStatusLabels[status as keyof typeof m.common.quoteStatusLabels] ?? status
 
   return (
     <Card>
@@ -35,8 +34,8 @@ export function OpportunitySummaryCard({
           <div className="min-w-0 flex-1">
             <h2 className="text-lg font-semibold leading-tight">{title}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              {pipelineName ?? m.opportunitySummaryCard.unknown} -{" "}
-              {stageName ?? m.opportunitySummaryCard.unknown}
+              {pipelineName ?? m.quoteSummaryCard.unknown} -{" "}
+              {stageName ?? m.quoteSummaryCard.unknown}
             </p>
           </div>
           <Badge variant="outline">{statusLabel}</Badge>
@@ -49,8 +48,7 @@ export function OpportunitySummaryCard({
         </div>
         {expectedCloseDate ? (
           <p className="mt-1 text-xs text-muted-foreground">
-            {m.opportunitySummaryCard.expectedClose}:{" "}
-            {formatRegistryCrmDate(i18n, expectedCloseDate)}
+            {m.quoteSummaryCard.expectedClose}: {formatRegistryCrmDate(i18n, expectedCloseDate)}
           </p>
         ) : null}
       </CardContent>

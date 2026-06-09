@@ -36,19 +36,6 @@ export {
   useCustomerSignalsForPerson,
 } from "./hooks/use-customer-signals.js"
 export {
-  type UseOpportunitiesOptions,
-  useOpportunities,
-} from "./hooks/use-opportunities.js"
-export {
-  type UseOpportunityOptions,
-  useOpportunity,
-} from "./hooks/use-opportunity.js"
-export {
-  type CreateOpportunityInput,
-  type UpdateOpportunityInput,
-  useOpportunityMutation,
-} from "./hooks/use-opportunity-mutation.js"
-export {
   type UseOrganizationOptions,
   useOrganization,
 } from "./hooks/use-organization.js"
@@ -111,15 +98,28 @@ export {
 export {
   type UseQuoteOptions,
   useQuote,
-  useQuoteLines,
 } from "./hooks/use-quote.js"
 export {
   type CreateQuoteInput,
-  type CreateQuoteLineInput,
   type UpdateQuoteInput,
-  type UpdateQuoteLineInput,
   useQuoteMutation,
 } from "./hooks/use-quote-mutation.js"
+export {
+  type UseQuoteVersionOptions,
+  useQuoteVersion,
+  useQuoteVersionLines,
+} from "./hooks/use-quote-version.js"
+export {
+  type CreateQuoteVersionInput,
+  type CreateQuoteVersionLineInput,
+  type UpdateQuoteVersionInput,
+  type UpdateQuoteVersionLineInput,
+  useQuoteVersionMutation,
+} from "./hooks/use-quote-version-mutation.js"
+export {
+  type UseQuoteVersionsOptions,
+  useQuoteVersions,
+} from "./hooks/use-quote-versions.js"
 export {
   type UseQuotesOptions,
   useQuotes,
@@ -144,7 +144,6 @@ export {
   type ActivitiesListFilters,
   type CustomerSignalsListFilters,
   crmQueryKeys,
-  type OpportunitiesListFilters,
   type OrganizationsListFilters,
   type OrganizationsListSortDir,
   type OrganizationsListSortField,
@@ -155,24 +154,25 @@ export {
   type PersonRelationshipsListFilters,
   type PipelinesListFilters,
   type QuotesListFilters,
+  type QuoteVersionsListFilters,
   type StagesListFilters,
 } from "./query-keys.js"
 export {
   getActivitiesQueryOptions,
-  getOpportunitiesQueryOptions,
-  getOpportunityQueryOptions,
   getOrganizationQueryOptions,
   getOrganizationsQueryOptions,
   getPeopleQueryOptions,
   getPersonActivitiesQueryOptions,
   getPersonNotesQueryOptions,
-  getPersonOpportunitiesQueryOptions,
   getPersonQueryOptions,
+  getPersonQuotesQueryOptions,
   getPipelineQueryOptions,
   getPipelinesQueryOptions,
-  getQuoteLinesQueryOptions,
   getQuoteQueryOptions,
   getQuotesQueryOptions,
+  getQuoteVersionLinesQueryOptions,
+  getQuoteVersionQueryOptions,
+  getQuoteVersionsQueryOptions,
   getStageQueryOptions,
   getStagesQueryOptions,
 } from "./query-options.js"
@@ -191,9 +191,7 @@ export {
   customerSignalStatusSchema,
   type KmsEnvelopeRecord,
   kmsEnvelopeRecordSchema,
-  type OpportunityRecord,
   type OrganizationRecord,
-  opportunityRecordSchema,
   organizationRecordSchema,
   type PersonDocumentRecord,
   type PersonDocumentType,
@@ -211,10 +209,12 @@ export {
   personRelationshipRecordSchema,
   personTravelSnapshotSchema,
   pipelineRecordSchema,
-  type QuoteLineRecord,
   type QuoteRecord,
-  quoteLineRecordSchema,
+  type QuoteVersionLineRecord,
+  type QuoteVersionRecord,
   quoteRecordSchema,
+  quoteVersionLineRecordSchema,
+  quoteVersionRecordSchema,
   type StageRecord,
   stageRecordSchema,
 } from "./schemas.js"

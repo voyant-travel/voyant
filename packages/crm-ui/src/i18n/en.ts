@@ -43,22 +43,22 @@ export const crmUiEn = {
       none: "None",
       person: "Person",
       organization: "Organization",
-      opportunity: "Opportunity",
       quote: "Quote",
+      activity: "Activity",
     },
-    opportunityStatusLabels: {
+    quoteStatusLabels: {
       open: "Open",
       won: "Won",
       lost: "Lost",
       archived: "Archived",
     },
-    quoteStatusLabels: {
+    quoteVersionStatusLabels: {
       draft: "Draft",
       sent: "Sent",
       accepted: "Accepted",
+      declined: "Declined",
+      superseded: "Superseded",
       expired: "Expired",
-      rejected: "Rejected",
-      archived: "Archived",
     },
     relativeTime: {
       daysAgo: "{count}d ago",
@@ -279,26 +279,26 @@ export const crmUiEn = {
       createFailed: "Failed to create activity",
     },
   },
-  createOpportunityDialog: {
-    title: "New opportunity",
+  createQuoteDialog: {
+    title: "New quote",
     fields: {
       title: "Title",
       stage: "Stage",
     },
     placeholders: {
-      title: "New opportunity",
+      title: "New quote",
       stage: "Select stage...",
     },
     validation: {
       titleRequired: "Title is required",
       stageRequired: "Stage is required",
-      createFailed: "Failed to create opportunity",
+      createFailed: "Failed to create quote",
     },
   },
-  opportunitiesBoard: {
+  quotesBoard: {
     fallbackName: "Unnamed stage",
   },
-  opportunitySummaryCard: {
+  quoteSummaryCard: {
     unknown: "Unknown",
     expectedClose: "Expected close",
   },
@@ -362,14 +362,14 @@ export const crmUiEn = {
     },
     metrics: {
       people: "People",
-      openOpportunities: "Open opportunities",
+      openQuotes: "Open quotes",
       pipelineValue: "Pipeline value",
       won: "Won",
     },
     tabs: {
       overview: "Overview",
       people: "People",
-      opportunities: "Opportunities",
+      quotes: "Quotes",
       activities: "Activities",
       bookings: "Bookings",
       invoices: "Invoices",
@@ -384,7 +384,7 @@ export const crmUiEn = {
     empty: {
       noPeople: "No people linked to this organization.",
       unnamed: "Unnamed",
-      noOpportunities: "No opportunities.",
+      noQuotes: "No quotes.",
       noActivities: "No activities yet.",
     },
     hint: "Fields update on the left panel. Hover to reveal the edit icon.",
@@ -434,14 +434,14 @@ export const crmUiEn = {
       },
     },
     metrics: {
-      openOpportunities: "Open opportunities",
+      openQuotes: "Open quotes",
       pipelineValue: "Pipeline value",
       documents: "Documents",
       activities: "Activities",
     },
     tabs: {
       overview: "Overview",
-      opportunities: "Opportunities",
+      quotes: "Quotes",
       activities: "Activities",
       relationships: "Relationships",
       documents: "Documents",
@@ -486,7 +486,7 @@ export const crmUiEn = {
       other: "Other",
     },
     empty: {
-      noOpportunities: "No opportunities.",
+      noQuotes: "No quotes.",
       noActivities: "No activities yet.",
       noRelationships: "No relationships linked to this person.",
       noDocuments: "No documents.",
@@ -533,33 +533,33 @@ export const crmUiEn = {
       saving: "Saving…",
     },
   },
-  createQuoteDialog: {
-    title: "New quote",
+  createQuoteVersionDialog: {
+    title: "New quote version",
     fields: {
-      opportunity: "Opportunity",
+      quote: "Quote",
       currency: "Currency",
       validUntil: "Valid until",
     },
     placeholders: {
-      searchOpportunities: "Search opportunities...",
+      searchQuotes: "Search quotes...",
       selectCurrency: "Select currency...",
       pickDate: "Pick a date",
     },
     empty: {
       loading: "Loading...",
-      noOpportunities: "No opportunities found.",
+      noQuotes: "No quotes found.",
     },
     validation: {
-      selectOpportunity: "Please select an opportunity",
+      selectQuote: "Please select a quote",
       selectCurrency: "Please select a currency",
-      createFailed: "Failed to create quote",
+      createFailed: "Failed to create quote version",
     },
     actions: {
       create: "Create",
     },
   },
-  quoteLinesCard: {
-    title: "Line items",
+  quoteVersionLinesCard: {
+    title: "Version line items",
     empty: "No line items yet.",
     fields: {
       description: "Description",
@@ -584,16 +584,16 @@ export const crmUiEn = {
     },
     empty: "No activities match your filters.",
   },
-  quotesPage: {
-    title: "Quotes",
-    description: "Quotes issued for opportunities in your pipeline.",
-    create: "New quote",
+  quoteVersionsPage: {
+    title: "Quote versions",
+    description: "Quote versions issued for quotes in your pipeline.",
+    create: "New quote version",
     filters: {
       status: "Status",
       allStatuses: "All statuses",
     },
     columns: {
-      quote: "Quote",
+      quoteVersion: "Version",
       status: "Status",
       total: "Total",
       validUntil: "Valid until",

@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router"
 import {
   getActivitiesQueryOptions,
-  getOpportunitiesQueryOptions,
   getOrganizationQueryOptions,
   getPeopleQueryOptions,
+  getQuotesQueryOptions,
 } from "@/components/voyant/crm/crm-query-options"
 import { OrganizationDetailPage } from "@/components/voyant/crm/organization-detail-page"
 import { OrganizationDetailSkeleton } from "@/components/voyant/crm/organization-detail-skeleton"
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_workspace/organizations/$id")({
         getPeopleQueryOptions({ organizationId: params.id, limit: 50 }),
       ),
       context.queryClient.ensureQueryData(
-        getOpportunitiesQueryOptions({ organizationId: params.id, limit: 50 }),
+        getQuotesQueryOptions({ organizationId: params.id, limit: 50 }),
       ),
       context.queryClient.ensureQueryData(
         getActivitiesQueryOptions({

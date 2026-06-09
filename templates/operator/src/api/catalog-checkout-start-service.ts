@@ -178,7 +178,7 @@ export async function startCatalogCheckout(
 }
 
 /**
- * Inquiry intent — write a CRM opportunity for the operator to follow
+ * Inquiry intent — write a CRM quote for the operator to follow
  * up on, then cancel the booking so inventory isn't blocked.
  *
  * The pipeline + stage used can be pinned via env vars
@@ -201,7 +201,7 @@ async function startInquiryCheckout(
   if (!pipelineId || !stageId) {
     const { crmService } = await import("@voyantjs/crm")
     const pipelines = await crmService
-      .listPipelines(db, { entityType: "person", limit: 1, offset: 0 })
+      .listPipelines(db, { entityType: "quote", limit: 1, offset: 0 })
       .catch(() => null)
     const firstPipeline = pipelines?.data?.[0] ?? null
     if (firstPipeline) {
@@ -221,12 +221,12 @@ async function startInquiryCheckout(
       kind: "inquiry_received",
       bookingId: booking.id,
       inquiryId: `inq-${booking.id}`,
-      note: "No CRM pipeline configured — set INQUIRY_PIPELINE_ID + INQUIRY_STAGE_ID to record a real opportunity.",
+      note: "No CRM pipeline configured — set INQUIRY_PIPELINE_ID + INQUIRY_STAGE_ID to record a real quote.",
     }
   }
 
   const { crmService } = await import("@voyantjs/crm")
-  const opportunity = await crmService.createOpportunity(db, {
+  const quote = await crmService.createQuote(db, {
     title: `Inquiry — booking ${booking.bookingNumber}`,
     pipelineId,
     stageId,
@@ -237,12 +237,13 @@ async function startInquiryCheckout(
     valueCurrency: booking.sellCurrency ?? null,
     source: "storefront-inquiry",
     sourceRef: booking.id,
-  } as never)
+    tags: [],
+  })
 
   await releaseInquiryBooking(db, booking, eventBus)
 
   await eventBus?.emit("inquiry.created", {
-    opportunityId: opportunity?.id ?? null,
+    opportunityId: quote?.id ?? null,
     bookingId: booking.id,
     bookingNumber: booking.bookingNumber,
     pipelineId,
@@ -252,7 +253,7 @@ async function startInquiryCheckout(
   return {
     kind: "inquiry_received",
     bookingId: booking.id,
-    inquiryId: opportunity?.id ?? `inq-${booking.id}`,
+    inquiryId: quote?.id ?? `inq-${booking.id}`,
   }
 }
 

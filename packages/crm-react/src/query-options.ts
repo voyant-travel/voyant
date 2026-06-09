@@ -4,17 +4,15 @@ import { queryOptions } from "@tanstack/react-query"
 
 import { type FetchWithValidationOptions, fetchWithValidation } from "./client.js"
 import type { UseActivitiesOptions } from "./hooks/use-activities.js"
-import type { UseOpportunitiesOptions } from "./hooks/use-opportunities.js"
 import type { UseOrganizationsOptions } from "./hooks/use-organizations.js"
 import type { UsePeopleOptions } from "./hooks/use-people.js"
 import type { UsePipelinesOptions } from "./hooks/use-pipelines.js"
+import type { UseQuoteVersionsOptions } from "./hooks/use-quote-versions.js"
 import type { UseQuotesOptions } from "./hooks/use-quotes.js"
 import type { UseStagesOptions } from "./hooks/use-stages.js"
 import { crmQueryKeys } from "./query-keys.js"
 import {
   activityListResponse,
-  opportunityListResponse,
-  opportunitySingleResponse,
   organizationListResponse,
   organizationSingleResponse,
   personListResponse,
@@ -22,9 +20,11 @@ import {
   personSingleResponse,
   pipelineListResponse,
   pipelineSingleResponse,
-  quoteLineListResponse,
   quoteListResponse,
   quoteSingleResponse,
+  quoteVersionLineListResponse,
+  quoteVersionListResponse,
+  quoteVersionSingleResponse,
   stageListResponse,
   stageSingleResponse,
 } from "./schemas.js"
@@ -122,18 +122,14 @@ export function getPersonActivitiesQueryOptions(client: FetchWithValidationOptio
   })
 }
 
-export function getPersonOpportunitiesQueryOptions(client: FetchWithValidationOptions, id: string) {
+export function getPersonQuotesQueryOptions(client: FetchWithValidationOptions, id: string) {
   return queryOptions({
-    queryKey: ["person-opportunities", id],
+    queryKey: ["person-quotes", id],
     queryFn: () =>
-      fetchWithValidation(
-        `/v1/crm/opportunities?personId=${id}&limit=20`,
-        opportunityListResponse,
-        {
-          baseUrl: client.baseUrl,
-          fetcher: client.fetcher,
-        },
-      ),
+      fetchWithValidation(`/v1/crm/quotes?personId=${id}&limit=20`, quoteListResponse, {
+        baseUrl: client.baseUrl,
+        fetcher: client.fetcher,
+      }),
   })
 }
 
@@ -257,50 +253,6 @@ export function getStageQueryOptions(client: FetchWithValidationOptions, id: str
   })
 }
 
-export function getOpportunitiesQueryOptions(
-  client: FetchWithValidationOptions,
-  options: UseOpportunitiesOptions = {},
-) {
-  const { enabled: _enabled = true, ...filters } = options
-
-  return queryOptions({
-    queryKey: crmQueryKeys.opportunitiesList(filters),
-    queryFn: () => {
-      const params = new URLSearchParams()
-      if (filters.search) params.set("search", filters.search)
-      if (filters.personId) params.set("personId", filters.personId)
-      if (filters.organizationId) params.set("organizationId", filters.organizationId)
-      if (filters.pipelineId) params.set("pipelineId", filters.pipelineId)
-      if (filters.stageId) params.set("stageId", filters.stageId)
-      if (filters.ownerId) params.set("ownerId", filters.ownerId)
-      if (filters.status) params.set("status", filters.status)
-      if (filters.limit !== undefined) params.set("limit", String(filters.limit))
-      if (filters.offset !== undefined) params.set("offset", String(filters.offset))
-      const qs = params.toString()
-
-      return fetchWithValidation(
-        `/v1/crm/opportunities${qs ? `?${qs}` : ""}`,
-        opportunityListResponse,
-        { baseUrl: client.baseUrl, fetcher: client.fetcher },
-      )
-    },
-  })
-}
-
-export function getOpportunityQueryOptions(client: FetchWithValidationOptions, id: string) {
-  return queryOptions({
-    queryKey: crmQueryKeys.opportunity(id),
-    queryFn: async () => {
-      const { data } = await fetchWithValidation(
-        `/v1/crm/opportunities/${id}`,
-        opportunitySingleResponse,
-        { baseUrl: client.baseUrl, fetcher: client.fetcher },
-      )
-      return data
-    },
-  })
-}
-
 export function getQuotesQueryOptions(
   client: FetchWithValidationOptions,
   options: UseQuotesOptions = {},
@@ -311,7 +263,12 @@ export function getQuotesQueryOptions(
     queryKey: crmQueryKeys.quotesList(filters),
     queryFn: () => {
       const params = new URLSearchParams()
-      if (filters.opportunityId) params.set("opportunityId", filters.opportunityId)
+      if (filters.search) params.set("search", filters.search)
+      if (filters.personId) params.set("personId", filters.personId)
+      if (filters.organizationId) params.set("organizationId", filters.organizationId)
+      if (filters.pipelineId) params.set("pipelineId", filters.pipelineId)
+      if (filters.stageId) params.set("stageId", filters.stageId)
+      if (filters.ownerId) params.set("ownerId", filters.ownerId)
       if (filters.status) params.set("status", filters.status)
       if (filters.limit !== undefined) params.set("limit", String(filters.limit))
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))
@@ -338,13 +295,61 @@ export function getQuoteQueryOptions(client: FetchWithValidationOptions, id: str
   })
 }
 
-export function getQuoteLinesQueryOptions(client: FetchWithValidationOptions, quoteId: string) {
+export function getQuoteVersionsQueryOptions(
+  client: FetchWithValidationOptions,
+  options: UseQuoteVersionsOptions = {},
+) {
+  const { enabled: _enabled = true, ...filters } = options
+
   return queryOptions({
-    queryKey: crmQueryKeys.quoteLines(quoteId),
+    queryKey: crmQueryKeys.quoteVersionsList(filters),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (filters.quoteId) params.set("quoteId", filters.quoteId)
+      if (filters.status) params.set("status", filters.status)
+      if (filters.limit !== undefined) params.set("limit", String(filters.limit))
+      if (filters.offset !== undefined) params.set("offset", String(filters.offset))
+      const qs = params.toString()
+
+      return fetchWithValidation(
+        `/v1/crm/quote-versions${qs ? `?${qs}` : ""}`,
+        quoteVersionListResponse,
+        {
+          baseUrl: client.baseUrl,
+          fetcher: client.fetcher,
+        },
+      )
+    },
+  })
+}
+
+export function getQuoteVersionQueryOptions(client: FetchWithValidationOptions, id: string) {
+  return queryOptions({
+    queryKey: crmQueryKeys.quoteVersion(id),
+    queryFn: async () => {
+      const { data } = await fetchWithValidation(
+        `/v1/crm/quote-versions/${id}`,
+        quoteVersionSingleResponse,
+        {
+          baseUrl: client.baseUrl,
+          fetcher: client.fetcher,
+        },
+      )
+      return data
+    },
+  })
+}
+
+export function getQuoteVersionLinesQueryOptions(
+  client: FetchWithValidationOptions,
+  quoteVersionId: string,
+) {
+  return queryOptions({
+    queryKey: crmQueryKeys.quoteVersionLines(quoteVersionId),
     queryFn: async () => {
       const data = await fetchWithValidation(
-        `/v1/crm/quotes/${quoteId}/lines`,
-        quoteLineListResponse,
+        `/v1/crm/quote-versions/${quoteVersionId}/lines`,
+        quoteVersionLineListResponse,
         {
           baseUrl: client.baseUrl,
           fetcher: client.fetcher,

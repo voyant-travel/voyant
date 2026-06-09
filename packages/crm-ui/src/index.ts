@@ -1,24 +1,19 @@
 export { ActivitiesPage } from "./components/activities-page.js"
 export { CreateActivityDialog } from "./components/create-activity-dialog.js"
-export { CreateOpportunityDialog } from "./components/create-opportunity-dialog.js"
 export {
   CreateQuoteDialog,
   type CreateQuoteDialogProps,
 } from "./components/create-quote-dialog.js"
+export {
+  CreateQuoteVersionDialog,
+  type CreateQuoteVersionDialogProps,
+} from "./components/create-quote-version-dialog.js"
 export {
   OrganizationMergeDialog,
   type OrganizationMergeDialogProps,
   PersonMergeDialog,
   type PersonMergeDialogProps,
 } from "./components/merge-dialogs.js"
-export {
-  OpportunitiesBoard,
-  type OpportunitiesBoardProps,
-} from "./components/opportunities-board.js"
-export {
-  OpportunitySummaryCard,
-  type OpportunitySummaryCardProps,
-} from "./components/opportunity-summary-card.js"
 export {
   OrganizationCard,
   type OrganizationCardProps,
@@ -40,8 +35,8 @@ export {
   type OrganizationDetailTab,
   OrganizationMain,
   type OrganizationMainProps,
-  type OrganizationOpportunity,
   type OrganizationPerson,
+  type OrganizationQuote,
   OrganizationSidebar,
   type OrganizationSidebarProps,
   OrganizationTopBar,
@@ -100,12 +95,12 @@ export {
   type PersonDocumentsPanelProps,
   PersonMain,
   type PersonMainProps,
-  PersonOpportunitiesPanel,
-  type PersonOpportunitiesPanelProps,
-  type PersonOpportunity,
   type PersonOrganization,
   PersonOverviewPanel,
   type PersonOverviewPanelProps,
+  type PersonQuote,
+  PersonQuotesPanel,
+  type PersonQuotesPanelProps,
   type PersonRelationship,
   PersonRelationshipsPanel,
   type PersonRelationshipsPanelProps,
@@ -133,10 +128,21 @@ export {
   type PersonRelationshipsSectionProps,
 } from "./components/person-relationships-section.js"
 export {
-  QuoteLinesCard,
-  type QuoteLinesCardProps,
-} from "./components/quote-detail-sections.js"
-export { QuotesPage, type QuotesPageProps } from "./components/quotes-page.js"
+  QuoteSummaryCard,
+  type QuoteSummaryCardProps,
+} from "./components/quote-summary-card.js"
+export {
+  QuoteVersionLinesCard,
+  type QuoteVersionLinesCardProps,
+} from "./components/quote-version-detail-sections.js"
+export {
+  QuoteVersionsPage,
+  type QuoteVersionsPageProps,
+} from "./components/quote-versions-page.js"
+export {
+  QuotesBoard,
+  type QuotesBoardProps,
+} from "./components/quotes-board.js"
 export {
   type CrmUiMessageOverrides,
   type CrmUiMessages,

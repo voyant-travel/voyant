@@ -1,7 +1,4 @@
-import type {
-  OpportunityRecord as OpportunityData,
-  StageRecord as StageData,
-} from "@voyantjs/crm-react"
+import type { QuoteRecord as QuoteData, StageRecord as StageData } from "@voyantjs/crm-react"
 import { Card } from "@voyantjs/ui/components"
 import { ScrollArea, ScrollBar } from "@voyantjs/ui/components/scroll-area"
 import { TrendingUp } from "lucide-react"
@@ -9,17 +6,13 @@ import { TrendingUp } from "lucide-react"
 import { useCrmUiI18nOrDefault } from "../i18n/index.js"
 import { formatCrmDate, formatCrmMoney } from "./crm-format.js"
 
-export interface OpportunitiesBoardProps {
+export interface QuotesBoardProps {
   stages: StageData[]
-  opportunitiesByStage: Map<string, OpportunityData[]>
-  onOpportunityOpen?: (opportunity: OpportunityData) => void
+  quotesByStage: Map<string, QuoteData[]>
+  onQuoteOpen?: (quote: QuoteData) => void
 }
 
-export function OpportunitiesBoard({
-  stages,
-  opportunitiesByStage,
-  onOpportunityOpen,
-}: OpportunitiesBoardProps) {
+export function QuotesBoard({ stages, quotesByStage, onQuoteOpen }: QuotesBoardProps) {
   const i18n = useCrmUiI18nOrDefault()
   const { messages } = i18n
 
@@ -27,12 +20,9 @@ export function OpportunitiesBoard({
     <ScrollArea className="flex-1">
       <div className="flex gap-3 pb-2">
         {stages.map((stage) => {
-          const opportunities = opportunitiesByStage.get(stage.id) ?? []
-          const total = opportunities.reduce(
-            (sum, opportunity) => sum + (opportunity.valueAmountCents ?? 0),
-            0,
-          )
-          const primaryCurrency = opportunities[0]?.valueCurrency ?? null
+          const quotes = quotesByStage.get(stage.id) ?? []
+          const total = quotes.reduce((sum, quote) => sum + (quote.valueAmountCents ?? 0), 0)
+          const primaryCurrency = quotes[0]?.valueCurrency ?? null
 
           return (
             <div
@@ -42,10 +32,10 @@ export function OpportunitiesBoard({
               <div className="flex items-center justify-between gap-2 px-2 py-1">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">
-                    {stage.name || messages.opportunitiesBoard.fallbackName}
+                    {stage.name || messages.quotesBoard.fallbackName}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {i18n.formatNumber(opportunities.length)} -{" "}
+                    {i18n.formatNumber(quotes.length)} -{" "}
                     {formatCrmMoney(i18n, total, primaryCurrency)}
                   </p>
                 </div>
@@ -56,12 +46,8 @@ export function OpportunitiesBoard({
                 ) : null}
               </div>
               <div className="flex flex-col gap-2">
-                {opportunities.map((opportunity) => (
-                  <OpportunityBoardCard
-                    key={opportunity.id}
-                    opportunity={opportunity}
-                    onOpen={onOpportunityOpen}
-                  />
+                {quotes.map((quote) => (
+                  <QuoteBoardCard key={quote.id} quote={quote} onOpen={onQuoteOpen} />
                 ))}
               </div>
             </div>
@@ -73,25 +59,25 @@ export function OpportunitiesBoard({
   )
 }
 
-function OpportunityBoardCard({
-  opportunity,
+function QuoteBoardCard({
+  quote,
   onOpen,
 }: {
-  opportunity: OpportunityData
-  onOpen?: (opportunity: OpportunityData) => void
+  quote: QuoteData
+  onOpen?: (quote: QuoteData) => void
 }) {
   const i18n = useCrmUiI18nOrDefault()
   const content = (
     <>
-      <p className="line-clamp-2 font-medium">{opportunity.title}</p>
+      <p className="line-clamp-2 font-medium">{quote.title}</p>
       <div className="mt-2 flex items-center justify-between gap-2">
         <span className="flex items-center gap-1 text-xs text-muted-foreground">
           <TrendingUp className="size-3" aria-hidden="true" />
-          {formatCrmMoney(i18n, opportunity.valueAmountCents, opportunity.valueCurrency)}
+          {formatCrmMoney(i18n, quote.valueAmountCents, quote.valueCurrency)}
         </span>
-        {opportunity.expectedCloseDate ? (
+        {quote.expectedCloseDate ? (
           <span className="text-xs text-muted-foreground">
-            {formatCrmDate(i18n, opportunity.expectedCloseDate)}
+            {formatCrmDate(i18n, quote.expectedCloseDate)}
           </span>
         ) : null}
       </div>
@@ -101,11 +87,7 @@ function OpportunityBoardCard({
   if (onOpen) {
     return (
       <Card className="p-3 text-sm">
-        <button
-          type="button"
-          className="block w-full text-left"
-          onClick={() => onOpen(opportunity)}
-        >
+        <button type="button" className="block w-full text-left" onClick={() => onOpen(quote)}>
           {content}
         </button>
       </Card>

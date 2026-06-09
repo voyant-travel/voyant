@@ -1,9 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router"
 import {
   defaultFetcher,
-  getOpportunityQueryOptions,
-  getQuoteLinesQueryOptions,
+  getActivitiesQueryOptions,
+  getOrganizationQueryOptions,
+  getPersonQueryOptions,
+  getPipelineQueryOptions,
   getQuoteQueryOptions,
+  getQuoteVersionsQueryOptions,
+  getStagesQueryOptions,
+  useQuote,
 } from "@voyantjs/crm-react"
 import { QuoteDetailPage } from "@/components/voyant/crm/quote-detail-page"
 import { getApiUrl } from "@/lib/env"
@@ -17,12 +22,34 @@ export const Route = createFileRoute("/_workspace/quotes/$id")({
     )
 
     await Promise.all([
-      context.queryClient.ensureQueryData(getQuoteLinesQueryOptions(routeClient, params.id)),
-      quote.opportunityId
+      quote.personId
+        ? context.queryClient.ensureQueryData(getPersonQueryOptions(routeClient, quote.personId))
+        : Promise.resolve(),
+      quote.organizationId
         ? context.queryClient.ensureQueryData(
-            getOpportunityQueryOptions(routeClient, quote.opportunityId),
+            getOrganizationQueryOptions(routeClient, quote.organizationId),
           )
         : Promise.resolve(),
+      quote.pipelineId
+        ? context.queryClient.ensureQueryData(
+            getPipelineQueryOptions(routeClient, quote.pipelineId),
+          )
+        : Promise.resolve(),
+      quote.pipelineId
+        ? context.queryClient.ensureQueryData(
+            getStagesQueryOptions(routeClient, { pipelineId: quote.pipelineId, limit: 100 }),
+          )
+        : Promise.resolve(),
+      context.queryClient.ensureQueryData(
+        getActivitiesQueryOptions(routeClient, {
+          entityType: "quote",
+          entityId: params.id,
+          limit: 50,
+        }),
+      ),
+      context.queryClient.ensureQueryData(
+        getQuoteVersionsQueryOptions(routeClient, { quoteId: params.id, limit: 50 }),
+      ),
     ])
   },
   component: QuoteDetailRoute,
@@ -30,5 +57,6 @@ export const Route = createFileRoute("/_workspace/quotes/$id")({
 
 function QuoteDetailRoute() {
   const { id } = Route.useParams()
+  useQuote(id)
   return <QuoteDetailPage id={id} />
 }

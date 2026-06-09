@@ -61,8 +61,8 @@ const baseData = {
       icon: Building,
     },
     {
-      title: "Opportunities",
-      url: "/opportunities",
+      title: "Quotes",
+      url: "/quotes",
       icon: Handshake,
     },
     {
@@ -71,8 +71,8 @@ const baseData = {
       icon: ListTodo,
     },
     {
-      title: "Quotes",
-      url: "/quotes",
+      title: "Quote Versions",
+      url: "/quote-versions",
       icon: FileText,
     },
     {

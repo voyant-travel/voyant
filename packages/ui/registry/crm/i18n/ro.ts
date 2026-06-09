@@ -6,50 +6,36 @@ export const registryCrmRo = {
   ...crmUiRo,
   common: {
     ...crmUiRo.common,
-    opportunityStatusLabels: {
-      open: "Deschisa",
-      won: "Castigata",
-      lost: "Pierduta",
-      archived: "Arhivata",
-    },
-    quoteStatusLabels: {
-      draft: "Ciorna",
-      sent: "Trimisa",
-      accepted: "Acceptata",
-      expired: "Expirata",
-      rejected: "Respinsa",
-      archived: "Arhivata",
-    },
   },
-  createQuoteDialog: {
-    title: "Cotatie noua",
+  createQuoteVersionDialog: {
+    title: "Versiune de oferta noua",
     fields: {
-      opportunity: "Oportunitate",
+      quote: "Oferta",
       currency: "Moneda",
       validUntil: "Valabila pana la",
     },
     placeholders: {
-      searchOpportunities: "Cauta oportunitati...",
+      searchQuotes: "Cauta oferte...",
       pickDate: "Alege o data",
     },
     empty: {
       loading: "Se incarca...",
-      noOpportunities: "Nu au fost gasite oportunitati.",
+      noQuotes: "Nu au fost gasite oferte.",
       noCurrencies: "Nu a fost gasita nicio moneda.",
     },
     validation: {
-      selectOpportunity: "Selecteaza o oportunitate",
+      selectQuote: "Selecteaza o oferta",
       selectCurrency: "Selecteaza o moneda",
-      createFailed: "Nu am putut crea cotatia",
+      createFailed: "Nu am putut crea versiunea de oferta",
     },
     actions: {
       create: "Creeaza",
     },
   },
-  opportunitiesBoard: {
+  quotesBoard: {
     fallbackName: "Etapa fara nume",
   },
-  opportunitySummaryCard: {
+  quoteSummaryCard: {
     unknown: "Necunoscut",
     expectedClose: "Inchidere estimata",
   },
@@ -83,14 +69,14 @@ export const registryCrmRo = {
     },
     metrics: {
       people: "Persoane",
-      openOpportunities: "Oportunitati deschise",
+      openQuotes: "Oferte deschise",
       pipelineValue: "Valoare pipeline",
       won: "Castigate",
     },
     tabs: {
       overview: "Prezentare",
       people: "Persoane",
-      opportunities: "Oportunitati",
+      quotes: "Oferte",
       activities: "Activitati",
     },
     sections: {
@@ -101,13 +87,13 @@ export const registryCrmRo = {
     empty: {
       noPeople: "Nu exista persoane asociate acestei organizatii.",
       unnamed: "Fara nume",
-      noOpportunities: "Nu exista oportunitati.",
+      noQuotes: "Nu exista oferte.",
       noActivities: "Nu exista activitati.",
     },
     hint: "Campurile se actualizeaza din panoul din stanga. Treci cu mouse-ul pentru a vedea iconita de editare.",
   },
-  quoteLinesCard: {
-    title: "Linii cotatie",
+  quoteVersionLinesCard: {
+    title: "Linii versiune oferta",
     empty: "Nu exista inca linii.",
     fields: {
       description: "Descriere",
@@ -120,16 +106,16 @@ export const registryCrmRo = {
     },
     subtotal: "Subtotal",
   },
-  quotesPage: {
-    title: "Cotatii",
-    description: "Cotatiile emise pentru oportunitatile din pipeline.",
-    create: "Cotatie noua",
+  quoteVersionsPage: {
+    title: "Versiuni oferta",
+    description: "Versiuni emise pentru ofertele din pipeline.",
+    create: "Versiune oferta noua",
     filters: {
       status: "Status",
       allStatuses: "Toate statusurile",
     },
     columns: {
-      quote: "Cotatie",
+      quoteVersion: "Versiune",
       status: "Status",
       total: "Total",
       validUntil: "Valabila pana la",

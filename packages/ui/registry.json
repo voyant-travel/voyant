@@ -1410,68 +1410,17 @@
       ]
     },
     {
-      "name": "voyant-crm-opportunities-board",
+      "name": "voyant-crm-quotes-board",
       "type": "registry:component",
-      "title": "Opportunities Board",
-      "description": "Kanban board layout for opportunity stages and cards.",
+      "title": "Quotes Board",
+      "description": "Kanban board layout for quote stages and cards.",
       "dependencies": ["lucide-react", "@voyantjs/crm-react"],
       "registryDependencies": ["card", "scroll-area"],
       "files": [
         {
-          "path": "registry/crm/opportunities-board.tsx",
+          "path": "registry/crm/quotes-board.tsx",
           "type": "registry:component",
-          "target": "components/voyant/crm/opportunities-board.tsx"
-        }
-      ]
-    },
-    {
-      "name": "voyant-crm-create-opportunity-dialog",
-      "type": "registry:component",
-      "title": "Create Opportunity Dialog",
-      "description": "Dialog for creating an opportunity within a selected pipeline and stage.",
-      "dependencies": ["lucide-react", "@voyantjs/crm-react"],
-      "registryDependencies": ["button", "dialog", "input", "label", "select"],
-      "files": [
-        {
-          "path": "registry/crm/create-opportunity-dialog.tsx",
-          "type": "registry:component",
-          "target": "components/voyant/crm/create-opportunity-dialog.tsx"
-        }
-      ]
-    },
-    {
-      "name": "voyant-crm-opportunity-summary-card",
-      "type": "registry:component",
-      "title": "Opportunity Summary Card",
-      "description": "Summary card for an opportunity detail view with value, stage, and status.",
-      "dependencies": ["lucide-react"],
-      "registryDependencies": ["badge", "card"],
-      "files": [
-        {
-          "path": "registry/crm/opportunity-summary-card.tsx",
-          "type": "registry:component",
-          "target": "components/voyant/crm/opportunity-summary-card.tsx"
-        }
-      ]
-    },
-    {
-      "name": "voyant-crm-quotes-page",
-      "type": "registry:component",
-      "title": "Quotes Page",
-      "description": "Quotes list page shell with status filtering and create action.",
-      "dependencies": ["lucide-react", "@voyantjs/crm-react", "@voyantjs/utils"],
-      "registryDependencies": [
-        "badge",
-        "button",
-        "select",
-        "table",
-        "voyant-crm-create-quote-dialog"
-      ],
-      "files": [
-        {
-          "path": "registry/crm/quotes-page.tsx",
-          "type": "registry:component",
-          "target": "components/voyant/crm/quotes-page.tsx"
+          "target": "components/voyant/crm/quotes-board.tsx"
         }
       ]
     },
@@ -1479,9 +1428,9 @@
       "name": "voyant-crm-create-quote-dialog",
       "type": "registry:component",
       "title": "Create Quote Dialog",
-      "description": "Dialog for creating a quote from an existing CRM opportunity.",
-      "dependencies": ["lucide-react", "@voyantjs/crm-react", "@voyantjs/utils"],
-      "registryDependencies": ["button", "combobox", "date-picker", "dialog", "label"],
+      "description": "Dialog for creating a quote within a selected pipeline and stage.",
+      "dependencies": ["lucide-react", "@voyantjs/crm-react"],
+      "registryDependencies": ["button", "dialog", "input", "label", "select"],
       "files": [
         {
           "path": "registry/crm/create-quote-dialog.tsx",
@@ -1491,17 +1440,68 @@
       ]
     },
     {
-      "name": "voyant-crm-quote-line-items-card",
+      "name": "voyant-crm-quote-summary-card",
       "type": "registry:component",
-      "title": "Quote Line Items Card",
-      "description": "Editable quote line items card with inline quantity and price updates.",
+      "title": "Quote Summary Card",
+      "description": "Summary card for a quote detail view with value, stage, and status.",
+      "dependencies": ["lucide-react"],
+      "registryDependencies": ["badge", "card"],
+      "files": [
+        {
+          "path": "registry/crm/quote-summary-card.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/crm/quote-summary-card.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-crm-quote-versions-page",
+      "type": "registry:component",
+      "title": "Quote Versions Page",
+      "description": "Quote versions list page shell with status filtering and create action.",
+      "dependencies": ["lucide-react", "@voyantjs/crm-react", "@voyantjs/utils"],
+      "registryDependencies": [
+        "badge",
+        "button",
+        "select",
+        "table",
+        "voyant-crm-create-quote-version-dialog"
+      ],
+      "files": [
+        {
+          "path": "registry/crm/quote-versions-page.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/crm/quote-versions-page.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-crm-create-quote-version-dialog",
+      "type": "registry:component",
+      "title": "Create Quote Version Dialog",
+      "description": "Dialog for creating a quote version from an existing CRM quote.",
+      "dependencies": ["lucide-react", "@voyantjs/crm-react", "@voyantjs/utils"],
+      "registryDependencies": ["button", "combobox", "date-picker", "dialog", "label"],
+      "files": [
+        {
+          "path": "registry/crm/create-quote-version-dialog.tsx",
+          "type": "registry:component",
+          "target": "components/voyant/crm/create-quote-version-dialog.tsx"
+        }
+      ]
+    },
+    {
+      "name": "voyant-crm-quote-version-line-items-card",
+      "type": "registry:component",
+      "title": "Quote Version Line Items Card",
+      "description": "Editable quote version line items card with inline quantity and price updates.",
       "dependencies": ["lucide-react", "@voyantjs/crm-react"],
       "registryDependencies": ["button", "card", "currency-input", "input"],
       "files": [
         {
-          "path": "registry/crm/quote-detail-sections.tsx",
+          "path": "registry/crm/quote-version-detail-sections.tsx",
           "type": "registry:component",
-          "target": "components/voyant/crm/quote-detail-sections.tsx"
+          "target": "components/voyant/crm/quote-version-detail-sections.tsx"
         }
       ]
     },
@@ -1524,7 +1524,7 @@
       "name": "voyant-crm-organization-detail-page",
       "type": "registry:component",
       "title": "Organization Detail Page",
-      "description": "CRM organization detail page container with related people, opportunities, and activities.",
+      "description": "CRM organization detail page container with related people, quotes, and activities.",
       "dependencies": ["lucide-react", "@voyantjs/crm-react"],
       "registryDependencies": ["button", "voyant-crm-organization-detail-sections"],
       "files": [

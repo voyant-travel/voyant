@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router"
-import { type QuoteRecord, useQuotes } from "@voyantjs/crm-react"
+import { type QuoteVersionRecord, useQuoteVersions } from "@voyantjs/crm-react"
 import { Loader2, Plus } from "lucide-react"
 import { useState } from "react"
 
@@ -20,7 +20,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { CreateQuoteDialog } from "./create-quote-dialog"
+
+import { CreateQuoteVersionDialog } from "./create-quote-version-dialog"
 import { useRegistryCrmI18nOrDefault, useRegistryCrmMessagesOrDefault } from "./i18n"
 import {
   formatRegistryCrmDate,
@@ -28,49 +29,49 @@ import {
   formatRegistryCrmRelative,
 } from "./i18n/utils"
 
-export function QuotesPage() {
+export function QuoteVersionsPage() {
   const navigate = useNavigate()
   const i18n = useRegistryCrmI18nOrDefault()
   const m = useRegistryCrmMessagesOrDefault()
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  const { data, isPending, isError } = useQuotes({
+  const { data, isPending, isError } = useQuoteVersions({
     status: statusFilter === "all" ? undefined : statusFilter,
     limit: 100,
   })
 
-  const quotes = data?.data ?? []
-  const quoteStatusOptions = [
-    { value: "draft", label: m.common.quoteStatusLabels.draft },
-    { value: "sent", label: m.common.quoteStatusLabels.sent },
-    { value: "accepted", label: m.common.quoteStatusLabels.accepted },
-    { value: "expired", label: m.common.quoteStatusLabels.expired },
-    { value: "rejected", label: m.common.quoteStatusLabels.rejected },
-    { value: "archived", label: m.common.quoteStatusLabels.archived },
+  const quoteVersions = data?.data ?? []
+  const quoteVersionStatusOptions = [
+    { value: "draft", label: m.common.quoteVersionStatusLabels.draft },
+    { value: "sent", label: m.common.quoteVersionStatusLabels.sent },
+    { value: "accepted", label: m.common.quoteVersionStatusLabels.accepted },
+    { value: "declined", label: m.common.quoteVersionStatusLabels.declined },
+    { value: "superseded", label: m.common.quoteVersionStatusLabels.superseded },
+    { value: "expired", label: m.common.quoteVersionStatusLabels.expired },
   ]
 
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{m.quotesPage.title}</h1>
-          <p className="text-sm text-muted-foreground">{m.quotesPage.description}</p>
+          <h1 className="text-2xl font-bold tracking-tight">{m.quoteVersionsPage.title}</h1>
+          <p className="text-sm text-muted-foreground">{m.quoteVersionsPage.description}</p>
         </div>
         <Button onClick={() => setDialogOpen(true)}>
           <Plus className="mr-2 size-4" />
-          {m.quotesPage.create}
+          {m.quoteVersionsPage.create}
         </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "all")}>
           <SelectTrigger className="w-[180px] text-sm">
-            <SelectValue placeholder={m.quotesPage.filters.status} />
+            <SelectValue placeholder={m.quoteVersionsPage.filters.status} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{m.quotesPage.filters.allStatuses}</SelectItem>
-            {quoteStatusOptions.map((option) => (
+            <SelectItem value="all">{m.quoteVersionsPage.filters.allStatuses}</SelectItem>
+            {quoteVersionStatusOptions.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
@@ -83,11 +84,11 @@ export function QuotesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{m.quotesPage.columns.quote}</TableHead>
-              <TableHead>{m.quotesPage.columns.status}</TableHead>
-              <TableHead>{m.quotesPage.columns.total}</TableHead>
-              <TableHead>{m.quotesPage.columns.validUntil}</TableHead>
-              <TableHead>{m.quotesPage.columns.updated}</TableHead>
+              <TableHead>{m.quoteVersionsPage.columns.quoteVersion}</TableHead>
+              <TableHead>{m.quoteVersionsPage.columns.status}</TableHead>
+              <TableHead>{m.quoteVersionsPage.columns.total}</TableHead>
+              <TableHead>{m.quoteVersionsPage.columns.validUntil}</TableHead>
+              <TableHead>{m.quoteVersionsPage.columns.updated}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -100,37 +101,48 @@ export function QuotesPage() {
             ) : isError ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-sm text-destructive">
-                  {m.quotesPage.loadFailed}
+                  {m.quoteVersionsPage.loadFailed}
                 </TableCell>
               </TableRow>
-            ) : quotes.length === 0 ? (
+            ) : quoteVersions.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-sm text-muted-foreground">
-                  {m.quotesPage.empty}
+                  {m.quoteVersionsPage.empty}
                 </TableCell>
               </TableRow>
             ) : (
-              quotes.map((quote: QuoteRecord) => {
+              quoteVersions.map((quoteVersion: QuoteVersionRecord) => {
                 const statusLabel =
-                  m.common.quoteStatusLabels[
-                    quote.status as keyof typeof m.common.quoteStatusLabels
-                  ] ?? quote.status
+                  m.common.quoteVersionStatusLabels[
+                    quoteVersion.status as keyof typeof m.common.quoteVersionStatusLabels
+                  ] ?? quoteVersion.status
                 return (
                   <TableRow
-                    key={quote.id}
-                    onClick={() => void navigate({ to: "/quotes/$id", params: { id: quote.id } })}
+                    key={quoteVersion.id}
+                    onClick={() =>
+                      void navigate({
+                        to: "/quote-versions/$id",
+                        params: { id: quoteVersion.id },
+                      })
+                    }
                     className="cursor-pointer"
                   >
-                    <TableCell className="font-mono text-xs">{quote.id.slice(-8)}</TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {quoteVersion.label ?? quoteVersion.id.slice(-8)}
+                    </TableCell>
                     <TableCell>
                       <Badge variant="secondary">{statusLabel}</Badge>
                     </TableCell>
                     <TableCell className="font-medium">
-                      {formatRegistryCrmMoney(i18n, quote.totalAmountCents, quote.currency)}
+                      {formatRegistryCrmMoney(
+                        i18n,
+                        quoteVersion.totalAmountCents,
+                        quoteVersion.currency,
+                      )}
                     </TableCell>
-                    <TableCell>{formatRegistryCrmDate(i18n, quote.validUntil)}</TableCell>
+                    <TableCell>{formatRegistryCrmDate(i18n, quoteVersion.validUntil)}</TableCell>
                     <TableCell className="text-muted-foreground">
-                      {formatRegistryCrmRelative(i18n, quote.updatedAt)}
+                      {formatRegistryCrmRelative(i18n, quoteVersion.updatedAt)}
                     </TableCell>
                   </TableRow>
                 )
@@ -140,7 +152,7 @@ export function QuotesPage() {
         </Table>
       </div>
 
-      <CreateQuoteDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <CreateQuoteVersionDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
   )
 }

@@ -11,20 +11,20 @@ export const STATUS_OPTIONS = [
   { value: "archived", label: "Archived" },
 ] as const
 
-export const OPPORTUNITY_STATUS_OPTIONS = [
+export const QUOTE_STATUS_OPTIONS = [
   { value: "open", label: "Open" },
   { value: "won", label: "Won" },
   { value: "lost", label: "Lost" },
   { value: "archived", label: "Archived" },
 ] as const
 
-export const QUOTE_STATUS_OPTIONS = [
+export const QUOTE_VERSION_STATUS_OPTIONS = [
   { value: "draft", label: "Draft" },
   { value: "sent", label: "Sent" },
   { value: "accepted", label: "Accepted" },
+  { value: "declined", label: "Declined" },
+  { value: "superseded", label: "Superseded" },
   { value: "expired", label: "Expired" },
-  { value: "rejected", label: "Rejected" },
-  { value: "archived", label: "Archived" },
 ] as const
 
 export const ACTIVITY_TYPE_OPTIONS = [

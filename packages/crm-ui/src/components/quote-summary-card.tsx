@@ -2,10 +2,10 @@ import { Badge, Card, CardContent } from "@voyantjs/ui/components"
 import { TrendingUp } from "lucide-react"
 
 import { useCrmUiI18nOrDefault } from "../i18n/index.js"
-import type { CrmOpportunityStatus } from "../i18n/messages.js"
+import type { CrmQuoteStatus } from "../i18n/messages.js"
 import { formatCrmDate, formatCrmMoney } from "./crm-format.js"
 
-export interface OpportunitySummaryCardProps {
+export interface QuoteSummaryCardProps {
   title: string
   pipelineName?: string | null
   stageName?: string | null
@@ -15,7 +15,7 @@ export interface OpportunitySummaryCardProps {
   expectedCloseDate?: string | null
 }
 
-export function OpportunitySummaryCard({
+export function QuoteSummaryCard({
   title,
   pipelineName,
   stageName,
@@ -23,11 +23,10 @@ export function OpportunitySummaryCard({
   valueAmountCents,
   valueCurrency,
   expectedCloseDate,
-}: OpportunitySummaryCardProps) {
+}: QuoteSummaryCardProps) {
   const i18n = useCrmUiI18nOrDefault()
   const { messages } = i18n
-  const statusLabel =
-    messages.common.opportunityStatusLabels[status as CrmOpportunityStatus] ?? status
+  const statusLabel = messages.common.quoteStatusLabels[status as CrmQuoteStatus] ?? status
 
   return (
     <Card>
@@ -36,8 +35,8 @@ export function OpportunitySummaryCard({
           <div className="min-w-0 flex-1">
             <h2 className="text-lg font-semibold leading-tight">{title}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              {pipelineName ?? messages.opportunitySummaryCard.unknown} -{" "}
-              {stageName ?? messages.opportunitySummaryCard.unknown}
+              {pipelineName ?? messages.quoteSummaryCard.unknown} -{" "}
+              {stageName ?? messages.quoteSummaryCard.unknown}
             </p>
           </div>
           <Badge variant="outline">{statusLabel}</Badge>
@@ -50,8 +49,7 @@ export function OpportunitySummaryCard({
         </div>
         {expectedCloseDate ? (
           <p className="mt-1 text-xs text-muted-foreground">
-            {messages.opportunitySummaryCard.expectedClose}:{" "}
-            {formatCrmDate(i18n, expectedCloseDate)}
+            {messages.quoteSummaryCard.expectedClose}: {formatCrmDate(i18n, expectedCloseDate)}
           </p>
         ) : null}
       </CardContent>

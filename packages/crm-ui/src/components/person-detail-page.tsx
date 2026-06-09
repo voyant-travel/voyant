@@ -2,23 +2,23 @@
 
 import type {
   ActivityRecord,
-  OpportunityRecord,
   OrganizationRecord,
   PersonDocumentRecord,
   PersonRecord,
   PersonRelationshipRecord,
   PersonTravelSnapshotRecord,
+  QuoteRecord,
   UpdatePersonInput,
 } from "@voyantjs/crm-react"
 import {
   useActivities,
-  useOpportunities,
   useOrganization,
   usePerson,
   usePersonDocumentMutation,
   usePersonDocuments,
   usePersonMutation,
   usePersonRelationships,
+  useQuotes,
   useRevealPersonDocument,
 } from "@voyantjs/crm-react"
 import {
@@ -72,7 +72,7 @@ import { TagsEditor } from "./tags-editor.js"
 
 export type PersonDetailTab =
   | "overview"
-  | "opportunities"
+  | "quotes"
   | "activities"
   | "relationships"
   | "documents"
@@ -106,8 +106,8 @@ export type PersonData = Pick<
 
 export type PersonOrganization = Pick<OrganizationRecord, "id" | "name" | "website">
 
-export type PersonOpportunity = Pick<
-  OpportunityRecord,
+export type PersonQuote = Pick<
+  QuoteRecord,
   | "expectedCloseDate"
   | "id"
   | "status"
@@ -163,8 +163,8 @@ export interface PersonDetailPageSlots {
   sidebarEnd?: ReactNode
   overviewContent?: ReactNode
   overviewEnd?: ReactNode
-  opportunitiesContent?: ReactNode
-  opportunitiesEnd?: ReactNode
+  quotesContent?: ReactNode
+  quotesEnd?: ReactNode
   activitiesContent?: ReactNode
   activitiesEnd?: ReactNode
   relationshipsContent?: ReactNode
@@ -219,7 +219,7 @@ export function PersonDetailPage({
   const organizationQuery = useOrganization(person?.organizationId ?? undefined, {
     enabled: Boolean(person?.organizationId),
   })
-  const opportunitiesQuery = useOpportunities({
+  const quotesQuery = useQuotes({
     personId: id,
     limit: 50,
     enabled: Boolean(person),
@@ -265,7 +265,7 @@ export function PersonDetailPage({
     )
   }
 
-  const opportunities = opportunitiesQuery.data?.data ?? []
+  const quotes = quotesQuery.data?.data ?? []
   const activities = activitiesQuery.data?.data ?? []
   const relationships = relationshipsQuery.data?.data ?? []
   const documents = documentsQuery.data?.data ?? []
@@ -302,11 +302,11 @@ export function PersonDetailPage({
           setActiveTab={setActiveTab}
           person={person}
           organization={organization}
-          opportunities={opportunities}
+          quotes={quotes}
           activities={activities}
           relationships={relationships}
           documents={documents}
-          opportunitiesPending={opportunitiesQuery.isPending}
+          quotesPending={quotesQuery.isPending}
           activitiesPending={activitiesQuery.isPending}
           relationshipsPending={relationshipsQuery.isPending}
           documentsPending={documentsQuery.isPending}
@@ -569,11 +569,11 @@ export interface PersonMainProps {
   setActiveTab: (value: PersonDetailTab) => void
   person: PersonData
   organization: PersonOrganization | null
-  opportunities: PersonOpportunity[]
+  quotes: PersonQuote[]
   activities: PersonActivity[]
   relationships: PersonRelationship[]
   documents: PersonDocument[]
-  opportunitiesPending: boolean
+  quotesPending: boolean
   activitiesPending: boolean
   relationshipsPending: boolean
   documentsPending: boolean
@@ -587,11 +587,11 @@ export function PersonMain({
   setActiveTab,
   person,
   organization,
-  opportunities,
+  quotes,
   activities,
   relationships,
   documents,
-  opportunitiesPending,
+  quotesPending,
   activitiesPending,
   relationshipsPending,
   documentsPending,
@@ -609,8 +609,8 @@ export function PersonMain({
           <CardHeader className="pb-0">
             <TabsList className="h-auto flex-wrap justify-start">
               <TabsTrigger value="overview">{messages.personDetail.tabs.overview}</TabsTrigger>
-              <TabsTrigger value="opportunities">
-                {messages.personDetail.tabs.opportunities} ({opportunities.length})
+              <TabsTrigger value="quotes">
+                {messages.personDetail.tabs.quotes} ({quotes.length})
               </TabsTrigger>
               <TabsTrigger value="activities">
                 {messages.personDetail.tabs.activities} ({activities.length})
@@ -657,16 +657,13 @@ export function PersonMain({
               )}
               {slots?.overviewEnd}
             </TabsContent>
-            <TabsContent value="opportunities" className="m-0">
-              {slots?.opportunitiesContent !== undefined ? (
-                slots.opportunitiesContent
+            <TabsContent value="quotes" className="m-0">
+              {slots?.quotesContent !== undefined ? (
+                slots.quotesContent
               ) : (
-                <PersonOpportunitiesPanel
-                  opportunities={opportunities}
-                  opportunitiesPending={opportunitiesPending}
-                />
+                <PersonQuotesPanel quotes={quotes} quotesPending={quotesPending} />
               )}
-              {slots?.opportunitiesEnd}
+              {slots?.quotesEnd}
             </TabsContent>
             <TabsContent value="activities" className="m-0">
               {slots?.activitiesContent !== undefined ? (
@@ -828,45 +825,42 @@ export function OverviewTerm({ label, children, className }: OverviewTermProps) 
   )
 }
 
-export interface PersonOpportunitiesPanelProps {
-  opportunities: PersonOpportunity[]
-  opportunitiesPending: boolean
+export interface PersonQuotesPanelProps {
+  quotes: PersonQuote[]
+  quotesPending: boolean
 }
 
-export function PersonOpportunitiesPanel({
-  opportunities,
-  opportunitiesPending,
-}: PersonOpportunitiesPanelProps) {
+export function PersonQuotesPanel({ quotes, quotesPending }: PersonQuotesPanelProps) {
   const i18n = useCrmUiI18nOrDefault()
   const messages = useCrmUiMessagesOrDefault()
 
-  if (opportunitiesPending) {
+  if (quotesPending) {
     return <LoadingRow />
   }
 
-  if (opportunities.length === 0) {
-    return <EmptyRow>{messages.personDetail.empty.noOpportunities}</EmptyRow>
+  if (quotes.length === 0) {
+    return <EmptyRow>{messages.personDetail.empty.noQuotes}</EmptyRow>
   }
 
   return (
     <ul className="divide-y">
-      {opportunities.map((opportunity) => {
+      {quotes.map((quote) => {
         const statusLabel =
-          messages.common.opportunityStatusLabels[
-            opportunity.status as keyof typeof messages.common.opportunityStatusLabels
-          ] ?? opportunity.status
+          messages.common.quoteStatusLabels[
+            quote.status as keyof typeof messages.common.quoteStatusLabels
+          ] ?? quote.status
         return (
-          <li key={opportunity.id} className="flex items-center justify-between gap-3 py-3">
+          <li key={quote.id} className="flex items-center justify-between gap-3 py-3">
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{opportunity.title}</p>
+              <p className="truncate text-sm font-medium">{quote.title}</p>
               <p className="text-xs text-muted-foreground">
-                {statusLabel} - {formatCrmDate(i18n, opportunity.expectedCloseDate)}
+                {statusLabel} - {formatCrmDate(i18n, quote.expectedCloseDate)}
               </p>
             </div>
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1 text-sm font-medium">
                 <TrendingUp className="size-3.5 text-muted-foreground" aria-hidden="true" />
-                {formatCrmMoney(i18n, opportunity.valueAmountCents, opportunity.valueCurrency)}
+                {formatCrmMoney(i18n, quote.valueAmountCents, quote.valueCurrency)}
               </span>
               <Badge variant="outline">{statusLabel}</Badge>
             </div>
