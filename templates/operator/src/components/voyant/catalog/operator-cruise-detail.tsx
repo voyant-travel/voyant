@@ -28,6 +28,7 @@ export function OperatorCruiseDetail({ id, locale }: { id: string; locale?: stri
       onBreadcrumbs={setCrumbs}
       // Cruises carry a sailing + cabin selection, so they name their vertical
       // via `?module`; provenance still resolves server-side from (module, id).
+      // The sailing's date locks the departure step; name/hero preview the panel.
       onBook={(cruiseId, opts) =>
         void navigate({
           to: "/bookings/new/$entityId",
@@ -35,7 +36,12 @@ export function OperatorCruiseDetail({ id, locale }: { id: string; locale?: stri
           search: {
             module: "cruises",
             ...(opts.departureId ? { departureId: opts.departureId } : {}),
+            ...(opts.departureDate ? { departureDate: opts.departureDate.slice(0, 10) } : {}),
             ...(opts.optionId ? { optionId: opts.optionId } : {}),
+          },
+          state: {
+            ...(opts.name ? { entityName: opts.name } : {}),
+            ...(opts.heroImageUrl ? { entityImageUrl: opts.heroImageUrl } : {}),
           },
         })
       }

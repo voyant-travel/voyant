@@ -319,13 +319,32 @@ function goToBookingPage(
   // One URL for every booking — just the id. The `products` vertical is the
   // default; others name themselves via `?module`. Provenance (owned vs
   // sourced, connection, ref) resolves server-side from (module, id).
+  const isSourced = (() => {
+    const kind = stringField(hit, "source.kind", null)
+    return Boolean(kind) && kind !== "owned"
+  })()
+  const name = stringField(hit, "name", null)
+  const heroImageUrl =
+    stringField(hit, "thumbnailUrl", null) ?? stringField(hit, "heroImageUrl", null)
   navigate({
     to: "/bookings/new/$entityId",
     params: { entityId: hit.id },
     search: {
       ...(entityModule !== "products" ? { module: entityModule } : {}),
-      ...(departure ? { departureId: departure.id } : {}),
+      // Owned books a real availability slot. Sourced has no matching slot, so
+      // the picked departure's date seeds the free-date picker instead (the
+      // slot id can't be replayed) — same as the catalog detail pages.
+      ...(departure
+        ? isSourced
+          ? { departureDate: departure.startsAt.slice(0, 10) }
+          : { departureId: departure.id }
+        : {}),
       ...(option ? { optionId: option.id } : {}),
+    },
+    // Preview hints ride in ephemeral history state, not the URL.
+    state: {
+      ...(name ? { entityName: name } : {}),
+      ...(heroImageUrl ? { entityImageUrl: heroImageUrl } : {}),
     },
   })
 }

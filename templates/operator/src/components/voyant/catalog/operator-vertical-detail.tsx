@@ -53,7 +53,8 @@ export function OperatorVerticalDetail({
       formatSupplier={formatSupplier}
       onBreadcrumbs={setCrumbs}
       // Non-product verticals name themselves via `?module` (products is the
-      // default); provenance resolves server-side from (module, id).
+      // default); provenance resolves server-side from (module, id). The picked
+      // departure's date locks the departure step; name/hero preview the panel.
       onBook={(entityModule, entityId, opts) =>
         void navigate({
           to: "/bookings/new/$entityId",
@@ -61,7 +62,12 @@ export function OperatorVerticalDetail({
           search: {
             ...(entityModule !== "products" ? { module: entityModule } : {}),
             ...(opts.departureId ? { departureId: opts.departureId } : {}),
+            ...(opts.departureDate ? { departureDate: opts.departureDate.slice(0, 10) } : {}),
             ...(opts.optionId ? { optionId: opts.optionId } : {}),
+          },
+          state: {
+            ...(opts.name ? { entityName: opts.name } : {}),
+            ...(opts.heroImageUrl ? { entityImageUrl: opts.heroImageUrl } : {}),
           },
         })
       }

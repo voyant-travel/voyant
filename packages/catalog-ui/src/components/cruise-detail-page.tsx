@@ -113,8 +113,19 @@ export interface CruiseDetailPageProps {
   cruisesLabel: string
   /** Href of the cruises browse page, e.g. `/catalog/cruises`. */
   cruisesHref: string
-  /** Route to the booking journey for a sailing/cabin. */
-  onBook: (cruiseId: string, opts: { departureId?: string; optionId?: string }) => void
+  /** Route to the booking journey for a sailing/cabin. `departureDate` + the
+   *  name/hero let the journey pre-fill the date and show a preview rather than
+   *  opening blank. */
+  onBook: (
+    cruiseId: string,
+    opts: {
+      departureId?: string
+      optionId?: string
+      departureDate?: string | null
+      name?: string | null
+      heroImageUrl?: string | null
+    },
+  ) => void
   /** Publish breadcrumbs as the resolved name changes. */
   onBreadcrumbs?: (crumbs: Array<{ label: string; href?: string }>) => void
 }
@@ -297,6 +308,9 @@ export function CruiseDetailPage({
     onBook(id, {
       ...(sail.sourceRef || sail.id ? { departureId: sail.sourceRef ?? sail.id ?? "" } : {}),
       ...(cabinCode ? { optionId: cabinCode } : {}),
+      departureDate: sail.startDate,
+      name: detail?.name ?? null,
+      heroImageUrl: detail?.heroImageUrl ?? null,
     })
 
   if (status === "loading") {
