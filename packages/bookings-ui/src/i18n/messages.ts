@@ -753,6 +753,10 @@ export type BookingsUiMessages = {
       priceOverrideReasonPlaceholder: string
       priceOverrideReasonRequired: string
     }
+    documents: {
+      saveAsDraft: string
+      saveAsDraftHint: string
+    }
     contract: {
       defaultTitle: string
       description: string

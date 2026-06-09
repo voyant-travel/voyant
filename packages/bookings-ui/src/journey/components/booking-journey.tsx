@@ -345,6 +345,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
       // The owned commit reads the buyer + travelers off `party`, not the
       // draft — without this the create rejects with "no billing person/org".
       party: buildCommitParty(draft),
+      initialStatus: resolveInitialStatus(draft),
       paymentIntent: { type: draft.payment.intent === "card" ? "card" : "hold" } as never,
     })
   }
@@ -732,6 +733,18 @@ function buildCommitParty(draft: Draft): Record<string, unknown> {
       travelers: draft.travelers.map((t) => ({ personId: t.personId })),
     },
   }
+}
+
+/**
+ * Initial booking status from the operator's choices: an explicit "save as
+ * draft", else live — confirmed when the payment is fully marked paid,
+ * otherwise awaiting payment.
+ */
+function resolveInitialStatus(draft: Draft): "draft" | "confirmed" | "awaiting_payment" {
+  if (draft.saveAsDraft) return "draft"
+  const schedules = draft.paymentSchedules ?? []
+  const fullyPaid = schedules.length > 0 && schedules.every((s) => s.status === "paid")
+  return fullyPaid ? "confirmed" : "awaiting_payment"
 }
 
 const sectionId = (step: JourneyStep): string => `bj-section-${step}`

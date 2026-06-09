@@ -28,6 +28,24 @@ export function DocumentsStep({
       </CardHeader>
       <Separator />
       <CardContent className="space-y-4">
+        {/* Booking status: draft, or live (confirmed when paid / awaiting
+            payment otherwise — decided at commit). */}
+        <div className="flex items-start gap-2 text-sm">
+          <Checkbox
+            id="bj-save-as-draft"
+            checked={draft.saveAsDraft === true}
+            onCheckedChange={(v) => setDraft({ ...draft, saveAsDraft: v === true })}
+            className="mt-0.5"
+          />
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="bj-save-as-draft" className="cursor-pointer">
+              {messages.bookingJourney.documents.saveAsDraft}
+            </Label>
+            <p className="text-muted-foreground text-xs">
+              {messages.bookingJourney.documents.saveAsDraftHint}
+            </p>
+          </div>
+        </div>
         <div className="space-y-1">
           <Label htmlFor="bj-internal-notes">{messages.bookingJourney.review.internalNotes}</Label>
           <Textarea

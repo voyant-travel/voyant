@@ -939,6 +939,11 @@ export const bookingsUiRo = {
       priceOverrideReasonPlaceholder: "De ce se modifica pretul?",
       priceOverrideReasonRequired: "Este necesar un motiv cand pretul este modificat.",
     },
+    documents: {
+      saveAsDraft: "Salveaza ca ciorna",
+      saveAsDraftHint:
+        "Pastreaza rezervarea ca ciorna. Lasa nebifat pentru a o crea activa - confirmata daca plata este marcata achitata, altfel in asteptarea platii.",
+    },
     contract: {
       defaultTitle: "Contract rezervare",
       description:

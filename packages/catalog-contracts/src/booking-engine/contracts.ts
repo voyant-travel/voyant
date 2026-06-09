@@ -488,6 +488,12 @@ export const bookingDraftV1 = z.object({
    */
   internalNotes: z.string().optional(),
   /**
+   * Operator-only: land the booking as a draft instead of a live booking.
+   * When false (default), the commit picks `confirmed` if the payment is
+   * marked paid, else `awaiting_payment`.
+   */
+  saveAsDraft: z.boolean().optional(),
+  /**
    * Customer-facing notes — "anything we should know?" Free-text
    * the customer fills on the storefront review step. Stored on
    * the booking and visible to ops; treat as untrusted input.

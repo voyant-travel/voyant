@@ -938,6 +938,11 @@ export const bookingsUiEn = {
       priceOverrideReasonPlaceholder: "Why is the price being changed?",
       priceOverrideReasonRequired: "A reason is required when the price is changed.",
     },
+    documents: {
+      saveAsDraft: "Save as draft",
+      saveAsDraftHint:
+        "Keep the booking as a draft. Leave unchecked to create it live — confirmed if the payment is marked paid, otherwise awaiting payment.",
+    },
     contract: {
       defaultTitle: "Booking contract",
       description:
