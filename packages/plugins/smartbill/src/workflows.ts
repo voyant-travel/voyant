@@ -15,9 +15,22 @@ import type {
   SmartbillStatusResponse,
 } from "./types.js"
 import {
+  loadSmartbillCandidateRefs,
+  type SmartbillCandidateExternalRefRecorder,
+  type SmartbillCandidateInvoice,
+  type SmartbillWorkflowCandidateSource,
+} from "./workflow-candidates.js"
+import {
   discoverRemoteDocuments,
   paymentStatusToRemoteStatus,
 } from "./workflow-remote-discovery.js"
+
+export type {
+  SmartbillCandidateExternalRefRecorder,
+  SmartbillCandidateExternalRefRecorderContext,
+  SmartbillCandidateInvoice,
+  SmartbillWorkflowCandidateSource,
+} from "./workflow-candidates.js"
 
 export type SmartbillWorkflowDocumentType = "invoice" | "proforma"
 
@@ -77,8 +90,11 @@ export interface SmartbillProformaConversionPollerOptions {
   client: SmartbillClientApi
   limit?: number
   companyVatCode?: string
+  source?: SmartbillWorkflowCandidateSource
   logger?: SmartbillWorkflowLogger
   listExternalRefs?: () => Promise<SmartbillWorkflowExternalRef[]>
+  listCandidateInvoices?: () => Promise<SmartbillCandidateInvoice[]>
+  recordCandidateExternalRef?: SmartbillCandidateExternalRefRecorder
   onConverted: (
     proformaRef: SmartbillWorkflowExternalRef,
     conversion: SmartbillProformaConversion,
@@ -152,7 +168,10 @@ export interface SmartbillDriftReconcilerOptions {
   companyVatCode?: string
   logger?: SmartbillWorkflowLogger
   discoverRemote?: boolean
+  source?: SmartbillWorkflowCandidateSource
   listExternalRefs?: () => Promise<SmartbillWorkflowExternalRef[]>
+  listCandidateInvoices?: () => Promise<SmartbillCandidateInvoice[]>
+  recordCandidateExternalRef?: SmartbillCandidateExternalRefRecorder
   listRemoteDocuments?: (context: {
     refs: SmartbillWorkflowExternalRef[]
   }) => Promise<SmartbillRemoteDocument[]>
@@ -187,7 +206,7 @@ export function createSmartbillProformaConversionPoller(
       skipped: [],
       errors: [],
     }
-    const refs = await loadSmartbillExternalRefs(options)
+    const refs = await loadSmartbillWorkflowRefs(options)
 
     for (const ref of refs) {
       const document = resolveReferenceParts(ref, options.companyVatCode)
@@ -247,7 +266,7 @@ export function createSmartbillDriftReconciler(
       skipped: [],
       errors: [],
     }
-    const refs = await loadSmartbillExternalRefs(options)
+    const refs = await loadSmartbillWorkflowRefs(options)
     const remoteDocuments = await loadRemoteDocuments(options, refs)
     const remoteDocumentMap = new Map(
       (remoteDocuments ?? []).map((remote) => [documentKey(remote), remote]),
@@ -336,6 +355,21 @@ function resolveDiscoveryCompanyVatCode(
   if (companyVatCodes.size === 1) return [...companyVatCodes][0]!
 
   throw new Error("SmartBill remote discovery requires companyVatCode")
+}
+
+async function loadSmartbillWorkflowRefs(options: {
+  db?: PostgresJsDatabase
+  limit?: number
+  companyVatCode?: string
+  source?: SmartbillWorkflowCandidateSource
+  listExternalRefs?: () => Promise<SmartbillWorkflowExternalRef[]>
+  listCandidateInvoices?: () => Promise<SmartbillCandidateInvoice[]>
+  recordCandidateExternalRef?: SmartbillCandidateExternalRefRecorder
+}) {
+  if (options.listCandidateInvoices || options.source === "invoices") {
+    return loadSmartbillCandidateRefs(options)
+  }
+  return loadSmartbillExternalRefs(options)
 }
 
 async function loadSmartbillExternalRefs(options: {

@@ -161,6 +161,7 @@ import {
 const pollProformas = createSmartbillProformaConversionPoller({
   db,
   client: smartbillClient,
+  source: "invoices",
   onConverted: async (proformaRef, conversion) => {
     // Record a Voyant payment or emit a domain event in the host app.
     // The plugin reports the SmartBill invoice series/number and source
@@ -171,6 +172,7 @@ const pollProformas = createSmartbillProformaConversionPoller({
 const reconcileSmartbill = createSmartbillDriftReconciler({
   db,
   client: smartbillClient,
+  source: "invoices",
   discoverRemote: true,
   onFinding: async (finding) => {
     // Log, alert, or open an operator ticket.
@@ -189,8 +191,13 @@ default. Pass `discoverRemote: true` to walk SmartBill invoice/proforma series
 with `client.listSeries()` and report documents that exist remotely without a
 local external ref as `missing_local`; those findings include lazy PDF and
 payment-status/conversion lookup accessors on `finding.remote.accessors`.
-Consumers can still pass `listRemoteDocuments` to provide their own inventory.
-The reconciler only reports drift; it does not delete, void, or create finance
+Both workflow factories use `invoice_external_refs` by default. Pass
+`source: "invoices"` to derive candidates from finance invoice rows instead, or
+pass `listCandidateInvoices` for a custom invoice-table/source query. Candidate
+refs are materialized as SmartBill external refs when `db` is available; custom
+sources can override that writeback with `recordCandidateExternalRef`. Consumers
+can still pass `listRemoteDocuments` to provide their own remote inventory. The
+reconciler only reports drift; it does not delete, void, or create finance
 records.
 
 ## Exports
