@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/workflows-bindings",
-  "version": "0.37.1",
+  "version": "0.37.2",
   "private": true,
   "description": "Deprecated workspace compatibility wrapper for @voyantjs/workflows/bindings.",
   "license": "Apache-2.0",

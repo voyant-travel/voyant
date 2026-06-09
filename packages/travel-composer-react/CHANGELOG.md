@@ -1,5 +1,17 @@
 # @voyantjs/travel-composer-react
 
+## 0.105.0
+
+### Minor Changes
+
+- d1ad572: Add composer-owned Trip snapshot freezing and read APIs for Quote Version proposal snapshots.
+
+### Patch Changes
+
+- Updated dependencies [c2aef18]
+- Updated dependencies [d1ad572]
+  - @voyantjs/travel-composer@0.105.0
+
 ## 0.104.1
 
 ### Patch Changes

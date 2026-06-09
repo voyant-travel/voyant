@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/workflows-orchestrator-worker",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Reference Cloudflare Worker that hosts the Voyant Workflows orchestrator. Composes @voyantjs/workflows-orchestrator-cloudflare into a deployable Worker + Durable Object.",
   "license": "Apache-2.0",
   "private": true,

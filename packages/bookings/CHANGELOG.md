@@ -1,5 +1,16 @@
 # @voyantjs/bookings
 
+## 0.107.0
+
+### Patch Changes
+
+- Updated dependencies [c2aef18]
+  - @voyantjs/core@0.105.0
+  - @voyantjs/bookings-contracts@0.104.2
+  - @voyantjs/db@0.104.3
+  - @voyantjs/action-ledger@0.104.2
+  - @voyantjs/hono@0.104.2
+
 ## 0.106.2
 
 ### Patch Changes

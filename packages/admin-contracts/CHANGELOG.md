@@ -1,5 +1,19 @@
 # @voyantjs/admin-contracts
 
+## 0.104.4
+
+### Patch Changes
+
+- Updated dependencies [d1ad572]
+- Updated dependencies [d1ad572]
+- Updated dependencies [d1ad572]
+- Updated dependencies [d1ad572]
+  - @voyantjs/crm-contracts@0.106.0
+  - @voyantjs/bookings-contracts@0.104.2
+  - @voyantjs/finance-contracts@0.104.4
+  - @voyantjs/legal-contracts@0.104.2
+  - @voyantjs/products-contracts@0.105.1
+
 ## 0.104.3
 
 ### Patch Changes

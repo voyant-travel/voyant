@@ -1,5 +1,25 @@
 # @voyantjs/travel-composer
 
+## 0.105.0
+
+### Minor Changes
+
+- d1ad572: Add composer-owned Trip snapshot freezing and read APIs for Quote Version proposal snapshots.
+
+### Patch Changes
+
+- c2aef18: Manifest-driven migration schema resolution (#1608).
+
+  - `@voyantjs/core` `VoyantConfig` gains `additionalSchemas`, `extensions`, and `schemas` fields (with validation) so a template's migrated schema set is derived from `voyant.config.ts`.
+  - `catalog`, `flights`, `travel-composer`, and `workflow-runs` declare `package.json#voyant` schema metadata so they resolve into the generated schema manifest (flights pins its non-standard `./reference/local-postgres` subpath).
+
+- Updated dependencies [c2aef18]
+  - @voyantjs/core@0.105.0
+  - @voyantjs/catalog@0.105.0
+  - @voyantjs/db@0.104.3
+  - @voyantjs/hono@0.104.2
+  - @voyantjs/catalog-mcp@0.105.0
+
 ## 0.104.1
 
 ### Patch Changes

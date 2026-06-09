@@ -1,5 +1,18 @@
 # @voyantjs/flights
 
+## 0.107.0
+
+### Patch Changes
+
+- c2aef18: Manifest-driven migration schema resolution (#1608).
+
+  - `@voyantjs/core` `VoyantConfig` gains `additionalSchemas`, `extensions`, and `schemas` fields (with validation) so a template's migrated schema set is derived from `voyant.config.ts`.
+  - `catalog`, `flights`, `travel-composer`, and `workflow-runs` declare `package.json#voyant` schema metadata so they resolve into the generated schema manifest (flights pins its non-standard `./reference/local-postgres` subpath).
+
+- Updated dependencies [c2aef18]
+  - @voyantjs/catalog@0.105.0
+  - @voyantjs/db@0.104.3
+
 ## 0.106.0
 
 ## 0.105.0

@@ -1,5 +1,14 @@
 # @voyantjs/external-refs
 
+## 0.107.0
+
+### Patch Changes
+
+- Updated dependencies [c2aef18]
+  - @voyantjs/core@0.105.0
+  - @voyantjs/db@0.104.3
+  - @voyantjs/hono@0.104.2
+
 ## 0.106.0
 
 ## 0.105.0

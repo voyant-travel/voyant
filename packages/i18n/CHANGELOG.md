@@ -1,5 +1,11 @@
 # @voyantjs/i18n
 
+## 0.105.0
+
+### Minor Changes
+
+- d1ad572: Rename CRM React hooks, UI components, and registry entries from Opportunity to Quote, with Quote Version surfaces split out for proposal/version workflows.
+
 ## 0.104.2
 
 ### Patch Changes
