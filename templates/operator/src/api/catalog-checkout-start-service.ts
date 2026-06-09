@@ -243,7 +243,7 @@ async function startInquiryCheckout(
   await releaseInquiryBooking(db, booking, eventBus)
 
   await eventBus?.emit("inquiry.created", {
-    opportunityId: quote?.id ?? null,
+    quoteId: quote?.id ?? null,
     bookingId: booking.id,
     bookingNumber: booking.bookingNumber,
     pipelineId,

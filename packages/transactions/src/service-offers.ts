@@ -127,8 +127,8 @@ function pickPrimaryContactSnapshot(
 export async function listOffers(db: PostgresJsDatabase, query: OfferListQuery) {
   const conditions = []
   if (query.status) conditions.push(eq(offers.status, query.status))
-  if (query.opportunityId) conditions.push(eq(offers.opportunityId, query.opportunityId))
   if (query.quoteId) conditions.push(eq(offers.quoteId, query.quoteId))
+  if (query.quoteVersionId) conditions.push(eq(offers.quoteVersionId, query.quoteVersionId))
   if (query.personId) conditions.push(eq(offers.personId, query.personId))
   if (query.organizationId) conditions.push(eq(offers.organizationId, query.organizationId))
   if (query.marketId) conditions.push(eq(offers.marketId, query.marketId))

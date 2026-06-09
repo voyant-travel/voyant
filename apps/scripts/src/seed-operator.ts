@@ -49,12 +49,12 @@ import {
   customFieldValues,
 } from "../../../packages/crm/src/schema-activities.ts"
 import {
-  opportunities,
-  opportunityParticipants,
-  opportunityProducts,
   pipelines,
-  quoteLines,
+  quoteParticipants,
+  quoteProducts,
   quotes,
+  quoteVersionLines,
+  quoteVersions,
   stages,
 } from "../../../packages/crm/src/schema-sales.ts"
 import { newId } from "../../../packages/db/src/lib/index.ts"
@@ -80,6 +80,7 @@ import {
 import {
   productDayServices,
   productDays,
+  productItineraries,
   productMedia,
   productNotes,
   productVersions,
@@ -138,7 +139,7 @@ const scaleConfig = {
     suppliers: 3,
     products: 3,
     bookings: 4,
-    opportunities: 2,
+    quotes: 2,
     participantsPerBooking: 2,
   },
   medium: {
@@ -146,7 +147,7 @@ const scaleConfig = {
     suppliers: 5,
     products: 5,
     bookings: 6,
-    opportunities: 3,
+    quotes: 3,
     participantsPerBooking: 3,
   },
   large: {
@@ -154,7 +155,7 @@ const scaleConfig = {
     suppliers: 7,
     products: 8,
     bookings: 10,
-    opportunities: 5,
+    quotes: 5,
     participantsPerBooking: 4,
   },
 } as const
@@ -312,7 +313,7 @@ const worldPlanSchema = z.object({
       }),
     )
     .min(1),
-  opportunities: z
+  quotes: z
     .array(
       z.object({
         title: z.string().min(4),
@@ -559,7 +560,7 @@ async function buildWorldPlan(params: {
     `Customers: ${counts.customers}`,
     `Suppliers: ${counts.suppliers}`,
     `Products: ${counts.products}`,
-    `Opportunities: ${counts.opportunities}`,
+    `Quotes: ${counts.quotes}`,
     `Bookings: ${counts.bookings}`,
     "",
     "Requirements:",
@@ -665,15 +666,15 @@ function normalizePlan(
           : fallbackSupplier?.name || plan.suppliers[0]?.name || "Seed Supplier",
       }
     }),
-    opportunities: plan.opportunities.slice(0, counts.opportunities).map((opportunity, index) => {
+    quotes: plan.quotes.slice(0, counts.quotes).map((quotePlan, index) => {
       const fallbackCustomer = plan.customers[index % plan.customers.length]
       return {
-        ...opportunity,
-        customerName: customersByName.has(opportunity.customerName)
-          ? opportunity.customerName
+        ...quotePlan,
+        customerName: customersByName.has(quotePlan.customerName)
+          ? quotePlan.customerName
           : fallbackCustomer?.name || plan.customers[0]?.name || "Seed Customer",
-        contactEmail: opportunity.contactEmail || fallbackCustomer?.primaryContact.email || "",
-        products: opportunity.products
+        contactEmail: quotePlan.contactEmail || fallbackCustomer?.primaryContact.email || "",
+        products: quotePlan.products
           .map((item) => ({
             ...item,
             productName: productsByName.has(item.productName)
@@ -1404,13 +1405,24 @@ async function seedProducts(
       description: `${productPlan.unitName} unit for ${productPlan.name}`,
     })
 
+    const [itinerary] = await ctx.db
+      .insert(productItineraries)
+      .values({
+        id: newId("product_itineraries"),
+        productId: product.id,
+        name: "Default itinerary",
+        isDefault: true,
+        sortOrder: 0,
+      })
+      .returning()
+
     const dayRows = []
     for (const [dayIndex, itineraryDay] of productPlan.itineraryDays.entries()) {
       const [day] = await ctx.db
         .insert(productDays)
         .values({
           id: newId("product_days"),
-          productId: product.id,
+          itineraryId: itinerary.id,
           dayNumber: dayIndex + 1,
           title: itineraryDay.title,
           description: itineraryDay.description,
@@ -1658,7 +1670,7 @@ async function seedActivitiesAndSales(
     .insert(pipelines)
     .values({
       id: newId("pipelines"),
-      entityType: "opportunity",
+      entityType: "quote",
       name: `Seed sales pipeline ${ctx.labelSlug}`,
       isDefault: false,
       sortOrder: 0,
@@ -1718,11 +1730,11 @@ async function seedActivitiesAndSales(
     ["won", wonStage.id],
   ])
 
-  for (const [index, opportunityPlan] of plan.opportunities.entries()) {
-    const customerSeed = customerSeeds.get(opportunityPlan.customerName)
+  for (const [index, quotePlan] of plan.quotes.entries()) {
+    const customerSeed = customerSeeds.get(quotePlan.customerName)
     if (!customerSeed) continue
 
-    const productItems = opportunityPlan.products
+    const productItems = quotePlan.products
       .map((productItem) => {
         const productSeed = productSeeds.get(productItem.productName)
         return productSeed
@@ -1734,49 +1746,49 @@ async function seedActivitiesAndSales(
       })
       .filter((value): value is NonNullable<typeof value> => Boolean(value))
 
-    const [opportunity] = await ctx.db
-      .insert(opportunities)
+    const [quote] = await ctx.db
+      .insert(quotes)
       .values({
-        id: newId("opportunities"),
-        title: opportunityPlan.title,
+        id: newId("quotes"),
+        title: quotePlan.title,
         personId:
-          customerSeed.emailToPersonId.get(opportunityPlan.contactEmail.toLowerCase()) ??
+          customerSeed.emailToPersonId.get(quotePlan.contactEmail.toLowerCase()) ??
           customerSeed.primaryContactId,
         organizationId: customerSeed.organizationId,
         pipelineId: pipeline.id,
-        stageId: stageByName.get(opportunityPlan.stage) ?? proposalStage.id,
+        stageId: stageByName.get(quotePlan.stage) ?? proposalStage.id,
         ownerId: ctx.ownerUserId,
-        status: opportunityPlan.stage === "won" ? "won" : "open",
+        status: quotePlan.stage === "won" ? "won" : "open",
         valueAmountCents: productItems.reduce(
           (sum, item) => sum + item.productItem.quantity * 20_000,
           0,
         ),
         valueCurrency: plan.workspace.currency,
-        expectedCloseDate: opportunityPlan.closeDate,
+        expectedCloseDate: quotePlan.closeDate,
         source: "operator_seed",
         sourceRef: ctx.labelSlug,
-        tags: ["seeded", opportunityPlan.stage],
+        tags: ["seeded", quotePlan.stage],
         stageChangedAt: new Date(),
-        closedAt: opportunityPlan.stage === "won" ? new Date() : null,
+        closedAt: quotePlan.stage === "won" ? new Date() : null,
       })
       .returning()
 
-    await ctx.db.insert(opportunityParticipants).values({
-      id: newId("opportunity_participants"),
-      opportunityId: opportunity.id,
+    await ctx.db.insert(quoteParticipants).values({
+      id: newId("quote_participants"),
+      quoteId: quote.id,
       personId: customerSeed.primaryContactId,
       role: "decision_maker",
       isPrimary: true,
     })
 
     for (const [lineIndex, item] of productItems.entries()) {
-      await ctx.db.insert(opportunityProducts).values({
-        id: newId("opportunity_products"),
-        opportunityId: opportunity.id,
+      await ctx.db.insert(quoteProducts).values({
+        id: newId("quote_products"),
+        quoteId: quote.id,
         productId: item.productSeed.productId,
         supplierServiceId: null,
         nameSnapshot: item.productItem.productName,
-        description: `Seeded opportunity line for ${item.productItem.productName}`,
+        description: `Seeded quote line for ${item.productItem.productName}`,
         quantity: item.productItem.quantity,
         unitPriceAmountCents: 20_000 + lineIndex * 5_000,
         costAmountCents: 12_000 + lineIndex * 2_000,
@@ -1784,26 +1796,26 @@ async function seedActivitiesAndSales(
       })
     }
 
-    const [quote] = await ctx.db
-      .insert(quotes)
+    const [quoteVersion] = await ctx.db
+      .insert(quoteVersions)
       .values({
-        id: newId("quotes"),
-        opportunityId: opportunity.id,
-        status: opportunityPlan.stage === "won" ? "accepted" : "sent",
-        validUntil: shiftDateString(opportunityPlan.closeDate, 14),
+        id: newId("quote_versions"),
+        quoteId: quote.id,
+        status: quotePlan.stage === "won" ? "accepted" : "sent",
+        validUntil: shiftDateString(quotePlan.closeDate, 14),
         currency: plan.workspace.currency,
         subtotalAmountCents: productItems.length * 20_000,
         taxAmountCents: Math.round(productItems.length * 20_000 * 0.09),
         totalAmountCents: Math.round(productItems.length * 20_000 * 1.09),
-        notes: opportunityPlan.notes,
+        notes: quotePlan.notes,
       })
       .returning()
 
     for (const [lineIndex, item] of productItems.entries()) {
       const totalAmount = item.productItem.quantity * (18_000 + lineIndex * 4_000)
-      await ctx.db.insert(quoteLines).values({
-        id: newId("quote_lines"),
-        quoteId: quote.id,
+      await ctx.db.insert(quoteVersionLines).values({
+        id: newId("quote_version_lines"),
+        quoteVersionId: quoteVersion.id,
         productId: item.productSeed.productId,
         supplierServiceId: null,
         description: item.productItem.productName,
@@ -1818,14 +1830,14 @@ async function seedActivitiesAndSales(
       .insert(activities)
       .values({
         id: newId("activities"),
-        subject: `${opportunityPlan.title} follow-up`,
+        subject: `${quotePlan.title} follow-up`,
         type: index === 0 ? "meeting" : "email",
         ownerId: ctx.ownerUserId,
-        status: opportunityPlan.stage === "won" ? "done" : "planned",
+        status: quotePlan.stage === "won" ? "done" : "planned",
         dueAt: daysFromNow(5 + index),
-        completedAt: opportunityPlan.stage === "won" ? new Date() : null,
+        completedAt: quotePlan.stage === "won" ? new Date() : null,
         location: "Operator HQ",
-        description: opportunityPlan.notes,
+        description: quotePlan.notes,
       })
       .returning()
 
@@ -1840,8 +1852,8 @@ async function seedActivitiesAndSales(
       {
         id: newId("activity_links"),
         activityId: activity.id,
-        entityType: "opportunity",
-        entityId: opportunity.id,
+        entityType: "quote",
+        entityId: quote.id,
         role: "related",
       },
     ])
@@ -2324,7 +2336,7 @@ async function seedTransactionsAndBookings(
             ? "draft"
             : bookingPlan.status === "completed"
               ? "paid"
-              : "sent",
+              : "issued",
         currency: plan.workspace.currency,
         subtotalCents: totalSell,
         taxCents: Math.round(totalSell * 0.09),
@@ -2526,7 +2538,7 @@ function printPlanSummary(plan: WorldPlan, args: SeedArgs) {
         customers: plan.customers.length,
         suppliers: plan.suppliers.length,
         products: plan.products.length,
-        opportunities: plan.opportunities.length,
+        quotes: plan.quotes.length,
         bookings: plan.bookings.length,
       },
       null,
