@@ -13,12 +13,15 @@ export const bookingCrmDetails = pgTable(
   "booking_crm_details",
   {
     bookingId: text("booking_id").primaryKey(),
-    opportunityId: text("opportunity_id"),
     quoteId: text("quote_id"),
+    quoteVersionId: text("quote_version_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("idx_bcd_opportunity").on(t.opportunityId), index("idx_bcd_quote").on(t.quoteId)],
+  (t) => [
+    index("idx_bcd_quote").on(t.quoteId),
+    index("idx_bcd_quote_version").on(t.quoteVersionId),
+  ],
 )
 
 export type BookingCrmDetail = typeof bookingCrmDetails.$inferSelect
@@ -27,8 +30,8 @@ export type NewBookingCrmDetail = typeof bookingCrmDetails.$inferInsert
 // ---------- validation ----------
 
 const bookingCrmDetailSchema = z.object({
-  opportunityId: z.string().optional().nullable(),
   quoteId: z.string().optional().nullable(),
+  quoteVersionId: z.string().optional().nullable(),
 })
 
 // ---------- service ----------
@@ -52,14 +55,14 @@ export const bookingCrmExtensionService = {
       .insert(bookingCrmDetails)
       .values({
         bookingId,
-        opportunityId: data.opportunityId ?? null,
         quoteId: data.quoteId ?? null,
+        quoteVersionId: data.quoteVersionId ?? null,
       })
       .onConflictDoUpdate({
         target: bookingCrmDetails.bookingId,
         set: {
-          opportunityId: data.opportunityId ?? null,
           quoteId: data.quoteId ?? null,
+          quoteVersionId: data.quoteVersionId ?? null,
           updatedAt: new Date(),
         },
       })
