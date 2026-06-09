@@ -76,7 +76,11 @@ vi.mock("./travel-composer-runtime", () => ({
 
 import { buildQuoteVersionProposalUrl, mountOperatorProposalRoutes } from "./proposal-routes"
 
-const fakeDb = { name: "db" }
+const fakeTx = { execute: vi.fn(), name: "tx" }
+const fakeDb = {
+  name: "db",
+  transaction: vi.fn(async (callback: (tx: typeof fakeTx) => Promise<unknown>) => callback(fakeTx)),
+}
 const quoteVersion = {
   id: "qver_123",
   quoteId: "quot_123",
@@ -405,17 +409,19 @@ describe("operator proposal routes", () => {
     })
 
     expect(response.status).toBe(200)
-    expect(mocks.getTripSnapshotById).toHaveBeenCalledWith(fakeDb, "trsn_123")
-    expect(mocks.getTrip).toHaveBeenCalledWith(fakeDb, "trip_123")
+    expect(fakeDb.transaction).toHaveBeenCalledOnce()
+    expect(fakeTx.execute).toHaveBeenCalledOnce()
+    expect(mocks.getTripSnapshotById).toHaveBeenCalledWith(fakeTx, "trsn_123")
+    expect(mocks.getTrip).toHaveBeenCalledWith(fakeTx, "trip_123")
     expect(mocks.reserveTrip).toHaveBeenCalledWith(
-      fakeDb,
+      fakeTx,
       expect.objectContaining({
         envelopeId: "trip_123",
         idempotencyKey: "proposal-accept-reserve:qver_123:accept-1",
       }),
       { reserve: "deps" },
     )
-    expect(mocks.acceptQuoteVersion).toHaveBeenCalledWith(fakeDb, "qver_123", {})
+    expect(mocks.acceptQuoteVersion).toHaveBeenCalledWith(fakeTx, "qver_123", {})
     expect(mocks.startCheckout).toHaveBeenCalledWith(
       fakeDb,
       expect.objectContaining({
@@ -427,6 +433,9 @@ describe("operator proposal routes", () => {
     )
     expect(mocks.reserveTrip.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.acceptQuoteVersion.mock.invocationCallOrder[0],
+    )
+    expect(fakeTx.execute.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.reserveTrip.mock.invocationCallOrder[0],
     )
     const body = await response.json()
     expect(body).toEqual({
@@ -483,6 +492,27 @@ describe("operator proposal routes", () => {
     expect(body.error).toContain("changed")
     expect(mocks.reserveTrip).not.toHaveBeenCalled()
     expect(mocks.acceptQuoteVersion).not.toHaveBeenCalled()
+  })
+
+  it("rechecks a sent proposal under the quote accept lock before reserving", async () => {
+    const app = makeApp()
+    mocks.getQuoteVersionProposal.mockResolvedValueOnce(proposal).mockResolvedValueOnce({
+      ...proposal,
+      quoteVersion: { ...quoteVersion, status: "declined" },
+    })
+
+    const response = await app.request("/v1/public/proposals/qver_123/accept", {
+      method: "POST",
+      ...json({}),
+    })
+
+    expect(response.status).toBe(409)
+    expect(fakeDb.transaction).toHaveBeenCalledOnce()
+    expect(fakeTx.execute).toHaveBeenCalledOnce()
+    expect(mocks.reserveTrip).not.toHaveBeenCalled()
+    expect(mocks.acceptQuoteVersion).not.toHaveBeenCalled()
+    const body = (await response.json()) as { error?: string }
+    expect(body.error).toContain("can no longer be accepted")
   })
 
   it("returns safe reservation failure details without accepting the proposal", async () => {
