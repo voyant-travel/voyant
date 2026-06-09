@@ -344,6 +344,8 @@ async function acceptPublicProposalWithQuoteLock({
     return { kind: "accepted", accepted, snapshot, warnings: [] }
   }
 
+  assertSnapshotCanUsePublicAcceptReserve(snapshot)
+
   const liveTrip = await travelComposerService.getTrip(db, snapshot.envelopeId)
   if (!liveTrip) {
     return {
@@ -397,6 +399,28 @@ function lockQuoteAccept(db: PostgresJsDatabase, quoteId: string) {
 
 function quoteAcceptLockKey(quoteId: string) {
   return `quote-accept:${quoteId}`
+}
+
+function assertSnapshotCanUsePublicAcceptReserve(snapshot: TripSnapshot) {
+  const sourcedCatalogComponent = snapshot.frozenComponents.find(isSourcedCatalogSnapshotComponent)
+  if (!sourcedCatalogComponent) return
+
+  // reserveTrip runs under the Quote accept transaction. Owned catalog holds
+  // and manual placeholders are DB-local, but sourced catalog adapters can
+  // create upstream holds before local release records commit.
+  throw new QuoteVersionConflictError(
+    "Sourced catalog components cannot be accepted from public proposals yet",
+  )
+}
+
+function isSourcedCatalogSnapshotComponent(component: Record<string, unknown>): boolean {
+  return Boolean(
+    component.kind === "catalog_booking" &&
+      component.entityModule &&
+      component.entityId &&
+      component.sourceKind &&
+      component.sourceKind !== "owned",
+  )
 }
 
 async function startAcceptedProposalCheckout(

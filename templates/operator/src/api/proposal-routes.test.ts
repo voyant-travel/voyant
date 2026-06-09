@@ -1,234 +1,17 @@
-import { Hono } from "hono"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-
-const mocks = vi.hoisted(() => {
-  class QuoteVersionConflictError extends Error {
-    constructor(message: string) {
-      super(message)
-      this.name = "QuoteVersionConflictError"
-    }
-  }
-  return {
-    QuoteVersionConflictError,
-    acceptQuoteVersion: vi.fn(),
-    declineQuoteVersion: vi.fn(),
-    expireQuoteVersionIfPastValidUntil: vi.fn(),
-    getOperatorSettings: vi.fn(),
-    getQuoteVersionProposal: vi.fn(),
-    getTrip: vi.fn(),
-    getTripSnapshotById: vi.fn(),
-    markQuoteVersionViewed: vi.fn(),
-    reserveTrip: vi.fn(),
-    sendQuoteVersion: vi.fn(),
-    startCheckout: vi.fn(),
-  }
-})
-
-vi.mock("@voyantjs/crm", async () => {
-  const { z } = await import("zod")
-  return {
-    QuoteVersionConflictError: mocks.QuoteVersionConflictError,
-    sendQuoteVersionSchema: z.object({
-      validUntil: z.string().date().nullable().optional(),
-    }),
-    crmService: {
-      acceptQuoteVersion: mocks.acceptQuoteVersion,
-      declineQuoteVersion: mocks.declineQuoteVersion,
-      expireQuoteVersionIfPastValidUntil: mocks.expireQuoteVersionIfPastValidUntil,
-      getQuoteVersionProposal: mocks.getQuoteVersionProposal,
-      markQuoteVersionViewed: mocks.markQuoteVersionViewed,
-      sendQuoteVersion: mocks.sendQuoteVersion,
-    },
-  }
-})
-
-vi.mock("@voyantjs/travel-composer", () => {
-  class TravelComposerInvariantError extends Error {
-    constructor(message: string) {
-      super(message)
-      this.name = "TravelComposerInvariantError"
-    }
-  }
-  return {
-    TravelComposerInvariantError,
-    travelComposerService: {
-      getTrip: mocks.getTrip,
-      getTripSnapshotById: mocks.getTripSnapshotById,
-      reserveTrip: mocks.reserveTrip,
-      startCheckout: mocks.startCheckout,
-    },
-  }
-})
-
-vi.mock("./operator-runtime-adapter", () => ({
-  operatorPostgresDb: (db: unknown) => db,
-}))
-
-vi.mock("./settings", () => ({
-  getOperatorSettings: mocks.getOperatorSettings,
-  toPublicOperatorSettings: (settings: unknown) => settings,
-}))
-
-vi.mock("./travel-composer-runtime", () => ({
-  createReserveTripDeps: () => ({ reserve: "deps" }),
-  createStartCheckoutDeps: () => ({ checkout: "deps" }),
-}))
-
-import { buildQuoteVersionProposalUrl, mountOperatorProposalRoutes } from "./proposal-routes"
-
-const fakeTx = { execute: vi.fn(), name: "tx" }
-const fakeDb = {
-  name: "db",
-  transaction: vi.fn(async (callback: (tx: typeof fakeTx) => Promise<unknown>) => callback(fakeTx)),
-}
-const quoteVersion = {
-  id: "qver_123",
-  quoteId: "quot_123",
-  label: "Internal working proposal",
-  status: "sent",
-  tripSnapshotId: "trsn_123",
-  validUntil: "2099-01-01",
-  currency: "EUR",
-  subtotalAmountCents: 10000,
-  taxAmountCents: 900,
-  totalAmountCents: 10900,
-  notes: "Internal proposal notes",
-  sentAt: "2026-06-09T10:00:00.000Z",
-  viewedAt: null,
-  decidedAt: null,
-}
-
-const proposal = {
-  quote: {
-    id: "quot_123",
-    ownerId: "usr_internal_owner",
-    title: "Romania private tour",
-    pipelineId: "pipe_internal",
-    stageId: "stg_internal",
-    status: "open",
-    valueAmountCents: 250000,
-    valueCurrency: "EUR",
-    expectedCloseDate: "2026-07-01",
-    source: "inquiry",
-    sourceRef: "inq_123",
-    lostReason: "Internal loss reason",
-  },
+import {
+  buildQuoteVersionProposalUrl,
+  fakeDb,
+  fakeTx,
+  frozenComponent,
+  json,
+  liveTrip,
+  makeApp,
+  mocks,
+  proposal,
   quoteVersion,
-  lines: [
-    {
-      id: "qtln_123",
-      quoteVersionId: "qver_123",
-      productId: "qprd_internal",
-      supplierServiceId: "srv_internal",
-      description: "Airport transfer",
-      quantity: 1,
-      unitPriceAmountCents: 10000,
-      totalAmountCents: 10900,
-      currency: "EUR",
-    },
-  ],
-}
-
-const frozenEnvelope = {
-  id: "trip_123",
-  status: "priced",
-  title: "Romania private tour",
-  description: null,
-  travelerParty: {},
-  constraints: {},
-  aggregateCurrency: "EUR",
-  aggregateSubtotalAmountCents: 10000,
-  aggregateTaxAmountCents: 900,
-  aggregateTotalAmountCents: 10900,
-  updatedAt: "2026-06-09T09:00:00.000Z",
-}
-
-const frozenComponent = {
-  id: "trcp_123",
-  envelopeId: "trip_123",
-  sequence: 0,
-  kind: "manual_service",
-  status: "priced",
-  title: "Airport transfer",
-  description: null,
-  entityModule: "products",
-  entityId: "prod_123",
-  sourceKind: "manual",
-  pricingSnapshot: {
-    currency: "EUR",
-    subtotalAmountCents: 10000,
-    taxAmountCents: 900,
-    totalAmountCents: 10900,
-  },
-  warningCodes: [],
-  metadata: { manualService: { name: "Airport transfer" } },
-  updatedAt: "2026-06-09T09:00:00.000Z",
-}
-
-const tripSnapshot = {
-  id: "trsn_123",
-  envelopeId: "trip_123",
-  currency: "EUR",
-  subtotalAmountCents: 10000,
-  taxAmountCents: 900,
-  totalAmountCents: 10900,
-  frozenEnvelope,
-  frozenComponents: [frozenComponent],
-  proposal: {
-    envelopeId: "trip_123",
-    title: "Romania private tour",
-    description: null,
-    currency: "EUR",
-    subtotalAmountCents: 10000,
-    taxAmountCents: 900,
-    totalAmountCents: 10900,
-    componentCount: 1,
-    pricedComponentCount: 1,
-    warnings: [],
-    frozenAt: "2026-06-09T10:00:00.000Z",
-    lines: [
-      {
-        componentId: "trcp_123",
-        sequence: 0,
-        kind: "manual_service",
-        status: "priced",
-        title: "Airport transfer",
-        description: "Airport transfer",
-        entityModule: "products",
-        entityId: "prod_123",
-        sourceKind: "manual",
-        currency: "EUR",
-        subtotalAmountCents: 10000,
-        taxAmountCents: 900,
-        totalAmountCents: 10900,
-        priceExpiresAt: null,
-        warnings: [],
-      },
-    ],
-  },
-}
-
-const liveTrip = {
-  envelope: frozenEnvelope,
-  components: [frozenComponent],
-}
-
-function json(body: Record<string, unknown>) {
-  return {
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  }
-}
-
-function makeApp() {
-  const app = new Hono()
-  app.use("*", async (c, next) => {
-    c.set("db" as never, fakeDb as never)
-    await next()
-  })
-  mountOperatorProposalRoutes(app as never)
-  return app
-}
+  tripSnapshot,
+} from "./proposal-routes.test-helpers"
 
 describe("operator proposal routes", () => {
   beforeEach(() => {
@@ -490,6 +273,42 @@ describe("operator proposal routes", () => {
     expect(response.status).toBe(409)
     const body = (await response.json()) as { error?: string }
     expect(body.error).toContain("changed")
+    expect(mocks.reserveTrip).not.toHaveBeenCalled()
+    expect(mocks.acceptQuoteVersion).not.toHaveBeenCalled()
+  })
+
+  it("rejects sourced catalog components before reserving from public accept", async () => {
+    const app = makeApp()
+    const sourcedCatalogComponent = {
+      ...frozenComponent,
+      kind: "catalog_booking",
+      sourceKind: "external_supplier",
+    }
+    mocks.getQuoteVersionProposal.mockResolvedValue(proposal)
+    mocks.getTripSnapshotById.mockResolvedValue({
+      ...tripSnapshot,
+      frozenComponents: [sourcedCatalogComponent],
+      proposal: {
+        ...tripSnapshot.proposal,
+        lines: [
+          {
+            ...tripSnapshot.proposal.lines[0],
+            kind: "catalog_booking",
+            sourceKind: "external_supplier",
+          },
+        ],
+      },
+    })
+
+    const response = await app.request("/v1/public/proposals/qver_123/accept", {
+      method: "POST",
+      ...json({}),
+    })
+
+    expect(response.status).toBe(409)
+    const body = (await response.json()) as { error?: string }
+    expect(body.error).toContain("Sourced catalog components")
+    expect(mocks.getTrip).not.toHaveBeenCalled()
     expect(mocks.reserveTrip).not.toHaveBeenCalled()
     expect(mocks.acceptQuoteVersion).not.toHaveBeenCalled()
   })
