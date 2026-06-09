@@ -92,6 +92,30 @@ export interface VoyantConfig {
   modules?: ModuleEntry[]
   /** Plugins registered alongside core modules. */
   plugins?: PluginEntry[]
+  /**
+   * Hono extensions mounted into the application (e.g. the booking extensions
+   * each vertical contributes). Extensions that own tables are seeded into
+   * schema discovery alongside `modules`, so an extension's tables can never be
+   * silently omitted from a migration — closing the "registered at runtime but
+   * forgotten in drizzle.config" trap on the migration side.
+   */
+  extensions?: ModuleEntry[]
+  /**
+   * Schema-owning packages that this template migrates but does **not** mount
+   * as a Hono module or extension — e.g. plugin-provided schemas (`catalog` via
+   * a bridge bundle) or FK-target packages (`accommodations`). Migration tooling
+   * seeds schema discovery from `modules` + `extensions` + `additionalSchemas`,
+   * so a table can be migrated without pretending its package is a runtime
+   * module. Keeps `modules` an honest list of what is actually mounted.
+   */
+  additionalSchemas?: ModuleEntry[]
+  /**
+   * Template/app-**local** Drizzle schema entrypoints (file paths relative to
+   * the template) that belong to no package — deployment-owned glue such as a
+   * `./src/db/schema.ts`. Migration tooling appends these verbatim after the
+   * package-derived closure (`modules` + `additionalSchemas`).
+   */
+  schemas?: string[]
   /** Feature flags for gradual rollout. */
   featureFlags?: Record<string, boolean>
   /** Deployment target hint consumed by tooling. */
@@ -214,6 +238,70 @@ export function validateVoyantConfig(config: unknown): ConfigValidationResult {
           })
         }
         seen.add(name)
+      })
+    }
+  }
+
+  if (cfg.extensions !== undefined) {
+    if (!Array.isArray(cfg.extensions)) {
+      issues.push({ path: "extensions", message: "Expected an array." })
+    } else {
+      const seen = new Set<string>()
+      cfg.extensions.forEach((entry, index) => {
+        const name = extractEntryName(entry)
+        if (!name) {
+          issues.push({
+            path: `extensions[${index}]`,
+            message:
+              "Extension entry must be a non-empty string or an object with a `resolve` string.",
+          })
+          return
+        }
+        if (seen.has(name)) {
+          issues.push({ path: `extensions[${index}]`, message: `Duplicate extension "${name}".` })
+        }
+        seen.add(name)
+      })
+    }
+  }
+
+  if (cfg.additionalSchemas !== undefined) {
+    if (!Array.isArray(cfg.additionalSchemas)) {
+      issues.push({ path: "additionalSchemas", message: "Expected an array." })
+    } else {
+      const seen = new Set<string>()
+      cfg.additionalSchemas.forEach((entry, index) => {
+        const name = extractEntryName(entry)
+        if (!name) {
+          issues.push({
+            path: `additionalSchemas[${index}]`,
+            message:
+              "additionalSchemas entry must be a non-empty string or an object with a `resolve` string.",
+          })
+          return
+        }
+        if (seen.has(name)) {
+          issues.push({
+            path: `additionalSchemas[${index}]`,
+            message: `Duplicate additionalSchemas entry "${name}".`,
+          })
+        }
+        seen.add(name)
+      })
+    }
+  }
+
+  if (cfg.schemas !== undefined) {
+    if (!Array.isArray(cfg.schemas)) {
+      issues.push({ path: "schemas", message: "Expected an array of file-path strings." })
+    } else {
+      cfg.schemas.forEach((entry, index) => {
+        if (typeof entry !== "string" || entry.trim().length === 0) {
+          issues.push({
+            path: `schemas[${index}]`,
+            message: "schemas entry must be a non-empty file-path string.",
+          })
+        }
       })
     }
   }

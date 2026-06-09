@@ -12,6 +12,12 @@
     "./recorder": "./src/recorder.ts",
     "./workflows": "./src/workflows.ts"
   },
+  "voyant": {
+    "schema": "./schema",
+    "requiresSchemas": [
+      "@voyantjs/db"
+    ]
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "biome check src/",

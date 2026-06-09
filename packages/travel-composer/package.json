@@ -12,6 +12,12 @@
     "./cruise-extension": "./src/cruise-extension.ts",
     "./routes": "./src/routes.ts"
   },
+  "voyant": {
+    "schema": "./schema",
+    "requiresSchemas": [
+      "@voyantjs/db"
+    ]
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "biome check src/ tests/",
