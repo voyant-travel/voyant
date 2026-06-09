@@ -1,5 +1,11 @@
 # @voyantjs/pricing
 
+## 0.106.2
+
+### Patch Changes
+
+- 3013fef: Treat adult age floors and zero quantity bounds as standard catalog price-from candidates.
+
 ## 0.106.1
 
 ### Patch Changes
