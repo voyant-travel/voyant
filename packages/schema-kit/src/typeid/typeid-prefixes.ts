@@ -107,11 +107,11 @@ export const PREFIXES = {
   person_relationships: "prel",
   pipelines: "pipe",
   stages: "stg",
-  opportunities: "opp",
-  opportunity_participants: "oppp",
-  opportunity_products: "oppr",
   quotes: "quot",
-  quote_lines: "qtln",
+  quote_participants: "qprt",
+  quote_products: "qprd",
+  quote_versions: "qver",
+  quote_version_lines: "qtln",
   activities: "act",
   activity_links: "actl",
   activity_participants: "actp",
@@ -363,6 +363,7 @@ export const PREFIXES = {
   trip_envelopes: "trip",
   trip_components: "trcp",
   trip_component_events: "trce",
+  trip_snapshots: "trsn",
 
   // --- FINANCE (extensions for journey tax computation) ---
   // Per booking-journey-architecture §9. The classes are the per-

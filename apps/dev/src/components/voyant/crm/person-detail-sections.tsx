@@ -96,7 +96,7 @@ export type ActivityRecord = {
   updatedAt: string
 }
 
-export type OpportunityRecord = {
+export type QuoteRecord = {
   id: string
   title: string
   status: "open" | "won" | "lost" | "archived"
@@ -1049,9 +1049,9 @@ function ActivityIcon({ type }: { type: ActivityRecord["type"] }) {
   return <Icon className="h-4 w-4" />
 }
 
-function StatusBadge({ status }: { status: OpportunityRecord["status"] }) {
+function StatusBadge({ status }: { status: QuoteRecord["status"] }) {
   const variants: Record<
-    OpportunityRecord["status"],
+    QuoteRecord["status"],
     "default" | "secondary" | "outline" | "destructive"
   > = {
     open: "default",
@@ -1296,8 +1296,8 @@ export function PersonMain({
   onSaveActivity,
   onDeleteActivity,
   onToggleActivityStatus,
-  openOpportunitiesCount,
-  wonOpportunitiesCount,
+  openQuotesCount,
+  wonQuotesCount,
   totalOpenValue,
   primaryCurrency,
 }: {
@@ -1338,8 +1338,8 @@ export function PersonMain({
   ) => Promise<void>
   onDeleteActivity: (activityId: string) => Promise<void>
   onToggleActivityStatus: (activity: ActivityRecord) => Promise<void>
-  openOpportunitiesCount: number
-  wonOpportunitiesCount: number
+  openQuotesCount: number
+  wonQuotesCount: number
   totalOpenValue: number
   primaryCurrency: string | null
 }) {
@@ -1360,8 +1360,8 @@ export function PersonMain({
           <div className="grid grid-cols-3 gap-3">
             <Card size="sm">
               <CardContent className="pt-4">
-                <p className="text-xs text-muted-foreground">Open deals</p>
-                <p className="text-2xl font-semibold">{openOpportunitiesCount}</p>
+                <p className="text-xs text-muted-foreground">Open quotes</p>
+                <p className="text-2xl font-semibold">{openQuotesCount}</p>
               </CardContent>
             </Card>
             <Card size="sm">
@@ -1374,8 +1374,8 @@ export function PersonMain({
             </Card>
             <Card size="sm">
               <CardContent className="pt-4">
-                <p className="text-xs text-muted-foreground">Won deals</p>
-                <p className="text-2xl font-semibold">{wonOpportunitiesCount}</p>
+                <p className="text-xs text-muted-foreground">Won quotes</p>
+                <p className="text-2xl font-semibold">{wonQuotesCount}</p>
               </CardContent>
             </Card>
           </div>
@@ -1625,8 +1625,8 @@ export function PersonAside({
   person,
   organization,
   organizationPending,
-  opportunities,
-  opportunitiesPending,
+  quotes,
+  quotesPending,
   updatePending,
   updateField,
 }: {
@@ -1645,8 +1645,8 @@ export function PersonAside({
     | null
     | undefined
   organizationPending: boolean
-  opportunities: OpportunityRecord[]
-  opportunitiesPending: boolean
+  quotes: QuoteRecord[]
+  quotesPending: boolean
   updatePending: boolean
   updateField: (patch: Record<string, unknown>) => Promise<void>
 }) {
@@ -1712,27 +1712,29 @@ export function PersonAside({
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold">
-            Deals{opportunities.length > 0 ? ` (${opportunities.length})` : ""}
+            Quotes{quotes.length > 0 ? ` (${quotes.length})` : ""}
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          {opportunitiesPending ? (
+          {quotesPending ? (
             <div className="flex justify-center py-4">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             </div>
-          ) : opportunities.length === 0 ? (
-            <p className="py-2 text-sm text-muted-foreground">No deals yet.</p>
+          ) : quotes.length === 0 ? (
+            <p className="py-2 text-sm text-muted-foreground">No quotes yet.</p>
           ) : (
             <div className="flex flex-col gap-3">
-              {opportunities.slice(0, 5).map((opp) => (
-                <div key={opp.id} className="flex flex-col gap-1 rounded-md border p-2">
+              {quotes.slice(0, 5).map((quote) => (
+                <div key={quote.id} className="flex flex-col gap-1 rounded-md border p-2">
                   <div className="flex items-start justify-between gap-2">
-                    <p className="truncate text-sm font-medium">{opp.title}</p>
-                    <StatusBadge status={opp.status} />
+                    <p className="truncate text-sm font-medium">{quote.title}</p>
+                    <StatusBadge status={quote.status} />
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{formatMoney(opp.valueAmountCents, opp.valueCurrency)}</span>
-                    {opp.expectedCloseDate && <span>{formatDate(opp.expectedCloseDate)}</span>}
+                    <span>{formatMoney(quote.valueAmountCents, quote.valueCurrency)}</span>
+                    {quote.expectedCloseDate ? (
+                      <span>{formatDate(quote.expectedCloseDate)}</span>
+                    ) : null}
                   </div>
                 </div>
               ))}

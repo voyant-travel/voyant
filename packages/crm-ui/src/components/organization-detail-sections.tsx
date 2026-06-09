@@ -2,9 +2,9 @@
 
 import type {
   ActivityRecord,
-  OpportunityRecord,
   OrganizationRecord,
   PersonRecord,
+  QuoteRecord,
   UpdateOrganizationInput,
 } from "@voyantjs/crm-react"
 import {
@@ -49,7 +49,7 @@ import { TagsEditor } from "./tags-editor.js"
 export type OrganizationDetailTab =
   | "overview"
   | "people"
-  | "opportunities"
+  | "quotes"
   | "activities"
   | "bookings"
   | "invoices"
@@ -79,8 +79,8 @@ export type OrganizationPerson = Pick<
   "email" | "firstName" | "id" | "jobTitle" | "lastName" | "status"
 >
 
-export type OrganizationOpportunity = Pick<
-  OpportunityRecord,
+export type OrganizationQuote = Pick<
+  QuoteRecord,
   | "expectedCloseDate"
   | "id"
   | "status"
@@ -108,8 +108,8 @@ export interface OrganizationDetailPageSlots {
   overviewEnd?: ReactNode
   peopleContent?: ReactNode
   peopleEnd?: ReactNode
-  opportunitiesContent?: ReactNode
-  opportunitiesEnd?: ReactNode
+  quotesContent?: ReactNode
+  quotesEnd?: ReactNode
   activitiesContent?: ReactNode
   activitiesEnd?: ReactNode
   bookingsTab?: OrganizationCommercialContextTabSlot
@@ -329,10 +329,10 @@ export interface OrganizationMainProps {
   setActiveTab: (value: OrganizationDetailTab) => void
   org: OrganizationData
   people: OrganizationPerson[]
-  opportunities: OrganizationOpportunity[]
+  quotes: OrganizationQuote[]
   activities: OrganizationActivity[]
   peoplePending: boolean
-  opportunitiesPending: boolean
+  quotesPending: boolean
   activitiesPending: boolean
   totalOpenValue: number
   primaryCurrency: string | null
@@ -346,10 +346,10 @@ export function OrganizationMain({
   setActiveTab,
   org,
   people,
-  opportunities,
+  quotes,
   activities,
   peoplePending,
-  opportunitiesPending,
+  quotesPending,
   activitiesPending,
   totalOpenValue,
   primaryCurrency,
@@ -359,8 +359,8 @@ export function OrganizationMain({
 }: OrganizationMainProps) {
   const i18n = useCrmUiI18nOrDefault()
   const messages = useCrmUiMessagesOrDefault()
-  const openOpportunities = opportunities.filter((opportunity) => opportunity.status === "open")
-  const wonOpportunities = opportunities.filter((opportunity) => opportunity.status === "won")
+  const openQuotes = quotes.filter((quote) => quote.status === "open")
+  const wonQuotes = quotes.filter((quote) => quote.status === "won")
 
   return (
     <main className="col-span-12 flex flex-col gap-4 lg:col-span-9">
@@ -376,9 +376,9 @@ export function OrganizationMain({
         <Card>
           <CardContent className="pt-6">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {messages.organizationDetail.metrics.openOpportunities}
+              {messages.organizationDetail.metrics.openQuotes}
             </p>
-            <p className="mt-1 text-2xl font-semibold">{openOpportunities.length}</p>
+            <p className="mt-1 text-2xl font-semibold">{openQuotes.length}</p>
           </CardContent>
         </Card>
         <Card>
@@ -396,7 +396,7 @@ export function OrganizationMain({
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {messages.organizationDetail.metrics.won}
             </p>
-            <p className="mt-1 text-2xl font-semibold">{wonOpportunities.length}</p>
+            <p className="mt-1 text-2xl font-semibold">{wonQuotes.length}</p>
           </CardContent>
         </Card>
       </div>
@@ -414,8 +414,8 @@ export function OrganizationMain({
               <TabsTrigger value="people">
                 {messages.organizationDetail.tabs.people} ({people.length})
               </TabsTrigger>
-              <TabsTrigger value="opportunities">
-                {messages.organizationDetail.tabs.opportunities} ({opportunities.length})
+              <TabsTrigger value="quotes">
+                {messages.organizationDetail.tabs.quotes} ({quotes.length})
               </TabsTrigger>
               <TabsTrigger value="activities">
                 {messages.organizationDetail.tabs.activities} ({activities.length})
@@ -533,43 +533,36 @@ export function OrganizationMain({
               {slots?.peopleEnd}
             </TabsContent>
 
-            <TabsContent value="opportunities" className="m-0">
-              {slots?.opportunitiesContent !== undefined ? (
-                slots.opportunitiesContent
-              ) : opportunitiesPending ? (
+            <TabsContent value="quotes" className="m-0">
+              {slots?.quotesContent !== undefined ? (
+                slots.quotesContent
+              ) : quotesPending ? (
                 <div className="flex justify-center py-6">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
-              ) : opportunities.length === 0 ? (
+              ) : quotes.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">
-                  {messages.organizationDetail.empty.noOpportunities}
+                  {messages.organizationDetail.empty.noQuotes}
                 </p>
               ) : (
                 <ul className="divide-y">
-                  {opportunities.map((opportunity) => {
+                  {quotes.map((quote) => {
                     const statusLabel =
-                      messages.common.opportunityStatusLabels[
-                        opportunity.status as keyof typeof messages.common.opportunityStatusLabels
-                      ] ?? opportunity.status
+                      messages.common.quoteStatusLabels[
+                        quote.status as keyof typeof messages.common.quoteStatusLabels
+                      ] ?? quote.status
                     return (
-                      <li
-                        key={opportunity.id}
-                        className="flex items-center justify-between gap-3 py-3"
-                      >
+                      <li key={quote.id} className="flex items-center justify-between gap-3 py-3">
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{opportunity.title}</p>
+                          <p className="truncate text-sm font-medium">{quote.title}</p>
                           <p className="text-xs text-muted-foreground">
-                            {statusLabel} - {formatCrmDate(i18n, opportunity.expectedCloseDate)}
+                            {statusLabel} - {formatCrmDate(i18n, quote.expectedCloseDate)}
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="flex items-center gap-1 text-sm font-medium">
                             <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
-                            {formatCrmMoney(
-                              i18n,
-                              opportunity.valueAmountCents,
-                              opportunity.valueCurrency,
-                            )}
+                            {formatCrmMoney(i18n, quote.valueAmountCents, quote.valueCurrency)}
                           </span>
                           <Badge variant="outline">{statusLabel}</Badge>
                         </div>
@@ -578,7 +571,7 @@ export function OrganizationMain({
                   })}
                 </ul>
               )}
-              {slots?.opportunitiesEnd}
+              {slots?.quotesEnd}
             </TabsContent>
 
             <TabsContent value="activities" className="m-0">

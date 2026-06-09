@@ -28,8 +28,8 @@ how a real tour operator runs checkout:
    - **Bank transfer** — proforma generated immediately via SmartBill,
      IBAN + payment reference shown to the customer; workflow waits
      for an admin to mark the payment as received.
-   - **Inquiry** — no payment, no inventory hold; an opportunity is
-     created in CRM for the operator to follow up.
+   - **Inquiry** — no payment, no inventory hold; a CRM Quote is
+     created for the operator to follow up.
 5. Once payment is confirmed, the workflow:
    - transitions the booking to `confirmed`,
    - generates the contract PDF from the legal templates package,
@@ -148,8 +148,8 @@ Netopia webhook → payment.completed event           Admin opens booking detail
 The workflow is the spine. Card and bank-transfer differ only in
 **how the workflow gets unblocked**: a Netopia webhook for cards, an
 admin click for bank transfers. `inquiry` short-circuits — no
-payment session, no contract, just a CRM opportunity for the
-operator's queue.
+payment session, no contract, just a CRM Quote for the operator's
+queue.
 
 ## Implementation phases
 
@@ -256,7 +256,7 @@ unchanged).
 ### Phase 6 — Inquiry path + observability
 
 1. Inquiry — `checkout-start` for intent=`inquiry` skips the
-   workflow, writes a `crm.opportunity`, emits `inquiry.created`.
+   workflow, writes a CRM Quote, emits `inquiry.created`.
    No contract, no invoice, no hold. The detail page on the operator
    side gets a "Convert to booking" action that re-enters the
    regular flow.
@@ -274,7 +274,7 @@ relevant phase.
 
 1. **Booking status name** for "money expected, hold active":
    `awaiting_payment` (descriptive, recommended) vs reuse `on_hold`.
-2. **Inquiry storage**: reuse `crm.opportunities` (recommended — has
+2. **Inquiry storage**: reuse `crm.quotes` (recommended — has
    stages and pipelines) vs new `inquiries` table.
 3. **Contract acceptance signature storage**: write to
    `contract_signatures` with `method='electronic'` and capture
@@ -375,8 +375,8 @@ Mark-payment-received (admin):
 
 Followups landed alongside Phase 6:
 
-1. **Real CRM opportunity for inquiry** ✅ — inquiry intent now
-   creates a `crm.opportunities` row using
+1. **Real CRM Quote for inquiry** ✅ — inquiry intent now
+   creates a `crm.quotes` row using
    `INQUIRY_PIPELINE_ID`/`INQUIRY_STAGE_ID` env vars (or the first
    sales pipeline + stage when those aren't set), then cancels the
    booking so capacity isn't blocked. Emits `inquiry.created` for

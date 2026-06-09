@@ -1,40 +1,24 @@
 import type { CrmUiMessages } from "../../../../crm-ui/src/i18n/messages"
 
 export type RegistryCrmMessages = CrmUiMessages & {
-  common: CrmUiMessages["common"] & {
-    opportunityStatusLabels: {
-      open: string
-      won: string
-      lost: string
-      archived: string
-    }
-    quoteStatusLabels: {
-      draft: string
-      sent: string
-      accepted: string
-      expired: string
-      rejected: string
-      archived: string
-    }
-  }
-  createQuoteDialog: {
+  createQuoteVersionDialog: CrmUiMessages["createQuoteVersionDialog"] & {
     title: string
     fields: {
-      opportunity: string
+      quote: string
       currency: string
       validUntil: string
     }
     placeholders: {
-      searchOpportunities: string
+      searchQuotes: string
       pickDate: string
     }
     empty: {
       loading: string
-      noOpportunities: string
+      noQuotes: string
       noCurrencies: string
     }
     validation: {
-      selectOpportunity: string
+      selectQuote: string
       selectCurrency: string
       createFailed: string
     }
@@ -42,10 +26,10 @@ export type RegistryCrmMessages = CrmUiMessages & {
       create: string
     }
   }
-  opportunitiesBoard: {
+  quotesBoard: {
     fallbackName: string
   }
-  opportunitySummaryCard: {
+  quoteSummaryCard: {
     unknown: string
     expectedClose: string
   }
@@ -78,14 +62,14 @@ export type RegistryCrmMessages = CrmUiMessages & {
     }
     metrics: {
       people: string
-      openOpportunities: string
+      openQuotes: string
       pipelineValue: string
       won: string
     }
     tabs: {
       overview: string
       people: string
-      opportunities: string
+      quotes: string
       activities: string
     }
     sections: {
@@ -96,12 +80,12 @@ export type RegistryCrmMessages = CrmUiMessages & {
     empty: {
       noPeople: string
       unnamed: string
-      noOpportunities: string
+      noQuotes: string
       noActivities: string
     }
     hint: string
   }
-  quoteLinesCard: {
+  quoteVersionLinesCard: {
     title: string
     empty: string
     fields: {
@@ -115,7 +99,7 @@ export type RegistryCrmMessages = CrmUiMessages & {
     }
     subtotal: string
   }
-  quotesPage: {
+  quoteVersionsPage: {
     title: string
     description: string
     create: string
@@ -124,7 +108,7 @@ export type RegistryCrmMessages = CrmUiMessages & {
       allStatuses: string
     }
     columns: {
-      quote: string
+      quoteVersion: string
       status: string
       total: string
       validUntil: string

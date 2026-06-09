@@ -144,7 +144,6 @@ Package name:
 Alternative names:
 
 - `@voyantjs/itinerary-composer`
-- `@voyantjs/package-offers`
 - `@voyantjs/travel-experiences`
 
 Recommendation: use a domain name, not an AI name. The module's job is
@@ -322,9 +321,10 @@ A Trip whose selected components have been held or booked upstream and converted
 into Voyant's Booking Session / Booking / Order structures as appropriate.
 
 A Reserved Trip may resolve to one Booking with many items, multiple Bookings
-under a booking group, or a future package-level transactional record. The
-composer must keep that grouping decision behind its service interface until a
-formal `PackageOffer` / composite package vertical exists.
+under a booking group, or component Orders/Bookings under a Quote Version
+snapshot. The composer must keep that grouping decision behind its service
+interface so the accepted proposal can preserve the Trip snapshot without
+erasing component lifecycle boundaries.
 
 Default grouping decision for cross-vertical composition:
 
@@ -422,22 +422,23 @@ Current caveats:
 
 ### 5.4. Commercial ladder
 
-Voyant's ladder remains:
+ADR-0004 makes the travel-native bespoke sales ladder:
 
-**Quote -> Offer -> Order -> Booking -> Fulfillment**
+**Quote -> accepted Quote Version -> reserve workflow -> Order / Booking -> Fulfillment**
 
 The composer sits before and around that ladder:
 
 - Trip Envelope in `draft` status is pre-commitment.
-- Priced Trip is a customer-facing priced proposal, but not necessarily a
-  formal Offer record.
-- Reserved Trip creates holds and/or Booking Session state.
+- Priced Trip can be frozen into a Quote Version, which is the sendable,
+  acceptable proposal snapshot.
+- Accepting a Quote Version starts reserve; it does not mean every live or
+  manual component is supplier-confirmed.
+- Reserved Trip creates holds and/or Booking Session / Booking / Order state.
 - Checkout turns the held/reserved commitment into collection.
 
-Open design question: whether a formal `PackageOffer` should be introduced as
-the cross-vertical transactional artifact. If package-level cancellation,
-terms, pricing, margin, and snapshot semantics become non-trivial, a dedicated
-composite package vertical likely earns its keep.
+Transactions Offer remains a separate transactions package primitive for
+existing offer-to-order flows. It is not the bespoke travel proposal artifact
+for the composer.
 
 ### 5.5. Booking Sessions
 
@@ -660,8 +661,9 @@ Booking Session state until the customer asks to reserve or buy.
 
 Avoid making the Trip Envelope depend on exactly one Booking. Multi-line
 composition may need one Booking with many items, several Bookings under a
-group, or a later `PackageOffer`/package vertical. The schema should preserve
-line-level commit references and an optional aggregate reference.
+group, or several component Orders/Bookings under an accepted Quote Version.
+The schema should preserve line-level commit references and an optional
+aggregate reference.
 
 For MVP, bias toward several component bookings/orders under one envelope for
 FIT composition, while allowing a component itself to contain child booking
@@ -703,47 +705,40 @@ High-level buy flow:
 
 ## 11. Open questions
 
-1. **Future package-offer artifact.** `travel-composer` is the package name.
-   If the primary output later becomes a formal transactable proposal, add a
-   `PackageOffer` artifact inside or alongside the composer rather than
-   renaming the package.
-2. **PackageOffer vs Trip Envelope only.** If cross-vertical pricing,
-   cancellation, and terms need a durable transactable proposal, introduce
-   `PackageOffer`. If not, keep Trip Envelope + Booking Session.
-3. **Where to store conversation state.** The composer should store structured
+1. **Where to store conversation state.** The composer should store structured
    summaries and decisions, not raw prompt dependence. Raw transcript retention
    may be app-owned or configurable.
-4. **Staff handoff shape.** Could use CRM Opportunity, Quote, Activity, or a
-   dedicated support task depending on operator workflow.
-5. **Public vs admin AI tools.** Customer agents need strict customer-audience
+2. **Staff handoff shape.** Could use Quote, Quote Activity, or a dedicated
+   support task depending on operator workflow.
+3. **Public vs admin AI tools.** Customer agents need strict customer-audience
    access. Staff agents may federate across audience pools and see operational
    fields.
-6. **Flights in public surface.** The `@voyantjs/flights` package now provides
+4. **Flights in public surface.** The `@voyantjs/flights` package now provides
    contracts, fan-out, snapshots, and reference-data providers, but AI
    storefront use still needs public-safe route mounting for search, price,
    reserve, and order-status surfaces. The operator template has flight UI/API
    wiring, but the composer should not assume a customer-safe flight route
    family exists yet.
-7. **Manual placeholders.** Real operators often need "we will confirm this
+5. **Manual placeholders.** Real operators often need "we will confirm this
    hotel manually." The composer should support placeholders without pretending
    they are live inventory.
-8. **Ground transport boundary.** `@voyantjs/ground` is an operational module.
+6. **Ground transport boundary.** `@voyantjs/ground` is an operational module.
    The composer still needs a sellable transfer/search surface before it can
    treat ground services like normal Trip Components.
-9. **Hold-release primitive for sourced drafts.** The draft reaper can release
+7. **Hold-release primitive for sourced drafts.** The draft reaper can release
    owned holds through owned handlers and can honor
    `AdapterCapabilities.holdReleaseGraceMs`. Sourced adapters currently expose
    `cancel`, not a hold-only release primitive, so sourced soft-hold cleanup
    still needs a SourceAdapter contract addition before broad multi-source
    reserve flows are safe.
-10. **Aggregate commit shape.** Decide whether MVP reserve produces one Booking
-    with many Booking Items, several Bookings in a booking group, or a narrower
-    package-level artifact. Current default: several component bookings/orders
-    under one Trip / Package Envelope for FIT composition; one booking with
-    child items/Extras for operated products and dependent upsells. The
-    composer interface can hide this, but checkout, documents, cancellation,
-    and support UI need a consistent target.
-11. **Template-owned checkout extraction.** `POST
+8. **Aggregate commit shape.** Decide whether MVP reserve produces one Booking
+   with many Booking Items, several Bookings in a booking group, or several
+   component Orders/Bookings under an accepted Quote Version. Current default:
+   several component bookings/orders under one Trip / Package Envelope for FIT
+   composition; one booking with child items/Extras for operated products and
+   dependent upsells. The composer interface can hide this, but checkout,
+   documents, cancellation, and support UI need a consistent target.
+9. **Template-owned checkout extraction.** `POST
     /v1/public/catalog/checkout/start` exists in the operator template. The
     current operator adapter can call the extracted `startCatalogCheckout(...)`
     service from that template, which is enough for the integration branch.
@@ -783,7 +778,7 @@ that component's supplier lifecycle.
   while the adapter wiring is proven; the hardening slice should move the
   generic parts into framework-owned catalog/checkout services.
 - Preserve template ownership of Netopia config, bank details, contract template
-  choice, CRM opportunity creation, and storefront URLs.
+  choice, CRM Quote creation, and storefront URLs.
 - Expose a service-level `startCheckout({ bookingId, paymentIntent, ... })`
   that the composer can call after reserve.
 
@@ -818,7 +813,7 @@ that component's supplier lifecycle.
 - Place holds/bookings in dependency order, with compensation on partial
   failure.
 - Preserve line-level references and optional aggregate references
-  (`bookingId`, `bookingGroupId`, or future package artifact).
+  (`bookingId`, `bookingGroupId`, or accepted Quote Version).
 - Cover owned-hold release, quote expiry, one-line success, one-line failure,
   and sourced-hold unsupported behavior in tests.
 

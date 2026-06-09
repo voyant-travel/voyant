@@ -1,6 +1,6 @@
 # @voyantjs/crm-contracts
 
-Pure CRM validation schemas (people, organizations, opportunities, activities,
+Pure CRM validation schemas (people, organizations, Quotes, activities,
 custom fields) and enums, zod-only, for consumers (admin SDK, Voyant Connect)
 that validate CRM payloads without the crm runtime. `@voyantjs/crm` re-exports
 these so existing import paths are unchanged.
@@ -17,7 +17,7 @@ pnpm add @voyantjs/crm-contracts zod
 import {
   entityTypeSchema,
   insertPersonSchema,
-  opportunityStatusSchema,
+  quoteStatusSchema,
 } from "@voyantjs/crm-contracts"
 ```
 

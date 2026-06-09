@@ -103,19 +103,19 @@ function statusLabel(
   }
 }
 
-function opportunityStatusLabel(
+function quoteStatusLabel(
   status: string,
   messages: ReturnType<typeof useAdminMessages>["crm"]["organizationDetail"],
 ): string {
   switch (status) {
     case "open":
-      return messages.opportunityOpen
+      return messages.quoteOpen
     case "won":
-      return messages.opportunityWon
+      return messages.quoteWon
     case "lost":
-      return messages.opportunityLost
+      return messages.quoteLost
     case "archived":
-      return messages.opportunityArchived
+      return messages.quoteArchived
     default:
       return status
   }
@@ -169,7 +169,7 @@ type OrganizationPerson = {
   status?: string | null
 }
 
-type OrganizationOpportunity = {
+type OrganizationQuote = {
   id: string
   title: string
   status: string
@@ -374,24 +374,24 @@ export function OrganizationMain({
   setActiveTab,
   org,
   people,
-  opportunities,
+  quotes,
   activities,
   peoplePending,
-  opportunitiesPending,
+  quotesPending,
   activitiesPending,
   totalOpenValue,
   primaryCurrency,
   onOpenPerson,
   onUpdateField,
 }: {
-  activeTab: "overview" | "people" | "opportunities" | "activities"
-  setActiveTab: (value: "overview" | "people" | "opportunities" | "activities") => void
+  activeTab: "overview" | "people" | "quotes" | "activities"
+  setActiveTab: (value: "overview" | "people" | "quotes" | "activities") => void
   org: OrganizationData
   people: OrganizationPerson[]
-  opportunities: OrganizationOpportunity[]
+  quotes: OrganizationQuote[]
   activities: OrganizationActivity[]
   peoplePending: boolean
-  opportunitiesPending: boolean
+  quotesPending: boolean
   activitiesPending: boolean
   totalOpenValue: number
   primaryCurrency: string | null
@@ -400,8 +400,8 @@ export function OrganizationMain({
 }) {
   const { resolvedLocale } = useLocale()
   const messages = useAdminMessages().crm.organizationDetail
-  const openOpportunities = opportunities.filter((opportunity) => opportunity.status === "open")
-  const wonOpportunities = opportunities.filter((opportunity) => opportunity.status === "won")
+  const openQuotes = quotes.filter((quote) => quote.status === "open")
+  const wonQuotes = quotes.filter((quote) => quote.status === "won")
 
   return (
     <main className="col-span-12 flex flex-col gap-4 lg:col-span-9">
@@ -417,9 +417,9 @@ export function OrganizationMain({
         <Card>
           <CardContent className="pt-6">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {messages.statOpenOpportunities}
+              {messages.statOpenQuotes}
             </p>
-            <p className="mt-1 text-2xl font-semibold">{openOpportunities.length}</p>
+            <p className="mt-1 text-2xl font-semibold">{openQuotes.length}</p>
           </CardContent>
         </Card>
         <Card>
@@ -437,7 +437,7 @@ export function OrganizationMain({
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {messages.statWon}
             </p>
-            <p className="mt-1 text-2xl font-semibold">{wonOpportunities.length}</p>
+            <p className="mt-1 text-2xl font-semibold">{wonQuotes.length}</p>
           </CardContent>
         </Card>
       </div>
@@ -446,7 +446,7 @@ export function OrganizationMain({
         <Tabs
           value={activeTab}
           onValueChange={(value) =>
-            setActiveTab(value as "overview" | "people" | "opportunities" | "activities")
+            setActiveTab(value as "overview" | "people" | "quotes" | "activities")
           }
         >
           <CardHeader className="pb-0">
@@ -455,8 +455,8 @@ export function OrganizationMain({
               <TabsTrigger value="people">
                 {messages.tabPeople} ({people.length})
               </TabsTrigger>
-              <TabsTrigger value="opportunities">
-                {messages.tabOpportunities} ({opportunities.length})
+              <TabsTrigger value="quotes">
+                {messages.tabQuotes} ({quotes.length})
               </TabsTrigger>
               <TabsTrigger value="activities">
                 {messages.tabActivities} ({activities.length})
@@ -556,8 +556,8 @@ export function OrganizationMain({
               )}
             </TabsContent>
 
-            <TabsContent value="opportunities" className="m-0">
-              {opportunitiesPending ? (
+            <TabsContent value="quotes" className="m-0">
+              {quotesPending ? (
                 <ul className="divide-y">
                   {Array.from({ length: 3 }).map((_, i) => (
                     // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholder
@@ -571,32 +571,29 @@ export function OrganizationMain({
                     </li>
                   ))}
                 </ul>
-              ) : opportunities.length === 0 ? (
+              ) : quotes.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">
-                  {messages.opportunitiesEmpty}
+                  {messages.quotesEmpty}
                 </p>
               ) : (
                 <ul className="divide-y">
-                  {opportunities.map((opportunity) => {
+                  {quotes.map((quote) => {
                     return (
-                      <li
-                        key={opportunity.id}
-                        className="flex items-center justify-between gap-3 py-3"
-                      >
+                      <li key={quote.id} className="flex items-center justify-between gap-3 py-3">
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{opportunity.title}</p>
+                          <p className="truncate text-sm font-medium">{quote.title}</p>
                           <p className="text-xs text-muted-foreground">
-                            {opportunityStatusLabel(opportunity.status, messages)} ·{" "}
-                            {formatOrganizationDate(opportunity.expectedCloseDate, resolvedLocale)}
+                            {quoteStatusLabel(quote.status, messages)} ·{" "}
+                            {formatOrganizationDate(quote.expectedCloseDate, resolvedLocale)}
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="flex items-center gap-1 text-sm font-medium">
                             <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
-                            {formatMoney(opportunity.valueAmountCents, opportunity.valueCurrency)}
+                            {formatMoney(quote.valueAmountCents, quote.valueCurrency)}
                           </span>
                           <Badge variant="outline" className="capitalize">
-                            {opportunityStatusLabel(opportunity.status, messages)}
+                            {quoteStatusLabel(quote.status, messages)}
                           </Badge>
                         </div>
                       </li>

@@ -15,12 +15,12 @@ import {
   ACTIVITY_TYPES,
   type ActivityRecord,
   type ListEnvelope,
-  type OpportunityRecord,
   PersonAside,
   PersonMain,
   type PersonNote,
   PersonSidebar,
   PersonTopBar,
+  type QuoteRecord,
 } from "./person-detail-sections"
 
 export function PersonDetailPage({ id }: { id: string }) {
@@ -67,10 +67,9 @@ export function PersonDetailPage({ id }: { id: string }) {
     enabled: Boolean(person),
   })
 
-  const opportunitiesQuery = useQuery({
-    queryKey: ["person-opportunities", id],
-    queryFn: () =>
-      api.get<ListEnvelope<OpportunityRecord>>(`/v1/crm/opportunities?personId=${id}&limit=20`),
+  const quotesQuery = useQuery({
+    queryKey: ["person-quotes", id],
+    queryFn: () => api.get<ListEnvelope<QuoteRecord>>(`/v1/crm/quotes?personId=${id}&limit=20`),
     enabled: Boolean(person),
   })
 
@@ -180,12 +179,12 @@ export function PersonDetailPage({ id }: { id: string }) {
     [person.firstName, person.lastName].filter(Boolean).join(" ") || "Unnamed person"
   const notes = notesQuery.data?.data ?? []
   const activities = activitiesQuery.data?.data ?? []
-  const opportunities = opportunitiesQuery.data?.data ?? []
+  const quotes = quotesQuery.data?.data ?? []
   const organization = organizationQuery.data
-  const openOpportunities = opportunities.filter((o) => o.status === "open")
-  const wonOpportunities = opportunities.filter((o) => o.status === "won")
-  const totalOpenValue = openOpportunities.reduce((sum, o) => sum + (o.valueAmountCents ?? 0), 0)
-  const primaryCurrency = opportunities[0]?.valueCurrency ?? null
+  const openQuotes = quotes.filter((o) => o.status === "open")
+  const wonQuotes = quotes.filter((o) => o.status === "won")
+  const totalOpenValue = openQuotes.reduce((sum, o) => sum + (o.valueAmountCents ?? 0), 0)
+  const primaryCurrency = quotes[0]?.valueCurrency ?? null
   const websiteHref = person.website
     ? person.website.startsWith("http")
       ? person.website
@@ -266,8 +265,8 @@ export function PersonDetailPage({ id }: { id: string }) {
               })
               .then(() => undefined)
           }
-          openOpportunitiesCount={openOpportunities.length}
-          wonOpportunitiesCount={wonOpportunities.length}
+          openQuotesCount={openQuotes.length}
+          wonQuotesCount={wonQuotes.length}
           totalOpenValue={totalOpenValue}
           primaryCurrency={primaryCurrency}
         />
@@ -276,8 +275,8 @@ export function PersonDetailPage({ id }: { id: string }) {
           person={person}
           organization={organization}
           organizationPending={organizationQuery.isPending}
-          opportunities={opportunities}
-          opportunitiesPending={opportunitiesQuery.isPending}
+          quotes={quotes}
+          quotesPending={quotesQuery.isPending}
           updatePending={update.isPending}
           updateField={async (patch) => updateField(patch as UpdatePersonInput)}
         />

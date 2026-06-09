@@ -11,6 +11,10 @@ export interface UseQuotesOptions extends QuotesListFilters {
   enabled?: boolean
 }
 
+/**
+ * Lists quotes with filters + pagination. Returns the raw
+ * `{ data, total, limit, offset }` envelope.
+ */
 export function useQuotes(options: UseQuotesOptions = {}) {
   const { baseUrl, fetcher } = useVoyantContext()
   const { enabled = true, ...filters } = options
@@ -19,7 +23,12 @@ export function useQuotes(options: UseQuotesOptions = {}) {
     queryKey: crmQueryKeys.quotesList(filters),
     queryFn: () => {
       const params = new URLSearchParams()
-      if (filters.opportunityId) params.set("opportunityId", filters.opportunityId)
+      if (filters.search) params.set("search", filters.search)
+      if (filters.personId) params.set("personId", filters.personId)
+      if (filters.organizationId) params.set("organizationId", filters.organizationId)
+      if (filters.pipelineId) params.set("pipelineId", filters.pipelineId)
+      if (filters.stageId) params.set("stageId", filters.stageId)
+      if (filters.ownerId) params.set("ownerId", filters.ownerId)
       if (filters.status) params.set("status", filters.status)
       if (filters.limit !== undefined) params.set("limit", String(filters.limit))
       if (filters.offset !== undefined) params.set("offset", String(filters.offset))

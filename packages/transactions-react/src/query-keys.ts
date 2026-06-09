@@ -1,7 +1,7 @@
 export interface OffersListFilters {
   status?: string | undefined
-  opportunityId?: string | undefined
   quoteId?: string | undefined
+  quoteVersionId?: string | undefined
   personId?: string | undefined
   organizationId?: string | undefined
   marketId?: string | undefined
@@ -13,8 +13,8 @@ export interface OffersListFilters {
 export interface OrdersListFilters {
   status?: string | undefined
   offerId?: string | undefined
-  opportunityId?: string | undefined
   quoteId?: string | undefined
+  quoteVersionId?: string | undefined
   personId?: string | undefined
   organizationId?: string | undefined
   marketId?: string | undefined

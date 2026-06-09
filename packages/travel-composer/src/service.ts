@@ -19,6 +19,12 @@ export {
 export { applyQuoteToComponent, priceTrip } from "./service-pricing.js"
 export { reserveTrip } from "./service-reservation.js"
 export {
+  buildTripSnapshotProposal,
+  freezeTripSnapshot,
+  getTripSnapshotById,
+  listTripSnapshots,
+} from "./service-snapshots.js"
+export {
   addComponent,
   createTrip,
   getTrip,
@@ -70,6 +76,7 @@ import { cancelComponents, previewCancellation } from "./service-cancellation.js
 import { completeTripCheckout, startCheckout } from "./service-checkout.js"
 import { priceTrip } from "./service-pricing.js"
 import { reserveTrip } from "./service-reservation.js"
+import { freezeTripSnapshot, getTripSnapshotById, listTripSnapshots } from "./service-snapshots.js"
 import {
   addComponent,
   createTrip,
@@ -100,6 +107,9 @@ export const travelComposerService = {
   reorderComponents,
   priceTrip,
   reserveTrip,
+  freezeTripSnapshot,
+  getTripSnapshotById,
+  listTripSnapshots,
   startCheckout,
   completeTripCheckout,
   previewCancellation,

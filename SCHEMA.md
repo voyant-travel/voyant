@@ -1,6 +1,6 @@
 # Voyant Database Schema Reference
 
-> Auto-generated from Drizzle table definitions via `pnpm generate:schema-docs` on 2026-05-19.
+> Auto-generated from Drizzle table definitions via `pnpm generate:schema-docs` on 2026-06-09.
 > SQL column names are shown first; TypeScript property names are included when they differ.
 > Constraint markers are derived from the schema source, not from a live database introspection run.
 
@@ -239,8 +239,8 @@ Constraints:
 | Column | Type |
 |--------|------|
 | `booking_id` (`bookingId`) | text • PK • not null |
-| `opportunity_id` (`opportunityId`) | text • nullable |
 | `quote_id` (`quoteId`) | text • nullable |
+| `quote_version_id` (`quoteVersionId`) | text • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
@@ -288,56 +288,6 @@ Constraints:
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-### `opportunities`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `title` | text • not null |
-| `person_id` (`personId`) | text • FK -> people.id • nullable |
-| `organization_id` (`organizationId`) | text • FK -> organizations.id • nullable |
-| `pipeline_id` (`pipelineId`) | text • FK -> pipelines.id • not null |
-| `stage_id` (`stageId`) | text • FK -> stages.id • not null |
-| `owner_id` (`ownerId`) | text • nullable |
-| `status` | opportunity_status • not null • default "open" |
-| `value_amount_cents` (`valueAmountCents`) | integer • nullable |
-| `value_currency` (`valueCurrency`) | text • nullable |
-| `expected_close_date` (`expectedCloseDate`) | date • nullable |
-| `source` | text • nullable |
-| `source_ref` (`sourceRef`) | text • nullable |
-| `lost_reason` (`lostReason`) | text • nullable |
-| `tags` | jsonb • not null • default [] |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-| `stage_changed_at` (`stageChangedAt`) | timestamp with time zone • not null • default |
-| `closed_at` (`closedAt`) | timestamp with time zone • nullable |
-
-### `opportunity_participants`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `opportunity_id` (`opportunityId`) | text • FK -> opportunities.id • not null |
-| `person_id` (`personId`) | text • FK -> people.id • not null |
-| `role` | participant_role • not null • default "other" |
-| `is_primary` (`isPrimary`) | boolean • not null • default false |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-
-### `opportunity_products`
-| Column | Type |
-|--------|------|
-| `id` | text • PK • not null • default |
-| `opportunity_id` (`opportunityId`) | text • FK -> opportunities.id • not null |
-| `product_id` (`productId`) | text • nullable |
-| `supplier_service_id` (`supplierServiceId`) | text • nullable |
-| `name_snapshot` (`nameSnapshot`) | text • not null |
-| `description` | text • nullable |
-| `quantity` | integer • not null • default 1 |
-| `unit_price_amount_cents` (`unitPriceAmountCents`) | integer • nullable |
-| `cost_amount_cents` (`costAmountCents`) | integer • nullable |
-| `currency` | text • nullable |
-| `discount_amount_cents` (`discountAmountCents`) | integer • nullable |
-| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
-| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
-
 ### `organization_notes`
 | Column | Type |
 |--------|------|
@@ -354,7 +304,7 @@ Constraints:
 | `name` | text • not null |
 | `legal_name` (`legalName`) | text • nullable |
 | `website` | text • nullable |
-| `vat_number` (`vatNumber`) | text • nullable |
+| `tax_id` (`taxId`) | text • nullable |
 | `industry` | text • nullable |
 | `relation` | relation_type • nullable |
 | `owner_id` (`ownerId`) | text • nullable |
@@ -459,18 +409,45 @@ Constraints:
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `entity_type` (`entityType`) | entity_type • not null • default "opportunity" |
+| `entity_type` (`entityType`) | entity_type • not null • default "quote" |
 | `name` | text • not null |
 | `is_default` (`isDefault`) | boolean • not null • default false |
 | `sort_order` (`sortOrder`) | integer • not null • default 0 |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-### `quote_lines`
+### `quote_participants`
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
 | `quote_id` (`quoteId`) | text • FK -> quotes.id • not null |
+| `person_id` (`personId`) | text • FK -> people.id • not null |
+| `role` | participant_role • not null • default "other" |
+| `is_primary` (`isPrimary`) | boolean • not null • default false |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+
+### `quote_products`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `quote_id` (`quoteId`) | text • FK -> quotes.id • not null |
+| `product_id` (`productId`) | text • nullable |
+| `supplier_service_id` (`supplierServiceId`) | text • nullable |
+| `name_snapshot` (`nameSnapshot`) | text • not null |
+| `description` | text • nullable |
+| `quantity` | integer • not null • default 1 |
+| `unit_price_amount_cents` (`unitPriceAmountCents`) | integer • nullable |
+| `cost_amount_cents` (`costAmountCents`) | integer • nullable |
+| `currency` | text • nullable |
+| `discount_amount_cents` (`discountAmountCents`) | integer • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `quote_version_lines`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `quote_version_id` (`quoteVersionId`) | text • FK -> quote_versions.id • not null |
 | `product_id` (`productId`) | text • nullable |
 | `supplier_service_id` (`supplierServiceId`) | text • nullable |
 | `description` | text • not null |
@@ -481,21 +458,51 @@ Constraints:
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
-### `quotes`
+### `quote_versions`
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `opportunity_id` (`opportunityId`) | text • FK -> opportunities.id • not null |
-| `status` | quote_status • not null • default "draft" |
+| `quote_id` (`quoteId`) | text • FK -> quotes.id • not null |
+| `label` | text • nullable |
+| `status` | quote_version_status • not null • default "draft" |
+| `supersedes_id` (`supersedesId`) | text • FK -> quote_versions.id • nullable |
+| `trip_snapshot_id` (`tripSnapshotId`) | text • nullable |
 | `valid_until` (`validUntil`) | date • nullable |
 | `currency` | text • not null |
 | `subtotal_amount_cents` (`subtotalAmountCents`) | integer • not null • default 0 |
 | `tax_amount_cents` (`taxAmountCents`) | integer • not null • default 0 |
 | `total_amount_cents` (`totalAmountCents`) | integer • not null • default 0 |
 | `notes` | text • nullable |
+| `sent_at` (`sentAt`) | timestamp with time zone • nullable |
+| `viewed_at` (`viewedAt`) | timestamp with time zone • nullable |
+| `decided_at` (`decidedAt`) | timestamp with time zone • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 | `archived_at` (`archivedAt`) | timestamp with time zone • nullable |
+
+### `quotes`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `title` | text • not null |
+| `person_id` (`personId`) | text • FK -> people.id • nullable |
+| `organization_id` (`organizationId`) | text • FK -> organizations.id • nullable |
+| `pipeline_id` (`pipelineId`) | text • FK -> pipelines.id • not null |
+| `stage_id` (`stageId`) | text • FK -> stages.id • not null |
+| `owner_id` (`ownerId`) | text • nullable |
+| `status` | quote_status • not null • default "open" |
+| `accepted_version_id` (`acceptedVersionId`) | text • nullable |
+| `value_amount_cents` (`valueAmountCents`) | integer • nullable |
+| `value_currency` (`valueCurrency`) | text • nullable |
+| `expected_close_date` (`expectedCloseDate`) | date • nullable |
+| `source` | text • nullable |
+| `source_ref` (`sourceRef`) | text • nullable |
+| `lost_reason` (`lostReason`) | text • nullable |
+| `tags` | jsonb • not null • default [] |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+| `stage_changed_at` (`stageChangedAt`) | timestamp with time zone • not null • default |
+| `closed_at` (`closedAt`) | timestamp with time zone • nullable |
 
 ### `segment_members`
 | Column | Type |
@@ -629,7 +636,10 @@ Constraints:
 | `parent_id` (`parentId`) | text • nullable |
 | `slug` | text • not null |
 | `code` | text • nullable |
+| `canonical_place_id` (`canonicalPlaceId`) | text • nullable |
 | `destination_type` (`destinationType`) | text • not null • default "destination" |
+| `latitude` | double precision • nullable |
+| `longitude` | double precision • nullable |
 | `sort_order` (`sortOrder`) | integer • not null • default 0 |
 | `active` | boolean • not null • default true |
 | `metadata` | jsonb • nullable |
@@ -814,6 +824,18 @@ Constraints:
 | `sort_order` (`sortOrder`) | integer • nullable |
 | `notes` | text • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+
+### `product_day_translations`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `day_id` (`dayId`) | text • FK -> product_days.id • not null |
+| `language_tag` (`languageTag`) | text • not null |
+| `title` | text • nullable |
+| `description` | text • nullable |
+| `location` | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
 ### `product_days`
 | Column | Type |
@@ -1026,6 +1048,9 @@ Constraints:
 | `name` | text • not null |
 | `short_description` (`shortDescription`) | text • nullable |
 | `description` | text • nullable |
+| `inclusions_html` (`inclusionsHtml`) | text • nullable |
+| `exclusions_html` (`exclusionsHtml`) | text • nullable |
+| `terms_html` (`termsHtml`) | text • nullable |
 | `seo_title` (`seoTitle`) | text • nullable |
 | `seo_description` (`seoDescription`) | text • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
@@ -1074,9 +1099,14 @@ Constraints:
 | `name` | text • not null |
 | `status` | product_status • not null • default "draft" |
 | `description` | text • nullable |
+| `inclusions_html` (`inclusionsHtml`) | text • nullable |
+| `exclusions_html` (`exclusionsHtml`) | text • nullable |
+| `terms_html` (`termsHtml`) | text • nullable |
+| `terms_show_on_contract` (`termsShowOnContract`) | boolean • not null • default false |
 | `booking_mode` (`bookingMode`) | product_booking_mode • not null • default "date" |
 | `capacity_mode` (`capacityMode`) | product_capacity_mode • not null • default "limited" |
 | `timezone` | text • nullable |
+| `default_language_tag` (`defaultLanguageTag`) | text • nullable |
 | `visibility` | product_visibility • not null • default "private" |
 | `activated` | boolean • not null • default false |
 | `reservation_timeout_minutes` (`reservationTimeoutMinutes`) | integer • nullable |
@@ -1090,6 +1120,7 @@ Constraints:
 | `end_date` (`endDate`) | date • nullable |
 | `pax` | integer • nullable |
 | `product_type_id` (`productTypeId`) | text • nullable |
+| `contract_template_id` (`contractTemplateId`) | text • nullable |
 | `tax_class_id` (`taxClassId`) | text • nullable |
 | `customer_payment_policy` (`customerPaymentPolicy`) | jsonb • nullable |
 | `tags` | jsonb • nullable • default [] |
@@ -1436,6 +1467,27 @@ Constraints:
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
+### `extra_participant_selections`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `booking_id` (`bookingId`) | text • not null |
+| `booking_item_id` (`bookingItemId`) | text • nullable |
+| `traveler_id` (`travelerId`) | text • not null |
+| `product_extra_id` (`productExtraId`) | text • FK -> product_extras.id • not null |
+| `option_extra_config_id` (`optionExtraConfigId`) | text • FK -> option_extra_configs.id • nullable |
+| `status` | extra_participant_selection_status • not null • default "selected" |
+| `collection_mode` (`collectionMode`) | extra_collection_mode • not null • default "booking_total" |
+| `collection_status` (`collectionStatus`) | extra_collection_status • not null • default "not_required" |
+| `collection_currency` (`collectionCurrency`) | text • nullable |
+| `collection_amount_cents` (`collectionAmountCents`) | integer • nullable |
+| `collected_at` (`collectedAt`) | timestamp with time zone • nullable |
+| `collected_by` (`collectedBy`) | text • nullable |
+| `notes` | text • nullable |
+| `metadata` | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
 ### `extra_price_rules`
 | Column | Type |
 |--------|------|
@@ -1761,6 +1813,8 @@ Constraints:
 | `selection_type` (`selectionType`) | extra_selection_type • not null • default "optional" |
 | `pricing_mode` (`pricingMode`) | extra_pricing_mode • not null • default "per_booking" |
 | `priced_per_person` (`pricedPerPerson`) | boolean • not null • default false |
+| `collection_mode` (`collectionMode`) | extra_collection_mode • not null • default "booking_total" |
+| `show_on_slot_manifest` (`showOnSlotManifest`) | boolean • not null • default true |
 | `min_quantity` (`minQuantity`) | integer • nullable |
 | `max_quantity` (`maxQuantity`) | integer • nullable |
 | `default_quantity` (`defaultQuantity`) | integer • nullable |
@@ -1912,6 +1966,11 @@ Constraints:
 | `option_id` (`optionId`) | text • nullable |
 | `option_unit_id` (`optionUnitId`) | text • nullable |
 | `pricing_category_id` (`pricingCategoryId`) | text • nullable |
+| `availability_slot_id` (`availabilitySlotId`) | text • nullable |
+| `product_name_snapshot` (`productNameSnapshot`) | text • nullable |
+| `option_name_snapshot` (`optionNameSnapshot`) | text • nullable |
+| `unit_name_snapshot` (`unitNameSnapshot`) | text • nullable |
+| `departure_label_snapshot` (`departureLabelSnapshot`) | text • nullable |
 | `source_snapshot_id` (`sourceSnapshotId`) | text • nullable |
 | `source_offer_id` (`sourceOfferId`) | text • nullable |
 | `metadata` | jsonb • nullable |
@@ -1975,11 +2034,13 @@ Constraints:
 | `id` | text • PK • not null • default |
 | `booking_id` (`bookingId`) | text • FK -> bookings.id • not null |
 | `supplier_service_id` (`supplierServiceId`) | text • nullable |
+| `supplier_id` (`supplierId`) | text • nullable |
 | `service_name` (`serviceName`) | text • not null |
 | `status` | supplier_confirmation_status • not null • default "pending" |
 | `supplier_reference` (`supplierReference`) | text • nullable |
 | `cost_currency` (`costCurrency`) | text • not null |
 | `cost_amount_cents` (`costAmountCents`) | integer • not null |
+| `supplier_invoice_line_id` (`supplierInvoiceLineId`) | text • nullable |
 | `notes` | text • nullable |
 | `confirmed_at` (`confirmedAt`) | timestamp with time zone • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
@@ -1992,7 +2053,7 @@ Constraints:
 | `identity_encrypted` (`identityEncrypted`) | jsonb • nullable |
 | `dietary_encrypted` (`dietaryEncrypted`) | jsonb • nullable |
 | `accessibility_encrypted` (`accessibilityEncrypted`) | jsonb • nullable |
-| `passport_person_document_id` (`passportPersonDocumentId`) | text • nullable |
+| `document_person_document_id` (`documentPersonDocumentId`) | text • nullable |
 | `is_lead_traveler` (`isLeadTraveler`) | boolean • not null • default false |
 | `sharing_group_id` (`sharingGroupId`) | text • nullable |
 | `room_type_id` (`roomTypeId`) | text • nullable |
@@ -2033,6 +2094,8 @@ Constraints:
 | `communication_language` (`communicationLanguage`) | text • nullable |
 | `contact_first_name` (`contactFirstName`) | text • nullable |
 | `contact_last_name` (`contactLastName`) | text • nullable |
+| `contact_party_type` (`contactPartyType`) | text • nullable |
+| `contact_tax_id` (`contactTaxId`) | text • nullable |
 | `contact_email` (`contactEmail`) | text • nullable |
 | `contact_phone` (`contactPhone`) | text • nullable |
 | `contact_preferred_language` (`contactPreferredLanguage`) | text • nullable |
@@ -2040,6 +2103,7 @@ Constraints:
 | `contact_region` (`contactRegion`) | text • nullable |
 | `contact_city` (`contactCity`) | text • nullable |
 | `contact_address_line1` (`contactAddressLine1`) | text • nullable |
+| `contact_address_line2` (`contactAddressLine2`) | text • nullable |
 | `contact_postal_code` (`contactPostalCode`) | text • nullable |
 | `sell_currency` (`sellCurrency`) | text • not null |
 | `base_currency` (`baseCurrency`) | text • nullable |
@@ -2173,12 +2237,14 @@ Constraints:
 | `status` | offer_status • not null • default "draft" |
 | `person_id` (`personId`) | text • nullable |
 | `organization_id` (`organizationId`) | text • nullable |
-| `opportunity_id` (`opportunityId`) | text • nullable |
 | `quote_id` (`quoteId`) | text • nullable |
+| `quote_version_id` (`quoteVersionId`) | text • nullable |
 | `market_id` (`marketId`) | text • nullable |
 | `source_channel_id` (`sourceChannelId`) | text • nullable |
+| `contact_party_type` (`contactPartyType`) | text • nullable |
 | `contact_first_name` (`contactFirstName`) | text • nullable |
 | `contact_last_name` (`contactLastName`) | text • nullable |
+| `contact_tax_id` (`contactTaxId`) | text • nullable |
 | `contact_email` (`contactEmail`) | text • nullable |
 | `contact_phone` (`contactPhone`) | text • nullable |
 | `contact_preferred_language` (`contactPreferredLanguage`) | text • nullable |
@@ -2186,6 +2252,7 @@ Constraints:
 | `contact_region` (`contactRegion`) | text • nullable |
 | `contact_city` (`contactCity`) | text • nullable |
 | `contact_address_line1` (`contactAddressLine1`) | text • nullable |
+| `contact_address_line2` (`contactAddressLine2`) | text • nullable |
 | `contact_postal_code` (`contactPostalCode`) | text • nullable |
 | `currency` | text • not null |
 | `base_currency` (`baseCurrency`) | text • nullable |
@@ -2294,12 +2361,14 @@ Constraints:
 | `status` | order_status • not null • default "draft" |
 | `person_id` (`personId`) | text • nullable |
 | `organization_id` (`organizationId`) | text • nullable |
-| `opportunity_id` (`opportunityId`) | text • nullable |
 | `quote_id` (`quoteId`) | text • nullable |
+| `quote_version_id` (`quoteVersionId`) | text • nullable |
 | `market_id` (`marketId`) | text • nullable |
 | `source_channel_id` (`sourceChannelId`) | text • nullable |
+| `contact_party_type` (`contactPartyType`) | text • nullable |
 | `contact_first_name` (`contactFirstName`) | text • nullable |
 | `contact_last_name` (`contactLastName`) | text • nullable |
+| `contact_tax_id` (`contactTaxId`) | text • nullable |
 | `contact_email` (`contactEmail`) | text • nullable |
 | `contact_phone` (`contactPhone`) | text • nullable |
 | `contact_preferred_language` (`contactPreferredLanguage`) | text • nullable |
@@ -2307,6 +2376,7 @@ Constraints:
 | `contact_region` (`contactRegion`) | text • nullable |
 | `contact_city` (`contactCity`) | text • nullable |
 | `contact_address_line1` (`contactAddressLine1`) | text • nullable |
+| `contact_address_line2` (`contactAddressLine2`) | text • nullable |
 | `contact_postal_code` (`contactPostalCode`) | text • nullable |
 | `currency` | text • not null |
 | `base_currency` (`baseCurrency`) | text • nullable |
@@ -3150,6 +3220,16 @@ Constraints:
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
+### `cost_categories`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `name` | text • not null |
+| `sort_order` (`sortOrder`) | integer • not null • default 0 |
+| `archived_at` (`archivedAt`) | timestamp with time zone • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
 ### `credit_note_line_items`
 | Column | Type |
 |--------|------|
@@ -3224,6 +3304,7 @@ Constraints:
 | `id` | text • PK • not null • default |
 | `invoice_id` (`invoiceId`) | text • FK -> invoices.id • not null |
 | `booking_item_id` (`bookingItemId`) | text • nullable |
+| `booking_payment_schedule_id` (`bookingPaymentScheduleId`) | text • FK -> booking_payment_schedules.id • nullable |
 | `description` | text • not null |
 | `quantity` | integer • not null • default 1 |
 | `unit_price_cents` (`unitPriceCents`) | integer • not null |
@@ -3245,6 +3326,9 @@ Constraints:
 | `reset_strategy` (`resetStrategy`) | invoice_number_reset_strategy • not null • default "never" |
 | `reset_at` (`resetAt`) | timestamp with time zone • nullable |
 | `scope` | invoice_number_series_scope • not null • default "invoice" |
+| `is_default` (`isDefault`) | boolean • not null • default false |
+| `external_provider` (`externalProvider`) | text • nullable |
+| `external_config_key` (`externalConfigKey`) | text • nullable |
 | `active` | boolean • not null • default true |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
@@ -3288,7 +3372,7 @@ Constraints:
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `invoice_number` (`invoiceNumber`) | text • unique • not null |
+| `invoice_number` (`invoiceNumber`) | text • not null |
 | `invoice_type` (`invoiceType`) | invoice_type • not null • default "invoice" |
 | `converted_from_invoice_id` (`convertedFromInvoiceId`) | text • nullable |
 | `series_id` (`seriesId`) | text • nullable |
@@ -3318,6 +3402,8 @@ Constraints:
 | `issue_date` (`issueDate`) | date • not null |
 | `due_date` (`dueDate`) | date • not null |
 | `notes` | text • nullable |
+| `voided_at` (`voidedAt`) | timestamp with time zone • nullable |
+| `void_reason` (`voidReason`) | text • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
@@ -3456,13 +3542,98 @@ Constraints:
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
 
+### `supplier_cost_allocations`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `supplier_invoice_id` (`supplierInvoiceId`) | text • FK -> supplier_invoices.id • not null |
+| `supplier_invoice_line_id` (`supplierInvoiceLineId`) | text • FK -> supplier_invoice_lines.id • nullable |
+| `target_type` (`targetType`) | cost_allocation_target_type • not null |
+| `departure_id` (`departureId`) | text • nullable |
+| `product_id` (`productId`) | text • nullable |
+| `booking_id` (`bookingId`) | text • nullable |
+| `booking_item_id` (`bookingItemId`) | text • nullable |
+| `traveler_id` (`travelerId`) | text • nullable |
+| `amount_cents` (`amountCents`) | integer • not null |
+| `base_amount_cents` (`baseAmountCents`) | integer • nullable |
+| `split_method` (`splitMethod`) | cost_allocation_split_method • not null • default "manual" |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `supplier_invoice_attachments`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `supplier_invoice_id` (`supplierInvoiceId`) | text • FK -> supplier_invoices.id • not null |
+| `kind` | text • not null • default "supporting_document" |
+| `name` | text • not null |
+| `mime_type` (`mimeType`) | text • nullable |
+| `file_size` (`fileSize`) | integer • nullable |
+| `storage_key` (`storageKey`) | text • nullable |
+| `checksum` | text • nullable |
+| `metadata` | jsonb • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+
+### `supplier_invoice_lines`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `supplier_invoice_id` (`supplierInvoiceId`) | text • FK -> supplier_invoices.id • not null |
+| `description` | text • not null |
+| `service_type` (`serviceType`) | ap_service_type • not null • default "other" |
+| `cost_category_id` (`costCategoryId`) | text • FK -> cost_categories.id • nullable |
+| `supplier_service_id` (`supplierServiceId`) | text • nullable |
+| `quantity` | integer • not null • default 1 |
+| `unit_amount_cents` (`unitAmountCents`) | integer • not null |
+| `tax_rate_bps` (`taxRateBps`) | integer • nullable |
+| `tax_amount_cents` (`taxAmountCents`) | integer • not null • default 0 |
+| `total_amount_cents` (`totalAmountCents`) | integer • not null |
+| `sort_order` (`sortOrder`) | integer • not null • default 0 |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `supplier_invoices`
+| Column | Type |
+|--------|------|
+| `id` | text • PK • not null • default |
+| `supplier_id` (`supplierId`) | text • not null |
+| `supplier_invoice_no` (`supplierInvoiceNo`) | text • not null |
+| `internal_ref` (`internalRef`) | text • nullable |
+| `status` | supplier_invoice_status • not null • default "draft" |
+| `currency` | text • not null |
+| `base_currency` (`baseCurrency`) | text • nullable |
+| `fx_rate_set_id` (`fxRateSetId`) | text • nullable |
+| `subtotal_cents` (`subtotalCents`) | integer • not null • default 0 |
+| `tax_cents` (`taxCents`) | integer • not null • default 0 |
+| `total_cents` (`totalCents`) | integer • not null • default 0 |
+| `base_subtotal_cents` (`baseSubtotalCents`) | integer • nullable |
+| `base_tax_cents` (`baseTaxCents`) | integer • nullable |
+| `base_total_cents` (`baseTotalCents`) | integer • nullable |
+| `paid_cents` (`paidCents`) | integer • not null • default 0 |
+| `balance_due_cents` (`balanceDueCents`) | integer • not null • default 0 |
+| `tax_regime_id` (`taxRegimeId`) | text • nullable |
+| `issue_date` (`issueDate`) | date • not null |
+| `due_date` (`dueDate`) | date • nullable |
+| `received_at` (`receivedAt`) | timestamp with time zone • nullable |
+| `approved_at` (`approvedAt`) | timestamp with time zone • nullable |
+| `approved_by` (`approvedBy`) | text • nullable |
+| `storage_key` (`storageKey`) | text • nullable |
+| `extraction_id` (`extractionId`) | text • nullable |
+| `notes` | text • nullable |
+| `voided_at` (`voidedAt`) | timestamp with time zone • nullable |
+| `void_reason` (`voidReason`) | text • nullable |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
+| `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+| `deleted_at` (`deletedAt`) | timestamp with time zone • nullable |
+
 ### `supplier_payments`
 | Column | Type |
 |--------|------|
 | `id` | text • PK • not null • default |
-| `booking_id` (`bookingId`) | text • not null |
+| `booking_id` (`bookingId`) | text • nullable |
 | `supplier_id` (`supplierId`) | text • nullable |
 | `booking_supplier_status_id` (`bookingSupplierStatusId`) | text • nullable |
+| `supplier_invoice_id` (`supplierInvoiceId`) | text • FK -> supplier_invoices.id • nullable |
 | `amount_cents` (`amountCents`) | integer • not null |
 | `currency` | text • not null |
 | `base_currency` (`baseCurrency`) | text • nullable |
@@ -3593,6 +3764,9 @@ Constraints:
 | `reset_strategy` (`resetStrategy`) | contract_number_reset_strategy • not null • default "never" |
 | `reset_at` (`resetAt`) | timestamp with time zone • nullable |
 | `scope` | contract_scope • not null • default "customer" |
+| `is_default` (`isDefault`) | boolean • not null • default false |
+| `external_provider` (`externalProvider`) | text • nullable |
+| `external_config_key` (`externalConfigKey`) | text • nullable |
 | `active` | boolean • not null • default true |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
@@ -3792,6 +3966,14 @@ Constraints:
 | `failed_at` (`failedAt`) | timestamp with time zone • nullable |
 | `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 | `updated_at` (`updatedAt`) | timestamp with time zone • not null • default |
+
+### `notification_reminder_rule_authoring_requests`
+| Column | Type |
+|--------|------|
+| `idempotency_key` (`idempotencyKey`) | text • PK • not null |
+| `reminder_rule_id` (`reminderRuleId`) | text • FK -> notification_reminder_rules.id • not null |
+| `operation` | text • not null |
+| `created_at` (`createdAt`) | timestamp with time zone • not null • default |
 
 ### `notification_reminder_rule_stages`
 | Column | Type |

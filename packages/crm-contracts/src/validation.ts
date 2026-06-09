@@ -6,13 +6,7 @@ const paginationSchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
 })
 
-export const entityTypeSchema = z.enum([
-  "organization",
-  "person",
-  "opportunity",
-  "quote",
-  "activity",
-])
+export const entityTypeSchema = z.enum(["organization", "person", "quote", "activity"])
 
 export const recordStatusSchema = z.enum(["active", "inactive", "archived"])
 export const relationTypeSchema = z.enum(["client", "partner", "supplier", "other"])
@@ -25,14 +19,14 @@ export const communicationChannelSchema = z.enum([
   "other",
 ])
 export const communicationDirectionSchema = z.enum(["inbound", "outbound"])
-export const opportunityStatusSchema = z.enum(["open", "won", "lost", "archived"])
-export const quoteStatusSchema = z.enum([
+export const quoteStatusSchema = z.enum(["open", "won", "lost", "archived"])
+export const quoteVersionStatusSchema = z.enum([
   "draft",
   "sent",
   "accepted",
+  "declined",
+  "superseded",
   "expired",
-  "rejected",
-  "archived",
 ])
 export const activityTypeSchema = z.enum(["call", "email", "meeting", "task", "follow_up", "note"])
 export const activityStatusSchema = z.enum(["planned", "done", "cancelled"])
@@ -187,7 +181,7 @@ export const personListQuerySchema = paginationSchema.extend({
 })
 
 export const pipelineCoreSchema = z.object({
-  entityType: entityTypeSchema.default("opportunity"),
+  entityType: entityTypeSchema.default("quote"),
   name: z.string().min(1),
   isDefault: z.boolean().default(false),
   sortOrder: z.number().int().default(0),
@@ -215,14 +209,15 @@ export const stageListQuerySchema = paginationSchema.extend({
   pipelineId: z.string().optional(),
 })
 
-export const opportunityCoreSchema = z.object({
+export const quoteCoreSchema = z.object({
   title: z.string().min(1),
   personId: z.string().nullable().optional(),
   organizationId: z.string().nullable().optional(),
   pipelineId: z.string(),
   stageId: z.string(),
   ownerId: z.string().nullable().optional(),
-  status: opportunityStatusSchema.default("open"),
+  status: quoteStatusSchema.default("open"),
+  acceptedVersionId: z.string().nullable().optional(),
   valueAmountCents: z.number().int().nullable().optional(),
   valueCurrency: z.string().nullable().optional(),
   expectedCloseDate: z.string().date().nullable().optional(),
@@ -232,25 +227,25 @@ export const opportunityCoreSchema = z.object({
   tags: z.array(z.string()).default([]),
 })
 
-export const insertOpportunitySchema = opportunityCoreSchema
-export const updateOpportunitySchema = opportunityCoreSchema.partial()
-export const opportunityListQuerySchema = paginationSchema.extend({
+export const insertQuoteSchema = quoteCoreSchema
+export const updateQuoteSchema = quoteCoreSchema.partial()
+export const quoteListQuerySchema = paginationSchema.extend({
   personId: z.string().optional(),
   organizationId: z.string().optional(),
   pipelineId: z.string().optional(),
   stageId: z.string().optional(),
   ownerId: z.string().optional(),
-  status: opportunityStatusSchema.optional(),
+  status: quoteStatusSchema.optional(),
   search: z.string().optional(),
 })
 
-export const insertOpportunityParticipantSchema = z.object({
+export const insertQuoteParticipantSchema = z.object({
   personId: z.string(),
   role: participantRoleSchema.default("other"),
   isPrimary: z.boolean().default(false),
 })
 
-export const insertOpportunityProductSchema = z.object({
+export const insertQuoteProductSchema = z.object({
   productId: z.string().nullable().optional(),
   supplierServiceId: z.string().nullable().optional(),
   nameSnapshot: z.string().min(1),
@@ -262,27 +257,33 @@ export const insertOpportunityProductSchema = z.object({
   discountAmountCents: z.number().int().nullable().optional(),
 })
 
-export const updateOpportunityProductSchema = insertOpportunityProductSchema.partial()
+export const updateQuoteProductSchema = insertQuoteProductSchema.partial()
 
-export const quoteCoreSchema = z.object({
-  opportunityId: z.string(),
-  status: quoteStatusSchema.default("draft"),
+export const quoteVersionCoreSchema = z.object({
+  quoteId: z.string(),
+  label: z.string().nullable().optional(),
+  status: quoteVersionStatusSchema.default("draft"),
+  supersedesId: z.string().nullable().optional(),
+  tripSnapshotId: z.string().nullable().optional(),
   validUntil: z.string().date().nullable().optional(),
   currency: z.string().min(1),
   subtotalAmountCents: z.number().int().default(0),
   taxAmountCents: z.number().int().default(0),
   totalAmountCents: z.number().int().default(0),
   notes: z.string().nullable().optional(),
+  sentAt: z.string().datetime().nullable().optional(),
+  viewedAt: z.string().datetime().nullable().optional(),
+  decidedAt: z.string().datetime().nullable().optional(),
 })
 
-export const insertQuoteSchema = quoteCoreSchema
-export const updateQuoteSchema = quoteCoreSchema.partial()
-export const quoteListQuerySchema = paginationSchema.extend({
-  opportunityId: z.string().optional(),
-  status: quoteStatusSchema.optional(),
+export const insertQuoteVersionSchema = quoteVersionCoreSchema
+export const updateQuoteVersionSchema = quoteVersionCoreSchema.partial()
+export const quoteVersionListQuerySchema = paginationSchema.extend({
+  quoteId: z.string().optional(),
+  status: quoteVersionStatusSchema.optional(),
 })
 
-export const quoteLineCoreSchema = z.object({
+export const quoteVersionLineCoreSchema = z.object({
   productId: z.string().nullable().optional(),
   supplierServiceId: z.string().nullable().optional(),
   description: z.string().min(1),
@@ -292,8 +293,33 @@ export const quoteLineCoreSchema = z.object({
   currency: z.string().min(1),
 })
 
-export const insertQuoteLineSchema = quoteLineCoreSchema
-export const updateQuoteLineSchema = quoteLineCoreSchema.partial()
+export const insertQuoteVersionLineSchema = quoteVersionLineCoreSchema
+export const updateQuoteVersionLineSchema = quoteVersionLineCoreSchema.partial()
+
+export const applyTripSnapshotQuoteVersionLineSchema = quoteVersionLineCoreSchema.extend({
+  componentId: z.string().nullable().optional(),
+})
+
+export const applyTripSnapshotToQuoteVersionSchema = z.object({
+  tripSnapshotId: z.string().min(1),
+  currency: z.string().min(1),
+  subtotalAmountCents: z.number().int().default(0),
+  taxAmountCents: z.number().int().default(0),
+  totalAmountCents: z.number().int().default(0),
+  lines: z.array(applyTripSnapshotQuoteVersionLineSchema).default([]),
+})
+
+export const sendQuoteVersionSchema = z.object({
+  validUntil: z.string().date().nullable().optional(),
+})
+
+export const acceptQuoteVersionSchema = z.object({})
+
+export const declineQuoteVersionSchema = z.object({})
+
+export const expireQuoteVersionsSchema = z.object({
+  now: z.string().datetime().optional(),
+})
 
 export const activityCoreSchema = z.object({
   subject: z.string().min(1),

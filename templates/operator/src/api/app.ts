@@ -82,6 +82,8 @@ import {
   resolveBankTransferDetails,
   resolvePublicCheckoutBaseUrlFromBindings,
 } from "./payment-config"
+import { mountOperatorProposalRoutes } from "./proposal-routes"
+import { mountOperatorQuoteVersionSnapshotRoutes } from "./quote-version-snapshot-routes"
 import { mountOperatorSettingsRoutes } from "./settings"
 import { smartbillOperatorBundle } from "./smartbill"
 import {
@@ -297,6 +299,9 @@ export const app = createApp<CloudflareBindings>({
     "/v1/public/finance/accountant",
     "/v1/public/payment-link-config",
     "/v1/public/payment-link",
+    // Customer-facing sent Quote Version proposal. This public route must
+    // return only customer-safe DTO fields, never internal CRM rows.
+    "/v1/public/proposals",
     // Storefront booking journey — quote / book / drafts run
     // unauthenticated against the customer surface. Per
     // booking-journey-architecture §10 Phase B (the journey is
@@ -455,6 +460,10 @@ export const app = createApp<CloudflareBindings>({
     mountPublicPaymentPolicyRoutes(hono)
 
     mountOperatorMediaUploadRoutes(hono)
+
+    mountOperatorProposalRoutes(hono)
+
+    mountOperatorQuoteVersionSnapshotRoutes(hono)
 
     mountOperatorLazyAdditionalRoutes(hono)
 

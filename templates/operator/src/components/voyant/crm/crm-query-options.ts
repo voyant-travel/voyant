@@ -1,14 +1,14 @@
 import { queryOptions } from "@tanstack/react-query"
 import {
   getActivitiesQueryOptions as getActivitiesQueryOptionsBase,
-  getOpportunitiesQueryOptions as getOpportunitiesQueryOptionsBase,
   getOrganizationQueryOptions as getOrganizationQueryOptionsBase,
   getOrganizationsQueryOptions as getOrganizationsQueryOptionsBase,
   getPeopleQueryOptions as getPeopleQueryOptionsBase,
   getPersonActivitiesQueryOptions as getPersonActivitiesQueryOptionsBase,
   getPersonNotesQueryOptions as getPersonNotesQueryOptionsBase,
-  getPersonOpportunitiesQueryOptions as getPersonOpportunitiesQueryOptionsBase,
   getPersonQueryOptions as getPersonQueryOptionsBase,
+  getPersonQuotesQueryOptions as getPersonQuotesQueryOptionsBase,
+  getQuotesQueryOptions as getQuotesQueryOptionsBase,
 } from "@voyantjs/crm-react"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
@@ -43,14 +43,14 @@ export function getPersonActivitiesQueryOptions(id: string) {
   return queryOptions(getPersonActivitiesQueryOptionsBase(client, id))
 }
 
-export function getPersonOpportunitiesQueryOptions(id: string) {
-  return queryOptions(getPersonOpportunitiesQueryOptionsBase(client, id))
+export function getPersonQuotesQueryOptions(id: string) {
+  return queryOptions(getPersonQuotesQueryOptionsBase(client, id))
 }
 
 export function getOrganizationQueryOptions(id: string) {
   return queryOptions(getOrganizationQueryOptionsBase(client, id))
 }
 
-export function getOpportunitiesQueryOptions(filters = {}) {
-  return queryOptions(getOpportunitiesQueryOptionsBase(client, filters))
+export function getQuotesQueryOptions(filters = {}) {
+  return queryOptions(getQuotesQueryOptionsBase(client, filters))
 }
