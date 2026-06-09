@@ -1,5 +1,13 @@
 # @voyantjs/finance
 
+## 0.106.6
+
+### Patch Changes
+
+- b19888a: Make invoice payment recording idempotent with optional request keys and stable server-derived replay keys.
+- Updated dependencies [b19888a]
+  - @voyantjs/finance-contracts@0.104.3
+
 ## 0.106.5
 
 ### Patch Changes
