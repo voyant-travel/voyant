@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => {
     expireQuoteVersionIfPastValidUntil: vi.fn(),
     getOperatorSettings: vi.fn(),
     getQuoteVersionProposal: vi.fn(),
+    getTrip: vi.fn(),
     getTripSnapshotById: vi.fn(),
     markQuoteVersionViewed: vi.fn(),
     reserveTrip: vi.fn(),
@@ -51,6 +52,7 @@ vi.mock("@voyantjs/travel-composer", () => {
   return {
     TravelComposerInvariantError,
     travelComposerService: {
+      getTrip: mocks.getTrip,
       getTripSnapshotById: mocks.getTripSnapshotById,
       reserveTrip: mocks.reserveTrip,
       startCheckout: mocks.startCheckout,
@@ -123,6 +125,42 @@ const proposal = {
   ],
 }
 
+const frozenEnvelope = {
+  id: "trip_123",
+  status: "priced",
+  title: "Romania private tour",
+  description: null,
+  travelerParty: {},
+  constraints: {},
+  aggregateCurrency: "EUR",
+  aggregateSubtotalAmountCents: 10000,
+  aggregateTaxAmountCents: 900,
+  aggregateTotalAmountCents: 10900,
+  updatedAt: "2026-06-09T09:00:00.000Z",
+}
+
+const frozenComponent = {
+  id: "trcp_123",
+  envelopeId: "trip_123",
+  sequence: 0,
+  kind: "manual_service",
+  status: "priced",
+  title: "Airport transfer",
+  description: null,
+  entityModule: "products",
+  entityId: "prod_123",
+  sourceKind: "manual",
+  pricingSnapshot: {
+    currency: "EUR",
+    subtotalAmountCents: 10000,
+    taxAmountCents: 900,
+    totalAmountCents: 10900,
+  },
+  warningCodes: [],
+  metadata: { manualService: { name: "Airport transfer" } },
+  updatedAt: "2026-06-09T09:00:00.000Z",
+}
+
 const tripSnapshot = {
   id: "trsn_123",
   envelopeId: "trip_123",
@@ -130,6 +168,8 @@ const tripSnapshot = {
   subtotalAmountCents: 10000,
   taxAmountCents: 900,
   totalAmountCents: 10900,
+  frozenEnvelope,
+  frozenComponents: [frozenComponent],
   proposal: {
     envelopeId: "trip_123",
     title: "Romania private tour",
@@ -162,6 +202,11 @@ const tripSnapshot = {
       },
     ],
   },
+}
+
+const liveTrip = {
+  envelope: frozenEnvelope,
+  components: [frozenComponent],
 }
 
 function json(body: Record<string, unknown>) {
@@ -323,6 +368,7 @@ describe("operator proposal routes", () => {
     const app = makeApp()
     mocks.getQuoteVersionProposal.mockResolvedValue(proposal)
     mocks.getTripSnapshotById.mockResolvedValue(tripSnapshot)
+    mocks.getTrip.mockResolvedValue(liveTrip)
     mocks.reserveTrip.mockResolvedValue({
       envelope: { id: "trip_123", aggregateCurrency: "EUR", aggregateTotalAmountCents: 10900 },
       components: [],
@@ -360,6 +406,7 @@ describe("operator proposal routes", () => {
 
     expect(response.status).toBe(200)
     expect(mocks.getTripSnapshotById).toHaveBeenCalledWith(fakeDb, "trsn_123")
+    expect(mocks.getTrip).toHaveBeenCalledWith(fakeDb, "trip_123")
     expect(mocks.reserveTrip).toHaveBeenCalledWith(
       fakeDb,
       expect.objectContaining({
@@ -412,10 +459,37 @@ describe("operator proposal routes", () => {
     expect(mocks.acceptQuoteVersion).not.toHaveBeenCalled()
   })
 
+  it("rejects accepting when the live trip has changed after the frozen snapshot", async () => {
+    const app = makeApp()
+    mocks.getQuoteVersionProposal.mockResolvedValue(proposal)
+    mocks.getTripSnapshotById.mockResolvedValue(tripSnapshot)
+    mocks.getTrip.mockResolvedValue({
+      ...liveTrip,
+      components: [
+        {
+          ...frozenComponent,
+          title: "Edited transfer",
+        },
+      ],
+    })
+
+    const response = await app.request("/v1/public/proposals/qver_123/accept", {
+      method: "POST",
+      ...json({}),
+    })
+
+    expect(response.status).toBe(409)
+    const body = (await response.json()) as { error?: string }
+    expect(body.error).toContain("changed")
+    expect(mocks.reserveTrip).not.toHaveBeenCalled()
+    expect(mocks.acceptQuoteVersion).not.toHaveBeenCalled()
+  })
+
   it("returns safe reservation failure details without accepting the proposal", async () => {
     const app = makeApp()
     mocks.getQuoteVersionProposal.mockResolvedValue(proposal)
     mocks.getTripSnapshotById.mockResolvedValue(tripSnapshot)
+    mocks.getTrip.mockResolvedValue(liveTrip)
     mocks.reserveTrip.mockResolvedValue({
       envelope: { id: "trip_123" },
       components: [],

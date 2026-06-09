@@ -8,6 +8,7 @@ import { parseOptionalJsonBody, type VoyantDb } from "@voyantjs/hono"
 import {
   type StartCheckoutResult,
   TravelComposerInvariantError,
+  type Trip,
   type TripSnapshot,
   travelComposerService,
 } from "@voyantjs/travel-composer"
@@ -241,6 +242,9 @@ export async function handleAcceptPublicProposal(c: Context<OperatorProposalRout
     if (!snapshot) return c.json({ error: "Proposal Trip snapshot not found" }, 409)
 
     assertProposalMatchesTripSnapshot(proposal, snapshot)
+    const liveTrip = await travelComposerService.getTrip(db, snapshot.envelopeId)
+    if (!liveTrip) return c.json({ error: "Proposal Trip envelope not found" }, 409)
+    assertLiveTripMatchesSnapshot(liveTrip, snapshot)
 
     const reserveIdempotencyKey = `proposal-accept-reserve:${quoteVersionId}:${
       body.idempotencyKey ?? "default"
@@ -327,6 +331,18 @@ async function startAcceptedProposalCheckout(
   }
 }
 
+function assertLiveTripMatchesSnapshot(trip: Trip, snapshot: TripSnapshot) {
+  const liveComponents = trip.components.filter((component) => component.status !== "removed")
+  if (
+    stableSnapshotString(trip.envelope) !== stableSnapshotString(snapshot.frozenEnvelope) ||
+    stableSnapshotString(liveComponents) !== stableSnapshotString(snapshot.frozenComponents)
+  ) {
+    throw new QuoteVersionConflictError(
+      "Proposal Trip has changed since this Quote Version was sent",
+    )
+  }
+}
+
 function assertProposalMatchesTripSnapshot(
   proposal: QuoteVersionProposalReadModel,
   snapshot: TripSnapshot,
@@ -358,4 +374,22 @@ function assertProposalMatchesTripSnapshot(
       throw new QuoteVersionConflictError("Proposal does not match its frozen Trip snapshot")
     }
   }
+}
+
+function stableSnapshotString(value: unknown): string {
+  return JSON.stringify(canonicalSnapshotValue(value))
+}
+
+function canonicalSnapshotValue(value: unknown): unknown {
+  if (value instanceof Date) return value.toISOString()
+  if (Array.isArray(value)) return value.map(canonicalSnapshotValue)
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([, entryValue]) => entryValue !== undefined)
+        .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+        .map(([key, entryValue]) => [key, canonicalSnapshotValue(entryValue)]),
+    )
+  }
+  return value
 }
