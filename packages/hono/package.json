@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./app": "./src/app.ts",
     "./module": "./src/module.ts",
+    "./composition": "./src/composition.ts",
     "./plugin": "./src/plugin.ts",
     "./document-download": "./src/document-download.ts",
     "./public-document-delivery": "./src/public-document-delivery.ts",
@@ -70,6 +71,11 @@
         "types": "./dist/module.d.ts",
         "import": "./dist/module.js",
         "default": "./dist/module.js"
+      },
+      "./composition": {
+        "types": "./dist/composition.d.ts",
+        "import": "./dist/composition.js",
+        "default": "./dist/composition.js"
       },
       "./plugin": {
         "types": "./dist/plugin.d.ts",

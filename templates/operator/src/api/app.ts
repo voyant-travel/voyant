@@ -1,46 +1,13 @@
-import { actionLedgerHonoModule } from "@voyantjs/action-ledger"
-import { availabilityHonoModule } from "@voyantjs/availability"
-import { bookingRequirementsHonoModule } from "@voyantjs/booking-requirements"
-import { bookingsSupplierExtension, createBookingsHonoModule } from "@voyantjs/bookings"
-import { createCatalogSearchHonoModule } from "@voyantjs/catalog"
-import { catalogAuthoringExtension } from "@voyantjs/catalog-authoring"
-import { type EmbeddingProvider, executeSemanticSearch } from "@voyantjs/catalog-rag"
-import { type CheckoutPaymentStarter, createCheckoutHonoModule } from "@voyantjs/checkout"
-import { createCrmHonoModule, crmBookingExtension, crmService } from "@voyantjs/crm"
-import { createCustomerPortalHonoModule } from "@voyantjs/customer-portal"
-import { distributionBookingExtension, distributionHonoModule } from "@voyantjs/distribution"
-import { externalRefsHonoModule } from "@voyantjs/external-refs"
-import { extrasHonoModule } from "@voyantjs/extras"
-import { bookingsCreateExtension, createFinanceHonoModule } from "@voyantjs/finance"
-import { createApp, createPublicDocumentDeliveryHonoModule } from "@voyantjs/hono"
-import { identityHonoModule } from "@voyantjs/identity"
-import { createLegalHonoModule } from "@voyantjs/legal"
-import { marketsHonoModule } from "@voyantjs/markets"
-import {
-  createDefaultBookingDocumentAttachment,
-  createNotificationsHonoModule,
-} from "@voyantjs/notifications"
-import { createNetopiaCheckoutStarter, netopiaHonoBundle } from "@voyantjs/plugin-netopia"
-import { pricingHonoModule } from "@voyantjs/pricing"
-import { productsBookingExtension, productsHonoModule } from "@voyantjs/products"
-import { promotionsHonoModule } from "@voyantjs/promotions"
-import { createPromotionsStorefrontResolvers } from "@voyantjs/promotions/service-storefront"
-import { resourcesHonoModule } from "@voyantjs/resources"
-import { sellabilityHonoModule } from "@voyantjs/sellability"
-import { createStorefrontHonoModule } from "@voyantjs/storefront"
-import { createStorefrontVerificationHonoModule } from "@voyantjs/storefront-verification"
-import { suppliersHonoModule } from "@voyantjs/suppliers"
-import { transactionsBookingExtension, transactionsHonoModule } from "@voyantjs/transactions"
-import { createTravelComposerHonoModule } from "@voyantjs/travel-composer"
+import { createApp } from "@voyantjs/hono"
+import { composeFromManifest } from "@voyantjs/hono/composition"
+import { netopiaHonoBundle } from "@voyantjs/plugin-netopia"
 import { mountWorkflowRunsAdminRoutes, WorkflowRunnerRegistry } from "@voyantjs/workflow-runs"
-import { resolveNotificationProviders } from "../lib/notifications"
 import { mountActionLedgerHealthRoutes } from "./action-ledger-health"
 import authHandler, {
   hasAuthPermission,
   resolveAuthRequest,
   validateApiTokenAccess,
 } from "./auth/handler"
-import { closeTerminalBookingPaymentSchedules } from "./booking-payment-cleanup"
 import {
   bookingScheduleBundle,
   mountBookingPaymentScheduleRoutes,
@@ -55,132 +22,29 @@ import { rebuildBookingItemTaxLines } from "./catalog-checkout-materialization"
 import { mountCatalogContentRoutes } from "./catalog-content"
 import { mountCatalogOffersRoutes } from "./catalog-offers"
 import { channelPushBundle, mountChannelPushAdminRoutes } from "./channel-push"
+import {
+  buildOperatorCapabilities,
+  OPERATOR_RUNTIME_MANIFEST,
+  operatorComposition,
+} from "./composition"
 import { mountOperatorContractDocumentRoutes } from "./contract-document-routes"
-import { AUTO_GENERATE_CONTRACT_OPTIONS } from "./contract-document-runtime"
 import { mountFlightRoutes } from "./flights"
 import { createInvitationsRoutes } from "./invitations"
 import { mountOperatorLazyAdditionalRoutes } from "./lazy-additional-routes"
-import { buildCatalogContext } from "./lib/catalog-context"
 import { dbFromEnvForApp } from "./lib/db"
-import { createDocumentStorage } from "./lib/storage"
 import { mountCatalogMcpRoutes } from "./mcp"
 import { mountOperatorMediaUploadRoutes } from "./media-upload-routes"
 import {
-  createOperatorBookingPiiService,
-  createOperatorDocumentStorage,
-  createOperatorInvoiceExchangeRateResolver,
-  createOperatorInvoiceSettlementPollers,
   createOperatorWorkflowDriver,
   generateContractPdfForBooking,
   operatorPostgresDb,
-  readOperatorDocumentContentBase64,
-  resolveOperatorContractDocumentGenerator,
-  resolveOperatorDb,
-  resolveOperatorDocumentDownloadUrl,
 } from "./operator-runtime-adapter"
-import {
-  resolveBankTransferDetails,
-  resolvePublicCheckoutBaseUrlFromBindings,
-} from "./payment-config"
 import { mountOperatorProposalRoutes } from "./proposal-routes"
 import { mountOperatorQuoteVersionSnapshotRoutes } from "./quote-version-snapshot-routes"
 import { mountOperatorSettingsRoutes } from "./settings"
 import { smartbillOperatorBundle } from "./smartbill"
-import {
-  createOperatorTravelComposerRoutesOptions,
-  travelComposerPaymentBundle,
-} from "./travel-composer-runtime"
+import { travelComposerPaymentBundle } from "./travel-composer-runtime"
 
-const notificationsHonoModule = createNotificationsHonoModule({
-  resolveProviders: resolveNotificationProviders,
-  resolvePublicCheckoutBaseUrl: resolvePublicCheckoutBaseUrlFromBindings,
-  resolveDocumentAttachmentResolver: (bindings) => async (document) => {
-    if (document.storageKey) {
-      const contentBase64 = await readOperatorDocumentContentBase64(bindings, document.storageKey)
-      if (contentBase64) {
-        return {
-          filename: document.name,
-          contentBase64,
-          contentType: document.mimeType ?? undefined,
-        }
-      }
-
-      const path = await resolveOperatorDocumentDownloadUrl(bindings, document.storageKey)
-      if (path) {
-        return {
-          filename: document.name,
-          path,
-          contentType: document.mimeType ?? undefined,
-        }
-      }
-    }
-
-    return createDefaultBookingDocumentAttachment(document)
-  },
-  // Auto-dispatch the booking-confirmation bundle when a booking flips to
-  // `confirmed`. The subscriber runs in the same process as the emitter via
-  // the in-process event bus; errors are logged, not rethrown, so a flaky
-  // mailer can't block the confirm request.
-  //
-  // KNOWN LEAK: `resolveDb` is called per-booking-confirmation by the
-  // module's subscriber and leaks a Neon WebSocket Pool until isolate
-  // teardown (the factory contract is `(bindings) => VoyantDb`, with no
-  // dispose hook). Volume is low (1 per confirmed booking), so this
-  // doesn't move the operational needle today. Fixing it properly
-  // requires widening the module-factory contract in `@voyantjs/bookings`
-  // to accept the `DisposableDb` shape — tracked alongside the rest of
-  // the audit in #510.
-  resolveDb: resolveOperatorDb,
-  autoConfirmAndDispatch: {
-    enabled: true,
-    templateSlug: "booking-confirmation",
-  },
-})
-
-const catalogSearchHonoModule = createCatalogSearchHonoModule({
-  resolveRuntime: (c) => {
-    const ctx = buildCatalogContext(c)
-    return {
-      indexer: ctx.catalog.indexer,
-      embeddings: ctx.catalog.embeddings,
-      defaultScope: ctx.defaultScope,
-    }
-  },
-  executeSearch: ({ adapter, embeddings, slice, request }) =>
-    executeSemanticSearch({
-      adapter,
-      embeddings: embeddings as EmbeddingProvider | undefined,
-      slice,
-      request,
-    }),
-})
-const storefrontVerificationHonoModule = createStorefrontVerificationHonoModule({
-  resolveProviders: resolveNotificationProviders,
-  email: {
-    subject: "Your verification code",
-  },
-})
-const storefrontHonoModule = createStorefrontHonoModule({
-  // Wire the promotions resolver into the storefront's previously-empty
-  // `/v1/public/products/:productId/offers` and `/v1/public/offers/:slug`
-  // endpoints. Per docs/architecture/promotions-architecture.md §8.
-  offers: createPromotionsStorefrontResolvers(),
-})
-
-// Netopia is the only configured `pay-by-link` provider in this template.
-// Container bootstrap (via `netopiaHonoBundle`) caches the resolved runtime
-// options, so the starter only needs the `payload` from the request — env
-// resolution happens lazily inside the starter's `startProvider`.
-const netopiaCheckoutStarter = createNetopiaCheckoutStarter()
-
-const checkoutHonoModule = createCheckoutHonoModule({
-  resolveProviders: resolveNotificationProviders,
-  resolvePaymentStarters: (): Record<string, CheckoutPaymentStarter> => ({
-    netopia: netopiaCheckoutStarter,
-  }),
-  resolveBankTransferDetails,
-  resolvePublicCheckoutBaseUrl: resolvePublicCheckoutBaseUrlFromBindings,
-})
 /**
  * Process-wide registry of workflow runners. Bundles register their
  * runners on bootstrap (see `createCatalogCheckoutBundle`) so the
@@ -193,76 +57,17 @@ const checkoutHonoModule = createCheckoutHonoModule({
  */
 const workflowRunnerRegistry = new WorkflowRunnerRegistry()
 
-const customerPortalHonoModule = createCustomerPortalHonoModule({
-  resolveDocumentDownloadUrl: (bindings, storageKey) =>
-    resolveOperatorDocumentDownloadUrl(bindings, storageKey),
-})
-
-// Wires the env-driven KMS provider into CRM admin routes so
-// operator UIs can read/write decrypted PII (passport snapshots,
-// dietary/accessibility blobs) through `/v1/admin/crm/people/...`.
-const crmHonoModule = createCrmHonoModule()
-
-// `resolveTravelSnapshot` lets the booking-traveler "with travel
-// details" route auto-snapshot dietary/accessibility/primary-passport
-// from the linked `crm.people` row when an operator picks an existing
-// person. Bookings stays free of any direct CRM dep — the resolver
-// is wired here at template assembly time and receives the same KMS
-// provider the route already resolved.
-const bookingsHonoModule = createBookingsHonoModule({
-  resolveTravelSnapshot: (db, personId, { kms }) =>
-    crmService.loadPersonTravelSnapshot(db, personId, { kms }),
-  // Storefront booking session bootstrap + update flows hand the
-  // billing contact and per-traveler snapshots to these resolvers. They
-  // dedupe by normalized email/phone via `identity_contact_points` and
-  // upsert a CRM person on miss; traveler snapshots without email/phone
-  // stay booking-only until explicitly linked. See issues #961 / #1399.
-  resolveBillingPerson: async (db, contact, ctx) => {
-    const person = await crmService.upsertPersonFromContact(db, contact, {
-      source: ctx.source,
-      sourceRef: ctx.sourceRef,
-    })
-    return person?.id ?? null
-  },
-  resolveTravelerPerson: async (db, contact, ctx) => {
-    const person = await crmService.upsertPersonFromContact(db, contact, {
-      source: ctx.source,
-      sourceRef: ctx.sourceRef,
-      requireContactPoint: true,
-    })
-    return person?.id ?? null
-  },
-  resolveBillingPersonById: async (db, personId) =>
-    (await crmService.getPersonById(db, personId)) != null,
-  resolveBillingOrganizationById: async (db, organizationId) =>
-    (await crmService.getOrganizationById(db, organizationId)) != null,
-  closePaymentSchedulesForBooking: closeTerminalBookingPaymentSchedules,
-})
-
-const financeModule = createFinanceHonoModule({
-  resolveDocumentDownloadUrl: (bindings: unknown, storageKey: string) =>
-    resolveOperatorDocumentDownloadUrl(bindings, storageKey),
-  resolveInvoiceExchangeRateResolver: createOperatorInvoiceExchangeRateResolver,
-  resolveInvoiceSettlementPollers: createOperatorInvoiceSettlementPollers,
-  invoiceDueDateResolver: ({ issueDate, dueDate, bookingPaymentSchedule }) =>
-    bookingPaymentSchedule && dueDate < issueDate ? issueDate : dueDate,
-})
-const legalModule = createLegalHonoModule({
-  // KNOWN LEAK: same shape as the bookings `resolveDb` above — leaks a
-  // Pool per legal-event subscriber call until the module factory's
-  // contract widens to accept `DisposableDb`. Tracked in #510.
-  resolveDb: resolveOperatorDb,
-  resolveDocumentDownloadUrl: (bindings, storageKey) =>
-    resolveOperatorDocumentDownloadUrl(bindings, storageKey),
-  resolveDocumentStorage: createOperatorDocumentStorage,
-  resolveDocumentGenerator: resolveOperatorContractDocumentGenerator,
-  resolveBookingPiiService: createOperatorBookingPiiService,
-  autoGenerateContractOnConfirmed: AUTO_GENERATE_CONTRACT_OPTIONS,
-})
-
-const publicDocumentDeliveryModule = createPublicDocumentDeliveryHonoModule<CloudflareBindings>({
-  resolveStorage: createDocumentStorage,
-})
+// Runtime modules + extensions are DERIVED from the manifest via the
+// composition registry (see ./composition.ts) rather than hand-listed here.
+// Mount/hook order follows OPERATOR_RUNTIME_MANIFEST; capabilities (storage,
+// FX, providers, document-download, CRM, …) are gathered in one typed
+// container. `voyant db doctor` cross-checks the manifest against the registry
+// and against voyant.config.ts. See voyant#1608 / #1620.
+const { modules, extensions } = composeFromManifest(
+  OPERATOR_RUNTIME_MANIFEST,
+  operatorComposition,
+  buildOperatorCapabilities(),
+)
 
 export const app = createApp<CloudflareBindings>({
   // `dbFromEnvForApp` returns `{ db, dispose }`; the Hono db middleware
@@ -344,50 +149,8 @@ export const app = createApp<CloudflareBindings>({
     // `NETOPIA_NOTIFY_URL`.
     "/v1/finance/providers/netopia/callback",
   ],
-  modules: [
-    actionLedgerHonoModule,
-    crmHonoModule,
-    availabilityHonoModule,
-    identityHonoModule,
-    externalRefsHonoModule,
-    extrasHonoModule,
-    bookingRequirementsHonoModule,
-    pricingHonoModule,
-    marketsHonoModule,
-    transactionsHonoModule,
-    resourcesHonoModule,
-    sellabilityHonoModule,
-    distributionHonoModule,
-    suppliersHonoModule,
-    productsHonoModule,
-    promotionsHonoModule,
-    catalogSearchHonoModule,
-    bookingsHonoModule,
-    financeModule,
-    legalModule,
-    publicDocumentDeliveryModule,
-    notificationsHonoModule,
-    storefrontHonoModule,
-    customerPortalHonoModule,
-    storefrontVerificationHonoModule,
-    checkoutHonoModule,
-    createTravelComposerHonoModule({
-      ...createOperatorTravelComposerRoutesOptions(),
-      publicRoutes: true,
-    }),
-  ],
-  extensions: [
-    bookingsSupplierExtension,
-    bookingsCreateExtension,
-    productsBookingExtension,
-    // Mounts POST /v1/admin/products/{id}/duplicate (deep-clone) + /compose
-    // (new-from-spec) for catalog authoring. Replaces the former local
-    // product-duplicate route.
-    catalogAuthoringExtension,
-    crmBookingExtension,
-    transactionsBookingExtension,
-    distributionBookingExtension,
-  ],
+  modules,
+  extensions,
   plugins: [
     // bookingScheduleBundle subscribes to booking.confirmed BEFORE
     // legal's auto-generate-contract subscriber so the rendered
