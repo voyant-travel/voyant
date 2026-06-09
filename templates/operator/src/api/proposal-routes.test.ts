@@ -515,6 +515,57 @@ describe("operator proposal routes", () => {
     expect(body.error).toContain("can no longer be accepted")
   })
 
+  it("replays checkout for an already accepted proposal without reserving again", async () => {
+    const app = makeApp()
+    const acceptedProposal = {
+      ...proposal,
+      quote: { ...proposal.quote, status: "won", acceptedVersionId: "qver_123" },
+      quoteVersion: { ...quoteVersion, status: "accepted", decidedAt: "2026-06-09T10:05:00.000Z" },
+    }
+    mocks.getQuoteVersionProposal
+      .mockResolvedValueOnce(acceptedProposal)
+      .mockResolvedValueOnce(acceptedProposal)
+    mocks.getTripSnapshotById.mockResolvedValue(tripSnapshot)
+    mocks.acceptQuoteVersion.mockResolvedValue({
+      quote: acceptedProposal.quote,
+      quoteVersion: acceptedProposal.quoteVersion,
+      closedQuoteVersions: [],
+    })
+    mocks.startCheckout.mockResolvedValue({
+      target: {
+        currency: "EUR",
+        totalAmountCents: 10900,
+        paymentSessionId: "pays_123",
+        checkoutUrl: "https://travel.example.com/pay/pays_123",
+      },
+      failures: [],
+      warnings: [],
+    })
+
+    const response = await app.request("/v1/public/proposals/qver_123/accept", {
+      method: "POST",
+      ...json({ intent: "card", idempotencyKey: "accept-1" }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(mocks.getTripSnapshotById).toHaveBeenCalledWith(fakeTx, "trsn_123")
+    expect(mocks.getTrip).not.toHaveBeenCalled()
+    expect(mocks.reserveTrip).not.toHaveBeenCalled()
+    expect(mocks.acceptQuoteVersion).toHaveBeenCalledWith(fakeTx, "qver_123", {})
+    expect(mocks.startCheckout).toHaveBeenCalledWith(
+      fakeDb,
+      expect.objectContaining({
+        idempotencyKey: "proposal-accept-checkout:qver_123:card:accept-1",
+      }),
+      { checkout: "deps" },
+    )
+    const body = (await response.json()) as { data?: Record<string, unknown> }
+    expect(body.data).toMatchObject({
+      status: "accepted",
+      checkoutUrl: "https://travel.example.com/pay/pays_123",
+    })
+  })
+
   it("returns safe reservation failure details without accepting the proposal", async () => {
     const app = makeApp()
     mocks.getQuoteVersionProposal.mockResolvedValue(proposal)

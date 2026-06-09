@@ -307,7 +307,10 @@ async function acceptPublicProposalWithQuoteLock({
       response: c.json({ error: "Proposal has been superseded" }, 410),
     }
   }
-  if (proposal.quoteVersion.status !== "sent") {
+  const isAcceptedReplay =
+    proposal.quoteVersion.status === "accepted" &&
+    proposal.quote.acceptedVersionId === proposal.quoteVersion.id
+  if (proposal.quoteVersion.status !== "sent" && !isAcceptedReplay) {
     return {
       kind: "response",
       response: c.json({ error: "Proposal can no longer be accepted" }, 409),
@@ -332,6 +335,15 @@ async function acceptPublicProposalWithQuoteLock({
   }
 
   assertProposalMatchesTripSnapshot(proposal, snapshot)
+  if (isAcceptedReplay) {
+    const accepted = await crmService.acceptQuoteVersion(db, quoteVersionId, {})
+    if (!accepted) {
+      return { kind: "response", response: c.json({ error: "Proposal not found" }, 404) }
+    }
+
+    return { kind: "accepted", accepted, snapshot, warnings: [] }
+  }
+
   const liveTrip = await travelComposerService.getTrip(db, snapshot.envelopeId)
   if (!liveTrip) {
     return {
