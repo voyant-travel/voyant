@@ -53,6 +53,7 @@
       "!**/.claude",
       "!**/docs/open-travel",
       "!**/*.gen.ts",
+      "!**/*.generated.ts",
       "!**/migrations",
       "!apps/workflows-node-step-container/bundle.mjs",
       "!apps/workflows-selfhost-cloudflare-worker/src/bundle.mjs",

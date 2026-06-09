@@ -6,10 +6,17 @@ import { describe, expect, it } from "vitest"
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..")
 
 describe("operator action ledger schema mounting", () => {
-  it("keeps the action ledger schema mounted in drizzle config", () => {
+  it("keeps the action ledger schema in the migration schema set", () => {
+    // drizzle.config consumes the generated manifest (derived from
+    // voyant.config.ts), which must still include the action-ledger schema.
     const config = readFileSync(resolve(repoRoot, "templates/operator/drizzle.config.ts"), "utf8")
+    expect(config).toContain("./drizzle.schemas.generated.ts")
 
-    expect(config).toContain("../../packages/action-ledger/src/schema.ts")
+    const generated = readFileSync(
+      resolve(repoRoot, "templates/operator/drizzle.schemas.generated.ts"),
+      "utf8",
+    )
+    expect(generated).toContain("../../packages/action-ledger/src/schema.ts")
   })
 
   it("keeps the action ledger migration in the operator template", () => {

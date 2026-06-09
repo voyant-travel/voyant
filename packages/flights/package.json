@@ -15,6 +15,12 @@
     "./reference/local-postgres": "./src/reference/local-postgres.ts",
     "./reference/static-bundle": "./src/reference/static-bundle.ts"
   },
+  "voyant": {
+    "schema": "./reference/local-postgres",
+    "requiresSchemas": [
+      "@voyantjs/db"
+    ]
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "biome check src/",

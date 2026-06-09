@@ -181,6 +181,73 @@ describe("validateVoyantConfig", () => {
     expect(result.ok).toBe(false)
     expect(result.issues.length).toBeGreaterThanOrEqual(3)
   })
+
+  it("accepts additionalSchemas as module-style entries", () => {
+    const result = validateVoyantConfig({
+      modules: ["crm"],
+      additionalSchemas: ["@voyantjs/catalog", { resolve: "@voyantjs/accommodations" }],
+    })
+    expect(result.ok).toBe(true)
+  })
+
+  it("rejects additionalSchemas that are not an array", () => {
+    const result = validateVoyantConfig({ additionalSchemas: "@voyantjs/catalog" })
+    expect(result.ok).toBe(false)
+    expect(result.issues).toContainEqual({
+      path: "additionalSchemas",
+      message: "Expected an array.",
+    })
+  })
+
+  it("rejects duplicate additionalSchemas entries", () => {
+    const result = validateVoyantConfig({
+      additionalSchemas: ["@voyantjs/catalog", "@voyantjs/catalog"],
+    })
+    expect(result.ok).toBe(false)
+    expect(result.issues.some((i) => i.path === "additionalSchemas[1]")).toBe(true)
+  })
+
+  it("accepts extensions as module-style entries", () => {
+    const result = validateVoyantConfig({
+      modules: ["crm"],
+      extensions: ["@voyantjs/catalog-authoring", { resolve: "@voyantjs/products" }],
+    })
+    expect(result.ok).toBe(true)
+  })
+
+  it("rejects extensions that are not an array", () => {
+    const result = validateVoyantConfig({ extensions: "@voyantjs/catalog-authoring" })
+    expect(result.ok).toBe(false)
+    expect(result.issues).toContainEqual({ path: "extensions", message: "Expected an array." })
+  })
+
+  it("rejects duplicate extension entries", () => {
+    const result = validateVoyantConfig({
+      extensions: ["@voyantjs/catalog-authoring", "@voyantjs/catalog-authoring"],
+    })
+    expect(result.ok).toBe(false)
+    expect(result.issues.some((i) => i.path === "extensions[1]")).toBe(true)
+  })
+
+  it("accepts schemas as an array of file-path strings", () => {
+    const result = validateVoyantConfig({ schemas: ["./src/db/schema.ts"] })
+    expect(result.ok).toBe(true)
+  })
+
+  it("rejects schemas that are not an array", () => {
+    const result = validateVoyantConfig({ schemas: "./src/db/schema.ts" })
+    expect(result.ok).toBe(false)
+    expect(result.issues).toContainEqual({
+      path: "schemas",
+      message: "Expected an array of file-path strings.",
+    })
+  })
+
+  it("rejects empty-string schemas entries", () => {
+    const result = validateVoyantConfig({ schemas: ["./ok.ts", ""] })
+    expect(result.ok).toBe(false)
+    expect(result.issues.some((i) => i.path === "schemas[1]")).toBe(true)
+  })
 })
 
 describe("resolveEntry", () => {
