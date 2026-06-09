@@ -270,6 +270,7 @@ function TravelerCard({
     })
   }
 
+  const travelerName = [traveler.firstName, traveler.lastName].filter(Boolean).join(" ").trim()
   return (
     <div className="space-y-4 rounded-md border p-4">
       {/* Header: who this traveler is, with subtle row-level actions. */}
@@ -278,6 +279,9 @@ function TravelerCard({
           {formatMessage(messages.bookingJourney.travelers.travelerNumber, {
             number: idx + 1,
           })}
+          {travelerName ? (
+            <span className="text-muted-foreground font-normal">{` · ${travelerName}`}</span>
+          ) : null}
           {computedAge != null ? (
             <span className="text-muted-foreground font-normal">
               {" · "}
