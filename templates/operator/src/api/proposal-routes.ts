@@ -12,6 +12,8 @@ import {
   type TripSnapshot,
   travelComposerService,
 } from "@voyantjs/travel-composer"
+import { sql } from "drizzle-orm"
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context, Hono } from "hono"
 import { z } from "zod"
 import { operatorPostgresDb } from "./operator-runtime-adapter"
@@ -74,6 +76,17 @@ export interface AcceptPublicProposalResult {
 type QuoteVersionProposalReadModel = NonNullable<
   Awaited<ReturnType<typeof crmService.getQuoteVersionProposal>>
 >
+type AcceptQuoteVersionResult = NonNullable<
+  Awaited<ReturnType<typeof crmService.acceptQuoteVersion>>
+>
+type LockedAcceptResult =
+  | {
+      kind: "accepted"
+      accepted: AcceptQuoteVersionResult
+      snapshot: TripSnapshot
+      warnings: string[]
+    }
+  | { kind: "response"; response: Response }
 
 const acceptPublicProposalSchema = z.object({
   intent: z.enum(["card", "bank_transfer"]).default("card"),
@@ -219,64 +232,28 @@ export async function handleAcceptPublicProposal(c: Context<OperatorProposalRout
 
   const body = await parseOptionalJsonBody(c, acceptPublicProposalSchema)
   const db = operatorPostgresDb(c.get("db"))
-  await crmService.expireQuoteVersionIfPastValidUntil(db, quoteVersionId)
-  const proposal = await crmService.getQuoteVersionProposal(db, quoteVersionId)
+  const proposalForLock = await crmService.getQuoteVersionProposal(db, quoteVersionId)
 
-  if (!proposal) return c.json({ error: "Proposal not found" }, 404)
-  if (proposal.quoteVersion.status === "draft") return c.json({ error: "Proposal not found" }, 404)
-  if (proposal.quoteVersion.status === "superseded") {
-    return c.json({ error: "Proposal has been superseded" }, 410)
-  }
-  if (proposal.quoteVersion.status !== "sent") {
-    return c.json({ error: "Proposal can no longer be accepted" }, 409)
-  }
-  if (!proposal.quoteVersion.tripSnapshotId) {
-    return c.json({ error: "Proposal has no frozen Trip snapshot" }, 409)
-  }
+  if (!proposalForLock) return c.json({ error: "Proposal not found" }, 404)
 
   try {
-    const snapshot = await travelComposerService.getTripSnapshotById(
-      db,
-      proposal.quoteVersion.tripSnapshotId,
+    const lockedResult = await db.transaction((tx) =>
+      acceptPublicProposalWithQuoteLock({
+        c,
+        db: tx as PostgresJsDatabase,
+        quoteId: proposalForLock.quote.id,
+        quoteVersionId,
+        body,
+      }),
     )
-    if (!snapshot) return c.json({ error: "Proposal Trip snapshot not found" }, 409)
+    if (lockedResult.kind === "response") return lockedResult.response
 
-    assertProposalMatchesTripSnapshot(proposal, snapshot)
-    const liveTrip = await travelComposerService.getTrip(db, snapshot.envelopeId)
-    if (!liveTrip) return c.json({ error: "Proposal Trip envelope not found" }, 409)
-    assertLiveTripMatchesSnapshot(liveTrip, snapshot)
-
-    const reserveIdempotencyKey = `proposal-accept-reserve:${quoteVersionId}:${
-      body.idempotencyKey ?? "default"
-    }`
-    const reserved = await travelComposerService.reserveTrip(
-      db,
-      {
-        envelopeId: snapshot.envelopeId,
-        idempotencyKey: reserveIdempotencyKey,
-        refreshScope: {
-          locale: "en-US",
-          audience: "customer",
-          market: "default",
-          currency: snapshot.currency,
-        },
-      },
-      createReserveTripDeps(c),
+    const checkout = await startAcceptedProposalCheckout(
+      c,
+      lockedResult.snapshot,
+      body,
+      quoteVersionId,
     )
-    if (reserved.failures.length > 0) {
-      return c.json(
-        {
-          error: "Proposal could not be reserved",
-          failures: reserved.failures.map(({ code, reason }) => ({ code, reason })),
-        },
-        409,
-      )
-    }
-
-    const accepted = await crmService.acceptQuoteVersion(db, quoteVersionId, {})
-    if (!accepted) return c.json({ error: "Proposal not found" }, 404)
-
-    const checkout = await startAcceptedProposalCheckout(c, snapshot, body, quoteVersionId)
     const checkoutWarnings = checkout
       ? checkout.failures.map((failure) => failure.reason)
       : ["checkout_start_failed"]
@@ -286,10 +263,10 @@ export async function handleAcceptPublicProposal(c: Context<OperatorProposalRout
         status: "accepted",
         checkoutUrl: checkout?.target.checkoutUrl ?? null,
         paymentSessionId: checkout?.target.paymentSessionId ?? null,
-        currency: checkout?.target.currency ?? accepted.quoteVersion.currency,
+        currency: checkout?.target.currency ?? lockedResult.accepted.quoteVersion.currency,
         totalAmountCents:
-          checkout?.target.totalAmountCents ?? accepted.quoteVersion.totalAmountCents,
-        warnings: [...reserved.warnings, ...(checkout?.warnings ?? []), ...checkoutWarnings],
+          checkout?.target.totalAmountCents ?? lockedResult.accepted.quoteVersion.totalAmountCents,
+        warnings: [...lockedResult.warnings, ...(checkout?.warnings ?? []), ...checkoutWarnings],
       } satisfies AcceptPublicProposalResult,
     })
   } catch (error) {
@@ -301,6 +278,125 @@ export async function handleAcceptPublicProposal(c: Context<OperatorProposalRout
     }
     throw error
   }
+}
+
+async function acceptPublicProposalWithQuoteLock({
+  c,
+  db,
+  quoteId,
+  quoteVersionId,
+  body,
+}: {
+  c: Context<OperatorProposalRouteEnv>
+  db: PostgresJsDatabase
+  quoteId: string
+  quoteVersionId: string
+  body: z.infer<typeof acceptPublicProposalSchema>
+}): Promise<LockedAcceptResult> {
+  await lockQuoteAccept(db, quoteId)
+  await crmService.expireQuoteVersionIfPastValidUntil(db, quoteVersionId)
+  const proposal = await crmService.getQuoteVersionProposal(db, quoteVersionId)
+
+  if (!proposal) return { kind: "response", response: c.json({ error: "Proposal not found" }, 404) }
+  if (proposal.quoteVersion.status === "draft") {
+    return { kind: "response", response: c.json({ error: "Proposal not found" }, 404) }
+  }
+  if (proposal.quoteVersion.status === "superseded") {
+    return {
+      kind: "response",
+      response: c.json({ error: "Proposal has been superseded" }, 410),
+    }
+  }
+  const isAcceptedReplay =
+    proposal.quoteVersion.status === "accepted" &&
+    proposal.quote.acceptedVersionId === proposal.quoteVersion.id
+  if (proposal.quoteVersion.status !== "sent" && !isAcceptedReplay) {
+    return {
+      kind: "response",
+      response: c.json({ error: "Proposal can no longer be accepted" }, 409),
+    }
+  }
+  if (!proposal.quoteVersion.tripSnapshotId) {
+    return {
+      kind: "response",
+      response: c.json({ error: "Proposal has no frozen Trip snapshot" }, 409),
+    }
+  }
+
+  const snapshot = await travelComposerService.getTripSnapshotById(
+    db,
+    proposal.quoteVersion.tripSnapshotId,
+  )
+  if (!snapshot) {
+    return {
+      kind: "response",
+      response: c.json({ error: "Proposal Trip snapshot not found" }, 409),
+    }
+  }
+
+  assertProposalMatchesTripSnapshot(proposal, snapshot)
+  if (isAcceptedReplay) {
+    const accepted = await crmService.acceptQuoteVersion(db, quoteVersionId, {})
+    if (!accepted) {
+      return { kind: "response", response: c.json({ error: "Proposal not found" }, 404) }
+    }
+
+    return { kind: "accepted", accepted, snapshot, warnings: [] }
+  }
+
+  const liveTrip = await travelComposerService.getTrip(db, snapshot.envelopeId)
+  if (!liveTrip) {
+    return {
+      kind: "response",
+      response: c.json({ error: "Proposal Trip envelope not found" }, 409),
+    }
+  }
+  assertLiveTripMatchesSnapshot(liveTrip, snapshot)
+
+  const reserveIdempotencyKey = `proposal-accept-reserve:${quoteVersionId}:${
+    body.idempotencyKey ?? "default"
+  }`
+  const reserved = await travelComposerService.reserveTrip(
+    db,
+    {
+      envelopeId: snapshot.envelopeId,
+      idempotencyKey: reserveIdempotencyKey,
+      refreshScope: {
+        locale: "en-US",
+        audience: "customer",
+        market: "default",
+        currency: snapshot.currency,
+      },
+    },
+    createReserveTripDeps(c),
+  )
+  if (reserved.failures.length > 0) {
+    return {
+      kind: "response",
+      response: c.json(
+        {
+          error: "Proposal could not be reserved",
+          failures: reserved.failures.map(({ code, reason }) => ({ code, reason })),
+        },
+        409,
+      ),
+    }
+  }
+
+  const accepted = await crmService.acceptQuoteVersion(db, quoteVersionId, {})
+  if (!accepted) return { kind: "response", response: c.json({ error: "Proposal not found" }, 404) }
+
+  return { kind: "accepted", accepted, snapshot, warnings: reserved.warnings }
+}
+
+function lockQuoteAccept(db: PostgresJsDatabase, quoteId: string) {
+  return db.execute(
+    sql`SELECT pg_advisory_xact_lock(hashtextextended(${quoteAcceptLockKey(quoteId)}, 0))`,
+  )
+}
+
+function quoteAcceptLockKey(quoteId: string) {
+  return `quote-accept:${quoteId}`
 }
 
 async function startAcceptedProposalCheckout(
