@@ -4479,7 +4479,10 @@ export const financeService = {
         externalProvider: externalRef?.provider ?? null,
         externalNumber: externalRef?.externalNumber ?? null,
         externalSeriesName:
-          readStringMetadata(externalRef?.metadata, "seriesName") ?? series?.name ?? null,
+          readStringMetadata(externalRef?.metadata, "seriesName") ??
+          readStringMetadata(externalRef?.metadata, "series") ??
+          series?.name ??
+          null,
       }
       await runtime.eventBus.emit("invoice.voided", event)
     }
