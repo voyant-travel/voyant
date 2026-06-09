@@ -1,18 +1,52 @@
+import type { ActionLedgerRequestContextValues } from "@voyantjs/action-ledger"
 import type { Extension } from "@voyantjs/core"
 import { parseJsonBody } from "@voyantjs/hono"
 import type { HonoExtension } from "@voyantjs/hono/module"
-import { Hono } from "hono"
+import { type Context, Hono } from "hono"
 
 import { FINANCE_ROUTE_RUNTIME_CONTAINER_KEY, type FinanceRouteRuntime } from "./route-runtime.js"
+import type { Env } from "./routes-shared.js"
 import { bookingCreateSchema, createBooking } from "./service-booking-create.js"
 import { dualCreateBooking, dualCreateBookingSchema } from "./service-bookings-dual-create.js"
 
-function resolveRuntime(container: { resolve: <T>(key: string) => T }): FinanceRouteRuntime | null {
+function resolveRuntime(container: { resolve: <T>(key: string) => T } | undefined) {
   try {
-    return container.resolve<FinanceRouteRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
+    return container?.resolve<FinanceRouteRuntime>(FINANCE_ROUTE_RUNTIME_CONTAINER_KEY)
   } catch {
-    return null
+    return undefined
   }
+}
+
+function getBookingCreateActionLedgerRequestContext(
+  c: Context<Env>,
+): ActionLedgerRequestContextValues | undefined {
+  const context = {
+    userId: c.get("userId") ?? null,
+    agentId: c.get("agentId") ?? null,
+    workflowPrincipalId: c.get("workflowPrincipalId") ?? null,
+    principalSubtype: c.get("principalSubtype") ?? null,
+    sessionId: c.get("sessionId") ?? null,
+    apiTokenId: c.get("apiTokenId") ?? c.get("apiKeyId") ?? null,
+    callerType: c.get("callerType") ?? null,
+    actor: c.get("actor") ?? null,
+    isInternalRequest: c.get("isInternalRequest") ?? false,
+    organizationId: c.get("organizationId") ?? null,
+    workflowRunId: c.get("workflowRunId") ?? null,
+    workflowStepId: c.get("workflowStepId") ?? null,
+    correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
+  }
+
+  if (
+    context.userId ||
+    context.agentId ||
+    context.workflowPrincipalId ||
+    context.apiTokenId ||
+    context.isInternalRequest
+  ) {
+    return context
+  }
+
+  return undefined
 }
 
 /**
@@ -21,20 +55,18 @@ function resolveRuntime(container: { resolve: <T>(key: string) => T }): FinanceR
  * even though the code lives in `@voyantjs/finance`. See the header comment in
  * service-booking-create.ts for why finance owns this orchestration.
  */
-const createBookingRoutes = new Hono<{
-  Variables: {
-    db: import("drizzle-orm/postgres-js").PostgresJsDatabase
-    userId?: string
-    container: { resolve: <T>(key: string) => T }
-  }
-}>()
+const createBookingRoutes = new Hono<Env>()
   .post("/create", async (c) => {
     const input = await parseJsonBody(c, bookingCreateSchema)
     const runtime = resolveRuntime(c.var.container)
 
     const outcome = await createBooking(c.get("db"), input, {
       userId: c.get("userId"),
-      runtime: runtime ?? undefined,
+      runtime: {
+        ...(runtime ?? {}),
+        actionLedgerContext: getBookingCreateActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "booking.create.route",
+      },
     })
 
     switch (outcome.status) {
@@ -109,7 +141,11 @@ const createBookingRoutes = new Hono<{
 
     const outcome = await dualCreateBooking(c.get("db"), input, {
       userId: c.get("userId"),
-      runtime: runtime ? { eventBus: runtime.eventBus } : undefined,
+      runtime: {
+        ...(runtime ?? {}),
+        actionLedgerContext: getBookingCreateActionLedgerRequestContext(c),
+        actionLedgerAuthorizationSource: "booking.create.route",
+      },
     })
 
     if (outcome.status === "ok") {

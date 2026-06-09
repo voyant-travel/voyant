@@ -1,3 +1,4 @@
+import { actionLedgerEntries } from "@voyantjs/action-ledger/schema"
 import {
   bookingGroups,
   bookingItems,
@@ -27,6 +28,7 @@ async function resetTables(
   db: any,
 ) {
   const tableNames = [
+    "action_ledger_entries",
     "payments",
     "invoice_renditions",
     "invoice_line_items",
@@ -538,6 +540,75 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
 
     const bookingRows = await db.select().from(bookings)
     expect(bookingRows).toHaveLength(1)
+  })
+
+  it("writes action ledger entries for successful creates and duplicate rejections", async () => {
+    const { productId, optionId } = await seedProduct()
+    const slot = await seedSlot({ productId, optionId })
+    const runtime = {
+      actionLedgerContext: {
+        userId: "user_booking_create_ledger",
+        callerType: "session" as const,
+        actor: "staff",
+      },
+      actionLedgerAuthorizationSource: "booking.create.route",
+    }
+
+    const first = await createBooking(
+      db,
+      {
+        productId,
+        optionId,
+        slotId: slot.id,
+        bookingNumber: nextBookingNumber(),
+        ...bookingParty(),
+      },
+      { userId: "user_booking_create_ledger", runtime },
+    )
+
+    expect(first.status).toBe("ok")
+    if (first.status !== "ok") return
+
+    const duplicate = await createBooking(
+      db,
+      {
+        productId,
+        optionId,
+        slotId: slot.id,
+        bookingNumber: nextBookingNumber(),
+        ...bookingParty(),
+      },
+      { userId: "user_booking_create_ledger", runtime },
+    )
+
+    expect(duplicate.status).toBe("duplicate_booking")
+
+    const ledgerRows = await db
+      .select()
+      .from(actionLedgerEntries)
+      .where(eq(actionLedgerEntries.actionName, "booking.create"))
+
+    expect(ledgerRows).toHaveLength(2)
+    expect(ledgerRows.find((row) => row.status === "succeeded")).toMatchObject({
+      actionKind: "create",
+      targetType: "booking",
+      targetId: first.result.booking.id,
+      principalType: "user",
+      principalId: "user_booking_create_ledger",
+      actorType: "staff",
+      routeOrToolName: "booking.create",
+      authorizationSource: "booking.create.route",
+    })
+    expect(ledgerRows.find((row) => row.status === "failed")).toMatchObject({
+      actionKind: "create",
+      targetType: "booking",
+      targetId: first.result.booking.id,
+      principalType: "user",
+      principalId: "user_booking_create_ledger",
+      actorType: "staff",
+      routeOrToolName: "booking.create",
+      authorizationSource: "booking.create.route",
+    })
   })
 
   it("allows duplicate active bookings when explicitly overridden", async () => {
