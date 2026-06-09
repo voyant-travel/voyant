@@ -103,6 +103,9 @@ export type {
   VoyantInvoiceEvent,
 } from "./types.js"
 export type {
+  SmartbillCandidateExternalRefRecorder,
+  SmartbillCandidateExternalRefRecorderContext,
+  SmartbillCandidateInvoice,
   SmartbillDriftFinding,
   SmartbillDriftFindingType,
   SmartbillDriftReconciler,
@@ -118,6 +121,7 @@ export type {
   SmartbillRemoteDocument,
   SmartbillRemoteDocumentAccessors,
   SmartbillRemoteDocumentStatus,
+  SmartbillWorkflowCandidateSource,
   SmartbillWorkflowDocumentType,
   SmartbillWorkflowError,
   SmartbillWorkflowExternalRef,

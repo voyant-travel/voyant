@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
 import { SmartbillApiError, type SmartbillClientApi } from "../../src/client.js"
+import { loadSmartbillCandidateRefs } from "../../src/workflow-candidates.js"
 import {
   createSmartbillDriftReconciler,
   createSmartbillProformaConversionPoller,
@@ -110,6 +111,65 @@ describe("createSmartbillProformaConversionPoller", () => {
     expect(result.converted).toEqual([])
     expect(result.skipped[0]?.reason).toBe("not_converted")
   })
+
+  it("can poll proforma conversions from invoice candidates", async () => {
+    const onConverted = vi.fn()
+    const recordCandidateExternalRef = vi.fn(async ({ ref }) => ({
+      ...ref,
+      id: "iex_candidate",
+    }))
+    const client = makeClient({
+      listEstimateInvoices: vi.fn(async () => ({
+        status: "Ok",
+        areInvoicesCreated: true,
+        invoices: [{ series: "INV", number: "42", url: "https://smartbill.test/inv-42.pdf" }],
+      })),
+    })
+
+    const result = await createSmartbillProformaConversionPoller({
+      client,
+      companyVatCode: "RO12345678",
+      listCandidateInvoices: async () => [
+        {
+          invoiceId: "inv_candidate",
+          invoiceNumber: "PF-9",
+          documentType: "proforma",
+          seriesName: "PF",
+          status: "issued",
+          currency: "RON",
+          totalCents: 10000,
+          paidCents: 0,
+          balanceDueCents: 10000,
+        },
+      ],
+      recordCandidateExternalRef,
+      onConverted,
+    })()
+
+    expect(recordCandidateExternalRef).toHaveBeenCalledWith(
+      expect.objectContaining({
+        candidate: expect.objectContaining({ invoiceId: "inv_candidate" }),
+        document: expect.objectContaining({
+          companyVatCode: "RO12345678",
+          seriesName: "PF",
+          number: "9",
+          documentType: "proforma",
+        }),
+      }),
+    )
+    expect(client.listEstimateInvoices).toHaveBeenCalledWith("RO12345678", "PF", "9")
+    expect(onConverted).toHaveBeenCalledOnce()
+    expect(onConverted.mock.calls[0]![0]).toMatchObject({
+      id: "iex_candidate",
+      invoiceId: "inv_candidate",
+      externalNumber: "9",
+    })
+    expect(result.converted[0]).toMatchObject({
+      proformaNumber: "9",
+      invoiceSeriesName: "INV",
+      invoiceNumber: "42",
+    })
+  })
 })
 
 describe("createSmartbillDriftReconciler", () => {
@@ -147,6 +207,120 @@ describe("createSmartbillDriftReconciler", () => {
       document: { seriesName: "INV", number: "99" },
     })
     expect(onFinding).toHaveBeenCalledWith(result.findings[0])
+  })
+
+  it("can verify local invoice candidates without external refs", async () => {
+    const verifyRemoteDocument = vi.fn(async () => "present" as const)
+
+    const result = await createSmartbillDriftReconciler({
+      client: makeClient(),
+      companyVatCode: "RO12345678",
+      listCandidateInvoices: async () => [
+        {
+          invoiceId: "inv_candidate",
+          invoiceNumber: "INV-42",
+          documentType: "invoice",
+          seriesName: "INV",
+          status: "issued",
+          currency: "RON",
+          totalCents: 10000,
+          paidCents: 0,
+          balanceDueCents: 10000,
+        },
+      ],
+      verifyRemoteDocument,
+    })()
+
+    expect(verifyRemoteDocument).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ref: expect.objectContaining({
+          id: "candidate:inv_candidate",
+          invoiceId: "inv_candidate",
+          externalNumber: "42",
+        }),
+        document: expect.objectContaining({
+          companyVatCode: "RO12345678",
+          seriesName: "INV",
+          number: "42",
+          documentType: "invoice",
+        }),
+      }),
+    )
+    expect(result.checked).toBe(1)
+    expect(result.findings).toEqual([])
+  })
+
+  it("uses SmartBill series keys and skips pending placeholders from DB invoice candidates", async () => {
+    const rows = [
+      {
+        invoice: {
+          id: "inv_issued",
+          invoiceNumber: "B-0133",
+          invoiceType: "invoice",
+          status: "issued",
+          currency: "RON",
+          totalCents: 10000,
+          paidCents: 0,
+          balanceDueCents: 10000,
+          sequence: 133,
+        },
+        seriesName: "B",
+      },
+      {
+        invoice: {
+          id: "inv_pending",
+          invoiceNumber: "PENDING-smartbill-invoice-1",
+          invoiceType: "invoice",
+          status: "pending_external_allocation",
+          currency: "RON",
+          totalCents: 10000,
+          paidCents: 0,
+          balanceDueCents: 10000,
+          sequence: null,
+        },
+        seriesName: "B",
+      },
+    ]
+    const query = {
+      from: vi.fn(() => query),
+      leftJoin: vi.fn(() => query),
+      where: vi.fn(() => query),
+      orderBy: vi.fn(() => query),
+      limit: vi.fn(async () => rows),
+    }
+    const db = { select: vi.fn(() => query) }
+    const recordCandidateExternalRef = vi.fn(async ({ ref }) => ref)
+
+    const refs = await loadSmartbillCandidateRefs({
+      db: db as never,
+      companyVatCode: "RO12345678",
+      recordCandidateExternalRef,
+    })
+
+    expect(query.limit).toHaveBeenCalledWith(500)
+    expect(recordCandidateExternalRef).toHaveBeenCalledTimes(1)
+    expect(refs).toHaveLength(1)
+    expect(refs[0]).toMatchObject({
+      invoiceId: "inv_issued",
+      externalNumber: "0133",
+      metadata: {
+        companyVatCode: "RO12345678",
+        invoiceNumber: "B-0133",
+        seriesName: "B",
+        series: "B",
+        number: "0133",
+        documentType: "invoice",
+      },
+    })
+  })
+
+  it("requires db or listCandidateInvoices for the invoices source", async () => {
+    await expect(
+      createSmartbillDriftReconciler({
+        client: makeClient(),
+        source: "invoices",
+      })(),
+    ).rejects.toThrow("SmartBill invoice candidate source requires db or listCandidateInvoices")
   })
 
   it("discovers missing local documents from SmartBill series when opted in", async () => {
