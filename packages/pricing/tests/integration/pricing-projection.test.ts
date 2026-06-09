@@ -6,6 +6,7 @@ import type { IndexerSlice } from "@voyantjs/products/service-catalog-plane"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import { priceCatalogs } from "../../src/schema-catalogs.js"
+import { pricingCategories } from "../../src/schema-categories.js"
 import {
   optionPriceRules,
   optionUnitPriceRules,
@@ -242,6 +243,181 @@ describe.skipIf(!DB_AVAILABLE)("createProductPricingProjectionExtension (integra
     expect(out.get("priceFromAmountCents")).toBe(8500)
   })
 
+  it("prefers unrestricted adult category prices over cheaper child category prices", async () => {
+    const adultCategoryId = newId("pricing_categories")
+    const childCategoryId = newId("pricing_categories")
+    await db.insert(pricingCategories).values([
+      {
+        id: adultCategoryId,
+        productId,
+        optionId,
+        unitId,
+        name: "Adult",
+        code: "adult",
+        categoryType: "adult",
+      },
+      {
+        id: childCategoryId,
+        productId,
+        optionId,
+        unitId,
+        name: "Child 0-5",
+        code: "child-0-5",
+        categoryType: "child",
+        minAge: 0,
+        maxAge: 5,
+      },
+    ])
+
+    const ruleId = newId("option_price_rules")
+    await db.insert(optionPriceRules).values({
+      id: ruleId,
+      productId,
+      optionId,
+      priceCatalogId: usdCatalogId,
+      name: "per-person",
+      baseSellAmountCents: null,
+      isDefault: true,
+      active: true,
+    })
+    await db.insert(optionUnitPriceRules).values([
+      {
+        id: newId("option_unit_price_rules"),
+        optionPriceRuleId: ruleId,
+        optionId,
+        unitId,
+        pricingCategoryId: adultCategoryId,
+        sellAmountCents: 48000,
+        active: true,
+      },
+      {
+        id: newId("option_unit_price_rules"),
+        optionPriceRuleId: ruleId,
+        optionId,
+        unitId,
+        pricingCategoryId: childCategoryId,
+        sellAmountCents: 24000,
+        active: true,
+      },
+    ])
+
+    const ext = createProductPricingProjectionExtension()
+    const out = await ext.project(db, productId, enSlice)
+    expect(out.get("priceFromAmountCents")).toBe(48000)
+  })
+
+  it("prefers unrestricted adult prices over cheaper quantity tiers and child prices", async () => {
+    const adultCategoryId = newId("pricing_categories")
+    const childCategoryId = newId("pricing_categories")
+    await db.insert(pricingCategories).values([
+      {
+        id: adultCategoryId,
+        productId,
+        optionId,
+        unitId,
+        name: "Adult",
+        code: "adult-tiered",
+        categoryType: "adult",
+      },
+      {
+        id: childCategoryId,
+        productId,
+        optionId,
+        unitId,
+        name: "Child 0-5",
+        code: "child-tiered",
+        categoryType: "child",
+        minAge: 0,
+        maxAge: 5,
+      },
+    ])
+
+    const ruleId = newId("option_price_rules")
+    await db.insert(optionPriceRules).values({
+      id: ruleId,
+      productId,
+      optionId,
+      priceCatalogId: usdCatalogId,
+      name: "tiered-per-person",
+      baseSellAmountCents: null,
+      isDefault: true,
+      active: true,
+    })
+
+    const adultUnitRuleId = newId("option_unit_price_rules")
+    await db.insert(optionUnitPriceRules).values([
+      {
+        id: adultUnitRuleId,
+        optionPriceRuleId: ruleId,
+        optionId,
+        unitId,
+        pricingCategoryId: adultCategoryId,
+        sellAmountCents: 48000,
+        active: true,
+      },
+      {
+        id: newId("option_unit_price_rules"),
+        optionPriceRuleId: ruleId,
+        optionId,
+        unitId,
+        pricingCategoryId: childCategoryId,
+        sellAmountCents: 24000,
+        active: true,
+      },
+    ])
+    await db.insert(optionUnitTiers).values({
+      id: newId("option_unit_tiers"),
+      optionUnitPriceRuleId: adultUnitRuleId,
+      minQuantity: 2,
+      sellAmountCents: 40000,
+      active: true,
+    })
+
+    const ext = createProductPricingProjectionExtension()
+    const out = await ext.project(db, productId, enSlice)
+    expect(out.get("priceFromAmountCents")).toBe(48000)
+  })
+
+  it("falls back to restricted category pricing when no standard price exists", async () => {
+    const childCategoryId = newId("pricing_categories")
+    await db.insert(pricingCategories).values({
+      id: childCategoryId,
+      productId,
+      optionId,
+      unitId,
+      name: "Child 0-5",
+      code: "child-only",
+      categoryType: "child",
+      minAge: 0,
+      maxAge: 5,
+    })
+
+    const ruleId = newId("option_price_rules")
+    await db.insert(optionPriceRules).values({
+      id: ruleId,
+      productId,
+      optionId,
+      priceCatalogId: usdCatalogId,
+      name: "child-only",
+      baseSellAmountCents: null,
+      isDefault: true,
+      active: true,
+    })
+    await db.insert(optionUnitPriceRules).values({
+      id: newId("option_unit_price_rules"),
+      optionPriceRuleId: ruleId,
+      optionId,
+      unitId,
+      pricingCategoryId: childCategoryId,
+      sellAmountCents: 24000,
+      active: true,
+    })
+
+    const ext = createProductPricingProjectionExtension()
+    const out = await ext.project(db, productId, enSlice)
+    expect(out.get("priceFromAmountCents")).toBe(24000)
+  })
+
   it("prefers future rate-plan rules over stale product row pricing", async () => {
     const { sql } = await import("drizzle-orm")
     await db.execute(sql`UPDATE products SET sell_amount_cents = 5000 WHERE id = ${productId}`)
@@ -262,7 +438,7 @@ describe.skipIf(!DB_AVAILABLE)("createProductPricingProjectionExtension (integra
     expect(out.get("priceFromAmountCents")).toBe(9900)
   })
 
-  it("prefers room prices over base prices and stale zero row pricing", async () => {
+  it("prefers standard room prices over quantity-tier room prices and stale zero row pricing", async () => {
     const { sql } = await import("drizzle-orm")
     await db.execute(sql`UPDATE products SET sell_amount_cents = 0 WHERE id = ${productId}`)
 
@@ -308,7 +484,7 @@ describe.skipIf(!DB_AVAILABLE)("createProductPricingProjectionExtension (integra
 
     const ext = createProductPricingProjectionExtension()
     const out = await ext.project(db, productId, enSlice)
-    expect(out.get("priceFromAmountCents")).toBe(16500)
+    expect(out.get("priceFromAmountCents")).toBe(18000)
     expect(out.get("hasPricing")).toBe(true)
   })
 })
