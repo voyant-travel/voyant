@@ -110,14 +110,17 @@ export function CatalogVerticalDetailPage({
   )
 
   // Booking: route to the unified journey. entityModule = the content vertical.
-  const book = (departureId?: string, optionId?: string) => {
+  const book = (departureId?: string, optionId?: string, departureDate?: string | null) => {
     void navigate({
       to: "/catalog/journey/$entityModule/$entityId",
       params: { entityModule: vertical, entityId: id },
       search: {
         sourceKind: "voyant-connect",
         ...(departureId ? { departureId } : {}),
+        ...(departureDate ? { departureDate: departureDate.slice(0, 10) } : {}),
         ...(optionId ? { optionId } : {}),
+        ...(enrichment?.name ? { entityName: enrichment.name } : {}),
+        ...(enrichment?.heroImageUrl ? { entityImageUrl: enrichment.heroImageUrl } : {}),
       },
     })
   }
@@ -178,9 +181,11 @@ export function CatalogVerticalDetailPage({
           onLoadDeparturePricing={(h, sailingRef) =>
             fetchers.loadDeparturePricing(h, sailingRef, vertical)
           }
-          onBookDeparture={(_h, departure) => book(departure.sourceRef ?? departure.id)}
+          onBookDeparture={(_h, departure) =>
+            book(departure.sourceRef ?? departure.id, undefined, departure.startsAt)
+          }
           onBookOption={(_h, departure, option) =>
-            book(departure.sourceRef ?? departure.id, option.id)
+            book(departure.sourceRef ?? departure.id, option.id, departure.startsAt)
           }
         />
       </div>

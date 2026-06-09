@@ -8,13 +8,21 @@
  * Per booking-journey-architecture §8.1 + §10 Phase B.
  */
 
+import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { PersonPickerSection, type PersonPickerValue } from "@voyantjs/bookings-ui"
-import { BookingJourney, type BookingJourneyProps } from "@voyantjs/bookings-ui/journey"
-import { useState } from "react"
+import {
+  type BookingEntitySummary,
+  BookingJourney,
+  type BookingJourneyProps,
+} from "@voyantjs/bookings-ui/journey"
+import { getProductMediaQueryOptions, getProductQueryOptions } from "@voyantjs/products-react"
+import { useMemo, useState } from "react"
 
 import { catalogVerticalPath } from "@/components/voyant/catalog/catalog-route-state"
 import { useAdminMessages } from "@/lib/admin-i18n"
+import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
 const emptyPersonPickerValue: PersonPickerValue = {
   mode: "existing",
@@ -30,7 +38,10 @@ export interface OperatorBookingJourneyProps {
   sourceConnectionId?: string
   sourceRef?: string
   departureId?: string
+  departureDate?: string
   optionId?: string
+  entityName?: string
+  entityImageUrl?: string
   draftId: string
   className?: string
 }
@@ -42,11 +53,18 @@ export function OperatorBookingJourney({
   sourceConnectionId,
   sourceRef,
   departureId,
+  departureDate,
   optionId,
+  entityName,
+  entityImageUrl,
   draftId,
   className,
 }: OperatorBookingJourneyProps): React.ReactElement {
   const navigate = useNavigate()
+  const entitySummary = useEntitySummary(entityModule, entityId, {
+    name: entityName,
+    heroImageUrl: entityImageUrl,
+  })
 
   const slots: Pick<
     BookingJourneyProps,
@@ -83,6 +101,7 @@ export function OperatorBookingJourney({
       draftId={draftId}
       initialConfigure={{
         ...(departureId ? { departureSlotId: departureId } : {}),
+        ...(departureDate ? { departureDate } : {}),
         ...(optionId ? { variantId: optionId } : {}),
       }}
       defaultBuyerType="B2B"
@@ -91,10 +110,54 @@ export function OperatorBookingJourney({
         acceptsHold: true,
         acceptsTicketOnCredit: true,
       }}
+      entitySummary={entitySummary}
       className={className}
       {...slots}
     />
   )
+}
+
+function useEntitySummary(
+  entityModule: string,
+  entityId: string,
+  hints: { name?: string; heroImageUrl?: string },
+): BookingEntitySummary | undefined {
+  const tryProductSummary = entityModule === "products" && Boolean(entityId)
+  const client = useMemo(() => ({ baseUrl: getApiUrl(), fetcher: operatorFetcher }), [])
+
+  const productQuery = useQuery({
+    ...getProductQueryOptions(client, entityId),
+    enabled: tryProductSummary,
+    retry: false,
+  })
+  const mediaQuery = useQuery({
+    ...getProductMediaQueryOptions(client, entityId, { mediaType: "image" }),
+    enabled: tryProductSummary,
+    retry: false,
+  })
+
+  return useMemo<BookingEntitySummary | undefined>(() => {
+    const product = productQuery.data
+    if (product) {
+      const heroImageUrl = (mediaQuery.data?.data ?? [])
+        .filter((media) => media.mediaType === "image" && media.dayId == null)
+        .map((media) => media.url)
+        .find(Boolean)
+      return {
+        name: product.name,
+        vertical: "products",
+        ...(heroImageUrl ? { heroImageUrl } : {}),
+      }
+    }
+    if (hints.name) {
+      return {
+        name: hints.name,
+        vertical: entityModule,
+        ...(hints.heroImageUrl ? { heroImageUrl: hints.heroImageUrl } : {}),
+      }
+    }
+    return undefined
+  }, [productQuery.data, mediaQuery.data, hints.name, hints.heroImageUrl, entityModule])
 }
 
 /**

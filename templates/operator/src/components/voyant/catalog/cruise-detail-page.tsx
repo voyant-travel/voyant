@@ -283,7 +283,10 @@ export function CruiseDetailPage({ id, locale = "ro" }: { id: string; locale?: s
       search: {
         sourceKind: "voyant-connect",
         ...(sail.sourceRef || sail.id ? { departureId: sail.sourceRef ?? sail.id ?? "" } : {}),
+        ...(sail.startDate ? { departureDate: sail.startDate.slice(0, 10) } : {}),
         ...(cabinCode ? { optionId: cabinCode } : {}),
+        ...(detail?.name ? { entityName: detail.name } : {}),
+        ...(detail?.heroImageUrl ? { entityImageUrl: detail.heroImageUrl } : {}),
       },
     })
 
