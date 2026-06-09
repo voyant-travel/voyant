@@ -172,8 +172,10 @@ export type {
   UpdatePersonRelationshipInput,
 } from "./service/person-relationships.js"
 export { personRelationshipsService } from "./service/person-relationships.js"
+export type { AcceptQuoteVersionResult } from "./service/quote-versions.js"
 export { QuoteVersionConflictError } from "./service/quote-versions.js"
 export {
+  acceptQuoteVersionSchema,
   activityListQuerySchema,
   applyTripSnapshotQuoteVersionLineSchema,
   applyTripSnapshotToQuoteVersionSchema,

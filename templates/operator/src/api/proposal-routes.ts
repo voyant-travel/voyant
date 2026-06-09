@@ -5,14 +5,24 @@ import {
   sendQuoteVersionSchema,
 } from "@voyantjs/crm"
 import { parseOptionalJsonBody, type VoyantDb } from "@voyantjs/hono"
+import {
+  type StartCheckoutResult,
+  TravelComposerInvariantError,
+  type Trip,
+  type TripSnapshot,
+  travelComposerService,
+} from "@voyantjs/travel-composer"
 import type { Context, Hono } from "hono"
+import { z } from "zod"
 import { operatorPostgresDb } from "./operator-runtime-adapter"
 import { resolvePublicCheckoutBaseUrlFromBindings } from "./payment-config"
+import { tripSnapshotToQuoteVersionApply } from "./quote-version-snapshot-routes"
 import {
   getOperatorSettings,
   type PublicOperatorProfile,
   toPublicOperatorSettings,
 } from "./settings"
+import { createReserveTripDeps, createStartCheckoutDeps } from "./travel-composer-runtime"
 
 type OperatorProposalRouteEnv = {
   Bindings: Record<string, unknown>
@@ -52,9 +62,23 @@ export interface DeclinePublicProposalResult {
   status: QuoteVersion["status"]
 }
 
+export interface AcceptPublicProposalResult {
+  status: Extract<QuoteVersion["status"], "accepted">
+  checkoutUrl: string | null
+  paymentSessionId: string | null
+  currency: string
+  totalAmountCents: number
+  warnings: string[]
+}
+
 type QuoteVersionProposalReadModel = NonNullable<
   Awaited<ReturnType<typeof crmService.getQuoteVersionProposal>>
 >
+
+const acceptPublicProposalSchema = z.object({
+  intent: z.enum(["card", "bank_transfer"]).default("card"),
+  idempotencyKey: z.string().min(1).max(120).optional(),
+})
 
 export function buildQuoteVersionProposalUrl(
   quoteVersionId: string,
@@ -98,6 +122,7 @@ function toPublicQuoteVersionProposal(
 export function mountOperatorProposalRoutes(hono: Hono<OperatorProposalRouteEnv>): void {
   hono.post("/v1/admin/quote-versions/:quoteVersionId/send", handleSendQuoteVersion)
   hono.get("/v1/public/proposals/:quoteVersionId", handleGetPublicProposal)
+  hono.post("/v1/public/proposals/:quoteVersionId/accept", handleAcceptPublicProposal)
   hono.post("/v1/public/proposals/:quoteVersionId/decline", handleDeclinePublicProposal)
 }
 
@@ -186,4 +211,185 @@ export async function handleDeclinePublicProposal(c: Context<OperatorProposalRou
     }
     throw error
   }
+}
+
+export async function handleAcceptPublicProposal(c: Context<OperatorProposalRouteEnv>) {
+  const quoteVersionId = c.req.param("quoteVersionId")
+  if (!quoteVersionId) return c.json({ error: "Quote Version id is required" }, 400)
+
+  const body = await parseOptionalJsonBody(c, acceptPublicProposalSchema)
+  const db = operatorPostgresDb(c.get("db"))
+  await crmService.expireQuoteVersionIfPastValidUntil(db, quoteVersionId)
+  const proposal = await crmService.getQuoteVersionProposal(db, quoteVersionId)
+
+  if (!proposal) return c.json({ error: "Proposal not found" }, 404)
+  if (proposal.quoteVersion.status === "draft") return c.json({ error: "Proposal not found" }, 404)
+  if (proposal.quoteVersion.status === "superseded") {
+    return c.json({ error: "Proposal has been superseded" }, 410)
+  }
+  if (proposal.quoteVersion.status !== "sent") {
+    return c.json({ error: "Proposal can no longer be accepted" }, 409)
+  }
+  if (!proposal.quoteVersion.tripSnapshotId) {
+    return c.json({ error: "Proposal has no frozen Trip snapshot" }, 409)
+  }
+
+  try {
+    const snapshot = await travelComposerService.getTripSnapshotById(
+      db,
+      proposal.quoteVersion.tripSnapshotId,
+    )
+    if (!snapshot) return c.json({ error: "Proposal Trip snapshot not found" }, 409)
+
+    assertProposalMatchesTripSnapshot(proposal, snapshot)
+    const liveTrip = await travelComposerService.getTrip(db, snapshot.envelopeId)
+    if (!liveTrip) return c.json({ error: "Proposal Trip envelope not found" }, 409)
+    assertLiveTripMatchesSnapshot(liveTrip, snapshot)
+
+    const reserveIdempotencyKey = `proposal-accept-reserve:${quoteVersionId}:${
+      body.idempotencyKey ?? "default"
+    }`
+    const reserved = await travelComposerService.reserveTrip(
+      db,
+      {
+        envelopeId: snapshot.envelopeId,
+        idempotencyKey: reserveIdempotencyKey,
+        refreshScope: {
+          locale: "en-US",
+          audience: "customer",
+          market: "default",
+          currency: snapshot.currency,
+        },
+      },
+      createReserveTripDeps(c),
+    )
+    if (reserved.failures.length > 0) {
+      return c.json(
+        {
+          error: "Proposal could not be reserved",
+          failures: reserved.failures.map(({ code, reason }) => ({ code, reason })),
+        },
+        409,
+      )
+    }
+
+    const accepted = await crmService.acceptQuoteVersion(db, quoteVersionId, {})
+    if (!accepted) return c.json({ error: "Proposal not found" }, 404)
+
+    const checkout = await startAcceptedProposalCheckout(c, snapshot, body, quoteVersionId)
+    const checkoutWarnings = checkout
+      ? checkout.failures.map((failure) => failure.reason)
+      : ["checkout_start_failed"]
+
+    return c.json({
+      data: {
+        status: "accepted",
+        checkoutUrl: checkout?.target.checkoutUrl ?? null,
+        paymentSessionId: checkout?.target.paymentSessionId ?? null,
+        currency: checkout?.target.currency ?? accepted.quoteVersion.currency,
+        totalAmountCents:
+          checkout?.target.totalAmountCents ?? accepted.quoteVersion.totalAmountCents,
+        warnings: [...reserved.warnings, ...(checkout?.warnings ?? []), ...checkoutWarnings],
+      } satisfies AcceptPublicProposalResult,
+    })
+  } catch (error) {
+    if (error instanceof QuoteVersionConflictError) {
+      return c.json({ error: error.message }, 409)
+    }
+    if (error instanceof TravelComposerInvariantError) {
+      return c.json({ error: error.message }, error.message.includes("was not found") ? 404 : 409)
+    }
+    throw error
+  }
+}
+
+async function startAcceptedProposalCheckout(
+  c: Context<OperatorProposalRouteEnv>,
+  snapshot: TripSnapshot,
+  body: z.infer<typeof acceptPublicProposalSchema>,
+  quoteVersionId: string,
+): Promise<StartCheckoutResult | null> {
+  try {
+    return await travelComposerService.startCheckout(
+      operatorPostgresDb(c.get("db")),
+      {
+        envelopeId: snapshot.envelopeId,
+        intent: body.intent,
+        idempotencyKey: `proposal-accept-checkout:${quoteVersionId}:${body.intent}:${
+          body.idempotencyKey ?? "default"
+        }`,
+        request: {
+          initiatedBy: "public-proposal",
+          collectionCurrency: snapshot.currency,
+        },
+      },
+      createStartCheckoutDeps(c),
+    )
+  } catch (error) {
+    console.warn("[proposal] checkout handoff failed after proposal acceptance:", error)
+    return null
+  }
+}
+
+function assertLiveTripMatchesSnapshot(trip: Trip, snapshot: TripSnapshot) {
+  const liveComponents = trip.components.filter((component) => component.status !== "removed")
+  if (
+    stableSnapshotString(trip.envelope) !== stableSnapshotString(snapshot.frozenEnvelope) ||
+    stableSnapshotString(liveComponents) !== stableSnapshotString(snapshot.frozenComponents)
+  ) {
+    throw new QuoteVersionConflictError(
+      "Proposal Trip has changed since this Quote Version was sent",
+    )
+  }
+}
+
+function assertProposalMatchesTripSnapshot(
+  proposal: QuoteVersionProposalReadModel,
+  snapshot: TripSnapshot,
+) {
+  const expected = tripSnapshotToQuoteVersionApply(snapshot)
+  const actual = proposal.quoteVersion
+
+  if (
+    actual.tripSnapshotId !== snapshot.id ||
+    actual.currency !== expected.currency ||
+    actual.subtotalAmountCents !== expected.subtotalAmountCents ||
+    actual.taxAmountCents !== expected.taxAmountCents ||
+    actual.totalAmountCents !== expected.totalAmountCents ||
+    proposal.lines.length !== expected.lines.length
+  ) {
+    throw new QuoteVersionConflictError("Proposal does not match its frozen Trip snapshot")
+  }
+
+  for (const [index, expectedLine] of expected.lines.entries()) {
+    const actualLine = proposal.lines[index]
+    if (
+      !actualLine ||
+      actualLine.description !== expectedLine.description ||
+      actualLine.quantity !== expectedLine.quantity ||
+      actualLine.unitPriceAmountCents !== expectedLine.unitPriceAmountCents ||
+      actualLine.totalAmountCents !== expectedLine.totalAmountCents ||
+      actualLine.currency !== expectedLine.currency
+    ) {
+      throw new QuoteVersionConflictError("Proposal does not match its frozen Trip snapshot")
+    }
+  }
+}
+
+function stableSnapshotString(value: unknown): string {
+  return JSON.stringify(canonicalSnapshotValue(value))
+}
+
+function canonicalSnapshotValue(value: unknown): unknown {
+  if (value instanceof Date) return value.toISOString()
+  if (Array.isArray(value)) return value.map(canonicalSnapshotValue)
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([, entryValue]) => entryValue !== undefined)
+        .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+        .map(([key, entryValue]) => [key, canonicalSnapshotValue(entryValue)]),
+    )
+  }
+  return value
 }

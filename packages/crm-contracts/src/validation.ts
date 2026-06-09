@@ -313,6 +313,8 @@ export const sendQuoteVersionSchema = z.object({
   validUntil: z.string().date().nullable().optional(),
 })
 
+export const acceptQuoteVersionSchema = z.object({})
+
 export const declineQuoteVersionSchema = z.object({})
 
 export const expireQuoteVersionsSchema = z.object({

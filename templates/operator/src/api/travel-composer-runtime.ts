@@ -69,7 +69,7 @@ function createPriceTripDeps(c: Context): PriceTripDeps {
   }
 }
 
-function createReserveTripDeps(c: Context): ReserveTripDeps {
+export function createReserveTripDeps(c: Context): ReserveTripDeps {
   return {
     quoteCatalogComponentBeforeReserve: (input) => quoteCatalogComponent(c, input),
     validateNonCatalogComponentBeforeReserve: (input) =>
@@ -80,7 +80,7 @@ function createReserveTripDeps(c: Context): ReserveTripDeps {
   }
 }
 
-function createStartCheckoutDeps(c: Context): StartCheckoutDeps {
+export function createStartCheckoutDeps(c: Context): StartCheckoutDeps {
   return {
     startTripCheckout: (input) => startTripCheckout(c, input),
     startComponentCheckout: (input) => startComponentCheckout(c, input),

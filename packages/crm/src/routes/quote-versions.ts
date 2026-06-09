@@ -4,6 +4,7 @@ import { Hono } from "hono"
 import { crmService } from "../service/index.js"
 import { QuoteVersionConflictError } from "../service/quote-versions.js"
 import {
+  acceptQuoteVersionSchema,
   applyTripSnapshotToQuoteVersionSchema,
   declineQuoteVersionSchema,
   expireQuoteVersionsSchema,
@@ -102,6 +103,22 @@ export const quoteVersionRoutes = new Hono<Env>()
     const row = await crmService.markQuoteVersionViewed(c.get("db"), c.req.param("id"))
     if (!row) return c.json({ error: "Quote version not found" }, 404)
     return c.json({ data: row })
+  })
+  .post("/quote-versions/:id/accept", async (c) => {
+    try {
+      const row = await crmService.acceptQuoteVersion(
+        c.get("db"),
+        c.req.param("id"),
+        await parseOptionalJsonBody(c, acceptQuoteVersionSchema),
+      )
+      if (!row) return c.json({ error: "Quote version not found" }, 404)
+      return c.json({ data: row })
+    } catch (error) {
+      if (error instanceof QuoteVersionConflictError) {
+        return c.json({ error: error.message }, 409)
+      }
+      throw error
+    }
   })
   .post("/quote-versions/:id/decline", async (c) => {
     try {
