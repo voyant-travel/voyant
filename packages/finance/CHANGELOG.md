@@ -1,5 +1,11 @@
 # @voyantjs/finance
 
+## 0.106.5
+
+### Patch Changes
+
+- 3198c8e: Record `booking.create` action-ledger entries for successful booking creation and duplicate-create rejections.
+
 ## 0.106.4
 
 ### Patch Changes
