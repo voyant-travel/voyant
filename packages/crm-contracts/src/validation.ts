@@ -309,6 +309,16 @@ export const applyTripSnapshotToQuoteVersionSchema = z.object({
   lines: z.array(applyTripSnapshotQuoteVersionLineSchema).default([]),
 })
 
+export const sendQuoteVersionSchema = z.object({
+  validUntil: z.string().date().nullable().optional(),
+})
+
+export const declineQuoteVersionSchema = z.object({})
+
+export const expireQuoteVersionsSchema = z.object({
+  now: z.string().datetime().optional(),
+})
+
 export const activityCoreSchema = z.object({
   subject: z.string().min(1),
   type: activityTypeSchema,

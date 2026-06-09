@@ -112,6 +112,8 @@ export {
 export {
   type CreateQuoteVersionInput,
   type CreateQuoteVersionLineInput,
+  type ExpireQuoteVersionsInput,
+  type SendQuoteVersionInput,
   type UpdateQuoteVersionInput,
   type UpdateQuoteVersionLineInput,
   useQuoteVersionMutation,
