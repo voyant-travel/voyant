@@ -391,6 +391,20 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     await handleAccepted(acceptance)
   }
 
+  // Bind the picked lead + departure into the billing-extras slot so the
+  // template can run lead-aware checks (e.g. duplicate-departure warning).
+  const billingExtrasSlot = props.renderBillingExtras
+    ? () =>
+        props.renderBillingExtras?.({
+          buyerType: draft.billing.buyerType,
+          personId: draft.billing.contact.personId,
+          organizationId: draft.billing.organizationId,
+          productId: props.entityId,
+          departureSlotId: draft.configure.departureSlotId,
+          departureDate: draft.configure.departureDate,
+        })
+    : undefined
+
   // Renders one step's content. Shared by both layouts — the wizard shows
   // exactly one at a time; the stacked page renders them all in sections.
   const renderStep = (step: JourneyStep): React.ReactNode => {
@@ -427,7 +441,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             setDraft={setDraft}
             shape={shape}
             renderLeadContactPicker={props.renderLeadContactPicker}
-            renderExtras={props.renderBillingExtras}
+            renderExtras={billingExtrasSlot}
             warnings={warningsForStep("billing", draft, shape, messages)}
           />
         )
@@ -579,7 +593,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
               setDraft={setDraft}
               shape={shape}
               renderLeadContactPicker={props.renderLeadContactPicker}
-              renderExtras={props.renderBillingExtras}
+              renderExtras={billingExtrasSlot}
             />
           ) : null}
           {currentStep === "travelers" ? (

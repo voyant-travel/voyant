@@ -194,6 +194,7 @@ export const adminBookingsMessages = {
           voucherSearchPlaceholder: "Search vouchers by code…",
           voucherEmpty: "No vouchers with balance found.",
           voucherRemaining: "{amount} left",
+          duplicateDepartureWarning: "This customer already has a booking on this departure:",
         },
         catalogSource: {
           openProduct: "Open",
@@ -518,6 +519,7 @@ export const adminBookingsMessages = {
           voucherSearchPlaceholder: "Cauta vouchere dupa cod…",
           voucherEmpty: "Niciun voucher cu sold disponibil.",
           voucherRemaining: "{amount} ramas",
+          duplicateDepartureWarning: "Acest client are deja o rezervare pe aceasta plecare:",
         },
         catalogSource: {
           openProduct: "Deschide",

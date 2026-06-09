@@ -40,6 +40,7 @@ export {
   totalPax,
 } from "./lib/draft-state.js"
 export {
+  type BillingExtrasContext,
   type BookingEntitySummary,
   type BookingJourneyCheckoutContext,
   type BookingJourneyProps,

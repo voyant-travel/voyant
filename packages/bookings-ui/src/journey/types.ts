@@ -88,6 +88,20 @@ export interface TravelerContactPickerProps {
 }
 
 /**
+ * Context handed to `renderBillingExtras` — the picked lead + the departure —
+ * so a template can run lead-aware checks (e.g. "this customer already booked
+ * this departure") next to the billing block.
+ */
+export interface BillingExtrasContext {
+  buyerType: "B2C" | "B2B"
+  personId?: string
+  organizationId?: string
+  productId: string
+  departureSlotId?: string
+  departureDate?: string
+}
+
+/**
  * Props for the injectable voucher picker. The operator surface wires an async
  * combobox (search the admin vouchers list) so staff pick a voucher without
  * knowing the exact code; the storefront keeps the customer code-entry form.
@@ -315,7 +329,9 @@ export interface BookingJourneyProps {
    *  template wants to inject a custom block (e.g. coupon code
    *  banner, marketing opt-in). */
   renderConfigureExtras?: () => ReactNode
-  renderBillingExtras?: () => ReactNode
+  /** Billing extras — receives the picked lead + departure so a template can,
+   *  e.g., warn that this customer already has a booking on this departure. */
+  renderBillingExtras?: (ctx: BillingExtrasContext) => ReactNode
   renderReviewExtras?: () => ReactNode
 
   /** Fired on successful commit — typically a navigation. */

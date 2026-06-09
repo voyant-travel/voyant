@@ -26,6 +26,7 @@ import { catalogVerticalPath } from "@/components/voyant/catalog/catalog-route-s
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
+import { BillingDuplicateWarning } from "./billing-duplicate-warning"
 import { OperatorDeparturePicker } from "./operator-departure-picker"
 import { OperatorUnitsPicker } from "./operator-units-picker"
 import { OperatorVoucherPicker } from "./operator-voucher-picker"
@@ -70,12 +71,17 @@ export function OperatorBookingJourney({
     | "renderDeparturePicker"
     | "renderUnitsPicker"
     | "renderVoucherPicker"
+    | "renderBillingExtras"
     | "renderPaymentProviderStep"
     | "onCommitted"
     | "onCancelled"
   > = {
     renderLeadContactPicker({ apply, buyerType }) {
       return <CrmLeadPicker apply={apply} buyerType={buyerType} />
+    },
+    renderBillingExtras(ctx) {
+      // Warn if the picked lead already booked this departure.
+      return <BillingDuplicateWarning {...ctx} />
     },
     renderDeparturePicker(pickerProps) {
       // Owned: real scheduled departures from availability. Sourced
