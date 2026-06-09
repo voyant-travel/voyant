@@ -2137,6 +2137,71 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(data.invoiceId).toBe(inv.id)
     })
 
+    it("replays duplicate payment records with derived idempotency", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id, { totalCents: 10000, balanceDueCents: 10000 })
+      const body = {
+        amountCents: 5000,
+        currency: "USD",
+        paymentMethod: "bank_transfer",
+        paymentDate: "2025-06-15",
+        status: "completed",
+        idempotencyKey: "",
+      }
+
+      const firstRes = await app.request(`/invoices/${inv.id}/payments`, {
+        method: "POST",
+        ...json(body),
+      })
+      expect(firstRes.status).toBe(201)
+      const { data: firstPayment } = await firstRes.json()
+
+      const retryRes = await app.request(`/invoices/${inv.id}/payments`, {
+        method: "POST",
+        ...json(body),
+      })
+      expect(retryRes.status).toBe(201)
+      const { data: replayedPayment } = await retryRes.json()
+      expect(replayedPayment.id).toBe(firstPayment.id)
+
+      const paymentRows = await db.select().from(payments).where(eq(payments.invoiceId, inv.id))
+      expect(paymentRows).toHaveLength(1)
+
+      const check = await app.request(`/invoices/${inv.id}`, { method: "GET" })
+      const { data: invoiceAfterRetry } = await check.json()
+      expect(invoiceAfterRetry.paidCents).toBe(5000)
+      expect(invoiceAfterRetry.balanceDueCents).toBe(5000)
+      expect(invoiceAfterRetry.status).toBe("partially_paid")
+    })
+
+    it("rejects changed payment payloads with the same explicit idempotency key", async () => {
+      const booking = await seedBooking()
+      const inv = await seedInvoice(booking.id, { totalCents: 10000, balanceDueCents: 10000 })
+      const firstBody = {
+        amountCents: 5000,
+        currency: "USD",
+        paymentMethod: "bank_transfer",
+        paymentDate: "2025-06-15",
+        status: "completed",
+        idempotencyKey: "payment-record-1",
+      }
+
+      const firstRes = await app.request(`/invoices/${inv.id}/payments`, {
+        method: "POST",
+        ...json(firstBody),
+      })
+      expect(firstRes.status).toBe(201)
+
+      const conflictRes = await app.request(`/invoices/${inv.id}/payments`, {
+        method: "POST",
+        ...json({ ...firstBody, amountCents: 6000 }),
+      })
+      expect(conflictRes.status).toBe(409)
+
+      const paymentRows = await db.select().from(payments).where(eq(payments.invoiceId, inv.id))
+      expect(paymentRows).toHaveLength(1)
+    })
+
     it("updates invoice paidCents and status after completed payment", async () => {
       const booking = await seedBooking()
       const inv = await seedInvoice(booking.id, { totalCents: 10000, balanceDueCents: 10000 })

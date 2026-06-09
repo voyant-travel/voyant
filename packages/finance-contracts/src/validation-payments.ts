@@ -307,6 +307,7 @@ const paymentCoreSchema = z.object({
   paymentCaptureId: z.string().optional().nullable(),
   status: paymentStatusSchema.default("pending"),
   referenceNumber: z.string().max(255).optional().nullable(),
+  idempotencyKey: z.string().max(255).optional().nullable(),
   paymentDate: z.string().min(1),
   notes: z.string().optional().nullable(),
 })
