@@ -232,11 +232,17 @@ async function fetchBookableRoomPrice(
       SELECT
         unit_rule.sell_amount_cents AS price,
         (
-          category.category_type IS DISTINCT FROM 'child'
-          AND category.min_age IS NULL
-          AND category.max_age IS NULL
-          AND unit_rule.min_quantity IS NULL
-          AND unit_rule.max_quantity IS NULL
+          (
+            category.id IS NULL
+            OR category.category_type = 'adult'
+            OR (
+              category.category_type NOT IN ('child', 'infant', 'senior')
+              AND category.min_age IS NULL
+              AND category.max_age IS NULL
+            )
+          )
+          AND COALESCE(unit_rule.min_quantity, 0) <= 1
+          AND COALESCE(unit_rule.max_quantity, 0) = 0
         ) AS standard_price
       FROM active_rules rule
       INNER JOIN option_unit_price_rules unit_rule
@@ -251,13 +257,19 @@ async function fetchBookableRoomPrice(
       SELECT
         tier.sell_amount_cents AS price,
         (
-          category.category_type IS DISTINCT FROM 'child'
-          AND category.min_age IS NULL
-          AND category.max_age IS NULL
-          AND unit_rule.min_quantity IS NULL
-          AND unit_rule.max_quantity IS NULL
+          (
+            category.id IS NULL
+            OR category.category_type = 'adult'
+            OR (
+              category.category_type NOT IN ('child', 'infant', 'senior')
+              AND category.min_age IS NULL
+              AND category.max_age IS NULL
+            )
+          )
+          AND COALESCE(unit_rule.min_quantity, 0) <= 1
+          AND COALESCE(unit_rule.max_quantity, 0) = 0
           AND tier.min_quantity <= 1
-          AND tier.max_quantity IS NULL
+          AND COALESCE(tier.max_quantity, 0) = 0
         ) AS standard_price
       FROM active_rules rule
       INNER JOIN option_unit_price_rules unit_rule
@@ -324,11 +336,17 @@ async function fetchBookableBasePrice(
       SELECT
         unit_rule.sell_amount_cents AS price,
         (
-          category.category_type IS DISTINCT FROM 'child'
-          AND category.min_age IS NULL
-          AND category.max_age IS NULL
-          AND unit_rule.min_quantity IS NULL
-          AND unit_rule.max_quantity IS NULL
+          (
+            category.id IS NULL
+            OR category.category_type = 'adult'
+            OR (
+              category.category_type NOT IN ('child', 'infant', 'senior')
+              AND category.min_age IS NULL
+              AND category.max_age IS NULL
+            )
+          )
+          AND COALESCE(unit_rule.min_quantity, 0) <= 1
+          AND COALESCE(unit_rule.max_quantity, 0) = 0
         ) AS standard_price
       FROM active_rules rule
       INNER JOIN option_unit_price_rules unit_rule
@@ -343,13 +361,19 @@ async function fetchBookableBasePrice(
       SELECT
         tier.sell_amount_cents AS price,
         (
-          category.category_type IS DISTINCT FROM 'child'
-          AND category.min_age IS NULL
-          AND category.max_age IS NULL
-          AND unit_rule.min_quantity IS NULL
-          AND unit_rule.max_quantity IS NULL
+          (
+            category.id IS NULL
+            OR category.category_type = 'adult'
+            OR (
+              category.category_type NOT IN ('child', 'infant', 'senior')
+              AND category.min_age IS NULL
+              AND category.max_age IS NULL
+            )
+          )
+          AND COALESCE(unit_rule.min_quantity, 0) <= 1
+          AND COALESCE(unit_rule.max_quantity, 0) = 0
           AND tier.min_quantity <= 1
-          AND tier.max_quantity IS NULL
+          AND COALESCE(tier.max_quantity, 0) = 0
         ) AS standard_price
       FROM active_rules rule
       INNER JOIN option_unit_price_rules unit_rule
