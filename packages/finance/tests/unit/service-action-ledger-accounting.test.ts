@@ -48,6 +48,35 @@ describe("finance accounting action ledger builders", () => {
     expect(ledgerInput.idempotencyFingerprint).toMatch(/^sha256:/)
   })
 
+  it("derives stable idempotency for payment records without external references", async () => {
+    const invoice = {
+      id: "inv_123",
+      bookingId: "book_123",
+    } as never
+    const paymentCommand = {
+      amountCents: 25000,
+      currency: "USD",
+      baseCurrency: "USD",
+      baseAmountCents: 25000,
+      fxRateSetId: null,
+      paymentMethod: "bank_transfer",
+      paymentDate: "2026-05-16",
+      referenceNumber: "",
+      paymentInstrumentId: null,
+      paymentAuthorizationId: null,
+      paymentCaptureId: null,
+      status: "completed",
+    } as never
+
+    const first = await ledger.buildRecordPaymentIdempotency(invoice, paymentCommand)
+    const second = await ledger.buildRecordPaymentIdempotency(invoice, paymentCommand)
+
+    expect(first.scope).toBe("finance.invoice:inv_123:payment")
+    expect(first.key).toMatch(/^sha256:/)
+    expect(first.fingerprint).toMatch(/^sha256:/)
+    expect(second).toEqual(first)
+  })
+
   it("builds booking-targeted action ledger input for supplier payment creation", async () => {
     const ledgerInput = await ledger.buildSupplierPaymentCreateActionLedgerInput(
       {

@@ -34,6 +34,21 @@ type RecordPaymentLedgerInput = {
   invoice: InvoiceRecord
   payment: PaymentRecord
 }
+type RecordPaymentCommandInput = Pick<
+  PaymentRecord,
+  | "amountCents"
+  | "currency"
+  | "baseCurrency"
+  | "baseAmountCents"
+  | "fxRateSetId"
+  | "paymentMethod"
+  | "paymentInstrumentId"
+  | "paymentAuthorizationId"
+  | "paymentCaptureId"
+  | "status"
+  | "referenceNumber"
+  | "paymentDate"
+>
 type PaymentUpdateLedgerInput = {
   invoice: InvoiceRecord
   payment: PaymentRecord
@@ -78,33 +93,15 @@ export async function buildRecordPaymentActionLedgerInput(
   input: RecordPaymentLedgerInput,
   options: {
     authorizationSource?: string | null
+    idempotencyKey?: string | null
   } = {},
 ): Promise<BuildActionLedgerMutationInput> {
   const target = getInvoiceLedgerTarget(input.invoice)
-  const idempotencyKey =
-    input.payment.referenceNumber ??
-    input.payment.paymentCaptureId ??
-    input.payment.paymentAuthorizationId ??
-    null
-  const idempotencyFingerprint = idempotencyKey
-    ? await buildIdempotencyFingerprint({
-        actionName: "finance.payment.record",
-        actionVersion: "v1",
-        targetType: target.type,
-        targetId: target.id,
-        commandInput: {
-          invoiceId: input.invoice.id,
-          paymentId: input.payment.id,
-          amountCents: input.payment.amountCents,
-          currency: input.payment.currency,
-          paymentMethod: input.payment.paymentMethod,
-          paymentDate: input.payment.paymentDate,
-          referenceNumber: input.payment.referenceNumber,
-          paymentAuthorizationId: input.payment.paymentAuthorizationId,
-          paymentCaptureId: input.payment.paymentCaptureId,
-        },
-      })
-    : null
+  const idempotency = await buildRecordPaymentIdempotency(input.invoice, input.payment, {
+    requestedKey: options.idempotencyKey,
+    targetType: target.type,
+    targetId: target.id,
+  })
 
   return {
     context,
@@ -117,9 +114,9 @@ export async function buildRecordPaymentActionLedgerInput(
     targetId: target.id,
     routeOrToolName: "finance.payment.record",
     authorizationSource: options.authorizationSource ?? "finance.payment.route",
-    idempotencyScope: idempotencyKey ? `finance.invoice:${input.invoice.id}:payment` : null,
-    idempotencyKey,
-    idempotencyFingerprint,
+    idempotencyScope: idempotency.scope,
+    idempotencyKey: idempotency.key,
+    idempotencyFingerprint: idempotency.fingerprint,
     mutationDetail: {
       commandInputRef: `invoice:${input.invoice.id}:payment`,
       commandResultRef: `payment:${input.payment.id}`,
@@ -127,6 +124,68 @@ export async function buildRecordPaymentActionLedgerInput(
       reversalKind: "none",
     },
   }
+}
+
+export async function buildRecordPaymentIdempotency(
+  invoice: InvoiceRecord,
+  payment: RecordPaymentCommandInput,
+  options: {
+    requestedKey?: string | null
+    targetType?: string
+    targetId?: string
+  } = {},
+): Promise<{
+  scope: string
+  key: string
+  fingerprint: string
+}> {
+  const target = getInvoiceLedgerTarget(invoice)
+  const targetType = options.targetType ?? target.type
+  const targetId = options.targetId ?? target.id
+  const naturalCommandInput = {
+    invoiceId: invoice.id,
+    amountCents: payment.amountCents,
+    currency: payment.currency,
+    baseCurrency: payment.baseCurrency ?? null,
+    baseAmountCents: payment.baseAmountCents ?? null,
+    fxRateSetId: payment.fxRateSetId ?? null,
+    paymentMethod: payment.paymentMethod,
+    paymentInstrumentId: normalizeLedgerIdempotencyString(payment.paymentInstrumentId),
+    paymentAuthorizationId: normalizeLedgerIdempotencyString(payment.paymentAuthorizationId),
+    paymentCaptureId: normalizeLedgerIdempotencyString(payment.paymentCaptureId),
+    status: payment.status,
+    referenceNumber: normalizeLedgerIdempotencyString(payment.referenceNumber),
+    paymentDate: payment.paymentDate,
+  }
+  const requestedKey = normalizeLedgerIdempotencyString(options.requestedKey)
+  const naturalKey =
+    normalizeLedgerIdempotencyString(payment.referenceNumber) ??
+    normalizeLedgerIdempotencyString(payment.paymentCaptureId) ??
+    normalizeLedgerIdempotencyString(payment.paymentAuthorizationId) ??
+    (await buildIdempotencyFingerprint({
+      actionName: "finance.payment.record",
+      actionVersion: "v1",
+      targetType,
+      targetId,
+      commandInput: naturalCommandInput,
+    }))
+
+  return {
+    scope: `finance.invoice:${invoice.id}:payment`,
+    key: requestedKey ?? naturalKey,
+    fingerprint: await buildIdempotencyFingerprint({
+      actionName: "finance.payment.record",
+      actionVersion: "v1",
+      targetType,
+      targetId,
+      commandInput: naturalCommandInput,
+    }),
+  }
+}
+
+function normalizeLedgerIdempotencyString(value: string | null | undefined): string | null {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : null
 }
 
 export function buildPaymentUpdateActionLedgerInput(

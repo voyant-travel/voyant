@@ -305,13 +305,16 @@ const paymentCoreSchema = z.object({
   paymentInstrumentId: z.string().optional().nullable(),
   paymentAuthorizationId: z.string().optional().nullable(),
   paymentCaptureId: z.string().optional().nullable(),
-  status: paymentStatusSchema.default("pending"),
+  status: paymentStatusSchema,
   referenceNumber: z.string().max(255).optional().nullable(),
   paymentDate: z.string().min(1),
   notes: z.string().optional().nullable(),
 })
 
-export const insertPaymentSchema = paymentCoreSchema
+export const insertPaymentSchema = paymentCoreSchema.extend({
+  status: paymentStatusSchema.default("pending"),
+  idempotencyKey: z.string().max(255).optional().nullable(),
+})
 export const updatePaymentSchema = paymentCoreSchema.partial()
 
 const supplierPaymentCoreSchema = z.object({
