@@ -1,5 +1,11 @@
 # @voyantjs/pricing-ui
 
+## 0.106.2
+
+### Patch Changes
+
+- @voyantjs/pricing-react@0.106.2
+
 ## 0.106.1
 
 ### Patch Changes
