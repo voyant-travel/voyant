@@ -289,7 +289,7 @@ export function ProductDetailPage({
       )
   }, [selectedOffers, roomByCode])
 
-  const bookOffer = (_offer: Offer) =>
+  const bookOffer = (offer: Offer) =>
     navigate({
       to: "/catalog/journey/$entityModule/$entityId",
       params: { entityModule: "products", entityId: productId },
@@ -299,6 +299,11 @@ export function ProductDetailPage({
         sourceKind: "voyant-connect",
         ...(state.source?.connectionId ? { sourceConnectionId: state.source.connectionId } : {}),
         ...(state.source?.ref ? { sourceRef: state.source.ref } : {}),
+        ...(offer.checkIn ? { departureDate: offer.checkIn.slice(0, 10) } : {}),
+        ...(product?.name ? { entityName: product.name } : {}),
+        ...(product?.media.find((media) => media.src)?.src
+          ? { entityImageUrl: product.media.find((media) => media.src)?.src }
+          : {}),
       },
     })
 

@@ -391,6 +391,10 @@ function goToBookingPage(
 
   const sourceRef = stringField(hit, "source.ref", null) ?? undefined
   const sourceConnectionId = stringField(hit, "source.connectionId", null) ?? undefined
+  const isSourced = sourceKind !== "owned"
+  const entityName = stringField(hit, "name", null) ?? undefined
+  const entityImageUrl =
+    stringField(hit, "thumbnailUrl", null) ?? stringField(hit, "heroImageUrl", null) ?? undefined
   navigate({
     to: "/catalog/journey/$entityModule/$entityId",
     params: { entityModule, entityId: hit.id },
@@ -398,8 +402,14 @@ function goToBookingPage(
       sourceKind,
       ...(sourceConnectionId ? { sourceConnectionId } : {}),
       ...(sourceRef ? { sourceRef } : {}),
-      ...(departure ? { departureId: departure.id } : {}),
+      ...(departure
+        ? isSourced
+          ? { departureDate: departure.startsAt.slice(0, 10) }
+          : { departureId: departure.id }
+        : {}),
       ...(option ? { optionId: option.id } : {}),
+      ...(entityName ? { entityName } : {}),
+      ...(entityImageUrl ? { entityImageUrl } : {}),
     },
   })
 }
