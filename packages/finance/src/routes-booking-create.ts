@@ -57,6 +57,17 @@ const createBookingRoutes = new Hono<{
           },
           400,
         )
+      case "room_occupancy_insufficient":
+        return c.json(
+          {
+            error: "Selected rooms cannot seat the booking party",
+            code: "room_occupancy_insufficient",
+            pax: outcome.pax,
+            occupancyMax: outcome.occupancyMax,
+            shortfall: outcome.shortfall,
+          },
+          400,
+        )
       case "duplicate_booking":
         return c.json(
           {
@@ -128,6 +139,18 @@ const createBookingRoutes = new Hono<{
             error: `${which}: booking payload does not match the resolved draft`,
             code: "payload_resolver_mismatch",
             mismatches: reason.mismatches,
+          },
+          400,
+        )
+      case "room_occupancy_insufficient":
+        return c.json(
+          {
+            ...body,
+            error: `${which}: selected rooms cannot seat the booking party`,
+            code: "room_occupancy_insufficient",
+            pax: reason.pax,
+            occupancyMax: reason.occupancyMax,
+            shortfall: reason.shortfall,
           },
           400,
         )
