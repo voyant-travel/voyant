@@ -1479,6 +1479,51 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(proformaConvertedEvents).toHaveLength(0)
     })
 
+    it("rejects converting a proforma when a regular fiscal invoice already exists", async () => {
+      const booking = await seedBooking()
+      const existingInvoice = await seedInvoice(booking.id, {
+        invoiceNumber: "INV-REGULAR-DUP",
+        invoiceType: "invoice",
+        status: "issued",
+        totalCents: 66000,
+        balanceDueCents: 66000,
+      })
+      const proforma = await seedInvoice(booking.id, {
+        invoiceNumber: "PRO-REGULAR-DUP",
+        invoiceType: "proforma",
+        status: "issued",
+        totalCents: 66000,
+        balanceDueCents: 66000,
+      })
+      invoiceIssuedEvents.length = 0
+      proformaConvertedEvents.length = 0
+
+      const res = await app.request(`/invoices/${proforma.id}/convert-to-invoice`, {
+        method: "POST",
+        ...json({ invoiceNumber: "INV-REGULAR-DUP-CONVERTED" }),
+      })
+
+      expect(res.status).toBe(409)
+      await expect(res.json()).resolves.toMatchObject({
+        code: "duplicate_fiscal_invoice",
+        existingInvoiceId: existingInvoice.id,
+        existingInvoiceNumber: "INV-REGULAR-DUP",
+      })
+      const refreshedProforma = await financeService.getInvoiceById(db, proforma.id)
+      expect(refreshedProforma).toMatchObject({
+        status: "issued",
+        voidedAt: null,
+        voidReason: null,
+      })
+      const converted = await db
+        .select({ id: invoices.id })
+        .from(invoices)
+        .where(eq(invoices.convertedFromInvoiceId, proforma.id))
+      expect(converted).toHaveLength(0)
+      expect(invoiceIssuedEvents).toHaveLength(0)
+      expect(proformaConvertedEvents).toHaveLength(0)
+    })
+
     it("returns a conflict when conversion would reuse an active invoice number", async () => {
       const booking = await seedBooking()
       await seedInvoice(booking.id, {

@@ -1,6 +1,6 @@
 import { appendActionLedgerMutation } from "@voyantjs/action-ledger"
 import { bookingItems, bookings } from "@voyantjs/bookings/schema"
-import { and, asc, eq, inArray, isNotNull, ne, sql } from "drizzle-orm"
+import { and, asc, eq, inArray, ne, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { resolveBookingSellTaxRate } from "./booking-tax.js"
@@ -545,8 +545,6 @@ export async function convertProformaToInvoice(
             ne(invoices.status, "void"),
             eq(invoices.totalCents, lockedProforma.totalCents),
             eq(invoices.currency, lockedProforma.currency),
-            isNotNull(invoices.convertedFromInvoiceId),
-            ne(invoices.convertedFromInvoiceId, lockedProforma.id),
           ),
         )
         .limit(1)
