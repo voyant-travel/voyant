@@ -18,13 +18,20 @@ import type {
   SearchResults,
 } from "./contract.js"
 import {
+  buildDefaultTypesenseQueryBy,
+  buildDefaultTypesenseSearchFields,
   buildSearchQuery,
   isTypesenseSortableStringField,
   type TypesenseSearchQuery,
   typesenseTypeForField,
 } from "./typesense-search-query.js"
 
-export { buildSearchQuery, type TypesenseSearchQuery } from "./typesense-search-query.js"
+export {
+  buildDefaultTypesenseQueryBy,
+  buildDefaultTypesenseSearchFields,
+  buildSearchQuery,
+  type TypesenseSearchQuery,
+} from "./typesense-search-query.js"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Injected client interface
@@ -69,6 +76,7 @@ export interface TypesenseCollectionSchema {
   fields: TypesenseFieldSchema[]
   default_sorting_field?: string
   enable_nested_fields?: boolean
+  metadata?: Record<string, unknown>
 }
 
 export interface TypesenseSearchHit {
@@ -163,6 +171,12 @@ export function buildCollectionSchema(
     name: collectionName(slice, options.collectionPrefix),
     fields,
     enable_nested_fields: true,
+    metadata: {
+      voyant: {
+        defaultQueryBy: buildDefaultTypesenseQueryBy(registry, slice),
+        defaultSearchFields: buildDefaultTypesenseSearchFields(registry, slice),
+      },
+    },
   }
 }
 

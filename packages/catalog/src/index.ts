@@ -128,6 +128,8 @@ export type {
 export {
   attachEmitter,
   buildCollectionSchema,
+  buildDefaultTypesenseQueryBy,
+  buildDefaultTypesenseSearchFields,
   buildSearchQuery,
   collectionName,
   createTypesenseIndexer,
