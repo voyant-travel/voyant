@@ -325,6 +325,7 @@ describe.skipIf(!DB_AVAILABLE)("createProductPricingProjectionExtension (integra
 
     const adultCategoryId = newId("pricing_categories")
     const childCategoryId = newId("pricing_categories")
+    const infantCategoryId = newId("pricing_categories")
     await db.insert(pricingCategories).values([
       {
         id: adultCategoryId,
@@ -346,6 +347,17 @@ describe.skipIf(!DB_AVAILABLE)("createProductPricingProjectionExtension (integra
         categoryType: "child",
         minAge: 0,
         maxAge: 5,
+      },
+      {
+        id: infantCategoryId,
+        productId,
+        optionId,
+        unitId: pricedUnitId,
+        name: "Infant 0-1",
+        code: roomUnit ? "infant-room-zero-one" : "infant-zero-one",
+        categoryType: "infant",
+        minAge: 0,
+        maxAge: 1,
       },
     ])
 
@@ -379,6 +391,17 @@ describe.skipIf(!DB_AVAILABLE)("createProductPricingProjectionExtension (integra
         unitId: pricedUnitId,
         pricingCategoryId: childCategoryId,
         sellAmountCents: 24000,
+        minQuantity: 0,
+        maxQuantity: 0,
+        active: true,
+      },
+      {
+        id: newId("option_unit_price_rules"),
+        optionPriceRuleId: ruleId,
+        optionId,
+        unitId: pricedUnitId,
+        pricingCategoryId: infantCategoryId,
+        sellAmountCents: 12000,
         minQuantity: 0,
         maxQuantity: 0,
         active: true,
