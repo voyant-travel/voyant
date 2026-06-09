@@ -11,6 +11,7 @@ const mockRegistry = vi.hoisted(() => {
   return {
     QuoteVersionConflictError,
     acceptQuoteVersion: vi.fn(),
+    cancelComponents: vi.fn(),
     declineQuoteVersion: vi.fn(),
     expireQuoteVersionIfPastValidUntil: vi.fn(),
     getOperatorSettings: vi.fn(),
@@ -56,6 +57,7 @@ vi.mock("@voyantjs/travel-composer", () => {
     travelComposerService: {
       getTrip: mockRegistry.getTrip,
       getTripSnapshotById: mockRegistry.getTripSnapshotById,
+      cancelComponents: mockRegistry.cancelComponents,
       reserveTrip: mockRegistry.reserveTrip,
       startCheckout: mockRegistry.startCheckout,
     },
@@ -72,6 +74,7 @@ vi.mock("./settings", () => ({
 }))
 
 vi.mock("./travel-composer-runtime", () => ({
+  createCancelTripComponentsDeps: () => ({ cancel: "deps" }),
   createReserveTripDeps: () => ({ reserve: "deps" }),
   createStartCheckoutDeps: () => ({ checkout: "deps" }),
 }))

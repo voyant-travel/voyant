@@ -192,12 +192,12 @@ describe("operator proposal routes", () => {
     })
 
     expect(response.status).toBe(200)
-    expect(fakeDb.transaction).toHaveBeenCalledOnce()
-    expect(fakeTx.execute).toHaveBeenCalledOnce()
+    expect(fakeDb.transaction).toHaveBeenCalledTimes(2)
+    expect(fakeTx.execute).toHaveBeenCalledTimes(2)
     expect(mocks.getTripSnapshotById).toHaveBeenCalledWith(fakeTx, "trsn_123")
     expect(mocks.getTrip).toHaveBeenCalledWith(fakeTx, "trip_123")
     expect(mocks.reserveTrip).toHaveBeenCalledWith(
-      fakeTx,
+      fakeDb,
       expect.objectContaining({
         envelopeId: "trip_123",
         idempotencyKey: "proposal-accept-reserve:qver_123:accept-1",
@@ -219,6 +219,9 @@ describe("operator proposal routes", () => {
     )
     expect(fakeTx.execute.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.reserveTrip.mock.invocationCallOrder[0],
+    )
+    expect(fakeTx.execute.mock.invocationCallOrder[1]).toBeLessThan(
+      mocks.acceptQuoteVersion.mock.invocationCallOrder[0],
     )
     const body = await response.json()
     expect(body).toEqual({
@@ -277,7 +280,7 @@ describe("operator proposal routes", () => {
     expect(mocks.acceptQuoteVersion).not.toHaveBeenCalled()
   })
 
-  it("rejects sourced catalog components before reserving from public accept", async () => {
+  it("reserves sourced catalog components outside the CRM accept transaction", async () => {
     const app = makeApp()
     const sourcedCatalogComponent = {
       ...frozenComponent,
@@ -299,18 +302,48 @@ describe("operator proposal routes", () => {
         ],
       },
     })
+    mocks.getTrip.mockResolvedValue({
+      ...liveTrip,
+      components: [sourcedCatalogComponent],
+    })
+    mocks.reserveTrip.mockResolvedValue({
+      envelope: { id: "trip_123", aggregateCurrency: "EUR", aggregateTotalAmountCents: 10900 },
+      components: [],
+      reserved: [{ componentId: "trcp_123", status: "held" }],
+      failures: [],
+      compensations: [],
+      warnings: [],
+    })
+    mocks.acceptQuoteVersion.mockResolvedValue({
+      quote: { ...proposal.quote, status: "won", acceptedVersionId: "qver_123" },
+      quoteVersion: { ...quoteVersion, status: "accepted" },
+      closedQuoteVersions: [],
+    })
+    mocks.startCheckout.mockResolvedValue({
+      target: {
+        currency: "EUR",
+        totalAmountCents: 10900,
+        paymentSessionId: null,
+        checkoutUrl: null,
+      },
+      failures: [],
+      warnings: [],
+    })
 
     const response = await app.request("/v1/public/proposals/qver_123/accept", {
       method: "POST",
       ...json({}),
     })
 
-    expect(response.status).toBe(409)
-    const body = (await response.json()) as { error?: string }
-    expect(body.error).toContain("Sourced catalog components")
-    expect(mocks.getTrip).not.toHaveBeenCalled()
-    expect(mocks.reserveTrip).not.toHaveBeenCalled()
-    expect(mocks.acceptQuoteVersion).not.toHaveBeenCalled()
+    expect(response.status).toBe(200)
+    expect(fakeDb.transaction).toHaveBeenCalledTimes(2)
+    expect(mocks.reserveTrip).toHaveBeenCalledWith(
+      fakeDb,
+      expect.objectContaining({ envelopeId: "trip_123" }),
+      { reserve: "deps" },
+    )
+    expect(mocks.acceptQuoteVersion).toHaveBeenCalledWith(fakeTx, "qver_123", {})
+    expect(mocks.cancelComponents).not.toHaveBeenCalled()
   })
 
   it("rechecks a sent proposal under the quote accept lock before reserving", async () => {
@@ -411,5 +444,47 @@ describe("operator proposal routes", () => {
       error: "Proposal could not be reserved",
       failures: [{ code: "price_changed", reason: "price_changed" }],
     })
+  })
+
+  it("releases the reserved trip when final CRM acceptance rejects", async () => {
+    const app = makeApp()
+    mocks.getQuoteVersionProposal.mockResolvedValue(proposal)
+    mocks.getTripSnapshotById.mockResolvedValue(tripSnapshot)
+    mocks.getTrip.mockResolvedValue(liveTrip)
+    mocks.reserveTrip.mockResolvedValue({
+      envelope: { id: "trip_123", aggregateCurrency: "EUR", aggregateTotalAmountCents: 10900 },
+      components: [],
+      reserved: [{ componentId: "trcp_123", status: "held" }],
+      failures: [],
+      compensations: [],
+      warnings: [],
+    })
+    mocks.acceptQuoteVersion.mockRejectedValue(
+      new mocks.QuoteVersionConflictError("Quote already has an accepted Quote Version"),
+    )
+
+    const response = await app.request("/v1/public/proposals/qver_123/accept", {
+      method: "POST",
+      ...json({ idempotencyKey: "accept-1" }),
+    })
+
+    expect(response.status).toBe(409)
+    expect(mocks.cancelComponents).toHaveBeenCalledWith(
+      fakeDb,
+      {
+        envelopeId: "trip_123",
+        componentIds: ["trcp_123"],
+        reason: "quote_accept_failed",
+        idempotencyKey: "proposal-accept-release:qver_123:quote_accept_failed",
+        request: {
+          initiatedBy: "public-proposal-accept",
+          quoteVersionId: "qver_123",
+        },
+      },
+      { cancel: "deps" },
+    )
+    expect(mocks.startCheckout).not.toHaveBeenCalled()
+    const body = (await response.json()) as { error?: string }
+    expect(body.error).toContain("accepted Quote Version")
   })
 })

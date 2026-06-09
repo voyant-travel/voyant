@@ -87,7 +87,7 @@ export function createStartCheckoutDeps(c: Context): StartCheckoutDeps {
   }
 }
 
-function createCancelTripComponentsDeps(c: Context): CancelTripComponentsDeps {
+export function createCancelTripComponentsDeps(c: Context): CancelTripComponentsDeps {
   return {
     previewComponentCancellation: (input) => previewComponentCancellation(input),
     cancelComponent: (input) => cancelComponent(c, input),
