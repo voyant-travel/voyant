@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useLocation } from "@tanstack/react-router"
 import { useAdminBreadcrumbs } from "@voyantjs/admin"
 import { useBookingsUiMessagesOrDefault } from "@voyantjs/bookings-ui/i18n"
 import { useMemo } from "react"
@@ -39,10 +39,6 @@ const newBookingSearchSchema = z.object({
    *  picked offer's check-in seeds the date directly. */
   departureDate: z.string().optional(),
   optionId: z.string().optional(),
-  /** Preview hints carried from a catalog detail page (name + hero image) so
-   *  the side panel isn't blank for sourced entities. */
-  entityName: z.string().optional(),
-  entityImageUrl: z.string().optional(),
   /** Stable draft id — refresh-safe. When absent, the component
    *  generates a fresh id on mount. */
   draftId: z.string().optional(),
@@ -58,6 +54,9 @@ export const Route = createFileRoute("/_workspace/bookings_/new/$entityId")({
 function NewBookingRouteComponent(): React.ReactElement {
   const { entityId } = Route.useParams()
   const search = Route.useSearch()
+  // Preview hints (name + hero image) ride in ephemeral history state, not the
+  // URL — they're a nicety for the side panel, not addressable state.
+  const { entityName, entityImageUrl } = useLocation({ select: (l) => l.state })
   const entityModule = search.module ?? "products"
   const draftId = useMemo(() => search.draftId ?? generateDraftId(), [search.draftId])
 
@@ -87,8 +86,8 @@ function NewBookingRouteComponent(): React.ReactElement {
         departureId={search.departureId}
         departureDate={search.departureDate}
         optionId={search.optionId}
-        entityName={search.entityName}
-        entityImageUrl={search.entityImageUrl}
+        entityName={entityName}
+        entityImageUrl={entityImageUrl}
         draftId={draftId}
       />
     </main>

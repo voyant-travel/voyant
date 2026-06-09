@@ -86,4 +86,11 @@ declare module "@tanstack/react-router" {
   interface Register {
     router: ReturnType<typeof getRouter>
   }
+  /** Ephemeral, per-navigation history state — kept out of the URL. */
+  interface HistoryState {
+    /** Preview hints for the booking journey when launched from a catalog
+     *  detail page (sourced entities aren't in the owned products table). */
+    entityName?: string
+    entityImageUrl?: string
+  }
 }

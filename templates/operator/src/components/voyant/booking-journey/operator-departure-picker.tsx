@@ -48,9 +48,13 @@ export function OperatorDeparturePicker({
   optionId,
   slotId,
   departureDate,
-  departureTime,
   onChange,
-}: DeparturePickerProps): React.ReactElement {
+  lockDeparture = false,
+}: DeparturePickerProps & {
+  /** The departure is fixed (a sourced offer's date came in pre-selected) —
+   *  show it read-only rather than a re-editable input. */
+  lockDeparture?: boolean
+}): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault().bookingCreateDialog
   // Stable "now" so the slot query + future filter don't churn every render.
   const [nowIso] = useState(() => new Date().toISOString())
@@ -60,7 +64,7 @@ export function OperatorDeparturePicker({
     status: "open",
     startsAtFrom: nowIso,
     limit: 100,
-    enabled: Boolean(productId),
+    enabled: Boolean(productId) && !lockDeparture,
   })
 
   const slots = useMemo<LoadedSlot[]>(
@@ -98,29 +102,33 @@ export function OperatorDeparturePicker({
     if (slot) setInputValue((prev) => (prev ? prev : formatLabel(slot)))
   }, [slotId, slotMap])
 
-  // No scheduled departures for this product → free date/time so the
-  // operator can still set a departure for non-scheduled products.
+  // Sourced offer with a fixed date (came in pre-selected) → show it read-only.
+  // A different date would be a different offer, so there's nothing to edit.
+  if (lockDeparture && departureDate) {
+    return (
+      <div className="space-y-1">
+        <Label>{messages.fields.departure}</Label>
+        <p className="font-medium text-sm">
+          {dateFormatter.format(new Date(`${departureDate.slice(0, 10)}T00:00:00`))}
+        </p>
+      </div>
+    )
+  }
+
+  // No scheduled departures for this product → a free date so the operator can
+  // still set a departure for non-scheduled products. (No time field — tour /
+  // package departures are by date.)
   if (!query.isLoading && slots.length === 0) {
     return (
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="space-y-1">
-          <Label htmlFor="bj-departure-date">{messages.fields.departure}</Label>
-          <Input
-            id="bj-departure-date"
-            type="date"
-            value={departureDate ?? ""}
-            onChange={(e) => onChange({ departureDate: e.target.value || null })}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="bj-departure-time">{messages.placeholders.departure}</Label>
-          <Input
-            id="bj-departure-time"
-            type="time"
-            value={departureTime ?? ""}
-            onChange={(e) => onChange({ departureTime: e.target.value || null })}
-          />
-        </div>
+      <div className="space-y-1">
+        <Label htmlFor="bj-departure-date">{messages.fields.departure}</Label>
+        <Input
+          id="bj-departure-date"
+          type="date"
+          className="sm:max-w-xs"
+          value={departureDate ?? ""}
+          onChange={(e) => onChange({ departureDate: e.target.value || null })}
+        />
       </div>
     )
   }

@@ -97,9 +97,10 @@ export function OperatorBookingJourney({
       return <BillingDuplicateWarning {...ctx} />
     },
     renderDeparturePicker(pickerProps) {
-      // Owned: real scheduled departures from availability. Sourced
-      // products have none, so the picker falls back to a free date.
-      return <OperatorDeparturePicker {...pickerProps} />
+      // Owned: real scheduled departures from availability. Sourced products
+      // have none; when one was booked from a specific offer the date came in
+      // pre-selected, so we lock it (a different date = a different offer).
+      return <OperatorDeparturePicker {...pickerProps} lockDeparture={Boolean(departureDate)} />
     },
     renderUnitsPicker(pickerProps) {
       // Rooms/units for the picked option + departure (operator inventory).
