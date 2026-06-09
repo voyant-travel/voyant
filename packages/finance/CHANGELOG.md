@@ -1,5 +1,11 @@
 # @voyantjs/finance
 
+## 0.106.7
+
+### Patch Changes
+
+- 9c22b6b: Cancel SmartBill invoices when Voyant invoices are voided and persist the external reference cancellation state.
+
 ## 0.106.6
 
 ### Patch Changes
