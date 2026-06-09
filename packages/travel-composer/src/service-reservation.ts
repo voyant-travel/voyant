@@ -1,5 +1,5 @@
 import type { AnyDrizzleDb } from "@voyantjs/db"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 
 import { isCatalogBackedTripComponent, toBookingDraftV1 } from "./catalog-component-adapter.js"
 import type { NewTripEnvelope, TripComponent, TripEnvelope } from "./schema.js"
@@ -43,24 +43,52 @@ export async function reserveTrip(
   }
 
   if (shouldReplayReserve(trip.envelope, input.idempotencyKey)) {
-    return {
-      envelope: trip.envelope,
-      components: trip.components,
-      reserved: trip.components
-        .filter(isReservedTripComponent)
-        .map((component) => ({ componentId: component.id, status: component.status })),
-      failures: [],
-      compensations: [],
-      warnings: ["idempotent_replay"],
-    }
+    return reserveReplayResult(trip)
+  }
+
+  if (trip.envelope.status !== "priced") {
+    return reserveClaimConflictResult(trip)
   }
 
   assertTripTravelerPartyComplete(trip.envelope.travelerParty, "Trip reserve")
 
-  const preflight = await refreshComponentsBeforeReserve(db, trip, input, deps)
+  const [claimedEnvelope] = (await db
+    .update(tripEnvelopes)
+    .set({
+      status: "reserve_in_progress",
+      reserveIdempotencyKey: input.idempotencyKey ?? null,
+      reserveStartedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(and(eq(tripEnvelopes.id, input.envelopeId), eq(tripEnvelopes.status, "priced")))
+    .returning()) as TripEnvelope[]
+
+  if (!claimedEnvelope) {
+    const refreshed = await getTrip(db, input.envelopeId)
+    if (!refreshed) {
+      throw new TravelComposerInvariantError(`Trip envelope ${input.envelopeId} was not found`)
+    }
+
+    if (shouldReplayReserve(refreshed.envelope, input.idempotencyKey)) {
+      return reserveReplayResult(refreshed)
+    }
+
+    return reserveClaimConflictResult(refreshed)
+  }
+
+  trip = { envelope: claimedEnvelope, components: trip.components }
+
+  let preflight: Awaited<ReturnType<typeof refreshComponentsBeforeReserve>>
+  try {
+    preflight = await refreshComponentsBeforeReserve(db, trip, input, deps)
+  } catch (error) {
+    await releaseReserveClaimAfterPreflightFailure(db, input, trip)
+    throw error
+  }
   if (preflight.failures.length > 0) {
+    const envelope = await releaseReserveClaimAfterPreflightFailure(db, input, preflight.trip)
     return {
-      envelope: preflight.trip.envelope,
+      envelope,
       components: preflight.trip.components,
       reserved: [],
       failures: preflight.failures,
@@ -69,16 +97,6 @@ export async function reserveTrip(
     }
   }
   trip = preflight.trip
-
-  await db
-    .update(tripEnvelopes)
-    .set({
-      status: "reserve_in_progress",
-      reserveIdempotencyKey: input.idempotencyKey ?? null,
-      reserveStartedAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(eq(tripEnvelopes.id, input.envelopeId))
 
   const warnings = new Set<string>()
   const failures: ReserveTripResult["failures"] = []
@@ -203,6 +221,72 @@ export async function reserveTrip(
   }
 }
 
+function reserveReplayResult(trip: Trip): ReserveTripResult {
+  return {
+    envelope: trip.envelope,
+    components: trip.components,
+    reserved: trip.components
+      .filter(isReservedTripComponent)
+      .map((component) => ({ componentId: component.id, status: component.status })),
+    failures: [],
+    compensations: [],
+    warnings: ["idempotent_replay"],
+  }
+}
+
+function reserveClaimConflictResult(trip: Trip): ReserveTripResult {
+  const reason = reserveClaimConflictReason(trip.envelope)
+  const componentId = reserveClaimConflictComponentId(trip)
+
+  return {
+    envelope: trip.envelope,
+    components: trip.components,
+    reserved: trip.components
+      .filter(isReservedTripComponent)
+      .map((component) => ({ componentId: component.id, status: component.status })),
+    failures: [{ componentId, reason, code: reason }],
+    compensations: [],
+    warnings: [reason],
+  }
+}
+
+function reserveClaimConflictReason(envelope: TripEnvelope): string {
+  if (envelope.status === "reserve_in_progress") return "reservation_in_progress"
+  if (["reserved", "checkout_started", "booked"].includes(envelope.status)) {
+    return "reservation_already_completed"
+  }
+  return `trip_${envelope.status}_cannot_be_reserved`
+}
+
+function reserveClaimConflictComponentId(trip: Trip): string {
+  return (
+    trip.components.find(
+      (component) => component.status !== "removed" && component.status !== "cancelled",
+    )?.id ?? trip.envelope.id
+  )
+}
+
+async function releaseReserveClaimAfterPreflightFailure(
+  db: AnyDrizzleDb,
+  input: ReserveTripInput,
+  trip: Trip,
+): Promise<TripEnvelope> {
+  const [envelope] = (await db
+    .update(tripEnvelopes)
+    .set({
+      status: "priced",
+      reserveIdempotencyKey: null,
+      reserveStartedAt: null,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(eq(tripEnvelopes.id, input.envelopeId), eq(tripEnvelopes.status, "reserve_in_progress")),
+    )
+    .returning()) as TripEnvelope[]
+
+  return envelope ?? trip.envelope
+}
+
 async function refreshComponentsBeforeReserve(
   db: AnyDrizzleDb,
   trip: Trip,
@@ -284,7 +368,7 @@ async function refreshComponentsBeforeReserve(
     const [envelope] = (await db
       .update(tripEnvelopes)
       .set({
-        status: "priced",
+        status: trip.envelope.status,
         aggregateCurrency: aggregate.currency,
         aggregateSubtotalAmountCents: aggregate.subtotalAmountCents,
         aggregateTaxAmountCents: aggregate.taxAmountCents,

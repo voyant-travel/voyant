@@ -137,6 +137,8 @@ export async function releaseAcceptedProposalReservation(
     reason: string
   },
 ) {
+  if (reserved.warnings.includes("idempotent_replay")) return
+
   const reservedComponentIds = reserved.reserved.map((component) => component.componentId)
   if (reservedComponentIds.length === 0) return
 

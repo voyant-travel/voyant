@@ -487,4 +487,31 @@ describe("operator proposal routes", () => {
     const body = (await response.json()) as { error?: string }
     expect(body.error).toContain("accepted Quote Version")
   })
+
+  it("does not release a replayed reservation when final CRM acceptance rejects", async () => {
+    const app = makeApp()
+    mocks.getQuoteVersionProposal.mockResolvedValue(proposal)
+    mocks.getTripSnapshotById.mockResolvedValue(tripSnapshot)
+    mocks.getTrip.mockResolvedValue(liveTrip)
+    mocks.reserveTrip.mockResolvedValue({
+      envelope: { id: "trip_123", aggregateCurrency: "EUR", aggregateTotalAmountCents: 10900 },
+      components: [],
+      reserved: [{ componentId: "trcp_123", status: "held" }],
+      failures: [],
+      compensations: [],
+      warnings: ["idempotent_replay"],
+    })
+    mocks.acceptQuoteVersion.mockRejectedValue(
+      new mocks.QuoteVersionConflictError("Quote already has an accepted Quote Version"),
+    )
+
+    const response = await app.request("/v1/public/proposals/qver_123/accept", {
+      method: "POST",
+      ...json({ idempotencyKey: "accept-1" }),
+    })
+
+    expect(response.status).toBe(409)
+    expect(mocks.cancelComponents).not.toHaveBeenCalled()
+    expect(mocks.startCheckout).not.toHaveBeenCalled()
+  })
 })

@@ -105,15 +105,30 @@ function envelope(overrides: Partial<TripEnvelope> = {}): TripEnvelope {
   }
 }
 
-function makeFakeDb(state: {
-  envelope: TripEnvelope
-  components: TripComponent[]
-  events?: NewTripComponentEvent[]
-}): AnyDrizzleDb {
+function makeFakeDb(
+  state: {
+    envelope: TripEnvelope
+    components: TripComponent[]
+    events?: NewTripComponentEvent[]
+  },
+  options: {
+    failReserveClaim?: boolean
+  } = {},
+): AnyDrizzleDb {
   const events = state.events ?? []
 
   function applyUpdate(table: unknown, patch: Partial<TripEnvelope & TripComponent>) {
     if (table === tripEnvelopes) {
+      if (options.failReserveClaim && patch.status === "reserve_in_progress") {
+        Object.assign(state.envelope, {
+          status: "reserve_in_progress",
+          reserveIdempotencyKey: "attempt-other",
+          reserveStartedAt: new Date("2026-05-18T10:30:00.000Z"),
+          updatedAt: new Date("2026-05-18T10:30:00.000Z"),
+        })
+        return undefined
+      }
+
       Object.assign(state.envelope, patch)
       return state.envelope
     }
@@ -242,18 +257,22 @@ describe("travel composer reservation helpers", () => {
       components: [component({ id: "trcp_1" }), component({ id: "trcp_2", sequence: 1 })],
       events: [],
     }
+    const seenEnvelopeStatuses: TripEnvelope["status"][] = []
 
     const result = await travelComposerService.reserveTrip(
       makeFakeDb(state),
       { envelopeId: state.envelope.id, idempotencyKey: "attempt-1" },
       {
-        reserveCatalogComponent: async ({ component: item }) => ({
-          status: "held",
-          bookingId: `book_${item.id}`,
-          bookingGroupId: "bkgrp_123",
-          holdToken: `hold_${item.id}`,
-          holdExpiresAt: "2026-05-18T12:00:00.000Z",
-        }),
+        reserveCatalogComponent: async ({ envelope: reserveEnvelope, component: item }) => {
+          seenEnvelopeStatuses.push(reserveEnvelope.status)
+          return {
+            status: "held",
+            bookingId: `book_${item.id}`,
+            bookingGroupId: "bkgrp_123",
+            holdToken: `hold_${item.id}`,
+            holdExpiresAt: "2026-05-18T12:00:00.000Z",
+          }
+        },
       },
     )
 
@@ -265,7 +284,121 @@ describe("travel composer reservation helpers", () => {
       { componentId: "trcp_1", status: "held" },
       { componentId: "trcp_2", status: "held" },
     ])
+    expect(seenEnvelopeStatuses).toEqual(["reserve_in_progress", "reserve_in_progress"])
     expect(state.components.map((item) => item.bookingId)).toEqual(["book_trcp_1", "book_trcp_2"])
+  })
+
+  it("does not dispatch provider reservations when the envelope reserve claim loses a race", async () => {
+    const state = {
+      envelope: envelope(),
+      components: [component({ id: "trcp_1" })],
+      events: [],
+    }
+    let reserveCalls = 0
+
+    const result = await travelComposerService.reserveTrip(
+      makeFakeDb(state, { failReserveClaim: true }),
+      { envelopeId: state.envelope.id, idempotencyKey: "attempt-2" },
+      {
+        reserveCatalogComponent: async () => {
+          reserveCalls += 1
+          return {
+            status: "held",
+            bookingId: "book_123",
+            holdToken: "hold_123",
+          }
+        },
+      },
+    )
+
+    expect(reserveCalls).toBe(0)
+    expect(result.envelope.status).toBe("reserve_in_progress")
+    expect(result.failures).toEqual([
+      {
+        componentId: "trcp_1",
+        reason: "reservation_in_progress",
+        code: "reservation_in_progress",
+      },
+    ])
+    expect(result.reserved).toEqual([])
+  })
+
+  it("releases the envelope reserve claim when unavailable preflight fails before provider dispatch", async () => {
+    const state = {
+      envelope: envelope(),
+      components: [component({ id: "trcp_1" })],
+      events: [],
+    }
+    let reserveCalls = 0
+
+    const result = await travelComposerService.reserveTrip(
+      makeFakeDb(state),
+      { envelopeId: state.envelope.id, idempotencyKey: "attempt-3" },
+      {
+        quoteCatalogComponentBeforeReserve: async () => ({
+          quoteId: "quote_unavailable",
+          quotedAt: "2026-05-18T10:30:00.000Z",
+          expiresAt: "2099-05-20T12:00:00.000Z",
+          available: false,
+          invalidReason: "sold_out",
+        }),
+        reserveCatalogComponent: async () => {
+          reserveCalls += 1
+          return {
+            status: "held",
+            bookingId: "book_123",
+            holdToken: "hold_123",
+          }
+        },
+      },
+    )
+
+    expect(reserveCalls).toBe(0)
+    expect(result.envelope.status).toBe("priced")
+    expect(result.envelope.reserveIdempotencyKey).toBeNull()
+    expect(result.failures).toEqual([
+      expect.objectContaining({
+        componentId: "trcp_1",
+        reason: "sold_out",
+        code: "unavailable",
+      }),
+    ])
+    expect(state.envelope.status).toBe("priced")
+    expect(state.envelope.reserveIdempotencyKey).toBeNull()
+    expect(state.components[0]?.status).toBe("unavailable")
+  })
+
+  it("releases the envelope reserve claim when preflight throws before provider dispatch", async () => {
+    const state = {
+      envelope: envelope(),
+      components: [component({ id: "trcp_1" })],
+      events: [],
+    }
+    let reserveCalls = 0
+
+    await expect(
+      travelComposerService.reserveTrip(
+        makeFakeDb(state),
+        { envelopeId: state.envelope.id, idempotencyKey: "attempt-4" },
+        {
+          quoteCatalogComponentBeforeReserve: async () => {
+            throw new Error("booking_engine_unavailable")
+          },
+          reserveCatalogComponent: async () => {
+            reserveCalls += 1
+            return {
+              status: "held",
+              bookingId: "book_123",
+              holdToken: "hold_123",
+            }
+          },
+        },
+      ),
+    ).rejects.toThrow("booking_engine_unavailable")
+
+    expect(reserveCalls).toBe(0)
+    expect(state.envelope.status).toBe("priced")
+    expect(state.envelope.reserveIdempotencyKey).toBeNull()
   })
 
   it("compensates earlier reserved components when a later reserve fails", async () => {
