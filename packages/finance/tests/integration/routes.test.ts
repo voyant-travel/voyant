@@ -1333,6 +1333,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         totalCents: 50000,
         paidCents: 10000,
         balanceDueCents: 40000,
+        notes: "Proforma pentru Ana Popescu / City tour, 2 persoane.",
       })
       const payment = await app.request(`/invoices/${proforma.id}/payments`, {
         method: "POST",
@@ -1360,6 +1361,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         convertedFromInvoiceId: proforma.id,
         paidCents: 10000,
         balanceDueCents: 40000,
+        notes: null,
       })
       const refreshedProforma = await financeService.getInvoiceById(db, proforma.id)
       expect(refreshedProforma).toMatchObject({
