@@ -326,7 +326,7 @@ export function createSmartbillDriftReconciler(
         }
       } catch (error) {
         await recordWorkflowError(options, result.errors, { ref, error })
-        if (isSmartbillRateLimitError(error)) break
+        if (isSmartbillRateLimitError(error)) return result
         await recordFinding(options, result.findings, {
           type: "missing_remote",
           document,

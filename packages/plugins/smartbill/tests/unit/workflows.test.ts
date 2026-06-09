@@ -650,6 +650,83 @@ describe("createSmartbillDriftReconciler", () => {
     expect(onError).toHaveBeenCalledWith(result.errors[0])
   })
 
+  it("does not report missing local documents after rate limits during discovery verification", async () => {
+    const onMissingLocal = vi.fn()
+    const statusResponse = {
+      status: "Ok",
+      message: "",
+      errorText: "",
+      paid: false,
+      invoiceTotalAmount: 100,
+      paidAmount: 0,
+      unpaidAmount: 100,
+      payments: [],
+    }
+    const client = makeClient({
+      listSeries: vi.fn(async () => ({
+        status: "Ok",
+        list: [{ name: "INV", nextNumber: 4, type: "f" }],
+      })),
+      getPaymentStatus: vi
+        .fn()
+        .mockResolvedValueOnce(statusResponse)
+        .mockResolvedValueOnce(statusResponse)
+        .mockResolvedValueOnce(statusResponse)
+        .mockResolvedValueOnce(statusResponse)
+        .mockRejectedValueOnce(
+          new SmartbillRateLimitError("SmartBill account blocked", {
+            operation: "getPaymentStatus",
+            status: 403,
+          }),
+        ),
+    })
+
+    const result = await createSmartbillDriftReconciler({
+      client,
+      companyVatCode: "RO12345678",
+      discoverRemote: true,
+      listExternalRefs: async () => [
+        smartbillRef({
+          metadata: {
+            companyVatCode: "RO12345678",
+            seriesName: "INV",
+            number: "1",
+            documentType: "invoice",
+          },
+        }),
+        smartbillRef({
+          id: "iex_2",
+          externalId: "2",
+          externalNumber: "2",
+          metadata: {
+            companyVatCode: "RO12345678",
+            seriesName: "INV",
+            number: "2",
+            documentType: "invoice",
+          },
+        }),
+        smartbillRef({
+          id: "iex_3",
+          externalId: "3",
+          externalNumber: "3",
+          metadata: {
+            companyVatCode: "RO12345678",
+            seriesName: "INV",
+            number: "3",
+            documentType: "invoice",
+          },
+        }),
+      ],
+      onMissingLocal,
+    })()
+
+    expect(client.getPaymentStatus).toHaveBeenCalledTimes(5)
+    expect(result.checked).toBe(2)
+    expect(result.findings).toEqual([])
+    expect(result.errors).toHaveLength(1)
+    expect(onMissingLocal).not.toHaveBeenCalled()
+  })
+
   it("skips missing numbers while walking SmartBill series", async () => {
     const client = makeClient({
       listSeries: vi.fn(async () => ({
