@@ -306,6 +306,90 @@ describe.skipIf(!DB_AVAILABLE)("createProductPricingProjectionExtension (integra
     expect(out.get("priceFromAmountCents")).toBe(48000)
   })
 
+  it.each([
+    ["person", false],
+    ["room", true],
+  ] as const)("treats adult %s age floors and zero quantity bounds as standard pricing", async (_unitLabel, roomUnit) => {
+    const pricedUnitId = roomUnit ? newId("option_units") : unitId
+    if (roomUnit) {
+      await db.insert(optionUnits).values({
+        id: pricedUnitId,
+        optionId,
+        name: "Double Room",
+        code: "adult-room",
+        unitType: "room",
+        occupancyMin: 1,
+        occupancyMax: 2,
+      })
+    }
+
+    const adultCategoryId = newId("pricing_categories")
+    const childCategoryId = newId("pricing_categories")
+    await db.insert(pricingCategories).values([
+      {
+        id: adultCategoryId,
+        productId,
+        optionId,
+        unitId: pricedUnitId,
+        name: "Adult 18+",
+        code: roomUnit ? "adult-room-18-plus" : "adult-18-plus",
+        categoryType: "adult",
+        minAge: 18,
+      },
+      {
+        id: childCategoryId,
+        productId,
+        optionId,
+        unitId: pricedUnitId,
+        name: "Child 0-5",
+        code: roomUnit ? "child-room-zero-five" : "child-zero-five",
+        categoryType: "child",
+        minAge: 0,
+        maxAge: 5,
+      },
+    ])
+
+    const ruleId = newId("option_price_rules")
+    await db.insert(optionPriceRules).values({
+      id: ruleId,
+      productId,
+      optionId,
+      priceCatalogId: usdCatalogId,
+      name: roomUnit ? "room-age-floor" : "adult-age-floor",
+      baseSellAmountCents: null,
+      isDefault: true,
+      active: true,
+    })
+    await db.insert(optionUnitPriceRules).values([
+      {
+        id: newId("option_unit_price_rules"),
+        optionPriceRuleId: ruleId,
+        optionId,
+        unitId: pricedUnitId,
+        pricingCategoryId: adultCategoryId,
+        sellAmountCents: 48000,
+        minQuantity: 0,
+        maxQuantity: 0,
+        active: true,
+      },
+      {
+        id: newId("option_unit_price_rules"),
+        optionPriceRuleId: ruleId,
+        optionId,
+        unitId: pricedUnitId,
+        pricingCategoryId: childCategoryId,
+        sellAmountCents: 24000,
+        minQuantity: 0,
+        maxQuantity: 0,
+        active: true,
+      },
+    ])
+
+    const ext = createProductPricingProjectionExtension()
+    const out = await ext.project(db, productId, enSlice)
+    expect(out.get("priceFromAmountCents")).toBe(48000)
+  })
+
   it("prefers unrestricted adult prices over cheaper quantity tiers and child prices", async () => {
     const adultCategoryId = newId("pricing_categories")
     const childCategoryId = newId("pricing_categories")
