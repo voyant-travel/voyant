@@ -1,5 +1,7 @@
 # @voyantjs/finance
 
+## 0.106.3
+
 ## 0.106.2
 
 ### Patch Changes
