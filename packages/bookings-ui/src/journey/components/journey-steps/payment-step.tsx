@@ -7,7 +7,7 @@ import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"
 import { RadioGroup, RadioGroupItem } from "@voyantjs/ui/components/radio-group"
 import { Textarea } from "@voyantjs/ui/components/textarea"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   PaymentScheduleSection,
   type PaymentScheduleValue,
@@ -207,6 +207,25 @@ function PaymentScheduleEditor({
   // A manual price override is the booking's real total — schedules must sum
   // to it (booking-create enforces this), so the editor anchors on it.
   const total = draft.priceOverride?.amountCents ?? pricing?.total ?? null
+
+  // Persist the default schedule (a single full-amount payment) to the draft
+  // once the total is known — otherwise an operator who never touches the
+  // editor commits a booking with NO payment schedule. Seeds once; after that
+  // the operator owns it via onChange.
+  const seeded = useRef(false)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot seed guarded by the ref; reads latest via closure
+  useEffect(() => {
+    if (seeded.current || total == null) return
+    if (draft.paymentSchedules && draft.paymentSchedules.length > 0) {
+      seeded.current = true
+      return
+    }
+    const rows = paymentScheduleValueToRows(value, currency, total)
+    if (rows && rows.length > 0) {
+      seeded.current = true
+      setDraft({ ...draft, paymentSchedules: rows })
+    }
+  }, [total, currency])
 
   return (
     <PaymentScheduleSection
