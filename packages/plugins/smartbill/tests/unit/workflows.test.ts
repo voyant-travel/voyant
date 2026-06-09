@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { SmartbillApiError, type SmartbillClientApi } from "../../src/client.js"
+import {
+  SmartbillApiError,
+  type SmartbillClientApi,
+  SmartbillRateLimitError,
+} from "../../src/client.js"
 import { loadSmartbillCandidateRefs } from "../../src/workflow-candidates.js"
 import {
   createSmartbillDriftReconciler,
@@ -169,6 +173,132 @@ describe("createSmartbillProformaConversionPoller", () => {
       invoiceSeriesName: "INV",
       invoiceNumber: "42",
     })
+  })
+
+  it("spaces SmartBill requests when requestSpacingMs is set", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-06-09T00:00:00Z"))
+    try {
+      const requestTimes: number[] = []
+      const client = makeClient({
+        listEstimateInvoices: vi.fn(async () => {
+          requestTimes.push(Date.now())
+          return {
+            status: "Ok",
+            areInvoicesCreated: false,
+            invoices: [],
+          }
+        }),
+      })
+
+      const resultPromise = createSmartbillProformaConversionPoller({
+        client,
+        requestSpacingMs: 350,
+        listExternalRefs: async () => [
+          smartbillRef(),
+          smartbillRef({
+            id: "iex_2",
+            externalId: "2",
+            externalNumber: "2",
+            metadata: {
+              companyVatCode: "RO12345678",
+              seriesName: "PF",
+              number: "2",
+              documentType: "proforma",
+            },
+          }),
+          smartbillRef({
+            id: "iex_3",
+            externalId: "3",
+            externalNumber: "3",
+            metadata: {
+              companyVatCode: "RO12345678",
+              seriesName: "PF",
+              number: "3",
+              documentType: "proforma",
+            },
+          }),
+        ],
+        onConverted: vi.fn(),
+      })()
+
+      await vi.advanceTimersByTimeAsync(0)
+      expect(requestTimes).toHaveLength(1)
+      await vi.advanceTimersByTimeAsync(349)
+      expect(requestTimes).toHaveLength(1)
+      await vi.advanceTimersByTimeAsync(1)
+      expect(requestTimes).toHaveLength(2)
+      await vi.advanceTimersByTimeAsync(350)
+      expect(requestTimes).toHaveLength(3)
+
+      const result = await resultPromise
+      expect(result.checked).toBe(3)
+      expect(requestTimes[1]! - requestTimes[0]!).toBe(350)
+      expect(requestTimes[2]! - requestTimes[1]!).toBe(350)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("stops after SmartBill rate-limit errors", async () => {
+    const onError = vi.fn()
+    const client = makeClient({
+      listEstimateInvoices: vi
+        .fn()
+        .mockResolvedValueOnce({
+          status: "Ok",
+          areInvoicesCreated: false,
+          invoices: [],
+        })
+        .mockRejectedValueOnce(
+          new SmartbillRateLimitError("SmartBill account blocked", {
+            operation: "listEstimateInvoices",
+            status: 403,
+          }),
+        )
+        .mockResolvedValueOnce({
+          status: "Ok",
+          areInvoicesCreated: false,
+          invoices: [],
+        }),
+    })
+
+    const result = await createSmartbillProformaConversionPoller({
+      client,
+      listExternalRefs: async () => [
+        smartbillRef(),
+        smartbillRef({
+          id: "iex_2",
+          externalId: "2",
+          externalNumber: "2",
+          metadata: {
+            companyVatCode: "RO12345678",
+            seriesName: "PF",
+            number: "2",
+            documentType: "proforma",
+          },
+        }),
+        smartbillRef({
+          id: "iex_3",
+          externalId: "3",
+          externalNumber: "3",
+          metadata: {
+            companyVatCode: "RO12345678",
+            seriesName: "PF",
+            number: "3",
+            documentType: "proforma",
+          },
+        }),
+      ],
+      onConverted: vi.fn(),
+      onError,
+    })()
+
+    expect(client.listEstimateInvoices).toHaveBeenCalledTimes(2)
+    expect(result.checked).toBe(2)
+    expect(result.skipped[0]?.reason).toBe("not_converted")
+    expect(result.errors).toHaveLength(1)
+    expect(onError).toHaveBeenCalledWith(result.errors[0])
   })
 })
 
@@ -401,6 +531,200 @@ describe("createSmartbillDriftReconciler", () => {
 
     await invoiceFinding.remote.accessors?.viewPdf()
     expect(client.viewInvoicePdf).toHaveBeenCalledWith("RO12345678", "INV", "2")
+  })
+
+  it("spaces SmartBill requests during remote discovery", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-06-09T00:00:00Z"))
+    try {
+      const requestTimes: Array<{ operation: string; time: number }> = []
+      const client = makeClient({
+        listSeries: vi.fn(async () => {
+          requestTimes.push({ operation: "listSeries", time: Date.now() })
+          return {
+            status: "Ok",
+            list: [{ name: "INV", nextNumber: 3, type: "f" }],
+          }
+        }),
+        getPaymentStatus: vi.fn(async (_companyVatCode, _seriesName, number) => {
+          requestTimes.push({ operation: `getPaymentStatus:${number}`, time: Date.now() })
+          return {
+            status: "Ok",
+            message: "",
+            errorText: "",
+            paid: false,
+            invoiceTotalAmount: 100,
+            paidAmount: 0,
+            unpaidAmount: 100,
+            payments: [],
+          }
+        }),
+      })
+
+      const resultPromise = createSmartbillDriftReconciler({
+        client,
+        requestSpacingMs: 250,
+        companyVatCode: "RO12345678",
+        discoverRemote: true,
+        listExternalRefs: async () => [],
+      })()
+
+      await vi.advanceTimersByTimeAsync(0)
+      expect(requestTimes).toHaveLength(1)
+      await vi.advanceTimersByTimeAsync(249)
+      expect(requestTimes).toHaveLength(1)
+      await vi.advanceTimersByTimeAsync(1)
+      expect(requestTimes).toHaveLength(2)
+      await vi.advanceTimersByTimeAsync(250)
+      expect(requestTimes).toHaveLength(3)
+
+      const result = await resultPromise
+      expect(result.findings).toHaveLength(2)
+      expect(requestTimes.map((request) => request.operation)).toEqual([
+        "listSeries",
+        "getPaymentStatus:1",
+        "getPaymentStatus:2",
+      ])
+      expect(requestTimes[1]!.time - requestTimes[0]!.time).toBe(250)
+      expect(requestTimes[2]!.time - requestTimes[1]!.time).toBe(250)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("returns processed drift results after SmartBill rate-limit errors", async () => {
+    const onError = vi.fn()
+    const verifyRemoteDocument = vi
+      .fn()
+      .mockResolvedValueOnce("present")
+      .mockRejectedValueOnce(
+        new SmartbillRateLimitError("SmartBill account blocked", {
+          operation: "getPaymentStatus",
+          status: 403,
+        }),
+      )
+      .mockResolvedValueOnce("missing")
+
+    const result = await createSmartbillDriftReconciler({
+      client: makeClient(),
+      listExternalRefs: async () => [
+        smartbillRef({
+          metadata: {
+            companyVatCode: "RO12345678",
+            seriesName: "INV",
+            number: "1",
+            documentType: "invoice",
+          },
+        }),
+        smartbillRef({
+          id: "iex_2",
+          externalId: "2",
+          externalNumber: "2",
+          metadata: {
+            companyVatCode: "RO12345678",
+            seriesName: "INV",
+            number: "2",
+            documentType: "invoice",
+          },
+        }),
+        smartbillRef({
+          id: "iex_3",
+          externalId: "3",
+          externalNumber: "3",
+          metadata: {
+            companyVatCode: "RO12345678",
+            seriesName: "INV",
+            number: "3",
+            documentType: "invoice",
+          },
+        }),
+      ],
+      verifyRemoteDocument,
+      onError,
+    })()
+
+    expect(verifyRemoteDocument).toHaveBeenCalledTimes(2)
+    expect(result.checked).toBe(2)
+    expect(result.findings).toEqual([])
+    expect(result.errors).toHaveLength(1)
+    expect(onError).toHaveBeenCalledWith(result.errors[0])
+  })
+
+  it("does not report missing local documents after rate limits during discovery verification", async () => {
+    const onMissingLocal = vi.fn()
+    const statusResponse = {
+      status: "Ok",
+      message: "",
+      errorText: "",
+      paid: false,
+      invoiceTotalAmount: 100,
+      paidAmount: 0,
+      unpaidAmount: 100,
+      payments: [],
+    }
+    const client = makeClient({
+      listSeries: vi.fn(async () => ({
+        status: "Ok",
+        list: [{ name: "INV", nextNumber: 4, type: "f" }],
+      })),
+      getPaymentStatus: vi
+        .fn()
+        .mockResolvedValueOnce(statusResponse)
+        .mockResolvedValueOnce(statusResponse)
+        .mockResolvedValueOnce(statusResponse)
+        .mockResolvedValueOnce(statusResponse)
+        .mockRejectedValueOnce(
+          new SmartbillRateLimitError("SmartBill account blocked", {
+            operation: "getPaymentStatus",
+            status: 403,
+          }),
+        ),
+    })
+
+    const result = await createSmartbillDriftReconciler({
+      client,
+      companyVatCode: "RO12345678",
+      discoverRemote: true,
+      listExternalRefs: async () => [
+        smartbillRef({
+          metadata: {
+            companyVatCode: "RO12345678",
+            seriesName: "INV",
+            number: "1",
+            documentType: "invoice",
+          },
+        }),
+        smartbillRef({
+          id: "iex_2",
+          externalId: "2",
+          externalNumber: "2",
+          metadata: {
+            companyVatCode: "RO12345678",
+            seriesName: "INV",
+            number: "2",
+            documentType: "invoice",
+          },
+        }),
+        smartbillRef({
+          id: "iex_3",
+          externalId: "3",
+          externalNumber: "3",
+          metadata: {
+            companyVatCode: "RO12345678",
+            seriesName: "INV",
+            number: "3",
+            documentType: "invoice",
+          },
+        }),
+      ],
+      onMissingLocal,
+    })()
+
+    expect(client.getPaymentStatus).toHaveBeenCalledTimes(5)
+    expect(result.checked).toBe(2)
+    expect(result.findings).toEqual([])
+    expect(result.errors).toHaveLength(1)
+    expect(onMissingLocal).not.toHaveBeenCalled()
   })
 
   it("skips missing numbers while walking SmartBill series", async () => {
