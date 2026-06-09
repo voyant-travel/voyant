@@ -297,16 +297,6 @@ export const financeRoutes = new Hono<Env>()
         )
       }
 
-      if (error instanceof ActionLedgerIdempotencyConflictError) {
-        return c.json(
-          {
-            error: error.message,
-            existingActionId: error.existingActionId,
-          },
-          409,
-        )
-      }
-
       throw error
     }
   })
@@ -687,6 +677,16 @@ export const financeRoutes = new Hono<Env>()
         return c.json(
           { error: error.message, code: error.code, details: error.details },
           error.status,
+        )
+      }
+
+      if (error instanceof ActionLedgerIdempotencyConflictError) {
+        return c.json(
+          {
+            error: error.message,
+            existingActionId: error.existingActionId,
+          },
+          409,
         )
       }
 
