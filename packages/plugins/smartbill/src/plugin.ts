@@ -6,7 +6,11 @@ import type { SmartbillArtifactPersistenceOptions } from "./artifacts.js"
 import type { SmartbillClientOptions } from "./client.js"
 import type { SmartbillMappingOptions } from "./mapping.js"
 import { createSmartbillSyncRuntime } from "./runtime.js"
-import { syncSmartbillInvoiceEvent, syncSmartbillProformaConversion } from "./sync.js"
+import {
+  syncSmartbillInvoiceEvent,
+  syncSmartbillInvoiceVoidEvent,
+  syncSmartbillProformaConversion,
+} from "./sync.js"
 import type { SmartbillInvoiceBody, SmartbillInvoiceResponse, VoyantInvoiceEvent } from "./types.js"
 import { parseSmartbillPluginOptions } from "./validation.js"
 
@@ -212,24 +216,13 @@ export function smartbillPlugin(options: SmartbillPluginOptions): Plugin {
         const event = coerceEvent(envelope.data)
         if (!event) return
         try {
-          const seriesName = await resolveExternalSeriesName(event)
-          const number =
-            typeof event.externalNumber === "string"
-              ? event.externalNumber
-              : typeof event.invoiceNumber === "string"
-                ? event.invoiceNumber
-                : undefined
-          if (!number) {
-            logger.error(`[smartbill] cannot cancel invoice ${event.id}: missing external number`)
-            return
-          }
-          await client.cancelInvoice(validatedOptions.companyVatCode, seriesName, number)
-          logger.info?.(`[smartbill] invoice cancelled: ${seriesName}-${number} for ${event.id}`)
-        } catch (err) {
-          logger.error(
-            `[smartbill] cancelInvoice on "${eventNames.voided}" failed for ${event.id}`,
-            err,
-          )
+          await syncSmartbillInvoiceVoidEvent({
+            event,
+            runtime,
+            pluginOptions: validatedOptions,
+          })
+        } catch {
+          // `syncSmartbillInvoiceVoidEvent` logs and records retryable state.
         }
       },
     },
