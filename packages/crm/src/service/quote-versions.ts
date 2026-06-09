@@ -20,6 +20,13 @@ type CreateQuoteVersionLineInput = z.infer<typeof insertQuoteVersionLineSchema>
 type UpdateQuoteVersionLineInput = z.infer<typeof updateQuoteVersionLineSchema>
 type ApplyTripSnapshotToQuoteVersionInput = z.infer<typeof applyTripSnapshotToQuoteVersionSchema>
 
+export class QuoteVersionConflictError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "QuoteVersionConflictError"
+  }
+}
+
 function normalizeTimestamp(value: string | null | undefined) {
   return value == null ? value : new Date(value)
 }
@@ -101,10 +108,20 @@ export const quoteVersionsService = {
           totalAmountCents: data.totalAmountCents,
           updatedAt: new Date(),
         })
-        .where(eq(quoteVersions.id, id))
+        .where(and(eq(quoteVersions.id, id), eq(quoteVersions.status, "draft")))
         .returning()
 
-      if (!quoteVersion) return null
+      if (!quoteVersion) {
+        const [existing] = await tx
+          .select({ status: quoteVersions.status })
+          .from(quoteVersions)
+          .where(eq(quoteVersions.id, id))
+          .limit(1)
+        if (!existing) return null
+        throw new QuoteVersionConflictError(
+          "Trip snapshots can only be applied to draft Quote Versions",
+        )
+      }
 
       await tx.delete(quoteVersionLines).where(eq(quoteVersionLines.quoteVersionId, id))
 

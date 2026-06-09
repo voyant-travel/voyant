@@ -6,11 +6,7 @@ import { z } from "zod"
 import { fetchWithValidation } from "../client.js"
 import { useVoyantContext } from "../provider.js"
 import { crmQueryKeys } from "../query-keys.js"
-import {
-  quoteVersionLineSingleResponse,
-  quoteVersionSingleResponse,
-  quoteVersionTripSnapshotApplyResponse,
-} from "../schemas.js"
+import { quoteVersionLineSingleResponse, quoteVersionSingleResponse } from "../schemas.js"
 
 export interface CreateQuoteVersionInput {
   currency: string
@@ -44,19 +40,6 @@ export interface CreateQuoteVersionLineInput {
 }
 
 export type UpdateQuoteVersionLineInput = Partial<CreateQuoteVersionLineInput>
-
-export interface ApplyTripSnapshotQuoteVersionLineInput extends CreateQuoteVersionLineInput {
-  componentId?: string | null
-}
-
-export interface ApplyTripSnapshotToQuoteVersionInput {
-  tripSnapshotId: string
-  currency: string
-  subtotalAmountCents?: number
-  taxAmountCents?: number
-  totalAmountCents?: number
-  lines?: ApplyTripSnapshotQuoteVersionLineInput[]
-}
 
 const deleteResponseSchema = z.object({ success: z.boolean() })
 
@@ -112,34 +95,6 @@ export function useQuoteVersionMutation() {
     onSuccess: (_data, id) => {
       void queryClient.invalidateQueries({ queryKey: crmQueryKeys.quoteVersions() })
       queryClient.removeQueries({ queryKey: crmQueryKeys.quoteVersion(id) })
-    },
-  })
-
-  const applyTripSnapshot = useMutation({
-    mutationFn: async ({
-      id,
-      input,
-    }: {
-      id: string
-      input: ApplyTripSnapshotToQuoteVersionInput
-    }) => {
-      const { data } = await fetchWithValidation(
-        `/v1/crm/quote-versions/${id}/trip-snapshot`,
-        quoteVersionTripSnapshotApplyResponse,
-        { baseUrl, fetcher },
-        { method: "POST", body: JSON.stringify(input) },
-      )
-      return data
-    },
-    onSuccess: (data) => {
-      void queryClient.invalidateQueries({ queryKey: crmQueryKeys.quoteVersions() })
-      queryClient.setQueryData(crmQueryKeys.quoteVersion(data.quoteVersion.id), data.quoteVersion)
-      void queryClient.invalidateQueries({
-        queryKey: crmQueryKeys.quoteVersionLines(data.quoteVersion.id),
-      })
-      void queryClient.invalidateQueries({
-        queryKey: crmQueryKeys.quote(data.quoteVersion.quoteId),
-      })
     },
   })
 
@@ -222,5 +177,5 @@ export function useQuoteVersionMutation() {
     },
   })
 
-  return { create, update, remove, applyTripSnapshot, createLine, updateLine, removeLine }
+  return { create, update, remove, createLine, updateLine, removeLine }
 }

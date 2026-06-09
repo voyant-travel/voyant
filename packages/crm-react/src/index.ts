@@ -110,8 +110,6 @@ export {
   useQuoteVersionLines,
 } from "./hooks/use-quote-version.js"
 export {
-  type ApplyTripSnapshotQuoteVersionLineInput,
-  type ApplyTripSnapshotToQuoteVersionInput,
   type CreateQuoteVersionInput,
   type CreateQuoteVersionLineInput,
   type UpdateQuoteVersionInput,

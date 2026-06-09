@@ -19,6 +19,7 @@ import {
   cancelTripComponentsResponseSchema,
   previewTripCancellationResponseSchema,
   priceTripResponseSchema,
+  quoteVersionSnapshotApplyResponseSchema,
   reserveTripResponseSchema,
   startTripCheckoutResponseSchema,
   tripComponentResponseSchema,
@@ -70,6 +71,10 @@ export type CreateTripSnapshotBody = Omit<CreateTripSnapshotInput, "envelopeId">
 
 function composerPath(client: FetchWithValidationOptions, path: string): string {
   return `/v1/${client.surface ?? "admin"}/travel-composer${path}`
+}
+
+function adminComposerPath(path: string): string {
+  return `/v1/admin/travel-composer${path}`
 }
 
 function withQuery(path: string, params: ListTripsParams = {}): string {
@@ -143,6 +148,24 @@ export function freezeTripSnapshot(
   return fetchWithValidation(
     composerPath(client, `/trips/${encodeURIComponent(envelopeId)}/snapshots`),
     tripSnapshotResponseSchema,
+    client,
+    { method: "POST", body: JSON.stringify(input) },
+  ).then((response) => response.data)
+}
+
+export function freezeTripSnapshotForQuoteVersion(
+  client: FetchWithValidationOptions,
+  envelopeId: string,
+  quoteVersionId: string,
+  input: CreateTripSnapshotBody = {},
+) {
+  return fetchWithValidation(
+    adminComposerPath(
+      `/trips/${encodeURIComponent(envelopeId)}/quote-versions/${encodeURIComponent(
+        quoteVersionId,
+      )}/snapshot`,
+    ),
+    quoteVersionSnapshotApplyResponseSchema,
     client,
     { method: "POST", body: JSON.stringify(input) },
   ).then((response) => response.data)

@@ -399,14 +399,3 @@ export type QuoteVersionLineRecord = z.infer<typeof quoteVersionLineRecordSchema
 
 export const quoteVersionLineListResponse = listEnvelope(quoteVersionLineRecordSchema)
 export const quoteVersionLineSingleResponse = singleEnvelope(quoteVersionLineRecordSchema)
-
-export const quoteVersionTripSnapshotApplyResponse = singleEnvelope(
-  z.object({
-    quoteVersion: quoteVersionRecordSchema,
-    lines: z.array(quoteVersionLineRecordSchema),
-  }),
-)
-
-export type QuoteVersionTripSnapshotApplyRecord = z.infer<
-  typeof quoteVersionTripSnapshotApplyResponse
->["data"]

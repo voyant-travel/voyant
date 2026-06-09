@@ -4,6 +4,7 @@ import {
   cancelTripComponents,
   createTrip,
   freezeTripSnapshot,
+  freezeTripSnapshotForQuoteVersion,
   getTrip,
   getTripSnapshot,
   listTripSnapshots,
@@ -159,6 +160,31 @@ describe("travel composer react operations", () => {
       "https://app.example/v1/admin/travel-composer/trips/trip_123/snapshots",
     ])
     expect(JSON.parse(String(calls[2]?.init?.body))).toEqual({ createdBy: "agent_1" })
+  })
+
+  it("freezes and applies a trip snapshot to a quote version through the operator bridge", async () => {
+    const calls: Array<{ url: string; init?: RequestInit }> = []
+    const client = {
+      baseUrl: "https://app.example",
+      surface: "public" as const,
+      fetcher: async (url: string, init?: RequestInit) => {
+        calls.push({ url, init })
+        return jsonResponse({
+          snapshot: { id: "trsn_123" },
+          quoteVersion: { id: "qver_123", quoteId: "quot_123" },
+          lines: [],
+        })
+      },
+    }
+
+    await freezeTripSnapshotForQuoteVersion(client, "trip_123", "qver_123", {
+      createdBy: "agent_1",
+    })
+
+    expect(calls[0]?.url).toBe(
+      "https://app.example/v1/admin/travel-composer/trips/trip_123/quote-versions/qver_123/snapshot",
+    )
+    expect(JSON.parse(String(calls[0]?.init?.body))).toEqual({ createdBy: "agent_1" })
   })
 
   it("posts cancellation preview and selected-component cancel bodies", async () => {

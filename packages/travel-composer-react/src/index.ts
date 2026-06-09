@@ -20,6 +20,7 @@ export {
   cancelTripComponents,
   createTrip,
   freezeTripSnapshot,
+  freezeTripSnapshotForQuoteVersion,
   getTrip,
   getTripSnapshot,
   type ListTripsParams,

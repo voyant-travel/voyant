@@ -1,8 +1,8 @@
 import { parseJsonBody, parseQuery } from "@voyantjs/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
-
 import { crmService } from "../service/index.js"
+import { QuoteVersionConflictError } from "../service/quote-versions.js"
 import {
   applyTripSnapshotToQuoteVersionSchema,
   insertQuoteVersionLineSchema,
@@ -56,13 +56,20 @@ export const quoteVersionRoutes = new Hono<Env>()
     return c.json({ success: true })
   })
   .post("/quote-versions/:id/trip-snapshot", async (c) => {
-    const row = await crmService.applyTripSnapshotToQuoteVersion(
-      c.get("db"),
-      c.req.param("id"),
-      await parseJsonBody(c, applyTripSnapshotToQuoteVersionSchema),
-    )
-    if (!row) return c.json({ error: "Quote version not found" }, 404)
-    return c.json({ data: row })
+    try {
+      const row = await crmService.applyTripSnapshotToQuoteVersion(
+        c.get("db"),
+        c.req.param("id"),
+        await parseJsonBody(c, applyTripSnapshotToQuoteVersionSchema),
+      )
+      if (!row) return c.json({ error: "Quote version not found" }, 404)
+      return c.json({ data: row })
+    } catch (error) {
+      if (error instanceof QuoteVersionConflictError) {
+        return c.json({ error: error.message }, 409)
+      }
+      throw error
+    }
   })
   .get("/quote-versions/:id/lines", async (c) => {
     return c.json({
