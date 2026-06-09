@@ -97,3 +97,34 @@ apply unconditionally.
 `hasSoftDelete(table)` is exported alongside for code paths that need to
 branch on whether soft-delete applies (e.g. when generating dynamic
 clauses).
+
+## Migration generation & ordering
+
+A template's Drizzle schema set is **derived from `voyant.config.ts`**, not
+hand-listed. The manifest's `modules` + `extensions` + `additionalSchemas`
+(package closures) plus `schemas` (template-local files) are resolved into a
+committed `drizzle.schemas.generated.ts` that `drizzle.config.ts` imports. See
+[`migration-resilience-rfc.md`](./migration-resilience-rfc.md) (voyant#1608).
+
+Rules:
+
+- **Never hand-edit the schema list** in `drizzle.config.ts`. Add the
+  module/extension/package to `voyant.config.ts` and run `voyant db generate`
+  (or `voyant db schemas --emit`) to refresh the generated manifest.
+- **New migrations use timestamp prefixes.** `voyant db generate` defaults to
+  `--prefix timestamp`, so concurrently-authored migrations never collide on a
+  sequential index. The pre-existing sequential migrations stay as-is.
+- **Pre-existing duplicate prefixes are baselined**, not rewritten, in
+  `migrations/duplicate-prefixes.baseline.json`. `voyant db doctor` fails only
+  on *new* (un-baselined) collisions.
+- **Cross-module link tables are folded into the migration history.** Generate
+  their Drizzle definitions with `voyant db sync-links --emit-drizzle` (writes
+  `drizzle.links.generated.ts`, referenced from the manifest's `schemas`), then
+  `voyant db generate` so Drizzle owns their diff/snapshot — instead of applying
+  them out-of-band via raw `sync-links` DDL.
+- **`voyant db doctor --fail-on-drift` gates CI** — it cross-checks manifest
+  resolvability, schema parity, generated-manifest freshness, duplicate prefixes
+  (vs the baseline), and that every link table is in the latest snapshot.
+
+Generated files (`*.generated.ts`) are excluded from formatting so
+`voyant db generate` is a no-op when nothing changed.

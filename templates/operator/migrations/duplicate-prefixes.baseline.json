@@ -1,0 +1,26 @@
+{
+  "note": "Pre-existing duplicate migration prefixes accepted as a baseline. New duplicates fail `voyant db doctor --fail-on-drift`. New migrations use timestamp prefixes (see schema-discipline.md).",
+  "duplicates": [
+    {
+      "prefix": "0011",
+      "files": [
+        "0011_allocation_resource_templates.sql",
+        "0011_storefront_verification_challenges.sql"
+      ]
+    },
+    {
+      "prefix": "0017",
+      "files": [
+        "0017_action_ledger.sql",
+        "0017_cloud_auth_links.sql"
+      ]
+    },
+    {
+      "prefix": "0046",
+      "files": [
+        "0046_cruise_price_fare_variants.sql",
+        "0046_organization_tax_id.sql"
+      ]
+    }
+  ]
+}
