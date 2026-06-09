@@ -134,6 +134,17 @@ const SECTION_ICONS: Record<string, typeof Info> = {
   DISABILITY: Accessibility,
 }
 
+/** The offer the user clicked Book on — enough for the journey to pre-fill the
+ *  date and render a "what you're booking" preview. */
+export interface ProductBookSelection {
+  /** Check-in / departure date (ISO), seeds the journey's departure. */
+  checkIn: string | null
+  /** Product name for the journey side-panel preview. */
+  name: string | null
+  /** Hero image for the preview, if the content has one. */
+  heroImageUrl: string | null
+}
+
 export interface ProductDetailPageProps {
   productId: string
   adults?: number
@@ -145,8 +156,16 @@ export interface ProductDetailPageProps {
   productsLabel: string
   /** Href of the packages browse page, e.g. `/catalog/products`. */
   productsHref: string
-  /** Route to the booking journey, pinned to the resolved Connect source. */
-  onBook: (productId: string, source: { connectionId?: string; ref?: string | null }) => void
+  /**
+   * Route to the booking journey, pinned to the resolved Connect source.
+   * `selection` carries the offer the user clicked Book on, so the journey can
+   * pre-fill the date and show a preview instead of starting blank.
+   */
+  onBook: (
+    productId: string,
+    source: { connectionId?: string; ref?: string | null },
+    selection?: ProductBookSelection,
+  ) => void
   /** Publish breadcrumbs as the resolved name changes. */
   onBreadcrumbs?: (crumbs: Array<{ label: string; href?: string }>) => void
 }
@@ -298,8 +317,16 @@ export function ProductDetailPage({
       )
   }, [selectedOffers, roomByCode])
 
-  const bookOffer = (_offer: Offer) =>
-    onBook(productId, { connectionId: state.source?.connectionId, ref: state.source?.ref })
+  const bookOffer = (offer: Offer) =>
+    onBook(
+      productId,
+      { connectionId: state.source?.connectionId, ref: state.source?.ref },
+      {
+        checkIn: offer.checkIn,
+        name: state.product?.name ?? null,
+        heroImageUrl: state.product?.media.find((m) => m.src)?.src ?? null,
+      },
+    )
 
   const stars = formatStars(product?.stars)
   const location = [

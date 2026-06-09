@@ -35,7 +35,14 @@ const newBookingSearchSchema = z.object({
   sourceConnectionId: z.string().optional(),
   sourceRef: z.string().optional(),
   departureId: z.string().optional(),
+  /** Free-form departure date (ISO) — sourced products have no slot id, so the
+   *  picked offer's check-in seeds the date directly. */
+  departureDate: z.string().optional(),
   optionId: z.string().optional(),
+  /** Preview hints carried from a catalog detail page (name + hero image) so
+   *  the side panel isn't blank for sourced entities. */
+  entityName: z.string().optional(),
+  entityImageUrl: z.string().optional(),
   /** Stable draft id — refresh-safe. When absent, the component
    *  generates a fresh id on mount. */
   draftId: z.string().optional(),
@@ -78,7 +85,10 @@ function NewBookingRouteComponent(): React.ReactElement {
         sourceConnectionId={search.sourceConnectionId}
         sourceRef={search.sourceRef}
         departureId={search.departureId}
+        departureDate={search.departureDate}
         optionId={search.optionId}
+        entityName={search.entityName}
+        entityImageUrl={search.entityImageUrl}
         draftId={draftId}
       />
     </main>

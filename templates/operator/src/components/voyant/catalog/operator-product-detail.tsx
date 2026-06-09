@@ -41,7 +41,20 @@ export function OperatorProductDetail({
       onBreadcrumbs={setCrumbs}
       // Products vertical: clean `/bookings/new/<id>`. Provenance (owned vs
       // connect, connection, ref) resolves server-side from (products, id).
-      onBook={(id) => void navigate({ to: "/bookings/new/$entityId", params: { entityId: id } })}
+      // Carry the picked offer's date + a preview so the journey doesn't start
+      // blank (the connect quote resolves the offer by date, same as if the
+      // user re-entered it in the departure step).
+      onBook={(id, _source, selection) =>
+        void navigate({
+          to: "/bookings/new/$entityId",
+          params: { entityId: id },
+          search: {
+            ...(selection?.checkIn ? { departureDate: selection.checkIn.slice(0, 10) } : {}),
+            ...(selection?.name ? { entityName: selection.name } : {}),
+            ...(selection?.heroImageUrl ? { entityImageUrl: selection.heroImageUrl } : {}),
+          },
+        })
+      }
     />
   )
 }

@@ -88,6 +88,7 @@ export {
   type DynamicCatalogPageProps,
 } from "./components/dynamic-catalog-page.js"
 export {
+  type ProductBookSelection,
   ProductDetailPage,
   type ProductDetailPageProps,
 } from "./components/product-detail-page.js"

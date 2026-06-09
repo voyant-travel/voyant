@@ -46,7 +46,13 @@ export interface OperatorBookingJourneyProps {
   sourceConnectionId?: string
   sourceRef?: string
   departureId?: string
+  /** Free-form departure date (ISO) for sourced products with no slot id. */
+  departureDate?: string
   optionId?: string
+  /** Preview hints (name + hero image) for sourced entities, which aren't in
+   *  the owned products table. */
+  entityName?: string
+  entityImageUrl?: string
   draftId: string
   className?: string
 }
@@ -58,12 +64,18 @@ export function OperatorBookingJourney({
   sourceConnectionId,
   sourceRef,
   departureId,
+  departureDate,
   optionId,
+  entityName,
+  entityImageUrl,
   draftId,
   className,
 }: OperatorBookingJourneyProps): React.ReactElement {
   const navigate = useNavigate()
-  const entitySummary = useEntitySummary(entityModule, entityId)
+  const entitySummary = useEntitySummary(entityModule, entityId, {
+    name: entityName,
+    heroImageUrl: entityImageUrl,
+  })
 
   const slots: Pick<
     BookingJourneyProps,
@@ -137,6 +149,7 @@ export function OperatorBookingJourney({
       draftId={draftId}
       initialConfigure={{
         ...(departureId ? { departureSlotId: departureId } : {}),
+        ...(departureDate ? { departureDate } : {}),
         ...(optionId ? { variantId: optionId } : {}),
       }}
       defaultBuyerType="B2B"
@@ -159,15 +172,17 @@ export function OperatorBookingJourney({
 /**
  * Builds the "what you're booking" preview shown atop the journey side
  * panel — the product's name + first image, for an instant preview before
- * the quote returns. Owned products in the `products` table resolve here; a
- * sourced/connect id simply 404s (it isn't in the owned table) and the panel
- * falls back to the quote-provided summary. We can't (and needn't) tell owned
- * from sourced on the client — the URL no longer carries `sourceKind` — so we
- * just try the products fetch for the `products` vertical.
+ * the quote returns. Owned products in the `products` table resolve via the
+ * client fetch; a sourced/connect id isn't in that table, so it falls back to
+ * the `hints` (name + hero image) carried from the catalog detail page. We
+ * can't (and needn't) tell owned from sourced on the client — the URL no
+ * longer carries `sourceKind` — so we try the products fetch for the
+ * `products` vertical and let the hints cover everything else.
  */
 function useEntitySummary(
   entityModule: string,
   entityId: string,
+  hints: { name?: string; heroImageUrl?: string },
 ): BookingEntitySummary | undefined {
   const tryProductSummary = entityModule === "products" && Boolean(entityId)
   const client = useMemo(() => ({ baseUrl: getApiUrl(), fetcher: operatorFetcher }), [])
@@ -185,18 +200,28 @@ function useEntitySummary(
 
   return useMemo<BookingEntitySummary | undefined>(() => {
     const product = productQuery.data
-    if (!product) return undefined
-    // First product-level (not day-scoped) image, if any.
-    const heroImageUrl = (mediaQuery.data?.data ?? [])
-      .filter((media) => media.mediaType === "image" && media.dayId == null)
-      .map((media) => media.url)
-      .find(Boolean)
-    return {
-      name: product.name,
-      vertical: "products",
-      ...(heroImageUrl ? { heroImageUrl } : {}),
+    if (product) {
+      // First product-level (not day-scoped) image, if any.
+      const heroImageUrl = (mediaQuery.data?.data ?? [])
+        .filter((media) => media.mediaType === "image" && media.dayId == null)
+        .map((media) => media.url)
+        .find(Boolean)
+      return {
+        name: product.name,
+        vertical: "products",
+        ...(heroImageUrl ? { heroImageUrl } : {}),
+      }
     }
-  }, [productQuery.data, mediaQuery.data])
+    // Sourced/connect entity (not in the owned table) — use the preview hints.
+    if (hints.name) {
+      return {
+        name: hints.name,
+        vertical: entityModule,
+        ...(hints.heroImageUrl ? { heroImageUrl: hints.heroImageUrl } : {}),
+      }
+    }
+    return undefined
+  }, [productQuery.data, mediaQuery.data, hints.name, hints.heroImageUrl, entityModule])
 }
 
 /**
