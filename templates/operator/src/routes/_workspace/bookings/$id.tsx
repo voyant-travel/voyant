@@ -40,12 +40,9 @@ export const Route = createFileRoute("/_workspace/bookings/$id")({
   beforeLoad: ({ params, search }) => {
     if (params.id === "new" && search.productId) {
       throw redirect({
-        to: "/bookings/journey/$entityModule/$entityId",
-        params: { entityModule: "products", entityId: search.productId },
-        search: {
-          sourceKind: "owned",
-          ...(search.slotId ? { departureId: search.slotId } : {}),
-        },
+        to: "/bookings/new/$entityId",
+        params: { entityId: search.productId },
+        search: search.slotId ? { departureId: search.slotId } : {},
       })
     }
   },
@@ -104,21 +101,14 @@ function NewBookingPicker() {
   const navigate = useNavigate()
   const messages = useBookingsUiMessagesOrDefault()
 
-  const goToJourney = (sel: {
-    entityModule: string
-    entityId: string
-    sourceKind: string
-    sourceRef?: string
-    sourceConnectionId?: string
-  }) =>
+  // One URL for every booking — just the id. The `products` vertical is the
+  // default; provenance (owned vs sourced) resolves server-side from
+  // (module, id), so neither the module nor the source kind rides the URL here.
+  const goToJourney = (sel: { entityModule: string; entityId: string }) =>
     void navigate({
-      to: "/bookings/journey/$entityModule/$entityId",
-      params: { entityModule: sel.entityModule, entityId: sel.entityId },
-      search: {
-        sourceKind: sel.sourceKind,
-        ...(sel.sourceConnectionId ? { sourceConnectionId: sel.sourceConnectionId } : {}),
-        ...(sel.sourceRef ? { sourceRef: sel.sourceRef } : {}),
-      },
+      to: "/bookings/new/$entityId",
+      params: { entityId: sel.entityId },
+      search: sel.entityModule !== "products" ? { module: sel.entityModule } : {},
     })
 
   return (
@@ -133,18 +123,14 @@ function NewBookingPicker() {
         value={{ productId: "", optionId: null }}
         enabled
         lockProduct={false}
-        // Owned pick → journey with `owned` provenance. (Clearing the field
-        // yields an empty productId, which we ignore.)
+        // Owned pick → journey for that product. (Clearing the field yields an
+        // empty productId, which we ignore.)
         onChange={(value) => {
           if (value.productId) {
-            goToJourney({
-              entityModule: "products",
-              entityId: value.productId,
-              sourceKind: "owned",
-            })
+            goToJourney({ entityModule: "products", entityId: value.productId })
           }
         }}
-        // Sourced pick → journey with the supplier provenance.
+        // Sourced pick → same journey; provenance resolves server-side.
         onSourcedSelected={(sel) => goToJourney(sel)}
       />
     </main>

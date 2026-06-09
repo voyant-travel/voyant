@@ -52,12 +52,14 @@ export function OperatorVerticalDetail({
       surfaceHref={`/catalog/${surface}`}
       formatSupplier={formatSupplier}
       onBreadcrumbs={setCrumbs}
+      // Non-product verticals name themselves via `?module` (products is the
+      // default); provenance resolves server-side from (module, id).
       onBook={(entityModule, entityId, opts) =>
         void navigate({
-          to: "/bookings/journey/$entityModule/$entityId",
-          params: { entityModule, entityId },
+          to: "/bookings/new/$entityId",
+          params: { entityId },
           search: {
-            sourceKind: "voyant-connect",
+            ...(entityModule !== "products" ? { module: entityModule } : {}),
             ...(opts.departureId ? { departureId: opts.departureId } : {}),
             ...(opts.optionId ? { optionId: opts.optionId } : {}),
           },

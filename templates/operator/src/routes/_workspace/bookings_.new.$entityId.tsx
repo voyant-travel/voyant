@@ -8,22 +8,30 @@ import { OperatorBookingJourney } from "@/components/voyant/booking-journey/oper
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 /**
- * Unified booking journey route. The shareable wizard from
- * `@voyantjs/bookings-ui/journey`, wrapped with operator slots
- * (CRM picker, B2B default, post-commit nav to /orders/catalog).
+ * THE admin booking journey. One URL — `/bookings/new/<entityId>` — for every
+ * admin booking, owned or supplier-sourced; you just swap the id. The shareable
+ * `@voyantjs/bookings-ui/journey` wizard, wrapped with operator slots (CRM
+ * picker, B2B default, stacked layout, post-commit nav to the booking detail).
  *
- * Per booking-journey-architecture §10 Phase B.
+ * Nothing redundant lives in the URL: the **module** defaults to `products`
+ * (the vertical that carries no extra selection state); cruises/accommodations
+ * pass `?module=` because they already carry their own selection params
+ * (departure, cabin, dates). The **source kind/connection/ref** never appear —
+ * the catalog plane resolves provenance server-side from `(module, id)` (same
+ * path the storefront relies on), so an owned and a sourced product share the
+ * exact same `/bookings/new/<id>` shape.
  *
- * This is THE booking page — it lives under `/bookings/journey/...` (not
- * `/catalog/...`) precisely so it reads as the single booking flow, not a
- * catalog-specific feature. Catalog detail/browse pages, the trips composer,
- * and "New booking" (`/bookings/new`) all route here for owned AND
- * supplier-sourced products — they differ only by the `sourceKind`
- * provenance. The legacy `/catalog/book` single-page flow was removed; the
- * owned-only create-sheet is no longer wired into the operator route.
+ * Entry points: "New booking" picker, owned product deep-link, and the catalog
+ * product/cruise/accommodation detail pages — all route here. Per
+ * booking-journey-architecture §10 Phase B.
  */
-const journeySearchSchema = z.object({
-  sourceKind: z.string().min(1),
+const newBookingSearchSchema = z.object({
+  /** Vertical. Omitted (→ `products`) for owned + sourced products. */
+  module: z.string().optional(),
+  /** Provenance is resolved server-side from `(module, id)`; callers normally
+   *  omit these. Kept optional for any caller that already holds an explicit
+   *  pointer (storefront parity — never required). */
+  sourceKind: z.string().min(1).optional(),
   sourceConnectionId: z.string().optional(),
   sourceRef: z.string().optional(),
   departureId: z.string().optional(),
@@ -33,16 +41,17 @@ const journeySearchSchema = z.object({
   draftId: z.string().optional(),
 })
 
-export type JourneySearchParams = z.infer<typeof journeySearchSchema>
+export type NewBookingSearchParams = z.infer<typeof newBookingSearchSchema>
 
-export const Route = createFileRoute("/_workspace/bookings_/journey/$entityModule/$entityId")({
-  component: JourneyRouteComponent,
-  validateSearch: journeySearchSchema,
+export const Route = createFileRoute("/_workspace/bookings_/new/$entityId")({
+  component: NewBookingRouteComponent,
+  validateSearch: newBookingSearchSchema,
 })
 
-function JourneyRouteComponent(): React.ReactElement {
-  const { entityModule, entityId } = Route.useParams()
+function NewBookingRouteComponent(): React.ReactElement {
+  const { entityId } = Route.useParams()
   const search = Route.useSearch()
+  const entityModule = search.module ?? "products"
   const draftId = useMemo(() => search.draftId ?? generateDraftId(), [search.draftId])
 
   const adminMessages = useAdminMessages()

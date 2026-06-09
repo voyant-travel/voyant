@@ -39,17 +39,9 @@ export function OperatorProductDetail({
       productsLabel={productsLabel}
       productsHref="/catalog/products"
       onBreadcrumbs={setCrumbs}
-      onBook={(id, source) =>
-        void navigate({
-          to: "/bookings/journey/$entityModule/$entityId",
-          params: { entityModule: "products", entityId: id },
-          search: {
-            sourceKind: "voyant-connect",
-            ...(source.connectionId ? { sourceConnectionId: source.connectionId } : {}),
-            ...(source.ref ? { sourceRef: source.ref } : {}),
-          },
-        })
-      }
+      // Products vertical: clean `/bookings/new/<id>`. Provenance (owned vs
+      // connect, connection, ref) resolves server-side from (products, id).
+      onBook={(id) => void navigate({ to: "/bookings/new/$entityId", params: { entityId: id } })}
     />
   )
 }

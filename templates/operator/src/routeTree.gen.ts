@@ -103,10 +103,10 @@ import { Route as WorkspaceCatalogProductsProductIdRouteImport } from './routes/
 import { Route as WorkspaceCatalogExcursionsIdRouteImport } from './routes/_workspace/catalog/excursions/$id'
 import { Route as WorkspaceCatalogCruisesIdRouteImport } from './routes/_workspace/catalog/cruises/$id'
 import { Route as WorkspaceCatalogAccommodationsIdRouteImport } from './routes/_workspace/catalog/accommodations/$id'
+import { Route as WorkspaceBookingsNewEntityIdRouteImport } from './routes/_workspace/bookings_.new.$entityId'
 import { Route as WorkspaceAvailabilityStartTimesIdRouteImport } from './routes/_workspace/availability/start-times/$id'
 import { Route as WorkspaceAvailabilityRulesIdRouteImport } from './routes/_workspace/availability/rules/$id'
 import { Route as storefrontShopConfirmationBookingIdRouteImport } from './routes/(storefront)/shop_.confirmation.$bookingId'
-import { Route as WorkspaceBookingsJourneyEntityModuleEntityIdRouteImport } from './routes/_workspace/bookings_.journey.$entityModule.$entityId'
 import { Route as storefrontShopProductsEntityModuleEntityIdRouteImport } from './routes/(storefront)/shop_.products.$entityModule.$entityId'
 import { Route as storefrontShopBookEntityModuleEntityIdRouteImport } from './routes/(storefront)/shop_.book.$entityModule.$entityId'
 
@@ -629,6 +629,12 @@ const WorkspaceCatalogAccommodationsIdRoute =
     path: '/accommodations/$id',
     getParentRoute: () => WorkspaceCatalogRouteRoute,
   } as any)
+const WorkspaceBookingsNewEntityIdRoute =
+  WorkspaceBookingsNewEntityIdRouteImport.update({
+    id: '/bookings_/new/$entityId',
+    path: '/bookings/new/$entityId',
+    getParentRoute: () => WorkspaceRouteRoute,
+  } as any)
 const WorkspaceAvailabilityStartTimesIdRoute =
   WorkspaceAvailabilityStartTimesIdRouteImport.update({
     id: '/availability/start-times/$id',
@@ -646,12 +652,6 @@ const storefrontShopConfirmationBookingIdRoute =
     id: '/shop_/confirmation/$bookingId',
     path: '/shop/confirmation/$bookingId',
     getParentRoute: () => storefrontRouteRoute,
-  } as any)
-const WorkspaceBookingsJourneyEntityModuleEntityIdRoute =
-  WorkspaceBookingsJourneyEntityModuleEntityIdRouteImport.update({
-    id: '/bookings_/journey/$entityModule/$entityId',
-    path: '/bookings/journey/$entityModule/$entityId',
-    getParentRoute: () => WorkspaceRouteRoute,
   } as any)
 const storefrontShopProductsEntityModuleEntityIdRoute =
   storefrontShopProductsEntityModuleEntityIdRouteImport.update({
@@ -729,6 +729,7 @@ export interface FileRoutesByFullPath {
   '/shop/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/availability/rules/$id': typeof WorkspaceAvailabilityRulesIdRoute
   '/availability/start-times/$id': typeof WorkspaceAvailabilityStartTimesIdRoute
+  '/bookings/new/$entityId': typeof WorkspaceBookingsNewEntityIdRoute
   '/catalog/accommodations/$id': typeof WorkspaceCatalogAccommodationsIdRoute
   '/catalog/cruises/$id': typeof WorkspaceCatalogCruisesIdRoute
   '/catalog/excursions/$id': typeof WorkspaceCatalogExcursionsIdRoute
@@ -763,7 +764,6 @@ export interface FileRoutesByFullPath {
   '/notifications/templates/': typeof WorkspaceNotificationsTemplatesIndexRoute
   '/shop/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
   '/shop/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
-  '/bookings/journey/$entityModule/$entityId': typeof WorkspaceBookingsJourneyEntityModuleEntityIdRoute
 }
 export interface FileRoutesByTo {
   '/pay': typeof PayRoute
@@ -826,6 +826,7 @@ export interface FileRoutesByTo {
   '/shop/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/availability/rules/$id': typeof WorkspaceAvailabilityRulesIdRoute
   '/availability/start-times/$id': typeof WorkspaceAvailabilityStartTimesIdRoute
+  '/bookings/new/$entityId': typeof WorkspaceBookingsNewEntityIdRoute
   '/catalog/accommodations/$id': typeof WorkspaceCatalogAccommodationsIdRoute
   '/catalog/cruises/$id': typeof WorkspaceCatalogCruisesIdRoute
   '/catalog/excursions/$id': typeof WorkspaceCatalogExcursionsIdRoute
@@ -860,7 +861,6 @@ export interface FileRoutesByTo {
   '/notifications/templates': typeof WorkspaceNotificationsTemplatesIndexRoute
   '/shop/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
   '/shop/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
-  '/bookings/journey/$entityModule/$entityId': typeof WorkspaceBookingsJourneyEntityModuleEntityIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -929,6 +929,7 @@ export interface FileRoutesById {
   '/(storefront)/shop_/confirmation/$bookingId': typeof storefrontShopConfirmationBookingIdRoute
   '/_workspace/availability/rules/$id': typeof WorkspaceAvailabilityRulesIdRoute
   '/_workspace/availability/start-times/$id': typeof WorkspaceAvailabilityStartTimesIdRoute
+  '/_workspace/bookings_/new/$entityId': typeof WorkspaceBookingsNewEntityIdRoute
   '/_workspace/catalog/accommodations/$id': typeof WorkspaceCatalogAccommodationsIdRoute
   '/_workspace/catalog/cruises/$id': typeof WorkspaceCatalogCruisesIdRoute
   '/_workspace/catalog/excursions/$id': typeof WorkspaceCatalogExcursionsIdRoute
@@ -963,7 +964,6 @@ export interface FileRoutesById {
   '/_workspace/notifications/templates/': typeof WorkspaceNotificationsTemplatesIndexRoute
   '/(storefront)/shop_/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
   '/(storefront)/shop_/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
-  '/_workspace/bookings_/journey/$entityModule/$entityId': typeof WorkspaceBookingsJourneyEntityModuleEntityIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1030,6 +1030,7 @@ export interface FileRouteTypes {
     | '/shop/confirmation/$bookingId'
     | '/availability/rules/$id'
     | '/availability/start-times/$id'
+    | '/bookings/new/$entityId'
     | '/catalog/accommodations/$id'
     | '/catalog/cruises/$id'
     | '/catalog/excursions/$id'
@@ -1064,7 +1065,6 @@ export interface FileRouteTypes {
     | '/notifications/templates/'
     | '/shop/book/$entityModule/$entityId'
     | '/shop/products/$entityModule/$entityId'
-    | '/bookings/journey/$entityModule/$entityId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/pay'
@@ -1127,6 +1127,7 @@ export interface FileRouteTypes {
     | '/shop/confirmation/$bookingId'
     | '/availability/rules/$id'
     | '/availability/start-times/$id'
+    | '/bookings/new/$entityId'
     | '/catalog/accommodations/$id'
     | '/catalog/cruises/$id'
     | '/catalog/excursions/$id'
@@ -1161,7 +1162,6 @@ export interface FileRouteTypes {
     | '/notifications/templates'
     | '/shop/book/$entityModule/$entityId'
     | '/shop/products/$entityModule/$entityId'
-    | '/bookings/journey/$entityModule/$entityId'
   id:
     | '__root__'
     | '/(auth)'
@@ -1229,6 +1229,7 @@ export interface FileRouteTypes {
     | '/(storefront)/shop_/confirmation/$bookingId'
     | '/_workspace/availability/rules/$id'
     | '/_workspace/availability/start-times/$id'
+    | '/_workspace/bookings_/new/$entityId'
     | '/_workspace/catalog/accommodations/$id'
     | '/_workspace/catalog/cruises/$id'
     | '/_workspace/catalog/excursions/$id'
@@ -1263,7 +1264,6 @@ export interface FileRouteTypes {
     | '/_workspace/notifications/templates/'
     | '/(storefront)/shop_/book/$entityModule/$entityId'
     | '/(storefront)/shop_/products/$entityModule/$entityId'
-    | '/_workspace/bookings_/journey/$entityModule/$entityId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1935,6 +1935,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceCatalogAccommodationsIdRouteImport
       parentRoute: typeof WorkspaceCatalogRouteRoute
     }
+    '/_workspace/bookings_/new/$entityId': {
+      id: '/_workspace/bookings_/new/$entityId'
+      path: '/bookings/new/$entityId'
+      fullPath: '/bookings/new/$entityId'
+      preLoaderRoute: typeof WorkspaceBookingsNewEntityIdRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/_workspace/availability/start-times/$id': {
       id: '/_workspace/availability/start-times/$id'
       path: '/availability/start-times/$id'
@@ -1955,13 +1962,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/shop/confirmation/$bookingId'
       preLoaderRoute: typeof storefrontShopConfirmationBookingIdRouteImport
       parentRoute: typeof storefrontRouteRoute
-    }
-    '/_workspace/bookings_/journey/$entityModule/$entityId': {
-      id: '/_workspace/bookings_/journey/$entityModule/$entityId'
-      path: '/bookings/journey/$entityModule/$entityId'
-      fullPath: '/bookings/journey/$entityModule/$entityId'
-      preLoaderRoute: typeof WorkspaceBookingsJourneyEntityModuleEntityIdRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
     }
     '/(storefront)/shop_/products/$entityModule/$entityId': {
       id: '/(storefront)/shop_/products/$entityModule/$entityId'
@@ -2136,6 +2136,7 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceTripsIndexRoute: typeof WorkspaceTripsIndexRoute
   WorkspaceAvailabilityRulesIdRoute: typeof WorkspaceAvailabilityRulesIdRoute
   WorkspaceAvailabilityStartTimesIdRoute: typeof WorkspaceAvailabilityStartTimesIdRoute
+  WorkspaceBookingsNewEntityIdRoute: typeof WorkspaceBookingsNewEntityIdRoute
   WorkspaceFinanceInvoicesIdRoute: typeof WorkspaceFinanceInvoicesIdRoute
   WorkspaceFinancePaymentsIdRoute: typeof WorkspaceFinancePaymentsIdRoute
   WorkspaceFinanceSupplierInvoicesIdRoute: typeof WorkspaceFinanceSupplierInvoicesIdRoute
@@ -2158,7 +2159,6 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceLegalTemplatesIndexRoute: typeof WorkspaceLegalTemplatesIndexRoute
   WorkspaceNotificationsReminderRulesIndexRoute: typeof WorkspaceNotificationsReminderRulesIndexRoute
   WorkspaceNotificationsTemplatesIndexRoute: typeof WorkspaceNotificationsTemplatesIndexRoute
-  WorkspaceBookingsJourneyEntityModuleEntityIdRoute: typeof WorkspaceBookingsJourneyEntityModuleEntityIdRoute
 }
 
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
@@ -2200,6 +2200,7 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceAvailabilityRulesIdRoute: WorkspaceAvailabilityRulesIdRoute,
   WorkspaceAvailabilityStartTimesIdRoute:
     WorkspaceAvailabilityStartTimesIdRoute,
+  WorkspaceBookingsNewEntityIdRoute: WorkspaceBookingsNewEntityIdRoute,
   WorkspaceFinanceInvoicesIdRoute: WorkspaceFinanceInvoicesIdRoute,
   WorkspaceFinancePaymentsIdRoute: WorkspaceFinancePaymentsIdRoute,
   WorkspaceFinanceSupplierInvoicesIdRoute:
@@ -2229,8 +2230,6 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
     WorkspaceNotificationsReminderRulesIndexRoute,
   WorkspaceNotificationsTemplatesIndexRoute:
     WorkspaceNotificationsTemplatesIndexRoute,
-  WorkspaceBookingsJourneyEntityModuleEntityIdRoute:
-    WorkspaceBookingsJourneyEntityModuleEntityIdRoute,
 }
 
 const WorkspaceRouteRouteWithChildren = WorkspaceRouteRoute._addFileChildren(

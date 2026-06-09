@@ -191,14 +191,12 @@ export function CatalogVerticalPage({
           }}
         />
       }
-      onBookHit={(hit, entityModule) =>
-        goToBookingPage(hit, entityModule, navigate, browserMessages)
-      }
+      onBookHit={(hit, entityModule) => goToBookingPage(hit, entityModule, navigate)}
       onBookDeparture={(hit, entityModule, departure) =>
-        goToBookingPage(hit, entityModule, navigate, browserMessages, departure)
+        goToBookingPage(hit, entityModule, navigate, departure)
       }
       onBookOption={(hit, entityModule, departure, option) =>
-        goToBookingPage(hit, entityModule, navigate, browserMessages, departure, option)
+        goToBookingPage(hit, entityModule, navigate, departure, option)
       }
       onOpenProductEditor={(hit) => navigate({ to: "/products/$id", params: { id: hit.id } })}
       // When the surface provides a detail-page opener, results open it (new
@@ -315,27 +313,17 @@ function goToBookingPage(
   hit: CatalogSearchHit,
   entityModule: string,
   navigate: AppNavigate,
-  messages: CatalogBrowserMessages,
   departure?: BookingDeparture,
   option?: { id: string; name: string },
 ): void {
-  const sourceKind = stringField(hit, "source.kind", null) ?? "owned"
-  if (!sourceKind) {
-    toast.info(messages.cannotBookYet, {
-      description: messages.missingSourceInfo,
-    })
-    return
-  }
-
-  const sourceRef = stringField(hit, "source.ref", null) ?? undefined
-  const sourceConnectionId = stringField(hit, "source.connectionId", null) ?? undefined
+  // One URL for every booking — just the id. The `products` vertical is the
+  // default; others name themselves via `?module`. Provenance (owned vs
+  // sourced, connection, ref) resolves server-side from (module, id).
   navigate({
-    to: "/bookings/journey/$entityModule/$entityId",
-    params: { entityModule, entityId: hit.id },
+    to: "/bookings/new/$entityId",
+    params: { entityId: hit.id },
     search: {
-      sourceKind,
-      ...(sourceConnectionId ? { sourceConnectionId } : {}),
-      ...(sourceRef ? { sourceRef } : {}),
+      ...(entityModule !== "products" ? { module: entityModule } : {}),
       ...(departure ? { departureId: departure.id } : {}),
       ...(option ? { optionId: option.id } : {}),
     },

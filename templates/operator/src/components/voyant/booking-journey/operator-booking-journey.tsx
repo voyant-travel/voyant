@@ -41,7 +41,8 @@ const emptyPersonPickerValue: PersonPickerValue = {
 export interface OperatorBookingJourneyProps {
   entityModule: string
   entityId: string
-  sourceKind: string
+  /** Usually omitted — the server resolves provenance from `(module, id)`. */
+  sourceKind?: string
   sourceConnectionId?: string
   sourceRef?: string
   departureId?: string
@@ -62,7 +63,7 @@ export function OperatorBookingJourney({
   className,
 }: OperatorBookingJourneyProps): React.ReactElement {
   const navigate = useNavigate()
-  const entitySummary = useEntitySummary(entityModule, entityId, sourceKind)
+  const entitySummary = useEntitySummary(entityModule, entityId)
 
   const slots: Pick<
     BookingJourneyProps,
@@ -157,24 +158,29 @@ export function OperatorBookingJourney({
 
 /**
  * Builds the "what you're booking" preview shown atop the journey side
- * panel — the product's name + first image. Owned products only; sourced
- * rows resolve their summary server-side and aren't fetched here.
+ * panel — the product's name + first image, for an instant preview before
+ * the quote returns. Owned products in the `products` table resolve here; a
+ * sourced/connect id simply 404s (it isn't in the owned table) and the panel
+ * falls back to the quote-provided summary. We can't (and needn't) tell owned
+ * from sourced on the client — the URL no longer carries `sourceKind` — so we
+ * just try the products fetch for the `products` vertical.
  */
 function useEntitySummary(
   entityModule: string,
   entityId: string,
-  sourceKind: string,
 ): BookingEntitySummary | undefined {
-  const isOwnedProduct = sourceKind === "owned" && entityModule === "products"
+  const tryProductSummary = entityModule === "products" && Boolean(entityId)
   const client = useMemo(() => ({ baseUrl: getApiUrl(), fetcher: operatorFetcher }), [])
 
   const productQuery = useQuery({
     ...getProductQueryOptions(client, entityId),
-    enabled: isOwnedProduct && Boolean(entityId),
+    enabled: tryProductSummary,
+    retry: false,
   })
   const mediaQuery = useQuery({
     ...getProductMediaQueryOptions(client, entityId, { mediaType: "image" }),
-    enabled: isOwnedProduct && Boolean(entityId),
+    enabled: tryProductSummary,
+    retry: false,
   })
 
   return useMemo<BookingEntitySummary | undefined>(() => {

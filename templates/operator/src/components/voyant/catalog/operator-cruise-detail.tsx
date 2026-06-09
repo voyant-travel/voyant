@@ -26,12 +26,14 @@ export function OperatorCruiseDetail({ id, locale }: { id: string; locale?: stri
       cruisesLabel={cruisesLabel}
       cruisesHref="/catalog/cruises"
       onBreadcrumbs={setCrumbs}
+      // Cruises carry a sailing + cabin selection, so they name their vertical
+      // via `?module`; provenance still resolves server-side from (module, id).
       onBook={(cruiseId, opts) =>
         void navigate({
-          to: "/bookings/journey/$entityModule/$entityId",
-          params: { entityModule: "cruises", entityId: cruiseId },
+          to: "/bookings/new/$entityId",
+          params: { entityId: cruiseId },
           search: {
-            sourceKind: "voyant-connect",
+            module: "cruises",
             ...(opts.departureId ? { departureId: opts.departureId } : {}),
             ...(opts.optionId ? { optionId: opts.optionId } : {}),
           },
