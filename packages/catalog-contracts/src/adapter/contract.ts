@@ -283,7 +283,12 @@ export interface LiveResolveRequest {
   ids: string[]
   /** Variant scope for the request (mirrors the resolver's scope). */
   scope: SourceAdapterRequestScope
-  /** Date range or other vertical-specific parameters. */
+  /**
+   * Date range or other vertical-specific parameters. Adapters recognize
+   * well-known keys (date range, pax) and — for sourced stays/packages — the
+   * rate pin `roomTypeId` / `ratePlanId` / `board`, used to re-resolve the
+   * exact room + rate the operator picked. See voyant#1579.
+   */
   parameters?: Record<string, unknown>
 }
 

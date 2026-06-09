@@ -582,6 +582,13 @@ function engineParametersFromDraft(
   if (paxCount > 0 && next.paxCount == null) {
     next.paxCount = paxCount
   }
+  // Lift the sourced stays/package rate pin so the adapter's liveResolve/reserve
+  // can read it off the top-level parameters (it re-resolves the exact room +
+  // rate plan the operator picked). See voyant#1579 + connect-adapter.
+  for (const key of ["roomTypeId", "ratePlanId", "board"] as const) {
+    const value = stringValue(configure?.[key])
+    if (value && next[key] == null) next[key] = value
+  }
   // Lift `draft.promotionCode` to the top-level so `quoteEntity`'s
   // promotion hook can read it without descending into the nested
   // draft. Same lifting pattern as `paxCount` above. Per

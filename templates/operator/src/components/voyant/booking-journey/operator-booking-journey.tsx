@@ -49,6 +49,10 @@ export interface OperatorBookingJourneyProps {
   /** Free-form departure date (ISO) for sourced products with no slot id. */
   departureDate?: string
   optionId?: string
+  /** Sourced stays/package rate pin — the exact room + rate plan to re-resolve. */
+  roomTypeId?: string
+  ratePlanId?: string
+  board?: string
   /** Preview hints (name + hero image) for sourced entities, which aren't in
    *  the owned products table. */
   entityName?: string
@@ -66,6 +70,9 @@ export function OperatorBookingJourney({
   departureId,
   departureDate,
   optionId,
+  roomTypeId,
+  ratePlanId,
+  board,
   entityName,
   entityImageUrl,
   draftId,
@@ -152,6 +159,9 @@ export function OperatorBookingJourney({
         ...(departureId ? { departureSlotId: departureId } : {}),
         ...(departureDate ? { departureDate } : {}),
         ...(optionId ? { variantId: optionId } : {}),
+        ...(roomTypeId ? { roomTypeId } : {}),
+        ...(ratePlanId ? { ratePlanId } : {}),
+        ...(board ? { board } : {}),
       }}
       defaultBuyerType="B2B"
       // Operator payment options: hold (reserve, collect later), online payment

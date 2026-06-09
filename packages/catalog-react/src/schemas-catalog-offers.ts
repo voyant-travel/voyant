@@ -77,6 +77,9 @@ export const packageOfferSchema = z.object({
   nights: z.number().nullable(),
   board: z.string().nullable(),
   roomTypeId: z.string().nullable(),
+  /** Stable rate-plan key (e.g. `HOTEL:ROOM:AI`); `board` is its trailing
+   *  segment. Used to pin the exact rate through the journey (voyant#1579). */
+  ratePlanId: z.string().nullable().optional(),
   perPerson: moneyMinorSchema.nullable(),
   total: moneyMinorSchema.nullable(),
   flights: z.array(packageOfferFlightSchema),

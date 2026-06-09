@@ -331,6 +331,14 @@ export const bookingDraftV1 = z.object({
         .optional(),
       cabinCategoryId: z.string().optional(),
       cabinNumberId: z.string().optional(),
+      // Sourced stays/package rate pin. The chosen room + rate plan (and its
+      // `board` suffix) so the connect adapter re-resolves the EXACT offer the
+      // operator clicked, not just the first one for the date. Pin by the
+      // stable `ratePlanId`/`roomTypeId` — the per-search `offer.id` is a
+      // short-TTL token that can't be replayed. See voyant#1579.
+      roomTypeId: z.string().optional(),
+      ratePlanId: z.string().optional(),
+      board: z.string().optional(),
       dateRange: z
         .object({
           checkIn: z.string(),

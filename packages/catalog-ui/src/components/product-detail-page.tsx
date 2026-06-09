@@ -61,6 +61,7 @@ interface Offer {
   nights: number | null
   board: string | null
   roomTypeId: string | null
+  ratePlanId?: string | null
   perPerson: { amountMinor: number; currency: string } | null
   total: { amountMinor: number; currency: string } | null
   flights: Array<{
@@ -143,6 +144,12 @@ export interface ProductBookSelection {
   name: string | null
   /** Hero image for the preview, if the content has one. */
   heroImageUrl: string | null
+  /** Rate pin — the exact room + rate plan the operator clicked Book on, so the
+   *  connect adapter re-resolves THAT offer (not just the first for the date).
+   *  Pinned by stable keys; the per-search offer id can't be replayed. #1579. */
+  roomTypeId: string | null
+  ratePlanId: string | null
+  board: string | null
 }
 
 export interface ProductDetailPageProps {
@@ -325,6 +332,9 @@ export function ProductDetailPage({
         checkIn: offer.checkIn,
         name: state.product?.name ?? null,
         heroImageUrl: state.product?.media.find((m) => m.src)?.src ?? null,
+        roomTypeId: offer.roomTypeId,
+        ratePlanId: offer.ratePlanId ?? null,
+        board: offer.board,
       },
     )
 

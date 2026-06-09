@@ -8,6 +8,13 @@ export interface SourceAdapterRequestScope {
 export interface ReserveRequest {
   entity_module: string
   entity_id: string
+  /**
+   * Vertical-specific selection. Free-form, but adapters recognize well-known
+   * keys: `departureSlotId`/`slotId`, `paxCount`, date range, and — for sourced
+   * stays/packages — the rate pin `roomTypeId` / `ratePlanId` / `board`, which
+   * select the EXACT room + rate the operator picked (the per-search offer id
+   * is a short-TTL token and can't be replayed). See voyant#1579.
+   */
   parameters: Record<string, unknown>
   /** Customer / passenger identity, vertical-shaped. */
   party?: Record<string, unknown>

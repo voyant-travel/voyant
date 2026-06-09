@@ -48,7 +48,15 @@ export function OperatorProductDetail({
         void navigate({
           to: "/bookings/new/$entityId",
           params: { entityId: id },
-          search: selection?.checkIn ? { departureDate: selection.checkIn.slice(0, 10) } : {},
+          // Date + rate pin drive the quote → addressable URL state. The rate
+          // pin (room + rate plan) makes the connect adapter re-resolve the
+          // exact offer the operator clicked (#1579).
+          search: {
+            ...(selection?.checkIn ? { departureDate: selection.checkIn.slice(0, 10) } : {}),
+            ...(selection?.roomTypeId ? { roomTypeId: selection.roomTypeId } : {}),
+            ...(selection?.ratePlanId ? { ratePlanId: selection.ratePlanId } : {}),
+            ...(selection?.board ? { board: selection.board } : {}),
+          },
           state: {
             ...(selection?.name ? { entityName: selection.name } : {}),
             ...(selection?.heroImageUrl ? { entityImageUrl: selection.heroImageUrl } : {}),

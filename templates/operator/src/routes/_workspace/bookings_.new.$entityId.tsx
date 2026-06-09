@@ -39,6 +39,11 @@ const newBookingSearchSchema = z.object({
    *  picked offer's check-in seeds the date directly. */
   departureDate: z.string().optional(),
   optionId: z.string().optional(),
+  /** Sourced stays/package rate pin — the exact room + rate plan the operator
+   *  picked, so the connect adapter re-resolves that offer (#1579). */
+  roomTypeId: z.string().optional(),
+  ratePlanId: z.string().optional(),
+  board: z.string().optional(),
   /** Stable draft id — refresh-safe. When absent, the component
    *  generates a fresh id on mount. */
   draftId: z.string().optional(),
@@ -86,6 +91,9 @@ function NewBookingRouteComponent(): React.ReactElement {
         departureId={search.departureId}
         departureDate={search.departureDate}
         optionId={search.optionId}
+        roomTypeId={search.roomTypeId}
+        ratePlanId={search.ratePlanId}
+        board={search.board}
         entityName={entityName}
         entityImageUrl={entityImageUrl}
         draftId={draftId}
