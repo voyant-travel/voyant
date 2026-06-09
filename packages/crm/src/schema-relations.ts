@@ -17,18 +17,18 @@ import {
   customFieldValues,
 } from "./schema-activities.js"
 import {
-  opportunities,
-  opportunityParticipants,
-  opportunityProducts,
   pipelines,
-  quoteLines,
+  quoteParticipants,
+  quoteProducts,
   quotes,
+  quoteVersionLines,
+  quoteVersions,
   stages,
 } from "./schema-sales.js"
 
 export const organizationsRelations = relations(organizations, ({ many }) => ({
   people: many(people),
-  opportunities: many(opportunities),
+  quotes: many(quotes),
   notes: many(organizationNotes),
   communications: many(communicationLog),
 }))
@@ -38,9 +38,9 @@ export const peopleRelations = relations(people, ({ one, many }) => ({
     fields: [people.organizationId],
     references: [organizations.id],
   }),
-  opportunities: many(opportunities),
+  quotes: many(quotes),
   activityParticipants: many(activityParticipants),
-  opportunityParticipants: many(opportunityParticipants),
+  quoteParticipants: many(quoteParticipants),
   notes: many(personNotes),
   communications: many(communicationLog),
   segmentMemberships: many(segmentMembers),
@@ -48,58 +48,65 @@ export const peopleRelations = relations(people, ({ one, many }) => ({
 
 export const pipelinesRelations = relations(pipelines, ({ many }) => ({
   stages: many(stages),
-  opportunities: many(opportunities),
+  quotes: many(quotes),
 }))
 
 export const stagesRelations = relations(stages, ({ one, many }) => ({
   pipeline: one(pipelines, { fields: [stages.pipelineId], references: [pipelines.id] }),
-  opportunities: many(opportunities),
-}))
-
-export const opportunitiesRelations = relations(opportunities, ({ one, many }) => ({
-  person: one(people, { fields: [opportunities.personId], references: [people.id] }),
-  organization: one(organizations, {
-    fields: [opportunities.organizationId],
-    references: [organizations.id],
-  }),
-  pipeline: one(pipelines, {
-    fields: [opportunities.pipelineId],
-    references: [pipelines.id],
-  }),
-  stage: one(stages, { fields: [opportunities.stageId], references: [stages.id] }),
-  participants: many(opportunityParticipants),
-  products: many(opportunityProducts),
   quotes: many(quotes),
 }))
 
-export const opportunityParticipantsRelations = relations(opportunityParticipants, ({ one }) => ({
-  opportunity: one(opportunities, {
-    fields: [opportunityParticipants.opportunityId],
-    references: [opportunities.id],
+export const quotesRelations = relations(quotes, ({ one, many }) => ({
+  person: one(people, { fields: [quotes.personId], references: [people.id] }),
+  organization: one(organizations, {
+    fields: [quotes.organizationId],
+    references: [organizations.id],
+  }),
+  pipeline: one(pipelines, {
+    fields: [quotes.pipelineId],
+    references: [pipelines.id],
+  }),
+  stage: one(stages, { fields: [quotes.stageId], references: [stages.id] }),
+  participants: many(quoteParticipants),
+  products: many(quoteProducts),
+  versions: many(quoteVersions),
+}))
+
+export const quoteParticipantsRelations = relations(quoteParticipants, ({ one }) => ({
+  quote: one(quotes, {
+    fields: [quoteParticipants.quoteId],
+    references: [quotes.id],
   }),
   person: one(people, {
-    fields: [opportunityParticipants.personId],
+    fields: [quoteParticipants.personId],
     references: [people.id],
   }),
 }))
 
-export const opportunityProductsRelations = relations(opportunityProducts, ({ one }) => ({
-  opportunity: one(opportunities, {
-    fields: [opportunityProducts.opportunityId],
-    references: [opportunities.id],
+export const quoteProductsRelations = relations(quoteProducts, ({ one }) => ({
+  quote: one(quotes, {
+    fields: [quoteProducts.quoteId],
+    references: [quotes.id],
   }),
 }))
 
-export const quotesRelations = relations(quotes, ({ one, many }) => ({
-  opportunity: one(opportunities, {
-    fields: [quotes.opportunityId],
-    references: [opportunities.id],
+export const quoteVersionsRelations = relations(quoteVersions, ({ one, many }) => ({
+  quote: one(quotes, {
+    fields: [quoteVersions.quoteId],
+    references: [quotes.id],
   }),
-  lines: many(quoteLines),
+  supersedes: one(quoteVersions, {
+    fields: [quoteVersions.supersedesId],
+    references: [quoteVersions.id],
+  }),
+  lines: many(quoteVersionLines),
 }))
 
-export const quoteLinesRelations = relations(quoteLines, ({ one }) => ({
-  quote: one(quotes, { fields: [quoteLines.quoteId], references: [quotes.id] }),
+export const quoteVersionLinesRelations = relations(quoteVersionLines, ({ one }) => ({
+  quoteVersion: one(quoteVersions, {
+    fields: [quoteVersionLines.quoteVersionId],
+    references: [quoteVersions.id],
+  }),
 }))
 
 export const activitiesRelations = relations(activities, ({ many }) => ({

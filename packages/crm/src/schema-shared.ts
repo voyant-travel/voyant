@@ -1,12 +1,6 @@
 import { pgEnum } from "drizzle-orm/pg-core"
 
-export const entityTypeEnum = pgEnum("entity_type", [
-  "organization",
-  "person",
-  "opportunity",
-  "quote",
-  "activity",
-])
+export const entityTypeEnum = pgEnum("entity_type", ["organization", "person", "quote", "activity"])
 
 export const relationTypeEnum = pgEnum("relation_type", ["client", "partner", "supplier", "other"])
 
@@ -23,20 +17,15 @@ export const communicationDirectionEnum = pgEnum("communication_direction", ["in
 
 export const recordStatusEnum = pgEnum("record_status", ["active", "inactive", "archived"])
 
-export const opportunityStatusEnum = pgEnum("opportunity_status", [
-  "open",
-  "won",
-  "lost",
-  "archived",
-])
+export const quoteStatusEnum = pgEnum("quote_status", ["open", "won", "lost", "archived"])
 
-export const quoteStatusEnum = pgEnum("quote_status", [
+export const quoteVersionStatusEnum = pgEnum("quote_version_status", [
   "draft",
   "sent",
   "accepted",
+  "declined",
+  "superseded",
   "expired",
-  "rejected",
-  "archived",
 ])
 
 export const activityTypeEnum = pgEnum("activity_type", [

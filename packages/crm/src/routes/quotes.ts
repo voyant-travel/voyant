@@ -4,10 +4,11 @@ import { Hono } from "hono"
 
 import { crmService } from "../service/index.js"
 import {
-  insertQuoteLineSchema,
+  insertQuoteParticipantSchema,
+  insertQuoteProductSchema,
   insertQuoteSchema,
   quoteListQuerySchema,
-  updateQuoteLineSchema,
+  updateQuoteProductSchema,
   updateQuoteSchema,
 } from "../validation.js"
 
@@ -50,32 +51,56 @@ export const quoteRoutes = new Hono<Env>()
     if (!row) return c.json({ error: "Quote not found" }, 404)
     return c.json({ success: true })
   })
-  .get("/quotes/:id/lines", async (c) => {
-    return c.json({ data: await crmService.listQuoteLines(c.get("db"), c.req.param("id")) })
+  .get("/quotes/:id/participants", async (c) => {
+    return c.json({
+      data: await crmService.listQuoteParticipants(c.get("db"), c.req.param("id")),
+    })
   })
-  .post("/quotes/:id/lines", async (c) => {
+  .post("/quotes/:id/participants", async (c) => {
     return c.json(
       {
-        data: await crmService.createQuoteLine(
+        data: await crmService.createQuoteParticipant(
           c.get("db"),
           c.req.param("id"),
-          await parseJsonBody(c, insertQuoteLineSchema),
+          await parseJsonBody(c, insertQuoteParticipantSchema),
         ),
       },
       201,
     )
   })
-  .patch("/quote-lines/:id", async (c) => {
-    const row = await crmService.updateQuoteLine(
+  .delete("/quote-participants/:id", async (c) => {
+    const row = await crmService.deleteQuoteParticipant(c.get("db"), c.req.param("id"))
+    if (!row) return c.json({ error: "Quote participant not found" }, 404)
+    return c.json({ success: true })
+  })
+  .get("/quotes/:id/products", async (c) => {
+    return c.json({
+      data: await crmService.listQuoteProducts(c.get("db"), c.req.param("id")),
+    })
+  })
+  .post("/quotes/:id/products", async (c) => {
+    return c.json(
+      {
+        data: await crmService.createQuoteProduct(
+          c.get("db"),
+          c.req.param("id"),
+          await parseJsonBody(c, insertQuoteProductSchema),
+        ),
+      },
+      201,
+    )
+  })
+  .patch("/quote-products/:id", async (c) => {
+    const row = await crmService.updateQuoteProduct(
       c.get("db"),
       c.req.param("id"),
-      await parseJsonBody(c, updateQuoteLineSchema),
+      await parseJsonBody(c, updateQuoteProductSchema),
     )
-    if (!row) return c.json({ error: "Quote line not found" }, 404)
+    if (!row) return c.json({ error: "Quote product not found" }, 404)
     return c.json({ data: row })
   })
-  .delete("/quote-lines/:id", async (c) => {
-    const row = await crmService.deleteQuoteLine(c.get("db"), c.req.param("id"))
-    if (!row) return c.json({ error: "Quote line not found" }, 404)
+  .delete("/quote-products/:id", async (c) => {
+    const row = await crmService.deleteQuoteProduct(c.get("db"), c.req.param("id"))
+    if (!row) return c.json({ error: "Quote product not found" }, 404)
     return c.json({ success: true })
   })

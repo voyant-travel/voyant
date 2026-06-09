@@ -1,13 +1,14 @@
-import { and, desc, eq, sql } from "drizzle-orm"
+import { and, desc, eq, ilike, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
-import { quoteLines, quotes } from "../schema.js"
+import { quoteParticipants, quoteProducts, quotes } from "../schema.js"
 import type {
-  insertQuoteLineSchema,
+  insertQuoteParticipantSchema,
+  insertQuoteProductSchema,
   insertQuoteSchema,
   quoteListQuerySchema,
-  updateQuoteLineSchema,
+  updateQuoteProductSchema,
   updateQuoteSchema,
 } from "../validation.js"
 import { paginate } from "./helpers.js"
@@ -15,16 +16,28 @@ import { paginate } from "./helpers.js"
 type QuoteListQuery = z.infer<typeof quoteListQuerySchema>
 type CreateQuoteInput = z.infer<typeof insertQuoteSchema>
 type UpdateQuoteInput = z.infer<typeof updateQuoteSchema>
-type CreateQuoteLineInput = z.infer<typeof insertQuoteLineSchema>
-type UpdateQuoteLineInput = z.infer<typeof updateQuoteLineSchema>
+type CreateQuoteParticipantInput = z.infer<typeof insertQuoteParticipantSchema>
+type CreateQuoteProductInput = z.infer<typeof insertQuoteProductSchema>
+type UpdateQuoteProductInput = z.infer<typeof updateQuoteProductSchema>
 
 export const quotesService = {
   async listQuotes(db: PostgresJsDatabase, query: QuoteListQuery) {
     const conditions = []
-    if (query.opportunityId) conditions.push(eq(quotes.opportunityId, query.opportunityId))
-    if (query.status) conditions.push(eq(quotes.status, query.status))
-    const where = conditions.length ? and(...conditions) : undefined
 
+    if (query.personId) conditions.push(eq(quotes.personId, query.personId))
+    if (query.organizationId) conditions.push(eq(quotes.organizationId, query.organizationId))
+    if (query.pipelineId) conditions.push(eq(quotes.pipelineId, query.pipelineId))
+    if (query.stageId) conditions.push(eq(quotes.stageId, query.stageId))
+    if (query.ownerId) conditions.push(eq(quotes.ownerId, query.ownerId))
+    if (query.status) conditions.push(eq(quotes.status, query.status))
+    if (query.search) {
+      const term = `%${query.search}%`
+      conditions.push(
+        or(ilike(quotes.title, term), ilike(quotes.source, term), ilike(quotes.sourceRef, term)),
+      )
+    }
+
+    const where = conditions.length ? and(...conditions) : undefined
     return paginate(
       db
         .select()
@@ -50,11 +63,24 @@ export const quotesService = {
   },
 
   async updateQuote(db: PostgresJsDatabase, id: string, data: UpdateQuoteInput) {
-    const [row] = await db
-      .update(quotes)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(quotes.id, id))
-      .returning()
+    const patch: UpdateQuoteInput & {
+      updatedAt: Date
+      stageChangedAt?: Date
+      closedAt?: Date | null
+    } = {
+      ...data,
+      updatedAt: new Date(),
+    }
+
+    if (data.stageId) patch.stageChangedAt = new Date()
+    if (data.status && data.status !== "open") {
+      patch.closedAt = new Date()
+    }
+    if (data.status === "open") {
+      patch.closedAt = null
+    }
+
+    const [row] = await db.update(quotes).set(patch).where(eq(quotes.id, id)).returning()
     return row ?? null
   },
 
@@ -63,36 +89,64 @@ export const quotesService = {
     return row ?? null
   },
 
-  listQuoteLines(db: PostgresJsDatabase, quoteId: string) {
+  listQuoteParticipants(db: PostgresJsDatabase, quoteId: string) {
     return db
       .select()
-      .from(quoteLines)
-      .where(eq(quoteLines.quoteId, quoteId))
-      .orderBy(quoteLines.createdAt)
+      .from(quoteParticipants)
+      .where(eq(quoteParticipants.quoteId, quoteId))
+      .orderBy(desc(quoteParticipants.isPrimary), quoteParticipants.createdAt)
   },
 
-  async createQuoteLine(db: PostgresJsDatabase, quoteId: string, data: CreateQuoteLineInput) {
+  async createQuoteParticipant(
+    db: PostgresJsDatabase,
+    quoteId: string,
+    data: CreateQuoteParticipantInput,
+  ) {
     const [row] = await db
-      .insert(quoteLines)
+      .insert(quoteParticipants)
       .values({ ...data, quoteId })
       .returning()
     return row
   },
 
-  async updateQuoteLine(db: PostgresJsDatabase, id: string, data: UpdateQuoteLineInput) {
+  async deleteQuoteParticipant(db: PostgresJsDatabase, id: string) {
     const [row] = await db
-      .update(quoteLines)
+      .delete(quoteParticipants)
+      .where(eq(quoteParticipants.id, id))
+      .returning({ id: quoteParticipants.id })
+    return row ?? null
+  },
+
+  listQuoteProducts(db: PostgresJsDatabase, quoteId: string) {
+    return db
+      .select()
+      .from(quoteProducts)
+      .where(eq(quoteProducts.quoteId, quoteId))
+      .orderBy(quoteProducts.createdAt)
+  },
+
+  async createQuoteProduct(db: PostgresJsDatabase, quoteId: string, data: CreateQuoteProductInput) {
+    const [row] = await db
+      .insert(quoteProducts)
+      .values({ ...data, quoteId })
+      .returning()
+    return row
+  },
+
+  async updateQuoteProduct(db: PostgresJsDatabase, id: string, data: UpdateQuoteProductInput) {
+    const [row] = await db
+      .update(quoteProducts)
       .set({ ...data, updatedAt: new Date() })
-      .where(eq(quoteLines.id, id))
+      .where(eq(quoteProducts.id, id))
       .returning()
     return row ?? null
   },
 
-  async deleteQuoteLine(db: PostgresJsDatabase, id: string) {
+  async deleteQuoteProduct(db: PostgresJsDatabase, id: string) {
     const [row] = await db
-      .delete(quoteLines)
-      .where(eq(quoteLines.id, id))
-      .returning({ id: quoteLines.id })
+      .delete(quoteProducts)
+      .where(eq(quoteProducts.id, id))
+      .returning({ id: quoteProducts.id })
     return row ?? null
   },
 }

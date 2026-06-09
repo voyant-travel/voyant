@@ -5,10 +5,10 @@ import { accountRoutes } from "./accounts.js"
 import { activityRoutes } from "./activities.js"
 import { customFieldRoutes } from "./custom-fields.js"
 import { customerSignalRoutes } from "./customer-signals.js"
-import { opportunityRoutes } from "./opportunities.js"
 import { personDocumentRoutes } from "./person-documents.js"
 import { personRelationshipRoutes } from "./person-relationships.js"
 import { pipelineRoutes } from "./pipelines.js"
+import { quoteVersionRoutes } from "./quote-versions.js"
 import { quoteRoutes } from "./quotes.js"
 
 type Env = {
@@ -24,8 +24,8 @@ export const crmRoutes = new Hono<Env>()
   .route("/", personRelationshipRoutes)
   .route("/", customerSignalRoutes)
   .route("/", pipelineRoutes)
-  .route("/", opportunityRoutes)
   .route("/", quoteRoutes)
+  .route("/", quoteVersionRoutes)
   .route("/", activityRoutes)
   .route("/", customFieldRoutes)
 
