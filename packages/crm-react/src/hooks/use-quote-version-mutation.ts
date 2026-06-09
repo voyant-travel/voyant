@@ -6,7 +6,12 @@ import { z } from "zod"
 import { fetchWithValidation } from "../client.js"
 import { useVoyantContext } from "../provider.js"
 import { crmQueryKeys } from "../query-keys.js"
-import { quoteVersionLineSingleResponse, quoteVersionSingleResponse } from "../schemas.js"
+import {
+  listEnvelope,
+  quoteVersionLineSingleResponse,
+  quoteVersionRecordSchema,
+  quoteVersionSingleResponse,
+} from "../schemas.js"
 
 export interface CreateQuoteVersionInput {
   currency: string
@@ -28,6 +33,14 @@ export interface CreateQuoteVersionInput {
 
 export type UpdateQuoteVersionInput = Partial<CreateQuoteVersionInput>
 
+export interface SendQuoteVersionInput {
+  validUntil?: string | null
+}
+
+export interface ExpireQuoteVersionsInput {
+  now?: string
+}
+
 export interface CreateQuoteVersionLineInput {
   description: string
   currency: string
@@ -42,6 +55,7 @@ export interface CreateQuoteVersionLineInput {
 export type UpdateQuoteVersionLineInput = Partial<CreateQuoteVersionLineInput>
 
 const deleteResponseSchema = z.object({ success: z.boolean() })
+const quoteVersionArrayResponse = listEnvelope(quoteVersionRecordSchema)
 
 export function useQuoteVersionMutation() {
   const { baseUrl, fetcher } = useVoyantContext()
@@ -95,6 +109,75 @@ export function useQuoteVersionMutation() {
     onSuccess: (_data, id) => {
       void queryClient.invalidateQueries({ queryKey: crmQueryKeys.quoteVersions() })
       queryClient.removeQueries({ queryKey: crmQueryKeys.quoteVersion(id) })
+    },
+  })
+
+  const send = useMutation({
+    mutationFn: async ({ id, input }: { id: string; input?: SendQuoteVersionInput }) => {
+      const { data } = await fetchWithValidation(
+        `/v1/crm/quote-versions/${id}/send`,
+        quoteVersionSingleResponse,
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify(input ?? {}) },
+      )
+      return data
+    },
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: crmQueryKeys.quoteVersions() })
+      queryClient.setQueryData(crmQueryKeys.quoteVersion(data.id), data)
+      void queryClient.invalidateQueries({ queryKey: crmQueryKeys.quote(data.quoteId) })
+    },
+  })
+
+  const view = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await fetchWithValidation(
+        `/v1/crm/quote-versions/${id}/view`,
+        quoteVersionSingleResponse,
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify({}) },
+      )
+      return data
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(crmQueryKeys.quoteVersion(data.id), data)
+      void queryClient.invalidateQueries({ queryKey: crmQueryKeys.quoteVersions() })
+    },
+  })
+
+  const decline = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await fetchWithValidation(
+        `/v1/crm/quote-versions/${id}/decline`,
+        quoteVersionSingleResponse,
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify({}) },
+      )
+      return data
+    },
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: crmQueryKeys.quoteVersions() })
+      queryClient.setQueryData(crmQueryKeys.quoteVersion(data.id), data)
+      void queryClient.invalidateQueries({ queryKey: crmQueryKeys.quote(data.quoteId) })
+    },
+  })
+
+  const expire = useMutation({
+    mutationFn: async (input?: ExpireQuoteVersionsInput) => {
+      const { data } = await fetchWithValidation(
+        "/v1/crm/quote-versions/expire",
+        quoteVersionArrayResponse,
+        { baseUrl, fetcher },
+        { method: "POST", body: JSON.stringify(input ?? {}) },
+      )
+      return data
+    },
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: crmQueryKeys.quoteVersions() })
+      for (const quoteVersion of data) {
+        queryClient.setQueryData(crmQueryKeys.quoteVersion(quoteVersion.id), quoteVersion)
+        void queryClient.invalidateQueries({ queryKey: crmQueryKeys.quote(quoteVersion.quoteId) })
+      }
     },
   })
 
@@ -177,5 +260,5 @@ export function useQuoteVersionMutation() {
     },
   })
 
-  return { create, update, remove, createLine, updateLine, removeLine }
+  return { create, update, remove, send, view, decline, expire, createLine, updateLine, removeLine }
 }

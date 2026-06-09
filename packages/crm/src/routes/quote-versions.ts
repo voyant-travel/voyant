@@ -1,13 +1,16 @@
-import { parseJsonBody, parseQuery } from "@voyantjs/hono"
+import { parseJsonBody, parseOptionalJsonBody, parseQuery } from "@voyantjs/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { Hono } from "hono"
 import { crmService } from "../service/index.js"
 import { QuoteVersionConflictError } from "../service/quote-versions.js"
 import {
   applyTripSnapshotToQuoteVersionSchema,
+  declineQuoteVersionSchema,
+  expireQuoteVersionsSchema,
   insertQuoteVersionLineSchema,
   insertQuoteVersionSchema,
   quoteVersionListQuerySchema,
+  sendQuoteVersionSchema,
   updateQuoteVersionLineSchema,
   updateQuoteVersionSchema,
 } from "../validation.js"
@@ -36,6 +39,14 @@ export const quoteVersionRoutes = new Hono<Env>()
       201,
     )
   })
+  .post("/quote-versions/expire", async (c) => {
+    return c.json({
+      data: await crmService.expireQuoteVersions(
+        c.get("db"),
+        await parseOptionalJsonBody(c, expireQuoteVersionsSchema),
+      ),
+    })
+  })
   .get("/quote-versions/:id", async (c) => {
     const row = await crmService.getQuoteVersionById(c.get("db"), c.req.param("id"))
     if (!row) return c.json({ error: "Quote version not found" }, 404)
@@ -61,6 +72,43 @@ export const quoteVersionRoutes = new Hono<Env>()
         c.get("db"),
         c.req.param("id"),
         await parseJsonBody(c, applyTripSnapshotToQuoteVersionSchema),
+      )
+      if (!row) return c.json({ error: "Quote version not found" }, 404)
+      return c.json({ data: row })
+    } catch (error) {
+      if (error instanceof QuoteVersionConflictError) {
+        return c.json({ error: error.message }, 409)
+      }
+      throw error
+    }
+  })
+  .post("/quote-versions/:id/send", async (c) => {
+    try {
+      const row = await crmService.sendQuoteVersion(
+        c.get("db"),
+        c.req.param("id"),
+        await parseOptionalJsonBody(c, sendQuoteVersionSchema),
+      )
+      if (!row) return c.json({ error: "Quote version not found" }, 404)
+      return c.json({ data: row })
+    } catch (error) {
+      if (error instanceof QuoteVersionConflictError) {
+        return c.json({ error: error.message }, 409)
+      }
+      throw error
+    }
+  })
+  .post("/quote-versions/:id/view", async (c) => {
+    const row = await crmService.markQuoteVersionViewed(c.get("db"), c.req.param("id"))
+    if (!row) return c.json({ error: "Quote version not found" }, 404)
+    return c.json({ data: row })
+  })
+  .post("/quote-versions/:id/decline", async (c) => {
+    try {
+      const row = await crmService.declineQuoteVersion(
+        c.get("db"),
+        c.req.param("id"),
+        await parseOptionalJsonBody(c, declineQuoteVersionSchema),
       )
       if (!row) return c.json({ error: "Quote version not found" }, 404)
       return c.json({ data: row })

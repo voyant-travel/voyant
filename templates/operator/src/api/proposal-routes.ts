@@ -1,0 +1,140 @@
+import {
+  crmService,
+  type Quote,
+  type QuoteVersion,
+  QuoteVersionConflictError,
+  type QuoteVersionLine,
+  sendQuoteVersionSchema,
+} from "@voyantjs/crm"
+import { parseOptionalJsonBody, type VoyantDb } from "@voyantjs/hono"
+import type { Context, Hono } from "hono"
+import { operatorPostgresDb } from "./operator-runtime-adapter"
+import { resolvePublicCheckoutBaseUrlFromBindings } from "./payment-config"
+import {
+  getOperatorSettings,
+  type PublicOperatorProfile,
+  toPublicOperatorSettings,
+} from "./settings"
+
+type OperatorProposalRouteEnv = {
+  Bindings: Record<string, unknown>
+  Variables: {
+    db: VoyantDb
+    userId?: string
+  }
+}
+
+export interface PublicQuoteVersionProposal {
+  quote: Quote
+  quoteVersion: QuoteVersion
+  lines: QuoteVersionLine[]
+  operator: PublicOperatorProfile | null
+  proposalUrl: string
+}
+
+export interface SendQuoteVersionResult {
+  quoteVersion: QuoteVersion
+  proposalUrl: string
+}
+
+export function buildQuoteVersionProposalUrl(
+  quoteVersionId: string,
+  options: { baseUrl?: string | null } = {},
+) {
+  const path = `/proposal/${encodeURIComponent(quoteVersionId)}`
+  const baseUrl = options.baseUrl?.trim().replace(/\/+$/, "")
+  return baseUrl ? `${baseUrl}${path}` : path
+}
+
+export function mountOperatorProposalRoutes(hono: Hono<OperatorProposalRouteEnv>): void {
+  hono.post("/v1/admin/quote-versions/:quoteVersionId/send", handleSendQuoteVersion)
+  hono.get("/v1/public/proposals/:quoteVersionId", handleGetPublicProposal)
+  hono.post("/v1/public/proposals/:quoteVersionId/decline", handleDeclinePublicProposal)
+}
+
+export async function handleSendQuoteVersion(c: Context<OperatorProposalRouteEnv>) {
+  const quoteVersionId = c.req.param("quoteVersionId")
+  if (!quoteVersionId) return c.json({ error: "Quote Version id is required" }, 400)
+
+  try {
+    const quoteVersion = await crmService.sendQuoteVersion(
+      operatorPostgresDb(c.get("db")),
+      quoteVersionId,
+      await parseOptionalJsonBody(c, sendQuoteVersionSchema),
+    )
+    if (!quoteVersion) return c.json({ error: "Quote Version not found" }, 404)
+
+    return c.json({
+      data: {
+        quoteVersion,
+        proposalUrl: buildQuoteVersionProposalUrl(quoteVersion.id, {
+          baseUrl: resolvePublicCheckoutBaseUrlFromBindings(c.env ?? {}),
+        }),
+      } satisfies SendQuoteVersionResult,
+    })
+  } catch (error) {
+    if (error instanceof QuoteVersionConflictError) {
+      return c.json({ error: error.message }, 409)
+    }
+    throw error
+  }
+}
+
+export async function handleGetPublicProposal(c: Context<OperatorProposalRouteEnv>) {
+  const quoteVersionId = c.req.param("quoteVersionId")
+  if (!quoteVersionId) return c.json({ error: "Quote Version id is required" }, 400)
+
+  const db = operatorPostgresDb(c.get("db"))
+  await crmService.expireQuoteVersionIfPastValidUntil(db, quoteVersionId)
+  const proposal = await crmService.getQuoteVersionProposal(db, quoteVersionId)
+
+  if (!proposal) return c.json({ error: "Proposal not found" }, 404)
+  if (proposal.quoteVersion.status === "draft") return c.json({ error: "Proposal not found" }, 404)
+  if (proposal.quoteVersion.status === "superseded") {
+    return c.json({ error: "Proposal has been superseded" }, 410)
+  }
+
+  const viewedQuoteVersion =
+    proposal.quoteVersion.status === "sent"
+      ? await crmService.markQuoteVersionViewed(db, quoteVersionId)
+      : proposal.quoteVersion
+  const operatorSettings = await getOperatorSettings(db)
+
+  return c.json({
+    data: {
+      quote: proposal.quote,
+      quoteVersion: viewedQuoteVersion ?? proposal.quoteVersion,
+      lines: proposal.lines,
+      operator: operatorSettings ? toPublicOperatorSettings(operatorSettings) : null,
+      proposalUrl: buildQuoteVersionProposalUrl(quoteVersionId, {
+        baseUrl: resolvePublicCheckoutBaseUrlFromBindings(c.env ?? {}),
+      }),
+    } satisfies PublicQuoteVersionProposal,
+  })
+}
+
+export async function handleDeclinePublicProposal(c: Context<OperatorProposalRouteEnv>) {
+  const quoteVersionId = c.req.param("quoteVersionId")
+  if (!quoteVersionId) return c.json({ error: "Quote Version id is required" }, 400)
+
+  const db = operatorPostgresDb(c.get("db"))
+  await crmService.expireQuoteVersionIfPastValidUntil(db, quoteVersionId)
+  const proposal = await crmService.getQuoteVersionProposal(db, quoteVersionId)
+
+  if (!proposal) return c.json({ error: "Proposal not found" }, 404)
+  if (proposal.quoteVersion.status === "draft") return c.json({ error: "Proposal not found" }, 404)
+  if (proposal.quoteVersion.status === "superseded") {
+    return c.json({ error: "Proposal has been superseded" }, 410)
+  }
+
+  try {
+    const quoteVersion = await crmService.declineQuoteVersion(db, quoteVersionId)
+    if (!quoteVersion) return c.json({ error: "Proposal not found" }, 404)
+    return c.json({ data: quoteVersion })
+  } catch (error) {
+    if (error instanceof QuoteVersionConflictError) {
+      return c.json({ error: error.message }, 409)
+    }
+    throw error
+  }
+}

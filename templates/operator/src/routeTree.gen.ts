@@ -14,6 +14,7 @@ import { Route as WorkspaceRouteRouteImport } from './routes/_workspace/route'
 import { Route as storefrontRouteRouteImport } from './routes/(storefront)/route'
 import { Route as authRouteRouteImport } from './routes/(auth)/route'
 import { Route as WorkspaceIndexRouteImport } from './routes/_workspace/index'
+import { Route as ProposalQuoteVersionIdRouteImport } from './routes/proposal.$quoteVersionId'
 import { Route as PaySessionIdRouteImport } from './routes/pay_.$sessionId'
 import { Route as AccountantTokenRouteImport } from './routes/accountant.$token'
 import { Route as WorkspaceFlightsRouteImport } from './routes/_workspace/flights'
@@ -132,6 +133,11 @@ const WorkspaceIndexRoute = WorkspaceIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => WorkspaceRouteRoute,
+} as any)
+const ProposalQuoteVersionIdRoute = ProposalQuoteVersionIdRouteImport.update({
+  id: '/proposal/$quoteVersionId',
+  path: '/proposal/$quoteVersionId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PaySessionIdRoute = PaySessionIdRouteImport.update({
   id: '/pay_/$sessionId',
@@ -692,6 +698,7 @@ export interface FileRoutesByFullPath {
   '/flights': typeof WorkspaceFlightsRoute
   '/accountant/$token': typeof AccountantTokenRoute
   '/pay/$sessionId': typeof PaySessionIdRoute
+  '/proposal/$quoteVersionId': typeof ProposalQuoteVersionIdRoute
   '/shop/composer': typeof storefrontShopComposerRoute
   '/availability/$id': typeof WorkspaceAvailabilityIdRoute
   '/bookings/$id': typeof WorkspaceBookingsIdRoute
@@ -789,6 +796,7 @@ export interface FileRoutesByTo {
   '/flights': typeof WorkspaceFlightsRoute
   '/accountant/$token': typeof AccountantTokenRoute
   '/pay/$sessionId': typeof PaySessionIdRoute
+  '/proposal/$quoteVersionId': typeof ProposalQuoteVersionIdRoute
   '/': typeof WorkspaceIndexRoute
   '/shop/composer': typeof storefrontShopComposerRoute
   '/availability/$id': typeof WorkspaceAvailabilityIdRoute
@@ -893,6 +901,7 @@ export interface FileRoutesById {
   '/_workspace/flights': typeof WorkspaceFlightsRoute
   '/accountant/$token': typeof AccountantTokenRoute
   '/pay_/$sessionId': typeof PaySessionIdRoute
+  '/proposal/$quoteVersionId': typeof ProposalQuoteVersionIdRoute
   '/_workspace/': typeof WorkspaceIndexRoute
   '/(storefront)/shop_/composer': typeof storefrontShopComposerRoute
   '/_workspace/availability/$id': typeof WorkspaceAvailabilityIdRoute
@@ -996,6 +1005,7 @@ export interface FileRouteTypes {
     | '/flights'
     | '/accountant/$token'
     | '/pay/$sessionId'
+    | '/proposal/$quoteVersionId'
     | '/shop/composer'
     | '/availability/$id'
     | '/bookings/$id'
@@ -1093,6 +1103,7 @@ export interface FileRouteTypes {
     | '/flights'
     | '/accountant/$token'
     | '/pay/$sessionId'
+    | '/proposal/$quoteVersionId'
     | '/'
     | '/shop/composer'
     | '/availability/$id'
@@ -1196,6 +1207,7 @@ export interface FileRouteTypes {
     | '/_workspace/flights'
     | '/accountant/$token'
     | '/pay_/$sessionId'
+    | '/proposal/$quoteVersionId'
     | '/_workspace/'
     | '/(storefront)/shop_/composer'
     | '/_workspace/availability/$id'
@@ -1286,6 +1298,7 @@ export interface RootRouteChildren {
   PayRoute: typeof PayRoute
   AccountantTokenRoute: typeof AccountantTokenRoute
   PaySessionIdRoute: typeof PaySessionIdRoute
+  ProposalQuoteVersionIdRoute: typeof ProposalQuoteVersionIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1324,6 +1337,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof WorkspaceIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/proposal/$quoteVersionId': {
+      id: '/proposal/$quoteVersionId'
+      path: '/proposal/$quoteVersionId'
+      fullPath: '/proposal/$quoteVersionId'
+      preLoaderRoute: typeof ProposalQuoteVersionIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/pay_/$sessionId': {
       id: '/pay_/$sessionId'
@@ -2267,6 +2287,7 @@ const rootRouteChildren: RootRouteChildren = {
   PayRoute: PayRoute,
   AccountantTokenRoute: AccountantTokenRoute,
   PaySessionIdRoute: PaySessionIdRoute,
+  ProposalQuoteVersionIdRoute: ProposalQuoteVersionIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

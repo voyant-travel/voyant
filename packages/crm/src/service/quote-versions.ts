@@ -1,13 +1,23 @@
-import { and, desc, eq, sql } from "drizzle-orm"
+import { and, desc, eq, isNotNull, isNull, lt, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
-import { quoteVersionLines, quoteVersions } from "../schema.js"
+import {
+  type Quote,
+  type QuoteVersion,
+  type QuoteVersionLine,
+  quotes,
+  quoteVersionLines,
+  quoteVersions,
+} from "../schema.js"
 import type {
   applyTripSnapshotToQuoteVersionSchema,
+  declineQuoteVersionSchema,
+  expireQuoteVersionsSchema,
   insertQuoteVersionLineSchema,
   insertQuoteVersionSchema,
   quoteVersionListQuerySchema,
+  sendQuoteVersionSchema,
   updateQuoteVersionLineSchema,
   updateQuoteVersionSchema,
 } from "../validation.js"
@@ -19,6 +29,15 @@ type UpdateQuoteVersionInput = z.infer<typeof updateQuoteVersionSchema>
 type CreateQuoteVersionLineInput = z.infer<typeof insertQuoteVersionLineSchema>
 type UpdateQuoteVersionLineInput = z.infer<typeof updateQuoteVersionLineSchema>
 type ApplyTripSnapshotToQuoteVersionInput = z.infer<typeof applyTripSnapshotToQuoteVersionSchema>
+type SendQuoteVersionInput = z.infer<typeof sendQuoteVersionSchema>
+type DeclineQuoteVersionInput = z.infer<typeof declineQuoteVersionSchema>
+type ExpireQuoteVersionsInput = z.infer<typeof expireQuoteVersionsSchema>
+
+export interface QuoteVersionProposalReadModel {
+  quote: Quote
+  quoteVersion: QuoteVersion
+  lines: QuoteVersionLine[]
+}
 
 export class QuoteVersionConflictError extends Error {
   constructor(message: string) {
@@ -29,6 +48,14 @@ export class QuoteVersionConflictError extends Error {
 
 function normalizeTimestamp(value: string | null | undefined) {
   return value == null ? value : new Date(value)
+}
+
+function normalizeNow(value: Date | string | null | undefined) {
+  return value instanceof Date ? value : value ? new Date(value) : new Date()
+}
+
+function toDateString(value: Date) {
+  return value.toISOString().slice(0, 10)
 }
 
 export const quoteVersionsService = {
@@ -55,6 +82,33 @@ export const quoteVersionsService = {
   async getQuoteVersionById(db: PostgresJsDatabase, id: string) {
     const [row] = await db.select().from(quoteVersions).where(eq(quoteVersions.id, id)).limit(1)
     return row ?? null
+  },
+
+  async getQuoteVersionProposal(
+    db: PostgresJsDatabase,
+    id: string,
+  ): Promise<QuoteVersionProposalReadModel | null> {
+    const [row] = await db
+      .select({
+        quoteVersion: quoteVersions,
+        quote: quotes,
+      })
+      .from(quoteVersions)
+      .innerJoin(quotes, eq(quoteVersions.quoteId, quotes.id))
+      .where(eq(quoteVersions.id, id))
+      .limit(1)
+
+    if (!row) return null
+
+    return {
+      quote: row.quote,
+      quoteVersion: row.quoteVersion,
+      lines: await db
+        .select()
+        .from(quoteVersionLines)
+        .where(eq(quoteVersionLines.quoteVersionId, id))
+        .orderBy(quoteVersionLines.createdAt),
+    }
   },
 
   async createQuoteVersion(db: PostgresJsDatabase, data: CreateQuoteVersionInput) {
@@ -136,6 +190,148 @@ export const quoteVersionsService = {
 
       return { quoteVersion, lines }
     })
+  },
+
+  async sendQuoteVersion(db: PostgresJsDatabase, id: string, data: SendQuoteVersionInput = {}) {
+    return db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(quoteVersions)
+        .where(eq(quoteVersions.id, id))
+        .limit(1)
+
+      if (!existing) return null
+      if (existing.status !== "draft") {
+        throw new QuoteVersionConflictError("Quote Versions can only be sent from draft")
+      }
+      if (!existing.tripSnapshotId) {
+        throw new QuoteVersionConflictError(
+          "Quote Versions must have a Trip snapshot before they can be sent",
+        )
+      }
+
+      const now = new Date()
+      const validUntil = data.validUntil === undefined ? existing.validUntil : data.validUntil
+      if (validUntil && validUntil < toDateString(now)) {
+        throw new QuoteVersionConflictError("Quote Version validUntil must be today or later")
+      }
+
+      const [row] = await tx
+        .update(quoteVersions)
+        .set({
+          status: "sent",
+          validUntil,
+          sentAt: now,
+          viewedAt: null,
+          decidedAt: null,
+          updatedAt: now,
+        })
+        .where(eq(quoteVersions.id, id))
+        .returning()
+
+      return row ?? null
+    })
+  },
+
+  async markQuoteVersionViewed(db: PostgresJsDatabase, id: string) {
+    const now = new Date()
+    const [row] = await db
+      .update(quoteVersions)
+      .set({
+        viewedAt: now,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(quoteVersions.id, id),
+          eq(quoteVersions.status, "sent"),
+          isNull(quoteVersions.viewedAt),
+        ),
+      )
+      .returning()
+
+    if (row) return row
+
+    const [existing] = await db
+      .select()
+      .from(quoteVersions)
+      .where(eq(quoteVersions.id, id))
+      .limit(1)
+    return existing ?? null
+  },
+
+  async declineQuoteVersion(
+    db: PostgresJsDatabase,
+    id: string,
+    _data: DeclineQuoteVersionInput = {},
+  ) {
+    const now = new Date()
+    const [row] = await db
+      .update(quoteVersions)
+      .set({
+        status: "declined",
+        decidedAt: now,
+        updatedAt: now,
+      })
+      .where(and(eq(quoteVersions.id, id), eq(quoteVersions.status, "sent")))
+      .returning()
+
+    if (row) return row
+
+    const [existing] = await db
+      .select({ status: quoteVersions.status })
+      .from(quoteVersions)
+      .where(eq(quoteVersions.id, id))
+      .limit(1)
+    if (!existing) return null
+    throw new QuoteVersionConflictError("Quote Versions can only be declined after they are sent")
+  },
+
+  async expireQuoteVersionIfPastValidUntil(
+    db: PostgresJsDatabase,
+    id: string,
+    nowValue?: Date | string,
+  ) {
+    const now = normalizeNow(nowValue)
+    const [row] = await db
+      .update(quoteVersions)
+      .set({
+        status: "expired",
+        decidedAt: now,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(quoteVersions.id, id),
+          eq(quoteVersions.status, "sent"),
+          isNotNull(quoteVersions.validUntil),
+          lt(quoteVersions.validUntil, toDateString(now)),
+        ),
+      )
+      .returning()
+
+    return row ?? null
+  },
+
+  async expireQuoteVersions(db: PostgresJsDatabase, data: ExpireQuoteVersionsInput = {}) {
+    const now = normalizeNow(data.now)
+    const rows = await db
+      .update(quoteVersions)
+      .set({
+        status: "expired",
+        decidedAt: now,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(quoteVersions.status, "sent"),
+          isNotNull(quoteVersions.validUntil),
+          lt(quoteVersions.validUntil, toDateString(now)),
+        ),
+      )
+      .returning()
+
+    return rows
   },
 
   listQuoteVersionLines(db: PostgresJsDatabase, quoteVersionId: string) {

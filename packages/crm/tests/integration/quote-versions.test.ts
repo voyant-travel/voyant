@@ -156,6 +156,30 @@ describe.skipIf(!DB_AVAILABLE)("Quote Version routes", () => {
       return { quote, quoteVersion }
     }
 
+    async function applySnapshot(quoteVersionId: string, overrides: Record<string, unknown> = {}) {
+      return app.request(`/quote-versions/${quoteVersionId}/trip-snapshot`, {
+        method: "POST",
+        ...json({
+          tripSnapshotId: `trsn_${Date.now()}`,
+          currency: "EUR",
+          subtotalAmountCents: 10000,
+          taxAmountCents: 900,
+          totalAmountCents: 10900,
+          lines: [
+            {
+              componentId: "trcp_123",
+              description: "Airport transfer",
+              quantity: 1,
+              unitPriceAmountCents: 10000,
+              totalAmountCents: 10900,
+              currency: "EUR",
+            },
+          ],
+          ...overrides,
+        }),
+      })
+    }
+
     it("applies a trip snapshot read model to a quote version", async () => {
       const { quoteVersion } = await seedQuoteVersion()
 
@@ -210,6 +234,80 @@ describe.skipIf(!DB_AVAILABLE)("Quote Version routes", () => {
       expect(res.status).toBe(409)
       const body = await res.json()
       expect(body.error).toContain("draft")
+    })
+
+    it("requires a trip snapshot before sending a quote version", async () => {
+      const { quoteVersion } = await seedQuoteVersion()
+
+      const res = await app.request(`/quote-versions/${quoteVersion.id}/send`, {
+        method: "POST",
+        ...json({ validUntil: "2099-01-01" }),
+      })
+
+      expect(res.status).toBe(409)
+      const body = await res.json()
+      expect(body.error).toContain("Trip snapshot")
+    })
+
+    it("sends, tracks view, and declines quote versions through lifecycle routes", async () => {
+      const { quoteVersion } = await seedQuoteVersion()
+      await applySnapshot(quoteVersion.id)
+
+      const sendRes = await app.request(`/quote-versions/${quoteVersion.id}/send`, {
+        method: "POST",
+        ...json({ validUntil: "2099-01-01" }),
+      })
+      expect(sendRes.status).toBe(200)
+      const sendBody = await sendRes.json()
+      expect(sendBody.data.status).toBe("sent")
+      expect(sendBody.data.sentAt).not.toBeNull()
+      expect(sendBody.data.validUntil).toBe("2099-01-01")
+
+      const viewRes = await app.request(`/quote-versions/${quoteVersion.id}/view`, {
+        method: "POST",
+        ...json({}),
+      })
+      expect(viewRes.status).toBe(200)
+      const viewBody = await viewRes.json()
+      expect(viewBody.data.status).toBe("sent")
+      expect(viewBody.data.viewedAt).not.toBeNull()
+
+      const declineRes = await app.request(`/quote-versions/${quoteVersion.id}/decline`, {
+        method: "POST",
+        ...json({}),
+      })
+      expect(declineRes.status).toBe(200)
+      const declineBody = await declineRes.json()
+      expect(declineBody.data.status).toBe("declined")
+      expect(declineBody.data.decidedAt).not.toBeNull()
+    })
+
+    it("expires sent quote versions past validUntil", async () => {
+      const { quote } = await seedQuote()
+      const quoteVersionRes = await app.request(`/quotes/${quote.id}/versions`, {
+        method: "POST",
+        ...json({
+          currency: "USD",
+          status: "sent",
+          tripSnapshotId: "trsn_expiring",
+          validUntil: "2026-01-01",
+          sentAt: "2026-01-01T10:00:00.000Z",
+        }),
+      })
+      const { data: quoteVersion } = await quoteVersionRes.json()
+
+      const res = await app.request("/quote-versions/expire", {
+        method: "POST",
+        ...json({ now: "2026-06-09T00:00:00.000Z" }),
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.data.map((row: { id: string }) => row.id)).toContain(quoteVersion.id)
+      const getRes = await app.request(`/quote-versions/${quoteVersion.id}`, { method: "GET" })
+      const getBody = await getRes.json()
+      expect(getBody.data.status).toBe("expired")
+      expect(getBody.data.decidedAt).not.toBeNull()
     })
 
     it("creates a quote version line", async () => {
