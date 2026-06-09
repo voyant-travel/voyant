@@ -1,9 +1,9 @@
 import { bookingGroupsService } from "@voyantjs/bookings"
 import type { BookingGroup, BookingGroupMember } from "@voyantjs/bookings/schema"
-import type { EventBus } from "@voyantjs/core"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { z } from "zod"
 
+import type { FinanceServiceRuntime } from "./service.js"
 import {
   type BookingCreateOutcome,
   type BookingCreateResult,
@@ -37,9 +37,7 @@ export type DualCreateBookingInput = z.infer<typeof dualCreateBookingSchema>
 
 // ---------- runtime ----------
 
-export interface DualCreateBookingRuntime {
-  eventBus?: EventBus
-}
+export interface DualCreateBookingRuntime extends FinanceServiceRuntime {}
 
 export interface BookingDualCreatedEvent {
   groupId: string
@@ -119,12 +117,12 @@ export async function dualCreateBooking(
   let result: DualCreateBookingResult
   try {
     result = await db.transaction(async (tx) => {
-      const primaryOutcome = await createBooking(tx, input.primary, { userId })
+      const primaryOutcome = await createBooking(tx, input.primary, { userId, runtime })
       if (primaryOutcome.status !== "ok") {
         throw new DualCreateAbort({ status: "primary_failed", reason: primaryOutcome })
       }
 
-      const secondaryOutcome = await createBooking(tx, input.secondary, { userId })
+      const secondaryOutcome = await createBooking(tx, input.secondary, { userId, runtime })
       if (secondaryOutcome.status !== "ok") {
         throw new DualCreateAbort({ status: "secondary_failed", reason: secondaryOutcome })
       }

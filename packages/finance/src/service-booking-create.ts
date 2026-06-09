@@ -1,4 +1,8 @@
 import {
+  type ActionLedgerRequestContextValues,
+  appendActionLedgerMutation,
+} from "@voyantjs/action-ledger"
+import {
   type BookingConfirmedEvent,
   bookingGroupsService,
   bookingsService,
@@ -24,6 +28,10 @@ import type {
 } from "./schema.js"
 import { bookingPaymentSchedules, vouchers } from "./schema.js"
 import { type FinanceServiceRuntime, financeService, toRows } from "./service.js"
+import {
+  buildBookingCreateRejectedActionLedgerInput,
+  buildBookingCreateSucceededActionLedgerInput,
+} from "./service-action-ledger.js"
 import { financeDocumentsService, type InvoiceDocumentGenerator } from "./service-documents.js"
 import { VoucherServiceError, vouchersService } from "./service-vouchers.js"
 import {
@@ -1075,6 +1083,67 @@ export function deriveBookingCreatePax(input: {
   return pax > 0 ? pax : null
 }
 
+function buildBookingCreateLedgerCommand(
+  input: BookingCreateInput,
+  options: {
+    pax: number | null
+    documentGeneration: {
+      contractDocument: boolean
+      invoiceDocument: boolean
+      invoiceType: "invoice" | "proforma"
+    }
+  },
+) {
+  return {
+    productId: input.productId,
+    optionId: input.optionId ?? null,
+    slotId: input.slotId ?? null,
+    bookingNumber: input.bookingNumber,
+    personId: input.personId ?? null,
+    organizationId: input.organizationId ?? null,
+    pax: options.pax,
+    itemLineCount: input.itemLines?.length ?? 0,
+    extraLineCount: input.extraLines?.length ?? 0,
+    travelerCount: input.travelers?.length ?? 0,
+    paymentScheduleCount: input.paymentSchedules?.length ?? 0,
+    voucherRedemptionRequested: Boolean(input.voucherRedemption),
+    groupMembershipAction: input.groupMembership?.action ?? null,
+    initialStatus: input.initialStatus ?? null,
+    documentGeneration: options.documentGeneration,
+  }
+}
+
+async function appendBookingCreateRejectedActionLedger(
+  db: PostgresJsDatabase,
+  context: ActionLedgerRequestContextValues | undefined,
+  outcome: Extract<BookingCreateOutcome, { status: "duplicate_booking" }>,
+  input: BookingCreateInput,
+  options: {
+    pax: number | null
+    documentGeneration: {
+      contractDocument: boolean
+      invoiceDocument: boolean
+      invoiceType: "invoice" | "proforma"
+    }
+    authorizationSource?: string | null
+  },
+) {
+  if (!context) return
+
+  await appendActionLedgerMutation(
+    db,
+    await buildBookingCreateRejectedActionLedgerInput(
+      context,
+      {
+        existingBooking: outcome.existingBooking,
+        command: buildBookingCreateLedgerCommand(input, options),
+        reason: "duplicate_booking",
+      },
+      { authorizationSource: options.authorizationSource },
+    ),
+  )
+}
+
 export async function createBooking(
   db: PostgresJsDatabase,
   rawInput: BookingCreateInput,
@@ -1359,6 +1428,20 @@ export async function createBooking(
         }
       }
 
+      if (runtime?.actionLedgerContext) {
+        await appendActionLedgerMutation(
+          tx,
+          await buildBookingCreateSucceededActionLedgerInput(
+            runtime.actionLedgerContext,
+            {
+              booking,
+              command: buildBookingCreateLedgerCommand(input, { pax, documentGeneration }),
+            },
+            { authorizationSource: runtime.actionLedgerAuthorizationSource },
+          ),
+        )
+      }
+
       return {
         booking,
         travelers,
@@ -1372,6 +1455,19 @@ export async function createBooking(
     })
   } catch (error) {
     if (error instanceof BookingCreateAbort) {
+      if (error.outcome.status === "duplicate_booking") {
+        await appendBookingCreateRejectedActionLedger(
+          db,
+          runtime?.actionLedgerContext,
+          error.outcome,
+          input,
+          {
+            pax,
+            documentGeneration,
+            authorizationSource: runtime?.actionLedgerAuthorizationSource,
+          },
+        )
+      }
       return error.outcome
     }
     if (error instanceof BookingCreateValidationError) {

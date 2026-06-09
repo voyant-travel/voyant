@@ -101,6 +101,8 @@ import { recomputeSupplierInvoiceBalance } from "./service-supplier-invoices.js"
 import { vouchersService } from "./service-vouchers.js"
 
 export {
+  buildBookingCreateRejectedActionLedgerInput,
+  buildBookingCreateSucceededActionLedgerInput,
   buildBookingGuaranteeCreateActionLedgerInput,
   buildBookingGuaranteeDeleteActionLedgerInput,
   buildBookingGuaranteeUpdateActionLedgerInput,

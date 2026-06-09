@@ -1,3 +1,4 @@
+import { actionLedgerEntries } from "@voyantjs/action-ledger/schema"
 import { bookingGroupMembers, bookingGroups, bookings } from "@voyantjs/bookings/schema"
 import { createEventBus } from "@voyantjs/core"
 import { eq, sql } from "drizzle-orm"
@@ -13,6 +14,7 @@ async function resetTables(
   db: any,
 ) {
   const tableNames = [
+    "action_ledger_entries",
     "voucher_redemptions",
     "vouchers",
     "payment_instruments",
@@ -130,6 +132,74 @@ describe.skipIf(!DB_AVAILABLE)("dualCreateBooking", () => {
       .from(bookingGroupMembers)
       .where(eq(bookingGroupMembers.groupId, outcome.result.group.id))
     expect(memberRows).toHaveLength(2)
+  })
+
+  it("writes booking.create ledger entries for both sub-bookings", async () => {
+    const { productId } = await seedProduct()
+
+    const outcome = await dualCreateBooking(
+      db,
+      {
+        primary: {
+          productId,
+          bookingNumber: "BK-DUAL-LEDGER-P",
+          internalNotes: "Primary traveler",
+        },
+        secondary: {
+          productId,
+          bookingNumber: "BK-DUAL-LEDGER-S",
+          internalNotes: "Room-sharing partner",
+        },
+        group: { kind: "shared_room" },
+      },
+      {
+        userId: "user_dual_create_ledger",
+        runtime: {
+          actionLedgerContext: {
+            userId: "user_dual_create_ledger",
+            callerType: "session",
+            actor: "staff",
+          },
+          actionLedgerAuthorizationSource: "booking.create.route",
+        },
+      },
+    )
+
+    expect(outcome.status).toBe("ok")
+    if (outcome.status !== "ok") return
+
+    const ledgerRows = await db
+      .select()
+      .from(actionLedgerEntries)
+      .where(eq(actionLedgerEntries.actionName, "booking.create"))
+
+    expect(ledgerRows).toHaveLength(2)
+    expect(ledgerRows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          actionKind: "create",
+          status: "succeeded",
+          targetType: "booking",
+          targetId: outcome.result.primary.booking.id,
+          principalType: "user",
+          principalId: "user_dual_create_ledger",
+          actorType: "staff",
+          routeOrToolName: "booking.create",
+          authorizationSource: "booking.create.route",
+        }),
+        expect.objectContaining({
+          actionKind: "create",
+          status: "succeeded",
+          targetType: "booking",
+          targetId: outcome.result.secondary.booking.id,
+          principalType: "user",
+          principalId: "user_dual_create_ledger",
+          actorType: "staff",
+          routeOrToolName: "booking.create",
+          authorizationSource: "booking.create.route",
+        }),
+      ]),
+    )
   })
 
   it("rolls back both bookings and the group when the second booking's voucher is invalid", async () => {
