@@ -25,17 +25,6 @@ export function buildSearchQuery(
   registry: FieldPolicyRegistry,
   slice?: IndexerSlice,
 ): TypesenseSearchQuery {
-  // Build query_by from indexed text fields only. Typesense rejects numeric
-  // and boolean fields in query_by even when those fields are filterable.
-  const queryFields = registry.policies
-    .filter(
-      (p) =>
-        p.query === "indexed-column" && (p.class === "merchandisable" || p.class === "structural"),
-    )
-    .map((p) => normalizeTypesenseField(p.path))
-    .filter((field) => isTextSearchableField(field) && !SORTABLE_STRING_FIELD_NAMES.has(field))
-    .join(",")
-
   const perPage = request.pagination?.limit ?? 20
   // Cursor doubles as the 1-indexed page number for Typesense's `page`
   // parameter. Callers wanting a different cursor strategy (e.g. opaque
@@ -44,7 +33,7 @@ export function buildSearchQuery(
 
   const query: TypesenseSearchQuery = {
     q: request.query.length > 0 ? request.query : "*",
-    query_by: queryFields || "title",
+    query_by: buildDefaultTypesenseQueryBy(registry, slice),
     per_page: perPage,
     page,
     // Strip the vector field from response payloads. At e.g. 3072-dim that's
@@ -89,6 +78,28 @@ export function buildSearchQuery(
   }
 
   return query
+}
+
+/**
+ * Returns the policy-owned default text fields for Typesense keyword search.
+ * Hosted Typesense-compatible proxies can use this as their server-side
+ * fallback when callers omit `query_by`, avoiding client-side schema scraping.
+ */
+export function buildDefaultTypesenseSearchFields(
+  registry: FieldPolicyRegistry,
+  slice?: IndexerSlice,
+): string[] {
+  return registry.policies
+    .filter((policy) => isDefaultSearchablePolicy(policy, slice))
+    .map((policy) => normalizeTypesenseField(policy.path))
+}
+
+export function buildDefaultTypesenseQueryBy(
+  registry: FieldPolicyRegistry,
+  slice?: IndexerSlice,
+): string {
+  const fields = buildDefaultTypesenseSearchFields(registry, slice)
+  return fields.length > 0 ? fields.join(",") : "title"
 }
 
 export function typesenseTypeForField(
@@ -176,9 +187,33 @@ function normalizeTypesenseField(field: string): string {
   return field.endsWith("[]") ? field.slice(0, -2) : field
 }
 
+function isDefaultSearchablePolicy(
+  policy: FieldPolicyRegistry["policies"][number],
+  slice: IndexerSlice | undefined,
+): boolean {
+  if (policy.query !== "indexed-column") return false
+  if (policy.class !== "merchandisable" && policy.class !== "structural") return false
+  if (!isVisibleInSlice(policy.visibility, slice)) return false
+
+  const field = normalizeTypesenseField(policy.path)
+  return isTextSearchableField(field) && !isNonSearchTextField(field)
+}
+
+function isVisibleInSlice(
+  visibility: FieldPolicyRegistry["policies"][number]["visibility"],
+  slice: IndexerSlice | undefined,
+): boolean {
+  if (!slice || slice.audience === "staff-admin") return true
+  return visibility.includes(slice.audience)
+}
+
 function isTextSearchableField(name: string): boolean {
   const type = typesenseTypeForField(name, false)
   return type === "string" || type === "string[]"
+}
+
+function isNonSearchTextField(name: string): boolean {
+  return SORTABLE_STRING_FIELD_NAMES.has(name) || NON_SEARCH_TEXT_FIELD_RE.test(name)
 }
 
 const BOOLEAN_FIELD_NAMES = new Set(["activated"])
@@ -206,3 +241,5 @@ const SORTABLE_STRING_FIELD_NAMES = new Set([
   "publishedAt",
   "startDate",
 ])
+
+const NON_SEARCH_TEXT_FIELD_RE = /(?:^|\.)(?:.*Url|.*Uri|.*Href|.*Html|.*Markdown)$/i

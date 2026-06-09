@@ -4,6 +4,8 @@ import { createFieldPolicyRegistry, defineFieldPolicy } from "../contract.js"
 import type { IndexerDocument, IndexerSlice } from "./contract.js"
 import {
   buildCollectionSchema,
+  buildDefaultTypesenseQueryBy,
+  buildDefaultTypesenseSearchFields,
   buildSearchQuery,
   createTypesenseIndexer,
   type TypesenseClient,
@@ -108,6 +110,26 @@ const registry = createFieldPolicyRegistry(
       query: "indexed-column",
       visibility: ["customer"],
     },
+    {
+      path: "thumbnailUrl",
+      class: "merchandisable",
+      merge: "source-only",
+      editRole: "none",
+      overrideFriction: "none",
+      snapshot: "on-book",
+      query: "indexed-column",
+      visibility: ["customer"],
+    },
+    {
+      path: "status",
+      class: "structural",
+      merge: "source-only",
+      editRole: "none",
+      overrideFriction: "none",
+      snapshot: "on-book",
+      query: "indexed-column",
+      visibility: ["staff"],
+    },
   ]),
 )
 
@@ -120,15 +142,28 @@ describe("Typesense catalog indexer", () => {
     expect(schema.fields.find((field) => field.name === "hasOffer")?.type).toBe("bool")
     expect(schema.fields.find((field) => field.name === "nextDepartureAt")?.sort).toBe(true)
     expect(schema.fields.find((field) => field.name === "nextDepartureDate")?.sort).toBe(true)
+    expect(schema.metadata).toEqual({
+      voyant: {
+        defaultQueryBy: "name,categorySlugs",
+        defaultSearchFields: ["name", "categorySlugs"],
+      },
+    })
   })
 
-  it("keeps non-text fields out of Typesense query_by", () => {
-    const query = buildSearchQuery({ query: "retreat", mode: "keyword" }, registry)
+  it("derives default Typesense query fields from policy-visible searchable text", () => {
+    expect(buildDefaultTypesenseSearchFields(registry, slice)).toEqual(["name", "categorySlugs"])
+    expect(buildDefaultTypesenseQueryBy(registry, slice)).toBe("name,categorySlugs")
+  })
+
+  it("keeps non-search fields out of Typesense query_by", () => {
+    const query = buildSearchQuery({ query: "retreat", mode: "keyword" }, registry, slice)
     expect(query.query_by).toBe("name,categorySlugs")
     expect(query.query_by).not.toContain("categorySlugs[]")
     expect(query.query_by).not.toContain("priceFromAmountCents")
     expect(query.query_by).not.toContain("durationDays")
     expect(query.query_by).not.toContain("hasOffer")
+    expect(query.query_by).not.toContain("thumbnailUrl")
+    expect(query.query_by).not.toContain("status")
   })
 
   it("maps typed storefront sort options to engine sort fields", () => {
@@ -175,6 +210,46 @@ describe("Typesense catalog indexer", () => {
     const query = buildSearchQuery({ query: "", mode: "keyword", sort: "newest" }, registry, slice)
 
     expect(query.sort_by).toBeUndefined()
+  })
+
+  it("patches default search metadata onto existing collections without field diffs", async () => {
+    const updatePayloads: Partial<ReturnType<typeof buildCollectionSchema>>[] = []
+    const existingSchema = buildCollectionSchema(slice, registry)
+    const client: TypesenseClient = {
+      collections: () => ({
+        create: async () => {
+          throw new Error("already exists")
+        },
+        update: async (schema) => {
+          updatePayloads.push(schema)
+        },
+        delete: async () => undefined,
+        retrieve: async () => ({
+          name: existingSchema.name,
+          fields: existingSchema.fields,
+          enable_nested_fields: true,
+        }),
+        documents: () => ({
+          import: async () => ({}),
+          delete: async () => undefined,
+          search: async () => ({ hits: [], found: 0 }),
+        }),
+      }),
+    }
+    const indexer = createTypesenseIndexer({ client })
+
+    await indexer.ensureCollection(slice, registry)
+
+    expect(updatePayloads).toEqual([
+      {
+        metadata: {
+          voyant: {
+            defaultQueryBy: "name,categorySlugs",
+            defaultSearchFields: ["name", "categorySlugs"],
+          },
+        },
+      },
+    ])
   })
 
   it("upserts storefront card values without stringifying typed fields", async () => {
