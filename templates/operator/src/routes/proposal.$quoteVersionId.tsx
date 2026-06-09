@@ -46,6 +46,17 @@ interface DeclineProposalResponse {
   }
 }
 
+interface AcceptProposalResponse {
+  data: {
+    status: string
+    checkoutUrl: string | null
+    paymentSessionId: string | null
+    currency: string
+    totalAmountCents: number
+    warnings: string[]
+  }
+}
+
 function ProposalRoute() {
   const { quoteVersionId } = Route.useParams()
   const queryClient = useQueryClient()
@@ -77,6 +88,35 @@ function ProposalRoute() {
       )
     },
   })
+  const accept = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(
+        `${getApiUrl()}/v1/public/proposals/${encodeURIComponent(quoteVersionId)}/accept`,
+        {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify({
+            intent: "card",
+            idempotencyKey: `proposal-${quoteVersionId}-accept`,
+          }),
+        },
+      )
+      const body = (await res.json()) as Partial<AcceptProposalResponse> & {
+        error?: string
+        failures?: Array<{ reason?: string }>
+      }
+      if (!res.ok || !body.data) {
+        throw new Error(publicMutationError(body, "Could not accept proposal"))
+      }
+      return body.data
+    },
+    onSuccess: (result) => {
+      void queryClient.setQueryData<PublicProposal>(["public-proposal", quoteVersionId], (data) =>
+        data ? { ...data, status: result.status } : data,
+      )
+      if (result.checkoutUrl) window.location.assign(result.checkoutUrl)
+    },
+  })
 
   if (proposalQuery.isLoading) {
     return (
@@ -104,7 +144,8 @@ function ProposalRoute() {
   const proposal = proposalQuery.data
   const operatorName =
     proposal.operator?.name || proposal.operator?.legalName || "Your travel specialist"
-  const canDecline = proposal.status === "sent"
+  const canAct = proposal.status === "sent"
+  const isMutating = accept.isPending || decline.isPending
 
   return (
     <div className="min-h-screen bg-[#f7f5ef] text-[#232826]">
@@ -177,22 +218,36 @@ function ProposalRoute() {
         <footer className="flex flex-col gap-4 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <OperatorContact operator={proposal.operator} />
           <div className="flex flex-col items-stretch gap-2 sm:items-end">
-            {decline.error ? (
+            {accept.error || decline.error ? (
               <p className="text-[#9f3a2f] text-sm">
-                {decline.error instanceof Error ? decline.error.message : "Request failed"}
+                {accept.error instanceof Error
+                  ? accept.error.message
+                  : decline.error instanceof Error
+                    ? decline.error.message
+                    : "Request failed"}
               </p>
             ) : null}
-            {canDecline ? (
-              <button
-                type="button"
-                className="h-10 border border-[#9f3a2f] px-4 font-medium text-[#9f3a2f] text-sm transition hover:bg-[#fff1ef] disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={decline.isPending}
-                onClick={() => {
-                  if (window.confirm("Decline this proposal?")) void decline.mutateAsync()
-                }}
-              >
-                {decline.isPending ? "Declining..." : "Decline"}
-              </button>
+            {canAct ? (
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  className="h-10 bg-[#232826] px-5 font-medium text-sm text-white transition hover:bg-[#3a403d] disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={isMutating}
+                  onClick={() => void accept.mutateAsync()}
+                >
+                  {accept.isPending ? "Accepting..." : "Accept"}
+                </button>
+                <button
+                  type="button"
+                  className="h-10 border border-[#9f3a2f] px-4 font-medium text-[#9f3a2f] text-sm transition hover:bg-[#fff1ef] disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={isMutating}
+                  onClick={() => {
+                    if (window.confirm("Decline this proposal?")) void decline.mutateAsync()
+                  }}
+                >
+                  {decline.isPending ? "Declining..." : "Decline"}
+                </button>
+              </div>
             ) : null}
           </div>
         </footer>
@@ -272,6 +327,17 @@ function proposalLineKey(line: PublicProposal["lines"][number]) {
     line.totalAmountCents,
     line.currency,
   ].join(":")
+}
+
+function publicMutationError(
+  body: { error?: string; failures?: Array<{ reason?: string }> },
+  fallback: string,
+) {
+  const reasons = body.failures
+    ?.map((failure) => failure.reason)
+    .filter((reason): reason is string => Boolean(reason))
+  if (body.error && reasons?.length) return `${body.error}: ${reasons.join(", ")}`
+  return body.error ?? fallback
 }
 
 function formatMoney(amountCents: number, currency: string) {

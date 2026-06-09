@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, isNull, lt, sql } from "drizzle-orm"
+import { and, desc, eq, isNotNull, isNull, lt, ne, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { z } from "zod"
 
@@ -11,6 +11,7 @@ import {
   quoteVersions,
 } from "../schema.js"
 import type {
+  acceptQuoteVersionSchema,
   applyTripSnapshotToQuoteVersionSchema,
   declineQuoteVersionSchema,
   expireQuoteVersionsSchema,
@@ -30,6 +31,7 @@ type CreateQuoteVersionLineInput = z.infer<typeof insertQuoteVersionLineSchema>
 type UpdateQuoteVersionLineInput = z.infer<typeof updateQuoteVersionLineSchema>
 type ApplyTripSnapshotToQuoteVersionInput = z.infer<typeof applyTripSnapshotToQuoteVersionSchema>
 type SendQuoteVersionInput = z.infer<typeof sendQuoteVersionSchema>
+type AcceptQuoteVersionInput = z.infer<typeof acceptQuoteVersionSchema>
 type DeclineQuoteVersionInput = z.infer<typeof declineQuoteVersionSchema>
 type ExpireQuoteVersionsInput = z.infer<typeof expireQuoteVersionsSchema>
 
@@ -37,6 +39,12 @@ export interface QuoteVersionProposalReadModel {
   quote: Quote
   quoteVersion: QuoteVersion
   lines: QuoteVersionLine[]
+}
+
+export interface AcceptQuoteVersionResult {
+  quote: Quote
+  quoteVersion: QuoteVersion
+  closedQuoteVersions: QuoteVersion[]
 }
 
 export class QuoteVersionConflictError extends Error {
@@ -258,6 +266,124 @@ export const quoteVersionsService = {
       .where(eq(quoteVersions.id, id))
       .limit(1)
     return existing ?? null
+  },
+
+  async acceptQuoteVersion(
+    db: PostgresJsDatabase,
+    id: string,
+    _data: AcceptQuoteVersionInput = {},
+  ): Promise<AcceptQuoteVersionResult | null> {
+    return db.transaction(async (tx) => {
+      const [current] = await tx
+        .select({
+          quoteVersion: quoteVersions,
+          quote: quotes,
+        })
+        .from(quoteVersions)
+        .innerJoin(quotes, eq(quoteVersions.quoteId, quotes.id))
+        .where(eq(quoteVersions.id, id))
+        .limit(1)
+
+      if (!current) return null
+
+      if (
+        current.quote.acceptedVersionId &&
+        current.quote.acceptedVersionId !== current.quoteVersion.id
+      ) {
+        throw new QuoteVersionConflictError("Quote already has an accepted Quote Version")
+      }
+
+      if (current.quoteVersion.status === "accepted") {
+        return {
+          quote: current.quote,
+          quoteVersion: current.quoteVersion,
+          closedQuoteVersions: [],
+        }
+      }
+
+      if (current.quoteVersion.status !== "sent") {
+        throw new QuoteVersionConflictError(
+          "Quote Versions can only be accepted after they are sent",
+        )
+      }
+
+      const now = new Date()
+      const [quoteVersion] = await tx
+        .update(quoteVersions)
+        .set({
+          status: "accepted",
+          decidedAt: now,
+          updatedAt: now,
+        })
+        .where(and(eq(quoteVersions.id, id), eq(quoteVersions.status, "sent")))
+        .returning()
+
+      if (!quoteVersion) {
+        throw new QuoteVersionConflictError(
+          "Quote Versions can only be accepted after they are sent",
+        )
+      }
+
+      const declinedVersions = await tx
+        .update(quoteVersions)
+        .set({
+          status: "declined",
+          decidedAt: now,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(quoteVersions.quoteId, quoteVersion.quoteId),
+            ne(quoteVersions.id, quoteVersion.id),
+            eq(quoteVersions.status, "sent"),
+          ),
+        )
+        .returning()
+
+      const supersededVersions = await tx
+        .update(quoteVersions)
+        .set({
+          status: "superseded",
+          decidedAt: now,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(quoteVersions.quoteId, quoteVersion.quoteId),
+            ne(quoteVersions.id, quoteVersion.id),
+            eq(quoteVersions.status, "draft"),
+          ),
+        )
+        .returning()
+
+      const [quote] = await tx
+        .update(quotes)
+        .set({
+          status: "won",
+          acceptedVersionId: quoteVersion.id,
+          valueAmountCents: quoteVersion.totalAmountCents,
+          valueCurrency: quoteVersion.currency,
+          closedAt: now,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(quotes.id, quoteVersion.quoteId),
+            or(isNull(quotes.acceptedVersionId), eq(quotes.acceptedVersionId, quoteVersion.id)),
+          ),
+        )
+        .returning()
+
+      if (!quote) {
+        throw new QuoteVersionConflictError("Quote already has an accepted Quote Version")
+      }
+
+      return {
+        quote,
+        quoteVersion,
+        closedQuoteVersions: [...declinedVersions, ...supersededVersions],
+      }
+    })
   },
 
   async declineQuoteVersion(

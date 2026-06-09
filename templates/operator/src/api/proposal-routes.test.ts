@@ -10,12 +10,16 @@ const mocks = vi.hoisted(() => {
   }
   return {
     QuoteVersionConflictError,
+    acceptQuoteVersion: vi.fn(),
     declineQuoteVersion: vi.fn(),
     expireQuoteVersionIfPastValidUntil: vi.fn(),
     getOperatorSettings: vi.fn(),
     getQuoteVersionProposal: vi.fn(),
+    getTripSnapshotById: vi.fn(),
     markQuoteVersionViewed: vi.fn(),
+    reserveTrip: vi.fn(),
     sendQuoteVersion: vi.fn(),
+    startCheckout: vi.fn(),
   }
 })
 
@@ -27,11 +31,29 @@ vi.mock("@voyantjs/crm", async () => {
       validUntil: z.string().date().nullable().optional(),
     }),
     crmService: {
+      acceptQuoteVersion: mocks.acceptQuoteVersion,
       declineQuoteVersion: mocks.declineQuoteVersion,
       expireQuoteVersionIfPastValidUntil: mocks.expireQuoteVersionIfPastValidUntil,
       getQuoteVersionProposal: mocks.getQuoteVersionProposal,
       markQuoteVersionViewed: mocks.markQuoteVersionViewed,
       sendQuoteVersion: mocks.sendQuoteVersion,
+    },
+  }
+})
+
+vi.mock("@voyantjs/travel-composer", () => {
+  class TravelComposerInvariantError extends Error {
+    constructor(message: string) {
+      super(message)
+      this.name = "TravelComposerInvariantError"
+    }
+  }
+  return {
+    TravelComposerInvariantError,
+    travelComposerService: {
+      getTripSnapshotById: mocks.getTripSnapshotById,
+      reserveTrip: mocks.reserveTrip,
+      startCheckout: mocks.startCheckout,
     },
   }
 })
@@ -43,6 +65,11 @@ vi.mock("./operator-runtime-adapter", () => ({
 vi.mock("./settings", () => ({
   getOperatorSettings: mocks.getOperatorSettings,
   toPublicOperatorSettings: (settings: unknown) => settings,
+}))
+
+vi.mock("./travel-composer-runtime", () => ({
+  createReserveTripDeps: () => ({ reserve: "deps" }),
+  createStartCheckoutDeps: () => ({ checkout: "deps" }),
 }))
 
 import { buildQuoteVersionProposalUrl, mountOperatorProposalRoutes } from "./proposal-routes"
@@ -94,6 +121,47 @@ const proposal = {
       currency: "EUR",
     },
   ],
+}
+
+const tripSnapshot = {
+  id: "trsn_123",
+  envelopeId: "trip_123",
+  currency: "EUR",
+  subtotalAmountCents: 10000,
+  taxAmountCents: 900,
+  totalAmountCents: 10900,
+  proposal: {
+    envelopeId: "trip_123",
+    title: "Romania private tour",
+    description: null,
+    currency: "EUR",
+    subtotalAmountCents: 10000,
+    taxAmountCents: 900,
+    totalAmountCents: 10900,
+    componentCount: 1,
+    pricedComponentCount: 1,
+    warnings: [],
+    frozenAt: "2026-06-09T10:00:00.000Z",
+    lines: [
+      {
+        componentId: "trcp_123",
+        sequence: 0,
+        kind: "manual_service",
+        status: "priced",
+        title: "Airport transfer",
+        description: "Airport transfer",
+        entityModule: "products",
+        entityId: "prod_123",
+        sourceKind: "manual",
+        currency: "EUR",
+        subtotalAmountCents: 10000,
+        taxAmountCents: 900,
+        totalAmountCents: 10900,
+        priceExpiresAt: null,
+        warnings: [],
+      },
+    ],
+  },
 }
 
 function json(body: Record<string, unknown>) {
@@ -249,5 +317,125 @@ describe("operator proposal routes", () => {
     expect(mocks.declineQuoteVersion).toHaveBeenCalledWith(fakeDb, "qver_123")
     const body = await response.json()
     expect(body).toEqual({ data: { status: "declined" } })
+  })
+
+  it("accepts a sent proposal by verifying the snapshot, reserving, accepting, and starting checkout", async () => {
+    const app = makeApp()
+    mocks.getQuoteVersionProposal.mockResolvedValue(proposal)
+    mocks.getTripSnapshotById.mockResolvedValue(tripSnapshot)
+    mocks.reserveTrip.mockResolvedValue({
+      envelope: { id: "trip_123", aggregateCurrency: "EUR", aggregateTotalAmountCents: 10900 },
+      components: [],
+      reserved: [{ componentId: "trcp_123", status: "held" }],
+      failures: [],
+      compensations: [],
+      warnings: [],
+    })
+    mocks.acceptQuoteVersion.mockResolvedValue({
+      quote: { ...proposal.quote, status: "won", acceptedVersionId: "qver_123" },
+      quoteVersion: { ...quoteVersion, status: "accepted" },
+      closedQuoteVersions: [],
+    })
+    mocks.startCheckout.mockResolvedValue({
+      envelope: { id: "trip_123" },
+      components: [],
+      target: {
+        envelopeId: "trip_123",
+        status: "checkout_started",
+        currency: "EUR",
+        totalAmountCents: 10900,
+        paymentSessionId: "pays_123",
+        checkoutUrl: "https://travel.example.com/pay/pays_123",
+        holdExpiresAt: null,
+      },
+      componentCheckouts: [],
+      failures: [],
+      warnings: [],
+    })
+
+    const response = await app.request("/v1/public/proposals/qver_123/accept", {
+      method: "POST",
+      ...json({ intent: "card", idempotencyKey: "accept-1" }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(mocks.getTripSnapshotById).toHaveBeenCalledWith(fakeDb, "trsn_123")
+    expect(mocks.reserveTrip).toHaveBeenCalledWith(
+      fakeDb,
+      expect.objectContaining({
+        envelopeId: "trip_123",
+        idempotencyKey: "proposal-accept-reserve:qver_123:accept-1",
+      }),
+      { reserve: "deps" },
+    )
+    expect(mocks.acceptQuoteVersion).toHaveBeenCalledWith(fakeDb, "qver_123", {})
+    expect(mocks.startCheckout).toHaveBeenCalledWith(
+      fakeDb,
+      expect.objectContaining({
+        envelopeId: "trip_123",
+        intent: "card",
+        idempotencyKey: "proposal-accept-checkout:qver_123:card:accept-1",
+      }),
+      { checkout: "deps" },
+    )
+    expect(mocks.reserveTrip.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.acceptQuoteVersion.mock.invocationCallOrder[0],
+    )
+    const body = await response.json()
+    expect(body).toEqual({
+      data: {
+        status: "accepted",
+        checkoutUrl: "https://travel.example.com/pay/pays_123",
+        paymentSessionId: "pays_123",
+        currency: "EUR",
+        totalAmountCents: 10900,
+        warnings: [],
+      },
+    })
+  })
+
+  it("rejects accepting when the CRM proposal copy does not match the frozen snapshot", async () => {
+    const app = makeApp()
+    mocks.getQuoteVersionProposal.mockResolvedValue(proposal)
+    mocks.getTripSnapshotById.mockResolvedValue({
+      ...tripSnapshot,
+      proposal: { ...tripSnapshot.proposal, totalAmountCents: 11000 },
+    })
+
+    const response = await app.request("/v1/public/proposals/qver_123/accept", {
+      method: "POST",
+      ...json({}),
+    })
+
+    expect(response.status).toBe(409)
+    expect(mocks.reserveTrip).not.toHaveBeenCalled()
+    expect(mocks.acceptQuoteVersion).not.toHaveBeenCalled()
+  })
+
+  it("returns safe reservation failure details without accepting the proposal", async () => {
+    const app = makeApp()
+    mocks.getQuoteVersionProposal.mockResolvedValue(proposal)
+    mocks.getTripSnapshotById.mockResolvedValue(tripSnapshot)
+    mocks.reserveTrip.mockResolvedValue({
+      envelope: { id: "trip_123" },
+      components: [],
+      reserved: [],
+      failures: [{ componentId: "trcp_123", code: "price_changed", reason: "price_changed" }],
+      compensations: [],
+      warnings: ["price_changed"],
+    })
+
+    const response = await app.request("/v1/public/proposals/qver_123/accept", {
+      method: "POST",
+      ...json({}),
+    })
+
+    expect(response.status).toBe(409)
+    expect(mocks.acceptQuoteVersion).not.toHaveBeenCalled()
+    const body = await response.json()
+    expect(body).toEqual({
+      error: "Proposal could not be reserved",
+      failures: [{ code: "price_changed", reason: "price_changed" }],
+    })
   })
 })

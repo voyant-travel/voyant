@@ -282,6 +282,72 @@ describe.skipIf(!DB_AVAILABLE)("Quote Version routes", () => {
       expect(declineBody.data.decidedAt).not.toBeNull()
     })
 
+    it("accepts one sent quote version, closes other open versions, and wins the quote", async () => {
+      const { quote, quoteVersion } = await seedQuoteVersion()
+      await applySnapshot(quoteVersion.id)
+      await app.request(`/quote-versions/${quoteVersion.id}/send`, {
+        method: "POST",
+        ...json({ validUntil: "2099-01-01" }),
+      })
+
+      const alternativeRes = await app.request(`/quotes/${quote.id}/versions`, {
+        method: "POST",
+        ...json({ currency: "EUR", label: "Alternative" }),
+      })
+      const { data: alternative } = await alternativeRes.json()
+      await applySnapshot(alternative.id, { tripSnapshotId: "trsn_alternative" })
+      await app.request(`/quote-versions/${alternative.id}/send`, {
+        method: "POST",
+        ...json({ validUntil: "2099-01-01" }),
+      })
+
+      const draftRes = await app.request(`/quotes/${quote.id}/versions`, {
+        method: "POST",
+        ...json({ currency: "EUR", label: "Draft after send" }),
+      })
+      const { data: draft } = await draftRes.json()
+
+      const res = await app.request(`/quote-versions/${quoteVersion.id}/accept`, {
+        method: "POST",
+        ...json({}),
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.data.quoteVersion.status).toBe("accepted")
+      expect(body.data.quoteVersion.decidedAt).not.toBeNull()
+      expect(body.data.quote.status).toBe("won")
+      expect(body.data.quote.acceptedVersionId).toBe(quoteVersion.id)
+      expect(body.data.quote.valueAmountCents).toBe(10900)
+      expect(body.data.quote.valueCurrency).toBe("EUR")
+      expect(body.data.closedQuoteVersions.map((row: { id: string }) => row.id)).toEqual(
+        expect.arrayContaining([alternative.id, draft.id]),
+      )
+
+      const alternativeGet = await app.request(`/quote-versions/${alternative.id}`, {
+        method: "GET",
+      })
+      const alternativeBody = await alternativeGet.json()
+      expect(alternativeBody.data.status).toBe("declined")
+
+      const draftGet = await app.request(`/quote-versions/${draft.id}`, { method: "GET" })
+      const draftBody = await draftGet.json()
+      expect(draftBody.data.status).toBe("superseded")
+    })
+
+    it("rejects accepting a non-sent quote version", async () => {
+      const { quoteVersion } = await seedQuoteVersion()
+
+      const res = await app.request(`/quote-versions/${quoteVersion.id}/accept`, {
+        method: "POST",
+        ...json({}),
+      })
+
+      expect(res.status).toBe(409)
+      const body = await res.json()
+      expect(body.error).toContain("sent")
+    })
+
     it("expires sent quote versions past validUntil", async () => {
       const { quote } = await seedQuote()
       const quoteVersionRes = await app.request(`/quotes/${quote.id}/versions`, {
