@@ -15,6 +15,7 @@ import {
   cancelTripComponentsSchema,
   createTripComponentBodySchema,
   createTripEnvelopeSchema,
+  createTripSnapshotSchema,
   listTripsQuerySchema,
   previewTripCancellationSchema,
   priceTripSchema,
@@ -44,6 +45,7 @@ export interface TravelComposerRoutesOptions {
 export type TravelComposerRouteDeps<T> = T | ((c: Context<Env>) => T | undefined)
 
 const priceTripBodySchema = priceTripSchema.omit({ envelopeId: true })
+const createTripSnapshotBodySchema = createTripSnapshotSchema.omit({ envelopeId: true })
 const reserveTripBodySchema = reserveTripSchema.omit({ envelopeId: true })
 const startCheckoutBodySchema = startTripCheckoutSchema.omit({ envelopeId: true })
 const previewCancellationBodySchema = previewTripCancellationSchema.omit({ envelopeId: true })
@@ -86,6 +88,12 @@ function envelopeIdParam(c: Context<Env>): string {
   return envelopeId
 }
 
+function snapshotIdParam(c: Context<Env>): string {
+  const snapshotId = c.req.param("snapshotId")
+  if (!snapshotId) throw new TravelComposerInvariantError("Trip snapshot id is required")
+  return snapshotId
+}
+
 async function listTripsHandler(c: Context<Env>) {
   const query = parseQuery(c, listTripsQuerySchema)
   return c.json(await travelComposerService.listTrips(c.get("db"), query))
@@ -108,6 +116,35 @@ async function getTripHandler(c: Context<Env>) {
   const trip = await travelComposerService.getTrip(c.get("db"), envelopeIdParam(c))
   if (!trip) return c.json({ error: "Trip envelope not found" }, 404)
   return c.json({ data: trip })
+}
+
+async function listTripSnapshotsHandler(c: Context<Env>, options: TravelComposerRoutesOptions) {
+  if (isPublicSurface(options)) return publicForbidden()
+  return c.json({
+    data: await travelComposerService.listTripSnapshots(c.get("db"), envelopeIdParam(c)),
+  })
+}
+
+async function createTripSnapshotHandler(c: Context<Env>, options: TravelComposerRoutesOptions) {
+  if (isPublicSurface(options)) return publicForbidden()
+  try {
+    const body = await parseJsonBody(c, createTripSnapshotBodySchema)
+    const snapshot = await travelComposerService.freezeTripSnapshot(c.get("db"), {
+      ...body,
+      envelopeId: envelopeIdParam(c),
+    })
+    return c.json({ data: snapshot }, 201)
+  } catch (error) {
+    const { message, status } = routeError(error)
+    return c.json({ error: message }, status)
+  }
+}
+
+async function getTripSnapshotHandler(c: Context<Env>, options: TravelComposerRoutesOptions) {
+  if (isPublicSurface(options)) return publicForbidden()
+  const snapshot = await travelComposerService.getTripSnapshotById(c.get("db"), snapshotIdParam(c))
+  if (!snapshot) return c.json({ error: "Trip snapshot not found" }, 404)
+  return c.json({ data: snapshot })
 }
 
 async function updateTripHandler(c: Context<Env>, options: TravelComposerRoutesOptions) {
@@ -260,6 +297,9 @@ export function createTravelComposerRoutes(options: TravelComposerRoutesOptions 
     .get("/trips", listTripsHandler)
     .post("/trips", createTripHandler)
     .get("/trips/:envelopeId", getTripHandler)
+    .get("/trips/:envelopeId/snapshots", (c) => listTripSnapshotsHandler(c, options))
+    .post("/trips/:envelopeId/snapshots", (c) => createTripSnapshotHandler(c, options))
+    .get("/trip-snapshots/:snapshotId", (c) => getTripSnapshotHandler(c, options))
     .patch("/trips/:envelopeId", (c) => updateTripHandler(c, options))
     .post("/trips/:envelopeId/components", addTripComponentHandler)
     .post("/trips/:envelopeId/components/reorder", (c) => reorderTripComponentsHandler(c, options))

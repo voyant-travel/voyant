@@ -147,6 +147,50 @@ export const listTripsQuerySchema = z.object({
 
 export type ListTripsQuery = z.infer<typeof listTripsQuerySchema>
 
+export const tripSnapshotProposalLineSchema = z.object({
+  componentId: z.string().min(1),
+  sequence: z.number().int().min(0),
+  kind: tripComponentKindSchema,
+  status: tripComponentStatusSchema,
+  title: z.string().nullable(),
+  description: z.string().min(1),
+  entityModule: z.string().nullable(),
+  entityId: z.string().nullable(),
+  sourceKind: z.string().nullable(),
+  currency: z.string().length(3),
+  subtotalAmountCents: z.number().int(),
+  taxAmountCents: z.number().int(),
+  totalAmountCents: z.number().int(),
+  priceExpiresAt: z.string().datetime().nullable(),
+  warnings: z.array(z.string()),
+})
+
+export type TripSnapshotProposalLine = z.infer<typeof tripSnapshotProposalLineSchema>
+
+export const tripSnapshotProposalSchema = z.object({
+  envelopeId: z.string().min(1),
+  title: z.string().nullable(),
+  description: z.string().nullable(),
+  currency: z.string().length(3),
+  subtotalAmountCents: z.number().int(),
+  taxAmountCents: z.number().int(),
+  totalAmountCents: z.number().int(),
+  componentCount: z.number().int().nonnegative(),
+  pricedComponentCount: z.number().int().nonnegative(),
+  warnings: z.array(z.string()),
+  frozenAt: z.string().datetime(),
+  lines: z.array(tripSnapshotProposalLineSchema),
+})
+
+export type TripSnapshotProposal = z.infer<typeof tripSnapshotProposalSchema>
+
+export const createTripSnapshotSchema = z.object({
+  envelopeId: z.string().min(1),
+  createdBy: z.string().min(1).nullable().optional(),
+})
+
+export type CreateTripSnapshotInput = z.infer<typeof createTripSnapshotSchema>
+
 export const updateTripEnvelopeSchema = z.object({
   title: z.string().min(1).max(255).nullable().optional(),
   description: z.string().nullable().optional(),

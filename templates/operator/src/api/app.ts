@@ -82,6 +82,7 @@ import {
   resolveBankTransferDetails,
   resolvePublicCheckoutBaseUrlFromBindings,
 } from "./payment-config"
+import { mountOperatorQuoteVersionSnapshotRoutes } from "./quote-version-snapshot-routes"
 import { mountOperatorSettingsRoutes } from "./settings"
 import { smartbillOperatorBundle } from "./smartbill"
 import {
@@ -455,6 +456,8 @@ export const app = createApp<CloudflareBindings>({
     mountPublicPaymentPolicyRoutes(hono)
 
     mountOperatorMediaUploadRoutes(hono)
+
+    mountOperatorQuoteVersionSnapshotRoutes(hono)
 
     mountOperatorLazyAdditionalRoutes(hono)
 

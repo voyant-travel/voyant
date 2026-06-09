@@ -414,6 +414,13 @@
 			"when": 1780987038795,
 			"tag": "0059_quotes_ref_grain",
 			"breakpoints": true
+		},
+		{
+			"idx": 58,
+			"version": "7",
+			"when": 1781006188988,
+			"tag": "0060_trip_snapshots",
+			"breakpoints": true
 		}
 	]
 }

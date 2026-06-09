@@ -76,6 +76,39 @@ export type TripComponentTaxLineSnapshot = {
   source?: string
 }
 
+export type TripSnapshotProposalLine = {
+  componentId: string
+  sequence: number
+  kind: string
+  status: string
+  title: string | null
+  description: string
+  entityModule: string | null
+  entityId: string | null
+  sourceKind: string | null
+  currency: string
+  subtotalAmountCents: number
+  taxAmountCents: number
+  totalAmountCents: number
+  priceExpiresAt: string | null
+  warnings: string[]
+}
+
+export type TripSnapshotProposal = {
+  envelopeId: string
+  title: string | null
+  description: string | null
+  currency: string
+  subtotalAmountCents: number
+  taxAmountCents: number
+  totalAmountCents: number
+  componentCount: number
+  pricedComponentCount: number
+  warnings: string[]
+  frozenAt: string
+  lines: TripSnapshotProposalLine[]
+}
+
 export const tripEnvelopes = pgTable(
   "trip_envelopes",
   {
@@ -202,9 +235,51 @@ export const tripComponentEvents = pgTable(
   ],
 )
 
+export const tripSnapshots = pgTable(
+  "trip_snapshots",
+  {
+    id: typeId("trip_snapshots"),
+    envelopeId: typeIdRef("envelope_id")
+      .notNull()
+      .references(() => tripEnvelopes.id, { onDelete: "restrict" }),
+    sourceEnvelopeUpdatedAt: timestamp("source_envelope_updated_at", {
+      withTimezone: true,
+    }).notNull(),
+    titleSnapshot: text("title_snapshot"),
+    descriptionSnapshot: text("description_snapshot"),
+    travelerPartySnapshot: jsonb("traveler_party_snapshot")
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
+    constraintsSnapshot: jsonb("constraints_snapshot")
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
+    currency: text("currency").notNull(),
+    subtotalAmountCents: integer("subtotal_amount_cents").notNull().default(0),
+    taxAmountCents: integer("tax_amount_cents").notNull().default(0),
+    totalAmountCents: integer("total_amount_cents").notNull().default(0),
+    componentCount: integer("component_count").notNull().default(0),
+    pricedComponentCount: integer("priced_component_count").notNull().default(0),
+    frozenEnvelope: jsonb("frozen_envelope").$type<Record<string, unknown>>().notNull(),
+    frozenComponents: jsonb("frozen_components")
+      .$type<Record<string, unknown>[]>()
+      .notNull()
+      .default([]),
+    proposal: jsonb("proposal").$type<TripSnapshotProposal>().notNull(),
+    createdBy: text("created_by"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_trip_snapshots_envelope_created").on(table.envelopeId, table.createdAt),
+    index("idx_trip_snapshots_created").on(table.createdAt),
+  ],
+)
+
 export const tripEnvelopeRelations = relations(tripEnvelopes, ({ many }) => ({
   components: many(tripComponents),
   events: many(tripComponentEvents),
+  snapshots: many(tripSnapshots),
 }))
 
 export const tripComponentRelations = relations(tripComponents, ({ one, many }) => ({
@@ -226,9 +301,18 @@ export const tripComponentEventRelations = relations(tripComponentEvents, ({ one
   }),
 }))
 
+export const tripSnapshotRelations = relations(tripSnapshots, ({ one }) => ({
+  envelope: one(tripEnvelopes, {
+    fields: [tripSnapshots.envelopeId],
+    references: [tripEnvelopes.id],
+  }),
+}))
+
 export type TripEnvelope = typeof tripEnvelopes.$inferSelect
 export type NewTripEnvelope = typeof tripEnvelopes.$inferInsert
 export type TripComponent = typeof tripComponents.$inferSelect
 export type NewTripComponent = typeof tripComponents.$inferInsert
 export type TripComponentEvent = typeof tripComponentEvents.$inferSelect
 export type NewTripComponentEvent = typeof tripComponentEvents.$inferInsert
+export type TripSnapshot = typeof tripSnapshots.$inferSelect
+export type NewTripSnapshot = typeof tripSnapshots.$inferInsert

@@ -4,6 +4,7 @@ import type { z } from "zod"
 
 import { quoteVersionLines, quoteVersions } from "../schema.js"
 import type {
+  applyTripSnapshotToQuoteVersionSchema,
   insertQuoteVersionLineSchema,
   insertQuoteVersionSchema,
   quoteVersionListQuerySchema,
@@ -17,6 +18,14 @@ type CreateQuoteVersionInput = z.infer<typeof insertQuoteVersionSchema>
 type UpdateQuoteVersionInput = z.infer<typeof updateQuoteVersionSchema>
 type CreateQuoteVersionLineInput = z.infer<typeof insertQuoteVersionLineSchema>
 type UpdateQuoteVersionLineInput = z.infer<typeof updateQuoteVersionLineSchema>
+type ApplyTripSnapshotToQuoteVersionInput = z.infer<typeof applyTripSnapshotToQuoteVersionSchema>
+
+export class QuoteVersionConflictError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "QuoteVersionConflictError"
+  }
+}
 
 function normalizeTimestamp(value: string | null | undefined) {
   return value == null ? value : new Date(value)
@@ -81,6 +90,52 @@ export const quoteVersionsService = {
       .where(eq(quoteVersions.id, id))
       .returning({ id: quoteVersions.id })
     return row ?? null
+  },
+
+  async applyTripSnapshotToQuoteVersion(
+    db: PostgresJsDatabase,
+    id: string,
+    data: ApplyTripSnapshotToQuoteVersionInput,
+  ) {
+    return db.transaction(async (tx) => {
+      const [quoteVersion] = await tx
+        .update(quoteVersions)
+        .set({
+          tripSnapshotId: data.tripSnapshotId,
+          currency: data.currency,
+          subtotalAmountCents: data.subtotalAmountCents,
+          taxAmountCents: data.taxAmountCents,
+          totalAmountCents: data.totalAmountCents,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(quoteVersions.id, id), eq(quoteVersions.status, "draft")))
+        .returning()
+
+      if (!quoteVersion) {
+        const [existing] = await tx
+          .select({ status: quoteVersions.status })
+          .from(quoteVersions)
+          .where(eq(quoteVersions.id, id))
+          .limit(1)
+        if (!existing) return null
+        throw new QuoteVersionConflictError(
+          "Trip snapshots can only be applied to draft Quote Versions",
+        )
+      }
+
+      await tx.delete(quoteVersionLines).where(eq(quoteVersionLines.quoteVersionId, id))
+
+      const lineValues = data.lines.map(({ componentId: _componentId, ...line }) => ({
+        ...line,
+        quoteVersionId: id,
+      }))
+      const lines =
+        lineValues.length > 0
+          ? await tx.insert(quoteVersionLines).values(lineValues).returning()
+          : []
+
+      return { quoteVersion, lines }
+    })
   },
 
   listQuoteVersionLines(db: PostgresJsDatabase, quoteVersionId: string) {

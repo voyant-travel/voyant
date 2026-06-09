@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  applyTripSnapshotToQuoteVersionSchema,
   insertPipelineSchema,
   insertQuoteSchema,
   insertQuoteVersionSchema,
@@ -112,5 +113,29 @@ describe("Quote Version schemas", () => {
 
   it("rejects missing currency", () => {
     expect(() => insertQuoteVersionSchema.parse({ quoteId: "crm_quot_abc" })).toThrow()
+  })
+
+  it("accepts a trip snapshot proposal payload for a quote version", () => {
+    const result = applyTripSnapshotToQuoteVersionSchema.parse({
+      tripSnapshotId: "trsn_abc",
+      currency: "EUR",
+      totalAmountCents: 10900,
+      lines: [
+        {
+          componentId: "trcp_123",
+          description: "Airport transfer",
+          currency: "EUR",
+          totalAmountCents: 10900,
+        },
+      ],
+    })
+
+    expect(result.lines[0]).toMatchObject({
+      componentId: "trcp_123",
+      description: "Airport transfer",
+      quantity: 1,
+      unitPriceAmountCents: 0,
+      totalAmountCents: 10900,
+    })
   })
 })
