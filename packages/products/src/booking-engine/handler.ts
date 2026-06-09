@@ -823,6 +823,9 @@ export function createProductsBookingHandler(
       const bridge = await options.createBooking({
         productId: product.id,
         optionId: primaryOptionId,
+        // Link the departure so the booking item carries availability_slot_id
+        // (powers the duplicate-departure check + slot-level reporting).
+        slotId: draft.configure?.departureSlotId ?? null,
         bookingNumber: generateNumber(),
         personId: partyBilling.personId,
         organizationId: partyBilling.organizationId,
