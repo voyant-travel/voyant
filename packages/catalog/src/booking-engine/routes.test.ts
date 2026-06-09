@@ -139,7 +139,15 @@ describe("createCatalogBookingRoutes", () => {
       body: JSON.stringify({
         entityModule: "products",
         entityId: "prod_1",
-        draft: { configure: { departureSlotId: "slot_1", pax: { adult: 2 } } },
+        draft: {
+          configure: {
+            departureSlotId: "slot_1",
+            pax: { adult: 2 },
+            roomTypeId: "HOTEL:DZL1",
+            ratePlanId: "HOTEL:DZL1:BB",
+            board: "BB",
+          },
+        },
       }),
     })
 
@@ -178,6 +186,9 @@ describe("createCatalogBookingRoutes", () => {
           departure_id: "slot_1",
           slotId: "slot_1",
           paxCount: 2,
+          roomTypeId: "HOTEL:DZL1",
+          ratePlanId: "HOTEL:DZL1:BB",
+          board: "BB",
         }),
         adapterContext: {
           connection_id: "conn_demo",
@@ -239,7 +250,15 @@ describe("createCatalogBookingRoutes", () => {
     vi.mocked(getBookingDraft).mockResolvedValue({
       id: "draft_1",
       current_quote_id: "quote_1",
-      draft_payload: { configure: { departureSlotId: "slot_1", pax: { adult: 2 } } },
+      draft_payload: {
+        configure: {
+          departureSlotId: "slot_1",
+          pax: { adult: 2 },
+          roomTypeId: "HOTEL:DZL1",
+          ratePlanId: "HOTEL:DZL1:BB",
+          board: "BB",
+        },
+      },
     } as never)
     vi.mocked(bookEntity).mockResolvedValue({
       bookingId: "booking_1",
@@ -281,6 +300,9 @@ describe("createCatalogBookingRoutes", () => {
           departure_id: "slot_1",
           slotId: "slot_1",
           paxCount: 2,
+          roomTypeId: "HOTEL:DZL1",
+          ratePlanId: "HOTEL:DZL1:BB",
+          board: "BB",
         }),
         adapterContext: { connection_id: "engine", correlation_id: "req_2" },
       }),
