@@ -1,5 +1,11 @@
 # @voyantjs/bookings
 
+## 0.108.1
+
+### Patch Changes
+
+- 92af490: Parallelize operator dashboard aggregate queries and emit short-lived private cache headers for aggregate responses. Finance also adds an invoice index for outstanding-balance dashboard queries.
+
 ## 0.108.0
 
 ## 0.107.1
