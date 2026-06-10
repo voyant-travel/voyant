@@ -387,7 +387,17 @@ function ProductOptionFields({
       <Label>{messages.bookingJourney.configure.option}</Label>
       <RadioGroup
         value={selectedId ?? ""}
-        onValueChange={(v) => setDraft(patchConfigure(draft, { variantId: v }))}
+        // Switching options must clear the previous option's room/unit picks —
+        // otherwise stale `optionSelections` from option A still drive the
+        // quote/commit (price, item lines, rooms gate) under option B.
+        onValueChange={(v) =>
+          setDraft(
+            patchConfigure(
+              draft,
+              v === selectedId ? { variantId: v } : { variantId: v, optionSelections: [] },
+            ),
+          )
+        }
         className="grid grid-cols-1 gap-2"
       >
         {options.map((option) => {

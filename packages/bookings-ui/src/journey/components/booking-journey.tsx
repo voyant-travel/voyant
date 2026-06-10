@@ -1003,6 +1003,12 @@ function canAdvanceFromStep(
       return rooms > 0
     }
     case "billing": {
+      // B2B: the picked organization is the bill-to. The CRM org picker doesn't
+      // collect an individual contact name (and the manual contact inputs are
+      // hidden), so requiring one would lock the step with no way to satisfy it.
+      if (draft.billing.buyerType === "B2B") {
+        return Boolean(draft.billing.organizationId)
+      }
       const c = draft.billing.contact
       return c.firstName.length > 0 && c.lastName.length > 0 && c.email.length > 0
     }
