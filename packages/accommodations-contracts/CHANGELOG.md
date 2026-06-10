@@ -1,5 +1,12 @@
 # @voyantjs/accommodations-contracts
 
+## 0.105.1
+
+### Patch Changes
+
+- Updated dependencies [7122c2a]
+  - @voyantjs/catalog-contracts@0.106.0
+
 ## 0.105.0
 
 ### Minor Changes

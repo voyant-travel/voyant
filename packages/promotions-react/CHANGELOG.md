@@ -1,5 +1,11 @@
 # @voyantjs/promotions-react
 
+## 0.105.2
+
+### Patch Changes
+
+- @voyantjs/promotions@0.105.2
+
 ## 0.105.1
 
 ### Patch Changes

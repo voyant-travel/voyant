@@ -1,5 +1,36 @@
 # @voyantjs/bookings-ui
 
+## 0.108.0
+
+### Minor Changes
+
+- 7122c2a: Admin booking journey overhaul + unified new-booking + reusable catalog UI (#1625)
+
+  - **bookings-ui**: the operator books on a single stacked, guided accordion (progressive unlock, auto-advance) instead of the wizard; storefront keeps the wizard. Travelers as add-rows + per-traveler type + CRM linking, Configure with departure-first + nested rooms + occupancy-dependency rules, price override + voucher in the side panel, single payment-link checkbox, notes/docs block, save-as-draft / confirmed-if-paid status, duplicate-departure warning, commit lands on the booking detail. Journey steps split into per-step modules. B2B billing is satisfied by a picked organization; switching the product option clears stale room selections.
+  - **catalog / catalog-react / catalog-ui**: the operator catalog browse/detail UI moves into the shared `@voyantjs/catalog-ui` + `@voyantjs/catalog-react` packages (detail pages, browse/dynamic/scheduled, gallery, calendar, sheet, enrichment, catalog i18n) so other templates can reuse them; booking-engine commit path returns the booking id and lands on detail.
+  - **catalog-contracts**: adds pax-band occupancy dependencies, the option-units configure sub-step, and the sourced stays/package rate pin (`roomTypeId` / `ratePlanId` / `board`) to the booking-engine draft + adapter contracts.
+  - **products / i18n**: products booking handler forwards the slot id + breakdown currency; admin booking-journey i18n strings.
+
+### Patch Changes
+
+- Updated dependencies [7122c2a]
+  - @voyantjs/catalog@0.106.0
+  - @voyantjs/i18n@0.106.0
+  - @voyantjs/catalog-react@0.106.0
+  - @voyantjs/bookings@0.108.0
+  - @voyantjs/products-react@0.108.0
+  - @voyantjs/crm-ui@0.108.0
+  - @voyantjs/ui@0.105.1
+  - @voyantjs/availability-react@0.105.2
+  - @voyantjs/bookings-react@0.108.0
+  - @voyantjs/crm-react@0.108.0
+  - @voyantjs/extras-react@0.108.0
+  - @voyantjs/finance-react@0.108.0
+  - @voyantjs/identity-react@0.108.0
+  - @voyantjs/legal-react@0.108.0
+  - @voyantjs/pricing-react@0.108.0
+  - @voyantjs/suppliers-react@0.105.2
+
 ## 0.107.1
 
 ### Patch Changes
