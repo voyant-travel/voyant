@@ -252,8 +252,10 @@ pass the `api` prop only when an app needs a custom invitation transport.
 
 `DashboardPage` renders explicit empty states for charts, upcoming departures,
 and outstanding invoices instead of blank card frames. Brand-new tenants see a
-first-run onboarding panel. Apps that need different empty copy or actions can
-pass `emptyStates` for the affected section:
+first-run onboarding panel. The page fetches each aggregate card itself with
+independent queries; apps should render it directly instead of preloading the
+dashboard aggregate query options in a route loader. Apps that need different
+empty copy or actions can pass `emptyStates` for the affected section:
 
 ```tsx
 <DashboardPage

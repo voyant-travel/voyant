@@ -285,6 +285,14 @@ export interface BookingActionApprovalDecisionResponse {
   }
 }
 
+const DASHBOARD_AGGREGATES_CACHE_CONTROL = "private, max-age=60"
+
+function cacheDashboardAggregates(c: Context<Env>) {
+  c.header("Cache-Control", DASHBOARD_AGGREGATES_CACHE_CONTROL)
+  c.header("Vary", "Authorization", { append: true })
+  c.header("Vary", "Cookie", { append: true })
+}
+
 function getActionLedgerRequestContext(c: Context<Env>): ActionLedgerRequestContextValues {
   return {
     userId: c.get("userId") ?? null,
@@ -1390,6 +1398,7 @@ export const bookingRoutes = new Hono<Env>()
   // 1b. GET /aggregates — Pre-aggregated dashboard metrics
   .get("/aggregates", async (c) => {
     const query = parseQuery(c, bookingAggregatesQuerySchema)
+    cacheDashboardAggregates(c)
     return c.json({ data: await bookingsService.getBookingAggregates(c.get("db"), query) })
   })
 

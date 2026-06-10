@@ -34,43 +34,39 @@ export async function getProductAggregates(
   if (toDate) rangeConditions.push(sql`${products.createdAt} < ${toDate.toISOString()}`)
   const rangeWhere = rangeConditions.length ? and(...rangeConditions) : undefined
 
-  const [totalRow] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(products)
-    .where(rangeWhere)
-
-  const statusRows = await db
-    .select({ status: products.status, count: sql<number>`count(*)::int` })
-    .from(products)
-    .where(rangeWhere)
-    .groupBy(products.status)
-
-  const statusMap = new Map<ProductStatus, number>(statusRows.map((r) => [r.status, r.count]))
-
   // Publicly-listed count ignores the date range — it's a point-in-time KPI
   // ("what's live on the storefront right now"). The range-bound `active`
   // bucket serves the "how many active products did we create this quarter"
   // question instead.
-  const [publicActiveRow] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(products)
-    .where(
-      and(
-        eq(products.status, "active"),
-        eq(products.activated, true),
-        eq(products.visibility, "public"),
+  const [[totalRow], statusRows, [publicActiveRow], monthlyCreatedCountsRows] = await Promise.all([
+    db.select({ count: sql<number>`count(*)::int` }).from(products).where(rangeWhere),
+    db
+      .select({ status: products.status, count: sql<number>`count(*)::int` })
+      .from(products)
+      .where(rangeWhere)
+      .groupBy(products.status),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(products)
+      .where(
+        and(
+          eq(products.status, "active"),
+          eq(products.activated, true),
+          eq(products.visibility, "public"),
+        ),
       ),
-    )
+    db
+      .select({
+        yearMonth: sql<string>`to_char(${products.createdAt} at time zone 'UTC', 'YYYY-MM')`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(products)
+      .where(rangeWhere)
+      .groupBy(sql`to_char(${products.createdAt} at time zone 'UTC', 'YYYY-MM')`)
+      .orderBy(sql`to_char(${products.createdAt} at time zone 'UTC', 'YYYY-MM')`),
+  ])
 
-  const monthlyCreatedCountsRows = await db
-    .select({
-      yearMonth: sql<string>`to_char(${products.createdAt} at time zone 'UTC', 'YYYY-MM')`,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(products)
-    .where(rangeWhere)
-    .groupBy(sql`to_char(${products.createdAt} at time zone 'UTC', 'YYYY-MM')`)
-    .orderBy(sql`to_char(${products.createdAt} at time zone 'UTC', 'YYYY-MM')`)
+  const statusMap = new Map<ProductStatus, number>(statusRows.map((r) => [r.status, r.count]))
 
   return {
     total: totalRow?.count ?? 0,

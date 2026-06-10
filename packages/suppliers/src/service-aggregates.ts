@@ -37,22 +37,19 @@ export async function getSupplierAggregates(
   if (toDate) rangeConditions.push(sql`${suppliers.createdAt} < ${toDate}`)
   const rangeWhere = rangeConditions.length ? and(...rangeConditions) : undefined
 
-  const [totalRow] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(suppliers)
-    .where(rangeWhere)
-
-  const statusRows = await db
-    .select({ status: suppliers.status, count: sql<number>`count(*)::int` })
-    .from(suppliers)
-    .where(rangeWhere)
-    .groupBy(suppliers.status)
-
-  const typeRows = await db
-    .select({ type: suppliers.type, count: sql<number>`count(*)::int` })
-    .from(suppliers)
-    .where(rangeWhere)
-    .groupBy(suppliers.type)
+  const [[totalRow], statusRows, typeRows] = await Promise.all([
+    db.select({ count: sql<number>`count(*)::int` }).from(suppliers).where(rangeWhere),
+    db
+      .select({ status: suppliers.status, count: sql<number>`count(*)::int` })
+      .from(suppliers)
+      .where(rangeWhere)
+      .groupBy(suppliers.status),
+    db
+      .select({ type: suppliers.type, count: sql<number>`count(*)::int` })
+      .from(suppliers)
+      .where(rangeWhere)
+      .groupBy(suppliers.type),
+  ])
 
   const statusMap = new Map<SupplierStatus, number>(statusRows.map((r) => [r.status, r.count]))
   const typeMap = new Map<SupplierType, number>(typeRows.map((r) => [r.type, r.count]))

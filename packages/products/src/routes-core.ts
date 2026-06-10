@@ -10,10 +10,21 @@ import type { Env } from "./route-env.js"
 import { productsService } from "./service.js"
 import * as validation from "./validation.js"
 
+const DASHBOARD_AGGREGATES_CACHE_CONTROL = "private, max-age=60"
+
+function cacheDashboardAggregates(c: {
+  header: (name: string, value: string, options?: { append?: boolean }) => void
+}) {
+  c.header("Cache-Control", DASHBOARD_AGGREGATES_CACHE_CONTROL)
+  c.header("Vary", "Authorization", { append: true })
+  c.header("Vary", "Cookie", { append: true })
+}
+
 export const productCoreRoutes = new Hono<Env>()
   // GET /aggregates — dashboard KPIs (before /:id so the matcher doesn't swallow it)
   .get("/aggregates", async (c) => {
     const query = parseQuery(c, validation.productAggregatesQuerySchema)
+    cacheDashboardAggregates(c)
     return c.json({ data: await productsService.getProductAggregates(c.get("db"), query) })
   })
 

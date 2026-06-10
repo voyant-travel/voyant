@@ -98,82 +98,11 @@ export async function getFinanceAggregates(
   if (options.status?.length) invoiceConditions.push(inArray(invoices.status, options.status))
   const rangeWhere = invoiceConditions.length ? and(...invoiceConditions) : undefined
 
-  const [totalRow] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(invoices)
-    .where(rangeWhere)
-
-  const statusRows = await db
-    .select({
-      status: invoices.status,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(invoices)
-    .where(rangeWhere)
-    .groupBy(invoices.status)
-
-  const countsByStatusMap = new Map<InvoiceStatus, number>(
-    statusRows.map((row) => [row.status, row.count]),
-  )
-
-  const monthlyInvoiceCountsRows = await db
-    .select({
-      yearMonth: sql<string>`to_char(${invoices.createdAt} at time zone 'UTC', 'YYYY-MM')`,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(invoices)
-    .where(rangeWhere)
-    .groupBy(sql`to_char(${invoices.createdAt} at time zone 'UTC', 'YYYY-MM')`)
-    .orderBy(sql`to_char(${invoices.createdAt} at time zone 'UTC', 'YYYY-MM')`)
-
-  const monthlyRevenueRows = await db
-    .select({
-      yearMonth: sql<string>`to_char(${invoices.createdAt} at time zone 'UTC', 'YYYY-MM')`,
-      currency: invoices.currency,
-      totalCents: sql<number>`coalesce(sum(${invoices.totalCents}), 0)::bigint`,
-    })
-    .from(invoices)
-    .where(and(...invoiceConditions, ne(invoices.status, "void")))
-    .groupBy(sql`to_char(${invoices.createdAt} at time zone 'UTC', 'YYYY-MM')`, invoices.currency)
-    .orderBy(sql`to_char(${invoices.createdAt} at time zone 'UTC', 'YYYY-MM')`, invoices.currency)
-
-  const invoiceSummaryRows = await db
-    .select({
-      invoiceType: invoices.invoiceType,
-      status: invoices.status,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(invoices)
-    .where(rangeWhere)
-    .groupBy(invoices.invoiceType, invoices.status)
-
-  const invoiceTotalsRows = await db
-    .select({
-      currency: invoices.currency,
-      invoiced: sql<number>`coalesce(sum(case when ${invoices.status} != 'void' then ${invoices.totalCents} else 0 end), 0)::bigint`,
-      outstanding: sql<number>`coalesce(sum(case when ${invoices.status} not in ('paid', 'void') then ${invoices.balanceDueCents} else 0 end), 0)::bigint`,
-    })
-    .from(invoices)
-    .where(rangeWhere)
-    .groupBy(invoices.currency)
-    .orderBy(invoices.currency)
-
   const paymentConditions = []
   if (fromDate) paymentConditions.push(sql`${payments.paymentDate} >= ${dateOnly(fromDate)}`)
   if (toDate) paymentConditions.push(sql`${payments.paymentDate} < ${dateOnly(toDate)}`)
   if (options.currency?.length) paymentConditions.push(inArray(payments.currency, options.currency))
   const paymentWhere = paymentConditions.length ? and(...paymentConditions) : undefined
-
-  const paymentTotalsRows = await db
-    .select({
-      currency: payments.currency,
-      collected: sql<number>`coalesce(sum(case when ${payments.status} = 'completed' then ${payments.amountCents} else 0 end), 0)::bigint`,
-      refunded: sql<number>`coalesce(sum(case when ${payments.status} = 'refunded' then ${payments.amountCents} else 0 end), 0)::bigint`,
-    })
-    .from(payments)
-    .where(paymentWhere)
-    .groupBy(payments.currency)
-    .orderBy(payments.currency)
 
   const sessionConditions = []
   if (fromDate)
@@ -184,59 +113,121 @@ export async function getFinanceAggregates(
   }
   const sessionWhere = sessionConditions.length ? and(...sessionConditions) : undefined
 
-  const paymentSessionRows = await db
-    .select({
-      status: paymentSessions.status,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(paymentSessions)
-    .where(sessionWhere)
-    .groupBy(paymentSessions.status)
-
   // Outstanding + overdue always look at the whole book (not the date range),
   // since "what are we owed right now" is a point-in-time question — bounding
   // it by `from..to` would hide old unpaid invoices.
-  const outstandingRows = await db
-    .select({
-      currency: invoices.currency,
-      balanceDueCents: sql<number>`coalesce(sum(${invoices.balanceDueCents}), 0)::bigint`,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(invoices)
-    .where(
-      and(
-        inArray(invoices.status, [...OUTSTANDING_STATUSES]),
-        sql`${invoices.balanceDueCents} > 0`,
-      ),
-    )
-    .groupBy(invoices.currency)
-    .orderBy(invoices.currency)
-
   const todayUtc = new Date()
   todayUtc.setUTCHours(0, 0, 0, 0)
   const todayDateString = todayUtc.toISOString().slice(0, 10)
+  const outstandingWhere = and(
+    inArray(invoices.status, [...OUTSTANDING_STATUSES]),
+    sql`${invoices.balanceDueCents} > 0`,
+  )
 
-  const overdueRows = await db
-    .select({
-      currency: invoices.currency,
-      balanceDueCents: sql<number>`coalesce(sum(${invoices.balanceDueCents}), 0)::bigint`,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(invoices)
-    .where(
-      and(
-        inArray(invoices.status, [...OUTSTANDING_STATUSES]),
-        sql`${invoices.balanceDueCents} > 0`,
-        sql`${invoices.dueDate} < ${todayDateString}`,
+  const [
+    [totalRow],
+    statusRows,
+    monthlyInvoiceCountsRows,
+    monthlyRevenueRows,
+    invoiceSummaryRows,
+    invoiceTotalsRows,
+    paymentTotalsRows,
+    paymentSessionRows,
+    outstandingRows,
+    overdueRows,
+    outstandingTopRows,
+  ] = await Promise.all([
+    db.select({ count: sql<number>`count(*)::int` }).from(invoices).where(rangeWhere),
+    db
+      .select({
+        status: invoices.status,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(invoices)
+      .where(rangeWhere)
+      .groupBy(invoices.status),
+    db
+      .select({
+        yearMonth: sql<string>`to_char(${invoices.createdAt} at time zone 'UTC', 'YYYY-MM')`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(invoices)
+      .where(rangeWhere)
+      .groupBy(sql`to_char(${invoices.createdAt} at time zone 'UTC', 'YYYY-MM')`)
+      .orderBy(sql`to_char(${invoices.createdAt} at time zone 'UTC', 'YYYY-MM')`),
+    db
+      .select({
+        yearMonth: sql<string>`to_char(${invoices.createdAt} at time zone 'UTC', 'YYYY-MM')`,
+        currency: invoices.currency,
+        totalCents: sql<number>`coalesce(sum(${invoices.totalCents}), 0)::bigint`,
+      })
+      .from(invoices)
+      .where(and(...invoiceConditions, ne(invoices.status, "void")))
+      .groupBy(sql`to_char(${invoices.createdAt} at time zone 'UTC', 'YYYY-MM')`, invoices.currency)
+      .orderBy(
+        sql`to_char(${invoices.createdAt} at time zone 'UTC', 'YYYY-MM')`,
+        invoices.currency,
       ),
-    )
-    .groupBy(invoices.currency)
-    .orderBy(invoices.currency)
-
-  const outstandingTopRows =
+    db
+      .select({
+        invoiceType: invoices.invoiceType,
+        status: invoices.status,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(invoices)
+      .where(rangeWhere)
+      .groupBy(invoices.invoiceType, invoices.status),
+    db
+      .select({
+        currency: invoices.currency,
+        invoiced: sql<number>`coalesce(sum(case when ${invoices.status} != 'void' then ${invoices.totalCents} else 0 end), 0)::bigint`,
+        outstanding: sql<number>`coalesce(sum(case when ${invoices.status} not in ('paid', 'void') then ${invoices.balanceDueCents} else 0 end), 0)::bigint`,
+      })
+      .from(invoices)
+      .where(rangeWhere)
+      .groupBy(invoices.currency)
+      .orderBy(invoices.currency),
+    db
+      .select({
+        currency: payments.currency,
+        collected: sql<number>`coalesce(sum(case when ${payments.status} = 'completed' then ${payments.amountCents} else 0 end), 0)::bigint`,
+        refunded: sql<number>`coalesce(sum(case when ${payments.status} = 'refunded' then ${payments.amountCents} else 0 end), 0)::bigint`,
+      })
+      .from(payments)
+      .where(paymentWhere)
+      .groupBy(payments.currency)
+      .orderBy(payments.currency),
+    db
+      .select({
+        status: paymentSessions.status,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(paymentSessions)
+      .where(sessionWhere)
+      .groupBy(paymentSessions.status),
+    db
+      .select({
+        currency: invoices.currency,
+        balanceDueCents: sql<number>`coalesce(sum(${invoices.balanceDueCents}), 0)::bigint`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(invoices)
+      .where(outstandingWhere)
+      .groupBy(invoices.currency)
+      .orderBy(invoices.currency),
+    db
+      .select({
+        currency: invoices.currency,
+        balanceDueCents: sql<number>`coalesce(sum(${invoices.balanceDueCents}), 0)::bigint`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(invoices)
+      .where(and(outstandingWhere, sql`${invoices.dueDate} < ${todayDateString}`))
+      .groupBy(invoices.currency)
+      .orderBy(invoices.currency),
     outstandingTopLimit === 0
-      ? []
-      : await db
+      ? Promise.resolve([] as FinanceAggregateOutstandingInvoice[])
+      : db
           .select({
             id: invoices.id,
             invoiceNumber: invoices.invoiceNumber,
@@ -249,12 +240,7 @@ export async function getFinanceAggregates(
             dueDate: invoices.dueDate,
           })
           .from(invoices)
-          .where(
-            and(
-              inArray(invoices.status, [...OUTSTANDING_STATUSES]),
-              sql`${invoices.balanceDueCents} > 0`,
-            ),
-          )
+          .where(outstandingWhere)
           // Nulls-last on dueDate so undated invoices don't pretend to be
           // the most overdue. After that, oldest issued first.
           .orderBy(
@@ -263,7 +249,12 @@ export async function getFinanceAggregates(
             asc(invoices.issueDate),
             asc(invoices.id),
           )
-          .limit(outstandingTopLimit)
+          .limit(outstandingTopLimit),
+  ])
+
+  const countsByStatusMap = new Map<InvoiceStatus, number>(
+    statusRows.map((row) => [row.status, row.count]),
+  )
 
   return {
     total: totalRow?.count ?? 0,

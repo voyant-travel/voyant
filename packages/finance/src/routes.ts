@@ -122,6 +122,7 @@ import {
 // ==========================================================================
 
 const DEFAULT_RENDITION_WAIT_TIMEOUT_MS = 30_000
+const DASHBOARD_AGGREGATES_CACHE_CONTROL = "private, max-age=60"
 
 function csvDownload(csv: string, filename: string): Response {
   return new Response(csv, {
@@ -198,6 +199,12 @@ export function getActionLedgerRequestContext(c: Context<Env>) {
   return undefined
 }
 
+function cacheDashboardAggregates(c: Context<Env>) {
+  c.header("Cache-Control", DASHBOARD_AGGREGATES_CACHE_CONTROL)
+  c.header("Vary", "Authorization", { append: true })
+  c.header("Vary", "Cookie", { append: true })
+}
+
 export const financeRoutes = new Hono<Env>()
 
   // ========================================================================
@@ -206,6 +213,7 @@ export const financeRoutes = new Hono<Env>()
 
   .get("/aggregates", async (c) => {
     const query = parseQuery(c, financeAggregatesQuerySchema)
+    cacheDashboardAggregates(c)
     return c.json({ data: await financeService.getFinanceAggregates(c.get("db"), query) })
   })
 
