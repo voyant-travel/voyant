@@ -1,5 +1,13 @@
 # @voyantjs/workflow-runs
 
+## 0.105.1
+
+### Patch Changes
+
+- Updated dependencies [656b25d]
+  - @voyantjs/hono@0.105.0
+  - @voyantjs/workflows@0.105.1
+
 ## 0.105.0
 
 ### Patch Changes

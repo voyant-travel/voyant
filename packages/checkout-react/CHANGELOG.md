@@ -1,5 +1,13 @@
 # @voyantjs/checkout-react
 
+## 0.107.1
+
+### Patch Changes
+
+- @voyantjs/checkout@0.107.1
+- @voyantjs/finance@0.107.1
+- @voyantjs/finance-react@0.107.1
+
 ## 0.107.0
 
 ### Patch Changes

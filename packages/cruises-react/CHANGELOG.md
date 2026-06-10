@@ -1,5 +1,11 @@
 # @voyantjs/cruises-react
 
+## 0.106.1
+
+### Patch Changes
+
+- @voyantjs/cruises@0.106.1
+
 ## 0.106.0
 
 ### Patch Changes
