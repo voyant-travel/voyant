@@ -1,7 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { OrganizationsPage } from "@voyantjs/crm-ui"
+import { lazy, Suspense } from "react"
 import { getOrganizationsQueryOptions } from "@/components/voyant/crm/crm-query-options"
 import { OrganizationsListSkeleton } from "@/components/voyant/crm/organizations-list-skeleton"
+
+const OrganizationsPage = lazy(() =>
+  import("@voyantjs/crm-ui/components/organizations-page").then((module) => ({
+    default: module.OrganizationsPage,
+  })),
+)
 
 export const Route = createFileRoute("/_workspace/organizations/")({
   ssr: "data-only",
@@ -15,10 +21,12 @@ function OrganizationsRoute() {
   const navigate = useNavigate()
 
   return (
-    <OrganizationsPage
-      onOrganizationOpen={(organization) =>
-        void navigate({ to: "/organizations/$id", params: { id: organization.id } })
-      }
-    />
+    <Suspense fallback={<OrganizationsListSkeleton />}>
+      <OrganizationsPage
+        onOrganizationOpen={(organization) =>
+          void navigate({ to: "/organizations/$id", params: { id: organization.id } })
+        }
+      />
+    </Suspense>
   )
 }

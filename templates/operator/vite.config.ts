@@ -67,8 +67,6 @@ const config = defineConfig({
             if (id.includes("/@tiptap/") || id.includes("/prosemirror-")) return "tiptap"
             if (id.includes("/recharts/")) return "recharts"
             if (id.includes("/pdf-lib/") || id.includes("/@pdf-lib/")) return "pdf-lib"
-            if (id.includes("/react-phone-number-input/") || id.includes("/libphonenumber-js/"))
-              return "phone-input"
           }
         },
       },

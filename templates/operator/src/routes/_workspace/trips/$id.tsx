@@ -30,17 +30,22 @@ import {
   Ship,
   Users,
 } from "lucide-react"
-import { type ReactNode, useState } from "react"
-import { AdminTripComposerPage } from "@/components/voyant/travel-composer/admin-trip-composer-page"
+import { lazy, type ReactNode, Suspense, useState } from "react"
 import {
   componentReferenceLabelFor,
   componentTitleFor,
   formatScheduleLabel,
   sortComponentsBySchedule,
-} from "@/components/voyant/travel-composer/admin-trip-composer-panels"
+} from "@/components/voyant/travel-composer/trip-component-display"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
+
+const AdminTripComposerPage = lazy(() =>
+  import("@/components/voyant/travel-composer/admin-trip-composer-page").then((module) => ({
+    default: module.AdminTripComposerPage,
+  })),
+)
 
 export const Route = createFileRoute("/_workspace/trips/$id")({
   ssr: "data-only",
@@ -56,8 +61,20 @@ export const Route = createFileRoute("/_workspace/trips/$id")({
 function TripDetailRoute() {
   const [mode, setMode] = useState<"record" | "edit">("record")
   const trip = Route.useLoaderData()
-  if (!trip) return <AdminTripComposerPage initialTrip={null} />
-  if (mode === "edit") return <AdminTripComposerPage initialTrip={trip} />
+  if (!trip) {
+    return (
+      <Suspense fallback={null}>
+        <AdminTripComposerPage initialTrip={null} />
+      </Suspense>
+    )
+  }
+  if (mode === "edit") {
+    return (
+      <Suspense fallback={null}>
+        <AdminTripComposerPage initialTrip={trip} />
+      </Suspense>
+    )
+  }
   return <TripRecordPage trip={trip} onEdit={() => setMode("edit")} />
 }
 

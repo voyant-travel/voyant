@@ -22,7 +22,7 @@ import {
   componentTitleFor,
   readComponentSchedule,
   sortComponentsBySchedule,
-} from "@/components/voyant/travel-composer/admin-trip-composer-panels"
+} from "@/components/voyant/travel-composer/trip-component-display"
 import {
   TRIP_STATUS_ALL,
   TripListFiltersPopover,

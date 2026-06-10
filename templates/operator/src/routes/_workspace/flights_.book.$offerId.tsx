@@ -1,7 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useFlightBook } from "@voyantjs/flights-react"
-import { FlightBookingPage, type PaymentStepCapabilities } from "@voyantjs/flights-ui"
+import type { PaymentStepCapabilities } from "@voyantjs/flights-ui/components/flight-payment-step"
+import { lazy, Suspense } from "react"
 import { z } from "zod"
+
+const FlightBookingPage = lazy(() =>
+  import("@voyantjs/flights-ui/components/flight-booking-page").then((module) => ({
+    default: module.FlightBookingPage,
+  })),
+)
 
 /**
  * Booking journey route. Pax counts + cabin live in the URL so the page
@@ -36,27 +43,29 @@ function FlightBookingRoute() {
   const bookMutation = useFlightBook()
 
   return (
-    <FlightBookingPage
-      outboundOfferId={offerId}
-      returnOfferId={search.return}
-      passengers={{
-        adults: search.pax_a ?? 1,
-        children: search.pax_c ?? 0,
-        infants: search.pax_i ?? 0,
-      }}
-      paymentCapabilities={paymentCapabilities}
-      onBackToSearch={() => navigate({ to: "/flights" })}
-      onAddPassengerContact={() => window.open("/people", "_blank")}
-      onBook={async (request) => {
-        const result = await bookMutation.mutateAsync(request)
-        return result.order
-      }}
-      onBooked={(order) => {
-        navigate({
-          to: "/bookings/$id",
-          params: { id: order.orderId },
-        })
-      }}
-    />
+    <Suspense fallback={null}>
+      <FlightBookingPage
+        outboundOfferId={offerId}
+        returnOfferId={search.return}
+        passengers={{
+          adults: search.pax_a ?? 1,
+          children: search.pax_c ?? 0,
+          infants: search.pax_i ?? 0,
+        }}
+        paymentCapabilities={paymentCapabilities}
+        onBackToSearch={() => navigate({ to: "/flights" })}
+        onAddPassengerContact={() => window.open("/people", "_blank")}
+        onBook={async (request) => {
+          const result = await bookMutation.mutateAsync(request)
+          return result.order
+        }}
+        onBooked={(order) => {
+          navigate({
+            to: "/bookings/$id",
+            params: { id: order.orderId },
+          })
+        }}
+      />
+    </Suspense>
   )
 }
