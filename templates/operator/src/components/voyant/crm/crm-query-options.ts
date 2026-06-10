@@ -9,6 +9,7 @@ import {
   getPersonQueryOptions as getPersonQueryOptionsBase,
   getPersonQuotesQueryOptions as getPersonQuotesQueryOptionsBase,
   getQuotesQueryOptions as getQuotesQueryOptionsBase,
+  getQuoteVersionsQueryOptions as getQuoteVersionsQueryOptionsBase,
 } from "@voyantjs/crm-react"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
@@ -53,4 +54,8 @@ export function getOrganizationQueryOptions(id: string) {
 
 export function getQuotesQueryOptions(filters = {}) {
   return queryOptions(getQuotesQueryOptionsBase(client, filters))
+}
+
+export function getQuoteVersionsQueryOptions(filters = {}) {
+  return queryOptions(getQuoteVersionsQueryOptionsBase(client, filters))
 }
