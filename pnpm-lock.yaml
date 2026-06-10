@@ -6963,8 +6963,8 @@ importers:
         specifier: ^6.0.1
         version: 6.0.1(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
       '@voyantjs/cli':
-        specifier: ^0.19.0
-        version: 0.19.0(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(postgres@3.4.8)(zod@4.3.6)
+        specifier: ^0.21.0
+        version: 0.21.0(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(postgres@3.4.8)(typesense@3.0.6(@babel/runtime@7.29.2))(zod@4.3.6)
       dotenv:
         specifier: ^17.4.0
         version: 17.4.0
@@ -10287,6 +10287,21 @@ packages:
     resolution: {integrity: sha512-oOzqzy2WMh1iVglNRGQ/EXjjZtacOm2/zCxig8yO7g8lcufjdiDbOBRyCWvdMfx3iIXOuatgsyVqkiWFbn6Qzg==}
     hasBin: true
 
+  '@voyantjs/cli@0.21.0':
+    resolution: {integrity: sha512-dyshYAihejiWY1Lzz/diTzeMXBHV1OS1r0TUPvg92tsd14UyMe66Eo2GhMUMa5AmNhIbO5/VPqVO8ix1trXtCQ==}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  '@voyantjs/cloud-sdk@0.6.2':
+    resolution: {integrity: sha512-T9073qILcix61oqUcVNCeijHgxC8i2OsjWi5EDvSIZZLx4T4HJS+lBYr39b8Dh+EYdGwSd3HvIcteVrHeuHNow==}
+    peerDependencies:
+      typesense: '>=2.0.0 <4.0.0'
+    peerDependenciesMeta:
+      typesense:
+        optional: true
+    bundledDependencies:
+      - '@voyant-sdk/sdk-core'
+
   '@voyantjs/cloud-sdk@0.8.0':
     resolution: {integrity: sha512-dptd/6dbP+4BvNrcvzJZCpz5KQ3BaTMN+Jpvtb5sC8uAAvDe2kooHUGKhisaKeUsNqFq+Yvu5WquDFLiZSuKeA==}
     peerDependencies:
@@ -10315,6 +10330,9 @@ packages:
     bundledDependencies:
       - '@voyant-sdk/sdk-core'
 
+  '@voyantjs/core@0.18.0':
+    resolution: {integrity: sha512-LGWoE07g9ECc/QBhXL14oKMurWheCBf0cAMXq55AIBit2uX0uy2vZJY4qAFD/l2+RiAgNGvedG6STlyOnib3lQ==}
+
   '@voyantjs/core@0.19.0':
     resolution: {integrity: sha512-L3ielbbWsjGJLkyS6Mzee0z6OD98rqyTxksKBIsaKSiCO0R/a32AXSZ/l4Y8Ek8I8ucYrwe7P4+lr+clppIrBQ==}
 
@@ -10323,14 +10341,31 @@ packages:
     bundledDependencies:
       - '@voyant-sdk/sdk-core'
 
+  '@voyantjs/workflows-errors@0.18.0':
+    resolution: {integrity: sha512-0ZQWENBsz78arcD+h9x28Pe8GytyNAumdW7PYqd++87U8W1+OWelDhWJirQaHHiXCV4AKtg+b2POKThOQe0Hog==}
+
   '@voyantjs/workflows-errors@0.19.0':
     resolution: {integrity: sha512-HVG+8K/I0aSkk+ZKRlPM14+cwK2Bc3JLwYknqg8WhPBBuiXTFhCUlkum/BYdS3WsVGSZ6awk+34+8yM+UBdSPw==}
+
+  '@voyantjs/workflows-orchestrator-node@0.18.0':
+    resolution: {integrity: sha512-P5xKtpvQps5vM6qAWIAhkTnZEXxbLpP7endWcTTpqceyXpnxIYxyp9KEt0VOXw4TQZizdCLg84+LXpvygYsw5g==}
 
   '@voyantjs/workflows-orchestrator-node@0.19.0':
     resolution: {integrity: sha512-X4Nj8W0a2wgTwVEcxMzoCp6UZU62YMwzT1dYywBj/Bj322+1XFI5b7yj1vdliHnPE0+mAOl8YLEO+AkpfRO2jA==}
 
+  '@voyantjs/workflows-orchestrator@0.18.0':
+    resolution: {integrity: sha512-R/9sD6yXbeS67qzjsc6fKVF50OU6bYdPjlwXvA4fT83CYjYOGPq01wYKdsdNTJgjCGT2TyUlD77Fr9GJNjidwQ==}
+
   '@voyantjs/workflows-orchestrator@0.19.0':
     resolution: {integrity: sha512-I4BB9wKGaE4edUWkAnYbdMs5SD9yTHSLBbuH3PlE1KOEUupD26BOcTieCC0IT9wxNFz/e8zuxkMbry0YXhh1WA==}
+
+  '@voyantjs/workflows@0.18.0':
+    resolution: {integrity: sha512-OEN34EAhaqmJGLG0Zw8vMcj1EH/DTjbLS8Olx9GLLjJpCjU9uLgw4lj2PjfyKTe+7lDKQaQ5ihPaSeyg1yhzEQ==}
+    peerDependencies:
+      zod: ^3.23.0 || ^4.0.0
+    peerDependenciesMeta:
+      zod:
+        optional: true
 
   '@voyantjs/workflows@0.19.0':
     resolution: {integrity: sha512-CLMxPyFrCphc7IZgPYJfUdwpUFyCFSUYGhUFFUPvtIYiXcobQba1nuo7IXY5ffMlSjgdgqWFFkAmx9jNba5+2A==}
@@ -17076,6 +17111,52 @@ snapshots:
       - sqlite3
       - zod
 
+  '@voyantjs/cli@0.21.0(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(postgres@3.4.8)(typesense@3.0.6(@babel/runtime@7.29.2))(zod@4.3.6)':
+    dependencies:
+      '@voyantjs/cloud-sdk': 0.6.2(typesense@3.0.6(@babel/runtime@7.29.2))
+      '@voyantjs/core': 0.18.0
+      '@voyantjs/workflows': 0.18.0(zod@4.3.6)
+      '@voyantjs/workflows-orchestrator': 0.18.0(zod@4.3.6)
+      '@voyantjs/workflows-orchestrator-node': 0.18.0(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(postgres@3.4.8)(zod@4.3.6)
+      esbuild: 0.28.0
+      tar: 7.5.13
+    transitivePeerDependencies:
+      - '@aws-sdk/client-rds-data'
+      - '@cloudflare/workers-types'
+      - '@electric-sql/pglite'
+      - '@libsql/client'
+      - '@libsql/client-wasm'
+      - '@neondatabase/serverless'
+      - '@op-engineering/op-sqlite'
+      - '@opentelemetry/api'
+      - '@planetscale/database'
+      - '@prisma/client'
+      - '@tidbcloud/serverless'
+      - '@types/better-sqlite3'
+      - '@types/pg'
+      - '@types/sql.js'
+      - '@upstash/redis'
+      - '@vercel/postgres'
+      - '@xata.io/client'
+      - better-sqlite3
+      - bun-types
+      - expo-sqlite
+      - gel
+      - knex
+      - kysely
+      - mysql2
+      - pg-native
+      - postgres
+      - prisma
+      - sql.js
+      - sqlite3
+      - typesense
+      - zod
+
+  '@voyantjs/cloud-sdk@0.6.2(typesense@3.0.6(@babel/runtime@7.29.2))':
+    optionalDependencies:
+      typesense: 3.0.6(@babel/runtime@7.29.2)
+
   '@voyantjs/cloud-sdk@0.8.0(typesense@3.0.6(@babel/runtime@7.29.2))':
     optionalDependencies:
       typesense: 3.0.6(@babel/runtime@7.29.2)
@@ -17093,11 +17174,53 @@ snapshots:
 
   '@voyantjs/connect-sdk@0.7.1': {}
 
+  '@voyantjs/core@0.18.0': {}
+
   '@voyantjs/core@0.19.0': {}
 
   '@voyantjs/data-sdk@0.4.0': {}
 
+  '@voyantjs/workflows-errors@0.18.0': {}
+
   '@voyantjs/workflows-errors@0.19.0': {}
+
+  '@voyantjs/workflows-orchestrator-node@0.18.0(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(postgres@3.4.8)(zod@4.3.6)':
+    dependencies:
+      '@voyantjs/workflows': 0.18.0(zod@4.3.6)
+      '@voyantjs/workflows-orchestrator': 0.18.0(zod@4.3.6)
+      drizzle-orm: 0.45.2(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(pg@8.20.0)(postgres@3.4.8)
+      pg: 8.20.0
+    transitivePeerDependencies:
+      - '@aws-sdk/client-rds-data'
+      - '@cloudflare/workers-types'
+      - '@electric-sql/pglite'
+      - '@libsql/client'
+      - '@libsql/client-wasm'
+      - '@neondatabase/serverless'
+      - '@op-engineering/op-sqlite'
+      - '@opentelemetry/api'
+      - '@planetscale/database'
+      - '@prisma/client'
+      - '@tidbcloud/serverless'
+      - '@types/better-sqlite3'
+      - '@types/pg'
+      - '@types/sql.js'
+      - '@upstash/redis'
+      - '@vercel/postgres'
+      - '@xata.io/client'
+      - better-sqlite3
+      - bun-types
+      - expo-sqlite
+      - gel
+      - knex
+      - kysely
+      - mysql2
+      - pg-native
+      - postgres
+      - prisma
+      - sql.js
+      - sqlite3
+      - zod
 
   '@voyantjs/workflows-orchestrator-node@0.19.0(@cloudflare/workers-types@4.20260426.1)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.35.6)(kysely@0.28.17)(postgres@3.4.8)(zod@4.3.6)':
     dependencies:
@@ -17137,11 +17260,23 @@ snapshots:
       - sqlite3
       - zod
 
+  '@voyantjs/workflows-orchestrator@0.18.0(zod@4.3.6)':
+    dependencies:
+      '@voyantjs/workflows': 0.18.0(zod@4.3.6)
+    transitivePeerDependencies:
+      - zod
+
   '@voyantjs/workflows-orchestrator@0.19.0(zod@4.3.6)':
     dependencies:
       '@voyantjs/workflows': 0.19.0(zod@4.3.6)
     transitivePeerDependencies:
       - zod
+
+  '@voyantjs/workflows@0.18.0(zod@4.3.6)':
+    dependencies:
+      '@voyantjs/workflows-errors': 0.18.0
+    optionalDependencies:
+      zod: 4.3.6
 
   '@voyantjs/workflows@0.19.0(zod@4.3.6)':
     dependencies:
