@@ -1,5 +1,15 @@
 # @voyantjs/customer-portal
 
+## 0.104.6
+
+### Patch Changes
+
+- @voyantjs/bookings@0.108.0
+- @voyantjs/finance@0.108.0
+- @voyantjs/crm@0.108.0
+- @voyantjs/identity@0.108.0
+- @voyantjs/legal@0.108.0
+
 ## 0.104.5
 
 ### Patch Changes

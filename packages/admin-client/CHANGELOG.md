@@ -1,5 +1,7 @@
 # @voyantjs/admin-client
 
+## 0.105.1
+
 ## 0.105.0
 
 ### Patch Changes

@@ -1,5 +1,15 @@
 # @voyantjs/charters-ui
 
+## 0.106.0
+
+### Patch Changes
+
+- Updated dependencies [7122c2a]
+  - @voyantjs/i18n@0.106.0
+  - @voyantjs/catalog-react@0.106.0
+  - @voyantjs/ui@0.105.1
+  - @voyantjs/charters-react@0.106.0
+
 ## 0.105.1
 
 ### Patch Changes
