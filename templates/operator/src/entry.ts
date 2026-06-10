@@ -45,7 +45,7 @@ export default {
     }
 
     // Everything else → TanStack Start SSR
-    return startHandler(request)
+    return startHandler(request, { context: { env } } as never)
   },
 
   // Cloudflare Workers cron entrypoint. Triggers are declared in

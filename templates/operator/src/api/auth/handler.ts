@@ -23,6 +23,7 @@ import type { VoyantDb, VoyantRequestAuthContext } from "@voyantjs/hono"
 import { eq, sql } from "drizzle-orm"
 import { type Context, Hono } from "hono"
 
+import type { BootstrapStatus, CurrentUser } from "../../lib/current-user-model"
 import { resolveEmailReplyTo } from "../../lib/notifications"
 import { tryGetCloudClient } from "../../lib/voyant-cloud"
 import { dbFromEnvForApp } from "../lib/db"
@@ -181,9 +182,8 @@ function isLocalRequest(request: Request): boolean {
   return hostname === "127.0.0.1" || hostname === "localhost"
 }
 
-function useBrowserEvidenceAuthFallback(env: CloudflareBindings, request: Request): boolean {
-  const bindings = env as unknown as Record<string, string | undefined>
-  return bindings.VOYANT_OPERATOR_BROWSER_EVIDENCE === "1" && isLocalRequest(request)
+function shouldUseBrowserEvidenceAuthFallback(env: CloudflareBindings, request: Request): boolean {
+  return env.VOYANT_OPERATOR_BROWSER_EVIDENCE === "1" && isLocalRequest(request)
 }
 /**
  * Build a Better Auth instance backed by a caller-provided drizzle
@@ -325,6 +325,91 @@ export async function hasAuthPermission(
   return auth !== null
 }
 
+export class CurrentUserNotFoundError extends Error {
+  constructor() {
+    super("User not found")
+    this.name = "CurrentUserNotFoundError"
+  }
+}
+
+export async function getCurrentUserForRequest(
+  request: Request,
+  env: CloudflareBindings,
+): Promise<CurrentUser | null> {
+  if (shouldUseBrowserEvidenceAuthFallback(env, request)) {
+    return null
+  }
+
+  const { db, dispose } = dbFromEnvForApp(env)
+  try {
+    const betterAuth = buildBetterAuth(env, db)
+    const session = await betterAuth.api.getSession({ headers: request.headers })
+    if (!session) {
+      return null
+    }
+
+    const [row] = await db
+      .select({
+        id: authUser.id,
+        email: authUser.email,
+        createdAt: authUser.createdAt,
+        firstName: userProfilesTable.firstName,
+        lastName: userProfilesTable.lastName,
+        locale: userProfilesTable.locale,
+        timezone: userProfilesTable.timezone,
+        uiPrefs: userProfilesTable.uiPrefs,
+        avatarUrl: userProfilesTable.avatarUrl,
+        isSuperAdmin: userProfilesTable.isSuperAdmin,
+        isSupportUser: userProfilesTable.isSupportUser,
+      })
+      .from(authUser)
+      .leftJoin(userProfilesTable, eq(userProfilesTable.id, authUser.id))
+      .where(eq(authUser.id, session.user.id))
+      .limit(1)
+
+    if (!row) {
+      throw new CurrentUserNotFoundError()
+    }
+
+    return {
+      id: row.id,
+      email: row.email ?? session.user.email ?? "",
+      firstName: row.firstName ?? null,
+      lastName: row.lastName ?? null,
+      locale: row.locale ?? "en",
+      timezone: row.timezone ?? null,
+      uiPrefs: (row.uiPrefs as CurrentUser["uiPrefs"]) ?? null,
+      isSuperAdmin: row.isSuperAdmin ?? false,
+      isSupportUser: row.isSupportUser ?? false,
+      createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
+      profilePictureUrl: row.avatarUrl ?? null,
+    }
+  } finally {
+    await dispose()
+  }
+}
+
+export async function getBootstrapStatusForRequest(
+  request: Request,
+  env: CloudflareBindings,
+): Promise<BootstrapStatus> {
+  if (shouldUseBrowserEvidenceAuthFallback(env, request)) {
+    return { hasUsers: true }
+  }
+
+  if (isVoyantCloudAuthMode(env)) {
+    return { hasUsers: true, authMode: "voyant-cloud" }
+  }
+
+  const { db, dispose } = dbFromEnvForApp(env)
+  try {
+    const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
+    return { hasUsers: (row?.count ?? 0) > 0, authMode: "local" }
+  } finally {
+    await dispose()
+  }
+}
+
 export async function validateApiTokenAccess(
   env: CloudflareBindings,
   db: VoyantDb,
@@ -354,63 +439,17 @@ export async function validateApiTokenAccess(
  * Validates the session cookie directly (no Bearer token needed).
  */
 auth.get("/auth/me", async (c) => {
-  if (useBrowserEvidenceAuthFallback(c.env, c.req.raw)) {
-    return c.json({ error: "Unauthorized" }, 401)
-  }
-
-  // The auth sub-app is mounted before the request-scoped `db`
-  // middleware in `createApp` (auth routes are public — no requireAuth
-  // gate), so `c.var.db` is undefined here. Build the per-request Pool
-  // ourselves and use it for both better-auth's session lookup and
-  // the profile query that follows.
-  const { db, dispose } = dbFromEnvForApp(c.env)
   try {
-    const betterAuth = buildBetterAuth(c.env, db)
-    const session = await betterAuth.api.getSession({ headers: c.req.raw.headers })
-    if (!session) {
+    const currentUser = await getCurrentUserForRequest(c.req.raw, c.env)
+    if (!currentUser) {
       return c.json({ error: "Unauthorized" }, 401)
     }
-
-    const [row] = await db
-      .select({
-        id: authUser.id,
-        email: authUser.email,
-        createdAt: authUser.createdAt,
-        firstName: userProfilesTable.firstName,
-        lastName: userProfilesTable.lastName,
-        locale: userProfilesTable.locale,
-        timezone: userProfilesTable.timezone,
-        uiPrefs: userProfilesTable.uiPrefs,
-        avatarUrl: userProfilesTable.avatarUrl,
-        isSuperAdmin: userProfilesTable.isSuperAdmin,
-        isSupportUser: userProfilesTable.isSupportUser,
-      })
-      .from(authUser)
-      .leftJoin(userProfilesTable, eq(userProfilesTable.id, authUser.id))
-      .where(eq(authUser.id, session.user.id))
-      .limit(1)
-
-    if (!row) {
+    return c.json(currentUser)
+  } catch (error) {
+    if (error instanceof CurrentUserNotFoundError) {
       return c.json({ error: "User not found" }, 404)
     }
-
-    return c.json({
-      id: row.id,
-      email: row.email,
-      firstName: row.firstName ?? null,
-      lastName: row.lastName ?? null,
-      locale: row.locale ?? "en",
-      timezone: row.timezone ?? null,
-      uiPrefs: (row.uiPrefs as Record<string, unknown> | null) ?? null,
-      isSuperAdmin: row.isSuperAdmin ?? false,
-      isSupportUser: row.isSupportUser ?? false,
-      createdAt: row.createdAt?.toISOString() ?? new Date().toISOString(),
-      profilePictureUrl: row.avatarUrl ?? null,
-    })
-  } finally {
-    // Schedule dispose AFTER queries settle. waitUntil keeps the
-    // worker alive while the WebSocket close handshake completes.
-    c.executionCtx.waitUntil(dispose())
+    throw error
   }
 })
 
@@ -454,23 +493,7 @@ auth.get("/auth/status", async (c) => {
  * sign-up route loaders to pick the right flow.
  */
 auth.get("/auth/bootstrap-status", async (c) => {
-  if (useBrowserEvidenceAuthFallback(c.env, c.req.raw)) {
-    return c.json({ hasUsers: true })
-  }
-
-  if (isVoyantCloudAuthMode(c.env)) {
-    return c.json({ hasUsers: true, authMode: "voyant-cloud" })
-  }
-
-  // See `/auth/me` above — auth sub-app runs before the request `db`
-  // middleware, so own the Pool here.
-  const { db, dispose } = dbFromEnvForApp(c.env)
-  try {
-    const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(authUser)
-    return c.json({ hasUsers: (row?.count ?? 0) > 0, authMode: "local" })
-  } finally {
-    c.executionCtx.waitUntil(dispose())
-  }
+  return c.json(await getBootstrapStatusForRequest(c.req.raw, c.env))
 })
 
 async function handleApiTokensFacade(c: Context<AuthHonoEnv>) {
