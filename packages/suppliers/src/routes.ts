@@ -42,6 +42,7 @@ function cacheDashboardAggregates(c: {
 }) {
   c.header("Cache-Control", DASHBOARD_AGGREGATES_CACHE_CONTROL)
   c.header("Vary", "Authorization", { append: true })
+  c.header("Vary", "Cookie", { append: true })
 }
 
 // ==========================================================================

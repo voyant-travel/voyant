@@ -290,6 +290,7 @@ const DASHBOARD_AGGREGATES_CACHE_CONTROL = "private, max-age=60"
 function cacheDashboardAggregates(c: Context<Env>) {
   c.header("Cache-Control", DASHBOARD_AGGREGATES_CACHE_CONTROL)
   c.header("Vary", "Authorization", { append: true })
+  c.header("Vary", "Cookie", { append: true })
 }
 
 function getActionLedgerRequestContext(c: Context<Env>): ActionLedgerRequestContextValues {

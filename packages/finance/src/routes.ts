@@ -202,6 +202,7 @@ export function getActionLedgerRequestContext(c: Context<Env>) {
 function cacheDashboardAggregates(c: Context<Env>) {
   c.header("Cache-Control", DASHBOARD_AGGREGATES_CACHE_CONTROL)
   c.header("Vary", "Authorization", { append: true })
+  c.header("Vary", "Cookie", { append: true })
 }
 
 export const financeRoutes = new Hono<Env>()
