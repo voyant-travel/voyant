@@ -1,5 +1,14 @@
 # @voyantjs/finance-ui
 
+## 0.107.1
+
+### Patch Changes
+
+- @voyantjs/finance@0.107.1
+- @voyantjs/bookings-ui@0.107.1
+- @voyantjs/finance-react@0.107.1
+- @voyantjs/suppliers-ui@0.105.1
+
 ## 0.107.0
 
 ### Patch Changes

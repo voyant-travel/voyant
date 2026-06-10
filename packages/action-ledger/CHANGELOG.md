@@ -1,5 +1,12 @@
 # @voyantjs/action-ledger
 
+## 0.104.3
+
+### Patch Changes
+
+- Updated dependencies [656b25d]
+  - @voyantjs/hono@0.105.0
+
 ## 0.104.2
 
 ### Patch Changes

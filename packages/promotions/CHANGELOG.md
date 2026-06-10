@@ -1,5 +1,16 @@
 # @voyantjs/promotions
 
+## 0.105.1
+
+### Patch Changes
+
+- Updated dependencies [656b25d]
+  - @voyantjs/hono@0.105.0
+  - @voyantjs/catalog@0.105.1
+  - @voyantjs/products@0.107.1
+  - @voyantjs/storefront@0.107.1
+  - @voyantjs/workflows@0.105.1
+
 ## 0.105.0
 
 ### Patch Changes
