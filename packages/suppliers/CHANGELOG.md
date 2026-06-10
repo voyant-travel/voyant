@@ -1,5 +1,11 @@
 # @voyantjs/suppliers
 
+## 0.105.3
+
+### Patch Changes
+
+- 92af490: Parallelize operator dashboard aggregate queries and emit short-lived private cache headers for aggregate responses. Finance also adds an invoice index for outstanding-balance dashboard queries.
+
 ## 0.105.2
 
 ### Patch Changes
