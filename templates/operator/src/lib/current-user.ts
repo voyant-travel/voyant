@@ -1,22 +1,9 @@
 import { createMiddleware, createServerFn } from "@tanstack/react-start"
 
-export type CurrentUser = {
-  id: string
-  email: string
-  firstName: string | null
-  lastName: string | null
-  locale: string
-  timezone: string | null
-  // biome-ignore lint/complexity/noBannedTypes: UI prefs are opaque JSON blobs passed through app/server boundaries.
-  uiPrefs: Record<string, {}> | null
-  isSuperAdmin: boolean
-  isSupportUser: boolean
-  createdAt: string
-  profilePictureUrl?: string | null
-}
+export type { AuthMode, BootstrapStatus, CurrentUser } from "./current-user-model"
 
-export type AuthMode = "local" | "voyant-cloud"
-export type BootstrapStatus = { hasUsers: boolean; authMode?: AuthMode }
+import type { BootstrapStatus, CurrentUser } from "./current-user-model"
+import { getOperatorStartEnv } from "./operator-start-context"
 
 export function cloudAuthStartHref(next?: string): string {
   const params = new URLSearchParams()
@@ -33,35 +20,45 @@ function isLocalRequest(request: Request): boolean {
   return hostname === "127.0.0.1" || hostname === "localhost"
 }
 
-function useBrowserEvidenceAuthFallback(request: Request): boolean {
+function shouldUseBrowserEvidenceAuthFallback(request: Request): boolean {
   return process.env.VOYANT_OPERATOR_BROWSER_EVIDENCE === "1" && isLocalRequest(request)
 }
 
-const withRequest = createMiddleware({ type: "request" }).server(({ next, request }) => {
-  return next({ context: { request } })
+const withRequest = createMiddleware({ type: "request" }).server(({ context, next, request }) => {
+  return next({
+    context: { request, env: getOperatorStartEnv(context) },
+  })
 })
 
 export const getBootstrapStatus = createServerFn({ method: "GET" })
   .middleware([withRequest])
   .handler(async ({ context }) => {
-    if (useBrowserEvidenceAuthFallback(context.request)) {
+    if (shouldUseBrowserEvidenceAuthFallback(context.request)) {
       return { hasUsers: true }
+    }
+
+    if (context.env) {
+      const { getBootstrapStatusForRequest } = await import("../api/auth/handler")
+      return getBootstrapStatusForRequest(context.request, context.env)
     }
 
     const response = await fetch(new URL("/api/auth/bootstrap-status", context.request.url), {
       method: "GET",
     })
-    if (!response.ok) {
-      throw new Error("Failed to fetch bootstrap status")
-    }
+    if (!response.ok) throw new Error("Failed to fetch bootstrap status")
     return (await response.json()) as BootstrapStatus
   })
 
 export const getCurrentUser = createServerFn({ method: "GET" })
   .middleware([withRequest])
   .handler(async ({ context }) => {
-    if (useBrowserEvidenceAuthFallback(context.request)) {
+    if (shouldUseBrowserEvidenceAuthFallback(context.request)) {
       return null
+    }
+
+    if (context.env) {
+      const { getCurrentUserForRequest } = await import("../api/auth/handler")
+      return getCurrentUserForRequest(context.request, context.env)
     }
 
     const headers = new Headers()

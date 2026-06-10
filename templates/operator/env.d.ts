@@ -31,6 +31,7 @@ interface CloudflareBindings {
   VOYANT_CLOUD_APP_ID?: string
   VOYANT_CLOUD_DEPLOYMENT_ID?: string
   VOYANT_CLOUD_ENVIRONMENT?: string
+  VOYANT_OPERATOR_BROWSER_EVIDENCE?: string
 
   // Voyant API (canonical email/sms/verify/vault/connect provider)
   VOYANT_API_KEY: string

@@ -74,7 +74,14 @@ export class DashboardApiError extends Error {
   }
 }
 
-function buildSixMonthWindow() {
+export const dashboardQueryKeys = {
+  bookingsAggregates: (from: string) => ["dashboard-bookings-aggregates", from] as const,
+  productsAggregates: () => ["dashboard-products-aggregates"] as const,
+  suppliersAggregates: () => ["dashboard-suppliers-aggregates"] as const,
+  financeAggregates: (from: string) => ["dashboard-finance-aggregates", from] as const,
+}
+
+export function buildDashboardSixMonthWindow() {
   const now = new Date()
   const fromDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 5, 1, 0, 0, 0, 0))
   return { from: fromDate.toISOString() }
@@ -127,9 +134,9 @@ async function fetchDashboardJson<T>(client: DashboardQueryClient, path: string)
 }
 
 export function getDashboardBookingsAggregatesQueryOptions(client: DashboardQueryClient) {
-  const { from } = buildSixMonthWindow()
+  const { from } = buildDashboardSixMonthWindow()
   return queryOptions({
-    queryKey: ["dashboard-bookings-aggregates", from],
+    queryKey: dashboardQueryKeys.bookingsAggregates(from),
     queryFn: () =>
       fetchDashboardJson<{ data: BookingsAggregates }>(
         client,
@@ -141,7 +148,7 @@ export function getDashboardBookingsAggregatesQueryOptions(client: DashboardQuer
 
 export function getDashboardProductsAggregatesQueryOptions(client: DashboardQueryClient) {
   return queryOptions({
-    queryKey: ["dashboard-products-aggregates"],
+    queryKey: dashboardQueryKeys.productsAggregates(),
     queryFn: () =>
       fetchDashboardJson<{ data: ProductsAggregates }>(client, "/v1/admin/products/aggregates"),
     staleTime: 60_000,
@@ -150,7 +157,7 @@ export function getDashboardProductsAggregatesQueryOptions(client: DashboardQuer
 
 export function getDashboardSuppliersAggregatesQueryOptions(client: DashboardQueryClient) {
   return queryOptions({
-    queryKey: ["dashboard-suppliers-aggregates"],
+    queryKey: dashboardQueryKeys.suppliersAggregates(),
     queryFn: () =>
       fetchDashboardJson<{ data: SuppliersAggregates }>(client, "/v1/admin/suppliers/aggregates"),
     staleTime: 60_000,
@@ -158,9 +165,9 @@ export function getDashboardSuppliersAggregatesQueryOptions(client: DashboardQue
 }
 
 export function getDashboardFinanceAggregatesQueryOptions(client: DashboardQueryClient) {
-  const { from } = buildSixMonthWindow()
+  const { from } = buildDashboardSixMonthWindow()
   return queryOptions({
-    queryKey: ["dashboard-finance-aggregates", from],
+    queryKey: dashboardQueryKeys.financeAggregates(from),
     queryFn: () =>
       fetchDashboardJson<{ data: FinanceAggregates }>(
         client,

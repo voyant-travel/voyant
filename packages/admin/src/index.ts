@@ -90,9 +90,11 @@ export type {
 export {
   type BookingsAggregates,
   bookingStatusConfig,
+  buildDashboardSixMonthWindow,
   buildMonthSeries,
   DashboardApiError,
   type DashboardQueryClient,
+  dashboardQueryKeys,
   type FinanceAggregates,
   formatCurrency,
   getDashboardBookingsAggregatesQueryOptions,
