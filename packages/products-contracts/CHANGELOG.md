@@ -1,5 +1,11 @@
 # @voyantjs/products-contracts
 
+## 0.105.2
+
+### Patch Changes
+
+- 54d529e: Include product inclusions, exclusions, and terms HTML fields in public catalog product response schemas.
+
 ## 0.105.1
 
 ### Patch Changes
