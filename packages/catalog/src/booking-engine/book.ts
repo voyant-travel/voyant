@@ -217,6 +217,10 @@ export async function bookEntity(
       throw new ReserveFailedError(commitResult.upstreamPayload, quote.source_kind, quote.entity_id)
     }
 
+    // The handler may mint its own booking row id rather than use the provided
+    // one — adopt it so the response + snapshot + quote marker reference the
+    // real booking (otherwise the detail page 404s on a non-existent id).
+    const ownedBookingId = commitResult.bookingId ?? bookingId
     const finalPricing = commitResult.pricing ?? quotePricing
     const ownedFrozenPayload: Record<string, unknown> = {
       quote: serializeQuote(quote),
@@ -224,7 +228,7 @@ export async function bookEntity(
       paymentIntent,
     }
     const ownedSnapshot = await captureSnapshot(db, {
-      bookingId,
+      bookingId: ownedBookingId,
       entityModule: quote.entity_module,
       entityId: quote.entity_id,
       sourceKind: quote.source_kind,
@@ -235,10 +239,10 @@ export async function bookEntity(
       pricingBasis: finalPricing,
       idempotencyKey: request.idempotencyKey,
     })
-    await markQuoteConsumed(db, quote.id, bookingId)
+    await markQuoteConsumed(db, quote.id, ownedBookingId)
 
     return {
-      bookingId,
+      bookingId: ownedBookingId,
       orderRef: commitResult.orderRef || ownedSnapshot.id,
       status: commitResult.status,
       snapshotId: ownedSnapshot.id,

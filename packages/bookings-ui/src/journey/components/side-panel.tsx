@@ -25,27 +25,65 @@ export function PriceSidePanel({
   entitySummary,
   currentStep,
   steps,
+  shape,
   draft,
   className,
-}: SidePanelState & { className?: string }): React.ReactElement {
+  pricingExtras,
+}: SidePanelState & {
+  className?: string
+  /** Operator-only price controls (override + voucher) rendered with the
+   *  pricing, where they're most in context. */
+  pricingExtras?: React.ReactNode
+}): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
+  // Only surface pricing once the user has configured what actually drives
+  // the price — otherwise the quote's baseline shows a misleading total
+  // (e.g. a per-pax "from" price before any room is picked). Room products
+  // (an `option-units` sub-step) require a room selection; everything else
+  // requires at least one traveler.
+  const configuredPax = draft?.configure?.pax
+    ? Object.values(draft.configure.pax).reduce<number>((sum, n) => sum + (n ?? 0), 0)
+    : 0
+  const isRoomProduct = (shape?.configureSubSteps ?? []).some((s) => s.kind === "option-units")
+  const roomsPicked = (draft?.configure?.optionSelections?.length ?? 0) > 0
+  const showPricing = isRoomProduct ? roomsPicked : configuredPax > 0
+  const pricingHint = isRoomProduct
+    ? messages.bookingJourney.sidePanel.pricingHintRooms
+    : messages.bookingJourney.sidePanel.pricingHint
+  // Departure shows directly under the product title — it's the most-glanced
+  // fact, so it doesn't belong buried in the recap accordion.
+  const departureText = draft ? stepHeadline("departure", draft, messages) : ""
+
   return (
     <Card className={className}>
-      {entitySummary ? <EntityHeader summary={entitySummary} /> : null}
+      {/* Image is a DIRECT Card child so the card's `has-[>img:first-child]`
+          rule drops the top padding and rounds the top corners flush. */}
+      {entitySummary?.heroImageUrl ? (
+        <img
+          src={entitySummary.heroImageUrl}
+          alt={entitySummary.name}
+          className="aspect-video w-full object-cover"
+        />
+      ) : null}
+      {entitySummary ? (
+        <EntityHeader summary={entitySummary} departureText={departureText} />
+      ) : null}
       <CardContent className="space-y-4">
         {steps && steps.length > 0 && currentStep && draft ? (
           <StepRecap steps={steps} currentStep={currentStep} draft={draft} />
         ) : null}
 
-        {isQuoting && !pricing ? (
-          <div className="space-y-2">
+        {invalidReason ? <p className="text-destructive text-sm">{invalidReason}</p> : null}
+        {!showPricing ? (
+          <p className="border-t pt-4 text-muted-foreground text-sm">{pricingHint}</p>
+        ) : isQuoting && !pricing ? (
+          <div className="space-y-2 border-t pt-4">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-4 w-32" />
             <Skeleton className="h-4 w-20" />
           </div>
         ) : null}
-        {invalidReason ? <p className="text-destructive text-sm">{invalidReason}</p> : null}
-        {pricing ? (
+        {showPricing && pricing ? (
           <div className="space-y-2 border-t pt-4">
             <ul className="space-y-1 text-sm">
               {pricing.lines.map((line) => (
@@ -67,7 +105,10 @@ export function PriceSidePanel({
               <ul className="space-y-1 border-t pt-2 text-sm text-muted-foreground">
                 {pricing.taxes.map((tax) => (
                   <li key={tax.code} className="flex justify-between">
-                    <span>{tax.label}</span>
+                    <span>
+                      {tax.label}
+                      {tax.rate > 0 ? ` (${formatTaxRate(tax.rate)})` : ""}
+                    </span>
                     <span>{formatMoney(tax.amount, pricing.currency)}</span>
                   </li>
                 ))}
@@ -79,36 +120,33 @@ export function PriceSidePanel({
             </div>
           </div>
         ) : null}
+
+        {pricingExtras ? <div className="border-t pt-4">{pricingExtras}</div> : null}
       </CardContent>
     </Card>
   )
 }
 
-function EntityHeader({ summary }: { summary: BookingEntitySummary }): React.ReactElement {
-  const messages = useBookingsUiMessagesOrDefault()
+function EntityHeader({
+  summary,
+  departureText,
+}: {
+  summary: BookingEntitySummary
+  departureText?: string
+}): React.ReactElement {
+  // Text block only — the hero image is rendered as a direct Card child above.
   return (
-    <div className="overflow-hidden rounded-t-xl">
-      {summary.heroImageUrl ? (
-        <img
-          src={summary.heroImageUrl}
-          alt={summary.name}
-          className="aspect-video w-full object-cover"
-        />
+    <div className="space-y-1 px-6 pt-4 pb-2">
+      <div className="font-semibold leading-tight">{summary.name}</div>
+      {departureText ? <div className="text-muted-foreground text-sm">{departureText}</div> : null}
+      {summary.subtitle ? (
+        <div className="text-muted-foreground text-sm">{summary.subtitle}</div>
       ) : null}
-      <div className="space-y-1 px-6 pt-4 pb-2">
-        <div className="text-muted-foreground text-xs uppercase tracking-wide">
-          {messages.bookingJourney.sidePanel.youAreBooking}
+      {summary.whenLabel || summary.locationLabel ? (
+        <div className="text-muted-foreground text-xs">
+          {[summary.whenLabel, summary.locationLabel].filter(Boolean).join(" · ")}
         </div>
-        <div className="font-semibold leading-tight">{summary.name}</div>
-        {summary.subtitle ? (
-          <div className="text-muted-foreground text-sm">{summary.subtitle}</div>
-        ) : null}
-        {summary.whenLabel || summary.locationLabel ? (
-          <div className="text-muted-foreground text-xs">
-            {[summary.whenLabel, summary.locationLabel].filter(Boolean).join(" · ")}
-          </div>
-        ) : null}
-      </div>
+      ) : null}
     </div>
   )
 }
@@ -124,12 +162,18 @@ function StepRecap({
 }): React.ReactElement | null {
   const messages = useBookingsUiMessagesOrDefault()
   if (!draft) return null
+  // Departure shows in the header; payment + documents aren't worth a recap
+  // row — so the accordion covers the substantive in-between steps only.
+  const recapSteps = steps.filter(
+    (step) => step !== "departure" && step !== "payment" && step !== "documents",
+  )
+  if (recapSteps.length === 0) return null
   // Default-open the current step. Uncontrolled — users can toggle
   // freely. Re-mounts when currentStep changes (key) so the
   // newly-active step opens automatically as the user advances.
   return (
     <Accordion key={currentStep} defaultValue={[currentStep]} multiple>
-      {steps.map((step) => (
+      {recapSteps.map((step) => (
         <AccordionItem key={step} value={step}>
           <AccordionTrigger className="py-3">
             <div className="flex flex-1 flex-col text-left">
@@ -165,22 +209,31 @@ function StepSummaryLine({
   return <span className="text-muted-foreground text-xs">{text}</span>
 }
 
-function stepHeadline(
+export function stepHeadline(
   step: JourneyStep,
   draft: NonNullable<SidePanelState["draft"]>,
   messages: ReturnType<typeof useBookingsUiMessagesOrDefault>,
 ): string {
   switch (step) {
-    case "configure": {
-      const total = paxTotal(draft)
-      const slot = draft.configure?.departureSlotId ?? draft.configure?.departureDate ?? undefined
+    case "departure": {
       const range = draft.configure?.dateRange
-      const when = range?.checkIn && range?.checkOut ? `${range.checkIn} → ${range.checkOut}` : slot
-      const guestLabel =
-        total === 1
-          ? messages.bookingJourney.sidePanel.guestSingular
-          : messages.bookingJourney.sidePanel.guestPlural
-      return when ? `${total} ${guestLabel} · ${when}` : `${total} ${guestLabel}`
+      if (range?.checkIn && range?.checkOut) return `${range.checkIn} → ${range.checkOut}`
+      // Never surface the raw slot id — show the departure date.
+      return draft.configure?.departureDate
+        ? formatConfigureDate(draft.configure.departureDate)
+        : ""
+    }
+    case "options": {
+      const rooms = (draft.configure?.optionSelections ?? []).reduce(
+        (sum, s) => sum + (s.quantity ?? 0),
+        0,
+      )
+      if (rooms <= 0) return ""
+      return `${rooms} ${
+        rooms === 1
+          ? messages.bookingJourney.sidePanel.roomSingular
+          : messages.bookingJourney.sidePanel.roomPlural
+      }`
     }
     case "billing": {
       const c = draft.billing.contact
@@ -235,8 +288,10 @@ function StepDetails({
 }): React.ReactElement | null {
   const messages = useBookingsUiMessagesOrDefault()
   switch (step) {
-    case "configure":
-      return <ConfigureDetails draft={draft} />
+    case "departure":
+      return <DepartureDetails draft={draft} />
+    case "options":
+      return <OptionsDetails draft={draft} />
     case "billing":
       return <BillingDetails draft={draft} />
     case "travelers":
@@ -258,7 +313,7 @@ function StepDetails({
   }
 }
 
-function ConfigureDetails({
+function DepartureDetails({
   draft,
 }: {
   draft: NonNullable<SidePanelState["draft"]>
@@ -268,18 +323,12 @@ function ConfigureDetails({
   const range = cfg.dateRange
   return (
     <dl className="space-y-1 text-xs">
-      <Row label={messages.bookingJourney.sidePanel.adults} value={String(cfg.pax?.adult ?? 0)} />
-      {(cfg.pax?.child ?? 0) > 0 ? (
-        <Row label={messages.bookingJourney.sidePanel.children} value={String(cfg.pax.child)} />
-      ) : null}
-      {(cfg.pax?.infant ?? 0) > 0 ? (
-        <Row label={messages.bookingJourney.sidePanel.infants} value={String(cfg.pax.infant)} />
-      ) : null}
-      {cfg.departureSlotId ? (
-        <Row label={messages.bookingJourney.sidePanel.departure} value={cfg.departureSlotId} />
-      ) : null}
+      {/* Show the departure DATE, never the raw slot id. */}
       {cfg.departureDate ? (
-        <Row label={messages.bookingJourney.sidePanel.date} value={cfg.departureDate} />
+        <Row
+          label={messages.bookingJourney.sidePanel.departure}
+          value={formatConfigureDate(cfg.departureDate)}
+        />
       ) : null}
       {range?.checkIn ? (
         <Row label={messages.bookingJourney.sidePanel.checkIn} value={range.checkIn} />
@@ -287,6 +336,27 @@ function ConfigureDetails({
       {range?.checkOut ? (
         <Row label={messages.bookingJourney.sidePanel.checkOut} value={range.checkOut} />
       ) : null}
+    </dl>
+  )
+}
+
+function OptionsDetails({
+  draft,
+}: {
+  draft: NonNullable<SidePanelState["draft"]>
+}): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
+  const cfg = draft.configure ?? {}
+  const selections = (cfg.optionSelections ?? []).filter((s) => (s.quantity ?? 0) > 0)
+  return (
+    <dl className="space-y-1 text-xs">
+      {selections.map((selection) => (
+        <Row
+          key={selection.optionUnitId ?? selection.optionId}
+          label={selection.optionUnitName ?? selection.optionName ?? selection.optionId}
+          value={`× ${selection.quantity}`}
+        />
+      ))}
       {cfg.cabinCategoryId ? (
         <Row label={messages.bookingJourney.sidePanel.cabin} value={cfg.cabinCategoryId} />
       ) : null}
@@ -490,15 +560,27 @@ function stepLabel(
   return messages.bookingJourney.steps[step]
 }
 
-function paxTotal(draft: NonNullable<SidePanelState["draft"]>): number {
-  const pax = draft.configure?.pax ?? {}
-  return (pax.adult ?? 0) + (pax.child ?? 0) + (pax.infant ?? 0)
-}
-
 function formatMoney(cents: number, currency: string): string {
   try {
     return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100)
   } catch {
     return `${(cents / 100).toFixed(2)} ${currency}`
   }
+}
+
+/** Tax rate is stored as a fraction (0.19 → "19%"). Trim trailing zeros. */
+function formatTaxRate(rate: number): string {
+  return `${Number((rate * 100).toFixed(2))}%`
+}
+
+/** Format an ISO date (YYYY-MM-DD or full ISO) for the recap, falling back
+ *  to the raw value when unparseable. Never surfaces a raw slot id. */
+function formatConfigureDate(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return new Intl.DateTimeFormat(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(date)
 }

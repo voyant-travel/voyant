@@ -38,6 +38,8 @@ import {
   defaultTravelerFields,
   type OwnedBookingHandler,
   type OwnedHandlerContext,
+  type PaxBandDependency,
+  type PaxBandSpec,
   type ProductVariantOption,
   paxBandsAllowedTotalFrom,
   type TravelerFieldRequirement,
@@ -118,6 +120,19 @@ export interface BookingCreateBridgeInput {
     invoiceDocument: boolean
     invoiceType: "invoice" | "proforma"
   }
+  /** Suppress post-commit notifications (operator-only). */
+  suppressNotifications?: boolean
+  /** List/quote price before a manual override (drives the override audit + reason check). */
+  catalogSellAmountCents?: number | null
+  /** Manual operator price override — wins over the quote/promotion price. */
+  confirmedSellAmountCents?: number | null
+  /** Required by booking-create when confirmed != catalog. */
+  priceOverrideReason?: string | null
+  /**
+   * Gift / refund-credit voucher to redeem atomically inside the create
+   * transaction. booking-create re-validates status / expiry / balance.
+   */
+  voucherRedemption?: { voucherId: string; amountCents: number }
   taxLines?: Array<{
     code?: string | null
     name: string
@@ -200,6 +215,9 @@ interface DraftLike {
   }>
   paymentSchedules?: BookingCreateBridgeInput["paymentSchedules"]
   documentGeneration?: BookingCreateBridgeInput["documentGeneration"]
+  suppressNotifications?: boolean
+  priceOverride?: { amountCents: number; reason: string }
+  voucherRedemption?: { voucherId: string; amountCents: number }
   addons?: Array<{
     extraId: string
     quantity: number
@@ -225,26 +243,59 @@ export interface BuildOwnedProductDraftShapeOptions {
    * booking configuration, while extras add optional line items.
    */
   productOptions?: ReadonlyArray<ProductVariantOption>
+  /**
+   * Traveler bands derived from the product's configured traveler types
+   * (e.g. pricing categories like "Adult" / "Child under 6"). When
+   * omitted or empty, falls back to the generic adult/child/infant
+   * defaults. `code` must stay aligned with the pricing resolver's
+   * traveler-category codes so per-band pricing keeps matching.
+   */
+  paxBands?: ReadonlyArray<PaxBandSpec>
+  /**
+   * Cross-band occupancy rules (e.g. "Child under 6 requires an Adult"),
+   * derived from the product's pricing-category dependencies. Codes must
+   * match the `paxBands` codes.
+   */
+  paxBandDependencies?: ReadonlyArray<PaxBandDependency>
 }
 
 export function buildOwnedProductDraftShape(
   options: BuildOwnedProductDraftShapeOptions = {},
 ): BookingDraftShape {
-  const paxBands = DEFAULT_PAX_BANDS
+  // Use the product's configured traveler types when supplied; otherwise
+  // the generic adult/child/infant defaults.
+  const paxBands =
+    options.paxBands && options.paxBands.length > 0 ? options.paxBands : DEFAULT_PAX_BANDS
   const fields = options.travelerFields ?? defaultTravelerFields()
   const addons = options.addonCatalog ?? []
   const variants = options.productOptions ?? []
   const flags = defaultDraftShapeFlags()
+  // Room/vehicle-style products sell inventory units (rooms) the operator
+  // must pick a quantity of; person-only products price by pax band alone.
+  const hasInventoryUnits = variants.some((variant) =>
+    variant.units?.some((unit) => unit.unitType === "room" || unit.unitType === "vehicle"),
+  )
   return {
     ...flags,
     showsAddons: addons.length > 0,
     paxBands,
     paxBandsAllowedTotal: paxBandsAllowedTotalFrom(paxBands),
+    ...(options.paxBandDependencies && options.paxBandDependencies.length > 0
+      ? { paxBandDependencies: options.paxBandDependencies }
+      : {}),
     travelerFields: fields,
     bookingFields: defaultBookingFields(),
     paymentIntents: ["hold", "card"],
     configureSubSteps: [
       ...(variants.length > 0 ? [{ kind: "product-option" as const, options: variants }] : []),
+      // Owned products are scheduled — the operator picks a real departure.
+      // The journey renders an injected slot picker for this kind, falling
+      // back to a free date when the product has no scheduled departures.
+      { kind: "departure" as const, required: true },
+      // Inventory products: the operator picks room/unit quantities for the
+      // chosen option + departure. The journey renders an injected units
+      // picker that writes `configure.optionSelections`.
+      ...(hasInventoryUnits ? [{ kind: "option-units" as const }] : []),
       { kind: "occupancy", bands: paxBands },
     ],
     addons: addons.length > 0 ? { catalog: addons } : undefined,
@@ -323,6 +374,30 @@ export interface OwnedProductsShapeLoaders {
     ctx: OwnedHandlerContext,
     productId: string,
   ) => Promise<ReadonlyArray<ProductVariantOption>>
+
+  /**
+   * Resolve the product's configured traveler types as pax bands
+   * (e.g. from `@voyantjs/pricing` pricing categories). Caller-supplied
+   * so the journey's Configure step offers exactly the traveler types
+   * the product is priced for ("Adult", "Child under 6", …) instead of
+   * the generic adult/child/infant defaults. Returns undefined/empty to
+   * fall back to the defaults.
+   */
+  loadPaxBands?: (
+    ctx: OwnedHandlerContext,
+    productId: string,
+  ) => Promise<ReadonlyArray<PaxBandSpec> | undefined>
+
+  /**
+   * Resolve cross-band occupancy rules (e.g. "Child requires an Adult")
+   * from the product's pricing-category dependencies. Caller-supplied;
+   * codes must match `loadPaxBands`. Returns undefined/empty when the
+   * product has no dependency rules.
+   */
+  loadPaxBandDependencies?: (
+    ctx: OwnedHandlerContext,
+    productId: string,
+  ) => Promise<ReadonlyArray<PaxBandDependency> | undefined>
 
   /**
    * Resolve the tax rate for a given (product, buyer country) pair.
@@ -425,6 +500,23 @@ export interface CreateProductsBookingHandlerOptions extends OwnedProductsShapeL
   holds?: AvailabilityHoldBridge
 }
 
+/**
+ * Run an optional enrichment loader so a single failure (a missing
+ * migration, a flaky query) never rejects the quote. The journey
+ * descriptor — steps, pax bands, options, extras, units — must always
+ * render; a broken enrichment source degrades to `undefined`, not a
+ * collapsed booking shape. Logs the cause for diagnosis.
+ */
+async function safeLoad<T>(label: string, promise: Promise<T> | undefined): Promise<T | undefined> {
+  if (!promise) return undefined
+  try {
+    return await promise
+  } catch (error) {
+    console.warn(`[products/booking-engine] ${label} failed; continuing without it`, error)
+    return undefined
+  }
+}
+
 export function createProductsBookingHandler(
   options: CreateProductsBookingHandlerOptions,
 ): OwnedBookingHandler {
@@ -456,118 +548,159 @@ export function createProductsBookingHandler(
       // Concurrent enrichment + slot-date lookup. The slot date is
       // needed before we can call loadResolvedOptionPrice, so it
       // joins this batch.
-      const [travelerFields, addonCatalog, productOptionCatalog, taxRate, slotDate] =
-        await Promise.all([
-          options.loadTravelerFields?.(ctx, request.entityId) ?? Promise.resolve(undefined),
-          options.loadAddonCatalog?.(ctx, request.entityId) ?? Promise.resolve(undefined),
-          options.loadProductOptions?.(ctx, request.entityId) ?? Promise.resolve(undefined),
+      const [
+        travelerFields,
+        addonCatalog,
+        productOptionCatalog,
+        paxBands,
+        paxBandDependencies,
+        taxRate,
+        slotDate,
+      ] = await Promise.all([
+        safeLoad("loadTravelerFields", options.loadTravelerFields?.(ctx, request.entityId)),
+        safeLoad("loadAddonCatalog", options.loadAddonCatalog?.(ctx, request.entityId)),
+        safeLoad("loadProductOptions", options.loadProductOptions?.(ctx, request.entityId)),
+        safeLoad("loadPaxBands", options.loadPaxBands?.(ctx, request.entityId)),
+        safeLoad(
+          "loadPaxBandDependencies",
+          options.loadPaxBandDependencies?.(ctx, request.entityId),
+        ),
+        safeLoad(
+          "loadTaxRate",
           options.loadTaxRate?.(ctx, {
             productId: request.entityId,
             buyerCountry: draft.billing?.address?.country,
             buyerType: draft.billing?.buyerType,
-          }) ?? Promise.resolve(null),
-          slotId && options.loadSlotDate
-            ? options.loadSlotDate(ctx, slotId)
-            : Promise.resolve(draft.configure?.departureDate ?? null),
-        ])
+          }),
+        ),
+        slotId && options.loadSlotDate
+          ? safeLoad("loadSlotDate", options.loadSlotDate(ctx, slotId)).then(
+              (date) => date ?? draft.configure?.departureDate ?? null,
+            )
+          : Promise.resolve(draft.configure?.departureDate ?? null),
+      ])
 
-      const resolvedPrice =
-        optionSelections.length === 0 && optionId && slotDate && options.loadResolvedOptionPrice
-          ? await options.loadResolvedOptionPrice(ctx, {
-              productId: request.entityId,
-              optionId,
-              date: slotDate,
-            })
-          : null
-
-      const paxCount = sumPax(draft.configure?.pax)
-      // Per-pax pricing fallback: when no pax is supplied yet, quote a
-      // single-occupant baseline so the wizard can render a starter
-      // total before the user picks counts.
-      const effectivePax = paxCount > 0 ? paxCount : 1
-
-      const priced =
-        optionSelections.length > 0
-          ? await priceOptionSelections({
-              ctx,
-              options,
-              product,
-              productOptions: productOptionCatalog ?? [],
-              selections: optionSelections,
-              slotDate,
-            })
-          : priceQuote({
-              product,
-              resolvedPrice,
-              pax: draft.configure?.pax,
-              effectivePax,
-            })
-      const pricedWithAddons = applyAddonSelections({
-        priced,
-        addons: draft.addons,
-        addonCatalog: addonCatalog ?? [],
-        effectivePax,
+      // The journey descriptor never depends on pricing — build it
+      // unconditionally so the wizard always renders the right steps,
+      // bands, options, extras and units. Pricing is best-effort: a
+      // failure here returns the shape with no price rather than 500ing
+      // the quote (which would collapse the shape to the bare default).
+      const shape = buildOwnedProductDraftShape({
+        travelerFields,
+        addonCatalog,
+        productOptions: productOptionCatalog,
+        paxBands,
+        paxBandDependencies,
       })
 
-      // Tax computation. The base is taxable; addons/accommodation
-      // get the same rate in this MVP cut. Per-line override (the
-      // `applies_to` axis on tax_classes.lines) lands in a follow-up
-      // when the catalog actually carries mixed treatments.
-      const taxIsInclusive = taxRate?.priceMode === "inclusive"
-      const grossCents = pricedWithAddons.totalCents
-      const taxCents =
-        taxRate && taxRate.rate > 0
-          ? taxIsInclusive
-            ? Math.round(grossCents - grossCents / (1 + taxRate.rate))
-            : Math.round(grossCents * taxRate.rate)
-          : 0
-      const netCents = taxIsInclusive ? grossCents - taxCents : grossCents
-      const payableCents = taxIsInclusive ? grossCents : netCents + taxCents
+      let available = false
+      let pricing: ComputeQuoteResult["pricing"]
+      try {
+        const resolvedPrice =
+          optionSelections.length === 0 && optionId && slotDate && options.loadResolvedOptionPrice
+            ? await options.loadResolvedOptionPrice(ctx, {
+                productId: request.entityId,
+                optionId,
+                date: slotDate,
+              })
+            : null
 
-      const available = grossCents > 0
-      const pricing = available
-        ? {
-            base_amount: netCents,
-            taxes: taxCents,
-            fees: 0,
-            surcharges: 0,
-            currency: product.sellCurrency,
-            breakdown: {
-              lines: pricedWithAddons.lines.map((line) => ({
-                ...line,
-                taxIncluded: taxIsInclusive,
-              })),
-              taxes:
-                taxRate && taxCents > 0
-                  ? [
-                      {
-                        code: taxRate.code,
-                        label: taxRate.label,
-                        rate: taxRate.rate,
-                        amount: taxCents,
-                        base: netCents,
-                        includedInPrice: taxIsInclusive,
-                        scope: taxIsInclusive ? "included" : "excluded",
-                      },
-                    ]
-                  : [],
-              subtotal: netCents,
-              taxTotal: taxCents,
-              total: payableCents,
-              paxCount: effectivePax,
-            } as Record<string, unknown>,
-          }
-        : undefined
+        const paxCount = sumPax(draft.configure?.pax)
+        // Per-pax pricing fallback: when no pax is supplied yet, quote a
+        // single-occupant baseline so the wizard can render a starter
+        // total before the user picks counts.
+        const effectivePax = paxCount > 0 ? paxCount : 1
+
+        const priced =
+          optionSelections.length > 0
+            ? await priceOptionSelections({
+                ctx,
+                options,
+                product,
+                productOptions: productOptionCatalog ?? [],
+                selections: optionSelections,
+                slotDate,
+              })
+            : priceQuote({
+                product,
+                resolvedPrice,
+                pax: draft.configure?.pax,
+                effectivePax,
+              })
+        const pricedWithAddons = applyAddonSelections({
+          priced,
+          addons: draft.addons,
+          addonCatalog: addonCatalog ?? [],
+          effectivePax,
+        })
+
+        // Tax computation. The base is taxable; addons/accommodation
+        // get the same rate in this MVP cut. Per-line override (the
+        // `applies_to` axis on tax_classes.lines) lands in a follow-up
+        // when the catalog actually carries mixed treatments.
+        const taxIsInclusive = taxRate?.priceMode === "inclusive"
+        const grossCents = pricedWithAddons.totalCents
+        const taxCents =
+          taxRate && taxRate.rate > 0
+            ? taxIsInclusive
+              ? Math.round(grossCents - grossCents / (1 + taxRate.rate))
+              : Math.round(grossCents * taxRate.rate)
+            : 0
+        const netCents = taxIsInclusive ? grossCents - taxCents : grossCents
+        const payableCents = taxIsInclusive ? grossCents : netCents + taxCents
+
+        available = grossCents > 0
+        pricing = available
+          ? {
+              base_amount: netCents,
+              taxes: taxCents,
+              fees: 0,
+              surcharges: 0,
+              currency: product.sellCurrency,
+              breakdown: {
+                // `currency` is required for the API serializer to use this
+                // itemized breakdown instead of synthesizing a single "Base"
+                // line from base_amount.
+                currency: product.sellCurrency,
+                lines: pricedWithAddons.lines.map((line) => ({
+                  ...line,
+                  taxIncluded: taxIsInclusive,
+                })),
+                taxes:
+                  taxRate && taxCents > 0
+                    ? [
+                        {
+                          code: taxRate.code,
+                          label: taxRate.label,
+                          rate: taxRate.rate,
+                          amount: taxCents,
+                          base: netCents,
+                          includedInPrice: taxIsInclusive,
+                          scope: taxIsInclusive ? "included" : "excluded",
+                        },
+                      ]
+                    : [],
+                subtotal: netCents,
+                taxTotal: taxCents,
+                total: payableCents,
+                paxCount: effectivePax,
+              } as Record<string, unknown>,
+            }
+          : undefined
+      } catch (error) {
+        console.warn(
+          "[products/booking-engine] pricing failed; returning shape without a price",
+          error,
+        )
+        available = false
+        pricing = undefined
+      }
 
       return {
         available,
         invalidReason: available ? undefined : "no_sell_amount_configured",
         pricing,
-        shape: buildOwnedProductDraftShape({
-          travelerFields,
-          addonCatalog,
-          productOptions: productOptionCatalog,
-        }),
+        shape,
       }
     },
 
@@ -690,6 +823,9 @@ export function createProductsBookingHandler(
       const bridge = await options.createBooking({
         productId: product.id,
         optionId: primaryOptionId,
+        // Link the departure so the booking item carries availability_slot_id
+        // (powers the duplicate-departure check + slot-level reporting).
+        slotId: draft.configure?.departureSlotId ?? null,
         bookingNumber: generateNumber(),
         personId: partyBilling.personId,
         organizationId: partyBilling.organizationId,
@@ -708,7 +844,21 @@ export function createProductsBookingHandler(
                 draft.documentGeneration.invoiceType === "proforma" ? "proforma" : "invoice",
             }
           : undefined,
+        suppressNotifications: draft.suppressNotifications,
         sellAmountCentsOverride,
+        // Manual operator override: `confirmedSellAmountCents` wins over the
+        // quote/promotion price; the quote total is the `catalog` baseline so
+        // booking-create's override audit + required-reason check fire correctly.
+        ...(draft.priceOverride
+          ? {
+              catalogSellAmountCents: sellAmountCentsOverride ?? null,
+              confirmedSellAmountCents: draft.priceOverride.amountCents,
+              priceOverrideReason: draft.priceOverride.reason.trim() || null,
+            }
+          : {}),
+        // Operator-applied gift / refund-credit voucher. booking-create
+        // redeems it atomically and re-checks status / expiry / balance.
+        voucherRedemption: draft.voucherRedemption,
         taxLines: extractTaxLines(request.pricing),
         itemLines: bookingItemLinesFromOptionSelections(optionSelections),
         extraLines: bookingExtraLinesFromAddonSelections({
@@ -730,6 +880,7 @@ export function createProductsBookingHandler(
 
       return {
         status: "held",
+        bookingId: bridge.bookingId,
         orderRef: bridge.bookingNumber ?? bridge.bookingId,
         pricing: request.pricing,
         upstreamPayload: { bridgeBookingId: bridge.bookingId },
@@ -780,6 +931,8 @@ interface PricedQuote {
 interface NormalizedOptionSelection {
   optionId: string
   optionUnitId?: string
+  optionName?: string
+  optionUnitName?: string
   quantity: number
 }
 
@@ -810,6 +963,10 @@ function normalizeOptionSelections(
         optionId: selection.optionId,
         ...(typeof selection.optionUnitId === "string" && selection.optionUnitId.length > 0
           ? { optionUnitId: selection.optionUnitId }
+          : {}),
+        ...(typeof selection.optionName === "string" ? { optionName: selection.optionName } : {}),
+        ...(typeof selection.optionUnitName === "string"
+          ? { optionUnitName: selection.optionUnitName }
           : {}),
         quantity,
       },
@@ -850,7 +1007,10 @@ async function priceOptionSelections(input: {
     totalCents += totalAmount
     lines.push({
       kind: "base",
-      label: optionsById.get(selection.optionId)?.name ?? input.product.name,
+      // Prefer the specific room/unit name ("Standard - Single"); fall back to
+      // the option name, then the product name.
+      label:
+        selection.optionUnitName ?? optionsById.get(selection.optionId)?.name ?? input.product.name,
       quantity: selection.quantity,
       unitAmount,
       totalAmount,

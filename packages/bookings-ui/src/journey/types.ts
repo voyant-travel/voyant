@@ -16,21 +16,25 @@ import type {
 import type { ReactNode } from "react"
 
 export type JourneyStep =
-  | "configure"
+  | "departure"
   | "billing"
   | "travelers"
+  | "options"
   | "accommodation"
   | "addons"
   | "payment"
+  | "documents"
   | "review"
 
 export const JOURNEY_STEP_ORDER: ReadonlyArray<JourneyStep> = [
-  "configure",
+  "departure",
   "billing",
   "travelers",
+  "options",
   "accommodation",
   "addons",
   "payment",
+  "documents",
   "review",
 ]
 
@@ -40,10 +44,40 @@ export interface JourneySurface {
 }
 
 export interface LeadContactPickerProps {
-  /** Apply a picked contact to the draft's billing fields. Email is
-   *  optional because CRM-backed people may not have one stored —
-   *  the billing form will surface it as empty for the operator to
-   *  fill in. */
+  /** Current buyer type — the picker should search PEOPLE for B2C and
+   *  ORGANIZATIONS for B2B. */
+  buyerType: "B2C" | "B2B"
+  /** Apply a picked lead to the draft's billing fields. A PARTIAL — only
+   *  the provided fields are merged, so separate CRM lookups (person/org
+   *  record, then its address) can each fill their slice without clobbering
+   *  the others. B2C fills the person; B2B fills companyName/taxId; both
+   *  fill the billing address from the CRM record. */
+  apply: (contact: {
+    firstName?: string
+    lastName?: string
+    email?: string
+    phone?: string
+    personId?: string
+    organizationId?: string
+    companyName?: string
+    taxId?: string
+    address?: {
+      line1?: string
+      line2?: string
+      city?: string
+      postal?: string
+      country?: string
+    }
+  }) => void
+}
+
+export interface TravelerContactPickerProps {
+  rowIndex: number
+  /** The CRM person currently linked to this traveler row, if any. The
+   *  picker should reflect it in its combobox — so e.g. "Copy from billing"
+   *  (which links the billing person) shows that person as selected. */
+  selectedPersonId?: string
+  /** Apply a picked contact to the traveler at `rowIndex`. */
   apply: (contact: {
     firstName: string
     lastName: string
@@ -53,16 +87,91 @@ export interface LeadContactPickerProps {
   }) => void
 }
 
-export interface TravelerContactPickerProps {
-  rowIndex: number
-  /** Apply a picked contact to the traveler at `rowIndex`. */
-  apply: (contact: {
-    firstName: string
-    lastName: string
-    email?: string
-    phone?: string
-    personId?: string
+/**
+ * Context handed to `renderBillingExtras` — the picked lead + the departure —
+ * so a template can run lead-aware checks (e.g. "this customer already booked
+ * this departure") next to the billing block.
+ */
+export interface BillingExtrasContext {
+  buyerType: "B2C" | "B2B"
+  personId?: string
+  organizationId?: string
+  productId: string
+  departureSlotId?: string
+  departureDate?: string
+}
+
+/**
+ * Props for the injectable voucher picker. The operator surface wires an async
+ * combobox (search the admin vouchers list) so staff pick a voucher without
+ * knowing the exact code; the storefront keeps the customer code-entry form.
+ */
+export interface VoucherPickerProps {
+  /** Currently-linked voucher redemption on the draft, if any. */
+  value: { voucherId?: string; amountCents?: number }
+  /** Apply a picked voucher's full remaining balance — or clear with `null`. */
+  onApply: (picked: { voucherId: string; amountCents: number } | null) => void
+  /** Booking currency + payable total, to display/cap the redemption. */
+  currency?: string
+  amountCents?: number
+}
+
+/**
+ * Props for the injectable departure picker rendered in the Configure
+ * step for a `"departure"` sub-step. The template wires this with a
+ * scheduled-departures source (e.g. operator availability) so the
+ * operator picks a real departure rather than typing a free date.
+ *
+ * The picker owns its own data-loading and should fall back to a free
+ * date when the product has no scheduled departures — the journey just
+ * stores whatever it reports via `onChange`.
+ */
+export interface DeparturePickerProps {
+  /** The owned product whose departures to load. */
+  productId: string
+  /** Selected product option, used to filter departures (null = any). */
+  optionId: string | null
+  /** Currently-picked scheduled departure id, or null. */
+  slotId: string | null
+  /** Currently-entered departure date (free-date fallback), or null. */
+  departureDate: string | null
+  /** Currently-entered departure time (free-date fallback), or null. */
+  departureTime: string | null
+  /** Report a change — any omitted field is left unchanged on the draft. */
+  onChange: (next: {
+    slotId?: string | null
+    departureDate?: string | null
+    departureTime?: string | null
   }) => void
+}
+
+/** A picked inventory unit (room) selection on the draft's configure. */
+export interface JourneyOptionSelection {
+  optionId: string
+  optionName?: string
+  optionUnitId?: string
+  optionUnitName?: string
+  quantity: number
+}
+
+/**
+ * Props for the injectable units (rooms) picker rendered in the Configure
+ * step for an `"option-units"` sub-step. The template wires it to an
+ * inventory source (operator availability) so the operator picks room
+ * quantities for the chosen option + departure; the journey stores the
+ * result on `configure.optionSelections`.
+ */
+export interface UnitsPickerProps {
+  /** The owned product whose units to load. */
+  productId: string
+  /** Currently-selected product option (drives which units show), or null. */
+  optionId: string | null
+  /** Currently-picked departure slot (drives per-slot availability), or null. */
+  slotId: string | null
+  /** Current unit selections on the draft. */
+  selections: ReadonlyArray<JourneyOptionSelection>
+  /** Report the new full set of unit selections. */
+  onChange: (selections: JourneyOptionSelection[]) => void
 }
 
 /**
@@ -137,6 +246,17 @@ export interface BookingJourneyProps {
   /** Surface — drives audience defaults and slot wiring. */
   surface?: "admin" | "public"
 
+  /**
+   * Layout of the booking flow.
+   *  - `"wizard"` — one step at a time with Back/Next (the guided
+   *    storefront flow).
+   *  - `"stacked"` — every section rendered as a block on a single
+   *    scrollable page, nothing hidden (the operator flow — an admin
+   *    can see travelers while editing options, and jump around freely).
+   * Defaults to `"stacked"` on the admin surface and `"wizard"` on
+   * public, keeping the two processes deliberately separate. */
+  layout?: "wizard" | "stacked"
+
   /** Stable draft id — caller persists in URL or session storage so
    *  the journey survives page refresh. */
   draftId: string
@@ -174,6 +294,23 @@ export interface BookingJourneyProps {
   /** Operator: pulls from CRM. Storefront: bare inline form. */
   renderLeadContactPicker?: (props: LeadContactPickerProps) => ReactNode
   renderTravelerContactPicker?: (props: TravelerContactPickerProps) => ReactNode
+  /** Operator-only voucher picker (async search). When omitted, the voucher
+   *  control falls back to the customer code-entry form. */
+  renderVoucherPicker?: (props: VoucherPickerProps) => ReactNode
+
+  /**
+   * Renders the Configure step's `"departure"` sub-step. Operator
+   * surfaces wire this to a scheduled-departure picker (availability);
+   * when omitted, the journey renders a free date/time fallback.
+   */
+  renderDeparturePicker?: (props: DeparturePickerProps) => ReactNode
+
+  /**
+   * Renders the Configure step's `"option-units"` sub-step (room/unit
+   * quantity selection). Operator surfaces wire this to an inventory
+   * units picker; when omitted, the sub-step renders nothing.
+   */
+  renderUnitsPicker?: (props: UnitsPickerProps) => ReactNode
 
   /** Hook for the actual payment-provider widget — checkout-ui's
    *  PaymentStep is the canonical implementation. When omitted, the
@@ -192,7 +329,9 @@ export interface BookingJourneyProps {
    *  template wants to inject a custom block (e.g. coupon code
    *  banner, marketing opt-in). */
   renderConfigureExtras?: () => ReactNode
-  renderBillingExtras?: () => ReactNode
+  /** Billing extras — receives the picked lead + departure so a template can,
+   *  e.g., warn that this customer already has a booking on this departure. */
+  renderBillingExtras?: (ctx: BillingExtrasContext) => ReactNode
   renderReviewExtras?: () => ReactNode
 
   /** Fired on successful commit — typically a navigation. */

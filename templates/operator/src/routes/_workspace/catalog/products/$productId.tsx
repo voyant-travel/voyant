@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { z } from "zod"
-import { ProductDetailPage } from "@/components/voyant/catalog/product-detail-page"
+import { OperatorProductDetail } from "@/components/voyant/catalog/operator-product-detail"
 
 // Search context carried onto the detail page so live offers match what the
 // operator searched (occupancy + length of stay) and the right locale loads.
@@ -19,5 +19,7 @@ function CatalogProductDetailRoute() {
   const { productId } = Route.useParams()
   const { adults, nights, locale } = Route.useSearch()
 
-  return <ProductDetailPage productId={productId} adults={adults} nights={nights} locale={locale} />
+  return (
+    <OperatorProductDetail productId={productId} adults={adults} nights={nights} locale={locale} />
+  )
 }

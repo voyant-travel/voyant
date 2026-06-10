@@ -1,21 +1,16 @@
 "use client"
 
-import { useNavigate } from "@tanstack/react-router"
-import { useAdminBreadcrumbs, useLocale } from "@voyantjs/admin"
 import type { CatalogSearchHit } from "@voyantjs/catalog-react"
-import {
-  type CatalogDetailEnrichment,
-  CatalogDetailView,
-  type CatalogSlotAvailability,
-  createCatalogEnrichmentFetchers,
-} from "@voyantjs/catalog-ui"
-import { useSuppliers } from "@voyantjs/suppliers-react"
+import { fetchCatalogSlots, useVoyantCatalogContext } from "@voyantjs/catalog-react"
 import { Image as ImageIcon } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { getApiUrl } from "@/lib/env"
-import { type CatalogDetailSurface, catalogSurfaceVertical } from "./catalog-route-state"
+import { useCatalogUiI18nOrDefault, useCatalogUiMessagesOrDefault } from "../i18n/index.js"
+import { type CatalogDetailEnrichment, CatalogDetailView } from "./catalog-detail-sheet.js"
+import {
+  type CatalogSlotAvailability,
+  createCatalogEnrichmentFetchers,
+} from "./catalog-enrichment-fetchers.js"
 
 /**
  * Generic, full-page, URL-addressable detail page for the non-package catalog
@@ -24,9 +19,13 @@ import { type CatalogDetailSurface, catalogSurfaceVertical } from "./catalog-rou
  * uses — keyed by the catalog id, so it works where a Typesense `id` filter
  * doesn't) and renders the shared `CatalogDetailView`. Opened in a new tab from
  * the surface's results. Packages keep their own bespoke detail page.
+ *
+ * Presentational: navigation (`onBook`), breadcrumbs (`onBreadcrumbs`) and
+ * supplier-name resolution (`formatSupplier`) are injected by the host; the
+ * content base URL + fetcher come from `VoyantCatalogProvider`.
  */
 
-const CONTENT_BASE_BY_VERTICAL: Record<string, string> = {
+const DEFAULT_CONTENT_BASE_BY_VERTICAL: Record<string, string> = {
   products: "/v1/admin/products",
   cruises: "/v1/admin/cruises",
   accommodations: "/v1/admin/accommodations",
@@ -34,38 +33,76 @@ const CONTENT_BASE_BY_VERTICAL: Record<string, string> = {
 
 type Status = "loading" | "ready" | "notfound" | "error"
 
-export function CatalogVerticalDetailPage({
-  surface,
-  id,
-}: {
-  surface: CatalogDetailSurface
-  id: string
-}) {
-  const messages = useAdminMessages()
-  const nav = messages.nav
-  const navigate = useNavigate()
-  const { resolvedLocale } = useLocale()
-  const vertical = catalogSurfaceVertical(surface)
-  const surfaceLabel = surfaceTitle(surface, nav)
+export type CatalogVerticalDetailVertical = "products" | "cruises" | "accommodations"
 
-  const suppliersQuery = useSuppliers({ limit: 100 })
-  const supplierMap = useMemo(() => {
-    const m = new Map<string, string>()
-    for (const sup of suppliersQuery.data?.data ?? []) m.set(sup.id, sup.name)
-    return m
-  }, [suppliersQuery.data])
+export interface CatalogVerticalDetailBreadcrumb {
+  label: string
+  href?: string
+}
+
+export interface CatalogVerticalDetailPageProps {
+  id: string
+  /** Content vertical backing the surface (excursions/tours → products). */
+  vertical: CatalogVerticalDetailVertical
+  /** Localized surface name — header fallback + breadcrumb root. */
+  surfaceLabel: string
+  /** Href of the surface's browse page, e.g. `/catalog/cruises`. */
+  surfaceHref: string
+  /** BCP-47 locale forwarded to the content route. Defaults to the i18n locale. */
+  locale?: string
+  /** Per-vertical content mount paths. Defaults to the operator admin routes. */
+  contentBasePathByVertical?: Record<string, string>
+  /** Resolve a supplier id to a display name (host's supplier directory). */
+  formatSupplier?: (id: string) => string
+  /** Route to the booking journey for this entity. `departureDate` + name/hero
+   *  let the journey pre-fill the date and preview the panel rather than blank. */
+  onBook: (
+    vertical: string,
+    id: string,
+    opts: {
+      departureId?: string
+      optionId?: string
+      departureDate?: string | null
+      name?: string | null
+      heroImageUrl?: string | null
+    },
+  ) => void
+  /** Publish breadcrumbs as the resolved name changes (host feeds its breadcrumb sink). */
+  onBreadcrumbs?: (crumbs: CatalogVerticalDetailBreadcrumb[]) => void
+}
+
+export function CatalogVerticalDetailPage({
+  id,
+  vertical,
+  surfaceLabel,
+  surfaceHref,
+  locale,
+  contentBasePathByVertical = DEFAULT_CONTENT_BASE_BY_VERTICAL,
+  formatSupplier,
+  onBook,
+  onBreadcrumbs,
+}: CatalogVerticalDetailPageProps) {
+  const { baseUrl, fetcher } = useVoyantCatalogContext()
+  const messages = useCatalogUiMessagesOrDefault().catalogBrowser
+  const { locale: resolvedLocale } = useCatalogUiI18nOrDefault()
+  const contentLocale = locale ?? resolvedLocale
 
   const fetchers = useMemo(
     () =>
       createCatalogEnrichmentFetchers({
-        baseUrl: getApiUrl(),
-        contentBasePathByVertical: CONTENT_BASE_BY_VERTICAL,
+        baseUrl,
+        contentBasePathByVertical,
         credentials: "include",
-        locale: resolvedLocale,
-        formatSupplier: (sid) => supplierMap.get(String(sid)) ?? String(sid),
-        loadSlotAvailability,
+        locale: contentLocale,
+        formatSupplier,
+        loadSlotAvailability: (productId) =>
+          fetchCatalogSlots({ baseUrl, fetcher }, { entityModule: "products", entityId: productId })
+            .then(
+              (res) => new Map(res.rows.map((slot) => [slot.id, slot as CatalogSlotAvailability])),
+            )
+            .catch(() => new Map<string, CatalogSlotAvailability>()),
       }),
-    [resolvedLocale, supplierMap],
+    [baseUrl, fetcher, contentBasePathByVertical, contentLocale, formatSupplier],
   )
 
   // Minimal hit — the detail body keys off `hit.id` for content + the slots
@@ -103,25 +140,24 @@ export function CatalogVerticalDetailPage({
   }, [hit, vertical, fetchers])
 
   const name = enrichment?.name ?? null
-  useAdminBreadcrumbs(
-    name
-      ? [{ label: surfaceLabel, href: `/catalog/${surface}` }, { label: name }]
-      : [{ label: surfaceLabel, href: `/catalog/${surface}` }],
-  )
+  useEffect(() => {
+    if (!onBreadcrumbs) return
+    onBreadcrumbs(
+      name
+        ? [{ label: surfaceLabel, href: surfaceHref }, { label: name }]
+        : [{ label: surfaceLabel, href: surfaceHref }],
+    )
+  }, [name, surfaceLabel, surfaceHref, onBreadcrumbs])
 
   // Booking: route to the unified journey. entityModule = the content vertical.
+  // (enrichment is non-null whenever the detail view — the only caller — renders.)
   const book = (departureId?: string, optionId?: string, departureDate?: string | null) => {
-    void navigate({
-      to: "/catalog/journey/$entityModule/$entityId",
-      params: { entityModule: vertical, entityId: id },
-      search: {
-        sourceKind: "voyant-connect",
-        ...(departureId ? { departureId } : {}),
-        ...(departureDate ? { departureDate: departureDate.slice(0, 10) } : {}),
-        ...(optionId ? { optionId } : {}),
-        ...(enrichment?.name ? { entityName: enrichment.name } : {}),
-        ...(enrichment?.heroImageUrl ? { entityImageUrl: enrichment.heroImageUrl } : {}),
-      },
+    onBook(vertical, id, {
+      ...(departureId ? { departureId } : {}),
+      ...(optionId ? { optionId } : {}),
+      departureDate: departureDate ?? null,
+      name: enrichment?.name ?? null,
+      heroImageUrl: enrichment?.heroImageUrl ?? null,
     })
   }
 
@@ -139,9 +175,7 @@ export function CatalogVerticalDetailPage({
     return (
       <div className="mx-auto w-full max-w-screen-2xl px-6 py-6 lg:px-8">
         <div className="rounded-md border border-dashed p-8 text-center text-muted-foreground text-sm">
-          {status === "notfound"
-            ? messages.catalog.detail.notFound
-            : messages.catalog.detail.loadError}
+          {status === "notfound" ? messages.detail.notFound : messages.detail.loadError}
         </div>
       </div>
     )
@@ -191,39 +225,4 @@ export function CatalogVerticalDetailPage({
       </div>
     </div>
   )
-}
-
-async function loadSlotAvailability(
-  productId: string,
-): Promise<Map<string, CatalogSlotAvailability>> {
-  try {
-    const res = await fetch(
-      `${getApiUrl()}/v1/admin/catalog/slots?entityModule=products&entityId=${encodeURIComponent(productId)}`,
-      { credentials: "include" },
-    )
-    const json = (await res.json()) as {
-      rows?: Array<CatalogSlotAvailability & { startsAt: string }>
-    }
-    return new Map((json.rows ?? []).map((slot) => [slot.id, slot]))
-  } catch {
-    return new Map()
-  }
-}
-
-function surfaceTitle(
-  surface: CatalogDetailSurface,
-  nav: ReturnType<typeof useAdminMessages>["nav"],
-): string {
-  switch (surface) {
-    case "cruises":
-      return nav.catalogCruises
-    case "accommodations":
-      return nav.catalogAccommodations
-    case "excursions":
-      return nav.catalogExcursions
-    case "tours":
-      return nav.catalogTours
-    default:
-      return nav.catalogProducts
-  }
 }

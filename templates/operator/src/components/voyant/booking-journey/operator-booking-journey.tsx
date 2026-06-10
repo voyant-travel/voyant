@@ -15,14 +15,21 @@ import {
   type BookingEntitySummary,
   BookingJourney,
   type BookingJourneyProps,
+  type LeadContactPickerProps,
 } from "@voyantjs/bookings-ui/journey"
+import { useOrganization, usePerson } from "@voyantjs/crm-react"
+import { useAddresses } from "@voyantjs/identity-react"
 import { getProductMediaQueryOptions, getProductQueryOptions } from "@voyantjs/products-react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { catalogVerticalPath } from "@/components/voyant/catalog/catalog-route-state"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
+import { BillingDuplicateWarning } from "./billing-duplicate-warning"
+import { OperatorDeparturePicker } from "./operator-departure-picker"
+import { OperatorUnitsPicker } from "./operator-units-picker"
+import { OperatorVoucherPicker } from "./operator-voucher-picker"
 
 const emptyPersonPickerValue: PersonPickerValue = {
   mode: "existing",
@@ -34,15 +41,20 @@ const emptyPersonPickerValue: PersonPickerValue = {
 export interface OperatorBookingJourneyProps {
   entityModule: string
   entityId: string
-  sourceKind: string
+  /** Usually omitted — the server resolves provenance from `(module, id)`. */
+  sourceKind?: string
   sourceConnectionId?: string
   sourceRef?: string
   departureId?: string
+  /** Free-form departure date (ISO) for sourced products with no slot id. */
   departureDate?: string
   optionId?: string
+  /** Sourced stays/package rate pin — the exact room + rate plan to re-resolve. */
   roomTypeId?: string
   ratePlanId?: string
   board?: string
+  /** Preview hints (name + hero image) for sourced entities, which aren't in
+   *  the owned products table. */
   entityName?: string
   entityImageUrl?: string
   draftId: string
@@ -76,20 +88,58 @@ export function OperatorBookingJourney({
     BookingJourneyProps,
     | "renderLeadContactPicker"
     | "renderTravelerContactPicker"
+    | "renderDeparturePicker"
+    | "renderUnitsPicker"
+    | "renderVoucherPicker"
+    | "renderBillingExtras"
     | "renderPaymentProviderStep"
     | "onCommitted"
     | "onCancelled"
   > = {
-    renderLeadContactPicker({ apply }) {
-      return <CrmLeadPicker apply={apply} />
+    renderLeadContactPicker({ apply, buyerType }) {
+      return <CrmLeadPicker apply={apply} buyerType={buyerType} />
     },
-    renderTravelerContactPicker({ apply }) {
-      // Travelers reuse the same picker; the operator picks an
-      // existing CRM person or fills the inline-create form.
-      return <CrmLeadPicker apply={apply} variant="traveler" />
+    renderBillingExtras(ctx) {
+      // Warn if the picked lead already booked this departure.
+      return <BillingDuplicateWarning {...ctx} />
+    },
+    renderDeparturePicker(pickerProps) {
+      // Owned: real scheduled departures from availability. Sourced products
+      // have none; when one was booked from a specific offer the date came in
+      // pre-selected, so we lock it (a different date = a different offer).
+      return <OperatorDeparturePicker {...pickerProps} lockDeparture={Boolean(departureDate)} />
+    },
+    renderUnitsPicker(pickerProps) {
+      // Rooms/units for the picked option + departure (operator inventory).
+      return <OperatorUnitsPicker {...pickerProps} />
+    },
+    renderVoucherPicker(pickerProps) {
+      // Admin searches + selects a voucher (no need to know the code).
+      return <OperatorVoucherPicker {...pickerProps} />
+    },
+    renderTravelerContactPicker({ apply, selectedPersonId }) {
+      // Travelers reuse the same picker (person-only). Adapt the picker's
+      // partial lead-apply to the traveler apply (always a person), and
+      // reflect the row's linked person so "Copy from billing" selects it.
+      return (
+        <CrmLeadPicker
+          variant="traveler"
+          linkedPersonId={selectedPersonId}
+          apply={(contact) =>
+            apply({
+              firstName: contact.firstName ?? "",
+              lastName: contact.lastName ?? "",
+              email: contact.email,
+              phone: contact.phone,
+              personId: contact.personId,
+            })
+          }
+        />
+      )
     },
     onCommitted(result) {
-      navigate({ to: "/bookings", search: { highlight: result.bookingId } as never })
+      // Land on the new booking's detail page.
+      navigate({ to: "/bookings/$id", params: { id: result.bookingId } })
     },
     onCancelled() {
       navigate({ to: catalogVerticalPath(entityModule) })
@@ -114,9 +164,13 @@ export function OperatorBookingJourney({
         ...(board ? { board } : {}),
       }}
       defaultBuyerType="B2B"
+      // Operator payment options: hold (reserve, collect later), online payment
+      // link (the customer pays via the hosted PSP page — we never charge a card
+      // instantly here), bank transfer, and agency credit.
       paymentCapabilities={{
         acceptsCard: true,
         acceptsHold: true,
+        acceptsBankTransfer: true,
         acceptsTicketOnCredit: true,
       }}
       entitySummary={entitySummary}
@@ -126,6 +180,16 @@ export function OperatorBookingJourney({
   )
 }
 
+/**
+ * Builds the "what you're booking" preview shown atop the journey side
+ * panel — the product's name + first image, for an instant preview before
+ * the quote returns. Owned products in the `products` table resolve via the
+ * client fetch; a sourced/connect id isn't in that table, so it falls back to
+ * the `hints` (name + hero image) carried from the catalog detail page. We
+ * can't (and needn't) tell owned from sourced on the client — the URL no
+ * longer carries `sourceKind` — so we try the products fetch for the
+ * `products` vertical and let the hints cover everything else.
+ */
 function useEntitySummary(
   entityModule: string,
   entityId: string,
@@ -148,6 +212,7 @@ function useEntitySummary(
   return useMemo<BookingEntitySummary | undefined>(() => {
     const product = productQuery.data
     if (product) {
+      // First product-level (not day-scoped) image, if any.
       const heroImageUrl = (mediaQuery.data?.data ?? [])
         .filter((media) => media.mediaType === "image" && media.dayId == null)
         .map((media) => media.url)
@@ -158,6 +223,7 @@ function useEntitySummary(
         ...(heroImageUrl ? { heroImageUrl } : {}),
       }
     }
+    // Sourced/connect entity (not in the owned table) — use the preview hints.
     if (hints.name) {
       return {
         name: hints.name,
@@ -170,42 +236,133 @@ function useEntitySummary(
 }
 
 /**
- * CRM-backed picker that owns its own PersonPickerSection state and
- * notifies the journey via `apply` once the operator picks (or
- * inline-creates) a person. Used for both the lead-contact slot and
- * the per-traveler slot — the variant prop only changes the label.
+ * CRM-backed picker for the journey's contact slots. Buyer type drives the
+ * mode (there's no bill-to toggle): for the LEAD slot it searches PEOPLE on
+ * B2C and ORGANIZATIONS on B2B — picking either hydrates the journey from the
+ * CRM record (person → name/email/phone; org → company name/tax id). The
+ * per-traveler slot is always a person picker.
  */
 function CrmLeadPicker({
   apply,
+  buyerType,
   variant = "lead",
+  linkedPersonId,
 }: {
-  apply: (contact: {
-    firstName: string
-    lastName: string
-    email?: string
-    phone?: string
-    personId?: string
-  }) => void
+  apply: LeadContactPickerProps["apply"]
+  buyerType?: "B2C" | "B2B"
   variant?: "lead" | "traveler"
+  /** Externally-linked person to reflect in the combobox (e.g. a traveler
+   *  whose contact was copied from billing). */
+  linkedPersonId?: string
 }): React.ReactElement {
   const t = useAdminMessages().bookings.detail.bookingJourney
+  // The lead picker bills an organization on B2B; everything else is a person.
+  const orgMode = variant === "lead" && buyerType === "B2B"
   const [value, setValue] = useState<PersonPickerValue>(emptyPersonPickerValue)
+
+  // Reflect an externally-set person (copy-from-billing, or a re-opened
+  // draft) in the combobox. The hydrate effect below then fills the names;
+  // the `appliedPersonId` ref keeps that idempotent.
+  useEffect(() => {
+    if (!linkedPersonId) return
+    setValue((cur) =>
+      cur.personId === linkedPersonId
+        ? cur
+        : { ...cur, mode: "existing", personId: linkedPersonId },
+    )
+  }, [linkedPersonId])
+
+  // Keep the picker's target aligned with the Buyer type radio.
+  useEffect(() => {
+    setValue((current) => {
+      const desired = orgMode ? "organization" : "person"
+      return (current.billTo ?? "person") === desired ? current : { ...current, billTo: desired }
+    })
+  }, [orgMode])
+
+  // Hydrate from the picked CRM person (B2C). The picker yields just an id;
+  // we fetch the record and apply the real name/email/phone.
+  const selectedPersonId =
+    !orgMode && value.mode === "existing" && value.personId ? value.personId : undefined
+  const personQuery = usePerson(selectedPersonId, { enabled: Boolean(selectedPersonId) })
+  const appliedPersonId = useRef<string | null>(null)
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: applies once per resolved record; the ref guards re-entry from apply()->setDraft re-renders
+  useEffect(() => {
+    const person = personQuery.data
+    if (!person || appliedPersonId.current === person.id) return
+    appliedPersonId.current = person.id
+    apply({
+      firstName: person.firstName,
+      lastName: person.lastName,
+      email: person.email ?? undefined,
+      phone: person.phone ?? undefined,
+      personId: person.id,
+    })
+  }, [personQuery.data])
+
+  // Hydrate the company fields from the picked CRM organization (B2B).
+  const selectedOrgId = orgMode && value.organizationId ? value.organizationId : undefined
+  const orgQuery = useOrganization(selectedOrgId, { enabled: Boolean(selectedOrgId) })
+  const appliedOrgId = useRef<string | null>(null)
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: applies once per resolved record; the ref guards re-entry
+  useEffect(() => {
+    const org = orgQuery.data
+    if (!org || appliedOrgId.current === org.id) return
+    appliedOrgId.current = org.id
+    apply({
+      organizationId: org.id,
+      companyName: org.legalName ?? org.name,
+      taxId: org.taxId ?? undefined,
+    })
+  }, [orgQuery.data])
+
+  // Hydrate the billing address from the picked person (B2C) or org (B2B)
+  // primary CRM address — so the operator never re-types it and the tax
+  // country is set. Missing → surfaced as a warning to fix in the picker.
+  const addressEntityType = orgMode ? "organization" : "person"
+  // Only the billing lead pulls an address; travelers don't carry one.
+  const addressEntityId =
+    variant === "lead" ? (orgMode ? selectedOrgId : selectedPersonId) : undefined
+  const addressQuery = useAddresses({
+    entityType: addressEntityType,
+    entityId: addressEntityId,
+    isPrimary: true,
+    limit: 1,
+    enabled: Boolean(addressEntityId),
+  })
+  const appliedAddressKey = useRef<string | null>(null)
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: applies once per resolved address; the ref guards re-entry
+  useEffect(() => {
+    const addr = addressQuery.data?.data?.[0]
+    if (!addressEntityId || !addr) return
+    const key = `${addressEntityType}:${addressEntityId}`
+    if (appliedAddressKey.current === key) return
+    appliedAddressKey.current = key
+    apply({
+      address: {
+        line1: addr.line1 ?? undefined,
+        line2: addr.line2 ?? undefined,
+        city: addr.city ?? undefined,
+        postal: addr.postalCode ?? undefined,
+        country: addr.country ?? undefined,
+      },
+    })
+  }, [addressQuery.data, addressEntityId])
 
   function commit(next: PersonPickerValue): void {
     setValue(next)
-    if (next.mode === "existing" && next.personId) {
-      // Caller looks up the person by id from CRM; the picker
-      // section also exposes the picked person via the search
-      // dropdown, so we propagate the id here. Names default to
-      // empty — the journey's billing form gets populated from the
-      // CRM hydration on the next render.
-      apply({
-        firstName: "",
-        lastName: "",
-        personId: next.personId,
-      })
+    if ((next.billTo ?? "person") === "organization") {
+      if (next.organizationId !== appliedOrgId.current) appliedOrgId.current = null
       return
     }
+    if (next.mode === "existing" && next.personId) {
+      if (next.personId !== appliedPersonId.current) appliedPersonId.current = null
+      return
+    }
+    appliedPersonId.current = null
     if (next.mode === "new") {
       apply({
         firstName: next.newPerson.firstName,
@@ -220,7 +377,10 @@ function CrmLeadPicker({
     <PersonPickerSection
       value={value}
       onChange={commit}
+      // Org is an allowed target for the lead (so its CRM org search runs),
+      // but the toggle is hidden — Buyer type is the single control.
       showOrganization={variant === "lead"}
+      hideTargetToggle
       labels={{
         person: variant === "traveler" ? t.travelerPickerLabel : t.leadContactPickerLabel,
       }}

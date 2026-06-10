@@ -72,6 +72,12 @@ export interface PersonPickerSectionProps {
   onChange: (value: PersonPickerValue) => void
   enabled?: boolean
   showOrganization?: boolean
+  /**
+   * Hide the person-vs-organization toggle while still allowing org mode
+   * (driven by `value.billTo`). Use when an outer control already chooses
+   * the target — e.g. the journey's Buyer type radio.
+   */
+  hideTargetToggle?: boolean
   labels?: {
     person?: string
     organization?: string
@@ -116,6 +122,7 @@ export function PersonPickerSection({
   onChange,
   enabled = true,
   showOrganization = true,
+  hideTargetToggle = false,
   labels,
 }: PersonPickerSectionProps) {
   const [personSearch, setPersonSearch] = React.useState("")
@@ -193,29 +200,35 @@ export function PersonPickerSection({
 
   return (
     <>
-      <div className="flex flex-col gap-2">
-        <Label>{merged.billTo}</Label>
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            type="button"
-            variant={billingTarget === "person" ? "default" : "outline"}
-            onClick={() => setPerson({ billTo: "person", organizationId: null })}
-            disabled={!enabled}
-          >
-            <User className="mr-2 h-4 w-4" />
-            {merged.billToPerson}
-          </Button>
-          <Button
-            type="button"
-            variant={billingTarget === "organization" ? "default" : "outline"}
-            onClick={() => setPerson({ billTo: "organization", personId: "" })}
-            disabled={!enabled || !showOrganization}
-          >
-            <Building2 className="mr-2 h-4 w-4" />
-            {merged.billToOrganization}
-          </Button>
+      {/* Bill-to (person vs organization) toggle. Hidden when orgs aren't
+          offered at all (a per-traveler picker), OR when the consumer drives
+          the target externally (e.g. the journey's Buyer type radio) via
+          `hideTargetToggle` — org mode still works, just without the toggle. */}
+      {showOrganization && !hideTargetToggle ? (
+        <div className="flex flex-col gap-2">
+          <Label>{merged.billTo}</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant={billingTarget === "person" ? "default" : "outline"}
+              onClick={() => setPerson({ billTo: "person", organizationId: null })}
+              disabled={!enabled}
+            >
+              <User className="mr-2 h-4 w-4" />
+              {merged.billToPerson}
+            </Button>
+            <Button
+              type="button"
+              variant={billingTarget === "organization" ? "default" : "outline"}
+              onClick={() => setPerson({ billTo: "organization", personId: "" })}
+              disabled={!enabled}
+            >
+              <Building2 className="mr-2 h-4 w-4" />
+              {merged.billToOrganization}
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {billingTarget === "person" ? (
         <div className="flex flex-col gap-2">

@@ -32,9 +32,14 @@ import {
   useBookingQuote,
 } from "@voyantjs/catalog-react/booking-engine"
 import { Button } from "@voyantjs/ui/components/button"
+import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
+import { Skeleton } from "@voyantjs/ui/components/skeleton"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@voyantjs/ui/components/tooltip"
+import { Loader2, Lock } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { formatMessage, useBookingsUiMessagesOrDefault } from "../../i18n/index.js"
 import { type Draft, emptyDraft, totalPax } from "../lib/draft-state.js"
+import { evaluatePaxBandDependencies } from "../lib/pax-band-dependencies.js"
 import {
   type BookingJourneyProps,
   type ContractAcceptanceEvent,
@@ -46,7 +51,10 @@ import {
   AccommodationStep,
   AddonsStep,
   BillingStep,
-  ConfigureStep,
+  DepartureStep,
+  DocumentsStep,
+  FinalizeControls,
+  OptionsStep,
   PaymentStep,
   ReviewStep,
   TravelersStep,
@@ -57,6 +65,10 @@ import { StepHeader } from "./step-header.js"
 export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   const messages = useBookingsUiMessagesOrDefault()
   const surface = props.surface ?? "admin"
+  // Admin books on a single stacked page (nothing hidden); the storefront
+  // keeps the guided one-step-at-a-time wizard. Two deliberately separate
+  // flows — see BookingJourneyProps.layout.
+  const layout = props.layout ?? (surface === "admin" ? "stacked" : "wizard")
 
   const [draft, setDraft] = useState<Draft>(() => {
     const base = emptyDraft(
@@ -123,37 +135,50 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   const steps = useMemo<ReadonlyArray<JourneyStep>>(
     () =>
       JOURNEY_STEP_ORDER.filter((s) => {
-        if (hideConfigure && s === "configure") return false
+        // `hideConfigure` skips the configure phase — now split across the
+        // Departure + Options steps.
+        if (hideConfigure && (s === "departure" || s === "options")) return false
+        // Internal notes + document generation are operator-only.
+        if (s === "documents" && surface !== "admin") return false
         return isStepVisible(s, shape)
       }),
-    [shape, hideConfigure],
+    [shape, hideConfigure, surface],
   )
 
-  const [currentStep, setCurrentStep] = useState<JourneyStep>(() => steps[0] ?? "configure")
-  const [visited, setVisited] = useState<Set<JourneyStep>>(() => new Set([steps[0] ?? "configure"]))
+  // The stacked admin layout drops the Review block — the side panel shows the
+  // live summary + Confirm at all times, so a separate review section is
+  // redundant.
+  const stackedSteps = useMemo<ReadonlyArray<JourneyStep>>(
+    () => steps.filter((s) => s !== "review"),
+    [steps],
+  )
+
+  const [currentStep, setCurrentStep] = useState<JourneyStep>(() => steps[0] ?? "departure")
+  const [visited, setVisited] = useState<Set<JourneyStep>>(() => new Set([steps[0] ?? "departure"]))
 
   // If the descriptor changes and removes the current step, reset to
   // the first available step. (Edge case: shape goes from
   // owned→sourced and the relevant step set narrows.)
   useEffect(() => {
     if (!steps.includes(currentStep)) {
-      setCurrentStep(steps[0] ?? "configure")
+      setCurrentStep(steps[0] ?? "departure")
     }
   }, [steps, currentStep])
 
-  // PUT the draft to the server every time the user transitions
-  // steps. Keeps the recovery surface fresh without saving on every
-  // keystroke. The mutation reads the latest draft + quote from the
-  // closure on each fire — adding them to the deps array would defeat
-  // the "save on step change only" semantics.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional — fires on step transition only
+  // PUT the draft to the server to keep the recovery surface fresh
+  // without saving on every keystroke. Wizard saves on each step
+  // transition; the stacked admin page has no steps, so it saves on
+  // each settled quote (a natural, debounced cadence). The mutation
+  // reads the latest draft + quote from the closure on each fire.
+  const saveTrigger = layout === "wizard" ? currentStep : (quote.data?.quoteId ?? "")
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional — fires on save trigger only
   useEffect(() => {
     draftSync.save.mutate({
       draft: { ...draft, quoteId: quote.data?.quoteId },
       currentStep,
       currentQuoteId: quote.data?.quoteId,
     })
-  }, [currentStep])
+  }, [saveTrigger])
 
   // Commit
   const commit = useBookingCommit({
@@ -173,7 +198,11 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: signature change is the only trigger; refs + closure read latest values
   useEffect(() => {
-    if (currentStep === "configure" || !holdSignature) return
+    // Wizard: don't hold while still on the configure steps. Stacked:
+    // everything's on one page, so the signature (slot + pax present)
+    // is the trigger.
+    if (layout === "wizard" && (currentStep === "departure" || currentStep === "options")) return
+    if (!holdSignature) return
     if (holdState.current.signature === holdSignature) return
     // Inquiry mode is the lead-form path — capture the lead without
     // burning capacity. The operator follows up before any inventory
@@ -205,8 +234,25 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     }
   }, [holdSignature, currentStep])
 
-  const canAdvance = canAdvanceFromStep(currentStep, draft, shape, quote.data?.available !== false)
+  const available = quote.data?.available !== false
+  const canAdvance = canAdvanceFromStep(currentStep, draft, shape, available)
   const warnings = warningsForStep(currentStep, draft, shape, messages)
+
+  // Stacked layout: there's no "current" step, but the section nav still
+  // nudges toward the first thing that isn't done yet, and the final
+  // Confirm is gated until every section passes its check.
+  const firstIncomplete = useMemo<JourneyStep>(
+    () =>
+      stackedSteps.find((s) => !stackedStepComplete(s, draft, shape, available)) ??
+      stackedSteps[stackedSteps.length - 1] ??
+      stackedSteps[0] ??
+      "departure",
+    [stackedSteps, draft, shape, available],
+  )
+  const canCommit = useMemo(
+    () => stackedSteps.every((s) => canAdvanceFromStep(s, draft, shape, available)),
+    [stackedSteps, draft, shape, available],
+  )
   const [isAdvanceGuardPending, setIsAdvanceGuardPending] = useState(false)
   const [advanceGuardError, setAdvanceGuardError] = useState<string | null>(null)
 
@@ -296,6 +342,10 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     await commit.mutateAsync({
       draft: { ...draft, quoteId: quote.data.quoteId },
       quoteId: quote.data.quoteId,
+      // The owned commit reads the buyer + travelers off `party`, not the
+      // draft — without this the create rejects with "no billing person/org".
+      party: buildCommitParty(draft),
+      initialStatus: resolveInitialStatus(draft),
       paymentIntent: { type: draft.payment.intent === "card" ? "card" : "hold" } as never,
     })
   }
@@ -341,6 +391,165 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
     await handleAccepted(acceptance)
   }
 
+  // Bind the picked lead + departure into the billing-extras slot so the
+  // template can run lead-aware checks (e.g. duplicate-departure warning).
+  const billingExtrasSlot = props.renderBillingExtras
+    ? () =>
+        props.renderBillingExtras?.({
+          buyerType: draft.billing.buyerType,
+          personId: draft.billing.contact.personId,
+          organizationId: draft.billing.organizationId,
+          productId: props.entityId,
+          departureSlotId: draft.configure.departureSlotId,
+          departureDate: draft.configure.departureDate,
+        })
+    : undefined
+
+  // Renders one step's content. Shared by both layouts — the wizard shows
+  // exactly one at a time; the stacked page renders them all in sections.
+  const renderStep = (step: JourneyStep): React.ReactNode => {
+    switch (step) {
+      case "departure":
+        // First load: the descriptor arrives with the first quote. Show a
+        // skeleton rather than the generic fallback, which would flash and
+        // then shift into the real layout.
+        return !quote.data && quote.isQuoting ? (
+          <ConfigureStepSkeleton />
+        ) : (
+          <DepartureStep
+            draft={draft}
+            setDraft={setDraft}
+            shape={shape}
+            productId={props.entityId}
+            renderDeparturePicker={props.renderDeparturePicker}
+          />
+        )
+      case "options":
+        return (
+          <OptionsStep
+            draft={draft}
+            setDraft={setDraft}
+            shape={shape}
+            productId={props.entityId}
+            renderUnitsPicker={props.renderUnitsPicker}
+          />
+        )
+      case "billing":
+        return (
+          <BillingStep
+            draft={draft}
+            setDraft={setDraft}
+            shape={shape}
+            renderLeadContactPicker={props.renderLeadContactPicker}
+            renderExtras={billingExtrasSlot}
+            warnings={warningsForStep("billing", draft, shape, messages)}
+          />
+        )
+      case "travelers":
+        return (
+          <TravelersStep
+            draft={draft}
+            setDraft={setDraft}
+            shape={shape}
+            renderTravelerContactPicker={props.renderTravelerContactPicker}
+            warnings={warningsForStep("travelers", draft, shape, messages)}
+          />
+        )
+      case "accommodation":
+        return <AccommodationStep draft={draft} setDraft={setDraft} shape={shape} />
+      case "addons":
+        return <AddonsStep draft={draft} setDraft={setDraft} shape={shape} />
+      case "payment":
+        return (
+          <PaymentStep
+            draft={draft}
+            setDraft={setDraft}
+            shape={shape}
+            capabilities={
+              props.paymentCapabilities ?? {
+                acceptsCard: false,
+                acceptsHold: true,
+                acceptsTicketOnCredit: false,
+              }
+            }
+            renderProviderStep={props.renderPaymentProviderStep}
+            surface={surface}
+            pricing={quote.data?.pricing ?? null}
+          />
+        )
+      case "documents":
+        return <DocumentsStep draft={draft} setDraft={setDraft} />
+      case "review":
+        return (
+          <ReviewStep
+            draft={draft}
+            setDraft={setDraft}
+            isCommitting={commit.isPending || isHandlingCheckout}
+            onConfirm={onConfirm}
+            // Stacked has no per-step gates, so the Confirm button enforces
+            // the whole-booking validity itself.
+            canConfirm={layout === "stacked" ? canCommit : undefined}
+            renderExtras={props.renderReviewExtras}
+            surface={surface}
+            pricing={quote.data?.pricing ?? null}
+            warnings={warningsForStep("review", draft, shape, messages)}
+          />
+        )
+    }
+  }
+
+  if (layout === "stacked") {
+    return (
+      <StackedJourney
+        className={props.className}
+        steps={stackedSteps}
+        renderStep={renderStep}
+        isStepComplete={(s) => stackedStepComplete(s, draft, shape, available)}
+        commitError={commit.error}
+        onCancel={props.onCancelled}
+        onConfirm={onConfirm}
+        isCommitting={commit.isPending || isHandlingCheckout}
+        canConfirm={canCommit}
+        sidePanel={
+          <PriceSidePanel
+            pricing={quote.data?.pricing ?? null}
+            isQuoting={quote.isQuoting}
+            invalidReason={quote.data?.invalidReason}
+            entitySummary={props.entitySummary}
+            currentStep={firstIncomplete}
+            steps={stackedSteps}
+            shape={shape}
+            draft={draft}
+            className={props.sidePanelClassName}
+            // Price override + voucher live with the pricing, not in Payment.
+            pricingExtras={
+              <FinalizeControls
+                draft={draft}
+                setDraft={setDraft}
+                pricing={quote.data?.pricing ?? null}
+                renderVoucherPicker={props.renderVoucherPicker}
+              />
+            }
+          />
+        }
+        contractDialog={
+          contractConfig ? (
+            <ContractPreviewDialog
+              open={contractDialogOpen}
+              onOpenChange={setContractDialogOpen}
+              previewUrl={contractConfig.previewUrl}
+              acceptLanguage={contractConfig.acceptLanguage}
+              variables={contractVariables}
+              marketingLabel={contractConfig.marketingLabel as string | undefined}
+              termsLabel={contractConfig.termsLabel}
+              onAccept={onContractAccept}
+            />
+          ) : null
+        }
+      />
+    )
+  }
+
   return (
     <div className={props.className}>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-8 md:items-start">
@@ -353,8 +562,30 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
             onJumpTo={jumpTo}
           />
 
-          {currentStep === "configure" ? (
-            <ConfigureStep draft={draft} setDraft={setDraft} shape={shape} />
+          {currentStep === "departure" ? (
+            // First load: the descriptor arrives with the first quote. Show a
+            // skeleton rather than the generic fallback, which would flash
+            // and then shift into the real layout.
+            !quote.data && quote.isQuoting ? (
+              <ConfigureStepSkeleton />
+            ) : (
+              <DepartureStep
+                draft={draft}
+                setDraft={setDraft}
+                shape={shape}
+                productId={props.entityId}
+                renderDeparturePicker={props.renderDeparturePicker}
+              />
+            )
+          ) : null}
+          {currentStep === "options" ? (
+            <OptionsStep
+              draft={draft}
+              setDraft={setDraft}
+              shape={shape}
+              productId={props.entityId}
+              renderUnitsPicker={props.renderUnitsPicker}
+            />
           ) : null}
           {currentStep === "billing" ? (
             <BillingStep
@@ -362,7 +593,7 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
               setDraft={setDraft}
               shape={shape}
               renderLeadContactPicker={props.renderLeadContactPicker}
-              renderExtras={props.renderBillingExtras}
+              renderExtras={billingExtrasSlot}
             />
           ) : null}
           {currentStep === "travelers" ? (
@@ -392,6 +623,8 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
                 }
               }
               renderProviderStep={props.renderPaymentProviderStep}
+              surface={surface}
+              pricing={quote.data?.pricing ?? null}
             />
           ) : null}
           {currentStep === "review" ? (
@@ -402,11 +635,12 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
               onConfirm={onConfirm}
               renderExtras={props.renderReviewExtras}
               surface={surface}
+              pricing={quote.data?.pricing ?? null}
             />
           ) : null}
 
           {warnings.length > 0 ? (
-            <ul className="space-y-1 rounded border border-amber-300 bg-amber-50 p-3 text-amber-900 text-sm dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+            <ul className="space-y-1 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900 text-sm dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
               {warnings.map((w) => (
                 <li key={w}>⚠ {w}</li>
               ))}
@@ -488,10 +722,206 @@ export function BookingJourney(props: BookingJourneyProps): React.ReactElement {
   )
 }
 
+/**
+ * The buyer + travelers the owned commit reads off `request.party` (the draft
+ * carries them but `extractBillingParty` only inspects `party`). B2C supplies
+ * `personId`; B2B supplies `organizationId`; traveler person links thread
+ * through so the booking attaches to the right CRM records.
+ */
+function buildCommitParty(draft: Draft): Record<string, unknown> {
+  const c = draft.billing.contact
+  return {
+    personId: c.personId,
+    organizationId: draft.billing.organizationId,
+    billing: {
+      personId: c.personId,
+      organizationId: draft.billing.organizationId,
+      contact: {
+        firstName: c.firstName,
+        lastName: c.lastName,
+        email: c.email,
+        phone: c.phone,
+      },
+    },
+    travelerParty: {
+      travelers: draft.travelers.map((t) => ({ personId: t.personId })),
+    },
+  }
+}
+
+/**
+ * Initial booking status from the operator's choices: an explicit "save as
+ * draft", else live — confirmed when the payment is fully marked paid,
+ * otherwise awaiting payment.
+ */
+function resolveInitialStatus(draft: Draft): "draft" | "confirmed" | "awaiting_payment" {
+  if (draft.saveAsDraft) return "draft"
+  const schedules = draft.paymentSchedules ?? []
+  const fullyPaid = schedules.length > 0 && schedules.every((s) => s.status === "paid")
+  return fullyPaid ? "confirmed" : "awaiting_payment"
+}
+
+const sectionId = (step: JourneyStep): string => `bj-section-${step}`
+
+/**
+ * The sequential gates in the stacked layout: each must be filled before the
+ * next sections unlock. Once all three are done, the remaining sections
+ * (options, extras, payment) all open together.
+ */
+const GATE_STEPS = new Set<JourneyStep>(["departure", "billing", "travelers"])
+
+/**
+ * The admin's guided single-page layout — every section is a block on one
+ * page, but content stays collapsed until the previous section is complete,
+ * so the operator fills them in sequence and focuses on one at a time.
+ *
+ *  - LOCKED (a prior section isn't done): a muted, disabled summary row.
+ *  - ACTIVE (the first not-yet-done section): expanded with its full
+ *    content + a "Continue" button (enabled once the section is valid).
+ *  - DONE (passed via Continue): collapses to a one-line summary row with a
+ *    check — click to re-open and edit, so nothing entered is ever lost.
+ *
+ * Completeness derives from the same per-step gate the wizard uses; the
+ * final Review section's Confirm is gated on the whole booking.
+ */
+function StackedJourney({
+  className,
+  steps,
+  renderStep,
+  isStepComplete,
+  commitError,
+  onCancel,
+  onConfirm,
+  isCommitting,
+  canConfirm,
+  sidePanel,
+  contractDialog,
+}: {
+  className?: string
+  steps: ReadonlyArray<JourneyStep>
+  renderStep: (step: JourneyStep) => React.ReactNode
+  isStepComplete: (step: JourneyStep) => boolean
+  commitError: unknown
+  onCancel?: () => void
+  onConfirm?: () => void
+  isCommitting?: boolean
+  canConfirm?: boolean
+  sidePanel: React.ReactNode
+  contractDialog: React.ReactNode
+}): React.ReactElement {
+  const messages = useBookingsUiMessagesOrDefault()
+  const nav = messages.bookingJourney.navigation
+  // Progressive unlock gated only on the SEQUENTIAL gates (departure →
+  // billing → travelers). Once those are filled, the remaining sections
+  // (options, extras, payment) all unlock together — they're independent
+  // refinements, not a strict sequence. Unlocked sections stay open so the
+  // operator keeps full context of everything they've filled.
+  const firstIncompleteGate = steps.find((s) => GATE_STEPS.has(s) && !isStepComplete(s))
+  const unlockThroughIndex = firstIncompleteGate
+    ? steps.indexOf(firstIncompleteGate)
+    : steps.length - 1
+
+  return (
+    <div className={className}>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-8 md:items-start">
+        <div className="space-y-3 md:col-span-5">
+          {steps.map((step, i) => {
+            // Locked: a section beyond the active gate — a muted, disabled row
+            // until the operator clears the gates above it.
+            if (i > unlockThroughIndex) {
+              return (
+                <div
+                  key={step}
+                  id={sectionId(step)}
+                  className="flex w-full scroll-mt-4 items-center gap-3 rounded-md border p-4 opacity-60"
+                >
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs">
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0 flex-1 font-medium text-sm">
+                    {messages.bookingJourney.steps[step]}
+                  </div>
+                  <Lock className="h-4 w-4 text-muted-foreground" />
+                </div>
+              )
+            }
+
+            // Unlocked: full section content, stays open once reached. Its
+            // warnings render inside the step's own card (scoped to the block).
+            return (
+              <section key={step} id={sectionId(step)} className="scroll-mt-4">
+                {renderStep(step)}
+              </section>
+            )
+          })}
+
+          {commitError ? (
+            <p className="text-destructive text-sm">
+              {commitError instanceof Error ? commitError.message : String(commitError)}
+            </p>
+          ) : null}
+
+          <div className="flex items-center gap-2 pt-1">
+            <Button type="button" variant="ghost" size="sm" onClick={() => onCancel?.()}>
+              {nav.cancel}
+            </Button>
+            {onConfirm ? (
+              canConfirm === false ? (
+                // Disabled — explain why via a tooltip (the button can't be
+                // clicked, so the span wrapper captures hover).
+                <Tooltip>
+                  <TooltipTrigger render={<span className="ml-auto inline-flex" />}>
+                    <Button type="button" disabled>
+                      {messages.bookingJourney.review.confirmBooking}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {messages.bookingJourney.review.completeToConfirm}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <Button
+                  type="button"
+                  className="ml-auto"
+                  onClick={onConfirm}
+                  disabled={isCommitting === true}
+                >
+                  {isCommitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {messages.bookingJourney.review.confirming}
+                    </>
+                  ) : (
+                    messages.bookingJourney.review.confirmBooking
+                  )}
+                </Button>
+              )
+            ) : null}
+          </div>
+        </div>
+
+        <aside className="md:sticky md:top-4 md:col-span-3">{sidePanel}</aside>
+      </div>
+      {contractDialog}
+    </div>
+  )
+}
+
 function isStepVisible(step: JourneyStep, shape: BookingDraftShape): boolean {
+  const subSteps = shape.configureSubSteps ?? []
   switch (step) {
-    case "configure":
+    case "departure":
+      // The departure step shows whenever the journey has a configure phase
+      // (owned products always pick a departure; storefront free-date too).
       return shape.showsConfigure
+    case "options":
+      // The options step shows only when there's something to choose —
+      // a product option, room/unit selection, or another configure
+      // sub-step (cabin, date-range, air). Simple per-person tours skip it.
+      return (
+        shape.showsConfigure &&
+        subSteps.some((s) => s.kind !== "departure" && s.kind !== "occupancy")
+      )
     case "billing":
       return shape.showsBilling
     case "travelers":
@@ -502,9 +932,46 @@ function isStepVisible(step: JourneyStep, shape: BookingDraftShape): boolean {
       return shape.showsAddons
     case "payment":
       return shape.showsPayment
+    case "documents":
+      // Operator-only block; shown whenever a real booking is being finalized
+      // (gated to the admin surface in the step list above).
+      return shape.showsReview
     case "review":
       return shape.showsReview
   }
+}
+
+/**
+ * First-load placeholder for the Configure step. Mirrors the real layout
+ * (departure, travelers, option) closely enough that swapping to the live
+ * descriptor causes minimal layout shift.
+ */
+function ConfigureStepSkeleton(): React.ReactElement {
+  return (
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-5 w-28" />
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-20" />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
 function canAdvanceFromStep(
@@ -515,24 +982,83 @@ function canAdvanceFromStep(
 ): boolean {
   if (!available) return false
   switch (step) {
-    case "configure": {
-      const total = totalPax(draft)
-      return total >= shape.paxBandsAllowedTotal.min && total <= shape.paxBandsAllowedTotal.max
+    case "departure": {
+      // Require a departure when the descriptor marks it required.
+      const requiresDeparture = (shape.configureSubSteps ?? []).some(
+        (s) => s.kind === "departure" && s.required,
+      )
+      if (!requiresDeparture) return true
+      return Boolean(draft.configure.departureSlotId || draft.configure.departureDate)
+    }
+    case "options": {
+      // Room products (an `option-units` sub-step) can't be booked — or
+      // priced — without at least one room, so block confirm until one is
+      // picked. Per-person products have nothing to require here.
+      const isRoomProduct = (shape.configureSubSteps ?? []).some((s) => s.kind === "option-units")
+      if (!isRoomProduct) return true
+      const rooms = (draft.configure.optionSelections ?? []).reduce(
+        (sum, s) => sum + (s.quantity ?? 0),
+        0,
+      )
+      return rooms > 0
     }
     case "billing": {
+      // B2B: the picked organization is the bill-to. The CRM org picker doesn't
+      // collect an individual contact name (and the manual contact inputs are
+      // hidden), so requiring one would lock the step with no way to satisfy it.
+      if (draft.billing.buyerType === "B2B") {
+        return Boolean(draft.billing.organizationId)
+      }
       const c = draft.billing.contact
       return c.firstName.length > 0 && c.lastName.length > 0 && c.email.length > 0
     }
     case "travelers": {
-      // Hard-reject only on canonical traveler fields (firstName,
-      // lastName) — those are always required regardless of
-      // descriptor configuration. All other required fields surface
-      // as warnings so operators can complete the journey and fill
-      // them in later from the booking detail page.
+      // Pax counts are set on this step now: require the allowed total and
+      // that occupancy rules (e.g. "Child under 6 requires an Adult") hold.
+      const total = totalPax(draft)
+      if (total < shape.paxBandsAllowedTotal.min || total > shape.paxBandsAllowedTotal.max) {
+        return false
+      }
+      if (
+        evaluatePaxBandDependencies(draft.configure.pax, shape.paxBandDependencies, shape.paxBands)
+          .length > 0
+      ) {
+        return false
+      }
+      // Hard-reject only on canonical traveler fields (firstName, lastName);
+      // other required fields surface as warnings, fillable later.
       return draft.travelers.every((t) => t.firstName && t.lastName)
     }
     default:
       return true
+  }
+}
+
+/**
+ * Completeness for the stacked admin accordion's AUTO-advance — stricter
+ * than `canAdvanceFromStep` so the flow pauses on sections that need a
+ * deliberate choice even though they're not hard-required to commit:
+ *  - options: a product option must be picked (when the product has them);
+ *  - payment: an intent must be chosen.
+ * Everything else defers to the shared gate. Kept separate so the wizard's
+ * Next gating (which uses `canAdvanceFromStep`) is unchanged.
+ */
+function stackedStepComplete(
+  step: JourneyStep,
+  draft: Draft,
+  shape: BookingDraftShape,
+  available: boolean,
+): boolean {
+  switch (step) {
+    case "options": {
+      const hasOptions = (shape.configureSubSteps ?? []).some((s) => s.kind === "product-option")
+      // No options to choose → nothing to wait for. Otherwise require a pick.
+      return hasOptions ? Boolean(draft.configure.variantId) : true
+    }
+    case "payment":
+      return Boolean(draft.payment.intent)
+    default:
+      return canAdvanceFromStep(step, draft, shape, available)
   }
 }
 

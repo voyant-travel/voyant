@@ -19,7 +19,8 @@ export {
   AccommodationStep,
   AddonsStep,
   BillingStep,
-  ConfigureStep,
+  DepartureStep,
+  OptionsStep,
   PaymentStep,
   ReviewStep,
   TravelersStep,
@@ -39,6 +40,7 @@ export {
   totalPax,
 } from "./lib/draft-state.js"
 export {
+  type BillingExtrasContext,
   type BookingEntitySummary,
   type BookingJourneyCheckoutContext,
   type BookingJourneyProps,
@@ -46,8 +48,10 @@ export {
   type BookingJourneyTransitionGuardContext,
   type BookingJourneyTransitionGuardResult,
   type ContractAcceptanceEvent,
+  type DeparturePickerProps,
   JOURNEY_STEP_ORDER,
   type JourneyHeaderState,
+  type JourneyOptionSelection,
   type JourneyStep,
   type JourneySurface,
   type LeadContactPickerProps,
@@ -55,4 +59,6 @@ export {
   type PaymentProviderStepRenderProps,
   type SidePanelState,
   type TravelerContactPickerProps,
+  type UnitsPickerProps,
+  type VoucherPickerProps,
 } from "./types.js"

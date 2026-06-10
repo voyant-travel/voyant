@@ -21,6 +21,10 @@ export {
   type BookingCreateSheetProps,
 } from "./components/booking-create-sheet.js"
 export {
+  type DepartureSlotSearchRecord,
+  getBookableDepartureSlots,
+} from "./components/booking-create-utils.js"
+export {
   BookingBillingContextCard,
   BookingDetailPage,
   type BookingDetailPageProps,
@@ -97,8 +101,10 @@ export {
   type IconActionButtonProps,
 } from "./components/icon-action-button.js"
 export {
+  emptyOptionUnitsStepperValue,
   OptionUnitsStepperSection,
   type OptionUnitsStepperSectionProps,
+  type OptionUnitsStepperUnit,
   type OptionUnitsStepperValue,
 } from "./components/option-units-stepper-section.js"
 export {

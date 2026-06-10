@@ -454,6 +454,8 @@ export const bookingsUiRo = {
       productEmpty: "Niciun produs gasit.",
       option: "Optiune",
       optionNone: "Fara optiune specifica",
+      owned: "Propriu",
+      supplier: "Furnizor",
     },
   },
   personPickerSection: {
@@ -762,12 +764,14 @@ export const bookingsUiRo = {
   },
   bookingJourney: {
     steps: {
-      configure: "Configurare",
+      departure: "Plecare",
       billing: "Facturare",
       travelers: "Calatori",
+      options: "Optiuni",
       accommodation: "Cazare",
       addons: "Extra",
       payment: "Plata",
+      documents: "Documente si note",
       review: "Revizuire",
       billingAndContact: "Facturare si contact",
       reviewAndConfirm: "Revizuire si confirmare",
@@ -776,6 +780,10 @@ export const bookingsUiRo = {
       back: "Inapoi",
       next: "Urmatorul",
       checking: "Se verifica...",
+      continue: "Continua",
+      edit: "Editeaza",
+      done: "Gata",
+      cancel: "Anuleaza",
     },
     values: {
       noValue: "—",
@@ -789,12 +797,16 @@ export const bookingsUiRo = {
       addAtLeastTravelers: "Adauga cel putin {count} calator{plural} pentru a continua.",
       maxTravelersPerBooking: "Maximum {count} calatori per rezervare.",
       ageOutOfRange: "Varsta {age} este in afara intervalului acceptat pentru acest produs.",
+      dependencyRequires: "{dependent} necesita cel putin un {master}.",
+      dependencyExcludes: "{dependent} nu poate fi combinat cu {master}.",
+      dependencyLimitPerMaster: "Maximum {limit} {dependent} per {master}.",
+      dependencyLimitSum: "Maximum {limit} {dependent} permis.",
     },
     warnings: {
       phoneMissing: "Numarul de telefon lipseste - util pentru contact furnizor in ultimul moment.",
       billingCountryMissing:
         "Tara de facturare lipseste - taxele nu se calculeaza pana la completare.",
-      vatMissing: "Codul TVA lipseste - obligatoriu pentru facturarea B2B cu taxare inversa.",
+      vatMissing: "Codul fiscal lipseste - necesar pentru facturarea catre companie (B2B).",
       travelerFieldRequired: "{traveler}: {field} este obligatoriu.",
       paymentIntentMissing:
         "Intentia de plata lipseste - rezervarea va ramane implicit in asteptare.",
@@ -844,12 +856,19 @@ export const bookingsUiRo = {
       postalCode: "Cod postal",
       country: "Tara",
       companyName: "Nume companie",
-      vatId: "Cod TVA",
+      vatId: "Cod fiscal",
+      leadContactSummaryNote: "Datele provin din contactul selectat — editeaza-le mai sus.",
+      leadContactSummaryEmpty: "Cauta si selecteaza un contact mai sus, sau creeaza unul nou.",
     },
     travelers: {
       title: "Calatori",
+      partySize: "Componenta grupului",
+      details: "Detalii calatori",
+      decrease: "Scade {label}",
+      increase: "Adauga {label}",
       empty: "Alege numarul de calatori in pasul Configurare pentru a adauga detalii.",
       addTraveler: "Adauga calator",
+      travelerType: "Tip calator",
       travelerNumber: "Calator {number}",
       ageLabel: "varsta {age}",
       copyFromBilling: "Copiaza din facturare",
@@ -873,6 +892,14 @@ export const bookingsUiRo = {
       empty: "Nu exista metode de plata disponibile pentru aceasta rezervare.",
       redirectedAfterConfirm:
         "Vei fi redirectionat catre pagina noastra securizata de plata dupa confirmarea rezervarii.",
+      linkSentAfterConfirm:
+        "Dupa confirmare se genereaza un link securizat de plata pentru client, care alege cum plateste. Nu se incaseaza nimic acum.",
+      cardOperatorLabel: "Link de plata online",
+      cardOperatorDescription:
+        "Clientul plateste online printr-un link securizat dupa confirmare. Nu se incaseaza instant; inventarul este rezervat la confirmare.",
+      generateLinkLabel: "Genereaza un link de plata online",
+      generateLinkHint:
+        "Creeaza un link securizat de plata online pentru aceasta rezervare dupa confirmare. Lasa nebifat pentru a doar rezerva si a incasa mai tarziu.",
       inquiryNotice:
         "Vom trimite detaliile tale catre operator fara a bloca inventar sau a incasa plata. Operatorul va reveni cu disponibilitate si oferta - de obicei intr-o zi lucratoare.",
       bankTransferInstructions: "Instructiuni transfer bancar",
@@ -905,6 +932,17 @@ export const bookingsUiRo = {
       internalNotes: "Note interne (doar operator)",
       confirmBooking: "Confirma rezervarea",
       confirming: "Se confirma...",
+      completeToConfirm: "Completeaza sectiunile evidentiate mai sus pentru a confirma.",
+      priceOverrideToggle: "Modifica pretul total",
+      priceOverrideAmount: "Pret total",
+      priceOverrideReason: "Motivul modificarii",
+      priceOverrideReasonPlaceholder: "De ce se modifica pretul?",
+      priceOverrideReasonRequired: "Este necesar un motiv cand pretul este modificat.",
+    },
+    documents: {
+      saveAsDraft: "Salveaza ca ciorna",
+      saveAsDraftHint:
+        "Pastreaza rezervarea ca ciorna. Lasa nebifat pentru a o crea activa - confirmata daca plata este marcata achitata, altfel in asteptarea platii.",
     },
     contract: {
       defaultTitle: "Contract rezervare",
@@ -925,6 +963,8 @@ export const bookingsUiRo = {
     sidePanel: {
       youAreBooking: "Rezervi",
       total: "Total",
+      pricingHint: "Adauga calatori pentru a vedea pretul.",
+      pricingHintRooms: "Selecteaza camere pentru a vedea pretul.",
       guestSingular: "oaspete",
       guestPlural: "oaspeti",
       filledOf: "{filled} din {total} completati",

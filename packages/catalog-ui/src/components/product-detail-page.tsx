@@ -1,7 +1,7 @@
 "use client"
 
-import { useNavigate } from "@tanstack/react-router"
-import { useAdminBreadcrumbs, useLocale } from "@voyantjs/admin"
+import type { CatalogSurface } from "@voyantjs/catalog-react"
+import { fetchPackageDetail, useVoyantCatalogContext } from "@voyantjs/catalog-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import {
@@ -28,9 +28,8 @@ import {
   Waves,
 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
-
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { getApiUrl } from "@/lib/env"
+import { useCatalogUiI18nOrDefault, useCatalogUiMessagesOrDefault } from "../i18n/index.js"
+import type { CatalogUiMessages } from "../i18n/messages.js"
 import {
   AvailabilityCalendar,
   compareMonth,
@@ -38,8 +37,8 @@ import {
   type MonthCursor,
   monthOfIso,
   shiftMonth,
-} from "./availability-calendar"
-import { Gallery, GalleryLightbox } from "./catalog-gallery"
+} from "./availability-calendar.js"
+import { Gallery, GalleryLightbox } from "./catalog-gallery.js"
 
 /**
  * Individual product page (Dynamic surface) — full-page, URL-addressable at
@@ -49,6 +48,9 @@ import { Gallery, GalleryLightbox } from "./catalog-gallery"
  * plus the live dated offers — NOT from the search index. Renders a gallery,
  * overview, inclusions, an availability calendar with a per-room rate table,
  * rooms, and reviews.
+ *
+ * Presentational: navigation (`onBook`) and breadcrumbs (`onBreadcrumbs`) are
+ * injected by the host; the base URL + fetcher come from `VoyantCatalogProvider`.
  */
 
 interface Offer {
@@ -59,7 +61,7 @@ interface Offer {
   nights: number | null
   board: string | null
   roomTypeId: string | null
-  ratePlanId: string | null
+  ratePlanId?: string | null
   perPerson: { amountMinor: number; currency: string } | null
   total: { amountMinor: number; currency: string } | null
   flights: Array<{
@@ -110,7 +112,7 @@ interface ProductDetail {
 }
 
 type RoomDetail = ProductDetail["rooms"][number]
-type DetailMessages = ReturnType<typeof useAdminMessages>["catalog"]["detail"]
+type DetailMessages = CatalogUiMessages["catalogBrowser"]["detail"]
 
 interface OfferGroup {
   /** Room code (offer.roomTypeId / room.code); null when the offer has none. */
@@ -133,22 +135,62 @@ const SECTION_ICONS: Record<string, typeof Info> = {
   DISABILITY: Accessibility,
 }
 
+/** The offer the user clicked Book on — enough for the journey to pre-fill the
+ *  date and render a "what you're booking" preview. */
+export interface ProductBookSelection {
+  /** Check-in / departure date (ISO), seeds the journey's departure. */
+  checkIn: string | null
+  /** Product name for the journey side-panel preview. */
+  name: string | null
+  /** Hero image for the preview, if the content has one. */
+  heroImageUrl: string | null
+  /** Rate pin — the exact room + rate plan the operator clicked Book on, so the
+   *  connect adapter re-resolves THAT offer (not just the first for the date).
+   *  Pinned by stable keys; the per-search offer id can't be replayed. #1579. */
+  roomTypeId: string | null
+  ratePlanId: string | null
+  board: string | null
+}
+
+export interface ProductDetailPageProps {
+  productId: string
+  adults?: number
+  nights?: number
+  locale?: string
+  /** `/v1/admin/...` (default) vs `/v1/public/...`. */
+  surface?: CatalogSurface
+  /** Localized "Packages" label — breadcrumb root + header fallback. */
+  productsLabel: string
+  /** Href of the packages browse page, e.g. `/catalog/products`. */
+  productsHref: string
+  /**
+   * Route to the booking journey, pinned to the resolved Connect source.
+   * `selection` carries the offer the user clicked Book on, so the journey can
+   * pre-fill the date and show a preview instead of starting blank.
+   */
+  onBook: (
+    productId: string,
+    source: { connectionId?: string; ref?: string | null },
+    selection?: ProductBookSelection,
+  ) => void
+  /** Publish breadcrumbs as the resolved name changes. */
+  onBreadcrumbs?: (crumbs: Array<{ label: string; href?: string }>) => void
+}
+
 export function ProductDetailPage({
   productId,
   adults = 2,
   nights = 7,
   locale = "ro",
-}: {
-  productId: string
-  adults?: number
-  nights?: number
-  locale?: string
-}) {
-  const navigate = useNavigate()
-  const messages = useAdminMessages()
-  const nav = messages.nav
-  const t = messages.catalog.detail
-  const { resolvedLocale } = useLocale()
+  surface = "admin",
+  productsLabel,
+  productsHref,
+  onBook,
+  onBreadcrumbs,
+}: ProductDetailPageProps) {
+  const { baseUrl, fetcher } = useVoyantCatalogContext()
+  const t = useCatalogUiMessagesOrDefault().catalogBrowser.detail
+  const { locale: resolvedLocale } = useCatalogUiI18nOrDefault()
   const [state, setState] = useState<{
     status: "loading" | "ready" | "error"
     product: ProductDetail | null
@@ -168,27 +210,19 @@ export function ProductDetailPage({
     setState((p) => ({ ...p, status: "loading" }))
     void (async () => {
       try {
-        const res = await fetch(`${getApiUrl()}/v1/admin/catalog/package-detail`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
+        const json = await fetchPackageDetail(
+          { baseUrl, fetcher, surface },
+          {
             productId,
             departureDateFrom: isoDate(addDays(new Date(), 7)),
             departureDateTo: isoDate(addDays(new Date(), 230)),
             adults,
             nights: { min: nights, max: nights },
             locale,
-          }),
-        })
-        const json = (await res.json()) as {
-          product?: ProductDetail | null
-          offers?: Offer[]
-          retryable?: boolean
-          source?: { connectionId: string; ref: string | null } | null
-        }
+          },
+        )
         if (cancelled) return
-        const offers = Array.isArray(json.offers) ? json.offers : []
+        const offers = json.offers ?? []
         setState({
           status: "ready",
           product: json.product ?? null,
@@ -212,7 +246,7 @@ export function ProductDetailPage({
     return () => {
       cancelled = true
     }
-  }, [productId, adults, nights, locale])
+  }, [productId, adults, nights, locale, baseUrl, fetcher, surface])
 
   // Per-day availability: how many offers depart each day + the cheapest.
   const byDate = useMemo(() => {
@@ -291,25 +325,18 @@ export function ProductDetailPage({
   }, [selectedOffers, roomByCode])
 
   const bookOffer = (offer: Offer) =>
-    navigate({
-      to: "/catalog/journey/$entityModule/$entityId",
-      params: { entityModule: "products", entityId: productId },
-      // Pin the resolved Connect connection/ref so the server books against the
-      // right one (it otherwise falls back to the first adapter for the kind).
-      search: {
-        sourceKind: "voyant-connect",
-        ...(state.source?.connectionId ? { sourceConnectionId: state.source.connectionId } : {}),
-        ...(state.source?.ref ? { sourceRef: state.source.ref } : {}),
-        ...(offer.checkIn ? { departureDate: offer.checkIn.slice(0, 10) } : {}),
-        ...(offer.roomTypeId ? { roomTypeId: offer.roomTypeId } : {}),
-        ...(offer.ratePlanId ? { ratePlanId: offer.ratePlanId } : {}),
-        ...(offer.board ? { board: offer.board } : {}),
-        ...(product?.name ? { entityName: product.name } : {}),
-        ...(product?.media.find((media) => media.src)?.src
-          ? { entityImageUrl: product.media.find((media) => media.src)?.src }
-          : {}),
+    onBook(
+      productId,
+      { connectionId: state.source?.connectionId, ref: state.source?.ref },
+      {
+        checkIn: offer.checkIn,
+        name: state.product?.name ?? null,
+        heroImageUrl: state.product?.media.find((m) => m.src)?.src ?? null,
+        roomTypeId: offer.roomTypeId,
+        ratePlanId: offer.ratePlanId ?? null,
+        board: offer.board,
       },
-    })
+    )
 
   const stars = formatStars(product?.stars)
   const location = [
@@ -335,13 +362,16 @@ export function ProductDetailPage({
     ? availableMonths.findIndex((m) => compareMonth(m, monthCursor) === 0)
     : -1
 
-  // Header breadcrumbs (Packages › this product) — replaces an in-page back
-  // button; the product segment appears once its name has loaded.
-  useAdminBreadcrumbs(
-    product?.name
-      ? [{ label: nav.catalogProducts, href: "/catalog/products" }, { label: product.name }]
-      : [{ label: nav.catalogProducts, href: "/catalog/products" }],
-  )
+  // Header breadcrumbs (Packages › this product) — the product segment appears
+  // once its name has loaded.
+  useEffect(() => {
+    if (!onBreadcrumbs) return
+    onBreadcrumbs(
+      product?.name
+        ? [{ label: productsLabel, href: productsHref }, { label: product.name }]
+        : [{ label: productsLabel, href: productsHref }],
+    )
+  }, [product?.name, productsLabel, productsHref, onBreadcrumbs])
 
   if (state.status === "loading") {
     return (
@@ -789,8 +819,8 @@ function RoomRateCard({
 }
 
 // Stable key for a meal/board (case-folded; offers without a board share one).
-function boardKeyOf(o: Offer): string {
-  return (o.board ?? "").toUpperCase() || "__none__"
+function boardKeyOf(o: Offer | undefined): string {
+  return (o?.board ?? "").toUpperCase() || "__none__"
 }
 
 // Readable, localized meal label (AI/HB/BB/…) → "All-inclusive"/"Half board"/…

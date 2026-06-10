@@ -93,6 +93,7 @@ export {
   defaultDraftShapeFlags,
   defaultTravelerFields,
   type ExtensionOption,
+  type PaxBandDependency,
   type PaxBandSpec,
   type ProductVariantOption,
   type ProductVariantUnitOption,

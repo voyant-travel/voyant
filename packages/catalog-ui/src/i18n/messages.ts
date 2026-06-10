@@ -296,4 +296,112 @@ export type CatalogUiMessages = {
       travelerNameRequired: string
     }
   }
+  /**
+   * The Booking.com-style catalog surfaces — search-first (dynamic) + detail
+   * pages + the shared availability calendar. This is the single source of
+   * truth for these strings; templates may override per-locale via the
+   * provider's `overrides`, and these package defaults fill any gaps.
+   */
+  catalogBrowser: {
+    /** Individual product (package) / cruise detail page. */
+    detail: {
+      datesAndPrices: string
+      datesError: string
+      availabilityUnavailable: string
+      /** `{nights}` placeholder. */
+      noDepartures: string
+      selectDate: string
+      roomType: string
+      roomTypes: string
+      roomsTitle: string
+      notFound: string
+      loadError: string
+      about: string
+      cabins: string
+      itinerary: string
+      ship: string
+      day: string
+      atSea: string
+      capacity: string
+      decks: string
+      soldOut: string
+      highlights: string
+      location: string
+      guestReviews: string
+      reviewsWord: string
+      book: string
+      freeCancellation: string
+      photos: string
+      from: string
+      /** `{nights}` placeholder. */
+      nightsFlightIncluded: string
+      max: string
+      room: string
+      perPerson: string
+      mealPlan: string
+      close: string
+      prevPhoto: string
+      nextPhoto: string
+      /** Meal/board basis labels keyed by code (AI/HB/BB/RO/FB). */
+      boards: {
+        RO: string
+        BB: string
+        HB: string
+        FB: string
+        AI: string
+        standard: string
+      }
+    }
+    /** Dynamic (search-first) catalog surface — the unified search bar + results. */
+    search: {
+      searchLabel: string
+      searchPlaceholder: string
+      destination: string
+      chooseCountry: string
+      when: string
+      anyTime: string
+      flyingFrom: string
+      finding: string
+      loading: string
+      allAirports: string
+      departureAirport: string
+      duration: string
+      nights: string
+      adults: string
+      searchAvailability: string
+      searching: string
+      clear: string
+      error: string
+      availabilityUnavailable: string
+      /** `{nights}` + `{destination}` placeholders. */
+      noDepartures: string
+      thisDestination: string
+      departureDate: string
+      departureDates: string
+      in: string
+      holiday: string
+      holidays: string
+      departing: string
+      selectDay: string
+      flightIncluded: string
+      viewDates: string
+      perPerson: string
+      cruiseType: string
+      allTypes: string
+      typeRiver: string
+      typeOcean: string
+      cruisePlaceholder: string
+      sailing: string
+      sailings: string
+      viewCruise: string
+      noSailings: string
+    }
+    /** Availability month calendar (shared by search + detail). */
+    calendar: {
+      prevMonth: string
+      nextMonth: string
+      offer: string
+      offers: string
+    }
+  }
 }

@@ -27,6 +27,9 @@ export interface CommitInput {
   quoteId?: string
   party?: Record<string, unknown>
   paymentIntent?: BookingPaymentIntent
+  /** Initial booking status the owned handler should land on (draft /
+   *  awaiting_payment / confirmed). When omitted, the create defaults to draft. */
+  initialStatus?: string
   /** Idempotency key — same key in 24h returns the existing booking. */
   idempotencyKey?: string
 }
@@ -56,8 +59,11 @@ export function useBookingCommit(options: UseBookingCommitOptions = {}) {
         paymentIntent: input.paymentIntent,
         idempotencyKey,
       }
-      if (input.draft) {
-        body.parameters = { draft: input.draft }
+      if (input.draft || input.initialStatus) {
+        body.parameters = {
+          ...(input.draft ? { draft: input.draft } : {}),
+          ...(input.initialStatus ? { initialStatus: input.initialStatus } : {}),
+        }
       }
       return api.request<BookResponseV1>("POST", "/book", bookResponseV1, body)
     },
