@@ -35,6 +35,15 @@ type Env = {
   }
 }
 
+const DASHBOARD_AGGREGATES_CACHE_CONTROL = "private, max-age=60"
+
+function cacheDashboardAggregates(c: {
+  header: (name: string, value: string, options?: { append?: boolean }) => void
+}) {
+  c.header("Cache-Control", DASHBOARD_AGGREGATES_CACHE_CONTROL)
+  c.header("Vary", "Authorization", { append: true })
+}
+
 // ==========================================================================
 // Suppliers — method-chained for Hono RPC type inference
 // ==========================================================================
@@ -48,6 +57,7 @@ export const supplierRoutes = new Hono<Env>()
   // GET /aggregates — dashboard KPIs (before /:id so the matcher doesn't swallow it)
   .get("/aggregates", async (c) => {
     const query = parseQuery(c, supplierAggregatesQuerySchema)
+    cacheDashboardAggregates(c)
     return c.json({ data: await suppliersService.getSupplierAggregates(c.get("db"), query) })
   })
 

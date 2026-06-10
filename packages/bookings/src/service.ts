@@ -2424,69 +2424,6 @@ export const bookingsService = {
     if (toDate) rangeConditions.push(sql`${bookings.createdAt} < ${toDate.toISOString()}`)
     const rangeWhere = rangeConditions.length ? and(...rangeConditions) : undefined
 
-    const [totalRow] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(bookings)
-      .where(rangeWhere)
-
-    const [totalPaxRow] = await db
-      .select({
-        totalPax: sql<number>`coalesce(sum(${bookings.pax}), 0)::bigint`,
-      })
-      .from(bookings)
-      .where(
-        and(
-          ...(rangeConditions.length ? rangeConditions : []),
-          inArray(bookings.status, [...AGGREGATE_ACTIVE_STATUSES]),
-        ),
-      )
-
-    const statusRows = await db
-      .select({
-        status: bookings.status,
-        count: sql<number>`count(*)::int`,
-      })
-      .from(bookings)
-      .where(rangeWhere)
-      .groupBy(bookings.status)
-
-    const countsByStatusMap = new Map<BookingStatus, number>(
-      statusRows.map((row) => [row.status, row.count]),
-    )
-
-    const monthlyCountsRows = await db
-      .select({
-        yearMonth: sql<string>`to_char(${bookings.createdAt} at time zone 'UTC', 'YYYY-MM')`,
-        count: sql<number>`count(*)::int`,
-      })
-      .from(bookings)
-      .where(rangeWhere)
-      .groupBy(sql`to_char(${bookings.createdAt} at time zone 'UTC', 'YYYY-MM')`)
-      .orderBy(sql`to_char(${bookings.createdAt} at time zone 'UTC', 'YYYY-MM')`)
-
-    const monthlyRevenueRows = await db
-      .select({
-        yearMonth: sql<string>`to_char(${bookings.createdAt} at time zone 'UTC', 'YYYY-MM')`,
-        currency: bookings.sellCurrency,
-        sellAmountCents: sql<number>`coalesce(sum(${bookings.sellAmountCents}), 0)::bigint`,
-      })
-      .from(bookings)
-      .where(
-        and(
-          ...(rangeConditions.length ? rangeConditions : []),
-          sql`${bookings.sellAmountCents} IS NOT NULL`,
-          inArray(bookings.status, [...AGGREGATE_ACTIVE_STATUSES]),
-        ),
-      )
-      .groupBy(
-        sql`to_char(${bookings.createdAt} at time zone 'UTC', 'YYYY-MM')`,
-        bookings.sellCurrency,
-      )
-      .orderBy(
-        sql`to_char(${bookings.createdAt} at time zone 'UTC', 'YYYY-MM')`,
-        bookings.sellCurrency,
-      )
-
     const todayUtc = new Date()
     todayUtc.setUTCHours(0, 0, 0, 0)
     const todayDateString = todayUtc.toISOString().slice(0, 10)
@@ -2496,15 +2433,70 @@ export const bookingsService = {
       sql`${bookings.startDate} >= ${todayDateString}`,
     )
 
-    const [upcomingRow] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(bookings)
-      .where(upcomingFilter)
-
-    const upcomingItems =
+    const [
+      [totalRow],
+      [totalPaxRow],
+      statusRows,
+      monthlyCountsRows,
+      monthlyRevenueRows,
+      [upcomingRow],
+      upcomingItems,
+    ] = await Promise.all([
+      db.select({ count: sql<number>`count(*)::int` }).from(bookings).where(rangeWhere),
+      db
+        .select({
+          totalPax: sql<number>`coalesce(sum(${bookings.pax}), 0)::bigint`,
+        })
+        .from(bookings)
+        .where(
+          and(
+            ...(rangeConditions.length ? rangeConditions : []),
+            inArray(bookings.status, [...AGGREGATE_ACTIVE_STATUSES]),
+          ),
+        ),
+      db
+        .select({
+          status: bookings.status,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(bookings)
+        .where(rangeWhere)
+        .groupBy(bookings.status),
+      db
+        .select({
+          yearMonth: sql<string>`to_char(${bookings.createdAt} at time zone 'UTC', 'YYYY-MM')`,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(bookings)
+        .where(rangeWhere)
+        .groupBy(sql`to_char(${bookings.createdAt} at time zone 'UTC', 'YYYY-MM')`)
+        .orderBy(sql`to_char(${bookings.createdAt} at time zone 'UTC', 'YYYY-MM')`),
+      db
+        .select({
+          yearMonth: sql<string>`to_char(${bookings.createdAt} at time zone 'UTC', 'YYYY-MM')`,
+          currency: bookings.sellCurrency,
+          sellAmountCents: sql<number>`coalesce(sum(${bookings.sellAmountCents}), 0)::bigint`,
+        })
+        .from(bookings)
+        .where(
+          and(
+            ...(rangeConditions.length ? rangeConditions : []),
+            sql`${bookings.sellAmountCents} IS NOT NULL`,
+            inArray(bookings.status, [...AGGREGATE_ACTIVE_STATUSES]),
+          ),
+        )
+        .groupBy(
+          sql`to_char(${bookings.createdAt} at time zone 'UTC', 'YYYY-MM')`,
+          bookings.sellCurrency,
+        )
+        .orderBy(
+          sql`to_char(${bookings.createdAt} at time zone 'UTC', 'YYYY-MM')`,
+          bookings.sellCurrency,
+        ),
+      db.select({ count: sql<number>`count(*)::int` }).from(bookings).where(upcomingFilter),
       upcomingLimit === 0
-        ? []
-        : await db
+        ? Promise.resolve([] as BookingAggregateUpcomingDeparture[])
+        : db
             .select({
               id: bookings.id,
               bookingNumber: bookings.bookingNumber,
@@ -2518,7 +2510,12 @@ export const bookingsService = {
             .from(bookings)
             .where(upcomingFilter)
             .orderBy(asc(bookings.startDate), asc(bookings.id))
-            .limit(upcomingLimit)
+            .limit(upcomingLimit),
+    ])
+
+    const countsByStatusMap = new Map<BookingStatus, number>(
+      statusRows.map((row) => [row.status, row.count]),
+    )
 
     return {
       total: totalRow?.count ?? 0,

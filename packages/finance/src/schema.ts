@@ -822,6 +822,7 @@ export const invoices = pgTable(
     index("idx_invoices_organization").on(table.organizationId),
     index("idx_invoices_status").on(table.status),
     index("idx_invoices_status_created").on(table.status, table.createdAt),
+    index("idx_invoices_outstanding_due").on(table.status, table.balanceDueCents, table.dueDate),
     index("idx_invoices_fx_rate_set").on(table.fxRateSetId),
     index("idx_invoices_number").on(table.invoiceNumber),
     uniqueIndex("invoices_invoice_number_type_active_idx")

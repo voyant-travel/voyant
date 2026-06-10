@@ -428,6 +428,13 @@
       "when": 1781037894336,
       "tag": "20260609204454_link_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1781118000000,
+      "tag": "20260610190000_invoice_aggregate_indexes",
+      "breakpoints": true
     }
   ]
 }
