@@ -32,6 +32,10 @@ export const travelerEntryV1 = z.object({
   lastName: z.string().min(1).max(255),
   email: z.string().email().optional(),
   phone: z.string().max(50).optional(),
+  /** Linked CRM person, when the traveler was picked from (or copied as)
+   *  an existing contact. Lets the picker reflect the selection and the
+   *  commit path attach the traveler to a known person. */
+  personId: z.string().optional(),
   band: paxBandCodeSchema.default("adult"),
   dateOfBirth: z.string().optional(), // ISO yyyy-mm-dd
   /**
@@ -61,6 +65,16 @@ export const paxBandSpecV1 = z.object({
   maxCount: z.number().int().nonnegative(),
 })
 export type PaxBandSpecV1 = z.infer<typeof paxBandSpecV1>
+
+/** Cross-band occupancy rule (e.g. "Child under 6 requires an Adult"). */
+export const paxBandDependencyV1 = z.object({
+  dependentCode: z.string(),
+  masterCode: z.string(),
+  type: z.enum(["requires", "limits_per_master", "limits_sum", "excludes"]),
+  maxPerMaster: z.number().int().nonnegative().optional(),
+  maxDependentSum: z.number().int().nonnegative().optional(),
+})
+export type PaxBandDependencyV1 = z.infer<typeof paxBandDependencyV1>
 
 export const cabinCategoryOptionV1 = z.object({
   id: z.string(),
@@ -148,6 +162,9 @@ export const addonOfferV1 = z.object({
 export const configureSubStepV1 = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("departure"), required: z.literal(true) }),
   z.object({ kind: z.literal("product-option"), options: z.array(productVariantOptionV1) }),
+  // Inventory-unit (room/vehicle) quantity selection — payload-less; the
+  // journey loads the units via an injected picker.
+  z.object({ kind: z.literal("option-units") }),
   z.object({ kind: z.literal("cabin-category"), categories: z.array(cabinCategoryOptionV1) }),
   z.object({
     kind: z.literal("cabin-number"),
@@ -215,6 +232,7 @@ export const bookingDraftShapeV1 = z.object({
   configureSubSteps: z.array(configureSubStepV1).optional(),
   paxBands: z.array(paxBandSpecV1),
   paxBandsAllowedTotal: z.object({ min: z.number().int(), max: z.number().int() }),
+  paxBandDependencies: z.array(paxBandDependencyV1).optional(),
   travelerFields: z.array(travelerFieldRequirementV1),
   bookingFields: z.array(bookingFieldRequirementV1),
   accommodation: z
@@ -313,8 +331,11 @@ export const bookingDraftV1 = z.object({
         .optional(),
       cabinCategoryId: z.string().optional(),
       cabinNumberId: z.string().optional(),
-      // Sourced stays/package rate pin. Pin by stable room/rate keys instead
-      // of the short-lived offer id so adapters can re-resolve the exact rate.
+      // Sourced stays/package rate pin. The chosen room + rate plan (and its
+      // `board` suffix) so the connect adapter re-resolves the EXACT offer the
+      // operator clicked, not just the first one for the date. Pin by the
+      // stable `ratePlanId`/`roomTypeId` — the per-search `offer.id` is a
+      // short-TTL token that can't be replayed. See voyant#1579.
       roomTypeId: z.string().optional(),
       ratePlanId: z.string().optional(),
       board: z.string().optional(),
@@ -334,11 +355,15 @@ export const bookingDraftV1 = z.object({
   billing: z
     .object({
       buyerType: z.enum(["B2C", "B2B"]).default("B2C"),
+      /** CRM organization id when a company (B2B) lead was picked. */
+      organizationId: z.string().optional(),
       contact: z.object({
         firstName: z.string().default(""),
         lastName: z.string().default(""),
         email: z.string().default(""),
         phone: z.string().optional(),
+        /** CRM person id when the lead was picked from CRM (vs typed). */
+        personId: z.string().optional(),
       }),
       address: z
         .object({
@@ -416,6 +441,43 @@ export const bookingDraftV1 = z.object({
     .optional(),
 
   /**
+   * Operator-only: when true, the booking-create commit suppresses
+   * post-commit notifications (e.g. the confirmation email). Set on the
+   * admin review step; the owned handler forwards it to booking-create.
+   */
+  suppressNotifications: z.boolean().optional(),
+
+  /**
+   * Operator-only manual price override (admin review step). The owned
+   * handler sends `amountCents` as `confirmedSellAmountCents` (which wins
+   * over the quote/promotion price), the quote total as
+   * `catalogSellAmountCents`, and the reason — booking-create requires a
+   * reason when the two differ.
+   */
+  priceOverride: z
+    .object({
+      amountCents: z.number().int().min(0),
+      reason: z.string(),
+    })
+    .optional(),
+
+  /**
+   * Operator-applied gift / refund-credit voucher (admin review step).
+   * `voucherId` + `amountCents` mirror finance's `voucherRedemptionInput`
+   * exactly; the owned handler forwards them to booking-create, which
+   * atomically redeems the voucher inside the create transaction after
+   * re-checking status / expiry / balance. The UI validates the code via
+   * `/v1/public/vouchers/validate` before writing this. Distinct from
+   * `promotionCode` (a customer discount code) — see the note there.
+   */
+  voucherRedemption: z
+    .object({
+      voucherId: z.string().min(1),
+      amountCents: z.number().int().min(1),
+    })
+    .optional(),
+
+  /**
    * Customer-typed promotion code. Validated case-insensitively against
    * `promotional_offers.code` at quote time when the operator template
    * wires `evaluatePromotions` on `QuoteEntityDeps`. Surfaces as a
@@ -433,6 +495,12 @@ export const bookingDraftV1 = z.object({
    * the booking detail's notes panel.
    */
   internalNotes: z.string().optional(),
+  /**
+   * Operator-only: land the booking as a draft instead of a live booking.
+   * When false (default), the commit picks `confirmed` if the payment is
+   * marked paid, else `awaiting_payment`.
+   */
+  saveAsDraft: z.boolean().optional(),
   /**
    * Customer-facing notes — "anything we should know?" Free-text
    * the customer fills on the storefront review step. Stored on

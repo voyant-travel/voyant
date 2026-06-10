@@ -455,6 +455,8 @@ export const bookingsUiEn = {
       productEmpty: "No products found.",
       option: "Option",
       optionNone: "No specific option",
+      owned: "Owned",
+      supplier: "Supplier",
     },
   },
   personPickerSection: {
@@ -763,12 +765,14 @@ export const bookingsUiEn = {
   },
   bookingJourney: {
     steps: {
-      configure: "Configure",
+      departure: "Departure",
       billing: "Billing",
       travelers: "Travelers",
+      options: "Options",
       accommodation: "Accommodation",
-      addons: "Add-ons",
+      addons: "Extras",
       payment: "Payment",
+      documents: "Documents & notes",
       review: "Review",
       billingAndContact: "Billing & contact",
       reviewAndConfirm: "Review & confirm",
@@ -777,6 +781,10 @@ export const bookingsUiEn = {
       back: "Back",
       next: "Next",
       checking: "Checking...",
+      continue: "Continue",
+      edit: "Edit",
+      done: "Done",
+      cancel: "Cancel",
     },
     values: {
       noValue: "—",
@@ -790,11 +798,15 @@ export const bookingsUiEn = {
       addAtLeastTravelers: "Add at least {count} traveler{plural} to continue.",
       maxTravelersPerBooking: "Max {count} travelers per booking.",
       ageOutOfRange: "Age {age} is outside the accepted range for this product.",
+      dependencyRequires: "{dependent} requires at least one {master}.",
+      dependencyExcludes: "{dependent} can't be combined with {master}.",
+      dependencyLimitPerMaster: "At most {limit} {dependent} per {master}.",
+      dependencyLimitSum: "At most {limit} {dependent} allowed.",
     },
     warnings: {
       phoneMissing: "Phone number not set — useful for last-minute supplier contact.",
       billingCountryMissing: "Billing country not set — taxes won't compute until it's filled in.",
-      vatMissing: "VAT id missing — required for B2B reverse-charge invoicing.",
+      vatMissing: "Tax ID not set — needed for company (B2B) invoicing.",
       travelerFieldRequired: "{traveler}: {field} is required.",
       paymentIntentMissing: "Payment intent not set — booking will default to hold.",
       noTravelers: "No travelers added — at least one is recommended for ops handoff.",
@@ -843,12 +855,19 @@ export const bookingsUiEn = {
       postalCode: "Postal code",
       country: "Country",
       companyName: "Company name",
-      vatId: "VAT id",
+      vatId: "Tax ID",
+      leadContactSummaryNote: "Details come from the selected contact — edit them above.",
+      leadContactSummaryEmpty: "Search and select a contact above, or create a new one.",
     },
     travelers: {
       title: "Travelers",
+      partySize: "Party size",
+      details: "Traveler details",
+      decrease: "Decrease {label}",
+      increase: "Increase {label}",
       empty: "Pick traveler counts in the Configure step to start adding details.",
       addTraveler: "Add traveler",
+      travelerType: "Traveler type",
       travelerNumber: "Traveler {number}",
       ageLabel: "age {age}",
       copyFromBilling: "Copy from billing",
@@ -872,6 +891,14 @@ export const bookingsUiEn = {
       empty: "No payment methods are available for this booking.",
       redirectedAfterConfirm:
         "You'll be redirected to our secure payment page after confirming the booking.",
+      linkSentAfterConfirm:
+        "A secure payment link is generated for the customer after you confirm — they choose how to pay. Nothing is charged now.",
+      cardOperatorLabel: "Online payment link",
+      cardOperatorDescription:
+        "The customer pays online via a secure link after you confirm. Nothing is charged instantly; inventory is reserved on confirmation.",
+      generateLinkLabel: "Generate an online payment link",
+      generateLinkHint:
+        "Creates a secure online payment link for this booking after you confirm. Leave unchecked to just reserve and collect payment later.",
       inquiryNotice:
         "We'll send your details to the operator without locking inventory or taking payment. They'll get back to you with availability and a quote — typically within one business day.",
       bankTransferInstructions: "Bank transfer instructions",
@@ -904,6 +931,17 @@ export const bookingsUiEn = {
       internalNotes: "Internal notes (operator-only)",
       confirmBooking: "Confirm booking",
       confirming: "Confirming...",
+      completeToConfirm: "Complete the highlighted sections above to confirm.",
+      priceOverrideToggle: "Override total price",
+      priceOverrideAmount: "Total price",
+      priceOverrideReason: "Override reason",
+      priceOverrideReasonPlaceholder: "Why is the price being changed?",
+      priceOverrideReasonRequired: "A reason is required when the price is changed.",
+    },
+    documents: {
+      saveAsDraft: "Save as draft",
+      saveAsDraftHint:
+        "Keep the booking as a draft. Leave unchecked to create it live — confirmed if the payment is marked paid, otherwise awaiting payment.",
     },
     contract: {
       defaultTitle: "Booking contract",
@@ -923,6 +961,8 @@ export const bookingsUiEn = {
     sidePanel: {
       youAreBooking: "You're booking",
       total: "Total",
+      pricingHint: "Add travelers to see pricing.",
+      pricingHintRooms: "Select rooms to see pricing.",
       guestSingular: "guest",
       guestPlural: "guests",
       filledOf: "{filled} of {total} filled",

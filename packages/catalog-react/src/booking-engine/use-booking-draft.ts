@@ -75,16 +75,20 @@ export function useBookingDraft(options: UseBookingDraftOptions) {
   >({
     mutationFn: async ({ draft, currentStep, currentQuoteId }) => {
       bookingDraftV1.parse(draft)
-      const body = {
+      const body: Record<string, unknown> = {
         entityModule: draft.entity.module,
         entityId: draft.entity.id,
-        sourceKind: draft.entity.sourceKind,
-        sourceConnectionId: draft.entity.sourceConnectionId,
-        sourceRef: draft.entity.sourceRef,
         draftPayload: draft as Record<string, unknown>,
         currentStep,
         currentQuoteId,
       }
+      // Only send the source pointer fields when present. They're optional but
+      // non-empty when set (`z.string().min(1).optional()`); an empty string —
+      // which is what a server-resolved-provenance draft carries — would fail
+      // validation. Mirrors the quote hook's guarding.
+      if (draft.entity.sourceKind) body.sourceKind = draft.entity.sourceKind
+      if (draft.entity.sourceConnectionId) body.sourceConnectionId = draft.entity.sourceConnectionId
+      if (draft.entity.sourceRef) body.sourceRef = draft.entity.sourceRef
       return api.request("PUT", `/drafts/${options.draftId}`, draftRowSchema, body)
     },
     onSuccess(row) {

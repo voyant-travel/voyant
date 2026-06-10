@@ -29,9 +29,14 @@ describe("buildProductDraftShape", () => {
     expect(shape.addons).toBeUndefined()
   })
 
-  it("emits an occupancy sub-step under Configure", () => {
+  it("emits a departure + occupancy sub-step under Configure", () => {
     const shape = buildProductDraftShape(minimalContent)
     expect(shape.configureSubSteps).toEqual([
+      // Owned products are scheduled — operator picks a real departure.
+      {
+        kind: "departure",
+        required: true,
+      },
       {
         kind: "occupancy",
         bands: DEFAULT_PAX_BANDS,

@@ -106,6 +106,13 @@ export interface CommitOwnedRequest {
 export interface CommitOwnedResult {
   status: "held" | "confirmed" | "ticketed" | "failed"
   orderRef: string
+  /**
+   * The id of the booking row the handler actually created. The engine adopts
+   * this as the canonical booking id (the handler mints its own rather than use
+   * the provided `request.bookingId`), so the response + snapshot + quote-
+   * consumed marker all point at the real row.
+   */
+  bookingId?: string
   /** Re-priced or echoed pricing — written into the snapshot. */
   pricing?: PricingBasis
   /** Free-form payload preserved in the snapshot's frozen_payload. */

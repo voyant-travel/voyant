@@ -405,6 +405,10 @@ export type BookingsUiMessages = {
       productEmpty: string
       option: string
       optionNone: string
+      /** Badge for an owned-inventory product in a catalog-aware picker. */
+      owned: string
+      /** Badge for a supplier-sourced product in a catalog-aware picker. */
+      supplier: string
     }
   }
   personPickerSection: {
@@ -600,7 +604,15 @@ export type BookingsUiMessages = {
   }
   bookingJourney: {
     steps: Record<
-      "configure" | "billing" | "travelers" | "accommodation" | "addons" | "payment" | "review",
+      | "departure"
+      | "billing"
+      | "travelers"
+      | "options"
+      | "accommodation"
+      | "addons"
+      | "payment"
+      | "documents"
+      | "review",
       string
     > & {
       billingAndContact: string
@@ -610,6 +622,10 @@ export type BookingsUiMessages = {
       back: string
       next: string
       checking: string
+      continue: string
+      edit: string
+      done: string
+      cancel: string
     }
     values: {
       noValue: string
@@ -623,6 +639,10 @@ export type BookingsUiMessages = {
       addAtLeastTravelers: string
       maxTravelersPerBooking: string
       ageOutOfRange: string
+      dependencyRequires: string
+      dependencyExcludes: string
+      dependencyLimitPerMaster: string
+      dependencyLimitSum: string
     }
     warnings: {
       phoneMissing: string
@@ -666,11 +686,18 @@ export type BookingsUiMessages = {
       country: string
       companyName: string
       vatId: string
+      leadContactSummaryNote: string
+      leadContactSummaryEmpty: string
     }
     travelers: {
       title: string
+      partySize: string
+      details: string
+      decrease: string
+      increase: string
       empty: string
       addTraveler: string
+      travelerType: string
       travelerNumber: string
       ageLabel: string
       copyFromBilling: string
@@ -693,6 +720,11 @@ export type BookingsUiMessages = {
       title: string
       empty: string
       redirectedAfterConfirm: string
+      linkSentAfterConfirm: string
+      cardOperatorLabel: string
+      cardOperatorDescription: string
+      generateLinkLabel: string
+      generateLinkHint: string
       inquiryNotice: string
       bankTransferInstructions: string
       bankTransferDefaultNote: string
@@ -714,6 +746,16 @@ export type BookingsUiMessages = {
       internalNotes: string
       confirmBooking: string
       confirming: string
+      completeToConfirm: string
+      priceOverrideToggle: string
+      priceOverrideAmount: string
+      priceOverrideReason: string
+      priceOverrideReasonPlaceholder: string
+      priceOverrideReasonRequired: string
+    }
+    documents: {
+      saveAsDraft: string
+      saveAsDraftHint: string
     }
     contract: {
       defaultTitle: string
@@ -730,6 +772,8 @@ export type BookingsUiMessages = {
     sidePanel: {
       youAreBooking: string
       total: string
+      pricingHint: string
+      pricingHintRooms: string
       guestSingular: string
       guestPlural: string
       filledOf: string
