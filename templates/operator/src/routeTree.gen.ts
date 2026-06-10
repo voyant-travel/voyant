@@ -108,7 +108,6 @@ import { Route as WorkspaceAvailabilityStartTimesIdRouteImport } from './routes/
 import { Route as WorkspaceAvailabilityRulesIdRouteImport } from './routes/_workspace/availability/rules/$id'
 import { Route as storefrontShopConfirmationBookingIdRouteImport } from './routes/(storefront)/shop_.confirmation.$bookingId'
 import { Route as WorkspaceCatalogJourneyEntityModuleEntityIdRouteImport } from './routes/_workspace/catalog_.journey.$entityModule.$entityId'
-import { Route as WorkspaceCatalogBookEntityModuleEntityIdRouteImport } from './routes/_workspace/catalog_.book.$entityModule.$entityId'
 import { Route as storefrontShopProductsEntityModuleEntityIdRouteImport } from './routes/(storefront)/shop_.products.$entityModule.$entityId'
 import { Route as storefrontShopBookEntityModuleEntityIdRouteImport } from './routes/(storefront)/shop_.book.$entityModule.$entityId'
 
@@ -660,12 +659,6 @@ const WorkspaceCatalogJourneyEntityModuleEntityIdRoute =
     path: '/catalog/journey/$entityModule/$entityId',
     getParentRoute: () => WorkspaceRouteRoute,
   } as any)
-const WorkspaceCatalogBookEntityModuleEntityIdRoute =
-  WorkspaceCatalogBookEntityModuleEntityIdRouteImport.update({
-    id: '/catalog_/book/$entityModule/$entityId',
-    path: '/catalog/book/$entityModule/$entityId',
-    getParentRoute: () => WorkspaceRouteRoute,
-  } as any)
 const storefrontShopProductsEntityModuleEntityIdRoute =
   storefrontShopProductsEntityModuleEntityIdRouteImport.update({
     id: '/shop_/products/$entityModule/$entityId',
@@ -777,7 +770,6 @@ export interface FileRoutesByFullPath {
   '/notifications/templates/': typeof WorkspaceNotificationsTemplatesIndexRoute
   '/shop/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
   '/shop/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
-  '/catalog/book/$entityModule/$entityId': typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
   '/catalog/journey/$entityModule/$entityId': typeof WorkspaceCatalogJourneyEntityModuleEntityIdRoute
 }
 export interface FileRoutesByTo {
@@ -876,7 +868,6 @@ export interface FileRoutesByTo {
   '/notifications/templates': typeof WorkspaceNotificationsTemplatesIndexRoute
   '/shop/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
   '/shop/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
-  '/catalog/book/$entityModule/$entityId': typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
   '/catalog/journey/$entityModule/$entityId': typeof WorkspaceCatalogJourneyEntityModuleEntityIdRoute
 }
 export interface FileRoutesById {
@@ -981,7 +972,6 @@ export interface FileRoutesById {
   '/_workspace/notifications/templates/': typeof WorkspaceNotificationsTemplatesIndexRoute
   '/(storefront)/shop_/book/$entityModule/$entityId': typeof storefrontShopBookEntityModuleEntityIdRoute
   '/(storefront)/shop_/products/$entityModule/$entityId': typeof storefrontShopProductsEntityModuleEntityIdRoute
-  '/_workspace/catalog_/book/$entityModule/$entityId': typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
   '/_workspace/catalog_/journey/$entityModule/$entityId': typeof WorkspaceCatalogJourneyEntityModuleEntityIdRoute
 }
 export interface FileRouteTypes {
@@ -1084,7 +1074,6 @@ export interface FileRouteTypes {
     | '/notifications/templates/'
     | '/shop/book/$entityModule/$entityId'
     | '/shop/products/$entityModule/$entityId'
-    | '/catalog/book/$entityModule/$entityId'
     | '/catalog/journey/$entityModule/$entityId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1183,7 +1172,6 @@ export interface FileRouteTypes {
     | '/notifications/templates'
     | '/shop/book/$entityModule/$entityId'
     | '/shop/products/$entityModule/$entityId'
-    | '/catalog/book/$entityModule/$entityId'
     | '/catalog/journey/$entityModule/$entityId'
   id:
     | '__root__'
@@ -1287,7 +1275,6 @@ export interface FileRouteTypes {
     | '/_workspace/notifications/templates/'
     | '/(storefront)/shop_/book/$entityModule/$entityId'
     | '/(storefront)/shop_/products/$entityModule/$entityId'
-    | '/_workspace/catalog_/book/$entityModule/$entityId'
     | '/_workspace/catalog_/journey/$entityModule/$entityId'
   fileRoutesById: FileRoutesById
 }
@@ -1996,13 +1983,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceCatalogJourneyEntityModuleEntityIdRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
-    '/_workspace/catalog_/book/$entityModule/$entityId': {
-      id: '/_workspace/catalog_/book/$entityModule/$entityId'
-      path: '/catalog/book/$entityModule/$entityId'
-      fullPath: '/catalog/book/$entityModule/$entityId'
-      preLoaderRoute: typeof WorkspaceCatalogBookEntityModuleEntityIdRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
     '/(storefront)/shop_/products/$entityModule/$entityId': {
       id: '/(storefront)/shop_/products/$entityModule/$entityId'
       path: '/shop/products/$entityModule/$entityId'
@@ -2198,7 +2178,6 @@ interface WorkspaceRouteRouteChildren {
   WorkspaceLegalTemplatesIndexRoute: typeof WorkspaceLegalTemplatesIndexRoute
   WorkspaceNotificationsReminderRulesIndexRoute: typeof WorkspaceNotificationsReminderRulesIndexRoute
   WorkspaceNotificationsTemplatesIndexRoute: typeof WorkspaceNotificationsTemplatesIndexRoute
-  WorkspaceCatalogBookEntityModuleEntityIdRoute: typeof WorkspaceCatalogBookEntityModuleEntityIdRoute
   WorkspaceCatalogJourneyEntityModuleEntityIdRoute: typeof WorkspaceCatalogJourneyEntityModuleEntityIdRoute
 }
 
@@ -2270,8 +2249,6 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
     WorkspaceNotificationsReminderRulesIndexRoute,
   WorkspaceNotificationsTemplatesIndexRoute:
     WorkspaceNotificationsTemplatesIndexRoute,
-  WorkspaceCatalogBookEntityModuleEntityIdRoute:
-    WorkspaceCatalogBookEntityModuleEntityIdRoute,
   WorkspaceCatalogJourneyEntityModuleEntityIdRoute:
     WorkspaceCatalogJourneyEntityModuleEntityIdRoute,
 }

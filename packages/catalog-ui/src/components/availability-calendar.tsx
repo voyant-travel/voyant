@@ -1,11 +1,10 @@
 "use client"
 
-import { useLocale } from "@voyantjs/admin"
 import { Button } from "@voyantjs/ui/components/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useMemo } from "react"
 
-import { useAdminMessages } from "@/lib/admin-i18n"
+import { useCatalogUiI18nOrDefault, useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 
 /**
  * Availability-aware month calendar. Each day that has live offers is
@@ -48,8 +47,8 @@ export function AvailabilityCalendar({
   canPrev?: boolean
   canNext?: boolean
 }) {
-  const cal = useAdminMessages().catalog.calendar
-  const { resolvedLocale } = useLocale()
+  const cal = useCatalogUiMessagesOrDefault().catalogBrowser.calendar
+  const { locale: resolvedLocale } = useCatalogUiI18nOrDefault()
   const { year, month } = cursor
   const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7 // Mon = 0
   const daysInMonth = new Date(year, month + 1, 0).getDate()

@@ -6,10 +6,6 @@ import {
 import { type AdminAuthMessages, adminAuthMessages } from "./auth.js"
 import { type AdminAvailabilityMessages, adminAvailabilityMessages } from "./availability.js"
 import { type AdminBookingsMessages, adminBookingsMessages } from "./bookings.js"
-import {
-  type OperatorAdminCatalogMessages,
-  operatorAdminCatalogMessages,
-} from "./catalog-operator.js"
 import { type AdminChromeMessages, adminChromeMessages } from "./chrome.js"
 import { type OperatorAdminCoreMessages, operatorAdminCoreMessages } from "./core-operator.js"
 import { type OperatorAdminCrmMessages, operatorAdminCrmMessages } from "./crm-operator.js"
@@ -58,7 +54,6 @@ export type OperatorAdminMessages = AdminChromeMessages & {
   OperatorAdminSuppliersMessages &
   AdminTripsMessages & {
     nav: OperatorAdminNavMessages
-    catalog: OperatorAdminCatalogMessages
   }
 
 export const operatorAdminMessageDefinitions =
@@ -81,5 +76,4 @@ export const operatorAdminMessageDefinitions =
     adminFinanceMessages,
     adminResourcesMessages,
     operatorAdminNavMessages,
-    operatorAdminCatalogMessages,
   ) satisfies LocaleMessageDefinitions<OperatorAdminMessages>

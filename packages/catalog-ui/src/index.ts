@@ -1,20 +1,21 @@
 export {
-  type CatalogBookingFetchers,
-  type CatalogBookingFetchersOptions,
-  CatalogBookingPage,
-  type CatalogBookingPageProps,
-  type CatalogBookingRouteState,
-  type CatalogBookRequest,
-  type CatalogBookResponse,
-  type CatalogQuoteRequest,
-  type CatalogQuoteResponse,
-  type ContactPickerRenderProps,
-  type ContactValue,
-  createCatalogBookingFetchers,
-  type PaymentIntentKind,
-  type PricingBasis,
-  type TravelerEntry,
-} from "./components/catalog-booking-page.js"
+  type CatalogDetailSurface,
+  catalogDetailSurfaces,
+  catalogSurfaceVertical,
+} from "./catalog-surfaces.js"
+export {
+  AvailabilityCalendar,
+  compareMonth,
+  type DayAvailability,
+  dateKey,
+  type MonthCursor,
+  monthOfIso,
+  shiftMonth,
+} from "./components/availability-calendar.js"
+export {
+  CatalogBrowsePage,
+  type CatalogBrowsePageProps,
+} from "./components/catalog-browse-page.js"
 export {
   CatalogCard,
   type CatalogCardBadge,
@@ -47,6 +48,12 @@ export {
   type CatalogFilterRailProps,
 } from "./components/catalog-filter-rail.js"
 export {
+  Gallery,
+  type GalleryImage,
+  GalleryLightbox,
+  type GalleryLightboxLabels,
+} from "./components/catalog-gallery.js"
+export {
   CatalogPage,
   type CatalogPageProps,
   type CatalogPageSearchState,
@@ -66,6 +73,31 @@ export {
   type CatalogSearchTab,
   type CatalogSortOption,
 } from "./components/catalog-search-page.js"
+export {
+  type CatalogVerticalDetailBreadcrumb,
+  CatalogVerticalDetailPage,
+  type CatalogVerticalDetailPageProps,
+  type CatalogVerticalDetailVertical,
+} from "./components/catalog-vertical-detail-page.js"
+export {
+  CruiseDetailPage,
+  type CruiseDetailPageProps,
+} from "./components/cruise-detail-page.js"
+export {
+  DynamicCatalogPage,
+  type DynamicCatalogPageProps,
+} from "./components/dynamic-catalog-page.js"
+export {
+  type ProductBookSelection,
+  ProductDetailPage,
+  type ProductDetailPageProps,
+} from "./components/product-detail-page.js"
+export {
+  type ScheduledCatalogLocks,
+  ScheduledCatalogPage,
+  type ScheduledCatalogPageProps,
+  type ScheduledScope,
+} from "./components/scheduled-catalog-page.js"
 export {
   type CatalogUiMessageOverrides,
   type CatalogUiMessages,

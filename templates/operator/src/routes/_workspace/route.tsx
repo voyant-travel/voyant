@@ -93,7 +93,15 @@ export const Route = createFileRoute("/_workspace")({
   // the workspace chrome reads localStorage (theme, locale) — keeping that
   // client-only avoids hydration mismatches.
   ssr: "data-only",
-  loader: async ({ location }) => {
+  // Auth guard MUST run in beforeLoad, not loader. beforeLoad executes
+  // top-down for the whole matched chain BEFORE any loader fires, so an
+  // unauthenticated redirect short-circuits the subtree. If this lived in
+  // the loader, it would race (in parallel) with child loaders — e.g. the
+  // dashboard's `/aggregates` queries — whose 401 throw would surface the
+  // root error boundary ("Something went wrong / Unauthorized") and beat
+  // the redirect, dead-ending logged-out users instead of sending them to
+  // /sign-in. Returning `{ user }` here merges it into route context.
+  beforeLoad: async ({ location }) => {
     const user = await getCurrentUser()
 
     if (!user) {
@@ -105,6 +113,7 @@ export const Route = createFileRoute("/_workspace")({
 
     return { user }
   },
+  loader: ({ context }) => ({ user: context.user }),
   pendingComponent: WorkspacePendingFallback,
   component: WorkspaceLayout,
 })
