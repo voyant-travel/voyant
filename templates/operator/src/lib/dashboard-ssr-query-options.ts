@@ -31,6 +31,23 @@ function requireOperatorEnv(context: OperatorServerContext): CloudflareBindings 
   return context.env
 }
 
+function unauthorizedDashboardError(): Error & { status: 401 } {
+  return Object.assign(new Error("Unauthorized"), { status: 401 as const })
+}
+
+async function requireAuthenticatedOperatorRequest(
+  context: OperatorServerContext,
+): Promise<CloudflareBindings> {
+  const env = requireOperatorEnv(context)
+  const { hasAuthPermission } = await import("../api/auth/handler")
+
+  if (!(await hasAuthPermission(context.request, env))) {
+    throw unauthorizedDashboardError()
+  }
+
+  return env
+}
+
 async function withDashboardDb<T>(
   env: CloudflareBindings,
   fn: (db: ReturnType<typeof dbFromEnvForApp>["db"]) => Promise<T>,
@@ -46,7 +63,7 @@ async function withDashboardDb<T>(
 export const getOperatorDashboardBookingsAggregates = createServerFn({ method: "GET" })
   .middleware([withOperatorRequest])
   .handler(async ({ context }) => {
-    const env = requireOperatorEnv(context)
+    const env = await requireAuthenticatedOperatorRequest(context)
     const { from } = buildDashboardSixMonthWindow()
     return withDashboardDb(env, async (db) => {
       const { bookingsService } = await import("@voyantjs/bookings")
@@ -57,7 +74,7 @@ export const getOperatorDashboardBookingsAggregates = createServerFn({ method: "
 export const getOperatorDashboardProductsAggregates = createServerFn({ method: "GET" })
   .middleware([withOperatorRequest])
   .handler(async ({ context }) => {
-    const env = requireOperatorEnv(context)
+    const env = await requireAuthenticatedOperatorRequest(context)
     return withDashboardDb(env, async (db) => {
       const { productsService } = await import("@voyantjs/products")
       return productsService.getProductAggregates(db)
@@ -67,7 +84,7 @@ export const getOperatorDashboardProductsAggregates = createServerFn({ method: "
 export const getOperatorDashboardSuppliersAggregates = createServerFn({ method: "GET" })
   .middleware([withOperatorRequest])
   .handler(async ({ context }) => {
-    const env = requireOperatorEnv(context)
+    const env = await requireAuthenticatedOperatorRequest(context)
     return withDashboardDb(env, async (db) => {
       const { suppliersService } = await import("@voyantjs/suppliers")
       return suppliersService.getSupplierAggregates(db)
@@ -77,7 +94,7 @@ export const getOperatorDashboardSuppliersAggregates = createServerFn({ method: 
 export const getOperatorDashboardFinanceAggregates = createServerFn({ method: "GET" })
   .middleware([withOperatorRequest])
   .handler(async ({ context }) => {
-    const env = requireOperatorEnv(context)
+    const env = await requireAuthenticatedOperatorRequest(context)
     const { from } = buildDashboardSixMonthWindow()
     return withDashboardDb(env, async (db) => {
       const { financeService } = await import("@voyantjs/finance")
