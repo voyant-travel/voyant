@@ -1,13 +1,20 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { getBookingsQueryOptions } from "@voyantjs/bookings-react"
-import { type BookingListFiltersState, BookingsPage } from "@voyantjs/bookings-ui"
+import type { BookingListFiltersState } from "@voyantjs/bookings-ui/components/booking-list"
 import { Button } from "@voyantjs/ui/components/button"
 import { Route as RouteIcon } from "lucide-react"
+import { lazy, Suspense } from "react"
 import { z } from "zod"
 
 import { BookingsListSkeleton } from "@/components/voyant/bookings/bookings-list-skeleton"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
+
+const BookingsPage = lazy(() =>
+  import("@voyantjs/bookings-ui/components/bookings-page").then((module) => ({
+    default: module.BookingsPage,
+  })),
+)
 
 const sortBySchema = z.enum([
   "bookingNumber",
@@ -57,29 +64,31 @@ function BookingsRoute() {
   const search = Route.useSearch()
 
   return (
-    <BookingsPage
-      onCreateBooking={() => void navigate({ to: "/bookings/$id", params: { id: "new" } })}
-      onBookingOpen={(booking) =>
-        void navigate({ to: "/bookings/$id", params: { id: booking.id } })
-      }
-      headerActions={
-        <Button
-          variant="outline"
-          onClick={() => void navigate({ to: "/trips/$id", params: { id: "new" } })}
-        >
-          <RouteIcon className="size-4" aria-hidden="true" />
-          Compose trip
-        </Button>
-      }
-      initialFilters={searchToFilters(search)}
-      onFiltersChange={(filters) =>
-        void navigate({
-          to: "/bookings",
-          search: filtersToSearch(filters),
-          replace: true,
-        })
-      }
-    />
+    <Suspense fallback={<BookingsListSkeleton />}>
+      <BookingsPage
+        onCreateBooking={() => void navigate({ to: "/bookings/$id", params: { id: "new" } })}
+        onBookingOpen={(booking) =>
+          void navigate({ to: "/bookings/$id", params: { id: booking.id } })
+        }
+        headerActions={
+          <Button
+            variant="outline"
+            onClick={() => void navigate({ to: "/trips/$id", params: { id: "new" } })}
+          >
+            <RouteIcon className="size-4" aria-hidden="true" />
+            Compose trip
+          </Button>
+        }
+        initialFilters={searchToFilters(search)}
+        onFiltersChange={(filters) =>
+          void navigate({
+            to: "/bookings",
+            search: filtersToSearch(filters),
+            replace: true,
+          })
+        }
+      />
+    </Suspense>
   )
 }
 

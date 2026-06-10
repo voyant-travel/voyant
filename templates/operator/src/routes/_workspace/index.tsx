@@ -1,8 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
-// DashboardPage pulls recharts (~390 KB). Subpath import so only the
-// dashboard route's chunk references it — no leakage into the workspace
-// shell that's loaded by every other route.
-import { DashboardPage } from "@voyantjs/admin/dashboard"
+import { DashboardSkeleton } from "@voyantjs/admin/dashboard/skeleton"
+import { lazy, Suspense } from "react"
 
 import {
   getOperatorDashboardBookingsAggregatesQueryOptions,
@@ -10,6 +8,12 @@ import {
   getOperatorDashboardProductsAggregatesQueryOptions,
   getOperatorDashboardSuppliersAggregatesQueryOptions,
 } from "@/lib/dashboard-ssr-query-options"
+
+// DashboardPage pulls recharts. The generated route tree statically imports
+// this route module, so keep the chart page behind dynamic import().
+const DashboardPage = lazy(() =>
+  import("@voyantjs/admin/dashboard").then((module) => ({ default: module.DashboardPage })),
+)
 
 export const Route = createFileRoute("/_workspace/")({
   ssr: "data-only",
@@ -21,5 +25,13 @@ export const Route = createFileRoute("/_workspace/")({
       context.queryClient.ensureQueryData(getOperatorDashboardFinanceAggregatesQueryOptions()),
     ])
   },
-  component: DashboardPage,
+  component: DashboardRoute,
 })
+
+function DashboardRoute() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardPage />
+    </Suspense>
+  )
+}

@@ -7,12 +7,22 @@ import {
   getTravelersQueryOptions,
 } from "@voyantjs/bookings-react"
 import { useBookingsUiMessagesOrDefault } from "@voyantjs/bookings-ui/i18n"
+import { lazy, Suspense } from "react"
 import { z } from "zod"
-import { BookingDetailPage } from "@/components/voyant/bookings/booking-detail-page"
 import { BookingDetailSkeleton } from "@/components/voyant/bookings/booking-detail-skeleton"
-import { CatalogProductPicker } from "@/components/voyant/catalog/catalog-product-picker"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
+
+const BookingDetailPage = lazy(() =>
+  import("@/components/voyant/bookings/booking-detail-page").then((module) => ({
+    default: module.BookingDetailPage,
+  })),
+)
+const CatalogProductPicker = lazy(() =>
+  import("@/components/voyant/catalog/catalog-product-picker").then((module) => ({
+    default: module.CatalogProductPicker,
+  })),
+)
 
 const bookingTabSchema = z.enum([
   "items",
@@ -78,18 +88,20 @@ function BookingDetailRoute() {
   }
 
   return (
-    <BookingDetailPage
-      id={id}
-      activeTab={search.tab}
-      onTabChange={(tab) =>
-        void navigate({
-          to: "/bookings/$id",
-          params: { id },
-          search: (prev) => ({ ...prev, tab }),
-          replace: true,
-        })
-      }
-    />
+    <Suspense fallback={<BookingDetailSkeleton />}>
+      <BookingDetailPage
+        id={id}
+        activeTab={search.tab}
+        onTabChange={(tab) =>
+          void navigate({
+            to: "/bookings/$id",
+            params: { id },
+            search: (prev) => ({ ...prev, tab }),
+            replace: true,
+          })
+        }
+      />
+    </Suspense>
   )
 }
 
@@ -110,22 +122,24 @@ function NewBookingPicker() {
         </h1>
         <p className="text-muted-foreground text-sm">{messages.bookingCreatePage.description}</p>
       </header>
-      <CatalogProductPicker
-        value={{ productId: "", optionId: null }}
-        enabled
-        lockProduct={false}
-        // Owned pick → journey with `owned` provenance. (Clearing the field
-        // yields an empty productId, which we ignore.)
-        onChange={(value) => {
-          if (value.productId) {
-            void navigate({
-              to: "/catalog/journey/$entityModule/$entityId",
-              params: { entityModule: "products", entityId: value.productId },
-              search: { sourceKind: "owned" },
-            })
-          }
-        }}
-      />
+      <Suspense fallback={null}>
+        <CatalogProductPicker
+          value={{ productId: "", optionId: null }}
+          enabled
+          lockProduct={false}
+          // Owned pick -> journey with `owned` provenance. Clearing the field
+          // yields an empty productId, which we ignore.
+          onChange={(value) => {
+            if (value.productId) {
+              void navigate({
+                to: "/catalog/journey/$entityModule/$entityId",
+                params: { entityModule: "products", entityId: value.productId },
+                search: { sourceKind: "owned" },
+              })
+            }
+          }}
+        />
+      </Suspense>
     </main>
   )
 }

@@ -10,13 +10,23 @@ import {
   getAvailabilitySlotProductQueryOptions,
   loadAvailabilitySlotDetailPage,
 } from "@voyantjs/availability-ui"
-import { BookingCreateSheet, BookingQuickViewSheet } from "@voyantjs/bookings-ui"
 import { SlotExtrasManifestPanel, useExtrasUiMessagesOrDefault } from "@voyantjs/extras-ui"
 import { ProductQuickViewSheet } from "@voyantjs/products-ui"
-import { useState } from "react"
+import { lazy, Suspense, useState } from "react"
 import { AvailabilitySlotDialog } from "@/components/voyant/availability/availability-dialogs"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { getAvailabilityContextValue } from "@/lib/availability-context"
+
+const BookingCreateSheet = lazy(() =>
+  import("@voyantjs/bookings-ui/components/booking-create-sheet").then((module) => ({
+    default: module.BookingCreateSheet,
+  })),
+)
+const BookingQuickViewSheet = lazy(() =>
+  import("@voyantjs/bookings-ui/components/booking-quick-view-sheet").then((module) => ({
+    default: module.BookingQuickViewSheet,
+  })),
+)
 
 export const Route = createFileRoute("/_workspace/availability/$id")({
   loader: ({ context, params }) =>
@@ -92,27 +102,31 @@ function RouteComponent() {
         extrasTabLabel={extrasMessages.slotManifest.title}
       />
 
-      <BookingCreateSheet
-        open={Boolean(bookingCreateDefaults)}
-        onOpenChange={(open) => {
-          if (!open) setBookingCreateDefaults(null)
-        }}
-        defaultProductId={bookingCreateDefaults?.productId}
-        defaultSlotId={bookingCreateDefaults?.slotId}
-        onCreated={(booking) => setBookingPreviewId(booking.id)}
-      />
+      <Suspense fallback={null}>
+        <BookingCreateSheet
+          open={Boolean(bookingCreateDefaults)}
+          onOpenChange={(open) => {
+            if (!open) setBookingCreateDefaults(null)
+          }}
+          defaultProductId={bookingCreateDefaults?.productId}
+          defaultSlotId={bookingCreateDefaults?.slotId}
+          onCreated={(booking) => setBookingPreviewId(booking.id)}
+        />
+      </Suspense>
 
-      <BookingQuickViewSheet
-        bookingId={bookingPreviewId}
-        open={bookingPreviewId !== null}
-        onOpenChange={(open) => {
-          if (!open) setBookingPreviewId(null)
-        }}
-        onViewFull={(booking) => {
-          setBookingPreviewId(null)
-          void navigate({ to: "/bookings/$id", params: { id: booking.id } })
-        }}
-      />
+      <Suspense fallback={null}>
+        <BookingQuickViewSheet
+          bookingId={bookingPreviewId}
+          open={bookingPreviewId !== null}
+          onOpenChange={(open) => {
+            if (!open) setBookingPreviewId(null)
+          }}
+          onViewFull={(booking) => {
+            setBookingPreviewId(null)
+            void navigate({ to: "/bookings/$id", params: { id: booking.id } })
+          }}
+        />
+      </Suspense>
 
       <ProductQuickViewSheet
         productId={productPreviewId}

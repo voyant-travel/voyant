@@ -1,8 +1,12 @@
 import { createFileRoute, useParams, useSearch } from "@tanstack/react-router"
-import { useMemo } from "react"
+import { lazy, Suspense, useMemo } from "react"
 import { z } from "zod"
 
-import { OperatorBookingJourney } from "@/components/voyant/booking-journey/operator-booking-journey"
+const OperatorBookingJourney = lazy(() =>
+  import("@/components/voyant/booking-journey/operator-booking-journey").then((module) => ({
+    default: module.OperatorBookingJourney,
+  })),
+)
 
 /**
  * Unified booking journey route. The shareable wizard from
@@ -48,22 +52,24 @@ function JourneyRouteComponent(): React.ReactElement {
 
   return (
     <div className="container mx-auto py-6">
-      <OperatorBookingJourney
-        entityModule={entityModule}
-        entityId={entityId}
-        sourceKind={search.sourceKind}
-        sourceConnectionId={search.sourceConnectionId}
-        sourceRef={search.sourceRef}
-        departureId={search.departureId}
-        departureDate={search.departureDate}
-        optionId={search.optionId}
-        roomTypeId={search.roomTypeId}
-        ratePlanId={search.ratePlanId}
-        board={search.board}
-        entityName={search.entityName}
-        entityImageUrl={search.entityImageUrl}
-        draftId={draftId}
-      />
+      <Suspense fallback={null}>
+        <OperatorBookingJourney
+          entityModule={entityModule}
+          entityId={entityId}
+          sourceKind={search.sourceKind}
+          sourceConnectionId={search.sourceConnectionId}
+          sourceRef={search.sourceRef}
+          departureId={search.departureId}
+          departureDate={search.departureDate}
+          optionId={search.optionId}
+          roomTypeId={search.roomTypeId}
+          ratePlanId={search.ratePlanId}
+          board={search.board}
+          entityName={search.entityName}
+          entityImageUrl={search.entityImageUrl}
+          draftId={draftId}
+        />
+      </Suspense>
     </div>
   )
 }

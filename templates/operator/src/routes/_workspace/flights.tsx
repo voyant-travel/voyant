@@ -1,6 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { FlightsPage } from "@voyantjs/flights-ui"
+import { lazy, Suspense } from "react"
 import { z } from "zod"
+
+const FlightsPage = lazy(() =>
+  import("@voyantjs/flights-ui/components/flights-page").then((module) => ({
+    default: module.FlightsPage,
+  })),
+)
 
 /**
  * Search params for `/flights`. Everything the page renders is derived
@@ -62,27 +68,29 @@ function FlightsRoute() {
   const routerNavigate = useNavigate()
 
   return (
-    <FlightsPage
-      search={search}
-      onSearchChange={(next, options) => {
-        navigate({
-          search: (): FlightsSearchParams => next as FlightsSearchParams,
-          replace: options?.replace ?? false,
-        })
-      }}
-      onBookOffer={({ outboundOfferId, returnOfferId, passengers, cabin }) => {
-        routerNavigate({
-          to: "/flights/book/$offerId",
-          params: { offerId: outboundOfferId },
-          search: {
-            ...(returnOfferId ? { return: returnOfferId } : {}),
-            pax_a: passengers.adults,
-            pax_c: passengers.children ?? 0,
-            pax_i: passengers.infants ?? 0,
-            cabin,
-          },
-        })
-      }}
-    />
+    <Suspense fallback={null}>
+      <FlightsPage
+        search={search}
+        onSearchChange={(next, options) => {
+          navigate({
+            search: (): FlightsSearchParams => next as FlightsSearchParams,
+            replace: options?.replace ?? false,
+          })
+        }}
+        onBookOffer={({ outboundOfferId, returnOfferId, passengers, cabin }) => {
+          routerNavigate({
+            to: "/flights/book/$offerId",
+            params: { offerId: outboundOfferId },
+            search: {
+              ...(returnOfferId ? { return: returnOfferId } : {}),
+              pax_a: passengers.adults,
+              pax_c: passengers.children ?? 0,
+              pax_i: passengers.infants ?? 0,
+              cabin,
+            },
+          })
+        }}
+      />
+    </Suspense>
   )
 }
