@@ -18,6 +18,7 @@ export type OperatorAdminNavMessages = {
   products: string
   categories: string
   bookings: string
+  quotes: string
   trips: string
   allTrips: string
   newTrip: string
@@ -70,6 +71,7 @@ export const operatorAdminNavMessages = {
       products: "Products",
       categories: "Categories",
       bookings: "Bookings",
+      quotes: "Quotes",
       trips: "Trips",
       allTrips: "All trips",
       newTrip: "New trip",
@@ -121,6 +123,7 @@ export const operatorAdminNavMessages = {
       products: "Produse",
       categories: "Categorii",
       bookings: "Rezervari",
+      quotes: "Oferte",
       trips: "Calatorii",
       allTrips: "Toate calatoriile",
       newTrip: "Calatorie noua",

@@ -14,6 +14,7 @@ export type OperatorAdminNavigationIconName =
   | "organizations"
   | "people"
   | "products"
+  | "quotes"
   | "resources"
   | "settings"
   | "suppliers"
@@ -101,6 +102,12 @@ export function createOperatorAdminNavigation({
       title: messages.bookings,
       url: "/bookings",
       icon: icons.bookings,
+    },
+    {
+      id: "quotes",
+      title: messages.quotes,
+      url: "/quotes",
+      icon: icons.quotes,
     },
     {
       id: "notifications",

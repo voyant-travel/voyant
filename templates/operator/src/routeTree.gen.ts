@@ -35,6 +35,7 @@ import { Route as WorkspaceTripsIndexRouteImport } from './routes/_workspace/tri
 import { Route as WorkspaceSuppliersIndexRouteImport } from './routes/_workspace/suppliers/index'
 import { Route as WorkspaceSettingsIndexRouteImport } from './routes/_workspace/settings/index'
 import { Route as WorkspaceResourcesIndexRouteImport } from './routes/_workspace/resources/index'
+import { Route as WorkspaceQuotesIndexRouteImport } from './routes/_workspace/quotes/index'
 import { Route as WorkspacePromotionsIndexRouteImport } from './routes/_workspace/promotions/index'
 import { Route as WorkspaceProductsIndexRouteImport } from './routes/_workspace/products/index'
 import { Route as WorkspacePeopleIndexRouteImport } from './routes/_workspace/people/index'
@@ -237,6 +238,11 @@ const WorkspaceSettingsIndexRoute = WorkspaceSettingsIndexRouteImport.update({
 const WorkspaceResourcesIndexRoute = WorkspaceResourcesIndexRouteImport.update({
   id: '/resources/',
   path: '/resources/',
+  getParentRoute: () => WorkspaceRouteRoute,
+} as any)
+const WorkspaceQuotesIndexRoute = WorkspaceQuotesIndexRouteImport.update({
+  id: '/quotes/',
+  path: '/quotes/',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
 const WorkspacePromotionsIndexRoute =
@@ -736,6 +742,7 @@ export interface FileRoutesByFullPath {
   '/people/': typeof WorkspacePeopleIndexRoute
   '/products/': typeof WorkspaceProductsIndexRoute
   '/promotions/': typeof WorkspacePromotionsIndexRoute
+  '/quotes/': typeof WorkspaceQuotesIndexRoute
   '/resources/': typeof WorkspaceResourcesIndexRoute
   '/settings/': typeof WorkspaceSettingsIndexRoute
   '/suppliers/': typeof WorkspaceSuppliersIndexRoute
@@ -835,6 +842,7 @@ export interface FileRoutesByTo {
   '/people': typeof WorkspacePeopleIndexRoute
   '/products': typeof WorkspaceProductsIndexRoute
   '/promotions': typeof WorkspacePromotionsIndexRoute
+  '/quotes': typeof WorkspaceQuotesIndexRoute
   '/resources': typeof WorkspaceResourcesIndexRoute
   '/settings': typeof WorkspaceSettingsIndexRoute
   '/suppliers': typeof WorkspaceSuppliersIndexRoute
@@ -940,6 +948,7 @@ export interface FileRoutesById {
   '/_workspace/people/': typeof WorkspacePeopleIndexRoute
   '/_workspace/products/': typeof WorkspaceProductsIndexRoute
   '/_workspace/promotions/': typeof WorkspacePromotionsIndexRoute
+  '/_workspace/quotes/': typeof WorkspaceQuotesIndexRoute
   '/_workspace/resources/': typeof WorkspaceResourcesIndexRoute
   '/_workspace/settings/': typeof WorkspaceSettingsIndexRoute
   '/_workspace/suppliers/': typeof WorkspaceSuppliersIndexRoute
@@ -1043,6 +1052,7 @@ export interface FileRouteTypes {
     | '/people/'
     | '/products/'
     | '/promotions/'
+    | '/quotes/'
     | '/resources/'
     | '/settings/'
     | '/suppliers/'
@@ -1142,6 +1152,7 @@ export interface FileRouteTypes {
     | '/people'
     | '/products'
     | '/promotions'
+    | '/quotes'
     | '/resources'
     | '/settings'
     | '/suppliers'
@@ -1246,6 +1257,7 @@ export interface FileRouteTypes {
     | '/_workspace/people/'
     | '/_workspace/products/'
     | '/_workspace/promotions/'
+    | '/_workspace/quotes/'
     | '/_workspace/resources/'
     | '/_workspace/settings/'
     | '/_workspace/suppliers/'
@@ -1483,6 +1495,13 @@ declare module '@tanstack/react-router' {
       path: '/resources'
       fullPath: '/resources/'
       preLoaderRoute: typeof WorkspaceResourcesIndexRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
+    '/_workspace/quotes/': {
+      id: '/_workspace/quotes/'
+      path: '/quotes'
+      fullPath: '/quotes/'
+      preLoaderRoute: typeof WorkspaceQuotesIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
     '/_workspace/promotions/': {
@@ -2171,6 +2190,7 @@ interface WorkspaceRouteRouteChildren {
   WorkspacePeopleIndexRoute: typeof WorkspacePeopleIndexRoute
   WorkspaceProductsIndexRoute: typeof WorkspaceProductsIndexRoute
   WorkspacePromotionsIndexRoute: typeof WorkspacePromotionsIndexRoute
+  WorkspaceQuotesIndexRoute: typeof WorkspaceQuotesIndexRoute
   WorkspaceResourcesIndexRoute: typeof WorkspaceResourcesIndexRoute
   WorkspaceSuppliersIndexRoute: typeof WorkspaceSuppliersIndexRoute
   WorkspaceTripsIndexRoute: typeof WorkspaceTripsIndexRoute
@@ -2235,6 +2255,7 @@ const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspacePeopleIndexRoute: WorkspacePeopleIndexRoute,
   WorkspaceProductsIndexRoute: WorkspaceProductsIndexRoute,
   WorkspacePromotionsIndexRoute: WorkspacePromotionsIndexRoute,
+  WorkspaceQuotesIndexRoute: WorkspaceQuotesIndexRoute,
   WorkspaceResourcesIndexRoute: WorkspaceResourcesIndexRoute,
   WorkspaceSuppliersIndexRoute: WorkspaceSuppliersIndexRoute,
   WorkspaceTripsIndexRoute: WorkspaceTripsIndexRoute,
