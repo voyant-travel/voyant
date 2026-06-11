@@ -5,7 +5,7 @@
  * Everything else imports shared helpers from here.
  */
 
-import type { BookingDraftShape } from "@voyantjs/catalog/booking-engine"
+import type { BookingDraftShape } from "@voyantjs/catalog-contracts/booking-engine/draft-shape"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { Input } from "@voyantjs/ui/components/input"
 import { Label } from "@voyantjs/ui/components/label"

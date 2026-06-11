@@ -1,6 +1,6 @@
 "use client"
 
-import type { BookingDraftShape } from "@voyantjs/catalog/booking-engine"
+import type { BookingDraftShape } from "@voyantjs/catalog-contracts/booking-engine/draft-shape"
 import { Separator } from "@voyantjs/ui/components"
 import { Button } from "@voyantjs/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components/card"

@@ -29,7 +29,13 @@ import {
   type PricingBasis,
   type SelectBookingCatalogSnapshot,
 } from "../snapshot/schema.js"
-
+/**
+ * `BookingPaymentIntent` now lives in `@voyantjs/catalog-contracts`
+ * (the shared server/client seam, alongside `bookRequestV1` whose
+ * `paymentIntent` field mirrors it). Re-exported here to keep existing
+ * `@voyantjs/catalog/booking-engine` import paths stable.
+ */
+import type { BookingPaymentIntent } from "./contracts.js"
 import {
   BookingEngineError,
   QUOTE_NOT_FOUND,
@@ -43,15 +49,7 @@ import type { SourceAdapterRegistry } from "./registry.js"
 import { catalogQuotesTable, type SelectCatalogQuote } from "./schema.js"
 import type { SnapshotContentCapture, SnapshotContentCapturer } from "./snapshot-content.js"
 
-/**
- * Mirrors flights' `paymentIntent` discriminated union from
- * `catalog-flights-architecture.md` §3.1. Default `{ type: "hold" }`
- * when omitted.
- */
-export type BookingPaymentIntent =
-  | { type: "hold" }
-  | { type: "card"; tokenizedCard: string }
-  | { type: "ticket_on_credit"; agencyAccount: string }
+export type { BookingPaymentIntent }
 
 function paymentIntentToAdapterRecord(intent: BookingPaymentIntent): Record<string, unknown> {
   return { ...intent }

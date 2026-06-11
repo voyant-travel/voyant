@@ -1,7 +1,10 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { type BookingDraftV1, bookingDraftV1 } from "@voyantjs/catalog/booking-engine"
+import {
+  type BookingDraftV1,
+  bookingDraftV1,
+} from "@voyantjs/catalog-contracts/booking-engine/contracts"
 import { z } from "zod"
 
 import { type BookingJourneyApiOptions, useBookingJourneyApi } from "./use-booking-journey-api.js"

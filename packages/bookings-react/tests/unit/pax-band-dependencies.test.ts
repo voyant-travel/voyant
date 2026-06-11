@@ -1,4 +1,4 @@
-import type { PaxBandDependency } from "@voyantjs/catalog/booking-engine"
+import type { PaxBandDependency } from "@voyantjs/catalog-contracts/booking-engine/draft-shape"
 import { describe, expect, it } from "vitest"
 
 import { evaluatePaxBandDependencies } from "../../src/journey/lib/pax-band-dependencies.js"

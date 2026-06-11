@@ -15,6 +15,7 @@
     "./adapter/channel-push-contracts": "./src/adapter/channel-push-contracts.ts",
     "./adapter/provider-contracts": "./src/adapter/provider-contracts.ts",
     "./booking-engine/contracts": "./src/booking-engine/contracts.ts",
+    "./booking-engine/draft-shape": "./src/booking-engine/draft-shape.ts",
     "./booking-engine/promotions-contract": "./src/booking-engine/promotions-contract.ts",
     "./snapshot": "./src/snapshot.ts"
   },
@@ -86,6 +87,11 @@
         "types": "./dist/booking-engine/contracts.d.ts",
         "import": "./dist/booking-engine/contracts.js",
         "default": "./dist/booking-engine/contracts.js"
+      },
+      "./booking-engine/draft-shape": {
+        "types": "./dist/booking-engine/draft-shape.d.ts",
+        "import": "./dist/booking-engine/draft-shape.js",
+        "default": "./dist/booking-engine/draft-shape.js"
       },
       "./booking-engine/promotions-contract": {
         "types": "./dist/booking-engine/promotions-contract.d.ts",

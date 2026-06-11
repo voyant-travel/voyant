@@ -7,7 +7,7 @@
  * booking-journey-architecture §4.
  */
 
-import type { BookingDraftV1 } from "@voyantjs/catalog/booking-engine"
+import type { BookingDraftV1 } from "@voyantjs/catalog-contracts/booking-engine/contracts"
 
 export type Draft = BookingDraftV1
 

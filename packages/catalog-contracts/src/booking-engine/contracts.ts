@@ -550,6 +550,16 @@ export const quoteResponseV1 = z.object({
   upstreamPayload: z.record(z.string(), z.unknown()).optional(),
 })
 
+/**
+ * Mirrors flights' `paymentIntent` discriminated union from
+ * `catalog-flights-architecture.md` §3.1. Default `{ type: "hold" }`
+ * when omitted. Kept in lockstep with `bookRequestV1.paymentIntent`.
+ */
+export type BookingPaymentIntent =
+  | { type: "hold" }
+  | { type: "card"; tokenizedCard: string }
+  | { type: "ticket_on_credit"; agencyAccount: string }
+
 export const bookRequestV1 = z
   .object({
     quoteId: z.string().optional(),
