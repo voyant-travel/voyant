@@ -1,7 +1,13 @@
 "use client"
 
 import { useQueryClient } from "@tanstack/react-query"
-import { useLegalContractAttachmentMutation, useLegalContractMutation } from "@voyantjs/legal-react"
+import { useOperatorAdminMessages } from "@voyantjs/admin"
+import { useBookingContractGenerationMutation } from "@voyantjs/bookings-react"
+import {
+  legalQueryKeys,
+  useLegalContractAttachmentMutation,
+  useLegalContractMutation,
+} from "@voyantjs/legal-react"
 import {
   Button,
   Dialog,
@@ -16,9 +22,6 @@ import {
 import { FileText, Loader2, Paperclip, X } from "lucide-react"
 import { useEffect, useState } from "react"
 
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { getApiUrl } from "@/lib/env"
-
 type ContractDialogMode = "generate" | "upload"
 
 export interface BookingContractDialogProps {
@@ -27,13 +30,6 @@ export interface BookingContractDialogProps {
   bookingId: string
   bookingNumber?: string | null
   onSuccess?: () => void
-}
-
-interface PreviewState {
-  status: "idle" | "loading" | "ready" | "error"
-  html: string
-  templateName: string
-  errorMessage: string | null
 }
 
 /**
@@ -56,13 +52,13 @@ export function BookingContractDialog({
   bookingNumber,
   onSuccess,
 }: BookingContractDialogProps) {
-  const t = useAdminMessages().bookings.detail.contractDialog
+  const t = useOperatorAdminMessages().bookings.detail.contractDialog
   const queryClient = useQueryClient()
   const { create: createContract } = useLegalContractMutation()
   const { upload: uploadAttachment } = useLegalContractAttachmentMutation()
+  const { preview, generate } = useBookingContractGenerationMutation(bookingId)
 
   const [mode, setMode] = useState<ContractDialogMode>("generate")
-  const [generating, setGenerating] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -70,94 +66,37 @@ export function BookingContractDialog({
   const [title, setTitle] = useState("")
   const [file, setFile] = useState<File | null>(null)
 
-  // Preview state
-  const [preview, setPreview] = useState<PreviewState>({
-    status: "idle",
-    html: "",
-    templateName: "",
-    errorMessage: null,
-  })
-
   // Reset on open. Generate is the leading mode so the preview fetch
   // kicks off immediately.
+  const resetPreview = preview.reset
   useEffect(() => {
     if (!open) return
     setMode("generate")
     setTitle("")
     setFile(null)
     setError(null)
-    setGenerating(false)
     setUploading(false)
-    setPreview({ status: "idle", html: "", templateName: "", errorMessage: null })
-  }, [open])
+    resetPreview()
+  }, [open, resetPreview])
 
   // Fetch preview HTML every time the dialog opens (or the mode flips
   // back to Generate). The preview reflects current booking + template
   // state so re-fetching is intentional.
+  const fetchPreview = preview.mutate
   useEffect(() => {
     if (!open || mode !== "generate") return
-    let cancelled = false
-    setPreview({ status: "loading", html: "", templateName: "", errorMessage: null })
-    void fetch(`${getApiUrl()}/v1/admin/bookings/${bookingId}/generate-contract`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ preview: true }),
-    })
-      .then(async (res) => {
-        const json = (await res.json().catch(() => ({}))) as {
-          data?: { html?: string; templateName?: string }
-          error?: string
-        }
-        if (cancelled) return
-        if (!res.ok || !json.data?.html) {
-          throw new Error(json.error ?? t.previewFailed)
-        }
-        setPreview({
-          status: "ready",
-          html: json.data.html,
-          templateName: json.data.templateName ?? "",
-          errorMessage: null,
-        })
-      })
-      .catch((err) => {
-        if (cancelled) return
-        setPreview({
-          status: "error",
-          html: "",
-          templateName: "",
-          errorMessage: err instanceof Error ? err.message : String(err),
-        })
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [open, mode, bookingId, t.previewFailed])
+    fetchPreview()
+  }, [open, mode, fetchPreview])
 
   const handleGenerate = async () => {
-    setGenerating(true)
     setError(null)
     try {
-      const response = await fetch(
-        `${getApiUrl()}/v1/admin/bookings/${bookingId}/generate-contract`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
-        },
-      )
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({ error: response.statusText }))
-        throw new Error((body as { error?: string }).error ?? `HTTP ${response.status}`)
-      }
-      await queryClient.invalidateQueries({ queryKey: ["legal", "contracts"] })
+      await generate.mutateAsync({})
+      await queryClient.invalidateQueries({ queryKey: legalQueryKeys.contracts() })
       onSuccess?.()
       onOpenChange(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setGenerating(false)
     }
   }
 
@@ -194,9 +133,9 @@ export function BookingContractDialog({
     }
   }
 
-  const submitting = generating || uploading
-  const canSubmit =
-    mode === "generate" ? preview.status === "ready" && !submitting : file != null && !submitting
+  const submitting = generate.isPending || uploading
+  const previewReady = preview.data != null
+  const canSubmit = mode === "generate" ? previewReady && !submitting : file != null && !submitting
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -224,7 +163,7 @@ export function BookingContractDialog({
               <div className="flex flex-col gap-2">
                 <Label>{t.previewLabel}</Label>
                 <div className="overflow-hidden rounded-md border bg-muted/30">
-                  {preview.status === "loading" ? (
+                  {preview.isPending ? (
                     <div className="flex flex-col gap-3 p-6">
                       <Skeleton className="h-6 w-1/2" />
                       <Skeleton className="h-4 w-full" />
@@ -232,22 +171,23 @@ export function BookingContractDialog({
                       <Skeleton className="h-4 w-4/5" />
                       <Skeleton className="h-4 w-full" />
                     </div>
-                  ) : preview.status === "error" ? (
+                  ) : preview.isError ? (
                     <p className="p-6 text-destructive text-sm">
-                      {t.previewErrorPrefix} {preview.errorMessage ?? t.previewFailed}
+                      {t.previewErrorPrefix}{" "}
+                      {preview.error instanceof Error ? preview.error.message : t.previewFailed}
                     </p>
-                  ) : preview.status === "ready" ? (
+                  ) : preview.data ? (
                     <iframe
-                      title={preview.templateName || t.previewIframeFallback}
-                      srcDoc={wrapPreviewHtml(preview.html)}
+                      title={preview.data.templateName || t.previewIframeFallback}
+                      srcDoc={wrapPreviewHtml(preview.data.html)}
                       sandbox=""
                       className="h-[60vh] w-full border-0 bg-white"
                     />
                   ) : null}
                 </div>
-                {preview.templateName ? (
+                {preview.data?.templateName ? (
                   <p className="text-muted-foreground text-xs">
-                    {t.previewTemplateLabel} {preview.templateName}
+                    {t.previewTemplateLabel} {preview.data.templateName}
                   </p>
                 ) : null}
               </div>

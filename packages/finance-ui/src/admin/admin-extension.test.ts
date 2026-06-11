@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest"
 
 import {
   BookingInvoicesWidget,
+  BookingPaymentPolicyWidget,
+  BookingPendingPaymentSessionsWidget,
   CreditNoteDialog,
   createFinanceAdminExtension,
   InvoiceDetailHost,
@@ -67,9 +69,26 @@ describe("createFinanceAdminExtension", () => {
     // arrives as a widget contribution the bookings host renders.
     const extension = createFinanceAdminExtension()
     const widgets = extension.widgets ?? []
-    expect(widgets).toHaveLength(2)
+    expect(widgets).toHaveLength(4)
     expect(widgets[0]?.slot).toBe("booking.details.invoices-tab")
     expect(widgets[0]?.component).toBe(BookingInvoicesWidget)
+  })
+
+  it("contributes the finance-tab cards on the booking detail finance slots", () => {
+    // Same cycle resolution: the pending payment-links card and the
+    // payment-policy override card mount on the finance-start / finance-end
+    // widget slots the bookings detail host exposes.
+    const extension = createFinanceAdminExtension()
+    const pending = extension.widgets?.find(
+      (candidate) => candidate.id === "finance-booking-pending-payment-sessions",
+    )
+    expect(pending?.slot).toBe("booking.details.finance-start")
+    expect(pending?.component).toBe(BookingPendingPaymentSessionsWidget)
+    const policy = extension.widgets?.find(
+      (candidate) => candidate.id === "finance-booking-payment-policy",
+    )
+    expect(policy?.slot).toBe("booking.details.finance-end")
+    expect(policy?.component).toBe(BookingPaymentPolicyWidget)
   })
 
   it("contributes the payment-policy card on the supplier detail slot", () => {
@@ -93,6 +112,8 @@ describe("packaged finance admin hosts", () => {
   it("exports the page hosts and dialogs as components from the admin entrypoint", () => {
     for (const host of [
       BookingInvoicesWidget,
+      BookingPaymentPolicyWidget,
+      BookingPendingPaymentSessionsWidget,
       CreditNoteDialog,
       InvoiceDetailHost,
       InvoiceDetailSkeleton,

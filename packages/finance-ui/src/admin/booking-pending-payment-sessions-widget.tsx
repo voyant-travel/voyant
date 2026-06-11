@@ -1,11 +1,19 @@
 "use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import type { ColumnDef } from "@tanstack/react-table"
+import { useOperatorAdminMessages } from "@voyantjs/admin"
 import { bookingsQueryKeys } from "@voyantjs/bookings-react"
 import { IconActionButton, StatusBadge, useBookingsUiI18nOrDefault } from "@voyantjs/bookings-ui"
+import type { BookingDetailHostSlotContext } from "@voyantjs/bookings-ui/admin"
 import { buildPaymentLinkUrl } from "@voyantjs/finance/payment-link"
-import { financeQueryKeys } from "@voyantjs/finance-react"
+import {
+  financeQueryKeys,
+  type PaymentSessionRecord,
+  usePaymentSessionMutation,
+  usePaymentSessions,
+  useVoyantFinanceContext,
+} from "@voyantjs/finance-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,124 +31,108 @@ import { Check, Copy, Loader2, Plus, Trash2, Wallet } from "lucide-react"
 import * as React from "react"
 import { toast } from "sonner"
 
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { api } from "@/lib/api-client"
-import { queryKeys } from "@/lib/query-keys"
-
 type PaymentSessionsMessages = ReturnType<
-  typeof useAdminMessages
+  typeof useOperatorAdminMessages
 >["bookings"]["detail"]["paymentSessions"]
 
-interface PendingPaymentSession {
-  id: string
-  status: string
-  amountCents: number
-  currency: string
-  provider: string | null
-  notes: string | null
-  payerName: string | null
-  payerEmail: string | null
-  createdAt: string
-  invoiceId: string | null
-}
+/**
+ * Props of the pending payment-sessions widget: exactly the slot context
+ * the bookings detail host hands to `booking.details.finance-start` widget
+ * contributions (see `bookingDetailFinanceStartSlot` in
+ * `@voyantjs/bookings-ui/admin`).
+ */
+export type BookingPendingPaymentSessionsWidgetProps = BookingDetailHostSlotContext
 
-interface ListResponse {
-  data: PendingPaymentSession[]
-  total: number
-}
-
-interface PaymentLinkConfigResponse {
-  data: {
-    publicCheckoutBaseUrl?: string | null
-  }
-}
-
-export interface BookingPendingPaymentSessionsProps {
-  bookingId: string
-  /**
-   * Opens the operator's `Generate payment link` flow. When provided,
-   * the section header renders a primary button that triggers it.
-   */
-  onGenerateLink?: () => void
-  /**
-   * When set, the Generate payment link button is rendered disabled and
-   * its tooltip shows this reason — e.g. "Booking is fully paid."
-   */
-  generateLinkDisabledReason?: string | null
-}
-
-export function BookingPendingPaymentSessions({
-  bookingId,
+/**
+ * Finance-owned payment-links card for the booking detail page's Finance
+ * tab, delivered as a widget contribution on `booking.details.finance-start`
+ * (packaged-admin RFC §4.7 cycle resolution: this package depends on
+ * `@voyantjs/bookings-ui`, so the bookings host cannot import the card —
+ * finance contributes it instead). Lists the booking's pending payment
+ * sessions and lets ops copy the public payment link, mark a session paid
+ * (manual bank-transfer capture) or cancel it.
+ *
+ * The copy action resolves the public checkout origin from the
+ * template-level `/v1/public/payment-link-config` route through the shared
+ * finance provider context, falling back to the dashboard origin.
+ */
+export function BookingPendingPaymentSessionsWidget({
+  booking,
+  fullyPaidReason,
   onGenerateLink,
-  generateLinkDisabledReason,
-}: BookingPendingPaymentSessionsProps): React.ReactElement {
-  const t = useAdminMessages().bookings.detail.paymentSessions
+}: BookingPendingPaymentSessionsWidgetProps): React.ReactElement {
+  const t = useOperatorAdminMessages().bookings.detail.paymentSessions
   const { formatDateTime } = useBookingsUiI18nOrDefault()
+  const { baseUrl, fetcher } = useVoyantFinanceContext()
   const queryClient = useQueryClient()
-  const queryKey = ["booking-pending-payment-sessions", bookingId]
-  const [cancelTarget, setCancelTarget] = React.useState<PendingPaymentSession | null>(null)
+  const bookingId = booking.id
+  const [cancelTarget, setCancelTarget] = React.useState<PaymentSessionRecord | null>(null)
 
-  const { data } = useQuery({
-    queryKey,
-    queryFn: () =>
-      api.get<ListResponse>(
-        `/v1/admin/finance/payment-sessions?bookingId=${encodeURIComponent(
-          bookingId,
-        )}&status=pending&limit=10`,
-      ),
-  })
+  const { data } = usePaymentSessions({ bookingId, status: "pending", limit: 10 })
+  // Shares the cache entry with `useCheckoutPaymentLinkConfig` from
+  // `@voyantjs/checkout-react` — same endpoint, same key.
   const { data: paymentLinkConfig } = useQuery({
-    queryKey: ["payment-link-config"],
-    queryFn: () => api.get<PaymentLinkConfigResponse>("/v1/public/payment-link-config"),
+    queryKey: ["checkout-payment-link-config"],
+    queryFn: async (): Promise<{ publicCheckoutBaseUrl?: string | null }> => {
+      const response = await fetcher(`${baseUrl}/v1/public/payment-link-config`, {
+        headers: { Accept: "application/json" },
+      })
+      if (!response.ok) throw new Error(`config fetch failed: ${response.status}`)
+      const body = (await response.json()) as { data: { publicCheckoutBaseUrl?: string | null } }
+      return body.data
+    },
     staleTime: 5 * 60 * 1000,
   })
 
-  const invalidateSurroundings = () => {
-    void queryClient.invalidateQueries({ queryKey })
-    void queryClient.invalidateQueries({ queryKey: ["public-booking-detail", bookingId] })
-    void queryClient.invalidateQueries({ queryKey: ["public-booking-payments", bookingId] })
+  const { complete, cancel } = usePaymentSessionMutation()
+
+  // The mutation hook already refreshes finance-owned session/payment/
+  // invoice lists; refresh the booking-scoped surfaces here.
+  const invalidateBookingSurroundings = React.useCallback(() => {
     void queryClient.invalidateQueries({
       queryKey: financeQueryKeys.adminBookingPayments(bookingId),
     })
-    void queryClient.invalidateQueries({ queryKey: financeQueryKeys.invoices() })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.bookings.actionLedger(bookingId) })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.actionLedger.all })
     void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.booking(bookingId) })
-  }
+    void queryClient.invalidateQueries({ queryKey: bookingsQueryKeys.actionLedger(bookingId) })
+  }, [queryClient, bookingId])
 
-  const markReceived = useMutation({
-    mutationFn: async (sessionId: string) => {
-      await api.post(
-        `/v1/admin/finance/payment-sessions/${encodeURIComponent(sessionId)}/complete`,
+  const completeMutate = complete.mutate
+  const markReceived = React.useCallback(
+    (sessionId: string) => {
+      const now = new Date().toISOString()
+      completeMutate(
         {
-          status: "paid",
-          captureMode: "manual",
-          paymentMethod: "bank_transfer",
-          paymentDate: new Date().toISOString(),
-          authorizedAt: new Date().toISOString(),
-          capturedAt: new Date().toISOString(),
+          id: sessionId,
+          input: {
+            status: "paid",
+            captureMode: "manual",
+            paymentMethod: "bank_transfer",
+            paymentDate: now,
+            authorizedAt: now,
+            capturedAt: now,
+          },
         },
+        { onSuccess: invalidateBookingSurroundings },
       )
     },
-    onSuccess: invalidateSurroundings,
-  })
+    [completeMutate, invalidateBookingSurroundings],
+  )
 
-  const cancelSession = useMutation({
-    mutationFn: async (sessionId: string) => {
-      await api.post(
-        `/v1/admin/finance/payment-sessions/${encodeURIComponent(sessionId)}/cancel`,
-        {},
-      )
-    },
-    onSuccess: () => {
-      invalidateSurroundings()
-      setCancelTarget(null)
-    },
-  })
+  const cancelSession = (sessionId: string) => {
+    cancel.mutate(
+      { id: sessionId },
+      {
+        onSuccess: () => {
+          invalidateBookingSurroundings()
+          setCancelTarget(null)
+        },
+      },
+    )
+  }
 
   const sessions = data?.data ?? []
 
-  const columns = React.useMemo<ColumnDef<PendingPaymentSession>[]>(
+  const columns = React.useMemo<ColumnDef<PaymentSessionRecord>[]>(
     () => [
       {
         accessorKey: "createdAt",
@@ -171,14 +163,14 @@ export function BookingPendingPaymentSessions({
         header: "",
         cell: ({ row }) => {
           const session = row.original
-          const isMarkingThis = markReceived.isPending && markReceived.variables === session.id
+          const isMarkingThis = complete.isPending && complete.variables?.id === session.id
           return (
             <div className="flex items-center justify-end gap-1">
               <IconActionButton
                 label={t.copyPaymentLink}
                 icon={<Copy className="h-3.5 w-3.5" />}
                 onClick={() =>
-                  void copyPaymentLink(session.id, paymentLinkConfig?.data.publicCheckoutBaseUrl, t)
+                  void copyPaymentLink(session.id, paymentLinkConfig?.publicCheckoutBaseUrl, t)
                 }
               />
               <IconActionButton
@@ -190,8 +182,8 @@ export function BookingPendingPaymentSessions({
                     <Check className="h-3.5 w-3.5" />
                   )
                 }
-                disabled={markReceived.isPending}
-                onClick={() => markReceived.mutate(session.id)}
+                disabled={complete.isPending}
+                onClick={() => markReceived(session.id)}
               />
               <IconActionButton
                 label={t.cancelPaymentLink}
@@ -204,14 +196,7 @@ export function BookingPendingPaymentSessions({
         },
       },
     ],
-    [
-      formatDateTime,
-      markReceived.isPending,
-      markReceived.mutate,
-      markReceived.variables,
-      paymentLinkConfig,
-      t,
-    ],
+    [formatDateTime, complete.isPending, complete.variables, markReceived, paymentLinkConfig, t],
   )
 
   return (
@@ -222,7 +207,7 @@ export function BookingPendingPaymentSessions({
           {t.pendingTitle}
         </h2>
         {onGenerateLink ? (
-          generateLinkDisabledReason ? (
+          fullyPaidReason ? (
             <Tooltip>
               {/* biome-ignore lint/a11y/noNoninteractiveTabindex: required so disabled-button tooltips remain keyboard-discoverable */}
               <TooltipTrigger render={<span tabIndex={0} className="inline-block" />}>
@@ -231,7 +216,7 @@ export function BookingPendingPaymentSessions({
                   {t.generatePaymentLink}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{generateLinkDisabledReason}</TooltipContent>
+              <TooltipContent>{fullyPaidReason}</TooltipContent>
             </Tooltip>
           ) : (
             <Button variant="outline" size="sm" onClick={onGenerateLink}>
@@ -244,16 +229,16 @@ export function BookingPendingPaymentSessions({
 
       <DataTable columns={columns} data={sessions} emptyMessage={t.empty} showPagination={false} />
 
-      {markReceived.error ? (
+      {complete.error ? (
         <p className="text-destructive text-xs">
-          {markReceived.error instanceof Error ? markReceived.error.message : t.markReceivedFailed}
+          {complete.error instanceof Error ? complete.error.message : t.markReceivedFailed}
         </p>
       ) : null}
 
       <AlertDialog
         open={Boolean(cancelTarget)}
         onOpenChange={(next) => {
-          if (!next && !cancelSession.isPending) setCancelTarget(null)
+          if (!next && !cancel.isPending) setCancelTarget(null)
         }}
       >
         <AlertDialogContent size="sm">
@@ -262,13 +247,13 @@ export function BookingPendingPaymentSessions({
             <AlertDialogDescription>{t.cancelConfirmDescription}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={cancelSession.isPending}>
+            <AlertDialogCancel disabled={cancel.isPending}>
               {t.cancelConfirmCancel}
             </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              disabled={cancelSession.isPending}
-              onClick={() => cancelTarget && cancelSession.mutate(cancelTarget.id)}
+              disabled={cancel.isPending}
+              onClick={() => cancelTarget && cancelSession(cancelTarget.id)}
             >
               {t.cancelConfirmConfirm}
             </AlertDialogAction>

@@ -278,6 +278,117 @@ export type BookingPaymentScheduleRecord = z.infer<typeof bookingPaymentSchedule
 
 export const bookingPaymentSchedulesResponse = arrayEnvelope(bookingPaymentScheduleRecordSchema)
 
+// Payment sessions — admin surface of `/v1/admin/finance/payment-sessions`.
+// Mirrors the backend's `payment_sessions` row (dates serialized to ISO
+// strings); the status enum is kept inline like `paymentMethodSchema`
+// above so the browser bundle doesn't drag in the server package.
+export const paymentSessionStatusSchema = z.enum([
+  "pending",
+  "requires_redirect",
+  "processing",
+  "authorized",
+  "paid",
+  "failed",
+  "cancelled",
+  "expired",
+])
+export type PaymentSessionStatus = z.infer<typeof paymentSessionStatusSchema>
+
+export const paymentSessionRecordSchema = z.object({
+  id: z.string(),
+  targetType: z.string(),
+  targetId: z.string().nullable(),
+  bookingId: z.string().nullable(),
+  orderId: z.string().nullable(),
+  invoiceId: z.string().nullable(),
+  bookingPaymentScheduleId: z.string().nullable(),
+  bookingGuaranteeId: z.string().nullable(),
+  paymentInstrumentId: z.string().nullable(),
+  paymentAuthorizationId: z.string().nullable(),
+  paymentCaptureId: z.string().nullable(),
+  paymentId: z.string().nullable(),
+  status: paymentSessionStatusSchema,
+  provider: z.string().nullable(),
+  providerSessionId: z.string().nullable(),
+  providerPaymentId: z.string().nullable(),
+  externalReference: z.string().nullable(),
+  idempotencyKey: z.string().nullable(),
+  clientReference: z.string().nullable(),
+  currency: z.string(),
+  amountCents: z.number().int(),
+  paymentMethod: paymentMethodSchema.nullable(),
+  payerPersonId: z.string().nullable(),
+  payerOrganizationId: z.string().nullable(),
+  payerEmail: z.string().nullable(),
+  payerName: z.string().nullable(),
+  redirectUrl: z.string().nullable(),
+  returnUrl: z.string().nullable(),
+  cancelUrl: z.string().nullable(),
+  callbackUrl: z.string().nullable(),
+  expiresAt: z.string().nullable(),
+  completedAt: z.string().nullable(),
+  failedAt: z.string().nullable(),
+  cancelledAt: z.string().nullable(),
+  expiredAt: z.string().nullable(),
+  failureCode: z.string().nullable(),
+  failureMessage: z.string().nullable(),
+  notes: z.string().nullable(),
+  providerPayload: z.record(z.string(), z.unknown()).nullable(),
+  metadata: z.record(z.string(), z.unknown()).nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type PaymentSessionRecord = z.infer<typeof paymentSessionRecordSchema>
+
+export const paymentSessionListResponse = paginatedEnvelope(paymentSessionRecordSchema)
+export const paymentSessionSingleResponse = singleEnvelope(paymentSessionRecordSchema)
+
+// Customer payment policy — structural mirror of `PaymentPolicy` /
+// `PaymentPolicySource` from `@voyantjs/finance/payment-policy`, kept
+// inline for the same browser-bundle reason as the enums above.
+export const financeDepositRuleSchema = z.object({
+  kind: z.enum(["none", "percent", "fixed_cents"]),
+  percent: z.number().min(0).max(100).optional(),
+  amountCents: z.number().int().min(0).optional(),
+})
+
+export const financePaymentPolicySchema = z.object({
+  deposit: financeDepositRuleSchema,
+  minDaysBeforeDepartureForDeposit: z.number().int().min(0),
+  balanceDueDaysBeforeDeparture: z.number().int().min(0),
+  balanceDueMinDaysFromNow: z.number().int().min(0),
+})
+
+export type FinancePaymentPolicy = z.infer<typeof financePaymentPolicySchema>
+
+export const financePaymentPolicySourceSchema = z.enum([
+  "booking",
+  "listing",
+  "category",
+  "supplier",
+  "operator_default",
+])
+
+export type FinancePaymentPolicySource = z.infer<typeof financePaymentPolicySourceSchema>
+
+// `POST /v1/admin/bookings/:bookingId/payment-schedule/regenerate` —
+// returns the regenerated schedule rows plus the persisted booking-level
+// override (or null) and which cascade layer produced the schedule.
+export const regenerateBookingPaymentScheduleResultSchema = z.object({
+  schedule: z.array(bookingPaymentScheduleRecordSchema),
+  bookingPolicy: financePaymentPolicySchema.nullable(),
+  cascadeSource: financePaymentPolicySourceSchema,
+})
+
+export type RegenerateBookingPaymentScheduleResult = z.infer<
+  typeof regenerateBookingPaymentScheduleResultSchema
+>
+
+export const regenerateBookingPaymentScheduleResponse = singleEnvelope(
+  regenerateBookingPaymentScheduleResultSchema,
+)
+
 export const invoiceFxRateRecordSchema = z.object({
   baseCurrency: z.string(),
   quoteCurrency: z.string(),

@@ -154,6 +154,28 @@ export interface PublicFinanceDocumentLookupFilters {
   reference?: string | undefined
 }
 
+export type FinancePaymentSessionStatusFilter =
+  | "pending"
+  | "requires_redirect"
+  | "processing"
+  | "authorized"
+  | "paid"
+  | "failed"
+  | "cancelled"
+  | "expired"
+
+export interface FinancePaymentSessionListFilters {
+  bookingId?: string | undefined
+  orderId?: string | undefined
+  invoiceId?: string | undefined
+  bookingPaymentScheduleId?: string | undefined
+  bookingGuaranteeId?: string | undefined
+  status?: FinancePaymentSessionStatusFilter | undefined
+  provider?: string | undefined
+  limit?: number | undefined
+  offset?: number | undefined
+}
+
 export interface FinanceActionLedgerListCursor {
   occurredAt: string
   id: string
@@ -231,8 +253,11 @@ export const financeQueryKeys = {
   allPaymentsList: (filters: FinanceAllPaymentsListFilters) =>
     [...financeQueryKeys.allPayments(), "list", filters] as const,
   payment: (id: string) => [...financeQueryKeys.allPayments(), "detail", id] as const,
+  paymentSessions: () => [...financeQueryKeys.all, "payment-sessions"] as const,
+  paymentSessionsList: (filters: FinancePaymentSessionListFilters) =>
+    [...financeQueryKeys.paymentSessions(), "list", filters] as const,
   paymentSessionActionLedger: (id: string, filters: FinanceActionLedgerListFilters = {}) =>
-    [...financeQueryKeys.all, "payment-sessions", id, "action-ledger", filters] as const,
+    [...financeQueryKeys.paymentSessions(), id, "action-ledger", filters] as const,
 
   publicCheckout: () => [...financeQueryKeys.all, "public-checkout"] as const,
   publicFinanceDocumentLookup: (filters: PublicFinanceDocumentLookupFilters) =>
