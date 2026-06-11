@@ -1,5 +1,16 @@
 # @voyantjs/travel-composer
 
+## 0.105.4
+
+### Patch Changes
+
+- Updated dependencies [eeb23df]
+  - @voyantjs/core@0.106.0
+  - @voyantjs/catalog@0.108.0
+  - @voyantjs/db@0.104.4
+  - @voyantjs/hono@0.105.3
+  - @voyantjs/catalog-mcp@0.108.0
+
 ## 0.105.3
 
 ### Patch Changes

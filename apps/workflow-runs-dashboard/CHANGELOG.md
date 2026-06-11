@@ -1,5 +1,12 @@
 # @voyantjs/workflow-runs-dashboard
 
+## 0.0.3
+
+### Patch Changes
+
+- Updated dependencies [6c27159]
+  - @voyantjs/workflows-react@0.107.0
+
 ## 0.0.2
 
 ### Patch Changes

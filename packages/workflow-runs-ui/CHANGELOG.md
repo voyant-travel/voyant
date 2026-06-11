@@ -1,5 +1,12 @@
 # @voyantjs/workflow-runs-ui
 
+## 0.39.1
+
+### Patch Changes
+
+- Updated dependencies [6c27159]
+  - @voyantjs/workflows-react@0.107.0
+
 ## 0.39.0
 
 ### Patch Changes
