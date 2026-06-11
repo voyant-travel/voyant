@@ -566,7 +566,6 @@ export const bookingActionLedgerEntrySchema = z.object({
   approvalId: z.string().nullable(),
   amendsActionId: z.string().nullable(),
   createdAt: z.string(),
-  mutationSummary: z.string().nullable(),
 })
 
 export type BookingActionLedgerEntryRecord = z.infer<typeof bookingActionLedgerEntrySchema>
