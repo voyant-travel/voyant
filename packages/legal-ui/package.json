@@ -15,6 +15,7 @@
     "./i18n": "./src/i18n/index.ts",
     "./i18n/en": "./src/i18n/en.ts",
     "./i18n/ro": "./src/i18n/ro.ts",
+    "./admin": "./src/admin/index.tsx",
     "./components/*": "./src/components/*.tsx"
   },
   "scripts": {
@@ -27,8 +28,15 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
+    "@voyantjs/admin": "workspace:^",
+    "@voyantjs/bookings-react": "workspace:^",
+    "@voyantjs/bookings-ui": "workspace:^",
     "@voyantjs/crm-react": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/legal-react": "workspace:^",
+    "@voyantjs/markets-react": "workspace:^",
+    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/suppliers-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -41,11 +49,19 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.100.11",
+    "@tiptap/core": "^3.7.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@voyantjs/admin": "workspace:^",
+    "@voyantjs/bookings-react": "workspace:^",
+    "@voyantjs/bookings-ui": "workspace:^",
     "@voyantjs/crm-react": "workspace:^",
+    "@voyantjs/distribution-react": "workspace:^",
     "@voyantjs/i18n": "workspace:^",
     "@voyantjs/legal-react": "workspace:^",
+    "@voyantjs/markets-react": "workspace:^",
+    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/suppliers-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/utils": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
@@ -86,6 +102,11 @@
         "types": "./dist/i18n/ro.d.ts",
         "import": "./dist/i18n/ro.js",
         "default": "./dist/i18n/ro.js"
+      },
+      "./admin": {
+        "types": "./dist/admin/index.d.ts",
+        "import": "./dist/admin/index.js",
+        "default": "./dist/admin/index.js"
       },
       "./components/*": {
         "types": "./dist/components/*.d.ts",

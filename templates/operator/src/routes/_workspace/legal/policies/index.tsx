@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { getLegalPoliciesQueryOptions } from "@voyantjs/legal-react"
-import { PoliciesPage } from "@voyantjs/legal-ui"
+import { PoliciesHost } from "@voyantjs/legal-ui/admin"
 
-import { PolicyDialog } from "@/components/voyant/legal/policy-dialog"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
 
@@ -15,21 +14,5 @@ export const Route = createFileRoute("/_workspace/legal/policies/")({
         { search: "", kind: "all", limit: 25, offset: 0 },
       ),
     ),
-  component: RouteComponent,
+  component: PoliciesHost,
 })
-
-function RouteComponent() {
-  const navigate = Route.useNavigate()
-
-  return (
-    <PoliciesPage
-      onOpenPolicy={(id) =>
-        void navigate({
-          to: "/legal/policies/$id",
-          params: { id },
-        })
-      }
-      renderPolicyDialog={(props) => <PolicyDialog {...props} />}
-    />
-  )
-}

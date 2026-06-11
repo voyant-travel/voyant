@@ -15,6 +15,7 @@
     "./i18n": "./src/i18n/index.ts",
     "./i18n/en": "./src/i18n/en.ts",
     "./i18n/ro": "./src/i18n/ro.ts",
+    "./admin": "./src/admin/index.tsx",
     "./components/*": "./src/components/*.tsx"
   },
   "scripts": {
@@ -27,15 +28,20 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
+    "@tanstack/react-table": "^8.0.0",
+    "@voyantjs/admin": "workspace:^",
+    "@voyantjs/bookings-react": "workspace:^",
     "@voyantjs/bookings-ui": "workspace:^",
     "@voyantjs/finance": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
+    "@voyantjs/suppliers-react": "workspace:^",
     "@voyantjs/suppliers-ui": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.60.0",
     "recharts": "^3.0.0",
+    "sonner": "^2.0.7",
     "zod": "^4.3.6"
   },
   "dependencies": {
@@ -43,12 +49,16 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.100.11",
+    "@tanstack/react-table": "^8.21.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@voyantjs/admin": "workspace:^",
+    "@voyantjs/bookings-react": "workspace:^",
     "@voyantjs/bookings-ui": "workspace:^",
     "@voyantjs/finance": "workspace:^",
     "@voyantjs/finance-react": "workspace:^",
     "@voyantjs/i18n": "workspace:^",
+    "@voyantjs/suppliers-react": "workspace:^",
     "@voyantjs/suppliers-ui": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
@@ -57,6 +67,7 @@
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.60.0",
     "recharts": "3.8.1",
+    "sonner": "^2.0.7",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2",
     "zod": "^4.3.6"
@@ -90,6 +101,11 @@
         "types": "./dist/i18n/ro.d.ts",
         "import": "./dist/i18n/ro.js",
         "default": "./dist/i18n/ro.js"
+      },
+      "./admin": {
+        "types": "./dist/admin/index.d.ts",
+        "import": "./dist/admin/index.js",
+        "default": "./dist/admin/index.js"
       },
       "./components/*": {
         "types": "./dist/components/*.d.ts",

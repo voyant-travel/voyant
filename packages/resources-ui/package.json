@@ -15,6 +15,7 @@
     "./i18n": "./src/i18n/index.ts",
     "./i18n/en": "./src/i18n/en.ts",
     "./i18n/ro": "./src/i18n/ro.ts",
+    "./admin": "./src/admin/index.tsx",
     "./components/*": "./src/components/*.tsx"
   },
   "scripts": {
@@ -28,10 +29,14 @@
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-table": "^8.0.0",
+    "@voyantjs/admin": "workspace:^",
     "@voyantjs/resources-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.60.0",
+    "sonner": "^2.0.7",
+    "zod": "^4.3.6"
   },
   "dependencies": {
     "@voyantjs/i18n": "workspace:^"
@@ -41,6 +46,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@voyantjs/admin": "workspace:^",
     "@voyantjs/i18n": "workspace:^",
     "@voyantjs/resources-react": "workspace:^",
     "@voyantjs/ui": "workspace:^",
@@ -48,8 +54,11 @@
     "lucide-react": "^0.475.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-hook-form": "^7.60.0",
+    "sonner": "^2.0.7",
     "typescript": "^6.0.2",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.2",
+    "zod": "^4.3.6"
   },
   "files": [
     "dist",
@@ -80,6 +89,11 @@
         "types": "./dist/i18n/ro.d.ts",
         "import": "./dist/i18n/ro.js",
         "default": "./dist/i18n/ro.js"
+      },
+      "./admin": {
+        "types": "./dist/admin/index.d.ts",
+        "import": "./dist/admin/index.js",
+        "default": "./dist/admin/index.js"
       },
       "./components/*": {
         "types": "./dist/components/*.d.ts",

@@ -1,41 +1,20 @@
 import {
-  type AvailabilityCloseoutRow,
-  type AvailabilityPickupPointRow,
-  type AvailabilityRuleRow,
-  type AvailabilitySlotRow,
-  type AvailabilityStartTimeRow,
-  booleanOptions,
-  formatDateTime,
-  formatSelectionLabel,
   getCloseoutsQueryOptions as getCloseoutsQueryOptionsBase,
   getPickupPointsQueryOptions as getPickupPointsQueryOptionsBase,
   getProductsQueryOptions as getProductsQueryOptionsBase,
   getRulesQueryOptions as getRulesQueryOptionsBase,
   getSlotsQueryOptions as getSlotsQueryOptionsBase,
   getStartTimesQueryOptions as getStartTimesQueryOptionsBase,
-  NONE_VALUE,
-  nullableNumber,
-  nullableString,
-  type ProductOption,
-  productNameById,
-  slotStatusOptions,
-  toIsoDateTime,
-  toLocalDateTimeInput,
 } from "@voyantjs/availability-react"
-
-export {
-  availabilityCloseoutColumns as closeoutColumns,
-  availabilityPickupPointColumns as pickupPointColumns,
-  availabilityRuleColumns as ruleColumns,
-  availabilitySlotColumns as slotColumns,
-  availabilityStartTimeColumns as startTimeColumns,
-  formatLocalizedSelectionLabel,
-  getSlotStatusLabel,
-} from "@voyantjs/availability-ui"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
 
+/**
+ * Envelope of the availability `batch-update` / `batch-delete` endpoints.
+ * App-local: `@voyantjs/availability-react` has no batch mutation client yet,
+ * so the availability page wrapper calls them through the app api client.
+ */
 export type BatchMutationResponse<T = unknown> = {
   data?: T[]
   deletedIds?: string[]
@@ -46,27 +25,6 @@ export type BatchMutationResponse<T = unknown> = {
 
 // operatorFetcher so SSR loaders forward the request cookie.
 const client = { baseUrl: getApiUrl(), fetcher: operatorFetcher }
-
-export type {
-  AvailabilityCloseoutRow,
-  AvailabilityPickupPointRow,
-  AvailabilityRuleRow,
-  AvailabilitySlotRow,
-  AvailabilityStartTimeRow,
-  ProductOption,
-}
-export {
-  booleanOptions,
-  formatDateTime,
-  formatSelectionLabel,
-  NONE_VALUE,
-  nullableNumber,
-  nullableString,
-  productNameById,
-  slotStatusOptions,
-  toIsoDateTime,
-  toLocalDateTimeInput,
-}
 
 export function getAvailabilityProductsQueryOptions(filters?: {
   search?: string

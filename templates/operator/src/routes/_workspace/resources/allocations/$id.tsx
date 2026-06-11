@@ -1,12 +1,9 @@
-import { useQueryClient } from "@tanstack/react-query"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { resourcesQueryKeys } from "@voyantjs/resources-react"
+import { createFileRoute } from "@tanstack/react-router"
 import {
   ensureResourceAllocationDetailPageData,
-  ResourceAllocationDetailPage,
   ResourceAllocationDetailSkeleton,
 } from "@voyantjs/resources-ui"
-import { api } from "@/lib/api-client"
+import { ResourceAllocationDetailHost } from "@voyantjs/resources-ui/admin"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
 
@@ -22,22 +19,5 @@ export const Route = createFileRoute("/_workspace/resources/allocations/$id")({
 
 function ResourceAllocationDetailRoute() {
   const { id } = Route.useParams()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
-
-  return (
-    <ResourceAllocationDetailPage
-      id={id}
-      onBack={() => void navigate({ to: "/resources" })}
-      onOpenPool={(poolId) => void navigate({ to: "/resources/pools/$id", params: { id: poolId } })}
-      onOpenProduct={(productId) =>
-        void navigate({ to: "/products/$id", params: { id: productId } })
-      }
-      onDelete={async (allocation) => {
-        await api.delete(`/v1/resources/allocations/${allocation.id}`)
-        await queryClient.invalidateQueries({ queryKey: resourcesQueryKeys.allocations() })
-        void navigate({ to: "/resources" })
-      }}
-    />
-  )
+  return <ResourceAllocationDetailHost id={id} />
 }

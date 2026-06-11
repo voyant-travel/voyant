@@ -71,6 +71,8 @@
     "@voyantjs/legal-react": "workspace:^",
     "@voyantjs/markets": "workspace:^",
     "@voyantjs/notifications": "workspace:^",
+    "@voyantjs/notifications-react": "workspace:^",
+    "@voyantjs/notifications-ui": "workspace:^",
     "@voyantjs/pricing": "workspace:^",
     "@voyantjs/products": "workspace:^",
     "@voyantjs/products-react": "workspace:^",

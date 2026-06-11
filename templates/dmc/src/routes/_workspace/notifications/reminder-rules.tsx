@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { NotificationReminderRulesPage } from "@voyantjs/ui/components/notification-reminder-rules-page"
+import { NotificationReminderRulesHost } from "@voyantjs/notifications-ui/admin"
 
 export const Route = createFileRoute("/_workspace/notifications/reminder-rules")({
-  component: NotificationReminderRulesPage,
+  component: NotificationReminderRulesHost,
 })

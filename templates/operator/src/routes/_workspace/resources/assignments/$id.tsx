@@ -1,12 +1,9 @@
-import { useQueryClient } from "@tanstack/react-query"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { resourcesQueryKeys } from "@voyantjs/resources-react"
+import { createFileRoute } from "@tanstack/react-router"
 import {
   ensureResourceAssignmentDetailPageData,
-  ResourceAssignmentDetailPage,
   ResourceAssignmentDetailSkeleton,
 } from "@voyantjs/resources-ui"
-import { api } from "@/lib/api-client"
+import { ResourceAssignmentDetailHost } from "@voyantjs/resources-ui/admin"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
 
@@ -22,22 +19,5 @@ export const Route = createFileRoute("/_workspace/resources/assignments/$id")({
 
 function ResourceAssignmentDetailRoute() {
   const { id } = Route.useParams()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
-
-  return (
-    <ResourceAssignmentDetailPage
-      id={id}
-      onBack={() => void navigate({ to: "/resources" })}
-      onOpenSlot={(slotId) => void navigate({ to: "/availability/$id", params: { id: slotId } })}
-      onOpenResource={(resourceId) =>
-        void navigate({ to: "/resources/$id", params: { id: resourceId } })
-      }
-      onDelete={async (assignment) => {
-        await api.delete(`/v1/resources/slot-assignments/${assignment.id}`)
-        await queryClient.invalidateQueries({ queryKey: resourcesQueryKeys.assignments() })
-        void navigate({ to: "/resources" })
-      }}
-    />
-  )
+  return <ResourceAssignmentDetailHost id={id} />
 }

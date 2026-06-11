@@ -1073,6 +1073,45 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@25.0.1)(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
 
+  packages/admin-app:
+    devDependencies:
+      '@tanstack/react-query':
+        specifier: ^5.100.11
+        version: 5.100.11(react@19.2.4)
+      '@tanstack/react-router':
+        specifier: ^1.170.4
+        version: 1.170.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@types/react':
+        specifier: ^19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
+      '@voyantjs/ui':
+        specifier: workspace:^
+        version: link:../ui
+      '@voyantjs/voyant-typescript-config':
+        specifier: workspace:^
+        version: link:../typescript-config
+      lucide-react:
+        specifier: ^1.7.0
+        version: 1.7.0(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+
   packages/admin-client:
     dependencies:
       '@voyantjs/admin-contracts':
@@ -1401,9 +1440,27 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
+      '@voyantjs/allocation-ui':
+        specifier: workspace:^
+        version: link:../allocation-ui
       '@voyantjs/availability-react':
         specifier: workspace:^
         version: link:../availability-react
+      '@voyantjs/bookings-ui':
+        specifier: workspace:^
+        version: link:../bookings-ui
+      '@voyantjs/extras-ui':
+        specifier: workspace:^
+        version: link:../extras-ui
+      '@voyantjs/products-react':
+        specifier: workspace:^
+        version: link:../products-react
+      '@voyantjs/products-ui':
+        specifier: workspace:^
+        version: link:../products-ui
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
@@ -1660,6 +1717,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
       '@voyantjs/availability-react':
         specifier: workspace:^
         version: link:../availability-react
@@ -1919,9 +1979,21 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
       '@voyantjs/catalog-react':
         specifier: workspace:^
         version: link:../catalog-react
+      '@voyantjs/markets-react':
+        specifier: workspace:^
+        version: link:../markets-react
+      '@voyantjs/products-react':
+        specifier: workspace:^
+        version: link:../products-react
+      '@voyantjs/suppliers-react':
+        specifier: workspace:^
+        version: link:../suppliers-react
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
@@ -1937,12 +2009,18 @@ importers:
       react-dom:
         specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
       vitest:
         specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
 
   packages/charters:
     dependencies:
@@ -2334,6 +2412,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
       '@voyantjs/crm-react':
         specifier: workspace:^
         version: link:../crm-react
@@ -3255,12 +3336,21 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.100.11
         version: 5.100.11(react@19.2.4)
+      '@tanstack/react-table':
+        specifier: ^8.21.3
+        version: 8.21.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.14
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
+      '@voyantjs/bookings-react':
+        specifier: workspace:^
+        version: link:../bookings-react
       '@voyantjs/bookings-ui':
         specifier: workspace:^
         version: link:../bookings-ui
@@ -3270,6 +3360,9 @@ importers:
       '@voyantjs/finance-react':
         specifier: workspace:^
         version: link:../finance-react
+      '@voyantjs/suppliers-react':
+        specifier: workspace:^
+        version: link:../suppliers-react
       '@voyantjs/suppliers-ui':
         specifier: workspace:^
         version: link:../suppliers-ui
@@ -3294,6 +3387,9 @@ importers:
       recharts:
         specifier: 3.8.1
         version: 3.8.1(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react-is@18.3.1)(react@19.2.4)(redux@5.0.1)
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -3864,18 +3960,42 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.100.11
         version: 5.100.11(react@19.2.4)
+      '@tiptap/core':
+        specifier: ^3.7.2
+        version: 3.22.4(@tiptap/pm@3.22.4)
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.14
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
+      '@voyantjs/bookings-react':
+        specifier: workspace:^
+        version: link:../bookings-react
+      '@voyantjs/bookings-ui':
+        specifier: workspace:^
+        version: link:../bookings-ui
       '@voyantjs/crm-react':
         specifier: workspace:^
         version: link:../crm-react
+      '@voyantjs/distribution-react':
+        specifier: workspace:^
+        version: link:../distribution-react
       '@voyantjs/legal-react':
         specifier: workspace:^
         version: link:../legal-react
+      '@voyantjs/markets-react':
+        specifier: workspace:^
+        version: link:../markets-react
+      '@voyantjs/products-react':
+        specifier: workspace:^
+        version: link:../products-react
+      '@voyantjs/suppliers-react':
+        specifier: workspace:^
+        version: link:../suppliers-react
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
@@ -4125,16 +4245,28 @@ importers:
       '@voyantjs/i18n':
         specifier: workspace:^
         version: link:../i18n
+      '@voyantjs/notifications':
+        specifier: workspace:^
+        version: link:../notifications
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.100.11
         version: 5.100.11(react@19.2.4)
+      '@tiptap/core':
+        specifier: ^3.7.2
+        version: 3.22.4(@tiptap/pm@3.22.4)
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.14
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
       '@voyantjs/notifications-react':
         specifier: workspace:^
         version: link:../notifications-react
@@ -4153,6 +4285,9 @@ importers:
       react-dom:
         specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
+      react-hook-form:
+        specifier: ^7.60.0
+        version: 7.72.1(react@19.2.4)
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -4801,6 +4936,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
       '@voyantjs/promotions-react':
         specifier: workspace:^
         version: link:../promotions-react
@@ -4942,6 +5080,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
       '@voyantjs/resources-react':
         specifier: workspace:^
         version: link:../resources-react
@@ -4960,12 +5101,21 @@ importers:
       react-dom:
         specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
+      react-hook-form:
+        specifier: ^7.60.0
+        version: 7.72.1(react@19.2.4)
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
       vitest:
         specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
 
   packages/schema-kit:
     dependencies:
@@ -5439,6 +5589,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
       '@voyantjs/suppliers-react':
         specifier: workspace:^
         version: link:../suppliers-react
@@ -5719,12 +5872,6 @@ importers:
       '@voyantjs/i18n':
         specifier: workspace:^
         version: link:../i18n
-      '@voyantjs/notifications':
-        specifier: workspace:^
-        version: link:../notifications
-      '@voyantjs/notifications-react':
-        specifier: workspace:^
-        version: link:../notifications-react
       '@voyantjs/utils':
         specifier: workspace:^
         version: link:../utils
@@ -6345,6 +6492,12 @@ importers:
       '@voyantjs/notifications':
         specifier: workspace:^
         version: link:../../packages/notifications
+      '@voyantjs/notifications-react':
+        specifier: workspace:^
+        version: link:../../packages/notifications-react
+      '@voyantjs/notifications-ui':
+        specifier: workspace:^
+        version: link:../../packages/notifications-ui
       '@voyantjs/pricing':
         specifier: workspace:^
         version: link:../../packages/pricing
@@ -6595,6 +6748,9 @@ importers:
       '@voyantjs/admin':
         specifier: workspace:^
         version: link:../../packages/admin
+      '@voyantjs/admin-app':
+        specifier: workspace:^
+        version: link:../../packages/admin-app
       '@voyantjs/allocation-ui':
         specifier: workspace:^
         version: link:../../packages/allocation-ui

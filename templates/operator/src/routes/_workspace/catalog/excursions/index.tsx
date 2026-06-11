@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router"
-
 import {
   type CatalogSearchParams,
   catalogSearchSchema,
-} from "@/components/voyant/catalog/catalog-route-state"
-import { ScheduledCatalogPage } from "@/components/voyant/catalog/scheduled-catalog-page"
+  ScheduledCatalogHost,
+} from "@voyantjs/catalog-ui/admin"
 
+// Thin host for the package-delivered scheduled catalog page (packaged-admin
+// RFC Phase 2). This file only binds the route's URL search state.
 export const Route = createFileRoute("/_workspace/catalog/excursions/")({
   validateSearch: catalogSearchSchema,
   component: CatalogExcursionsRoute,
@@ -17,7 +18,7 @@ function CatalogExcursionsRoute() {
 
   // Excursions = single-day scheduled trips (durationDays ≤ 1).
   return (
-    <ScheduledCatalogPage
+    <ScheduledCatalogHost
       scope="excursions"
       search={search}
       onSearchChange={(updater, replace = true) =>

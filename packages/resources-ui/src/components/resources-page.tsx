@@ -10,6 +10,17 @@ import {
   type ResourceRow,
   type ResourceSlotAssignmentRow,
   type SupplierOption,
+  type UseAllocationsOptions,
+  type UseAssignmentsOptions,
+  type UseBookingsOptions,
+  type UseCloseoutsOptions,
+  type UsePoolsOptions,
+  type UseProductsOptions,
+  type UseResourcesOptions,
+  type UseRulesOptions,
+  type UseSlotsOptions,
+  type UseStartTimesOptions,
+  type UseSuppliersOptions,
   useAllocations,
   useAssignments,
   useBookings,
@@ -82,6 +93,25 @@ export interface ResourcesPageSlots {
   dialogs?: ReactNode
 }
 
+/**
+ * Per-list query options the page's data hooks run with. Hosts that SSR
+ * prefetch (route loaders) pass the same filters here so the loader-seeded
+ * cache entries and the page's hooks share query keys.
+ */
+export interface ResourcesPageQueryFilters {
+  suppliers?: UseSuppliersOptions
+  products?: UseProductsOptions
+  bookings?: UseBookingsOptions
+  slots?: UseSlotsOptions
+  rules?: UseRulesOptions
+  startTimes?: UseStartTimesOptions
+  resources?: UseResourcesOptions
+  pools?: UsePoolsOptions
+  allocations?: UseAllocationsOptions
+  assignments?: UseAssignmentsOptions
+  closeouts?: UseCloseoutsOptions
+}
+
 export interface ResourcesPageProps {
   className?: string
   defaultTab?: ResourcesPageTab
@@ -103,6 +133,10 @@ export interface ResourcesPageProps {
   onCloseoutCreate?: () => void
   onCloseoutEdit?: (closeout: ResourceCloseoutRow) => void
   slots?: ResourcesPageSlots
+  /** Options forwarded to the page's list hooks (e.g. to match SSR-prefetched query keys). */
+  queryFilters?: ResourcesPageQueryFilters
+  /** Rendered instead of the default loading hint while the list queries resolve. */
+  loadingFallback?: ReactNode
 }
 
 const noop = () => undefined
@@ -130,6 +164,8 @@ export function ResourcesPage({
   onCloseoutCreate = noop,
   onCloseoutEdit = noopRow,
   slots,
+  queryFilters,
+  loadingFallback,
 }: ResourcesPageProps) {
   const i18n = useResourcesUiI18nOrDefault()
   const m = i18n.messages
@@ -150,17 +186,17 @@ export function ResourcesPage({
   const [assignmentSelection, setAssignmentSelectionState] = useState<RowSelectionState>({})
   const [closeoutSelection, setCloseoutSelectionState] = useState<RowSelectionState>({})
 
-  const suppliersQuery = useSuppliers()
-  const productsQuery = useProducts()
-  const bookingsQuery = useBookings()
-  const slotsQuery = useSlots()
-  const rulesQuery = useRules()
-  const startTimesQuery = useStartTimes()
-  const resourcesQuery = useResources()
-  const poolsQuery = usePools()
-  const allocationsQuery = useAllocations()
-  const assignmentsQuery = useAssignments()
-  const closeoutsQuery = useCloseouts()
+  const suppliersQuery = useSuppliers(queryFilters?.suppliers)
+  const productsQuery = useProducts(queryFilters?.products)
+  const bookingsQuery = useBookings(queryFilters?.bookings)
+  const slotsQuery = useSlots(queryFilters?.slots)
+  const rulesQuery = useRules(queryFilters?.rules)
+  const startTimesQuery = useStartTimes(queryFilters?.startTimes)
+  const resourcesQuery = useResources(queryFilters?.resources)
+  const poolsQuery = usePools(queryFilters?.pools)
+  const allocationsQuery = useAllocations(queryFilters?.allocations)
+  const assignmentsQuery = useAssignments(queryFilters?.assignments)
+  const closeoutsQuery = useCloseouts(queryFilters?.closeouts)
 
   const suppliers = suppliersQuery.data?.data ?? []
   const products = productsQuery.data?.data ?? []
@@ -399,7 +435,9 @@ export function ResourcesPage({
       </div>
 
       {isLoading ? (
-        <div className="rounded-md border p-6 text-sm text-muted-foreground">{page.loading}</div>
+        (loadingFallback ?? (
+          <div className="rounded-md border p-6 text-sm text-muted-foreground">{page.loading}</div>
+        ))
       ) : isError ? (
         <div className="rounded-md border p-6 text-sm text-muted-foreground">{page.loadFailed}</div>
       ) : (

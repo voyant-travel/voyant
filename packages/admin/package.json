@@ -20,6 +20,7 @@
     "./dashboard/query-options": "./src/dashboard/dashboard-query-options.ts",
     "./dashboard/skeleton": "./src/dashboard/dashboard-skeleton.tsx",
     "./extensions": "./src/extensions.ts",
+    "./navigation/destinations": "./src/navigation/destinations.tsx",
     "./navigation/operator-navigation": "./src/navigation/operator-navigation.ts",
     "./providers/admin-extensions": "./src/providers/admin-extensions.tsx",
     "./providers/locale-preferences": "./src/providers/locale-preferences.tsx",
@@ -149,6 +150,11 @@
         "types": "./dist/extensions.d.ts",
         "import": "./dist/extensions.js",
         "default": "./dist/extensions.js"
+      },
+      "./navigation/destinations": {
+        "types": "./dist/navigation/destinations.d.ts",
+        "import": "./dist/navigation/destinations.js",
+        "default": "./dist/navigation/destinations.js"
       },
       "./navigation/operator-navigation": {
         "types": "./dist/navigation/operator-navigation.d.ts",

@@ -45,6 +45,7 @@ export {
   type ResourcesPageBulkUpdateArgs,
   type ResourcesPageBulkUpdateHandler,
   type ResourcesPageProps,
+  type ResourcesPageQueryFilters,
   type ResourcesPageSlots,
   type ResourcesPageTab,
 } from "./components/resources-page.js"

@@ -13,6 +13,9 @@
  * - Dashboard page composition, skeletons, aggregate query helpers, and extension context.
  * - Operator admin sidebar, navigation, and workspace layout helpers.
  * - Admin extension helpers for navigation contributions and widget slots.
+ * - Semantic destinations: `AdminDestinations` + `AdminNavigationProvider` +
+ *   `useAdminHref`/`useAdminNavigate` for package-owned pages that navigate
+ *   to routes they don't own (packaged-admin RFC §4.7).
  * - User utilities: `getInitials`, `getDisplayName`.
  * - Types: `AdminUser`, `NavItem`, `NavSubItem`, `AuthActions`, `ThemeMode`.
  */
@@ -121,6 +124,8 @@ export {
 export {
   type AdminExtension,
   type AdminNavigationContribution,
+  type AdminRouteLoaderContext,
+  type AdminRouteRuntime,
   type AdminUiRouteContribution,
   type AdminWidgetContribution,
   type AdminWidgetSlot,
@@ -142,6 +147,17 @@ export {
   useMessages,
 } from "./lib/i18n.js"
 export { getDisplayName, getInitials } from "./lib/initials.js"
+export {
+  type AdminDestinationKey,
+  type AdminDestinationNavigator,
+  type AdminDestinationResolvers,
+  type AdminDestinations,
+  type AdminHrefResolver,
+  AdminNavigationProvider,
+  type AdminNavigationProviderProps,
+  useAdminHref,
+  useAdminNavigate,
+} from "./navigation/destinations.js"
 export {
   type CreateOperatorAdminNavigationOptions,
   createOperatorAdminNavigation,

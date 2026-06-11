@@ -1,47 +1,44 @@
 "use client"
 
-import { useNavigate } from "@tanstack/react-router"
-import { useAdminBreadcrumbs, useLocale } from "@voyantjs/admin"
+import { useLocale } from "@voyantjs/admin"
 import { useBooking } from "@voyantjs/bookings-react"
-import {
-  type BookingDetailTabValue,
-  BookingDetailPage as CanonicalBookingDetailPage,
-} from "@voyantjs/bookings-ui/components/booking-detail-page"
+import { BookingDetailHost } from "@voyantjs/bookings-ui/admin"
+import type { BookingDetailTabValue } from "@voyantjs/bookings-ui/components/booking-detail-page"
 import type { BookingPaymentsSummaryRow } from "@voyantjs/bookings-ui/components/booking-payments-summary"
 import { CollectPaymentDialog } from "@voyantjs/checkout-ui"
-import { useInvoices, usePaymentMutation } from "@voyantjs/finance-react"
 import { RecordBookingPaymentDialog } from "@voyantjs/finance-ui"
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@voyantjs/ui/components/collapsible"
-import { Sheet, SheetContent } from "@voyantjs/ui/components/sheet"
 import { ChevronDown } from "lucide-react"
 import { useState } from "react"
-import { AdminWidgetSlotRenderer } from "@/components/admin/admin-widget-slot"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
 import { BookingDocumentsTable } from "./booking-documents-table"
-import { BookingInvoiceSheet } from "./booking-invoice-sheet"
-import { BookingInvoicesCard } from "./booking-invoices-card"
 import { BookingPaymentPolicyCard } from "./booking-payment-policy-card"
 import { BookingPendingPaymentSessions } from "./booking-pending-payment-sessions"
 import { useBookingActionLedgerEvents } from "./use-booking-action-ledger-events"
 
 /**
- * Operator wrapper around the canonical `BookingDetailPage`. The
- * shared layout (header, summary, tabs, dialogs) lives in
- * `@voyantjs/bookings-ui`; the operator template only supplies the
- * dependencies it owns:
+ * Operator wrapper around the packaged `BookingDetailHost` from
+ * `@voyantjs/bookings-ui/admin`. The host owns the canonical page wiring
+ * (breadcrumbs, semantic-destination navigation, paid-amount aggregation,
+ * widget slots, invoice sheet); this wrapper only supplies what stays
+ * app-local because its data access has no package equivalent yet:
  *
- *   - Router navigation callbacks (TanStack Router).
- *   - Admin chrome breadcrumbs (`useAdminBreadcrumbs`).
- *   - Two payment dialogs and the buttons that open them.
- *   - Nine operator-local cards that fill named slots (catalog
- *     source, pricing summary, payment sessions / policy, invoices,
- *     documents, action ledger).
- *   - Admin widget extension points (`AdminWidgetSlotRenderer`).
+ *   - Pending/complete/cancel payment-session card (admin payment-sessions
+ *     API) + the payment-policy override card (schedule regenerate API).
+ *   - The unified Documents tab (contract generation API).
+ *   - Action-ledger timeline events (booking action-ledger API).
+ *   - The two payment dialogs (`@voyantjs/finance-ui` /
+ *     `@voyantjs/checkout-ui` depend on `bookings-ui`, so the package host
+ *     cannot import them without a cycle).
+ *
+ * The Invoices tab is no longer wired here: `@voyantjs/finance-ui/admin`
+ * contributes the finance-owned invoices card as a widget on the host's
+ * `booking.details.invoices-tab` slot.
  */
 export function BookingDetailPage({
   id,
@@ -54,114 +51,37 @@ export function BookingDetailPage({
 }) {
   const detailMessages = useAdminMessages().bookings.detail
   const { resolvedLocale } = useLocale()
-  const navigate = useNavigate()
   const [collectPaymentOpen, setCollectPaymentOpen] = useState(false)
   const [recordPaymentOpen, setRecordPaymentOpen] = useState(false)
   const [editingPayment, setEditingPayment] = useState<BookingPaymentsSummaryRow | null>(null)
-  const [viewingInvoiceId, setViewingInvoiceId] = useState<string | null>(null)
-  const { remove: removePayment } = usePaymentMutation()
   const { events: actionLedgerEvents, footer: actionLedgerFooter } =
     useBookingActionLedgerEvents(id)
-  // Mirror the booking fetch so the admin chrome can render
-  // breadcrumbs and the payment dialogs can read sell currency /
-  // contact snapshots without prop-drilling through the canonical.
-  // TanStack Query dedupes by key, so this doesn't issue a second
-  // network request.
+  // Mirror the booking fetch so the payment dialogs can read sell currency /
+  // contact snapshots. TanStack Query dedupes by key, so this doesn't issue
+  // a second network request.
   const { data: bookingData } = useBooking(id)
   const booking = bookingData?.data
-  // Sum customer payments across this booking's non-credit-note,
-  // non-draft invoices.
-  const { data: invoicesData } = useInvoices({ bookingId: id, limit: 20 })
-  const paidAmountCents = invoicesData?.data
-    ? invoicesData.data
-        .filter((inv) => {
-          const type = (inv as { invoiceType?: string }).invoiceType ?? "invoice"
-          return type !== "credit_note" && inv.status !== "draft"
-        })
-        .reduce((sum, inv) => sum + (inv.paidCents ?? 0), 0)
-    : null
-  useAdminBreadcrumbs(
-    booking
-      ? [
-          { label: detailMessages.breadcrumbBookings, href: "/bookings" },
-          { label: booking.bookingNumber },
-        ]
-      : [{ label: detailMessages.breadcrumbBookings, href: "/bookings" }],
-  )
 
   return (
     <>
-      <CanonicalBookingDetailPage
+      <BookingDetailHost
         id={id}
-        locale={resolvedLocale}
-        hideBreadcrumb
         activeTab={activeTab}
         onTabChange={onTabChange}
-        onBack={() => void navigate({ to: "/bookings" })}
-        onPersonOpen={(personId) => void navigate({ to: "/people/$id", params: { id: personId } })}
-        onOrganizationOpen={(organizationId) =>
-          void navigate({ to: "/organizations/$id", params: { id: organizationId } })
-        }
         onRecordPayment={() => setRecordPaymentOpen(true)}
-        recordPaymentDisabledReason={
-          booking &&
-          booking.sellAmountCents != null &&
-          paidAmountCents != null &&
-          paidAmountCents >= booking.sellAmountCents
-            ? detailMessages.generateLinkFullyPaid
-            : null
-        }
-        addScheduleDisabledReason={
-          booking &&
-          booking.sellAmountCents != null &&
-          paidAmountCents != null &&
-          paidAmountCents >= booking.sellAmountCents
-            ? detailMessages.generateLinkFullyPaid
-            : null
-        }
-        paidAmountCents={paidAmountCents}
-        onItemResourceOpen={(kind, resourceId) => {
-          if (kind === "product") {
-            void navigate({ to: "/products/$id", params: { id: resourceId } })
-            return
-          }
-          if (kind === "availabilitySlot") {
-            void navigate({ to: "/availability/$id", params: { id: resourceId } })
-          }
-        }}
-        onInvoiceOpen={(invoiceId) => setViewingInvoiceId(invoiceId)}
-        onViewPayment={(row) =>
-          void navigate({ to: "/finance/payments/$id", params: { id: row.id } })
-        }
         onEditPayment={(row) => {
           setEditingPayment(row)
           setRecordPaymentOpen(true)
         }}
-        onDeletePayment={async (row) => {
-          await removePayment.mutateAsync(row.id)
-        }}
         slots={{
-          header: (b) => (
-            <AdminWidgetSlotRenderer slot="booking.details.header" props={{ booking: b }} />
-          ),
-          afterSummary: (b) => (
-            <AdminWidgetSlotRenderer slot="booking.details.after-summary" props={{ booking: b }} />
-          ),
-          financeStart: () => (
+          financeStart: ({ fullyPaidReason }) => (
             <BookingPendingPaymentSessions
               bookingId={id}
               onGenerateLink={() => setCollectPaymentOpen(true)}
-              generateLinkDisabledReason={
-                booking &&
-                booking.sellAmountCents != null &&
-                paidAmountCents != null &&
-                paidAmountCents >= booking.sellAmountCents
-                  ? detailMessages.generateLinkFullyPaid
-                  : null
-              }
+              generateLinkDisabledReason={fullyPaidReason}
             />
           ),
-          financeEnd: (b) => (
+          financeEnd: ({ booking: b }) => (
             <Collapsible>
               <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-md border bg-background px-4 py-3 text-sm font-semibold hover:bg-muted/30">
                 {detailMessages.paymentPolicyCard.title}
@@ -172,19 +92,13 @@ export function BookingDetailPage({
               </CollapsibleContent>
             </Collapsible>
           ),
-          invoicesTab: {
-            content: (b) => (
-              <BookingInvoicesCard
-                bookingId={id}
-                defaultCurrency={b.sellCurrency}
-                defaultAmountCents={b.sellAmountCents ?? null}
-                onInvoiceOpen={(invoiceId) => setViewingInvoiceId(invoiceId)}
-              />
-            ),
-          },
+          // No invoicesTab slot: the finance-owned invoices card arrives as a
+          // widget contribution from @voyantjs/finance-ui/admin on the host's
+          // `booking.details.invoices-tab` slot (the finance-ui ↔ bookings-ui
+          // cycle resolution), so the host mounts the tab on its own.
+          documents: () => <BookingDocumentsTable bookingId={id} apiBaseUrl={getApiUrl()} />,
           activityExtraEvents: actionLedgerEvents,
           activityTimelineFooter: actionLedgerFooter,
-          documents: () => <BookingDocumentsTable bookingId={id} apiBaseUrl={getApiUrl()} />,
         }}
       />
 
@@ -230,25 +144,6 @@ export function BookingDetailPage({
           />
         </>
       ) : null}
-
-      <Sheet
-        open={Boolean(viewingInvoiceId)}
-        onOpenChange={(open) => {
-          if (!open) setViewingInvoiceId(null)
-        }}
-      >
-        <SheetContent side="right" className="w-full! max-w-5xl!">
-          {viewingInvoiceId ? (
-            <BookingInvoiceSheet
-              invoiceId={viewingInvoiceId}
-              onOpenInvoice={(id) => {
-                setViewingInvoiceId(null)
-                void navigate({ to: "/finance/invoices/$id", params: { id } })
-              }}
-            />
-          ) : null}
-        </SheetContent>
-      </Sheet>
     </>
   )
 }

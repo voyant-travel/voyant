@@ -665,6 +665,16 @@ export const financeUiRo = {
       },
       due: "scadent {date}",
     },
+    supplierCard: {
+      title: "Politica de plata a clientului",
+      description:
+        "Cand este setata, rezervarile externe catre acest furnizor mostenesc acesti termeni in locul politicii implicite a operatorului. Lasati mostenirea pentru a folosi politica generala a platformei.",
+      missingCurrency:
+        "Setati mai intai moneda implicita a furnizorului inainte de a defini o politica de plata; sumele trebuie exprimate intr-o moneda cunoscuta.",
+      save: "Salveaza politica",
+      savedToast: "Politica de plata a clientului a fost salvata",
+      saveFailed: "Politica nu a putut fi salvata",
+    },
   },
   taxesPage: {
     title: "Regimuri si clase de taxe",

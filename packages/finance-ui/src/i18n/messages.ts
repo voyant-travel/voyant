@@ -757,6 +757,14 @@ export type FinanceUiMessages = {
       scheduleTypes: Record<"deposit" | "balance" | "full", string>
       due: string
     }
+    supplierCard: {
+      title: string
+      description: string
+      missingCurrency: string
+      save: string
+      savedToast: string
+      saveFailed: string
+    }
   }
   taxesPage: Record<TaxesPageMessageKey, string>
   supplierPaymentDialog: {

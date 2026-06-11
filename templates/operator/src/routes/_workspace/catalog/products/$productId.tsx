@@ -1,15 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { z } from "zod"
-import { OperatorProductDetail } from "@/components/voyant/catalog/operator-product-detail"
+import { ProductDetailHost, productDetailSearchSchema } from "@voyantjs/catalog-ui/admin"
 
-// Search context carried onto the detail page so live offers match what the
-// operator searched (occupancy + length of stay) and the right locale loads.
-const productDetailSearchSchema = z.object({
-  adults: z.coerce.number().int().min(1).optional(),
-  nights: z.coerce.number().int().min(1).optional(),
-  locale: z.string().optional(),
-})
-
+// Thin host for the package-delivered product detail page (packaged-admin
+// RFC Phase 2). Page, search contract, and booking-journey navigation
+// (semantic destinations, RFC §4.7) are package-owned; this file only binds
+// the route param + search context onto the host's props.
 export const Route = createFileRoute("/_workspace/catalog/products/$productId")({
   validateSearch: productDetailSearchSchema,
   component: CatalogProductDetailRoute,
@@ -19,7 +14,5 @@ function CatalogProductDetailRoute() {
   const { productId } = Route.useParams()
   const { adults, nights, locale } = Route.useSearch()
 
-  return (
-    <OperatorProductDetail productId={productId} adults={adults} nights={nights} locale={locale} />
-  )
+  return <ProductDetailHost productId={productId} adults={adults} nights={nights} locale={locale} />
 }
