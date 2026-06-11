@@ -24,10 +24,10 @@ describe("createSuppliersAdminExtension", () => {
     expect(routes.map((route) => route.path)).toEqual(["/suppliers", "/suppliers/$id"])
   })
 
-  it("honors basePath and label", () => {
+  it("honors basePath and labels", () => {
     const extension = createSuppliersAdminExtension({
       basePath: "/vendors",
-      label: "Furnizori",
+      labels: { suppliers: "Furnizori" },
     })
     const index = extension.routes?.find((route) => route.id === "suppliers-index")
     expect(index?.path).toBe("/vendors")

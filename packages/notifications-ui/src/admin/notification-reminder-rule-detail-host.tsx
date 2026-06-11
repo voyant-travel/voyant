@@ -6,6 +6,7 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyant
 import { ArrowLeft } from "lucide-react"
 
 import { StageList } from "../components/stage-list.js"
+import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
 import { DestinationLink } from "./notifications-admin-shared.js"
 
 export interface NotificationReminderRuleDetailHostProps {
@@ -22,6 +23,7 @@ export interface NotificationReminderRuleDetailHostProps {
 export function NotificationReminderRuleDetailHost({
   id,
 }: NotificationReminderRuleDetailHostProps) {
+  const messages = useNotificationsUiMessagesOrDefault()
   const resolveHref = useAdminHref()
   const navigateTo = useAdminNavigate()
   const { data: rule, isLoading } = useNotificationReminderRule(id)
@@ -39,8 +41,12 @@ export function NotificationReminderRuleDetailHost({
             </Button>
           </DestinationLink>
           <div>
-            <h1 className="text-2xl font-semibold">{rule?.name ?? "Reminder rule"}</h1>
-            <p className="text-sm text-muted-foreground">{isLoading ? "Loading…" : rule?.slug}</p>
+            <h1 className="text-2xl font-semibold">
+              {rule?.name ?? messages.admin.reminderRuleDetail.fallbackTitle}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {isLoading ? messages.common.loading : rule?.slug}
+            </p>
           </div>
         </div>
         {rule && (

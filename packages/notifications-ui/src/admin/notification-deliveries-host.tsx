@@ -24,12 +24,17 @@ import {
 import { Loader2, RotateCcw, Search } from "lucide-react"
 import { useState } from "react"
 
+import { type NotificationsUiMessages, useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
+
 /**
  * Packaged admin host for the notification deliveries page (packaged-admin
  * RFC Phase 3). Zero-prop: filter state stays component-local and the
  * details dialog is in-page — no cross-route navigation.
  */
 export function NotificationDeliveriesHost() {
+  const messages = useNotificationsUiMessagesOrDefault()
+  const t = messages.admin.deliveriesPage
+  const common = messages.admin.common
   const [channel, setChannel] = useState<UseNotificationDeliveriesOptions["channel"] | "all">("all")
   const [status, setStatus] = useState<UseNotificationDeliveriesOptions["status"] | "all">("all")
   const [selectedDelivery, setSelectedDelivery] = useState<NotificationDeliveryRecord | null>(null)
@@ -45,33 +50,31 @@ export function NotificationDeliveriesHost() {
   return (
     <div className="flex flex-col gap-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Deliveries</h1>
-        <p className="text-sm text-muted-foreground">
-          Review notification delivery attempts, rendered payloads, and provider-level outcomes.
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
+        <p className="text-sm text-muted-foreground">{t.description}</p>
       </div>
 
       <div className="flex items-center gap-3">
         <Select value={channel} onValueChange={(value) => setChannel(value ?? "all")}>
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Channel" />
+            <SelectValue placeholder={common.channelFilterPlaceholder} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All channels</SelectItem>
-            <SelectItem value="email">Email</SelectItem>
-            <SelectItem value="sms">SMS</SelectItem>
+            <SelectItem value="all">{common.allChannels}</SelectItem>
+            <SelectItem value="email">{common.channelEmail}</SelectItem>
+            <SelectItem value="sms">{common.channelSms}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={status} onValueChange={(value) => setStatus(value ?? "all")}>
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder={common.statusFilterPlaceholder} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="sent">Sent</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="all">{common.allStatuses}</SelectItem>
+            <SelectItem value="pending">{common.statusPending}</SelectItem>
+            <SelectItem value="sent">{common.statusSent}</SelectItem>
+            <SelectItem value="failed">{common.statusFailed}</SelectItem>
+            <SelectItem value="cancelled">{common.statusCancelled}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -84,7 +87,7 @@ export function NotificationDeliveriesHost() {
 
       {!isPending && (!data?.data || data.data.length === 0) ? (
         <div className="rounded-md border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">No deliveries yet.</p>
+          <p className="text-sm text-muted-foreground">{t.empty}</p>
         </div>
       ) : null}
 
@@ -112,7 +115,7 @@ export function NotificationDeliveriesHost() {
                     ) : null}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs">
-                    {delivery.templateSlug ?? "direct"}
+                    {delivery.templateSlug ?? common.directTemplate}
                   </td>
                   <td className="px-4 py-3">
                     <Badge variant="outline">{delivery.channel}</Badge>
@@ -149,9 +152,7 @@ export function NotificationDeliveriesHost() {
                             deliveryMutation.resend.mutate(delivery.id, {
                               onError(error) {
                                 window.alert(
-                                  error instanceof Error
-                                    ? error.message
-                                    : "Notification resend failed",
+                                  error instanceof Error ? error.message : t.resendFailed,
                                 )
                               },
                             })
@@ -162,7 +163,7 @@ export function NotificationDeliveriesHost() {
                           ) : (
                             <RotateCcw className="mr-2 h-4 w-4" />
                           )}
-                          Resend
+                          {t.resend}
                         </Button>
                       ) : null}
                       <Button
@@ -172,7 +173,7 @@ export function NotificationDeliveriesHost() {
                         onClick={() => setSelectedDelivery(delivery)}
                       >
                         <Search className="mr-2 h-4 w-4" />
-                        Details
+                        {t.detailsButton}
                       </Button>
                     </div>
                   </td>
@@ -184,6 +185,7 @@ export function NotificationDeliveriesHost() {
       ) : null}
 
       <DeliveryDetailsDialog
+        messages={messages}
         delivery={selectedDelivery}
         open={Boolean(selectedDelivery)}
         onOpenChange={(open) => {
@@ -194,9 +196,7 @@ export function NotificationDeliveriesHost() {
             ? () => {
                 deliveryMutation.resend.mutate(selectedDeliveryId, {
                   onError(error) {
-                    window.alert(
-                      error instanceof Error ? error.message : "Notification resend failed",
-                    )
+                    window.alert(error instanceof Error ? error.message : t.resendFailed)
                   },
                 })
               }
@@ -209,12 +209,14 @@ export function NotificationDeliveriesHost() {
 }
 
 function DeliveryDetailsDialog({
+  messages,
   delivery,
   open,
   onOpenChange,
   onResend,
   isResending = false,
 }: {
+  messages: NotificationsUiMessages
   delivery: NotificationDeliveryRecord | null
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -223,6 +225,7 @@ function DeliveryDetailsDialog({
 }) {
   if (!delivery) return null
 
+  const t = messages.admin.deliveriesPage
   const failureLog = readRecord(delivery.metadata?.failureLog)
 
   return (
@@ -231,10 +234,8 @@ function DeliveryDetailsDialog({
         <DialogHeader>
           <div className="flex items-start justify-between gap-4 pr-8">
             <div className="space-y-2">
-              <DialogTitle>Delivery details</DialogTitle>
-              <DialogDescription>
-                Provider response, failure log, rendered content, and payload for this notification.
-              </DialogDescription>
+              <DialogTitle>{t.dialogTitle}</DialogTitle>
+              <DialogDescription>{t.dialogDescription}</DialogDescription>
             </div>
             {onResend ? (
               <Button
@@ -249,48 +250,56 @@ function DeliveryDetailsDialog({
                 ) : (
                   <RotateCcw className="mr-2 h-4 w-4" />
                 )}
-                Resend
+                {t.resend}
               </Button>
             ) : null}
           </div>
         </DialogHeader>
         <DialogBody className="space-y-5">
           <section className="grid gap-3 sm:grid-cols-2">
-            <Detail label="Delivery ID" value={delivery.id} mono />
-            <Detail label="Status" value={delivery.status} />
-            <Detail label="Provider" value={delivery.provider} />
-            <Detail label="Provider message ID" value={delivery.providerMessageId ?? "—"} mono />
-            <Detail label="Template" value={delivery.templateSlug ?? "direct"} mono />
-            <Detail label="Channel" value={delivery.channel} />
-            <Detail label="Created" value={formatDateTime(delivery.createdAt)} />
-            <Detail label="Failed" value={formatDateTime(delivery.failedAt)} />
-            <Detail label="Sent" value={formatDateTime(delivery.sentAt)} />
-            <Detail label="Scheduled" value={formatDateTime(delivery.scheduledFor)} />
+            <Detail label={t.labels.deliveryId} value={delivery.id} mono />
+            <Detail label={t.labels.status} value={delivery.status} />
+            <Detail label={t.labels.provider} value={delivery.provider} />
+            <Detail
+              label={t.labels.providerMessageId}
+              value={delivery.providerMessageId ?? "—"}
+              mono
+            />
+            <Detail
+              label={t.labels.template}
+              value={delivery.templateSlug ?? messages.admin.common.directTemplate}
+              mono
+            />
+            <Detail label={t.labels.channel} value={delivery.channel} />
+            <Detail label={t.labels.created} value={formatDateTime(delivery.createdAt)} />
+            <Detail label={t.labels.failed} value={formatDateTime(delivery.failedAt)} />
+            <Detail label={t.labels.sent} value={formatDateTime(delivery.sentAt)} />
+            <Detail label={t.labels.scheduled} value={formatDateTime(delivery.scheduledFor)} />
           </section>
 
           {delivery.errorMessage ? (
-            <LogSection title="Error message" tone="destructive">
+            <LogSection title={t.errorMessageTitle} tone="destructive">
               {delivery.errorMessage}
             </LogSection>
           ) : null}
 
           {failureLog ? (
-            <JsonSection title="Failure log" value={failureLog} />
+            <JsonSection title={t.failureLogTitle} value={failureLog} />
           ) : delivery.status === "failed" ? (
-            <LogSection title="Failure log">No structured failure log was captured.</LogSection>
+            <LogSection title={t.failureLogTitle}>{t.noFailureLog}</LogSection>
           ) : null}
 
           <section className="grid gap-3 sm:grid-cols-2">
-            <Detail label="To" value={delivery.toAddress} />
-            <Detail label="From" value={delivery.fromAddress ?? "—"} />
-            <Detail label="Subject" value={delivery.subject ?? "—"} />
-            <Detail label="Target" value={formatTarget(delivery)} mono />
+            <Detail label={t.labels.to} value={delivery.toAddress} />
+            <Detail label={t.labels.from} value={delivery.fromAddress ?? "—"} />
+            <Detail label={t.labels.subject} value={delivery.subject ?? "—"} />
+            <Detail label={t.labels.target} value={formatTarget(delivery)} mono />
           </section>
 
-          <JsonSection title="Payload data" value={delivery.payloadData} />
-          <JsonSection title="Metadata" value={delivery.metadata} />
-          <BodySection title="Text body" value={delivery.textBody} />
-          <BodySection title="HTML body" value={delivery.htmlBody} />
+          <JsonSection title={t.payloadDataTitle} value={delivery.payloadData} />
+          <JsonSection title={t.metadataTitle} value={delivery.metadata} />
+          <BodySection title={t.textBodyTitle} value={delivery.textBody} />
+          <BodySection title={t.htmlBodyTitle} value={delivery.htmlBody} />
         </DialogBody>
       </DialogContent>
     </Dialog>
@@ -320,6 +329,7 @@ function LogSection({
       <h2 className="font-medium text-sm">{title}</h2>
       <pre
         className={`max-h-56 overflow-auto rounded-md border p-3 text-xs ${
+          // i18n-literal-ok tailwind utilities keyed off a tone enum, not user-facing copy.
           tone === "destructive" ? "border-destructive/30 bg-destructive/10" : "bg-muted/30"
         }`}
       >

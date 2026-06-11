@@ -34,10 +34,10 @@ describe("createResourcesAdminExtension", () => {
     ])
   })
 
-  it("honors basePath and label", () => {
+  it("honors basePath and labels", () => {
     const extension = createResourcesAdminExtension({
       basePath: "/assets",
-      label: "Resurse",
+      labels: { resources: "Resurse" },
     })
     const index = extension.routes?.find((route) => route.id === "resources-index")
     expect(index?.path).toBe("/assets")

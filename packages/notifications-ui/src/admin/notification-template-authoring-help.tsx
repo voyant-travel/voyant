@@ -13,6 +13,8 @@ import {
   type TemplateAuthoringVariableGroup,
 } from "@voyantjs/ui/components/contract-template-authoring-help"
 
+import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
+
 type NotificationTemplateAuthoringHelpProps = {
   variableGroups: NotificationTemplateVariableCategory[]
   snippets?: NotificationLiquidSnippet[]
@@ -43,14 +45,13 @@ export function NotificationTemplateAuthoringHelp({
   className,
   messages,
 }: NotificationTemplateAuthoringHelpProps) {
+  const defaults = useNotificationsUiMessagesOrDefault().admin.authoringHelp
+
   return (
     <ContractTemplateAuthoringHelp
       className={className}
-      title={messages?.title ?? "Notification variables"}
-      description={
-        messages?.description ??
-        "Notifications render with Liquid. Use variables for subject/body content and control tags for conditionals or loops."
-      }
+      title={messages?.title ?? defaults.title}
+      description={messages?.description ?? defaults.description}
       messages={messages}
       variableGroups={variableGroups as TemplateAuthoringVariableGroup[]}
       snippets={snippets as TemplateAuthoringSnippet[]}

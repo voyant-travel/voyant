@@ -60,8 +60,10 @@ export { ResourcesBodySkeleton, ResourcesPageSkeleton } from "./resources-page-s
 export interface CreateResourcesAdminExtensionOptions {
   /** Mount path of the resources pages inside the admin workspace. Default `/resources`. */
   basePath?: string
-  /** Localized page title. Default is the English operator nav label. */
-  label?: string
+  /** Localized page titles. Defaults are the English operator nav labels. */
+  labels?: {
+    resources?: string
+  }
 }
 
 /**
@@ -94,7 +96,8 @@ export interface CreateResourcesAdminExtensionOptions {
 export function createResourcesAdminExtension(
   options: CreateResourcesAdminExtensionOptions = {},
 ): AdminExtension {
-  const { basePath = "/resources", label = "Resources" } = options
+  const { basePath = "/resources", labels = {} } = options
+  const { resources = "Resources" } = labels
 
   return defineAdminExtension({
     id: "resources",
@@ -102,27 +105,27 @@ export function createResourcesAdminExtension(
       {
         id: "resources-index",
         path: basePath,
-        title: label,
+        title: resources,
       },
       {
         id: "resources-detail",
         path: `${basePath}/$id`,
-        title: label,
+        title: resources,
       },
       {
         id: "resources-pool-detail",
         path: `${basePath}/pools/$id`,
-        title: label,
+        title: resources,
       },
       {
         id: "resources-assignment-detail",
         path: `${basePath}/assignments/$id`,
-        title: label,
+        title: resources,
       },
       {
         id: "resources-allocation-detail",
         path: `${basePath}/allocations/$id`,
-        title: label,
+        title: resources,
       },
     ],
   })

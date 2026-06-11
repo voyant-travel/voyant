@@ -28,10 +28,10 @@ describe("createBookingsAdminExtension", () => {
     expect(routes.map((route) => route.path)).toEqual(["/bookings", "/bookings/$id"])
   })
 
-  it("honors basePath and label", () => {
+  it("honors basePath and labels", () => {
     const extension = createBookingsAdminExtension({
       basePath: "/reservations",
-      label: "Rezervări",
+      labels: { bookings: "Rezervări" },
     })
     const index = extension.routes?.find((route) => route.id === "bookings-index")
     expect(index?.path).toBe("/reservations")

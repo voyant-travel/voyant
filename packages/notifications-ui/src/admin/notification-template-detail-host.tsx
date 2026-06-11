@@ -25,6 +25,7 @@ import { ArrowLeft, Loader2, Pencil } from "lucide-react"
 import { lazy, Suspense, useMemo, useState } from "react"
 import { toast } from "sonner"
 
+import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
 import { NotificationDeliveryDetailDialog } from "./notification-delivery-detail-dialog.js"
 import { DestinationLink } from "./notifications-admin-shared.js"
 
@@ -105,6 +106,9 @@ export interface NotificationTemplateDetailHostProps {
  * the `notificationTemplate.list` semantic destination.
  */
 export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetailHostProps) {
+  const messages = useNotificationsUiMessagesOrDefault()
+  const t = messages.admin.templateDetail
+  const common = messages.admin.common
   const [editOpen, setEditOpen] = useState(false)
   const [previewDataInput, setPreviewDataInput] = useState("")
   const [selectedDeliveryId, setSelectedDeliveryId] = useState<string | null>(null)
@@ -139,12 +143,12 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
     try {
       const parsed = previewDataInput.trim() ? JSON.parse(previewDataInput) : {}
       if (typeof parsed !== "object" || parsed == null || Array.isArray(parsed)) {
-        throw new Error("Preview data must be a JSON object.")
+        throw new Error(common.previewDataNotObject)
       }
       return parsed as Record<string, unknown>
     } catch (previewError) {
       throw new Error(
-        previewError instanceof Error ? previewError.message : "Preview data is invalid JSON.",
+        previewError instanceof Error ? previewError.message : common.previewInvalidJson,
       )
     }
   }
@@ -163,7 +167,7 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
         data,
       })
     } catch (previewError) {
-      toast.error(previewError instanceof Error ? previewError.message : "Preview failed")
+      toast.error(previewError instanceof Error ? previewError.message : common.previewFailed)
     }
   }
 
@@ -184,10 +188,10 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to templates
+          {t.backToTemplates}
         </DestinationLink>
         <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error instanceof Error ? error.message : "Notification template not found."}
+          {error instanceof Error ? error.message : t.notFound}
         </div>
       </div>
     )
@@ -205,7 +209,7 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to templates
+            {t.backToTemplates}
           </DestinationLink>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{template.name}</h1>
@@ -220,34 +224,34 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
         </div>
         <Button onClick={() => setEditOpen(true)}>
           <Pencil className="mr-2 h-4 w-4" />
-          Edit Template
+          {t.editTemplate}
         </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetaCard label="Channel" value={template.channel} />
-        <MetaCard label="From" value={template.fromAddress ?? "Default sender"} />
-        <MetaCard label="Updated" value={new Date(template.updatedAt).toLocaleString()} />
+        <MetaCard label={t.metaChannel} value={template.channel} />
+        <MetaCard label={t.metaFrom} value={template.fromAddress ?? common.defaultSender} />
+        <MetaCard label={t.metaUpdated} value={new Date(template.updatedAt).toLocaleString()} />
       </div>
 
       <Tabs defaultValue="overview">
         <TabsList className="w-full">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="preview">Preview</TabsTrigger>
-          <TabsTrigger value="deliveries">Recent deliveries</TabsTrigger>
+          <TabsTrigger value="overview">{t.tabOverview}</TabsTrigger>
+          <TabsTrigger value="preview">{t.tabPreview}</TabsTrigger>
+          <TabsTrigger value="deliveries">{t.recentDeliveries}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4 space-y-4">
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Message structure</CardTitle>
+                <CardTitle>{t.messageStructureTitle}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
-                <KeyValue label="Subject" value={template.subjectTemplate ?? "—"} />
-                <KeyValue label="Text fallback" value={template.textTemplate ?? "—"} />
+                <KeyValue label={t.subjectLabel} value={template.subjectTemplate ?? "—"} />
+                <KeyValue label={t.textFallbackLabel} value={template.textTemplate ?? "—"} />
                 <KeyValue
-                  label="Description"
+                  label={t.descriptionLabel}
                   value={template.metadata ? JSON.stringify(template.metadata) : "—"}
                 />
               </CardContent>
@@ -255,7 +259,7 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
 
             <Card>
               <CardHeader>
-                <CardTitle>HTML body</CardTitle>
+                <CardTitle>{t.htmlBodyTitle}</CardTitle>
               </CardHeader>
               <CardContent>
                 {template.htmlTemplate ? (
@@ -266,7 +270,7 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
                   />
                 ) : (
                   <div className="rounded-md border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-                    No HTML body configured.
+                    {t.noHtmlConfigured}
                   </div>
                 )}
               </CardContent>
@@ -278,10 +282,10 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <Card>
               <CardHeader>
-                <CardTitle>Sample data</CardTitle>
+                <CardTitle>{t.sampleDataTitle}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Label>Render with custom JSON</Label>
+                <Label>{t.customJsonLabel}</Label>
                 <Textarea
                   value={previewDataInput || defaultPreviewData}
                   onChange={(event) => setPreviewDataInput(event.target.value)}
@@ -295,22 +299,25 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
                   disabled={preview.isPending}
                 >
                   {preview.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Render Preview
+                  {t.renderPreview}
                 </Button>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Rendered output</CardTitle>
+                <CardTitle>{t.renderedOutputTitle}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <KeyValue label="Subject" value={renderedPreview?.subject ?? "Not rendered yet."} />
+                <KeyValue
+                  label={t.subjectLabel}
+                  value={renderedPreview?.subject ?? t.notRenderedYet}
+                />
                 {template.channel === "email" ? (
                   <>
                     <div className="space-y-1">
                       <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                        HTML body
+                        {t.htmlBodyTitle}
                       </div>
                       {renderedPreview?.html ? (
                         <div
@@ -320,26 +327,26 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
                         />
                       ) : (
                         <div className="rounded-md border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-                          No rendered HTML yet.
+                          {t.noRenderedHtml}
                         </div>
                       )}
                     </div>
                     <div className="space-y-1">
                       <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                        Text fallback
+                        {t.textFallbackLabel}
                       </div>
                       <pre className="whitespace-pre-wrap rounded-md border bg-muted/20 px-3 py-3 text-xs">
-                        {renderedPreview?.text ?? "No rendered text yet."}
+                        {renderedPreview?.text ?? t.noRenderedText}
                       </pre>
                     </div>
                   </>
                 ) : (
                   <div className="space-y-1">
                     <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                      SMS body
+                      {t.smsBodyLabel}
                     </div>
                     <pre className="whitespace-pre-wrap rounded-md border bg-muted/20 px-3 py-3 text-xs">
-                      {renderedPreview?.text ?? "No rendered text yet."}
+                      {renderedPreview?.text ?? t.noRenderedText}
                     </pre>
                   </div>
                 )}
@@ -351,7 +358,7 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
         <TabsContent value="deliveries" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Recent deliveries</CardTitle>
+              <CardTitle>{t.recentDeliveries}</CardTitle>
             </CardHeader>
             <CardContent>
               {deliveries.isPending ? (
@@ -404,7 +411,7 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
                               size="sm"
                               onClick={() => setSelectedDeliveryId(delivery.id)}
                             >
-                              Inspect
+                              {t.inspect}
                             </Button>
                           </td>
                         </tr>
@@ -414,7 +421,7 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
                 </div>
               ) : (
                 <div className="rounded-md border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
-                  No deliveries recorded for this template yet.
+                  {t.noDeliveriesForTemplate}
                 </div>
               )}
             </CardContent>

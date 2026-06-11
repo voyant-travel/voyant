@@ -12,6 +12,8 @@ import {
 } from "@voyantjs/ui/components"
 import { Loader2 } from "lucide-react"
 
+import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
+
 type NotificationDeliveryDetailDialogProps = {
   deliveryId: string | null
   open: boolean
@@ -23,6 +25,8 @@ export function NotificationDeliveryDetailDialog({
   open,
   onOpenChange,
 }: NotificationDeliveryDetailDialogProps) {
+  const messages = useNotificationsUiMessagesOrDefault()
+  const t = messages.admin.deliveryDetail
   const { data, isPending, error } = useNotificationDelivery(deliveryId ?? "", {
     enabled: open && Boolean(deliveryId),
   })
@@ -33,7 +37,7 @@ export function NotificationDeliveryDetailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
-          <DialogTitle>Delivery details</DialogTitle>
+          <DialogTitle>{t.title}</DialogTitle>
         </DialogHeader>
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto py-4 pr-1">
           {isPending ? (
@@ -44,19 +48,23 @@ export function NotificationDeliveryDetailDialog({
 
           {!isPending && error ? (
             <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {error instanceof Error ? error.message : "Failed to load delivery."}
+              {error instanceof Error ? error.message : t.loadFailed}
             </div>
           ) : null}
 
           {!isPending && delivery ? (
             <>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <InfoCard label="To" value={delivery.toAddress} />
-                <InfoCard label="Template" value={delivery.templateSlug ?? "direct"} mono />
-                <InfoCard label="Provider" value={delivery.provider} />
+                <InfoCard label={t.labels.to} value={delivery.toAddress} />
+                <InfoCard
+                  label={t.labels.template}
+                  value={delivery.templateSlug ?? messages.admin.common.directTemplate}
+                  mono
+                />
+                <InfoCard label={t.labels.provider} value={delivery.provider} />
                 <div className="rounded-md border p-3">
                   <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Status
+                    {t.labels.status}
                   </div>
                   <div className="mt-2">
                     <Badge
@@ -75,33 +83,36 @@ export function NotificationDeliveryDetailDialog({
               </div>
 
               <div className="grid gap-4 lg:grid-cols-2">
-                <Section title="Metadata">
-                  <KeyValue label="Channel" value={delivery.channel} />
-                  <KeyValue label="From" value={delivery.fromAddress ?? "—"} />
-                  <KeyValue label="Target type" value={delivery.targetType} />
-                  <KeyValue label="Target id" value={delivery.targetId ?? "—"} mono />
+                <Section title={t.metadataTitle}>
+                  <KeyValue label={t.labels.channel} value={delivery.channel} />
+                  <KeyValue label={t.labels.from} value={delivery.fromAddress ?? "—"} />
+                  <KeyValue label={t.labels.targetType} value={delivery.targetType} />
+                  <KeyValue label={t.labels.targetId} value={delivery.targetId ?? "—"} mono />
                   <KeyValue
-                    label="Provider message id"
+                    label={t.labels.providerMessageId}
                     value={delivery.providerMessageId ?? "—"}
                     mono
                   />
-                  <KeyValue label="Created" value={new Date(delivery.createdAt).toLocaleString()} />
                   <KeyValue
-                    label="Sent"
+                    label={t.labels.created}
+                    value={new Date(delivery.createdAt).toLocaleString()}
+                  />
+                  <KeyValue
+                    label={t.labels.sent}
                     value={delivery.sentAt ? new Date(delivery.sentAt).toLocaleString() : "—"}
                   />
                   <KeyValue
-                    label="Failed"
+                    label={t.labels.failed}
                     value={delivery.failedAt ? new Date(delivery.failedAt).toLocaleString() : "—"}
                   />
                 </Section>
 
-                <Section title="Rendered payload">
-                  <KeyValue label="Subject" value={delivery.subject ?? "—"} />
-                  <KeyValue label="Error" value={delivery.errorMessage ?? "—"} />
+                <Section title={t.renderedPayloadTitle}>
+                  <KeyValue label={t.labels.subject} value={delivery.subject ?? "—"} />
+                  <KeyValue label={t.labels.error} value={delivery.errorMessage ?? "—"} />
                   <div className="space-y-1">
                     <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Text
+                      {t.labels.text}
                     </div>
                     <pre className="whitespace-pre-wrap rounded-md border bg-muted/20 px-3 py-3 text-xs">
                       {delivery.textBody ?? "—"}
@@ -110,7 +121,7 @@ export function NotificationDeliveryDetailDialog({
                 </Section>
               </div>
 
-              <Section title="HTML body">
+              <Section title={t.htmlBodyTitle}>
                 {delivery.htmlBody ? (
                   <div
                     className="prose prose-sm max-w-none rounded-md border bg-background px-4 py-4 dark:prose-invert"
@@ -119,12 +130,12 @@ export function NotificationDeliveryDetailDialog({
                   />
                 ) : (
                   <div className="rounded-md border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-                    No HTML body stored for this delivery.
+                    {t.noHtmlStored}
                   </div>
                 )}
               </Section>
 
-              <Section title="Payload data">
+              <Section title={t.payloadDataTitle}>
                 <pre className="overflow-x-auto whitespace-pre-wrap rounded-md border bg-muted/20 px-3 py-3 text-xs">
                   {JSON.stringify(delivery.payloadData ?? {}, null, 2)}
                 </pre>
@@ -134,7 +145,7 @@ export function NotificationDeliveryDetailDialog({
         </div>
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-            Close
+            {t.close}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -163,6 +174,7 @@ function InfoCard({
   return (
     <div className="rounded-md border p-3">
       <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
+      {/* i18n-literal-ok tailwind utilities behind a mono toggle, not user-facing copy. */}
       <div className={`mt-2 break-words text-sm ${mono ? "font-mono text-xs" : ""}`}>{value}</div>
     </div>
   )
@@ -180,6 +192,7 @@ function KeyValue({
   return (
     <div className="grid gap-1">
       <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
+      {/* i18n-literal-ok tailwind utilities behind a mono toggle, not user-facing copy. */}
       <div className={`break-words text-sm ${mono ? "font-mono text-xs" : ""}`}>{value}</div>
     </div>
   )

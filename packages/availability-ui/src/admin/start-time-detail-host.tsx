@@ -38,14 +38,16 @@ export function AvailabilityStartTimeDetailHost({
   const startTimeQuery = useQuery(getAvailabilityStartTimeDetailQueryOptions(client, startTimeId))
   const startTime = startTimeQuery.data?.data
 
+  const startTimeFallback = messages.availability.details.startTime.fallbackTitle
+
   useAdminBreadcrumbs([
     { label: messages.availability.title, href: resolveHref("availabilitySlot.list", {}) },
     ...(startTime
       ? [
           {
             label: startTime.label
-              ? `${startTime.productName ?? "Start time"} · ${startTime.label}`
-              : (startTime.productName ?? `Start time ${startTime.startTimeLocal}`),
+              ? `${startTime.productName ?? startTimeFallback} · ${startTime.label}`
+              : (startTime.productName ?? `${startTimeFallback} ${startTime.startTimeLocal}`),
           },
         ]
       : []),

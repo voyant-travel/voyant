@@ -37,8 +37,10 @@ export { SuppliersListSkeleton } from "./suppliers-list-skeleton.js"
 export interface CreateSuppliersAdminExtensionOptions {
   /** Mount path of the supplier pages inside the admin workspace. Default `/suppliers`. */
   basePath?: string
-  /** Localized page title. Default is the English operator nav label. */
-  label?: string
+  /** Localized page titles. Defaults are the English operator nav labels. */
+  labels?: {
+    suppliers?: string
+  }
 }
 
 /**
@@ -75,7 +77,8 @@ export interface CreateSuppliersAdminExtensionOptions {
 export function createSuppliersAdminExtension(
   options: CreateSuppliersAdminExtensionOptions = {},
 ): AdminExtension {
-  const { basePath = "/suppliers", label = "Suppliers" } = options
+  const { basePath = "/suppliers", labels = {} } = options
+  const { suppliers = "Suppliers" } = labels
 
   return defineAdminExtension({
     id: "suppliers",
@@ -83,12 +86,12 @@ export function createSuppliersAdminExtension(
       {
         id: "suppliers-index",
         path: basePath,
-        title: label,
+        title: suppliers,
       },
       {
         id: "suppliers-detail",
         path: `${basePath}/$id`,
-        title: label,
+        title: suppliers,
       },
     ],
   })

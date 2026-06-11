@@ -16,8 +16,10 @@ export {
 } from "../promotions-page.js"
 
 export interface CreatePromotionsAdminExtensionOptions {
-  /** Localized nav/page label. Defaults to "Promotions". */
-  label?: string
+  /** Localized nav/page labels. Defaults are the English operator nav labels. */
+  labels?: {
+    promotions?: string
+  }
   /** Nav icon — icon choice stays with the host (e.g. lucide `Tag`). */
   icon?: NavItem["icon"]
   /** Nav ordering past the host's base items. Default 50. */
@@ -35,21 +37,22 @@ export interface CreatePromotionsAdminExtensionOptions {
 export function createPromotionsAdminExtension(
   options: CreatePromotionsAdminExtensionOptions = {},
 ): AdminExtension {
-  const { label = "Promotions", icon, order = 50, path = "/promotions" } = options
+  const { labels = {}, icon, order = 50, path = "/promotions" } = options
+  const { promotions = "Promotions" } = labels
 
   return defineAdminExtension({
     id: "promotions",
     navigation: [
       {
         order,
-        items: [{ id: "promotions", title: label, url: path, icon }],
+        items: [{ id: "promotions", title: promotions, url: path, icon }],
       },
     ],
     routes: [
       {
         id: "promotions-index",
         path,
-        title: label,
+        title: promotions,
         ssr: "data-only",
         component: PromotionsPage,
         loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>

@@ -1,6 +1,7 @@
 "use client"
 
 import type { Editor } from "@tiptap/core"
+import { formatMessage } from "@voyantjs/i18n"
 import {
   type NotificationTemplateRecord,
   useNotificationTemplateAuthoring,
@@ -37,24 +38,32 @@ import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod/v4"
 
+import { type NotificationsUiMessages, useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
 import { NotificationTemplateAuthoringHelp } from "./notification-template-authoring-help.js"
 
-const CHANNEL_ITEMS = [
-  { label: "Email", value: "email" },
-  { label: "SMS", value: "sms" },
-] as const
+const CHANNEL_VALUES = ["email", "sms"] as const
+const STATUS_VALUES = ["draft", "active", "archived"] as const
+const ATTACHMENT_VALUES = ["contract", "invoice", "brochure"] as const
 
-const STATUS_ITEMS = [
-  { label: "Draft", value: "draft" },
-  { label: "Active", value: "active" },
-  { label: "Archived", value: "archived" },
-] as const
+const channelItemLabel = (
+  t: NotificationsUiMessages["admin"]["common"],
+  value: (typeof CHANNEL_VALUES)[number],
+) => (value === "email" ? t.channelEmail : t.channelSms)
 
-const ATTACHMENT_ITEMS = [
-  { label: "Contract", value: "contract" },
-  { label: "Invoice", value: "invoice" },
-  { label: "Brochure", value: "brochure" },
-] as const
+const statusItemLabel = (
+  t: NotificationsUiMessages["admin"]["common"],
+  value: (typeof STATUS_VALUES)[number],
+) => (value === "draft" ? t.statusDraft : value === "active" ? t.statusActive : t.statusArchived)
+
+const attachmentItemLabel = (
+  t: NotificationsUiMessages["admin"]["templateDialog"],
+  value: (typeof ATTACHMENT_VALUES)[number],
+) =>
+  value === "contract"
+    ? t.attachmentContract
+    : value === "invoice"
+      ? t.attachmentInvoice
+      : t.attachmentBrochure
 
 const nativeSelectClassName =
   "h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30"
@@ -171,8 +180,8 @@ function readTemplateAttachments(metadata: unknown): TemplateAttachment[] {
     return []
   }
 
-  const allowed = new Set(ATTACHMENT_ITEMS.map((item) => item.value))
-  return ATTACHMENT_ITEMS.map((item) => item.value).filter(
+  const allowed = new Set(ATTACHMENT_VALUES)
+  return ATTACHMENT_VALUES.filter(
     (attachment) => allowed.has(attachment) && value.includes(attachment),
   )
 }
@@ -208,6 +217,9 @@ function NotificationTemplateDialogInner({
   onSuccess,
 }: NotificationTemplateDialogProps) {
   const isEditing = Boolean(template)
+  const messages = useNotificationsUiMessagesOrDefault()
+  const t = messages.admin.templateDialog
+  const common = messages.admin.common
   const { create, update } = useNotificationTemplateMutation()
   const { preview, testSend } = useNotificationTemplateTools()
   const previewResetRef = useRef(preview.reset)
@@ -334,11 +346,11 @@ function NotificationTemplateDialogInner({
     try {
       const parsed = previewDataInput.trim() ? JSON.parse(previewDataInput) : {}
       if (typeof parsed !== "object" || parsed == null || Array.isArray(parsed)) {
-        throw new Error("Preview data must be a JSON object.")
+        throw new Error(common.previewDataNotObject)
       }
       return parsed as Record<string, unknown>
     } catch (error) {
-      throw new Error(error instanceof Error ? error.message : "Preview data is invalid JSON.")
+      throw new Error(error instanceof Error ? error.message : common.previewInvalidJson)
     }
   }
 
@@ -356,7 +368,8 @@ function NotificationTemplateDialogInner({
     const current = form.getValues(fieldName) ?? ""
     const nextValue =
       kind === "variable"
-        ? `${current}${current ? " " : ""}${variableReference(content)}`
+        ? // i18n-literal-ok single-space joiner between Liquid tokens, not user-facing copy.
+          `${current}${current ? " " : ""}${variableReference(content)}`
         : appendTemplateValue(current, content)
     form.setValue(fieldName, nextValue, {
       shouldDirty: true,
@@ -378,15 +391,13 @@ function NotificationTemplateDialogInner({
         data,
       })
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Preview failed")
+      toast.error(error instanceof Error ? error.message : common.previewFailed)
     }
   }
 
   const handleTestSend = async () => {
     if (!testRecipient.trim()) {
-      toast.error(
-        channel === "email" ? "Recipient email is required." : "Recipient phone is required.",
-      )
+      toast.error(channel === "email" ? t.recipientEmailRequired : t.recipientPhoneRequired)
       return
     }
 
@@ -403,9 +414,9 @@ function NotificationTemplateDialogInner({
         data,
         targetType: "other",
       })
-      toast.success(`Test ${channel === "email" ? "email" : "SMS"} queued successfully.`)
+      toast.success(channel === "email" ? t.testQueuedEmail : t.testQueuedSms)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Test send failed")
+      toast.error(error instanceof Error ? error.message : t.testSendFailed)
     }
   }
 
@@ -430,23 +441,21 @@ function NotificationTemplateDialogInner({
           className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden"
         >
           <DialogHeader>
-            <DialogTitle>
-              {isEditing ? "Edit Notification Template" : "New Notification Template"}
-            </DialogTitle>
+            <DialogTitle>{isEditing ? t.editTitle : t.createTitle}</DialogTitle>
           </DialogHeader>
           <ScrollArea className="min-h-0 flex-1">
             <div className="grid gap-4 py-4 pr-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
-                  <Label>Name</Label>
-                  <Input {...form.register("name")} placeholder="Booking confirmation" />
+                  <Label>{t.nameLabel}</Label>
+                  <Input {...form.register("name")} placeholder={t.namePlaceholder} />
                   {form.formState.errors.name ? (
                     <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
                   ) : null}
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label>Slug</Label>
-                  <Input {...form.register("slug")} placeholder="booking-confirmation" />
+                  <Label>{t.slugLabel}</Label>
+                  <Input {...form.register("slug")} placeholder={t.slugPlaceholder} />
                   {form.formState.errors.slug ? (
                     <p className="text-xs text-destructive">{form.formState.errors.slug.message}</p>
                   ) : null}
@@ -455,7 +464,7 @@ function NotificationTemplateDialogInner({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
-                  <Label>Channel</Label>
+                  <Label>{t.channelLabel}</Label>
                   <select
                     className={nativeSelectClassName}
                     value={form.watch("channel")}
@@ -469,15 +478,15 @@ function NotificationTemplateDialogInner({
                       })
                     }}
                   >
-                    {CHANNEL_ITEMS.map((item) => (
-                      <option key={item.value} value={item.value}>
-                        {item.label}
+                    {CHANNEL_VALUES.map((value) => (
+                      <option key={value} value={value}>
+                        {channelItemLabel(common, value)}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label>Status</Label>
+                  <Label>{t.statusLabel}</Label>
                   <select
                     className={nativeSelectClassName}
                     value={form.watch("status")}
@@ -491,9 +500,9 @@ function NotificationTemplateDialogInner({
                       })
                     }}
                   >
-                    {STATUS_ITEMS.map((item) => (
-                      <option key={item.value} value={item.value}>
-                        {item.label}
+                    {STATUS_VALUES.map((value) => (
+                      <option key={value} value={value}>
+                        {statusItemLabel(common, value)}
                       </option>
                     ))}
                   </select>
@@ -503,25 +512,25 @@ function NotificationTemplateDialogInner({
               {channel === "email" ? (
                 <>
                   <div className="flex flex-col gap-2">
-                    <Label>Attachments</Label>
+                    <Label>{t.attachmentsLabel}</Label>
                     <div className="flex flex-wrap gap-3">
-                      {ATTACHMENT_ITEMS.map((item) => (
+                      {ATTACHMENT_VALUES.map((value) => (
                         <div
-                          key={item.value}
+                          key={value}
                           className="flex h-9 items-center gap-2 rounded-md border px-3 text-sm"
                         >
                           <Checkbox
-                            id={`notification-template-attachment-${item.value}`}
-                            checked={attachments.includes(item.value)}
+                            id={`notification-template-attachment-${value}`}
+                            checked={attachments.includes(value)}
                             onCheckedChange={(checked) =>
-                              setAttachmentSelected(item.value, checked === true)
+                              setAttachmentSelected(value, checked === true)
                             }
                           />
                           <Label
-                            htmlFor={`notification-template-attachment-${item.value}`}
+                            htmlFor={`notification-template-attachment-${value}`}
                             className="cursor-pointer text-sm font-normal"
                           >
-                            {item.label}
+                            {attachmentItemLabel(t, value)}
                           </Label>
                         </div>
                       ))}
@@ -530,23 +539,23 @@ function NotificationTemplateDialogInner({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-2">
-                      <Label>From address</Label>
+                      <Label>{t.fromAddressLabel}</Label>
                       <Input
                         {...form.register("fromAddress")}
-                        placeholder="reservations@example.com"
+                        placeholder={t.fromAddressPlaceholder}
                       />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Label>Subject</Label>
+                      <Label>{t.subjectLabel}</Label>
                       <Input
                         {...form.register("subjectTemplate")}
-                        placeholder="Your booking {{ booking.reference }}"
+                        placeholder={t.subjectPlaceholder}
                       />
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <Label>HTML body</Label>
+                    <Label>{t.htmlBodyLabel}</Label>
                     <RichTextEditor
                       value={form.watch("htmlTemplate") ?? ""}
                       onChange={(value) =>
@@ -556,7 +565,7 @@ function NotificationTemplateDialogInner({
                           shouldValidate: true,
                         })
                       }
-                      placeholder="Compose the email body using Liquid variables..."
+                      placeholder={t.htmlBodyPlaceholder}
                       enableVariables
                       onEditorReady={setEditorInstance}
                     />
@@ -566,10 +575,10 @@ function NotificationTemplateDialogInner({
 
               {channel === "sms" ? (
                 <div className="flex flex-col gap-2">
-                  <Label>SMS body</Label>
+                  <Label>{t.smsBodyLabel}</Label>
                   <Textarea
                     {...form.register("textTemplate")}
-                    placeholder='Hi {{ traveler.firstName | default: "traveler" }}, your booking is confirmed.'
+                    placeholder={t.smsBodyPlaceholder}
                     rows={6}
                     className="font-mono text-xs"
                   />
@@ -578,14 +587,14 @@ function NotificationTemplateDialogInner({
 
               <Tabs defaultValue="authoring">
                 <TabsList className="w-full">
-                  <TabsTrigger value="authoring">Authoring</TabsTrigger>
-                  <TabsTrigger value="preview">Preview & Test</TabsTrigger>
+                  <TabsTrigger value="authoring">{t.tabAuthoring}</TabsTrigger>
+                  <TabsTrigger value="preview">{t.tabPreview}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="authoring" className="mt-4 space-y-4">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-[180px_1fr] sm:items-center">
                     <div className="flex flex-col gap-1.5">
-                      <Label>Insert into</Label>
+                      <Label>{t.insertIntoLabel}</Label>
                       <select
                         className={nativeSelectClassName}
                         value={insertionTarget}
@@ -595,15 +604,18 @@ function NotificationTemplateDialogInner({
                           setInsertionTarget(nextTarget)
                         }}
                       >
-                        {channel === "email" ? <option value="subject">Subject</option> : null}
-                        {channel === "email" ? <option value="body">HTML body</option> : null}
-                        {channel === "sms" ? <option value="text">SMS body</option> : null}
+                        {channel === "email" ? (
+                          <option value="subject">{t.insertTargetSubject}</option>
+                        ) : null}
+                        {channel === "email" ? (
+                          <option value="body">{t.insertTargetHtmlBody}</option>
+                        ) : null}
+                        {channel === "sms" ? (
+                          <option value="text">{t.insertTargetSmsBody}</option>
+                        ) : null}
                       </select>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Variables insert as Liquid tags in text fields and as inline chips in the
-                      rich-text HTML body.
-                    </p>
+                    <p className="text-xs text-muted-foreground">{t.insertHint}</p>
                   </div>
 
                   <NotificationTemplateAuthoringHelp
@@ -618,17 +630,15 @@ function NotificationTemplateDialogInner({
                   <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
                     <div className="space-y-4">
                       <div className="flex flex-col gap-2">
-                        <Label>Preview data (JSON)</Label>
+                        <Label>{t.previewDataLabel}</Label>
                         <Textarea
                           value={previewDataInput}
                           onChange={(event) => setPreviewDataInput(event.target.value)}
                           rows={14}
                           className="font-mono text-xs"
-                          placeholder='{"booking":{"reference":"BKG-2026-00125"}}'
+                          placeholder={t.previewDataPlaceholder}
                         />
-                        <p className="text-xs text-muted-foreground">
-                          Use sample JSON to preview Liquid rendering and send a safe test message.
-                        </p>
+                        <p className="text-xs text-muted-foreground">{t.previewDataHint}</p>
                       </div>
 
                       <div className="flex gap-2">
@@ -641,27 +651,27 @@ function NotificationTemplateDialogInner({
                           {preview.isPending ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           ) : null}
-                          Refresh Preview
+                          {t.refreshPreview}
                         </Button>
                       </div>
 
                       <div className="space-y-3 rounded-md border p-4">
-                        <div className="text-sm font-medium">Rendered preview</div>
+                        <div className="text-sm font-medium">{t.renderedPreviewTitle}</div>
 
                         {channel === "email" ? (
                           <div className="space-y-3">
                             <div className="space-y-1">
                               <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                                Subject
+                                {t.renderedSubjectLabel}
                               </div>
                               <div className="rounded-md border bg-muted/20 px-3 py-2 text-sm">
-                                {preview.data?.subject || "No subject rendered yet."}
+                                {preview.data?.subject || t.noSubjectRendered}
                               </div>
                             </div>
 
                             <div className="space-y-1">
                               <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                                HTML body
+                                {t.renderedHtmlLabel}
                               </div>
                               <div className="rounded-md border bg-background">
                                 {preview.data?.html ? (
@@ -672,7 +682,7 @@ function NotificationTemplateDialogInner({
                                   />
                                 ) : (
                                   <div className="px-3 py-3 text-sm text-muted-foreground">
-                                    No HTML content rendered yet.
+                                    {t.noHtmlRendered}
                                   </div>
                                 )}
                               </div>
@@ -681,10 +691,10 @@ function NotificationTemplateDialogInner({
                         ) : (
                           <div className="space-y-1">
                             <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                              SMS body
+                              {t.renderedSmsLabel}
                             </div>
                             <pre className="whitespace-pre-wrap rounded-md border bg-muted/20 px-3 py-3 text-xs">
-                              {preview.data?.text || "No SMS content rendered yet."}
+                              {preview.data?.text || t.noSmsRendered}
                             </pre>
                           </div>
                         )}
@@ -693,25 +703,33 @@ function NotificationTemplateDialogInner({
 
                     <div className="space-y-4 rounded-md border p-4">
                       <div className="space-y-1">
-                        <div className="text-sm font-medium">Test send</div>
-                        <p className="text-xs text-muted-foreground">
-                          Sends the current unsaved content through the configured provider path.
-                        </p>
+                        <div className="text-sm font-medium">{t.testSendTitle}</div>
+                        <p className="text-xs text-muted-foreground">{t.testSendDescription}</p>
                       </div>
 
                       <div className="flex flex-col gap-2">
-                        <Label>{channel === "email" ? "Recipient email" : "Recipient phone"}</Label>
+                        <Label>
+                          {channel === "email" ? t.recipientEmailLabel : t.recipientPhoneLabel}
+                        </Label>
                         <Input
                           value={testRecipient}
                           onChange={(event) => setTestRecipient(event.target.value)}
-                          placeholder={channel === "email" ? "qa@example.com" : "+40 721 111 222"}
+                          placeholder={
+                            channel === "email"
+                              ? t.recipientEmailPlaceholder
+                              : t.recipientPhonePlaceholder
+                          }
                         />
                       </div>
 
                       <div className="space-y-1 text-xs text-muted-foreground">
-                        <div>Provider is selected automatically by the app runtime.</div>
+                        <div>{t.providerAutoNote}</div>
                         {channel === "email" ? (
-                          <div>From: {form.watch("fromAddress") || "Default sender"}</div>
+                          <div>
+                            {formatMessage(t.fromNote, {
+                              sender: form.watch("fromAddress") || common.defaultSender,
+                            })}
+                          </div>
                         ) : null}
                       </div>
 
@@ -724,7 +742,7 @@ function NotificationTemplateDialogInner({
                         {testSend.isPending ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : null}
-                        Send Test {channel === "email" ? "Email" : "SMS"}
+                        {channel === "email" ? t.sendTestEmail : t.sendTestSms}
                       </Button>
 
                       {testSend.data ? (
@@ -743,18 +761,18 @@ function NotificationTemplateDialogInner({
                   checked={form.watch("active")}
                   onCheckedChange={(checked) => form.setValue("active", checked)}
                 />
-                <Label className="cursor-pointer">Mark template active after saving</Label>
+                <Label className="cursor-pointer">{t.markActiveLabel}</Label>
               </div>
             </div>
           </ScrollArea>
 
           <DialogFooter className="mt-0">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isPending}>
               {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Create Template"}
+              {isEditing ? common.saveChanges : t.createTemplate}
             </Button>
           </DialogFooter>
         </form>

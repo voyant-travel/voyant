@@ -1,6 +1,7 @@
 "use client"
 
 import { RemindersPreviewList } from "../components/reminders-preview-list.js"
+import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
 
 /**
  * Packaged admin host for the read-only reminders preview page
@@ -8,13 +9,13 @@ import { RemindersPreviewList } from "../components/reminders-preview-list.js"
  * wiring through `@voyantjs/notifications-react`.
  */
 export function RemindersPreviewHost() {
+  const t = useNotificationsUiMessagesOrDefault().admin.previewPage
+
   return (
     <div className="container mx-auto space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-semibold">Reminders preview</h1>
-        <p className="text-sm text-muted-foreground">
-          What would fire on a chosen date with the active reminder sequences. Read-only.
-        </p>
+        <h1 className="text-2xl font-semibold">{t.title}</h1>
+        <p className="text-sm text-muted-foreground">{t.description}</p>
       </div>
       <RemindersPreviewList />
     </div>

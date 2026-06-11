@@ -19,6 +19,7 @@ import {
 import { Loader2, Pencil, Plus, Search } from "lucide-react"
 import { lazy, Suspense, useState } from "react"
 
+import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
 import { DestinationLink } from "./notifications-admin-shared.js"
 
 // Lazy-load: the template dialog pulls the rich-text editor (tiptap +
@@ -38,6 +39,9 @@ const NotificationTemplateDialog = lazy(() =>
  * dialog stays lazily loaded inside the package.
  */
 export function NotificationTemplatesHost() {
+  const messages = useNotificationsUiMessagesOrDefault()
+  const t = messages.admin.templatesPage
+  const common = messages.admin.common
   const [search, setSearch] = useState("")
   const [channel, setChannel] = useState<UseNotificationTemplatesOptions["channel"] | "all">("all")
   const [status, setStatus] = useState<UseNotificationTemplatesOptions["status"] | "all">("all")
@@ -55,10 +59,8 @@ export function NotificationTemplatesHost() {
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Notification Templates</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage email and SMS templates rendered with Liquid.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
+          <p className="text-sm text-muted-foreground">{t.description}</p>
         </div>
         <Button
           onClick={() => {
@@ -67,7 +69,7 @@ export function NotificationTemplatesHost() {
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
-          New Template
+          {t.newTemplate}
         </Button>
       </div>
 
@@ -75,7 +77,7 @@ export function NotificationTemplatesHost() {
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search templates..."
+            placeholder={t.searchPlaceholder}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             className="pl-9"
@@ -83,23 +85,23 @@ export function NotificationTemplatesHost() {
         </div>
         <Select value={channel} onValueChange={(value) => setChannel(value ?? "all")}>
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Channel" />
+            <SelectValue placeholder={common.channelFilterPlaceholder} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All channels</SelectItem>
-            <SelectItem value="email">Email</SelectItem>
-            <SelectItem value="sms">SMS</SelectItem>
+            <SelectItem value="all">{common.allChannels}</SelectItem>
+            <SelectItem value="email">{common.channelEmail}</SelectItem>
+            <SelectItem value="sms">{common.channelSms}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={status} onValueChange={(value) => setStatus(value ?? "all")}>
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder={common.statusFilterPlaceholder} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="archived">Archived</SelectItem>
+            <SelectItem value="all">{common.allStatuses}</SelectItem>
+            <SelectItem value="draft">{common.statusDraft}</SelectItem>
+            <SelectItem value="active">{common.statusActive}</SelectItem>
+            <SelectItem value="archived">{common.statusArchived}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -112,10 +114,7 @@ export function NotificationTemplatesHost() {
 
       {!isPending && (!data?.data || data.data.length === 0) ? (
         <div className="rounded-md border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            No notification templates yet. Create one to start sending branded emails and SMS
-            messages.
-          </p>
+          <p className="text-sm text-muted-foreground">{t.empty}</p>
         </div>
       ) : null}
 

@@ -27,6 +27,8 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
+import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
+
 const reminderRuleFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
   status: z.enum(["draft", "active", "archived"]).default("draft"),
@@ -42,11 +44,11 @@ const reminderRuleFormSchema = z.object({
   templateId: z.string().optional(),
 })
 
-const reminderTargetOptions = [
-  { value: "booking_confirmed", label: "Booking confirmed" },
-  { value: "payment_complete", label: "Payment complete" },
-  { value: "booking_cancelled_non_payment", label: "Booking cancelled (non-payment)" },
-  { value: "booking_payment_schedule", label: "Booking payment schedule" },
+const reminderTargetValues = [
+  "booking_confirmed",
+  "payment_complete",
+  "booking_cancelled_non_payment",
+  "booking_payment_schedule",
 ] as const
 
 type FormValues = z.input<typeof reminderRuleFormSchema>
@@ -75,6 +77,9 @@ export function NotificationReminderRuleDialog({
   onSuccess,
 }: NotificationReminderRuleDialogProps) {
   const isEditing = Boolean(rule)
+  const messages = useNotificationsUiMessagesOrDefault()
+  const t = messages.admin.reminderRuleDialog
+  const common = messages.admin.common
   const { create, update } = useNotificationReminderRuleMutation()
   const form = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(reminderRuleFormSchema),
@@ -149,18 +154,18 @@ export function NotificationReminderRuleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Reminder Rule" : "New Reminder Rule"}</DialogTitle>
+          <DialogTitle>{isEditing ? t.editTitle : t.createTitle}</DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogBody className="grid gap-4">
             <div className="flex flex-col gap-2">
-              <Label>Name</Label>
-              <Input {...form.register("name")} placeholder="Payment due in 3 days" />
+              <Label>{t.nameLabel}</Label>
+              <Input {...form.register("name")} placeholder={t.namePlaceholder} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Target</Label>
+                <Label>{t.targetLabel}</Label>
                 <Select
                   value={form.watch("targetType")}
                   onValueChange={(value) => {
@@ -172,16 +177,16 @@ export function NotificationReminderRuleDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {reminderTargetOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
+                    {reminderTargetValues.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {messages.admin.reminderRulesPage.targets[value]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label>Status</Label>
+                <Label>{t.statusLabel}</Label>
                 <Select
                   value={form.watch("status")}
                   onValueChange={(value) => {
@@ -193,9 +198,9 @@ export function NotificationReminderRuleDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
+                    <SelectItem value="draft">{common.statusDraft}</SelectItem>
+                    <SelectItem value="active">{common.statusActive}</SelectItem>
+                    <SelectItem value="archived">{common.statusArchived}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -203,7 +208,7 @@ export function NotificationReminderRuleDialog({
 
             <div className="grid gap-4">
               <div className="flex flex-col gap-2">
-                <Label>Channel</Label>
+                <Label>{t.channelLabel}</Label>
                 <Select
                   value={form.watch("channel")}
                   onValueChange={(value) => {
@@ -215,15 +220,15 @@ export function NotificationReminderRuleDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="email">Email</SelectItem>
-                    <SelectItem value="sms">SMS</SelectItem>
+                    <SelectItem value="email">{common.channelEmail}</SelectItem>
+                    <SelectItem value="sms">{common.channelSms}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Default template</Label>
+              <Label>{t.defaultTemplateLabel}</Label>
               <Select
                 value={form.watch("templateId")}
                 onValueChange={(value) => {
@@ -232,7 +237,7 @@ export function NotificationReminderRuleDialog({
                 }}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select template" />
+                  <SelectValue placeholder={t.selectTemplatePlaceholder} />
                 </SelectTrigger>
                 <SelectContent>
                   {(templates?.data ?? []).map((template) => (
@@ -242,25 +247,22 @@ export function NotificationReminderRuleDialog({
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                Used as a fallback. Per-stage channels can override this.
-              </p>
+              <p className="text-xs text-muted-foreground">{t.defaultTemplateHint}</p>
             </div>
 
             {!isEditing ? (
               <p className="rounded-md border border-dashed bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-                After creating the rule, click <strong>Manage stages</strong> on the row to define
-                when it fires (anchor, window, cadence) and which channels deliver it.
+                {t.stagesHintBefore} <strong>{t.stagesHintAction}</strong> {t.stagesHintAfter}
               </p>
             ) : null}
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {messages.common.cancel}
             </Button>
             <Button type="submit" disabled={isPending}>
               {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isEditing ? "Save Changes" : "Create Rule"}
+              {isEditing ? common.saveChanges : t.createRule}
             </Button>
           </DialogFooter>
         </form>
