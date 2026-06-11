@@ -1,3 +1,5 @@
+"use client"
+
 import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
 

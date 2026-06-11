@@ -2394,6 +2394,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
       '@voyantjs/crm-react':
         specifier: workspace:^
         version: link:../crm-react
@@ -3366,6 +3369,9 @@ importers:
       recharts:
         specifier: 3.8.1
         version: 3.8.1(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react-is@18.3.1)(react@19.2.4)(redux@5.0.1)
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -5538,6 +5544,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
       '@voyantjs/suppliers-react':
         specifier: workspace:^
         version: link:../suppliers-react

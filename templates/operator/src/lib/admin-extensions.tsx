@@ -22,6 +22,9 @@ import type { AdminMessages } from "@/lib/admin-i18n"
  * - `booking.details.invoices-tab` (packaged: rendered by bookings-ui's
  *   `BookingDetailHost`; finance-ui contributes its invoices card here —
  *   the finance-ui ↔ bookings-ui cycle resolution)
+ * - `person.details.bookings-tab` (packaged: rendered by crm-ui's
+ *   `PersonDetailHost`; bookings-ui contributes its person-bookings card
+ *   here — the crm-ui ↔ bookings-ui cycle resolution)
  * - `invoice.details.header`
  * - `invoice.details.after-summary`
  */
@@ -42,11 +45,14 @@ type AdminExtensionNavMessages = Pick<
   | "invoiceNumberSeries"
   | "invoices"
   | "newTrip"
+  | "organizations"
   | "payments"
+  | "people"
   | "policies"
   | "profitability"
   | "promotions"
   | "supplierInvoices"
+  | "suppliers"
   | "trips"
 >
 
@@ -104,6 +110,25 @@ function createFinanceExtension(messages: AdminExtensionNavMessages) {
   })
 }
 
+// CRM is package-delivered (packaged-admin RFC Phase 3): the extension
+// contributes NO navigation — the People and Organizations items are part of
+// the BASE operator navigation (createOperatorAdminNavigation in
+// @voyantjs/admin), so entries here would duplicate them. It's registered
+// for the routes seam (metadata for the people/organization pages; the pages
+// are the packaged hosts from @voyantjs/crm-ui/admin — the route files under
+// src/routes/_workspace/people/* and src/routes/_workspace/organizations/*
+// only bind route params onto them). The person detail page's Bookings tab
+// is the crm-ui ↔ bookings-ui cycle resolution: bookings-ui contributes its
+// PersonBookingsWidget on crm-ui's `person.details.bookings-tab` slot.
+function createCrmExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.crm({
+    labels: {
+      people: messages.people,
+      organizations: messages.organizations,
+    },
+  })
+}
+
 // Legal is package-delivered (packaged-admin RFC Phase 3): the extension
 // contributes NO navigation — the Legal group is part of the BASE operator
 // navigation (createOperatorAdminNavigation in @voyantjs/admin), so entries
@@ -122,6 +147,21 @@ function createLegalExtension(messages: AdminExtensionNavMessages) {
       numberSeries: messages.contractNumberSeries,
     },
   })
+}
+
+// Suppliers is package-delivered (packaged-admin RFC Phase 3): the extension
+// contributes NO navigation — the Suppliers item is part of the BASE operator
+// navigation (createOperatorAdminNavigation in @voyantjs/admin), so an entry
+// here would duplicate it. It's registered for the routes seam: the
+// contributions carry the package-owned route metadata (no search contracts —
+// the list keeps its filters local), and the pages are the packaged hosts
+// from @voyantjs/suppliers-ui/admin — the route files under
+// src/routes/_workspace/suppliers/* only bind route params onto them. The
+// detail page's customer-payment-policy card arrives via finance-ui's widget
+// contribution on `supplier.details.payment-policy` (the finance-ui ↔
+// suppliers-ui cycle resolution).
+function createSuppliersExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.suppliers({ label: messages.suppliers })
 }
 
 // Promotions is package-delivered (packaged-admin RFC Phase 2): nav AND the
@@ -204,11 +244,14 @@ const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   invoiceNumberSeries: "Number Series",
   invoices: "Invoices",
   newTrip: "New trip",
+  organizations: "Organizations",
   payments: "Payments",
+  people: "People",
   policies: "Policies",
   profitability: "Profitability",
   promotions: "Promotions",
   supplierInvoices: "Supplier invoices",
+  suppliers: "Suppliers",
   trips: "Trips",
 }
 
@@ -218,7 +261,9 @@ export function createOperatorAdminExtensions(
   return createAdminExtensionRegistry(
     createBookingsExtension(messages),
     createCatalogExtension(messages),
+    createCrmExtension(messages),
     createFinanceExtension(messages),
+    createSuppliersExtension(messages),
     createLegalExtension(messages),
     createPromotionsExtension(messages),
     createTravelComposerExtension(messages),

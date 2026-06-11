@@ -97,11 +97,14 @@ function WorkspaceContent() {
           invoiceNumberSeries: messages.nav.invoiceNumberSeries,
           invoices: messages.nav.invoices,
           newTrip: messages.nav.newTrip,
+          organizations: messages.nav.organizations,
           payments: messages.nav.payments,
+          people: messages.nav.people,
           policies: messages.nav.policies,
           profitability: messages.nav.profitability,
           promotions: messages.nav.promotions,
           supplierInvoices: messages.nav.supplierInvoices,
+          suppliers: messages.nav.suppliers,
           trips: messages.nav.trips,
         })
       }

@@ -1,30 +1,24 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { lazy, Suspense } from "react"
-import { getPeopleQueryOptions } from "@/components/voyant/crm/crm-query-options"
-import { PeopleListSkeleton } from "@/components/voyant/crm/people-list-skeleton"
+import { createFileRoute } from "@tanstack/react-router"
+import { getPeopleQueryOptions } from "@voyantjs/crm-react"
+import { PeopleHost, PeopleListSkeleton } from "@voyantjs/crm-ui/admin"
 
-const PeoplePage = lazy(() =>
-  import("@voyantjs/crm-ui/components/people-page").then((module) => ({
-    default: module.PeoplePage,
-  })),
-)
+import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
+// Thin host for the package-delivered people list (packaged-admin RFC
+// Phase 3). Page and navigation (semantic destinations, RFC §4.7) are
+// package-owned; `PeopleHost` is zero-prop, so it mounts directly.
+// `fetcher: operatorFetcher` forwards the request cookie on SSR (the default
+// fetcher would 401 on direct loads).
 export const Route = createFileRoute("/_workspace/people/")({
   ssr: "data-only",
   loader: ({ context }) =>
-    context.queryClient.ensureQueryData(getPeopleQueryOptions({ limit: 25, offset: 0 })),
+    context.queryClient.ensureQueryData(
+      getPeopleQueryOptions(
+        { baseUrl: getApiUrl(), fetcher: operatorFetcher },
+        { limit: 25, offset: 0 },
+      ),
+    ),
   pendingComponent: PeopleListSkeleton,
-  component: PeopleRoute,
+  component: PeopleHost,
 })
-
-function PeopleRoute() {
-  const navigate = useNavigate()
-
-  return (
-    <Suspense fallback={<PeopleListSkeleton />}>
-      <PeoplePage
-        onPersonOpen={(person) => void navigate({ to: "/people/$id", params: { id: person.id } })}
-      />
-    </Suspense>
-  )
-}

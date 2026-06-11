@@ -1,10 +1,8 @@
-import { useNavigate } from "@tanstack/react-router"
-import {
-  type BookingRecord,
-  bookingStatusBadgeVariant,
-  useBookings,
-} from "@voyantjs/bookings-react"
-import { PersonDetailPage as CanonicalPersonDetailPage } from "@voyantjs/crm-ui/components/person-detail-page"
+"use client"
+
+import { useAdminNavigate, useOperatorAdminMessages } from "@voyantjs/admin"
+import { bookingStatusBadgeVariant, useBookings } from "@voyantjs/bookings-react"
+import type { PersonDetailBookingsTabContext } from "@voyantjs/crm-ui/admin"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
 import {
@@ -15,66 +13,26 @@ import {
   TableHeader,
   TableRow,
 } from "@voyantjs/ui/components/table"
-import { useAdminMessages } from "@/lib/admin-i18n"
 
-export function PersonDetailPage({ id }: { id: string }) {
-  const navigate = useNavigate()
-  const adminMessages = useAdminMessages()
-  const messages = adminMessages.crm.personDetail
-  const listMessages = adminMessages.bookings.list
-  const bookingsQuery = useBookings({ personId: id, limit: 50 })
+export type PersonBookingsWidgetProps = PersonDetailBookingsTabContext
+
+/**
+ * The person detail page's Bookings tab, contributed as a widget on
+ * crm-ui's `person.details.bookings-tab` slot (packaged-admin RFC §4.7
+ * cycle resolution): this package depends on `@voyantjs/crm-ui`, so the
+ * person detail host cannot import this card — the contribution travels
+ * the widget seam instead. Receives the slot's typed context
+ * (`PersonDetailBookingsTabContext`) as props and opens rows through the
+ * semantic `booking.detail` destination.
+ */
+export function PersonBookingsWidget({ personId }: PersonBookingsWidgetProps) {
+  const adminMessages = useOperatorAdminMessages()
+  const messages = adminMessages.bookings.list
+  const navigateTo = useAdminNavigate()
+  const bookingsQuery = useBookings({ personId, limit: 50 })
   const bookings = bookingsQuery.data?.data ?? []
 
-  return (
-    <CanonicalPersonDetailPage
-      id={id}
-      onBack={() => void navigate({ to: "/people" })}
-      onDeleted={() => void navigate({ to: "/people" })}
-      onOrganizationOpen={(organizationId) =>
-        void navigate({ to: "/organizations/$id", params: { id: organizationId } })
-      }
-      onPersonOpen={(personId) => void navigate({ to: "/people/$id", params: { id: personId } })}
-      slots={{
-        bookingsTab: {
-          count: bookingsQuery.data?.total ?? bookings.length,
-          content: (
-            <PersonBookingsList
-              bookings={bookings}
-              isPending={bookingsQuery.isPending}
-              isError={bookingsQuery.isError}
-              onSelect={(booking) =>
-                void navigate({ to: "/bookings/$id", params: { id: booking.id } })
-              }
-              loadingError={messages.notFound}
-              messages={listMessages}
-            />
-          ),
-        },
-      }}
-    />
-  )
-}
-
-type BookingsListMessages = ReturnType<typeof useAdminMessages>["bookings"]["list"]
-
-interface PersonBookingsListProps {
-  bookings: BookingRecord[]
-  isPending: boolean
-  isError: boolean
-  onSelect: (booking: BookingRecord) => void
-  loadingError: string
-  messages: BookingsListMessages
-}
-
-function PersonBookingsList({
-  bookings,
-  isPending,
-  isError,
-  onSelect,
-  loadingError,
-  messages,
-}: PersonBookingsListProps) {
-  if (isPending) {
+  if (bookingsQuery.isPending) {
     return (
       <div className="space-y-2 p-4">
         <Skeleton className="h-10 w-full" />
@@ -84,13 +42,17 @@ function PersonBookingsList({
     )
   }
 
-  if (isError) {
-    return <div className="p-6 text-center text-sm text-destructive">{loadingError}</div>
+  if (bookingsQuery.isError) {
+    return (
+      <div className="p-6 text-center text-destructive text-sm">
+        {adminMessages.crm.personDetail.notFound}
+      </div>
+    )
   }
 
   if (bookings.length === 0) {
     return (
-      <div className="p-6 text-center text-sm text-muted-foreground">{messages.relatedEmpty}</div>
+      <div className="p-6 text-center text-muted-foreground text-sm">{messages.relatedEmpty}</div>
     )
   }
 
@@ -115,7 +77,7 @@ function PersonBookingsList({
             return (
               <TableRow
                 key={booking.id}
-                onClick={() => onSelect(booking)}
+                onClick={() => navigateTo("booking.detail", { bookingId: booking.id })}
                 className="cursor-pointer"
               >
                 <TableCell className="font-medium">{booking.bookingNumber}</TableCell>
@@ -123,7 +85,7 @@ function PersonBookingsList({
                   <div className="max-w-[280px] truncate" title={itemLabel}>
                     {itemLabel}
                     {extraItems > 0 ? (
-                      <span className="ml-1 text-xs text-muted-foreground">+{extraItems}</span>
+                      <span className="ml-1 text-muted-foreground text-xs">+{extraItems}</span>
                     ) : null}
                   </div>
                 </TableCell>
