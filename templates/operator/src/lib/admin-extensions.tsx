@@ -19,6 +19,9 @@ import type { AdminMessages } from "@/lib/admin-i18n"
  * - `dashboard.footer`
  * - `booking.details.header`
  * - `booking.details.after-summary`
+ * - `booking.details.invoices-tab` (packaged: rendered by bookings-ui's
+ *   `BookingDetailHost`; finance-ui contributes its invoices card here —
+ *   the finance-ui ↔ bookings-ui cycle resolution)
  * - `invoice.details.header`
  * - `invoice.details.after-summary`
  */
@@ -33,8 +36,13 @@ type AdminExtensionNavMessages = Pick<
   | "catalogExcursions"
   | "catalogProducts"
   | "catalogTours"
+  | "invoiceNumberSeries"
+  | "invoices"
   | "newTrip"
+  | "payments"
+  | "profitability"
   | "promotions"
+  | "supplierInvoices"
   | "trips"
 >
 
@@ -66,6 +74,28 @@ function createCatalogExtension(messages: AdminExtensionNavMessages) {
       tours: messages.catalogTours,
       cruises: messages.catalogCruises,
       accommodations: messages.catalogAccommodations,
+    },
+  })
+}
+
+// Finance is package-delivered (packaged-admin RFC Phase 3): the extension
+// contributes NO navigation — the Finance group is part of the BASE operator
+// navigation (createOperatorAdminNavigation in @voyantjs/admin), so entries
+// here would duplicate it. It's registered for the routes seam (metadata for
+// the finance pages; the detail pages are the packaged hosts from
+// @voyantjs/finance-ui/admin) AND for the widgets seam: it contributes the
+// finance-owned booking invoices card on bookings-ui's
+// `booking.details.invoices-tab` slot — the finance-ui ↔ bookings-ui cycle
+// resolution (finance-ui depends on bookings-ui, so the bookings host can't
+// import the card; the widget contribution travels the other way).
+function createFinanceExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.finance({
+    labels: {
+      invoices: messages.invoices,
+      invoiceNumberSeries: messages.invoiceNumberSeries,
+      payments: messages.payments,
+      supplierInvoices: messages.supplierInvoices,
+      profitability: messages.profitability,
     },
   })
 }
@@ -144,8 +174,13 @@ const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   catalogExcursions: "Excursions",
   catalogProducts: "Packages",
   catalogTours: "Tours",
+  invoiceNumberSeries: "Number Series",
+  invoices: "Invoices",
   newTrip: "New trip",
+  payments: "Payments",
+  profitability: "Profitability",
   promotions: "Promotions",
+  supplierInvoices: "Supplier invoices",
   trips: "Trips",
 }
 
@@ -155,6 +190,7 @@ export function createOperatorAdminExtensions(
   return createAdminExtensionRegistry(
     createBookingsExtension(messages),
     createCatalogExtension(messages),
+    createFinanceExtension(messages),
     createPromotionsExtension(messages),
     createTravelComposerExtension(messages),
     createActionLedgerExtension(messages),

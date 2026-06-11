@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
 
 /**
- * Layout-matched placeholder for InvoiceDetailPage.
+ * Layout-matched placeholder for InvoiceDetailHost.
  *   - Back + invoice number + status pill + edit/delete
  *   - InvoiceInfoCards: 3-column summary row (Overview / Totals / Booking)
  *   - Line items card (full width)

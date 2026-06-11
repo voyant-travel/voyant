@@ -3315,12 +3315,21 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.100.11
         version: 5.100.11(react@19.2.4)
+      '@tanstack/react-table':
+        specifier: ^8.21.3
+        version: 8.21.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.14
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
+      '@voyantjs/bookings-react':
+        specifier: workspace:^
+        version: link:../bookings-react
       '@voyantjs/bookings-ui':
         specifier: workspace:^
         version: link:../bookings-ui
@@ -3330,6 +3339,9 @@ importers:
       '@voyantjs/finance-react':
         specifier: workspace:^
         version: link:../finance-react
+      '@voyantjs/suppliers-react':
+        specifier: workspace:^
+        version: link:../suppliers-react
       '@voyantjs/suppliers-ui':
         specifier: workspace:^
         version: link:../suppliers-ui

@@ -2,7 +2,9 @@
 
 import {
   AdminWidgetSlotRenderer,
+  resolveAdminWidgets,
   useAdminBreadcrumbs,
+  useAdminExtensions,
   useAdminHref,
   useAdminNavigate,
   useLocale,
@@ -22,9 +24,20 @@ import type { BookingPaymentsSummaryRow } from "../components/booking-payments-s
 import { BookingInvoiceSheet } from "./booking-invoice-sheet.js"
 
 /**
- * Render context handed to the host's app-supplied slots. Carries the
+ * Widget slot rendered as the booking detail page's Invoices tab
+ * (packaged-admin RFC §4.7 cycle resolution): `@voyantjs/finance-ui` depends
+ * on this package, so the host cannot import the finance-owned invoices card
+ * directly — instead finance's admin extension contributes a widget targeting
+ * this slot and the host mounts the tab whenever a contribution exists.
+ * Widgets receive {@link BookingDetailHostSlotContext} as props.
+ */
+export const bookingDetailInvoicesTabSlot = "booking.details.invoices-tab"
+
+/**
+ * Render context handed to the host's app-supplied slots AND to widget
+ * contributions targeting {@link bookingDetailInvoicesTabSlot}. Carries the
  * booking plus the host-computed payment aggregates and the invoice-sheet
- * opener so app slots can participate without re-deriving them.
+ * opener so contributed cards can participate without re-deriving them.
  */
 export interface BookingDetailHostSlotContext {
   booking: BookingRecord
@@ -113,6 +126,13 @@ export function BookingDetailHost({
   const { resolvedLocale } = useLocale()
   const resolveHref = useAdminHref()
   const navigateTo = useAdminNavigate()
+  // Finance (or any extension that may not import this package) contributes
+  // the Invoices-tab content as widget contributions; the tab mounts whenever
+  // an app slot or at least one widget targets it.
+  const adminExtensions = useAdminExtensions()
+  const hasInvoicesTabWidgets =
+    resolveAdminWidgets({ slot: bookingDetailInvoicesTabSlot, extensions: adminExtensions })
+      .length > 0
   const [viewingInvoiceId, setViewingInvoiceId] = useState<string | null>(null)
   const { remove: removePayment } = usePaymentMutation()
   // Mirror the booking fetch so the admin chrome can render breadcrumbs
@@ -199,12 +219,21 @@ export function BookingDetailHost({
             ? (b) => slots.financeStart?.(slotContext(b))
             : undefined,
           financeEnd: slots?.financeEnd ? (b) => slots.financeEnd?.(slotContext(b)) : undefined,
-          invoicesTab: slots?.invoicesTab
-            ? {
-                label: slots.invoicesTab.label,
-                content: (b: BookingRecord) => slots.invoicesTab?.content(slotContext(b)),
-              }
-            : undefined,
+          invoicesTab:
+            slots?.invoicesTab || hasInvoicesTabWidgets
+              ? {
+                  label: slots?.invoicesTab?.label,
+                  content: (b: BookingRecord) => (
+                    <>
+                      {slots?.invoicesTab?.content(slotContext(b))}
+                      <AdminWidgetSlotRenderer
+                        slot={bookingDetailInvoicesTabSlot}
+                        props={{ ...slotContext(b) }}
+                      />
+                    </>
+                  ),
+                }
+              : undefined,
           documents: slots?.documents ? (b) => slots.documents?.(slotContext(b)) : undefined,
           activityExtraEvents: slots?.activityExtraEvents,
           activityTimelineFooter: slots?.activityTimelineFooter,

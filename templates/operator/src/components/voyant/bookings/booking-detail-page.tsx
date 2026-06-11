@@ -17,7 +17,6 @@ import { useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { getApiUrl } from "@/lib/env"
 import { BookingDocumentsTable } from "./booking-documents-table"
-import { BookingInvoicesCard } from "./booking-invoices-card"
 import { BookingPaymentPolicyCard } from "./booking-payment-policy-card"
 import { BookingPendingPaymentSessions } from "./booking-pending-payment-sessions"
 import { useBookingActionLedgerEvents } from "./use-booking-action-ledger-events"
@@ -32,11 +31,14 @@ import { useBookingActionLedgerEvents } from "./use-booking-action-ledger-events
  *   - Pending/complete/cancel payment-session card (admin payment-sessions
  *     API) + the payment-policy override card (schedule regenerate API).
  *   - The unified Documents tab (contract generation API).
- *   - The invoices card (template-level `/v1/uploads` attachment upload).
  *   - Action-ledger timeline events (booking action-ledger API).
  *   - The two payment dialogs (`@voyantjs/finance-ui` /
  *     `@voyantjs/checkout-ui` depend on `bookings-ui`, so the package host
  *     cannot import them without a cycle).
+ *
+ * The Invoices tab is no longer wired here: `@voyantjs/finance-ui/admin`
+ * contributes the finance-owned invoices card as a widget on the host's
+ * `booking.details.invoices-tab` slot.
  */
 export function BookingDetailPage({
   id,
@@ -90,16 +92,10 @@ export function BookingDetailPage({
               </CollapsibleContent>
             </Collapsible>
           ),
-          invoicesTab: {
-            content: ({ booking: b, openInvoiceSheet }) => (
-              <BookingInvoicesCard
-                bookingId={id}
-                defaultCurrency={b.sellCurrency}
-                defaultAmountCents={b.sellAmountCents ?? null}
-                onInvoiceOpen={openInvoiceSheet}
-              />
-            ),
-          },
+          // No invoicesTab slot: the finance-owned invoices card arrives as a
+          // widget contribution from @voyantjs/finance-ui/admin on the host's
+          // `booking.details.invoices-tab` slot (the finance-ui ↔ bookings-ui
+          // cycle resolution), so the host mounts the tab on its own.
           documents: () => <BookingDocumentsTable bookingId={id} apiBaseUrl={getApiUrl()} />,
           activityExtraEvents: actionLedgerEvents,
           activityTimelineFooter: actionLedgerFooter,

@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
 
 /**
- * Layout-matched placeholder for PaymentDetailPage.
+ * Layout-matched placeholder for PaymentDetailHost.
  *  - Back button + title + status pill
  *  - Two-column info grid: summary + links
  *  - Metadata card (full width)

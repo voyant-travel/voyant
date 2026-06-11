@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { getPaymentQueryOptions } from "@voyantjs/finance-react"
+import { PaymentDetailHost, PaymentDetailSkeleton } from "@voyantjs/finance-ui/admin"
 
-import { PaymentDetailPage } from "@/components/voyant/finance/payment-detail-page"
-import { PaymentDetailSkeleton } from "@/components/voyant/finance/payment-detail-skeleton"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
 
@@ -18,5 +17,5 @@ export const Route = createFileRoute("/_workspace/finance/payments/$id")({
 
 function PaymentDetailRoute() {
   const { id } = Route.useParams()
-  return <PaymentDetailPage id={id} />
+  return <PaymentDetailHost id={id} />
 }

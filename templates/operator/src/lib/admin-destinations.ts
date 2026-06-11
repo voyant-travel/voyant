@@ -1,9 +1,10 @@
 import type { AdminDestinationResolvers } from "@voyantjs/admin"
 // Type-only: binds the `AdminDestinations` augmentations (the bookings +
-// catalog destination keys) into this program without pulling the admin
-// bundles into the workspace-chrome chunk.
+// catalog + finance destination keys) into this program without pulling the
+// admin bundles into the workspace-chrome chunk.
 import type {} from "@voyantjs/bookings-ui/admin"
 import type {} from "@voyantjs/catalog-ui/admin"
+import type {} from "@voyantjs/finance-ui/admin"
 
 /**
  * Operator resolver map for the semantic-destination contract (packaged-admin
@@ -44,9 +45,11 @@ export const operatorAdminDestinations = {
   "catalog.detail": ({ surface, id, adults, nights }) =>
     `/catalog/${surface}/${encodeURIComponent(id)}${searchString({ adults, nights })}`,
   "invoice.detail": ({ invoiceId }) => `/finance/invoices/${encodeURIComponent(invoiceId)}`,
+  "invoice.list": () => "/finance/invoices",
   "organization.detail": ({ organizationId }) =>
     `/organizations/${encodeURIComponent(organizationId)}`,
   "payment.detail": ({ paymentId }) => `/finance/payments/${encodeURIComponent(paymentId)}`,
+  "payment.list": () => "/finance/payments",
   "person.detail": ({ personId }) => `/people/${encodeURIComponent(personId)}`,
   "product.detail": ({ productId }) => `/products/${encodeURIComponent(productId)}`,
   "supplier.detail": ({ supplierId }) => `/suppliers/${encodeURIComponent(supplierId)}`,
