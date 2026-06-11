@@ -125,4 +125,38 @@ describe("Hono API dispatch", () => {
     expect(loadFull).toHaveBeenCalledOnce()
     expect(ctx.waitUntil).toHaveBeenCalledOnce()
   })
+
+  it("handles auth CORS preflight without loading the full API app", async () => {
+    const request = new Request("https://example.test/api/auth/me", {
+      method: "OPTIONS",
+      headers: {
+        origin: "https://dashboard.example",
+        "access-control-request-method": "GET",
+        "access-control-request-headers": "content-type",
+      },
+    })
+    const env = {
+      APP_URL: "https://example.test",
+      CORS_ALLOWLIST: "https://dashboard.example",
+    } as CloudflareBindings
+    const ctx: ExecutionContext = {
+      props: undefined,
+      waitUntil: vi.fn(),
+      passThroughOnException: vi.fn(),
+    }
+    const loadFull = vi.fn(async () => ({
+      fetch: vi.fn<FetchApp["fetch"]>(async () => Response.json({ full: true })),
+    }))
+
+    const response = await dispatchHonoApiRequest(request, env, ctx, loadFull)
+
+    expect(response.status).toBe(204)
+    expect(response.headers.get("access-control-allow-origin")).toBe("https://dashboard.example")
+    expect(response.headers.get("access-control-allow-credentials")).toBe("true")
+    expect(response.headers.get("access-control-allow-methods")).toBe("GET")
+    expect(response.headers.get("access-control-allow-headers")).toBe("content-type")
+    expect(response.headers.get("vary")).toBe("Origin")
+    expect(loadFull).not.toHaveBeenCalled()
+    expect(ctx.waitUntil).not.toHaveBeenCalled()
+  })
 })

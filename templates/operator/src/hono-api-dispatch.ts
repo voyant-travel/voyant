@@ -1,13 +1,21 @@
-import type { Hono } from "hono"
+import { cors } from "@voyantjs/hono/middleware/cors"
+import { Hono } from "hono"
 
 const API_PREFIX = "/api"
 const AUTH_API_PREFIX = `${API_PREFIX}/auth`
 
-type HonoFetchApp = Pick<Hono, "fetch">
+type HonoFetchApp = {
+  fetch: (
+    request: Request,
+    env?: CloudflareBindings,
+    ctx?: ExecutionContext,
+  ) => Response | Promise<Response>
+}
 type HonoAppLoader = () => Promise<HonoFetchApp>
 
 let apiAppPromise: Promise<HonoFetchApp> | undefined
 let authAppPromise: Promise<HonoFetchApp> | undefined
+let authHandlerPromise: Promise<HonoFetchApp> | undefined
 
 export function loadOperatorApiApp(): Promise<HonoFetchApp> {
   if (!apiAppPromise) {
@@ -20,9 +28,16 @@ export function loadOperatorApiApp(): Promise<HonoFetchApp> {
 
 export function loadOperatorAuthApp(): Promise<HonoFetchApp> {
   if (!authAppPromise) {
-    authAppPromise = import("./api/auth/handler").then((mod) => ({
-      fetch: (request, env, ctx) => mod.default.fetch(request, env as CloudflareBindings, ctx),
-    }))
+    const authApp = new Hono<{ Bindings: CloudflareBindings }>()
+    authApp.use("*", cors())
+    authApp.all("*", async (c) => {
+      authHandlerPromise ??= import("./api/auth/handler").then((mod) => ({
+        fetch: (request, env, ctx) => mod.default.fetch(request, env as CloudflareBindings, ctx),
+      }))
+      const authHandler = await authHandlerPromise
+      return authHandler.fetch(c.req.raw, c.env, c.executionCtx)
+    })
+    authAppPromise = Promise.resolve(authApp as HonoFetchApp)
   }
   return authAppPromise
 }
@@ -67,11 +82,13 @@ export async function dispatchHonoApiRequest(
   if (isHonoAuthApiRequest(new URL(request.url).pathname)) {
     const authApp = await loadAuthApp()
     const response = await authApp.fetch(createHonoApiRequest(request), env, ctx)
-    ctx.waitUntil(
-      loadHonoApp().catch((error) => {
-        console.error("[api] background API warm failed:", error)
-      }),
-    )
+    if (request.method !== "OPTIONS") {
+      ctx.waitUntil(
+        loadHonoApp().catch((error) => {
+          console.error("[api] background API warm failed:", error)
+        }),
+      )
+    }
     return response
   }
 
