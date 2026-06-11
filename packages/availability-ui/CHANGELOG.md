@@ -1,5 +1,18 @@
 # @voyantjs/availability-ui
 
+## 0.107.0
+
+### Patch Changes
+
+- Updated dependencies [eeb23df]
+  - @voyantjs/admin@0.107.0
+  - @voyantjs/bookings-ui@0.110.0
+  - @voyantjs/products-ui@0.110.0
+  - @voyantjs/availability-react@0.107.0
+  - @voyantjs/extras-ui@0.110.0
+  - @voyantjs/products-react@0.110.0
+  - @voyantjs/allocation-ui@0.108.0
+
 ## 0.106.0
 
 ### Minor Changes

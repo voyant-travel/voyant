@@ -1,5 +1,14 @@
 # @voyantjs/notifications-ui
 
+## 0.107.0
+
+### Patch Changes
+
+- Updated dependencies [eeb23df]
+  - @voyantjs/admin@0.107.0
+  - @voyantjs/notifications@0.107.0
+  - @voyantjs/notifications-react@0.107.0
+
 ## 0.106.0
 
 ### Minor Changes

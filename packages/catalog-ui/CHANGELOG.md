@@ -1,5 +1,16 @@
 # @voyantjs/catalog-ui
 
+## 0.108.0
+
+### Patch Changes
+
+- Updated dependencies [eeb23df]
+  - @voyantjs/admin@0.107.0
+  - @voyantjs/catalog-react@0.108.0
+  - @voyantjs/markets-react@0.106.1
+  - @voyantjs/products-react@0.110.0
+  - @voyantjs/suppliers-react@0.107.0
+
 ## 0.107.0
 
 ### Minor Changes

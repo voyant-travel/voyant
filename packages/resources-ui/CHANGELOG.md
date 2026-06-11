@@ -1,5 +1,13 @@
 # @voyantjs/resources-ui
 
+## 0.107.0
+
+### Patch Changes
+
+- Updated dependencies [eeb23df]
+  - @voyantjs/admin@0.107.0
+  - @voyantjs/resources-react@0.107.0
+
 ## 0.106.0
 
 ### Minor Changes
