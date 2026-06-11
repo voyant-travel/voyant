@@ -1,12 +1,11 @@
 "use client"
 
 import { useAdminHref, useOperatorAdminMessages } from "@voyantjs/admin"
-import type { CatalogSearchParams } from "@voyantjs/catalog-react"
-
 import {
   ScheduledCatalogPage as ScheduledCatalogPageUi,
   type ScheduledScope,
 } from "../components/scheduled-catalog-page.js"
+import type { CatalogSearchParams } from "../index.js"
 import { CatalogVerticalHost } from "./catalog-vertical-host.js"
 import { openHrefInNewTab } from "./open-in-new-tab.js"
 

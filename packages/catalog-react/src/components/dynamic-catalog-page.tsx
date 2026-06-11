@@ -1,12 +1,5 @@
 "use client"
 
-import type { CatalogSearchParams, CatalogSurface } from "@voyantjs/catalog-react"
-import {
-  fetchDepartureAirports,
-  fetchPackageSearch,
-  useCatalogSearch,
-  useVoyantCatalogContext,
-} from "@voyantjs/catalog-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Input } from "@voyantjs/ui/components/input"
@@ -19,9 +12,15 @@ import {
 } from "@voyantjs/ui/components/select"
 import { Image as ImageIcon, Plane, Search, X } from "lucide-react"
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react"
-
 import { useCatalogUiI18nOrDefault, useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 import type { CatalogUiMessages } from "../i18n/messages.js"
+import type { CatalogSearchParams, CatalogSurface } from "../index.js"
+import {
+  fetchDepartureAirports,
+  fetchPackageSearch,
+  useCatalogSearch,
+  useVoyantCatalogContext,
+} from "../index.js"
 import {
   AvailabilityCalendar,
   compareMonth,

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { CruiseDetailHost } from "@voyantjs/catalog-ui/admin"
+import { CruiseDetailHost } from "@voyantjs/catalog-react/admin"
 
 // Thin host for the package-delivered cruise detail page (packaged-admin RFC
 // Phase 2). Navigation into the booking journey resolves through semantic

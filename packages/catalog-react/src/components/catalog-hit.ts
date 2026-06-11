@@ -1,4 +1,4 @@
-import type { CatalogSearchHit } from "@voyantjs/catalog-react"
+import type { CatalogSearchHit } from "../index.js"
 
 export type PriceUnit = "minor" | "major"
 

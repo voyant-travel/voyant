@@ -1,7 +1,6 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import { type CatalogSearchHit, useCatalogSearch } from "@voyantjs/catalog-react"
 import { Button } from "@voyantjs/ui/components/button"
 import { DataTable } from "@voyantjs/ui/components/data-table"
 import { Input } from "@voyantjs/ui/components/input"
@@ -17,6 +16,7 @@ import { ToggleGroup, ToggleGroupItem } from "@voyantjs/ui/components/toggle-gro
 import { ChevronLeft, ChevronRight, LayoutGrid, List, Search } from "lucide-react"
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
+import { type CatalogSearchHit, useCatalogSearch } from "../index.js"
 import { CatalogCard, type CatalogCardConfig } from "./catalog-card.js"
 import {
   type CatalogDetailAction,

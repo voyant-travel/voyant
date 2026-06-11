@@ -3,7 +3,7 @@ import {
   type CatalogSearchParams,
   catalogSearchSchema,
   ScheduledCatalogHost,
-} from "@voyantjs/catalog-ui/admin"
+} from "@voyantjs/catalog-react/admin"
 
 // Thin host for the package-delivered scheduled catalog page (packaged-admin
 // RFC Phase 2). This file only binds the route's URL search state.

@@ -1,15 +1,13 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import type { CatalogSearchHit } from "@voyantjs/catalog-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { cn } from "@voyantjs/ui/lib/utils"
 import { Image as ImageIcon } from "lucide-react"
 import type { ReactNode } from "react"
-
 import { useMemo } from "react"
-
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
+import type { CatalogSearchHit } from "../index.js"
 import type { CatalogCardConfig } from "./catalog-card.js"
 import type {
   CatalogDetailEnrichment,

@@ -12,7 +12,7 @@ import type {} from "@voyantjs/availability-ui/admin"
 // program without
 // pulling the admin bundles into the workspace-chrome chunk.
 import type {} from "@voyantjs/bookings-ui/admin"
-import type {} from "@voyantjs/catalog-ui/admin"
+import type {} from "@voyantjs/catalog-react/admin"
 import type {} from "@voyantjs/crm-ui/admin"
 import type {} from "@voyantjs/finance-ui/admin"
 import type {} from "@voyantjs/legal-ui/admin"

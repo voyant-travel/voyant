@@ -1,7 +1,7 @@
 "use client"
 
-import type { CatalogSearchParams } from "@voyantjs/catalog-react"
 import { type ReactNode, useMemo } from "react"
+import type { CatalogSearchParams } from "../index.js"
 
 import { type CatalogPageProps, CatalogPage as CatalogUiPage } from "./catalog-page.js"
 

@@ -59,7 +59,6 @@
     "@voyantjs/catalog-mcp": "workspace:^",
     "@voyantjs/catalog-rag": "workspace:^",
     "@voyantjs/catalog-react": "workspace:^",
-    "@voyantjs/catalog-ui": "workspace:^",
     "@voyantjs/charters": "workspace:^",
     "@voyantjs/checkout": "workspace:^",
     "@voyantjs/checkout-react": "workspace:^",

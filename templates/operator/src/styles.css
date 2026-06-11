@@ -15,7 +15,7 @@
 @source "../node_modules/@voyantjs/ui/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/availability-ui/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/bookings-ui/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/catalog-ui/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/catalog-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/crm-ui/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/extras-ui/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/finance-ui/dist/**/*.{js,mjs}";
@@ -34,7 +34,7 @@
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
 @source "../../../packages/availability-ui/src/**/*.{ts,tsx}";
 @source "../../../packages/bookings-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/catalog-ui/src/**/*.{ts,tsx}";
+@source "../../../packages/catalog-react/src/**/*.{ts,tsx}";
 @source "../../../packages/crm-ui/src/**/*.{ts,tsx}";
 @source "../../../packages/extras-ui/src/**/*.{ts,tsx}";
 @source "../../../packages/finance-ui/src/**/*.{ts,tsx}";
@@ -55,7 +55,7 @@
 @import "@voyantjs/products-ui/styles.css";
 @import "@voyantjs/resources-ui/styles.css";
 @import "@voyantjs/suppliers-ui/styles.css";
-@import "@voyantjs/catalog-ui/styles.css";
+@import "@voyantjs/catalog-react/styles.css";
 @import "@voyantjs/extras-ui/styles.css";
 @import "@voyantjs/flights-ui/styles.css";
 

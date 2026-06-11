@@ -1,8 +1,7 @@
 import { type AdminExtension, defineAdminExtension } from "@voyantjs/admin"
-import { catalogSearchSchema } from "@voyantjs/catalog-react"
 import { z } from "zod"
-
 import type { CatalogDetailSurface } from "../catalog-surfaces.js"
+import { catalogSearchSchema } from "../index.js"
 
 /**
  * Semantic destinations the catalog admin surfaces navigate to (packaged-admin
@@ -59,7 +58,6 @@ declare module "@voyantjs/admin" {
   }
 }
 
-export { type CatalogSearchParams, catalogSearchSchema } from "@voyantjs/catalog-react"
 // Packaged pages + taxonomy consumed by host route files / host wrappers, so
 // thin hosts can import everything catalog-admin from this one entrypoint.
 export {
@@ -90,6 +88,7 @@ export {
   type ScheduledCatalogPageProps,
   type ScheduledScope,
 } from "../components/scheduled-catalog-page.js"
+export { type CatalogSearchParams, catalogSearchSchema } from "../index.js"
 // Packaged admin hosts (packaged-admin RFC Phase 2): the catalog pages bound
 // to their data wiring + semantic-destination navigation. Host route files
 // only bind route params/search state onto these.

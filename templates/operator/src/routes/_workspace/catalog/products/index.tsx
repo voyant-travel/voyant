@@ -3,7 +3,7 @@ import {
   type CatalogSearchParams,
   catalogSearchSchema,
   DynamicCatalogHost,
-} from "@voyantjs/catalog-ui/admin"
+} from "@voyantjs/catalog-react/admin"
 
 // Thin host for the package-delivered dynamic catalog page (packaged-admin
 // RFC Phase 2). Page and search contract are package-owned; this file only

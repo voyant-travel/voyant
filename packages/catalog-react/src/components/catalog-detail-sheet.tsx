@@ -1,10 +1,5 @@
 "use client"
 
-import type {
-  CatalogDeparturePricingRow,
-  CatalogDetailEnrichment,
-  CatalogSearchHit,
-} from "@voyantjs/catalog-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import { Input } from "@voyantjs/ui/components/input"
@@ -49,6 +44,11 @@ import {
 } from "react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 import type { CatalogUiMessages } from "../i18n/messages.js"
+import type {
+  CatalogDeparturePricingRow,
+  CatalogDetailEnrichment,
+  CatalogSearchHit,
+} from "../index.js"
 import { MediaGallery } from "./media-gallery.js"
 
 export interface CatalogDetailAction {

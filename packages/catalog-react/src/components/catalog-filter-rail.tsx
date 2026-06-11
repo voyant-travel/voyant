@@ -1,6 +1,5 @@
 "use client"
 
-import type { CatalogFacetBucket } from "@voyantjs/catalog-react"
 import { Button } from "@voyantjs/ui/components/button"
 import { Checkbox } from "@voyantjs/ui/components/checkbox"
 import { Input } from "@voyantjs/ui/components/input"
@@ -8,6 +7,7 @@ import { Separator } from "@voyantjs/ui/components/separator"
 import { X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
+import type { CatalogFacetBucket } from "../index.js"
 import type { CatalogRangeFilterValue } from "./catalog-range-filter.js"
 import type {
   CatalogFacetFilterField,

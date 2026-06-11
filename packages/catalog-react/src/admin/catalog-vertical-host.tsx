@@ -1,14 +1,6 @@
 "use client"
 
 import { useAdminHref, useAdminNavigate, useOperatorAdminMessages } from "@voyantjs/admin"
-import type { CatalogSearchHit, CatalogSearchParams } from "@voyantjs/catalog-react"
-import {
-  type CatalogSlotAvailability,
-  createCatalogEnrichmentFetchers,
-  fetchCatalogSlots,
-  useVoyantCatalogContext,
-  type VoyantFetcher,
-} from "@voyantjs/catalog-react"
 import { useMarketLocales, useMarkets } from "@voyantjs/markets-react"
 import { useProductMutation } from "@voyantjs/products-react"
 import { useSuppliers } from "@voyantjs/suppliers-react"
@@ -21,10 +13,17 @@ import {
 } from "@voyantjs/ui/components/select"
 import { useMemo } from "react"
 import { toast } from "sonner"
-
 import type { CatalogVerticalPageId } from "../catalog-surfaces.js"
 import { CatalogPage as CatalogUiPage } from "../components/catalog-page.js"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
+import type { CatalogSearchHit, CatalogSearchParams } from "../index.js"
+import {
+  type CatalogSlotAvailability,
+  createCatalogEnrichmentFetchers,
+  fetchCatalogSlots,
+  useVoyantCatalogContext,
+  type VoyantFetcher,
+} from "../index.js"
 
 type CatalogBrowserMessages = ReturnType<
   typeof useOperatorAdminMessages

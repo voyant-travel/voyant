@@ -99,7 +99,7 @@ function createBookingsExtension(messages: AdminExtensionNavMessages) {
 // here would duplicate it. It's registered for the routes seam: the
 // contributions carry the package-owned route metadata + search contracts
 // (catalogSearchSchema / productDetailSearchSchema), and the pages are the
-// packaged hosts from @voyantjs/catalog-ui/admin — the route files under
+// packaged hosts from @voyantjs/catalog-react/admin — the route files under
 // src/routes/_workspace/catalog/* only bind route params/search onto them.
 function createCatalogExtension(messages: AdminExtensionNavMessages) {
   return generatedAdminExtensionFactories.catalog({

@@ -12,4 +12,4 @@ export {
   type CatalogEnrichmentFetchersOptions,
   type CatalogSlotAvailability,
   createCatalogEnrichmentFetchers,
-} from "@voyantjs/catalog-react"
+} from "../index.js"

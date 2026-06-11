@@ -1,5 +1,5 @@
-import type { CatalogSearchHit } from "@voyantjs/catalog-react"
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
+import type { CatalogSearchHit } from "../index.js"
 
 import {
   __resetEnrichmentFetcherWarnings,

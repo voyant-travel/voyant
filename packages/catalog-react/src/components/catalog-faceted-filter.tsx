@@ -1,6 +1,5 @@
 "use client"
 
-import type { CatalogFacetBucket } from "@voyantjs/catalog-react"
 import { Button } from "@voyantjs/ui/components/button"
 import { Checkbox } from "@voyantjs/ui/components/checkbox"
 import {
@@ -15,6 +14,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@voyantjs/ui/components/popover"
 import { PlusCircle } from "lucide-react"
 import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
+import type { CatalogFacetBucket } from "../index.js"
 
 export interface CatalogFacetedFilterProps {
   /** Field name (matches the indexer document field). */

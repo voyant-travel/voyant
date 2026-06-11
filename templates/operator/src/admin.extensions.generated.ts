@@ -5,7 +5,7 @@
 import { createCrmAdminExtension } from "@voyantjs/crm-ui/admin"
 import { createSuppliersAdminExtension } from "@voyantjs/suppliers-ui/admin"
 import { createPromotionsAdminExtension } from "@voyantjs/promotions-ui/admin"
-import { createCatalogAdminExtension } from "@voyantjs/catalog-ui/admin"
+import { createCatalogAdminExtension } from "@voyantjs/catalog-react/admin"
 import { createBookingsAdminExtension } from "@voyantjs/bookings-ui/admin"
 import { createFinanceAdminExtension } from "@voyantjs/finance-ui/admin"
 import { createAvailabilityAdminExtension } from "@voyantjs/availability-ui/admin"

@@ -1,11 +1,10 @@
 "use client"
 
-import type { CatalogSearchHit } from "@voyantjs/catalog-react"
-import { fetchCatalogSlots, useVoyantCatalogContext } from "@voyantjs/catalog-react"
 import { Image as ImageIcon } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
-
 import { useCatalogUiI18nOrDefault, useCatalogUiMessagesOrDefault } from "../i18n/index.js"
+import type { CatalogSearchHit } from "../index.js"
+import { fetchCatalogSlots, useVoyantCatalogContext } from "../index.js"
 import { type CatalogDetailEnrichment, CatalogDetailView } from "./catalog-detail-sheet.js"
 import {
   type CatalogSlotAvailability,

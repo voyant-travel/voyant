@@ -1538,46 +1538,12 @@ importers:
 
   packages/catalog-react:
     dependencies:
-      '@voyantjs/react':
-        specifier: workspace:^
-        version: link:../react
-    devDependencies:
-      '@tanstack/react-query':
-        specifier: ^5.100.11
-        version: 5.100.11(react@19.2.4)
-      '@types/react':
-        specifier: ^19.2.14
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19.2.3
-        version: 19.2.3(@types/react@19.2.14)
-      '@voyantjs/catalog':
-        specifier: workspace:^
-        version: link:../catalog
-      '@voyantjs/voyant-typescript-config':
-        specifier: workspace:^
-        version: link:../typescript-config
-      react:
-        specifier: ^19.2.4
-        version: 19.2.4
-      react-dom:
-        specifier: ^19.2.4
-        version: 19.2.4(react@19.2.4)
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
-      vitest:
-        specifier: ^4.1.2
-        version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
-      zod:
-        specifier: ^4.3.6
-        version: 4.3.6
-
-  packages/catalog-ui:
-    dependencies:
       '@voyantjs/i18n':
         specifier: workspace:^
         version: link:../i18n
+      '@voyantjs/react':
+        specifier: workspace:^
+        version: link:../react
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.100.11
@@ -1594,9 +1560,9 @@ importers:
       '@voyantjs/admin':
         specifier: workspace:^
         version: link:../admin
-      '@voyantjs/catalog-react':
+      '@voyantjs/catalog':
         specifier: workspace:^
-        version: link:../catalog-react
+        version: link:../catalog
       '@voyantjs/markets-react':
         specifier: workspace:^
         version: link:../markets-react
@@ -6053,9 +6019,6 @@ importers:
       '@voyantjs/catalog-react':
         specifier: workspace:^
         version: link:../../packages/catalog-react
-      '@voyantjs/catalog-ui':
-        specifier: workspace:^
-        version: link:../../packages/catalog-ui
       '@voyantjs/charters':
         specifier: workspace:^
         version: link:../../packages/charters

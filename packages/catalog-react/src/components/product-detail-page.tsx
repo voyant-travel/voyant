@@ -1,7 +1,5 @@
 "use client"
 
-import type { CatalogSurface } from "@voyantjs/catalog-react"
-import { fetchPackageDetail, useVoyantCatalogContext } from "@voyantjs/catalog-react"
 import { Badge } from "@voyantjs/ui/components/badge"
 import { Button } from "@voyantjs/ui/components/button"
 import {
@@ -30,6 +28,8 @@ import {
 import { useEffect, useMemo, useState } from "react"
 import { useCatalogUiI18nOrDefault, useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 import type { CatalogUiMessages } from "../i18n/messages.js"
+import type { CatalogSurface } from "../index.js"
+import { fetchPackageDetail, useVoyantCatalogContext } from "../index.js"
 import {
   AvailabilityCalendar,
   compareMonth,
