@@ -6,10 +6,14 @@ import type { NavItem } from "./types.js"
 /**
  * App-supplied runtime handed to route loaders: where the API lives and how
  * to reach it (the host's cookie-forwarding fetcher in SSR setups).
+ *
+ * The fetcher takes a string URL — the `VoyantFetcher` convention every
+ * `*-react` data client uses — so host fetchers typed against that contract
+ * (and the global `fetch`, which accepts a superset of inputs) bind directly.
  */
 export interface AdminRouteRuntime {
   baseUrl: string
-  fetcher?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+  fetcher?: (url: string, init?: RequestInit) => Promise<Response>
 }
 
 export interface AdminRouteLoaderContext {
@@ -95,6 +99,42 @@ export interface AdminExtension {
 
 export function defineAdminExtension<T extends AdminExtension>(extension: T): T {
   return extension
+}
+
+/**
+ * A route contribution whose `component` is guaranteed present, typed as a
+ * function component so it attaches directly to router `component:` options
+ * (router component types reject the class side of `React.ComponentType`).
+ */
+export type BindableAdminRoute = Omit<AdminUiRouteContribution, "component"> & {
+  component: React.FunctionComponent
+}
+
+/**
+ * Look up a route contribution by id and assert it carries a component.
+ *
+ * This is the binding contract generated thin route files rely on
+ * (`voyant admin generate --routes`, packaged-admin RFC §4.2): the generator
+ * only emits hosts for zero-prop contributions whose `component` is present,
+ * and the emitted file resolves the contribution through this helper so a
+ * contribution that later loses its id or component fails loudly at module
+ * evaluation (build/dev start) instead of rendering an empty route.
+ */
+export function requireAdminRoute(extension: AdminExtension, routeId: string): BindableAdminRoute {
+  const route = extension.routes?.find((candidate) => candidate.id === routeId)
+  if (!route) {
+    throw new Error(
+      `[voyant-admin] Extension "${extension.id}" has no route contribution "${routeId}". ` +
+        `Regenerate the host's route files with \`voyant admin generate --routes\`.`,
+    )
+  }
+  if (!route.component) {
+    throw new Error(
+      `[voyant-admin] Route contribution "${routeId}" of extension "${extension.id}" carries no component. ` +
+        `Generated thin hosts require zero-prop components — regenerate with \`voyant admin generate --routes\`.`,
+    )
+  }
+  return route as BindableAdminRoute
 }
 
 /**

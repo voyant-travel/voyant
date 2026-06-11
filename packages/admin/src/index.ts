@@ -129,10 +129,12 @@ export {
   type AdminUiRouteContribution,
   type AdminWidgetContribution,
   type AdminWidgetSlot,
+  type BindableAdminRoute,
   createAdminExtensionRegistry,
   defineAdminExtension,
   type ResolveAdminNavigationOptions,
   type ResolveAdminWidgetsOptions,
+  requireAdminRoute,
   resolveAdminNavigation,
   resolveAdminWidgets,
 } from "./extensions.js"
