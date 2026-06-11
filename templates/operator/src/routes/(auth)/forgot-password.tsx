@@ -1,6 +1,6 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
 import { formatMessage } from "@voyantjs/admin"
-import { ForgotPasswordPage, type ForgotPasswordPageMessages } from "@voyantjs/auth-ui"
+import { ForgotPasswordPage, type ForgotPasswordPageMessages } from "@voyantjs/auth-react/ui"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { cloudAuthStartHref, getBootstrapStatus, getCurrentUser } from "@/lib/current-user"
 

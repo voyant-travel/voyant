@@ -3,4 +3,4 @@ export {
   type BillingOrgPickerProps,
   BillingPersonPicker,
   type BillingPersonPickerProps,
-} from "@voyantjs/flights-ui"
+} from "@voyantjs/flights-react/ui"

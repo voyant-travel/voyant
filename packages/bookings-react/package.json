@@ -14,11 +14,19 @@
     "./provider": "./src/provider.tsx",
     "./hooks": "./src/hooks/index.ts",
     "./client": "./src/client.ts",
-    "./query-keys": "./src/query-keys.ts"
+    "./query-keys": "./src/query-keys.ts",
+    "./ui": "./src/ui.ts",
+    "./styles.css": "./src/styles.css",
+    "./i18n": "./src/i18n/index.ts",
+    "./i18n/en": "./src/i18n/en.ts",
+    "./i18n/ro": "./src/i18n/ro.ts",
+    "./journey": "./src/journey/index.ts",
+    "./admin": "./src/admin/index.tsx",
+    "./components/*": "./src/components/*.tsx"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo",
     "prepack": "pnpm run build",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src/",
@@ -26,29 +34,112 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
+    "@tanstack/react-table": "^8.0.0",
+    "@voyantjs/admin": "workspace:^",
+    "@voyantjs/availability-react": "workspace:^",
     "@voyantjs/bookings": "workspace:^",
+    "@voyantjs/catalog": "workspace:^",
+    "@voyantjs/catalog-react": "workspace:^",
+    "@voyantjs/crm-react": "workspace:^",
+    "@voyantjs/extras-react": "workspace:^",
+    "@voyantjs/finance-react": "workspace:^",
+    "@voyantjs/identity-react": "workspace:^",
+    "@voyantjs/legal-react": "workspace:^",
+    "@voyantjs/pricing-react": "workspace:^",
+    "@voyantjs/products-react": "workspace:^",
+    "@voyantjs/suppliers-react": "workspace:^",
+    "@voyantjs/ui": "workspace:^",
+    "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-hook-form": "^7.60.0",
     "zod": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/react-table": {
+      "optional": true
+    },
+    "@voyantjs/admin": {
+      "optional": true
+    },
+    "@voyantjs/availability-react": {
+      "optional": true
+    },
+    "@voyantjs/catalog-react": {
+      "optional": true
+    },
+    "@voyantjs/crm-react": {
+      "optional": true
+    },
+    "@voyantjs/extras-react": {
+      "optional": true
+    },
+    "@voyantjs/finance-react": {
+      "optional": true
+    },
+    "@voyantjs/identity-react": {
+      "optional": true
+    },
+    "@voyantjs/legal-react": {
+      "optional": true
+    },
+    "@voyantjs/pricing-react": {
+      "optional": true
+    },
+    "@voyantjs/products-react": {
+      "optional": true
+    },
+    "@voyantjs/suppliers-react": {
+      "optional": true
+    },
+    "@voyantjs/ui": {
+      "optional": true
+    },
+    "lucide-react": {
+      "optional": true
+    },
+    "react-hook-form": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@voyantjs/i18n": "workspace:^",
+    "@voyantjs/react": "workspace:^",
+    "sonner": "^2.0.7"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.100.11",
+    "@tanstack/react-table": "^8.21.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@voyantjs/admin": "workspace:^",
+    "@voyantjs/availability-react": "workspace:^",
     "@voyantjs/bookings": "workspace:^",
+    "@voyantjs/catalog": "workspace:^",
+    "@voyantjs/catalog-react": "workspace:^",
+    "@voyantjs/crm-react": "workspace:^",
+    "@voyantjs/extras-react": "workspace:^",
+    "@voyantjs/finance-react": "workspace:^",
+    "@voyantjs/identity-react": "workspace:^",
+    "@voyantjs/legal-react": "workspace:^",
+    "@voyantjs/pricing-react": "workspace:^",
+    "@voyantjs/products-react": "workspace:^",
     "@voyantjs/react": "workspace:^",
+    "@voyantjs/suppliers-react": "workspace:^",
+    "@voyantjs/ui": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
+    "lucide-react": "^0.475.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-hook-form": "^7.60.0",
+    "sonner": "^2.0.7",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2",
     "zod": "^4.3.6"
   },
-  "dependencies": {
-    "@voyantjs/react": "workspace:^"
-  },
   "files": [
-    "dist"
+    "dist",
+    "src/styles.css"
   ],
   "publishConfig": {
     "access": "public",
@@ -77,6 +168,44 @@
         "types": "./dist/query-keys.d.ts",
         "import": "./dist/query-keys.js",
         "default": "./dist/query-keys.js"
+      },
+      "./ui": {
+        "types": "./dist/ui.d.ts",
+        "import": "./dist/ui.js",
+        "default": "./dist/ui.js"
+      },
+      "./styles.css": {
+        "default": "./src/styles.css"
+      },
+      "./i18n": {
+        "types": "./dist/i18n/index.d.ts",
+        "import": "./dist/i18n/index.js",
+        "default": "./dist/i18n/index.js"
+      },
+      "./i18n/en": {
+        "types": "./dist/i18n/en.d.ts",
+        "import": "./dist/i18n/en.js",
+        "default": "./dist/i18n/en.js"
+      },
+      "./i18n/ro": {
+        "types": "./dist/i18n/ro.d.ts",
+        "import": "./dist/i18n/ro.js",
+        "default": "./dist/i18n/ro.js"
+      },
+      "./journey": {
+        "types": "./dist/journey/index.d.ts",
+        "import": "./dist/journey/index.js",
+        "default": "./dist/journey/index.js"
+      },
+      "./admin": {
+        "types": "./dist/admin/index.d.ts",
+        "import": "./dist/admin/index.js",
+        "default": "./dist/admin/index.js"
+      },
+      "./components/*": {
+        "types": "./dist/components/*.d.ts",
+        "import": "./dist/components/*.js",
+        "default": "./dist/components/*.js"
       }
     },
     "main": "./dist/index.js",

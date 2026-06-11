@@ -770,7 +770,7 @@ Recorded here as the rationale trail. The two larger architectural threads have 
 
 ### PR5 — Operator UI primitives
 
-- `packages/promotions-ui` (registry components for the operator dashboard): offer list, offer form, offer detail, redemption history.
+- `packages/promotions-react` (registry components for the operator dashboard): offer list, offer form, offer detail, redemption history.
 - DMC + operator template wires the components into `/admin/promotions/*` routes.
 - Integration tests of the form's discriminated-union scope picker (the trickiest piece of the UI).
 

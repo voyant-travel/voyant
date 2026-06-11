@@ -1,5 +1,9 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
-import { SignInPage, type SignInPageMessages, type SignInSocialProvider } from "@voyantjs/auth-ui"
+import {
+  SignInPage,
+  type SignInPageMessages,
+  type SignInSocialProvider,
+} from "@voyantjs/auth-react/ui"
 import { z } from "zod"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { authClient } from "@/lib/auth"

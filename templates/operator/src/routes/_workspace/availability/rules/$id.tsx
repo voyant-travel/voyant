@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { AvailabilityRuleDetailHost } from "@voyantjs/availability-react/admin"
 import {
   AvailabilityRuleDetailSkeleton,
   loadAvailabilityRuleDetailPage,
-} from "@voyantjs/availability-ui"
-import { AvailabilityRuleDetailHost } from "@voyantjs/availability-ui/admin"
+} from "@voyantjs/availability-react/ui"
 import { getAvailabilityContextValue } from "@/lib/availability-context"
 
 // Thin host for the package-delivered rule detail page (packaged-admin RFC

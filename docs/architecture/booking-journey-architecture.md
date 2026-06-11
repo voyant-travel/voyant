@@ -15,7 +15,7 @@ Current implementation state, May 2026:
 
 - The reusable engine contracts, quote/book routes, draft CRUD routes, hold routes, `catalog_quotes`, and `booking_drafts` are in `@voyantjs/catalog/booking-engine`.
 - The shareable React hooks are in `@voyantjs/catalog-react/booking-engine`.
-- The shareable wizard shell and step components are in `@voyantjs/bookings-ui/journey`.
+- The shareable wizard shell and step components are in `@voyantjs/bookings-react/journey`.
 - The operator template mounts the shared route family on both `/v1/admin/catalog/*` and `/v1/public/catalog/*`, and wires operator-only slots, order routes, checkout start, tax transforms, and snapshot enrichment locally.
 - Catalog Items are the journey input. `sourceKind: "owned"` dispatches to an
   internal Voyant handler when the relevant module is installed; sourced
@@ -93,7 +93,7 @@ Before specifying anything new, this doc commits to reusing the following primit
 | Encrypted PII (passport, DOB, dietary, accessibility) | `booking_traveler_travel_details` with `KmsEnvelope` columns (`identityEncrypted`, `dietaryEncrypted`, `accessibilityEncrypted`) — `packages/bookings/src/schema/travel-details.ts` | **Reuse.** Per-traveler document fields collected in the Travelers step commit through this envelope; no parallel `bookingTravelers.documents jsonb`. The Travelers step's *transient* draft state may carry plaintext during the journey, but the commit path encrypts. |
 | Tax-regime catalog (jurisdiction × rate) | `tax_regimes` table — `packages/finance/src/schema.ts` | **Reuse.** New `tax_classes` (this doc, §9) carries the per-product tax-treatment decision and *resolves to* a `tax_regimes` row at quote time. They stack, not overlap. |
 | Per-occupancy pricing for cruises | `cruise_prices.occupancy` column + `cruisePrices` table — `packages/cruises/src/schema-pricing.ts` | **Reuse for cruises.** The new `product_pax_pricing_tiers` (§9) is for non-cruise verticals that need single-supplement / triple-share. Cruises keep their specialized table; the engine reads from the right place per vertical. |
-| Payment-collection UI (saved cards, new card, processor flow) | `checkout-ui`'s `PaymentStep` — `packages/checkout-ui/src/components/payment-step.tsx` | **Compose.** The journey's "Payment" step picks **intent + schedule** (hold vs card vs ticket-on-credit; deposit vs full vs split) — that's a journey concern. Actual provider mechanics (Netopia tokenization, Stripe Elements, etc.) hand off to `checkout-ui`'s `PaymentStep` at commit time. The journey shell does not introduce a new payment-provider seam. |
+| Payment-collection UI (saved cards, new card, processor flow) | `checkout-ui`'s `PaymentStep` — `packages/checkout-react/src/components/payment-step.tsx` | **Compose.** The journey's "Payment" step picks **intent + schedule** (hold vs card vs ticket-on-credit; deposit vs full vs split) — that's a journey concern. Actual provider mechanics (Netopia tokenization, Stripe Elements, etc.) hand off to `checkout-ui`'s `PaymentStep` at commit time. The journey shell does not introduce a new payment-provider seam. |
 | Quantity-tier pricing (more units → cheaper per-unit) | `option_unit_tiers` — `packages/pricing/src/schema-option-rules.ts` | **Reuse.** Quantity tiers are an orthogonal axis to per-occupancy tiers; the engine consults both when pricing an option. |
 | Snapshot graph at commit | `booking_catalog_snapshot` + `captureSnapshot` / `captureSnapshotGraph` — `packages/catalog/src/services/snapshot-service.ts` | **Reuse.** Both owned and sourced commits pass through these. |
 | Atomic owned-product transaction | `bookingsCreate` — `packages/finance/src/service-booking-create.ts` | **Bridge only.** The products owned handler maps a draft to booking-create's input shape for the current commit path. Booking-create's input still does not model every axis the journey can collect (full extras, all accommodation stay details, encrypted travel details, tax lines, catalog snapshots, arbitrary draft shape), so vertical handlers remain the seam for richer commit primitives. |
@@ -106,7 +106,7 @@ The rule of thumb: if a reasonable read of "I need X" finds an existing primitiv
 A short inventory so we don't reinvent (full survey lives in the agent reports cited in the PR description):
 
 - **`packages/bookings/`** — `bookings`, `bookingTravelers`, `bookingItems`, `bookingAllocations`, `bookingGroups` schemas. Booking states: `draft`/`on_hold`/`confirmed`/`in_progress`/`completed`/`expired`/`cancelled`.
-- **`packages/bookings-ui/`** — composable sections: `ProductPickerSection`, `RoomsStepperSection`, `PersonPickerSection`, `PassengersSection`, `PaymentScheduleSection`, `SharedRoomSection`, `VoucherPickerSection`, `PriceBreakdownSection`. Each carries a `value` / `onChange` contract, parent owns state.
+- **`packages/bookings-react/`** — composable sections: `ProductPickerSection`, `RoomsStepperSection`, `PersonPickerSection`, `PassengersSection`, `PaymentScheduleSection`, `SharedRoomSection`, `VoucherPickerSection`, `PriceBreakdownSection`. Each carries a `value` / `onChange` contract, parent owns state.
 - **`packages/availability/`** — `availabilitySlots`, `useSlots`, `useSlotUnitAvailability`. Departure pickers for date / time / slot.
 - **`packages/pricing/`** — per-unit tier matching, `optionPriceRules` and `optionUnitPriceRules`. No unified `computeTotal()` exists yet.
 - **`packages/booking-requirements/`** — `productContactRequirements`, `bookingQuestions`. Per-product per-field requirements (passport, dietary, etc.) with `scope` (booking/lead/traveler/booker), `isRequired`, `perTraveler`. **This is the canonical source of "what fields to collect" — the wizard reads from it.**
@@ -559,9 +559,9 @@ Per Rule 4 (§overview), every piece of the journey except the wired-up route co
 |---------|---------|----------------|
 | Engine endpoints + types (`POST /quote`, `POST /book`, `BookingDraftShape`, `PricingBreakdown`) | `@voyantjs/catalog/booking-engine` | Existing — extend |
 | React hooks (`useBookingDraft`, `useBookingQuote`, `useBookingCommit`, `useBookingDraftShape`) | `@voyantjs/catalog-react/booking-engine` *(new sub-path)* | New |
-| Wizard shell (`<BookingJourney />`, step navigation, sticky footer, draft persistence) | `@voyantjs/bookings-ui/journey` | **New** — the missing piece. Modeled on `@voyantjs/flights-ui`'s `FlightBookingShell`. |
-| Step section components (Configure, Billing, Travelers, Accommodation, Add-ons, Payment, Review) | `@voyantjs/bookings-ui/journey` | New, with renderers per sub-step `kind` |
-| Reusable form sections that pre-date the journey | `@voyantjs/bookings-ui` (PassengersSection, PaymentScheduleSection, RoomsStepperSection, SharedRoomSection, VoucherPickerSection, PriceBreakdownSection) | Existing — widen as §8 table notes |
+| Wizard shell (`<BookingJourney />`, step navigation, sticky footer, draft persistence) | `@voyantjs/bookings-react/journey` | **New** — the missing piece. Modeled on `@voyantjs/flights-react/ui`'s `FlightBookingShell`. |
+| Step section components (Configure, Billing, Travelers, Accommodation, Add-ons, Payment, Review) | `@voyantjs/bookings-react/journey` | New, with renderers per sub-step `kind` |
+| Reusable form sections that pre-date the journey | `@voyantjs/bookings-react/ui` (PassengersSection, PaymentScheduleSection, RoomsStepperSection, SharedRoomSection, VoucherPickerSection, PriceBreakdownSection) | Existing — widen as §8 table notes |
 | Owned-handler interface + registry (`OwnedBookingHandler`, `OwnedBookingHandlerRegistry`) | `@voyantjs/catalog/booking-engine` | New (interface only — no vertical imports) |
 | Per-vertical owned handlers (e.g. `createProductsBookingHandler`) | each vertical's `<vertical>/src/booking-engine/handler.ts` | New per vertical, lands incrementally per phase |
 | Adapter contract bits not already in `SourceAdapter` (`describeShape`, hold metadata) | `@voyantjs/catalog/adapter` | Existing — extend |
@@ -747,7 +747,7 @@ section as the current execution map.
 - `@voyantjs/catalog-react/booking-engine` ships `useBookingDraft`,
   `useBookingQuote`, `useBookingDraftShape`, `useBookingCommit`, and
   `useBookingHold`.
-- `@voyantjs/bookings-ui/journey` ships `<BookingJourney />`, the step header,
+- `@voyantjs/bookings-react/journey` ships `<BookingJourney />`, the step header,
   side panel, and Configure/Billing/Travelers/Accommodation/Add-ons/Payment/
   Review steps.
 - Products, accommodations, and cruises all have owned handlers and descriptor

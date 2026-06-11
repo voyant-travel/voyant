@@ -1,1 +1,1 @@
-export * from "@voyantjs/workflows-ui/i18n/en"
+export * from "@voyantjs/workflows-react/i18n/en"

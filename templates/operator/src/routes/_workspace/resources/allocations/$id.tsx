@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { ResourceAllocationDetailHost } from "@voyantjs/resources-react/admin"
 import {
   ensureResourceAllocationDetailPageData,
   ResourceAllocationDetailSkeleton,
-} from "@voyantjs/resources-ui"
-import { ResourceAllocationDetailHost } from "@voyantjs/resources-ui/admin"
+} from "@voyantjs/resources-react/ui"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
 

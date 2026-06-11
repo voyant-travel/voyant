@@ -1,4 +1,4 @@
 export {
   PassengerContactPicker,
   type PassengerContactPickerProps,
-} from "@voyantjs/flights-ui"
+} from "@voyantjs/flights-react/ui"

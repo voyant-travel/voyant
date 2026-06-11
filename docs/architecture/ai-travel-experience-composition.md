@@ -36,7 +36,7 @@ Current code alignment, May 2026:
 
 - The single-line booking journey foundation has shipped: V1 contracts,
   `catalog_quotes`, `booking_drafts`, quote/book/draft/hold routes,
-  React hooks, and `@voyantjs/bookings-ui/journey`.
+  React hooks, and `@voyantjs/bookings-react/journey`.
 - The composer is catalog-first. It selects Catalog Items, not products,
   hotels, or other vertical-owned tables directly. `sourceKind: "owned"` is
   one catalog provenance/fulfillment path: the booking engine calls an internal

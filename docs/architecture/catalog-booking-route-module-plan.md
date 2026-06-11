@@ -13,7 +13,7 @@ operator template.
 `@voyantjs/catalog` publishes the booking engine services and
 `@voyantjs/catalog-react/booking-engine` publishes hooks that call the booking
 journey HTTP contract. Package consumers still need to recreate the Hono route
-layer that those hooks expect before `@voyantjs/bookings-ui/journey` can be a
+layer that those hooks expect before `@voyantjs/bookings-react/journey` can be a
 safe installable package swap.
 
 The operator template currently has a working implementation in
@@ -255,7 +255,7 @@ template.
 ## Acceptance Criteria
 
 - A consumer can install `@voyantjs/catalog`,
-  `@voyantjs/catalog-react`, and `@voyantjs/bookings-ui` without copying the
+  `@voyantjs/catalog-react`, and `@voyantjs/bookings-react/ui` without copying the
   operator template's booking route handlers.
 - The package exposes a documented route module or factory for both
   `/v1/admin/catalog/*` and `/v1/public/catalog/*`.

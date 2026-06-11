@@ -45,7 +45,7 @@ export const operatorAdminProductsMessages = {
           comboboxLoading: "Loading…",
           comboboxEmpty: "No product categories found.",
         },
-        // tags: removed — owned by `@voyantjs/products-ui`'s tag-* primitives.
+        // tags: removed — owned by `@voyantjs/products-react/ui`'s tag-* primitives.
       },
       core: {
         pageTitle: "Products",
@@ -378,7 +378,7 @@ export const operatorAdminProductsMessages = {
           overrideHint:
             "Override which itinerary this departure follows. Default tracks whichever itinerary is marked as default.",
         },
-        // days: removed — owned by `@voyantjs/products-ui`'s day-* primitives.
+        // days: removed — owned by `@voyantjs/products-react/ui`'s day-* primitives.
         services: {
           editTitle: "Edit Service",
           newTitle: "Add Service",
@@ -413,7 +413,7 @@ export const operatorAdminProductsMessages = {
           validationCountryCode: "Use 2-letter country code",
           create: "Add Service",
         },
-        // options: removed — owned by `@voyantjs/products-ui`'s option-* primitives.
+        // options: removed — owned by `@voyantjs/products-react/ui`'s option-* primitives.
         units: {
           editTitle: "Edit Unit",
           newTitle: "New Unit",
@@ -714,7 +714,7 @@ export const operatorAdminProductsMessages = {
             hidden: "Hidden",
           },
         },
-        // versions: removed — owned by `@voyantjs/products-ui`'s product-version-dialog.
+        // versions: removed — owned by `@voyantjs/products-react/ui`'s product-version-dialog.
       },
     },
   },

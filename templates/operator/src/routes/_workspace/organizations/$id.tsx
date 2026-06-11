@@ -5,7 +5,7 @@ import {
   getPeopleQueryOptions,
   getQuotesQueryOptions,
 } from "@voyantjs/crm-react"
-import { OrganizationDetailHost, OrganizationDetailSkeleton } from "@voyantjs/crm-ui/admin"
+import { OrganizationDetailHost, OrganizationDetailSkeleton } from "@voyantjs/crm-react/admin"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"

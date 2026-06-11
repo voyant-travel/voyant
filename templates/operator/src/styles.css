@@ -11,53 +11,53 @@
    issue #416), so the dist scans below are still required. */
 @source "../node_modules/@voyantjs/admin/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/allocation-ui/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/auth-ui/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/auth-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/ui/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/availability-ui/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/bookings-ui/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/availability-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/bookings-react/dist/**/*.{js,mjs}";
 @source "../node_modules/@voyantjs/catalog-react/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/crm-ui/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/extras-ui/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/finance-ui/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/flights-ui/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/legal-ui/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/products-ui/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/resources-ui/dist/**/*.{js,mjs}";
-@source "../node_modules/@voyantjs/suppliers-ui/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/crm-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/extras-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/finance-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/flights-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/legal-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/products-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/resources-react/dist/**/*.{js,mjs}";
+@source "../node_modules/@voyantjs/suppliers-react/dist/**/*.{js,mjs}";
 /* In the monorepo, package `exports` point at `./src/*.ts(x)` so dev/SSR
    runs from live source, not the package `dist/`. The dist scans above
    only help published consumers and can lag behind src during local dev,
    so also scan workspace src trees directly. */
 @source "../../../packages/admin/src/**/*.{ts,tsx}";
 @source "../../../packages/allocation-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/auth-ui/src/**/*.{ts,tsx}";
+@source "../../../packages/auth-react/src/**/*.{ts,tsx}";
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
-@source "../../../packages/availability-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/bookings-ui/src/**/*.{ts,tsx}";
+@source "../../../packages/availability-react/src/**/*.{ts,tsx}";
+@source "../../../packages/bookings-react/src/**/*.{ts,tsx}";
 @source "../../../packages/catalog-react/src/**/*.{ts,tsx}";
-@source "../../../packages/crm-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/extras-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/finance-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/flights-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/legal-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/products-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/resources-ui/src/**/*.{ts,tsx}";
-@source "../../../packages/suppliers-ui/src/**/*.{ts,tsx}";
+@source "../../../packages/crm-react/src/**/*.{ts,tsx}";
+@source "../../../packages/extras-react/src/**/*.{ts,tsx}";
+@source "../../../packages/finance-react/src/**/*.{ts,tsx}";
+@source "../../../packages/flights-react/src/**/*.{ts,tsx}";
+@source "../../../packages/legal-react/src/**/*.{ts,tsx}";
+@source "../../../packages/products-react/src/**/*.{ts,tsx}";
+@source "../../../packages/resources-react/src/**/*.{ts,tsx}";
+@source "../../../packages/suppliers-react/src/**/*.{ts,tsx}";
 
 @import "@voyantjs/ui/styles.css";
 @import "@voyantjs/admin/styles.css";
-@import "@voyantjs/auth-ui/styles.css";
-@import "@voyantjs/availability-ui/styles.css";
-@import "@voyantjs/bookings-ui/styles.css";
-@import "@voyantjs/crm-ui/styles.css";
-@import "@voyantjs/finance-ui/styles.css";
-@import "@voyantjs/legal-ui/styles.css";
-@import "@voyantjs/products-ui/styles.css";
-@import "@voyantjs/resources-ui/styles.css";
-@import "@voyantjs/suppliers-ui/styles.css";
+@import "@voyantjs/auth-react/styles.css";
+@import "@voyantjs/availability-react/styles.css";
+@import "@voyantjs/bookings-react/styles.css";
+@import "@voyantjs/crm-react/styles.css";
+@import "@voyantjs/finance-react/styles.css";
+@import "@voyantjs/legal-react/styles.css";
+@import "@voyantjs/products-react/styles.css";
+@import "@voyantjs/resources-react/styles.css";
+@import "@voyantjs/suppliers-react/styles.css";
 @import "@voyantjs/catalog-react/styles.css";
-@import "@voyantjs/extras-ui/styles.css";
-@import "@voyantjs/flights-ui/styles.css";
+@import "@voyantjs/extras-react/styles.css";
+@import "@voyantjs/flights-react/styles.css";
 
 @custom-variant dark (&:is(.dark *));
 

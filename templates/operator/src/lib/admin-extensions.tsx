@@ -70,7 +70,7 @@ type AdminExtensionNavMessages = Pick<
 // so an entry here would duplicate it. It's registered for the routes seam:
 // the contributions carry the package-owned route metadata (no search
 // contracts — the pages keep their filters local), and the detail pages are
-// the packaged hosts from @voyantjs/availability-ui/admin — the route files
+// the packaged hosts from @voyantjs/availability-react/admin — the route files
 // under src/routes/_workspace/availability/* only bind route params onto
 // them. The index page stays an app-side wrapper: its bulk update/delete
 // handlers call the availability batch endpoints, which have no
@@ -87,7 +87,7 @@ function createAvailabilityExtension(messages: AdminExtensionNavMessages) {
 // here would duplicate it. It's registered for the routes seam: the
 // contributions carry the package-owned route metadata + search contracts
 // (bookingsIndexSearchSchema / bookingDetailSearchSchema), and the pages are
-// the packaged hosts from @voyantjs/bookings-ui/admin — the route files under
+// the packaged hosts from @voyantjs/bookings-react/admin — the route files under
 // src/routes/_workspace/bookings/* only bind route params/search onto them.
 function createBookingsExtension(messages: AdminExtensionNavMessages) {
   return generatedAdminExtensionFactories.bookings({ labels: { bookings: messages.bookings } })
@@ -118,7 +118,7 @@ function createCatalogExtension(messages: AdminExtensionNavMessages) {
 // navigation (createOperatorAdminNavigation in @voyantjs/admin), so entries
 // here would duplicate it. It's registered for the routes seam (metadata for
 // the finance pages; the detail pages are the packaged hosts from
-// @voyantjs/finance-ui/admin) AND for the widgets seam: it contributes the
+// @voyantjs/finance-react/admin) AND for the widgets seam: it contributes the
 // finance-owned booking invoices card on bookings-ui's
 // `booking.details.invoices-tab` slot — the finance-ui ↔ bookings-ui cycle
 // resolution (finance-ui depends on bookings-ui, so the bookings host can't
@@ -140,7 +140,7 @@ function createFinanceExtension(messages: AdminExtensionNavMessages) {
 // the BASE operator navigation (createOperatorAdminNavigation in
 // @voyantjs/admin), so entries here would duplicate them. It's registered
 // for the routes seam (metadata for the people/organization pages; the pages
-// are the packaged hosts from @voyantjs/crm-ui/admin — the route files under
+// are the packaged hosts from @voyantjs/crm-react/admin — the route files under
 // src/routes/_workspace/people/* and src/routes/_workspace/organizations/*
 // only bind route params onto them). The person detail page's Bookings tab
 // is the crm-ui ↔ bookings-ui cycle resolution: bookings-ui contributes its
@@ -160,7 +160,7 @@ function createCrmExtension(messages: AdminExtensionNavMessages) {
 // here would duplicate it. It's registered for the routes seam: the
 // contributions carry the package-owned route metadata (the legal pages keep
 // their filter state component-local, so there are no URL search contracts),
-// and the pages are the packaged hosts from @voyantjs/legal-ui/admin — the
+// and the pages are the packaged hosts from @voyantjs/legal-react/admin — the
 // route files under src/routes/_workspace/legal/* only bind route params
 // onto them.
 function createLegalExtension(messages: AdminExtensionNavMessages) {
@@ -181,7 +181,7 @@ function createLegalExtension(messages: AdminExtensionNavMessages) {
 // the routes seam: the contributions carry the package-owned route metadata
 // (the notifications pages keep their filter state component-local, so
 // there are no URL search contracts), and the pages are the packaged hosts
-// from @voyantjs/notifications-ui/admin — the route files under
+// from @voyantjs/notifications-react/admin — the route files under
 // src/routes/_workspace/notifications/* only bind route params onto them.
 function createNotificationsExtension(messages: AdminExtensionNavMessages) {
   return generatedAdminExtensionFactories.notifications({
@@ -202,7 +202,7 @@ function createNotificationsExtension(messages: AdminExtensionNavMessages) {
 // here would duplicate it. It's registered for the routes seam: the
 // contributions carry the package-owned route metadata (no search contracts —
 // the list keeps its filters local), and the pages are the packaged hosts
-// from @voyantjs/suppliers-ui/admin — the route files under
+// from @voyantjs/suppliers-react/admin — the route files under
 // src/routes/_workspace/suppliers/* only bind route params onto them. The
 // detail page's customer-payment-policy card arrives via finance-ui's widget
 // contribution on `supplier.details.payment-policy` (the finance-ui ↔
@@ -217,14 +217,14 @@ function createSuppliersExtension(messages: AdminExtensionNavMessages) {
 // here would duplicate it. It's registered for the routes seam: the
 // contributions carry the package-owned route metadata (no search contracts —
 // the tab dashboard keeps its tab/filter state local), and the pages are the
-// packaged hosts from @voyantjs/resources-ui/admin — the route files under
+// packaged hosts from @voyantjs/resources-react/admin — the route files under
 // src/routes/_workspace/resources/* only bind route params onto them.
 function createResourcesExtension(messages: AdminExtensionNavMessages) {
   return generatedAdminExtensionFactories.resources({ labels: { resources: messages.resources } })
 }
 
 // Promotions is package-delivered (packaged-admin RFC Phase 2): nav AND the
-// route implementation come from @voyantjs/promotions-ui/admin. The app only
+// route implementation come from @voyantjs/promotions-react/admin. The app only
 // supplies the localized label and icon. Order 50 nudges it past the default
 // admin items so it lands alongside the operator's commercial tools.
 function createPromotionsExtension(messages: AdminExtensionNavMessages) {

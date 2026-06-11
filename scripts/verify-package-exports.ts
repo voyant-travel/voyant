@@ -474,7 +474,8 @@ function getCssHelperPackageDirs(): string[] {
       if (
         packageName === "@voyantjs/admin" ||
         packageName === "@voyantjs/ui" ||
-        packageName.endsWith("-ui")
+        packageName.endsWith("-ui") ||
+        packageName.endsWith("-react")
       ) {
         return shouldCheckPackage(packageName)
       }

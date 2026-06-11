@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, useParams, useSearch } from "@tanstack/react-router"
 import type { AccommodationContent } from "@voyantjs/accommodations/content-shape"
-import type { BookingEntitySummary } from "@voyantjs/bookings-ui/journey"
+import type { BookingEntitySummary } from "@voyantjs/bookings-react/journey"
 import type { CruiseContent } from "@voyantjs/cruises/content-shape"
 import type { ProductContent } from "@voyantjs/products/content-shape"
 import { useMemo } from "react"

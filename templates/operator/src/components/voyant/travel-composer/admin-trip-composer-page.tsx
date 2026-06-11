@@ -2,14 +2,14 @@
 
 import { useMutation } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import { emptyPersonPickerValue } from "@voyantjs/bookings-react/components/person-picker-section"
+import { emptyVoucherPickerValue } from "@voyantjs/bookings-react/components/voucher-picker-section"
 import {
   type PaymentScheduleValue,
   PersonPickerSection,
   type PersonPickerValue,
   type VoucherPickerValue,
-} from "@voyantjs/bookings-ui"
-import { emptyPersonPickerValue } from "@voyantjs/bookings-ui/components/person-picker-section"
-import { emptyVoucherPickerValue } from "@voyantjs/bookings-ui/components/voucher-picker-section"
+} from "@voyantjs/bookings-react/ui"
 import { usePerson } from "@voyantjs/crm-react"
 import { formatMessage } from "@voyantjs/i18n"
 import type { Trip, TripComponent } from "@voyantjs/travel-composer"

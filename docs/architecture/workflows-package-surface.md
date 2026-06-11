@@ -13,7 +13,7 @@ These workflow packages are intentionally public:
 | --- | --- |
 | `@voyantjs/workflows` | Authoring SDK and workflow runtime subpaths. |
 | `@voyantjs/workflows-react` | React hooks and client helpers for workflow run inspection. |
-| `@voyantjs/workflows-ui` | Canonical importable workflow run admin UI. |
+| `@voyantjs/workflows-react/ui` | Canonical importable workflow run admin UI. |
 | `@voyantjs/workflow-runs` | Operator observability module: schema, recorder, admin routes, and rerun/resume registry. |
 | `@voyantjs/workflows-orchestrator` | Transport-neutral orchestrator engine and compliance tests. |
 | `@voyantjs/workflows-orchestrator-cloudflare` | Cloudflare Worker/Durable Object adapter. |
@@ -31,7 +31,7 @@ These formerly separate package concepts now live under `@voyantjs/workflows`:
 | `@voyantjs/workflows-config` | `@voyantjs/workflows/config` |
 | `@voyantjs/workflows-bindings` | `@voyantjs/workflows/bindings` |
 
-`@voyantjs/workflow-runs-ui` is replaced by `@voyantjs/workflows-ui`. The old
+`@voyantjs/workflow-runs-ui` is replaced by `@voyantjs/workflows-react/ui`. The old
 workspace package is private and exists only as a local compatibility wrapper
 while repo references migrate.
 

@@ -1,1 +1,1 @@
-export * from "@voyantjs/workflows-ui/components/common"
+export * from "@voyantjs/workflows-react/components/common"

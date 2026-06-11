@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router"
-import { AuthLayout } from "@voyantjs/auth-ui"
+import { AuthLayout } from "@voyantjs/auth-react/ui"
 
 export const Route = createFileRoute("/(auth)")({
   component: AuthRouteLayout,

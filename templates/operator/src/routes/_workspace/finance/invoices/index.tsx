@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { getInvoicesQueryOptions } from "@voyantjs/finance-react"
-import { InvoicesPage, InvoicesPageSkeleton } from "@voyantjs/finance-ui"
+import { InvoicesPage, InvoicesPageSkeleton } from "@voyantjs/finance-react/ui"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"

@@ -59,12 +59,12 @@ helpers for packages they install, for example:
 ```css
 @import "@voyantjs/ui/styles.css";
 @import "@voyantjs/admin/styles.css";
-@import "@voyantjs/bookings-ui/styles.css";
+@import "@voyantjs/bookings-react/styles.css";
 ```
 
 `@voyantjs/ui/styles.css` is the canonical base import and includes the shared
 Voyant UI globals. Domain UI helpers such as
-`@voyantjs/bookings-ui/styles.css` and `@voyantjs/availability-ui/styles.css`
+`@voyantjs/bookings-react/styles.css` and `@voyantjs/availability-react/styles.css`
 only expose Tailwind source-detection directives for package components.
 
 ## What Does Not Belong In `-react`

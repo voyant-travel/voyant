@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { getChannelsQueryOptions } from "@voyantjs/distribution-react"
-import { ChannelsPage } from "@voyantjs/distribution-ui"
+import { ChannelsPage } from "@voyantjs/distribution-react/ui"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"

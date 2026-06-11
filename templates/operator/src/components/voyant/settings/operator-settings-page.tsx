@@ -10,7 +10,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { noDepositPolicy, type PaymentPolicy } from "@voyantjs/finance"
-import { PaymentPolicyForm, PaymentPolicyPreview } from "@voyantjs/finance-ui"
+import { PaymentPolicyForm, PaymentPolicyPreview } from "@voyantjs/finance-react/ui"
 import {
   Button,
   Card,

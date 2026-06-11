@@ -1,9 +1,9 @@
 "use client"
 
 import { useSlots } from "@voyantjs/availability-react"
-import { getBookableDepartureSlots } from "@voyantjs/bookings-ui"
-import { useBookingsUiMessagesOrDefault } from "@voyantjs/bookings-ui/i18n"
-import type { DeparturePickerProps } from "@voyantjs/bookings-ui/journey"
+import { useBookingsUiMessagesOrDefault } from "@voyantjs/bookings-react/i18n"
+import type { DeparturePickerProps } from "@voyantjs/bookings-react/journey"
+import { getBookableDepartureSlots } from "@voyantjs/bookings-react/ui"
 import {
   Combobox,
   ComboboxCollection,

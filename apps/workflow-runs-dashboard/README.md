@@ -1,7 +1,7 @@
 # `@voyantjs/workflow-runs-dashboard`
 
 Standalone Vite + React SPA for the workflow_runs admin surface. The reusable
-React surface ships from `@voyantjs/workflows-ui`; this app is a thin host
+React surface ships from `@voyantjs/workflows-react/ui`; this app is a thin host
 that configures the package against the mounted admin API.
 Reads the `/v1/admin/workflow-runs` endpoints exposed by
 `@voyantjs/workflow-runs/routes` (mounted in any deployment via

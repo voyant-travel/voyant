@@ -90,13 +90,13 @@ Step-based workflows with durable state, retries, and a shared wire protocol —
 - [`@voyantjs/workflows-orchestrator-cloudflare`](./packages/workflows-orchestrator-cloudflare) and [`@voyantjs/workflows-orchestrator-node`](./packages/workflows-orchestrator-node) — runtime adapters
 - `@voyantjs/workflows/bindings`, `@voyantjs/workflows/config`, and `@voyantjs/workflows/errors` — SDK subpaths for runtime bindings, config, and typed errors
 - [`@voyantjs/workflows-react`](./packages/workflows-react) — UI hooks for run inspection
-- [`@voyantjs/workflows-ui`](./packages/workflows-ui) — importable workflow run admin UI
+- [`@voyantjs/workflows-react/ui`](./packages/workflows-react) — importable workflow run admin UI
 
 Reference apps under [`apps/`](./apps) compose these into deployable shapes — `workflows-orchestrator-worker`, `workflows-tenant-worker`, `workflows-selfhost-cloudflare-worker`, `workflows-selfhost-node-server`, `workflows-node-step-container`, and `workflows-local-dashboard`.
 
 ### UI and React families
 
-Each domain module has matching `-ui` (admin components/pages) and `-react` (hooks + provider) packages where a reusable frontend surface is warranted - for example [`@voyantjs/crm-ui`](./packages/crm-ui/README.md) + [`@voyantjs/crm-react`](./packages/crm-react/README.md), [`@voyantjs/bookings-ui`](./packages/bookings-ui) + [`@voyantjs/bookings-react`](./packages/bookings-react), and so on across `products`, `finance`, `availability`, `distribution`, `markets`, `pricing`, `legal`, `resources`, `facilities`, `suppliers`, `identity`, `external-refs`, `charters`, `cruises`, `extras`, `sellability`, `booking-requirements`. The shared admin shell lives in [`@voyantjs/admin`](./packages/admin/README.md); cross-cutting primitives in [`packages/ui`](./packages/ui/README.md).
+Each domain module has matching `-ui` (admin components/pages) and `-react` (hooks + provider) packages where a reusable frontend surface is warranted - for example [`@voyantjs/crm-react/ui`](./packages/crm-react/README.md) + [`@voyantjs/crm-react`](./packages/crm-react/README.md), [`@voyantjs/bookings-react/ui`](./packages/bookings-react) + [`@voyantjs/bookings-react`](./packages/bookings-react), and so on across `products`, `finance`, `availability`, `distribution`, `markets`, `pricing`, `legal`, `resources`, `facilities`, `suppliers`, `identity`, `external-refs`, `charters`, `cruises`, `extras`, `sellability`, `booking-requirements`. The shared admin shell lives in [`@voyantjs/admin`](./packages/admin/README.md); cross-cutting primitives in [`packages/ui`](./packages/ui/README.md).
 
 ### Plugins
 

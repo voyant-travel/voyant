@@ -6,8 +6,8 @@ import {
   getSupplierStatusesQueryOptions,
   getTravelersQueryOptions,
 } from "@voyantjs/bookings-react"
-import { BookingDetailSkeleton, bookingDetailSearchSchema } from "@voyantjs/bookings-ui/admin"
-import { useBookingsUiMessagesOrDefault } from "@voyantjs/bookings-ui/i18n"
+import { BookingDetailSkeleton, bookingDetailSearchSchema } from "@voyantjs/bookings-react/admin"
+import { useBookingsUiMessagesOrDefault } from "@voyantjs/bookings-react/i18n"
 import { lazy, Suspense } from "react"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"

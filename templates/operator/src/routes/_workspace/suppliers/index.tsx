@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { getSuppliersQueryOptions } from "@voyantjs/suppliers-react"
-import { SuppliersHost, SuppliersListSkeleton } from "@voyantjs/suppliers-ui/admin"
+import { SuppliersHost, SuppliersListSkeleton } from "@voyantjs/suppliers-react/admin"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"

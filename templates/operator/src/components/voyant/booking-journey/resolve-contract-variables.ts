@@ -39,7 +39,7 @@
  *     are populated only when `entitySummary` carries enough context.
  */
 
-import type { BookingEntitySummary } from "@voyantjs/bookings-ui/journey"
+import type { BookingEntitySummary } from "@voyantjs/bookings-react/journey"
 import type { BookingDraftV1, PricingBreakdownV1 } from "@voyantjs/catalog/booking-engine"
 import type { ComputedScheduleEntry, PaymentPolicySource } from "@voyantjs/finance"
 

@@ -2,7 +2,7 @@
  * `@voyantjs/checkout-react` — admin React hooks for the checkout
  * orchestration layer (`@voyantjs/checkout`) plus the universal payment
  * choice / capability types consumed by `<PaymentStep>` in
- * `@voyantjs/checkout-ui`.
+ * `@voyantjs/checkout-react/ui`.
  *
  * Public-side hooks (`usePublicPaymentSession`,
  * `usePublicBookingPaymentOptions`) are re-exported from

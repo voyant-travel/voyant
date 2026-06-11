@@ -181,21 +181,21 @@ Make `cruises-ui` the reference implementation.
 
 ### Files to add
 
-- `packages/cruises-ui/src/i18n/messages.ts`
-- `packages/cruises-ui/src/i18n/en.ts`
-- `packages/cruises-ui/src/i18n/ro.ts`
-- `packages/cruises-ui/src/i18n/provider.tsx`
-- `packages/cruises-ui/src/i18n/index.ts`
-- `packages/cruises-ui/src/i18n.test.tsx`
+- `packages/cruises-react/src/i18n/messages.ts`
+- `packages/cruises-react/src/i18n/en.ts`
+- `packages/cruises-react/src/i18n/ro.ts`
+- `packages/cruises-react/src/i18n/provider.tsx`
+- `packages/cruises-react/src/i18n/index.ts`
+- `packages/cruises-react/src/i18n.test.tsx`
 
 ### Files to change
 
-- `packages/cruises-ui/package.json`
-- `packages/cruises-ui/src/index.ts`
-- `packages/cruises-ui/src/components/enrichment-program-list.tsx`
-- `packages/cruises-ui/src/components/external-badge.tsx`
-- `packages/cruises-ui/src/components/pricing-grid.tsx`
-- `packages/cruises-ui/src/components/quote-display.tsx`
+- `packages/cruises-react/package.json`
+- `packages/cruises-react/src/index.ts`
+- `packages/cruises-react/src/components/enrichment-program-list.tsx`
+- `packages/cruises-react/src/components/external-badge.tsx`
+- `packages/cruises-react/src/components/pricing-grid.tsx`
+- `packages/cruises-react/src/components/quote-display.tsx`
 
 ### Deliverables
 
@@ -207,8 +207,8 @@ Make `cruises-ui` the reference implementation.
 
 ### Acceptance criteria
 
-- no embedded English remains in `packages/cruises-ui/src/components/*` except API-provided content
-- English-only apps can import `@voyantjs/cruises-ui/i18n/en` without importing `ro`
+- no embedded English remains in `packages/cruises-react/src/components/*` except API-provided content
+- English-only apps can import `@voyantjs/cruises-react/i18n/en` without importing `ro`
 
 ## PR-3: `packages/ui/registry/cruises` Alignment
 
@@ -238,18 +238,18 @@ Validate the same pattern on a second domain with money, status, and provenance 
 
 ### Files to add
 
-- `packages/charters-ui/src/i18n/messages.ts`
-- `packages/charters-ui/src/i18n/en.ts`
-- `packages/charters-ui/src/i18n/ro.ts`
-- `packages/charters-ui/src/i18n/provider.tsx`
-- `packages/charters-ui/src/i18n/index.ts`
-- `packages/charters-ui/src/i18n.test.tsx`
+- `packages/charters-react/src/i18n/messages.ts`
+- `packages/charters-react/src/i18n/en.ts`
+- `packages/charters-react/src/i18n/ro.ts`
+- `packages/charters-react/src/i18n/provider.tsx`
+- `packages/charters-react/src/i18n/index.ts`
+- `packages/charters-react/src/i18n.test.tsx`
 
 ### Files to change
 
-- `packages/charters-ui/package.json`
-- `packages/charters-ui/src/index.ts`
-- `packages/charters-ui/src/components/*`
+- `packages/charters-react/package.json`
+- `packages/charters-react/src/index.ts`
+- `packages/charters-react/src/components/*`
 - `packages/ui/registry/charters/*`
 
 ### Deliverables
@@ -264,24 +264,24 @@ Migrate the highest-leverage booking flow components first.
 
 ### Files to add
 
-- `packages/bookings-ui/src/i18n/messages.ts`
-- `packages/bookings-ui/src/i18n/en.ts`
-- `packages/bookings-ui/src/i18n/ro.ts`
-- `packages/bookings-ui/src/i18n/provider.tsx`
-- `packages/bookings-ui/src/i18n/index.ts`
-- `packages/bookings-ui/src/i18n.test.tsx`
+- `packages/bookings-react/src/i18n/messages.ts`
+- `packages/bookings-react/src/i18n/en.ts`
+- `packages/bookings-react/src/i18n/ro.ts`
+- `packages/bookings-react/src/i18n/provider.tsx`
+- `packages/bookings-react/src/i18n/index.ts`
+- `packages/bookings-react/src/i18n.test.tsx`
 
 ### Files to change
 
-- `packages/bookings-ui/package.json`
-- `packages/bookings-ui/src/index.ts`
-- `packages/bookings-ui/src/components/passengers-section.tsx`
-- `packages/bookings-ui/src/components/payment-schedule-section.tsx`
-- `packages/bookings-ui/src/components/person-picker-section.tsx`
-- `packages/bookings-ui/src/components/price-breakdown-section.tsx`
-- `packages/bookings-ui/src/components/product-picker-section.tsx`
-- `packages/bookings-ui/src/components/rooms-stepper-section.tsx`
-- `packages/bookings-ui/src/components/shared-room-section.tsx`
+- `packages/bookings-react/package.json`
+- `packages/bookings-react/src/index.ts`
+- `packages/bookings-react/src/components/passengers-section.tsx`
+- `packages/bookings-react/src/components/payment-schedule-section.tsx`
+- `packages/bookings-react/src/components/person-picker-section.tsx`
+- `packages/bookings-react/src/components/price-breakdown-section.tsx`
+- `packages/bookings-react/src/components/product-picker-section.tsx`
+- `packages/bookings-react/src/components/rooms-stepper-section.tsx`
+- `packages/bookings-react/src/components/shared-room-section.tsx`
 - remaining user-facing components in the package
 
 ### Deliverables
@@ -297,17 +297,17 @@ Convert the large operator-facing product CRUD surface.
 
 ### Files to add
 
-- `packages/products-ui/src/i18n/messages.ts`
-- `packages/products-ui/src/i18n/en.ts`
-- `packages/products-ui/src/i18n/ro.ts`
-- `packages/products-ui/src/i18n/provider.tsx`
-- `packages/products-ui/src/i18n/index.ts`
-- `packages/products-ui/src/i18n.test.tsx`
+- `packages/products-react/src/i18n/messages.ts`
+- `packages/products-react/src/i18n/en.ts`
+- `packages/products-react/src/i18n/ro.ts`
+- `packages/products-react/src/i18n/provider.tsx`
+- `packages/products-react/src/i18n/index.ts`
+- `packages/products-react/src/i18n.test.tsx`
 
 ### Files to change
 
-- `packages/products-ui/package.json`
-- `packages/products-ui/src/index.ts`
+- `packages/products-react/package.json`
+- `packages/products-react/src/index.ts`
 - all dialog, form, section, and list components with embedded copy
 
 ### Deliverables
@@ -322,17 +322,17 @@ Convert rules, categories, schedules, policy, and combobox surfaces.
 
 ### Files to add
 
-- `packages/pricing-ui/src/i18n/messages.ts`
-- `packages/pricing-ui/src/i18n/en.ts`
-- `packages/pricing-ui/src/i18n/ro.ts`
-- `packages/pricing-ui/src/i18n/provider.tsx`
-- `packages/pricing-ui/src/i18n/index.ts`
-- `packages/pricing-ui/src/i18n.test.tsx`
+- `packages/pricing-react/src/i18n/messages.ts`
+- `packages/pricing-react/src/i18n/en.ts`
+- `packages/pricing-react/src/i18n/ro.ts`
+- `packages/pricing-react/src/i18n/provider.tsx`
+- `packages/pricing-react/src/i18n/index.ts`
+- `packages/pricing-react/src/i18n.test.tsx`
 
 ### Files to change
 
-- `packages/pricing-ui/package.json`
-- `packages/pricing-ui/src/index.ts`
+- `packages/pricing-react/package.json`
+- `packages/pricing-react/src/index.ts`
 - all dialogs, pages, lists, and comboboxes with embedded copy
 
 ### Deliverables
@@ -359,20 +359,20 @@ Convert dashboard, tables, filters, and status wording.
 
 ### Files to add
 
-- `packages/resources-ui/src/i18n/messages.ts`
-- `packages/resources-ui/src/i18n/en.ts`
-- `packages/resources-ui/src/i18n/ro.ts`
-- `packages/resources-ui/src/i18n/provider.tsx`
-- `packages/resources-ui/src/i18n/index.ts`
-- `packages/resources-ui/src/i18n.test.tsx`
+- `packages/resources-react/src/i18n/messages.ts`
+- `packages/resources-react/src/i18n/en.ts`
+- `packages/resources-react/src/i18n/ro.ts`
+- `packages/resources-react/src/i18n/provider.tsx`
+- `packages/resources-react/src/i18n/index.ts`
+- `packages/resources-react/src/i18n.test.tsx`
 
 ### Files to change
 
-- `packages/resources-ui/package.json`
-- `packages/resources-ui/src/index.ts`
-- `packages/resources-ui/src/components/resources-overview.tsx`
-- `packages/resources-ui/src/components/resources-tabs-primary.tsx`
-- `packages/resources-ui/src/components/resources-tabs-secondary.tsx`
+- `packages/resources-react/package.json`
+- `packages/resources-react/src/index.ts`
+- `packages/resources-react/src/components/resources-overview.tsx`
+- `packages/resources-react/src/components/resources-tabs-primary.tsx`
+- `packages/resources-react/src/components/resources-tabs-secondary.tsx`
 - remaining resource components
 
 ## PR-10: Remaining `*-ui` Packages

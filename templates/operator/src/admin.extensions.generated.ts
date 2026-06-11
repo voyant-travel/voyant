@@ -2,16 +2,16 @@
 // Recreate after changing the modules list in voyant.config.*:
 //   voyant admin generate
 
-import { createCrmAdminExtension } from "@voyantjs/crm-ui/admin"
-import { createSuppliersAdminExtension } from "@voyantjs/suppliers-ui/admin"
-import { createPromotionsAdminExtension } from "@voyantjs/promotions-ui/admin"
+import { createCrmAdminExtension } from "@voyantjs/crm-react/admin"
+import { createSuppliersAdminExtension } from "@voyantjs/suppliers-react/admin"
+import { createPromotionsAdminExtension } from "@voyantjs/promotions-react/admin"
 import { createCatalogAdminExtension } from "@voyantjs/catalog-react/admin"
-import { createBookingsAdminExtension } from "@voyantjs/bookings-ui/admin"
-import { createFinanceAdminExtension } from "@voyantjs/finance-ui/admin"
-import { createAvailabilityAdminExtension } from "@voyantjs/availability-ui/admin"
-import { createResourcesAdminExtension } from "@voyantjs/resources-ui/admin"
-import { createNotificationsAdminExtension } from "@voyantjs/notifications-ui/admin"
-import { createLegalAdminExtension } from "@voyantjs/legal-ui/admin"
+import { createBookingsAdminExtension } from "@voyantjs/bookings-react/admin"
+import { createFinanceAdminExtension } from "@voyantjs/finance-react/admin"
+import { createAvailabilityAdminExtension } from "@voyantjs/availability-react/admin"
+import { createResourcesAdminExtension } from "@voyantjs/resources-react/admin"
+import { createNotificationsAdminExtension } from "@voyantjs/notifications-react/admin"
+import { createLegalAdminExtension } from "@voyantjs/legal-react/admin"
 
 /**
  * Admin extension factories keyed by module domain. Factories, not

@@ -12,7 +12,7 @@ import {
 // via `declare module "@voyantjs/admin"`, which can't bind to the relative
 // imports used in tests), so the tests exercise the contract with a
 // locally-typed resolver map cast into the declared types. The real
-// declaration-merging path is type-tested in @voyantjs/catalog-ui.
+// declaration-merging path is type-tested in @voyantjs/catalog-react.
 type LooseResolvers = Record<string, (params: never) => string>
 
 function asResolvers(resolvers: LooseResolvers): AdminDestinationResolvers {

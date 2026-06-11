@@ -12,7 +12,7 @@ const allowedPublicPackages = new Set([
   "@voyantjs/workflows-orchestrator-cloudflare",
   "@voyantjs/workflows-orchestrator-node",
   "@voyantjs/workflows-react",
-  "@voyantjs/workflows-ui",
+  "@voyantjs/workflows-react/ui",
 ])
 
 const deprecatedWrappers = new Set([

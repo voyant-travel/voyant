@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { getPaymentQueryOptions } from "@voyantjs/finance-react"
-import { PaymentDetailHost, PaymentDetailSkeleton } from "@voyantjs/finance-ui/admin"
+import { PaymentDetailHost, PaymentDetailSkeleton } from "@voyantjs/finance-react/admin"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"

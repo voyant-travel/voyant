@@ -6,7 +6,7 @@ import {
   getInvoicePaymentsQueryOptions,
   getInvoiceQueryOptions,
 } from "@voyantjs/finance-react"
-import { InvoiceDetailHost, InvoiceDetailSkeleton } from "@voyantjs/finance-ui/admin"
+import { InvoiceDetailHost, InvoiceDetailSkeleton } from "@voyantjs/finance-react/admin"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"

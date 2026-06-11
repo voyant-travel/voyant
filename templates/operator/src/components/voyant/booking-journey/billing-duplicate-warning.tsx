@@ -8,7 +8,7 @@
 
 import { useNavigate } from "@tanstack/react-router"
 import { useBookings } from "@voyantjs/bookings-react"
-import type { BillingExtrasContext } from "@voyantjs/bookings-ui/journey"
+import type { BillingExtrasContext } from "@voyantjs/bookings-react/journey"
 
 import { useAdminMessages } from "@/lib/admin-i18n"
 

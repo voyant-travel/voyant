@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { TaxesPage as FinanceTaxesPage } from "@voyantjs/finance-ui"
+import { TaxesPage as FinanceTaxesPage } from "@voyantjs/finance-react/ui"
 import {
   Card,
   CardContent,

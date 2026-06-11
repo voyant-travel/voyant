@@ -6,7 +6,7 @@ import {
   bookingsFiltersToSearch,
   bookingsIndexSearchSchema,
   bookingsSearchToFilters,
-} from "@voyantjs/bookings-ui/admin"
+} from "@voyantjs/bookings-react/admin"
 import { Button } from "@voyantjs/ui/components/button"
 import { Route as RouteIcon } from "lucide-react"
 

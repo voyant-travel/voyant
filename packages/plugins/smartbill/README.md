@@ -118,7 +118,7 @@ It reads SmartBill refs from `/v1/finance/invoices/:id/external-refs` using the
 `InvoiceDetailPage`'s integration slot.
 
 ```tsx
-import { InvoiceDetailPage } from "@voyantjs/finance-ui"
+import { InvoiceDetailPage } from "@voyantjs/finance-react/ui"
 import { SmartbillInvoicePanel } from "@voyantjs/plugin-smartbill/invoice-ui"
 
 export function InvoicePage({ invoiceId }: { invoiceId: string }) {

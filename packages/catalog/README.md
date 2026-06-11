@@ -32,7 +32,7 @@ search services, or catalog runtime services.
 - **`./events/taxonomy`** — catalog event names + visibility-filtered payload builders, emitted via `@voyantjs/core/events` and consumed by the existing webhook pipeline.
 - **`./adapter/contract`** — public source-adapter contract. Voyant Connect, third-party providers, operator-built adapters all implement this.
 - **`./adapter/schemas`** — zod schemas for source-adapter runtime payloads. Use these at HTTP, queue, RPC, and adapter boundaries instead of re-declaring validators.
-- **`./booking-engine`** — quote/book services plus the Hono route module that backs `@voyantjs/catalog-react/booking-engine` and `@voyantjs/bookings-ui/journey`.
+- **`./booking-engine`** — quote/book services plus the Hono route module that backs `@voyantjs/catalog-react/booking-engine` and `@voyantjs/bookings-react/journey`.
 
 ## Architectural rules
 

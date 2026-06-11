@@ -28,7 +28,7 @@ narrow capability without carrying an operator session.
   API Key plugin HTTP routes.
 - `@voyantjs/auth-react` exposes React Query hooks for token management against
   that facade.
-- `@voyantjs/auth-ui` exposes reusable management UI.
+- `@voyantjs/auth-react/ui` exposes reusable management UI.
 
 API tokens must not become user sessions. Do not enable Better Auth's session
 mocking for API keys unless a deployment has a separate, explicit security

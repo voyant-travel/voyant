@@ -1,6 +1,6 @@
 "use client"
 
-import { ProductPickerSection, type ProductPickerValue } from "@voyantjs/bookings-ui"
+import { ProductPickerSection, type ProductPickerValue } from "@voyantjs/bookings-react/ui"
 
 /**
  * Product picker for "New booking". Picks owned products straight off the

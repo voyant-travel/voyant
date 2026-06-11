@@ -1,7 +1,7 @@
 {
   "name": "@voyantjs/workflows-react",
   "version": "0.106.0",
-  "description": "React hooks for Voyant Workflows — trigger, subscribe, and stream runs.",
+  "description": "React hooks for Voyant Workflows — trigger, subscribe, and stream runs — plus the styled workflow-run admin UI (formerly @voyantjs/workflows-ui).",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -14,45 +14,66 @@
     ".": "./src/index.ts",
     "./workflow-runs": "./src/workflow-runs.ts",
     "./workflow-runs-client": "./src/workflow-runs-client.ts",
-    "./workflow-schedules-client": "./src/workflow-schedules-client.ts"
+    "./workflow-schedules-client": "./src/workflow-schedules-client.ts",
+    "./ui": "./src/ui.ts",
+    "./client": "./src/client.ts",
+    "./styles.css": "./src/styles.css",
+    "./i18n": "./src/i18n/index.ts",
+    "./i18n/en": "./src/i18n/en.ts",
+    "./i18n/ro": "./src/i18n/ro.ts",
+    "./components/*": "./src/components/*.tsx"
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist",
-    "src",
-    "!**/*.test.*",
-    "!**/*.spec.*",
-    "NOTICE"
-  ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "check-types": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo",
+    "prepack": "pnpm run build",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src/",
-    "test": "vitest run --passWithNoTests",
-    "dev": "tsc -w -p tsconfig.json"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@voyantjs/i18n": "workspace:^",
     "@voyantjs/react": "workspace:^",
     "@voyantjs/workflows": "workspace:^"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
+    "@voyantjs/ui": "workspace:^",
+    "lucide-react": "^0.475.0 || ^1.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
+  "peerDependenciesMeta": {
+    "@voyantjs/ui": {
+      "optional": true
+    },
+    "lucide-react": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@tanstack/react-query": "^5.100.11",
-    "@types/react": "^19.1.0",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@voyantjs/i18n": "workspace:^",
     "@voyantjs/react": "workspace:^",
+    "@voyantjs/ui": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
-    "react": "^19.1.0",
+    "lucide-react": "^1.7.0",
+    "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "typescript": "^5.9.2",
+    "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
+  "files": [
+    "dist",
+    "src",
+    "!**/*.test.*",
+    "!**/*.spec.*",
+    "NOTICE",
+    "src/components",
+    "src/styles.css"
+  ],
   "publishConfig": {
     "access": "public",
     "exports": {
@@ -75,6 +96,39 @@
         "types": "./dist/workflow-schedules-client.d.ts",
         "import": "./dist/workflow-schedules-client.js",
         "default": "./dist/workflow-schedules-client.js"
+      },
+      "./ui": {
+        "types": "./dist/ui.d.ts",
+        "import": "./dist/ui.js",
+        "default": "./dist/ui.js"
+      },
+      "./client": {
+        "types": "./dist/client.d.ts",
+        "import": "./dist/client.js",
+        "default": "./dist/client.js"
+      },
+      "./styles.css": {
+        "default": "./src/styles.css"
+      },
+      "./i18n": {
+        "types": "./dist/i18n/index.d.ts",
+        "import": "./dist/i18n/index.js",
+        "default": "./dist/i18n/index.js"
+      },
+      "./i18n/en": {
+        "types": "./dist/i18n/en.d.ts",
+        "import": "./dist/i18n/en.js",
+        "default": "./dist/i18n/en.js"
+      },
+      "./i18n/ro": {
+        "types": "./dist/i18n/ro.d.ts",
+        "import": "./dist/i18n/ro.js",
+        "default": "./dist/i18n/ro.js"
+      },
+      "./components/*": {
+        "types": "./dist/components/*.d.ts",
+        "import": "./dist/components/*.js",
+        "default": "./dist/components/*.js"
       }
     },
     "main": "./dist/index.js",
