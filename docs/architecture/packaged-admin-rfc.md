@@ -1,6 +1,7 @@
 # Packaged Admin RFC (the admin ships as a versioned app, projects become hosts)
 
-Status: RFC / proposal — tracked in voyant#1641 (incident & motivation)
+Status: RFC / proposal — tracked in voyant#1643; motivated by voyant#1641
+(incident & delivery-model analysis)
 Audience: anyone who has shipped a fix to `templates/operator` and realized
 existing deployments will never receive it; anyone scaffolding a new client
 project and wondering which of the ~40k copied lines they actually own.
