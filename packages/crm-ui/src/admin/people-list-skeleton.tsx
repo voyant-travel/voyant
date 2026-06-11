@@ -1,17 +1,22 @@
-import { useCrmUiMessagesOrDefault } from "@voyantjs/crm-ui/i18n"
+"use client"
+
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
 import { Table, TableHead, TableHeader, TableRow } from "@voyantjs/ui/components/table"
-import { SkeletonTableRows } from "@/components/ui/skeletons"
+
+import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
+import { SkeletonRows } from "./crm-skeleton-rows.js"
 
 /**
- * Route-level placeholder for /people. Mirrors PeoplePage + PersonList:
+ * Route-level placeholder for the people list. Mirrors `PeoplePage` +
+ * `PersonList`:
  *   - Title + description block
  *   - Search input (left) + "New person" button (right)
  *   - 4-column table: Name / Email / Phone / Relation
  *   - Pagination bar
  */
 export function PeopleListSkeleton() {
-  const t = useCrmUiMessagesOrDefault().personList.columns
+  const columns = useCrmUiMessagesOrDefault().personList.columns
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="space-y-2">
@@ -28,13 +33,13 @@ export function PeopleListSkeleton() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t.name}</TableHead>
-              <TableHead>{t.email}</TableHead>
-              <TableHead>{t.phone}</TableHead>
-              <TableHead>{t.relation}</TableHead>
+              <TableHead>{columns.name}</TableHead>
+              <TableHead>{columns.email}</TableHead>
+              <TableHead>{columns.phone}</TableHead>
+              <TableHead>{columns.relation}</TableHead>
             </TableRow>
           </TableHeader>
-          <SkeletonTableRows rows={8} columns={4} columnWidths={["w-40", "w-48", "w-32", "w-16"]} />
+          <SkeletonRows rows={8} widths={["w-40", "w-48", "w-32", "w-16"]} />
         </Table>
       </div>
 
