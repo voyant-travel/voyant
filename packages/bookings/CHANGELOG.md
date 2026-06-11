@@ -1,5 +1,13 @@
 # @voyantjs/bookings
 
+## 0.109.0
+
+### Patch Changes
+
+- Updated dependencies [344e7b6]
+  - @voyantjs/core@0.105.1
+  - @voyantjs/hono@0.105.2
+
 ## 0.108.1
 
 ### Patch Changes

@@ -1,5 +1,105 @@
 # @voyantjs/availability-ui
 
+## 0.106.0
+
+### Minor Changes
+
+- ea7bf76: Packaged-admin RFC availability pages delivered: the operator's availability
+  detail routes move into `@voyantjs/availability-ui/admin` as packaged hosts —
+  `AvailabilitySlotDetailHost` (the slot page with its Allocation tab from
+  `@voyantjs/allocation-ui`, the Extras manifest tab from
+  `@voyantjs/extras-ui`, the lazy booking create/quick-view sheets from
+  `@voyantjs/bookings-ui`, the product quick-view sheet from
+  `@voyantjs/products-ui`, and the slot edit dialog submitting through
+  `useAvailabilitySlotMutation`), `AvailabilityRuleDetailHost`,
+  `AvailabilityStartTimeDetailHost`, plus `OptionResourceTemplatesPanel` (the
+  per-option resource templates editor the product editor embeds). Data wiring
+  runs through the shared availability provider context instead of a host env
+  helper; cross-route links resolve through the semantic destination keys
+  (RFC §4.7) via `useAdminHref`/`useAdminNavigate` — new keys
+  `availabilitySlot.list` and `availabilityStartTime.detail`, with
+  `availabilitySlot.detail`, `booking.detail` and `product.detail` consumed
+  from the bookings-ui augmentation. `createAvailabilityAdminExtension`
+  contributes the availability route metadata (no nav — the Availability item
+  is base-nav-owned; no search contracts — the pages keep their filters
+  local). Host route files shrink to param binding; the availability INDEX
+  page stays an app-side wrapper because the bulk update/delete handlers call
+  the availability `batch-update`/`batch-delete` endpoints, which have no
+  `@voyantjs/availability-react` client equivalent yet. New availability-ui
+  peers: `@voyantjs/admin`, `@voyantjs/allocation-ui`, `@voyantjs/bookings-ui`,
+  `@voyantjs/extras-ui`, `@voyantjs/products-react`, `@voyantjs/products-ui`.
+- f245b55: Packaged-admin RFC availability index page delivered: the last app-side
+  availability wrapper moves into `@voyantjs/availability-ui/admin` as the
+  `AvailabilityIndexHost`, unblocked by new client hooks in
+  `@voyantjs/availability-react` for the module's existing batch endpoints.
+  New hooks: `useAvailabilityRuleBatchMutation`,
+  `useAvailabilityStartTimeBatchMutation`, `useAvailabilitySlotBatchMutation`,
+  `useAvailabilityCloseoutBatchMutation` and
+  `useAvailabilityPickupPointBatchMutation` — each a typed
+  `{ batchUpdate, batchDelete }` pair posting the whole id selection to
+  `POST /v1/availability/<entity>/batch-update|batch-delete` and resolving the
+  server's success/partial-failure envelope (`{ total, succeeded, failed }`
+  plus updated rows / `deletedIds`), validated by the new
+  `batchUpdateEnvelope`/`batchDeleteEnvelope` schemas. Closeouts and pickup
+  points also gain single-record mutation hooks
+  (`useAvailabilityCloseoutMutation`, `useAvailabilityPickupPointMutation`)
+  with their create/update input types re-exported, so neither entity is
+  query-only anymore. `AvailabilityIndexHost` wires the packaged
+  `AvailabilityPage`'s bulk update/delete handlers to those batch hooks
+  (toasts via sonner on the shared operator admin messages), resolves slot
+  opens through the `availabilitySlot.detail` semantic destination, and ships
+  with `ensureAvailabilityPageData` — the index loader that awaits the slots +
+  products first page and background-prefetches the slot dialog's
+  rules/start-times, taking the app's cookie-forwarding client so the SSR
+  loader binding stays app-side per the packaged-host recipe. The operator's
+  availability index route shrinks to the loader binding; the app-side
+  wrapper and its app-local `BatchMutationResponse` type are deleted. New
+  availability-ui peer: `sonner`.
+- ccc4a5f: i18n for the packaged admin hosts: all hardcoded UI copy that moved into
+  packages with the packaged-admin migration now flows through the
+  package-owned message bundles.
+
+  - `@voyantjs/notifications-ui`: the admin hosts (templates page/dialog/
+    detail, deliveries + delivery detail, reminder rules/dialog/detail,
+    reminder runs, reminders preview, authoring help) consume a new
+    `admin` section of `NotificationsUiMessages` via
+    `useNotificationsUiMessagesOrDefault()` — ~190 new message keys with
+    English and Romanian definitions, grouped by component
+    (`admin.common`, `admin.templatesPage`, `admin.templateDialog`,
+    `admin.templateDetail`, `admin.deliveriesPage`, `admin.deliveryDetail`,
+    `admin.reminderRulesPage`, `admin.reminderRuleDialog`,
+    `admin.reminderRuleDetail`, `admin.reminderRunsPage`,
+    `admin.previewPage`, `admin.authoringHelp`).
+  - `@voyantjs/availability-ui`, `@voyantjs/bookings-ui`,
+    `@voyantjs/suppliers-ui`, `@voyantjs/resources-ui`,
+    `@voyantjs/promotions-ui`: the admin extension factories switch from a
+    singular `label?: string` option to the `labels?: { <domain>?: string }`
+    shape the other domain factories (catalog, crm, legal, finance) already
+    use — hosts pass localized titles per domain key. The availability
+    start-time detail host's breadcrumb fallback now resolves through the
+    operator admin message catalog instead of a hardcoded string.
+
+### Patch Changes
+
+- Updated dependencies [f245b55]
+- Updated dependencies [8638834]
+- Updated dependencies [05e5784]
+- Updated dependencies [25d7452]
+- Updated dependencies [098a172]
+- Updated dependencies [ccc4a5f]
+- Updated dependencies [4ade734]
+- Updated dependencies [3bd66e9]
+- Updated dependencies [ee5b530]
+- Updated dependencies [344e7b6]
+  - @voyantjs/availability-react@0.106.0
+  - @voyantjs/bookings-ui@0.109.0
+  - @voyantjs/admin@0.106.0
+  - @voyantjs/ui@0.106.0
+  - @voyantjs/products-ui@0.109.0
+  - @voyantjs/allocation-ui@0.107.0
+  - @voyantjs/extras-ui@0.109.0
+  - @voyantjs/products-react@0.109.0
+
 ## 0.105.2
 
 ### Patch Changes

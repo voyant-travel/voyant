@@ -1,5 +1,63 @@
 # @voyantjs/promotions-ui
 
+## 0.106.0
+
+### Minor Changes
+
+- ccc4a5f: i18n for the packaged admin hosts: all hardcoded UI copy that moved into
+  packages with the packaged-admin migration now flows through the
+  package-owned message bundles.
+
+  - `@voyantjs/notifications-ui`: the admin hosts (templates page/dialog/
+    detail, deliveries + delivery detail, reminder rules/dialog/detail,
+    reminder runs, reminders preview, authoring help) consume a new
+    `admin` section of `NotificationsUiMessages` via
+    `useNotificationsUiMessagesOrDefault()` — ~190 new message keys with
+    English and Romanian definitions, grouped by component
+    (`admin.common`, `admin.templatesPage`, `admin.templateDialog`,
+    `admin.templateDetail`, `admin.deliveriesPage`, `admin.deliveryDetail`,
+    `admin.reminderRulesPage`, `admin.reminderRuleDialog`,
+    `admin.reminderRuleDetail`, `admin.reminderRunsPage`,
+    `admin.previewPage`, `admin.authoringHelp`).
+  - `@voyantjs/availability-ui`, `@voyantjs/bookings-ui`,
+    `@voyantjs/suppliers-ui`, `@voyantjs/resources-ui`,
+    `@voyantjs/promotions-ui`: the admin extension factories switch from a
+    singular `label?: string` option to the `labels?: { <domain>?: string }`
+    shape the other domain factories (catalog, crm, legal, finance) already
+    use — hosts pass localized titles per domain key. The availability
+    start-time detail host's breadcrumb fallback now resolves through the
+    operator admin message catalog instead of a hardcoded string.
+
+- ee5b530: Packaged-admin RFC Phase 2 pilot (#1643): packages can ship admin pages.
+
+  - `@voyantjs/admin`: `AdminUiRouteContribution` grows from metadata-only to
+    the full route contract — optional `component`, `loader` (receives
+    `{ queryClient, runtime }` with the host's baseUrl/fetcher),
+    `validateSearch`, `ssr`, pending/error components, `capability`, and
+    `preload`. Metadata-only contributions remain valid. New types
+    `AdminRouteRuntime` and `AdminRouteLoaderContext`.
+  - `@voyantjs/promotions-ui`: first `@voyantjs/<domain>-ui/admin` entrypoint.
+    `createPromotionsAdminExtension({ label, icon, order, path })` contributes
+    the nav entry AND the route implementation (PromotionsPage +
+    loadPromotionsPage + SSR mode); the host supplies only label, icon, and
+    runtime.
+
+  The operator template consumes both: the local promotions extension is now a
+  thin call into the package, and the promotions route file is a thin host that
+  binds the package-owned page/loader to the file-based route tree (per-route
+  provider removed — the shell's VoyantReactProvider already supplies the same
+  context).
+
+### Patch Changes
+
+- Updated dependencies [4ade734]
+- Updated dependencies [3bd66e9]
+- Updated dependencies [ee5b530]
+- Updated dependencies [344e7b6]
+  - @voyantjs/admin@0.106.0
+  - @voyantjs/ui@0.106.0
+  - @voyantjs/promotions-react@0.106.0
+
 ## 0.105.2
 
 ### Patch Changes

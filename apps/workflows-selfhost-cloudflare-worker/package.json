@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/workflows-selfhost-cloudflare-worker",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Reference single-tenant Cloudflare Worker for self-hosting Voyant Workflows without Workers for Platforms.",
   "license": "Apache-2.0",
   "private": true,

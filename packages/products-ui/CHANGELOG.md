@@ -1,5 +1,37 @@
 # @voyantjs/products-ui
 
+## 0.109.0
+
+### Patch Changes
+
+- 344e7b6: Packaged-admin RFC §5 deletions: the fork-and-own distribution surfaces are
+  retired now that all 10 admin domains ship as versioned packages. `@voyantjs/ui`
+  drops its shadcn registry source (`registry/`, `registry.json`, generated
+  `public/r/`) and the `registry:build` script — the package's published
+  component/export surface is unchanged and remains the only way to consume it.
+  `templates/dmc`, `apps/dev`, and the hosted registry worker (`apps/registry`)
+  are deleted from the workspace. `@voyantjs/core` and `@voyantjs/products-ui`
+  only see stale comment/doc references repointed from the deleted surfaces to
+  `templates/operator`.
+- Updated dependencies [f245b55]
+- Updated dependencies [8638834]
+- Updated dependencies [098a172]
+- Updated dependencies [3bd66e9]
+- Updated dependencies [344e7b6]
+- Updated dependencies [127ae3a]
+  - @voyantjs/availability-react@0.106.0
+  - @voyantjs/finance-ui@0.109.0
+  - @voyantjs/ui@0.106.0
+  - @voyantjs/pricing-ui@0.109.0
+  - @voyantjs/availability@0.106.0
+  - @voyantjs/catalog-react@0.107.0
+  - @voyantjs/extras-react@0.109.0
+  - @voyantjs/finance@0.109.0
+  - @voyantjs/markets-react@0.106.0
+  - @voyantjs/pricing-react@0.109.0
+  - @voyantjs/products-react@0.109.0
+  - @voyantjs/suppliers-react@0.106.0
+
 ## 0.108.1
 
 ### Patch Changes

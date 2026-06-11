@@ -1,5 +1,13 @@
 # @voyantjs/workflows-selfhost-cloudflare-worker
 
+## 0.0.2
+
+### Patch Changes
+
+- @voyantjs/workflows@0.106.0
+- @voyantjs/workflows-orchestrator@0.106.0
+- @voyantjs/workflows-orchestrator-cloudflare@0.106.0
+
 ## 0.0.1
 
 ### Patch Changes

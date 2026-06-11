@@ -1,5 +1,56 @@
 # @voyantjs/ui
 
+## 0.106.0
+
+### Minor Changes
+
+- 3bd66e9: Packaged-admin RFC notifications pages delivered: the notification admin
+  pages move out of `@voyantjs/ui` into `@voyantjs/notifications-ui/admin`
+  as packaged hosts — `NotificationTemplatesHost`,
+  `NotificationTemplateDetailHost`, `NotificationReminderRulesHost`,
+  `NotificationReminderRuleDetailHost`, `NotificationDeliveriesHost`,
+  `NotificationReminderRunsHost`, `RemindersPreviewHost` and
+  `NotificationSettingsHost`, plus the `NotificationTemplateDialog`,
+  `NotificationReminderRuleDialog`, `NotificationDeliveryDetailDialog` and
+  `NotificationTemplateAuthoringHelp` building blocks. Cross-route links
+  resolve through new semantic destination keys (RFC §4.7):
+  `notificationTemplate.list`/`notificationTemplate.detail` and
+  `notificationReminderRule.list`/`notificationReminderRule.detail`, via
+  `useAdminHref` + `useAdminNavigate`. `createNotificationsAdminExtension`
+  contributes the eight notifications routes as metadata (no nav — the
+  Notifications group is base-nav-owned; no search contracts — every page
+  keeps its filter state component-local). The template detail host
+  lazy-loads the template dialog so tiptap/prosemirror stays out of the
+  detail-page chunk. New notifications-ui peers: `@voyantjs/admin`,
+  `lucide-react`, `react-hook-form`.
+
+  BREAKING for `@voyantjs/ui`: the notification page components are removed —
+  the `./components/notification-template-dialog`,
+  `./components/notification-templates-page`,
+  `./components/notification-reminder-rule-dialog`,
+  `./components/notification-reminder-rules-page`,
+  `./components/notification-deliveries-page`,
+  `./components/notification-reminder-runs-page` and
+  `./components/notification-template-authoring-help` subpath exports are
+  gone, as are the wildcard-only
+  `./components/notification-template-detail-page` and
+  `./components/notification-delivery-detail-dialog` modules. Import the
+  hosts from `@voyantjs/notifications-ui/admin` instead. `@voyantjs/ui` no
+  longer depends on `@voyantjs/notifications` /
+  `@voyantjs/notifications-react`.
+
+### Patch Changes
+
+- 344e7b6: Packaged-admin RFC §5 deletions: the fork-and-own distribution surfaces are
+  retired now that all 10 admin domains ship as versioned packages. `@voyantjs/ui`
+  drops its shadcn registry source (`registry/`, `registry.json`, generated
+  `public/r/`) and the `registry:build` script — the package's published
+  component/export surface is unchanged and remains the only way to consume it.
+  `templates/dmc`, `apps/dev`, and the hosted registry worker (`apps/registry`)
+  are deleted from the workspace. `@voyantjs/core` and `@voyantjs/products-ui`
+  only see stale comment/doc references repointed from the deleted surfaces to
+  `templates/operator`.
+
 ## 0.105.1
 
 ### Patch Changes

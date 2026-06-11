@@ -1,5 +1,64 @@
 # @voyantjs/catalog-ui
 
+## 0.107.0
+
+### Minor Changes
+
+- bf85285: Packaged-admin RFC catalog pilot, pages delivered: the operator's catalog
+  page wrappers move into `@voyantjs/catalog-ui/admin` as packaged hosts —
+  `CatalogVerticalHost` (indexed browse grid wired to markets/locales/
+  suppliers/product-tag mutations/slot availability), `DynamicCatalogHost`,
+  `ScheduledCatalogHost`, `ProductDetailHost`, `CruiseDetailHost`, and
+  `VerticalDetailHost`. Cross-route links (booking journey, supplier page,
+  product editor, catalog detail) resolve through the semantic destination
+  keys (RFC §4.7) via `useAdminHref`/`useAdminNavigate`; API access comes from
+  the shell's catalog provider context (`fetchCatalogSlots` replaces the app
+  RPC client). Also exports `catalogVerticalPageIds`/`CatalogVerticalPageId`
+  from the surface taxonomy. Host route files shrink to param/search binding;
+  `component:` stays off the route contributions until the §4.2 code-based
+  route assembly gives packaged pages router-agnostic route state. New peers:
+  `@voyantjs/markets-react`, `@voyantjs/products-react`,
+  `@voyantjs/suppliers-react`, `sonner`.
+- 4ade734: Semantic admin navigation destinations (packaged-admin RFC §4.7): packaged
+  admin pages navigate to routes they don't own (booking journey, supplier
+  detail, product editor) without importing a host route tree.
+
+  - `@voyantjs/admin`: new `AdminDestinations` interface (augmented by domain
+    packages via `declare module "@voyantjs/admin"`), `AdminNavigationProvider`,
+    and `useAdminHref`/`useAdminNavigate`. Unresolvable keys warn once per key
+    and degrade to `"#"`/no-op — never a throw in render paths.
+  - `@voyantjs/admin-app`: `AdminWorkspaceShell` accepts a `destinations`
+    resolver map (`satisfies AdminDestinationResolvers` for exhaustiveness) and
+    mounts the provider wired to the app router via `router.navigate({ href })`.
+  - `@voyantjs/catalog-ui`: declares the catalog destination keys
+    (`bookingJourney.start`, `catalog.browse`, `catalog.detail`,
+    `product.detail`, `supplier.detail`) covering every cross-route target the
+    operator's catalog wrappers navigate to.
+
+- b4d615d: Packaged-admin RFC Phase 2, second pilot (#1643): new
+  `@voyantjs/catalog-ui/admin` entrypoint. `createCatalogAdminExtension({ labels })`
+  contributes 10 route entries (5 catalog surfaces × browse + detail) carrying
+  the package-owned search contracts (`catalogSearchSchema`,
+  `productDetailSearchSchema` — the latter moved out of the operator route
+  file). No navigation contributed — the Catalog group is base-nav-owned.
+  Page components remain host-side for now: they depend on the app RPC client
+  and typed router navigation into other routes (booking journey, supplier and
+  product detail), which is the documented gap to close before catalog pages
+  can be package-delivered.
+
+### Patch Changes
+
+- Updated dependencies [4ade734]
+- Updated dependencies [3bd66e9]
+- Updated dependencies [ee5b530]
+- Updated dependencies [344e7b6]
+  - @voyantjs/admin@0.106.0
+  - @voyantjs/ui@0.106.0
+  - @voyantjs/catalog-react@0.107.0
+  - @voyantjs/markets-react@0.106.0
+  - @voyantjs/products-react@0.109.0
+  - @voyantjs/suppliers-react@0.106.0
+
 ## 0.106.0
 
 ### Patch Changes

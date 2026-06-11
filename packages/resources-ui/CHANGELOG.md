@@ -1,5 +1,69 @@
 # @voyantjs/resources-ui
 
+## 0.106.0
+
+### Minor Changes
+
+- ccc4a5f: i18n for the packaged admin hosts: all hardcoded UI copy that moved into
+  packages with the packaged-admin migration now flows through the
+  package-owned message bundles.
+
+  - `@voyantjs/notifications-ui`: the admin hosts (templates page/dialog/
+    detail, deliveries + delivery detail, reminder rules/dialog/detail,
+    reminder runs, reminders preview, authoring help) consume a new
+    `admin` section of `NotificationsUiMessages` via
+    `useNotificationsUiMessagesOrDefault()` — ~190 new message keys with
+    English and Romanian definitions, grouped by component
+    (`admin.common`, `admin.templatesPage`, `admin.templateDialog`,
+    `admin.templateDetail`, `admin.deliveriesPage`, `admin.deliveryDetail`,
+    `admin.reminderRulesPage`, `admin.reminderRuleDialog`,
+    `admin.reminderRuleDetail`, `admin.reminderRunsPage`,
+    `admin.previewPage`, `admin.authoringHelp`).
+  - `@voyantjs/availability-ui`, `@voyantjs/bookings-ui`,
+    `@voyantjs/suppliers-ui`, `@voyantjs/resources-ui`,
+    `@voyantjs/promotions-ui`: the admin extension factories switch from a
+    singular `label?: string` option to the `labels?: { <domain>?: string }`
+    shape the other domain factories (catalog, crm, legal, finance) already
+    use — hosts pass localized titles per domain key. The availability
+    start-time detail host's breadcrumb fallback now resolves through the
+    operator admin message catalog instead of a hardcoded string.
+
+- bd3a54a: Packaged-admin RFC resources pages delivered: the operator's resources
+  wrappers move into `@voyantjs/resources-ui/admin` as packaged hosts —
+  `ResourcesHost` (zero-prop tab dashboard with the operator-grade
+  create/edit dialogs `ResourceDialog`, `ResourcePoolDialog`,
+  `ResourceAllocationDialog`, `ResourceSlotAssignmentDialog`,
+  `ResourceCloseoutDialog` bound to the shared resources provider context,
+  plus `batch-update`/`batch-delete` bulk mutations with localized toasts)
+  and the four detail hosts `ResourceDetailHost`, `ResourcePoolDetailHost`,
+  `ResourceAllocationDetailHost`, `ResourceAssignmentDetailHost`, with the
+  matching `ResourcesPageSkeleton`/`ResourcesBodySkeleton`. Cross-route links
+  resolve through the semantic destination keys (RFC §4.7) via
+  `useAdminHref`/`useAdminNavigate` — new keys `resource.list`,
+  `resource.detail`, `resourcePool.detail`, `resourceAllocation.detail`,
+  `resourceAssignment.detail`, plus shape-locked `supplier.detail`,
+  `product.detail`, and `availabilitySlot.detail`; mutations go through the
+  resources provider context's `baseUrl` + `fetcher` instead of an app RPC
+  client. The SSR loader contract ships as `ensureResourcesPageData` +
+  `resourcesPageQueryFilters` so route loaders and the page's hooks share
+  query keys (`ResourcesPage` gains `queryFilters` + `loadingFallback`
+  props). `createResourcesAdminExtension` contributes the resources route
+  metadata (no nav — the Resources item is base-nav-owned; no search
+  contracts — the dashboard keeps tab/filter state local; no widgets). Host
+  route files shrink to param binding; `component:` stays off the route
+  contributions until the §4.2 code-based route assembly lands. New
+  resources-ui peers: `@voyantjs/admin`, `react-hook-form`, `sonner`, `zod`.
+
+### Patch Changes
+
+- Updated dependencies [4ade734]
+- Updated dependencies [3bd66e9]
+- Updated dependencies [ee5b530]
+- Updated dependencies [344e7b6]
+  - @voyantjs/admin@0.106.0
+  - @voyantjs/ui@0.106.0
+  - @voyantjs/resources-react@0.106.0
+
 ## 0.105.2
 
 ### Patch Changes

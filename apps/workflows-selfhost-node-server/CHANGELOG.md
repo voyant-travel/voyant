@@ -1,5 +1,12 @@
 # @voyantjs/workflows-selfhost-node-server
 
+## 0.0.2
+
+### Patch Changes
+
+- @voyantjs/workflows@0.106.0
+- @voyantjs/workflows-orchestrator-node@0.106.0
+
 ## 0.0.1
 
 ### Patch Changes

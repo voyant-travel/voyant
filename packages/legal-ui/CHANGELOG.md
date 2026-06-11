@@ -1,5 +1,57 @@
 # @voyantjs/legal-ui
 
+## 0.109.0
+
+### Minor Changes
+
+- 32f0751: Packaged-admin RFC legal pages delivered: the operator's legal wrappers move
+  into `@voyantjs/legal-ui/admin` as packaged hosts — `ContractsHost` /
+  `ContractDetailHost` (operator-grade contracts pages with the CRM/supplier/
+  channel-bound `ContractDialog`, person name cells, reference resolution for
+  person/booking/template-version/number-series, and breadcrumbs),
+  `PoliciesHost` / `PolicyDetailHost` (with `PolicyDialog` and the
+  `PolicyAssignmentDialog` whose scoped pickers now bind the products /
+  distribution / suppliers / markets / crm react hooks instead of an app-local
+  entity combobox), `TemplatesHost` / `TemplateDetailHost` (rich-text template
+  dialogs stay lazy-loaded inside the package), and `NumberSeriesHost`.
+  Cross-route links resolve through the semantic destination keys (RFC §4.7)
+  via `useAdminHref`/`useAdminNavigate` — new keys `legal.home`,
+  `contract.list`/`contract.detail`, `contractTemplate.list`/
+  `contractTemplate.detail`, `policy.list`/`policy.detail`; shared keys
+  (`person.detail`, `booking.detail`) come from the bookings-ui augmentation.
+  The attachment download href is built from the shared legal provider
+  context's `baseUrl` instead of a host env helper.
+  `createLegalAdminExtension` contributes the legal route metadata (no nav —
+  the Legal group is base-nav-owned; no search contracts — the legal pages
+  keep filter state component-local; no widgets). Host route files shrink to
+  param binding; `component:` stays off the route contributions until the
+  §4.2 code-based route assembly lands. New legal-ui peers: `@voyantjs/admin`,
+  `@voyantjs/bookings-react`, `@voyantjs/bookings-ui`,
+  `@voyantjs/distribution-react`, `@voyantjs/markets-react`,
+  `@voyantjs/products-react`, `@voyantjs/suppliers-react`.
+
+### Patch Changes
+
+- Updated dependencies [8638834]
+- Updated dependencies [05e5784]
+- Updated dependencies [25d7452]
+- Updated dependencies [098a172]
+- Updated dependencies [ccc4a5f]
+- Updated dependencies [4ade734]
+- Updated dependencies [3bd66e9]
+- Updated dependencies [ee5b530]
+- Updated dependencies [344e7b6]
+  - @voyantjs/bookings-react@0.109.0
+  - @voyantjs/bookings-ui@0.109.0
+  - @voyantjs/admin@0.106.0
+  - @voyantjs/ui@0.106.0
+  - @voyantjs/crm-react@0.109.0
+  - @voyantjs/distribution-react@0.106.0
+  - @voyantjs/legal-react@0.109.0
+  - @voyantjs/markets-react@0.106.0
+  - @voyantjs/products-react@0.109.0
+  - @voyantjs/suppliers-react@0.106.0
+
 ## 0.108.0
 
 ### Patch Changes
