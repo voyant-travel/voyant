@@ -1,7 +1,6 @@
 "use client"
 
-import { useLocale } from "@voyantjs/admin"
-import { StatusBadge } from "@voyantjs/bookings-ui"
+import { useLocale, useOperatorAdminMessages } from "@voyantjs/admin"
 import {
   type InvoiceAttachmentRecord,
   useInvoice,
@@ -9,6 +8,7 @@ import {
   useInvoiceLineItems,
   useInvoiceMutation,
   useInvoicePayments,
+  useVoyantFinanceContext,
 } from "@voyantjs/finance-react"
 import {
   AlertDialog,
@@ -26,8 +26,7 @@ import {
 import { ArrowRightLeft, ArrowUpRight, Download, FileText, Loader2 } from "lucide-react"
 import { useState } from "react"
 
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { getApiUrl } from "@/lib/env"
+import { StatusBadge } from "../components/status-badge.js"
 
 export interface BookingInvoiceSheetProps {
   invoiceId: string
@@ -42,10 +41,13 @@ export interface BookingInvoiceSheetProps {
  * trims the chrome and focuses on the operator's reconciliation needs:
  * summary numbers, line items, payments. Big actions (edit, void)
  * stay on the dedicated invoice page.
+ *
+ * Packaged host piece (packaged-admin RFC Phase 3): API base URL comes
+ * from the shell's finance provider context — no app env import.
  */
 export function BookingInvoiceSheet({ invoiceId, onOpenInvoice }: BookingInvoiceSheetProps) {
   const { resolvedLocale } = useLocale()
-  const adminMessages = useAdminMessages()
+  const adminMessages = useOperatorAdminMessages()
   const messages = adminMessages.bookings.detail.invoiceSheet
   const financeMessages = adminMessages.finance
   const { data: invoiceData, isPending: invoicePending } = useInvoice(invoiceId)
@@ -364,7 +366,11 @@ function AttachmentRow({
   attachment: InvoiceAttachmentRecord
   downloadLabel: string
 }) {
-  const href = `${getApiUrl()}/v1/admin/finance/invoice-attachments/${attachment.id}/download`
+  // Same admin endpoint the finance invoice page links to; the base URL
+  // comes from the finance provider context instead of an app env helper.
+  const { baseUrl } = useVoyantFinanceContext()
+  const trimmedBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl
+  const href = `${trimmedBase}/v1/admin/finance/invoice-attachments/${attachment.id}/download`
   const sizeKb =
     typeof attachment.fileSize === "number" ? `${Math.round(attachment.fileSize / 1024)} KB` : null
   return (

@@ -1,7 +1,8 @@
 import type { AdminDestinationResolvers } from "@voyantjs/admin"
-// Type-only: binds the `AdminDestinations` augmentation (the catalog
-// destination keys) into this program without pulling the catalog admin
-// bundle into the workspace-chrome chunk.
+// Type-only: binds the `AdminDestinations` augmentations (the bookings +
+// catalog destination keys) into this program without pulling the admin
+// bundles into the workspace-chrome chunk.
+import type {} from "@voyantjs/bookings-ui/admin"
 import type {} from "@voyantjs/catalog-ui/admin"
 
 /**
@@ -18,6 +19,11 @@ import type {} from "@voyantjs/catalog-ui/admin"
  * presence is meaningful to the journey).
  */
 export const operatorAdminDestinations = {
+  "availabilitySlot.detail": ({ slotId }) => `/availability/${encodeURIComponent(slotId)}`,
+  "booking.create": () => "/bookings/new",
+  "booking.detail": ({ bookingId, tab }) =>
+    `/bookings/${encodeURIComponent(bookingId)}${searchString({ tab })}`,
+  "booking.list": () => "/bookings",
   "bookingJourney.start": ({ entityModule, entityId, ...search }) =>
     `/catalog/journey/${encodeURIComponent(entityModule)}/${encodeURIComponent(entityId)}${searchString(
       {
@@ -37,6 +43,11 @@ export const operatorAdminDestinations = {
   "catalog.browse": ({ surface }) => `/catalog/${surface}`,
   "catalog.detail": ({ surface, id, adults, nights }) =>
     `/catalog/${surface}/${encodeURIComponent(id)}${searchString({ adults, nights })}`,
+  "invoice.detail": ({ invoiceId }) => `/finance/invoices/${encodeURIComponent(invoiceId)}`,
+  "organization.detail": ({ organizationId }) =>
+    `/organizations/${encodeURIComponent(organizationId)}`,
+  "payment.detail": ({ paymentId }) => `/finance/payments/${encodeURIComponent(paymentId)}`,
+  "person.detail": ({ personId }) => `/people/${encodeURIComponent(personId)}`,
   "product.detail": ({ productId }) => `/products/${encodeURIComponent(productId)}`,
   "supplier.detail": ({ supplierId }) => `/suppliers/${encodeURIComponent(supplierId)}`,
 } satisfies AdminDestinationResolvers

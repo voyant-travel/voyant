@@ -1,6 +1,11 @@
 import { Card, CardContent, CardHeader } from "@voyantjs/ui/components/card"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
 
+/**
+ * Route-level placeholder for the booking detail page. Mirrors the
+ * canonical `BookingDetailPage` layout (header row, summary card, tab
+ * bar, two list cards) so the pending state doesn't shift the page.
+ */
 export function BookingDetailSkeleton() {
   return (
     <div className="flex flex-col gap-6 p-6">
