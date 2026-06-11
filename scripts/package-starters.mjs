@@ -9,7 +9,7 @@ const cliPackageJsonPath = join(repoRoot, "packages", "cli", "package.json")
 const args = parseArgs(process.argv.slice(2))
 const version = resolveVersion(args.version)
 const outDir = resolve(repoRoot, args.outDir ?? ".release/starters")
-const starters = ["dmc", "operator"]
+const starters = ["operator"]
 const skipNames = new Set([
   "node_modules",
   ".git",

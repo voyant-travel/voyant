@@ -14,7 +14,6 @@ const checkerPath = path.join(repoRoot, "scripts/check-ui-hardcoded-strings.mjs"
 async function createFixture(files) {
   const root = await mkdtemp(path.join(tmpdir(), "voyant-ui-literals-"))
   await mkdir(path.join(root, "packages/example-ui/src/i18n"), { recursive: true })
-  await mkdir(path.join(root, "packages/ui/registry"), { recursive: true })
   await writeFile(path.join(root, "packages/example-ui/src/i18n/index.ts"), "export {}\n")
 
   for (const [relativePath, content] of Object.entries(files)) {

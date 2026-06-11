@@ -47,15 +47,15 @@ backend.
 
 ## Connecting to a real Voyant backend
 
-1. Start the DMC template:
+1. Start the operator template:
    ```bash
-   pnpm -C templates/dmc dev
+   pnpm -C templates/operator dev
    ```
 2. In `examples/nextjs-booking-portal/`, create `.env.local`:
    ```
-   VOYANT_API_URL=http://localhost:8787/api
+   VOYANT_API_URL=http://localhost:3300/api
    VOYANT_API_KEY=sk_live_...
-   NEXT_PUBLIC_VOYANT_CUSTOMER_API_URL=http://localhost:8787/api
+   NEXT_PUBLIC_VOYANT_CUSTOMER_API_URL=http://localhost:3300/api
    USE_MOCK_DATA=0
    ```
 3. Restart `pnpm -F nextjs-booking-portal dev`.

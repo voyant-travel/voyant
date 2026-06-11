@@ -1,5 +1,7 @@
 # Migration & Schema Resilience RFC (one manifest drives runtime + migrations)
 
+> Note (2026-06): `templates/dmc`, `apps/dev`, and the shadcn registry (`apps/registry` + `packages/ui/registry`) have since been deleted per the packaged-admin RFC (§5); path references to them below are historical.
+
 Status: RFC / proposal — tracked in voyant#1608
 Audience: anyone who adds a module, extension, or link and then has to make
 migrations reflect it; anyone who has shipped a migration that was silently

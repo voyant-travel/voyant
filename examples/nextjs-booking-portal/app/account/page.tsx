@@ -44,8 +44,8 @@ export default function AccountPage() {
             the customer session cookie.
           </p>
           <p>
-            In local development, <code>http://localhost:8787/api</code> is usually enough if you
-            are running the DMC template directly and signing in on the same origin.
+            In local development, <code>http://localhost:3300/api</code> is usually enough if you
+            are running the operator template directly and signing in on the same origin.
           </p>
         </section>
       )}

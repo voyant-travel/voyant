@@ -2,54 +2,23 @@
  * Enforces issue #977's accommodation resale boundary.
  *
  * Accommodation remains valid catalog/resale inventory. This check blocks the
- * first-party hotel-operations surfaces from returning in starters, dev UI, and
- * the public UI registry.
+ * first-party hotel-operations surfaces from returning in starters and
+ * packaged UI.
  */
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
-import { dirname, join, relative } from "node:path"
+import { existsSync, readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, "..")
 
 const FORBIDDEN_PATHS = [
-  "apps/dev/src/components/voyant/hospitality",
-  "apps/dev/src/routes/_workspace/hospitality",
   "packages/hospitality",
   "packages/hospitality-react",
   "packages/hospitality-ui",
-  "packages/ui/registry/hospitality",
 ]
 
 const FILE_CHECKS = [
-  {
-    file: "apps/dev/src/api/app.ts",
-    patterns: [/\bhospitalityHonoModule\b/, /@voyantjs\/hospitality/],
-  },
-  {
-    file: "apps/dev/src/api/api-types.ts",
-    patterns: [/\bHospitalityRoutes\b/, /"\/v1\/hospitality"/, /@voyantjs\/hospitality/],
-  },
-  {
-    file: "templates/dmc/src/api/app.ts",
-    patterns: [/\bhospitalityHonoModule\b/, /@voyantjs\/hospitality/],
-  },
-  {
-    file: "templates/dmc/src/api/api-types.ts",
-    patterns: [/\bHospitalityRoutes\b/, /"\/v1\/hospitality"/, /@voyantjs\/hospitality/],
-  },
-  {
-    file: "templates/dmc/voyant.config.ts",
-    patterns: [/"@voyantjs\/hospitality"/],
-  },
-  {
-    file: "templates/dmc/package.json",
-    patterns: [/"@voyantjs\/hospitality"/],
-  },
-  {
-    file: "templates/dmc/src/api/mcp.ts",
-    patterns: [/@voyantjs\/hospitality/, /\bvertical === "hospitality"\b/],
-  },
   {
     file: "templates/operator/package.json",
     patterns: [/"@voyantjs\/hospitality"/],
@@ -87,26 +56,6 @@ const FILE_CHECKS = [
     patterns: [/@voyantjs\/hospitality/, /"hospitality"/, /\bHospitalityContent\b/],
   },
   {
-    file: "apps/dev/package.json",
-    patterns: [
-      /"@voyantjs\/hospitality"/,
-      /"@voyantjs\/hospitality-react"/,
-      /"@voyantjs\/hospitality-ui"/,
-    ],
-  },
-  {
-    file: "apps/dev/src/styles.css",
-    patterns: [/@voyantjs\/hospitality-ui/],
-  },
-  {
-    file: "apps/dev/drizzle.config.ts",
-    patterns: [/packages\/hospitality/],
-  },
-  {
-    file: "templates/dmc/drizzle.config.ts",
-    patterns: [/packages\/hospitality/],
-  },
-  {
     file: "templates/operator/drizzle.config.ts",
     patterns: [/packages\/hospitality/],
   },
@@ -121,10 +70,6 @@ const FILE_CHECKS = [
   {
     file: "SCHEMA.md",
     patterns: [/\bhospitality\b/i, /^## Hospitality$/],
-  },
-  {
-    file: "apps/dev/src/components/voyant/facilities/property-tab.tsx",
-    patterns: [/\bhospitality\b/i],
   },
   {
     file: "packages/products/src/draft-shape.ts",
@@ -173,18 +118,6 @@ const FILE_CHECKS = [
   {
     file: "docs/architecture/cruises-module.md",
     patterns: [/\bhospitality\b/i],
-  },
-  {
-    file: "packages/ui/registry.json",
-    patterns: [/voyant-hospitality-/, /registry\/hospitality/, /@voyantjs\/hospitality-react/],
-  },
-  {
-    file: "packages/ui/public/r/registry.json",
-    patterns: [/voyant-hospitality-/, /registry\/hospitality/, /@voyantjs\/hospitality-react/],
-  },
-  {
-    file: "apps/registry/public/r/registry.json",
-    patterns: [/voyant-hospitality-/],
   },
   {
     file: "packages/catalog-ui/src/components/catalog-page.tsx",
@@ -328,8 +261,6 @@ const FILE_CHECKS = [
   },
 ]
 
-const GENERATED_REGISTRY_DIRS = ["packages/ui/public/r", "apps/registry/public/r"]
-
 const violations = []
 
 for (const path of FORBIDDEN_PATHS) {
@@ -346,17 +277,6 @@ for (const { file, patterns } of FILE_CHECKS) {
     const text = lines[i] ?? ""
     if (patterns.some((pattern) => pattern.test(text))) {
       violations.push({ file, line: i + 1, text: text.trim() })
-    }
-  }
-}
-
-for (const dir of GENERATED_REGISTRY_DIRS) {
-  const full = join(ROOT, dir)
-  if (!existsSync(full)) continue
-  for (const entry of readdirSync(full)) {
-    const file = join(full, entry)
-    if (statSync(file).isFile() && entry.startsWith("voyant-hospitality-")) {
-      violations.push({ file: relative(ROOT, file), line: null, text: "forbidden registry item" })
     }
   }
 }

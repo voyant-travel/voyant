@@ -166,7 +166,7 @@ environment/config values without removing Cloud-specific code by hand.
 
 Implemented in `issue-933-cloud-auth-broker`:
 
-- `templates/operator` and `templates/dmc` now have
+- `templates/operator` (and `templates/dmc`, since deleted) now have
   `VOYANT_ADMIN_AUTH_MODE`, defaulting to `local` in template config so
   localhost and self-hosted development keep the current Better Auth behavior.
 - Operator auth routes now fail closed in `voyant-cloud` mode:

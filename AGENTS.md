@@ -55,7 +55,6 @@ AI-workflow changes, read
 - Lint everything: `pnpm lint`
 - Check package exports: `pnpm verify:package-exports`
 - Regenerate schema docs: `pnpm generate:schema-docs`
-- Build UI registry artifacts: `pnpm registry:build`
 
 ## Guardrails
 

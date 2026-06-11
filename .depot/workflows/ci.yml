@@ -45,8 +45,6 @@ jobs:
       # the serialization cost.
       - name: Build packages
         run: pnpm turbo build --filter='./packages/**' --continue --concurrency=4
-      - name: Build registry artifacts
-        run: pnpm registry:build
       - name: Verify release train
         run: pnpm verify:release-train
       - name: Verify package exports

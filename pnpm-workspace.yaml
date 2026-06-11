@@ -1,7 +1,6 @@
 packages:
   - "packages/*"
   - "packages/plugins/*"
-  - "templates/dmc"
   - "templates/operator"
   - "apps/*"
   - "examples/*"

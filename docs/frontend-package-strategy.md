@@ -1,5 +1,7 @@
 # Frontend Package Strategy
 
+> Note (2026-06): layer 4 (shadcn registry blocks) has been retired — the registry source, `apps/registry`, and `registry:build` were deleted per `docs/architecture/packaged-admin-rfc.md` §5. Domain UI now ships only as versioned `*-ui` packages; registry references below are historical.
+
 Voyant separates frontend acceleration into three layers:
 
 1. `@voyantjs/<module>`
