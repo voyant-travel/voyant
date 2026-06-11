@@ -3,8 +3,8 @@ import {
   createAdminExtensionRegistry,
   defineAdminExtension,
 } from "@voyantjs/admin"
-import { createPromotionsAdminExtension } from "@voyantjs/promotions-ui/admin"
 import { Route, ScrollText, Tag } from "lucide-react"
+import { generatedAdminExtensionFactories } from "@/admin.extensions.generated"
 import type { AdminMessages } from "@/lib/admin-i18n"
 
 /**
@@ -25,15 +25,43 @@ import type { AdminMessages } from "@/lib/admin-i18n"
 
 type AdminExtensionNavMessages = Pick<
   AdminMessages["nav"],
-  "actionLedger" | "allTrips" | "newTrip" | "promotions" | "trips"
+  | "actionLedger"
+  | "allTrips"
+  | "catalogAccommodations"
+  | "catalogCruises"
+  | "catalogExcursions"
+  | "catalogProducts"
+  | "catalogTours"
+  | "newTrip"
+  | "promotions"
+  | "trips"
 >
+
+// Catalog is package-described (packaged-admin RFC Phase 2): the extension
+// contributes NO navigation — the Catalog group is part of the BASE operator
+// navigation (createOperatorAdminNavigation in @voyantjs/admin), so entries
+// here would duplicate it. It's registered anyway for the routes seam: the
+// contributions carry the package-owned route metadata + search contracts
+// (catalogSearchSchema / productDetailSearchSchema) while the pages remain
+// operator-hosted wrappers (see src/components/voyant/catalog/*).
+function createCatalogExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.catalog({
+    labels: {
+      products: messages.catalogProducts,
+      excursions: messages.catalogExcursions,
+      tours: messages.catalogTours,
+      cruises: messages.catalogCruises,
+      accommodations: messages.catalogAccommodations,
+    },
+  })
+}
 
 // Promotions is package-delivered (packaged-admin RFC Phase 2): nav AND the
 // route implementation come from @voyantjs/promotions-ui/admin. The app only
 // supplies the localized label and icon. Order 50 nudges it past the default
 // admin items so it lands alongside the operator's commercial tools.
 function createPromotionsExtension(messages: AdminExtensionNavMessages) {
-  return createPromotionsAdminExtension({
+  return generatedAdminExtensionFactories.promotions({
     label: messages.promotions,
     icon: Tag,
     order: 50,
@@ -96,6 +124,11 @@ function createActionLedgerExtension(messages: AdminExtensionNavMessages) {
 const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   actionLedger: "Logs",
   allTrips: "All trips",
+  catalogAccommodations: "Accommodations",
+  catalogCruises: "Cruises",
+  catalogExcursions: "Excursions",
+  catalogProducts: "Packages",
+  catalogTours: "Tours",
   newTrip: "New trip",
   promotions: "Promotions",
   trips: "Trips",
@@ -105,6 +138,7 @@ export function createOperatorAdminExtensions(
   messages: AdminExtensionNavMessages,
 ): ReadonlyArray<AdminExtension> {
   return createAdminExtensionRegistry(
+    createCatalogExtension(messages),
     createPromotionsExtension(messages),
     createTravelComposerExtension(messages),
     createActionLedgerExtension(messages),

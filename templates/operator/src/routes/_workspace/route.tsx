@@ -84,6 +84,11 @@ function WorkspaceContent() {
         createOperatorAdminExtensions({
           actionLedger: messages.nav.actionLedger,
           allTrips: messages.nav.allTrips,
+          catalogAccommodations: messages.nav.catalogAccommodations,
+          catalogCruises: messages.nav.catalogCruises,
+          catalogExcursions: messages.nav.catalogExcursions,
+          catalogProducts: messages.nav.catalogProducts,
+          catalogTours: messages.nav.catalogTours,
           newTrip: messages.nav.newTrip,
           promotions: messages.nav.promotions,
           trips: messages.nav.trips,
