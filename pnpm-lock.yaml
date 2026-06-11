@@ -1172,6 +1172,9 @@ importers:
 
   packages/bookings-react:
     dependencies:
+      '@voyantjs/catalog-contracts':
+        specifier: workspace:^
+        version: link:../catalog-contracts
       '@voyantjs/i18n':
         specifier: workspace:^
         version: link:../i18n
@@ -1203,9 +1206,6 @@ importers:
       '@voyantjs/bookings':
         specifier: workspace:^
         version: link:../bookings
-      '@voyantjs/catalog':
-        specifier: workspace:^
-        version: link:../catalog
       '@voyantjs/catalog-react':
         specifier: workspace:^
         version: link:../catalog-react
@@ -1397,6 +1397,9 @@ importers:
 
   packages/catalog-react:
     dependencies:
+      '@voyantjs/catalog-contracts':
+        specifier: workspace:^
+        version: link:../catalog-contracts
       '@voyantjs/i18n':
         specifier: workspace:^
         version: link:../i18n
@@ -1419,9 +1422,6 @@ importers:
       '@voyantjs/admin':
         specifier: workspace:^
         version: link:../admin
-      '@voyantjs/catalog':
-        specifier: workspace:^
-        version: link:../catalog
       '@voyantjs/markets-react':
         specifier: workspace:^
         version: link:../markets-react

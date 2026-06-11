@@ -5,7 +5,7 @@ import {
   type BookingDraftV1,
   type QuoteResponseV1,
   quoteResponseV1,
-} from "@voyantjs/catalog/booking-engine"
+} from "@voyantjs/catalog-contracts/booking-engine/contracts"
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { type BookingJourneyApiOptions, useBookingJourneyApi } from "./use-booking-journey-api.js"

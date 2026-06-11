@@ -35,7 +35,6 @@
     "@tanstack/react-query": "^5.0.0",
     "@tanstack/react-table": "^8.0.0",
     "@voyantjs/admin": "workspace:^",
-    "@voyantjs/catalog": "workspace:^",
     "@voyantjs/markets-react": "workspace:^",
     "@voyantjs/products-react": "workspace:^",
     "@voyantjs/suppliers-react": "workspace:^",
@@ -69,6 +68,7 @@
     }
   },
   "dependencies": {
+    "@voyantjs/catalog-contracts": "workspace:^",
     "@voyantjs/i18n": "workspace:^",
     "@voyantjs/react": "workspace:^"
   },
@@ -78,7 +78,6 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@voyantjs/admin": "workspace:^",
-    "@voyantjs/catalog": "workspace:^",
     "@voyantjs/i18n": "workspace:^",
     "@voyantjs/markets-react": "workspace:^",
     "@voyantjs/products-react": "workspace:^",

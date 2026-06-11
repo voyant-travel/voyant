@@ -1,6 +1,6 @@
 "use client"
 
-import type { BookingDraftShape } from "@voyantjs/catalog/booking-engine"
+import type { BookingDraftShape } from "@voyantjs/catalog-contracts/booking-engine/draft-shape"
 
 import type { BookingJourneyApiOptions } from "./use-booking-journey-api.js"
 

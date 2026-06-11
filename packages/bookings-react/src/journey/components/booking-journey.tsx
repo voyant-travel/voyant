@@ -23,7 +23,7 @@ import {
   defaultDraftShapeFlags,
   defaultTravelerFields,
   paxBandsAllowedTotalFrom,
-} from "@voyantjs/catalog/booking-engine"
+} from "@voyantjs/catalog-contracts/booking-engine/draft-shape"
 import {
   useBookingCommit,
   useBookingDraft,
