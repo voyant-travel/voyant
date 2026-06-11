@@ -1,5 +1,12 @@
 # @voyantjs/admin-app
 
+## 0.2.0
+
+### Patch Changes
+
+- Updated dependencies [eeb23df]
+  - @voyantjs/admin@0.107.0
+
 ## 0.1.0
 
 ### Minor Changes
