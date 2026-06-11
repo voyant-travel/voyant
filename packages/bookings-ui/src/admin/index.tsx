@@ -214,8 +214,10 @@ export type BookingDetailSearchParams = z.infer<typeof bookingDetailSearchSchema
 export interface CreateBookingsAdminExtensionOptions {
   /** Mount path of the bookings pages inside the admin workspace. Default `/bookings`. */
   basePath?: string
-  /** Localized page title. Default is the English operator nav label. */
-  label?: string
+  /** Localized page titles. Defaults are the English operator nav labels. */
+  labels?: {
+    bookings?: string
+  }
 }
 
 /**
@@ -256,7 +258,8 @@ export interface CreateBookingsAdminExtensionOptions {
 export function createBookingsAdminExtension(
   options: CreateBookingsAdminExtensionOptions = {},
 ): AdminExtension {
-  const { basePath = "/bookings", label = "Bookings" } = options
+  const { basePath = "/bookings", labels = {} } = options
+  const { bookings = "Bookings" } = labels
 
   return defineAdminExtension({
     id: "bookings",
@@ -264,13 +267,13 @@ export function createBookingsAdminExtension(
       {
         id: "bookings-index",
         path: basePath,
-        title: label,
+        title: bookings,
         validateSearch: (search) => bookingsIndexSearchSchema.parse(search),
       },
       {
         id: "bookings-detail",
         path: `${basePath}/$id`,
-        title: label,
+        title: bookings,
         validateSearch: (search) => bookingDetailSearchSchema.parse(search),
       },
     ],

@@ -76,7 +76,9 @@ type AdminExtensionNavMessages = Pick<
 // handlers call the availability batch endpoints, which have no
 // availability-react client equivalent yet.
 function createAvailabilityExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.availability({ label: messages.availability })
+  return generatedAdminExtensionFactories.availability({
+    labels: { availability: messages.availability },
+  })
 }
 
 // Bookings is package-delivered (packaged-admin RFC Phase 3): the extension
@@ -88,7 +90,7 @@ function createAvailabilityExtension(messages: AdminExtensionNavMessages) {
 // the packaged hosts from @voyantjs/bookings-ui/admin — the route files under
 // src/routes/_workspace/bookings/* only bind route params/search onto them.
 function createBookingsExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.bookings({ label: messages.bookings })
+  return generatedAdminExtensionFactories.bookings({ labels: { bookings: messages.bookings } })
 }
 
 // Catalog is package-delivered (packaged-admin RFC Phase 2): the extension
@@ -206,7 +208,7 @@ function createNotificationsExtension(messages: AdminExtensionNavMessages) {
 // contribution on `supplier.details.payment-policy` (the finance-ui ↔
 // suppliers-ui cycle resolution).
 function createSuppliersExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.suppliers({ label: messages.suppliers })
+  return generatedAdminExtensionFactories.suppliers({ labels: { suppliers: messages.suppliers } })
 }
 
 // Resources is package-delivered (packaged-admin RFC Phase 3): the extension
@@ -218,7 +220,7 @@ function createSuppliersExtension(messages: AdminExtensionNavMessages) {
 // packaged hosts from @voyantjs/resources-ui/admin — the route files under
 // src/routes/_workspace/resources/* only bind route params onto them.
 function createResourcesExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.resources({ label: messages.resources })
+  return generatedAdminExtensionFactories.resources({ labels: { resources: messages.resources } })
 }
 
 // Promotions is package-delivered (packaged-admin RFC Phase 2): nav AND the
@@ -227,7 +229,7 @@ function createResourcesExtension(messages: AdminExtensionNavMessages) {
 // admin items so it lands alongside the operator's commercial tools.
 function createPromotionsExtension(messages: AdminExtensionNavMessages) {
   return generatedAdminExtensionFactories.promotions({
-    label: messages.promotions,
+    labels: { promotions: messages.promotions },
     icon: Tag,
     order: 50,
   })

@@ -51,8 +51,10 @@ export {
 export interface CreateAvailabilityAdminExtensionOptions {
   /** Mount path of the availability pages inside the admin workspace. Default `/availability`. */
   basePath?: string
-  /** Localized page title. Default is the English operator nav label. */
-  label?: string
+  /** Localized page titles. Defaults are the English operator nav labels. */
+  labels?: {
+    availability?: string
+  }
 }
 
 /**
@@ -92,7 +94,8 @@ export interface CreateAvailabilityAdminExtensionOptions {
 export function createAvailabilityAdminExtension(
   options: CreateAvailabilityAdminExtensionOptions = {},
 ): AdminExtension {
-  const { basePath = "/availability", label = "Availability" } = options
+  const { basePath = "/availability", labels = {} } = options
+  const { availability = "Availability" } = labels
 
   return defineAdminExtension({
     id: "availability",
@@ -100,22 +103,22 @@ export function createAvailabilityAdminExtension(
       {
         id: "availability-index",
         path: basePath,
-        title: label,
+        title: availability,
       },
       {
         id: "availability-slot-detail",
         path: `${basePath}/$id`,
-        title: label,
+        title: availability,
       },
       {
         id: "availability-rule-detail",
         path: `${basePath}/rules/$id`,
-        title: label,
+        title: availability,
       },
       {
         id: "availability-start-time-detail",
         path: `${basePath}/start-times/$id`,
-        title: label,
+        title: availability,
       },
     ],
   })

@@ -30,10 +30,10 @@ describe("createAvailabilityAdminExtension", () => {
     ])
   })
 
-  it("honors basePath and label", () => {
+  it("honors basePath and labels", () => {
     const extension = createAvailabilityAdminExtension({
       basePath: "/inventory",
-      label: "Disponibilitate",
+      labels: { availability: "Disponibilitate" },
     })
     const index = extension.routes?.find((route) => route.id === "availability-index")
     expect(index?.path).toBe("/inventory")

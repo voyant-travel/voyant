@@ -15,12 +15,17 @@ import {
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 
+import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
+
 /**
  * Packaged admin host for the reminder runs page (packaged-admin RFC
  * Phase 3). Zero-prop, read-only: filter state stays component-local and
  * there is no cross-route navigation.
  */
 export function NotificationReminderRunsHost() {
+  const messages = useNotificationsUiMessagesOrDefault()
+  const t = messages.admin.reminderRunsPage
+  const common = messages.admin.common
   const [status, setStatus] = useState<UseNotificationReminderRunsOptions["status"] | "all">("all")
   const { data, isPending } = useNotificationReminderRuns({
     status: status === "all" ? undefined : status,
@@ -31,24 +36,22 @@ export function NotificationReminderRunsHost() {
   return (
     <div className="flex flex-col gap-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Reminder Runs</h1>
-        <p className="text-sm text-muted-foreground">
-          Inspect queued and processed reminder executions, linked deliveries, and failure reasons.
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
+        <p className="text-sm text-muted-foreground">{t.description}</p>
       </div>
 
       <div className="flex items-center gap-3">
         <Select value={status} onValueChange={(value) => setStatus(value ?? "all")}>
           <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder={common.statusFilterPlaceholder} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="queued">Queued</SelectItem>
-            <SelectItem value="processing">Processing</SelectItem>
-            <SelectItem value="sent">Sent</SelectItem>
-            <SelectItem value="skipped">Skipped</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
+            <SelectItem value="all">{common.allStatuses}</SelectItem>
+            <SelectItem value="queued">{common.statusQueued}</SelectItem>
+            <SelectItem value="processing">{common.statusProcessing}</SelectItem>
+            <SelectItem value="sent">{common.statusSent}</SelectItem>
+            <SelectItem value="skipped">{common.statusSkipped}</SelectItem>
+            <SelectItem value="failed">{common.statusFailed}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -61,7 +64,7 @@ export function NotificationReminderRunsHost() {
 
       {!isPending && (!data?.data || data.data.length === 0) ? (
         <div className="rounded-md border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">No reminder runs yet.</p>
+          <p className="text-sm text-muted-foreground">{t.empty}</p>
         </div>
       ) : null}
 
