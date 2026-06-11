@@ -91,8 +91,13 @@ function WorkspaceContent() {
           catalogExcursions: messages.nav.catalogExcursions,
           catalogProducts: messages.nav.catalogProducts,
           catalogTours: messages.nav.catalogTours,
+          invoiceNumberSeries: messages.nav.invoiceNumberSeries,
+          invoices: messages.nav.invoices,
           newTrip: messages.nav.newTrip,
+          payments: messages.nav.payments,
+          profitability: messages.nav.profitability,
           promotions: messages.nav.promotions,
+          supplierInvoices: messages.nav.supplierInvoices,
           trips: messages.nav.trips,
         })
       }

@@ -1,12 +1,22 @@
-import { Link, useNavigate } from "@tanstack/react-router"
+"use client"
+
+import {
+  type AdminDestinationKey,
+  type AdminDestinations,
+  type OperatorAdminMessages,
+  useAdminHref,
+  useAdminNavigate,
+  useOperatorAdminMessages,
+} from "@voyantjs/admin"
 import { usePayment } from "@voyantjs/finance-react"
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@voyantjs/ui/components"
 import { ArrowLeft, ExternalLink } from "lucide-react"
-import { type AdminMessages, useAdminMessages } from "@/lib/admin-i18n"
-import { formatAmount, paymentStatusVariant } from "./finance-shared"
-import { PaymentDetailSkeleton } from "./payment-detail-skeleton"
+import type { ReactNode } from "react"
 
-function getStatusLabel(messages: AdminMessages, status: string) {
+import { formatAmount, paymentStatusVariant } from "./finance-shared.js"
+import { PaymentDetailSkeleton } from "./payment-detail-skeleton.js"
+
+function getStatusLabel(messages: OperatorAdminMessages, status: string) {
   switch (status) {
     case "pending":
       return messages.finance.paymentStatusPending
@@ -21,7 +31,7 @@ function getStatusLabel(messages: AdminMessages, status: string) {
   }
 }
 
-function getMethodLabel(messages: AdminMessages, method: string) {
+function getMethodLabel(messages: OperatorAdminMessages, method: string) {
   switch (method) {
     case "bank_transfer":
       return messages.finance.paymentMethodBankTransfer
@@ -46,13 +56,56 @@ function getMethodLabel(messages: AdminMessages, method: string) {
   }
 }
 
-function getKindLabel(messages: AdminMessages, kind: "customer" | "supplier") {
+function getKindLabel(messages: OperatorAdminMessages, kind: "customer" | "supplier") {
   return kind === "customer" ? messages.finance.kindCustomer : messages.finance.kindSupplier
 }
 
-export function PaymentDetailPage({ id }: { id: string }) {
-  const messages = useAdminMessages()
-  const navigate = useNavigate()
+/**
+ * Anchor that resolves a semantic destination (RFC §4.7) to an href and
+ * commits navigation through the host-injected router — keeps the page free
+ * of any host route-tree import while still rendering a real link.
+ */
+function DestinationLink<K extends AdminDestinationKey>({
+  destination,
+  params,
+  children,
+}: {
+  destination: K
+  params: AdminDestinations[K]
+  children: ReactNode
+}) {
+  const resolveHref = useAdminHref()
+  const navigateTo = useAdminNavigate()
+
+  return (
+    <a
+      href={resolveHref(destination, params)}
+      onClick={(event) => {
+        event.preventDefault()
+        navigateTo(destination, params)
+      }}
+      className="inline-flex items-center gap-1 text-primary hover:underline"
+    >
+      {children}
+      <ExternalLink className="size-3" aria-hidden />
+    </a>
+  )
+}
+
+export interface PaymentDetailHostProps {
+  id: string
+}
+
+/**
+ * Packaged admin host for the payment detail page (packaged-admin RFC
+ * Phase 3). Data access goes through `@voyantjs/finance-react`; every
+ * cross-route link (`payment.list` back target, person/organization/
+ * invoice/supplier/booking links) resolves through semantic destinations,
+ * so the page imports no host route tree.
+ */
+export function PaymentDetailHost({ id }: PaymentDetailHostProps) {
+  const messages = useOperatorAdminMessages()
+  const navigateTo = useAdminNavigate()
   const { data, isPending, isError } = usePayment(id)
   const f = messages.finance
   const detail = f.paymentDetail
@@ -66,7 +119,7 @@ export function PaymentDetailPage({ id }: { id: string }) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-12">
         <p className="text-muted-foreground">{isError ? detail.loadFailed : detail.notFound}</p>
-        <Button variant="outline" onClick={() => void navigate({ to: "/finance/payments" })}>
+        <Button variant="outline" onClick={() => navigateTo("payment.list", {})}>
           {detail.backToPayments}
         </Button>
       </div>
@@ -87,7 +140,7 @@ export function PaymentDetailPage({ id }: { id: string }) {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => void navigate({ to: "/finance/payments" })}
+          onClick={() => navigateTo("payment.list", {})}
           aria-label={detail.backToPayments}
         >
           <ArrowLeft className="size-4" />
@@ -171,23 +224,19 @@ export function PaymentDetailPage({ id }: { id: string }) {
                 <>
                   <Row label={detail.paidByLabel}>
                     {payment.personId && payment.personName ? (
-                      <Link
-                        to="/people/$id"
-                        params={{ id: payment.personId }}
-                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                      <DestinationLink
+                        destination="person.detail"
+                        params={{ personId: payment.personId }}
                       >
                         {payment.personName}
-                        <ExternalLink className="size-3" aria-hidden />
-                      </Link>
+                      </DestinationLink>
                     ) : payment.organizationId && payment.organizationName ? (
-                      <Link
-                        to="/organizations/$id"
-                        params={{ id: payment.organizationId }}
-                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                      <DestinationLink
+                        destination="organization.detail"
+                        params={{ organizationId: payment.organizationId }}
                       >
                         {payment.organizationName}
-                        <ExternalLink className="size-3" aria-hidden />
-                      </Link>
+                      </DestinationLink>
                     ) : (
                       noValue
                     )}
@@ -197,26 +246,22 @@ export function PaymentDetailPage({ id }: { id: string }) {
                   payment.organizationId &&
                   payment.organizationName ? (
                     <Row label={detail.organizationLabel}>
-                      <Link
-                        to="/organizations/$id"
-                        params={{ id: payment.organizationId }}
-                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                      <DestinationLink
+                        destination="organization.detail"
+                        params={{ organizationId: payment.organizationId }}
                       >
                         {payment.organizationName}
-                        <ExternalLink className="size-3" aria-hidden />
-                      </Link>
+                      </DestinationLink>
                     </Row>
                   ) : null}
                   <Row label={detail.invoiceLabel}>
                     {payment.invoiceId ? (
-                      <Link
-                        to="/finance/invoices/$id"
-                        params={{ id: payment.invoiceId }}
-                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                      <DestinationLink
+                        destination="invoice.detail"
+                        params={{ invoiceId: payment.invoiceId }}
                       >
                         {payment.invoiceNumber ?? detail.viewInvoice}
-                        <ExternalLink className="size-3" aria-hidden />
-                      </Link>
+                      </DestinationLink>
                     ) : (
                       noValue
                     )}
@@ -226,28 +271,24 @@ export function PaymentDetailPage({ id }: { id: string }) {
                 <>
                   <Row label={detail.paidToLabel}>
                     {payment.supplierId && payment.supplierName ? (
-                      <Link
-                        to="/suppliers/$id"
-                        params={{ id: payment.supplierId }}
-                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                      <DestinationLink
+                        destination="supplier.detail"
+                        params={{ supplierId: payment.supplierId }}
                       >
                         {payment.supplierName}
-                        <ExternalLink className="size-3" aria-hidden />
-                      </Link>
+                      </DestinationLink>
                     ) : (
                       (payment.supplierName ?? noValue)
                     )}
                   </Row>
                   <Row label={detail.bookingLabel}>
                     {payment.bookingId ? (
-                      <Link
-                        to="/bookings/$id"
-                        params={{ id: payment.bookingId }}
-                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                      <DestinationLink
+                        destination="booking.detail"
+                        params={{ bookingId: payment.bookingId }}
                       >
                         {payment.bookingNumber ?? detail.viewBooking}
-                        <ExternalLink className="size-3" aria-hidden />
-                      </Link>
+                      </DestinationLink>
                     ) : (
                       noValue
                     )}
@@ -298,7 +339,7 @@ function formatFxRate(payment: {
   }).format(rate)} ${payment.currency}`
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4">
       <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>

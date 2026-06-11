@@ -1,5 +1,7 @@
-import { useLocale } from "@voyantjs/admin"
-import { useInvoiceAttachments } from "@voyantjs/finance-react"
+"use client"
+
+import { type OperatorAdminMessages, useLocale, useOperatorAdminMessages } from "@voyantjs/admin"
+import { useInvoiceAttachments, useVoyantFinanceContext } from "@voyantjs/finance-react"
 import {
   Badge,
   Button,
@@ -10,8 +12,6 @@ import {
   Textarea,
 } from "@voyantjs/ui/components"
 import { Download, FileText, Pencil, Plus, Trash2 } from "lucide-react"
-import { type AdminMessages, useAdminMessages } from "@/lib/admin-i18n"
-import { getApiUrl } from "@/lib/env"
 
 import {
   type CreditNoteRow,
@@ -23,9 +23,9 @@ import {
   type LineItem,
   type PaymentRow,
   paymentStatusVariant,
-} from "./invoice-detail-shared"
+} from "./finance-shared.js"
 
-function getPaymentStatusLabel(messages: AdminMessages, status: string): string {
+function getPaymentStatusLabel(messages: OperatorAdminMessages, status: string): string {
   switch (status) {
     case "pending":
       return messages.finance.paymentStatusPending
@@ -40,7 +40,7 @@ function getPaymentStatusLabel(messages: AdminMessages, status: string): string 
   }
 }
 
-function getPaymentMethodLabel(messages: AdminMessages, method: string): string {
+function getPaymentMethodLabel(messages: OperatorAdminMessages, method: string): string {
   switch (method) {
     case "bank_transfer":
       return messages.finance.paymentMethodBankTransfer
@@ -57,7 +57,7 @@ function getPaymentMethodLabel(messages: AdminMessages, method: string): string 
   }
 }
 
-function getCreditNoteStatusLabel(messages: AdminMessages, status: string): string {
+function getCreditNoteStatusLabel(messages: OperatorAdminMessages, status: string): string {
   switch (status) {
     case "draft":
       return messages.finance.creditNoteStatusDraft
@@ -77,7 +77,7 @@ export function InvoiceInfoCards({
   invoice: InvoiceDetail
   onOpenBooking: () => void
 }) {
-  const messages = useAdminMessages()
+  const messages = useOperatorAdminMessages()
   const { resolvedLocale } = useLocale()
 
   return (
@@ -212,7 +212,7 @@ export function InvoiceLineItemsCard({
   onEdit: (lineItem: LineItem) => void
   onDelete: (lineId: string) => void
 }) {
-  const messages = useAdminMessages()
+  const messages = useOperatorAdminMessages()
   const noValue = messages.finance.detailSections.noValue
 
   return (
@@ -304,7 +304,7 @@ export function InvoicePaymentsCard({
   onCreate: () => void
   canCreate?: boolean
 }) {
-  const messages = useAdminMessages()
+  const messages = useOperatorAdminMessages()
   const noValue = messages.finance.detailSections.noValue
 
   return (
@@ -379,7 +379,7 @@ export function InvoiceCreditNotesCard({
   creditNotes: CreditNoteRow[]
   onCreate: () => void
 }) {
-  const messages = useAdminMessages()
+  const messages = useOperatorAdminMessages()
 
   return (
     <Card>
@@ -438,11 +438,13 @@ export function InvoiceCreditNotesCard({
 }
 
 export function InvoiceAttachmentsCard({ invoiceId }: { invoiceId: string }) {
-  const messages = useAdminMessages().finance.detailSections
+  const messages = useOperatorAdminMessages().finance.detailSections
   const { resolvedLocale } = useLocale()
   const { data } = useInvoiceAttachments(invoiceId)
   const attachments = data?.data ?? []
-  const apiBase = getApiUrl()
+  // Download links hit the admin API directly — base URL from the shared
+  // finance provider context, not a host-app env helper.
+  const { baseUrl } = useVoyantFinanceContext()
 
   return (
     <Card>
@@ -473,7 +475,7 @@ export function InvoiceAttachmentsCard({ invoiceId }: { invoiceId: string }) {
                   </p>
                 </div>
                 <a
-                  href={`${apiBase}/v1/admin/finance/invoice-attachments/${attachment.id}/download`}
+                  href={`${baseUrl}/v1/admin/finance/invoice-attachments/${attachment.id}/download`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -527,7 +529,7 @@ export function InvoiceNotesCard({
   onNoteChange: (value: string) => void
   onAddNote: () => void
 }) {
-  const messages = useAdminMessages()
+  const messages = useOperatorAdminMessages()
   const { resolvedLocale } = useLocale()
 
   return (

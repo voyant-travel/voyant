@@ -1,3 +1,6 @@
+"use client"
+
+import { type OperatorAdminMessages, useOperatorAdminMessages } from "@voyantjs/admin"
 import { useInvoiceCreditNoteMutation } from "@voyantjs/finance-react"
 import {
   Button,
@@ -12,14 +15,13 @@ import {
   Textarea,
 } from "@voyantjs/ui/components"
 import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
+import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { type AdminMessages, useAdminMessages } from "@/lib/admin-i18n"
-import { zodResolver } from "@/lib/zod-resolver"
 
-function getCreditNoteFormSchema(messages: AdminMessages) {
+function getCreditNoteFormSchema(messages: OperatorAdminMessages) {
   return z.object({
     creditNoteNumber: z.string().min(1, messages.finance.creditNoteDialog.validationNumberRequired),
     amountCents: z.coerce
@@ -57,7 +59,7 @@ export function CreditNoteDialog({
   invoiceCurrency,
   onSuccess,
 }: CreditNoteDialogProps) {
-  const messages = useAdminMessages()
+  const messages = useOperatorAdminMessages()
   const { create } = useInvoiceCreditNoteMutation(invoiceId)
   const creditNoteFormSchema = useMemo(() => getCreditNoteFormSchema(messages), [messages])
 

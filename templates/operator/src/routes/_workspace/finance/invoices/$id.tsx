@@ -6,9 +6,8 @@ import {
   getInvoicePaymentsQueryOptions,
   getInvoiceQueryOptions,
 } from "@voyantjs/finance-react"
+import { InvoiceDetailHost, InvoiceDetailSkeleton } from "@voyantjs/finance-ui/admin"
 
-import { InvoiceDetailPage } from "@/components/voyant/finance/invoice-detail-page"
-import { InvoiceDetailSkeleton } from "@/components/voyant/finance/invoice-detail-skeleton"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
 
@@ -30,5 +29,5 @@ export const Route = createFileRoute("/_workspace/finance/invoices/$id")({
 
 function InvoiceDetailRoute() {
   const { id } = Route.useParams()
-  return <InvoiceDetailPage id={id} />
+  return <InvoiceDetailHost id={id} />
 }

@@ -1,11 +1,14 @@
+// Shared bits of the packaged finance admin pages: status → badge-variant
+// maps and the compact amount/method formatters the operator-grade detail
+// pages use. Kept admin-local — the canonical `InvoiceDetailPage` in
+// `../components` exports its own variants for the embeddable surface.
+
 export type {
   CreditNoteRecord as CreditNoteRow,
   FinanceNoteRecord as FinanceNote,
   InvoiceRecord as InvoiceDetail,
-  InvoiceRecord as InvoiceRow,
   LineItemRecord as LineItem,
   PaymentRecord as PaymentRow,
-  SupplierPaymentRecord as SupplierPaymentRow,
 } from "@voyantjs/finance-react"
 
 export const invoiceStatusVariant: Record<
@@ -42,10 +45,6 @@ export const creditNoteStatusVariant: Record<
 
 export function formatAmount(cents: number, currency: string): string {
   return `${(cents / 100).toFixed(2)} ${currency}`
-}
-
-export function formatStatus(status: string): string {
-  return status.replace(/_/g, " ")
 }
 
 export function formatMethod(method: string): string {

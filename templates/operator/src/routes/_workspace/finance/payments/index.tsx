@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { getAllPaymentsQueryOptions } from "@voyantjs/finance-react"
 import { PaymentsPage, PaymentsPageSkeleton } from "@voyantjs/finance-ui"
+import { RecordPaymentDialog } from "@voyantjs/finance-ui/admin"
 import { useSuppliers } from "@voyantjs/suppliers-react"
 import { useState } from "react"
 
-import { RecordPaymentDialog } from "@/components/voyant/finance/record-payment-dialog"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
 

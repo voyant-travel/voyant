@@ -1,3 +1,6 @@
+"use client"
+
+import { type OperatorAdminMessages, useOperatorAdminMessages } from "@voyantjs/admin"
 import { type LineItemRecord, useInvoiceLineItemMutation } from "@voyantjs/finance-react"
 import {
   Button,
@@ -10,14 +13,13 @@ import {
   Input,
   Label,
 } from "@voyantjs/ui/components"
+import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { type AdminMessages, useAdminMessages } from "@/lib/admin-i18n"
-import { zodResolver } from "@/lib/zod-resolver"
 
-function getLineItemFormSchema(messages: AdminMessages) {
+function getLineItemFormSchema(messages: OperatorAdminMessages) {
   return z.object({
     description: z.string().min(1, messages.finance.lineItemDialog.validationDescriptionRequired),
     quantity: z.coerce.number().int().min(1).default(1),
@@ -46,7 +48,7 @@ export function LineItemDialog({
   lineItem,
   onSuccess,
 }: LineItemDialogProps) {
-  const messages = useAdminMessages()
+  const messages = useOperatorAdminMessages()
   const isEditing = Boolean(lineItem)
   const { create, update } = useInvoiceLineItemMutation(invoiceId)
   const lineItemFormSchema = useMemo(() => getLineItemFormSchema(messages), [messages])

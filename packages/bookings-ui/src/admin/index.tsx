@@ -53,6 +53,7 @@ export {
   type BookingDetailHostSlot,
   type BookingDetailHostSlotContext,
   type BookingDetailHostSlots,
+  bookingDetailInvoicesTabSlot,
 } from "./booking-detail-host.js"
 export { BookingDetailSkeleton } from "./booking-detail-skeleton.js"
 export {

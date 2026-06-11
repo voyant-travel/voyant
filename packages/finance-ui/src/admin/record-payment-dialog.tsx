@@ -1,4 +1,6 @@
-import { useQuery } from "@tanstack/react-query"
+"use client"
+
+import { type OperatorAdminMessages, useOperatorAdminMessages } from "@voyantjs/admin"
 import { type BookingRecord, useBookings } from "@voyantjs/bookings-react"
 import {
   type FinancePaymentKind,
@@ -7,7 +9,7 @@ import {
   useInvoices,
   useSupplierPaymentMutation,
 } from "@voyantjs/finance-react"
-import type { Supplier } from "@voyantjs/suppliers-react"
+import { type Supplier, useSuppliers } from "@voyantjs/suppliers-react"
 import {
   Button,
   Dialog,
@@ -30,8 +32,6 @@ import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
-import { getSuppliersQueryOptions } from "@/components/voyant/suppliers/shared"
-import { type AdminMessages, useAdminMessages } from "@/lib/admin-i18n"
 
 const PAYMENT_METHODS = ["bank_transfer", "credit_card", "cash", "cheque", "other"] as const
 
@@ -64,7 +64,7 @@ const initialState = (): FormState => ({
   notes: "",
 })
 
-function getMethodLabel(messages: AdminMessages, method: string) {
+function getMethodLabel(messages: OperatorAdminMessages, method: string) {
   switch (method) {
     case "bank_transfer":
       return messages.finance.paymentMethodBankTransfer
@@ -81,7 +81,7 @@ function getMethodLabel(messages: AdminMessages, method: string) {
   }
 }
 
-function getStatusLabel(messages: AdminMessages, status: string) {
+function getStatusLabel(messages: OperatorAdminMessages, status: string) {
   switch (status) {
     case "pending":
       return messages.finance.paymentStatusPending
@@ -104,13 +104,19 @@ export interface RecordPaymentDialogProps {
   onSuccess?: () => void
 }
 
+/**
+ * Packaged record-payment dialog for the finance payments page: picks an
+ * invoice (customer payments) or a booking + supplier (supplier payments) via
+ * the shared react-data packages (`finance-react`, `bookings-react`,
+ * `suppliers-react`) — no app-local query clients.
+ */
 export function RecordPaymentDialog({
   open,
   onOpenChange,
   defaultKind = "customer",
   onSuccess,
 }: RecordPaymentDialogProps) {
-  const messages = useAdminMessages()
+  const messages = useOperatorAdminMessages()
   const f = messages.finance
   const dialog = f.recordPaymentDialog
 
@@ -175,9 +181,7 @@ export function RecordPaymentDialog({
   })
   const bookingOptions = useMemo(() => bookingsQuery.data?.data ?? [], [bookingsQuery.data])
 
-  const suppliersQuery = useQuery(
-    getSuppliersQueryOptions({ search: supplierSearch || undefined, limit: 20 }),
-  )
+  const suppliersQuery = useSuppliers({ search: supplierSearch || undefined, limit: 20 })
   const supplierOptions = suppliersQuery.data?.data ?? []
 
   const isSubmitting =

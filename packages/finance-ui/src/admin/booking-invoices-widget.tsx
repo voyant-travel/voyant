@@ -1,11 +1,11 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import { useLocale } from "@voyantjs/admin"
+import { useLocale, useOperatorAdminMessages } from "@voyantjs/admin"
 import { useBookingPrimaryProduct, useBookingTaxPreview } from "@voyantjs/bookings-react"
 import { IconActionButton, StatusBadge } from "@voyantjs/bookings-ui"
-import { useInvoiceMutation, useInvoices } from "@voyantjs/finance-react"
-import { BookingInvoiceDialog, type BookingInvoiceDialogUpload } from "@voyantjs/finance-ui"
+import type { BookingDetailHostSlotContext } from "@voyantjs/bookings-ui/admin"
+import { useInvoiceMutation, useInvoices, useVoyantFinanceContext } from "@voyantjs/finance-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,27 +21,11 @@ import {
 import { DataTable } from "@voyantjs/ui/components/data-table"
 import { ArrowRightLeft, ArrowUpRight, FileText, Loader2, Plus } from "lucide-react"
 import { useMemo, useState } from "react"
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { getApiUrl } from "@/lib/env"
 
-async function uploadInvoiceAttachment(file: File): Promise<BookingInvoiceDialogUpload> {
-  const body = new FormData()
-  body.append("file", file)
-  const response = await fetch(`${getApiUrl()}/v1/uploads`, {
-    method: "POST",
-    credentials: "include",
-    body,
-  })
-  if (!response.ok) {
-    throw new Error(`Upload failed: ${response.status} ${response.statusText}`)
-  }
-  const data = (await response.json()) as { key: string; mimeType?: string; size?: number }
-  return {
-    storageKey: data.key,
-    mimeType: data.mimeType ?? file.type,
-    fileSize: data.size ?? file.size,
-  }
-}
+import {
+  BookingInvoiceDialog,
+  type BookingInvoiceDialogUpload,
+} from "../components/booking-invoice-dialog.js"
 
 function clampScheduleInvoiceDueDate(input: { issueDate: string; dueDate: string }) {
   return input.dueDate < input.issueDate ? input.issueDate : input.dueDate
@@ -62,33 +46,52 @@ interface InvoiceRow {
   isConvertedProforma: boolean
 }
 
-export interface BookingInvoicesCardProps {
-  bookingId: string
-  /** Pre-fill the invoice's currency from the booking's sell currency. */
-  defaultCurrency?: string
-  /** Pre-fill the invoice's subtotal/total from the booking's sell amount. */
-  defaultAmountCents?: number | null
-  /**
-   * Open the invoice in the booking-detail invoice sheet. When omitted,
-   * the invoice-number cell renders as plain text — but operators
-   * typically want sheet preview to avoid leaving the booking page, so
-   * the parent should always pass this.
-   */
-  onInvoiceOpen?: (invoiceId: string) => void
-}
+/**
+ * Props of the booking invoices widget: exactly the slot context the
+ * bookings detail host hands to `booking.details.invoices-tab` widget
+ * contributions (see `bookingDetailInvoicesTabSlot` in
+ * `@voyantjs/bookings-ui/admin`).
+ */
+export type BookingInvoicesWidgetProps = BookingDetailHostSlotContext
 
-export function BookingInvoicesCard({
-  bookingId,
-  defaultCurrency,
-  defaultAmountCents,
-  onInvoiceOpen,
-}: BookingInvoicesCardProps): React.ReactElement {
-  const messages = useAdminMessages().finance
+/**
+ * Finance-owned invoices card for the booking detail page, delivered as a
+ * widget contribution on `booking.details.invoices-tab` (packaged-admin RFC
+ * §4.7 cycle resolution: this package depends on `@voyantjs/bookings-ui`, so
+ * the bookings host cannot import the card — finance contributes it instead).
+ *
+ * Attachment uploads post to the template-level `/v1/uploads` route through
+ * the shared finance provider context (`baseUrl` + credentialed fetcher).
+ */
+export function BookingInvoicesWidget({
+  booking,
+  openInvoiceSheet,
+}: BookingInvoicesWidgetProps): React.ReactElement {
+  const messages = useOperatorAdminMessages().finance
   const { resolvedLocale } = useLocale()
+  const { baseUrl, fetcher } = useVoyantFinanceContext()
+  const bookingId = booking.id
+  const defaultCurrency = booking.sellCurrency
+  const defaultAmountCents = booking.sellAmountCents ?? null
   const { data, isLoading } = useInvoices({ bookingId, limit: 50 })
   const { convertToInvoice } = useInvoiceMutation()
   const [addOpen, setAddOpen] = useState(false)
   const [convertTarget, setConvertTarget] = useState<InvoiceRow | null>(null)
+
+  const uploadInvoiceAttachment = async (file: File): Promise<BookingInvoiceDialogUpload> => {
+    const body = new FormData()
+    body.append("file", file)
+    const response = await fetcher(`${baseUrl}/v1/uploads`, { method: "POST", body })
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.status} ${response.statusText}`)
+    }
+    const uploaded = (await response.json()) as { key: string; mimeType?: string; size?: number }
+    return {
+      storageKey: uploaded.key,
+      mimeType: uploaded.mimeType ?? file.type,
+      fileSize: uploaded.size ?? file.size,
+    }
+  }
 
   // Resolve the booking's primary product so the dialog can seed
   // schedule-derived line items with the product's configured tax rate.
@@ -180,22 +183,19 @@ export function BookingInvoicesCard({
       {
         accessorKey: "invoiceNumber",
         header: messages.invoiceNumberColumn,
-        cell: ({ row }) =>
-          onInvoiceOpen ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                onInvoiceOpen(row.original.id)
-              }}
-              className="inline-flex items-center gap-1 font-mono text-xs text-primary hover:underline"
-            >
-              {row.original.invoiceNumber}
-              <ArrowUpRight className="h-3 w-3" />
-            </button>
-          ) : (
-            <span className="font-mono text-xs">{row.original.invoiceNumber}</span>
-          ),
+        cell: ({ row }) => (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              openInvoiceSheet(row.original.id)
+            }}
+            className="inline-flex items-center gap-1 font-mono text-xs text-primary hover:underline"
+          >
+            {row.original.invoiceNumber}
+            <ArrowUpRight className="h-3 w-3" />
+          </button>
+        ),
       },
       {
         accessorKey: "invoiceType",
@@ -263,16 +263,14 @@ export function BookingInvoicesCard({
             !row.original.isConvertedProforma
           return (
             <div className="flex items-center justify-end gap-1">
-              {onInvoiceOpen ? (
-                <IconActionButton
-                  label={messages.openInvoice}
-                  icon={<ArrowUpRight className="h-3.5 w-3.5" />}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onInvoiceOpen(row.original.id)
-                  }}
-                />
-              ) : null}
+              <IconActionButton
+                label={messages.openInvoice}
+                icon={<ArrowUpRight className="h-3.5 w-3.5" />}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  openInvoiceSheet(row.original.id)
+                }}
+              />
               {canConvert ? (
                 <IconActionButton
                   label={messages.convertToInvoice}
@@ -289,7 +287,14 @@ export function BookingInvoicesCard({
         },
       },
     ],
-    [messages, resolvedLocale, onInvoiceOpen, convertToInvoice.isPending, statusLabels, typeLabels],
+    [
+      messages,
+      resolvedLocale,
+      openInvoiceSheet,
+      convertToInvoice.isPending,
+      statusLabels,
+      typeLabels,
+    ],
   )
 
   return (
@@ -323,7 +328,7 @@ export function BookingInvoicesCard({
         onOpenChange={setAddOpen}
         bookingId={bookingId}
         defaultCurrency={defaultCurrency}
-        defaultAmountCents={defaultAmountCents ?? null}
+        defaultAmountCents={defaultAmountCents}
         defaultScheduleTaxRatePercent={scheduleTaxRatePercent}
         resolveScheduleDueDate={clampScheduleInvoiceDueDate}
         uploadFile={uploadInvoiceAttachment}

@@ -1,4 +1,11 @@
-import { useNavigate } from "@tanstack/react-router"
+"use client"
+
+import {
+  AdminWidgetSlotRenderer,
+  type OperatorAdminMessages,
+  useAdminNavigate,
+  useOperatorAdminMessages,
+} from "@voyantjs/admin"
 import {
   useInvoice,
   useInvoiceCreditNotes,
@@ -9,8 +16,6 @@ import {
   useInvoiceNotes,
   useInvoicePayments,
 } from "@voyantjs/finance-react"
-import { InvoiceActionLedgerCard } from "@voyantjs/finance-ui/components/invoice-action-ledger-card"
-import { InvoiceDialog } from "@voyantjs/finance-ui/components/invoice-dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,9 +32,11 @@ import {
 } from "@voyantjs/ui/components"
 import { ArrowLeft, ArrowRightLeft, Ban, Loader2, Pencil, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { AdminWidgetSlotRenderer } from "@/components/admin/admin-widget-slot"
-import { type AdminMessages, useAdminMessages } from "@/lib/admin-i18n"
-import { CreditNoteDialog } from "./credit-note-dialog"
+
+import { InvoiceActionLedgerCard } from "../components/invoice-action-ledger-card.js"
+import { InvoiceDialog } from "../components/invoice-dialog.js"
+import { CreditNoteDialog } from "./credit-note-dialog.js"
+import { invoiceStatusVariant, type LineItem } from "./finance-shared.js"
 import {
   InvoiceAttachmentsCard,
   InvoiceCreditNotesCard,
@@ -37,13 +44,12 @@ import {
   InvoiceLineItemsCard,
   InvoiceNotesCard,
   InvoicePaymentsCard,
-} from "./invoice-detail-sections"
-import { type LineItem, statusVariant } from "./invoice-detail-shared"
-import { InvoiceDetailSkeleton } from "./invoice-detail-skeleton"
-import { LineItemDialog } from "./line-item-dialog"
-import { PaymentDialog } from "./payment-dialog"
+} from "./invoice-detail-sections.js"
+import { InvoiceDetailSkeleton } from "./invoice-detail-skeleton.js"
+import { LineItemDialog } from "./line-item-dialog.js"
+import { PaymentDialog } from "./payment-dialog.js"
 
-function getInvoiceStatusLabel(messages: AdminMessages, status: string): string {
+function getInvoiceStatusLabel(messages: OperatorAdminMessages, status: string): string {
   switch (status) {
     case "draft":
       return messages.finance.invoiceStatusDraft
@@ -62,9 +68,27 @@ function getInvoiceStatusLabel(messages: AdminMessages, status: string): string 
   }
 }
 
-export function InvoiceDetailPage({ id }: { id: string }) {
-  const messages = useAdminMessages()
-  const navigate = useNavigate()
+export interface InvoiceDetailHostProps {
+  id: string
+}
+
+/**
+ * Packaged admin host for the operator-grade invoice detail page
+ * (packaged-admin RFC Phase 3). Owns everything package-clean:
+ *
+ *   - Data access through `@voyantjs/finance-react` hooks (shared finance
+ *     provider context — no app RPC client).
+ *   - Cross-route links resolve through semantic destinations (RFC §4.7):
+ *     `invoice.list` (back/after delete), `invoice.detail` (after a proforma
+ *     converts), `booking.detail` — no host route tree import.
+ *   - Admin widget extension points: the `invoice.details.header` and
+ *     `invoice.details.after-summary` slots render through the shared
+ *     `AdminWidgetSlotRenderer`, which reads the workspace shell's
+ *     `AdminExtensionsProvider` context.
+ */
+export function InvoiceDetailHost({ id }: InvoiceDetailHostProps) {
+  const messages = useOperatorAdminMessages()
+  const navigateTo = useAdminNavigate()
   const [editOpen, setEditOpen] = useState(false)
   const [lineItemDialogOpen, setLineItemDialogOpen] = useState(false)
   const [editingLineItem, setEditingLineItem] = useState<LineItem | undefined>()
@@ -93,7 +117,7 @@ export function InvoiceDetailPage({ id }: { id: string }) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-12">
         <p className="text-muted-foreground">{messages.finance.detailPage.notFound}</p>
-        <Button variant="outline" onClick={() => void navigate({ to: "/finance" })}>
+        <Button variant="outline" onClick={() => navigateTo("invoice.list", {})}>
           {messages.finance.detailPage.backToFinance}
         </Button>
       </div>
@@ -115,13 +139,16 @@ export function InvoiceDetailPage({ id }: { id: string }) {
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => void navigate({ to: "/finance" })}>
+        <Button variant="ghost" size="icon" onClick={() => navigateTo("invoice.list", {})}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
           <h1 className="text-2xl font-bold tracking-tight">{invoice.invoiceNumber}</h1>
           <div className="mt-1 flex items-center gap-2">
-            <Badge variant={statusVariant[invoice.status] ?? "secondary"} className="capitalize">
+            <Badge
+              variant={invoiceStatusVariant[invoice.status] ?? "secondary"}
+              className="capitalize"
+            >
               {getInvoiceStatusLabel(messages, invoice.status)}
             </Badge>
           </div>
@@ -138,7 +165,7 @@ export function InvoiceDetailPage({ id }: { id: string }) {
                   { id },
                   {
                     onSuccess: (converted) => {
-                      void navigate({ to: "/finance/invoices/$id", params: { id: converted.id } })
+                      navigateTo("invoice.detail", { invoiceId: converted.id })
                     },
                     onError: (error) => {
                       setActionError(
@@ -232,7 +259,7 @@ export function InvoiceDetailPage({ id }: { id: string }) {
                 setActionError(null)
                 deleteInvoice.mutate(id, {
                   onSuccess: () => {
-                    void navigate({ to: "/finance" })
+                    navigateTo("invoice.list", {})
                   },
                   onError: (error) => {
                     setActionError(
@@ -260,12 +287,7 @@ export function InvoiceDetailPage({ id }: { id: string }) {
 
       <InvoiceInfoCards
         invoice={invoice}
-        onOpenBooking={() =>
-          void navigate({
-            to: "/bookings/$id",
-            params: { id: invoice.bookingId },
-          })
-        }
+        onOpenBooking={() => navigateTo("booking.detail", { bookingId: invoice.bookingId })}
       />
       <AdminWidgetSlotRenderer
         slot="invoice.details.after-summary"

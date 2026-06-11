@@ -1,3 +1,6 @@
+"use client"
+
+import { type OperatorAdminMessages, useOperatorAdminMessages } from "@voyantjs/admin"
 import { useInvoicePaymentMutation } from "@voyantjs/finance-react"
 import {
   Button,
@@ -17,14 +20,13 @@ import {
   Textarea,
 } from "@voyantjs/ui/components"
 import { CurrencyCombobox } from "@voyantjs/ui/components/currency-combobox"
+import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { type AdminMessages, useAdminMessages } from "@/lib/admin-i18n"
-import { zodResolver } from "@/lib/zod-resolver"
 
-function getPaymentFormSchema(messages: AdminMessages) {
+function getPaymentFormSchema(messages: OperatorAdminMessages) {
   return z.object({
     amountCents: z.coerce.number().int().min(1, messages.finance.paymentDialog.validationAmountMin),
     currency: z.string().min(3).max(3),
@@ -58,7 +60,7 @@ export function PaymentDialog({
   invoiceCurrency,
   onSuccess,
 }: PaymentDialogProps) {
-  const messages = useAdminMessages()
+  const messages = useOperatorAdminMessages()
   const createPayment = useInvoicePaymentMutation(invoiceId)
   const paymentFormSchema = useMemo(() => getPaymentFormSchema(messages), [messages])
   const paymentMethods = useMemo(
