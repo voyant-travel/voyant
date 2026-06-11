@@ -362,6 +362,41 @@ Every file is either the manifest, thin wiring, or genuinely custom code.
 A dispatch fix, a cold-start fix, a new bookings page, an admin shell fix —
 all arrive with `pnpm update`.
 
+### 4.7 Navigation injection: semantic destinations
+
+The catalog pilot surfaced a blocker the §4.2 route contract alone does not
+solve: **interlinked pages cannot leave the template while they import the
+host's typed router.** The operator's catalog wrappers exist almost entirely
+to inject `useNavigate` calls into packaged pages — into the booking journey,
+the supplier page, the product editor — and every one of those calls is typed
+against the app's generated route tree. A package cannot ship a page that
+links to a route it does not own.
+
+The fix makes navigation an injected capability, the way data fetching
+already is. Packages express navigation as **semantic destination keys**;
+the host resolves keys to hrefs exactly once:
+
+- `@voyantjs/admin` ships an empty `AdminDestinations` interface plus
+  `AdminNavigationProvider`, `useAdminHref`, and `useAdminNavigate`. The
+  hooks never throw in render paths: an unresolvable key warns once and
+  degrades to `"#"` (href) or a no-op (navigate).
+- A domain package declares the destinations its pages need via declaration
+  merging — `declare module "@voyantjs/admin"` adding e.g.
+  `"supplier.detail": { supplierId: string }`. Naming convention:
+  `<entity>.<action>` (`"product.detail"`, `"bookingJourney.start"`).
+- The host registers one resolver map and hands it to the workspace shell
+  (`AdminWorkspaceShell destinations={...}` in `@voyantjs/admin-app`), which
+  injects router navigation behind the provider. `satisfies
+  AdminDestinationResolvers` makes the map exhaustive: mounting a package
+  that declares a new destination fails the host's typecheck until the key
+  resolves.
+
+This is the same `Register`-style declaration merging TanStack Router uses
+for its route tree, applied to cross-domain links: typed keys, no runtime
+registry. Endgame: when the generated typed route tree (§4.2) lands, the
+resolver map becomes generated output of the same build step, and the admin
+doctor check (§4.1) gains a "destination declared but unresolved" finding.
+
 ---
 
 ## 5. What we delete
@@ -462,6 +497,10 @@ Decided:
   extensions + imported packages, or fork the repository — nothing between.
 - Code-based route assembly first; build-time typed-tree generation later.
 - The existing `AdminExtension` seam is the foundation — extended, not replaced.
+- Cross-package navigation goes through semantic destination keys:
+  `AdminDestinations` declaration merging in domain packages plus a host
+  resolver map injected via the workspace shell (§4.7). Packages never import
+  a host route tree.
 
 Open:
 

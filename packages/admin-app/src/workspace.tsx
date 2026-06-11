@@ -1,7 +1,9 @@
-import { Link, redirect, useRouterState } from "@tanstack/react-router"
+import { Link, redirect, useRouter, useRouterState } from "@tanstack/react-router"
 import {
+  type AdminDestinationResolvers,
   type AdminExtension,
   AdminLocalePreferenceSync,
+  AdminNavigationProvider,
   type AdminNavLinkComponent,
   type AdminNavLinkProps,
   type AdminUser,
@@ -14,7 +16,7 @@ import {
   useOperatorAdminMessages,
 } from "@voyantjs/admin"
 import { Loader2 } from "lucide-react"
-import { forwardRef, type ReactNode, useMemo } from "react"
+import { forwardRef, type ReactNode, useCallback, useMemo } from "react"
 
 /**
  * Router-aware sidebar link. SidebarMenuButton with `asChild` wraps this in a
@@ -132,6 +134,14 @@ export interface AdminWorkspaceShellProps<TUser extends AdminWorkspaceShellUser>
   icons?: OperatorAdminNavigationIcons
   /** Defaults to the router-aware {@link AdminRouterLink}. */
   linkComponent?: AdminNavLinkComponent
+  /**
+   * Host resolver map for the semantic-destination contract (packaged-admin
+   * RFC §4.7): one `params → href` resolver per `AdminDestinations` key the
+   * mounted packages declare. When provided, the shell mounts an
+   * `AdminNavigationProvider` wired to the app router, so packaged pages can
+   * navigate to routes they don't own via `useAdminHref`/`useAdminNavigate`.
+   */
+  destinations?: AdminDestinationResolvers
   onSignOut?: () => void | Promise<void>
   /** Maps the loaded user for the layout; default covers the common fields. */
   mapUser?: (user: TUser) => AdminUser
@@ -150,6 +160,7 @@ export function AdminWorkspaceShell<TUser extends AdminWorkspaceShellUser>({
   extensions,
   icons,
   linkComponent = AdminRouterLink,
+  destinations,
   onSignOut,
   mapUser = defaultAdminWorkspaceUser,
   children,
@@ -172,6 +183,7 @@ export function AdminWorkspaceShell<TUser extends AdminWorkspaceShellUser>({
             extensions={extensions}
             icons={icons}
             linkComponent={linkComponent}
+            destinations={destinations}
             onSignOut={onSignOut}
             mapUser={mapUser}
           >
@@ -188,6 +200,7 @@ function AdminWorkspaceShellInner<TUser extends AdminWorkspaceShellUser>({
   extensions,
   icons,
   linkComponent,
+  destinations,
   onSignOut,
   mapUser,
   children,
@@ -196,18 +209,29 @@ function AdminWorkspaceShellInner<TUser extends AdminWorkspaceShellUser>({
   extensions: AdminWorkspaceShellProps<TUser>["extensions"]
   icons?: OperatorAdminNavigationIcons
   linkComponent: AdminNavLinkComponent
+  destinations?: AdminDestinationResolvers
   onSignOut?: () => void | Promise<void>
   mapUser: (user: TUser) => AdminUser
   children: ReactNode
 }) {
+  const router = useRouter()
   const currentPath = useRouterState({ select: (s) => s.location.pathname })
   const messages = useOperatorAdminMessages()
   const resolvedExtensions = useMemo(
     () => (typeof extensions === "function" ? extensions(messages) : extensions),
     [extensions, messages],
   )
+  // Resolver-built hrefs may carry a query string, so navigate by `href`
+  // (which parses it back into search params) rather than `to` (which would
+  // treat the whole string as a literal pathname).
+  const navigateToHref = useCallback(
+    (href: string) => {
+      void router.navigate({ href })
+    },
+    [router],
+  )
 
-  return (
+  const layout = (
     <OperatorAdminWorkspaceLayout
       currentPath={currentPath}
       extensions={resolvedExtensions}
@@ -218,5 +242,15 @@ function AdminWorkspaceShellInner<TUser extends AdminWorkspaceShellUser>({
     >
       {children}
     </OperatorAdminWorkspaceLayout>
+  )
+
+  if (!destinations) {
+    return layout
+  }
+
+  return (
+    <AdminNavigationProvider resolvers={destinations} navigate={navigateToHref}>
+      {layout}
+    </AdminNavigationProvider>
   )
 }
