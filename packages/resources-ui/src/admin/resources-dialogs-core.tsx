@@ -1,3 +1,17 @@
+"use client"
+
+import { useOperatorAdminMessages } from "@voyantjs/admin"
+import {
+  NONE_VALUE,
+  nullableNumber,
+  nullableString,
+  type ProductOption,
+  type ResourcePoolRow,
+  type ResourceRow,
+  resourceKindOptions,
+  type SupplierOption,
+  useVoyantResourcesContext,
+} from "@voyantjs/resources-react"
 import {
   Button,
   Dialog,
@@ -16,22 +30,15 @@ import {
   Switch,
   Textarea,
 } from "@voyantjs/ui/components"
+import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { api } from "@/lib/api-client"
-import { zodResolver } from "@/lib/zod-resolver"
-import type {
-  ProductOption,
-  ResourcePoolRow,
-  ResourceRow,
-  SupplierOption,
-} from "./resources-shared"
-import { NONE_VALUE, nullableNumber, nullableString, resourceKindOptions } from "./resources-shared"
 
-const getResourceFormSchema = (messages: ReturnType<typeof useAdminMessages>) =>
+import { sendResourcesMutation } from "./resources-admin-api.js"
+
+const getResourceFormSchema = (messages: ReturnType<typeof useOperatorAdminMessages>) =>
   z.object({
     supplierId: z.string().optional(),
     kind: z.enum(["guide", "vehicle", "room", "boat", "equipment", "other"]),
@@ -55,7 +62,8 @@ export function ResourceDialog({
   suppliers: SupplierOption[]
   onSuccess: () => void
 }) {
-  const messages = useAdminMessages()
+  const client = useVoyantResourcesContext()
+  const messages = useOperatorAdminMessages()
   const dialogMessages = messages.resources.dialogs.resource
   const resourceFormSchema = getResourceFormSchema(messages)
   const form = useForm({
@@ -101,9 +109,14 @@ export function ResourceDialog({
     }
 
     if (isEditing) {
-      await api.patch(`/v1/resources/resources/${resource?.id}`, payload)
+      await sendResourcesMutation(
+        client,
+        "PATCH",
+        `/v1/resources/resources/${resource?.id}`,
+        payload,
+      )
     } else {
-      await api.post("/v1/resources/resources", payload)
+      await sendResourcesMutation(client, "POST", "/v1/resources/resources", payload)
     }
     onSuccess()
   }
@@ -200,7 +213,7 @@ export function ResourceDialog({
   )
 }
 
-const getPoolFormSchema = (messages: ReturnType<typeof useAdminMessages>) =>
+const getPoolFormSchema = (messages: ReturnType<typeof useOperatorAdminMessages>) =>
   z.object({
     productId: z.string().optional(),
     kind: z.enum(["guide", "vehicle", "room", "boat", "equipment", "other"]),
@@ -223,7 +236,8 @@ export function ResourcePoolDialog({
   products: ProductOption[]
   onSuccess: () => void
 }) {
-  const messages = useAdminMessages()
+  const client = useVoyantResourcesContext()
+  const messages = useOperatorAdminMessages()
   const dialogMessages = messages.resources.dialogs.pool
   const poolFormSchema = getPoolFormSchema(messages)
   const form = useForm({
@@ -266,9 +280,9 @@ export function ResourcePoolDialog({
     }
 
     if (isEditing) {
-      await api.patch(`/v1/resources/pools/${pool?.id}`, payload)
+      await sendResourcesMutation(client, "PATCH", `/v1/resources/pools/${pool?.id}`, payload)
     } else {
-      await api.post("/v1/resources/pools", payload)
+      await sendResourcesMutation(client, "POST", "/v1/resources/pools", payload)
     }
     onSuccess()
   }

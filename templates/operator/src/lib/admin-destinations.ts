@@ -1,5 +1,13 @@
 import type { AdminDestinationResolvers } from "@voyantjs/admin"
+// Type-only: binds the `AdminDestinations` augmentations (the availability +
+// bookings + catalog + crm + finance + legal + suppliers destination keys)
+// into this program without pulling the admin bundles into the
+// workspace-chrome chunk.
+import type {} from "@voyantjs/availability-ui/admin"
 // Type-only: binds the `AdminDestinations` augmentations (the bookings +
+// catalog + crm + finance + legal + resources + suppliers destination keys)
+// into this program without pulling the admin bundles into the
+// workspace-chrome chunk.
 // catalog + crm + finance + legal + notifications + suppliers destination keys) into this
 // program without
 // pulling the admin bundles into the workspace-chrome chunk.
@@ -9,6 +17,7 @@ import type {} from "@voyantjs/crm-ui/admin"
 import type {} from "@voyantjs/finance-ui/admin"
 import type {} from "@voyantjs/legal-ui/admin"
 import type {} from "@voyantjs/notifications-ui/admin"
+import type {} from "@voyantjs/resources-ui/admin"
 import type {} from "@voyantjs/suppliers-ui/admin"
 
 /**
@@ -26,6 +35,9 @@ import type {} from "@voyantjs/suppliers-ui/admin"
  */
 export const operatorAdminDestinations = {
   "availabilitySlot.detail": ({ slotId }) => `/availability/${encodeURIComponent(slotId)}`,
+  "availabilitySlot.list": () => "/availability",
+  "availabilityStartTime.detail": ({ startTimeId }) =>
+    `/availability/start-times/${encodeURIComponent(startTimeId)}`,
   "booking.create": () => "/bookings/new",
   "booking.detail": ({ bookingId, tab }) =>
     `/bookings/${encodeURIComponent(bookingId)}${searchString({ tab })}`,
@@ -73,6 +85,13 @@ export const operatorAdminDestinations = {
   "policy.detail": ({ policyId }) => `/legal/policies/${encodeURIComponent(policyId)}`,
   "policy.list": () => "/legal/policies",
   "product.detail": ({ productId }) => `/products/${encodeURIComponent(productId)}`,
+  "resource.detail": ({ resourceId }) => `/resources/${encodeURIComponent(resourceId)}`,
+  "resource.list": () => "/resources",
+  "resourceAllocation.detail": ({ allocationId }) =>
+    `/resources/allocations/${encodeURIComponent(allocationId)}`,
+  "resourceAssignment.detail": ({ assignmentId }) =>
+    `/resources/assignments/${encodeURIComponent(assignmentId)}`,
+  "resourcePool.detail": ({ poolId }) => `/resources/pools/${encodeURIComponent(poolId)}`,
   "supplier.detail": ({ supplierId }) => `/suppliers/${encodeURIComponent(supplierId)}`,
   "supplier.list": () => "/suppliers",
 } satisfies AdminDestinationResolvers

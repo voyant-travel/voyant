@@ -1440,9 +1440,27 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
+      '@voyantjs/allocation-ui':
+        specifier: workspace:^
+        version: link:../allocation-ui
       '@voyantjs/availability-react':
         specifier: workspace:^
         version: link:../availability-react
+      '@voyantjs/bookings-ui':
+        specifier: workspace:^
+        version: link:../bookings-ui
+      '@voyantjs/extras-ui':
+        specifier: workspace:^
+        version: link:../extras-ui
+      '@voyantjs/products-react':
+        specifier: workspace:^
+        version: link:../products-react
+      '@voyantjs/products-ui':
+        specifier: workspace:^
+        version: link:../products-ui
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui
@@ -5062,6 +5080,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
       '@voyantjs/resources-react':
         specifier: workspace:^
         version: link:../resources-react
@@ -5080,12 +5101,21 @@ importers:
       react-dom:
         specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
+      react-hook-form:
+        specifier: ^7.60.0
+        version: 7.72.1(react@19.2.4)
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
       vitest:
         specifier: ^4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.0.1(@noble/hashes@2.0.1))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.2))(vite@8.0.10(@types/node@25.5.2)(esbuild@0.28.0)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
 
   packages/schema-kit:
     dependencies:

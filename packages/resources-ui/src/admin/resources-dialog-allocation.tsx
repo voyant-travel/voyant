@@ -1,3 +1,16 @@
+"use client"
+
+import { useOperatorAdminMessages } from "@voyantjs/admin"
+import {
+  allocationModeOptions,
+  NONE_VALUE,
+  type ProductOption,
+  type ResourceAllocationRow,
+  type ResourcePoolRow,
+  type RuleOption,
+  type StartTimeOption,
+  useVoyantResourcesContext,
+} from "@voyantjs/resources-react"
 import {
   Button,
   Dialog,
@@ -14,23 +27,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@voyantjs/ui/components"
+import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { api } from "@/lib/api-client"
-import { zodResolver } from "@/lib/zod-resolver"
-import type {
-  ProductOption,
-  ResourceAllocationRow,
-  ResourcePoolRow,
-  RuleOption,
-  StartTimeOption,
-} from "./resources-shared"
-import { allocationModeOptions, NONE_VALUE } from "./resources-shared"
 
-const getAllocationFormSchema = (messages: ReturnType<typeof useAdminMessages>) =>
+import { sendResourcesMutation } from "./resources-admin-api.js"
+
+const getAllocationFormSchema = (messages: ReturnType<typeof useOperatorAdminMessages>) =>
   z.object({
     poolId: z.string().min(1, messages.resources.dialogs.allocation.validationPoolRequired),
     productId: z.string().min(1, messages.resources.dialogs.allocation.validationProductRequired),
@@ -60,7 +65,8 @@ export function ResourceAllocationDialog({
   startTimes: StartTimeOption[]
   onSuccess: () => void
 }) {
-  const messages = useAdminMessages()
+  const client = useVoyantResourcesContext()
+  const messages = useOperatorAdminMessages()
   const dialogMessages = messages.resources.dialogs.allocation
   const allocationFormSchema = getAllocationFormSchema(messages)
   const form = useForm({
@@ -112,9 +118,14 @@ export function ResourceAllocationDialog({
     }
 
     if (isEditing) {
-      await api.patch(`/v1/resources/allocations/${allocation?.id}`, payload)
+      await sendResourcesMutation(
+        client,
+        "PATCH",
+        `/v1/resources/allocations/${allocation?.id}`,
+        payload,
+      )
     } else {
-      await api.post("/v1/resources/allocations", payload)
+      await sendResourcesMutation(client, "POST", "/v1/resources/allocations", payload)
     }
     onSuccess()
   }
