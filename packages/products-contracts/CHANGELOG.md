@@ -1,5 +1,12 @@
 # @voyantjs/products-contracts
 
+## 0.105.4
+
+### Patch Changes
+
+- Updated dependencies [e3fa849]
+  - @voyantjs/catalog-contracts@0.107.0
+
 ## 0.105.3
 
 ### Patch Changes

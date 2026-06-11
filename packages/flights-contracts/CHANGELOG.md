@@ -1,5 +1,12 @@
 # @voyantjs/flights-contracts
 
+## 0.104.4
+
+### Patch Changes
+
+- Updated dependencies [e3fa849]
+  - @voyantjs/catalog-contracts@0.107.0
+
 ## 0.104.3
 
 ### Patch Changes

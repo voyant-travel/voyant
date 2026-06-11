@@ -1,5 +1,12 @@
 # @voyantjs/cruises-contracts
 
+## 0.105.2
+
+### Patch Changes
+
+- Updated dependencies [e3fa849]
+  - @voyantjs/catalog-contracts@0.107.0
+
 ## 0.105.1
 
 ### Patch Changes
