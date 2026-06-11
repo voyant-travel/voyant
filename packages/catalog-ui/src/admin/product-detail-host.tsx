@@ -1,36 +1,36 @@
 "use client"
 
-import { useAdminBreadcrumbs, useAdminHref, useAdminNavigate } from "@voyantjs/admin"
-import { ProductDetailPage } from "@voyantjs/catalog-ui"
+import {
+  useAdminBreadcrumbs,
+  useAdminHref,
+  useAdminNavigate,
+  useOperatorAdminMessages,
+} from "@voyantjs/admin"
 import { useState } from "react"
 
-import { useAdminMessages } from "@/lib/admin-i18n"
+import { ProductDetailPage } from "../components/product-detail-page.js"
 
-/**
- * Operator host for the packaged `ProductDetailPage` — injects the localized
- * "Packages" label, navigation to the booking journey (pinned to the resolved
- * Connect source), and breadcrumbs.
- *
- * Proof-of-contract for semantic destinations (packaged-admin RFC §4.7): this
- * wrapper no longer touches the app's typed router — it resolves the
- * `catalog.browse` / `bookingJourney.start` keys declared by
- * `@voyantjs/catalog-ui/admin` through the resolvers the workspace shell
- * registered (`src/lib/admin-destinations.ts`).
- */
-export function OperatorProductDetail({
-  productId,
-  adults,
-  nights,
-  locale,
-}: {
+export interface ProductDetailHostProps {
   productId: string
   adults?: number
   nights?: number
   locale?: string
-}) {
+}
+
+/**
+ * Packaged admin host for `ProductDetailPage` — injects the localized
+ * "Packages" label, navigation to the booking journey (pinned to the resolved
+ * Connect source), and breadcrumbs.
+ *
+ * Proof-of-contract for semantic destinations (packaged-admin RFC §4.7): no
+ * host route tree is imported — the `catalog.browse` / `bookingJourney.start`
+ * keys declared in `./index.tsx` resolve through the resolvers the workspace
+ * shell registered.
+ */
+export function ProductDetailHost({ productId, adults, nights, locale }: ProductDetailHostProps) {
   const resolveHref = useAdminHref()
   const navigateTo = useAdminNavigate()
-  const productsLabel = useAdminMessages().nav.catalogProducts
+  const productsLabel = useOperatorAdminMessages().nav.catalogProducts
   const productsHref = resolveHref("catalog.browse", { surface: "products" })
   const [crumbs, setCrumbs] = useState<Array<{ label: string; href?: string }>>([
     { label: productsLabel, href: productsHref },

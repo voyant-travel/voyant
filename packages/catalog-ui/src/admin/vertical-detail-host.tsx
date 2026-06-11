@@ -1,34 +1,38 @@
 "use client"
 
-import { useNavigate } from "@tanstack/react-router"
-import { useAdminBreadcrumbs } from "@voyantjs/admin"
 import {
-  type CatalogDetailSurface,
-  type CatalogVerticalDetailBreadcrumb,
-  CatalogVerticalDetailPage,
-  catalogSurfaceVertical,
-} from "@voyantjs/catalog-ui"
+  useAdminBreadcrumbs,
+  useAdminHref,
+  useAdminNavigate,
+  useOperatorAdminMessages,
+} from "@voyantjs/admin"
 import { useSuppliers } from "@voyantjs/suppliers-react"
 import { useMemo, useState } from "react"
 
-import { useAdminMessages } from "@/lib/admin-i18n"
+import { type CatalogDetailSurface, catalogSurfaceVertical } from "../catalog-surfaces.js"
+import {
+  type CatalogVerticalDetailBreadcrumb,
+  CatalogVerticalDetailPage,
+} from "../components/catalog-vertical-detail-page.js"
 
-/**
- * Operator host for the packaged `CatalogVerticalDetailPage` — injects the
- * operator-only concerns (supplier directory, nav labels, router navigation +
- * breadcrumbs) so the route files stay trivial.
- */
-export function OperatorVerticalDetail({
-  surface,
-  id,
-}: {
+export interface VerticalDetailHostProps {
   surface: CatalogDetailSurface
   id: string
-}) {
-  const navigate = useNavigate()
-  const nav = useAdminMessages().nav
+}
+
+/**
+ * Packaged admin host for `CatalogVerticalDetailPage` — binds the supplier
+ * directory, the localized surface label, semantic-destination navigation
+ * into the booking journey (packaged-admin RFC §4.7), and breadcrumbs, so
+ * host route files stay trivial.
+ */
+export function VerticalDetailHost({ surface, id }: VerticalDetailHostProps) {
+  const resolveHref = useAdminHref()
+  const navigateTo = useAdminNavigate()
+  const nav = useOperatorAdminMessages().nav
   const vertical = catalogSurfaceVertical(surface)
   const surfaceLabel = surfaceTitle(surface, nav)
+  const surfaceHref = resolveHref("catalog.browse", { surface })
 
   const suppliersQuery = useSuppliers({ limit: 100 })
   const formatSupplier = useMemo(() => {
@@ -40,7 +44,7 @@ export function OperatorVerticalDetail({
   // The packaged page resolves the title from content; mirror its breadcrumbs
   // into the admin breadcrumb bar.
   const [crumbs, setCrumbs] = useState<CatalogVerticalDetailBreadcrumb[]>([
-    { label: surfaceLabel, href: `/catalog/${surface}` },
+    { label: surfaceLabel, href: surfaceHref },
   ])
   useAdminBreadcrumbs(crumbs)
 
@@ -49,24 +53,22 @@ export function OperatorVerticalDetail({
       id={id}
       vertical={vertical}
       surfaceLabel={surfaceLabel}
-      surfaceHref={`/catalog/${surface}`}
+      surfaceHref={surfaceHref}
       formatSupplier={formatSupplier}
       onBreadcrumbs={setCrumbs}
       // Connect-sourced vertical (accommodation/excursion/tour) → the unified
       // journey. The picked departure's date locks the departure step; name/hero
       // preview the panel.
       onBook={(entityModule, entityId, opts) =>
-        void navigate({
-          to: "/catalog/journey/$entityModule/$entityId",
-          params: { entityModule, entityId },
-          search: {
-            sourceKind: "voyant-connect",
-            ...(opts.departureId ? { departureId: opts.departureId } : {}),
-            ...(opts.departureDate ? { departureDate: opts.departureDate.slice(0, 10) } : {}),
-            ...(opts.optionId ? { optionId: opts.optionId } : {}),
-            ...(opts.name ? { entityName: opts.name } : {}),
-            ...(opts.heroImageUrl ? { entityImageUrl: opts.heroImageUrl } : {}),
-          },
+        navigateTo("bookingJourney.start", {
+          entityModule,
+          entityId,
+          sourceKind: "voyant-connect",
+          ...(opts.departureId ? { departureId: opts.departureId } : {}),
+          ...(opts.departureDate ? { departureDate: opts.departureDate.slice(0, 10) } : {}),
+          ...(opts.optionId ? { optionId: opts.optionId } : {}),
+          ...(opts.name ? { entityName: opts.name } : {}),
+          ...(opts.heroImageUrl ? { entityImageUrl: opts.heroImageUrl } : {}),
         })
       }
     />
@@ -75,7 +77,7 @@ export function OperatorVerticalDetail({
 
 function surfaceTitle(
   surface: CatalogDetailSurface,
-  nav: ReturnType<typeof useAdminMessages>["nav"],
+  nav: ReturnType<typeof useOperatorAdminMessages>["nav"],
 ): string {
   switch (surface) {
     case "cruises":

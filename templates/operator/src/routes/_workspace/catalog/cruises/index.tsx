@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router"
-
-import { CatalogVerticalPage } from "@/components/voyant/catalog/catalog-page"
 import {
   type CatalogSearchParams,
+  CatalogVerticalHost,
   catalogSearchSchema,
-  openCatalogDetail,
-} from "@/components/voyant/catalog/catalog-route-state"
+} from "@voyantjs/catalog-ui/admin"
+
+import { openCatalogDetail } from "@/components/voyant/catalog/catalog-route-state"
 import { useAdminMessages } from "@/lib/admin-i18n"
 
 export const Route = createFileRoute("/_workspace/catalog/cruises/")({
@@ -27,7 +27,7 @@ function CatalogCruisesRoute() {
       <div className="mb-4">
         <h1 className="font-semibold text-2xl">{nav.catalogCruises}</h1>
       </div>
-      <CatalogVerticalPage
+      <CatalogVerticalHost
         vertical="cruises"
         search={search}
         onSearchChange={(updater, replace = true) =>

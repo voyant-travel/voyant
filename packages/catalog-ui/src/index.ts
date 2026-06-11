@@ -1,7 +1,9 @@
 export {
   type CatalogDetailSurface,
+  type CatalogVerticalPageId,
   catalogDetailSurfaces,
   catalogSurfaceVertical,
+  catalogVerticalPageIds,
 } from "./catalog-surfaces.js"
 export {
   AvailabilityCalendar,
