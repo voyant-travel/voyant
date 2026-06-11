@@ -1,17 +1,26 @@
+"use client"
+
+import { useOperatorAdminMessages } from "@voyantjs/admin"
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
-import { Table, TableHead, TableHeader, TableRow } from "@voyantjs/ui/components/table"
-import { SkeletonTableRows } from "@/components/ui/skeletons"
-import { useAdminMessages } from "@/lib/admin-i18n"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@voyantjs/ui/components/table"
 
 /**
- * Route-level placeholder for /bookings. Mirrors BookingsPage + BookingList:
+ * Route-level placeholder for the bookings list. Mirrors `BookingsPage` +
+ * `BookingList`:
  *   - Page title + description
  *   - Search input (left) + "New booking" button (right)
  *   - 5-column table: Booking # / Status / Sell Amount / Pax / Start Date
  *   - Pagination bar
  */
 export function BookingsListSkeleton() {
-  const bookingMessages = useAdminMessages().bookings.list
+  const bookingMessages = useOperatorAdminMessages().bookings.list
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -39,11 +48,7 @@ export function BookingsListSkeleton() {
               <TableHead>{bookingMessages.tableStartDate}</TableHead>
             </TableRow>
           </TableHeader>
-          <SkeletonTableRows
-            rows={8}
-            columns={5}
-            columnWidths={["w-28", "w-20", "w-24", "w-6", "w-24"]}
-          />
+          <SkeletonRows rows={8} widths={["w-28", "w-20", "w-24", "w-6", "w-24"]} />
         </Table>
       </div>
 
@@ -56,5 +61,28 @@ export function BookingsListSkeleton() {
         </div>
       </div>
     </div>
+  )
+}
+
+/** Placeholder `<TableBody>` with one skeleton line per cell. */
+function SkeletonRows({ rows, widths }: { rows: number; widths: ReadonlyArray<string> }) {
+  return (
+    <TableBody>
+      {Array.from({ length: rows }).map((_, r) => (
+        <TableRow
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+          key={r}
+        >
+          {widths.map((width, c) => (
+            <TableCell
+              // biome-ignore lint/suspicious/noArrayIndexKey: stable placeholders
+              key={c}
+            >
+              <Skeleton className={`h-4 ${width}`} />
+            </TableCell>
+          ))}
+        </TableRow>
+      ))}
+    </TableBody>
   )
 }

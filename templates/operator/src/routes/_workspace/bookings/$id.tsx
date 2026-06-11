@@ -6,10 +6,9 @@ import {
   getSupplierStatusesQueryOptions,
   getTravelersQueryOptions,
 } from "@voyantjs/bookings-react"
+import { BookingDetailSkeleton, bookingDetailSearchSchema } from "@voyantjs/bookings-ui/admin"
 import { useBookingsUiMessagesOrDefault } from "@voyantjs/bookings-ui/i18n"
 import { lazy, Suspense } from "react"
-import { z } from "zod"
-import { BookingDetailSkeleton } from "@/components/voyant/bookings/booking-detail-skeleton"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
 
@@ -23,23 +22,6 @@ const CatalogProductPicker = lazy(() =>
     default: module.CatalogProductPicker,
   })),
 )
-
-const bookingTabSchema = z.enum([
-  "items",
-  "travelers",
-  "finance",
-  "invoices",
-  "documents",
-  "suppliers",
-  "activity",
-  "metadata",
-])
-
-const bookingRouteSearchSchema = z.object({
-  productId: z.string().optional(),
-  slotId: z.string().optional(),
-  tab: bookingTabSchema.optional(),
-})
 
 export const Route = createFileRoute("/_workspace/bookings/$id")({
   ssr: "data-only",
@@ -73,7 +55,7 @@ export const Route = createFileRoute("/_workspace/bookings/$id")({
     void context.queryClient.prefetchQuery(getBookingActivityQueryOptions(client, params.id))
     void context.queryClient.prefetchQuery(getBookingNotesQueryOptions(client, params.id))
   },
-  validateSearch: bookingRouteSearchSchema,
+  validateSearch: bookingDetailSearchSchema,
   pendingComponent: BookingDetailSkeleton,
   component: BookingDetailRoute,
 })

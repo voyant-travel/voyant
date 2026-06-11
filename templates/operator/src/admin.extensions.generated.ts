@@ -4,6 +4,7 @@
 
 import { createPromotionsAdminExtension } from "@voyantjs/promotions-ui/admin"
 import { createCatalogAdminExtension } from "@voyantjs/catalog-ui/admin"
+import { createBookingsAdminExtension } from "@voyantjs/bookings-ui/admin"
 
 /**
  * Admin extension factories keyed by module domain. Factories, not
@@ -13,4 +14,5 @@ import { createCatalogAdminExtension } from "@voyantjs/catalog-ui/admin"
 export const generatedAdminExtensionFactories = {
   promotions: createPromotionsAdminExtension,
   catalog: createCatalogAdminExtension,
+  bookings: createBookingsAdminExtension,
 } as const

@@ -27,6 +27,7 @@ type AdminExtensionNavMessages = Pick<
   AdminMessages["nav"],
   | "actionLedger"
   | "allTrips"
+  | "bookings"
   | "catalogAccommodations"
   | "catalogCruises"
   | "catalogExcursions"
@@ -36,6 +37,18 @@ type AdminExtensionNavMessages = Pick<
   | "promotions"
   | "trips"
 >
+
+// Bookings is package-delivered (packaged-admin RFC Phase 3): the extension
+// contributes NO navigation — the Bookings item is part of the BASE operator
+// navigation (createOperatorAdminNavigation in @voyantjs/admin), so an entry
+// here would duplicate it. It's registered for the routes seam: the
+// contributions carry the package-owned route metadata + search contracts
+// (bookingsIndexSearchSchema / bookingDetailSearchSchema), and the pages are
+// the packaged hosts from @voyantjs/bookings-ui/admin — the route files under
+// src/routes/_workspace/bookings/* only bind route params/search onto them.
+function createBookingsExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.bookings({ label: messages.bookings })
+}
 
 // Catalog is package-delivered (packaged-admin RFC Phase 2): the extension
 // contributes NO navigation — the Catalog group is part of the BASE operator
@@ -125,6 +138,7 @@ function createActionLedgerExtension(messages: AdminExtensionNavMessages) {
 const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   actionLedger: "Logs",
   allTrips: "All trips",
+  bookings: "Bookings",
   catalogAccommodations: "Accommodations",
   catalogCruises: "Cruises",
   catalogExcursions: "Excursions",
@@ -139,6 +153,7 @@ export function createOperatorAdminExtensions(
   messages: AdminExtensionNavMessages,
 ): ReadonlyArray<AdminExtension> {
   return createAdminExtensionRegistry(
+    createBookingsExtension(messages),
     createCatalogExtension(messages),
     createPromotionsExtension(messages),
     createTravelComposerExtension(messages),
