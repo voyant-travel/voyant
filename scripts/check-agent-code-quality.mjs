@@ -8,14 +8,7 @@ const reportOnly = args.has("--report-only")
 
 const codeExtensions = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"])
 const textExtensions = new Set([...codeExtensions, ".md", ".json", ".css", ".sql"])
-const skipPrefixes = [
-  "node_modules/",
-  "dist/",
-  ".turbo/",
-  ".next/",
-  "coverage/",
-  "apps/registry/public/",
-]
+const skipPrefixes = ["node_modules/", "dist/", ".turbo/", ".next/", "coverage/"]
 const generatedSuffixes = [".d.ts"]
 const generatedPathParts = ["/routeTree.gen.", "/__generated__/", "/generated/"]
 const sizeWarnLines = 500

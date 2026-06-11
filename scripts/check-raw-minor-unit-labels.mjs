@@ -7,7 +7,6 @@ const globs = [
   "packages/*-ui/src/**/*.{ts,tsx}",
   "packages/i18n/src/**/*.{ts,tsx}",
   "packages/legal/src/contracts/template-authoring.ts",
-  "packages/ui/registry/**/*.{ts,tsx}",
 ]
 
 const files = execFileSync("git", ["ls-files", ...globs], { encoding: "utf8" })

@@ -13,7 +13,7 @@ Voyant today has **no implementation** for promotional offers, despite three cal
 
 1. `packages/storefront/src/validation.ts` defines `StorefrontPromotionalOffer` with all the right-shaped fields (discountType, discountValue, applicableProductIds, validFrom/To, minTravelers, stackable). It's a contract for storefront UIs to render. The storefront service exposes `resolvePromotionalOffers` / `getOfferBySlug` callback hooks but **no implementation** — templates would have to wire their own.
 2. `packages/catalog/src/booking-engine/contracts.ts:343` accepts `voucher: { code: string }` in the booking draft. Nothing downstream reads the code, validates it, or applies a discount. **The field will be renamed to `promotionCode` in PR4 (see §7.0)** because `voucher` already names a real domain in finance (gift / refund credit vouchers — `packages/finance/src/schema.ts:239` (`vouchers`) and `:294` (`voucher_redemptions`)); keeping promotions on `voucher.code` would conflate the two and create a permanent terminology trap.
-3. `apps/dev/.../stay-booking-item-dialog.tsx` has a `voucherCode` field — but that's a hotel-confirmation voucher number from the supplier, unrelated to discount codes.
+3. The since-deleted `apps/dev` playground's `stay-booking-item-dialog.tsx` had a `voucherCode` field — but that's a hotel-confirmation voucher number from the supplier, unrelated to discount codes.
 
 So an operator today cannot:
 

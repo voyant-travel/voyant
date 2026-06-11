@@ -16,6 +16,7 @@ import type { UseInvoiceNumberSeriesOptions } from "./hooks/use-invoice-number-s
 import type { UseInvoicePaymentsOptions } from "./hooks/use-invoice-payments.js"
 import type { UseInvoicesOptions } from "./hooks/use-invoices.js"
 import type { UsePaymentOptions } from "./hooks/use-payment.js"
+import type { UsePaymentSessionsOptions } from "./hooks/use-payment-sessions.js"
 import type { UsePublicBookingDocumentsOptions } from "./hooks/use-public-booking-documents.js"
 import type { UsePublicBookingPaymentOptionsOptions } from "./hooks/use-public-booking-payment-options.js"
 import type { UsePublicBookingPaymentsOptions } from "./hooks/use-public-booking-payments.js"
@@ -58,6 +59,7 @@ import {
   invoiceNumberSeriesListResponse,
   invoicePaymentsResponse,
   invoiceSingleResponse,
+  paymentSessionListResponse,
   paymentSingleResponse,
   productProfitabilityResponse,
   supplierInvoiceAttachmentsResponse,
@@ -295,6 +297,38 @@ export function getAllPaymentsQueryOptions(
       return fetchWithValidation(
         `/v1/admin/finance/payments${qs ? `?${qs}` : ""}`,
         allPaymentsListResponse,
+        client,
+      )
+    },
+  })
+}
+
+export function getPaymentSessionsQueryOptions(
+  client: FetchWithValidationOptions,
+  options: UsePaymentSessionsOptions = {},
+) {
+  const { enabled: _enabled = true, ...filters } = options
+
+  return queryOptions({
+    queryKey: financeQueryKeys.paymentSessionsList(filters),
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (filters.bookingId) params.set("bookingId", filters.bookingId)
+      if (filters.orderId) params.set("orderId", filters.orderId)
+      if (filters.invoiceId) params.set("invoiceId", filters.invoiceId)
+      if (filters.bookingPaymentScheduleId) {
+        params.set("bookingPaymentScheduleId", filters.bookingPaymentScheduleId)
+      }
+      if (filters.bookingGuaranteeId) params.set("bookingGuaranteeId", filters.bookingGuaranteeId)
+      if (filters.status) params.set("status", filters.status)
+      if (filters.provider) params.set("provider", filters.provider)
+      if (filters.limit !== undefined) params.set("limit", String(filters.limit))
+      if (filters.offset !== undefined) params.set("offset", String(filters.offset))
+      const qs = params.toString()
+
+      return fetchWithValidation(
+        `/v1/admin/finance/payment-sessions${qs ? `?${qs}` : ""}`,
+        paymentSessionListResponse,
         client,
       )
     },

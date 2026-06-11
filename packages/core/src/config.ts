@@ -132,7 +132,7 @@ export interface VoyantConfig {
  *
  * @example
  * ```ts
- * // templates/dmc/voyant.config.ts
+ * // templates/operator/voyant.config.ts
  * import { defineVoyantConfig } from "@voyantjs/core/config"
  *
  * export default defineVoyantConfig({

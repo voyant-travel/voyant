@@ -9,7 +9,11 @@ import {
 // pages navigate through those shared keys, and this package already
 // peer-depends on `@voyantjs/bookings-ui`, so re-declaring them here would
 // just duplicate the contract.
-import { bookingDetailInvoicesTabSlot } from "@voyantjs/bookings-ui/admin"
+import {
+  bookingDetailFinanceEndSlot,
+  bookingDetailFinanceStartSlot,
+  bookingDetailInvoicesTabSlot,
+} from "@voyantjs/bookings-ui/admin"
 // Importing the slot id also binds the suppliers-ui `AdminDestinations`
 // augmentation (`supplier.list`, `supplier.detail`) — this package already
 // peer-depends on `@voyantjs/suppliers-ui`.
@@ -17,6 +21,8 @@ import { supplierDetailPaymentPolicySlot } from "@voyantjs/suppliers-ui/admin"
 import type { ComponentType } from "react"
 
 import { BookingInvoicesWidget } from "./booking-invoices-widget.js"
+import { BookingPaymentPolicyWidget } from "./booking-payment-policy-widget.js"
+import { BookingPendingPaymentSessionsWidget } from "./booking-pending-payment-sessions-widget.js"
 import { SupplierPaymentPolicyWidget } from "./supplier-payment-policy-widget.js"
 
 /**
@@ -47,6 +53,14 @@ export {
   BookingInvoicesWidget,
   type BookingInvoicesWidgetProps,
 } from "./booking-invoices-widget.js"
+export {
+  BookingPaymentPolicyWidget,
+  type BookingPaymentPolicyWidgetProps,
+} from "./booking-payment-policy-widget.js"
+export {
+  BookingPendingPaymentSessionsWidget,
+  type BookingPendingPaymentSessionsWidgetProps,
+} from "./booking-pending-payment-sessions-widget.js"
 export { CreditNoteDialog, type CreditNoteDialogProps } from "./credit-note-dialog.js"
 export { InvoiceDetailHost, type InvoiceDetailHostProps } from "./invoice-detail-host.js"
 export { InvoiceDetailSkeleton } from "./invoice-detail-skeleton.js"
@@ -107,8 +121,11 @@ export interface CreateFinanceAdminExtensionOptions {
  * this extension contributes {@link BookingInvoicesWidget} on the
  * `booking.details.invoices-tab` slot the bookings host exposes; the host
  * mounts its Invoices tab whenever a contribution targets that slot and
- * hands the widget its typed slot context as props. The same pattern
- * resolves the finance-ui ↔ suppliers-ui cycle: the supplier detail page's
+ * hands the widget its typed slot context as props. The Finance tab's
+ * payment-links card ({@link BookingPendingPaymentSessionsWidget}) and
+ * payment-policy override card ({@link BookingPaymentPolicyWidget}) travel
+ * the same way on `booking.details.finance-start` / `…finance-end`. The
+ * same pattern resolves the finance-ui ↔ suppliers-ui cycle: the supplier detail page's
  * customer-payment-policy card ships as {@link SupplierPaymentPolicyWidget}
  * on the `supplier.details.payment-policy` slot the supplier host exposes.
  */
@@ -176,6 +193,23 @@ export function createFinanceAdminExtension(
         // the typed contract is `BookingDetailHostSlotContext`, which the
         // bookings host passes verbatim to this slot's widgets.
         component: BookingInvoicesWidget as unknown as ComponentType<Record<string, unknown>>,
+      } satisfies AdminWidgetContribution,
+      {
+        id: "finance-booking-pending-payment-sessions",
+        slot: bookingDetailFinanceStartSlot,
+        // Same untyped-registry cast; the typed contract is
+        // `BookingDetailHostSlotContext`, which the bookings host passes
+        // verbatim to this slot's widgets.
+        component: BookingPendingPaymentSessionsWidget as unknown as ComponentType<
+          Record<string, unknown>
+        >,
+      } satisfies AdminWidgetContribution,
+      {
+        id: "finance-booking-payment-policy",
+        slot: bookingDetailFinanceEndSlot,
+        // Same untyped-registry cast; the typed contract is
+        // `BookingDetailHostSlotContext`.
+        component: BookingPaymentPolicyWidget as unknown as ComponentType<Record<string, unknown>>,
       } satisfies AdminWidgetContribution,
       {
         id: "finance-supplier-payment-policy",

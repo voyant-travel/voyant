@@ -51,6 +51,13 @@ declare module "@voyantjs/admin" {
     "payment.detail": { paymentId: string }
     /** An invoice's full detail page in the finance area. */
     "invoice.detail": { invoiceId: string }
+    /**
+     * A legal contract's detail page. Also declared by
+     * `@voyantjs/legal-ui/admin` — interface merging requires the member
+     * shape to stay identical across packages. Declared here because the
+     * booking Documents tab links contract rows to their detail page.
+     */
+    "contract.detail": { contractId: string }
   }
 }
 
@@ -58,14 +65,24 @@ declare module "@voyantjs/admin" {
 // bound to their data wiring + semantic-destination navigation. Host route
 // files only bind route params/search state onto these.
 export {
+  BookingContractDialog,
+  type BookingContractDialogProps,
+} from "./booking-contract-dialog.js"
+export {
   BookingDetailHost,
   type BookingDetailHostProps,
   type BookingDetailHostSlot,
   type BookingDetailHostSlotContext,
   type BookingDetailHostSlots,
+  bookingDetailFinanceEndSlot,
+  bookingDetailFinanceStartSlot,
   bookingDetailInvoicesTabSlot,
 } from "./booking-detail-host.js"
 export { BookingDetailSkeleton } from "./booking-detail-skeleton.js"
+export {
+  BookingDocumentsTable,
+  type BookingDocumentsTableProps,
+} from "./booking-documents-table.js"
 export {
   BookingInvoiceSheet,
   type BookingInvoiceSheetProps,
@@ -76,6 +93,7 @@ export {
   PersonBookingsWidget,
   type PersonBookingsWidgetProps,
 } from "./person-bookings-widget.js"
+export { useBookingActionLedgerEvents } from "./use-booking-action-ledger-events.js"
 
 const bookingsListSortBySchema = z.enum([
   "bookingNumber",

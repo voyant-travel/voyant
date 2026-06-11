@@ -1,31 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { AvailabilityPageSkeleton } from "@voyantjs/availability-ui"
-import { AvailabilityPage } from "@/components/voyant/availability/availability-page"
-import {
-  getAvailabilityCloseoutsQueryOptions,
-  getAvailabilityPickupPointsQueryOptions,
-  getAvailabilityProductsQueryOptions,
-  getAvailabilityRulesQueryOptions,
-  getAvailabilitySlotsQueryOptions,
-  getAvailabilityStartTimesQueryOptions,
-} from "@/components/voyant/availability/availability-shared"
+import { AvailabilityIndexHost, ensureAvailabilityPageData } from "@voyantjs/availability-ui/admin"
+import { getApiUrl } from "@/lib/env"
+import { operatorFetcher } from "@/lib/voyant-fetcher"
 
-// Tab dashboard — `slots` is the default. Await only what slots tab + the
-// products picker (top of page) need; everything else prefetches in the
-// background.
+// operatorFetcher so SSR loaders forward the request cookie.
+const availabilityClient = { baseUrl: getApiUrl(), fetcher: operatorFetcher }
+
+// Slots dashboard — the packaged loader awaits only what the slots tab +
+// the products picker need for first paint and prefetches the slot dialog's
+// rules/start-times dimensions in the background. Page, bulk batch
+// mutations and navigation (semantic destinations, RFC §4.7) are the
+// packaged AvailabilityIndexHost from @voyantjs/availability-ui/admin.
 export const Route = createFileRoute("/_workspace/availability/")({
   ssr: "data-only",
-  loader: async ({ context }) => {
-    await Promise.all([
-      context.queryClient.ensureQueryData(getAvailabilitySlotsQueryOptions()),
-      context.queryClient.ensureQueryData(getAvailabilityProductsQueryOptions()),
-    ])
-
-    void context.queryClient.prefetchQuery(getAvailabilityRulesQueryOptions())
-    void context.queryClient.prefetchQuery(getAvailabilityStartTimesQueryOptions())
-    void context.queryClient.prefetchQuery(getAvailabilityCloseoutsQueryOptions())
-    void context.queryClient.prefetchQuery(getAvailabilityPickupPointsQueryOptions())
-  },
+  loader: ({ context }) => ensureAvailabilityPageData(context.queryClient, availabilityClient),
   pendingComponent: AvailabilityPageSkeleton,
-  component: AvailabilityPage,
+  component: AvailabilityIndexHost,
 })

@@ -21,7 +21,9 @@ import {
   type BookingDetailTabValue,
 } from "../components/booking-detail-page.js"
 import type { BookingPaymentsSummaryRow } from "../components/booking-payments-summary.js"
+import { BookingDocumentsTable } from "./booking-documents-table.js"
 import { BookingInvoiceSheet } from "./booking-invoice-sheet.js"
+import { useBookingActionLedgerEvents } from "./use-booking-action-ledger-events.js"
 
 /**
  * Widget slot rendered as the booking detail page's Invoices tab
@@ -32,6 +34,21 @@ import { BookingInvoiceSheet } from "./booking-invoice-sheet.js"
  * Widgets receive {@link BookingDetailHostSlotContext} as props.
  */
 export const bookingDetailInvoicesTabSlot = "booking.details.invoices-tab"
+
+/**
+ * Widget slot rendered at the top of the booking detail page's Finance tab
+ * (same §4.7 cycle resolution as {@link bookingDetailInvoicesTabSlot}).
+ * `@voyantjs/finance-ui` contributes its pending payment-sessions card here.
+ * Widgets receive {@link BookingDetailHostSlotContext} as props.
+ */
+export const bookingDetailFinanceStartSlot = "booking.details.finance-start"
+
+/**
+ * Widget slot rendered at the bottom of the booking detail page's Finance
+ * tab. `@voyantjs/finance-ui` contributes its payment-policy override card
+ * here. Widgets receive {@link BookingDetailHostSlotContext} as props.
+ */
+export const bookingDetailFinanceEndSlot = "booking.details.finance-end"
 
 /**
  * Render context handed to the host's app-supplied slots AND to widget
@@ -51,29 +68,37 @@ export interface BookingDetailHostSlotContext {
   fullyPaidReason: string | null
   /** Open an invoice in the host's side sheet (stays on the booking page). */
   openInvoiceSheet: (invoiceId: string) => void
+  /**
+   * Opens the host app's "Generate payment link" flow (a dialog the app
+   * owns — `@voyantjs/checkout-ui` depends on this package, so the host
+   * cannot import it without a cycle). Forwarded from
+   * {@link BookingDetailHostProps.onGenerateLink}; `undefined` when the app
+   * didn't wire one, in which case payment-link widgets hide the button.
+   */
+  onGenerateLink: (() => void) | undefined
 }
 
 export type BookingDetailHostSlot = (context: BookingDetailHostSlotContext) => ReactNode
 
 /**
- * App-supplied extension points. These exist for booking-detail content
- * whose data access has no package equivalent yet (admin payment-session
- * list/complete/cancel, payment-schedule regenerate, contract generation,
- * booking action-ledger) — the operator keeps those cards and injects them
- * here; everything package-clean is owned by the host.
+ * App-supplied extension points. The host owns everything package-clean
+ * (the Documents tab, the action-ledger timeline merge, the finance-tab
+ * widget slots); these slots remain for app-local additions on top.
  */
 export interface BookingDetailHostSlots {
-  /** Top of the Finance tab (e.g. pending payment-link sessions). */
+  /** Top of the Finance tab, rendered before any widget contributions. */
   financeStart?: BookingDetailHostSlot
-  /** Bottom of the Finance tab (e.g. the payment-policy override card). */
+  /** Bottom of the Finance tab, rendered before any widget contributions. */
   financeEnd?: BookingDetailHostSlot
   /** Mounts a dedicated Invoices tab between Payments and Suppliers. */
   invoicesTab?: { label?: string; content: BookingDetailHostSlot }
-  /** Replaces the Documents tab content. */
+  /** Replaces the Documents tab content (default: {@link BookingDocumentsTable}). */
   documents?: BookingDetailHostSlot
-  /** Extra events merged into the Activity-tab timeline. */
+  /** Extra events merged into the Activity-tab timeline (the host already
+   *  merges the booking's central action-ledger entries). */
   activityExtraEvents?: BookingDetailPageSlots["activityExtraEvents"]
-  /** Rendered below the activity timeline events — typically a pager. */
+  /** Rendered below the activity timeline events, after the host's
+   *  action-ledger pager. */
   activityTimelineFooter?: ReactNode
 }
 
@@ -90,6 +115,13 @@ export interface BookingDetailHostProps {
   onRecordPayment?: () => void
   /** Opens the app's record-payment flow pre-filled with the row. */
   onEditPayment?: (row: BookingPaymentsSummaryRow) => void
+  /**
+   * Opens the app's "Generate payment link" flow (a dialog owned by the
+   * host app — `@voyantjs/checkout-ui` depends on this package, so
+   * importing it here would be a cycle). Forwarded to slot/widget
+   * contributions via {@link BookingDetailHostSlotContext.onGenerateLink}.
+   */
+  onGenerateLink?: () => void
   slots?: BookingDetailHostSlots
 }
 
@@ -120,6 +152,7 @@ export function BookingDetailHost({
   onTabChange,
   onRecordPayment,
   onEditPayment,
+  onGenerateLink,
   slots,
 }: BookingDetailHostProps) {
   const detailMessages = useOperatorAdminMessages().bookings.detail
@@ -174,7 +207,16 @@ export function BookingDetailHost({
     paidAmountCents,
     fullyPaidReason,
     openInvoiceSheet: setViewingInvoiceId,
+    onGenerateLink,
   })
+
+  // Central action-ledger entries merged into the Activity timeline —
+  // package-owned since the feed ships from `@voyantjs/bookings-react`.
+  const { events: actionLedgerEvents, footer: actionLedgerFooter } =
+    useBookingActionLedgerEvents(id)
+  const activityExtraEvents = slots?.activityExtraEvents
+    ? [...actionLedgerEvents, ...slots.activityExtraEvents]
+    : actionLedgerEvents
 
   return (
     <>
@@ -215,10 +257,24 @@ export function BookingDetailHost({
           afterSummary: (b) => (
             <AdminWidgetSlotRenderer slot="booking.details.after-summary" props={{ booking: b }} />
           ),
-          financeStart: slots?.financeStart
-            ? (b) => slots.financeStart?.(slotContext(b))
-            : undefined,
-          financeEnd: slots?.financeEnd ? (b) => slots.financeEnd?.(slotContext(b)) : undefined,
+          financeStart: (b) => (
+            <>
+              {slots?.financeStart?.(slotContext(b))}
+              <AdminWidgetSlotRenderer
+                slot={bookingDetailFinanceStartSlot}
+                props={{ ...slotContext(b) }}
+              />
+            </>
+          ),
+          financeEnd: (b) => (
+            <>
+              {slots?.financeEnd?.(slotContext(b))}
+              <AdminWidgetSlotRenderer
+                slot={bookingDetailFinanceEndSlot}
+                props={{ ...slotContext(b) }}
+              />
+            </>
+          ),
           invoicesTab:
             slots?.invoicesTab || hasInvoicesTabWidgets
               ? {
@@ -234,9 +290,17 @@ export function BookingDetailHost({
                   ),
                 }
               : undefined,
-          documents: slots?.documents ? (b) => slots.documents?.(slotContext(b)) : undefined,
-          activityExtraEvents: slots?.activityExtraEvents,
-          activityTimelineFooter: slots?.activityTimelineFooter,
+          documents: slots?.documents
+            ? (b) => slots.documents?.(slotContext(b))
+            : () => <BookingDocumentsTable bookingId={id} />,
+          activityExtraEvents,
+          activityTimelineFooter:
+            actionLedgerFooter || slots?.activityTimelineFooter ? (
+              <>
+                {actionLedgerFooter}
+                {slots?.activityTimelineFooter}
+              </>
+            ) : undefined,
         }}
       />
 

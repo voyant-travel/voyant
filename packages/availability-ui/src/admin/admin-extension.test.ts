@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  AvailabilityIndexHost,
   AvailabilityRuleDetailHost,
   AvailabilitySlotDetailHost,
   AvailabilityStartTimeDetailHost,
   createAvailabilityAdminExtension,
+  ensureAvailabilityPageData,
   OptionResourceTemplatesPanel,
 } from "./index.js"
 
@@ -66,6 +68,7 @@ describe("packaged availability admin hosts", () => {
   // and lives with the host apps.)
   it("exports the page hosts as components from the admin entrypoint", () => {
     for (const host of [
+      AvailabilityIndexHost,
       AvailabilityRuleDetailHost,
       AvailabilitySlotDetailHost,
       AvailabilityStartTimeDetailHost,
@@ -73,5 +76,9 @@ describe("packaged availability admin hosts", () => {
     ]) {
       expect(typeof host).toBe("function")
     }
+  })
+
+  it("exports the index page loader for app-side SSR binding", () => {
+    expect(typeof ensureAvailabilityPageData).toBe("function")
   })
 })

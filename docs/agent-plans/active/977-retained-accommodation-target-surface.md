@@ -1,5 +1,7 @@
 # Issue 977 - Retained Accommodation Target Surface
 
+> Note (2026-06): `templates/dmc`, `apps/dev`, and the shadcn registry (`apps/registry` + `packages/ui/registry`) have since been deleted per the packaged-admin RFC (§5); path references to them below are historical.
+
 Status: active
 Parent plan: `docs/agent-plans/active/977-accommodation-resale-boundary.md`
 

@@ -486,3 +486,134 @@ export const taxPreviewSnapshotSchema = z.object({
 })
 export type TaxPreviewSnapshot = z.infer<typeof taxPreviewSnapshotSchema>
 export const taxPreviewResponse = singleEnvelope(taxPreviewSnapshotSchema)
+
+// Booking action ledger — `GET /v1/admin/bookings/:id/action-ledger`.
+// Mirrors the server's `BookingActionLedgerListResponse` (an
+// `ActionLedgerEntryResponse[]` page plus the booking's travelers so
+// traveler-targeted entries can be labeled client-side). The entry
+// shape is kept inline rather than imported from the server package
+// so the browser bundle doesn't drag in drizzle.
+export const bookingActionLedgerActionKindSchema = z.enum([
+  "read",
+  "create",
+  "update",
+  "delete",
+  "execute",
+  "approve",
+  "reject",
+  "reverse",
+  "compensate",
+  "duplicate",
+])
+
+export const bookingActionLedgerStatusSchema = z.enum([
+  "requested",
+  "awaiting_approval",
+  "approved",
+  "denied",
+  "succeeded",
+  "failed",
+  "reversed",
+  "compensated",
+  "expired",
+  "cancelled",
+  "superseded",
+])
+
+export const bookingActionLedgerRiskSchema = z.enum(["low", "medium", "high", "critical"])
+
+export const bookingActionLedgerPrincipalTypeSchema = z.enum([
+  "user",
+  "api_key",
+  "agent",
+  "workflow",
+  "system",
+])
+
+export const bookingActionLedgerEntrySchema = z.object({
+  id: z.string(),
+  occurredAt: z.string(),
+  actionName: z.string(),
+  actionVersion: z.string(),
+  actionKind: bookingActionLedgerActionKindSchema,
+  status: bookingActionLedgerStatusSchema,
+  evaluatedRisk: bookingActionLedgerRiskSchema,
+  actorType: z.string().nullable(),
+  principalType: bookingActionLedgerPrincipalTypeSchema,
+  principalId: z.string(),
+  principalSubtype: z.string().nullable(),
+  sessionId: z.string().nullable(),
+  apiTokenId: z.string().nullable(),
+  internalRequest: z.boolean(),
+  delegatedByPrincipalType: bookingActionLedgerPrincipalTypeSchema.nullable(),
+  delegatedByPrincipalId: z.string().nullable(),
+  delegationId: z.string().nullable(),
+  callerType: z.string().nullable(),
+  organizationId: z.string().nullable(),
+  routeOrToolName: z.string().nullable(),
+  workflowRunId: z.string().nullable(),
+  workflowStepId: z.string().nullable(),
+  correlationId: z.string().nullable(),
+  causationActionId: z.string().nullable(),
+  idempotencyScope: z.string().nullable(),
+  idempotencyKey: z.string().nullable(),
+  idempotencyFingerprint: z.string().nullable(),
+  targetType: z.string(),
+  targetId: z.string(),
+  capabilityId: z.string().nullable(),
+  capabilityVersion: z.string().nullable(),
+  authorizationSource: z.string().nullable(),
+  approvalId: z.string().nullable(),
+  amendsActionId: z.string().nullable(),
+  createdAt: z.string(),
+})
+
+export type BookingActionLedgerEntryRecord = z.infer<typeof bookingActionLedgerEntrySchema>
+
+export const bookingActionLedgerCursorSchema = z.object({
+  occurredAt: z.string(),
+  id: z.string(),
+})
+
+export type BookingActionLedgerCursor = z.infer<typeof bookingActionLedgerCursorSchema>
+
+export const bookingActionLedgerTravelerSchema = z.object({
+  id: z.string(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
+})
+
+export type BookingActionLedgerTraveler = z.infer<typeof bookingActionLedgerTravelerSchema>
+
+export const bookingActionLedgerListResponse = z.object({
+  data: z.array(bookingActionLedgerEntrySchema),
+  travelers: z.array(bookingActionLedgerTravelerSchema),
+  pageInfo: z.object({
+    nextCursor: bookingActionLedgerCursorSchema.nullable(),
+  }),
+})
+
+export type BookingActionLedgerListResult = z.infer<typeof bookingActionLedgerListResponse>
+
+// Contract generation — `POST /v1/admin/bookings/:id/generate-contract`.
+// The route renders the booking's contract template; `{ preview: true }`
+// returns the rendered HTML without persisting anything, the default
+// call creates the legal contract row + persists the PDF attachment.
+export const bookingContractPreviewSchema = z.object({
+  html: z.string(),
+  templateName: z.string().optional(),
+  templateLanguage: z.string().optional(),
+})
+
+export type BookingContractPreview = z.infer<typeof bookingContractPreviewSchema>
+
+export const bookingContractPreviewResponse = singleEnvelope(bookingContractPreviewSchema)
+
+export const bookingGenerateContractResultSchema = z.object({
+  contractId: z.string(),
+  attachmentId: z.string(),
+})
+
+export type BookingGenerateContractResult = z.infer<typeof bookingGenerateContractResultSchema>
+
+export const bookingGenerateContractResponse = singleEnvelope(bookingGenerateContractResultSchema)

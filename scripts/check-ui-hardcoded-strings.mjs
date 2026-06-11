@@ -231,16 +231,6 @@ async function collectOptInRoots() {
     }
   }
 
-  const registryDir = path.join(packagesDir, "ui", "registry")
-  const registryNames = await readdir(registryDir)
-
-  for (const registryName of registryNames) {
-    const i18nEntry = path.join(registryDir, registryName, "i18n", "index.ts")
-    if (await exists(i18nEntry)) {
-      roots.push(path.join(registryDir, registryName))
-    }
-  }
-
   // Templates opt in to the scan via their admin-i18n shim. We only walk
   // `components/voyant/**` — custom voyant components are pure UI. Server
   // routes (api/, workflows.ts), shadcn ui/ copies, the api-client lib, and
