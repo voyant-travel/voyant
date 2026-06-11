@@ -1,25 +1,50 @@
 "use client"
 
+import { useAdminHref, useAdminNavigate } from "@voyantjs/admin"
 import {
   type NotificationTemplateRecord,
   type UseNotificationTemplatesOptions,
   useNotificationTemplates,
 } from "@voyantjs/notifications-react"
+import {
+  Badge,
+  Button,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@voyantjs/ui/components"
 import { Loader2, Pencil, Plus, Search } from "lucide-react"
-import { useState } from "react"
+import { lazy, Suspense, useState } from "react"
 
-import { Badge } from "./badge.js"
-import { Button } from "./button.js"
-import { Input } from "./input.js"
-import { NotificationTemplateDialog } from "./notification-template-dialog.js"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select.js"
+import { DestinationLink } from "./notifications-admin-shared.js"
 
-export function NotificationTemplatesPage() {
+// Lazy-load: the template dialog pulls the rich-text editor (tiptap +
+// prosemirror). Keeping it out of the list-page chunk means those modules
+// only download when the user opens the create/edit dialog.
+const NotificationTemplateDialog = lazy(() =>
+  import("./notification-template-dialog.js").then((m) => ({
+    default: m.NotificationTemplateDialog,
+  })),
+)
+
+/**
+ * Packaged admin host for the notification templates list page
+ * (packaged-admin RFC Phase 3). Zero-prop: list/filter state stays
+ * component-local, row clicks resolve through the
+ * `notificationTemplate.detail` semantic destination, and the create/edit
+ * dialog stays lazily loaded inside the package.
+ */
+export function NotificationTemplatesHost() {
   const [search, setSearch] = useState("")
   const [channel, setChannel] = useState<UseNotificationTemplatesOptions["channel"] | "all">("all")
   const [status, setStatus] = useState<UseNotificationTemplatesOptions["status"] | "all">("all")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<NotificationTemplateRecord | undefined>()
+  const resolveHref = useAdminHref()
+  const navigateTo = useAdminNavigate()
   const { data, isPending, refetch } = useNotificationTemplates({
     search,
     channel: channel === "all" ? undefined : channel,
@@ -110,13 +135,18 @@ export function NotificationTemplatesPage() {
               {data.data.map((template) => (
                 <tr key={template.id} className="border-t">
                   <td className="px-4 py-3">
-                    <a
-                      href={`/notifications/templates/${template.id}`}
+                    <DestinationLink
+                      href={resolveHref("notificationTemplate.detail", {
+                        templateId: template.id,
+                      })}
+                      onNavigate={() =>
+                        navigateTo("notificationTemplate.detail", { templateId: template.id })
+                      }
                       className="block rounded-sm outline-none transition-colors hover:text-primary focus-visible:text-primary"
                     >
                       <div className="font-medium">{template.name}</div>
                       <div className="font-mono text-xs text-muted-foreground">{template.slug}</div>
-                    </a>
+                    </DestinationLink>
                   </td>
                   <td className="px-4 py-3">
                     <Badge variant="outline">{template.channel}</Badge>
@@ -146,16 +176,18 @@ export function NotificationTemplatesPage() {
         </div>
       ) : null}
 
-      <NotificationTemplateDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        template={editing}
-        onSuccess={() => {
-          setDialogOpen(false)
-          setEditing(undefined)
-          void refetch()
-        }}
-      />
+      <Suspense fallback={null}>
+        <NotificationTemplateDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          template={editing}
+          onSuccess={() => {
+            setDialogOpen(false)
+            setEditing(undefined)
+            void refetch()
+          }}
+        />
+      </Suspense>
     </div>
   )
 }

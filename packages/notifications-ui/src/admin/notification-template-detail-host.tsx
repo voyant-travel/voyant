@@ -1,23 +1,41 @@
 "use client"
 
+import { useAdminHref, useAdminNavigate } from "@voyantjs/admin"
 import {
   useNotificationDeliveries,
   useNotificationTemplate,
   useNotificationTemplateAuthoring,
   useNotificationTemplateTools,
 } from "@voyantjs/notifications-react"
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Label,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Textarea,
+} from "@voyantjs/ui/components"
 import { ArrowLeft, Loader2, Pencil } from "lucide-react"
-import { useMemo, useState } from "react"
+import { lazy, Suspense, useMemo, useState } from "react"
 import { toast } from "sonner"
 
-import { Badge } from "./badge.js"
-import { Button } from "./button.js"
-import { Card, CardContent, CardHeader, CardTitle } from "./card.js"
-import { Label } from "./label.js"
 import { NotificationDeliveryDetailDialog } from "./notification-delivery-detail-dialog.js"
-import { NotificationTemplateDialog } from "./notification-template-dialog.js"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs.js"
-import { Textarea } from "./textarea.js"
+import { DestinationLink } from "./notifications-admin-shared.js"
+
+// Lazy-load: the template dialog pulls the rich-text editor (tiptap +
+// prosemirror). Keeping it out of the detail-page chunk means those modules
+// only download when the user opens the edit dialog.
+const NotificationTemplateDialog = lazy(() =>
+  import("./notification-template-dialog.js").then((m) => ({
+    default: m.NotificationTemplateDialog,
+  })),
+)
 
 function parsePath(path: string) {
   return path
@@ -76,14 +94,22 @@ function buildSamplePayload(
   return sample
 }
 
-type NotificationTemplateDetailPageProps = {
+export interface NotificationTemplateDetailHostProps {
   id: string
 }
 
-export function NotificationTemplateDetailPage({ id }: NotificationTemplateDetailPageProps) {
+/**
+ * Packaged admin host for the notification template detail page
+ * (packaged-admin RFC Phase 3). Takes the template id as a prop — the host
+ * route file binds `Route.useParams()` onto it. Back links resolve through
+ * the `notificationTemplate.list` semantic destination.
+ */
+export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetailHostProps) {
   const [editOpen, setEditOpen] = useState(false)
   const [previewDataInput, setPreviewDataInput] = useState("")
   const [selectedDeliveryId, setSelectedDeliveryId] = useState<string | null>(null)
+  const resolveHref = useAdminHref()
+  const navigateTo = useAdminNavigate()
   const { data: template, isPending, error, refetch } = useNotificationTemplate(id)
   const { variableCatalog } = useNotificationTemplateAuthoring()
   const variableGroups = useMemo(
@@ -152,13 +178,14 @@ export function NotificationTemplateDetailPage({ id }: NotificationTemplateDetai
   if (error || !template) {
     return (
       <div className="flex flex-col gap-4 p-6">
-        <a
-          href="/notifications/templates"
+        <DestinationLink
+          href={resolveHref("notificationTemplate.list", {})}
+          onNavigate={() => navigateTo("notificationTemplate.list", {})}
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to templates
-        </a>
+        </DestinationLink>
         <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error instanceof Error ? error.message : "Notification template not found."}
         </div>
@@ -172,13 +199,14 @@ export function NotificationTemplateDetailPage({ id }: NotificationTemplateDetai
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
-          <a
-            href="/notifications/templates"
+          <DestinationLink
+            href={resolveHref("notificationTemplate.list", {})}
+            onNavigate={() => navigateTo("notificationTemplate.list", {})}
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to templates
-          </a>
+          </DestinationLink>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{template.name}</h1>
             <p className="font-mono text-xs text-muted-foreground">{template.slug}</p>
@@ -394,15 +422,17 @@ export function NotificationTemplateDetailPage({ id }: NotificationTemplateDetai
         </TabsContent>
       </Tabs>
 
-      <NotificationTemplateDialog
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        template={template}
-        onSuccess={() => {
-          setEditOpen(false)
-          void refetch()
-        }}
-      />
+      <Suspense fallback={null}>
+        <NotificationTemplateDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          template={template}
+          onSuccess={() => {
+            setEditOpen(false)
+            void refetch()
+          }}
+        />
+      </Suspense>
 
       <NotificationDeliveryDetailDialog
         deliveryId={selectedDeliveryId}

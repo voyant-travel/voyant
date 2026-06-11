@@ -7,25 +7,37 @@ import {
   useNotificationTemplateMutation,
   useNotificationTemplateTools,
 } from "@voyantjs/notifications-react"
+import {
+  Button,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+  ScrollArea,
+  Switch,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Textarea,
+} from "@voyantjs/ui/components"
+import { RichTextEditor } from "@voyantjs/ui/components/rich-text-editor"
+import {
+  insertPlainText,
+  insertVariableToken,
+} from "@voyantjs/ui/components/rich-text-variable-extension"
+import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod/v4"
 
-import { zodResolver } from "../lib/zod-resolver.js"
-import { Button } from "./button.js"
-import { Checkbox } from "./checkbox.js"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./index.js"
-import { Input } from "./input.js"
-import { Label } from "./label.js"
 import { NotificationTemplateAuthoringHelp } from "./notification-template-authoring-help.js"
-import { RichTextEditor } from "./rich-text-editor.js"
-import { insertPlainText, insertVariableToken } from "./rich-text-variable-extension.js"
-import { ScrollArea } from "./scroll-area.js"
-import { Switch } from "./switch.js"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs.js"
-import { Textarea } from "./textarea.js"
 
 const CHANNEL_ITEMS = [
   { label: "Email", value: "email" },

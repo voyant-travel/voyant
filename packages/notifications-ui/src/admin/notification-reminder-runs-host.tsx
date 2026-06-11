@@ -4,13 +4,23 @@ import {
   type UseNotificationReminderRunsOptions,
   useNotificationReminderRuns,
 } from "@voyantjs/notifications-react"
+import {
+  Badge,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@voyantjs/ui/components"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 
-import { Badge } from "./badge.js"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select.js"
-
-export function NotificationReminderRunsPage() {
+/**
+ * Packaged admin host for the reminder runs page (packaged-admin RFC
+ * Phase 3). Zero-prop, read-only: filter state stays component-local and
+ * there is no cross-route navigation.
+ */
+export function NotificationReminderRunsHost() {
   const [status, setStatus] = useState<UseNotificationReminderRunsOptions["status"] | "all">("all")
   const { data, isPending } = useNotificationReminderRuns({
     status: status === "all" ? undefined : status,

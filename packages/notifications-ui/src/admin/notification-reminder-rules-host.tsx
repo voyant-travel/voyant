@@ -1,18 +1,27 @@
 "use client"
 
+import { useAdminHref, useAdminNavigate } from "@voyantjs/admin"
 import {
   type NotificationReminderRuleRecord,
   type UseNotificationReminderRulesOptions,
   useNotificationReminderRules,
 } from "@voyantjs/notifications-react"
+import {
+  Badge,
+  Button,
+  buttonVariants,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@voyantjs/ui/components"
 import { Layers, Loader2, Pencil, Plus, Search } from "lucide-react"
 import { useState } from "react"
 
-import { Badge } from "./badge.js"
-import { Button, buttonVariants } from "./button.js"
-import { Input } from "./input.js"
 import { NotificationReminderRuleDialog } from "./notification-reminder-rule-dialog.js"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select.js"
+import { DestinationLink } from "./notifications-admin-shared.js"
 
 const reminderTargetLabels = {
   booking_confirmed: "Booking confirmed",
@@ -26,18 +35,15 @@ function getReminderTargetLabel(targetType: NotificationReminderRuleRecord["targ
   return reminderTargetLabels[targetType] ?? targetType
 }
 
-export interface NotificationReminderRulesPageProps {
-  /**
-   * Path used for the per-rule "Manage stages" link. Receives the rule id and
-   * returns the URL the consumer's router understands. Defaults to
-   * `/notifications/reminder-rules/<id>`.
-   */
-  manageStagesHref?: (ruleId: string) => string
-}
-
-export function NotificationReminderRulesPage({
-  manageStagesHref = (id) => `/notifications/reminder-rules/${id}`,
-}: NotificationReminderRulesPageProps = {}) {
+/**
+ * Packaged admin host for the reminder rules list page (packaged-admin RFC
+ * Phase 3). Zero-prop: list/filter state stays component-local and the
+ * per-rule "Manage stages" link resolves through the
+ * `notificationReminderRule.detail` semantic destination.
+ */
+export function NotificationReminderRulesHost() {
+  const resolveHref = useAdminHref()
+  const navigateTo = useAdminNavigate()
   const [search, setSearch] = useState("")
   const [channel, setChannel] = useState<UseNotificationReminderRulesOptions["channel"] | "all">(
     "all",
@@ -163,13 +169,18 @@ export function NotificationReminderRulesPage({
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <a
-                        href={manageStagesHref(rule.id)}
+                      <DestinationLink
+                        href={resolveHref("notificationReminderRule.detail", {
+                          ruleId: rule.id,
+                        })}
+                        onNavigate={() =>
+                          navigateTo("notificationReminderRule.detail", { ruleId: rule.id })
+                        }
                         className={buttonVariants({ variant: "ghost", size: "sm" })}
                       >
                         <Layers className="mr-2 h-4 w-4" />
                         Manage stages
-                      </a>
+                      </DestinationLink>
                       <Button
                         variant="ghost"
                         size="sm"
