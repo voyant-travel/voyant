@@ -1,15 +1,20 @@
-import { useCrmUiMessagesOrDefault } from "@voyantjs/crm-ui/i18n"
+"use client"
+
 import { Skeleton } from "@voyantjs/ui/components/skeleton"
 import { Table, TableHead, TableHeader, TableRow } from "@voyantjs/ui/components/table"
-import { SkeletonTableRows } from "@/components/ui/skeletons"
+
+import { useCrmUiMessagesOrDefault } from "../i18n/index.js"
+import { SkeletonRows } from "./crm-skeleton-rows.js"
 
 /**
- * Route-level placeholder for /organizations. Matches OrganizationsPage +
- * OrganizationList: title/description, search + "New organization" button,
- * 5-column table (Name / Industry / Relation / Website / Updated), pagination.
+ * Route-level placeholder for the organizations list. Matches
+ * `OrganizationsPage` + `OrganizationList`: title/description, search +
+ * "New organization" button, 5-column table (Name / Industry / Relation /
+ * Website / Updated), pagination.
  */
 export function OrganizationsListSkeleton() {
-  const t = useCrmUiMessagesOrDefault().organizationList.columns
+  const columns = useCrmUiMessagesOrDefault().organizationList.columns
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="space-y-2">
@@ -26,18 +31,14 @@ export function OrganizationsListSkeleton() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t.name}</TableHead>
-              <TableHead>{t.industry}</TableHead>
-              <TableHead>{t.relation}</TableHead>
-              <TableHead>{t.website}</TableHead>
-              <TableHead>{t.updated}</TableHead>
+              <TableHead>{columns.name}</TableHead>
+              <TableHead>{columns.industry}</TableHead>
+              <TableHead>{columns.relation}</TableHead>
+              <TableHead>{columns.website}</TableHead>
+              <TableHead>{columns.updated}</TableHead>
             </TableRow>
           </TableHeader>
-          <SkeletonTableRows
-            rows={8}
-            columns={5}
-            columnWidths={["w-40", "w-24", "w-16", "w-48", "w-20"]}
-          />
+          <SkeletonRows rows={8} widths={["w-40", "w-24", "w-16", "w-48", "w-20"]} />
         </Table>
       </div>
 
