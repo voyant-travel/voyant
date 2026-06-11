@@ -150,10 +150,14 @@ What we have (and is already exercised in `templates/operator`):
   `AdminExtension`, `defineAdminExtension()`, `createAdminExtensionRegistry()`,
   `resolveAdminNavigation()`, `resolveAdminWidgets()`, `AdminWidgetSlot`.
 - **Live extension usage** — `templates/operator/src/lib/admin-extensions.tsx`
-  registers three extensions (promotions, travel-composer, action-ledger) that
-  contribute navigation and routes, and 8 widget slots are defined
-  (`dashboard.*`, `booking.details.*`, `invoice.details.*`) with renderers in
-  the booking and invoice detail pages.
+  registers three extensions (promotions, travel-composer, action-ledger).
+  Today they contribute **navigation only** (the route components behind
+  those nav entries are still template-local route files), and 7 widget
+  slots are exposed (`dashboard.header`, `dashboard.after-kpis`,
+  `dashboard.footer`, `booking.details.header`,
+  `booking.details.after-summary`, `invoice.details.header`,
+  `invoice.details.after-summary`) with renderers in the booking and
+  invoice detail pages.
 - **42 `@voyantjs/*-react` / `*-ui` packages** already imported by the
   operator — the domain UI largely lives in packages; the template wraps it
   in locally-owned pages.
@@ -164,9 +168,17 @@ What we have (and is already exercised in `templates/operator`):
 
 What is missing — the actual gap this RFC closes:
 
-- **Nobody owns the route tree but the template.** Extensions can declare
-  route *metadata*, but the 103 route files and the TanStack Router tree are
-  template-local. A package cannot ship a page.
+- **Nobody owns the route tree but the template.** `AdminUiRouteContribution`
+  is metadata-only by design (`{ id, path, title }` —
+  `packages/admin/src/extensions.ts`); the 103 route files and the TanStack
+  Router tree are template-local. A package cannot ship a page.
+- **No `*-ui` package exposes an admin entrypoint.** There is no
+  `@voyantjs/<domain>-ui/admin` export anywhere today; §4.2's extension
+  exports are new surface that each domain package must grow.
+- **Nothing ties the manifest to the admin.** Mounting a module in
+  `voyant.config.ts` does not produce (or verify) its admin pages/nav — the
+  same two-place-registration trap the migration-resilience RFC closes for
+  schemas exists for the admin surface.
 - **The shell composition is template code.** Providers, auth flows, nav
   shell, and layout wiring are copied per project.
 - **Worker dispatch and build config are copied files**, not package exports.
@@ -183,14 +195,13 @@ primitives package lean) exports a factory that owns the entire application:
 ```ts
 // src/admin/index.ts in a project — illustrative, not final API
 import { createAdminApp } from "@voyantjs/admin-app";
-import { bookingsAdmin } from "@voyantjs/bookings-ui/admin";
-import { catalogAdmin } from "@voyantjs/catalog-ui/admin";
-// ... one import per mounted domain
+// generated from voyant.config.ts — see "manifest-driven composition" below
+import { adminExtensions } from "./admin.extensions.generated";
 import { customExtensions } from "./extensions";
 
 export const admin = createAdminApp({
   basePath: "/app",
-  extensions: [bookingsAdmin, catalogAdmin /* ... */, ...customExtensions],
+  extensions: [...adminExtensions, ...customExtensions],
   branding: { name: "Acme Travel", logo: AcmeLogo },
   navigation: { /* optional ordering / grouping overrides */ },
   locale: { default: "en" },
@@ -202,22 +213,69 @@ onboarding — today ~8 copied route files backed by `@voyantjs/auth-ui`), the
 provider stack, the nav shell, error/loading boundaries, and the dashboard.
 All of it versioned, none of it copied.
 
+**Manifest-driven composition.** Hand-importing one extension per mounted
+domain recreates the two-place-registration trap (mount the module, forget
+the admin) that the migration-resilience RFC eliminates for schemas. We apply
+its exact mechanism here:
+
+- Each domain package declares its admin entry — convention
+  `@voyantjs/<domain>-ui/admin` (a new export none of the `*-ui` packages
+  has today), discoverable via a `package.json#voyant.adminEntry` field for
+  non-conventional cases.
+- The CLI generates a committed `admin.extensions.generated.ts` from
+  `voyant.config.ts`: for every mounted module, resolve its admin entry (if
+  it has one) and emit the import + registration. Static imports, so
+  bundling/tree-shaking and route code-splitting still work — generated, not
+  dynamic.
+- **Parity check** (the `voyant doctor` family, run in CI): for every mounted
+  module with an admin entry, the resolved extension set must contain it;
+  for every registered extension, its nav entries must resolve to routes the
+  assembled tree actually contains. Mounted module ↔ admin extension ↔
+  route/nav entries — a mismatch is an un-mergeable error, not a 404 found
+  in production.
+
 ### 4.2 Packages ship pages: route contributions become real components
 
-`AdminExtension` grows from route *metadata* to route *implementations*:
+`AdminExtension` grows from route *metadata* (`{ id, path, title }` today) to
+route *implementations*. A bare `{ path, component }` pair is not enough to
+replace the 103 template route files — those files currently carry loaders,
+search-param validation, SSR decisions, and boundaries. The contribution
+contract has to carry everything a route file can express today, or Phase 2
+stalls on the first non-trivial page:
 
 ```ts
-// inside @voyantjs/bookings-ui
+// inside @voyantjs/bookings-ui — illustrative shape, not final API
 export const bookingsAdmin = defineAdminExtension({
   id: "bookings",
   navigation: [{ to: "/bookings", label: "Bookings", icon: CalendarCheck, order: 20 }],
   routes: [
-    { path: "/bookings", component: BookingListPage },
-    { path: "/bookings/$bookingId", component: BookingDetailPage },
+    {
+      path: "/bookings/$bookingId",
+      component: BookingDetailPage,        // lazy-importable for code-splitting
+      loader: bookingDetailLoader,         // data loading (admin-client based)
+      validateSearch: bookingSearchSchema, // typed search params
+      ssr: true,                           // per-route SSR/CSR/data-only mode
+      pendingComponent: BookingDetailSkeleton,
+      errorComponent: BookingDetailError,  // defaults from the shell if omitted
+      head: bookingDetailHead,             // title/meta
+      capability: "bookings.read",         // permission/capability gate,
+                                           // enforced by the shell before render
+      i18n: bookingsAdminMessages,         // namespaced locale bundles
+      preload: "intent",                   // preload policy, feeds the SSR
+                                           // manifest restriction (#1642)
+    },
   ],
   widgets: [/* contributions into other domains' slots */],
 });
 ```
+
+Phase 2 must-haves: `component` (lazy), `loader`, `validateSearch`, `ssr`,
+pending/error boundaries, `head`, `capability`, and the i18n bundle — these
+are the features the existing operator route files actually use. `preload`
+tuning and anything beyond can follow. The deliberate non-goal: the contract
+mirrors what route files express, it does not invent a new abstraction over
+the router — `createAdminApp` maps contributions ~1:1 onto code-based route
+definitions.
 
 **Routing mechanics.** File-based routing cannot express package-contributed
 pages, so `createAdminApp` assembles a **code-based TanStack Router tree** from
@@ -244,10 +302,18 @@ becomes a documented, versioned contract of the admin package.
 Directly per voyant#1641's suggested directions:
 
 - **`@voyantjs/worker-runtime`** (or an export of `@voyantjs/hono`):
-  `createWorkerFetch({ ssrHandler, authApp, apiApp, workflowPaths })` — the
-  current `hono-api-dispatch.ts` (97 LOC) plus the dispatch parts of
-  `entry.ts` (287 LOC). A project's `entry.ts` becomes bindings + factory
-  call, ~30 lines.
+  `createWorkerFetch({ ssrHandler, authApp, apiApp })` — the current
+  `hono-api-dispatch.ts` (97 LOC) plus the **fetch-side** parts of `entry.ts`:
+  API/auth/SSR dispatch and the SSR-manifest-restriction logic (#1642).
+  Scoping is deliberate: `entry.ts` (287 LOC) also owns the cron
+  `scheduled()` handler, lazy workflow-runtime loading, the `WorkflowRunDO`
+  Durable Object, and the workflow step-service registry. Those are
+  app-specific composition (which crons exist, which services steps may
+  resolve) and **stay app-owned in Phase 0** — Phase 0 packages only the
+  load-bearing dispatch logic that caused the #1636 incident class. A fuller
+  `defineWorkerRuntime({ fetch, scheduled, durableObjects })` that also
+  standardizes cron registration and workflow-DO wiring is a candidate
+  follow-up, tracked as an open question (§8), not a Phase 0 deliverable.
 - **`@voyantjs/vite-config`**: `voyantAdminPreset()` carrying the manual-chunk
   / cold-start tuning and SSR preload configuration. A project's
   `vite.config.ts` becomes preset + project-specific additions.
@@ -319,11 +385,13 @@ scaffold source — but its `src/` shrinks from ~40k LOC toward the §4.6 shape.
 
 ## 6. Phased plan
 
-### Phase 0 — package the worker runtime + build preset (incident-class fix)
+### Phase 0 — package the fetch dispatch + build preset (incident-class fix)
 
-Extract `createWorkerFetch` and `voyantAdminPreset`; operator consumes both.
-Small, independent, immediately closes the #1636/#1638 delivery gap for the
-most load-bearing files. No admin UI changes.
+Extract `createWorkerFetch` (fetch/API/auth/SSR dispatch only — scheduled
+crons, the workflow DO, and step services stay in the app's `entry.ts`, see
+§4.4) and `voyantAdminPreset`; operator consumes both. Small, independent,
+immediately closes the #1636/#1638 delivery gap for the most load-bearing
+code path. No admin UI changes.
 
 ### Phase 1 — `createAdminApp` owns shell, providers, auth, navigation
 
@@ -334,18 +402,23 @@ factory. Domain routes remain template-local behind a transitional
 
 ### Phase 2 — packages ship pages; pilot one domain
 
-Extend `AdminExtension` routes to carry components; pilot with a domain whose
-UI already lives in packages (catalog or promotions — promotions is already
-extension-shaped). Validate: code-based route tree, SSR preloads, typed
+Extend `AdminExtension` routes to carry the full §4.2 contract; pilot with a
+domain whose UI already lives in packages (catalog or promotions —
+promotions is already extension-shaped). This phase also introduces the
+`@voyantjs/<domain>-ui/admin` entrypoint convention, the
+`admin.extensions.generated.ts` generator, and the manifest↔extension↔route
+parity check in report-only mode. Validate: code-based route tree, loaders +
+search validation + boundaries through the contract, SSR preloads, typed
 navigation, i18n bundle merging.
 
 ### Phase 3 — migrate all domains; delete the forks
 
 Move the remaining domain pages from `templates/operator/src/components/voyant`
 + `src/routes` into their `*-ui` packages' admin extensions, one domain per
-PR. When the operator's local routes are only genuinely custom pages, delete
-`templates/dmc`, `apps/dev`, and the registry (`apps/registry` + per-package
-`registry/` dirs + `registry:build` tooling).
+PR. The parity check flips from report-only to a CI gate once the majority
+of domains are migrated. When the operator's local routes are only genuinely
+custom pages, delete `templates/dmc`, `apps/dev`, and the registry
+(`apps/registry` + per-package `registry/` dirs + `registry:build` tooling).
 
 ### Phase 4 — contract hardening
 
@@ -409,6 +482,12 @@ Open:
    extensions declare a peer range on the admin app package only, or also on
    their backend module (so a page never renders against an API surface that
    lacks its endpoints)?
+7. **Worker runtime beyond fetch:** does a later `defineWorkerRuntime` also
+   standardize `scheduled()` cron registration and workflow-DO/step-service
+   wiring (per §4.4), or do those remain permanently app-owned composition?
+8. **Where the parity check lives:** a dedicated `voyant admin doctor`, or
+   one `voyant doctor` umbrella shared with the migration-resilience RFC's
+   schema checks?
 
 ---
 
