@@ -23,6 +23,7 @@ import {
   Wrench,
 } from "lucide-react"
 import { UserProvider, useUser } from "@/components/providers/user-provider"
+import { operatorAdminDestinations } from "@/lib/admin-destinations"
 import { createOperatorAdminExtensions } from "@/lib/admin-extensions"
 import { useSignOut } from "@/lib/auth"
 import { getCurrentUser } from "@/lib/current-user"
@@ -94,6 +95,7 @@ function WorkspaceContent() {
           trips: messages.nav.trips,
         })
       }
+      destinations={operatorAdminDestinations}
       onSignOut={() => signOut({ redirectTo: "/sign-in" })}
     >
       <Outlet />

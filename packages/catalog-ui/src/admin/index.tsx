@@ -2,6 +2,63 @@ import { type AdminExtension, defineAdminExtension } from "@voyantjs/admin"
 import { catalogSearchSchema } from "@voyantjs/catalog-react"
 import { z } from "zod"
 
+import type { CatalogDetailSurface } from "../catalog-surfaces.js"
+
+/**
+ * Semantic destinations the catalog admin surfaces navigate to (packaged-admin
+ * RFC §4.7). The catalog pages link into routes they do not own — the booking
+ * journey, the supplier page, the product editor — so instead of importing a
+ * host route tree they resolve these keys through
+ * `useAdminHref`/`useAdminNavigate` from `@voyantjs/admin`. Hosts register one
+ * resolver per key (`satisfies AdminDestinationResolvers`).
+ */
+declare module "@voyantjs/admin" {
+  interface AdminDestinations {
+    /**
+     * The unified booking journey wizard for an offer-carrying entity.
+     * Optional fields pre-pin the journey: a departure (by id for owned
+     * inventory, by date for sourced), an option/cabin, an accommodation rate
+     * (room type + rate plan + board), and name/image for the side-panel
+     * preview. Pass only the fields the selection actually carries — key
+     * presence is meaningful to the journey's search params.
+     */
+    "bookingJourney.start": {
+      /** Entity module owning the bookable entity (e.g. `"products"`, `"cruises"`). */
+      entityModule: string
+      entityId: string
+      /** Offer source kind (e.g. `"owned"`, `"voyant-connect"`). */
+      sourceKind: string
+      sourceConnectionId?: string
+      sourceRef?: string
+      departureId?: string
+      /** ISO date (YYYY-MM-DD). */
+      departureDate?: string
+      optionId?: string
+      roomTypeId?: string
+      ratePlanId?: string
+      board?: string
+      entityName?: string
+      entityImageUrl?: string
+    }
+    /** A catalog surface's browse page (e.g. Packages, Cruises). */
+    "catalog.browse": { surface: CatalogDetailSurface }
+    /**
+     * A catalog surface's dedicated detail page. `adults`/`nights` carry the
+     * package search context so live offers match what was searched.
+     */
+    "catalog.detail": {
+      surface: CatalogDetailSurface
+      id: string
+      adults?: number
+      nights?: number
+    }
+    /** The owned-product editor/detail page. */
+    "product.detail": { productId: string }
+    /** A supplier's detail page. */
+    "supplier.detail": { supplierId: string }
+  }
+}
+
 export { type CatalogSearchParams, catalogSearchSchema } from "@voyantjs/catalog-react"
 // Packaged pages + taxonomy consumed by host route files / host wrappers, so
 // thin hosts can import everything catalog-admin from this one entrypoint.
@@ -77,7 +134,10 @@ export interface CreateCatalogAdminExtensionOptions {
  * (`templates/operator/src/components/voyant/catalog/*`) that binds
  * operator-only concerns — typed router navigation into the booking journey /
  * supplier / product-editor routes, and (for the browse grid) the app's Hono
- * RPC client. Until that host layer is packaged, the route files stay
+ * RPC client. The navigation half of that gap is now closed by the semantic
+ * destinations declared above (`AdminDestinations` augmentation +
+ * `useAdminHref`/`useAdminNavigate`); once the wrappers are converted, the
+ * remaining host concern is the RPC client. Until then the route files stay
  * authoritative for rendering and these contributions describe the seam.
  */
 export function createCatalogAdminExtension(

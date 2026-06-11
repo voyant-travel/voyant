@@ -24,7 +24,11 @@ extension seam); this package owns the application-level composition on top.
   racing them.
 - **`AdminWorkspaceShell`** — bootstrap gate → per-user message overrides →
   locale sync → workspace layout, with `AdminRouterLink` (Slot-compatible,
-  external-URL-aware) as the default nav link.
+  external-URL-aware) as the default nav link. Pass `destinations` (a
+  `satisfies AdminDestinationResolvers` map) to mount the semantic-destination
+  contract: packaged pages resolve `AdminDestinations` keys to hrefs via
+  `useAdminHref`/`useAdminNavigate`, and the shell routes them through the app
+  router.
 
 ## Usage
 
@@ -51,6 +55,7 @@ export const Route = createFileRoute("/_workspace")({
       user={user}
       icons={navigationIcons}
       extensions={(messages) => createMyAdminExtensions(messages)}
+      destinations={myAdminDestinations} // key → href resolvers, satisfies AdminDestinationResolvers
       onSignOut={() => signOut({ redirectTo: "/sign-in" })}
     >
       <Outlet />
