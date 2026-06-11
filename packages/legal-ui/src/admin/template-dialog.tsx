@@ -1,4 +1,5 @@
 import type { Editor } from "@tiptap/core"
+import { useOperatorAdminMessages } from "@voyantjs/admin"
 import {
   type LegalContractTemplateRecord,
   useLegalContractTemplateAuthoring,
@@ -28,13 +29,12 @@ import {
   insertVariableToken,
 } from "@voyantjs/ui/components/rich-text-variable-extension"
 import { Switch } from "@voyantjs/ui/components/switch"
+import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { languages } from "@voyantjs/utils"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { zodResolver } from "@/lib/zod-resolver"
 
 const SCOPE_VALUES = ["customer", "supplier", "partner", "channel", "other"] as const
 type TemplateScope = (typeof SCOPE_VALUES)[number]
@@ -76,7 +76,7 @@ const LANGUAGE_ITEMS: Array<{ value: string; label: string }> = Object.entries(l
 
 export function TemplateDialog({ open, onOpenChange, template, onSuccess }: TemplateDialogProps) {
   const isEditing = !!template
-  const t = useAdminMessages().legal.templateDialog
+  const t = useOperatorAdminMessages().legal.templateDialog
   const { create, update } = useLegalContractTemplateMutation()
 
   const validationByCode: Record<string, string> = {

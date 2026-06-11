@@ -1,3 +1,4 @@
+import { useOperatorAdminMessages } from "@voyantjs/admin"
 import { formatMessage } from "@voyantjs/i18n"
 import {
   type LegalContractNumberSeriesRecord,
@@ -21,12 +22,11 @@ import {
   SelectValue,
 } from "@voyantjs/ui/components"
 import { Switch } from "@voyantjs/ui/components/switch"
+import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { zodResolver } from "@/lib/zod-resolver"
 
 const seriesFormSchema = z.object({
   name: z.string().min(1, "nameRequired").max(255),
@@ -63,7 +63,7 @@ export function NumberSeriesDialog({
   onSuccess,
 }: NumberSeriesDialogProps) {
   const isEditing = !!series
-  const t = useAdminMessages().legal.numberSeriesDialog
+  const t = useOperatorAdminMessages().legal.numberSeriesDialog
   const { create, update } = useLegalContractNumberSeriesMutation()
   const { data: existingList } = useLegalContractNumberSeries()
 

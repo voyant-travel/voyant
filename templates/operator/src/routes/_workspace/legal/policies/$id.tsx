@@ -5,10 +5,8 @@ import {
   getLegalPolicyQueryOptions,
   getLegalPolicyVersionsQueryOptions,
 } from "@voyantjs/legal-react"
-import { PolicyDetailPage } from "@voyantjs/legal-ui"
+import { PolicyDetailHost } from "@voyantjs/legal-ui/admin"
 
-import { PolicyAssignmentDialog } from "@/components/voyant/legal/policy-assignment-dialog"
-import { PolicyDialog } from "@/components/voyant/legal/policy-dialog"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
 
@@ -34,14 +32,5 @@ export const Route = createFileRoute("/_workspace/legal/policies/$id")({
 
 function PolicyDetailRoute() {
   const { id } = Route.useParams()
-  const navigate = Route.useNavigate()
-
-  return (
-    <PolicyDetailPage
-      id={id}
-      onBackToPolicies={() => void navigate({ to: "/legal/policies" })}
-      renderPolicyDialog={(props) => <PolicyDialog {...props} />}
-      renderPolicyAssignmentDialog={(props) => <PolicyAssignmentDialog {...props} />}
-    />
-  )
+  return <PolicyDetailHost id={id} />
 }

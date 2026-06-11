@@ -1,11 +1,12 @@
 import type { AdminDestinationResolvers } from "@voyantjs/admin"
 // Type-only: binds the `AdminDestinations` augmentations (the bookings +
-// catalog + crm + finance + suppliers destination keys) into this program without
+// catalog + crm + finance + legal + suppliers destination keys) into this program without
 // pulling the admin bundles into the workspace-chrome chunk.
 import type {} from "@voyantjs/bookings-ui/admin"
 import type {} from "@voyantjs/catalog-ui/admin"
 import type {} from "@voyantjs/crm-ui/admin"
 import type {} from "@voyantjs/finance-ui/admin"
+import type {} from "@voyantjs/legal-ui/admin"
 import type {} from "@voyantjs/suppliers-ui/admin"
 
 /**
@@ -46,8 +47,14 @@ export const operatorAdminDestinations = {
   "catalog.browse": ({ surface }) => `/catalog/${surface}`,
   "catalog.detail": ({ surface, id, adults, nights }) =>
     `/catalog/${surface}/${encodeURIComponent(id)}${searchString({ adults, nights })}`,
+  "contract.detail": ({ contractId }) => `/legal/contracts/${encodeURIComponent(contractId)}`,
+  "contract.list": () => "/legal/contracts",
+  "contractTemplate.detail": ({ templateId }) =>
+    `/legal/templates/${encodeURIComponent(templateId)}`,
+  "contractTemplate.list": () => "/legal/templates",
   "invoice.detail": ({ invoiceId }) => `/finance/invoices/${encodeURIComponent(invoiceId)}`,
   "invoice.list": () => "/finance/invoices",
+  "legal.home": () => "/legal",
   "organization.detail": ({ organizationId }) =>
     `/organizations/${encodeURIComponent(organizationId)}`,
   "organization.list": () => "/organizations",
@@ -55,6 +62,8 @@ export const operatorAdminDestinations = {
   "payment.list": () => "/finance/payments",
   "person.detail": ({ personId }) => `/people/${encodeURIComponent(personId)}`,
   "person.list": () => "/people",
+  "policy.detail": ({ policyId }) => `/legal/policies/${encodeURIComponent(policyId)}`,
+  "policy.list": () => "/legal/policies",
   "product.detail": ({ productId }) => `/products/${encodeURIComponent(productId)}`,
   "supplier.detail": ({ supplierId }) => `/suppliers/${encodeURIComponent(supplierId)}`,
   "supplier.list": () => "/suppliers",

@@ -1,6 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
+import { useOperatorAdminMessages } from "@voyantjs/admin"
 import { useOrganization, useOrganizations, usePeople, usePerson } from "@voyantjs/crm-react"
 import { useChannel, useChannels } from "@voyantjs/distribution-react"
 import { formatMessage } from "@voyantjs/i18n"
@@ -16,6 +17,7 @@ import {
   useLegalContractTemplateAuthoring,
   useLegalContractTemplates,
   useLegalContractTemplateVersions,
+  useVoyantLegalContext,
 } from "@voyantjs/legal-react"
 import { useSupplier, useSuppliers } from "@voyantjs/suppliers-react"
 import {
@@ -34,27 +36,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@voyantjs/ui/components"
-import {
-  Combobox,
-  ComboboxCollection,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@voyantjs/ui/components/combobox"
 import { DateTimePicker } from "@voyantjs/ui/components/date-time-picker"
+import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { languages } from "@voyantjs/utils/languages"
 import { FileText, Loader2, Plus, Trash2, Upload } from "lucide-react"
 import type { ChangeEvent, DragEvent } from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { type UseFormSetValue, type UseFormWatch, useFieldArray, useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { zodResolver } from "@/lib/zod-resolver"
-import { legalQueryClient } from "./legal-query-client"
 
-type ContractDialogMessages = ReturnType<typeof useAdminMessages>["legal"]["contractDialog"]
+import { type ComboboxOption, mergeUniqueOptions, SearchableSelect } from "./legal-admin-shared.js"
+
+type ContractDialogMessages = ReturnType<typeof useOperatorAdminMessages>["legal"]["contractDialog"]
 
 const contractFormSchema = z.object({
   scope: z.enum(["customer", "supplier", "partner", "channel", "other"]),
@@ -97,17 +90,11 @@ const contractFormSchema = z.object({
 type FormValues = z.input<typeof contractFormSchema>
 type FormOutput = z.output<typeof contractFormSchema>
 
-type ContractDialogProps = {
+export interface ContractDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   contract?: LegalContractRecord
   onSuccess: () => void
-}
-
-type ComboboxOption = {
-  value: string
-  label: string
-  description?: string
 }
 
 type TemplateVariableRow = FormValues["templateVariables"][number]
@@ -137,16 +124,6 @@ const languageOptions: ComboboxOption[] = Object.entries(languages)
     label: `${name} (${code})`,
     description: code,
   }))
-
-function mergeUniqueOptions(...groups: Array<ComboboxOption[] | undefined>): ComboboxOption[] {
-  const map = new Map<string, ComboboxOption>()
-  for (const group of groups) {
-    for (const option of group ?? []) {
-      map.set(option.value, option)
-    }
-  }
-  return Array.from(map.values())
-}
 
 function objectToEntries(record: Record<string, unknown> | null | undefined) {
   return Object.entries(record ?? {}).map(([key, value]) => ({
@@ -234,92 +211,6 @@ function inferTemplateVariableKeys(body: string | null | undefined, requiredKeys
   }
 
   return detected
-}
-
-function SearchableSelect({
-  value,
-  onChange,
-  options,
-  placeholder,
-  searchPlaceholder,
-  emptyLabel,
-  loadingLabel,
-  loading,
-  disabled,
-  onSearchChange,
-}: {
-  value: string | null | undefined
-  onChange: (value: string | null) => void
-  options: ComboboxOption[]
-  placeholder: string
-  searchPlaceholder?: string
-  emptyLabel: string
-  loadingLabel: string
-  loading?: boolean
-  disabled?: boolean
-  onSearchChange?: (value: string) => void
-}) {
-  const optionMap = useMemo(
-    () => new Map(options.map((option) => [option.value, option])),
-    [options],
-  )
-  const selected = value ? optionMap.get(value) : undefined
-  const selectedLabel = selected?.label ?? ""
-  const [inputValue, setInputValue] = useState(selectedLabel)
-
-  useEffect(() => {
-    setInputValue(selectedLabel)
-  }, [selectedLabel])
-
-  return (
-    <Combobox
-      items={options.map((option) => option.value)}
-      value={value ?? null}
-      inputValue={inputValue}
-      autoHighlight
-      disabled={disabled}
-      itemToStringValue={(id) => optionMap.get(id as string)?.label ?? ""}
-      onInputValueChange={(next) => {
-        setInputValue(next)
-        onSearchChange?.(next)
-        if (!next) onChange(null)
-      }}
-      onValueChange={(next) => {
-        const resolved = (next as string | null) ?? null
-        onChange(resolved)
-        setInputValue(resolved ? (optionMap.get(resolved)?.label ?? "") : "")
-      }}
-    >
-      <ComboboxInput
-        placeholder={searchPlaceholder ?? placeholder}
-        showClear={!!value}
-        disabled={disabled}
-      />
-      <ComboboxContent>
-        <ComboboxEmpty>{loading ? loadingLabel : emptyLabel}</ComboboxEmpty>
-        <ComboboxList>
-          <ComboboxCollection>
-            {(id) => {
-              const option = optionMap.get(id as string)
-              if (!option) return null
-              return (
-                <ComboboxItem key={option.value} value={option.value}>
-                  <div className="flex min-w-0 flex-col">
-                    <span className="truncate font-medium">{option.label}</span>
-                    {option.description ? (
-                      <span className="truncate text-xs text-muted-foreground">
-                        {option.description}
-                      </span>
-                    ) : null}
-                  </div>
-                </ComboboxItem>
-              )
-            }}
-          </ComboboxCollection>
-        </ComboboxList>
-      </ComboboxContent>
-    </Combobox>
-  )
 }
 
 function VariableValueField({
@@ -418,7 +309,8 @@ function VariableValueField({
 
 export function ContractDialog({ open, onOpenChange, contract, onSuccess }: ContractDialogProps) {
   const isEditing = !!contract
-  const t = useAdminMessages().legal.contractDialog
+  const t = useOperatorAdminMessages().legal.contractDialog
+  const legalClient = useVoyantLegalContext()
   const { create, update } = useLegalContractMutation()
   const { upload } = useLegalContractAttachmentMutation()
   const { variableCatalog } = useLegalContractTemplateAuthoring()
@@ -502,7 +394,7 @@ export function ContractDialog({ open, onOpenChange, contract, onSuccess }: Cont
       const { data } = await fetchWithValidation(
         `/v1/admin/legal/contracts/template-versions/${selectedTemplateVersionId}`,
         singleEnvelope(legalContractTemplateVersionRecordSchema),
-        legalQueryClient,
+        legalClient,
       )
       return data
     },

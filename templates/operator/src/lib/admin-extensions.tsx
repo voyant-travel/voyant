@@ -39,12 +39,16 @@ type AdminExtensionNavMessages = Pick<
   | "catalogExcursions"
   | "catalogProducts"
   | "catalogTours"
+  | "contractNumberSeries"
+  | "contractTemplates"
+  | "contracts"
   | "invoiceNumberSeries"
   | "invoices"
   | "newTrip"
   | "organizations"
   | "payments"
   | "people"
+  | "policies"
   | "profitability"
   | "promotions"
   | "supplierInvoices"
@@ -121,6 +125,26 @@ function createCrmExtension(messages: AdminExtensionNavMessages) {
     labels: {
       people: messages.people,
       organizations: messages.organizations,
+    },
+  })
+}
+
+// Legal is package-delivered (packaged-admin RFC Phase 3): the extension
+// contributes NO navigation — the Legal group is part of the BASE operator
+// navigation (createOperatorAdminNavigation in @voyantjs/admin), so entries
+// here would duplicate it. It's registered for the routes seam: the
+// contributions carry the package-owned route metadata (the legal pages keep
+// their filter state component-local, so there are no URL search contracts),
+// and the pages are the packaged hosts from @voyantjs/legal-ui/admin — the
+// route files under src/routes/_workspace/legal/* only bind route params
+// onto them.
+function createLegalExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.legal({
+    labels: {
+      contracts: messages.contracts,
+      contractTemplates: messages.contractTemplates,
+      policies: messages.policies,
+      numberSeries: messages.contractNumberSeries,
     },
   })
 }
@@ -214,12 +238,16 @@ const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   catalogExcursions: "Excursions",
   catalogProducts: "Packages",
   catalogTours: "Tours",
+  contractNumberSeries: "Number Series",
+  contractTemplates: "Contract Templates",
+  contracts: "Contracts",
   invoiceNumberSeries: "Number Series",
   invoices: "Invoices",
   newTrip: "New trip",
   organizations: "Organizations",
   payments: "Payments",
   people: "People",
+  policies: "Policies",
   profitability: "Profitability",
   promotions: "Promotions",
   supplierInvoices: "Supplier invoices",
@@ -236,6 +264,7 @@ export function createOperatorAdminExtensions(
     createCrmExtension(messages),
     createFinanceExtension(messages),
     createSuppliersExtension(messages),
+    createLegalExtension(messages),
     createPromotionsExtension(messages),
     createTravelComposerExtension(messages),
     createActionLedgerExtension(messages),

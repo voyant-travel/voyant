@@ -1,4 +1,5 @@
 import type { Editor } from "@tiptap/core"
+import { useOperatorAdminMessages } from "@voyantjs/admin"
 import {
   useLegalContractTemplateAuthoring,
   useLegalContractTemplateVersionMutation,
@@ -20,12 +21,11 @@ import {
   insertPlainText,
   insertVariableToken,
 } from "@voyantjs/ui/components/rich-text-variable-extension"
+import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { zodResolver } from "@/lib/zod-resolver"
 
 const versionFormSchema = z.object({
   body: z.string().min(1, "bodyRequired"),
@@ -49,7 +49,7 @@ export function TemplateVersionDialog({
   templateId,
   onSuccess,
 }: TemplateVersionDialogProps) {
-  const t = useAdminMessages().legal.templateVersionDialog
+  const t = useOperatorAdminMessages().legal.templateVersionDialog
   const { create } = useLegalContractTemplateVersionMutation()
   const { variableCatalog, liquidSnippets } = useLegalContractTemplateAuthoring()
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null)
