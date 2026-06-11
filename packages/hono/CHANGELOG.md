@@ -1,5 +1,11 @@
 # @voyantjs/hono
 
+## 0.105.1
+
+### Patch Changes
+
+- 0de4cba: Preserve CORS headers on preflight responses returned by the shared Hono middleware.
+
 ## 0.105.0
 
 ### Minor Changes
