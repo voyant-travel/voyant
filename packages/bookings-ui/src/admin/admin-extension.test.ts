@@ -60,6 +60,15 @@ describe("createBookingsAdminExtension", () => {
       expect(route.component).toBeUndefined()
     }
   })
+
+  it("contributes the person-bookings widget on crm-ui's bookings-tab slot", () => {
+    // The crm-ui ↔ bookings-ui cycle resolution (RFC §4.7): crm-ui's
+    // PersonDetailHost mounts its Bookings tab off this contribution.
+    const extension = createBookingsAdminExtension()
+    const widget = extension.widgets?.find((entry) => entry.id === "bookings-person-bookings")
+    expect(widget?.slot).toBe("person.details.bookings-tab")
+    expect(typeof widget?.component).toBe("function")
+  })
 })
 
 describe("bookings list search contract", () => {

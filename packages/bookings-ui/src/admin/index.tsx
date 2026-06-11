@@ -1,8 +1,18 @@
-import { type AdminExtension, defineAdminExtension } from "@voyantjs/admin"
+import {
+  type AdminExtension,
+  type AdminWidgetContribution,
+  defineAdminExtension,
+} from "@voyantjs/admin"
 import type { BookingsListSortDir, BookingsListSortField } from "@voyantjs/bookings-react"
+// Importing the slot id also binds the crm-ui `AdminDestinations`
+// augmentation (`person.list`, `organization.list`, ...) into this program;
+// this package already peer-depends on `@voyantjs/crm-ui`.
+import { personDetailBookingsTabSlot } from "@voyantjs/crm-ui/admin"
+import type { ComponentType } from "react"
 import { z } from "zod"
 import type { BookingDetailTabValue } from "../components/booking-detail-page.js"
 import type { BookingListFiltersState } from "../components/booking-list.js"
+import { PersonBookingsWidget } from "./person-bookings-widget.js"
 
 /**
  * Semantic destinations the bookings admin surfaces navigate to
@@ -62,6 +72,10 @@ export {
 } from "./booking-invoice-sheet.js"
 export { BookingsHost, type BookingsHostProps } from "./bookings-host.js"
 export { BookingsListSkeleton } from "./bookings-list-skeleton.js"
+export {
+  PersonBookingsWidget,
+  type PersonBookingsWidgetProps,
+} from "./person-bookings-widget.js"
 
 const bookingsListSortBySchema = z.enum([
   "bookingNumber",
@@ -211,6 +225,15 @@ export interface CreateBookingsAdminExtensionOptions {
  * binding layer (`Route.useParams()`/`Route.useSearch()` → host props)
  * until the §4.2 code-based route assembly gives packaged pages a
  * router-agnostic way to read route state.
+ *
+ * WIDGETS: the crm-ui ↔ bookings-ui cycle resolution (RFC §4.7). The CRM
+ * person detail page mounts a Bookings tab, but this package depends on
+ * `@voyantjs/crm-ui`, so crm-ui's host cannot import the bookings-owned
+ * card. Instead this extension contributes {@link PersonBookingsWidget} on
+ * the `person.details.bookings-tab` slot crm-ui's `PersonDetailHost`
+ * exposes; the host mounts its Bookings tab whenever a contribution targets
+ * that slot and hands the widget its typed slot context
+ * (`PersonDetailBookingsTabContext`) as props.
  */
 export function createBookingsAdminExtension(
   options: CreateBookingsAdminExtensionOptions = {},
@@ -232,6 +255,16 @@ export function createBookingsAdminExtension(
         title: label,
         validateSearch: (search) => bookingDetailSearchSchema.parse(search),
       },
+    ],
+    widgets: [
+      {
+        id: "bookings-person-bookings",
+        slot: personDetailBookingsTabSlot,
+        // The widget registry is untyped (`Record<string, unknown>` props);
+        // the typed contract is `PersonDetailBookingsTabContext`, which
+        // crm-ui's person detail host passes verbatim to this slot's widgets.
+        component: PersonBookingsWidget as unknown as ComponentType<Record<string, unknown>>,
+      } satisfies AdminWidgetContribution,
     ],
   })
 }
