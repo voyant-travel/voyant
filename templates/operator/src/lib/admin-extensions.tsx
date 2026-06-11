@@ -37,13 +37,14 @@ type AdminExtensionNavMessages = Pick<
   | "trips"
 >
 
-// Catalog is package-described (packaged-admin RFC Phase 2): the extension
+// Catalog is package-delivered (packaged-admin RFC Phase 2): the extension
 // contributes NO navigation — the Catalog group is part of the BASE operator
 // navigation (createOperatorAdminNavigation in @voyantjs/admin), so entries
-// here would duplicate it. It's registered anyway for the routes seam: the
+// here would duplicate it. It's registered for the routes seam: the
 // contributions carry the package-owned route metadata + search contracts
-// (catalogSearchSchema / productDetailSearchSchema) while the pages remain
-// operator-hosted wrappers (see src/components/voyant/catalog/*).
+// (catalogSearchSchema / productDetailSearchSchema), and the pages are the
+// packaged hosts from @voyantjs/catalog-ui/admin — the route files under
+// src/routes/_workspace/catalog/* only bind route params/search onto them.
 function createCatalogExtension(messages: AdminExtensionNavMessages) {
   return generatedAdminExtensionFactories.catalog({
     labels: {

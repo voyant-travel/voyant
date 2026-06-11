@@ -2,9 +2,12 @@ import { createFileRoute } from "@tanstack/react-router"
 import {
   type CatalogSearchParams,
   catalogSearchSchema,
-} from "@/components/voyant/catalog/catalog-route-state"
-import { DynamicCatalogPage } from "@/components/voyant/catalog/dynamic-catalog-page"
+  DynamicCatalogHost,
+} from "@voyantjs/catalog-ui/admin"
 
+// Thin host for the package-delivered dynamic catalog page (packaged-admin
+// RFC Phase 2). Page and search contract are package-owned; this file only
+// binds the route's URL search state onto the host's props.
 export const Route = createFileRoute("/_workspace/catalog/products/")({
   validateSearch: catalogSearchSchema,
   component: CatalogProductsRoute,
@@ -16,7 +19,7 @@ function CatalogProductsRoute() {
 
   // Products are the `dynamic` supply mechanic → search-first surface.
   return (
-    <DynamicCatalogPage
+    <DynamicCatalogHost
       search={search}
       onSearchChange={(updater, replace = true) =>
         void routeNavigate({

@@ -12,6 +12,14 @@ export const catalogDetailSurfaces = [
 ] as const
 export type CatalogDetailSurface = (typeof catalogDetailSurfaces)[number]
 
+/**
+ * Verticals the indexed browse grid (`CatalogVerticalHost`) can render — the
+ * surfaces with their own search-index collection. Excursions/tours browse the
+ * `products` vertical with locked supply-model/duration filters instead.
+ */
+export const catalogVerticalPageIds = ["products", "cruises", "accommodations"] as const
+export type CatalogVerticalPageId = (typeof catalogVerticalPageIds)[number]
+
 /** Catalog/content vertical backing a surface (excursions/tours → products). */
 export function catalogSurfaceVertical(
   surface: CatalogDetailSurface,

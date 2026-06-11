@@ -1,11 +1,15 @@
-// Catalog surface taxonomy (which surfaces have a dedicated detail page, and
-// the content vertical backing each) now lives in catalog-ui; the search-state
-// contract lives in catalog-react. Imported for local use + re-exported for the
-// operator's existing import paths.
+// Catalog surface taxonomy (which surfaces have a dedicated detail page, the
+// content vertical backing each, and the browse-grid vertical ids) lives in
+// catalog-ui; the search-state contract lives in catalog-react. The catalog
+// PAGES are package-delivered too (`@voyantjs/catalog-ui/admin` hosts) —
+// what's left here is the operator's own route-tree knowledge: detail hrefs
+// for new-tab openers and the journey's return path.
 import {
   type CatalogDetailSurface,
+  type CatalogVerticalPageId,
   catalogDetailSurfaces,
   catalogSurfaceVertical,
+  catalogVerticalPageIds,
 } from "@voyantjs/catalog-ui"
 
 export {
@@ -17,7 +21,13 @@ export {
   catalogSortOptions,
   catalogViewModes,
 } from "@voyantjs/catalog-react"
-export { type CatalogDetailSurface, catalogDetailSurfaces, catalogSurfaceVertical }
+export {
+  type CatalogDetailSurface,
+  type CatalogVerticalPageId,
+  catalogDetailSurfaces,
+  catalogSurfaceVertical,
+  catalogVerticalPageIds,
+}
 
 /** URL of a surface's dedicated detail page (opened in a new tab). */
 export function catalogDetailHref(surface: CatalogDetailSurface, id: string): string {
@@ -30,10 +40,6 @@ export function openCatalogDetail(surface: CatalogDetailSurface, id: string): vo
     window.open(catalogDetailHref(surface, id), "_blank", "noopener,noreferrer")
   }
 }
-
-export const catalogVerticalPageIds = ["products", "cruises", "accommodations"] as const
-
-export type CatalogVerticalPageId = (typeof catalogVerticalPageIds)[number]
 
 export function catalogVerticalPath(vertical: string) {
   switch (vertical) {

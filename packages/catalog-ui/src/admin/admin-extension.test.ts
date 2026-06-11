@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest"
 
-import { createCatalogAdminExtension, productDetailSearchSchema } from "./index.js"
+import {
+  CatalogVerticalHost,
+  CruiseDetailHost,
+  createCatalogAdminExtension,
+  DynamicCatalogHost,
+  ProductDetailHost,
+  productDetailSearchSchema,
+  ScheduledCatalogHost,
+  VerticalDetailHost,
+} from "./index.js"
 
 describe("createCatalogAdminExtension", () => {
   it("contributes no navigation (catalog nav is base-nav-owned)", () => {
@@ -44,5 +53,34 @@ describe("createCatalogAdminExtension", () => {
       adults: 2,
       nights: 7,
     })
+  })
+
+  it("does not attach components to contributions (hosts take route props)", () => {
+    // The contribution contract renders zero-prop pages; every catalog host
+    // takes route params/search as props, so host route files stay the
+    // binding layer until the RFC §4.2 code-based route assembly lands.
+    const extension = createCatalogAdminExtension()
+    for (const route of extension.routes ?? []) {
+      expect(route.component).toBeUndefined()
+    }
+  })
+})
+
+describe("packaged catalog admin hosts", () => {
+  // Importable + renderable component types — the operator's thin route hosts
+  // bind these directly, so a broken import surface fails here, not in an app
+  // build. (Behavioral rendering needs the workspace provider stack and lives
+  // with the host apps.)
+  it("exports the page hosts as components from the admin entrypoint", () => {
+    for (const host of [
+      CatalogVerticalHost,
+      CruiseDetailHost,
+      DynamicCatalogHost,
+      ProductDetailHost,
+      ScheduledCatalogHost,
+      VerticalDetailHost,
+    ]) {
+      expect(typeof host).toBe("function")
+    }
   })
 })

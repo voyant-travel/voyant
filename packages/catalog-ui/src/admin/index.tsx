@@ -64,8 +64,10 @@ export { type CatalogSearchParams, catalogSearchSchema } from "@voyantjs/catalog
 // thin hosts can import everything catalog-admin from this one entrypoint.
 export {
   type CatalogDetailSurface,
+  type CatalogVerticalPageId,
   catalogDetailSurfaces,
   catalogSurfaceVertical,
+  catalogVerticalPageIds,
 } from "../catalog-surfaces.js"
 export { CatalogPage, type CatalogPageProps } from "../components/catalog-page.js"
 export {
@@ -88,6 +90,21 @@ export {
   type ScheduledCatalogPageProps,
   type ScheduledScope,
 } from "../components/scheduled-catalog-page.js"
+// Packaged admin hosts (packaged-admin RFC Phase 2): the catalog pages bound
+// to their data wiring + semantic-destination navigation. Host route files
+// only bind route params/search state onto these.
+export {
+  CatalogVerticalHost,
+  type CatalogVerticalHostProps,
+} from "./catalog-vertical-host.js"
+export { CruiseDetailHost, type CruiseDetailHostProps } from "./cruise-detail-host.js"
+export { DynamicCatalogHost, type DynamicCatalogHostProps } from "./dynamic-catalog-host.js"
+export { ProductDetailHost, type ProductDetailHostProps } from "./product-detail-host.js"
+export {
+  ScheduledCatalogHost,
+  type ScheduledCatalogHostProps,
+} from "./scheduled-catalog-host.js"
+export { VerticalDetailHost, type VerticalDetailHostProps } from "./vertical-detail-host.js"
 
 /**
  * Search context carried onto the product detail page so live offers match
@@ -129,16 +146,21 @@ export interface CreateCatalogAdminExtensionOptions {
  * ROUTES: contributions are metadata + the package-owned search contracts
  * (`catalogSearchSchema` from `@voyantjs/catalog-react` for the browse
  * surfaces, {@link productDetailSearchSchema} for the package detail page).
- * `component`/`loader` are intentionally NOT carried yet: every catalog page
- * the operator mounts is wrapped by an app-local host
- * (`templates/operator/src/components/voyant/catalog/*`) that binds
- * operator-only concerns — typed router navigation into the booking journey /
- * supplier / product-editor routes, and (for the browse grid) the app's Hono
- * RPC client. The navigation half of that gap is now closed by the semantic
- * destinations declared above (`AdminDestinations` augmentation +
- * `useAdminHref`/`useAdminNavigate`); once the wrappers are converted, the
- * remaining host concern is the RPC client. Until then the route files stay
- * authoritative for rendering and these contributions describe the seam.
+ * The PAGES are package-owned too: the `*Host` components exported from this
+ * entrypoint ({@link CatalogVerticalHost}, {@link DynamicCatalogHost},
+ * {@link ScheduledCatalogHost}, {@link ProductDetailHost},
+ * {@link CruiseDetailHost}, {@link VerticalDetailHost}) bind the catalog
+ * pages to their data wiring (catalog provider context, markets/suppliers/
+ * products hooks) and resolve every cross-route link through the semantic
+ * destinations declared above — no app RPC client, no host route tree.
+ *
+ * `component:` is intentionally NOT attached to these contributions yet:
+ * the contribution contract renders zero-prop pages (route components read
+ * params via the router, per RFC §4.2), while every catalog host takes route
+ * params/search state as props. Host route files stay the thin binding layer
+ * (`Route.useParams()`/`Route.useSearch()` → host props) until the §4.2
+ * code-based route assembly gives packaged pages a router-agnostic way to
+ * read route state.
  */
 export function createCatalogAdminExtension(
   options: CreateCatalogAdminExtensionOptions = {},

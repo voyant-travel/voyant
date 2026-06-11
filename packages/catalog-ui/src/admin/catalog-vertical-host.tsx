@@ -1,13 +1,14 @@
 "use client"
 
-import { Link, useNavigate } from "@tanstack/react-router"
-import type { CatalogSearchHit } from "@voyantjs/catalog-react"
+import { useAdminHref, useAdminNavigate, useOperatorAdminMessages } from "@voyantjs/admin"
+import type { CatalogSearchHit, CatalogSearchParams } from "@voyantjs/catalog-react"
 import {
-  CatalogPage as CatalogUiPage,
+  type CatalogSlotAvailability,
   createCatalogEnrichmentFetchers,
-  type CatalogSlotAvailability as UiCatalogSlotAvailability,
-  useCatalogUiMessagesOrDefault,
-} from "@voyantjs/catalog-ui"
+  fetchCatalogSlots,
+  useVoyantCatalogContext,
+  type VoyantFetcher,
+} from "@voyantjs/catalog-react"
 import { useMarketLocales, useMarkets } from "@voyantjs/markets-react"
 import { useProductMutation } from "@voyantjs/products-react"
 import { useSuppliers } from "@voyantjs/suppliers-react"
@@ -21,19 +22,18 @@ import {
 import { useMemo } from "react"
 import { toast } from "sonner"
 
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { api } from "@/lib/api-client"
-import { getApiUrl } from "@/lib/env"
-import type { CatalogSearchParams, CatalogVerticalPageId } from "./catalog-route-state"
+import type { CatalogVerticalPageId } from "../catalog-surfaces.js"
+import { CatalogPage as CatalogUiPage } from "../components/catalog-page.js"
+import { useCatalogUiMessagesOrDefault } from "../i18n/index.js"
 
 type CatalogBrowserMessages = ReturnType<
-  typeof useAdminMessages
+  typeof useOperatorAdminMessages
 >["products"]["operations"]["catalogBrowser"]
 
 const DEFAULT_MARKET_VALUE = "__default__"
 const DEFAULT_CATALOG_LOCALE = "en-GB"
 
-interface CatalogVerticalPageProps {
+export interface CatalogVerticalHostProps {
   vertical: CatalogVerticalPageId
   search: CatalogSearchParams
   onSearchChange: (
@@ -54,7 +54,8 @@ interface CatalogVerticalPageProps {
   lockedFacets?: Record<string, Array<string | number>>
   /**
    * Range filters always applied to this surface (e.g. an Excursions page pins
-   * `durationDays: { lte: 1 }`). Like {@link lockedFacets}, kept out of URL.
+   * `durationDays: { lte: 1 }`). Like {@link CatalogVerticalHostProps.lockedFacets},
+   * kept out of URL.
    */
   lockedRanges?: Record<string, { gte?: number; lte?: number }>
   /**
@@ -66,7 +67,15 @@ interface CatalogVerticalPageProps {
   onOpenDetail?: (hit: CatalogSearchHit) => void
 }
 
-export function CatalogVerticalPage({
+/**
+ * The indexed catalog browse grid bound to its data wiring (markets, locales,
+ * suppliers, product tag mutations, slot availability) — the packaged admin
+ * host that turns the presentational `CatalogPage` into a working operator
+ * surface. API access comes from the shell's catalog provider context
+ * (`useVoyantCatalogContext`); cross-route links resolve through the semantic
+ * destination keys declared in `./index.tsx` (packaged-admin RFC §4.7).
+ */
+export function CatalogVerticalHost({
   vertical,
   search,
   onSearchChange,
@@ -74,9 +83,11 @@ export function CatalogVerticalPage({
   lockedFacets,
   lockedRanges,
   onOpenDetail,
-}: CatalogVerticalPageProps) {
-  const navigate = useNavigate()
-  const browserMessages = useAdminMessages().products.operations.catalogBrowser
+}: CatalogVerticalHostProps) {
+  const resolveHref = useAdminHref()
+  const navigateTo = useAdminNavigate()
+  const { baseUrl, fetcher } = useVoyantCatalogContext()
+  const browserMessages = useOperatorAdminMessages().products.operations.catalogBrowser
   const catalogMessages = useCatalogUiMessagesOrDefault().catalogPage
   const suppliersQuery = useSuppliers({ limit: 100 })
   const marketsQuery = useMarkets({ status: "active", limit: 100 })
@@ -114,10 +125,11 @@ export function CatalogVerticalPage({
   const enrichmentFetchers = useMemo(
     () =>
       createCatalogEnrichmentFetchers({
-        baseUrl: getApiUrl(),
+        baseUrl,
         // Route the detail-sheet content fetch to each vertical's content
-        // mount (see src/api/catalog-content.ts). Verticals omitted here have
-        // no content route mounted, so their sheet renders the projection only.
+        // mount (the host API's createProductContentRoutes mounts). Verticals
+        // omitted here have no content route mounted, so their sheet renders
+        // the projection only.
         contentBasePathByVertical: {
           products: "/v1/admin/products",
           cruises: "/v1/admin/cruises",
@@ -126,9 +138,10 @@ export function CatalogVerticalPage({
         formatSupplier: (id) => supplierMap.get(String(id)) ?? String(id),
         locale: selectedLocale,
         market: selectedMarketId,
-        loadSlotAvailability: loadProductSlotAvailability,
+        loadSlotAvailability: (productId) =>
+          loadProductSlotAvailability(baseUrl, fetcher, productId),
       }),
-    [supplierMap, selectedLocale, selectedMarketId],
+    [baseUrl, fetcher, supplierMap, selectedLocale, selectedMarketId],
   )
 
   // Merge the always-on locked facets/ranges with the user's URL-driven filters.
@@ -253,28 +266,43 @@ export function CatalogVerticalPage({
         )
       }}
       onBookHit={(hit, entityModule) =>
-        goToBookingPage(hit, entityModule, navigate, browserMessages)
+        goToBookingPage(hit, entityModule, navigateTo, browserMessages)
       }
       onBookDeparture={(hit, entityModule, departure) =>
-        goToBookingPage(hit, entityModule, navigate, browserMessages, departure)
+        goToBookingPage(hit, entityModule, navigateTo, browserMessages, departure)
       }
       onBookOption={(hit, entityModule, departure, option) =>
-        goToBookingPage(hit, entityModule, navigate, browserMessages, departure, option)
+        goToBookingPage(hit, entityModule, navigateTo, browserMessages, departure, option)
       }
-      onOpenProductEditor={(hit) => navigate({ to: "/products/$id", params: { id: hit.id } })}
+      onOpenProductEditor={(hit) => navigateTo("product.detail", { productId: hit.id })}
       // When the surface provides a detail-page opener, results open it (new
       // tab) instead of the in-page sheet. Surface-specific so each vertical
       // routes to the right detail page.
       onOpenProductDetail={onOpenDetail ? (hit) => onOpenDetail(hit) : undefined}
       enrichmentFetchers={enrichmentFetchers}
       renderSupplierLink={(supplierId, displayName) => (
-        <Link
-          to="/suppliers/$id"
-          params={{ id: supplierId }}
+        <a
+          href={resolveHref("supplier.detail", { supplierId })}
+          onClick={(event) => {
+            // Keep modified/middle clicks native (new tab etc.); plain clicks
+            // navigate through the host router so the workspace doesn't reload.
+            if (
+              event.defaultPrevented ||
+              event.button !== 0 ||
+              event.metaKey ||
+              event.ctrlKey ||
+              event.shiftKey ||
+              event.altKey
+            ) {
+              return
+            }
+            event.preventDefault()
+            navigateTo("supplier.detail", { supplierId })
+          }}
           className="font-medium text-primary hover:underline"
         >
           {displayName}
-        </Link>
+        </a>
       )}
       onTagsChange={async (hit, nextTags) => {
         // Owned products only — sourced rows are read-only mirrors of
@@ -362,21 +390,17 @@ function CatalogScopeControls({
   )
 }
 
-type AppNavigate = ReturnType<typeof useNavigate>
+type DestinationNavigator = ReturnType<typeof useAdminNavigate>
 
 interface BookingDeparture {
   id: string
   startsAt: string
 }
 
-interface CatalogSlotsResponse {
-  rows: Array<UiCatalogSlotAvailability & { startsAt: string }>
-}
-
 function goToBookingPage(
   hit: CatalogSearchHit,
   entityModule: string,
-  navigate: AppNavigate,
+  navigateTo: DestinationNavigator,
   messages: CatalogBrowserMessages,
   departure?: BookingDeparture,
   option?: { id: string; name: string },
@@ -395,31 +419,32 @@ function goToBookingPage(
   const entityName = stringField(hit, "name", null) ?? undefined
   const entityImageUrl =
     stringField(hit, "thumbnailUrl", null) ?? stringField(hit, "heroImageUrl", null) ?? undefined
-  navigate({
-    to: "/catalog/journey/$entityModule/$entityId",
-    params: { entityModule, entityId: hit.id },
-    search: {
-      sourceKind,
-      ...(sourceConnectionId ? { sourceConnectionId } : {}),
-      ...(sourceRef ? { sourceRef } : {}),
-      ...(departure
-        ? isSourced
-          ? { departureDate: departure.startsAt.slice(0, 10) }
-          : { departureId: departure.id }
-        : {}),
-      ...(option ? { optionId: option.id } : {}),
-      ...(entityName ? { entityName } : {}),
-      ...(entityImageUrl ? { entityImageUrl } : {}),
-    },
+  navigateTo("bookingJourney.start", {
+    entityModule,
+    entityId: hit.id,
+    sourceKind,
+    ...(sourceConnectionId ? { sourceConnectionId } : {}),
+    ...(sourceRef ? { sourceRef } : {}),
+    ...(departure
+      ? isSourced
+        ? { departureDate: departure.startsAt.slice(0, 10) }
+        : { departureId: departure.id }
+      : {}),
+    ...(option ? { optionId: option.id } : {}),
+    ...(entityName ? { entityName } : {}),
+    ...(entityImageUrl ? { entityImageUrl } : {}),
   })
 }
 
 async function loadProductSlotAvailability(
+  baseUrl: string,
+  fetcher: VoyantFetcher,
   productId: string,
-): Promise<Map<string, UiCatalogSlotAvailability>> {
+): Promise<Map<string, CatalogSlotAvailability>> {
   try {
-    const response = await api.get<CatalogSlotsResponse>(
-      `/v1/admin/catalog/slots?entityModule=products&entityId=${encodeURIComponent(productId)}`,
+    const response = await fetchCatalogSlots(
+      { baseUrl, fetcher },
+      { entityModule: "products", entityId: productId },
     )
     return new Map(response.rows.map((slot) => [slot.id, slot]))
   } catch {
