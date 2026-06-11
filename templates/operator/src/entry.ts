@@ -1,4 +1,9 @@
-import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
+import type { AnyRouter } from "@tanstack/react-router"
+import {
+  createStartHandler,
+  defaultStreamHandler,
+  type HandlerCallback,
+} from "@tanstack/react-start/server"
 import { BULK_REINDEX_SERVICE_KEY } from "@voyantjs/promotions/workflow-runtime"
 import type { StepHandler } from "@voyantjs/workflows-orchestrator"
 import type {
@@ -15,7 +20,55 @@ import {
   PROMOTION_BOUNDARY_SCHEDULER_CRON,
 } from "./scheduled-crons"
 
-const startHandler = createStartHandler(defaultStreamHandler)
+type ManifestRoute = {
+  assets?: Array<unknown>
+  preloads?: Array<unknown>
+}
+
+type SsrManifest = {
+  inlineCss?: unknown
+  routes: Record<string, ManifestRoute | undefined>
+}
+
+type StartHandlerCallback = HandlerCallback<AnyRouter>
+type RouteMatch = ReturnType<AnyRouter["stores"]["matches"]["get"]>[number]
+
+type RouterWithSsrManifest = AnyRouter & {
+  ssr?: {
+    readonly manifest?: SsrManifest
+  }
+}
+
+const activeRouteStreamHandler: StartHandlerCallback = (ctx) => {
+  restrictSsrManifestToActiveRoutes(ctx.router as RouterWithSsrManifest)
+  return defaultStreamHandler(ctx)
+}
+
+const startHandler = createStartHandler(activeRouteStreamHandler)
+
+function restrictSsrManifestToActiveRoutes(router: RouterWithSsrManifest): void {
+  const ssr = router.ssr
+  if (!ssr?.manifest) return
+
+  router.ssr = {
+    get manifest() {
+      const manifest = ssr.manifest
+      if (!manifest) return manifest
+
+      const activeRouteIds = new Set(
+        router.stores.matches.get().map((match: RouteMatch) => match.routeId),
+      )
+      const routes = Object.fromEntries(
+        Object.entries(manifest.routes).filter(([routeId]) => activeRouteIds.has(routeId)),
+      )
+
+      return {
+        ...manifest,
+        routes,
+      }
+    },
+  }
+}
 
 let workflowDefinitionsPromise: Promise<unknown> | undefined
 function loadWorkflowDefinitions(): Promise<unknown> {
