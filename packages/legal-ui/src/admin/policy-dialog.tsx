@@ -1,3 +1,4 @@
+import { useOperatorAdminMessages } from "@voyantjs/admin"
 import { type LegalPolicyRecord, useLegalPolicyMutation } from "@voyantjs/legal-react"
 import {
   Button,
@@ -16,12 +17,11 @@ import {
   SelectValue,
   Textarea,
 } from "@voyantjs/ui/components"
+import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { zodResolver } from "@/lib/zod-resolver"
 
 const KIND_VALUES = [
   "cancellation",
@@ -58,7 +58,7 @@ type PolicyDialogProps = {
 
 export function PolicyDialog({ open, onOpenChange, policy, onSuccess }: PolicyDialogProps) {
   const isEditing = !!policy
-  const t = useAdminMessages().legal.policyDialog
+  const t = useOperatorAdminMessages().legal.policyDialog
   const { create, update } = useLegalPolicyMutation()
 
   const validationByCode: Record<string, string> = {

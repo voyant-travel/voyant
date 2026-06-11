@@ -1,7 +1,13 @@
+import { useOperatorAdminMessages } from "@voyantjs/admin"
+import { useOrganization, useOrganizations } from "@voyantjs/crm-react"
+import { useChannel, useChannels } from "@voyantjs/distribution-react"
 import {
   type LegalPolicyAssignmentRecord,
   useLegalPolicyAssignmentMutation,
 } from "@voyantjs/legal-react"
+import { useMarket, useMarkets } from "@voyantjs/markets-react"
+import { useProduct, useProducts } from "@voyantjs/products-react"
+import { useSupplier, useSuppliers } from "@voyantjs/suppliers-react"
 import {
   Button,
   Dialog,
@@ -19,13 +25,18 @@ import {
   SelectValue,
 } from "@voyantjs/ui/components"
 import { DatePicker } from "@voyantjs/ui/components/date-picker"
+import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
 import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
-import { EntityCombobox } from "@/components/ui/entity-combobox"
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { zodResolver } from "@/lib/zod-resolver"
+
+import { mergeUniqueOptions, SearchableSelect } from "./legal-admin-shared.js"
+
+// Parity with the previous operator-local entity combobox, which showed a
+// hardcoded "No results." empty state; the loading label is localized via
+// the shared legal contract-dialog messages.
+const PICKER_EMPTY_LABEL = "No results."
 
 const SCOPE_VALUES = ["product", "channel", "supplier", "market", "organization", "global"] as const
 type AssignmentScope = (typeof SCOPE_VALUES)[number]
@@ -48,18 +59,7 @@ type FormOutput = z.output<typeof assignmentFormSchema>
 
 export type AssignmentData = LegalPolicyAssignmentRecord
 
-type ProductRef = { id: string; name: string; status?: string | null; bookingMode?: string | null }
-type ChannelRef = { id: string; name: string; kind?: string | null; status?: string | null }
-type SupplierRef = { id: string; name: string; city?: string | null; country?: string | null }
-type MarketRef = { id: string; name: string; code?: string | null; defaultCurrency?: string | null }
-type OrganizationRef = {
-  id: string
-  name: string
-  website?: string | null
-  industry?: string | null
-}
-
-type PolicyAssignmentDialogProps = {
+export interface PolicyAssignmentDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   policyId: string
@@ -75,7 +75,7 @@ export function PolicyAssignmentDialog({
   onSuccess,
 }: PolicyAssignmentDialogProps) {
   const isEditing = !!assignment
-  const t = useAdminMessages().legal.policyAssignmentDialog
+  const t = useOperatorAdminMessages().legal.policyAssignmentDialog
   const { create, update } = useLegalPolicyAssignmentMutation()
 
   const form = useForm<FormValues, unknown, FormOutput>({
@@ -190,16 +190,9 @@ export function PolicyAssignmentDialog({
             {watchedScope === "product" && (
               <div className="flex flex-col gap-2">
                 <Label>{t.productLabel}</Label>
-                <EntityCombobox<ProductRef>
+                <ProductPicker
                   value={form.watch("productId") || null}
                   onChange={(id) => setReferenceField("productId", id)}
-                  endpoint="/v1/products"
-                  detailEndpoint="/v1/products/:id"
-                  queryKey={["legal", "policy-assignment", "products"]}
-                  getLabel={(product) => product.name}
-                  getSecondary={(product) =>
-                    [product.status, product.bookingMode].filter(Boolean).join(" / ") || undefined
-                  }
                   placeholder={t.productSearchPlaceholder}
                 />
               </div>
@@ -207,16 +200,9 @@ export function PolicyAssignmentDialog({
             {watchedScope === "channel" && (
               <div className="flex flex-col gap-2">
                 <Label>{t.channelLabel}</Label>
-                <EntityCombobox<ChannelRef>
+                <ChannelPicker
                   value={form.watch("channelId") || null}
                   onChange={(id) => setReferenceField("channelId", id)}
-                  endpoint="/v1/distribution/channels"
-                  detailEndpoint="/v1/distribution/channels/:id"
-                  queryKey={["legal", "policy-assignment", "channels"]}
-                  getLabel={(channel) => channel.name}
-                  getSecondary={(channel) =>
-                    [channel.kind, channel.status].filter(Boolean).join(" / ") || undefined
-                  }
                   placeholder={t.channelSearchPlaceholder}
                 />
               </div>
@@ -224,16 +210,9 @@ export function PolicyAssignmentDialog({
             {watchedScope === "supplier" && (
               <div className="flex flex-col gap-2">
                 <Label>{t.supplierLabel}</Label>
-                <EntityCombobox<SupplierRef>
+                <SupplierPicker
                   value={form.watch("supplierId") || null}
                   onChange={(id) => setReferenceField("supplierId", id)}
-                  endpoint="/v1/suppliers"
-                  detailEndpoint="/v1/suppliers/:id"
-                  queryKey={["legal", "policy-assignment", "suppliers"]}
-                  getLabel={(supplier) => supplier.name}
-                  getSecondary={(supplier) =>
-                    [supplier.city, supplier.country].filter(Boolean).join(" / ") || undefined
-                  }
                   placeholder={t.supplierSearchPlaceholder}
                 />
               </div>
@@ -241,16 +220,9 @@ export function PolicyAssignmentDialog({
             {watchedScope === "market" && (
               <div className="flex flex-col gap-2">
                 <Label>{t.marketLabel}</Label>
-                <EntityCombobox<MarketRef>
+                <MarketPicker
                   value={form.watch("marketId") || null}
                   onChange={(id) => setReferenceField("marketId", id)}
-                  endpoint="/v1/markets/markets"
-                  detailEndpoint="/v1/markets/markets/:id"
-                  queryKey={["legal", "policy-assignment", "markets"]}
-                  getLabel={(market) => market.name}
-                  getSecondary={(market) =>
-                    [market.code, market.defaultCurrency].filter(Boolean).join(" / ") || undefined
-                  }
                   placeholder={t.marketSearchPlaceholder}
                 />
               </div>
@@ -258,17 +230,9 @@ export function PolicyAssignmentDialog({
             {watchedScope === "organization" && (
               <div className="flex flex-col gap-2">
                 <Label>{t.organizationLabel}</Label>
-                <EntityCombobox<OrganizationRef>
+                <OrganizationPicker
                   value={form.watch("organizationId") || null}
                   onChange={(id) => setReferenceField("organizationId", id)}
-                  endpoint="/v1/crm/organizations"
-                  detailEndpoint="/v1/crm/organizations/:id"
-                  queryKey={["legal", "policy-assignment", "organizations"]}
-                  getLabel={(organization) => organization.name}
-                  getSecondary={(organization) =>
-                    [organization.website, organization.industry].filter(Boolean).join(" / ") ||
-                    undefined
-                  }
                   placeholder={t.organizationSearchPlaceholder}
                 />
               </div>
@@ -317,5 +281,233 @@ export function PolicyAssignmentDialog({
         </form>
       </DialogContent>
     </Dialog>
+  )
+}
+
+/**
+ * Scoped record pickers. The operator template's previous app-local
+ * `EntityCombobox` hit the same list/detail endpoints through the app RPC
+ * client; these bind the equivalent domain react hooks (shared Voyant
+ * provider context) so the dialog ships package-clean. The selected
+ * record's detail query keeps the label resolvable when it falls outside
+ * the searched page.
+ */
+interface ScopedPickerProps {
+  value: string | null
+  onChange: (id: string | null) => void
+  placeholder: string
+}
+
+function usePickerLoadingLabel(): string {
+  return useOperatorAdminMessages().legal.contractDialog.loading
+}
+
+function ProductPicker({ value, onChange, placeholder }: ScopedPickerProps) {
+  const loadingLabel = usePickerLoadingLabel()
+  const [search, setSearch] = useState("")
+  const listQuery = useProducts({ search: search || undefined, limit: 25 })
+  const selectedQuery = useProduct(value ?? undefined, { enabled: Boolean(value) })
+
+  const options = useMemo(() => {
+    const describe = (product: { status?: string | null; bookingMode?: string | null }) =>
+      [product.status, product.bookingMode].filter(Boolean).join(" / ") || undefined
+    return mergeUniqueOptions(
+      listQuery.data?.data.map((product) => ({
+        value: product.id,
+        label: product.name,
+        description: describe(product),
+      })),
+      selectedQuery.data
+        ? [
+            {
+              value: selectedQuery.data.id,
+              label: selectedQuery.data.name,
+              description: describe(selectedQuery.data),
+            },
+          ]
+        : undefined,
+    )
+  }, [listQuery.data?.data, selectedQuery.data])
+
+  return (
+    <SearchableSelect
+      value={value}
+      onChange={onChange}
+      options={options}
+      placeholder={placeholder}
+      searchPlaceholder={placeholder}
+      emptyLabel={PICKER_EMPTY_LABEL}
+      loadingLabel={loadingLabel}
+      loading={listQuery.isPending || (Boolean(value) && selectedQuery.isPending)}
+      onSearchChange={setSearch}
+    />
+  )
+}
+
+function ChannelPicker({ value, onChange, placeholder }: ScopedPickerProps) {
+  const loadingLabel = usePickerLoadingLabel()
+  // Channels expose no server-side search filter; load a wide page and let
+  // the combobox narrow client-side (same approach as the contract dialog).
+  const listQuery = useChannels({ limit: 250 })
+  const selectedQuery = useChannel(value, { enabled: Boolean(value) })
+
+  const options = useMemo(() => {
+    const describe = (channel: { kind?: string | null; status?: string | null }) =>
+      [channel.kind, channel.status].filter(Boolean).join(" / ") || undefined
+    return mergeUniqueOptions(
+      listQuery.data?.data.map((channel) => ({
+        value: channel.id,
+        label: channel.name,
+        description: describe(channel),
+      })),
+      selectedQuery.data
+        ? [
+            {
+              value: selectedQuery.data.id,
+              label: selectedQuery.data.name,
+              description: describe(selectedQuery.data),
+            },
+          ]
+        : undefined,
+    )
+  }, [listQuery.data?.data, selectedQuery.data])
+
+  return (
+    <SearchableSelect
+      value={value}
+      onChange={onChange}
+      options={options}
+      placeholder={placeholder}
+      searchPlaceholder={placeholder}
+      emptyLabel={PICKER_EMPTY_LABEL}
+      loadingLabel={loadingLabel}
+      loading={listQuery.isPending || (Boolean(value) && selectedQuery.isPending)}
+    />
+  )
+}
+
+function SupplierPicker({ value, onChange, placeholder }: ScopedPickerProps) {
+  const loadingLabel = usePickerLoadingLabel()
+  const [search, setSearch] = useState("")
+  const listQuery = useSuppliers({ search: search || undefined, limit: 25 })
+  const selectedQuery = useSupplier(value ?? "", { enabled: Boolean(value) })
+
+  const options = useMemo(() => {
+    const describe = (supplier: { city?: string | null; country?: string | null }) =>
+      [supplier.city, supplier.country].filter(Boolean).join(" / ") || undefined
+    return mergeUniqueOptions(
+      listQuery.data?.data.map((supplier) => ({
+        value: supplier.id,
+        label: supplier.name,
+        description: describe(supplier),
+      })),
+      selectedQuery.data
+        ? [
+            {
+              value: selectedQuery.data.data.id,
+              label: selectedQuery.data.data.name,
+              description: describe(selectedQuery.data.data),
+            },
+          ]
+        : undefined,
+    )
+  }, [listQuery.data?.data, selectedQuery.data])
+
+  return (
+    <SearchableSelect
+      value={value}
+      onChange={onChange}
+      options={options}
+      placeholder={placeholder}
+      searchPlaceholder={placeholder}
+      emptyLabel={PICKER_EMPTY_LABEL}
+      loadingLabel={loadingLabel}
+      loading={listQuery.isPending || (Boolean(value) && selectedQuery.isPending)}
+      onSearchChange={setSearch}
+    />
+  )
+}
+
+function MarketPicker({ value, onChange, placeholder }: ScopedPickerProps) {
+  const loadingLabel = usePickerLoadingLabel()
+  const [search, setSearch] = useState("")
+  const listQuery = useMarkets({ search: search || undefined, limit: 25 })
+  const selectedQuery = useMarket(value, { enabled: Boolean(value) })
+
+  const options = useMemo(() => {
+    const describe = (market: { code?: string | null; defaultCurrency?: string | null }) =>
+      [market.code, market.defaultCurrency].filter(Boolean).join(" / ") || undefined
+    return mergeUniqueOptions(
+      listQuery.data?.data.map((market) => ({
+        value: market.id,
+        label: market.name,
+        description: describe(market),
+      })),
+      selectedQuery.data
+        ? [
+            {
+              value: selectedQuery.data.id,
+              label: selectedQuery.data.name,
+              description: describe(selectedQuery.data),
+            },
+          ]
+        : undefined,
+    )
+  }, [listQuery.data?.data, selectedQuery.data])
+
+  return (
+    <SearchableSelect
+      value={value}
+      onChange={onChange}
+      options={options}
+      placeholder={placeholder}
+      searchPlaceholder={placeholder}
+      emptyLabel={PICKER_EMPTY_LABEL}
+      loadingLabel={loadingLabel}
+      loading={listQuery.isPending || (Boolean(value) && selectedQuery.isPending)}
+      onSearchChange={setSearch}
+    />
+  )
+}
+
+function OrganizationPicker({ value, onChange, placeholder }: ScopedPickerProps) {
+  const loadingLabel = usePickerLoadingLabel()
+  const [search, setSearch] = useState("")
+  const listQuery = useOrganizations({ search: search || undefined, limit: 25 })
+  const selectedQuery = useOrganization(value ?? undefined, { enabled: Boolean(value) })
+
+  const options = useMemo(() => {
+    const describe = (organization: { website?: string | null; industry?: string | null }) =>
+      [organization.website, organization.industry].filter(Boolean).join(" / ") || undefined
+    return mergeUniqueOptions(
+      listQuery.data?.data.map((organization) => ({
+        value: organization.id,
+        label: organization.name,
+        description: describe(organization),
+      })),
+      selectedQuery.data
+        ? [
+            {
+              value: selectedQuery.data.id,
+              label: selectedQuery.data.name,
+              description: describe(selectedQuery.data),
+            },
+          ]
+        : undefined,
+    )
+  }, [listQuery.data?.data, selectedQuery.data])
+
+  return (
+    <SearchableSelect
+      value={value}
+      onChange={onChange}
+      options={options}
+      placeholder={placeholder}
+      searchPlaceholder={placeholder}
+      emptyLabel={PICKER_EMPTY_LABEL}
+      loadingLabel={loadingLabel}
+      loading={listQuery.isPending || (Boolean(value) && selectedQuery.isPending)}
+      onSearchChange={setSearch}
+    />
   )
 }

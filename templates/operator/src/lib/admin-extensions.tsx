@@ -36,10 +36,14 @@ type AdminExtensionNavMessages = Pick<
   | "catalogExcursions"
   | "catalogProducts"
   | "catalogTours"
+  | "contractNumberSeries"
+  | "contractTemplates"
+  | "contracts"
   | "invoiceNumberSeries"
   | "invoices"
   | "newTrip"
   | "payments"
+  | "policies"
   | "profitability"
   | "promotions"
   | "supplierInvoices"
@@ -96,6 +100,26 @@ function createFinanceExtension(messages: AdminExtensionNavMessages) {
       payments: messages.payments,
       supplierInvoices: messages.supplierInvoices,
       profitability: messages.profitability,
+    },
+  })
+}
+
+// Legal is package-delivered (packaged-admin RFC Phase 3): the extension
+// contributes NO navigation — the Legal group is part of the BASE operator
+// navigation (createOperatorAdminNavigation in @voyantjs/admin), so entries
+// here would duplicate it. It's registered for the routes seam: the
+// contributions carry the package-owned route metadata (the legal pages keep
+// their filter state component-local, so there are no URL search contracts),
+// and the pages are the packaged hosts from @voyantjs/legal-ui/admin — the
+// route files under src/routes/_workspace/legal/* only bind route params
+// onto them.
+function createLegalExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.legal({
+    labels: {
+      contracts: messages.contracts,
+      contractTemplates: messages.contractTemplates,
+      policies: messages.policies,
+      numberSeries: messages.contractNumberSeries,
     },
   })
 }
@@ -174,10 +198,14 @@ const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   catalogExcursions: "Excursions",
   catalogProducts: "Packages",
   catalogTours: "Tours",
+  contractNumberSeries: "Number Series",
+  contractTemplates: "Contract Templates",
+  contracts: "Contracts",
   invoiceNumberSeries: "Number Series",
   invoices: "Invoices",
   newTrip: "New trip",
   payments: "Payments",
+  policies: "Policies",
   profitability: "Profitability",
   promotions: "Promotions",
   supplierInvoices: "Supplier invoices",
@@ -191,6 +219,7 @@ export function createOperatorAdminExtensions(
     createBookingsExtension(messages),
     createCatalogExtension(messages),
     createFinanceExtension(messages),
+    createLegalExtension(messages),
     createPromotionsExtension(messages),
     createTravelComposerExtension(messages),
     createActionLedgerExtension(messages),

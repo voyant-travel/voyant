@@ -1,10 +1,11 @@
 import type { AdminDestinationResolvers } from "@voyantjs/admin"
 // Type-only: binds the `AdminDestinations` augmentations (the bookings +
-// catalog + finance destination keys) into this program without pulling the
-// admin bundles into the workspace-chrome chunk.
+// catalog + finance + legal destination keys) into this program without
+// pulling the admin bundles into the workspace-chrome chunk.
 import type {} from "@voyantjs/bookings-ui/admin"
 import type {} from "@voyantjs/catalog-ui/admin"
 import type {} from "@voyantjs/finance-ui/admin"
+import type {} from "@voyantjs/legal-ui/admin"
 
 /**
  * Operator resolver map for the semantic-destination contract (packaged-admin
@@ -44,13 +45,21 @@ export const operatorAdminDestinations = {
   "catalog.browse": ({ surface }) => `/catalog/${surface}`,
   "catalog.detail": ({ surface, id, adults, nights }) =>
     `/catalog/${surface}/${encodeURIComponent(id)}${searchString({ adults, nights })}`,
+  "contract.detail": ({ contractId }) => `/legal/contracts/${encodeURIComponent(contractId)}`,
+  "contract.list": () => "/legal/contracts",
+  "contractTemplate.detail": ({ templateId }) =>
+    `/legal/templates/${encodeURIComponent(templateId)}`,
+  "contractTemplate.list": () => "/legal/templates",
   "invoice.detail": ({ invoiceId }) => `/finance/invoices/${encodeURIComponent(invoiceId)}`,
   "invoice.list": () => "/finance/invoices",
+  "legal.home": () => "/legal",
   "organization.detail": ({ organizationId }) =>
     `/organizations/${encodeURIComponent(organizationId)}`,
   "payment.detail": ({ paymentId }) => `/finance/payments/${encodeURIComponent(paymentId)}`,
   "payment.list": () => "/finance/payments",
   "person.detail": ({ personId }) => `/people/${encodeURIComponent(personId)}`,
+  "policy.detail": ({ policyId }) => `/legal/policies/${encodeURIComponent(policyId)}`,
+  "policy.list": () => "/legal/policies",
   "product.detail": ({ productId }) => `/products/${encodeURIComponent(productId)}`,
   "supplier.detail": ({ supplierId }) => `/suppliers/${encodeURIComponent(supplierId)}`,
 } satisfies AdminDestinationResolvers

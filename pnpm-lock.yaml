@@ -3936,18 +3936,42 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.100.11
         version: 5.100.11(react@19.2.4)
+      '@tiptap/core':
+        specifier: ^3.7.2
+        version: 3.22.4(@tiptap/pm@3.22.4)
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.14
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
+      '@voyantjs/bookings-react':
+        specifier: workspace:^
+        version: link:../bookings-react
+      '@voyantjs/bookings-ui':
+        specifier: workspace:^
+        version: link:../bookings-ui
       '@voyantjs/crm-react':
         specifier: workspace:^
         version: link:../crm-react
+      '@voyantjs/distribution-react':
+        specifier: workspace:^
+        version: link:../distribution-react
       '@voyantjs/legal-react':
         specifier: workspace:^
         version: link:../legal-react
+      '@voyantjs/markets-react':
+        specifier: workspace:^
+        version: link:../markets-react
+      '@voyantjs/products-react':
+        specifier: workspace:^
+        version: link:../products-react
+      '@voyantjs/suppliers-react':
+        specifier: workspace:^
+        version: link:../suppliers-react
       '@voyantjs/ui':
         specifier: workspace:^
         version: link:../ui

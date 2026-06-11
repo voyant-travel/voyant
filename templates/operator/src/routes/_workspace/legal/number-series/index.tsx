@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { getLegalContractNumberSeriesQueryOptions } from "@voyantjs/legal-react"
-import { NumberSeriesPage } from "@voyantjs/legal-ui"
+import { NumberSeriesHost } from "@voyantjs/legal-ui/admin"
 
-import { NumberSeriesDialog } from "@/components/voyant/legal/number-series-dialog"
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"
 
@@ -12,11 +11,5 @@ export const Route = createFileRoute("/_workspace/legal/number-series/")({
     context.queryClient.ensureQueryData(
       getLegalContractNumberSeriesQueryOptions({ baseUrl: getApiUrl(), fetcher: operatorFetcher }),
     ),
-  component: RouteComponent,
+  component: NumberSeriesHost,
 })
-
-function RouteComponent() {
-  return (
-    <NumberSeriesPage renderNumberSeriesDialog={(props) => <NumberSeriesDialog {...props} />} />
-  )
-}
