@@ -98,6 +98,7 @@ function WorkspaceContent() {
           profitability: messages.nav.profitability,
           promotions: messages.nav.promotions,
           supplierInvoices: messages.nav.supplierInvoices,
+          suppliers: messages.nav.suppliers,
           trips: messages.nav.trips,
         })
       }

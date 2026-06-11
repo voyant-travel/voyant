@@ -2,6 +2,7 @@
 // Recreate after changing the modules list in voyant.config.*:
 //   voyant admin generate
 
+import { createSuppliersAdminExtension } from "@voyantjs/suppliers-ui/admin"
 import { createPromotionsAdminExtension } from "@voyantjs/promotions-ui/admin"
 import { createCatalogAdminExtension } from "@voyantjs/catalog-ui/admin"
 import { createBookingsAdminExtension } from "@voyantjs/bookings-ui/admin"
@@ -13,6 +14,7 @@ import { createFinanceAdminExtension } from "@voyantjs/finance-ui/admin"
  * registering the result.
  */
 export const generatedAdminExtensionFactories = {
+  suppliers: createSuppliersAdminExtension,
   promotions: createPromotionsAdminExtension,
   catalog: createCatalogAdminExtension,
   bookings: createBookingsAdminExtension,

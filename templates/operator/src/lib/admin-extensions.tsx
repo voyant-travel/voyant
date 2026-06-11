@@ -43,6 +43,7 @@ type AdminExtensionNavMessages = Pick<
   | "profitability"
   | "promotions"
   | "supplierInvoices"
+  | "suppliers"
   | "trips"
 >
 
@@ -98,6 +99,21 @@ function createFinanceExtension(messages: AdminExtensionNavMessages) {
       profitability: messages.profitability,
     },
   })
+}
+
+// Suppliers is package-delivered (packaged-admin RFC Phase 3): the extension
+// contributes NO navigation — the Suppliers item is part of the BASE operator
+// navigation (createOperatorAdminNavigation in @voyantjs/admin), so an entry
+// here would duplicate it. It's registered for the routes seam: the
+// contributions carry the package-owned route metadata (no search contracts —
+// the list keeps its filters local), and the pages are the packaged hosts
+// from @voyantjs/suppliers-ui/admin — the route files under
+// src/routes/_workspace/suppliers/* only bind route params onto them. The
+// detail page's customer-payment-policy card arrives via finance-ui's widget
+// contribution on `supplier.details.payment-policy` (the finance-ui ↔
+// suppliers-ui cycle resolution).
+function createSuppliersExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.suppliers({ label: messages.suppliers })
 }
 
 // Promotions is package-delivered (packaged-admin RFC Phase 2): nav AND the
@@ -181,6 +197,7 @@ const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   profitability: "Profitability",
   promotions: "Promotions",
   supplierInvoices: "Supplier invoices",
+  suppliers: "Suppliers",
   trips: "Trips",
 }
 
@@ -191,6 +208,7 @@ export function createOperatorAdminExtensions(
     createBookingsExtension(messages),
     createCatalogExtension(messages),
     createFinanceExtension(messages),
+    createSuppliersExtension(messages),
     createPromotionsExtension(messages),
     createTravelComposerExtension(messages),
     createActionLedgerExtension(messages),
