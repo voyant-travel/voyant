@@ -51,6 +51,7 @@ type AdminExtensionNavMessages = Pick<
   | "policies"
   | "profitability"
   | "promotions"
+  | "resources"
   | "supplierInvoices"
   | "suppliers"
   | "trips"
@@ -164,6 +165,18 @@ function createSuppliersExtension(messages: AdminExtensionNavMessages) {
   return generatedAdminExtensionFactories.suppliers({ label: messages.suppliers })
 }
 
+// Resources is package-delivered (packaged-admin RFC Phase 3): the extension
+// contributes NO navigation — the Resources item is part of the BASE operator
+// navigation (createOperatorAdminNavigation in @voyantjs/admin), so an entry
+// here would duplicate it. It's registered for the routes seam: the
+// contributions carry the package-owned route metadata (no search contracts —
+// the tab dashboard keeps its tab/filter state local), and the pages are the
+// packaged hosts from @voyantjs/resources-ui/admin — the route files under
+// src/routes/_workspace/resources/* only bind route params onto them.
+function createResourcesExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.resources({ label: messages.resources })
+}
+
 // Promotions is package-delivered (packaged-admin RFC Phase 2): nav AND the
 // route implementation come from @voyantjs/promotions-ui/admin. The app only
 // supplies the localized label and icon. Order 50 nudges it past the default
@@ -250,6 +263,7 @@ const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   policies: "Policies",
   profitability: "Profitability",
   promotions: "Promotions",
+  resources: "Resources",
   supplierInvoices: "Supplier invoices",
   suppliers: "Suppliers",
   trips: "Trips",
@@ -265,6 +279,7 @@ export function createOperatorAdminExtensions(
     createFinanceExtension(messages),
     createSuppliersExtension(messages),
     createLegalExtension(messages),
+    createResourcesExtension(messages),
     createPromotionsExtension(messages),
     createTravelComposerExtension(messages),
     createActionLedgerExtension(messages),
