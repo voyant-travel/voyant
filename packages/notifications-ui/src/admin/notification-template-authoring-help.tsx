@@ -11,7 +11,7 @@ import {
   type TemplateAuthoringSnippet,
   type TemplateAuthoringVariable,
   type TemplateAuthoringVariableGroup,
-} from "./contract-template-authoring-help.js"
+} from "@voyantjs/ui/components/contract-template-authoring-help"
 
 type NotificationTemplateAuthoringHelpProps = {
   variableGroups: NotificationTemplateVariableCategory[]

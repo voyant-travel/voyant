@@ -46,6 +46,12 @@ type AdminExtensionNavMessages = Pick<
   | "invoiceNumberSeries"
   | "invoices"
   | "newTrip"
+  | "notificationDeliveries"
+  | "notificationPreview"
+  | "notificationReminderRules"
+  | "notificationReminderRuns"
+  | "notificationSettings"
+  | "notificationTemplates"
   | "organizations"
   | "payments"
   | "people"
@@ -166,6 +172,28 @@ function createLegalExtension(messages: AdminExtensionNavMessages) {
   })
 }
 
+// Notifications is package-delivered (packaged-admin RFC Phase 3): the
+// extension contributes NO navigation — the Notifications group is part of
+// the BASE operator navigation (createOperatorAdminNavigation in
+// @voyantjs/admin), so entries here would duplicate it. It's registered for
+// the routes seam: the contributions carry the package-owned route metadata
+// (the notifications pages keep their filter state component-local, so
+// there are no URL search contracts), and the pages are the packaged hosts
+// from @voyantjs/notifications-ui/admin — the route files under
+// src/routes/_workspace/notifications/* only bind route params onto them.
+function createNotificationsExtension(messages: AdminExtensionNavMessages) {
+  return generatedAdminExtensionFactories.notifications({
+    labels: {
+      templates: messages.notificationTemplates,
+      reminderRules: messages.notificationReminderRules,
+      deliveries: messages.notificationDeliveries,
+      reminderRuns: messages.notificationReminderRuns,
+      preview: messages.notificationPreview,
+      settings: messages.notificationSettings,
+    },
+  })
+}
+
 // Suppliers is package-delivered (packaged-admin RFC Phase 3): the extension
 // contributes NO navigation — the Suppliers item is part of the BASE operator
 // navigation (createOperatorAdminNavigation in @voyantjs/admin), so an entry
@@ -274,6 +302,12 @@ const defaultExtensionNavMessages: AdminExtensionNavMessages = {
   invoiceNumberSeries: "Number Series",
   invoices: "Invoices",
   newTrip: "New trip",
+  notificationDeliveries: "Deliveries",
+  notificationPreview: "Preview",
+  notificationReminderRules: "Reminder Rules",
+  notificationReminderRuns: "Reminder Runs",
+  notificationSettings: "Settings",
+  notificationTemplates: "Templates",
   organizations: "Organizations",
   payments: "Payments",
   people: "People",
@@ -298,6 +332,7 @@ export function createOperatorAdminExtensions(
     createSuppliersExtension(messages),
     createLegalExtension(messages),
     createResourcesExtension(messages),
+    createNotificationsExtension(messages),
     createPromotionsExtension(messages),
     createTravelComposerExtension(messages),
     createActionLedgerExtension(messages),

@@ -6,22 +6,30 @@ import {
   useNotificationDeliveries,
   useNotificationDeliveryMutation,
 } from "@voyantjs/notifications-react"
-import { Loader2, RotateCcw, Search } from "lucide-react"
-import { useState } from "react"
-
-import { Badge } from "./badge.js"
-import { Button } from "./button.js"
 import {
+  Badge,
+  Button,
   Dialog,
   DialogBody,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "./index.js"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select.js"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@voyantjs/ui/components"
+import { Loader2, RotateCcw, Search } from "lucide-react"
+import { useState } from "react"
 
-export function NotificationDeliveriesPage() {
+/**
+ * Packaged admin host for the notification deliveries page (packaged-admin
+ * RFC Phase 3). Zero-prop: filter state stays component-local and the
+ * details dialog is in-page — no cross-route navigation.
+ */
+export function NotificationDeliveriesHost() {
   const [channel, setChannel] = useState<UseNotificationDeliveriesOptions["channel"] | "all">("all")
   const [status, setStatus] = useState<UseNotificationDeliveriesOptions["status"] | "all">("all")
   const [selectedDelivery, setSelectedDelivery] = useState<NotificationDeliveryRecord | null>(null)

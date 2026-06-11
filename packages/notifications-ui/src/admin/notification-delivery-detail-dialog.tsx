@@ -1,11 +1,16 @@
 "use client"
 
 import { useNotificationDelivery } from "@voyantjs/notifications-react"
+import {
+  Badge,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@voyantjs/ui/components"
 import { Loader2 } from "lucide-react"
-
-import { Badge } from "./badge.js"
-import { Button } from "./button.js"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./dialog.js"
 
 type NotificationDeliveryDetailDialogProps = {
   deliveryId: string | null

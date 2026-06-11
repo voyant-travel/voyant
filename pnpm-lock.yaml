@@ -4245,16 +4245,28 @@ importers:
       '@voyantjs/i18n':
         specifier: workspace:^
         version: link:../i18n
+      '@voyantjs/notifications':
+        specifier: workspace:^
+        version: link:../notifications
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.100.11
         version: 5.100.11(react@19.2.4)
+      '@tiptap/core':
+        specifier: ^3.7.2
+        version: 3.22.4(@tiptap/pm@3.22.4)
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.14
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@voyantjs/admin':
+        specifier: workspace:^
+        version: link:../admin
       '@voyantjs/notifications-react':
         specifier: workspace:^
         version: link:../notifications-react
@@ -4273,6 +4285,9 @@ importers:
       react-dom:
         specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
+      react-hook-form:
+        specifier: ^7.60.0
+        version: 7.72.1(react@19.2.4)
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -5857,12 +5872,6 @@ importers:
       '@voyantjs/i18n':
         specifier: workspace:^
         version: link:../i18n
-      '@voyantjs/notifications':
-        specifier: workspace:^
-        version: link:../notifications
-      '@voyantjs/notifications-react':
-        specifier: workspace:^
-        version: link:../notifications-react
       '@voyantjs/utils':
         specifier: workspace:^
         version: link:../utils
@@ -6483,6 +6492,12 @@ importers:
       '@voyantjs/notifications':
         specifier: workspace:^
         version: link:../../packages/notifications
+      '@voyantjs/notifications-react':
+        specifier: workspace:^
+        version: link:../../packages/notifications-react
+      '@voyantjs/notifications-ui':
+        specifier: workspace:^
+        version: link:../../packages/notifications-ui
       '@voyantjs/pricing':
         specifier: workspace:^
         version: link:../../packages/pricing

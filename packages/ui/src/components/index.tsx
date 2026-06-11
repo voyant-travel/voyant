@@ -125,7 +125,7 @@ export * from "./menubar.js"
 export * from "./native-select.js"
 export * from "./navigation-menu.js"
 // Heavy passthroughs intentionally NOT re-exported here — they statically
-// pull tiptap/prosemirror (rich-text-editor, notification-template-*) or
+// pull tiptap/prosemirror (rich-text-editor) or
 // libphonenumber-js (phone-input). Import directly from
 // "@voyantjs/ui/components/<subpath>" instead. Keeping them out of the
 // barrel lets every consumer that imports `Button` etc. tree-shake them.

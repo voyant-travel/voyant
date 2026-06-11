@@ -1,9 +1,17 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
-import { OperatorAdminBootstrapGate, useLocale } from "@voyantjs/admin"
+import { createFileRoute, Outlet, redirect, useRouter } from "@tanstack/react-router"
+import {
+  type AdminDestinationResolvers,
+  AdminNavigationProvider,
+  OperatorAdminBootstrapGate,
+  useLocale,
+} from "@voyantjs/admin"
 import { BookingsUiMessagesProvider } from "@voyantjs/bookings-ui/i18n"
 import { CrmUiMessagesProvider } from "@voyantjs/crm-ui/i18n"
 import { DistributionUiMessagesProvider } from "@voyantjs/distribution-ui/i18n"
 import { FinanceUiMessagesProvider } from "@voyantjs/finance-ui/i18n"
+// Type-only: binds the notifications `AdminDestinations` augmentation into
+// this program so the resolver map below typechecks against its keys.
+import type {} from "@voyantjs/notifications-ui/admin"
 import { ProductsUiMessagesProvider } from "@voyantjs/products-ui/i18n"
 import { VoyantReactProvider } from "@voyantjs/react"
 import { ResourcesUiMessagesProvider } from "@voyantjs/resources-ui/i18n"
@@ -37,14 +45,35 @@ export const Route = createFileRoute("/_workspace")({
   component: WorkspaceLayout,
 })
 
+// Resolver map for the semantic destinations declared by the packaged
+// admin pages this template mounts (packaged-admin RFC §4.7) — today the
+// notifications hosts from @voyantjs/notifications-ui/admin. `satisfies
+// AdminDestinationResolvers` keeps it exhaustive: mounting a package that
+// declares a new destination fails the typecheck here until the key is
+// resolvable.
+const dmcAdminDestinations = {
+  "notificationReminderRule.detail": ({ ruleId }) =>
+    `/notifications/reminder-rules/${encodeURIComponent(ruleId)}`,
+  "notificationReminderRule.list": () => "/notifications/reminder-rules",
+  "notificationTemplate.detail": ({ templateId }) =>
+    `/notifications/templates/${encodeURIComponent(templateId)}`,
+  "notificationTemplate.list": () => "/notifications/templates",
+} satisfies AdminDestinationResolvers
+
 function WorkspaceLayout() {
   const { user } = Route.useLoaderData()
+  const router = useRouter()
 
   return (
     <VoyantReactProvider baseUrl={getApiUrl()}>
-      <UserProvider initialUser={user}>
-        <WorkspaceContent />
-      </UserProvider>
+      <AdminNavigationProvider
+        resolvers={dmcAdminDestinations}
+        navigate={(href) => void router.navigate({ href })}
+      >
+        <UserProvider initialUser={user}>
+          <WorkspaceContent />
+        </UserProvider>
+      </AdminNavigationProvider>
     </VoyantReactProvider>
   )
 }

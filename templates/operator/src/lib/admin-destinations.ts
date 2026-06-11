@@ -8,11 +8,15 @@ import type {} from "@voyantjs/availability-ui/admin"
 // catalog + crm + finance + legal + resources + suppliers destination keys)
 // into this program without pulling the admin bundles into the
 // workspace-chrome chunk.
+// catalog + crm + finance + legal + notifications + suppliers destination keys) into this
+// program without
+// pulling the admin bundles into the workspace-chrome chunk.
 import type {} from "@voyantjs/bookings-ui/admin"
 import type {} from "@voyantjs/catalog-ui/admin"
 import type {} from "@voyantjs/crm-ui/admin"
 import type {} from "@voyantjs/finance-ui/admin"
 import type {} from "@voyantjs/legal-ui/admin"
+import type {} from "@voyantjs/notifications-ui/admin"
 import type {} from "@voyantjs/resources-ui/admin"
 import type {} from "@voyantjs/suppliers-ui/admin"
 
@@ -65,6 +69,12 @@ export const operatorAdminDestinations = {
   "invoice.detail": ({ invoiceId }) => `/finance/invoices/${encodeURIComponent(invoiceId)}`,
   "invoice.list": () => "/finance/invoices",
   "legal.home": () => "/legal",
+  "notificationReminderRule.detail": ({ ruleId }) =>
+    `/notifications/reminder-rules/${encodeURIComponent(ruleId)}`,
+  "notificationReminderRule.list": () => "/notifications/reminder-rules",
+  "notificationTemplate.detail": ({ templateId }) =>
+    `/notifications/templates/${encodeURIComponent(templateId)}`,
+  "notificationTemplate.list": () => "/notifications/templates",
   "organization.detail": ({ organizationId }) =>
     `/organizations/${encodeURIComponent(organizationId)}`,
   "organization.list": () => "/organizations",

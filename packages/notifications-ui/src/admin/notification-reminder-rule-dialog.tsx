@@ -5,24 +5,27 @@ import {
   useNotificationReminderRuleMutation,
   useNotificationTemplates,
 } from "@voyantjs/notifications-react"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod/v4"
-
-import { zodResolver } from "../lib/zod-resolver.js"
-import { Button } from "./button.js"
 import {
+  Button,
   Dialog,
   DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "./index.js"
-import { Input } from "./input.js"
-import { Label } from "./label.js"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select.js"
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@voyantjs/ui/components"
+import { zodResolver } from "@voyantjs/ui/lib/zod-resolver"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
 
 const reminderRuleFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
