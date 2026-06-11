@@ -1,5 +1,17 @@
 # @voyantjs/notifications
 
+## 0.107.0
+
+### Patch Changes
+
+- Updated dependencies [eeb23df]
+  - @voyantjs/core@0.106.0
+  - @voyantjs/bookings@0.110.0
+  - @voyantjs/db@0.104.4
+  - @voyantjs/finance@0.110.0
+  - @voyantjs/hono@0.105.3
+  - @voyantjs/legal@0.110.0
+
 ## 0.106.0
 
 ### Patch Changes

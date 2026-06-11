@@ -1,5 +1,16 @@
 # @voyantjs/plugin-smartbill
 
+## 0.110.0
+
+### Patch Changes
+
+- Updated dependencies [6c27159]
+- Updated dependencies [eeb23df]
+  - @voyantjs/finance-react@0.110.0
+  - @voyantjs/core@0.106.0
+  - @voyantjs/finance@0.110.0
+  - @voyantjs/hono@0.105.3
+
 ## 0.109.0
 
 ### Patch Changes
