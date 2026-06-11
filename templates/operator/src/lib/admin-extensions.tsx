@@ -3,6 +3,7 @@ import {
   createAdminExtensionRegistry,
   defineAdminExtension,
 } from "@voyantjs/admin"
+import { createPromotionsAdminExtension } from "@voyantjs/promotions-ui/admin"
 import { Route, ScrollText, Tag } from "lucide-react"
 import type { AdminMessages } from "@/lib/admin-i18n"
 
@@ -22,36 +23,20 @@ import type { AdminMessages } from "@/lib/admin-i18n"
  * - `invoice.details.after-summary`
  */
 
-/**
- * Promotions extension — registers the sidebar nav entry pointing to
- * `/promotions`. The route composes package-owned React/UI surfaces from
- * `@voyantjs/promotions-react` and `@voyantjs/promotions-ui`.
- *
- * Per docs/architecture/promotions-architecture.md PR5.
- */
 type AdminExtensionNavMessages = Pick<
   AdminMessages["nav"],
   "actionLedger" | "allTrips" | "newTrip" | "promotions" | "trips"
 >
 
+// Promotions is package-delivered (packaged-admin RFC Phase 2): nav AND the
+// route implementation come from @voyantjs/promotions-ui/admin. The app only
+// supplies the localized label and icon. Order 50 nudges it past the default
+// admin items so it lands alongside the operator's commercial tools.
 function createPromotionsExtension(messages: AdminExtensionNavMessages) {
-  return defineAdminExtension({
-    id: "promotions",
-    navigation: [
-      {
-        // Order > 0 nudges this past the default admin items so it lands
-        // alongside the operator's commercial tools.
-        order: 50,
-        items: [
-          {
-            id: "promotions",
-            title: messages.promotions,
-            url: "/promotions",
-            icon: Tag,
-          },
-        ],
-      },
-    ],
+  return createPromotionsAdminExtension({
+    label: messages.promotions,
+    icon: Tag,
+    order: 50,
   })
 }
 

@@ -1,17 +1,50 @@
+import type { QueryClient } from "@tanstack/react-query"
 import type * as React from "react"
 
 import type { NavItem } from "./types.js"
 
 /**
+ * App-supplied runtime handed to route loaders: where the API lives and how
+ * to reach it (the host's cookie-forwarding fetcher in SSR setups).
+ */
+export interface AdminRouteRuntime {
+  baseUrl: string
+  fetcher?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+}
+
+export interface AdminRouteLoaderContext {
+  queryClient: QueryClient
+  runtime: AdminRouteRuntime
+}
+
+/**
  * A named route contribution for the admin shell.
  *
- * This is metadata only in the initial implementation. Templates remain free
- * to decide how route registration is wired into their router/runtime.
+ * Originally metadata only; as of the packaged-admin RFC Phase 2
+ * (docs/architecture/packaged-admin-rfc.md §4.2) contributions may carry the
+ * route IMPLEMENTATION — everything a template route file can express — so
+ * domain packages can ship pages. All implementation fields are optional:
+ * metadata-only contributions remain valid, and hosts decide how the fields
+ * map onto their router (TanStack hosts spread them into route options).
  */
 export interface AdminUiRouteContribution {
   id: string
   path: string
   title: string
+  /** The page. Keep it lazy-importable for code-splitting. */
+  component?: React.ComponentType
+  /** Data loader; receives the host QueryClient + app runtime. */
+  loader?: (ctx: AdminRouteLoaderContext) => unknown
+  /** Typed search-param validation (e.g. a zod schema's parse). */
+  validateSearch?: (search: Record<string, unknown>) => unknown
+  /** Per-route SSR mode, mirroring the host router's option. */
+  ssr?: boolean | "data-only"
+  pendingComponent?: React.ComponentType
+  errorComponent?: React.ComponentType<{ error: unknown; reset: () => void }>
+  /** Capability/permission key the shell checks before rendering. */
+  capability?: string
+  /** Preload policy override, mirroring the host router's option. */
+  preload?: false | "intent" | "render" | "viewport"
 }
 
 /**

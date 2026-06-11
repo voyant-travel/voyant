@@ -121,6 +121,8 @@ export {
 export {
   type AdminExtension,
   type AdminNavigationContribution,
+  type AdminRouteLoaderContext,
+  type AdminRouteRuntime,
   type AdminUiRouteContribution,
   type AdminWidgetContribution,
   type AdminWidgetSlot,
