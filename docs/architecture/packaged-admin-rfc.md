@@ -64,9 +64,17 @@ Consequences we are accepting up front:
 - `templates/dmc` and `apps/dev` are **deleted**. They are stale forks of the
   same surface (we only use `templates/operator`), and they are the first
   victims of the model this RFC removes.
+- **Fork-and-own is retired entirely — including the source-installed
+  (registry) UI strategy.** There are exactly two ways to consume Voyant:
+  build on it (manifest + extension points + imported `@voyantjs/ui` /
+  `*-ui` packages) or fork the repository and own everything. No partial
+  forks via copied files or registry-installed component source. `*-ui`
+  packages become ordinary versioned dependencies; the shadcn-style registry
+  (`apps/registry`, per-package `registry/` dirs) is removed.
 - `admin-architecture.md` Rule 2 ("keep the final admin shell template-owned")
-  is **superseded**: the shell becomes framework-owned; projects own
-  composition via config and extensions, not via copied shell code.
+  is **superseded**, and so are Rules 8–9 (the source-installed UI block
+  layer): the shell becomes framework-owned; projects own composition via
+  config and extensions, not via copied shell or component code.
 - No template-upgrade/codemod tooling. We are going straight to the packaged
   model; the template that remains is thin enough that "upgrading" it is not a
   meaningful operation.
@@ -117,11 +125,17 @@ demonstrates the failure mode before any client does.
    sanctioned seams (routes, navigation, widget slots, component overrides).
    Overriding a framework-owned page is an explicit, registered act — never
    silent file divergence.
-4. **The manifest drives composition.** `voyant.config.ts` already lists
+4. **Two consumption modes, nothing in between.** Build on Voyant (manifest +
+   extensions + imported UI packages, everything upgradeable) or fork the
+   repository and own the whole stack. A partial fork — copied template
+   files, registry-installed component source — combines the upgrade story of
+   a fork with the expectations of a dependency, and is exactly what produced
+   the incident class in §1. It is no longer a supported mode.
+5. **The manifest drives composition.** `voyant.config.ts` already lists
    modules/plugins and is becoming the source of truth for migrations
    (migration-resilience RFC). The admin reads from the same composition: the
    modules you mount determine the pages, nav, and widgets you get.
-5. **The admin is a product surface, not a starter.** It has a version, a
+6. **The admin is a product surface, not a starter.** It has a version, a
    changelog, and a compatibility contract — like every other package.
 
 ---
@@ -253,9 +267,13 @@ In order of preference, all typed and all upgrade-safe:
 4. **Component overrides** — a registered override map for specific
    framework-owned pages or blocks (`overrides: { "bookings.detail": MyPage }`).
    This is the escape hatch: explicit, named, visible in one place, and
-   greppable when upgrading — the opposite of silent file divergence. The
-   source-installed UI block strategy (`frontend-package-strategy.md`) remains
-   the way to get an editable starting point for such an override.
+   greppable when upgrading — the opposite of silent file divergence. An
+   override is built the same way framework pages are built: by composing the
+   exported components, hooks, and primitives of `@voyantjs/ui` and the
+   domain `*-react` / `*-ui` packages — not by copying their source. If the
+   exported surface is not rich enough to build a needed override, that is a
+   gap in the package's public API and gets fixed there, where the fix
+   benefits every project.
 
 ### 4.6 What a project looks like after
 
@@ -287,6 +305,11 @@ all arrive with `pnpm update`.
   `templates/operator`, which becomes both the reference host and the proving
   ground: if the operator's local pages can't be expressed through the
   extension surface, neither can a client's.
+- **The shadcn-style registry** — `apps/registry` (the registry host worker),
+  the `registry/` directories inside `*-ui` packages, and the
+  `registry:build` tooling. `*-ui` packages are consumed as ordinary
+  versioned dependencies with a public component/export surface. Projects
+  that want source-level ownership fork the repository.
 
 `templates/operator` survives as the reference host and the `voyant new`
 scaffold source — but its `src/` shrinks from ~40k LOC toward the §4.6 shape.
@@ -320,7 +343,8 @@ navigation, i18n bundle merging.
 Move the remaining domain pages from `templates/operator/src/components/voyant`
 + `src/routes` into their `*-ui` packages' admin extensions, one domain per
 PR. When the operator's local routes are only genuinely custom pages, delete
-`templates/dmc` and `apps/dev`.
+`templates/dmc`, `apps/dev`, and the registry (`apps/registry` + per-package
+`registry/` dirs + `registry:build` tooling).
 
 ### Phase 4 — contract hardening
 
@@ -334,13 +358,22 @@ override catalogs, and revision of `admin-architecture.md` (§7).
 
 `admin-architecture.md` Rule 2 ("Keep the final admin shell template-owned")
 is superseded: the shell is framework-owned; projects own **composition**
-(config + extensions + overrides), not shell code. Rules 4–9 (explicit
-extension points, narrow nav contributions, selective widget slots, UI
-layering, source-installed blocks) are unchanged and become load-bearing —
-they are the customization surface that replaces forking. The "Non-Goals"
-caveat against "a fully closed admin product" still holds: §4.5's override
-registry is the explicit escape hatch that keeps the admin open without
-reintroducing silent divergence.
+(config + extensions + overrides), not shell code. Rules 8–9 (the
+source-installed UI block layer and the registry strategy) are also
+superseded: there is no source-installed layer anymore; `*-ui` packages are
+imported, not copied. Rules 4–7 (explicit extension points, narrow nav
+contributions, selective widget slots) are unchanged and become load-bearing —
+they are the customization surface that replaces forking.
+
+`frontend-package-strategy.md` is revised accordingly: the "shadcn registry
+blocks" layer is retired; the remaining layers are domain packages,
+framework-agnostic SDKs, `*-react` runtime packages, and `*-ui` component
+packages consumed as dependencies.
+
+The "Non-Goals" caveat against "a fully closed admin product" still holds:
+§4.5's override registry is the explicit escape hatch that keeps the admin
+open without reintroducing silent divergence — and a full repository fork
+remains available to anyone who genuinely wants to own the stack.
 
 ---
 
@@ -350,6 +383,9 @@ Decided:
 
 - No template-upgrade/codemod tooling — straight to the packaged model.
 - `templates/dmc` and `apps/dev` are deleted (Phase 3).
+- Fork-and-own is retired, including the shadcn-style registry
+  (`apps/registry` + per-package `registry/` source). Build on Voyant via
+  extensions + imported packages, or fork the repository — nothing between.
 - Code-based route assembly first; build-time typed-tree generation later.
 - The existing `AdminExtension` seam is the foundation — extended, not replaced.
 
@@ -387,3 +423,6 @@ Open:
 4. `templates/dmc` and `apps/dev` no longer exist.
 5. An enterprise customization (new page, injected widget, overridden detail
    page) is expressible without modifying any framework-owned file.
+6. No source-installed component copies remain: `apps/registry` and the
+   `registry/` directories are gone, and every `*-ui` consumer imports the
+   package instead of owning a copy of its source.
