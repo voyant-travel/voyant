@@ -1,5 +1,169 @@
 # @voyantjs/bookings-ui
 
+## 0.109.0
+
+### Minor Changes
+
+- 8638834: Packaged-admin RFC booking-detail close-out: the operator's last
+  booking-detail wrappers move into the packages, backed by new client hooks
+  for existing server endpoints. `@voyantjs/bookings-react` gains
+  `useBookingActionLedger` (cursor-paged
+  `GET /v1/admin/bookings/:id/action-ledger` feed with traveler labels) and
+  `useBookingContractGenerationMutation` (preview + generate modes of
+  `POST /v1/admin/bookings/:id/generate-contract`).
+  `@voyantjs/finance-react` gains `usePaymentSessions`
+  (`GET /v1/admin/finance/payment-sessions` with booking/status filters),
+  `usePaymentSessionMutation` (`POST …/payment-sessions/:id/complete` and
+  `/cancel`) and `useBookingPaymentScheduleRegenerateMutation`
+  (`POST /v1/admin/bookings/:bookingId/payment-schedule/regenerate`), plus the
+  matching payment-session / payment-policy schemas and
+  `financeQueryKeys.paymentSessions*` keys.
+
+  On top of those hooks, `@voyantjs/bookings-ui/admin` now owns the unified
+  Documents tab (`BookingDocumentsTable` + `BookingContractDialog`, linking
+  contract rows through a shape-locked `contract.detail` destination and the
+  legal provider context's `baseUrl`) and merges the booking's central
+  action-ledger entries into the Activity timeline natively
+  (`useBookingActionLedgerEvents`); `BookingDetailHost` renders the Documents
+  tab by default, exposes two new widget slots —
+  `booking.details.finance-start` / `booking.details.finance-end`
+  (`bookingDetailFinanceStartSlot` / `bookingDetailFinanceEndSlot`) — and
+  forwards a new `onGenerateLink` host prop through
+  `BookingDetailHostSlotContext`. `@voyantjs/finance-ui/admin` contributes the
+  finance-tab cards onto those slots (RFC §4.7 cycle resolution, same as the
+  invoices tab): `BookingPendingPaymentSessionsWidget` (pending payment links
+  with copy/mark-received/cancel) and `BookingPaymentPolicyWidget` (cascade
+  trace + booking-level override + schedule regenerate). The operator's
+  booking-detail wrapper shrinks to the two payment dialogs
+  (`CollectPaymentDialog` / `RecordBookingPaymentDialog`), which stay
+  app-side because `@voyantjs/checkout-ui` / `@voyantjs/finance-ui` depend on
+  `bookings-ui`; the dead `booking-catalog-source-card`,
+  `booking-pricing-summary-card`, `booking-paid-payment-sessions` and
+  `booking-note-dialog` wrappers are deleted.
+
+- 05e5784: Packaged-admin RFC Phase 3, bookings pages delivered: the operator's bookings
+  page wrappers move into `@voyantjs/bookings-ui/admin` as packaged hosts —
+  `BookingsHost` (list page bound to the packaged search contract) and
+  `BookingDetailHost` (canonical detail page wired to breadcrumbs, paid-amount
+  aggregation across invoices, payment-row delete, the in-place
+  `BookingInvoiceSheet`, and the `booking.details.header` /
+  `booking.details.after-summary` widget slots via the shared
+  `AdminWidgetSlotRenderer` extensions context). Cross-route links (bookings
+  list/detail/create, CRM person/organization, product editor, availability
+  slot, finance payment/invoice) resolve through new semantic destination keys
+  (RFC §4.7) via `useAdminHref`/`useAdminNavigate`; API access comes from the
+  shell's provider contexts (the invoice-attachment download href is built from
+  the finance context base URL instead of an app env helper). Also exports the
+  package-owned search contracts (`bookingsIndexSearchSchema`,
+  `bookingDetailSearchSchema`, `bookingsSearchToFilters`/
+  `bookingsFiltersToSearch`), the route skeletons (`BookingsListSkeleton`,
+  `BookingDetailSkeleton`), and `createBookingsAdminExtension` (route metadata
+  only — bookings navigation stays base-nav-owned). App-local booking-detail
+  cards whose data access has no package equivalent yet (admin payment
+  sessions, payment-schedule regenerate, contract generation, booking action
+  ledger, attachment uploads) stay injectable through the host's typed slots;
+  the payment dialogs stay app-side because `@voyantjs/finance-ui` depends on
+  this package. Host route files shrink to param/search binding; `component:`
+  stays off the route contributions until the §4.2 code-based route assembly
+  gives packaged pages router-agnostic route state. New peer:
+  `@voyantjs/admin`.
+- 25d7452: Packaged-admin RFC CRM pages delivered: the operator's people/organization
+  wrappers move into `@voyantjs/crm-ui/admin` as packaged hosts — zero-prop
+  `PeopleHost` / `OrganizationsHost` (route files mount them directly via
+  `component:`), `PersonDetailHost`, `OrganizationDetailHost` (canonical CRM
+  pages bound to semantic-destination navigation, with admin chrome
+  breadcrumbs on the organization page), and the four matching skeletons.
+  Cross-route links resolve through the semantic destination keys (RFC §4.7)
+  via `useAdminHref`/`useAdminNavigate` — new keys `person.list` and
+  `organization.list`, plus shape-locked `person.detail` and
+  `organization.detail` (also declared by `@voyantjs/bookings-ui/admin`;
+  crm-ui cannot peer-depend on bookings-ui, so the keys are re-declared with
+  identical shapes). `createCrmAdminExtension` contributes the CRM route
+  metadata (no nav — People/Organizations are base-nav-owned, and no search
+  contracts — the lists keep filter state in memory) AND resolves the
+  crm-ui ↔ bookings-ui cycle: the person detail page's Bookings tab now ships
+  as the `PersonBookingsWidget` contribution from `@voyantjs/bookings-ui`
+  targeting the new `person.details.bookings-tab` slot. `@voyantjs/crm-ui`'s
+  `PersonDetailHost` exposes that slot (`personDetailBookingsTabSlot`), mounts
+  its Bookings tab whenever a widget contribution targets it, and hands
+  widgets the typed `PersonDetailBookingsTabContext` (`{ personId }`) as
+  props. Host route files shrink to param binding; `component:` stays off the
+  route contributions until the §4.2 code-based route assembly lands. New
+  crm-ui peer: `@voyantjs/admin`.
+- 098a172: Packaged-admin RFC finance pages delivered: the operator's finance wrappers
+  move into `@voyantjs/finance-ui/admin` as packaged hosts —
+  `InvoiceDetailHost` (operator-grade invoice page with line-item/payment/
+  credit-note dialogs, attachments, notes, action ledger, and the
+  `invoice.details.header` / `invoice.details.after-summary` widget slots
+  rendered through the shared `AdminWidgetSlotRenderer`), `PaymentDetailHost`,
+  the matching skeletons, and the payments page's `RecordPaymentDialog`.
+  Cross-route links resolve through the semantic destination keys (RFC §4.7)
+  via `useAdminHref`/`useAdminNavigate` — new keys `invoice.list` and
+  `payment.list`, plus shape-locked `supplier.detail`; API URLs come from the
+  shared finance provider context's `baseUrl` instead of a host env helper.
+  `createFinanceAdminExtension` contributes the finance route metadata (no
+  nav — the Finance group is base-nav-owned) AND resolves the
+  finance-ui ↔ bookings-ui cycle: the booking detail page's invoices card now
+  ships as the `BookingInvoicesWidget` contribution targeting the new
+  `booking.details.invoices-tab` slot. `@voyantjs/bookings-ui`'s
+  `BookingDetailHost` exposes that slot (`bookingDetailInvoicesTabSlot`),
+  mounts its Invoices tab whenever an app slot or a widget contribution
+  targets it, and hands widgets the typed `BookingDetailHostSlotContext`
+  (`{ booking, paidAmountCents, fullyPaidReason, openInvoiceSheet }`) as
+  props. Host route files shrink to param binding; `component:` stays off the
+  route contributions until the §4.2 code-based route assembly lands. New
+  finance-ui peers: `@voyantjs/admin`, `@voyantjs/bookings-react`,
+  `@voyantjs/suppliers-react`, `@tanstack/react-table`.
+- ccc4a5f: i18n for the packaged admin hosts: all hardcoded UI copy that moved into
+  packages with the packaged-admin migration now flows through the
+  package-owned message bundles.
+
+  - `@voyantjs/notifications-ui`: the admin hosts (templates page/dialog/
+    detail, deliveries + delivery detail, reminder rules/dialog/detail,
+    reminder runs, reminders preview, authoring help) consume a new
+    `admin` section of `NotificationsUiMessages` via
+    `useNotificationsUiMessagesOrDefault()` — ~190 new message keys with
+    English and Romanian definitions, grouped by component
+    (`admin.common`, `admin.templatesPage`, `admin.templateDialog`,
+    `admin.templateDetail`, `admin.deliveriesPage`, `admin.deliveryDetail`,
+    `admin.reminderRulesPage`, `admin.reminderRuleDialog`,
+    `admin.reminderRuleDetail`, `admin.reminderRunsPage`,
+    `admin.previewPage`, `admin.authoringHelp`).
+  - `@voyantjs/availability-ui`, `@voyantjs/bookings-ui`,
+    `@voyantjs/suppliers-ui`, `@voyantjs/resources-ui`,
+    `@voyantjs/promotions-ui`: the admin extension factories switch from a
+    singular `label?: string` option to the `labels?: { <domain>?: string }`
+    shape the other domain factories (catalog, crm, legal, finance) already
+    use — hosts pass localized titles per domain key. The availability
+    start-time detail host's breadcrumb fallback now resolves through the
+    operator admin message catalog instead of a hardcoded string.
+
+### Patch Changes
+
+- Updated dependencies [f245b55]
+- Updated dependencies [8638834]
+- Updated dependencies [25d7452]
+- Updated dependencies [4ade734]
+- Updated dependencies [3bd66e9]
+- Updated dependencies [ee5b530]
+- Updated dependencies [344e7b6]
+  - @voyantjs/availability-react@0.106.0
+  - @voyantjs/bookings-react@0.109.0
+  - @voyantjs/finance-react@0.109.0
+  - @voyantjs/crm-ui@0.109.0
+  - @voyantjs/admin@0.106.0
+  - @voyantjs/ui@0.106.0
+  - @voyantjs/bookings@0.109.0
+  - @voyantjs/catalog@0.107.0
+  - @voyantjs/catalog-react@0.107.0
+  - @voyantjs/crm-react@0.109.0
+  - @voyantjs/extras-react@0.109.0
+  - @voyantjs/identity-react@0.109.0
+  - @voyantjs/legal-react@0.109.0
+  - @voyantjs/pricing-react@0.109.0
+  - @voyantjs/products-react@0.109.0
+  - @voyantjs/suppliers-react@0.106.0
+
 ## 0.108.1
 
 ### Patch Changes

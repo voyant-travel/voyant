@@ -1,5 +1,15 @@
 # @voyantjs/workflows-local-dashboard
 
+## 0.0.2
+
+### Patch Changes
+
+- Updated dependencies [3bd66e9]
+- Updated dependencies [344e7b6]
+  - @voyantjs/ui@0.106.0
+  - @voyantjs/workflows@0.106.0
+  - @voyantjs/workflows-react@0.106.0
+
 ## 0.0.1
 
 ### Patch Changes

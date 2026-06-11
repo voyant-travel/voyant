@@ -1,5 +1,115 @@
 # @voyantjs/finance-ui
 
+## 0.109.0
+
+### Minor Changes
+
+- 8638834: Packaged-admin RFC booking-detail close-out: the operator's last
+  booking-detail wrappers move into the packages, backed by new client hooks
+  for existing server endpoints. `@voyantjs/bookings-react` gains
+  `useBookingActionLedger` (cursor-paged
+  `GET /v1/admin/bookings/:id/action-ledger` feed with traveler labels) and
+  `useBookingContractGenerationMutation` (preview + generate modes of
+  `POST /v1/admin/bookings/:id/generate-contract`).
+  `@voyantjs/finance-react` gains `usePaymentSessions`
+  (`GET /v1/admin/finance/payment-sessions` with booking/status filters),
+  `usePaymentSessionMutation` (`POST …/payment-sessions/:id/complete` and
+  `/cancel`) and `useBookingPaymentScheduleRegenerateMutation`
+  (`POST /v1/admin/bookings/:bookingId/payment-schedule/regenerate`), plus the
+  matching payment-session / payment-policy schemas and
+  `financeQueryKeys.paymentSessions*` keys.
+
+  On top of those hooks, `@voyantjs/bookings-ui/admin` now owns the unified
+  Documents tab (`BookingDocumentsTable` + `BookingContractDialog`, linking
+  contract rows through a shape-locked `contract.detail` destination and the
+  legal provider context's `baseUrl`) and merges the booking's central
+  action-ledger entries into the Activity timeline natively
+  (`useBookingActionLedgerEvents`); `BookingDetailHost` renders the Documents
+  tab by default, exposes two new widget slots —
+  `booking.details.finance-start` / `booking.details.finance-end`
+  (`bookingDetailFinanceStartSlot` / `bookingDetailFinanceEndSlot`) — and
+  forwards a new `onGenerateLink` host prop through
+  `BookingDetailHostSlotContext`. `@voyantjs/finance-ui/admin` contributes the
+  finance-tab cards onto those slots (RFC §4.7 cycle resolution, same as the
+  invoices tab): `BookingPendingPaymentSessionsWidget` (pending payment links
+  with copy/mark-received/cancel) and `BookingPaymentPolicyWidget` (cascade
+  trace + booking-level override + schedule regenerate). The operator's
+  booking-detail wrapper shrinks to the two payment dialogs
+  (`CollectPaymentDialog` / `RecordBookingPaymentDialog`), which stay
+  app-side because `@voyantjs/checkout-ui` / `@voyantjs/finance-ui` depend on
+  `bookings-ui`; the dead `booking-catalog-source-card`,
+  `booking-pricing-summary-card`, `booking-paid-payment-sessions` and
+  `booking-note-dialog` wrappers are deleted.
+
+- 098a172: Packaged-admin RFC finance pages delivered: the operator's finance wrappers
+  move into `@voyantjs/finance-ui/admin` as packaged hosts —
+  `InvoiceDetailHost` (operator-grade invoice page with line-item/payment/
+  credit-note dialogs, attachments, notes, action ledger, and the
+  `invoice.details.header` / `invoice.details.after-summary` widget slots
+  rendered through the shared `AdminWidgetSlotRenderer`), `PaymentDetailHost`,
+  the matching skeletons, and the payments page's `RecordPaymentDialog`.
+  Cross-route links resolve through the semantic destination keys (RFC §4.7)
+  via `useAdminHref`/`useAdminNavigate` — new keys `invoice.list` and
+  `payment.list`, plus shape-locked `supplier.detail`; API URLs come from the
+  shared finance provider context's `baseUrl` instead of a host env helper.
+  `createFinanceAdminExtension` contributes the finance route metadata (no
+  nav — the Finance group is base-nav-owned) AND resolves the
+  finance-ui ↔ bookings-ui cycle: the booking detail page's invoices card now
+  ships as the `BookingInvoicesWidget` contribution targeting the new
+  `booking.details.invoices-tab` slot. `@voyantjs/bookings-ui`'s
+  `BookingDetailHost` exposes that slot (`bookingDetailInvoicesTabSlot`),
+  mounts its Invoices tab whenever an app slot or a widget contribution
+  targets it, and hands widgets the typed `BookingDetailHostSlotContext`
+  (`{ booking, paidAmountCents, fullyPaidReason, openInvoiceSheet }`) as
+  props. Host route files shrink to param binding; `component:` stays off the
+  route contributions until the §4.2 code-based route assembly lands. New
+  finance-ui peers: `@voyantjs/admin`, `@voyantjs/bookings-react`,
+  `@voyantjs/suppliers-react`, `@tanstack/react-table`.
+- 127ae3a: Packaged-admin RFC suppliers pages delivered: the operator's supplier
+  wrappers move into `@voyantjs/suppliers-ui/admin` as packaged hosts —
+  `SuppliersHost` (zero-prop list host, attachable directly as a route
+  `component:`), `SupplierDetailHost`, and the matching
+  `SuppliersListSkeleton` / `SupplierDetailSkeleton` route placeholders.
+  Cross-route links resolve through the semantic destination keys (RFC §4.7)
+  via `useAdminNavigate` — new key `supplier.list`, plus shape-locked
+  `supplier.detail` (also declared by catalog-ui and finance-ui).
+  `createSuppliersAdminExtension` contributes the suppliers route metadata
+  (no nav — the Suppliers item is base-nav-owned; no search contracts — the
+  list keeps its filters local). The extension seam also resolves the
+  finance-ui ↔ suppliers-ui cycle: the supplier detail page's
+  customer-payment-policy card now ships from `@voyantjs/finance-ui/admin` as
+  the `SupplierPaymentPolicyWidget` contribution targeting the new
+  `supplier.details.payment-policy` slot (`supplierDetailPaymentPolicySlot`).
+  `SupplierDetailHost` renders the section whenever a widget contribution
+  targets that slot and hands widgets the typed
+  `SupplierDetailHostSlotContext` (`{ supplier, updateSupplier, isUpdating }`)
+  as props; the card's strings move into finance-ui's i18n
+  (`paymentPolicy.supplierCard`, en + ro). Host route files shrink to param
+  binding + SSR prefetch; `component:` stays off the route contributions
+  until the §4.2 code-based route assembly lands. New suppliers-ui peer:
+  `@voyantjs/admin`. New finance-ui peer: `sonner`.
+
+### Patch Changes
+
+- Updated dependencies [8638834]
+- Updated dependencies [05e5784]
+- Updated dependencies [25d7452]
+- Updated dependencies [098a172]
+- Updated dependencies [ccc4a5f]
+- Updated dependencies [4ade734]
+- Updated dependencies [3bd66e9]
+- Updated dependencies [ee5b530]
+- Updated dependencies [344e7b6]
+- Updated dependencies [127ae3a]
+  - @voyantjs/bookings-react@0.109.0
+  - @voyantjs/finance-react@0.109.0
+  - @voyantjs/bookings-ui@0.109.0
+  - @voyantjs/suppliers-ui@0.106.0
+  - @voyantjs/admin@0.106.0
+  - @voyantjs/ui@0.106.0
+  - @voyantjs/finance@0.109.0
+  - @voyantjs/suppliers-react@0.106.0
+
 ## 0.108.1
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @voyantjs/octo
 
+## 0.104.7
+
+### Patch Changes
+
+- Updated dependencies [344e7b6]
+  - @voyantjs/core@0.105.1
+  - @voyantjs/availability@0.106.0
+  - @voyantjs/bookings@0.109.0
+  - @voyantjs/products@0.109.0
+  - @voyantjs/hono@0.105.2
+
 ## 0.104.6
 
 ### Patch Changes

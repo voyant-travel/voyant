@@ -1,5 +1,51 @@
 # @voyantjs/admin
 
+## 0.106.0
+
+### Minor Changes
+
+- 4ade734: Semantic admin navigation destinations (packaged-admin RFC §4.7): packaged
+  admin pages navigate to routes they don't own (booking journey, supplier
+  detail, product editor) without importing a host route tree.
+
+  - `@voyantjs/admin`: new `AdminDestinations` interface (augmented by domain
+    packages via `declare module "@voyantjs/admin"`), `AdminNavigationProvider`,
+    and `useAdminHref`/`useAdminNavigate`. Unresolvable keys warn once per key
+    and degrade to `"#"`/no-op — never a throw in render paths.
+  - `@voyantjs/admin-app`: `AdminWorkspaceShell` accepts a `destinations`
+    resolver map (`satisfies AdminDestinationResolvers` for exhaustiveness) and
+    mounts the provider wired to the app router via `router.navigate({ href })`.
+  - `@voyantjs/catalog-ui`: declares the catalog destination keys
+    (`bookingJourney.start`, `catalog.browse`, `catalog.detail`,
+    `product.detail`, `supplier.detail`) covering every cross-route target the
+    operator's catalog wrappers navigate to.
+
+- ee5b530: Packaged-admin RFC Phase 2 pilot (#1643): packages can ship admin pages.
+
+  - `@voyantjs/admin`: `AdminUiRouteContribution` grows from metadata-only to
+    the full route contract — optional `component`, `loader` (receives
+    `{ queryClient, runtime }` with the host's baseUrl/fetcher),
+    `validateSearch`, `ssr`, pending/error components, `capability`, and
+    `preload`. Metadata-only contributions remain valid. New types
+    `AdminRouteRuntime` and `AdminRouteLoaderContext`.
+  - `@voyantjs/promotions-ui`: first `@voyantjs/<domain>-ui/admin` entrypoint.
+    `createPromotionsAdminExtension({ label, icon, order, path })` contributes
+    the nav entry AND the route implementation (PromotionsPage +
+    loadPromotionsPage + SSR mode); the host supplies only label, icon, and
+    runtime.
+
+  The operator template consumes both: the local promotions extension is now a
+  thin call into the package, and the promotions route file is a thin host that
+  binds the package-owned page/loader to the file-based route tree (per-route
+  provider removed — the shell's VoyantReactProvider already supplies the same
+  context).
+
+### Patch Changes
+
+- Updated dependencies [3bd66e9]
+- Updated dependencies [344e7b6]
+  - @voyantjs/ui@0.106.0
+
 ## 0.105.2
 
 ### Patch Changes

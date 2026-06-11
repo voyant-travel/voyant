@@ -1,6 +1,6 @@
 {
   "name": "@voyantjs/workflows-tenant-worker",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "description": "Reference tenant Worker for Voyant Workflows. Wraps a user's workflow bundle with createStepHandler + nodeStepRunner + createCfContainerStepRunner so it runs behind the orchestrator's dispatch namespace.",
   "license": "Apache-2.0",

@@ -1,5 +1,79 @@
 # @voyantjs/notifications-ui
 
+## 0.106.0
+
+### Minor Changes
+
+- ccc4a5f: i18n for the packaged admin hosts: all hardcoded UI copy that moved into
+  packages with the packaged-admin migration now flows through the
+  package-owned message bundles.
+
+  - `@voyantjs/notifications-ui`: the admin hosts (templates page/dialog/
+    detail, deliveries + delivery detail, reminder rules/dialog/detail,
+    reminder runs, reminders preview, authoring help) consume a new
+    `admin` section of `NotificationsUiMessages` via
+    `useNotificationsUiMessagesOrDefault()` — ~190 new message keys with
+    English and Romanian definitions, grouped by component
+    (`admin.common`, `admin.templatesPage`, `admin.templateDialog`,
+    `admin.templateDetail`, `admin.deliveriesPage`, `admin.deliveryDetail`,
+    `admin.reminderRulesPage`, `admin.reminderRuleDialog`,
+    `admin.reminderRuleDetail`, `admin.reminderRunsPage`,
+    `admin.previewPage`, `admin.authoringHelp`).
+  - `@voyantjs/availability-ui`, `@voyantjs/bookings-ui`,
+    `@voyantjs/suppliers-ui`, `@voyantjs/resources-ui`,
+    `@voyantjs/promotions-ui`: the admin extension factories switch from a
+    singular `label?: string` option to the `labels?: { <domain>?: string }`
+    shape the other domain factories (catalog, crm, legal, finance) already
+    use — hosts pass localized titles per domain key. The availability
+    start-time detail host's breadcrumb fallback now resolves through the
+    operator admin message catalog instead of a hardcoded string.
+
+- 3bd66e9: Packaged-admin RFC notifications pages delivered: the notification admin
+  pages move out of `@voyantjs/ui` into `@voyantjs/notifications-ui/admin`
+  as packaged hosts — `NotificationTemplatesHost`,
+  `NotificationTemplateDetailHost`, `NotificationReminderRulesHost`,
+  `NotificationReminderRuleDetailHost`, `NotificationDeliveriesHost`,
+  `NotificationReminderRunsHost`, `RemindersPreviewHost` and
+  `NotificationSettingsHost`, plus the `NotificationTemplateDialog`,
+  `NotificationReminderRuleDialog`, `NotificationDeliveryDetailDialog` and
+  `NotificationTemplateAuthoringHelp` building blocks. Cross-route links
+  resolve through new semantic destination keys (RFC §4.7):
+  `notificationTemplate.list`/`notificationTemplate.detail` and
+  `notificationReminderRule.list`/`notificationReminderRule.detail`, via
+  `useAdminHref` + `useAdminNavigate`. `createNotificationsAdminExtension`
+  contributes the eight notifications routes as metadata (no nav — the
+  Notifications group is base-nav-owned; no search contracts — every page
+  keeps its filter state component-local). The template detail host
+  lazy-loads the template dialog so tiptap/prosemirror stays out of the
+  detail-page chunk. New notifications-ui peers: `@voyantjs/admin`,
+  `lucide-react`, `react-hook-form`.
+
+  BREAKING for `@voyantjs/ui`: the notification page components are removed —
+  the `./components/notification-template-dialog`,
+  `./components/notification-templates-page`,
+  `./components/notification-reminder-rule-dialog`,
+  `./components/notification-reminder-rules-page`,
+  `./components/notification-deliveries-page`,
+  `./components/notification-reminder-runs-page` and
+  `./components/notification-template-authoring-help` subpath exports are
+  gone, as are the wildcard-only
+  `./components/notification-template-detail-page` and
+  `./components/notification-delivery-detail-dialog` modules. Import the
+  hosts from `@voyantjs/notifications-ui/admin` instead. `@voyantjs/ui` no
+  longer depends on `@voyantjs/notifications` /
+  `@voyantjs/notifications-react`.
+
+### Patch Changes
+
+- Updated dependencies [4ade734]
+- Updated dependencies [3bd66e9]
+- Updated dependencies [ee5b530]
+- Updated dependencies [344e7b6]
+  - @voyantjs/admin@0.106.0
+  - @voyantjs/ui@0.106.0
+  - @voyantjs/notifications@0.106.0
+  - @voyantjs/notifications-react@0.106.0
+
 ## 0.105.2
 
 ### Patch Changes
