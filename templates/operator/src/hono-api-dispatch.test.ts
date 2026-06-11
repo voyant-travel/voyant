@@ -1,5 +1,14 @@
 import { describe, expect, it, vi } from "vitest"
-import { createHonoApiRequest, dispatchHonoApiRequest, isHonoApiRequest } from "./hono-api-dispatch"
+import {
+  createHonoApiRequest,
+  dispatchHonoApiRequest,
+  isHonoApiRequest,
+  isHonoAuthApiRequest,
+} from "./hono-api-dispatch"
+
+type FetchApp = {
+  fetch: (request: Request, env?: unknown, ctx?: ExecutionContext) => Response | Promise<Response>
+}
 
 describe("Hono API dispatch", () => {
   it("matches only the /api prefix", () => {
@@ -7,6 +16,14 @@ describe("Hono API dispatch", () => {
     expect(isHonoApiRequest("/api/v1/products")).toBe(true)
     expect(isHonoApiRequest("/apiary")).toBe(false)
     expect(isHonoApiRequest("/shop/api")).toBe(false)
+  })
+
+  it("matches auth requests under the API prefix", () => {
+    expect(isHonoAuthApiRequest("/api/auth")).toBe(true)
+    expect(isHonoAuthApiRequest("/api/auth/me")).toBe(true)
+    expect(isHonoAuthApiRequest("/api/auth/sign-in/email")).toBe(true)
+    expect(isHonoAuthApiRequest("/api/v1/admin/auth")).toBe(false)
+    expect(isHonoAuthApiRequest("/api/authz")).toBe(false)
   })
 
   it("strips the /api prefix and preserves the query string", () => {
@@ -60,5 +77,52 @@ describe("Hono API dispatch", () => {
     expect((forwardedRequest as Request).url).toBe("https://example.test/health")
     expect(forwardedEnv).toBe(env)
     expect(forwardedCtx).toBe(ctx)
+  })
+
+  it("dispatches auth requests through the lightweight auth app and warms the full app", async () => {
+    const request = new Request("https://example.test/api/auth/me")
+    const env = { APP_URL: "https://example.test" } as CloudflareBindings
+    const ctx: ExecutionContext = {
+      props: undefined,
+      waitUntil: vi.fn(),
+      passThroughOnException: vi.fn(),
+    }
+    const fullFetch = vi.fn<FetchApp["fetch"]>(async () => Response.json({ full: true }))
+    const authFetch = vi.fn<FetchApp["fetch"]>(async () => Response.json({ user: true }))
+    const loadFull = vi.fn(async () => ({ fetch: fullFetch }))
+    const loadAuth = vi.fn(async () => ({ fetch: authFetch }))
+
+    const response = await dispatchHonoApiRequest(request, env, ctx, loadFull, loadAuth)
+
+    await expect(response.json()).resolves.toEqual({ user: true })
+    expect(loadAuth).toHaveBeenCalledOnce()
+    expect(authFetch).toHaveBeenCalledOnce()
+    expect(loadFull).toHaveBeenCalledOnce()
+    expect(ctx.waitUntil).toHaveBeenCalledOnce()
+    expect(fullFetch).not.toHaveBeenCalled()
+    const [forwardedRequest, forwardedEnv, forwardedCtx] = authFetch.mock.calls[0]!
+    expect((forwardedRequest as Request).url).toBe("https://example.test/auth/me")
+    expect(forwardedEnv).toBe(env)
+    expect(forwardedCtx).toBe(ctx)
+  })
+
+  it("does not wait for full API warmup before returning auth responses", async () => {
+    const request = new Request("https://example.test/api/auth/me")
+    const env = { APP_URL: "https://example.test" } as CloudflareBindings
+    const ctx: ExecutionContext = {
+      props: undefined,
+      waitUntil: vi.fn(),
+      passThroughOnException: vi.fn(),
+    }
+    const authFetch = vi.fn<FetchApp["fetch"]>(async () => Response.json({ ok: true }))
+    const loadFull = vi.fn<() => Promise<FetchApp>>(() => new Promise<FetchApp>(() => undefined))
+
+    const response = await dispatchHonoApiRequest(request, env, ctx, loadFull, async () => ({
+      fetch: authFetch,
+    }))
+
+    await expect(response.json()).resolves.toEqual({ ok: true })
+    expect(loadFull).toHaveBeenCalledOnce()
+    expect(ctx.waitUntil).toHaveBeenCalledOnce()
   })
 })

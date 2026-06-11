@@ -20,6 +20,7 @@ import { createBetterAuth, handleApiTokenManagementRequest } from "@voyantjs/aut
 import { ensureCurrentUserProfile } from "@voyantjs/auth/workspace"
 import { authUser, type SelectApikey, userProfilesTable } from "@voyantjs/db/schema/iam"
 import type { VoyantDb, VoyantRequestAuthContext } from "@voyantjs/hono"
+import { handleApiError } from "@voyantjs/hono/middleware/error-boundary"
 import { eq, sql } from "drizzle-orm"
 import { type Context, Hono } from "hono"
 
@@ -35,6 +36,8 @@ type AuthHonoEnv = { Bindings: CloudflareBindings; Variables: { db: VoyantDb } }
 type OperatorAuthMode = "local" | "voyant-cloud"
 
 const auth = new Hono<AuthHonoEnv>()
+auth.onError(handleApiError)
+
 const DEFAULT_APP_URL = "http://localhost:3300"
 const CLOUD_BETTER_AUTH_ALLOWLIST = new Set([
   "/auth/get-session",
