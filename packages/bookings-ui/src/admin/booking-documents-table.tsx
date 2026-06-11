@@ -1,22 +1,23 @@
 "use client"
 
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
+import { useQueryClient } from "@tanstack/react-query"
 import type { ColumnDef } from "@tanstack/react-table"
+import { useAdminNavigate, useOperatorAdminMessages } from "@voyantjs/admin"
 import {
   type BookingTravelerRecord,
   useBooking,
+  useBookingContractGenerationMutation,
   useBookingTravelerDocumentMutation,
   useBookingTravelerDocuments,
   useTravelers,
 } from "@voyantjs/bookings-react"
-import { IconActionButton, StatusBadge } from "@voyantjs/bookings-ui"
-import { BookingDocumentDialog } from "@voyantjs/bookings-ui/components/booking-document-dialog"
 import {
   type LegalContractAttachmentRecord,
   type LegalContractRecord,
+  legalQueryKeys,
   useLegalContractAttachments,
   useLegalContracts,
+  useVoyantLegalContext,
 } from "@voyantjs/legal-react"
 import {
   AlertDialog,
@@ -33,20 +34,18 @@ import {
 import { DataTable } from "@voyantjs/ui/components/data-table"
 import { ArrowUpRight, Download, FileText, Loader2, Plus, RotateCw, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { BookingContractDialog } from "./booking-contract-dialog"
+
+import { BookingDocumentDialog } from "../components/booking-document-dialog.js"
+import { IconActionButton } from "../components/icon-action-button.js"
+import { StatusBadge } from "../components/status-badge.js"
+import { BookingContractDialog } from "./booking-contract-dialog.js"
 
 type DocumentsTableMessages = ReturnType<
-  typeof useAdminMessages
+  typeof useOperatorAdminMessages
 >["bookings"]["detail"]["documentsTable"]
 
 export interface BookingDocumentsTableProps {
   bookingId: string
-  /**
-   * API base URL for download redirects. Defaults to relative — the
-   * operator dashboard is typically same-origin with the API.
-   */
-  apiBaseUrl?: string
 }
 
 type TravelerDocPayload = {
@@ -108,9 +107,8 @@ function resolveContractGenerationFailure(contract: LegalContractRecord) {
  */
 export function BookingDocumentsTable({
   bookingId,
-  apiBaseUrl,
 }: BookingDocumentsTableProps): React.ReactElement {
-  const t = useAdminMessages().bookings.detail.documentsTable
+  const t = useOperatorAdminMessages().bookings.detail.documentsTable
   const [uploadOpen, setUploadOpen] = useState(false)
   const [contractDialogOpen, setContractDialogOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<TravelerDocPayload | null>(null)
@@ -174,7 +172,7 @@ export function BookingDocumentsTable({
         header: t.headerDocument,
         cell: ({ row }) =>
           row.original.kind === "contract" ? (
-            <ContractDocumentCell contract={row.original.contract} apiBaseUrl={apiBaseUrl} />
+            <ContractDocumentCell contract={row.original.contract} />
           ) : (
             <TravelerDocumentCell doc={row.original.doc} />
           ),
@@ -218,13 +216,7 @@ export function BookingDocumentsTable({
         header: () => <span className="sr-only">{t.headerCategory}</span>,
         cell: ({ row }) => {
           if (row.original.kind === "contract") {
-            return (
-              <ContractActionsCell
-                contract={row.original.contract}
-                apiBaseUrl={apiBaseUrl}
-                messages={t}
-              />
-            )
+            return <ContractActionsCell contract={row.original.contract} messages={t} />
           }
           const docPayload = row.original.doc
           return (
@@ -237,7 +229,7 @@ export function BookingDocumentsTable({
         },
       },
     ],
-    [t, apiBaseUrl],
+    [t],
   )
 
   const handleDeleteConfirm = async () => {
@@ -322,21 +314,26 @@ export function BookingDocumentsTable({
   )
 }
 
-function ContractDocumentCell({
-  contract,
-  apiBaseUrl,
-}: {
-  contract: LegalContractRecord
-  apiBaseUrl?: string
-}) {
+/**
+ * Admin download URL of a contract attachment, resolved against the
+ * legal provider context so the table works in any host app without an
+ * `apiBaseUrl` prop.
+ */
+function useContractAttachmentDownloadHref(
+  attachment: LegalContractAttachmentRecord | null,
+): string | null {
+  const { baseUrl } = useVoyantLegalContext()
+  if (!attachment) return null
+  return `${baseUrl}/v1/admin/legal/contracts/attachments/${attachment.id}/download`
+}
+
+function ContractDocumentCell({ contract }: { contract: LegalContractRecord }) {
   const attachmentsQuery = useLegalContractAttachments({ contractId: contract.id })
   const attachments = (attachmentsQuery.data ?? []).filter(
     (a: LegalContractAttachmentRecord) => a.kind === "document",
   )
   const latest = attachments[0] ?? null
-  const downloadHref = latest
-    ? `${apiBaseUrl ?? "/api"}/v1/admin/legal/contracts/attachments/${latest.id}/download`
-    : null
+  const downloadHref = useContractAttachmentDownloadHref(latest)
   const titleText = latest?.name ?? contract.contractNumber ?? `Contract ${contract.id.slice(-8)}`
 
   return downloadHref ? (
@@ -467,42 +464,22 @@ function TravelerDateCell({
 
 function ContractActionsCell({
   contract,
-  apiBaseUrl,
   messages,
 }: {
   contract: LegalContractRecord
-  apiBaseUrl?: string
   messages: DocumentsTableMessages
 }) {
   const queryClient = useQueryClient()
-  const navigate = useNavigate()
+  const navigateTo = useAdminNavigate()
   const attachmentsQuery = useLegalContractAttachments({ contractId: contract.id })
   const attachments = (attachmentsQuery.data ?? []).filter(
     (a: LegalContractAttachmentRecord) => a.kind === "document",
   )
   const latest = attachments[0] ?? null
   const hasDocument = latest !== null
-  const downloadHref = latest
-    ? `${apiBaseUrl ?? "/api"}/v1/admin/legal/contracts/attachments/${latest.id}/download`
-    : null
+  const downloadHref = useContractAttachmentDownloadHref(latest)
 
-  const generate = useMutation({
-    mutationFn: async ({ bookingId, force }: { bookingId: string; force: boolean }) => {
-      const response = await fetch(`/api/v1/admin/bookings/${bookingId}/generate-contract`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ force }),
-      })
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({ error: response.statusText }))
-        throw new Error((body as { error?: string }).error ?? `HTTP ${response.status}`)
-      }
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["legal", "contracts"] })
-    },
-  })
+  const { generate } = useBookingContractGenerationMutation(contract.bookingId ?? "")
 
   return (
     <div className="flex items-center justify-end gap-1">
@@ -511,7 +488,7 @@ function ContractActionsCell({
         icon={<ArrowUpRight className="h-3.5 w-3.5" />}
         onClick={(e) => {
           e.stopPropagation()
-          void navigate({ to: "/legal/contracts/$id", params: { id: contract.id } })
+          navigateTo("contract.detail", { contractId: contract.id })
         }}
       />
       {downloadHref ? (
@@ -537,7 +514,14 @@ function ContractActionsCell({
         onClick={(e) => {
           e.stopPropagation()
           if (!contract.bookingId) return
-          generate.mutate({ bookingId: contract.bookingId, force: hasDocument })
+          generate.mutate(
+            { force: hasDocument },
+            {
+              onSuccess: () => {
+                void queryClient.invalidateQueries({ queryKey: legalQueryKeys.contracts() })
+              },
+            },
+          )
         }}
       />
     </div>

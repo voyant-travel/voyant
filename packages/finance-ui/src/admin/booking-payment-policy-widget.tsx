@@ -1,19 +1,21 @@
 "use client"
 
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import {
-  type BookingPaymentPolicy,
-  type BookingRecord,
-  bookingsQueryKeys,
-  useBookingActivity,
-} from "@voyantjs/bookings-react"
+import { useQueryClient } from "@tanstack/react-query"
+import { useOperatorAdminMessages } from "@voyantjs/admin"
+import { bookingsQueryKeys, useBookingActivity } from "@voyantjs/bookings-react"
+import type { BookingDetailHostSlotContext } from "@voyantjs/bookings-ui/admin"
 import type { PaymentPolicy, PaymentPolicySource } from "@voyantjs/finance"
-import { financeQueryKeys } from "@voyantjs/finance-react"
-import { PaymentPolicyForm, PaymentPolicyPreview } from "@voyantjs/finance-ui"
+import {
+  type FinancePaymentPolicy,
+  useBookingPaymentScheduleRegenerateMutation,
+} from "@voyantjs/finance-react"
 import { formatMessage } from "@voyantjs/i18n"
 import {
   Badge,
   Button,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
   Dialog,
   DialogBody,
   DialogContent,
@@ -21,28 +23,59 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@voyantjs/ui/components"
-import { History, Loader2 } from "lucide-react"
+import { ChevronDown, History, Loader2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
-import { useAdminMessages } from "@/lib/admin-i18n"
-import { getApiUrl } from "@/lib/env"
+import { PaymentPolicyForm, PaymentPolicyPreview } from "../components/payment-policy-form.js"
 
 type PaymentPolicyCardMessages = ReturnType<
-  typeof useAdminMessages
+  typeof useOperatorAdminMessages
 >["bookings"]["detail"]["paymentPolicyCard"]
 
 /**
- * Booking detail → Finance tab → Payment-policy card.
+ * Props of the payment-policy widget: exactly the slot context the
+ * bookings detail host hands to `booking.details.finance-end` widget
+ * contributions (see `bookingDetailFinanceEndSlot` in
+ * `@voyantjs/bookings-ui/admin`).
+ */
+export type BookingPaymentPolicyWidgetProps = BookingDetailHostSlotContext
+
+/**
+ * Booking detail → Finance tab → Payment-policy card, delivered as a
+ * widget contribution on `booking.details.finance-end` (packaged-admin RFC
+ * §4.7 cycle resolution: this package depends on `@voyantjs/bookings-ui`,
+ * so the bookings host cannot import the card — finance contributes it).
  *
  * Surfaces the cascade trace (which layer's policy applied to this
- * booking's schedule) and lets ops override the policy + regenerate
- * the schedule. Mounted above the schedule list so the operator
- * sees both the rule and the generated installments together.
+ * booking's schedule) and lets ops override the policy + regenerate the
+ * schedule. Mounted below the schedule list, collapsed by default, so the
+ * operator sees both the rule and the generated installments together.
  */
-export function BookingPaymentPolicyCard({ booking }: { booking: BookingRecord }) {
+export function BookingPaymentPolicyWidget({ booking }: BookingPaymentPolicyWidgetProps) {
+  const t = useOperatorAdminMessages().bookings.detail.paymentPolicyCard
+
+  return (
+    <Collapsible>
+      <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-md border bg-background px-4 py-3 text-sm font-semibold hover:bg-muted/30">
+        {t.title}
+        <ChevronDown className="h-4 w-4 transition-transform group-data-panel-open:rotate-180" />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="mt-3">
+        <BookingPaymentPolicyCard booking={booking} messages={t} />
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
+
+function BookingPaymentPolicyCard({
+  booking,
+  messages: t,
+}: {
+  booking: BookingDetailHostSlotContext["booking"]
+  messages: PaymentPolicyCardMessages
+}) {
   const queryClient = useQueryClient()
-  const t = useAdminMessages().bookings.detail.paymentPolicyCard
   const persisted = (booking.customerPaymentPolicy as PaymentPolicy | null | undefined) ?? null
   const [draft, setDraft] = useState<PaymentPolicy | null>(persisted)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -64,46 +97,28 @@ export function BookingPaymentPolicyCard({ booking }: { booking: BookingRecord }
     setDraft(persisted)
   }, [persisted])
 
-  const regenerate = useMutation({
-    mutationFn: async (policy: PaymentPolicy | null) => {
-      const res = await fetch(
-        `${getApiUrl()}/v1/admin/bookings/${booking.id}/payment-schedule/regenerate`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            customerPaymentPolicy: (policy as BookingPaymentPolicy | null) ?? null,
-          }),
+  const regenerate = useBookingPaymentScheduleRegenerateMutation(booking.id)
+
+  const submitPolicy = (policy: PaymentPolicy | null) => {
+    regenerate.mutate(
+      { customerPaymentPolicy: (policy as FinancePaymentPolicy | null) ?? null },
+      {
+        onSuccess: ({ cascadeSource }) => {
+          setResolvedSource(cascadeSource)
+          toast.success(t.regenerateSucceeded)
+          // The hook already refreshes the schedule list; the booking
+          // record carries the persisted override, so refresh it too.
+          void queryClient.invalidateQueries({
+            queryKey: bookingsQueryKeys.booking(booking.id),
+          })
+          setDialogOpen(false)
         },
-      )
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string }
-        throw new Error(body.error ?? `Regenerate failed (${res.status})`)
-      }
-      return (await res.json()) as {
-        data: {
-          schedule: Array<{ scheduleType: string; amountCents: number; dueDate: string }>
-          bookingPolicy: BookingPaymentPolicy | null
-          cascadeSource: PaymentPolicySource
-        }
-      }
-    },
-    onSuccess: ({ data }) => {
-      setResolvedSource(data.cascadeSource)
-      toast.success(t.regenerateSucceeded)
-      void queryClient.invalidateQueries({
-        queryKey: bookingsQueryKeys.booking(booking.id),
-      })
-      void queryClient.invalidateQueries({
-        queryKey: financeQueryKeys.bookingPaymentSchedules(booking.id),
-      })
-      setDialogOpen(false)
-    },
-    onError: (err) => {
-      toast.error(err instanceof Error ? err.message : t.regenerateFailed)
-    },
-  })
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : t.regenerateFailed)
+        },
+      },
+    )
+  }
 
   const policySourceLabel = (source: PaymentPolicySource | null): string => {
     if (!source) return t.sourceLabels.unknown
@@ -145,7 +160,7 @@ export function BookingPaymentPolicyCard({ booking }: { booking: BookingRecord }
             variant="outline"
             size="sm"
             disabled={regenerate.isPending}
-            onClick={() => regenerate.mutate(null)}
+            onClick={() => submitPolicy(null)}
           >
             {regenerate.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {t.clearOverride}
@@ -191,7 +206,7 @@ export function BookingPaymentPolicyCard({ booking }: { booking: BookingRecord }
               type="button"
               size="sm"
               disabled={regenerate.isPending || draft === null}
-              onClick={() => regenerate.mutate(draft)}
+              onClick={() => submitPolicy(draft)}
             >
               {regenerate.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {t.saveAndRegenerate}
