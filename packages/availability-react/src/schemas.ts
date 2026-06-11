@@ -1,9 +1,13 @@
 import {
   insertAllocationResourceSchema,
+  insertAvailabilityCloseoutSchema,
+  insertAvailabilityPickupPointSchema,
   insertAvailabilityRuleSchema,
   insertAvailabilitySlotSchema,
   insertAvailabilityStartTimeSchema,
   updateAllocationResourceSchema,
+  updateAvailabilityCloseoutSchema,
+  updateAvailabilityPickupPointSchema,
   updateAvailabilityRuleSchema,
   updateAvailabilitySlotSchema,
   updateAvailabilityStartTimeSchema,
@@ -21,6 +25,37 @@ export const paginatedEnvelope = <T extends z.ZodTypeAny>(item: T) =>
 
 export const singleEnvelope = <T extends z.ZodTypeAny>(item: T) => z.object({ data: item })
 export const successEnvelope = z.object({ success: z.boolean() })
+
+export const batchFailureSchema = z.object({ id: z.string(), error: z.string() })
+export type BatchFailure = z.infer<typeof batchFailureSchema>
+
+/**
+ * Envelope of the availability `POST <entity>/batch-update` endpoints
+ * (success/partial-failure: `failed` lists the ids that were not found).
+ */
+export const batchUpdateEnvelope = <T extends z.ZodTypeAny>(item: T) =>
+  z.object({
+    data: z.array(item),
+    total: z.number().int(),
+    succeeded: z.number().int(),
+    failed: z.array(batchFailureSchema),
+  })
+
+/** Envelope of the availability `POST <entity>/batch-delete` endpoints. */
+export const batchDeleteEnvelope = z.object({
+  deletedIds: z.array(z.string()),
+  total: z.number().int(),
+  succeeded: z.number().int(),
+  failed: z.array(batchFailureSchema),
+})
+
+export type BatchUpdateResponse<TRecord> = {
+  data: TRecord[]
+  total: number
+  succeeded: number
+  failed: BatchFailure[]
+}
+export type BatchDeleteResponse = z.infer<typeof batchDeleteEnvelope>
 
 export const productOptionSchema = z.object({
   id: z.string(),
@@ -199,7 +234,11 @@ export const availabilityOverviewResponse = singleEnvelope(
 )
 export type AvailabilityOverviewData = z.infer<typeof availabilityOverviewResponse>["data"]
 export const availabilityCloseoutListResponse = paginatedEnvelope(availabilityCloseoutRecordSchema)
+export const availabilityCloseoutSingleResponse = singleEnvelope(availabilityCloseoutRecordSchema)
 export const availabilityPickupPointListResponse = paginatedEnvelope(
+  availabilityPickupPointRecordSchema,
+)
+export const availabilityPickupPointSingleResponse = singleEnvelope(
   availabilityPickupPointRecordSchema,
 )
 export const availabilitySlotPickupListResponse = paginatedEnvelope(
@@ -410,10 +449,14 @@ export const slotUnitAvailabilityListResponse = z.object({
 
 export {
   insertAllocationResourceSchema,
+  insertAvailabilityCloseoutSchema,
+  insertAvailabilityPickupPointSchema,
   insertAvailabilityRuleSchema,
   insertAvailabilitySlotSchema,
   insertAvailabilityStartTimeSchema,
   updateAllocationResourceSchema,
+  updateAvailabilityCloseoutSchema,
+  updateAvailabilityPickupPointSchema,
   updateAvailabilityRuleSchema,
   updateAvailabilitySlotSchema,
   updateAvailabilityStartTimeSchema,
@@ -429,3 +472,7 @@ export type CreateAvailabilityStartTimeInput = z.input<typeof insertAvailability
 export type UpdateAvailabilityStartTimeInput = z.input<typeof updateAvailabilityStartTimeSchema>
 export type CreateAvailabilitySlotInput = z.input<typeof insertAvailabilitySlotSchema>
 export type UpdateAvailabilitySlotInput = z.input<typeof updateAvailabilitySlotSchema>
+export type CreateAvailabilityCloseoutInput = z.input<typeof insertAvailabilityCloseoutSchema>
+export type UpdateAvailabilityCloseoutInput = z.input<typeof updateAvailabilityCloseoutSchema>
+export type CreateAvailabilityPickupPointInput = z.input<typeof insertAvailabilityPickupPointSchema>
+export type UpdateAvailabilityPickupPointInput = z.input<typeof updateAvailabilityPickupPointSchema>

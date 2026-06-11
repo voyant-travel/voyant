@@ -29,6 +29,8 @@ declare module "@voyantjs/admin" {
 // Packaged admin hosts (packaged-admin RFC Phase 3): the operator-grade
 // availability pages bound to their data wiring + semantic-destination
 // navigation. Host route files only bind route params onto these.
+export { AvailabilityIndexHost } from "./availability-index-host.js"
+export { ensureAvailabilityPageData } from "./availability-page-data.js"
 export {
   OptionResourceTemplatesPanel,
   type OptionResourceTemplatesPanelProps,
@@ -65,21 +67,22 @@ export interface CreateAvailabilityAdminExtensionOptions {
  *
  * ROUTES: contributions are metadata only — the availability pages keep
  * their filter state component-local, so there are no URL search contracts.
- * The detail PAGES are package-owned: {@link AvailabilitySlotDetailHost},
+ * The PAGES are package-owned: {@link AvailabilityIndexHost} (the slots
+ * list + calendar landing page, with bulk update/delete running through
+ * the typed batch mutation hooks in `@voyantjs/availability-react`) plus
+ * the detail hosts {@link AvailabilitySlotDetailHost},
  * {@link AvailabilityRuleDetailHost} and
- * {@link AvailabilityStartTimeDetailHost} bind the operator-grade detail
- * pages to their data wiring (the shared availability provider context) and
- * resolve every cross-route link through the semantic destinations declared
- * above. `component:` is intentionally NOT attached to these contributions:
- * the contribution contract renders zero-prop pages (route components read
+ * {@link AvailabilityStartTimeDetailHost} bind the operator-grade pages to
+ * their data wiring (the shared availability provider context) and resolve
+ * every cross-route link through the semantic destinations declared above.
+ * `component:` is intentionally NOT attached to these contributions: the
+ * contribution contract renders zero-prop pages (route components read
  * params via the router, per RFC §4.2), while the detail hosts take the
  * record id as a prop — host route files stay the thin binding layer
  * (`Route.useParams()` → host props) until the §4.2 code-based route
- * assembly lands. The availability INDEX page intentionally stays an
- * app-side wrapper around this package's `AvailabilityPage`: its bulk
- * update/delete handlers call the slots `batch-update` / `batch-delete`
- * endpoints, which have no client functions or hooks in
- * `@voyantjs/availability-react` yet.
+ * assembly lands. The index host's SSR loader binding stays app-side
+ * ({@link ensureAvailabilityPageData} takes the app's cookie-forwarding
+ * client), per the packaged-host recipe.
  *
  * WIDGETS: none. {@link OptionResourceTemplatesPanel} (the per-option
  * resource templates editor the product editor embeds) ships from this
