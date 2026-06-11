@@ -1,5 +1,6 @@
 export type {
   AdminConfig,
+  AdminRoutesConfig,
   ConfigValidationIssue,
   ConfigValidationResult,
   DeploymentTarget,

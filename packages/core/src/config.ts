@@ -38,6 +38,34 @@ export interface ProjectConfig {
 }
 
 /**
+ * Settings for `voyant admin generate --routes` — the generated thin route
+ * files that bind zero-prop extension route contributions into the host's
+ * file-based route tree (packaged-admin RFC §4.2). All fields are optional;
+ * defaults match the operator template's conventions.
+ */
+export interface AdminRoutesConfig {
+  /**
+   * Host route-tree directory generated files land in, relative to the
+   * config file. Default "src/routes/_workspace".
+   */
+  dir?: string
+  /**
+   * Module specifier exporting the API base-URL getter bound into generated
+   * loaders. Default "@/lib/env".
+   */
+  apiUrlModule?: string
+  /** Named export of `apiUrlModule` returning the API base URL. Default "getApiUrl". */
+  apiUrlExport?: string
+  /**
+   * Module specifier exporting the SSR cookie-forwarding fetcher bound into
+   * generated loaders. Default "@/lib/voyant-fetcher".
+   */
+  fetcherModule?: string
+  /** Named export of `fetcherModule`. Default "operatorFetcher". */
+  fetcherExport?: string
+}
+
+/**
  * Admin-dashboard manifest entry. Mirrors Medusa's admin section.
  */
 export interface AdminConfig {
@@ -47,6 +75,8 @@ export interface AdminConfig {
   path?: string
   /** Optional URL the admin dashboard should call back to. */
   backendUrl?: string
+  /** Generated-route-file settings for `voyant admin generate --routes`. */
+  routes?: AdminRoutesConfig
 }
 
 /**
@@ -319,6 +349,28 @@ export function validateVoyantConfig(config: unknown): ConfigValidationResult {
       }
       if (admin.backendUrl !== undefined && typeof admin.backendUrl !== "string") {
         issues.push({ path: "admin.backendUrl", message: "Expected a string." })
+      }
+      if (admin.routes !== undefined) {
+        if (
+          admin.routes === null ||
+          typeof admin.routes !== "object" ||
+          Array.isArray(admin.routes)
+        ) {
+          issues.push({ path: "admin.routes", message: "Expected an object." })
+        } else {
+          const routes = admin.routes as Record<string, unknown>
+          for (const field of [
+            "dir",
+            "apiUrlModule",
+            "apiUrlExport",
+            "fetcherModule",
+            "fetcherExport",
+          ]) {
+            if (routes[field] !== undefined && typeof routes[field] !== "string") {
+              issues.push({ path: `admin.routes.${field}`, message: "Expected a string." })
+            }
+          }
+        }
       }
     }
   }
