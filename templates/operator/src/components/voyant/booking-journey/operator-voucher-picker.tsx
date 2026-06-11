@@ -7,7 +7,7 @@
  * customers. Wired into the journey via `renderVoucherPicker`.
  */
 
-import type { VoucherPickerProps } from "@voyantjs/bookings-ui/journey"
+import type { VoucherPickerProps } from "@voyantjs/bookings-react/journey"
 import { useVouchers, type VoucherRecord } from "@voyantjs/finance-react"
 import {
   Combobox,

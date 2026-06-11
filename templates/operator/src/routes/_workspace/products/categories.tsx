@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { getProductCategoriesQueryOptions } from "@voyantjs/products-react"
-import { ProductCategoriesPage } from "@voyantjs/products-ui"
+import { ProductCategoriesPage } from "@voyantjs/products-react/ui"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"

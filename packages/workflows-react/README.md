@@ -1,5 +1,14 @@
 # @voyantjs/workflows-react
 
+The workflows client tier: headless hooks and API clients plus the styled
+workflow-run admin UI (formerly `@voyantjs/workflows-ui`).
+
+Headless consumers import from the root, `./workflow-runs`,
+`./workflow-runs-client`, or `./workflow-schedules-client` — these pull no
+styling peers. Styled surfaces live under `./ui`, `./components/*`, `./client`,
+`./i18n`, and `./styles.css`, whose heavier peers (`@voyantjs/ui`,
+`lucide-react`) are optional and only needed when you import those subpaths.
+
 React hooks for triggering Voyant Workflows and subscribing to runs in
 real time. The package also includes admin workflow-run observability hooks for
 the `/v1/admin/workflow-runs` routes exposed by `@voyantjs/workflow-runs`.
@@ -62,3 +71,37 @@ export function WorkflowsRoute() {
 `useWorkflowRuns` polls every 5 seconds only while the visible list contains a
 running workflow. `useWorkflowRun` polls every 2 seconds while the selected run
 is running. Both stop polling in background tabs.
+
+## UI components
+
+Importable React UI for the workflow run admin API exposed by
+`@voyantjs/workflow-runs`.
+
+```tsx
+import "@voyantjs/workflows-react/styles.css"
+
+import { createWorkflowRunsApiClient, WorkflowRunsPage } from "@voyantjs/workflows-react/ui"
+
+const workflowsApi = createWorkflowRunsApiClient({
+  apiBase: "/api",
+})
+
+export function WorkflowsRoute() {
+  return <WorkflowRunsPage api={workflowsApi} />
+}
+```
+
+The `./ui` subpath exports `WorkflowRunsPage` and `WorkflowRunDetailPage`.
+Route-owning apps can wire deep links by controlling the selected run id:
+
+```tsx
+<WorkflowRunsPage
+  api={workflowsApi}
+  selectedRunId={params.id}
+  onOpenRun={(id) => navigate({ to: "/workflows/$id", params: { id } })}
+/>
+```
+
+`@voyantjs/workflows-react/ui` is the public workflows-facing import path for
+these surfaces. Older `@voyantjs/workflows-react/ui` and `@voyantjs/workflow-runs-ui`
+imports should migrate here.

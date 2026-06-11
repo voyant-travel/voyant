@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { getSupplierInvoicesQueryOptions } from "@voyantjs/finance-react"
-import { SupplierInvoicesPage } from "@voyantjs/finance-ui"
+import { SupplierInvoicesPage } from "@voyantjs/finance-react/ui"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"

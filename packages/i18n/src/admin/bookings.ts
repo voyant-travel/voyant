@@ -3,7 +3,7 @@ import type { LocaleMessageSchema } from "../runtime.js"
 /**
  * Page-level booking strings owned by the admin shell — list page, detail
  * page chrome (tabs, summary, actions). Component-level strings (item list,
- * dialogs, traveler list, etc.) live in `@voyantjs/bookings-ui`'s own i18n
+ * dialogs, traveler list, etc.) live in `@voyantjs/bookings-react/ui`'s own i18n
  * bundle and are wired via `<BookingsUiMessagesProvider>` in each template's
  * workspace layout.
  */

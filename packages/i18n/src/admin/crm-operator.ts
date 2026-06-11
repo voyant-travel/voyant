@@ -12,7 +12,7 @@ export const operatorAdminCrmMessages = {
         description: "Manage your clients, partners, and suppliers.",
       },
       // organizationList, personList, organizationDialog, organizationForm,
-      // personDialog, personForm: removed — owned by `@voyantjs/crm-ui`'s i18n
+      // personDialog, personForm: removed — owned by `@voyantjs/crm-react/ui`'s i18n
       // bundle (mounted via <CrmUiMessagesProvider> in the workspace layout).
       shared: {
         failedToSave: "Failed to save",

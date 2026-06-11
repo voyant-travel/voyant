@@ -40,10 +40,10 @@ const settings = useAdminStorefrontSettings()
 const mutation = useAdminStorefrontSettingsMutation()
 ```
 
-Use `@voyantjs/storefront-ui` for the operator-facing settings page:
+Use `@voyantjs/storefront-react/ui` for the operator-facing settings page:
 
 ```tsx
-import { StorefrontSettingsPage } from "@voyantjs/storefront-ui"
+import { StorefrontSettingsPage } from "@voyantjs/storefront-react/ui"
 
 export function SettingsRoute() {
   return <StorefrontSettingsPage />

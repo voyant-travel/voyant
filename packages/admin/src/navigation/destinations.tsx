@@ -12,7 +12,7 @@ import * as React from "react"
  * TanStack Router uses):
  *
  * ```ts
- * // inside @voyantjs/catalog-ui
+ * // inside @voyantjs/catalog-react
  * declare module "@voyantjs/admin" {
  *   interface AdminDestinations {
  *     "supplier.detail": { supplierId: string }

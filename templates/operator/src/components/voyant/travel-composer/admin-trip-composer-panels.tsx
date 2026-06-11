@@ -1,21 +1,26 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
+import { emptyPaymentScheduleValue } from "@voyantjs/bookings-react/components/payment-schedule-section"
+import { deriveTravelerRoleFromDob } from "@voyantjs/bookings-react/components/travelers-section"
+import {
+  type Draft,
+  emptyDraft,
+  setAccommodation,
+  setAddons,
+} from "@voyantjs/bookings-react/journey"
 import {
   PaymentScheduleSection,
   type PaymentScheduleValue,
   type PersonPickerValue,
   VoucherPickerSection,
   type VoucherPickerValue,
-} from "@voyantjs/bookings-ui"
-import { emptyPaymentScheduleValue } from "@voyantjs/bookings-ui/components/payment-schedule-section"
-import { deriveTravelerRoleFromDob } from "@voyantjs/bookings-ui/components/travelers-section"
-import { type Draft, emptyDraft, setAccommodation, setAddons } from "@voyantjs/bookings-ui/journey"
+} from "@voyantjs/bookings-react/ui"
 import type { BookingDraftShape } from "@voyantjs/catalog/booking-engine"
 import { type CatalogSearchHit, useCatalogSearch } from "@voyantjs/catalog-react"
 import { useBookingQuote } from "@voyantjs/catalog-react/booking-engine"
 import { useOrganization, usePerson, usePersonRelationships } from "@voyantjs/crm-react"
-import { PersonCombobox, PersonForm } from "@voyantjs/crm-ui"
+import { PersonCombobox, PersonForm } from "@voyantjs/crm-react/ui"
 import type {
   AncillaryCatalog,
   AncillarySelection,
@@ -31,7 +36,7 @@ import {
   FlightFareUpsellStep,
   FlightOfferRow,
   FlightServicesStep,
-} from "@voyantjs/flights-ui"
+} from "@voyantjs/flights-react/ui"
 import { formatMessage } from "@voyantjs/i18n"
 import type { Trip, TripComponent } from "@voyantjs/travel-composer"
 import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTitle } from "@voyantjs/ui/components"

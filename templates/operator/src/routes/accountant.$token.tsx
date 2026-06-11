@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { AccountantPortal } from "@voyantjs/finance-ui"
+import { AccountantPortal } from "@voyantjs/finance-react/ui"
 
 import { getApiUrl } from "@/lib/env"
 

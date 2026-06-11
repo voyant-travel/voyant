@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { ChannelSyncPage } from "@voyantjs/distribution-ui"
+import { ChannelSyncPage } from "@voyantjs/distribution-react/ui"
 
 import { getApiUrl } from "@/lib/env"
 

@@ -120,27 +120,27 @@ const FILE_CHECKS = [
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/catalog-ui/src/components/catalog-page.tsx",
+    file: "packages/catalog-react/src/components/catalog-page.tsx",
     patterns: [/\bhospitality\b/i, /\bmakeHospitality/],
   },
   {
-    file: "packages/catalog-ui/src/components/catalog-search-page.tsx",
+    file: "packages/catalog-react/src/components/catalog-search-page.tsx",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/catalog-ui/src/i18n/messages.ts",
+    file: "packages/catalog-react/src/i18n/messages.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/catalog-ui/src/i18n/en.ts",
+    file: "packages/catalog-react/src/i18n/en.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/catalog-ui/src/i18n/ro.ts",
+    file: "packages/catalog-react/src/i18n/ro.ts",
     patterns: [/\bhospitality\b/i],
   },
   {
-    file: "packages/bookings-ui/src/journey/types.ts",
+    file: "packages/bookings-react/src/journey/types.ts",
     patterns: [/\bhospitality\b/i],
   },
   {

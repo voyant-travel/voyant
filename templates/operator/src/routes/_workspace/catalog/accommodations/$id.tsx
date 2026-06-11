@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { VerticalDetailHost } from "@voyantjs/catalog-ui/admin"
+import { VerticalDetailHost } from "@voyantjs/catalog-react/admin"
 
 // Thin host for the package-delivered vertical detail page (packaged-admin
 // RFC Phase 2). This file only binds the route param + surface.

@@ -1,5 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query"
-import type { AsyncComboboxOption } from "@voyantjs/finance-ui"
+import type { AsyncComboboxOption } from "@voyantjs/finance-react/ui"
 import { getSuppliersQueryOptions, suppliersQueryKeys } from "@voyantjs/suppliers-react"
 
 import { getApiUrl } from "@/lib/env"

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useAdminBreadcrumbs, useLocale } from "@voyantjs/admin"
-import { OptionResourceTemplatesPanel } from "@voyantjs/availability-ui/admin"
+import { OptionResourceTemplatesPanel } from "@voyantjs/availability-react/admin"
 import { getProductQueryOptions } from "@voyantjs/products-react"
 import {
   getChannelsQueryOptions,
@@ -15,7 +15,7 @@ import {
   type ProductDetailHostValue,
   ProductDetailPage,
   ProductDetailSkeleton,
-} from "@voyantjs/products-ui/components/product-detail"
+} from "@voyantjs/products-react/components/product-detail"
 import { useMemo, useState } from "react"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { api } from "@/lib/api-client"

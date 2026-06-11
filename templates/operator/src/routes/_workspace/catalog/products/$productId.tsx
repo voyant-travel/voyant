@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { ProductDetailHost, productDetailSearchSchema } from "@voyantjs/catalog-ui/admin"
+import { ProductDetailHost, productDetailSearchSchema } from "@voyantjs/catalog-react/admin"
 
 // Thin host for the package-delivered product detail page (packaged-admin
 // RFC Phase 2). Page, search contract, and booking-journey navigation

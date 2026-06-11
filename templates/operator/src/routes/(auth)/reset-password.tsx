@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
-import { ResetPasswordPage, type ResetPasswordPageMessages } from "@voyantjs/auth-ui"
+import { ResetPasswordPage, type ResetPasswordPageMessages } from "@voyantjs/auth-react/ui"
 import { z } from "zod"
 import { useAdminMessages } from "@/lib/admin-i18n"
 import { cloudAuthStartHref, getBootstrapStatus, getCurrentUser } from "@/lib/current-user"

@@ -5,7 +5,7 @@ import {
   getLegalPolicyQueryOptions,
   getLegalPolicyVersionsQueryOptions,
 } from "@voyantjs/legal-react"
-import { PolicyDetailHost } from "@voyantjs/legal-ui/admin"
+import { PolicyDetailHost } from "@voyantjs/legal-react/admin"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"

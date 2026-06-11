@@ -1,12 +1,12 @@
 "use client"
 
+import type { JourneyOptionSelection, UnitsPickerProps } from "@voyantjs/bookings-react/journey"
 import {
   emptyOptionUnitsStepperValue,
   OptionUnitsStepperSection,
   type OptionUnitsStepperUnit,
   type OptionUnitsStepperValue,
-} from "@voyantjs/bookings-ui"
-import type { JourneyOptionSelection, UnitsPickerProps } from "@voyantjs/bookings-ui/journey"
+} from "@voyantjs/bookings-react/ui"
 import { useRef, useState } from "react"
 
 /**

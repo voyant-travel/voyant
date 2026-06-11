@@ -1,1 +1,1 @@
-export { PriceCatalogsPage } from "@voyantjs/pricing-ui"
+export { PriceCatalogsPage } from "@voyantjs/pricing-react/ui"

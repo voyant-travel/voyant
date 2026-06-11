@@ -3,7 +3,7 @@ import {
   type CatalogSearchParams,
   CatalogVerticalHost,
   catalogSearchSchema,
-} from "@voyantjs/catalog-ui/admin"
+} from "@voyantjs/catalog-react/admin"
 
 import { openCatalogDetail } from "@/components/voyant/catalog/catalog-route-state"
 import { useAdminMessages } from "@/lib/admin-i18n"

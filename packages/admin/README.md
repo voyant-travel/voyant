@@ -114,7 +114,7 @@ import {
   type AdminDomainMessagesProvider,
   OperatorAdminShellProvider,
 } from "@voyantjs/admin"
-import { BookingsUiMessagesProvider } from "@voyantjs/bookings-ui/i18n"
+import { BookingsUiMessagesProvider } from "@voyantjs/bookings-react/i18n"
 
 const domainMessageProviders = [
   BookingsUiMessagesProvider,

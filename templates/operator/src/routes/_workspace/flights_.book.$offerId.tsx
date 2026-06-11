@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useFlightBook } from "@voyantjs/flights-react"
-import type { PaymentStepCapabilities } from "@voyantjs/flights-ui/components/flight-payment-step"
+import type { PaymentStepCapabilities } from "@voyantjs/flights-react/components/flight-payment-step"
 import { lazy, Suspense } from "react"
 import { z } from "zod"
 
 const FlightBookingPage = lazy(() =>
-  import("@voyantjs/flights-ui/components/flight-booking-page").then((module) => ({
+  import("@voyantjs/flights-react/components/flight-booking-page").then((module) => ({
     default: module.FlightBookingPage,
   })),
 )

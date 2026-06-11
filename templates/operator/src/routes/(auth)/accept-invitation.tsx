@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
-import { AcceptInvitationPage } from "@voyantjs/auth-ui"
+import { AcceptInvitationPage } from "@voyantjs/auth-react/ui"
 import { z } from "zod"
 import { cloudAuthStartHref, getBootstrapStatus, getCurrentUser } from "@/lib/current-user"
 

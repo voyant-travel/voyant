@@ -1,1 +1,1 @@
-export { ChannelSyncPage, type ChannelSyncPageProps } from "@voyantjs/distribution-ui"
+export { ChannelSyncPage, type ChannelSyncPageProps } from "@voyantjs/distribution-react/ui"

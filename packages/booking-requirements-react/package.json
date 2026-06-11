@@ -14,11 +14,17 @@
     "./provider": "./src/provider.tsx",
     "./hooks": "./src/hooks/index.ts",
     "./client": "./src/client.ts",
-    "./query-keys": "./src/query-keys.ts"
+    "./query-keys": "./src/query-keys.ts",
+    "./ui": "./src/ui.ts",
+    "./styles.css": "./src/styles.css",
+    "./i18n": "./src/i18n/index.ts",
+    "./i18n/en": "./src/i18n/en.ts",
+    "./i18n/ro": "./src/i18n/ro.ts",
+    "./components/*": "./src/components/*.tsx"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo",
     "prepack": "pnpm run build",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src/",
@@ -27,28 +33,39 @@
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@voyantjs/booking-requirements": "workspace:^",
+    "@voyantjs/ui": "workspace:^",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@voyantjs/ui": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@voyantjs/i18n": "workspace:^",
+    "@voyantjs/react": "workspace:^"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.100.11",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@voyantjs/booking-requirements": "workspace:^",
+    "@voyantjs/i18n": "workspace:^",
     "@voyantjs/react": "workspace:^",
+    "@voyantjs/ui": "workspace:^",
     "@voyantjs/voyant-typescript-config": "workspace:^",
+    "lucide-react": "^0.475.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2",
     "zod": "^4.3.6"
   },
-  "dependencies": {
-    "@voyantjs/react": "workspace:^"
-  },
   "files": [
-    "dist"
+    "dist",
+    "src/styles.css"
   ],
   "publishConfig": {
     "access": "public",
@@ -77,6 +94,34 @@
         "types": "./dist/query-keys.d.ts",
         "import": "./dist/query-keys.js",
         "default": "./dist/query-keys.js"
+      },
+      "./ui": {
+        "types": "./dist/ui.d.ts",
+        "import": "./dist/ui.js",
+        "default": "./dist/ui.js"
+      },
+      "./styles.css": {
+        "default": "./src/styles.css"
+      },
+      "./i18n": {
+        "types": "./dist/i18n/index.d.ts",
+        "import": "./dist/i18n/index.js",
+        "default": "./dist/i18n/index.js"
+      },
+      "./i18n/en": {
+        "types": "./dist/i18n/en.d.ts",
+        "import": "./dist/i18n/en.js",
+        "default": "./dist/i18n/en.js"
+      },
+      "./i18n/ro": {
+        "types": "./dist/i18n/ro.d.ts",
+        "import": "./dist/i18n/ro.js",
+        "default": "./dist/i18n/ro.js"
+      },
+      "./components/*": {
+        "types": "./dist/components/*.d.ts",
+        "import": "./dist/components/*.js",
+        "default": "./dist/components/*.js"
       }
     },
     "main": "./dist/index.js",

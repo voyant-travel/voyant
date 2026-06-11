@@ -5,7 +5,7 @@ import {
   getSupplierServiceRatesQueryOptions,
   getSupplierServicesQueryOptions,
 } from "@voyantjs/suppliers-react"
-import { SupplierDetailHost, SupplierDetailSkeleton } from "@voyantjs/suppliers-ui/admin"
+import { SupplierDetailHost, SupplierDetailSkeleton } from "@voyantjs/suppliers-react/admin"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"

@@ -209,7 +209,7 @@ export const admin = createAdminApp({
 ```
 
 The factory owns: the route tree, the auth flows (sign-in/up, reset, invites,
-onboarding — today ~8 copied route files backed by `@voyantjs/auth-ui`), the
+onboarding — today ~8 copied route files backed by `@voyantjs/auth-react/ui`), the
 provider stack, the nav shell, error/loading boundaries, and the dashboard.
 All of it versioned, none of it copied.
 
@@ -244,7 +244,7 @@ contract has to carry everything a route file can express today, or Phase 2
 stalls on the first non-trivial page:
 
 ```ts
-// inside @voyantjs/bookings-ui — illustrative shape, not final API
+// inside @voyantjs/bookings-react — illustrative shape, not final API
 export const bookingsAdmin = defineAdminExtension({
   id: "bookings",
   navigation: [{ to: "/bookings", label: "Bookings", icon: CalendarCheck, order: 20 }],
@@ -456,7 +456,7 @@ hard gate, the doctor catches the inverse direction and hosts whose
 typecheck doesn't cover the resolver file.
 
 **Pilot.** The operator's promotions index route is generated output now —
-byte-for-byte reproducible from `@voyantjs/promotions-ui/admin` plus the
+byte-for-byte reproducible from `@voyantjs/promotions-react/admin` plus the
 runtime defaults. On the full operator scan: 1 zero-prop route generated,
 24 param routes and 26 metadata-only contributions left to hand-written
 hosts, destination parity clean (36 declared keys ↔ 36 resolvers).
@@ -593,7 +593,7 @@ Open:
 2. **Typed links across packages:** how much route-path type safety do we
    accept losing in Phase 2 before the generated tree lands?
 3. **Auth route ownership:** the auth flows are framework-owned in §4.1 —
-   confirm `@voyantjs/auth-ui` covers all current operator auth routes
+   confirm `@voyantjs/auth-react/ui` covers all current operator auth routes
    (incl. accept-invite/onboarding) or extend it first.
 4. **Storefront routes:** `templates/operator` also hosts `(storefront)/*`
    pages. Same model eventually (a `createStorefrontApp`), but explicitly out

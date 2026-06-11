@@ -10,7 +10,7 @@ const OperatorBookingJourney = lazy(() =>
 
 /**
  * Unified booking journey route. The shareable wizard from
- * `@voyantjs/bookings-ui/journey`, wrapped with operator slots
+ * `@voyantjs/bookings-react/journey`, wrapped with operator slots
  * (CRM picker, B2B default, post-commit nav to /orders/catalog).
  *
  * Per booking-journey-architecture §10 Phase B.

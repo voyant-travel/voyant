@@ -3,7 +3,7 @@ import type { AdminDestinationResolvers } from "@voyantjs/admin"
 // bookings + catalog + crm + finance + legal + suppliers destination keys)
 // into this program without pulling the admin bundles into the
 // workspace-chrome chunk.
-import type {} from "@voyantjs/availability-ui/admin"
+import type {} from "@voyantjs/availability-react/admin"
 // Type-only: binds the `AdminDestinations` augmentations (the bookings +
 // catalog + crm + finance + legal + resources + suppliers destination keys)
 // into this program without pulling the admin bundles into the
@@ -11,14 +11,14 @@ import type {} from "@voyantjs/availability-ui/admin"
 // catalog + crm + finance + legal + notifications + suppliers destination keys) into this
 // program without
 // pulling the admin bundles into the workspace-chrome chunk.
-import type {} from "@voyantjs/bookings-ui/admin"
-import type {} from "@voyantjs/catalog-ui/admin"
-import type {} from "@voyantjs/crm-ui/admin"
-import type {} from "@voyantjs/finance-ui/admin"
-import type {} from "@voyantjs/legal-ui/admin"
-import type {} from "@voyantjs/notifications-ui/admin"
-import type {} from "@voyantjs/resources-ui/admin"
-import type {} from "@voyantjs/suppliers-ui/admin"
+import type {} from "@voyantjs/bookings-react/admin"
+import type {} from "@voyantjs/catalog-react/admin"
+import type {} from "@voyantjs/crm-react/admin"
+import type {} from "@voyantjs/finance-react/admin"
+import type {} from "@voyantjs/legal-react/admin"
+import type {} from "@voyantjs/notifications-react/admin"
+import type {} from "@voyantjs/resources-react/admin"
+import type {} from "@voyantjs/suppliers-react/admin"
 
 /**
  * Operator resolver map for the semantic-destination contract (packaged-admin

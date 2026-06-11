@@ -36,3 +36,7 @@ export function productNameById(
 export function formatSelectionLabel(count: number, singular: string, plural = `${singular}s`) {
   return `${count} ${count === 1 ? singular : plural}`
 }
+
+export function formatLocalizedSelectionLabel(count: number, singular: string, plural: string) {
+  return `${count} ${count === 1 ? singular : plural}`
+}

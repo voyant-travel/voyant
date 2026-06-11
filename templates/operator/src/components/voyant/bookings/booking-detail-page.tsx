@@ -2,22 +2,22 @@
 
 import { useLocale } from "@voyantjs/admin"
 import { useBooking } from "@voyantjs/bookings-react"
-import { BookingDetailHost } from "@voyantjs/bookings-ui/admin"
-import type { BookingDetailTabValue } from "@voyantjs/bookings-ui/components/booking-detail-page"
-import type { BookingPaymentsSummaryRow } from "@voyantjs/bookings-ui/components/booking-payments-summary"
-import { CollectPaymentDialog } from "@voyantjs/checkout-ui"
-import { RecordBookingPaymentDialog } from "@voyantjs/finance-ui"
+import { BookingDetailHost } from "@voyantjs/bookings-react/admin"
+import type { BookingDetailTabValue } from "@voyantjs/bookings-react/components/booking-detail-page"
+import type { BookingPaymentsSummaryRow } from "@voyantjs/bookings-react/components/booking-payments-summary"
+import { CollectPaymentDialog } from "@voyantjs/checkout-react/ui"
+import { RecordBookingPaymentDialog } from "@voyantjs/finance-react/ui"
 import { useState } from "react"
 
 /**
  * Operator wrapper around the packaged `BookingDetailHost` from
- * `@voyantjs/bookings-ui/admin`. The host owns the canonical page wiring
+ * `@voyantjs/bookings-react/admin`. The host owns the canonical page wiring
  * (breadcrumbs, semantic-destination navigation, paid-amount aggregation,
  * the Documents tab, the action-ledger timeline merge, widget slots,
  * invoice sheet); the finance-tab cards (pending payment links, payment
  * policy) and the Invoices tab arrive as widget contributions from
- * `@voyantjs/finance-ui/admin`. This wrapper only supplies the two payment
- * dialogs — `@voyantjs/finance-ui` / `@voyantjs/checkout-ui` depend on
+ * `@voyantjs/finance-react/admin`. This wrapper only supplies the two payment
+ * dialogs — `@voyantjs/finance-react/ui` / `@voyantjs/checkout-react/ui` depend on
  * `bookings-ui`, so the package host cannot import them without a cycle.
  */
 export function BookingDetailPage({

@@ -1,1 +1,1 @@
-export * from "@voyantjs/workflows-ui/components/workflow-runs-page"
+export * from "@voyantjs/workflows-react/components/workflow-runs-page"

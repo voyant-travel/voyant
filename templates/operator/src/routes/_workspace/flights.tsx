@@ -3,7 +3,7 @@ import { lazy, Suspense } from "react"
 import { z } from "zod"
 
 const FlightsPage = lazy(() =>
-  import("@voyantjs/flights-ui/components/flights-page").then((module) => ({
+  import("@voyantjs/flights-react/components/flights-page").then((module) => ({
     default: module.FlightsPage,
   })),
 )

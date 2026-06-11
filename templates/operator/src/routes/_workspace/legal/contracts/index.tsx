@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { getLegalContractsQueryOptions } from "@voyantjs/legal-react"
-import { ContractsHost } from "@voyantjs/legal-ui/admin"
+import { ContractsHost } from "@voyantjs/legal-react/admin"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"

@@ -4,7 +4,7 @@ import {
   getLegalContractQueryOptions,
   getLegalContractSignaturesQueryOptions,
 } from "@voyantjs/legal-react"
-import { ContractDetailHost } from "@voyantjs/legal-ui/admin"
+import { ContractDetailHost } from "@voyantjs/legal-react/admin"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"

@@ -3,7 +3,7 @@ import {
   getLegalContractTemplateQueryOptions,
   getLegalContractTemplateVersionsQueryOptions,
 } from "@voyantjs/legal-react"
-import { TemplateDetailHost } from "@voyantjs/legal-ui/admin"
+import { TemplateDetailHost } from "@voyantjs/legal-react/admin"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"

@@ -8,7 +8,7 @@ import {
   type SupplierInvoiceAttachmentUpload,
   SupplierInvoiceDetailPage,
   type SupplierInvoiceTargetSearch,
-} from "@voyantjs/finance-ui"
+} from "@voyantjs/finance-react/ui"
 import { getProductsQueryOptions } from "@voyantjs/products-react"
 
 import { getApiUrl } from "@/lib/env"

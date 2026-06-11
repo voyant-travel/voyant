@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { NotificationTemplateDetailHost } from "@voyantjs/notifications-ui/admin"
+import { NotificationTemplateDetailHost } from "@voyantjs/notifications-react/admin"
 
 export const Route = createFileRoute("/_workspace/notifications/templates/$id")({
   component: RouteComponent,

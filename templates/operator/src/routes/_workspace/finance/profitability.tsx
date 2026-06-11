@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useAdminBreadcrumbs } from "@voyantjs/admin"
 import { getDepartureProfitabilityQueryOptions } from "@voyantjs/finance-react"
-import { ProfitabilityPage } from "@voyantjs/finance-ui"
+import { ProfitabilityPage } from "@voyantjs/finance-react/ui"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"

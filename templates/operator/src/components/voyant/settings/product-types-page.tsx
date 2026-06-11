@@ -1,1 +1,1 @@
-export { ProductTypesPage } from "@voyantjs/products-ui"
+export { ProductTypesPage } from "@voyantjs/products-react/ui"

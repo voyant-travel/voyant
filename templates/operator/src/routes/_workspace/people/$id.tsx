@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { getOrganizationQueryOptions, getPersonQueryOptions } from "@voyantjs/crm-react"
-import { PersonDetailHost, PersonDetailSkeleton } from "@voyantjs/crm-ui/admin"
+import { PersonDetailHost, PersonDetailSkeleton } from "@voyantjs/crm-react/admin"
 
 import { getApiUrl } from "@/lib/env"
 import { operatorFetcher } from "@/lib/voyant-fetcher"

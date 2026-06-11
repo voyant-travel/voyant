@@ -1,7 +1,7 @@
 // Catalog surface taxonomy (which surfaces have a dedicated detail page, the
 // content vertical backing each, and the browse-grid vertical ids) lives in
 // catalog-ui; the search-state contract lives in catalog-react. The catalog
-// PAGES are package-delivered too (`@voyantjs/catalog-ui/admin` hosts) —
+// PAGES are package-delivered too (`@voyantjs/catalog-react/admin` hosts) —
 // what's left here is the operator's own route-tree knowledge: detail hrefs
 // for new-tab openers and the journey's return path.
 import {
@@ -10,7 +10,7 @@ import {
   catalogDetailSurfaces,
   catalogSurfaceVertical,
   catalogVerticalPageIds,
-} from "@voyantjs/catalog-ui"
+} from "@voyantjs/catalog-react/ui"
 
 export {
   type CatalogFilterSelections,

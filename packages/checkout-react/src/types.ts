@@ -9,7 +9,7 @@ export type SavedPaymentAccount = PublicBookingPaymentOptions["accounts"][number
 
 /**
  * Universal payment-choice contract used by the `<PaymentStep>` UI in
- * `@voyantjs/checkout-ui` and the `useCollectPayment` hook here.
+ * `@voyantjs/checkout-react/ui` and the `useCollectPayment` hook here.
  *
  * Admin-side choices only — the customer-facing card-vs-bank-transfer
  * decision happens on the public payment-link landing page, not here.

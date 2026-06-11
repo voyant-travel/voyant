@@ -8,7 +8,7 @@ the package names represent one installable module surface.
 - Do not put every publishable package on one global release train.
 - Use Changesets `fixed` cohorts for module runtime surfaces that should move
   together, for example `@voyantjs/bookings`, `@voyantjs/bookings-react`, and
-  `@voyantjs/bookings-ui`.
+  `@voyantjs/bookings-react/ui`.
 - Keep `*-contracts` packages independently versioned. Contract package versions
   describe contract changes, not unrelated runtime or UI churn.
 - Use `workspace:^` for internal `@voyantjs/*` dependencies. Patch releases

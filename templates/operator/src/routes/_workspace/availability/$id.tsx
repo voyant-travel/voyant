@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { AvailabilitySlotDetailHost } from "@voyantjs/availability-react/admin"
 import {
   AvailabilitySlotDetailSkeleton,
   loadAvailabilitySlotDetailPage,
-} from "@voyantjs/availability-ui"
-import { AvailabilitySlotDetailHost } from "@voyantjs/availability-ui/admin"
+} from "@voyantjs/availability-react/ui"
 import { getAvailabilityContextValue } from "@/lib/availability-context"
 
 // Thin host for the package-delivered slot detail page (packaged-admin RFC

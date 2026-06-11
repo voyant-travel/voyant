@@ -22,7 +22,7 @@ import {
   type BookingJourneyCheckoutContext,
   type BookingJourneyProps,
   type ContractAcceptanceEvent,
-} from "@voyantjs/bookings-ui/journey"
+} from "@voyantjs/bookings-react/journey"
 import {
   computePaymentSchedule,
   noDepositPolicy,

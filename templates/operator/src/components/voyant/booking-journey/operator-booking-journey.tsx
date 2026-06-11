@@ -10,13 +10,13 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
-import { PersonPickerSection, type PersonPickerValue } from "@voyantjs/bookings-ui"
 import {
   type BookingEntitySummary,
   BookingJourney,
   type BookingJourneyProps,
   type LeadContactPickerProps,
-} from "@voyantjs/bookings-ui/journey"
+} from "@voyantjs/bookings-react/journey"
+import { PersonPickerSection, type PersonPickerValue } from "@voyantjs/bookings-react/ui"
 import { useOrganization, usePerson } from "@voyantjs/crm-react"
 import { useAddresses } from "@voyantjs/identity-react"
 import { getProductMediaQueryOptions, getProductQueryOptions } from "@voyantjs/products-react"
