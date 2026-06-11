@@ -1,5 +1,8 @@
 import {
   type AdminExtension,
+  type AdminRouteLoaderContext,
+  type AdminRoutePageProps,
+  type AdminRouteRuntime,
   type AdminWidgetContribution,
   defineAdminExtension,
 } from "@voyantjs/admin"
@@ -7,11 +10,23 @@ import {
 // augmentation (`person.list`, `organization.list`, ...) into this program;
 // this package already peer-depends on `@voyantjs/crm-react/ui`.
 import { personDetailBookingsTabSlot } from "@voyantjs/crm-react/admin"
-import type { ComponentType } from "react"
+import type { ComponentType, ReactNode } from "react"
 import { z } from "zod"
 import type { BookingDetailTabValue } from "../components/booking-detail-page.js"
 import type { BookingListFiltersState } from "../components/booking-list.js"
-import type { BookingsListSortDir, BookingsListSortField } from "../index.js"
+import {
+  type BookingsListSortDir,
+  type BookingsListSortField,
+  defaultFetcher,
+  getBookingActivityQueryOptions,
+  getBookingNotesQueryOptions,
+  getBookingQueryOptions,
+  getBookingsQueryOptions,
+  getSupplierStatusesQueryOptions,
+  getTravelersQueryOptions,
+} from "../index.js"
+import { BookingDetailSkeleton } from "./booking-detail-skeleton.js"
+import { BookingsListSkeleton } from "./bookings-list-skeleton.js"
 import { PersonBookingsWidget } from "./person-bookings-widget.js"
 
 /**
@@ -211,6 +226,20 @@ export const bookingDetailSearchSchema = z.object({
 
 export type BookingDetailSearchParams = z.infer<typeof bookingDetailSearchSchema>
 
+/**
+ * Props contract of the booking detail PAGE component the "bookings-detail"
+ * contribution mounts — the route-state subset of `BookingDetailHostProps`.
+ * The packaged default wraps {@link BookingDetailHost} with exactly these;
+ * hosts substitute their own implementation via
+ * {@link CreateBookingsAdminExtensionOptions.detailPageComponent} when they
+ * need to compose app-owned flows around the host (e.g. payment dialogs).
+ */
+export interface BookingDetailPageComponentProps {
+  id: string
+  activeTab?: BookingDetailTabValue
+  onTabChange?: (tab: BookingDetailTabValue) => void
+}
+
 export interface CreateBookingsAdminExtensionOptions {
   /** Mount path of the bookings pages inside the admin workspace. Default `/bookings`. */
   basePath?: string
@@ -218,6 +247,30 @@ export interface CreateBookingsAdminExtensionOptions {
   labels?: {
     bookings?: string
   }
+  /**
+   * App-owned extra header action(s) rendered alongside the bookings list's
+   * primary "New booking" button (e.g. the operator's "Compose trip" link).
+   * Forwarded to {@link BookingsHost}'s `headerActions` by the index page so
+   * the packaged page doesn't hardcode other domains.
+   */
+  indexHeaderActions?: ReactNode
+  /**
+   * Substitute implementation for the booking detail page, loaded lazily so
+   * it stays in its own chunk. Defaults to the packaged page wrapping
+   * {@link BookingDetailHost}. The operator overrides this to compose the
+   * app-owned payment/payment-link dialogs around the host — those dialogs
+   * live app-side because `@voyantjs/finance-react/ui` and
+   * `@voyantjs/checkout-react/ui` depend on this package, so importing them
+   * here would be a cycle.
+   */
+  detailPageComponent?: () => Promise<{
+    default: ComponentType<BookingDetailPageComponentProps>
+  }>
+}
+
+/** Map the host-supplied route runtime onto the bookings data client shape. */
+function loaderClient(runtime: AdminRouteRuntime) {
+  return { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? defaultFetcher }
 }
 
 /**
@@ -230,21 +283,24 @@ export interface CreateBookingsAdminExtensionOptions {
  * If the base nav ever drops the bookings item, this extension is where the
  * entry moves.
  *
- * ROUTES: contributions are metadata + the package-owned search contracts
- * ({@link bookingsIndexSearchSchema} for the list,
- * {@link bookingDetailSearchSchema} for the detail page). The PAGES are
- * package-owned too: {@link BookingsHost} and {@link BookingDetailHost}
- * bind the canonical bookings pages to their data wiring (bookings/finance
- * provider context) and resolve every cross-route link through the semantic
- * destinations declared above — no app RPC client, no host route tree.
+ * ROUTES: full implementations (packaged-admin RFC §4.8) — the package-owned
+ * search contracts ({@link bookingsIndexSearchSchema} for the list,
+ * {@link bookingDetailSearchSchema} for the detail page), loaders that
+ * prefetch through the host-supplied runtime, and lazy `page` modules. The
+ * PAGES are package-owned too: {@link BookingsHost} and
+ * {@link BookingDetailHost} bind the canonical bookings pages to their data
+ * wiring (bookings/finance provider context) and resolve every cross-route
+ * link through the semantic destinations declared above — no app RPC client,
+ * no host route tree.
  *
- * `component:` is intentionally NOT attached to these contributions yet:
- * the contribution contract renders zero-prop pages (route components read
- * params via the router, per RFC §4.2), while both bookings hosts take
- * route params/search state as props. Host route files stay the thin
- * binding layer (`Route.useParams()`/`Route.useSearch()` → host props)
- * until the §4.2 code-based route assembly gives packaged pages a
- * router-agnostic way to read route state.
+ * `component:` stays unattached; each contribution carries a lazy `page`
+ * loader instead. The host binder wraps it in the router's lazy-component
+ * machinery (so the page lands in its own chunk) and hands the resolved
+ * component its route state as `AdminRoutePageProps` — which is how the
+ * param/search-taking bookings pages mount without a host route file. The
+ * `page` thunks below dynamically import the SPECIFIC page modules, never
+ * this barrel, so the factory itself never pins page code into the
+ * workspace-chrome chunk.
  *
  * WIDGETS: the crm-ui ↔ bookings-ui cycle resolution (RFC §4.7). The CRM
  * person detail page mounts a Bookings tab, but this package depends on
@@ -258,7 +314,7 @@ export interface CreateBookingsAdminExtensionOptions {
 export function createBookingsAdminExtension(
   options: CreateBookingsAdminExtensionOptions = {},
 ): AdminExtension {
-  const { basePath = "/bookings", labels = {} } = options
+  const { basePath = "/bookings", labels = {}, indexHeaderActions, detailPageComponent } = options
   const { bookings = "Bookings" } = labels
 
   return defineAdminExtension({
@@ -268,13 +324,63 @@ export function createBookingsAdminExtension(
         id: "bookings-index",
         path: basePath,
         title: bookings,
+        ssr: "data-only",
         validateSearch: (search) => bookingsIndexSearchSchema.parse(search),
+        pendingComponent: BookingsListSkeleton,
+        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
+          queryClient.ensureQueryData(getBookingsQueryOptions(loaderClient(runtime))),
+        page: async () => {
+          const module = await import("./pages/bookings-index-page.js")
+          const Page = module.default
+          // Tiny wrapper only — the heavy page stays in its own chunk; this
+          // closure just threads the app-owned header actions through.
+          return {
+            default: (props: AdminRoutePageProps) => (
+              <Page {...props} headerActions={indexHeaderActions} />
+            ),
+          }
+        },
       },
       {
         id: "bookings-detail",
         path: `${basePath}/$id`,
         title: bookings,
+        ssr: "data-only",
         validateSearch: (search) => bookingDetailSearchSchema.parse(search),
+        pendingComponent: BookingDetailSkeleton,
+        // The `"new"` pseudo-id is the app-owned "New booking" picker (host
+        // route concern) — the loader skips it; nothing to prefetch.
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id || id === "new") return
+
+          const client = loaderClient(runtime)
+
+          // Critical: booking itself drives the header. Everything else
+          // (travelers, supplier statuses, activity, notes) is per-section
+          // and renders progressively.
+          await queryClient.ensureQueryData(getBookingQueryOptions(client, id))
+
+          void queryClient.prefetchQuery(getTravelersQueryOptions(client, id))
+          void queryClient.prefetchQuery(getSupplierStatusesQueryOptions(client, id))
+          void queryClient.prefetchQuery(getBookingActivityQueryOptions(client, id))
+          void queryClient.prefetchQuery(getBookingNotesQueryOptions(client, id))
+        },
+        page: async () => {
+          const module = await (detailPageComponent
+            ? detailPageComponent()
+            : import("./pages/booking-detail-page.js"))
+          const Page = module.default
+          return {
+            default: ({ params, search, updateSearch }: AdminRoutePageProps) => (
+              <Page
+                id={params.id ?? ""}
+                activeTab={(search as BookingDetailSearchParams).tab}
+                onTabChange={(tab) => updateSearch((prev) => ({ ...prev, tab }), { replace: true })}
+              />
+            ),
+          }
+        },
       },
     ],
     widgets: [

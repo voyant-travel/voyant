@@ -51,13 +51,28 @@ describe("createBookingsAdminExtension", () => {
     expect(detail?.validateSearch?.({ tab: "finance" })).toMatchObject({ tab: "finance" })
   })
 
-  it("does not attach components to contributions (hosts take route props)", () => {
-    // The contribution contract renders zero-prop pages; both bookings hosts
-    // take route params/search as props, so host route files stay the
-    // binding layer until the RFC §4.2 code-based route assembly lands.
+  it("carries full route implementations as lazy pages (RFC §4.8)", () => {
+    // Contributions ship the route IMPLEMENTATION: a lazy `page` module
+    // loader (never an eager `component` — the host binder code-splits the
+    // page into its own chunk), a loader that prefetches through the
+    // host-supplied runtime, and the per-route SSR mode.
+    const extension = createBookingsAdminExtension()
+    const routes = extension.routes ?? []
+    expect(routes).toHaveLength(2)
+    for (const route of routes) {
+      expect(route.component).toBeUndefined()
+      expect(typeof route.page).toBe("function")
+      expect(typeof route.loader).toBe("function")
+      expect(route.ssr).toBe("data-only")
+      expect(typeof route.pendingComponent).toBe("function")
+    }
+  })
+
+  it("resolves both page loaders to modules with a default component", async () => {
     const extension = createBookingsAdminExtension()
     for (const route of extension.routes ?? []) {
-      expect(route.component).toBeUndefined()
+      const module = await route.page?.()
+      expect(typeof module?.default).toBe("function")
     }
   })
 

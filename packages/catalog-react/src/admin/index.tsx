@@ -142,24 +142,25 @@ export interface CreateCatalogAdminExtensionOptions {
  * entries here would duplicate them. If the base nav ever drops the catalog
  * group, this extension is where the entries move.
  *
- * ROUTES: contributions are metadata + the package-owned search contracts
+ * ROUTES: contributions carry the FULL route implementation (packaged-admin
+ * RFC §4.8 endgame) — the package-owned search contracts
  * (`catalogSearchSchema` from `@voyantjs/catalog-react` for the browse
- * surfaces, {@link productDetailSearchSchema} for the package detail page).
- * The PAGES are package-owned too: the `*Host` components exported from this
- * entrypoint ({@link CatalogVerticalHost}, {@link DynamicCatalogHost},
+ * surfaces, {@link productDetailSearchSchema} for the package detail page)
+ * plus a lazy `page` module loader per route. Hosts assemble a code-based
+ * route tree straight from these contributions (no per-route host files);
+ * the host binder hands each page {@link AdminRoutePageProps}
+ * (params/search/updateSearch/title), which the page modules under
+ * `./pages/*` bind onto the `*Host` components exported from this entrypoint
+ * ({@link CatalogVerticalHost}, {@link DynamicCatalogHost},
  * {@link ScheduledCatalogHost}, {@link ProductDetailHost},
- * {@link CruiseDetailHost}, {@link VerticalDetailHost}) bind the catalog
- * pages to their data wiring (catalog provider context, markets/suppliers/
- * products hooks) and resolve every cross-route link through the semantic
- * destinations declared above — no app RPC client, no host route tree.
+ * {@link CruiseDetailHost}, {@link VerticalDetailHost}). The hosts own the
+ * data wiring (catalog provider context, markets/suppliers/products hooks)
+ * and resolve every cross-route link through the semantic destinations
+ * declared above — no app RPC client, no host route tree.
  *
- * `component:` is intentionally NOT attached to these contributions yet:
- * the contribution contract renders zero-prop pages (route components read
- * params via the router, per RFC §4.2), while every catalog host takes route
- * params/search state as props. Host route files stay the thin binding layer
- * (`Route.useParams()`/`Route.useSearch()` → host props) until the §4.2
- * code-based route assembly gives packaged pages a router-agnostic way to
- * read route state.
+ * Every `page:` loader dynamically imports its SPECIFIC page module — never
+ * this barrel — so each page stays code-split in its own chunk instead of
+ * landing in the workspace-chrome chunk that evaluates this factory.
  */
 export function createCatalogAdminExtension(
   options: CreateCatalogAdminExtensionOptions = {},
@@ -185,56 +186,66 @@ export function createCatalogAdminExtension(
         path: `${basePath}/products`,
         title: products,
         validateSearch: browseSearch,
+        page: () => import("./pages/catalog-products-index-page.js"),
       },
       {
         id: "catalog-products-detail",
         path: `${basePath}/products/$productId`,
         title: products,
         validateSearch: productDetailSearch,
+        page: () => import("./pages/catalog-products-detail-page.js"),
       },
       {
         id: "catalog-excursions-index",
         path: `${basePath}/excursions`,
         title: excursions,
         validateSearch: browseSearch,
+        page: () => import("./pages/catalog-excursions-index-page.js"),
       },
       {
         id: "catalog-excursions-detail",
         path: `${basePath}/excursions/$id`,
         title: excursions,
+        page: () => import("./pages/catalog-excursions-detail-page.js"),
       },
       {
         id: "catalog-tours-index",
         path: `${basePath}/tours`,
         title: tours,
         validateSearch: browseSearch,
+        page: () => import("./pages/catalog-tours-index-page.js"),
       },
       {
         id: "catalog-tours-detail",
         path: `${basePath}/tours/$id`,
         title: tours,
+        page: () => import("./pages/catalog-tours-detail-page.js"),
       },
       {
         id: "catalog-cruises-index",
         path: `${basePath}/cruises`,
         title: cruises,
         validateSearch: browseSearch,
+        page: () => import("./pages/catalog-cruises-index-page.js"),
       },
       {
         id: "catalog-cruises-detail",
         path: `${basePath}/cruises/$id`,
         title: cruises,
+        page: () => import("./pages/catalog-cruises-detail-page.js"),
       },
       {
         id: "catalog-accommodations-index",
         path: `${basePath}/accommodations`,
         title: accommodations,
         validateSearch: browseSearch,
+        page: () => import("./pages/catalog-accommodations-index-page.js"),
       },
       {
         id: "catalog-accommodations-detail",
         path: `${basePath}/accommodations/$id`,
         title: accommodations,
+        page: () => import("./pages/catalog-accommodations-detail-page.js"),
       },
     ],
   })

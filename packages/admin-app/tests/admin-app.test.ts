@@ -119,3 +119,74 @@ describe("defaultAdminWorkspaceUser", () => {
     expect(mapped.email).toBe("")
   })
 })
+
+describe("attachAdminExtensionRoutes", () => {
+  it("grafts extension routes under the parent and is idempotent by path", async () => {
+    const { createRootRoute, createRoute } = await import("@tanstack/react-router")
+    const { attachAdminExtensionRoutes } = await import("../src/extension-routes.js")
+
+    const rootRoute = createRootRoute()
+    const layout = createRoute({ getParentRoute: () => rootRoute, id: "workspace" })
+    const fileChild = createRoute({ getParentRoute: () => layout, path: "/settings" })
+    layout.addChildren([fileChild])
+    const tree = rootRoute.addChildren([layout])
+
+    const extensionRoute = createRoute({ getParentRoute: () => layout, path: "/bookings" })
+    const result = attachAdminExtensionRoutes(tree, layout, [extensionRoute])
+    expect(result).toBe(tree)
+    expect(layout.children).toHaveLength(2)
+
+    // Re-evaluation (dev-server module reload) replaces by path, never duplicates.
+    const reloadedRoute = createRoute({ getParentRoute: () => layout, path: "/bookings" })
+    attachAdminExtensionRoutes(tree, layout, [reloadedRoute])
+    const children = layout.children as Array<{ options: { path?: string } }>
+    expect(children).toHaveLength(2)
+    expect(children.filter((child) => child.options.path === "/bookings")).toHaveLength(1)
+  })
+})
+
+describe("adminExtensionRouteOptions", () => {
+  it("binds contribution loader/ssr/boundaries and resolves the runtime per call", async () => {
+    const { adminExtensionRouteOptions } = await import("../src/extension-routes.js")
+    const loader = vi.fn()
+    const extension = {
+      id: "demo",
+      routes: [
+        {
+          id: "demo-index",
+          path: "/demo",
+          title: "Demo",
+          ssr: "data-only" as const,
+          page: () => Promise.resolve({ default: () => null }),
+          loader,
+        },
+      ],
+    }
+
+    const options = adminExtensionRouteOptions(extension, "demo-index", () => ({
+      baseUrl: "https://api.test",
+    }))
+    expect(options.ssr).toBe("data-only")
+    expect(options.wrapInSuspense).toBe(true)
+    expect(typeof options.component).toBe("function")
+
+    const queryClient = createAdminQueryClient()
+    options.loader({ context: { queryClient }, params: { id: "x" } })
+    expect(loader).toHaveBeenCalledWith({
+      queryClient,
+      runtime: { baseUrl: "https://api.test" },
+      params: { id: "x" },
+    })
+  })
+
+  it("throws loudly when the contribution has no implementation", async () => {
+    const { adminExtensionRouteOptions } = await import("../src/extension-routes.js")
+    expect(() =>
+      adminExtensionRouteOptions(
+        { id: "demo", routes: [{ id: "bare", path: "/bare", title: "Bare" }] },
+        "bare",
+        { baseUrl: "x" },
+      ),
+    ).toThrow(/carries no/)
+  })
+})

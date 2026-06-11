@@ -1,8 +1,10 @@
+import { useNavigate } from "@tanstack/react-router"
 import {
   type AdminExtension,
   createAdminExtensionRegistry,
   defineAdminExtension,
 } from "@voyantjs/admin"
+import { Button } from "@voyantjs/ui/components/button"
 import { Route, ScrollText, Tag } from "lucide-react"
 import { generatedAdminExtensionFactories } from "@/admin.extensions.generated"
 import type { AdminMessages } from "@/lib/admin-i18n"
@@ -81,16 +83,44 @@ function createAvailabilityExtension(messages: AdminExtensionNavMessages) {
   })
 }
 
-// Bookings is package-delivered (packaged-admin RFC Phase 3): the extension
-// contributes NO navigation — the Bookings item is part of the BASE operator
-// navigation (createOperatorAdminNavigation in @voyantjs/admin), so an entry
-// here would duplicate it. It's registered for the routes seam: the
-// contributions carry the package-owned route metadata + search contracts
-// (bookingsIndexSearchSchema / bookingDetailSearchSchema), and the pages are
-// the packaged hosts from @voyantjs/bookings-react/admin — the route files under
-// src/routes/_workspace/bookings/* only bind route params/search onto them.
+// App-owned header action on the package-delivered bookings list: composing
+// a trip is an operator concept (the travel-composer pages are app-custom),
+// so the button rides in through the extension factory's
+// `indexHeaderActions` option instead of a host route file.
+function ComposeTripButton() {
+  const navigate = useNavigate()
+
+  return (
+    <Button
+      variant="outline"
+      onClick={() => void navigate({ to: "/trips/$id", params: { id: "new" } })}
+    >
+      <Route className="size-4" aria-hidden="true" />
+      Compose trip
+    </Button>
+  )
+}
+
+// Bookings is package-delivered (packaged-admin RFC Phase 3 + §4.8): the
+// extension contributes NO navigation — the Bookings item is part of the BASE
+// operator navigation (createOperatorAdminNavigation in @voyantjs/admin), so
+// an entry here would duplicate it. It's registered for the routes seam: the
+// contributions carry the package-owned route implementations + search
+// contracts (bookingsIndexSearchSchema / bookingDetailSearchSchema), and the
+// host assembles them into its code-based route tree — no route files. The
+// app composes two seams through factory options: the "Compose trip" header
+// action on the list, and the detail-page substitution (the operator wraps
+// the packaged BookingDetailHost with the checkout/finance payment dialogs,
+// which the package cannot import without a dependency cycle).
 function createBookingsExtension(messages: AdminExtensionNavMessages) {
-  return generatedAdminExtensionFactories.bookings({ labels: { bookings: messages.bookings } })
+  return generatedAdminExtensionFactories.bookings({
+    labels: { bookings: messages.bookings },
+    indexHeaderActions: <ComposeTripButton />,
+    detailPageComponent: () =>
+      import("@/components/voyant/bookings/booking-detail-page").then((module) => ({
+        default: module.BookingDetailPage,
+      })),
+  })
 }
 
 // Catalog is package-delivered (packaged-admin RFC Phase 2): the extension

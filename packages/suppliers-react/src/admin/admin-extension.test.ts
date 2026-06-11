@@ -44,14 +44,33 @@ describe("createSuppliersAdminExtension", () => {
     }
   })
 
-  it("does not attach components to contributions (hosts take route props)", () => {
-    // The contribution contract renders zero-prop pages; SupplierDetailHost
-    // takes the supplier id as a prop, so host route files stay the binding
-    // layer until the RFC §4.2 code-based route assembly lands.
+  it("carries lazy page loaders instead of eager components", async () => {
+    // The full route implementation lives on the contribution (RFC §4.8):
+    // `page` resolves the page module lazily so it stays code-split; no
+    // eager `component` reference pins it into the workspace-chrome chunk.
     const extension = createSuppliersAdminExtension()
     for (const route of extension.routes ?? []) {
       expect(route.component).toBeUndefined()
+      expect(typeof route.page).toBe("function")
+      const module = await route.page?.()
+      expect(typeof module?.default).toBe("function")
     }
+  })
+
+  it("attaches data loaders and pending skeletons to every route", () => {
+    const extension = createSuppliersAdminExtension()
+    expect(extension.routes).toHaveLength(2)
+    for (const route of extension.routes ?? []) {
+      expect(typeof route.loader).toBe("function")
+      expect(typeof route.pendingComponent).toBe("function")
+    }
+  })
+
+  it("marks the list route data-only for SSR and leaves the detail route default", () => {
+    const extension = createSuppliersAdminExtension()
+    const ssrById = new Map(extension.routes?.map((route) => [route.id, route.ssr]))
+    expect(ssrById.get("suppliers-index")).toBe("data-only")
+    expect(ssrById.get("suppliers-detail")).toBeUndefined()
   })
 })
 

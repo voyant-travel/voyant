@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest"
 
+import { InvoicesPageSkeleton } from "../components/invoices-page-skeleton.js"
+import { PaymentsPageSkeleton } from "../components/payments-page-skeleton.js"
 import {
   BookingInvoicesWidget,
   BookingPaymentPolicyWidget,
@@ -15,6 +17,16 @@ import {
   RecordPaymentDialog,
   SupplierPaymentPolicyWidget,
 } from "./index.js"
+
+/** The contributions that ship their full route implementation (RFC §4.8). */
+const IMPLEMENTED_ROUTE_IDS = [
+  "finance-invoices-index",
+  "finance-invoices-detail",
+  "finance-invoice-number-series",
+  "finance-payments-index",
+  "finance-payments-detail",
+  "finance-profitability",
+] as const
 
 describe("createFinanceAdminExtension", () => {
   it("contributes no navigation (finance nav is base-nav-owned)", () => {
@@ -53,13 +65,57 @@ describe("createFinanceAdminExtension", () => {
     expect(paymentsDetail?.title).toBe("Plati")
   })
 
-  it("does not attach components to route contributions (hosts take route props)", () => {
-    // The contribution contract renders zero-prop pages; both finance detail
-    // hosts take the record id as a prop, so host route files stay the
-    // binding layer until the RFC §4.2 code-based route assembly lands.
+  it("carries the full route implementation on the six package-owned routes", () => {
+    // Packaged-admin RFC §4.8 endgame: these contributions ship the lazy
+    // page module loader + data loader + per-route SSR mode, so the host's
+    // code-assembled route tree binds them without per-route files. `page`
+    // (not `component`) keeps every page in its own chunk.
     const extension = createFinanceAdminExtension()
-    for (const route of extension.routes ?? []) {
-      expect(route.component).toBeUndefined()
+    for (const id of IMPLEMENTED_ROUTE_IDS) {
+      const route = extension.routes?.find((candidate) => candidate.id === id)
+      expect(route, id).toBeDefined()
+      expect(typeof route?.page, id).toBe("function")
+      expect(typeof route?.loader, id).toBe("function")
+      expect(route?.ssr, id).toBe("data-only")
+      expect(route?.component, id).toBeUndefined()
+    }
+  })
+
+  it("resolves each lazy page to a route page module", async () => {
+    const extension = createFinanceAdminExtension()
+    for (const id of IMPLEMENTED_ROUTE_IDS) {
+      const route = extension.routes?.find((candidate) => candidate.id === id)
+      const module = await route?.page?.()
+      expect(typeof module?.default, id).toBe("function")
+    }
+  })
+
+  it("attaches the operator pending skeletons where the operator routes had them", () => {
+    const extension = createFinanceAdminExtension()
+    const pendingByRoute: Record<string, unknown> = Object.fromEntries(
+      (extension.routes ?? []).map((route) => [route.id, route.pendingComponent]),
+    )
+    expect(pendingByRoute["finance-invoices-index"]).toBe(InvoicesPageSkeleton)
+    expect(pendingByRoute["finance-invoices-detail"]).toBe(InvoiceDetailSkeleton)
+    expect(pendingByRoute["finance-payments-index"]).toBe(PaymentsPageSkeleton)
+    expect(pendingByRoute["finance-payments-detail"]).toBe(PaymentDetailSkeleton)
+    expect(pendingByRoute["finance-invoice-number-series"]).toBeUndefined()
+    expect(pendingByRoute["finance-profitability"]).toBeUndefined()
+  })
+
+  it("keeps the supplier-invoices routes metadata-only (app-owned wiring)", () => {
+    // Their operator pages carry app-owned wiring — file uploads to the
+    // app's /v1/uploads, inline supplier creation, cross-domain target
+    // search — so they stay host-route-file-bound until the package API can
+    // carry that wiring.
+    const extension = createFinanceAdminExtension()
+    for (const id of ["finance-supplier-invoices-index", "finance-supplier-invoices-detail"]) {
+      const route = extension.routes?.find((candidate) => candidate.id === id)
+      expect(route, id).toBeDefined()
+      expect(route?.page, id).toBeUndefined()
+      expect(route?.loader, id).toBeUndefined()
+      expect(route?.component, id).toBeUndefined()
+      expect(route?.ssr, id).toBeUndefined()
     }
   })
 

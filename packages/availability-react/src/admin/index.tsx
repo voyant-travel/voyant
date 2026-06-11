@@ -1,4 +1,10 @@
-import { type AdminExtension, defineAdminExtension } from "@voyantjs/admin"
+import {
+  type AdminExtension,
+  type AdminRouteLoaderContext,
+  type AdminRouteRuntime,
+  adminRoutePageModule,
+  defineAdminExtension,
+} from "@voyantjs/admin"
 // Type-only: binds the bookings-ui `AdminDestinations` augmentation
 // (`booking.detail`, `product.detail`, `availabilitySlot.detail`, ...) into
 // this program — the slot detail host's booking/product quick-view sheets
@@ -8,6 +14,15 @@ import { type AdminExtension, defineAdminExtension } from "@voyantjs/admin"
 // (its booking items link to slots), so this package consumes rather than
 // re-declares it.
 import type {} from "@voyantjs/bookings-react/admin"
+
+import {
+  AvailabilityPageSkeleton,
+  AvailabilityRuleDetailSkeleton,
+  AvailabilitySlotDetailSkeleton,
+  AvailabilityStartTimeDetailSkeleton,
+} from "../components/availability-skeletons.js"
+import { defaultFetcher } from "../index.js"
+import { ensureAvailabilityPageData } from "./availability-page-data.js"
 
 /**
  * Semantic destinations the availability admin surfaces navigate to
@@ -67,24 +82,27 @@ export interface CreateAvailabilityAdminExtensionOptions {
  * If the base nav ever drops the availability item, this extension is where
  * the entry moves.
  *
- * ROUTES: contributions are metadata only — the availability pages keep
- * their filter state component-local, so there are no URL search contracts.
- * The PAGES are package-owned: {@link AvailabilityIndexHost} (the slots
- * list + calendar landing page, with bulk update/delete running through
- * the typed batch mutation hooks in `@voyantjs/availability-react`) plus
- * the detail hosts {@link AvailabilitySlotDetailHost},
+ * ROUTES: contributions carry the FULL route implementation (packaged-admin
+ * RFC §4.2/§4.8) — lazy `page` module loaders, data loaders fed by the
+ * host-supplied {@link AdminRouteLoaderContext} (QueryClient + runtime +
+ * params), per-route SSR mode, and pending skeletons. Hosts bind them into
+ * their code-assembled admin route tree; no per-route host files needed.
+ * The pages stay code-split because each contribution's `page` dynamically
+ * imports the specific host/page module — never the admin barrel — so the
+ * heavy page chunks load on navigation, not with workspace chrome.
+ * {@link AvailabilityIndexHost} (the slots list + calendar landing page,
+ * with bulk update/delete running through the typed batch mutation hooks in
+ * `@voyantjs/availability-react`) mounts as a zero-prop page; the detail
+ * hosts {@link AvailabilitySlotDetailHost},
  * {@link AvailabilityRuleDetailHost} and
- * {@link AvailabilityStartTimeDetailHost} bind the operator-grade pages to
- * their data wiring (the shared availability provider context) and resolve
- * every cross-route link through the semantic destinations declared above.
- * `component:` is intentionally NOT attached to these contributions: the
- * contribution contract renders zero-prop pages (route components read
- * params via the router, per RFC §4.2), while the detail hosts take the
- * record id as a prop — host route files stay the thin binding layer
- * (`Route.useParams()` → host props) until the §4.2 code-based route
- * assembly lands. The index host's SSR loader binding stays app-side
- * ({@link ensureAvailabilityPageData} takes the app's cookie-forwarding
- * client), per the packaged-host recipe.
+ * {@link AvailabilityStartTimeDetailHost} read their record id from
+ * `AdminRoutePageProps` via the default-exported wrappers in `./pages/`.
+ * The index host's SSR loader binding is no longer app-side:
+ * {@link ensureAvailabilityPageData} runs in the contribution's own loader
+ * against the host runtime's cookie-forwarding fetcher. The pages keep
+ * their filter state component-local, so there are no URL search contracts,
+ * and every cross-route link resolves through the semantic destinations
+ * declared above.
  *
  * WIDGETS: none. {@link OptionResourceTemplatesPanel} (the per-option
  * resource templates editor the product editor embeds) ships from this
@@ -104,22 +122,83 @@ export function createAvailabilityAdminExtension(
         id: "availability-index",
         path: basePath,
         title: availability,
+        ssr: "data-only",
+        page: () =>
+          import("./availability-index-host.js").then((module) =>
+            adminRoutePageModule(module.AvailabilityIndexHost),
+          ),
+        // Awaits only what the slots tab + the products picker need for
+        // first paint; the slot dialog's rules/start-times dimensions
+        // prefetch in the background.
+        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
+          ensureAvailabilityPageData(queryClient, loaderClient(runtime)),
+        pendingComponent: AvailabilityPageSkeleton,
       },
       {
         id: "availability-slot-detail",
         path: `${basePath}/$id`,
         title: availability,
+        page: () => import("./pages/availability-slot-detail-page.js"),
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id) return
+          // Dynamic import on purpose: the loader helper lives in the slot
+          // detail page module, and a static import here would pin that
+          // module into the host's workspace-chrome chunk, defeating the
+          // route's code-split. The loader and the page resolve the same
+          // chunk, fetched once.
+          const { loadAvailabilitySlotDetailPage } = await import(
+            "../components/availability-slot-detail-page.js"
+          )
+          return loadAvailabilitySlotDetailPage(queryClient, loaderClient(runtime), id)
+        },
+        pendingComponent: AvailabilitySlotDetailSkeleton,
       },
       {
         id: "availability-rule-detail",
         path: `${basePath}/rules/$id`,
         title: availability,
+        page: () => import("./pages/availability-rule-detail-page.js"),
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id) return
+          // Dynamic import on purpose — see the slot detail loader above.
+          const { loadAvailabilityRuleDetailPage } = await import(
+            "../components/availability-rule-detail-page.js"
+          )
+          return loadAvailabilityRuleDetailPage(queryClient, loaderClient(runtime), id)
+        },
+        pendingComponent: AvailabilityRuleDetailSkeleton,
       },
       {
         id: "availability-start-time-detail",
         path: `${basePath}/start-times/$id`,
         title: availability,
+        page: () => import("./pages/availability-start-time-detail-page.js"),
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id) return
+          // Dynamic import on purpose — see the slot detail loader above.
+          const { loadAvailabilityStartTimeDetailPage } = await import(
+            "../components/availability-start-time-detail-page.js"
+          )
+          return loadAvailabilityStartTimeDetailPage(queryClient, loaderClient(runtime), id)
+        },
+        pendingComponent: AvailabilityStartTimeDetailSkeleton,
       },
     ],
   })
+}
+
+/**
+ * Bridge the host-supplied {@link AdminRouteRuntime} (optional fetcher) to
+ * the required-fetcher client contract the availability loaders take.
+ *
+ * Note: the operator's detail route files built this client with the
+ * package `defaultFetcher` (a plain `credentials: "include"` fetch); the
+ * contribution uses the host runtime's cookie-forwarding fetcher instead,
+ * so detail SSR prefetches authenticate — an intentional improvement.
+ */
+function loaderClient(runtime: AdminRouteRuntime) {
+  return { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? defaultFetcher }
 }

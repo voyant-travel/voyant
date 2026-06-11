@@ -1,4 +1,24 @@
-import { type AdminExtension, defineAdminExtension } from "@voyantjs/admin"
+import {
+  type AdminExtension,
+  type AdminRouteLoaderContext,
+  type AdminRouteRuntime,
+  adminRoutePageModule,
+  defineAdminExtension,
+} from "@voyantjs/admin"
+
+import {
+  defaultFetcher,
+  getActivitiesQueryOptions,
+  getOrganizationQueryOptions,
+  getOrganizationsQueryOptions,
+  getPeopleQueryOptions,
+  getPersonQueryOptions,
+  getQuotesQueryOptions,
+} from "../index.js"
+import { OrganizationDetailSkeleton } from "./organization-detail-skeleton.js"
+import { OrganizationsListSkeleton } from "./organizations-list-skeleton.js"
+import { PeopleListSkeleton } from "./people-list-skeleton.js"
+import { PersonDetailSkeleton } from "./person-detail-skeleton.js"
 
 /**
  * Semantic destinations the CRM admin surfaces navigate to (packaged-admin
@@ -68,16 +88,18 @@ export interface CreateCrmAdminExtensionOptions {
  * them. If the base nav ever drops those items, this extension is where the
  * entries move.
  *
- * ROUTES: contributions are metadata only — the CRM pages carry no URL
- * search state (list filtering/paging is in-memory component state). The
- * PAGES are package-owned: {@link PeopleHost} and {@link OrganizationsHost}
- * are zero-prop hosts route files can mount directly via `component:` on the
- * file route; {@link PersonDetailHost} and {@link OrganizationDetailHost}
- * take the record id as a prop, so their host route files stay the thin
- * binding layer (`Route.useParams()` → host props) until the §4.2 code-based
- * route assembly gives packaged pages a router-agnostic way to read route
- * state. `component:` is intentionally NOT attached to the contributions
- * themselves yet for the same reason.
+ * ROUTES: contributions carry the FULL route implementation (packaged-admin
+ * RFC §4.2/§4.8) — lazy `page` module loaders, data loaders fed by the
+ * host-supplied {@link AdminRouteLoaderContext} (QueryClient + runtime +
+ * params), per-route SSR mode, and pending skeletons. Hosts bind them into
+ * their code-assembled admin route tree; no per-route host files needed.
+ * The pages stay code-split because each contribution's `page` dynamically
+ * imports the specific host/page module — never the admin barrel — so the
+ * heavy page chunks load on navigation, not with workspace chrome. The
+ * detail pages read the route id from {@link AdminRoutePageProps} via the
+ * default-exported wrappers in `./pages/`. The lists carry no URL search
+ * state (filtering/paging is in-memory component state), so no
+ * `validateSearch` contracts.
  *
  * WIDGET SLOTS: the person detail page exposes
  * {@link personDetailBookingsTabSlot} — the bookings-ui ↔ crm-ui cycle
@@ -104,22 +126,86 @@ export function createCrmAdminExtension(
         id: "crm-people-index",
         path: peopleBasePath,
         title: people,
+        ssr: "data-only",
+        page: () =>
+          import("./people-host.js").then((module) => adminRoutePageModule(module.PeopleHost)),
+        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
+          queryClient.ensureQueryData(
+            getPeopleQueryOptions(loaderClient(runtime), { limit: 25, offset: 0 }),
+          ),
+        pendingComponent: PeopleListSkeleton,
       },
       {
         id: "crm-people-detail",
         path: `${peopleBasePath}/$id`,
         title: people,
+        page: () => import("./pages/person-detail-page.js"),
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id) return
+          const client = loaderClient(runtime)
+          const person = await queryClient.ensureQueryData(getPersonQueryOptions(client, id))
+
+          if (person.organizationId) {
+            await queryClient.ensureQueryData(
+              getOrganizationQueryOptions(client, person.organizationId),
+            )
+          }
+        },
+        pendingComponent: PersonDetailSkeleton,
       },
       {
         id: "crm-organizations-index",
         path: organizationsBasePath,
         title: organizations,
+        ssr: "data-only",
+        page: () =>
+          import("./organizations-host.js").then((module) =>
+            adminRoutePageModule(module.OrganizationsHost),
+          ),
+        loader: ({ queryClient, runtime }: AdminRouteLoaderContext) =>
+          queryClient.ensureQueryData(
+            getOrganizationsQueryOptions(loaderClient(runtime), { limit: 25, offset: 0 }),
+          ),
+        pendingComponent: OrganizationsListSkeleton,
       },
       {
         id: "crm-organizations-detail",
         path: `${organizationsBasePath}/$id`,
         title: organizations,
+        page: () => import("./pages/organization-detail-page.js"),
+        loader: async ({ queryClient, runtime, params }: AdminRouteLoaderContext) => {
+          const id = params.id
+          if (!id) return
+          const client = loaderClient(runtime)
+
+          await Promise.all([
+            queryClient.ensureQueryData(getOrganizationQueryOptions(client, id)),
+            queryClient.ensureQueryData(
+              getPeopleQueryOptions(client, { organizationId: id, limit: 50 }),
+            ),
+            queryClient.ensureQueryData(
+              getQuotesQueryOptions(client, { organizationId: id, limit: 50 }),
+            ),
+            queryClient.ensureQueryData(
+              getActivitiesQueryOptions(client, {
+                entityType: "organization",
+                entityId: id,
+                limit: 50,
+              }),
+            ),
+          ])
+        },
+        pendingComponent: OrganizationDetailSkeleton,
       },
     ],
   })
+}
+
+/**
+ * Bridge the host-supplied {@link AdminRouteRuntime} (optional fetcher) to
+ * the required-fetcher client contract the CRM query options take.
+ */
+function loaderClient(runtime: AdminRouteRuntime) {
+  return { baseUrl: runtime.baseUrl, fetcher: runtime.fetcher ?? defaultFetcher }
 }

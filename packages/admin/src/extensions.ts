@@ -19,6 +19,57 @@ export interface AdminRouteRuntime {
 export interface AdminRouteLoaderContext {
   queryClient: QueryClient
   runtime: AdminRouteRuntime
+  /**
+   * Path params of the matched route (e.g. `{ id: "book_..." }`). Empty for
+   * param-less routes. Hosts that bind contributions into a router supply
+   * the matched params so package loaders can prefetch detail data.
+   */
+  params: Record<string, string>
+}
+
+/**
+ * Props a packaged route page receives from the host's route binder
+ * (packaged-admin RFC §4.2 endgame). The binder reads route state off the
+ * matched route — `useParams`/`useSearch` — and hands it to the page, which
+ * is what dissolves the old "zero-prop components only" restriction: a
+ * param-taking page is just a page that reads `params`/`search` from props.
+ */
+export interface AdminRoutePageProps {
+  /** Path params of the matched route (e.g. `{ id: "book_..." }`). */
+  params: Record<string, string>
+  /**
+   * Search params of the matched route, already validated by the
+   * contribution's `validateSearch`. Pages narrow this to their own search
+   * contract (the same schema the contribution carries).
+   */
+  search: Record<string, unknown>
+  /**
+   * Patch the route's URL search state in place (same-route navigation).
+   * Defaults to `replace: true` — filter/tab state shouldn't grow history.
+   */
+  updateSearch: (
+    updater: (prev: Record<string, unknown>) => Record<string, unknown>,
+    options?: { replace?: boolean },
+  ) => void
+  /** Localized route title from the contribution (factory `labels`). */
+  title?: string
+}
+
+export type AdminRoutePageComponent = React.ComponentType<AdminRoutePageProps>
+
+/** Module shape `AdminUiRouteContribution.page` loaders resolve to. */
+export interface AdminRoutePageModule {
+  default: AdminRoutePageComponent
+}
+
+/**
+ * Adapt a component into an {@link AdminRoutePageModule}. Use inside `page`
+ * loaders for components that ignore route props entirely (zero-prop hosts)
+ * or take an all-optional props bag — both of which TypeScript's weak-type
+ * rule rejects as `AdminRoutePageComponent` despite being safe to mount.
+ */
+export function adminRoutePageModule<P>(component: React.ComponentType<P>): AdminRoutePageModule {
+  return { default: component as unknown as AdminRoutePageComponent }
 }
 
 /**
@@ -37,6 +88,15 @@ export interface AdminUiRouteContribution {
   title: string
   /** The page. Keep it lazy-importable for code-splitting. */
   component?: React.ComponentType
+  /**
+   * The page as a LAZY module loader (preferred over `component`). The host
+   * binder wraps it in the router's lazy-component machinery, so the page
+   * lands in its own chunk instead of the workspace-chrome chunk, and
+   * hover/intent preloading fetches it ahead of navigation. The resolved
+   * component receives {@link AdminRoutePageProps} (params/search/title), so
+   * param-taking pages need no host route file.
+   */
+  page?: () => Promise<AdminRoutePageModule>
   /** Data loader; receives the host QueryClient + app runtime. */
   loader?: (ctx: AdminRouteLoaderContext) => unknown
   /** Typed search-param validation (e.g. a zod schema's parse). */
@@ -135,6 +195,44 @@ export function requireAdminRoute(extension: AdminExtension, routeId: string): B
     )
   }
   return route as BindableAdminRoute
+}
+
+/**
+ * A route contribution guaranteed to carry an implementation — either a
+ * lazy `page` module loader or an eager zero-prop `component`.
+ */
+export type ImplementedAdminRoute = AdminUiRouteContribution &
+  ({ page: () => Promise<AdminRoutePageModule> } | { component: React.FunctionComponent })
+
+/**
+ * Look up a route contribution by id and assert it carries an
+ * implementation (`page` or `component`).
+ *
+ * This is the binding contract of the code-assembled admin route tree
+ * (packaged-admin RFC §4.8 endgame): the host's generated route module
+ * resolves every extension route through this helper, so a contribution
+ * that later loses its id or implementation fails loudly at module
+ * evaluation (build/dev start) instead of rendering an empty route.
+ */
+export function requireImplementedAdminRoute(
+  extension: AdminExtension,
+  routeId: string,
+): ImplementedAdminRoute {
+  const route = extension.routes?.find((candidate) => candidate.id === routeId)
+  if (!route) {
+    throw new Error(
+      `[voyant-admin] Extension "${extension.id}" has no route contribution "${routeId}". ` +
+        `Regenerate the host's admin route module with \`voyant admin generate --routes\`.`,
+    )
+  }
+  if (!route.page && !route.component) {
+    throw new Error(
+      `[voyant-admin] Route contribution "${routeId}" of extension "${extension.id}" carries no ` +
+        `implementation (neither \`page\` nor \`component\`). Add one to the extension, or keep ` +
+        `the route as a hand-written host route file.`,
+    )
+  }
+  return route as ImplementedAdminRoute
 }
 
 /**

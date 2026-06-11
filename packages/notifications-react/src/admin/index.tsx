@@ -1,4 +1,4 @@
-import { type AdminExtension, defineAdminExtension } from "@voyantjs/admin"
+import { type AdminExtension, adminRoutePageModule, defineAdminExtension } from "@voyantjs/admin"
 
 /**
  * Semantic destinations the notifications admin surfaces navigate to
@@ -67,22 +67,20 @@ export interface CreateNotificationsAdminExtensionOptions {
  * them. If the base nav ever drops the notifications group, this extension
  * is where the entries move.
  *
- * ROUTES: contributions are metadata only — the notifications pages keep
- * their filter state component-local, so there are no URL search contracts.
- * The PAGES are package-owned: {@link NotificationTemplatesHost},
+ * ROUTES: full implementations (packaged-admin RFC §4.8 endgame) — each
+ * contribution carries a lazy `page` module loader, so hosts bind them
+ * through their code-assembled admin route tree with no per-route files.
+ * The notifications pages keep their filter state component-local and fetch
+ * client-side, so contributions carry no loader, no search contract and no
+ * SSR override. {@link NotificationTemplatesHost},
  * {@link NotificationReminderRulesHost}, {@link NotificationDeliveriesHost},
  * {@link NotificationReminderRunsHost}, {@link RemindersPreviewHost} and
- * {@link NotificationSettingsHost} are zero-prop;
+ * {@link NotificationSettingsHost} are zero-prop; the detail contributions
+ * resolve wrapper pages (`./pages/*`) that bind the matched `$id` param onto
  * {@link NotificationTemplateDetailHost} and
- * {@link NotificationReminderRuleDetailHost} bind the detail pages to their
- * data wiring and resolve every cross-route link through the semantic
- * destinations declared above. `component:` is intentionally NOT attached
- * to these contributions yet: the contribution contract renders zero-prop
- * pages (route components read params via the router, per RFC §4.2), while
- * the detail hosts take the record id as a prop. Host route files stay the
- * thin binding layer (`Route.useParams()` → host props) until the §4.2
- * code-based route assembly gives packaged pages a router-agnostic way to
- * read route state.
+ * {@link NotificationReminderRuleDetailHost}. Pages stay code-split because
+ * every `page` is a dynamic import of the specific host module, never a
+ * static reference from this factory.
  *
  * WIDGETS: none today. No cross-domain notifications card is slot-mounted —
  * deliveries shown on other domains' detail pages are those hosts' concern.
@@ -107,41 +105,67 @@ export function createNotificationsAdminExtension(
         id: "notifications-templates-index",
         path: `${basePath}/templates`,
         title: templates,
+        page: () =>
+          import("./notification-templates-host.js").then((module) =>
+            adminRoutePageModule(module.NotificationTemplatesHost),
+          ),
       },
       {
         id: "notifications-templates-detail",
         path: `${basePath}/templates/$id`,
         title: templates,
+        page: () => import("./pages/notification-template-detail-page.js"),
       },
       {
         id: "notifications-reminder-rules-index",
         path: `${basePath}/reminder-rules`,
         title: reminderRules,
+        page: () =>
+          import("./notification-reminder-rules-host.js").then((module) =>
+            adminRoutePageModule(module.NotificationReminderRulesHost),
+          ),
       },
       {
         id: "notifications-reminder-rules-detail",
         path: `${basePath}/reminder-rules/$id`,
         title: reminderRules,
+        page: () => import("./pages/notification-reminder-rule-detail-page.js"),
       },
       {
         id: "notifications-deliveries",
         path: `${basePath}/deliveries`,
         title: deliveries,
+        page: () =>
+          import("./notification-deliveries-host.js").then((module) =>
+            adminRoutePageModule(module.NotificationDeliveriesHost),
+          ),
       },
       {
         id: "notifications-reminder-runs",
         path: `${basePath}/reminder-runs`,
         title: reminderRuns,
+        page: () =>
+          import("./notification-reminder-runs-host.js").then((module) =>
+            adminRoutePageModule(module.NotificationReminderRunsHost),
+          ),
       },
       {
         id: "notifications-preview",
         path: `${basePath}/preview`,
         title: preview,
+        page: () =>
+          import("./reminders-preview-host.js").then((module) =>
+            adminRoutePageModule(module.RemindersPreviewHost),
+          ),
       },
       {
         id: "notifications-settings",
         path: `${basePath}/settings`,
         title: settings,
+        page: () =>
+          import("./notification-settings-host.js").then((module) =>
+            adminRoutePageModule(module.NotificationSettingsHost),
+          ),
       },
     ],
   })
