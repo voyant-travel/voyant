@@ -43,6 +43,7 @@
     "@voyantjs/accommodations": "workspace:^",
     "@voyantjs/action-ledger": "workspace:^",
     "@voyantjs/admin": "workspace:^",
+    "@voyantjs/admin-app": "workspace:^",
     "@voyantjs/allocation-ui": "workspace:^",
     "@voyantjs/auth": "workspace:^",
     "@voyantjs/auth-ui": "workspace:^",
