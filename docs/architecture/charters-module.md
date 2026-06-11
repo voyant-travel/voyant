@@ -548,7 +548,7 @@ export type SourceRef = { connectionId?: string; externalId: string; [k: string]
 Two registration points in a template (mirroring cruises):
 
 ```ts
-// templates/dmc/src/index.ts
+// templates/operator/src/index.ts (illustrative)
 import { createApp } from "@voyantjs/hono"
 import { chartersHonoModule, registerCharterAdapter } from "@voyantjs/charters"
 import { createConnectCharterAdapter } from "@voyantjs/charters-adapter-connect"

@@ -3,7 +3,9 @@
 > Status: **OPERATOR CUTOVER COMPLETE** ✅ — `@voyantjs/products-ui` now owns the
 > canonical `ProductDetailPage`; the operator consumes it via `ProductDetailHostProvider`.
 > Both `@voyantjs/products-ui` and `operator` typecheck + lint clean. The 36 operator
-> dupes are deleted. **Remaining: migrate `dmc` + `apps/dev` onto the same page (§5.9).**
+> dupes are deleted. ~~Remaining: migrate `dmc` + `apps/dev` onto the same page (§5.9).~~
+> Resolved: `templates/dmc` and `apps/dev` were deleted by the packaged-admin work
+> (`docs/architecture/packaged-admin-rfc.md` §5), so §5.9 is moot.
 > Branch: `product-optimizations` (uncommitted working tree). Restart the operator dev
 > server to pick up the route/page changes.
 >

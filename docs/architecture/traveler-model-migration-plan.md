@@ -1,5 +1,7 @@
 # Voyant Traveler Model Migration Plan
 
+> Note (2026-06): `templates/dmc`, `apps/dev`, and the shadcn registry (`apps/registry` + `packages/ui/registry`) have since been deleted per the packaged-admin RFC (§5); path references to them below are historical.
+
 This document defines the concrete migration plan for making `traveler` the
 canonical travel-commerce term across Voyant.
 

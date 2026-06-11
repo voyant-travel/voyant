@@ -132,7 +132,6 @@ async function getReleaseState() {
     hasReleasableChangesets: plannedReleases.length > 0,
     pendingPackages,
     pendingPackageNames,
-    registryBuildNeeded: pendingPackageNames.includes("@voyantjs/ui"),
     starterReleaseNeeded: pendingPackageNames.includes("@voyantjs/cli"),
     plannedReleases: plannedReleases.map((release) => ({
       name: release.name,
@@ -156,7 +155,6 @@ async function main() {
         pendingPackages: state.pendingPackages,
         pendingPublication,
         plannedReleases: state.plannedReleases,
-        registryBuildNeeded: state.registryBuildNeeded,
         starterReleaseNeeded: state.starterReleaseNeeded,
       },
       null,
@@ -171,7 +169,6 @@ async function main() {
   appendGithubOutput("pending_packages_json", JSON.stringify(state.pendingPackages))
   appendGithubOutput("turbo_filters", turboFilters)
   appendGithubOutput("package_filters", packageFilters)
-  appendGithubOutput("registry_build_needed", state.registryBuildNeeded ? "true" : "false")
   appendGithubOutput("starter_release_needed", state.starterReleaseNeeded ? "true" : "false")
 }
 

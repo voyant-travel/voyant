@@ -2,7 +2,7 @@
 
 Voyant is an open-source framework for OTAs, tour operators, and DMCs. It ships starter apps, durable workflow orchestration, and a wide set of headless domain modules - CRM, products, availability, bookings, finance, distribution, resources, legal, charters, cruises, accommodation resale, and more - that you can compose into your own travel platform.
 
-#### [CLI](./packages/cli/README.md) | [DMC Template](./templates/dmc/README.md) | [Operator Template](./templates/operator/README.md) | [Packages](./packages) | [Examples](./examples) | [Migrations](./docs/migrations/README.md)
+#### [CLI](./packages/cli/README.md) | [Operator Template](./templates/operator/README.md) | [Packages](./packages) | [Examples](./examples) | [Migrations](./docs/migrations/README.md)
 
 ## Get started
 
@@ -17,7 +17,7 @@ You can also use `pnpm add -g @voyantjs/cli`.
 ### 2. Scaffold a project from a starter
 
 ```bash
-voyant new my-travel-app --template dmc
+voyant new my-travel-app --template operator
 cd my-travel-app
 pnpm install
 ```
@@ -41,11 +41,10 @@ pnpm dev
 
 ## Starter templates
 
-Voyant ships two first-party starters:
+Voyant ships one first-party starter:
 
 | Starter | Purpose | Stack |
 | --- | --- | --- |
-| [`templates/dmc`](./templates/dmc/README.md) | Destination management company workflows | Cloudflare Workers, TanStack Start, Hono, Better Auth, Drizzle |
 | [`templates/operator`](./templates/operator/README.md) | Tour operator workflows | Cloudflare Workers, TanStack Start, Hono, Better Auth, Drizzle |
 
 ## What you get
@@ -56,7 +55,7 @@ Voyant ships two first-party starters:
 - Hono-based API transport with optional Next.js route helpers
 - Step-based durable workflow orchestration that runs on Cloudflare Workers + Durable Objects, Node, or Voyant Cloud
 - Better Auth wiring in first-party starters, with core packages staying auth-provider agnostic
-- A shadcn-style component registry per domain (`crm-ui`, `products-ui`, `bookings-ui`, …) for installable UI blocks
+- Versioned admin UI packages per domain (`crm-ui`, `products-ui`, `bookings-ui`, …) consumed as ordinary dependencies
 - React hook libraries (`crm-react`, `products-react`, `bookings-react`, …) that wrap the HTTP contract of each module
 - Optional integrations for payments, e-invoicing, storage, CMS sync, and notifications
 
@@ -95,9 +94,9 @@ Step-based workflows with durable state, retries, and a shared wire protocol —
 
 Reference apps under [`apps/`](./apps) compose these into deployable shapes — `workflows-orchestrator-worker`, `workflows-tenant-worker`, `workflows-selfhost-cloudflare-worker`, `workflows-selfhost-node-server`, `workflows-node-step-container`, and `workflows-local-dashboard`.
 
-### UI registries and React families
+### UI and React families
 
-Each domain module has matching `-ui` (shadcn registry source) and `-react` (hooks + provider) packages where a reusable frontend surface is warranted - for example [`@voyantjs/crm-ui`](./packages/crm-ui/README.md) + [`@voyantjs/crm-react`](./packages/crm-react/README.md), [`@voyantjs/bookings-ui`](./packages/bookings-ui) + [`@voyantjs/bookings-react`](./packages/bookings-react), and so on across `products`, `finance`, `availability`, `distribution`, `markets`, `pricing`, `legal`, `resources`, `facilities`, `suppliers`, `identity`, `external-refs`, `charters`, `cruises`, `extras`, `sellability`, `booking-requirements`. The shared admin shell lives in [`@voyantjs/admin`](./packages/admin/README.md); cross-cutting primitives in [`packages/ui`](./packages/ui/README.md).
+Each domain module has matching `-ui` (admin components/pages) and `-react` (hooks + provider) packages where a reusable frontend surface is warranted - for example [`@voyantjs/crm-ui`](./packages/crm-ui/README.md) + [`@voyantjs/crm-react`](./packages/crm-react/README.md), [`@voyantjs/bookings-ui`](./packages/bookings-ui) + [`@voyantjs/bookings-react`](./packages/bookings-react), and so on across `products`, `finance`, `availability`, `distribution`, `markets`, `pricing`, `legal`, `resources`, `facilities`, `suppliers`, `identity`, `external-refs`, `charters`, `cruises`, `extras`, `sellability`, `booking-requirements`. The shared admin shell lives in [`@voyantjs/admin`](./packages/admin/README.md); cross-cutting primitives in [`packages/ui`](./packages/ui/README.md).
 
 ### Plugins
 
@@ -115,8 +114,6 @@ This repository is the workspace that powers the framework, starters, runners, a
 | [`packages/*`](./packages) | Reusable business logic, schemas, services, transport adapters, and integrations |
 | [`packages/plugins/*`](./packages/plugins) | First-party plugin bundles (payments, invoicing, CMS sync) |
 | [`templates/*`](./templates) | First-party starter apps |
-| [`apps/dev`](./apps/dev/README.md) | Internal playground for broader module coverage |
-| [`apps/registry`](./apps/registry/README.md) | Hosted shadcn registry for installable Voyant UI components |
 | [`apps/workflows-*`](./apps) | Reference orchestrator/tenant/self-host workers and the local workflows dashboard |
 | [`apps/scripts`](./apps/scripts/README.md) | Workspace scripts (e.g. seed operator data) |
 | [`examples/*`](./examples) | Reference apps that consume Voyant surfaces (e.g. `nextjs-booking-portal`) |
@@ -132,10 +129,7 @@ This repository is the workspace that powers the framework, starters, runners, a
 | `pnpm test:bookings:integration` | Start or reuse the Docker test Postgres, ensure the bookings test schema, and run the bookings integration files serially |
 | `pnpm lint` | Run Biome checks across the repo |
 | `pnpm generate:schema-docs` | Regenerate [`SCHEMA.md`](./SCHEMA.md) from the Drizzle table definitions |
-| `pnpm registry:build` | Aggregate per-package shadcn registries into `apps/registry/public/r/` |
-| `pnpm -F dmc dev` | Start the DMC template on port `3100` |
 | `pnpm -F operator dev` | Start the operator template on port `3300` |
-| `pnpm -F dev dev` | Start the internal playground on port `3200` |
 
 ### Integration test database
 

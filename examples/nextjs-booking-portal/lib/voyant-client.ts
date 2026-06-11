@@ -65,7 +65,7 @@ export async function listProducts(): Promise<PublicProductList> {
     return { items: [...MOCK_PRODUCTS], total: MOCK_PRODUCTS.length }
   }
   // Real Voyant call — adapt the mapping to your product schema's public
-  // projection. The DMC template returns `{ items, total }` by convention.
+  // projection. The operator template returns `{ items, total }` by convention.
   return voyantFetch("/v1/public/products", publicProductListSchema)
 }
 

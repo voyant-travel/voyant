@@ -288,6 +288,18 @@ optimization, not a prerequisite.
 **SSR/preload policy** (the #1642 class of fix) moves inside the factory: the
 package knows the active route set because it built the tree.
 
+**Implementation findings** (from the Phase 3 domain migrations):
+
+- *Zero-prop components only.* `AdminUiRouteContribution.component` attaches
+  cleanly only when the host is a zero-prop component; detail hosts that take
+  route params stay bound by thin template route files until code-based route
+  assembly lands. The contribution carries the metadata either way, so the
+  thin files delete themselves once the factory builds the tree.
+- *Destination shape convention.* Destinations re-declare only closed,
+  stable shapes. Keys whose param unions still evolve — e.g.
+  `booking.detail`'s tab union — type-only-import the union from the owning
+  package instead of copying it, so the declaration cannot drift.
+
 ### 4.3 Navigation and widgets: the existing seam becomes the only path
 
 Nothing new to design — `resolveAdminNavigation` and `AdminWidgetSlot` exist
@@ -534,14 +546,17 @@ Open:
 
 1. A fix of the #1636/#1638 class (dispatch, chunking, preloads, shell, auth
    flow, domain page) ships to every project as a version bump. Zero
-   hand-ports.
+   hand-ports. **Met** — all 10 admin domains are package-delivered; domain
+   fixes land in the `*-ui` package and reach hosts as a version bump.
 2. A new project scaffold contains no framework infrastructure: manifest,
    thin entries, empty `src/admin/extensions/`.
 3. `templates/operator/src/routes` + `src/components` shrink from ~41k LOC to
-   only genuinely custom pages (target: under ~3k LOC).
-4. `templates/dmc` and `apps/dev` no longer exist.
+   only genuinely custom pages (target: under ~3k LOC). **Met** — the domain
+   migrations removed ~18k LOC of operator-local UI across the 10 domains;
+   what remains is host wiring and genuinely custom pages.
+4. `templates/dmc` and `apps/dev` no longer exist. **Met by this PR.**
 5. An enterprise customization (new page, injected widget, overridden detail
    page) is expressible without modifying any framework-owned file.
 6. No source-installed component copies remain: `apps/registry` and the
    `registry/` directories are gone, and every `*-ui` consumer imports the
-   package instead of owning a copy of its source.
+   package instead of owning a copy of its source. **Met by this PR.**

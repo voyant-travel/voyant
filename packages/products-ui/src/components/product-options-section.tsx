@@ -200,7 +200,7 @@ export function ProductOptionsSection({
 
   // A product with a single option needs no option chrome — show its pricing
   // table directly. Only flatten when a host injects the details (the grid);
-  // bare mounts (apps/dev) keep the expandable units table.
+  // bare mounts keep the expandable units table.
   const flattenedOption = renderOptionDetails && options.length === 1 ? options[0] : undefined
 
   const editOption = (option: ProductOptionRecord) => {
@@ -391,7 +391,7 @@ function OptionRow({
         <div className="flex flex-col gap-4 border-t bg-muted/30 p-3">
           {/* When a host injects option details (the merged pricing grid that
               manages its own inventory), use it. Otherwise fall back to the
-              standalone units table — e.g. apps/dev mounts this section bare. */}
+              standalone units table for hosts that mount this section bare. */}
           {children ?? <UnitsPanel optionId={option.id} messages={messages} />}
         </div>
       ) : null}

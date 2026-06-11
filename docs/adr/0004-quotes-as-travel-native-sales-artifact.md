@@ -111,7 +111,7 @@ The implementation order is:
    accept-to-reserve wiring.
 
 Migrations remain template-owned. The package schema changes are exported by
-the package; `templates/operator` and `templates/dmc` own migration generation
+the package; `templates/operator` (and, before its deletion, `templates/dmc`) owns migration generation
 and application.
 
 ## Alternatives considered

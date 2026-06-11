@@ -30,16 +30,6 @@ async function collectPackageI18nEntries() {
     }
   }
 
-  const registryDir = path.join(packagesDir, "ui", "registry")
-  const registryNames = await readdir(registryDir)
-
-  for (const registryName of registryNames) {
-    const filePath = path.join(registryDir, registryName, "i18n", "index.ts")
-    if (await exists(filePath)) {
-      entries.push(filePath)
-    }
-  }
-
   return entries.sort()
 }
 
