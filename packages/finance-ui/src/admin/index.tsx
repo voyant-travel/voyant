@@ -10,9 +10,14 @@ import {
 // peer-depends on `@voyantjs/bookings-ui`, so re-declaring them here would
 // just duplicate the contract.
 import { bookingDetailInvoicesTabSlot } from "@voyantjs/bookings-ui/admin"
+// Importing the slot id also binds the suppliers-ui `AdminDestinations`
+// augmentation (`supplier.list`, `supplier.detail`) — this package already
+// peer-depends on `@voyantjs/suppliers-ui`.
+import { supplierDetailPaymentPolicySlot } from "@voyantjs/suppliers-ui/admin"
 import type { ComponentType } from "react"
 
 import { BookingInvoicesWidget } from "./booking-invoices-widget.js"
+import { SupplierPaymentPolicyWidget } from "./supplier-payment-policy-widget.js"
 
 /**
  * Semantic destinations the finance admin surfaces navigate to
@@ -53,6 +58,10 @@ export {
   RecordPaymentDialog,
   type RecordPaymentDialogProps,
 } from "./record-payment-dialog.js"
+export {
+  SupplierPaymentPolicyWidget,
+  type SupplierPaymentPolicyWidgetProps,
+} from "./supplier-payment-policy-widget.js"
 
 export interface CreateFinanceAdminExtensionOptions {
   /** Mount path of the finance pages inside the admin workspace. Default `/finance`. */
@@ -98,7 +107,10 @@ export interface CreateFinanceAdminExtensionOptions {
  * this extension contributes {@link BookingInvoicesWidget} on the
  * `booking.details.invoices-tab` slot the bookings host exposes; the host
  * mounts its Invoices tab whenever a contribution targets that slot and
- * hands the widget its typed slot context as props.
+ * hands the widget its typed slot context as props. The same pattern
+ * resolves the finance-ui ↔ suppliers-ui cycle: the supplier detail page's
+ * customer-payment-policy card ships as {@link SupplierPaymentPolicyWidget}
+ * on the `supplier.details.payment-policy` slot the supplier host exposes.
  */
 export function createFinanceAdminExtension(
   options: CreateFinanceAdminExtensionOptions = {},
@@ -164,6 +176,14 @@ export function createFinanceAdminExtension(
         // the typed contract is `BookingDetailHostSlotContext`, which the
         // bookings host passes verbatim to this slot's widgets.
         component: BookingInvoicesWidget as unknown as ComponentType<Record<string, unknown>>,
+      } satisfies AdminWidgetContribution,
+      {
+        id: "finance-supplier-payment-policy",
+        slot: supplierDetailPaymentPolicySlot,
+        // Same untyped-registry cast; the typed contract is
+        // `SupplierDetailHostSlotContext`, which the supplier detail host
+        // passes verbatim to this slot's widgets.
+        component: SupplierPaymentPolicyWidget as unknown as ComponentType<Record<string, unknown>>,
       } satisfies AdminWidgetContribution,
     ],
   })

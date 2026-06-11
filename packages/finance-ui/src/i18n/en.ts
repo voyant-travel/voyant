@@ -661,6 +661,16 @@ export const financeUiEn = {
       },
       due: "due {date}",
     },
+    supplierCard: {
+      title: "Customer payment policy",
+      description:
+        "When set, sourced bookings against this supplier inherit these terms instead of the operator default. Leave inheriting to fall back to the deployment-wide policy.",
+      missingCurrency:
+        "Set the supplier's default currency above before defining a payment policy; amounts must be denominated in a known currency.",
+      save: "Save policy",
+      savedToast: "Customer payment policy saved",
+      saveFailed: "Failed to save policy",
+    },
   },
   taxesPage: {
     title: "Tax Regimes and Classes",

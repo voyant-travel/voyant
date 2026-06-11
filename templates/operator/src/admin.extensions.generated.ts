@@ -3,6 +3,7 @@
 //   voyant admin generate
 
 import { createCrmAdminExtension } from "@voyantjs/crm-ui/admin"
+import { createSuppliersAdminExtension } from "@voyantjs/suppliers-ui/admin"
 import { createPromotionsAdminExtension } from "@voyantjs/promotions-ui/admin"
 import { createCatalogAdminExtension } from "@voyantjs/catalog-ui/admin"
 import { createBookingsAdminExtension } from "@voyantjs/bookings-ui/admin"
@@ -15,6 +16,7 @@ import { createFinanceAdminExtension } from "@voyantjs/finance-ui/admin"
  */
 export const generatedAdminExtensionFactories = {
   crm: createCrmAdminExtension,
+  suppliers: createSuppliersAdminExtension,
   promotions: createPromotionsAdminExtension,
   catalog: createCatalogAdminExtension,
   bookings: createBookingsAdminExtension,

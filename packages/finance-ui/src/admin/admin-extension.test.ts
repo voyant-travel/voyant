@@ -11,6 +11,7 @@ import {
   PaymentDetailSkeleton,
   PaymentDialog,
   RecordPaymentDialog,
+  SupplierPaymentPolicyWidget,
 } from "./index.js"
 
 describe("createFinanceAdminExtension", () => {
@@ -66,9 +67,21 @@ describe("createFinanceAdminExtension", () => {
     // arrives as a widget contribution the bookings host renders.
     const extension = createFinanceAdminExtension()
     const widgets = extension.widgets ?? []
-    expect(widgets).toHaveLength(1)
+    expect(widgets).toHaveLength(2)
     expect(widgets[0]?.slot).toBe("booking.details.invoices-tab")
     expect(widgets[0]?.component).toBe(BookingInvoicesWidget)
+  })
+
+  it("contributes the payment-policy card on the supplier detail slot", () => {
+    // Same cycle resolution for finance-ui ↔ suppliers-ui: the supplier
+    // detail host cannot import this package, so the customer-payment-policy
+    // card arrives as a widget contribution the supplier host renders.
+    const extension = createFinanceAdminExtension()
+    const widget = extension.widgets?.find(
+      (candidate) => candidate.id === "finance-supplier-payment-policy",
+    )
+    expect(widget?.slot).toBe("supplier.details.payment-policy")
+    expect(widget?.component).toBe(SupplierPaymentPolicyWidget)
   })
 })
 
@@ -88,6 +101,7 @@ describe("packaged finance admin hosts", () => {
       PaymentDetailSkeleton,
       PaymentDialog,
       RecordPaymentDialog,
+      SupplierPaymentPolicyWidget,
     ]) {
       expect(typeof host).toBe("function")
     }
